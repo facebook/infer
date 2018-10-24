@@ -18,8 +18,8 @@
 @implementation CADisplay
 
 - (instancetype)init {
-  _displayLink =
-      [CADisplayLink displayLinkWithTarget:self selector:@selector(bla)];
+  _displayLink = [CADisplayLink displayLinkWithTarget:self
+                                             selector:@selector(bla)];
 
   return self;
 }
@@ -31,7 +31,8 @@
                                   selector:@selector(handleDisplayLink:)];
 }
 
-- (void)bla{};
+- (void)bla {
+};
 
 - (void)invalidate {
   // unregister displayLink target

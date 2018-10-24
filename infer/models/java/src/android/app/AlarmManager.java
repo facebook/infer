@@ -7,7 +7,6 @@
 
 package android.app;
 
-
 public abstract class AlarmManager {
 
   void cancel(PendingIntent operation) {

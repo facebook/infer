@@ -16,7 +16,7 @@ struct D {};
 @interface SomeClass : CKCompositeComponent
 @end
 @implementation SomeClass
-+ (instancetype) new {
++ (instancetype)new {
   int i; // error
 
   for (int i = 0; i < 10; i++) { // no error

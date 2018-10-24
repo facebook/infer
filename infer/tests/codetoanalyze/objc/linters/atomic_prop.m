@@ -15,7 +15,8 @@
 
 @implementation B
 
-- (void)foo{};
+- (void)foo {
+};
 
 @end
 

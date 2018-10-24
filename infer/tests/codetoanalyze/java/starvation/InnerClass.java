@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
 class InnerClass {
   synchronized void outerInnerOk(InnerClassA a) {
     a.foo();

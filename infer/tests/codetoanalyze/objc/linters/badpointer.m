@@ -94,7 +94,7 @@ int good4(NSNumber* number, Simple* simple) {
 }
 
 int bad5(NSNumber* number, Simple* simple) {
-  if ([simple fooWithCondition:(number ? 1 : 2)andNumber:number] != nil) {
+  if ([simple fooWithCondition:(number ? 1 : 2) andNumber:number] != nil) {
     return 0;
   }
   return 1;
@@ -108,8 +108,8 @@ int bad6(NSNumber* number, Simple* simple) {
 }
 
 int good5(NSNumber* number, Simple* simple) {
-  if ([simple fooWithCondition:(number == nil ? 1 : 2) andNumber:number] !=
-      nil) {
+  if ([simple fooWithCondition:(number == nil ? 1 : 2)
+                     andNumber:number] != nil) {
     return 0;
   }
   return 1;

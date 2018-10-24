@@ -31,8 +31,9 @@
       "file.txt", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (fileDescriptor == -1) {
     if (error)
-      *error =
-          [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+      *error = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                   code:errno
+                               userInfo:nil];
     return nil;
   } else {
     if (self)

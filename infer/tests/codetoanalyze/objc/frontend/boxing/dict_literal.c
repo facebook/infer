@@ -20,5 +20,5 @@ NSDictionary* get_array1() {
 
 NSDictionary* get_array2() {
 
-  return @{ @"firstName" : @"Matt", @"lastName" : @"Galloway", @"age" : @28 };
+  return @{@"firstName" : @"Matt", @"lastName" : @"Galloway", @"age" : @28};
 }

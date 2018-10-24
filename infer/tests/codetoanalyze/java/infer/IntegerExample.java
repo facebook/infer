@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-
 public class IntegerExample {
 
   private static void testIntegerEqualsGood() {

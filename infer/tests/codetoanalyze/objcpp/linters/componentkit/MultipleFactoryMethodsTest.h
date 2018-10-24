@@ -40,14 +40,14 @@
 
 // OK - unavailable initializers shouldn't count
 @interface UnavailableInitializer1 : CKCompositeComponent
-+ (instancetype) new // shouldn't count since it's unavailable
++ (instancetype)new // shouldn't count since it's unavailable
     __attribute__((unavailable("Must use designated initializer")));
 + (instancetype)newWithObject:(NSObject*)obj;
 @end
 
 // Not OK - there are 2 static initialzers, even w/out the unavailable one
 @interface UnavailableInitializer2 : CKCompositeComponent
-+ (instancetype) new // shouldn't count since it's unavailable
++ (instancetype)new // shouldn't count since it's unavailable
     __attribute__((unavailable("Must use designated initializer")));
 + (instancetype)newWithObject1:(NSObject*)obj;
 + (instancetype)newWithObject2:(NSObject*)obj;

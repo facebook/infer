@@ -115,8 +115,8 @@ class RaceWithMainThread {
 
   void conditional1_Ok(boolean b) {
     if (b) {
-        /*People not literally putting this assert inside if's,
-        but implicitly by method calls */
+      /*People not literally putting this assert inside if's,
+      but implicitly by method calls */
       OurThreadUtils.assertMainThread();
       ff = 88;
     }

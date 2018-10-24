@@ -83,7 +83,7 @@ class BarClass {
 @interface BarComponent : CKCompositeComponent
 @end
 @implementation BarComponent
-+ (instancetype) new {
++ (instancetype)new {
   // C++ classes
   BarClass s1; // error
   const BarClass& s2 = s1; // no error

@@ -19,12 +19,11 @@
   return [NSRunLoop alloc];
 };
 
-- (void)acceptInputForMode:(NSString*)mode beforeDate:(NSDate*)limit_date{};
+- (void)acceptInputForMode:(NSString*)mode beforeDate:(NSDate*)limit_date {
+};
 
-- (void)addTimer:(NSTimer*)timer
-         forMode:(NSString*)mode{
-
-                 };
+- (void)addTimer:(NSTimer*)timer forMode:(NSString*)mode {
+};
 
 - (NSString*)currentMode {
   return @"";
@@ -35,7 +34,8 @@
   return [NSDate alloc];
 };
 
-- (void)run{};
+- (void)run {
+};
 
 - (BOOL)runMode:(NSString*)mode beforeDate:(NSDate*)date {
 
@@ -43,6 +43,7 @@
   return res;
 };
 
-- (void)runUntilDate:(NSDate*)date{};
+- (void)runUntilDate:(NSDate*)date {
+};
 
 @end

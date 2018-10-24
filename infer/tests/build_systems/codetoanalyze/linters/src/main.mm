@@ -9,7 +9,7 @@
 @interface SomeClass : CKCompositeComponent
 @end
 @implementation SomeClass
-+ (instancetype) new {
++ (instancetype)new {
   int i; // error
   return nil;
 }

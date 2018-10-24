@@ -7,7 +7,6 @@
 
 package org.assertj.core.util;
 
-
 import static com.facebook.infer.builtins.InferBuiltins.assume;
 
 public final class Preconditions {

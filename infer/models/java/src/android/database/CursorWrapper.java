@@ -7,7 +7,6 @@
 
 package android.database;
 
-
 import java.io.IOException;
 
 public class CursorWrapper implements Cursor {

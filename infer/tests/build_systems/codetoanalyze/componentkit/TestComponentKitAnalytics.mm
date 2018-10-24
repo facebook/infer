@@ -10,7 +10,7 @@
 @interface SomeClass : CKCompositeComponent
 @end
 @implementation SomeClass
-+ (instancetype) new {
++ (instancetype)new {
   if (1 == 3) {
     return nil;
   } else if (2 == 4) {

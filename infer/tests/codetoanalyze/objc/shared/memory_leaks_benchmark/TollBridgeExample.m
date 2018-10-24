@@ -40,7 +40,7 @@ CTFontRef cfautorelease_test() {
 }
 
 void bridgeDictionaryNoLeak() {
-  NSDictionary* bufferAttributes = @{(NSString*)@"key" : @{} };
+  NSDictionary* bufferAttributes = @{(NSString*)@"key" : @{}};
   CFDictionaryRef dict = (__bridge CFDictionaryRef)bufferAttributes;
 }
 

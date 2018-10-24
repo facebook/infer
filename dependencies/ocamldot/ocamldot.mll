@@ -412,7 +412,7 @@ begin
       roots;
     print_string "  };\n";
     (* Find the graph reachable from the roots *)
-    let tcGraph = tc graph in          
+    let tcGraph = tc graph in
     let reachable node =
       (List.exists (fun r -> r=node) roots)
       ||

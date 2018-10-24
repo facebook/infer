@@ -26,10 +26,9 @@ BOOL ExampleSanitizer(NSURL* u, int f) {
   return self;
 }
 
-- (void)loadURL:(NSURL*)URL
-    trackingCodes:(NSArray*)trackingCodes{
-                      // Require untainted URL
-                  };
+- (void)loadURL:(NSURL*)URL trackingCodes:(NSArray*)trackingCodes {
+  // Require untainted URL
+};
 @end
 
 @interface VCB : NSObject

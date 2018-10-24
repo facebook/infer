@@ -7,7 +7,6 @@
 
 package java.util;
 
-
 // abstract so we don't have to implement every method of List
 public abstract class List<T> extends AbstractList<T> {
 

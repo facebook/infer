@@ -124,9 +124,8 @@
   NSDictionary* destinationPixelBufferAttributes;
   if (kCFCoreFoundationVersionNumber >=
       kCFCoreFoundationVersionNumber_iOS_9_0) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -134,16 +133,15 @@
 - (void)m2 {
   NSDictionary* destinationPixelBufferAttributes;
   destinationPixelBufferAttributes =
-      @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES };
+      @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
 }
 
 // bug
 - (void)m3:(BOOL)ok {
   NSDictionary* destinationPixelBufferAttributes;
   if (ok) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -153,9 +151,8 @@
   if (kCFCoreFoundationVersionNumber >=
           kCFCoreFoundationVersionNumber_iOS_9_0 &&
       ok) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -166,9 +163,8 @@
           kCFCoreFoundationVersionNumber_iOS_9_0 &&
       kCFCoreFoundationVersionNumber >=
           kCFCoreFoundationVersionNumber_iOS_7_0) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -176,9 +172,8 @@
 - (void)m6 {
   NSDictionary* destinationPixelBufferAttributes;
   if (AT_LEAST_IOS9) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -186,9 +181,8 @@
 - (void)m7 {
   NSDictionary* destinationPixelBufferAttributes;
   if (CK_AT_LEAST_IOS9) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
@@ -196,9 +190,8 @@
 - (void)m8 {
   NSDictionary* destinationPixelBufferAttributes;
   if (AT_LEAST_IOS10) {
-    destinationPixelBufferAttributes = @{
-      (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
-    };
+    destinationPixelBufferAttributes =
+        @{(NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES};
   }
 }
 
