@@ -174,7 +174,10 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
   in
   let resolved_proc_desc = Procdesc.from_proc_attributes resolved_attributes in
   let resolved_proc_desc = with_formals_types_proc callee_pdesc resolved_proc_desc substitutions in
-  Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
+  (* The attributes here are used to retrieve the per-file type environment for Clang languages.
+     The analysis for Java is using a global type environment *)
+  if not (Typ.Procname.is_java resolved_pname) then
+    Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
   resolved_proc_desc
 
 
