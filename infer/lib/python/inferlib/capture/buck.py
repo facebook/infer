@@ -121,6 +121,10 @@ class BuckAnalyzer:
             '*//infer.clang_plugin={plugin}'.format(plugin=plugin_path),
             '--config',
             '*//cxx.pch_enabled=false',
+            '--config',  # Infer doesn't support C++ modules yet (T35656509)
+            '*//cxx.modules_default=0',
+            '--config',
+            '*//cxx.modules=False',
         ] + self.args.Xbuck
 
         if self.args.xcode_developer_dir is not None:
