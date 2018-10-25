@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open! AbstractDomain.Types
 module F = Format
 
 module BoundEnd = struct

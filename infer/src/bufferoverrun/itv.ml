@@ -79,10 +79,7 @@ module type NonNegativeSymbol = sig
 
   val int_ub : t -> NonNegativeInt.t option
 
-  val subst :
-       t
-    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
-    -> (NonNegativeInt.t, t) Bounds.valclass
+  val subst : t -> (Symb.Symbol.t -> t bottom_lifted) -> (NonNegativeInt.t, t) Bounds.valclass
 
   val pp : F.formatter -> t -> unit
 end

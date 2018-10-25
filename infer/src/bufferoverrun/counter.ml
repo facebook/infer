@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open! AbstractDomain.Types
 
 type t = unit -> int
 

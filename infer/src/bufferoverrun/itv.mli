@@ -50,7 +50,7 @@ module NonNegativePolynomial : sig
 
   val min_default_left : astate -> astate -> astate
 
-  val subst : astate -> (Symb.Symbol.t -> Bound.t AbstractDomain.Types.bottom_lifted) -> astate
+  val subst : astate -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> astate
 
   val degree : astate -> int option
 

@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open! AbstractDomain.Types
 module F = Format
 
 module BoundEnd : sig
