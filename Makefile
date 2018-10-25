@@ -82,7 +82,8 @@ BUILD_SYSTEMS_TESTS += objc_getters_setters objc_missing_fld objc_retain_cycles 
 DIRECT_TESTS += \
   objc_frontend objc_errors objc_linters objc_ioslints objcpp_errors objcpp_nullable objcpp_retain-cycles \
   objc_linters-def-folder objc_nullable objc_liveness objcpp_liveness objc_uninit \
-  objcpp_frontend objcpp_linters cpp_linters  objc_linters-for-test-only objcpp_linters-for-test-only
+  objcpp_frontend objcpp_linters cpp_linters  objc_linters-for-test-only objcpp_linters-for-test-only \
+	objcpp_racerd
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
 endif

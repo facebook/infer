@@ -47,7 +47,7 @@ let compare_modulo_this x y =
     else
       let cmp = Mangled.compare x.pv_name y.pv_name in
       if not (Int.equal 0 cmp) then cmp
-      else if Mangled.is_this x.pv_name then 0
+      else if Mangled.is_this x.pv_name || Mangled.is_self x.pv_name then 0
       else compare_pvar_kind x.pv_kind y.pv_kind
 
 
@@ -134,7 +134,7 @@ let is_static_local pv = match pv.pv_kind with Global_var (_, _, _, true, _) -> 
 let is_this pvar = Mangled.is_this (get_name pvar)
 
 (** Check if a pvar is the special "self" var *)
-let is_self pvar = Mangled.equal (get_name pvar) (Mangled.from_string "self")
+let is_self pvar = Mangled.is_self (get_name pvar)
 
 (** Check if the pvar is a return var *)
 let is_return pv = Mangled.equal (get_name pv) Ident.name_return

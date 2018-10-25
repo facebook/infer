@@ -22,7 +22,7 @@ type translation_unit = SourceFile.t option [@@deriving compare]
 type t [@@deriving compare]
 
 val compare_modulo_this : t -> t -> int
-(** Comparison considering all pvars named 'this' to be equal *)
+(** Comparison considering all pvars named 'this'/'self' to be equal *)
 
 val equal : t -> t -> bool
 (** Equality for pvar's *)

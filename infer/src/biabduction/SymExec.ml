@@ -781,8 +781,7 @@ let receiver_self receiver prop =
     ~f:(fun hpred ->
       match hpred with
       | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->
-          Exp.equal e receiver && Pvar.is_seed pv
-          && Mangled.equal (Pvar.get_name pv) (Mangled.from_string "self")
+          Exp.equal e receiver && Pvar.is_seed pv && Pvar.is_self pv
       | _ ->
           false )
     prop.Prop.sigma

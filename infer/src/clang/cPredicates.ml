@@ -983,7 +983,7 @@ let is_receiver_self an =
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, fst_param :: _, _, _)) ->
       CAst_utils.exists_eventually_st
         (decl_ref_name ~kind:`ImplicitParam)
-        (ALVar.Const "self") fst_param
+        (ALVar.Const CFrontend_config.self) fst_param
   | _ ->
       false
 

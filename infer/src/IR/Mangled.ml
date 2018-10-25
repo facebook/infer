@@ -38,6 +38,10 @@ let this = from_string "this"
 
 let is_this = function {plain= "this"} -> true | _ -> false
 
+let self = from_string "self"
+
+let is_self = function {plain= "self"} -> true | _ -> false
+
 module Set = Caml.Set.Make (struct
   type nonrec t = t
 

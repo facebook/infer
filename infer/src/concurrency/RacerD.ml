@@ -1254,31 +1254,20 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
       { reported_acc with
         reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
     in
-    let class_has_mutex_member objc_cpp tenv =
-      let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
-      let matcher = ConcurrencyModels.cpp_lock_types_matcher in
-      Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
-          (* check if the class contains a lock member *)
-          List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
-              Option.exists (Typ.name ft) ~f:(fun name ->
-                  QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
-    in
     let should_report {tenv; procdesc} =
+      List.exists grouped_accesses ~f:(fun ({threads} : reported_access) ->
+          ThreadsDomain.is_any threads )
+      &&
       match Procdesc.get_proc_name procdesc with
       | Java _ ->
-          List.exists grouped_accesses ~f:(fun ({threads} : reported_access) ->
-              ThreadsDomain.is_any threads )
-          && should_report_on_proc procdesc tenv
+          should_report_in_java procdesc tenv
       | ObjC_Cpp objc_cpp ->
-          (* do not report if a procedure is private  *)
-          Procdesc.get_access procdesc <> PredSymb.Private
-          && (* report if the class has a mutex member  *)
-             class_has_mutex_member objc_cpp tenv
+          should_report_in_objcpp procdesc objc_cpp tenv
       | _ ->
           false
     in
     let reportable_accesses = List.filter ~f:should_report grouped_accesses in
-    List.fold ~f:(report_unsafe_access reportable_accesses) reportable_accesses ~init:reported
+    List.fold reportable_accesses ~init:reported ~f:(report_unsafe_access reportable_accesses)
   in
   ReportMap.fold report_accesses_on_location aggregated_access_map empty_reported |> ignore
 
@@ -1291,43 +1280,37 @@ let make_results_table file_env =
   let open RacerDDomain in
   let aggregate_post tenv procdesc acc {threads; accesses; wobbly_paths} =
     AccessDomain.fold
-      (fun snapshot acc ->
-        let reported_access : reported_access =
-          {threads; snapshot; tenv; procdesc; wobbly_paths}
-        in
-        ReportMap.add reported_access acc )
+      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc; wobbly_paths} acc)
       accesses acc
   in
   let aggregate_posts acc (tenv, proc_desc) =
     Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.fold ~init:acc ~f:(aggregate_post tenv proc_desc)
   in
-  List.fold ~f:aggregate_posts file_env ~init:ReportMap.empty
+  List.fold file_env ~init:ReportMap.empty ~f:aggregate_posts
 
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
 let aggregate_by_class file_env =
-  List.fold file_env
-    ~f:(fun acc ((_, pdesc) as proc) ->
-      let pname = Procdesc.get_proc_name pdesc in
+  List.fold file_env ~init:String.Map.empty ~f:(fun acc ((_, pdesc) as proc) ->
       let classname =
-        match pname with
+        match Procdesc.get_proc_name pdesc with
         | Typ.Procname.Java java_pname ->
-            Typ.Procname.Java.get_class_name java_pname
+            Some (Typ.Procname.Java.get_class_name java_pname)
+        | ObjC_Cpp objc_cpp_pname ->
+            Some (Typ.Procname.ObjC_Cpp.get_class_name objc_cpp_pname)
         | _ ->
-            "unknown"
+            None
       in
-      String.Map.update acc classname ~f:(function None -> [proc] | Some bucket -> proc :: bucket)
-      )
-    ~init:String.Map.empty
+      Option.fold classname ~init:acc ~f:(fun acc classname ->
+          String.Map.add_multi acc ~key:classname ~data:proc ) )
 
 
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
 let file_analysis {Callbacks.procedures; source_file} =
-  String.Map.iter
-    ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env))
-    (aggregate_by_class procedures) ;
+  String.Map.iter (aggregate_by_class procedures) ~f:(fun class_env ->
+      report_unsafe_accesses (make_results_table class_env) ) ;
   IssueLog.store Config.racerd_issues_dir_name source_file
