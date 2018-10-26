@@ -489,7 +489,9 @@ and c_type_equal c_type abs_ctype =
   | LValueReferenceType (_, qt), Reference abs_typ | RValueReferenceType (_, qt), Reference abs_typ
     ->
       check_type_ptr qt.qt_type_ptr abs_typ
-  | ObjCObjectPointerType (_, qt), ObjCGenProt _ ->
+  | BlockPointerType (_, qt), TypeName _
+  | FunctionProtoType (_, {fti_return_type= qt}, _), TypeName _
+  | ObjCObjectPointerType (_, qt), _ ->
       check_type_ptr qt.qt_type_ptr abs_ctype
   | ObjCObjectType _, ObjCGenProt _ ->
       objc_object_type_equal c_type abs_ctype
