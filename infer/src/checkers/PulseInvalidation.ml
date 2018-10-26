@@ -11,6 +11,7 @@ module L = Logging
 type cause =
   | CppDelete of AccessExpression.t
   | CppDestructor of Typ.Procname.t * AccessExpression.t
+  | CFree of AccessExpression.t
   | StdVectorPushBack of AccessExpression.t
 [@@deriving compare]
 
@@ -21,6 +22,8 @@ let issue_type_of_cause = function
       IssueType.use_after_delete
   | CppDestructor _ ->
       IssueType.use_after_lifetime
+  | CFree _ ->
+      IssueType.use_after_free
   | StdVectorPushBack _ ->
       IssueType.use_after_lifetime
 
@@ -33,6 +36,9 @@ let pp f ({cause; location}[@warning "+9"]) =
   | CppDestructor (proc_name, access_expr) ->
       F.fprintf f "invalidated by destructor call `%a(%a)` at %a" Typ.Procname.pp proc_name
         AccessExpression.pp access_expr Location.pp location
+  | CFree access_expr ->
+      F.fprintf f "invalidated by call to `free(%a)` at %a" AccessExpression.pp access_expr
+        Location.pp location
   | StdVectorPushBack access_expr ->
       F.fprintf f "potentially invalidated by call to `std::vector::push_back(%a, ..)` at %a"
         AccessExpression.pp access_expr Location.pp location

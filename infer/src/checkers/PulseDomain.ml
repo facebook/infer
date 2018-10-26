@@ -155,7 +155,11 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
       let compare_size _ _ = 0
 
-      let merge ~from ~to_ = if Config.debug_mode then to_ := Set.union !from !to_
+      let merge ~from ~to_ =
+        (* building the actual set is only useful to display what equalities where discovered in the
+           HTML debug output *)
+        if Config.debug_mode then to_ := Set.union !from !to_
+
 
       let pp f x = Set.pp f !x
     end

@@ -9,6 +9,7 @@ open! IStd
 type cause =
   | CppDelete of AccessExpression.t
   | CppDestructor of Typ.Procname.t * AccessExpression.t
+  | CFree of AccessExpression.t
   | StdVectorPushBack of AccessExpression.t
 [@@deriving compare]
 

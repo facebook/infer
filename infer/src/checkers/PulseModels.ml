@@ -16,6 +16,16 @@ type exec_fun =
 
 type model = exec_fun
 
+module C = struct
+  let free : model =
+   fun location ~ret:_ ~actuals astate ->
+    match actuals with
+    | [AccessExpression deleted_access] ->
+        PulseDomain.invalidate (CFree deleted_access) location deleted_access astate
+    | _ ->
+        Ok astate
+end
+
 module Cplusplus = struct
   let delete : model =
    fun location ~ret:_ ~actuals astate ->
@@ -89,6 +99,7 @@ end
 let builtins_dispatcher =
   let builtins =
     [ (BuiltinDecl.__delete, Cplusplus.delete)
+    ; (BuiltinDecl.free, C.free)
     ; (BuiltinDecl.__placement_new, Cplusplus.placement_new) ]
   in
   let builtins_map =
