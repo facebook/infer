@@ -7,7 +7,7 @@
 open! IStd
 module F = Format
 module L = Logging
-open Result.Monad_infix
+module Invalidation = PulseInvalidation
 
 (* {2 Abstract domain description } *)
 
@@ -34,6 +34,8 @@ end = struct
 
   let pp = F.pp_print_int
 end
+
+(* {3 Heap domain } *)
 
 module Access = struct
   type t = AccessPath.access [@@deriving compare]
@@ -73,6 +75,8 @@ module Memory = struct
     Graph.find_opt addr memory >>= Edges.find_opt access
 end
 
+(* {3 Stack domain } *)
+
 (** to be used as maps values *)
 module AbstractAddressDomain_JoinIsMin : AbstractDomain.S with type astate = AbstractAddress.t =
 struct
@@ -93,48 +97,30 @@ end
    meaningless on their own. *)
 module AliasingDomain = AbstractDomain.Map (Var) (AbstractAddressDomain_JoinIsMin)
 
-type actor = {access_expr: AccessExpression.t; location: Location.t}
+(* {3 Invalid addresses domain } *)
 
-let pp_actor f {access_expr; location} =
-  F.fprintf f "%a@%a" AccessExpression.pp access_expr Location.pp location
-
-
-(** Locations known to be invalid for a reason described by an {!actor}. *)
-module type InvalidAddressesDomain = sig
+(** Locations known to be invalid for some reason *)
+module InvalidAddressesDomain : sig
   include AbstractDomain.S
 
   val empty : astate
 
-  val add : AbstractAddress.t -> actor -> astate -> astate
+  val add : AbstractAddress.t -> Invalidation.t -> astate -> astate
 
-  val get_invalidation : AbstractAddress.t -> astate -> actor option
-  (** return [Some actor] if the location was invalid by [actor], [None] if it is valid *)
+  val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
+  (** None denotes a valid location *)
 
   val map : (AbstractAddress.t -> AbstractAddress.t) -> astate -> astate
   (** translate invalid addresses according to the mapping *)
-end
+end = struct
+  include AbstractDomain.Map (AbstractAddress) (Invalidation)
 
-module InvalidAddressesDomain : InvalidAddressesDomain = struct
-  module InvalidationReason = struct
-    type astate = actor
-
-    let join actor _ = actor
-
-    (* actors do not participate in the comparison of sets of invalid locations *)
-    let ( <= ) ~lhs:_ ~rhs:_ = true
-
-    let widen ~prev ~next:_ ~num_iters:_ = prev
-
-    let pp = pp_actor
-  end
-
-  include AbstractDomain.Map (AbstractAddress) (InvalidationReason)
+  let map f invalids = fold (fun key value map -> add (f key) value map) invalids empty
 
   let get_invalidation address invalids = find_opt address invalids
-
-  let map f invalids = fold (fun key actor invalids -> add (f key) actor invalids) invalids empty
 end
 
+(** the domain *)
 type t = {heap: Memory.t; stack: AliasingDomain.astate; invalids: InvalidAddressesDomain.astate}
 
 let initial =
@@ -169,7 +155,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
       let compare_size _ _ = 0
 
-      let merge ~from ~to_ = to_ := Set.union !from !to_
+      let merge ~from ~to_ = if Config.debug_mode then to_ := Set.union !from !to_
 
       let pp f x = Set.pp f !x
     end
@@ -347,44 +333,49 @@ end
 
 (* {2 Access operations on the domain} *)
 
+type actor = {access_expr: AccessExpression.t; location: Location.t} [@@deriving compare]
+
 module Diagnostic = struct
   type t =
     | AccessToInvalidAddress of
-        { invalidated_at: actor
+        { invalidated_by: Invalidation.t
         ; accessed_by: actor
         ; address: AbstractAddress.t }
 
   let get_location (AccessToInvalidAddress {accessed_by= {location}}) = location
 
-  let get_message (AccessToInvalidAddress {accessed_by; invalidated_at; address}) =
+  let get_message (AccessToInvalidAddress {accessed_by; invalidated_by; address}) =
     let pp_debug_address f =
       if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
     in
-    F.asprintf "`%a` accesses address `%a` past its lifetime%t" AccessExpression.pp
-      accessed_by.access_expr AccessExpression.pp invalidated_at.access_expr pp_debug_address
+    F.asprintf "`%a` accesses address %a past its lifetime%t" AccessExpression.pp
+      accessed_by.access_expr Invalidation.pp invalidated_by pp_debug_address
 
 
-  let get_trace (AccessToInvalidAddress {accessed_by; invalidated_at}) =
-    [ Errlog.make_trace_element 0 invalidated_at.location
-        (F.asprintf "invalidated `%a` here" AccessExpression.pp invalidated_at.access_expr)
+  let get_trace (AccessToInvalidAddress {accessed_by; invalidated_by}) =
+    [ Errlog.make_trace_element 0 invalidated_by.location
+        (F.asprintf "%a here" Invalidation.pp invalidated_by)
         []
     ; Errlog.make_trace_element 0 accessed_by.location
         (F.asprintf "accessed `%a` here" AccessExpression.pp accessed_by.access_expr)
         [] ]
 
 
-  let get_issue_type (AccessToInvalidAddress _) = IssueType.use_after_lifetime
+  let get_issue_type (AccessToInvalidAddress {invalidated_by= {cause}}) =
+    Invalidation.issue_type_of_cause cause
 end
 
 (** operations on the domain *)
 module Operations = struct
+  open Result.Monad_infix
+
   type 'a access_result = ('a, Diagnostic.t) result
 
   (** Check that the address is not known to be invalid *)
   let check_addr_access actor address astate =
     match InvalidAddressesDomain.get_invalidation address astate.invalids with
-    | Some invalidated_at ->
-        Error (Diagnostic.AccessToInvalidAddress {invalidated_at; accessed_by= actor; address})
+    | Some invalidated_by ->
+        Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; address})
     | None ->
         Ok astate
 
@@ -477,11 +468,10 @@ module Operations = struct
 
   let havoc var astate = {astate with stack= AliasingDomain.remove var astate.stack}
 
-  let invalidate location access_expr astate =
+  let invalidate cause location access_expr astate =
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
-    let actor = {access_expr; location} in
-    check_addr_access actor addr astate >>| mark_invalid actor addr
+    check_addr_access {access_expr; location} addr astate >>| mark_invalid {cause; location} addr
 end
 
 include Domain

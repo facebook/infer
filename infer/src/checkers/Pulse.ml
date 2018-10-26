@@ -46,7 +46,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
       | [AccessExpression destroyed_access] ->
-          PulseDomain.invalidate call_loc destroyed_access astate
+          PulseDomain.invalidate
+            (CppDestructor (callee_pname, destroyed_access))
+            call_loc destroyed_access astate
       | _ ->
           Ok astate )
     | _ ->

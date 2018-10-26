@@ -389,6 +389,8 @@ let unreachable_code_after = from_string "UNREACHABLE_CODE"
 
 let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
+let use_after_delete = from_string "USE_AFTER_DELETE"
+
 let use_after_free = from_string "USE_AFTER_FREE"
 
 let use_after_lifetime = from_string "USE_AFTER_LIFETIME"
