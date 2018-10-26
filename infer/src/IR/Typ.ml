@@ -989,6 +989,24 @@ module Procname = struct
         t
 
 
+  let get_class_type_name = function
+    | Java java_pname ->
+        Some (Java.get_class_type_name java_pname)
+    | ObjC_Cpp objc_pname ->
+        Some (ObjC_Cpp.get_class_type_name objc_pname)
+    | _ ->
+        None
+
+
+  let get_class_name = function
+    | Java java_pname ->
+        Some (Java.get_class_name java_pname)
+    | ObjC_Cpp objc_pname ->
+        Some (ObjC_Cpp.get_class_name objc_pname)
+    | _ ->
+        None
+
+
   let is_method_in_objc_protocol t =
     match t with ObjC_Cpp osig -> Name.is_objc_protocol osig.class_name | _ -> false
 

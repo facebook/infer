@@ -682,6 +682,15 @@ type summary =
   ; return_attributes: AttributeSetDomain.astate
   ; wobbly_paths: StabilityDomain.astate }
 
+let empty_summary =
+  { threads= ThreadsDomain.empty
+  ; locks= LocksDomain.empty
+  ; accesses= AccessDomain.empty
+  ; return_ownership= OwnershipAbstractValue.unowned
+  ; return_attributes= AttributeSetDomain.empty
+  ; wobbly_paths= StabilityDomain.empty }
+
+
 let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes; wobbly_paths} =
   F.fprintf fmt
     "@\n\
@@ -699,7 +708,7 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
   F.fprintf fmt
     "Threads: %a, Locks: %a @\n\
      Accesses %a @\n\
-    \ Ownership: %a @\n\
+     Ownership: %a @\n\
      Attributes: %a @\n\
      Non-stable Paths: %a@\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp

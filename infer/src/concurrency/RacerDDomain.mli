@@ -235,6 +235,8 @@ type summary =
   ; return_attributes: AttributeSetDomain.astate
   ; wobbly_paths: StabilityDomain.astate }
 
+val empty_summary : summary
+
 include AbstractDomain.WithBottom with type astate := astate
 
 val pp_summary : F.formatter -> summary -> unit

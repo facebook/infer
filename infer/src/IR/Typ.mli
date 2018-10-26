@@ -418,7 +418,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
     val get_class_name : t -> string
 
-    val get_class_type_name : t -> Name.t
+    val get_class_type_name : t -> Name.t [@@warning "-32"]
 
     val get_class_qualifiers : t -> QualifiedCppName.t
 
@@ -487,6 +487,10 @@ being the name of the struct, [None] means the parameter is of some other type. 
   val block_name_of_procname : t -> Block.block_name
 
   val equal : t -> t -> bool
+
+  val get_class_type_name : t -> Name.t option [@@warning "-32"]
+
+  val get_class_name : t -> string option
 
   val get_parameters : t -> Parameter.t list
 

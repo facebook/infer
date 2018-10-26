@@ -368,30 +368,3 @@ let is_thread_safe_method pname tenv =
 let is_marked_thread_safe pdesc tenv =
   let pname = Procdesc.get_proc_name pdesc in
   is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
-
-
-(* return true if procedure is at an abstraction boundary or reporting has been explicitly
-            requested via @ThreadSafe in java *)
-let should_report_in_java proc_desc tenv =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  is_thread_safe_method proc_name tenv
-  || (not
-        ( match proc_name with
-        | Typ.Procname.Java java_pname ->
-            Typ.Procname.Java.is_autogen_method java_pname
-        | _ ->
-            false ))
-     && Procdesc.get_access proc_desc <> PredSymb.Private
-     && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
-
-
-let should_report_in_objcpp proc_desc objc_cpp tenv =
-  Procdesc.get_access proc_desc <> PredSymb.Private
-  &&
-  let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
-  let matcher = ConcurrencyModels.cpp_lock_types_matcher in
-  Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
-      (* check if the class contains a lock member *)
-      List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
-          Option.exists (Typ.name ft) ~f:(fun name ->
-              QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )

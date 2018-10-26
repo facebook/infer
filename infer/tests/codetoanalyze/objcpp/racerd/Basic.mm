@@ -9,6 +9,7 @@
 
 @interface Basic : NSObject
 - (int)read;
+- (void)_private_write_no_top_level_report:(int)data;
 - (void)write:(int)data;
 @end
 
@@ -21,9 +22,13 @@
   return data_;
 }
 
+- (void)_private_write_no_top_level_report:(int)data {
+  data_ = data;
+}
+
 - (void)write:(int)data {
   mutex_.lock();
-  data_ = data;
+  [self _private_write_no_top_level_report:data];
   mutex_.unlock();
 }
 @end

@@ -50,10 +50,3 @@ val is_thread_safe_method : Typ.Procname.t -> Tenv.t -> bool
     as an alias of @ThreadSafe in a .inferconfig file. *)
 
 val is_marked_thread_safe : Procdesc.t -> Tenv.t -> bool
-
-val should_report_in_java : Procdesc.t -> Tenv.t -> bool
-(** return true if procedure is at an abstraction boundary or reporting has been explicitly
-   requested via @ThreadSafe *)
-
-val should_report_in_objcpp : Procdesc.t -> Typ.Procname.ObjC_Cpp.t -> Tenv.t -> bool
-(** check if the class contains a lock member *)

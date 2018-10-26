@@ -168,13 +168,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           OwnershipAbstractValue.unowned
     in
-    Some
-      { locks= LocksDomain.empty
-      ; threads= ThreadsDomain.empty
-      ; accesses= callee_accesses
-      ; return_ownership
-      ; return_attributes= AttributeSetDomain.empty
-      ; wobbly_paths= StabilityDomain.empty }
+    Some {empty_summary with accesses= callee_accesses; return_ownership}
 
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.astate) =
@@ -620,15 +614,6 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
-let empty_post : RacerDDomain.summary =
-  { threads= RacerDDomain.ThreadsDomain.empty
-  ; locks= RacerDDomain.LocksDomain.empty
-  ; accesses= RacerDDomain.AccessDomain.empty
-  ; return_ownership= RacerDDomain.OwnershipAbstractValue.unowned
-  ; return_attributes= RacerDDomain.AttributeSetDomain.empty
-  ; wobbly_paths= RacerDDomain.StabilityDomain.empty }
-
-
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let open RacerDModels in
   let open ConcurrencyModels in
@@ -691,19 +676,17 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           else
             (* express that the constructor owns [this] *)
             let init = add_owned_formal own_locals 0 in
-            List.fold ~f:add_conditional_owned_formal ~init
-              (List.filter
-                 ~f:(fun (_, index) -> not (Int.equal index 0))
-                 (FormalMap.get_formals_indexes formal_map))
+            FormalMap.get_formals_indexes formal_map
+            |> List.filter ~f:(fun (_, index) -> not (Int.equal 0 index))
+            |> List.fold ~init ~f:add_conditional_owned_formal
         in
         {RacerDDomain.empty with ownership; threads}
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
         let ownership =
-          List.fold ~f:add_conditional_owned_formal
+          List.fold ~init:own_locals ~f:add_conditional_owned_formal
             (FormalMap.get_formals_indexes formal_map)
-            ~init:own_locals
         in
         {RacerDDomain.empty with ownership; threads}
     in
@@ -723,7 +706,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         Payload.update_summary post summary
     | None ->
         summary
-  else Payload.update_summary empty_post summary
+  else Payload.update_summary empty_summary summary
 
 
 type conflict = RacerDDomain.TraceElem.t
@@ -1090,6 +1073,34 @@ end = struct
     M.fold f map a
 end
 
+let should_report_on_proc procdesc tenv =
+  let proc_name = Procdesc.get_proc_name procdesc in
+  match proc_name with
+  | Java java_pname ->
+      (* return true if procedure is at an abstraction boundary or reporting has been explicitly
+              requested via @ThreadSafe in java *)
+      RacerDModels.is_thread_safe_method proc_name tenv
+      || Procdesc.get_access procdesc <> PredSymb.Private
+         && (not (Typ.Procname.Java.is_autogen_method java_pname))
+         && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
+  | ObjC_Cpp objc_cpp_pname ->
+      ( match objc_cpp_pname.Typ.Procname.ObjC_Cpp.kind with
+      | CPPMethod _ | CPPConstructor _ | CPPDestructor _ ->
+          Procdesc.get_access procdesc <> PredSymb.Private
+      | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
+          (* ObjC has no private methods, just a convention that they start with an underscore *)
+          not (String.is_prefix objc_cpp_pname.Typ.Procname.ObjC_Cpp.method_name ~prefix:"_") )
+      &&
+      let matcher = ConcurrencyModels.cpp_lock_types_matcher in
+      Option.exists (Tenv.lookup tenv objc_cpp_pname.class_name) ~f:(fun class_str ->
+          (* check if the class contains a lock member *)
+          List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
+              Option.exists (Typ.name ft) ~f:(fun name ->
+                  QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
+  | _ ->
+      false
+
+
 (** Report accesses that may race with each other.
 
     Principles for race reporting.
@@ -1203,7 +1214,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
             (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
             reported_acc )
-      | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot -> (
+      | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
           (* unprotected read. report all writes as conflicts for java. for c++ filter out
              unprotected writes *)
           let is_conflict {snapshot; threads= other_threads} =
@@ -1213,15 +1224,15 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
               ThreadsDomain.is_any threads || ThreadsDomain.is_any other_threads
             else not (AccessSnapshot.is_unprotected snapshot)
           in
-          match List.find ~f:is_conflict accesses with
-          | None ->
-              reported_acc
-          | Some conflict ->
-              report_thread_safety_violation tenv procdesc
-                ~make_description:(make_read_write_race_description ~read_is_sync:false conflict)
-                ~report_kind:(ReadWriteRace conflict.snapshot.access) snapshot.access threads
-                wobbly_paths ;
-              update_reported snapshot.access pname reported_acc )
+          List.find ~f:is_conflict accesses
+          |> Option.value_map ~default:reported_acc ~f:(fun conflict ->
+                 let make_description =
+                   make_read_write_race_description ~read_is_sync:false conflict
+                 in
+                 let report_kind = ReadWriteRace conflict.snapshot.access in
+                 report_thread_safety_violation tenv procdesc ~make_description ~report_kind
+                   snapshot.access threads wobbly_paths ;
+                 update_reported snapshot.access pname reported_acc )
       | Access.Read _ | ContainerRead _ ->
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
           let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
@@ -1257,14 +1268,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     let should_report {tenv; procdesc} =
       List.exists grouped_accesses ~f:(fun ({threads} : reported_access) ->
           ThreadsDomain.is_any threads )
-      &&
-      match Procdesc.get_proc_name procdesc with
-      | Java _ ->
-          should_report_in_java procdesc tenv
-      | ObjC_Cpp objc_cpp ->
-          should_report_in_objcpp procdesc objc_cpp tenv
-      | _ ->
-          false
+      && should_report_on_proc procdesc tenv
     in
     let reportable_accesses = List.filter ~f:should_report grouped_accesses in
     List.fold reportable_accesses ~init:reported ~f:(report_unsafe_access reportable_accesses)
@@ -1278,39 +1282,30 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
    that x.f.g may point to during execution *)
 let make_results_table file_env =
   let open RacerDDomain in
-  let aggregate_post tenv procdesc acc {threads; accesses; wobbly_paths} =
+  let aggregate_post acc ({threads; accesses; wobbly_paths}, tenv, procdesc) =
     AccessDomain.fold
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc; wobbly_paths} acc)
       accesses acc
   in
-  let aggregate_posts acc (tenv, proc_desc) =
-    Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
-    |> Option.fold ~init:acc ~f:(aggregate_post tenv proc_desc)
-  in
-  List.fold file_env ~init:ReportMap.empty ~f:aggregate_posts
+  List.filter_map file_env ~f:(fun (tenv, proc_desc) ->
+      Procdesc.get_proc_name proc_desc |> Payload.read proc_desc
+      |> Option.map ~f:(fun payload -> (payload, tenv, proc_desc)) )
+  |> List.fold ~init:ReportMap.empty ~f:aggregate_post
 
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
 let aggregate_by_class file_env =
   List.fold file_env ~init:String.Map.empty ~f:(fun acc ((_, pdesc) as proc) ->
-      let classname =
-        match Procdesc.get_proc_name pdesc with
-        | Typ.Procname.Java java_pname ->
-            Some (Typ.Procname.Java.get_class_name java_pname)
-        | ObjC_Cpp objc_cpp_pname ->
-            Some (Typ.Procname.ObjC_Cpp.get_class_name objc_cpp_pname)
-        | _ ->
-            None
-      in
-      Option.fold classname ~init:acc ~f:(fun acc classname ->
-          String.Map.add_multi acc ~key:classname ~data:proc ) )
+      Procdesc.get_proc_name pdesc |> Typ.Procname.get_class_name
+      |> Option.fold ~init:acc ~f:(fun acc classname ->
+             String.Map.add_multi acc ~key:classname ~data:proc ) )
 
 
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
 let file_analysis {Callbacks.procedures; source_file} =
-  String.Map.iter (aggregate_by_class procedures) ~f:(fun class_env ->
-      report_unsafe_accesses (make_results_table class_env) ) ;
+  aggregate_by_class procedures
+  |> String.Map.iter ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env)) ;
   IssueLog.store Config.racerd_issues_dir_name source_file
