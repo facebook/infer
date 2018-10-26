@@ -201,9 +201,20 @@ let is_functional pname =
   is_annotated_functional pname || is_modeled_functional pname
 
 
+let nsobject = Typ.Name.Objc.from_qual_name (QualifiedCppName.of_qual_string "NSObject")
+
 let acquires_ownership pname tenv =
+  let is_nsobject_init = function
+    | Typ.Procname.ObjC_Cpp
+        {kind= Typ.Procname.ObjC_Cpp.ObjCInstanceMethod; method_name= "init"; class_name} ->
+        Typ.Name.equal class_name nsobject
+    | _ ->
+        false
+  in
   let is_allocation pn =
-    Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
+    Typ.Procname.equal pn BuiltinDecl.__new
+    || Typ.Procname.equal pn BuiltinDecl.__new_array
+    || is_nsobject_init pn
   in
   (* identify library functions that maintain ownership invariants behind the scenes *)
   let is_owned_in_library = function
