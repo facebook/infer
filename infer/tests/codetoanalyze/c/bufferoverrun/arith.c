@@ -291,4 +291,4 @@ void unsigned_prune_gt(unsigned int x, unsigned int y) {
   }
 }
 
-void call_unsigned_prune_gt_Good_FP() { unsigned_prune_gt(0, 3); }
+void call_unsigned_prune_gt_Good() { unsigned_prune_gt(0, 3); }

@@ -454,15 +454,6 @@ module ItvPure = struct
 
   let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
 
-  let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted =
-   fun (l, u) eval_sym ->
-    match (Bound.subst_lb l eval_sym, Bound.subst_ub u eval_sym) with
-    | NonBottom l, NonBottom u ->
-        NonBottom (l, u)
-    | _ ->
-        Bottom
-
-
   let ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs:(l1, u1) ~rhs:(l2, u2) -> Bound.le l2 l1 && Bound.le u1 u2
 
@@ -739,6 +730,15 @@ module ItvPure = struct
 
 
   let normalize : t -> t bottom_lifted = fun x -> if is_invalid x then Bottom else NonBottom x
+
+  let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted =
+   fun (l, u) eval_sym ->
+    match (Bound.subst_lb l eval_sym, Bound.subst_ub u eval_sym) with
+    | NonBottom l, NonBottom u ->
+        normalize (l, u)
+    | _ ->
+        Bottom
+
 
   let prune_le : t -> t -> t =
    fun x y ->
