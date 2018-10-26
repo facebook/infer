@@ -67,7 +67,9 @@ module StdVector = struct
 
   let deref_internal_array vector =
     AccessExpression.ArrayOffset
-      (AccessExpression.FieldOffset (vector, internal_array), Typ.void, [])
+      ( AccessExpression.Dereference (AccessExpression.FieldOffset (vector, internal_array))
+      , Typ.void
+      , [] )
 
 
   let at : model =
@@ -77,16 +79,16 @@ module StdVector = struct
         PulseDomain.read location (deref_internal_array vector) astate
         >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.Base ret) loc astate
     | _ ->
-        Ok (PulseDomain.havoc (fst ret) astate)
+        Ok (PulseDomain.havoc_var (fst ret) astate)
 
 
   let push_back : model =
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        PulseDomain.invalidate
-          (StdVectorPushBack (vector, location))
-          location (deref_internal_array vector) astate
+        let deref_array = deref_internal_array vector in
+        PulseDomain.invalidate (StdVectorPushBack (vector, location)) location deref_array astate
+        >>= PulseDomain.havoc location deref_array
     | _ ->
         Ok astate
 end

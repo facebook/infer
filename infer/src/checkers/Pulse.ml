@@ -66,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match model with
     | None ->
-        exec_call ret call actuals _flags call_loc astate >>| PulseDomain.havoc (fst ret)
+        exec_call ret call actuals _flags call_loc astate >>| PulseDomain.havoc_var (fst ret)
     | Some model ->
         model call_loc ~ret ~actuals astate
 
@@ -76,28 +76,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
         (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
-        let rhs_result =
+        let result =
           match rhs_exp with
           | AccessExpression rhs_access ->
               PulseDomain.read loc rhs_access astate
+              >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
           | Constant (Cint address) when IntLit.iszero address ->
-              Ok (astate, PulseDomain.AbstractAddress.nullptr)
+              PulseDomain.write loc lhs_access PulseDomain.AbstractAddress.nullptr astate
           | _ ->
               PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-              >>= fun astate ->
-              Ok
-                ( astate
-                , (* TODO: we could avoid creating and recording a fresh location whenever
-                       [lhs_access] is not already present in the state so that we keep its
-                       evaluation lazy, which would have the same semantic result but won't make the
-                       state grow needlessly in case we never need that value again. We would just
-                       need to add a function {!PulseDomain.freshen access_expr} that does the lazy
-                       refreshing and use it instead of {!PulseDomain.write} below in this case. *)
-                  PulseDomain.AbstractAddress.mk_fresh () )
+              >>= PulseDomain.havoc loc lhs_access
         in
-        Result.bind rhs_result ~f:(fun (astate, rhs_value) ->
-            PulseDomain.write loc lhs_access rhs_value astate )
-        |> check_error summary
+        check_error summary result
     | Assume (condition, _, _, loc) ->
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->

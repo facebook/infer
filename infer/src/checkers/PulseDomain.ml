@@ -440,13 +440,13 @@ module Operations = struct
    and return [new_addr] if [overwrite_last] is [Some new_addr], or go until the end of the path if it
    is [None]. Create more addresses into the heap as needed to follow the [path]. Check that each
    address reached is valid. *)
-  let rec walk actor ~overwrite_last addr path astate =
-    match (path, overwrite_last) with
-    | [], None ->
+  let rec walk actor ~on_last addr path astate =
+    match (path, on_last) with
+    | [], `Access ->
         Ok (astate, addr)
-    | [], Some _ ->
+    | [], `Overwrite _ ->
         L.die InternalError "Cannot overwrite last address in empty path"
-    | [a], Some new_addr ->
+    | [a], `Overwrite new_addr ->
         check_addr_access actor addr astate
         >>| fun astate ->
         let heap = Memory.add_edge_and_back_edge addr a new_addr astate.heap in
@@ -459,24 +459,24 @@ module Operations = struct
             let addr' = AbstractAddress.mk_fresh () in
             let heap = Memory.add_edge_and_back_edge addr a addr' astate.heap in
             let astate = {astate with heap} in
-            walk actor ~overwrite_last addr' path astate
+            walk actor ~on_last addr' path astate
         | Some addr' ->
-            walk actor ~overwrite_last addr' path astate )
+            walk actor ~on_last addr' path astate )
 
 
   (** add addresses to the state to give a address to the destination of the given access path *)
-  let walk_access_expr ?overwrite_last astate access_expr location =
+  let walk_access_expr ~on_last astate access_expr location =
     let (access_var, _), access_list = AccessExpression.to_accesses access_expr in
     if Config.write_html then
       L.d_strln
         (F.asprintf "Accessing %a -> [%a]" Var.pp access_var
            (Pp.seq ~sep:"," AccessExpression.Access.pp)
            access_list) ;
-    match (overwrite_last, access_list) with
-    | Some new_addr, [] ->
+    match (on_last, access_list) with
+    | `Overwrite new_addr, [] ->
         let stack = AliasingDomain.add access_var new_addr astate.stack in
         Ok ({astate with stack}, new_addr)
-    | None, _ | Some _, _ :: _ ->
+    | `Access, _ | `Overwrite _, _ :: _ ->
         let astate, base_addr =
           match AliasingDomain.find_opt access_var astate.stack with
           | Some addr ->
@@ -487,7 +487,7 @@ module Operations = struct
               ({astate with stack}, addr)
         in
         let actor = {access_expr; location} in
-        walk actor ~overwrite_last base_addr access_list astate
+        walk actor ~on_last base_addr access_list astate
 
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
@@ -495,7 +495,7 @@ module Operations = struct
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
-  let materialize_address astate access_expr = walk_access_expr astate access_expr
+  let materialize_address astate access_expr = walk_access_expr ~on_last:`Access astate access_expr
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
     abstract address representing what the expression points to, and replace that with the given
@@ -503,12 +503,29 @@ module Operations = struct
 
     Return an error state if it traverses some known invalid address. *)
   let overwrite_address astate access_expr new_addr =
-    walk_access_expr ~overwrite_last:new_addr astate access_expr
+    walk_access_expr ~on_last:(`Overwrite new_addr) astate access_expr
 
 
   (** Add the given address to the set of know invalid addresses. *)
   let mark_invalid actor address astate =
     {astate with invalids= InvalidAddressesDomain.add address actor astate.invalids}
+
+
+  let havoc_var var astate =
+    if AliasingDomain.mem var astate.stack then
+      {astate with stack= AliasingDomain.remove var astate.stack}
+    else astate
+
+
+  let havoc location (access_expr : AccessExpression.t) astate =
+    match access_expr with
+    | Base (access_var, _) ->
+        havoc_var access_var astate |> Result.return
+    | _ ->
+        walk_access_expr
+          ~on_last:(`Overwrite (AbstractAddress.mk_fresh ()))
+          astate access_expr location
+        >>| fst
 
 
   let read location access_expr astate =
@@ -526,8 +543,6 @@ module Operations = struct
   let write location access_expr addr astate =
     overwrite_address astate access_expr addr location >>| fun (astate, _) -> astate
 
-
-  let havoc var astate = {astate with stack= AliasingDomain.remove var astate.stack}
 
   let invalidate cause location access_expr astate =
     materialize_address astate access_expr location
