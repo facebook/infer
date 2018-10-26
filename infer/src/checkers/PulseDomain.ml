@@ -376,110 +376,113 @@ module Diagnostic = struct
   let get_issue_type (AccessToInvalidAddress _) = IssueType.use_after_lifetime
 end
 
-type 'a access_result = ('a, Diagnostic.t) result
+(** operations on the domain *)
+module Operations = struct
+  type 'a access_result = ('a, Diagnostic.t) result
 
-(** Check that the address is not known to be invalid *)
-let check_addr_access actor address astate =
-  match InvalidAddressesDomain.get_invalidation address astate.invalids with
-  | Some invalidated_at ->
-      Error (Diagnostic.AccessToInvalidAddress {invalidated_at; accessed_by= actor; address})
-  | None ->
-      Ok astate
+  (** Check that the address is not known to be invalid *)
+  let check_addr_access actor address astate =
+    match InvalidAddressesDomain.get_invalidation address astate.invalids with
+    | Some invalidated_at ->
+        Error (Diagnostic.AccessToInvalidAddress {invalidated_at; accessed_by= actor; address})
+    | None ->
+        Ok astate
 
 
-(** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
+  (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
    and return [new_addr] if [overwrite_last] is [Some new_addr], or go until the end of the path if it
    is [None]. Create more addresses into the heap as needed to follow the [path]. Check that each
    address reached is valid. *)
-let rec walk actor ~overwrite_last addr path astate =
-  match (path, overwrite_last) with
-  | [], None ->
-      Ok (astate, addr)
-  | [], Some _ ->
-      L.die InternalError "Cannot overwrite last address in empty path"
-  | [a], Some new_addr ->
-      check_addr_access actor addr astate
-      >>| fun astate ->
-      let heap = Memory.add_edge addr a new_addr astate.heap in
-      ({astate with heap}, new_addr)
-  | a :: path, _ -> (
-      check_addr_access actor addr astate
-      >>= fun astate ->
-      match Memory.find_edge_opt addr a astate.heap with
-      | None ->
-          let addr' = AbstractAddress.mk_fresh () in
-          let heap = Memory.add_edge addr a addr' astate.heap in
-          let astate = {astate with heap} in
-          walk actor ~overwrite_last addr' path astate
-      | Some addr' ->
-          walk actor ~overwrite_last addr' path astate )
-
-
-(** add addresses to the state to give a address to the destination of the given access path *)
-let walk_access_expr ?overwrite_last astate access_expr location =
-  let (access_var, _), access_list = AccessExpression.to_access_path access_expr in
-  match (overwrite_last, access_list) with
-  | Some new_addr, [] ->
-      let stack = AliasingDomain.add access_var new_addr astate.stack in
-      Ok ({astate with stack}, new_addr)
-  | None, _ | Some _, _ :: _ ->
-      let astate, base_addr =
-        match AliasingDomain.find_opt access_var astate.stack with
-        | Some addr ->
-            (astate, addr)
+  let rec walk actor ~overwrite_last addr path astate =
+    match (path, overwrite_last) with
+    | [], None ->
+        Ok (astate, addr)
+    | [], Some _ ->
+        L.die InternalError "Cannot overwrite last address in empty path"
+    | [a], Some new_addr ->
+        check_addr_access actor addr astate
+        >>| fun astate ->
+        let heap = Memory.add_edge addr a new_addr astate.heap in
+        ({astate with heap}, new_addr)
+    | a :: path, _ -> (
+        check_addr_access actor addr astate
+        >>= fun astate ->
+        match Memory.find_edge_opt addr a astate.heap with
         | None ->
-            let addr = AbstractAddress.mk_fresh () in
-            let stack = AliasingDomain.add access_var addr astate.stack in
-            ({astate with stack}, addr)
-      in
-      let actor = {access_expr; location} in
-      walk actor ~overwrite_last base_addr access_list astate
+            let addr' = AbstractAddress.mk_fresh () in
+            let heap = Memory.add_edge addr a addr' astate.heap in
+            let astate = {astate with heap} in
+            walk actor ~overwrite_last addr' path astate
+        | Some addr' ->
+            walk actor ~overwrite_last addr' path astate )
 
 
-(** Use the stack and heap to walk the access path represented by the given expression down to an
+  (** add addresses to the state to give a address to the destination of the given access path *)
+  let walk_access_expr ?overwrite_last astate access_expr location =
+    let (access_var, _), access_list = AccessExpression.to_access_path access_expr in
+    match (overwrite_last, access_list) with
+    | Some new_addr, [] ->
+        let stack = AliasingDomain.add access_var new_addr astate.stack in
+        Ok ({astate with stack}, new_addr)
+    | None, _ | Some _, _ :: _ ->
+        let astate, base_addr =
+          match AliasingDomain.find_opt access_var astate.stack with
+          | Some addr ->
+              (astate, addr)
+          | None ->
+              let addr = AbstractAddress.mk_fresh () in
+              let stack = AliasingDomain.add access_var addr astate.stack in
+              ({astate with stack}, addr)
+        in
+        let actor = {access_expr; location} in
+        walk actor ~overwrite_last base_addr access_list astate
+
+
+  (** Use the stack and heap to walk the access path represented by the given expression down to an
     abstract address representing what the expression points to.
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
-let materialize_address astate access_expr = walk_access_expr astate access_expr
+  let materialize_address astate access_expr = walk_access_expr astate access_expr
 
-(** Use the stack and heap to walk the access path represented by the given expression down to an
+  (** Use the stack and heap to walk the access path represented by the given expression down to an
     abstract address representing what the expression points to, and replace that with the given
     address.
 
     Return an error state if it traverses some known invalid address. *)
-let overwrite_address astate access_expr new_addr =
-  walk_access_expr ~overwrite_last:new_addr astate access_expr
+  let overwrite_address astate access_expr new_addr =
+    walk_access_expr ~overwrite_last:new_addr astate access_expr
 
 
-(** Add the given address to the set of know invalid addresses. *)
-let mark_invalid actor address astate =
-  {astate with invalids= InvalidAddressesDomain.add address actor astate.invalids}
+  (** Add the given address to the set of know invalid addresses. *)
+  let mark_invalid actor address astate =
+    {astate with invalids= InvalidAddressesDomain.add address actor astate.invalids}
 
 
-let read location access_expr astate =
-  materialize_address astate access_expr location
-  >>= fun (astate, addr) ->
-  let actor = {access_expr; location} in
-  check_addr_access actor addr astate >>| fun astate -> (astate, addr)
+  let read location access_expr astate =
+    materialize_address astate access_expr location
+    >>= fun (astate, addr) ->
+    let actor = {access_expr; location} in
+    check_addr_access actor addr astate >>| fun astate -> (astate, addr)
 
 
-let read_all location access_exprs astate =
-  List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
-      read location access_expr astate >>| fst )
+  let read_all location access_exprs astate =
+    List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
+        read location access_expr astate >>| fst )
 
 
-let write location access_expr addr astate =
-  overwrite_address astate access_expr addr location >>| fun (astate, _) -> astate
+  let write location access_expr addr astate =
+    overwrite_address astate access_expr addr location >>| fun (astate, _) -> astate
 
 
-let havoc var astate = {astate with stack= AliasingDomain.remove var astate.stack}
+  let havoc var astate = {astate with stack= AliasingDomain.remove var astate.stack}
 
-let invalidate location access_expr astate =
-  materialize_address astate access_expr location
-  >>= fun (astate, addr) ->
-  let actor = {access_expr; location} in
-  check_addr_access actor addr astate >>| mark_invalid actor addr
-
+  let invalidate location access_expr astate =
+    materialize_address astate access_expr location
+    >>= fun (astate, addr) ->
+    let actor = {access_expr; location} in
+    check_addr_access actor addr astate >>| mark_invalid actor addr
+end
 
 include Domain
+include Operations
