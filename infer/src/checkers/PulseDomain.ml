@@ -15,6 +15,8 @@ module Invalidation = PulseInvalidation
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
+  val nullptr : t
+
   val equal : t -> t -> bool
 
   val mk_fresh : unit -> t
@@ -25,7 +27,10 @@ end = struct
 
   let equal = [%compare.equal: t]
 
-  let next_fresh = ref 0
+  (** distinguish 0 since it's always an invalid address *)
+  let nullptr = 0
+
+  let next_fresh = ref 1
 
   let mk_fresh () =
     let l = !next_fresh in
@@ -37,14 +42,35 @@ end
 
 (* {3 Heap domain } *)
 
-module Access = struct
-  type t = AccessPath.access [@@deriving compare]
+module Memory : sig
+  module Edges : module type of PrettyPrintable.MakePPMap (AccessExpression.Access)
 
-  let pp = AccessPath.pp_access
-end
+  type edges = AbstractAddress.t Edges.t
 
-module Memory = struct
-  module Edges = PrettyPrintable.MakePPMap (Access)
+  type t
+
+  val empty : t
+
+  val find_opt : AbstractAddress.t -> t -> edges option
+
+  val for_all : (AbstractAddress.t -> edges -> bool) -> t -> bool
+
+  val fold : (AbstractAddress.t -> edges -> 'accum -> 'accum) -> t -> 'accum -> 'accum
+
+  val pp : F.formatter -> t -> unit
+
+  val add_edge : AbstractAddress.t -> AccessExpression.Access.t -> AbstractAddress.t -> t -> t
+
+  val add_edge_and_back_edge :
+    AbstractAddress.t -> AccessExpression.Access.t -> AbstractAddress.t -> t -> t
+
+  val find_edge_opt :
+    AbstractAddress.t -> AccessExpression.Access.t -> t -> AbstractAddress.t option
+end = struct
+  module Edges = PrettyPrintable.MakePPMap (AccessExpression.Access)
+
+  type edges = AbstractAddress.t Edges.t
+
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
   (* {3 Monomorphic {!PPMap} interface as needed } *)
@@ -68,6 +94,19 @@ module Memory = struct
       match Graph.find_opt addr_src memory with Some edges -> edges | None -> Edges.empty
     in
     Graph.add addr_src (Edges.add access addr_end edges) memory
+
+
+  (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
+      [*(&x) = &( *x ) = x]. *)
+  let add_edge_and_back_edge addr_src (access : AccessExpression.Access.t) addr_end memory =
+    let memory = add_edge addr_src access addr_end memory in
+    match access with
+    | ArrayAccess _ | FieldAccess _ ->
+        memory
+    | TakeAddress ->
+        add_edge addr_end Dereference addr_src memory
+    | Dereference ->
+        add_edge addr_end TakeAddress addr_src memory
 
 
   let find_edge_opt addr access memory =
@@ -124,7 +163,14 @@ end
 type t = {heap: Memory.t; stack: AliasingDomain.astate; invalids: InvalidAddressesDomain.astate}
 
 let initial =
-  {heap= Memory.empty; stack= AliasingDomain.empty; invalids= InvalidAddressesDomain.empty}
+  { heap= Memory.empty
+  ; stack= AliasingDomain.empty
+  ; invalids=
+      InvalidAddressesDomain.empty
+      (* TODO: this makes the analysis go a bit overboard with the Nullptr reports. *)
+      (* (\* always recall that 0 is invalid *\)
+         InvalidAddressesDomain.add AbstractAddress.nullptr Nullptr InvalidAddressesDomain.empty *)
+  }
 
 
 module Domain : AbstractDomain.S with type astate = t = struct
@@ -357,16 +403,22 @@ module Diagnostic = struct
 
 
   let get_trace (AccessToInvalidAddress {accessed_by; invalidated_by}) =
-    [ Errlog.make_trace_element 0 invalidated_by.location
-        (F.asprintf "%a here" Invalidation.pp invalidated_by)
-        []
-    ; Errlog.make_trace_element 0 accessed_by.location
-        (F.asprintf "accessed `%a` here" AccessExpression.pp accessed_by.access_expr)
-        [] ]
+    let invalidated_by_trace =
+      Invalidation.get_location invalidated_by
+      |> Option.map ~f:(fun location ->
+             Errlog.make_trace_element 0 location
+               (F.asprintf "%a here" Invalidation.pp invalidated_by)
+               [] )
+      |> Option.to_list
+    in
+    invalidated_by_trace
+    @ [ Errlog.make_trace_element 0 accessed_by.location
+          (F.asprintf "accessed `%a` here" AccessExpression.pp accessed_by.access_expr)
+          [] ]
 
 
-  let get_issue_type (AccessToInvalidAddress {invalidated_by= {cause}}) =
-    Invalidation.issue_type_of_cause cause
+  let get_issue_type (AccessToInvalidAddress {invalidated_by}) =
+    Invalidation.issue_type_of_cause invalidated_by
 end
 
 (** operations on the domain *)
@@ -397,7 +449,7 @@ module Operations = struct
     | [a], Some new_addr ->
         check_addr_access actor addr astate
         >>| fun astate ->
-        let heap = Memory.add_edge addr a new_addr astate.heap in
+        let heap = Memory.add_edge_and_back_edge addr a new_addr astate.heap in
         ({astate with heap}, new_addr)
     | a :: path, _ -> (
         check_addr_access actor addr astate
@@ -405,7 +457,7 @@ module Operations = struct
         match Memory.find_edge_opt addr a astate.heap with
         | None ->
             let addr' = AbstractAddress.mk_fresh () in
-            let heap = Memory.add_edge addr a addr' astate.heap in
+            let heap = Memory.add_edge_and_back_edge addr a addr' astate.heap in
             let astate = {astate with heap} in
             walk actor ~overwrite_last addr' path astate
         | Some addr' ->
@@ -414,7 +466,12 @@ module Operations = struct
 
   (** add addresses to the state to give a address to the destination of the given access path *)
   let walk_access_expr ?overwrite_last astate access_expr location =
-    let (access_var, _), access_list = AccessExpression.to_access_path access_expr in
+    let (access_var, _), access_list = AccessExpression.to_accesses access_expr in
+    if Config.write_html then
+      L.d_strln
+        (F.asprintf "Accessing %a -> [%a]" Var.pp access_var
+           (Pp.seq ~sep:"," AccessExpression.Access.pp)
+           access_list) ;
     match (overwrite_last, access_list) with
     | Some new_addr, [] ->
         let stack = AliasingDomain.add access_var new_addr astate.stack in
@@ -475,7 +532,7 @@ module Operations = struct
   let invalidate cause location access_expr astate =
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
-    check_addr_access {access_expr; location} addr astate >>| mark_invalid {cause; location} addr
+    check_addr_access {access_expr; location} addr astate >>| mark_invalid cause addr
 end
 
 include Domain

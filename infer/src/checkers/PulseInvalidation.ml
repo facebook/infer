@@ -8,38 +8,50 @@ open! IStd
 module F = Format
 module L = Logging
 
-type cause =
-  | CppDelete of AccessExpression.t
-  | CppDestructor of Typ.Procname.t * AccessExpression.t
-  | CFree of AccessExpression.t
-  | StdVectorPushBack of AccessExpression.t
+type t =
+  | CFree of AccessExpression.t * Location.t
+  | CppDelete of AccessExpression.t * Location.t
+  | CppDestructor of Typ.Procname.t * AccessExpression.t * Location.t
+  | Nullptr
+  | StdVectorPushBack of AccessExpression.t * Location.t
 [@@deriving compare]
 
-type t = {cause: cause; location: Location.t} [@@deriving compare]
-
 let issue_type_of_cause = function
+  | CFree _ ->
+      IssueType.use_after_free
   | CppDelete _ ->
       IssueType.use_after_delete
   | CppDestructor _ ->
       IssueType.use_after_lifetime
-  | CFree _ ->
-      IssueType.use_after_free
+  | Nullptr ->
+      IssueType.null_dereference
   | StdVectorPushBack _ ->
       IssueType.use_after_lifetime
 
 
-let pp f ({cause; location}[@warning "+9"]) =
-  match cause with
-  | CppDelete access_expr ->
-      F.fprintf f "invalidated by call to `delete %a` at %a" AccessExpression.pp access_expr
-        Location.pp location
-  | CppDestructor (proc_name, access_expr) ->
-      F.fprintf f "invalidated by destructor call `%a(%a)` at %a" Typ.Procname.pp proc_name
-        AccessExpression.pp access_expr Location.pp location
-  | CFree access_expr ->
+let get_location = function
+  | CFree (_, location)
+  | CppDelete (_, location)
+  | CppDestructor (_, _, location)
+  | StdVectorPushBack (_, location) ->
+      Some location
+  | Nullptr ->
+      None
+
+
+let pp f = function
+  | CFree (access_expr, location) ->
       F.fprintf f "invalidated by call to `free(%a)` at %a" AccessExpression.pp access_expr
         Location.pp location
-  | StdVectorPushBack access_expr ->
+  | CppDelete (access_expr, location) ->
+      F.fprintf f "invalidated by call to `delete %a` at %a" AccessExpression.pp access_expr
+        Location.pp location
+  | CppDestructor (proc_name, access_expr, location) ->
+      F.fprintf f "invalidated by destructor call `%a(%a)` at %a" Typ.Procname.pp proc_name
+        AccessExpression.pp access_expr Location.pp location
+  | Nullptr ->
+      F.fprintf f "null pointer"
+  | StdVectorPushBack (access_expr, location) ->
       F.fprintf f "potentially invalidated by call to `std::vector::push_back(%a, ..)` at %a"
         AccessExpression.pp access_expr Location.pp location
 

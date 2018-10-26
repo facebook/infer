@@ -6,15 +6,15 @@
  *)
 open! IStd
 
-type cause =
-  | CppDelete of AccessExpression.t
-  | CppDestructor of Typ.Procname.t * AccessExpression.t
-  | CFree of AccessExpression.t
-  | StdVectorPushBack of AccessExpression.t
-[@@deriving compare]
+type t =
+  | CFree of AccessExpression.t * Location.t
+  | CppDelete of AccessExpression.t * Location.t
+  | CppDestructor of Typ.Procname.t * AccessExpression.t * Location.t
+  | Nullptr
+  | StdVectorPushBack of AccessExpression.t * Location.t
 
-type t = {cause: cause; location: Location.t} [@@deriving compare]
+val issue_type_of_cause : t -> IssueType.t
 
-val issue_type_of_cause : cause -> IssueType.t
+val get_location : t -> Location.t option
 
 include AbstractDomain.S with type astate = t

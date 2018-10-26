@@ -47,7 +47,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match actuals with
       | [AccessExpression destroyed_access] ->
           PulseDomain.invalidate
-            (CppDestructor (callee_pname, destroyed_access))
+            (CppDestructor (callee_pname, destroyed_access, call_loc))
             call_loc destroyed_access astate
       | _ ->
           Ok astate )
@@ -80,9 +80,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match rhs_exp with
           | AccessExpression rhs_access ->
               PulseDomain.read loc rhs_access astate
+          | Constant (Cint address) when IntLit.iszero address ->
+              Ok (astate, PulseDomain.AbstractAddress.nullptr)
           | _ ->
               PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-              >>= fun astate -> Ok (astate, PulseDomain.AbstractAddress.mk_fresh ())
+              >>= fun astate ->
+              Ok
+                ( astate
+                , (* TODO: we could avoid creating and recording a fresh location whenever
+                       [lhs_access] is not already present in the state so that we keep its
+                       evaluation lazy, which would have the same semantic result but won't make the
+                       state grow needlessly in case we never need that value again. We would just
+                       need to add a function {!PulseDomain.freshen access_expr} that does the lazy
+                       refreshing and use it instead of {!PulseDomain.write} below in this case. *)
+                  PulseDomain.AbstractAddress.mk_fresh () )
         in
         Result.bind rhs_result ~f:(fun (astate, rhs_value) ->
             PulseDomain.write loc lhs_access rhs_value astate )

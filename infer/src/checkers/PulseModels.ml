@@ -21,7 +21,7 @@ module C = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
-        PulseDomain.invalidate (CFree deleted_access) location deleted_access astate
+        PulseDomain.invalidate (CFree (deleted_access, location)) location deleted_access astate
     | _ ->
         Ok astate
 end
@@ -33,7 +33,9 @@ module Cplusplus = struct
     >>= fun astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
-        PulseDomain.invalidate (CppDelete deleted_access) location deleted_access astate
+        PulseDomain.invalidate
+          (CppDelete (deleted_access, location))
+          location deleted_access astate
     | _ ->
         Ok astate
 
@@ -82,8 +84,9 @@ module StdVector = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        PulseDomain.invalidate (StdVectorPushBack vector) location (deref_internal_array vector)
-          astate
+        PulseDomain.invalidate
+          (StdVectorPushBack (vector, location))
+          location (deref_internal_array vector) astate
     | _ ->
         Ok astate
 end

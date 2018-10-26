@@ -20,6 +20,68 @@ type t =
   | Dereference of t
 [@@deriving compare]
 
+let may_pp_typ fmt typ =
+  if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
+
+
+let rec pp fmt = function
+  | Base (pvar, typ) ->
+      Var.pp fmt pvar ; may_pp_typ fmt typ
+  | FieldOffset (Dereference ae, fld) ->
+      F.fprintf fmt "%a->%a" pp ae Typ.Fieldname.pp fld
+  | FieldOffset (ae, fld) ->
+      F.fprintf fmt "%a.%a" pp ae Typ.Fieldname.pp fld
+  | ArrayOffset (ae, typ, []) ->
+      F.fprintf fmt "%a[_]%a" pp ae may_pp_typ typ
+  | ArrayOffset (ae, typ, index_aes) ->
+      F.fprintf fmt "%a[%a]%a" pp ae
+        (PrettyPrintable.pp_collection ~pp_item:pp)
+        index_aes may_pp_typ typ
+  | AddressOf ae ->
+      F.fprintf fmt "&(%a)" pp ae
+  | Dereference ae ->
+      F.fprintf fmt "*(%a)" pp ae
+
+
+module Access = struct
+  type access_expr = t [@@deriving compare]
+
+  type t =
+    | FieldAccess of Typ.Fieldname.t
+    | ArrayAccess of typ_ * access_expr list
+    | TakeAddress
+    | Dereference
+  [@@deriving compare]
+
+  let pp fmt = function
+    | FieldAccess field_name ->
+        Typ.Fieldname.pp fmt field_name
+    | ArrayAccess (_, []) ->
+        F.pp_print_string fmt "[_]"
+    | ArrayAccess (_, index_aps) ->
+        F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
+    | TakeAddress ->
+        F.pp_print_string fmt "&"
+    | Dereference ->
+        F.pp_print_string fmt "*"
+end
+
+let to_accesses ae =
+  let rec aux accesses = function
+    | Base base ->
+        (base, accesses)
+    | FieldOffset (ae, fld) ->
+        aux (Access.FieldAccess fld :: accesses) ae
+    | ArrayOffset (ae, typ, index_aes) ->
+        aux (Access.ArrayAccess (typ, index_aes) :: accesses) ae
+    | AddressOf ae ->
+        aux (Access.TakeAddress :: accesses) ae
+    | Dereference ae ->
+        aux (Access.Dereference :: accesses) ae
+  in
+  aux [] ae
+
+
 (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
 let rec to_access_path t =
   let rec to_access_path_ t =
@@ -94,29 +156,6 @@ let rec get_typ t tenv : Typ.t option =
   | Dereference ae -> (
       let base_typ_opt = get_typ ae tenv in
       match base_typ_opt with Some {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None )
-
-
-let may_pp_typ fmt typ =
-  if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
-
-
-let rec pp fmt = function
-  | Base (pvar, typ) ->
-      Var.pp fmt pvar ; may_pp_typ fmt typ
-  | FieldOffset (Dereference ae, fld) ->
-      F.fprintf fmt "%a->%a" pp ae Typ.Fieldname.pp fld
-  | FieldOffset (ae, fld) ->
-      F.fprintf fmt "%a.%a" pp ae Typ.Fieldname.pp fld
-  | ArrayOffset (ae, typ, []) ->
-      F.fprintf fmt "%a[_]%a" pp ae may_pp_typ typ
-  | ArrayOffset (ae, typ, index_aes) ->
-      F.fprintf fmt "%a[%a]%a" pp ae
-        (PrettyPrintable.pp_collection ~pp_item:pp)
-        index_aes may_pp_typ typ
-  | AddressOf ae ->
-      F.fprintf fmt "&(%a)" pp ae
-  | Dereference ae ->
-      F.fprintf fmt "*(%a)" pp ae
 
 
 let equal = [%compare.equal: t]

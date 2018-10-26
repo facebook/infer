@@ -10,6 +10,8 @@ open! IStd
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
+  val nullptr : t
+
   val mk_fresh : unit -> t
 end
 
@@ -41,5 +43,4 @@ val havoc : Var.t -> t -> t
 
 val write : Location.t -> AccessExpression.t -> AbstractAddress.t -> t -> t access_result
 
-val invalidate :
-  PulseInvalidation.cause -> Location.t -> AccessExpression.t -> t -> t access_result
+val invalidate : PulseInvalidation.t -> Location.t -> AccessExpression.t -> t -> t access_result

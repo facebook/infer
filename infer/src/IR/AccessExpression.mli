@@ -19,6 +19,21 @@ type t =
   (* dereference operator * *)
 [@@deriving compare]
 
+module Access : sig
+  type access_expr = t [@@deriving compare]
+
+  type t =
+    | FieldAccess of Typ.Fieldname.t
+    | ArrayAccess of Typ.t * access_expr list
+    | TakeAddress
+    | Dereference
+  [@@deriving compare]
+
+  val pp : Format.formatter -> t -> unit
+end
+
+val to_accesses : t -> AccessPath.base * Access.t list
+
 val to_access_path : t -> AccessPath.t
 
 val to_access_paths : t list -> AccessPath.t list

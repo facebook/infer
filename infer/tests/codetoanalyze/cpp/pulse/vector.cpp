@@ -7,9 +7,15 @@
 #include <iostream>
 #include <vector>
 
-void deref_vector_element_after_lifetime_bad() {
+void deref_vector_element_after_lifetime_bad(std::vector<int>& x) {
+  int* y = &x[1];
+  x.push_back(42);
+  std::cout << *y << "\n";
+}
+
+void deref_local_vector_element_after_lifetime_bad() {
   std::vector<int> x = {0, 0};
   int* y = &x[1];
-  x.push_back(4);
+  x.push_back(42);
   std::cout << *y << "\n";
 }
