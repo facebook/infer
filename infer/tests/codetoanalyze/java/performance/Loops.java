@@ -46,7 +46,7 @@ public class Loops {
     }
   }
 
-  static void dumbSort_FP(long[] a, long[] b, int length) {
+  static void dumbSort(long[] a, long[] b, int length) {
     for (int i = length - 1; i >= 0; --i) {
       for (int j = 0; j < i; ++j) {
         if (a[j] * b[j + 1] > a[j + 1] * b[j]) {
@@ -59,5 +59,22 @@ public class Loops {
         }
       }
     }
+  }
+
+  public static class C {
+    public char c;
+    public float[] f;
+  }
+
+  static boolean similar_SHOULD_NOT_REPORT_CONDITION_ALWAYS_TRUE_OR_FALSE(C[] x, C[] y) {
+    if (x == null || y == null || x.length != y.length) {
+      return false;
+    }
+    for (int i = 0; i < x.length; i++) {
+      if (x[i].c != y[i].c || x[i].f.length != y[i].f.length) {
+        return false;
+      }
+    }
+    return true;
   }
 }

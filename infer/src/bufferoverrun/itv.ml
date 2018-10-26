@@ -740,67 +740,9 @@ module ItvPure = struct
         Bottom
 
 
-  let prune_le : t -> t -> t =
-   fun x y ->
-    match (x, y) with
-    | (l1, Bound.PInf), (_, u2) ->
-        (l1, u2)
-    | (l1, Bound.Linear (c1, s1)), (_, Bound.Linear (c2, s2)) when Bounds.SymLinear.eq s1 s2 ->
-        (l1, Bound.Linear (Z.(min c1 c2), s1))
-    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
-      ->
-        (l1, Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
-    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
-      ->
-        (l1, Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
-    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
-      ->
-        (l1, Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Max, Z.neg c, Bound.get_mone_symbol u))
-    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
-      ->
-        (l1, Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Max, Z.neg c, Bound.get_mone_symbol u))
-    | (l1, Bound.Linear (c1, se)), (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se'))
-    | (l1, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se')), (_, Bound.Linear (c1, se))
-      when Bounds.SymLinear.is_zero se ->
-        (l1, Bound.mk_MinMax (c2, Bound.Plus, Bound.Min, Z.(min (c1 - c2) d2), se'))
-    | ( (l1, Bound.MinMax (c1, Bound.Plus, Bound.Min, d1, se1))
-      , (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se2)) )
-      when Z.equal c1 c2 && Symbol.equal se1 se2 ->
-        (l1, Bound.mk_MinMax (c1, Bound.Plus, Bound.Min, Z.min d1 d2, se1))
-    | _ ->
-        x
+  let prune_le : t -> t -> t = fun (l1, u1) (_, u2) -> (l1, Bound.overapprox_min u1 u2)
 
-
-  let prune_ge : t -> t -> t =
-   fun x y ->
-    match (x, y) with
-    | (Bound.MInf, u1), (l2, _) ->
-        (l2, u1)
-    | (Bound.Linear (c1, s1), u1), (Bound.Linear (c2, s2), _) when Bounds.SymLinear.eq s1 s2 ->
-        (Bound.Linear (Z.max c1 c2, s1), u1)
-    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
-      ->
-        (Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
-    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
-      ->
-        (Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
-    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
-      ->
-        (Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
-    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
-      ->
-        (Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
-    | (Bound.Linear (c1, se), u1), (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), _)
-    | (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), u1), (Bound.Linear (c1, se), _)
-      when Bounds.SymLinear.is_zero se ->
-        (Bound.mk_MinMax (c2, Bound.Plus, Bound.Max, Z.(max (c1 - c2) d2), se'), u1)
-    | ( (Bound.MinMax (c1, Bound.Plus, Bound.Max, d1, se1), u1)
-      , (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se2), _) )
-      when Z.equal c1 c2 && Symbol.equal se1 se2 ->
-        (Bound.mk_MinMax (c1, Bound.Plus, Bound.Max, Z.max d1 d2, se1), u1)
-    | _ ->
-        x
-
+  let prune_ge : t -> t -> t = fun (l1, u1) (l2, _) -> (Bound.underapprox_max l1 l2, u1)
 
   let prune_lt : t -> t -> t = fun x y -> prune_le x (minus y one)
 

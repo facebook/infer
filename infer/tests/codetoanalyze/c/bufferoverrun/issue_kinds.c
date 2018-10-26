@@ -195,6 +195,37 @@ void l1_unknown_function_Bad() {
   }
 }
 
+/*
+  We do not report the underrun here, in case the loop never runs (length <= 0).
+  But we should report it anyway.
+*/
+void loop_underrun_Bad_FN(int length) {
+  int i;
+  char a[length];
+
+  for (i = length - 1; i >= 0; i--) {
+    a[i - 1] = 'U';
+  }
+}
+
+void l2_loop_overflow_Bad(int length) {
+  int i;
+  char a[length];
+
+  for (i = length - 1; i >= 0; i--) {
+    a[i + 1] = 'O';
+  }
+}
+
+void l2_loop_overflow2_Bad(int length) {
+  int i;
+  char a[length];
+
+  for (i = length - 1; i >= 0; i--) {
+    a[length - i] = 'O';
+  }
+}
+
 /* Inferbo raises U5 alarm because
    - the pair of offset:[10,10] and size:[5,+oo] is belong to L3
    - the offset value is from an unknown function

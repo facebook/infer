@@ -61,14 +61,6 @@ module SymLinear = struct
     (singleton_one lb, singleton_one ub)
 
 
-  let eq : t -> t -> bool =
-   fun x y ->
-    let eq_pair _ (coeff1 : NonZeroInt.t option) (coeff2 : NonZeroInt.t option) =
-      [%compare.equal: Z.t option] (coeff1 :> Z.t option) (coeff2 :> Z.t option)
-    in
-    M.for_all2 ~f:eq_pair x y
-
-
   let pp1 : F.formatter -> Symb.Symbol.t * NonZeroInt.t -> unit =
    fun fmt (s, c) ->
     let c = (c :> Z.t) in
@@ -268,28 +260,6 @@ module Bound = struct
     | MinMax _ ->
         true
 
-
-  let lift_symlinear : (SymLinear.t -> 'a option) -> t -> 'a option =
-   fun f -> function Linear (n, se) when Z.(equal n zero) -> f se | _ -> None
-
-
-  let get_one_symbol_opt : t -> Symb.Symbol.t option = lift_symlinear SymLinear.get_one_symbol_opt
-
-  let get_mone_symbol_opt : t -> Symb.Symbol.t option =
-    lift_symlinear SymLinear.get_mone_symbol_opt
-
-
-  let get_one_symbol : t -> Symb.Symbol.t =
-   fun x -> match get_one_symbol_opt x with Some s -> s | None -> raise Not_One_Symbol
-
-
-  let get_mone_symbol : t -> Symb.Symbol.t =
-   fun x -> match get_mone_symbol_opt x with Some s -> s | None -> raise Not_One_Symbol
-
-
-  let is_one_symbol : t -> bool = fun x -> get_one_symbol_opt x <> None
-
-  let is_mone_symbol : t -> bool = fun x -> get_mone_symbol_opt x <> None
 
   let mk_MinMax (c, sign, m, d, s) =
     if Symb.Symbol.is_unsigned s && Z.(d <= zero) then

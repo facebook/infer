@@ -273,7 +273,7 @@ void unsigned_prune_ge2_Good(unsigned int x, unsigned int y) {
   }
 }
 
-void call_unsigned_prune_ge2_Good_FP() { unsigned_prune_ge2_Good(0, 1); }
+void call_unsigned_prune_ge2_Good() { unsigned_prune_ge2_Good(0, 1); }
 
 void unsigned_prune_ge3_Good(unsigned int x, unsigned int y) {
   if (y > 0) {
@@ -283,7 +283,7 @@ void unsigned_prune_ge3_Good(unsigned int x, unsigned int y) {
   }
 }
 
-void call_unsigned_prune_ge3_Good_FP() { unsigned_prune_ge3_Good(0, 1); }
+void call_unsigned_prune_ge3_Good() { unsigned_prune_ge3_Good(0, 1); }
 
 void unsigned_prune_gt(unsigned int x, unsigned int y) {
   if (x > 0) {

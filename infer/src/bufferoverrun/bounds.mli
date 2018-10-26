@@ -22,10 +22,6 @@ module SymLinear : sig
     -> Symb.SymbolPath.t
     -> Counter.t
     -> t * t
-
-  val eq : t -> t -> bool
-
-  val is_zero : t -> bool
 end
 
 module Bound : sig
@@ -57,16 +53,6 @@ module Bound : sig
 
   val is_symbolic : t -> bool
 
-  val get_one_symbol : t -> Symb.Symbol.t
-
-  val get_mone_symbol : t -> Symb.Symbol.t
-
-  val is_one_symbol : t -> bool
-
-  val is_mone_symbol : t -> bool
-
-  val mk_MinMax : Z.t * sign * min_max * Z.t * Symb.Symbol.t -> t
-
   val big_int_lb : t -> Z.t sexp_option
 
   val big_int_ub : t -> Z.t sexp_option
@@ -84,6 +70,8 @@ module Bound : sig
   val underapprox_min : t -> t -> t
 
   val overapprox_min : t -> t -> t
+
+  val underapprox_max : t -> t -> t
 
   val overapprox_max : t -> t -> t
 

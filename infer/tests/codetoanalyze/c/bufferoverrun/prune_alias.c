@@ -147,7 +147,7 @@ void prune_minmax1_Ok(unsigned int x, unsigned int y) {
   }
 }
 
-void FP_call_prune_minmax1_Ok() { prune_minmax1_Ok(0, 0); }
+void call_prune_minmax1_Ok() { prune_minmax1_Ok(0, 0); }
 
 void prune_minmax2_Ok(unsigned int x, unsigned int y) {
   if (x > y) {
@@ -155,7 +155,7 @@ void prune_minmax2_Ok(unsigned int x, unsigned int y) {
   }
 }
 
-void FP_call_prune_minmax2_Ok() { prune_minmax2_Ok(0, 2); }
+void call_prune_minmax2_Ok() { prune_minmax2_Ok(0, 2); }
 
 void loop_prune_Good(int length, int j) {
   int i;
