@@ -299,7 +299,7 @@ OPTIONS
 
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
-           (default: 10000)
+           (default: five seconds times number of cores)
 
        --starvation
            Activates: starvation analysis (Conversely: --no-starvation)

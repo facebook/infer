@@ -834,7 +834,7 @@ OPTIONS
 
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
-           (default: 10000)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
+           (default: five seconds times number of cores)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
        --stacktrace file
            File path containing a json-encoded Java crash stacktrace. Used to

@@ -2018,7 +2018,12 @@ and specs_library =
 
 
 and sqlite_lock_timeout =
-  CLOpt.mk_int ~long:"sqlite-lock-timeout" ~default:10_000
+  (* some lame estimate: when the frontend writes CFGs to disk, it may take a few seconds to write
+     one CFG and all the cores may be trying to write to the database at the same time. This means
+     one process might wait (a few seconds) * (number of cores) to write its CFG. *)
+  let five_seconds_per_core = ncpu * 5_000 in
+  CLOpt.mk_int ~long:"sqlite-lock-timeout" ~default:five_seconds_per_core
+    ~default_to_string:(fun _ -> "five seconds times number of cores")
     ~in_help:
       InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
     "Timeout for SQLite results database operations, in milliseconds."

@@ -97,7 +97,7 @@ OPTIONS
 
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
-           (default: 10000)
+           (default: five seconds times number of cores)
 
        --  Stop argument processing, use remaining arguments as a build
            command
