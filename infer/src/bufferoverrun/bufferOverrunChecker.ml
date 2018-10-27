@@ -157,6 +157,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match instr with
       | Load (id, _, _, _) when Ident.is_none id ->
           mem
+      | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar -> (
+        match Pvar.get_initializer_pname pvar with
+        | Some callee_pname -> (
+          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+          | Some callee_summary -> (
+            match Payload.of_summary callee_summary with
+            | Some payload ->
+                let callee_mem = BufferOverrunSummary.get_output payload in
+                let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
+                Dom.Mem.add_stack (Loc.of_id id) v mem
+            | None ->
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ Initializer of global constant %a at %a has no inferbo payload@\n"
+                  (Pvar.pp Pp.text) pvar Location.pp location ;
+                Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+          | None ->
+              L.(debug BufferOverrun Verbose)
+                "/!\\ Unknown initializer of global constant %a at %a@\n" (Pvar.pp Pp.text) pvar
+                Location.pp location ;
+              Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+        | None ->
+            L.(debug BufferOverrun Verbose)
+              "/!\\ Failed to get initializer name of global constant %a at %a@\n"
+              (Pvar.pp Pp.text) pvar Location.pp location ;
+            Dom.Mem.add_unknown id ~location mem )
       | Load (id, exp, _, _) ->
           BoUtils.Exec.load_val id (Sem.eval exp mem) mem
       | Store (exp1, _, exp2, location) ->
@@ -224,7 +249,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             L.(debug BufferOverrun Verbose)
               "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp location
           in
-          Dom.Mem.add_unknown_from_funcptr id ~location mem
+          Dom.Mem.add_unknown id ~location mem
       | Remove_temps (temps, _) ->
           Dom.Mem.remove_temps temps mem
       | Abstract _ | Nullify _ ->

@@ -276,3 +276,17 @@ void return_class_Bad() {
   my_class4* x = (my_class4*)my_malloc();
   x->b[5] = 0;
 }
+
+struct S {
+  static constexpr unsigned int x = 32;
+};
+
+void use_global_Good() {
+  int a[50];
+  a[S::x] = 0;
+}
+
+void use_global_Bad() {
+  int a[30];
+  a[S::x] = 0;
+}

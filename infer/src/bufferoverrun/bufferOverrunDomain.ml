@@ -972,7 +972,7 @@ module Mem = struct
     f_lift (MemReach.add_unknown_from id ~callee_pname:(Some callee_pname) ~location)
 
 
-  let add_unknown_from_funcptr : Ident.t -> location:Location.t -> t -> t =
+  let add_unknown : Ident.t -> location:Location.t -> t -> t =
    fun id ~location -> f_lift (MemReach.add_unknown_from id ~callee_pname:None ~location)
 
 
