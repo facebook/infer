@@ -36,6 +36,7 @@ module ConditionSet : sig
 
   val add_array_access :
        Location.t
+    -> offset:ItvPure.astate
     -> idx:ItvPure.astate
     -> size:ItvPure.astate
     -> is_collection_add:bool

@@ -17,8 +17,12 @@ void do_while_sub(char* a, int len) {
   } while (i < len);
 }
 
-void do_while() {
+void do_while_Good() {
   char* a = malloc(10);
   do_while_sub(a, 10); /* SAFE */
+}
+
+void do_while_Bad() {
+  char* a = malloc(10);
   do_while_sub(a, 11); /* BUG */
 }

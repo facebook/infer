@@ -80,3 +80,19 @@ void malloc_sizeof_value_leak_good() {
   }
   /* missing free(x) */
 }
+
+void initialize_arr(int* arr, int count) {
+  for (int i = 0; i < count; ++i) {
+    arr[i] = 0;
+  }
+}
+
+void call_initialize_arr_Good() {
+  int arr[10];
+  initialize_arr(arr, 5);
+}
+
+void call_initialize_arr_Bad() {
+  int arr[10];
+  initialize_arr(arr, 20);
+}

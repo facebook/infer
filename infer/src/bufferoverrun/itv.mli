@@ -98,6 +98,8 @@ module ItvPure : sig
 
   val is_top : t -> bool
 
+  val is_zero : t -> bool
+
   val is_one : t -> bool
 
   val is_ge_zero : t -> bool
@@ -135,6 +137,8 @@ module ItvPure : sig
   val get_symbols : t -> Symbol.t list
 
   val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted
+
+  val neg : t -> t
 
   val plus : t -> t -> t
 

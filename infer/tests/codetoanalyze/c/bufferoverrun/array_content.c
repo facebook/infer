@@ -48,7 +48,7 @@ int array_min_index_from_one_FP(int* a, int length) {
   We need a either a narrowing or a relational domain to prove that
   index_min < length
 */
-void call_array_min_index_from_one_good_FP() {
+void call_array_min_index_from_one_good() {
   int a[2];
   a[array_min_index_from_one_FP(a, 2) - 1] = 0;
 }

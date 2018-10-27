@@ -99,91 +99,106 @@ end
 
 module ArrayAccessCondition = struct
   type t =
-    { idx: ItvPure.astate
+    { offset: ItvPure.astate
+    ; idx: ItvPure.astate
     ; size: ItvPure.astate
     ; idx_sym_exp: Relation.SymExp.t option
     ; size_sym_exp: Relation.SymExp.t option
     ; relation: Relation.astate }
   [@@deriving compare]
 
-  let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
-
-  let set_size_pos : t -> t =
-   fun c ->
-    let size' = ItvPure.make_positive c.size in
-    if phys_equal size' c.size then c else {c with size= size'}
+  let get_symbols c =
+    ItvPure.get_symbols c.offset @ ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
 
 
   let pp : F.formatter -> t -> unit =
    fun fmt c ->
-    let c = set_size_pos c in
-    F.fprintf fmt "%a < %a" ItvPure.pp c.idx ItvPure.pp c.size ;
+    let pp_offset fmt =
+      if not (ItvPure.is_zero c.offset) then F.fprintf fmt "%a + " ItvPure.pp c.offset
+    in
+    F.fprintf fmt "%t%a < %a" pp_offset ItvPure.pp c.idx ItvPure.pp (ItvPure.make_positive c.size) ;
     if Option.is_some Config.bo_relational_domain then
       F.fprintf fmt "@,%a < %a when %a" Relation.SymExp.pp_opt c.idx_sym_exp Relation.SymExp.pp_opt
         c.size_sym_exp Relation.pp c.relation
 
 
+  (* TODO: change description to distinguish offset and index *)
   let pp_description : F.formatter -> t -> unit =
    fun fmt c ->
-    let c = set_size_pos c in
-    F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp c.idx ItvPure.pp c.size
+    F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp (ItvPure.plus c.offset c.idx) ItvPure.pp
+      (ItvPure.make_positive c.size)
 
 
   let make :
-         idx:ItvPure.t
+         offset:ItvPure.t
+      -> idx:ItvPure.t
       -> size:ItvPure.t
       -> idx_sym_exp:Relation.SymExp.t option
       -> size_sym_exp:Relation.SymExp.t option
       -> relation:Relation.astate
       -> t option =
-   fun ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation ->
-    if ItvPure.is_invalid idx || ItvPure.is_invalid size then None
-    else Some {idx; size; idx_sym_exp; size_sym_exp; relation}
+   fun ~offset ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation ->
+    if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
+    else Some {offset; idx; size; idx_sym_exp; size_sym_exp; relation}
 
 
-  let have_similar_bounds {idx= lidx; size= lsiz} {idx= ridx; size= rsiz} =
-    ItvPure.have_similar_bounds lidx ridx && ItvPure.have_similar_bounds lsiz rsiz
+  let have_similar_bounds {offset= loff; idx= lidx; size= lsiz}
+      {offset= roff; idx= ridx; size= rsiz} =
+    ItvPure.have_similar_bounds loff roff
+    && ItvPure.have_similar_bounds lidx ridx
+    && ItvPure.have_similar_bounds lsiz rsiz
 
 
-  let has_infty {idx; size} = ItvPure.has_infty idx || ItvPure.has_infty size
+  let has_infty {offset; idx; size} =
+    ItvPure.has_infty offset || ItvPure.has_infty idx || ItvPure.has_infty size
 
-  let xcompare ~lhs:{idx= lidx; size= lsiz} ~rhs:{idx= ridx; size= rsiz} =
+
+  let xcompare ~lhs:{offset= loff; idx= lidx; size= lsiz} ~rhs:{offset= roff; idx= ridx; size= rsiz}
+      =
+    let offcmp = ItvPure.xcompare ~lhs:loff ~rhs:roff in
     let idxcmp = ItvPure.xcompare ~lhs:lidx ~rhs:ridx in
     let sizcmp = ItvPure.xcompare ~lhs:lsiz ~rhs:rsiz in
-    match (idxcmp, sizcmp) with
-    | `Equal, `Equal ->
+    match (offcmp, idxcmp, sizcmp) with
+    | `Equal, `Equal, `Equal ->
         `Equal
-    | `NotComparable, _ ->
+    | `NotComparable, _, _ | _, `NotComparable, _ ->
         `NotComparable
-    | `Equal, (`LeftSmallerThanRight | `LeftSubsumesRight) ->
+    | `Equal, `Equal, (`LeftSmallerThanRight | `LeftSubsumesRight) ->
         `LeftSubsumesRight
-    | `Equal, (`RightSmallerThanLeft | `RightSubsumesLeft) ->
+    | `Equal, `Equal, (`RightSmallerThanLeft | `RightSubsumesLeft) ->
         `RightSubsumesLeft
-    | `LeftSubsumesRight, (`Equal | `LeftSubsumesRight) ->
+    | (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight)
+      ->
         `LeftSubsumesRight
-    | `RightSubsumesLeft, (`Equal | `RightSubsumesLeft) ->
+    | (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft)
+      ->
         `RightSubsumesLeft
-    | (`LeftSmallerThanRight | `RightSmallerThanLeft), _ ->
-        let lidxpos = ItvPure.le_sem ItvPure.zero lidx in
-        let ridxpos = ItvPure.le_sem ItvPure.zero ridx in
+    | (`Equal | `LeftSmallerThanRight), (`Equal | `LeftSmallerThanRight), _
+    | (`Equal | `RightSmallerThanLeft), (`Equal | `RightSmallerThanLeft), _ ->
+        let lidxpos = ItvPure.le_sem (ItvPure.neg lidx) loff in
+        let ridxpos = ItvPure.le_sem (ItvPure.neg ridx) roff in
         if not (Itv.Boolean.equal lidxpos ridxpos) then `NotComparable
         else if Itv.Boolean.is_true lidxpos then
           (* both idx >= 0 *)
-          match (idxcmp, sizcmp) with
-          | `LeftSmallerThanRight, (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft) ->
+          match (offcmp, idxcmp, sizcmp) with
+          | ( (`Equal | `LeftSmallerThanRight)
+            , (`Equal | `LeftSmallerThanRight)
+            , (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft) ) ->
               `RightSubsumesLeft
-          | `RightSmallerThanLeft, (`Equal | `LeftSmallerThanRight | `LeftSubsumesRight) ->
+          | ( (`Equal | `RightSmallerThanLeft)
+            , (`Equal | `RightSmallerThanLeft)
+            , (`Equal | `LeftSmallerThanRight | `LeftSubsumesRight) ) ->
               `LeftSubsumesRight
           | _ ->
               `NotComparable
         else if Itv.Boolean.is_false lidxpos then
           (* both idx < 0, size doesn't matter *)
-          match idxcmp with
-          | `LeftSmallerThanRight ->
+          match (offcmp, idxcmp) with
+          | `Equal, `LeftSmallerThanRight | `LeftSmallerThanRight, `Equal ->
               `LeftSubsumesRight
-          | `RightSmallerThanLeft ->
+          | `Equal, `RightSmallerThanLeft | `RightSmallerThanLeft, `Equal ->
               `RightSubsumesLeft
-          | `Equal ->
+          | `Equal, `Equal ->
               `Equal
           | _ ->
               `NotComparable
@@ -192,34 +207,34 @@ module ArrayAccessCondition = struct
         `NotComparable
 
 
-  let filter1 : t -> bool =
-   fun c ->
-    ItvPure.is_top c.idx || ItvPure.is_top c.size || ItvPure.is_lb_infty c.idx
+  let filter1 : real_idx:ItvPure.t -> t -> bool =
+   fun ~real_idx c ->
+    ItvPure.is_top real_idx || ItvPure.is_top c.size || ItvPure.is_lb_infty real_idx
     || ItvPure.is_lb_infty c.size
-    || (ItvPure.is_nat c.idx && ItvPure.is_nat c.size)
+    || (ItvPure.is_nat real_idx && ItvPure.is_nat c.size)
 
 
-  let filter2 : t -> bool =
-   fun c ->
+  let filter2 : real_idx:ItvPure.t -> t -> bool =
+   fun ~real_idx c ->
     (* basically, alarms involving infinity are filtered *)
-    ((not (ItvPure.is_finite c.idx)) || not (ItvPure.is_finite c.size))
+    ((not (ItvPure.is_finite real_idx)) || not (ItvPure.is_finite c.size))
     && (* except the following cases *)
        not
-         ( Bound.is_not_infty (ItvPure.lb c.idx)
+         ( Bound.is_not_infty (ItvPure.lb real_idx)
            && (* idx non-infty lb < 0 *)
-              Bound.lt (ItvPure.lb c.idx) Bound.zero
-         || Bound.is_not_infty (ItvPure.lb c.idx)
+              Bound.lt (ItvPure.lb real_idx) Bound.zero
+         || Bound.is_not_infty (ItvPure.lb real_idx)
             && (* idx non-infty lb > size lb *)
-               Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
-         || Bound.is_not_infty (ItvPure.lb c.idx)
+               Bound.gt (ItvPure.lb real_idx) (ItvPure.lb c.size)
+         || Bound.is_not_infty (ItvPure.lb real_idx)
             && (* idx non-infty lb > size ub *)
-               Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
-         || Bound.is_not_infty (ItvPure.ub c.idx)
+               Bound.gt (ItvPure.lb real_idx) (ItvPure.ub c.size)
+         || Bound.is_not_infty (ItvPure.ub real_idx)
             && (* idx non-infty ub > size lb *)
-               Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
-         || Bound.is_not_infty (ItvPure.ub c.idx)
+               Bound.gt (ItvPure.ub real_idx) (ItvPure.lb c.size)
+         || Bound.is_not_infty (ItvPure.ub real_idx)
             && (* idx non-infty ub > size ub *)
-               Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
+               Bound.gt (ItvPure.ub real_idx) (ItvPure.ub c.size) )
 
 
   (* check buffer overrun and return its confidence *)
@@ -228,17 +243,18 @@ module ArrayAccessCondition = struct
     (* idx = [il, iu], size = [sl, su],
        For arrays : we want to check that 0 <= idx < size
        For adding into arraylists: we want to check that 0 <= idx <= size *)
-    let c' = set_size_pos c in
+    let real_idx = ItvPure.plus c.offset c.idx in
+    let size = ItvPure.make_positive c.size in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
-      if is_collection_add then ItvPure.le_sem c'.idx c'.size
-      else if Relation.lt_sat_opt c'.idx_sym_exp c'.size_sym_exp c'.relation then Itv.Boolean.true_
-      else ItvPure.lt_sem c'.idx c'.size
+      if is_collection_add then ItvPure.le_sem real_idx size
+      else if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Itv.Boolean.true_
+      else ItvPure.lt_sem real_idx size
     in
     let not_underrun =
-      if Relation.le_sat_opt (Some Relation.SymExp.zero) c'.idx_sym_exp c'.relation then
+      if Relation.le_sat_opt (Some Relation.SymExp.zero) c.idx_sym_exp c.relation then
         Itv.Boolean.true_
-      else ItvPure.le_sem ItvPure.zero c'.idx
+      else ItvPure.le_sem ItvPure.zero real_idx
     in
     (* il >= 0 and iu < sl, definitely not an error *)
     if Itv.Boolean.is_true not_overrun && Itv.Boolean.is_true not_underrun then
@@ -247,19 +263,21 @@ module ArrayAccessCondition = struct
       {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
     else if
-      Bound.is_not_infty (ItvPure.ub c.idx) && Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
+      Bound.is_not_infty (ItvPure.ub real_idx) && Bound.le (ItvPure.ub size) (ItvPure.ub real_idx)
     then {report_issue_type= Some IssueType.buffer_overrun_l2; propagate= false}
       (* symbolic il >= sl, probably an error *)
     else if
-      Bound.is_symbolic (ItvPure.lb c.idx) && Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
+      Bound.is_symbolic (ItvPure.lb real_idx) && Bound.le (ItvPure.lb size) (ItvPure.lb real_idx)
     then {report_issue_type= Some IssueType.buffer_overrun_s2; propagate= true}
     else
       (* other symbolic bounds are probably too noisy *)
-      let is_symbolic = ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size in
+      let is_symbolic =
+        ItvPure.is_symbolic c.offset || ItvPure.is_symbolic c.idx || ItvPure.is_symbolic size
+      in
       let report_issue_type =
         if Config.bo_debug <= 3 && is_symbolic then None
-        else if filter1 c then Some IssueType.buffer_overrun_l5
-        else if filter2 c then Some IssueType.buffer_overrun_l4
+        else if filter1 ~real_idx c then Some IssueType.buffer_overrun_l5
+        else if filter2 ~real_idx c then Some IssueType.buffer_overrun_l4
         else Some IssueType.buffer_overrun_l3
       in
       {report_issue_type; propagate= is_symbolic}
@@ -272,12 +290,14 @@ module ArrayAccessCondition = struct
       -> t
       -> t option =
    fun eval_sym rel_map caller_relation c ->
-    match (ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym) with
-    | NonBottom idx, NonBottom size ->
+    match
+      (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
+    with
+    | NonBottom offset, NonBottom idx, NonBottom size ->
         let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
         let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
         let relation = Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation in
-        Some {idx; size; idx_sym_exp; size_sym_exp; relation}
+        Some {offset; idx; size; idx_sym_exp; size_sym_exp; relation}
     | _ ->
         None
 
@@ -780,9 +800,9 @@ module ConditionSet = struct
         join [cwt] condset
 
 
-  let add_array_access location ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation
-      val_traces condset =
-    ArrayAccessCondition.make ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
+  let add_array_access location ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
+      ~relation val_traces condset =
+    ArrayAccessCondition.make ~offset ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
     |> Condition.make_array_access ~is_collection_add
     |> add_opt location val_traces condset
 

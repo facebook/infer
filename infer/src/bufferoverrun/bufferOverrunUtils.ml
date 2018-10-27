@@ -297,12 +297,20 @@ end
 module Check = struct
   let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
       ?(is_collection_add = false) location cond_set =
-    let arr_traces = Dom.Val.get_traces arr in
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
+        let offset =
+          match ArrayBlk.offsetof (Dom.Val.get_array_blk arr) with
+          | Bottom ->
+              (* Java's collection has no offset. *)
+              Itv.ItvPure.zero
+          | NonBottom offset ->
+              offset
+        in
+        let arr_traces = Dom.Val.get_traces arr in
         let traces = TraceSet.merge ~arr_traces ~idx_traces location in
-        PO.ConditionSet.add_array_access location ~size:length ~idx ~size_sym_exp ~idx_sym_exp
-          ~relation ~is_collection_add traces cond_set
+        PO.ConditionSet.add_array_access location ~size:length ~offset ~idx ~size_sym_exp
+          ~idx_sym_exp ~relation ~is_collection_add traces cond_set
     | _ ->
         cond_set
 
@@ -311,20 +319,19 @@ module Check = struct
     let arr_blk = Dom.Val.get_array_blk arr in
     let size = ArrayBlk.sizeof arr_blk in
     let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
-    let offset = ArrayBlk.offsetof arr_blk in
-    let offset_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_offset_sym arr) in
     let idx_itv = Dom.Val.get_itv idx in
     let idx_traces = Dom.Val.get_traces idx in
-    let idx_in_blk = (if is_plus then Itv.plus else Itv.minus) offset idx_itv in
+    let idx = if is_plus then idx_itv else Itv.neg idx_itv in
     let idx_sym_exp =
+      let offset_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_offset_sym arr) in
       Option.map2 offset_sym_exp idx_sym_exp ~f:(fun offset_sym_exp idx_sym_exp ->
           let op = if is_plus then Relation.SymExp.plus else Relation.SymExp.minus in
           op idx_sym_exp offset_sym_exp )
     in
     L.(debug BufferOverrun Verbose)
-      "@[<v 2>Add condition :@,array: %a@,  idx: %a@,@]@." ArrayBlk.pp arr_blk Itv.pp idx_in_blk ;
-    check_access ~size ~idx:idx_in_blk ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
-      location cond_set
+      "@[<v 2>Add condition :@,array: %a@,  idx: %a + %a@,@]@." ArrayBlk.pp arr_blk Itv.pp
+      (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
+    check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces location cond_set
 
 
   let collection_access ~array_exp ~index_exp ?(is_collection_add = false) mem location cond_set =
@@ -349,14 +356,14 @@ module Check = struct
   let array_access_byte ~arr ~idx ~relation ~is_plus location cond_set =
     let arr_blk = Dom.Val.get_array_blk arr in
     let size = ArrayBlk.sizeof_byte arr_blk in
-    let offset = ArrayBlk.offsetof arr_blk in
     let idx_itv = Dom.Val.get_itv idx in
     let idx_traces = Dom.Val.get_traces idx in
-    let idx_in_blk = (if is_plus then Itv.plus else Itv.minus) offset idx_itv in
+    let idx = if is_plus then idx_itv else Itv.neg idx_itv in
     L.(debug BufferOverrun Verbose)
-      "@[<v 2>Add condition :@,array: %a@,  idx: %a@,@]@." ArrayBlk.pp arr_blk Itv.pp idx_in_blk ;
-    check_access ~size ~idx:idx_in_blk ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr
-      ~idx_traces location cond_set ~is_collection_add:true
+      "@[<v 2>Add condition :@,array: %a@,  idx: %a + %a@,@]@." ArrayBlk.pp arr_blk Itv.pp
+      (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
+    check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
+      location cond_set ~is_collection_add:true
 
 
   let lindex_byte ~array_exp ~byte_index_exp mem location cond_set =
