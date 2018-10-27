@@ -199,8 +199,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         else astate_pre
       in
       if
-        ((not is_narrowing) && Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre)
-        || (is_narrowing && Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre)
+        if is_narrowing then
+          (old_state.State.visit_count :> int) > Config.max_narrows
+          || Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre
+        else Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre
       then (inv_map, ReachedFixPoint)
       else
         let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in

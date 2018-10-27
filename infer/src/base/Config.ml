@@ -220,6 +220,8 @@ let manual_racerd = "RACERD CHECKER OPTIONS"
 
 let manual_siof = "SIOF CHECKER OPTIONS"
 
+let max_narrows = 5
+
 (** Maximum number of widens that can be performed before the analysis will intentionally crash.
     Used to guard against divergence in the case that someone has implemented a bad widening
     operator *)

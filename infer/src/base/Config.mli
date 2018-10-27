@@ -119,6 +119,8 @@ val lint_issues_dir_name : string
 
 val load_average : float option
 
+val max_narrows : int
+
 val max_widens : int
 
 val meet_level : int
