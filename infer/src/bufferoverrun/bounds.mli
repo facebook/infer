@@ -99,7 +99,9 @@ module Bound : sig
 
   val neg : t -> t
 
-  val div_const : t -> Ints.NonZeroInt.t -> t sexp_option
+  val div_const_l : t -> Ints.NonZeroInt.t -> t sexp_option
+
+  val div_const_u : t -> Ints.NonZeroInt.t -> t sexp_option
 
   val get_symbols : t -> Symb.Symbol.t list
 

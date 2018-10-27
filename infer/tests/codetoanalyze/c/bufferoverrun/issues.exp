@@ -8,6 +8,7 @@ codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_multiplication_Bad, 4
 codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_multiplication_Bad, 5, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_subtraction_Bad, 4, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Assignment,Binop: (-2000000000 - 2000000000):signed32]
 codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_subtraction_Bad, 5, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
+codetoanalyze/c/bufferoverrun/arith.c, minmax_div_const_Bad, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [ArrayDeclaration,Parameter: n,ArrayAccess: Offset: [0, 8] Size: 7]
 codetoanalyze/c/bufferoverrun/arith.c, minus_minimum_Bad, 2, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Assignment,Binop: (0 - -9223372036854775808):signed64]
 codetoanalyze/c/bufferoverrun/arith.c, minus_one_Bad, 3, INTEGER_OVERFLOW_L2, no_bucket, ERROR, [Unknown value from: unknown_uint,Assignment,Binop: ([0, +oo] - 1):unsigned64]
 codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_Bad, 2, BUFFER_OVERRUN_L3, no_bucket, ERROR, [ArrayDeclaration,Parameter: i,ArrayAccess: Offset: [-4, 4] Size: 5]

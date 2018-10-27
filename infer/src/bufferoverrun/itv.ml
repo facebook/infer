@@ -611,12 +611,12 @@ module ItvPure = struct
         if NonZeroInt.is_one n then itv
         else if NonZeroInt.is_minus_one n then neg itv
         else if NonZeroInt.is_positive n then
-          let l' = Option.value ~default:Bound.MInf (Bound.div_const l n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.div_const u n) in
+          let l' = Option.value ~default:Bound.MInf (Bound.div_const_l l n) in
+          let u' = Option.value ~default:Bound.PInf (Bound.div_const_u u n) in
           (l', u')
         else
-          let l' = Option.value ~default:Bound.MInf (Bound.div_const u n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.div_const l n) in
+          let l' = Option.value ~default:Bound.MInf (Bound.div_const_l u n) in
+          let u' = Option.value ~default:Bound.PInf (Bound.div_const_u l n) in
           (l', u')
 
 

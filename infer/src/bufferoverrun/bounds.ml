@@ -733,8 +733,18 @@ module Bound = struct
 
   let mult_const_u = mult_const Symb.BoundEnd.UpperBound
 
-  let div_const : t -> NonZeroInt.t -> t option =
-   fun x n ->
+  let overapprox_minmax_div_const x (n : NonZeroInt.t) =
+    let c = if NonZeroInt.is_positive n then big_int_ub_of_minmax x else big_int_lb_of_minmax x in
+    Option.map c ~f:(fun c -> Z.(c / (n :> Z.t)))
+
+
+  let underapprox_minmax_div_const x (n : NonZeroInt.t) =
+    let c = if NonZeroInt.is_positive n then big_int_lb_of_minmax x else big_int_ub_of_minmax x in
+    Option.map c ~f:(fun c -> Z.(c / (n :> Z.t)))
+
+
+  let div_const : Symb.BoundEnd.t -> t -> NonZeroInt.t -> t option =
+   fun bound_end x n ->
     match x with
     | MInf ->
         Some (if NonZeroInt.is_positive n then MInf else PInf)
@@ -746,9 +756,22 @@ module Bound = struct
           Some (Linear (Z.(c / (n :> Z.t)), x''))
       | exception NonZeroInt.DivisionNotExact ->
           None )
+    | MinMax _ ->
+        let c =
+          match bound_end with
+          | Symb.BoundEnd.LowerBound ->
+              underapprox_minmax_div_const x n
+          | Symb.BoundEnd.UpperBound ->
+              overapprox_minmax_div_const x n
+        in
+        Option.map c ~f:of_big_int
     | _ ->
         None
 
+
+  let div_const_l = div_const Symb.BoundEnd.LowerBound
+
+  let div_const_u = div_const Symb.BoundEnd.UpperBound
 
   let get_symbols : t -> Symb.Symbol.t list = function
     | MInf | PInf ->

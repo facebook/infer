@@ -292,3 +292,17 @@ void unsigned_prune_gt(unsigned int x, unsigned int y) {
 }
 
 void call_unsigned_prune_gt_Good() { unsigned_prune_gt(0, 3); }
+
+void minmax_div_const_Good(int n) {
+  int a[9];
+  if (0 < n && n < 65) {
+    int x = a[n / 8];
+  }
+}
+
+void minmax_div_const_Bad(int n) {
+  int a[7];
+  if (0 < n && n < 65) {
+    int x = a[n / 8];
+  }
+}
