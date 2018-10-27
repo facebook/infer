@@ -337,6 +337,19 @@ type 'a t =
   -> Arg.doc
   -> 'a
 
+let int_json_decoder ~flag ~inferconfig_dir json =
+  let int_as_string =
+    match json with
+    | `String s ->
+        warnf "WARNING: in %s/.inferconfig for option '%s', use an integer instead of a string.@."
+          inferconfig_dir flag ;
+        s
+    | json ->
+        string_of_int (YBU.to_int json)
+  in
+  [flag; int_as_string]
+
+
 let string_json_decoder ~flag ~inferconfig_dir:_ json = [flag; YBU.to_string json]
 
 let path_json_decoder ~flag ~inferconfig_dir json =
@@ -463,7 +476,7 @@ let mk_int ~default ?(default_to_string = string_of_int) ?(f = Fn.id) ?(deprecat
   let flag = mk_flag ~deprecated ?short ~long in
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
     ~mk_setter:(fun var str -> var := f (int_of_string str))
-    ~decode_json:(string_json_decoder ~flag)
+    ~decode_json:(int_json_decoder ~flag)
     ~mk_spec:(fun set -> String set)
 
 
