@@ -186,4 +186,5 @@ codetoanalyze/c/bufferoverrun/unreachable.c, condition_always_true_with_else_bad
 codetoanalyze/c/bufferoverrun/unreachable.c, infinite_loop_bad, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/unreachable.c, never_loops_bad, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/unreachable.c, unreachable_statement_exit_bad, 1, UNREACHABLE_CODE, no_bucket, ERROR, []
+codetoanalyze/c/bufferoverrun/while_loop.c, diverge_on_narrowing, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/while_loop.c, while_loop, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [0, 10] Size: 10]

@@ -13,3 +13,17 @@ void while_loop() {
   while (*(a + i) && i < 10) /* BUG */
     a[i++] = 1; /* SAFE */
 }
+
+struct S {
+  struct S* f;
+};
+
+void dummy_func(struct S* x) {}
+
+void diverge_on_narrowing() {
+  struct S* x;
+  while (1) {
+    dummy_func(0);
+    x = x->f;
+  }
+}

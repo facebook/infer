@@ -204,6 +204,11 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           || Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre
         else Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre
       then (inv_map, ReachedFixPoint)
+      else if is_narrowing && not (Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre) then (
+        L.(debug Analysis Verbose)
+          "Terminate narrowing because old and new states are not comparable at %a:%a@."
+          Typ.Procname.pp (Procdesc.get_proc_name pdesc) Node.pp_id node_id ;
+        (inv_map, ReachedFixPoint) )
       else
         let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
         update_inv_map new_pre ~visit_count:visit_count'
