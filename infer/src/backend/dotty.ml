@@ -1112,7 +1112,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
         Format.fprintf fmt "Skip %s" s
   in
   let instr_string i =
-    let pp f = Sil.pp_instr Pp.text f i in
+    let pp f = Sil.pp_instr ~print_types:false Pp.text f i in
     let str = F.asprintf "%t" pp in
     Escape.escape_dotty str
   in

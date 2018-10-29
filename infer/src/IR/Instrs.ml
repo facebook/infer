@@ -145,4 +145,5 @@ let last (type r) (t : r t) =
 
 let find_map t ~f = Container.find_map ~iter t ~f
 
-let pp pe fmt t = iter t ~f:(fun instr -> F.fprintf fmt "%a;@\n" (Sil.pp_instr pe) instr)
+let pp pe fmt t =
+  iter t ~f:(fun instr -> F.fprintf fmt "%a;@\n" (Sil.pp_instr ~print_types:false pe) instr)

@@ -84,7 +84,9 @@ let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
       in
       Logging.(debug Analysis Verbose) "Instructions of specialized method:@." ;
       Procdesc.iter_instrs
-        (fun _ instr -> Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr Pp.text) instr)
+        (fun _ instr ->
+          Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr ~print_types:false Pp.text) instr
+          )
         specialized_pdesc ;
       Logging.(debug Analysis Verbose) "End of instructions@." ;
       match Ondemand.analyze_proc_desc ~caller_pdesc specialized_pdesc with

@@ -28,7 +28,7 @@ module StructuredSil = struct
 
   let rec pp_structured_instr fmt = function
     | Cmd instr ->
-        Sil.pp_instr Pp.text fmt instr
+        Sil.pp_instr ~print_types:false Pp.text fmt instr
     | If (exp, then_instrs, else_instrs) ->
         (* TODO (t10287763): indent bodies of if/while *)
         F.fprintf fmt "if (%a) {@.%a@.} else {@.%a@.}" Exp.pp exp pp_structured_instr_list

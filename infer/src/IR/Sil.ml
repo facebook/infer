@@ -257,7 +257,7 @@ let pp_seq_diff pp pe0 f =
 
 
 (** Pretty print an expression. *)
-let pp_exp_printenv pe0 f e0 =
+let pp_exp_printenv ?(print_types = false) pe0 f e0 =
   let pe, changed = color_pre_wrapper pe0 f e0 in
   let e =
     match pe.Pp.obj_sub with
@@ -268,7 +268,7 @@ let pp_exp_printenv pe0 f e0 =
   in
   if not (Exp.equal e0 e) then
     match e with Exp.Lvar pvar -> Pvar.pp_value f pvar | _ -> assert false
-  else Exp.pp_printenv pe Typ.pp f e ;
+  else Exp.pp_printenv ~print_types pe f e ;
   color_post_wrapper changed f
 
 
@@ -299,7 +299,7 @@ let pp_texp_full pe f = function
       F.fprintf f "%a%a%a%a" (Typ.pp_full pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp
         subtype
   | e ->
-      Exp.pp_printenv pe Typ.pp_full f e
+      Exp.pp_printenv ~print_types:true pe f e
 
 
 (** Dump a type expression with all the details. *)
@@ -380,19 +380,22 @@ let if_kind_to_string = function
 
 
 (** Pretty print an instruction. *)
-let pp_instr pe0 f instr =
+let pp_instr ~print_types pe0 f instr =
+  let pp_typ = if print_types then Typ.pp_full else Typ.pp in
   let pe, changed = color_pre_wrapper pe0 f instr in
   ( match instr with
   | Load (id, e, t, loc) ->
-      F.fprintf f "%a=*%a:%a [%a]" Ident.pp id (pp_exp_printenv pe) e (Typ.pp pe) t Location.pp loc
-  | Store (e1, t, e2, loc) ->
-      F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv pe) e1 (Typ.pp pe) t (pp_exp_printenv pe) e2
+      F.fprintf f "%a=*%a:%a [%a]" Ident.pp id (pp_exp_printenv ~print_types pe) e (pp_typ pe0) t
         Location.pp loc
+  | Store (e1, t, e2, loc) ->
+      F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) t
+        (pp_exp_printenv ~print_types pe) e2 Location.pp loc
   | Prune (cond, loc, true_branch, _) ->
-      F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv pe) cond true_branch Location.pp loc
+      F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv ~print_types pe) cond true_branch
+        Location.pp loc
   | Call ((id, _), e, arg_ts, loc, cf) ->
       F.fprintf f "%a=" Ident.pp id ;
-      F.fprintf f "%a(%a)%a [%a]" (pp_exp_printenv pe) e
+      F.fprintf f "%a(%a)%a [%a]" (pp_exp_printenv ~print_types pe) e
         (Pp.comma_seq (pp_exp_typ pe))
         arg_ts CallFlags.pp cf Location.pp loc
   | Nullify (pvar, loc) ->
@@ -423,7 +426,7 @@ let add_with_block_parameters_flag instr =
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
 (** Dump an instruction. *)
-let d_instr (i : instr) = L.add_print_with_pe ~color:Pp.Green pp_instr i
+let d_instr (i : instr) = L.add_print_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i
 
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in

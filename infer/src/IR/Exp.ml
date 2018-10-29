@@ -252,9 +252,12 @@ and pp_captured_var pe pp_t f (exp, var, typ) =
       F.fprintf f "(%a %a:%a)" (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 
 
-let pp_printenv pe pp_typ f e = pp_ pe (pp_typ pe) f e
+let pp_printenv ~print_types pe f e =
+  let pp_typ = if print_types then Typ.pp_full else Typ.pp in
+  pp_ pe (pp_typ pe) f e
 
-let pp f e = pp_printenv Pp.text Typ.pp f e
+
+let pp f e = pp_printenv ~print_types:false Pp.text f e
 
 let to_string e = F.asprintf "%a" pp e
 

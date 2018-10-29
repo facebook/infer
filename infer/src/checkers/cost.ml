@@ -89,8 +89,9 @@ module TransferFunctionsNodesBasicCost = struct
           astate
     in
     L.(debug Analysis Medium)
-      "@\n>>>Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr
-      CostDomain.NodeInstructionToCostMap.pp astate' ;
+      "@\n>>>Instr: %a   Cost: %a@\n"
+      (Sil.pp_instr ~print_types:false Pp.text)
+      instr CostDomain.NodeInstructionToCostMap.pp astate' ;
     astate'
 
 
@@ -690,8 +691,9 @@ module TransferFunctionsWCET = struct
           assert false
     in
     L.(debug Analysis Medium)
-      "@\n[>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr BasicCost.pp
-      cost_node ;
+      "@\n[>>>AnalyzerWCET] Instr: %a   Cost: %a@\n"
+      (Sil.pp_instr ~print_types:false Pp.text)
+      instr BasicCost.pp cost_node ;
     let astate' =
       let und_node = CFG.Node.underlying_node node in
       let preds = Procdesc.Node.get_preds und_node in

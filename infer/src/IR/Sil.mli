@@ -255,7 +255,7 @@ val color_pre_wrapper : Pp.env -> F.formatter -> 'a -> Pp.env * bool
 val color_post_wrapper : bool -> F.formatter -> unit
 (** Close color annotation if changed *)
 
-val pp_exp_printenv : Pp.env -> F.formatter -> Exp.t -> unit
+val pp_exp_printenv : ?print_types:bool -> Pp.env -> F.formatter -> Exp.t -> unit
 (** Pretty print an expression. *)
 
 val d_exp : Exp.t -> unit
@@ -288,7 +288,7 @@ val instr_get_exps : instr -> Exp.t list
 val if_kind_to_string : if_kind -> string
 (** Pretty print an if_kind *)
 
-val pp_instr : Pp.env -> F.formatter -> instr -> unit
+val pp_instr : print_types:bool -> Pp.env -> F.formatter -> instr -> unit
 (** Pretty print an instruction. *)
 
 val d_instr : instr -> unit

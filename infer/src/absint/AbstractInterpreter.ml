@@ -151,7 +151,9 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           | exn ->
               IExn.reraise_after exn ~f:(fun () ->
                   if not !logged_error then (
-                    L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr ;
+                    L.internal_error "In instruction %a@\n"
+                      (Sil.pp_instr ~print_types:true Pp.text)
+                      instr ;
                     logged_error := true ) )
         in
         Instrs.fold ~f:compute_post ~init:pre instrs

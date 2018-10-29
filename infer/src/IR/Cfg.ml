@@ -68,9 +68,13 @@ let store source_file cfg =
 let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr option =
   let found instr instr' =
     L.(debug Analysis Verbose)
-      "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr Pp.text) instr ;
+      "XX inline_synthetic_method found instr: %a@."
+      (Sil.pp_instr ~print_types:true Pp.text)
+      instr ;
     L.(debug Analysis Verbose)
-      "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr' ;
+      "XX inline_synthetic_method instr': %a@."
+      (Sil.pp_instr ~print_types:true Pp.text)
+      instr' ;
     Some instr'
   in
   let do_instr instr =

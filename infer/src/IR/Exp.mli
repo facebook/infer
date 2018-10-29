@@ -127,7 +127,7 @@ val program_vars : t -> Pvar.t Sequence.t
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)
 
-val pp_printenv : Pp.env -> (Pp.env -> F.formatter -> Typ.t -> unit) -> F.formatter -> t -> unit
+val pp_printenv : print_types:bool -> Pp.env -> F.formatter -> t -> unit
 
 val pp : F.formatter -> t -> unit
 
