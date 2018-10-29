@@ -249,8 +249,9 @@ val is_java_synchronized : t -> bool
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
 
-val replace_instrs : t -> f:(Sil.instr -> Sil.instr) -> unit
-(** Map and replace the instructions to be executed *)
+val replace_instrs : t -> f:(Node.t -> Sil.instr -> Sil.instr) -> bool
+(** Map and replace the instructions to be executed.
+    Returns true if at least one substitution occured. *)
 
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)

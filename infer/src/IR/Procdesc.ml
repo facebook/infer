@@ -210,8 +210,11 @@ module Node = struct
 
   (** Map and replace the instructions to be executed *)
   let replace_instrs node ~f =
-    let instrs' = Instrs.map_changed ~equal:phys_equal node.instrs ~f in
-    if not (phys_equal instrs' node.instrs) then node.instrs <- instrs'
+    let instrs' = Instrs.map_changed ~equal:phys_equal node.instrs ~f:(f node) in
+    if phys_equal instrs' node.instrs then false
+    else (
+      node.instrs <- instrs' ;
+      true )
 
 
   let pp_stmt fmt = function
@@ -503,8 +506,10 @@ let find_map_instrs pdesc ~f =
 
 
 let replace_instrs pdesc ~f =
-  let do_node node = Node.replace_instrs ~f node in
-  iter_nodes do_node pdesc
+  let f updated node =
+    Node.replace_instrs ~f node || (* do not short-circuit [Node.replace_instrs] *) updated
+  in
+  fold_nodes pdesc ~init:false ~f
 
 
 (** fold between two nodes or until we reach a branching structure *)

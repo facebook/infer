@@ -8,7 +8,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = -F --project-root $(TESTS_DIR) --bufferoverrun-only
+INFER_OPTIONS = -F --project-root $(TESTS_DIR) --bufferoverrun-only --function-pointer-specialization
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)

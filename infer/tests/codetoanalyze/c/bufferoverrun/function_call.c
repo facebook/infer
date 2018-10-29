@@ -74,15 +74,16 @@ void call_by_struct_ptr_bad() {
 
 int ret_zero() { return 0; }
 
-void call_function_ptr_good_FP() {
+void call_function_ptr_good() {
   int (*func_ptr)(void) = &ret_zero;
   int arr[10];
   if ((*func_ptr)() != 0) {
+    // unreacheable
     arr[10] = 1;
   }
 }
 
-void call_function_ptr_bad() {
+void call_function_ptr_bad1() {
   int (*func_ptr)(void) = &ret_zero;
   int arr[10];
   if ((*func_ptr)() == 0) {

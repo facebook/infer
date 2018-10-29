@@ -1138,6 +1138,10 @@ INTERNAL OPTIONS
            Activates: Output statistics about the capture phase to *.o.astlog
            (clang only) (Conversely: --no-frontend-stats)
 
+       --function-pointer-specialization
+           Activates: Do function pointer preprocessing (clang only).
+           (Conversely: --no-function-pointer-specialization)
+
        --gen-previous-build-command-script-reset
            Cancel the effect of --gen-previous-build-command-script.
 

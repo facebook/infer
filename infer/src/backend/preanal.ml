@@ -181,5 +181,16 @@ let do_abstraction pdesc =
   Procdesc.signal_did_preanalysis pdesc
 
 
+let do_funptr_sub pdesc tenv =
+  let updated = FunctionPointers.substitute_function_pointers pdesc tenv in
+  if updated then Attributes.store ~proc_desc:(Some pdesc) (Procdesc.get_attributes pdesc)
+
+
 let do_preanalysis pdesc tenv =
-  if not (Procdesc.did_preanalysis pdesc) then ( do_liveness pdesc tenv ; do_abstraction pdesc )
+  if not (Procdesc.did_preanalysis pdesc) then (
+    if
+      Config.function_pointer_specialization
+      && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))
+    then do_funptr_sub pdesc tenv ;
+    do_liveness pdesc tenv ;
+    do_abstraction pdesc )

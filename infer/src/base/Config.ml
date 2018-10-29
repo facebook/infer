@@ -1339,6 +1339,11 @@ and frontend_stats =
     "Output statistics about the capture phase to *.o.astlog (clang only)"
 
 
+and function_pointer_specialization =
+  CLOpt.mk_bool ~long:"function-pointer-specialization" ~default:false
+    "Do function pointer preprocessing (clang only)."
+
+
 and gen_previous_build_command_script =
   CLOpt.mk_string_opt ~long:"gen-previous-build-command-script"
     ~in_help:InferCommand.[(Diff, manual_generic)]
@@ -2631,6 +2636,8 @@ and force_integration = !force_integration
 and from_json_report = !from_json_report
 
 and frontend_stats = !frontend_stats
+
+and function_pointer_specialization = !function_pointer_specialization
 
 and frontend_tests = !frontend_tests
 
