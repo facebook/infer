@@ -113,9 +113,8 @@ int* return_deleted_bad() {
   return x;
 }
 
-// this *could* be ok depending on what the destructor does, but there's
-// probably no good reason to do it
-S* return_destructed_pointer_bad() {
+// this *could* be ok depending on what the caller does
+S* return_destructed_pointer_ok() {
   S* s = new S(1);
   s->~S();
   return s;

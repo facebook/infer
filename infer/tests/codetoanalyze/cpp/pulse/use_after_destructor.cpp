@@ -36,7 +36,7 @@ int FP_reinit_after_explicit_destructor_ok() {
   return *s.f;
 }
 
-void placement_new_explicit_destructor_ok() {
+void FP_placement_new_explicit_destructor_ok() {
   char buf[sizeof(S)];
   {
     S* s = new (buf) S(1);
@@ -112,7 +112,7 @@ class Subclass : virtual POD {
   ~Subclass() { delete f; }
 };
 
-void FP_basic_placement_new_ok() {
+void basic_placement_new_ok() {
   S* ptr = new S(1);
   S* tptr = new (ptr) S(1);
   tptr->~S();

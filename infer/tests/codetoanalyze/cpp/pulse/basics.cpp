@@ -73,7 +73,7 @@ int multiple_invalidations_loop_bad(int n, int* ptr) {
   return *ptr;
 }
 
-Aggregate* FP_pointer_arithmetic_ok(Aggregate* a) {
+Aggregate* pointer_arithmetic_ok(Aggregate* a) {
   a->~Aggregate();
   a++;
   return a;
