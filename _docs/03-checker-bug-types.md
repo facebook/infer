@@ -15,6 +15,7 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Fragment retains view](/docs/checkers-bug-types.html#FRAGMENT_RETAINS_VIEW)
   - [Interface not thread-safe](/docs/checkers-bug-types.html#INTERFACE_NOT_THREAD_SAFE)
   - [Ivar not null checked](/docs/checkers-bug-types.html#IVAR_NOT_NULL_CHECKED)
+  - [Lock Consistency Violation](/docs/checkers-bug-types.html#LOCK_CONSISTENCY_VIOLATION)
   - [Memory leak](/docs/checkers-bug-types.html#MEMORY_LEAK)
   - [Null dereference](/docs/checkers-bug-types.html#NULL_DEREFERENCE)
   - [Parameter not null checked](/docs/checkers-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
@@ -211,6 +212,17 @@ This error type is only reported in Objective-C. This is similar to Null derefer
 Possible solutions are adding a check for `nil`, or making sure that the method is not called with `nil`.
 
 
+<a name="LOCK_CONSISTENCY_VIOLATION"></a>
+
+## Lock Consistency Violation
+
+This is a C++ and Objective C error reported whenever:
+
+- A class contains a member `lock` used for synchronization (most often a `std::mutex`).
+- It has a public method which writes to some member `x` while holding `lock`.
+- It has a public method which reads `x` without holding `lock`.
+
+The above may happen through a chain of calls. Above, `x` may also be a container (an array, a vector, etc).
 
 <a name="MEMORY_LEAK"></a>
 
