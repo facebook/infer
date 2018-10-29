@@ -82,8 +82,6 @@ module Val = struct
       && Bool.( <= ) lhs.represents_multiple_values rhs.represents_multiple_values
 
 
-  let equal x y = phys_equal x y || (( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x)
-
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
@@ -540,27 +538,10 @@ module Alias = struct
     F.fprintf fmt "AliasMap:@;%a@;AliasRet:@;%a" AliasMap.pp aliasmap AliasRet.pp aliasret
 end
 
-module PrunePairs = struct
-  module PrunePair = struct
-    (* PrunePair.t is a pair of an abstract location and an abstract
-       value where the abstract location was updated with the abstract
-       value in the latest pruning. *)
-    type t = Loc.t * Val.t
-
-    let pp fmt (l, v) = F.fprintf fmt "%a -> %a" Loc.pp l Val.pp v
-
-    let equal ((l1, v1) as x) ((l2, v2) as y) =
-      phys_equal x y || (Loc.equal l1 l2 && Val.equal v1 v2)
-  end
-
-  type t = PrunePair.t list
-
-  let pp = Pp.seq PrunePair.pp
-
-  let empty = []
-
-  let equal x y = List.equal x y ~equal:PrunePair.equal
-end
+(* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
+   in the latest pruning.  It uses [InvertedMap] because more pruning means smaller abstract
+   states. *)
+module PrunePairs = AbstractDomain.InvertedMap (Loc) (Val)
 
 module LatestPrune = struct
   (* Latest p: The pruned pairs 'p' has pruning information (which
@@ -580,10 +561,10 @@ module LatestPrune = struct
 
      Top: No information about the latest pruning. *)
   type astate =
-    | Latest of PrunePairs.t
-    | TrueBranch of Pvar.t * PrunePairs.t
-    | FalseBranch of Pvar.t * PrunePairs.t
-    | V of Pvar.t * PrunePairs.t * PrunePairs.t
+    | Latest of PrunePairs.astate
+    | TrueBranch of Pvar.t * PrunePairs.astate
+    | FalseBranch of Pvar.t * PrunePairs.astate
+    | V of Pvar.t * PrunePairs.astate * PrunePairs.astate
     | Top
 
   let pvar_pp = Pvar.pp Pp.text
@@ -610,14 +591,16 @@ module LatestPrune = struct
       | Top, _ ->
           false
       | Latest p1, Latest p2 ->
-          PrunePairs.equal p1 p2
+          PrunePairs.( <= ) ~lhs:p1 ~rhs:p2
       | TrueBranch (x1, p1), TrueBranch (x2, p2)
       | FalseBranch (x1, p1), FalseBranch (x2, p2)
       | TrueBranch (x1, p1), V (x2, p2, _)
       | FalseBranch (x1, p1), V (x2, _, p2) ->
-          Pvar.equal x1 x2 && PrunePairs.equal p1 p2
+          Pvar.equal x1 x2 && PrunePairs.( <= ) ~lhs:p1 ~rhs:p2
       | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) ->
-          Pvar.equal x1 x2 && PrunePairs.equal ptrue1 ptrue2 && PrunePairs.equal pfalse1 pfalse2
+          Pvar.equal x1 x2
+          && PrunePairs.( <= ) ~lhs:ptrue1 ~rhs:ptrue2
+          && PrunePairs.( <= ) ~lhs:pfalse1 ~rhs:pfalse2
       | _, _ ->
           false
 
@@ -628,10 +611,18 @@ module LatestPrune = struct
         y
     | _, _ when ( <= ) ~lhs:y ~rhs:x ->
         x
+    | Latest p1, Latest p2 ->
+        Latest (PrunePairs.join p1 p2)
+    | FalseBranch (x1, p1), FalseBranch (x2, p2) when Pvar.equal x1 x2 ->
+        FalseBranch (x1, PrunePairs.join p1 p2)
+    | TrueBranch (x1, p1), TrueBranch (x2, p2) when Pvar.equal x1 x2 ->
+        TrueBranch (x1, PrunePairs.join p1 p2)
     | FalseBranch (x', pfalse), TrueBranch (y', ptrue)
     | TrueBranch (x', ptrue), FalseBranch (y', pfalse)
       when Pvar.equal x' y' ->
         V (x', ptrue, pfalse)
+    | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) when Pvar.equal x1 x2 ->
+        V (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
     | _, _ ->
         Top
 
@@ -812,7 +803,7 @@ module MemReach = struct
    fun temps m -> List.fold temps ~init:m ~f:(fun acc temp -> remove_temp temp acc)
 
 
-  let set_prune_pairs : PrunePairs.t -> t -> t =
+  let set_prune_pairs : PrunePairs.astate -> t -> t =
    fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
 
 
@@ -823,7 +814,7 @@ module MemReach = struct
     | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
       match find_simple_alias r m with
       | Some (Loc.Var (Var.ProgramVar y)) when Pvar.equal x y ->
-          List.fold_left prunes ~init:m ~f:(fun acc (l, v) -> update_mem (PowLoc.singleton l) v acc)
+          PrunePairs.fold (fun l v acc -> update_mem (PowLoc.singleton l) v acc) prunes m
       | _ ->
           m )
     | _ ->
@@ -992,7 +983,7 @@ module Mem = struct
 
   let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
 
-  let set_prune_pairs : PrunePairs.t -> t -> t =
+  let set_prune_pairs : PrunePairs.astate -> t -> t =
    fun prune_pairs -> f_lift (MemReach.set_prune_pairs prune_pairs)
 
 

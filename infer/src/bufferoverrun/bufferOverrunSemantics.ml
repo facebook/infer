@@ -364,10 +364,10 @@ let get_offset_sym_f mem e = Val.get_offset_sym (eval e mem)
 let get_size_sym_f mem e = Val.get_size_sym (eval e mem)
 
 module Prune = struct
-  type astate = {prune_pairs: PrunePairs.t; mem: Mem.astate}
+  type astate = {prune_pairs: PrunePairs.astate; mem: Mem.astate}
 
   let update_mem_in_prune lv v {prune_pairs; mem} =
-    let prune_pairs = (lv, v) :: prune_pairs in
+    let prune_pairs = PrunePairs.add lv v prune_pairs in
     let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
     {prune_pairs; mem}
 
