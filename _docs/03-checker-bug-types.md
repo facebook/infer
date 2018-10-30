@@ -226,9 +226,9 @@ The above may happen through a chain of calls. Above, `x` may also be a containe
 
 ### Fixing Lock Consistency Violation reports
 
-- Mark one of the offending public methods as private, if possible.  This may silence the warning, since Infer looks for a pair of non-private methods.  Of course, this will not always be possible.
-- Avoid the offending access (most often the read).  Again, this may not be possible.
-- Use synchronization to protect the read, by using the lock protecting the corresponding write.
+- Avoid the offending access (most often the read).  Of course, this may not be possible.
+- Use synchronization to protect the read, by using the same lock protecting the corresponding write.
+- (Objective C specific) If the method doing the read is not exported *and* the lock protecting the write is always held when the method doing the read is called, then consider making it private (by prefixing its name with an underscore).  This should silence the warning, since Infer looks for a pair of non-private methods.
 
 <a name="MEMORY_LEAK"></a>
 
