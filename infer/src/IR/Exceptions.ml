@@ -572,7 +572,7 @@ let print_exception_html s exn =
         " " ^ L.ocaml_pos_to_string ocaml_pos
   in
   let desc_str = F.asprintf "%a" Localise.pp_error_desc error.description in
-  L.d_strln_color Red
+  L.d_strln ~color:Red
     (F.sprintf "%s%s %s%s" s error.name.IssueType.unique_id desc_str ocaml_pos_string)
 
 

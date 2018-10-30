@@ -1991,10 +1991,10 @@ let list_reduce name dd f list =
         L.d_ln () ;
         match f x y with
         | None ->
-            L.d_strln_color Red (".... COMBINE[" ^ name ^ "] FAILED ...") ;
+            L.d_strln ~color:Red (".... COMBINE[" ^ name ^ "] FAILED ...") ;
             element_list_reduce ((y, p2) :: acc) (x, p1) ys
         | Some x' ->
-            L.d_strln_color Green (".... COMBINE[" ^ name ^ "] SUCCEEDED ....") ;
+            L.d_strln ~color:Green (".... COMBINE[" ^ name ^ "] SUCCEEDED ....") ;
             L.d_strln "RESULT:" ;
             dd x' ;
             L.d_ln () ;
@@ -2095,11 +2095,11 @@ let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) 
         L.d_ln () ;
         match prop_partial_join pname tenv mode p2 p2' with
         | None ->
-            L.d_strln_color Red ".... JOIN FAILED ...." ;
+            L.d_strln ~color:Red ".... JOIN FAILED ...." ;
             L.d_ln () ;
             join_proppath_plist (ppa2' :: ppalist2_acc) ppa2 ppalist2_rest
         | Some p2'' ->
-            L.d_strln_color Green ".... JOIN SUCCEEDED ...." ;
+            L.d_strln ~color:Green ".... JOIN SUCCEEDED ...." ;
             L.d_strln "RESULT SYM HEAP:" ;
             Prop.d_prop p2'' ;
             L.d_ln () ;
@@ -2148,11 +2148,11 @@ let proplist_meet_generate tenv plist =
     L.d_ln () ;
     match prop_partial_meet tenv p pcombined with
     | None ->
-        L.d_strln_color Red ".... MEET FAILED ...." ;
+        L.d_strln ~color:Red ".... MEET FAILED ...." ;
         L.d_ln () ;
         (porig, pcombined)
     | Some pcombined' ->
-        L.d_strln_color Green ".... MEET SUCCEEDED ...." ;
+        L.d_strln ~color:Green ".... MEET SUCCEEDED ...." ;
         L.d_strln "RESULT SYM HEAP:" ;
         Prop.d_prop pcombined' ;
         L.d_ln () ;

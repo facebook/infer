@@ -253,7 +253,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
       raise (Exceptions.Bad_footprint __POS__)
   | Off_index _ :: _, Sil.Eexp _, (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _)
   | Off_index _ :: _, Sil.Estruct _, Tstruct _ ->
-      (* L.d_strln_color Orange "turn into an array"; *)
+      (* L.d_strln ~color:Orange "turn into an array"; *)
       let len =
         match se with
         | Sil.Eexp (_, Sil.Ialloc) ->
@@ -1317,7 +1317,7 @@ let type_at_offset tenv texp off =
 (** Check that the size of a type coming from an instruction does not exceed the size of the type from the pointsto predicate
     For example, that a pointer to int is not used to assign to a char *)
 let check_type_size tenv pname prop texp off typ_from_instr =
-  L.d_strln_color Orange "check_type_size" ;
+  L.d_strln ~color:Orange "check_type_size" ;
   L.d_str "off: " ;
   Sil.d_offset_list off ;
   L.d_ln () ;

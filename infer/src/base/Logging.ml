@@ -350,10 +350,7 @@ let setup_log_file () =
 type print_action =
   | PTdecrease_indent : int -> print_action
   | PTincrease_indent : int -> print_action
-  | PTstr : string -> print_action
-  | PTstr_color : string * Pp.color -> print_action
-  | PTstrln : string -> print_action
-  | PTstrln_color : string * Pp.color -> print_action
+  | PTstr : {s: string; color: Pp.color option; ln: bool} -> print_action
   | PTwarning : string -> print_action
   | PTerror : string -> print_action
   | PTinfo : string -> print_action
@@ -370,8 +367,12 @@ let pp_with_html_color color pp fmt x =
   F.fprintf fmt "<span class='%s'>%a</span>" (Pp.color_string color) pp x
 
 
-let pp_maybe_with_color color pp fmt x =
-  if Config.write_html then pp_with_html_color color pp fmt x else pp fmt x
+let pp_maybe_with_color ?color pp fmt x =
+  match color with
+  | Some color when Config.write_html ->
+      pp_with_html_color color pp fmt x
+  | _ ->
+      pp fmt x
 
 
 (** Execute the delayed print actions *)
@@ -382,20 +383,15 @@ let force_delayed_print fmt = function
       done
   | PTincrease_indent n ->
       F.fprintf fmt "%s@[" (String.make (2 * n) ' ')
-  | PTstr s ->
-      F.pp_print_string fmt s
-  | PTstr_color (s, c) ->
-      pp_maybe_with_color c F.pp_print_string fmt s
-  | PTstrln s ->
-      F.fprintf fmt "%s@\n" s
-  | PTstrln_color (s, c) ->
-      F.fprintf fmt "%a@\n" (pp_maybe_with_color c F.pp_print_string) s
+  | PTstr {s; color; ln} ->
+      pp_maybe_with_color ?color F.pp_print_string fmt s ;
+      if ln then F.pp_force_newline fmt ()
   | PTerror s ->
-      pp_maybe_with_color Pp.Red (fun fmt -> F.fprintf fmt "ERROR: %s") fmt s
+      pp_maybe_with_color ~color:Pp.Red (fun fmt -> F.fprintf fmt "ERROR: %s") fmt s
   | PTwarning s ->
-      pp_maybe_with_color Pp.Orange (fun fmt -> F.fprintf fmt "WARNING: %s") fmt s
+      pp_maybe_with_color ~color:Pp.Orange (fun fmt -> F.fprintf fmt "WARNING: %s") fmt s
   | PTinfo s ->
-      pp_maybe_with_color Pp.Blue (fun fmt -> F.fprintf fmt "INFO: %s") fmt s
+      pp_maybe_with_color ~color:Pp.Blue (fun fmt -> F.fprintf fmt "INFO: %s") fmt s
   | PT_generic (pp, x) ->
       pp fmt x
   | PT_generic_with_pe (None, pp, x) ->
@@ -431,10 +427,7 @@ let get_delayed_prints () = !delayed_actions
 let set_delayed_prints new_delayed_actions = delayed_actions := new_delayed_actions
 
 (** dump a string *)
-let d_str (s : string) = add_print_action (PTstr s)
-
-(** dump a string with the given color *)
-let d_str_color (c : Pp.color) (s : string) = add_print_action (PTstr_color (s, c))
+let d_str ?color (s : string) = add_print_action (PTstr {s; color; ln= false})
 
 (** dump an error string *)
 let d_error (s : string) = add_print_action (PTerror s)
@@ -446,19 +439,16 @@ let d_warning (s : string) = add_print_action (PTwarning s)
 let d_info (s : string) = add_print_action (PTinfo s)
 
 (** dump a string plus newline *)
-let d_strln (s : string) = add_print_action (PTstrln s)
-
-(** dump a string plus newline with the given color *)
-let d_strln_color (c : Pp.color) (s : string) = add_print_action (PTstrln_color (s, c))
+let d_strln ?color (s : string) = add_print_action (PTstr {s; color; ln= true})
 
 (** dump a newline *)
-let d_ln () = add_print_action (PTstrln "")
+let d_ln () = d_strln ""
 
 (** dump an indentation *)
 let d_indent indent =
   if indent <> 0 then
     let s = String.make (2 * indent) ' ' in
-    add_print_action (PTstr s)
+    d_str s
 
 
 (** dump command to increase the indentation level *)

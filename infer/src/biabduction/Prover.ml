@@ -1992,7 +1992,7 @@ let sexp_imply_preprocess se1 texp1 se2 =
   match (se1, texp1, se2) with
   | Sil.Eexp (_, inst), Exp.Sizeof _, Sil.Earray _ when Config.type_size ->
       let se1' = Sil.Earray (texp1, [(Exp.zero, se1)], inst) in
-      L.d_strln_color Orange "sexp_imply_preprocess" ;
+      L.d_strln ~color:Orange "sexp_imply_preprocess" ;
       L.d_str " se1: " ;
       Sil.d_sexp se1 ;
       L.d_ln () ;
@@ -2217,7 +2217,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                     decrease_indent_when_exception (fun () ->
                         try sigma_imply tenv calc_index_frame calc_missing subs prop1 hpred_list2
                         with exn when SymOp.exn_not_failure exn ->
-                          L.d_strln_color Red "backtracking lseg: trying rhs of length exactly 1" ;
+                          L.d_strln ~color:Red "backtracking lseg: trying rhs of length exactly 1" ;
                           let _, para_inst3 = Sil.hpara_instantiate para2 e2_ f2_ elist2 in
                           sigma_imply tenv calc_index_frame calc_missing subs prop1 para_inst3 )
                   in
@@ -2502,7 +2502,7 @@ let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
 let check_array_bounds tenv (sub1, sub2) prop =
   let check_failed atom =
     ProverState.checks := Bounds_check :: !ProverState.checks ;
-    L.d_str_color Red "bounds_check failed: provable atom: " ;
+    L.d_str ~color:Red "bounds_check failed: provable atom: " ;
     Sil.d_atom atom ;
     L.d_ln () ;
     if not Config.bound_error_allowed_in_procedure_call then
@@ -2516,7 +2516,7 @@ let check_array_bounds tenv (sub1, sub2) prop =
     | ProverState.BClen_imply (len1_, len2_, _indices2) ->
         let len1 = Sil.exp_sub sub1 len1_ in
         let len2 = Sil.exp_sub sub2 len2_ in
-        (* L.d_strln_color Orange "check_bound ";
+        (* L.d_strln ~color:Orange "check_bound ";
            Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
         let indices_to_check =
           [Exp.BinOp (Binop.PlusA None, len2, Exp.minus_one)]
@@ -2525,7 +2525,7 @@ let check_array_bounds tenv (sub1, sub2) prop =
         List.iter ~f:(fail_if_le len1) indices_to_check
     | ProverState.BCfrom_pre atom_ ->
         let atom_neg = atom_negate tenv (Sil.atom_sub sub2 atom_) in
-        (* L.d_strln_color Orange "BCFrom_pre"; Sil.d_atom atom_neg; L.d_ln (); *)
+        (* L.d_strln ~color:Orange "BCFrom_pre"; Sil.d_atom atom_neg; L.d_ln (); *)
         if check_atom tenv prop atom_neg then check_failed atom_neg
   in
   List.iter ~f:check_bound (ProverState.get_bounds_checks ())

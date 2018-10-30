@@ -368,7 +368,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
         Errdesc.explain_dereference_as_caller_expression caller_pname tenv ~use_buckets deref_str
           actual_pre spec_pre e (State.get_node_exn ()) (State.get_loc_exn ()) formal_params
       in
-      L.d_strln_color Red "found error in dereference" ;
+      L.d_strln ~color:Red "found error in dereference" ;
       L.d_strln "spec_pre:" ;
       Prop.d_prop spec_pre ;
       L.d_ln () ;

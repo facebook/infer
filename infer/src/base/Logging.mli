@@ -99,17 +99,11 @@ val set_delayed_prints : delayed_prints -> unit
 val reset_delayed_prints : unit -> unit
 (** reset the delayed print actions *)
 
-val d_str : string -> unit
+val d_str : ?color:Pp.color -> string -> unit
 (** dump a string *)
 
-val d_str_color : Pp.color -> string -> unit
-(** dump a string with the given color *)
-
-val d_strln : string -> unit
+val d_strln : ?color:Pp.color -> string -> unit
 (** dump a string plus newline *)
-
-val d_strln_color : Pp.color -> string -> unit
-(** dump a string plus newline with the given color *)
 
 val d_ln : unit -> unit
 (** dump a newline *)

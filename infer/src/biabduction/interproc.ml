@@ -299,7 +299,7 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
       in
       Paths.PathSet.map mk_incons diverging_states
     in
-    L.d_strln_color Orange "Propagating Divergence -- diverging states:" ;
+    L.d_strln ~color:Orange "Propagating Divergence -- diverging states:" ;
     Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons) ;
     L.d_ln () ;
     propagate wl pname ~is_exception:false prop_incons exit_node ) ;
@@ -780,7 +780,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
     ignore (path_set_put_todo wl init_node init_edgeset) ;
     forward_tabulate summary exe_env tenv proc_cfg wl ;
     do_before_node 0 init_node ;
-    L.d_strln_color Green
+    L.d_strln ~color:Green
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
     L.d_increase_indent 1 ;
     L.d_strln "Precond:" ;
@@ -810,7 +810,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   with RE_EXE_ERROR ->
     do_before_node 0 init_node ;
     Printer.force_delayed_prints () ;
-    L.d_strln_color Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR") ;
+    L.d_strln ~color:Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR") ;
     L.d_increase_indent 1 ;
     L.d_strln "when starting from pre:" ;
     Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
