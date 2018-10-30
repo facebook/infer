@@ -273,13 +273,13 @@ let pp_exp_printenv ?(print_types = false) pe0 f e0 =
 
 
 (** dump an expression. *)
-let d_exp (e : Exp.t) = L.add_print_with_pe pp_exp_printenv e
+let d_exp (e : Exp.t) = L.d_pp_with_pe pp_exp_printenv e
 
 (** Pretty print a list of expressions. *)
 let pp_exp_list pe f expl = Pp.seq (pp_exp_printenv pe) f expl
 
 (** dump a list of expressions. *)
-let d_exp_list (el : Exp.t list) = L.add_print_with_pe pp_exp_list el
+let d_exp_list (el : Exp.t list) = L.d_pp_with_pe pp_exp_list el
 
 let pp_texp pe f = function
   | Exp.Sizeof {typ; nbytes; dynamic_length; subtype} ->
@@ -303,7 +303,7 @@ let pp_texp_full pe f = function
 
 
 (** Dump a type expression with all the details. *)
-let d_texp_full (te : Exp.t) = L.add_print_with_pe pp_texp_full te
+let d_texp_full (te : Exp.t) = L.d_pp_with_pe pp_texp_full te
 
 (** Pretty print an offset *)
 let pp_offset pe f = function
@@ -312,9 +312,6 @@ let pp_offset pe f = function
   | Off_index exp ->
       (pp_exp_printenv pe) f exp
 
-
-(** Convert an offset to a string *)
-let offset_to_string e = F.asprintf "%a" (pp_offset Pp.text) e
 
 (** Pretty print a list of offsets *)
 let rec pp_offset_list pe f = function
@@ -327,7 +324,7 @@ let rec pp_offset_list pe f = function
 
 
 (** Dump a list of offsets *)
-let d_offset_list (offl : offset list) = L.add_print_with_pe pp_offset_list offl
+let d_offset_list (offl : offset list) = L.d_pp_with_pe pp_offset_list offl
 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t
 
@@ -426,7 +423,7 @@ let add_with_block_parameters_flag instr =
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
 (** Dump an instruction. *)
-let d_instr (i : instr) = L.add_print_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i
+let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i
 
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
@@ -445,7 +442,7 @@ let pp_atom pe0 f a =
 
 
 (** dump an atom *)
-let d_atom (a : atom) = L.add_print_with_pe pp_atom a
+let d_atom (a : atom) = L.d_pp_with_pe pp_atom a
 
 let pp_lseg_kind f = function Lseg_NE -> F.pp_print_string f "ne" | Lseg_PE -> ()
 
@@ -669,14 +666,12 @@ let pp_inst f inst =
       F.fprintf f "return_from_call: %d" n
 
 
-let inst_to_string inst = F.asprintf "%a" pp_inst inst
-
 exception JoinFail
 
 (** join of instrumentations, can raise JoinFail *)
 let inst_partial_join inst1 inst2 =
   let fail () =
-    L.d_strln ("inst_partial_join failed on " ^ inst_to_string inst1 ^ " " ^ inst_to_string inst2) ;
+    L.d_printfln "inst_partial_join failed on %a %a" pp_inst inst1 pp_inst inst2 ;
     raise JoinFail
   in
   if equal_inst inst1 inst2 then inst1
@@ -878,10 +873,10 @@ let pp_hpara_dll pe f = pp_hpara_dll_env pe None f
 let pp_hpred pe f = pp_hpred_env pe None f
 
 (** dump a strexp. *)
-let d_sexp (se : strexp) = L.add_print_with_pe pp_sexp se
+let d_sexp (se : strexp) = L.d_pp_with_pe pp_sexp se
 
 (** dump a hpred. *)
-let d_hpred (hpred : hpred) = L.add_print_with_pe pp_hpred hpred
+let d_hpred (hpred : hpred) = L.d_pp_with_pe pp_hpred hpred
 
 (** {2 Functions for traversing SIL data types} *)
 

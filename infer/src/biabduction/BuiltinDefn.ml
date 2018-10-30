@@ -658,7 +658,7 @@ let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as
           L.d_strln ", skipping call." ;
           [(prop_, path)]
       | Some pname -> (
-          L.d_strln ("pthread_create: calling function " ^ Typ.Procname.to_string pname) ;
+          L.d_printfln "pthread_create: calling function %a" Typ.Procname.pp pname ;
           match Ondemand.analyze_proc_name ~caller_pdesc:pdesc pname with
           | None ->
               (* no precondition to check, skip *)

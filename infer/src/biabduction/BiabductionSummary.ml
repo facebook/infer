@@ -60,7 +60,7 @@ module Jprop = struct
   let pp_short pe f jp = Prop.pp_prop pe f (to_prop jp)
 
   (** Dump the toplevel prop *)
-  let d_shallow (jp : Prop.normal t) = L.add_print_with_pe pp_short jp
+  let d_shallow (jp : Prop.normal t) = L.d_pp_with_pe pp_short jp
 
   (** Get identifies of the jprop *)
   let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
@@ -85,7 +85,7 @@ module Jprop = struct
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
   let d_list ~(shallow : bool) (jplist : Prop.normal t list) =
-    L.add_print_with_pe (pp_list ~shallow) jplist
+    L.d_pp_with_pe (pp_list ~shallow) jplist
 
 
   let rec gen_free_vars =
@@ -238,7 +238,7 @@ let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EX
 let string_of_phase_short = function FOOTPRINT -> "FP" | RE_EXECUTION -> "RE"
 
 (** Print the spec *)
-let pp_spec pe num_opt fmt spec =
+let pp_spec0 pe num_opt fmt spec =
   let pp_num_opt fmt = function
     | None ->
         F.pp_print_string fmt "----------"
@@ -265,19 +265,16 @@ let pp_spec pe num_opt fmt spec =
       F.pp_print_string fmt "----------------------------------------------------------------"
 
 
-(** Dump a spec *)
-let d_spec (spec : 'a spec) =
-  L.add_print (pp_spec (if Config.write_html then Pp.html Blue else Pp.text) None) spec
-
+let pp_spec f spec = pp_spec0 (if Config.write_html then Pp.html Blue else Pp.text) None f spec
 
 let pp_specs pe fmt specs =
   let total = List.length specs in
   match pe.Pp.kind with
   | TEXT ->
-      List.iteri specs ~f:(fun cnt spec -> pp_spec pe (Some (cnt + 1, total)) fmt spec)
+      List.iteri specs ~f:(fun cnt spec -> pp_spec0 pe (Some (cnt + 1, total)) fmt spec)
   | HTML ->
       List.iteri specs ~f:(fun cnt spec ->
-          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (cnt + 1, total))) spec )
+          F.fprintf fmt "%a<br>@\n" (pp_spec0 pe (Some (cnt + 1, total))) spec )
 
 
 let get_specs_from_preposts preposts = Option.value_map ~f:NormSpec.tospecs ~default:[] preposts

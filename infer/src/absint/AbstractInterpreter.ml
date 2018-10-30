@@ -121,9 +121,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       else if phys_equal result right then F.pp_print_string f "= RIGHT"
       else Domain.pp f result
     in
-    L.d_strln
-      ( Format.asprintf "LEFT: %a@.RIGHT: %t@.RESULT: %t@." Domain.pp left pp_right pp_result
-      |> Escape.escape_xml ) ;
+    L.d_printfln_escaped "LEFT: %a@.RIGHT: %t@.RESULT: %t@." Domain.pp left pp_right pp_result ;
     NodePrinter.finish_session underlying_node
 
 
@@ -164,10 +162,8 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           if phys_equal astate_post pre then F.pp_print_string f "= PRE"
           else Domain.pp f astate_post
         in
-        L.d_strln
-          ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %t@]@." Domain.pp pre
-              (Instrs.pp Pp.text) instrs pp_post
-          |> Escape.escape_xml ) ;
+        L.d_printfln_escaped "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %t@]@." Domain.pp pre
+          (Instrs.pp Pp.text) instrs pp_post ;
         NodePrinter.finish_session (Node.underlying_node node) ) ;
       InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
     in
@@ -309,11 +305,11 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     let underlying_node = Node.underlying_node node in
     NodePrinter.start_session ~pp_name underlying_node ;
     let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
-    L.d_strln (Format.asprintf "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto) ;
+    L.d_printfln "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto ;
     let loop_heads =
       wto |> IContainer.to_rev_list ~fold:WeakTopologicalOrder.Partition.fold_heads |> List.rev
     in
-    L.d_strln (Format.asprintf "Loop heads: %a" (Pp.seq pp_node) loop_heads) ;
+    L.d_printfln "Loop heads: %a" (Pp.seq pp_node) loop_heads ;
     NodePrinter.finish_session underlying_node
 
 

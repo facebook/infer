@@ -1087,7 +1087,7 @@ let rearrange_arith tenv lexp prop =
 
 
 let pp_rearrangement_error message prop lexp =
-  L.d_strln (".... Rearrangement Error .... " ^ message) ;
+  L.d_printfln ".... Rearrangement Error .... %s" message ;
   L.d_str "Exp:" ;
   Sil.d_exp lexp ;
   L.d_ln () ;
@@ -1362,8 +1362,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
           (* access through field: get the struct type from the field *)
           if Config.trace_rearrange then (
             L.d_increase_indent 1 ;
-            L.d_str "iter_rearrange: root of lexp accesses field " ;
-            L.d_strln (Typ.Fieldname.to_string f) ;
+            L.d_printfln "iter_rearrange: root of lexp accesses field %a" Typ.Fieldname.pp f ;
             L.d_str "  struct type from field: " ;
             Typ.d_full fld_typ ;
             L.d_ln () ;
@@ -1757,8 +1756,7 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   L.d_str "Exp: " ;
   Sil.d_exp nlexp ;
   L.d_ln () ;
-  L.d_str "Prop: " ;
-  L.d_ln () ;
+  L.d_strln "Prop:" ;
   Prop.d_prop prop ;
   L.d_ln () ;
   L.d_ln () ;

@@ -273,8 +273,7 @@ val d_texp_full : Exp.t -> unit
 val d_exp_list : Exp.t list -> unit
 (** Dump a list of expressions. *)
 
-val offset_to_string : offset -> string
-(** Convert an offset to a string *)
+val pp_offset : Pp.env -> F.formatter -> offset -> unit
 
 val d_offset_list : offset list -> unit
 (** Dump a list of offsets *)
@@ -299,9 +298,6 @@ val pp_atom : Pp.env -> F.formatter -> atom -> unit
 
 val d_atom : atom -> unit
 (** Dump an atom. *)
-
-val inst_to_string : inst -> string
-(** return a string representing the inst *)
 
 val pp_inst : F.formatter -> inst -> unit
 (** pretty-print an inst *)

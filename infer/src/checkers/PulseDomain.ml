@@ -309,10 +309,9 @@ module Domain : AbstractDomain.S with type astate = t = struct
         L.d_increase_indent 1 ;
         Container.iter state.subst ~fold:AddressUF.fold_sets
           ~f:(fun ((repr : AddressUF.Repr.t), set) ->
-            L.d_strln
-              (F.asprintf "%a=%a" AbstractAddress.pp
-                 (repr :> AbstractAddress.t)
-                 AddressUnionSet.pp set) ) ;
+            L.d_printfln "%a=%a" AbstractAddress.pp
+              (repr :> AbstractAddress.t)
+              AddressUnionSet.pp set ) ;
         L.d_decrease_indent 1 ;
         let stack = AliasingDomain.map (to_canonical_address state.subst) state.astate.stack in
         let invalids =
@@ -468,10 +467,9 @@ module Operations = struct
   let walk_access_expr ~on_last astate access_expr location =
     let (access_var, _), access_list = AccessExpression.to_accesses access_expr in
     if Config.write_html then
-      L.d_strln
-        (F.asprintf "Accessing %a -> [%a]" Var.pp access_var
-           (Pp.seq ~sep:"," AccessExpression.Access.pp)
-           access_list) ;
+      L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
+        (Pp.seq ~sep:"," AccessExpression.Access.pp)
+        access_list ;
     match (on_last, access_list) with
     | `Overwrite new_addr, [] ->
         let stack = AliasingDomain.add access_var new_addr astate.stack in

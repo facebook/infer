@@ -208,8 +208,7 @@ end = struct
           | Some (_, t, _) ->
               find_offset_sexp sigma_other hpred root (Field (f, typ) :: offs) se t
           | None ->
-              L.d_strln ("Can't find field " ^ Typ.Fieldname.to_string f ^ " in StrexpMatch.find")
-          ) ;
+              L.d_printfln "Can't find field %a in StrexpMatch.find" Typ.Fieldname.pp f ) ;
           find_offset_fsel sigma_other hpred root offs fsel' ftal typ
     and find_offset_esel sigma_other hpred root offs esel t =
       match esel with
@@ -378,7 +377,7 @@ let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal
     try
       let matched, footprint_part, matchings_cur_fp' = match_select_next matchings_cur_fp in
       let n = List.length (snd matchings_cur_fp') + 1 in
-      if Config.trace_absarray then L.d_strln ("Num of fp candidates " ^ string_of_int n) ;
+      if Config.trace_absarray then L.d_printfln "Num of fp candidates %d" n ;
       let strexp_data = StrexpMatch.get_data tenv matched in
       let p1, changed = do_abstract footprint_part p0 strexp_data in
       if changed then (p1, true) else match_abstract p0 matchings_cur_fp'
@@ -388,7 +387,7 @@ let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal
     if Int.equal bound 0 then p0
     else (
       if Config.trace_absarray then (
-        L.d_strln ("Applying " ^ abstraction_name ^ " to") ;
+        L.d_printfln "Applying %s to" abstraction_name ;
         Prop.d_prop p0 ;
         L.d_ln () ;
         L.d_ln () ) ;
@@ -513,12 +512,8 @@ let strexp_can_abstract ((_, se, typ) : StrexpMatch.strexp_data) : bool =
 (** This function abstracts a strexp *)
 let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.strexp_data) :
     Prop.normal Prop.t * bool =
-  if Config.trace_absarray && footprint_part then (
-    L.d_str "strexp_do_abstract (footprint)" ;
-    L.d_ln () ) ;
-  if Config.trace_absarray && not footprint_part then (
-    L.d_str "strexp_do_abstract (nonfootprint)" ;
-    L.d_ln () ) ;
+  if Config.trace_absarray && footprint_part then L.d_strln "strexp_do_abstract (footprint)" ;
+  if Config.trace_absarray && not footprint_part then L.d_strln "strexp_do_abstract (nonfootprint)" ;
   let prune_and_blur d_keys keep blur path keep_keys blur_keys =
     let p2, changed2 =
       if Config.trace_absarray then ( L.d_str "keep " ; d_keys keep_keys ; L.d_ln () ) ;

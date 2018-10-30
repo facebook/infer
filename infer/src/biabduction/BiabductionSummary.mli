@@ -64,8 +64,7 @@ end
 val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
 (** Cast a list of normalized specs to a list of specs *)
 
-val d_spec : _ spec -> unit
-(** Dump a spec *)
+val pp_spec : Format.formatter -> _ spec -> unit
 
 val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 (** Convert spec into normal form w.r.t. variable renaming *)

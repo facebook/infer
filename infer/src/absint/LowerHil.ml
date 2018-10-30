@@ -37,10 +37,8 @@ struct
         if phys_equal post pre then Format.pp_print_string f "= PRE"
         else TransferFunctions.Domain.pp f post
       in
-      L.d_strln
-        ( Format.asprintf "PRE: %a@.INSTR: %a@.POST: %t@." TransferFunctions.Domain.pp pre
-            HilInstr.pp hil_instr pp_post
-        |> Escape.escape_xml ) ;
+      L.d_printfln_escaped "PRE: %a@.INSTR: %a@.POST: %t@." TransferFunctions.Domain.pp pre
+        HilInstr.pp hil_instr pp_post ;
       NodePrinter.finish_session underyling_node )
 
 

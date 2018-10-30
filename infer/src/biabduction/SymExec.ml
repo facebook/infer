@@ -21,10 +21,9 @@ let rec fldlist_assoc fld = function
 
 
 let unroll_type tenv (typ : Typ.t) (off : Sil.offset) =
-  let fail fld_to_string fld =
+  let fail pp_fld fld =
     L.d_strln ".... Invalid Field Access ...." ;
-    L.d_str ("Fld : " ^ fld_to_string fld) ;
-    L.d_ln () ;
+    L.d_printfln "Fld : %a" pp_fld fld ;
     L.d_str "Type : " ;
     Typ.d_full typ ;
     L.d_ln () ;
@@ -34,16 +33,15 @@ let unroll_type tenv (typ : Typ.t) (off : Sil.offset) =
   | Tstruct name, Off_fld (fld, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields; statics} -> (
-      try fldlist_assoc fld (fields @ statics) with Caml.Not_found ->
-        fail Typ.Fieldname.to_string fld )
+      try fldlist_assoc fld (fields @ statics) with Caml.Not_found -> fail Typ.Fieldname.pp fld )
     | None ->
-        fail Typ.Fieldname.to_string fld )
+        fail Typ.Fieldname.pp fld )
   | Tarray {elt}, Off_index _ ->
       elt
   | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
-      fail Sil.offset_to_string off
+      fail (Sil.pp_offset Pp.text) off
 
 
 (** Apply function [f] to the expression at position [offlist] in [strexp].
@@ -547,7 +545,8 @@ let resolve_method tenv class_name proc_name =
   in
   match found_class with
   | None ->
-      Logging.d_strln ("Couldn't find method in the hierarchy of type " ^ Typ.Name.name class_name) ;
+      Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
+        (Typ.Name.name class_name) ;
       proc_name
   | Some proc_name ->
       proc_name
@@ -846,9 +845,8 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
   if is_receiver_null then (
     (* objective-c instance method with a null receiver just return objc_null(res). *)
     let path = Paths.Path.add_description path path_description in
-    L.d_strln
-      (F.sprintf "Object-C method %s called with nil receiver. Returning 0/nil"
-         (Typ.Procname.to_string callee_pname)) ;
+    L.d_printfln "Object-C method %a called with nil receiver. Returning 0/nil" Typ.Procname.pp
+      callee_pname ;
     (* We wish to nullify the result. However, in some cases,
        we want to add the attribute OBJC_NULL to it so that we
        can keep track of how this object became null,
@@ -1239,8 +1237,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_issue_deprecated_using_state Exceptions.Info current_pname exn ;
-      L.d_strln
-        (F.sprintf "Skipping function '%s': %s" (Typ.Procname.to_string callee_pname) reason) ;
+      L.d_printfln "Skipping function '%a': %s" Typ.Procname.pp callee_pname reason ;
       Tabulation.log_call_trace ~caller_name:current_pname ~callee_name:callee_pname
         ?callee_attributes ~reason loc Tabulation.CR_skip ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
@@ -1402,8 +1399,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
               let resolved_pdesc_opt = resolve_and_analyze_result.resolved_procdesc_opt in
               let resolved_summary_opt = resolve_and_analyze_result.resolved_summary_opt in
               let dynamic_dispatch_status = resolve_and_analyze_result.dynamic_dispatch_status in
-              Logging.d_strln ("Original callee " ^ Typ.Procname.to_unique_id callee_pname) ;
-              Logging.d_strln ("Resolved callee " ^ Typ.Procname.to_unique_id resolved_pname) ;
+              Logging.d_printfln "Original callee %s" (Typ.Procname.to_unique_id callee_pname) ;
+              Logging.d_printfln "Resolved callee %s" (Typ.Procname.to_unique_id resolved_pname) ;
               let sentinel_result =
                 if Language.curr_language_is Clang then
                   check_variadic_sentinel_if_present
@@ -1631,7 +1628,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
       | Some attrs ->
           let is_const = List.mem ~equal:Int.equal attrs.ProcAttributes.const_formals i in
           if is_const then (
-            L.d_str (Printf.sprintf "Not havocing const argument number %d: " i) ;
+            L.d_printf "Not havocing const argument number %d: " i ;
             Sil.d_exp e ;
             L.d_ln () ) ;
           not is_const
@@ -1783,9 +1780,8 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
 
 and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
   let field_name, _, _ = field in
-  L.d_strln
-    (F.sprintf "No custom getter found. Executing the ObjC builtin getter with ivar %s."
-       (Typ.Fieldname.to_string field_name)) ;
+  L.d_printfln "No custom getter found. Executing the ObjC builtin getter with ivar %a."
+    Typ.Fieldname.pp field_name ;
   match args with
   | [ ( lexp
       , ( ({Typ.desc= Tstruct struct_name} as typ)
@@ -1800,9 +1796,8 @@ and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
 
 and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
   let field_name, _, _ = field in
-  L.d_strln
-    (F.sprintf "No custom setter found. Executing the ObjC builtin setter with ivar %s."
-       (Typ.Fieldname.to_string field_name)) ;
+  L.d_printfln "No custom setter found. Executing the ObjC builtin setter with ivar %a."
+    Typ.Fieldname.pp field_name ;
   match args with
   | ( lexp1
     , ( ({Typ.desc= Tstruct struct_name} as typ1)
@@ -1880,8 +1875,8 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
         L.d_ln () ;
         actual_pars
     | [], _ ->
-        L.d_str ("**** ERROR: Procedure " ^ Typ.Procname.to_string callee_pname) ;
-        L.d_strln " mismatch in the number of parameters ****" ;
+        L.d_printfln "**** ERROR: Procedure %a mismatch in the number of parameters ****"
+          Typ.Procname.pp callee_pname ;
         L.d_str "actual parameters: " ;
         Sil.d_exp_list (List.map ~f:fst actual_pars) ;
         L.d_ln () ;

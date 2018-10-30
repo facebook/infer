@@ -214,7 +214,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
     let f p = Prop.prop_normal_vars_to_primed_vars tenv p in
     Propset.map tenv f pset
   in
-  L.d_strln ("#### Extracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
+  L.d_printfln "#### Extracted footprint of %a:  ####" Typ.Procname.pp proc_name ;
   L.d_increase_indent 1 ;
   Propset.d Prop.prop_emp pset' ;
   L.d_decrease_indent 1 ;
@@ -222,7 +222,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   L.d_ln () ;
   let pset'' = collect_do_abstract_pre proc_name tenv pset' in
   let plist_meet = do_meet_pre tenv pset'' in
-  L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Meet  ####") ;
+  L.d_printfln "#### Footprint of %a after Meet  ####" Typ.Procname.pp proc_name ;
   L.d_increase_indent 1 ;
   Propgraph.d_proplist Prop.prop_emp plist_meet ;
   L.d_decrease_indent 1 ;
@@ -233,7 +233,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   let jplist = do_join_pre tenv plist_meet in
   L.d_decrease_indent 2 ;
   L.d_ln () ;
-  L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Join  ####") ;
+  L.d_printfln "#### Footprint of %a after Join  ####" Typ.Procname.pp proc_name ;
   L.d_increase_indent 1 ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist ;
   L.d_decrease_indent 1 ;
@@ -241,7 +241,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   let jplist' =
     List.map ~f:(BiabductionSummary.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist
   in
-  L.d_strln ("#### Renamed footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
+  L.d_printfln "#### Renamed footprint of %a:  ####" Typ.Procname.pp proc_name ;
   L.d_increase_indent 1 ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist' ;
   L.d_decrease_indent 1 ;
@@ -252,7 +252,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
     in
     List.map ~f:(BiabductionSummary.Jprop.map f) jplist'
   in
-  L.d_strln ("#### Abstracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
+  L.d_printfln "#### Abstracted footprint of %a:  ####" Typ.Procname.pp proc_name ;
   L.d_increase_indent 1 ;
   BiabductionSummary.Jprop.d_list ~shallow:false jplist'' ;
   L.d_decrease_indent 1 ;
@@ -341,7 +341,7 @@ let check_prop_size_ p _ =
   let size = Prop.Metrics.prop_size p in
   if size > fst !prop_max_size then (
     prop_max_size := (size, p) ;
-    L.d_strln ("Prop with new max size " ^ string_of_int size ^ ":") ;
+    L.d_printfln "Prop with new max size %d:" size ;
     Prop.d_prop p ;
     L.d_ln () )
 
@@ -442,22 +442,17 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
         (Typ.Procname.to_string proc_name)
     in
-    L.d_strln
-      ( "**** " ^ log_string pname ^ " " ^ "Node: "
-      ^ string_of_int (Procdesc.Node.get_id curr_node :> int)
-      ^ ", " ^ "Procedure: " ^ Typ.Procname.to_string pname ^ ", " ^ "Session: "
-      ^ string_of_int session ^ ", " ^ "Todo: "
-      ^ string_of_int (Paths.PathSet.size pathset_todo)
-      ^ " ****" ) ;
+    L.d_printfln "**** %s Node: %a, Procedure: %a, Session: %d, Todo: %d ****" (log_string pname)
+      Procdesc.Node.pp curr_node Typ.Procname.pp pname session (Paths.PathSet.size pathset_todo) ;
     L.d_increase_indent 1 ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
-    L.d_strln ".... Instructions: .... " ;
+    L.d_strln ".... Instructions: ...." ;
     Procdesc.Node.d_instrs ~sub_instrs:true (State.get_instr ()) curr_node ;
     L.d_ln () ;
     L.d_ln ()
   in
   let do_prop (curr_node : ProcCfg.Exceptional.Node.t) handle_exn prop path cnt num_paths =
-    L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths) ;
+    L.d_printfln "Processing prop %d/%d" cnt num_paths ;
     L.d_increase_indent 1 ;
     try
       State.reset_diverging_states_node () ;
@@ -656,7 +651,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
     | _ ->
         pathset
   in
-  L.d_strln ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] Analysis result ####") ;
+  L.d_printfln "#### [FUNCTION %a] Analysis result ####" Typ.Procname.pp pname ;
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset) ;
   L.d_ln () ;
   let res =
@@ -674,7 +669,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
       L.d_strln "Leak in post collection" ;
       assert false
   in
-  L.d_strln ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] Postconditions after join ####") ;
+  L.d_printfln "#### [FUNCTION %a] Postconditions after join ####" Typ.Procname.pp pname ;
   L.d_increase_indent 1 ;
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv (fst res)) ;
   L.d_decrease_indent 1 ;
@@ -762,7 +757,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
-  L.d_strln ("#### Start: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
+  L.d_printfln "#### Start: RE-execution for %a ####" Typ.Procname.pp pname ;
   L.d_indent 1 ;
   L.d_strln "Precond:" ;
   BiabductionSummary.Jprop.d_shallow precondition ;
@@ -780,8 +775,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
     ignore (path_set_put_todo wl init_node init_edgeset) ;
     forward_tabulate summary exe_env tenv proc_cfg wl ;
     do_before_node 0 init_node ;
-    L.d_strln ~color:Green
-      ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
+    L.d_printfln ~color:Green "#### Finished: RE-execution for %a ####" Typ.Procname.pp pname ;
     L.d_increase_indent 1 ;
     L.d_strln "Precond:" ;
     Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
@@ -810,7 +804,7 @@ let execute_filter_prop summary exe_env tenv proc_cfg
   with RE_EXE_ERROR ->
     do_before_node 0 init_node ;
     Printer.force_delayed_prints () ;
-    L.d_strln ~color:Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR") ;
+    L.d_printfln ~color:Red "#### [FUNCTION %a] ...ERROR" Typ.Procname.pp pname ;
     L.d_increase_indent 1 ;
     L.d_strln "when starting from pre:" ;
     Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;

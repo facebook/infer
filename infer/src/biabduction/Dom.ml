@@ -1980,12 +1980,10 @@ let list_reduce name dd f list =
         ((x, p1), List.rev acc)
     | (y, p2) :: ys -> (
         L.d_strln ("COMBINE[" ^ name ^ "] ....") ;
-        L.d_str "ENTRY1: " ;
-        L.d_ln () ;
+        L.d_strln "ENTRY1:" ;
         dd x ;
         L.d_ln () ;
-        L.d_str "ENTRY2: " ;
-        L.d_ln () ;
+        L.d_strln "ENTRY2:" ;
         dd y ;
         L.d_ln () ;
         L.d_ln () ;
@@ -2086,10 +2084,10 @@ let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) 
         (ppa2, List.rev ppalist2_acc)
     | ((p2', pa2') as ppa2') :: ppalist2_rest -> (
         L.d_strln ".... JOIN ...." ;
-        L.d_strln "JOIN SYM HEAP1: " ;
+        L.d_strln "JOIN SYM HEAP1:" ;
         Prop.d_prop p2 ;
         L.d_ln () ;
-        L.d_strln "JOIN SYM HEAP2: " ;
+        L.d_strln "JOIN SYM HEAP2:" ;
         Prop.d_prop p2' ;
         L.d_ln () ;
         L.d_ln () ;
@@ -2140,10 +2138,10 @@ let proplist_meet_generate tenv plist =
     SymOp.pay () ;
     (* pay one symop *)
     L.d_strln ".... MEET ...." ;
-    L.d_strln "MEET SYM HEAP1: " ;
+    L.d_strln "MEET SYM HEAP1:" ;
     Prop.d_prop p ;
     L.d_ln () ;
-    L.d_strln "MEET SYM HEAP2: " ;
+    L.d_strln "MEET SYM HEAP2:" ;
     Prop.d_prop pcombined ;
     L.d_ln () ;
     match prop_partial_meet tenv p pcombined with

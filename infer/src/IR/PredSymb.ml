@@ -263,4 +263,4 @@ let to_string pe = function
 let pp pe fmt a = F.pp_print_string fmt (to_string pe a)
 
 (** dump an attribute *)
-let d_attribute (a : t) = L.add_print_with_pe pp a
+let d_attribute (a : t) = L.d_pp_with_pe pp a

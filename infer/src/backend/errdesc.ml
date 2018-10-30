@@ -82,11 +82,9 @@ let find_normal_variable_funcall (node : Procdesc.Node.t) (id : Ident.t) :
         None
   in
   let res = Procdesc.Node.find_in_node_or_preds node ~f:find_declaration in
-  if verbose && is_none res then (
-    L.d_str
-      ( "find_normal_variable_funcall could not find " ^ Ident.to_string id ^ " in node "
-      ^ string_of_int (Procdesc.Node.get_id node :> int) ) ;
-    L.d_ln () ) ;
+  if verbose && is_none res then
+    L.d_printfln "find_normal_variable_funcall could not find %a in node %a" Ident.pp id
+      Procdesc.Node.pp node ;
   res
 
 
@@ -198,11 +196,9 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
         None
   in
   let res = Procdesc.Node.find_in_node_or_preds node ~f:find_declaration in
-  if verbose && is_none res then (
-    L.d_str
-      ( "find_normal_variable_load could not find " ^ Ident.to_string id ^ " in node "
-      ^ string_of_int (Procdesc.Node.get_id node :> int) ) ;
-    L.d_ln () ) ;
+  if verbose && is_none res then
+    L.d_printfln "find_normal_variable_load could not find %a in node %a" Ident.pp id
+      Procdesc.Node.pp node ;
   res
 
 
@@ -269,8 +265,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         if verbose then (
           L.d_str "exp_lv_dexp: Lfield with var " ;
           Sil.d_exp (Exp.Var id) ;
-          L.d_str (" " ^ Typ.Fieldname.to_string f) ;
-          L.d_ln () ) ;
+          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
         match find_normal_variable_load_ tenv seen node id with
         | None ->
             None
@@ -280,8 +275,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         if verbose then (
           L.d_str "exp_lv_dexp: Lfield " ;
           Sil.d_exp e1 ;
-          L.d_str (" " ^ Typ.Fieldname.to_string f) ;
-          L.d_ln () ) ;
+          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
         match exp_lv_dexp_ tenv seen node e1 with
         | None ->
             None
@@ -337,8 +331,7 @@ and exp_rv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
         if verbose then (
           L.d_str "exp_rv_dexp: Lfield " ;
           Sil.d_exp e1 ;
-          L.d_str (" " ^ Typ.Fieldname.to_string f) ;
-          L.d_ln () ) ;
+          L.d_printfln " %a" Typ.Fieldname.pp f ) ;
         match exp_rv_dexp_ tenv seen node e1 with
         | None ->
             None
@@ -504,9 +497,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let value_str =
     match instro with
     | None ->
-        if verbose then (
-          L.d_str "explain_leak: no current instruction" ;
-          L.d_ln () ) ;
+        if verbose then L.d_strln "explain_leak: no current instruction" ;
         value_str_from_pvars_vpath [] vpath
     | Some (Sil.Nullify (pvar, _)) when check_pvar pvar -> (
         if verbose then (
@@ -519,9 +510,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         | _ ->
             None )
     | Some (Sil.Abstract _) ->
-        if verbose then (
-          L.d_str "explain_leak: current instruction is Abstract" ;
-          L.d_ln () ) ;
+        if verbose then L.d_strln "explain_leak: current instruction is Abstract" ;
         let get_nullify = function
           | Sil.Nullify (pvar, _) when check_pvar pvar ->
               if verbose then (
@@ -675,9 +664,7 @@ let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
         Sil.d_exp exp_ ;
         L.d_ln ()
     | Some de, typo -> (
-        L.d_str "vpath_find: found " ;
-        L.d_str (DExp.to_string de) ;
-        L.d_str " : " ;
+        L.d_printf "vpath_find: found %a :" DExp.pp de ;
         match typo with None -> L.d_str " No type" | Some typ -> Typ.d_full typ ; L.d_ln () ) ) ;
   res
 
@@ -693,8 +680,7 @@ let access_opt ?(is_nullable = false) inst =
   | Sil.Ialloc when Language.curr_language_is Java ->
       Some Localise.Initialized_automatically
   | inst ->
-      if verbose then
-        L.d_strln ("explain_dexp_access: inst is not an update " ^ Sil.inst_to_string inst) ;
+      if verbose then L.d_printfln "explain_dexp_access: inst is not an update %a" Sil.pp_inst inst ;
       None
 
 
@@ -726,7 +712,7 @@ let explain_dexp_access prop dexp is_nullable =
   let rec lookup_fld fsel f =
     match fsel with
     | [] ->
-        if verbose then L.d_strln ("lookup_fld: can't find field " ^ Typ.Fieldname.to_string f) ;
+        if verbose then L.d_printfln "lookup_fld: can't find field %a" Typ.Fieldname.pp f ;
         None
     | (f1, se) :: fsel' ->
         if Typ.Fieldname.equal f1 f then Some se else lookup_fld fsel' f
@@ -766,9 +752,7 @@ let explain_dexp_access prop dexp is_nullable =
       | Some (Sil.Estruct (fsel, _)) ->
           lookup_fld fsel f
       | Some _ ->
-          if verbose then (
-            L.d_str "lookup: case not matched on Darrow " ;
-            L.d_ln () ) ;
+          if verbose then L.d_strln "lookup: case not matched on Darrow" ;
           None )
     | DExp.Darrow (de1, f) -> (
       match lookup (DExp.Dderef de1) with
@@ -777,9 +761,7 @@ let explain_dexp_access prop dexp is_nullable =
       | Some (Sil.Estruct (fsel, _)) ->
           lookup_fld fsel f
       | Some _ ->
-          if verbose then (
-            L.d_str "lookup: case not matched on Darrow " ;
-            L.d_ln () ) ;
+          if verbose then L.d_strln "lookup: case not matched on Darrow" ;
           None )
     | DExp.Ddot (de1, f) -> (
       match lookup de1 with
@@ -790,20 +772,18 @@ let explain_dexp_access prop dexp is_nullable =
       | Some (Sil.Eexp (Const (Cfun _), _) as fun_strexp) ->
           Some fun_strexp
       | Some _ ->
-          if verbose then (
-            L.d_str "lookup: case not matched on Ddot " ;
-            L.d_ln () ) ;
+          if verbose then L.d_strln "lookup: case not matched on Ddot" ;
           None )
     | DExp.Dpvar pvar ->
-        if verbose then ( L.d_str "lookup: found Dpvar " ; L.d_ln () ) ;
+        if verbose then L.d_strln "lookup: found Dpvar" ;
         find_ptsto (Exp.Lvar pvar)
     | DExp.Dderef de -> (
       match lookup de with None -> None | Some (Sil.Eexp (e, _)) -> find_ptsto e | Some _ -> None )
     | DExp.Dbinop (Binop.PlusPI, DExp.Dpvar _, DExp.Dconst _) as de ->
-        if verbose then L.d_strln ("lookup: case )pvar + constant) " ^ DExp.to_string de) ;
+        if verbose then L.d_printfln "lookup: case )pvar + constant) %a" DExp.pp de ;
         None
     | DExp.Dfcall (DExp.Dconst c, _, loc, _) -> (
-        if verbose then L.d_strln "lookup: found Dfcall " ;
+        if verbose then L.d_strln "lookup: found Dfcall" ;
         match c with
         | Const.Cfun _ ->
             (* Treat function as an update *)
@@ -811,17 +791,17 @@ let explain_dexp_access prop dexp is_nullable =
         | _ ->
             None )
     | DExp.Dpvaraddr pvar ->
-        L.d_strln ("lookup: found Dvaraddr " ^ DExp.to_string (DExp.Dpvaraddr pvar)) ;
+        L.d_printfln "lookup: found Dvaraddr %a" DExp.pp (DExp.Dpvaraddr pvar) ;
         find_ptsto (Exp.Lvar pvar)
     | de ->
-        if verbose then L.d_strln ("lookup: unknown case not matched " ^ DExp.to_string de) ;
+        if verbose then L.d_printfln "lookup: unknown case not matched %a" DExp.pp de ;
         None
   in
   match sexpo_to_inst (lookup dexp) with
   | Some inst ->
       access_opt inst ~is_nullable
   | None ->
-      if verbose then L.d_strln ("explain_dexp_access: cannot find inst of " ^ DExp.to_string dexp) ;
+      if verbose then L.d_printfln "explain_dexp_access: cannot find inst of %a" DExp.pp dexp ;
       None
 
 
@@ -1107,14 +1087,14 @@ let explain_dereference_as_caller_expression proc_name tenv ?(use_buckets = fals
   in
   match find_with_exp spec_pre exp with
   | Some (pv, pvar_off) ->
-      if verbose then L.d_strln ("pvar: " ^ Pvar.to_string pv) ;
+      if verbose then L.d_printfln "pvar: %s" (Pvar.to_string pv) ;
       let pv_name = Pvar.get_name pv in
       if Pvar.is_global pv then
         let dexp = exp_lv_dexp tenv node (Exp.Lvar pv) in
         create_dereference_desc proc_name tenv ~use_buckets dexp deref_str actual_pre loc
       else if Pvar.is_callee pv then (
         let position = find_formal_param_number pv_name in
-        if verbose then L.d_strln ("parameter number: " ^ string_of_int position) ;
+        if verbose then L.d_printfln "parameter number: %d" position ;
         explain_nth_function_parameter proc_name tenv use_buckets deref_str actual_pre position
           pvar_off )
       else if Attribute.has_dangling_uninit tenv spec_pre exp then
@@ -1124,8 +1104,7 @@ let explain_dereference_as_caller_expression proc_name tenv ?(use_buckets = fals
       if verbose then (
         L.d_str "explain_dereference_as_caller_expression " ;
         Sil.d_exp exp ;
-        L.d_str ": cannot explain None " ;
-        L.d_ln () ) ;
+        L.d_strln ": cannot explain None" ) ;
       Localise.no_desc
 
 

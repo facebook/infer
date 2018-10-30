@@ -89,9 +89,8 @@ let map_join m1 m2 =
 
 let join t1 t2 =
   let tjoin = map_join t1 t2 in
-  ( if Config.write_html then
-    let s = F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." pp t1 pp t2 pp tjoin in
-    L.d_strln s ) ;
+  if Config.write_html then
+    L.d_printfln "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." pp t1 pp t2 pp tjoin ;
   tjoin
 
 

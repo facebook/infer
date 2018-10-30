@@ -768,7 +768,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let get_node_nb_exec =
     let debug =
       if Config.write_html then
-        let f fmt = F.kasprintf L.d_strln fmt in
+        let f fmt = L.d_printfln fmt in
         {ConstraintSolver.f}
       else
         let f fmt = L.(debug Analysis Verbose) fmt in

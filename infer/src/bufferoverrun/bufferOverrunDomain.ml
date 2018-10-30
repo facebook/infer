@@ -227,7 +227,7 @@ module Val = struct
   let warn_against_pruning_multiple_values : t -> t =
    fun x ->
     if x.represents_multiple_values && Config.write_html then
-      L.d_str ~color:Pp.Red (F.asprintf "Pruned %a that represents multiple values\n" pp x) ;
+      L.d_printfln ~color:Pp.Red "Pruned %a that represents multiple values" pp x ;
     x
 
 

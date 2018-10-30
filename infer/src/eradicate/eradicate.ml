@@ -91,7 +91,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             find_canonical_duplicate annotated_signature typestate node linereader
         in
         if Config.write_html then (
-          let d_typestate ts = L.d_strln (F.asprintf "%a" TypeState.pp ts) in
+          let d_typestate ts = L.d_printfln "%a" TypeState.pp ts in
           L.d_strln "before:" ;
           d_typestate typestate ;
           L.d_strln "after:" ;

@@ -31,6 +31,8 @@ type t =
     each expression represents a path, with Dpvar being the simplest one *)
 type vpath = t option
 
+val pp : F.formatter -> t -> unit
+
 val to_string : t -> string
 (** convert to a string *)
 

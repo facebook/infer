@@ -413,9 +413,9 @@ let add_print_action pact =
     Option.iter !log_file ~f:(function file_fmt, _ -> force_delayed_print file_fmt pact)
 
 
-let add_print pp x = add_print_action (PT_generic (pp, x))
+let d_pp pp x = add_print_action (PT_generic (pp, x))
 
-let add_print_with_pe ?color pp x = add_print_action (PT_generic_with_pe (color, pp, x))
+let d_pp_with_pe ?color pp x = add_print_action (PT_generic_with_pe (color, pp, x))
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () = delayed_actions := []
@@ -443,6 +443,12 @@ let d_strln ?color (s : string) = add_print_action (PTstr {s; color; ln= true})
 
 (** dump a newline *)
 let d_ln () = d_strln ""
+
+let d_printf ?color fmt = F.kasprintf (d_str ?color) fmt
+
+let d_printfln ?color fmt = F.kasprintf (d_strln ?color) fmt
+
+let d_printfln_escaped fmt = F.kasprintf (fun s -> d_strln (Escape.escape_xml s)) fmt
 
 (** dump an indentation *)
 let d_indent indent =

@@ -11,7 +11,6 @@ open! IStd
 (** Interprocedural footprint analysis *)
 
 module L = Logging
-module F = Format
 
 type splitting =
   { sub: Sil.subst
@@ -175,8 +174,7 @@ let spec_find_rename trace_call summary :
     let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
     (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->
-    L.d_strln
-      ("ERROR: found no entry for procedure " ^ Typ.Procname.to_string proc_name ^ ". Give up...") ;
+    L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Typ.Procname.pp proc_name ;
     raise
       (Exceptions.Precondition_not_found
          (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__))
@@ -374,7 +372,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
       L.d_ln () ;
       L.d_str "exp " ;
       Sil.d_exp e ;
-      L.d_strln (F.asprintf " desc: %a" Localise.pp_error_desc error_desc) ;
+      L.d_printfln " desc: %a" Localise.pp_error_desc error_desc ;
       error_desc
     in
     let deref_no_null_check_pos =
@@ -1147,7 +1145,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
   let posts = mk_posts tenv prop callee_pname spec.BiabductionSummary.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
   let spec_pre = BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre in
-  L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs) ;
+  L.d_printfln "EXECUTING SPEC %d/%d" n nspecs ;
   L.d_strln "ACTUAL PRECONDITION =" ;
   L.d_increase_indent 1 ;
   Prop.d_prop actual_pre ;
@@ -1155,7 +1153,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
   L.d_ln () ;
   L.d_strln "SPEC =" ;
   L.d_increase_indent 1 ;
-  BiabductionSummary.d_spec spec ;
+  L.d_pp BiabductionSummary.pp_spec spec ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   SymOp.pay () ;
@@ -1463,10 +1461,8 @@ let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id calle
   in
   let spec_list, formal_params = spec_find_rename trace_call callee_summary in
   let nspecs = List.length spec_list in
-  L.d_strln
-    (F.sprintf "Found %d specs for function %s" nspecs (Typ.Procname.to_unique_id callee_pname)) ;
-  L.d_strln
-    (F.sprintf "START EXECUTING SPECS FOR %s from state" (Typ.Procname.to_unique_id callee_pname)) ;
+  L.d_printfln "Found %d specs for function %s" nspecs (Typ.Procname.to_unique_id callee_pname) ;
+  L.d_printfln "START EXECUTING SPECS FOR %s from state" (Typ.Procname.to_unique_id callee_pname) ;
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =

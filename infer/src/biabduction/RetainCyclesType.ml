@@ -113,8 +113,7 @@ let pp_retain_cycle_edge f (edge : retain_cycle_edge) =
 
 let d_retain_cycle cycle =
   Logging.d_strln "Cycle=" ;
-  Logging.d_strln
-    (Format.asprintf "\t%a" (Pp.seq ~sep:"->" pp_retain_cycle_edge) cycle.rc_elements)
+  Logging.d_printfln "\t%a" (Pp.seq ~sep:"->" pp_retain_cycle_edge) cycle.rc_elements
 
 
 let find_minimum_element cycle =

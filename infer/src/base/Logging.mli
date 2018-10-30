@@ -84,9 +84,9 @@ val reset_formatters : unit -> unit
 
 type delayed_prints
 
-val add_print : (F.formatter -> 'a -> unit) -> 'a -> unit
+val d_pp : (F.formatter -> 'a -> unit) -> 'a -> unit
 
-val add_print_with_pe : ?color:Pp.color -> (Pp.env -> F.formatter -> 'a -> unit) -> 'a -> unit
+val d_pp_with_pe : ?color:Pp.color -> (Pp.env -> F.formatter -> 'a -> unit) -> 'a -> unit
 
 val force_delayed_prints : F.formatter -> delayed_prints -> unit
 
@@ -107,6 +107,12 @@ val d_strln : ?color:Pp.color -> string -> unit
 
 val d_ln : unit -> unit
 (** dump a newline *)
+
+val d_printf : ?color:Pp.color -> ('a, F.formatter, unit) format -> 'a
+
+val d_printfln : ?color:Pp.color -> ('a, F.formatter, unit) format -> 'a
+
+val d_printfln_escaped : ('a, F.formatter, unit) format -> 'a
 
 val d_error : string -> unit
 (** dump an error string *)

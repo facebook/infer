@@ -1018,7 +1018,7 @@ let check_junk pname tenv prop =
           let entries = Sil.hpred_entries hpred in
           if should_remove_hpred entries then (
             let part = if fp_part then "footprint" else "normal" in
-            L.d_strln (".... Prop with garbage in " ^ part ^ " part ....") ;
+            L.d_printfln ".... Prop with garbage in %s part ...." part ;
             L.d_increase_indent 1 ;
             L.d_strln "PROP:" ;
             Prop.d_prop prop ;

@@ -888,13 +888,11 @@ let check_atom tenv prop a0 =
     in
     let outc = Out_channel.create (DB.filename_to_string key_filename) in
     let fmt = F.formatter_of_out_channel outc in
-    L.d_str ("ID: " ^ key) ;
-    L.d_ln () ;
+    L.d_printfln "ID: %s" key ;
     L.d_str "CHECK_ATOM_BOUND: " ;
     Sil.d_atom a ;
     L.d_ln () ;
-    L.d_str "WHERE:" ;
-    L.d_ln () ;
+    L.d_strln "WHERE:" ;
     Prop.d_prop prop_no_fp ;
     L.d_ln () ;
     L.d_ln () ;
@@ -1218,18 +1216,18 @@ end = struct
     Prop.d_sub sub ;
     L.d_decrease_indent 1 ;
     if !missing_pi <> [] && !missing_sigma <> [] then (
-      L.d_ln () ; Prop.d_pi !missing_pi ; L.d_str "*" ; L.d_ln () ; Prop.d_sigma !missing_sigma )
+      L.d_ln () ; Prop.d_pi !missing_pi ; L.d_strln "*" ; Prop.d_sigma !missing_sigma )
     else if !missing_pi <> [] then ( L.d_ln () ; Prop.d_pi !missing_pi )
     else if !missing_sigma <> [] then ( L.d_ln () ; Prop.d_sigma !missing_sigma ) ;
     if !missing_fld <> [] then (
       L.d_ln () ;
-      L.d_strln "MISSING FLD: " ;
+      L.d_strln "MISSING FLD:" ;
       L.d_increase_indent 1 ;
       Prop.d_sigma !missing_fld ;
       L.d_decrease_indent 1 ) ;
     if !missing_typ <> [] then (
       L.d_ln () ;
-      L.d_strln "MISSING TYPING: " ;
+      L.d_strln "MISSING TYPING:" ;
       L.d_increase_indent 1 ;
       d_typings !missing_typ ;
       L.d_decrease_indent 1 )
@@ -1303,7 +1301,7 @@ end = struct
     L.d_strln "$$$$$$$ Implication" ;
     d_implication subs (p1, p2) ;
     L.d_ln () ;
-    L.d_str ("$$$$$$ error: " ^ s) ;
+    L.d_printf "$$$$$$ error: %s" s ;
     d_inner () ;
     L.d_strln " returning FALSE" ;
     L.d_ln ()
@@ -2431,7 +2429,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
         | _ ->
             normal_case hpred2 )
   with IMPL_EXC (s, _, _) when calc_missing ->
-    L.d_strln ("Adding rhs as missing: " ^ s) ;
+    L.d_printfln "Adding rhs as missing: %s" s ;
     ProverState.add_missing_sigma sigma2 ;
     (subs, prop1)
 
@@ -2561,12 +2559,12 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     L.d_ln () ;
     if pi2_bcheck <> [] then ( L.d_str "pi2 bounds checks: " ; Prop.d_pi pi2_bcheck ; L.d_ln () ) ;
     L.d_strln "returns" ;
-    L.d_strln "sub1: " ;
+    L.d_strln "sub1:" ;
     L.d_increase_indent 1 ;
     Prop.d_sub (fst subs) ;
     L.d_decrease_indent 1 ;
     L.d_ln () ;
-    L.d_strln "sub2: " ;
+    L.d_strln "sub2:" ;
     L.d_increase_indent 1 ;
     Prop.d_sub (snd subs) ;
     L.d_decrease_indent 1 ;
@@ -2594,7 +2592,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
       d_impl_err (s, subs, body) ;
       None
   | MISSING_EXC s ->
-      L.d_strln ("WARNING: footprint failed to find MISSING because: " ^ s) ;
+      L.d_printfln "WARNING: footprint failed to find MISSING because: %s" s ;
       None
   | Exceptions.Abduction_case_not_implemented _ as exn ->
       Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;

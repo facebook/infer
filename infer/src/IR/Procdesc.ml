@@ -326,7 +326,7 @@ module Node = struct
 
   (** Dump extended instructions for the node *)
   let d_instrs ~(sub_instrs : bool) (curr_instr : Sil.instr option) (node : t) =
-    L.add_print_with_pe ~color:Pp.Green (pp_instrs ~sub_instrs ~instro:curr_instr) node
+    L.d_pp_with_pe ~color:Pp.Green (pp_instrs ~sub_instrs ~instro:curr_instr) node
 
 
   (** Return a description of the cfg node *)
