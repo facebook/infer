@@ -662,7 +662,7 @@ module Report = struct
     L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
     L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
     L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-    L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" PO.ConditionSet.pp cond_set ;
+    L.(debug BufferOverrun Verbose) "@\n@\n@[<v 2>%a" PO.ConditionSet.pp cond_set ;
     L.(debug BufferOverrun Verbose) "@]@\n" ;
     L.(debug BufferOverrun Verbose) "================================@\n@."
 

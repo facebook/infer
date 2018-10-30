@@ -171,3 +171,17 @@ let remove_first =
         if f hd then Some (List.rev_append rev_front tl) else aux tl ~f (hd :: rev_front)
   in
   fun list ~f -> aux list ~f []
+
+
+let pp_print_list ~max ?(pp_sep = Format.pp_print_cut) pp_v ppf =
+  let rec aux n = function
+    | [] ->
+        ()
+    | v :: rest ->
+        if n >= max then Format.fprintf ppf " ..."
+        else (
+          pp_sep ppf () ;
+          pp_v ppf v ;
+          aux (n + 1) rest )
+  in
+  function [] -> () | [v] -> pp_v ppf v | v :: rest -> pp_v ppf v ; aux 1 rest

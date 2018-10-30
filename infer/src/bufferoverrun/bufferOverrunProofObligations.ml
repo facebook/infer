@@ -851,9 +851,9 @@ module ConditionSet = struct
 
   let pp : Format.formatter -> t -> unit =
    fun fmt condset ->
-    let pp_sep fmt () = F.fprintf fmt ",@," in
+    let pp_sep fmt () = F.fprintf fmt ",@;" in
     F.fprintf fmt "Safety conditions:@;@[<hov 2>{ %a }@]"
-      (F.pp_print_list ~pp_sep ConditionWithTrace.pp)
+      (IList.pp_print_list ~max:30 ~pp_sep ConditionWithTrace.pp)
       condset
 
 

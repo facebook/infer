@@ -41,3 +41,11 @@ val opt_cons : 'a option -> 'a list -> 'a list
 (** [opt_cons None l] returns [l]. [opt_cons (Some x) l] returns [x :: l]*)
 
 val remove_first : 'a list -> f:('a -> bool) -> 'a list option
+
+val pp_print_list :
+     max:int
+  -> ?pp_sep:(Format.formatter -> unit -> unit)
+  -> (Format.formatter -> 'a -> unit)
+  -> Format.formatter
+  -> 'a list
+  -> unit
