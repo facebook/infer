@@ -371,7 +371,7 @@ let pp_with_html_color color pp fmt x =
 
 
 let pp_maybe_with_color color pp fmt x =
-  if Config.write_html then pp fmt x else pp_with_html_color color pp fmt x
+  if Config.write_html then pp_with_html_color color pp fmt x else pp fmt x
 
 
 (** Execute the delayed print actions *)
