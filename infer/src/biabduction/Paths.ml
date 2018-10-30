@@ -10,7 +10,6 @@ open! IStd
 
 (** Execution Paths *)
 
-module L = Logging
 module F = Format
 
 (* =============== START of the Path module ===============*)
@@ -35,12 +34,6 @@ module Path : sig
 
   val curr_node : t -> Procdesc.Node.t option
   (** return the current node of the path *)
-
-  val d : t -> unit
-  (** dump a path *)
-
-  val d_stats : t -> unit
-  (** dump statistics of the path *)
 
   val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
@@ -390,8 +383,6 @@ end = struct
     Invariant.reset_stats path
 
 
-  let d_stats path = L.d_str (F.asprintf "%a" pp_stats path)
-
   module PathMap = Caml.Map.Make (struct
     type nonrec t = t
 
@@ -447,8 +438,6 @@ end = struct
     in
     add_delayed path ; doit 0 fmt path ; print_delayed ()
 
-
-  let d p = L.add_print pp p
 
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in
@@ -553,9 +542,6 @@ module PathSet : sig
 
   val add_renamed_prop : Prop.normal Prop.t -> Path.t -> t -> t
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
-
-  val d : t -> unit
-  (** dump the pathset *)
 
   val diff : t -> t -> t
   (** difference between two pathsets *)
@@ -689,7 +675,7 @@ end = struct
     !res
 
 
-  let pp pe fmt ps =
+  let[@warning "-32"] pp pe fmt ps =
     let count = ref 0 in
     let pp_path fmt path = F.fprintf fmt "[path: %a@\n%a]" Path.pp_stats path Path.pp path in
     let f prop path =
@@ -697,11 +683,6 @@ end = struct
       F.fprintf fmt "PROP %d:%a@\n%a@\n" !count pp_path path (Prop.pp_prop pe) prop
     in
     iter f ps
-
-
-  let d (ps : t) =
-    let pp pe fmt ps = F.fprintf fmt "%a@\n" (pp pe) ps in
-    L.add_print_with_pe pp ps
 
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)

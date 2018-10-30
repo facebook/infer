@@ -31,12 +31,6 @@ module Path : sig
   val curr_node : t -> Procdesc.Node.t option
   (** return the current node of the path *)
 
-  val d : t -> unit [@@warning "-32"]
-  (** dump a path *)
-
-  val d_stats : t -> unit [@@warning "-32"]
-  (** dump statistics of the path *)
-
   val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
 
@@ -56,10 +50,6 @@ module Path : sig
   val join : t -> t -> t
   (** join two paths *)
 
-  val pp_stats : Format.formatter -> t -> unit
-    [@@warning "-32"]
-  (** pretty print statistics of the path *)
-
   val start : Procdesc.Node.t -> t
   (** create a new path with given start node *)
 end
@@ -70,9 +60,6 @@ module PathSet : sig
 
   val add_renamed_prop : Prop.normal Prop.t -> Path.t -> t -> t
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
-
-  val d : t -> unit [@@warning "-32"]
-  (** dump the pathset *)
 
   val diff : t -> t -> t
   (** difference between two pathsets *)
