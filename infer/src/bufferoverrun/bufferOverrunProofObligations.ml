@@ -122,11 +122,16 @@ module ArrayAccessCondition = struct
         c.size_sym_exp Relation.pp c.relation
 
 
-  (* TODO: change description to distinguish offset and index *)
   let pp_description : F.formatter -> t -> unit =
    fun fmt c ->
-    F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp (ItvPure.plus c.offset c.idx) ItvPure.pp
-      (ItvPure.make_positive c.size)
+    let pp_offset fmt =
+      if ItvPure.is_zero c.offset then ItvPure.pp fmt c.idx
+      else if ItvPure.is_zero c.idx then ItvPure.pp fmt c.offset
+      else
+        F.fprintf fmt "%a (= %a + %a)" ItvPure.pp (ItvPure.plus c.offset c.idx) ItvPure.pp c.offset
+          ItvPure.pp c.idx
+    in
+    F.fprintf fmt "Offset: %t Size: %a" pp_offset ItvPure.pp (ItvPure.make_positive c.size)
 
 
   let make :
