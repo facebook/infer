@@ -381,23 +381,16 @@ end = struct
     Option.value_exn max_rep_opt
 
 
-  let stats_string path =
+  let pp_stats f path =
     Invariant.compute_stats true (fun _ -> true) path ;
     let repetitions, node = repetitions path in
-    let str =
-      "linear paths: "
-      ^ string_of_float (Invariant.get_stats path).linear_num
-      ^ " max length: "
-      ^ string_of_int (Invariant.get_stats path).max_length
-      ^ " has repetitions: " ^ string_of_int repetitions ^ " of node "
-      ^ string_of_int (Procdesc.Node.get_id node :> int)
-    in
-    Invariant.reset_stats path ; str
+    F.fprintf f "linear paths: %f max length: %d has repetitions: %d of node %a"
+      (Invariant.get_stats path).linear_num (Invariant.get_stats path).max_length repetitions
+      Procdesc.Node.pp node ;
+    Invariant.reset_stats path
 
 
-  let pp_stats fmt path = F.pp_print_string fmt (stats_string path)
-
-  let d_stats path = L.d_str (stats_string path)
+  let d_stats path = L.d_str (F.asprintf "%a" pp_stats path)
 
   module PathMap = Caml.Map.Make (struct
     type nonrec t = t

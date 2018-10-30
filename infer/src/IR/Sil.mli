@@ -303,6 +303,9 @@ val d_atom : atom -> unit
 val inst_to_string : inst -> string
 (** return a string representing the inst *)
 
+val pp_inst : F.formatter -> inst -> unit
+(** pretty-print an inst *)
+
 val pp_sexp : Pp.env -> F.formatter -> strexp -> unit
 (** Pretty print a strexp. *)
 

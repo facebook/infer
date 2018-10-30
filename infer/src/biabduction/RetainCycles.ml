@@ -238,7 +238,7 @@ let report_cycle tenv summary prop =
   (* When there is a cycle in objc we ignore it only if it's empty or it has weak or
      unsafe_unretained fields.  Otherwise we report a retain cycle. *)
   let cycles = get_retain_cycles tenv prop in
-  RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
+  RetainCyclesType.Set.iter RetainCyclesType.d_retain_cycle cycles ;
   if not (RetainCyclesType.Set.is_empty cycles) then (
     RetainCyclesType.Set.iter
       (fun cycle ->

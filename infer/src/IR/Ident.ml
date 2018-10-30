@@ -220,21 +220,20 @@ let create_path pathstring =
 
 (** {2 Pretty Printing} *)
 
-(** Convert an identifier to a string. *)
-let to_string id =
-  if has_kind id KNone then "_"
+(** Pretty print an identifier. *)
+let pp f id =
+  if has_kind id KNone then F.pp_print_char f '_'
   else
     let base_name = name_to_string id.name in
     let prefix = if has_kind id KFootprint then "@" else if has_kind id KNormal then "" else "_" in
-    let suffix = "$" ^ string_of_int id.stamp in
-    prefix ^ base_name ^ suffix
+    F.fprintf f "%s%s$%d" prefix base_name id.stamp
 
+
+(** Convert an identifier to a string. *)
+let to_string id = F.asprintf "%a" pp id
 
 (** Pretty print a name. *)
 let pp_name f name = F.pp_print_string f (name_to_string name)
-
-(** Pretty print an identifier. *)
-let pp f id = F.pp_print_string f (to_string id)
 
 (** pretty printer for lists of identifiers *)
 let pp_list = Pp.comma_seq pp

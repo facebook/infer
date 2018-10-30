@@ -22,7 +22,7 @@ type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
 (** Set for retain cycles. *)
 module Set : Caml.Set.S with type elt = t
 
-val print_cycle : t -> unit
+val d_retain_cycle : t -> unit
 
 val create_cycle : retain_cycle_edge list -> t option
 (** Creates a cycle if the list is non-empty *)

@@ -94,32 +94,28 @@ let is_exp_null node =
   match node with Object obj -> Exp.is_null_literal obj.rc_from.rc_node_exp | Block _ -> false
 
 
-let retain_cycle_node_to_string (node : retain_cycle_node) =
-  Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
+let pp_retain_cycle_node f (node : retain_cycle_node) =
+  Format.fprintf f "%a : %a" Exp.pp node.rc_node_exp (Typ.pp_full Pp.text) node.rc_node_typ
 
 
-let retain_cycle_field_to_string (field : retain_cycle_field) =
-  Format.sprintf "%s[%s]"
-    (Typ.Fieldname.to_string field.rc_field_name)
-    (Sil.inst_to_string field.rc_field_inst)
+let pp_retain_cycle_field f (field : retain_cycle_field) =
+  Format.fprintf f "%a[%a]" Typ.Fieldname.pp field.rc_field_name Sil.pp_inst field.rc_field_inst
 
 
-let retain_cycle_edge_to_string (edge : retain_cycle_edge) =
+let pp_retain_cycle_edge f (edge : retain_cycle_edge) =
   match edge with
   | Object obj ->
-      Format.sprintf "%s ->{%s}"
-        (retain_cycle_node_to_string obj.rc_from)
-        (retain_cycle_field_to_string obj.rc_field)
+      Format.fprintf f "%a ->{%a}" pp_retain_cycle_node obj.rc_from pp_retain_cycle_field
+        obj.rc_field
   | Block _ ->
-      Format.sprintf "a block"
+      Format.pp_print_string f "a block"
 
 
-let retain_cycle_to_string cycle =
-  "Cycle= \n\t"
-  ^ String.concat ~sep:"->" (List.map ~f:retain_cycle_edge_to_string cycle.rc_elements)
+let d_retain_cycle cycle =
+  Logging.d_strln "Cycle=" ;
+  Logging.d_strln
+    (Format.asprintf "\t%a" (Pp.seq ~sep:"->" pp_retain_cycle_edge) cycle.rc_elements)
 
-
-let print_cycle cycle = Logging.d_strln (retain_cycle_to_string cycle)
 
 let find_minimum_element cycle =
   List.reduce_exn cycle.rc_elements ~f:(fun el1 el2 ->

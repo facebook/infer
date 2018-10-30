@@ -638,36 +638,38 @@ let inst_new_loc loc inst =
       Ireturn_from_call loc.Location.line
 
 
-(** return a string representing the inst *)
-let inst_to_string inst =
-  let zero_flag_to_string = function Some true -> "(z)" | _ -> "" in
-  let null_case_flag_to_string ncf = if ncf then "(ncf)" else "" in
+(** pretty-print an inst *)
+let pp_inst f inst =
+  let pp_zero_flag f = function Some true -> F.pp_print_string f "(z)" | _ -> () in
+  let pp_null_case_flag f ncf = if ncf then F.pp_print_string f "(ncf)" in
   match inst with
   | Iabstraction ->
-      "abstraction"
+      F.pp_print_string f "abstraction"
   | Iactual_precondition ->
-      "actual_precondition"
+      F.pp_print_string f "actual_precondition"
   | Ialloc ->
-      "alloc"
+      F.pp_print_string f "alloc"
   | Iformal (zf, ncf) ->
-      "formal" ^ zero_flag_to_string zf ^ null_case_flag_to_string ncf
+      F.fprintf f "formal%a%a" pp_zero_flag zf pp_null_case_flag ncf
   | Iinitial ->
-      "initial"
+      F.pp_print_string f "initial"
   | Ilookup ->
-      "lookup"
+      F.pp_print_string f "lookup"
   | Inone ->
-      "none"
+      F.pp_print_string f "none"
   | Inullify ->
-      "nullify"
+      F.pp_print_string f "nullify"
   | Irearrange (zf, ncf, n, _) ->
-      "rearrange:" ^ zero_flag_to_string zf ^ null_case_flag_to_string ncf ^ string_of_int n
+      F.fprintf f "rearrange:%a%a%d" pp_zero_flag zf pp_null_case_flag ncf n
   | Itaint ->
-      "taint"
+      F.pp_print_string f "taint"
   | Iupdate (zf, ncf, n, _) ->
-      "update:" ^ zero_flag_to_string zf ^ null_case_flag_to_string ncf ^ string_of_int n
+      F.fprintf f "update:%a%a%d" pp_zero_flag zf pp_null_case_flag ncf n
   | Ireturn_from_call n ->
-      "return_from_call: " ^ string_of_int n
+      F.fprintf f "return_from_call: %d" n
 
+
+let inst_to_string inst = F.asprintf "%a" pp_inst inst
 
 exception JoinFail
 
@@ -779,14 +781,13 @@ let update_inst inst_old inst_new =
 
 
 (** describe an instrumentation with a string *)
-let pp_inst pe f inst =
-  let str = inst_to_string inst in
-  if Pp.equal_print_kind pe.Pp.kind Pp.HTML then
-    F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Pp.Orange str Io_infer.Html.pp_end_color ()
-  else F.fprintf f "%s%s%s" (Binop.str pe Lt) str (Binop.str pe Gt)
+let pp_inst_if_trace pe f inst =
+  if Config.trace_error then
+    if Pp.equal_print_kind pe.Pp.kind Pp.HTML then
+      F.fprintf f " %a%a%a" Io_infer.Html.pp_start_color Pp.Orange pp_inst inst
+        Io_infer.Html.pp_end_color ()
+    else F.fprintf f "%s%a%s" (Binop.str pe Lt) pp_inst inst (Binop.str pe Gt)
 
-
-let pp_inst_if_trace pe f inst = if Config.trace_error then pp_inst pe f inst
 
 (** pretty print a strexp with an optional predicate env *)
 let rec pp_sexp_env pe0 envo f se =
