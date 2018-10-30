@@ -1169,51 +1169,42 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     if is_duplicate_report snapshot.access pname reported_acc then reported_acc
     else
       match TraceElem.kind snapshot.access with
-      | Access.InterfaceCall unannoted_call_pname ->
-          if
-            AccessSnapshot.is_unprotected snapshot
-            && ThreadsDomain.is_any threads
-            && is_marked_thread_safe procdesc tenv
-          then (
-            (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-            report_unannotated_interface_violation tenv procdesc snapshot.access threads
-              unannoted_call_pname ;
-            update_reported snapshot.access pname reported_acc )
-          else reported_acc
-      | Access.Write _ | ContainerWrite _ -> (
-        match Procdesc.get_proc_name procdesc with
-        | Java _ ->
-            let writes_on_background_thread =
-              if ThreadsDomain.is_any threads then
-                (* unprotected write in method that may run in parallel with itself. warn *)
-                []
-              else
-                (* unprotected write, but not on a method that may run in parallel with itself
+      | Access.InterfaceCall unannoted_call_pname
+        when AccessSnapshot.is_unprotected snapshot
+             && ThreadsDomain.is_any threads
+             && is_marked_thread_safe procdesc tenv ->
+          (* un-annotated interface call + no lock in method marked thread-safe. warn *)
+          report_unannotated_interface_violation tenv procdesc snapshot.access threads
+            unannoted_call_pname ;
+          update_reported snapshot.access pname reported_acc
+      | Access.InterfaceCall _ ->
+          reported_acc
+      | (Access.Write _ | ContainerWrite _) when Typ.Procname.is_java pname ->
+          let conflict =
+            if ThreadsDomain.is_any threads then
+              (* unprotected write in method that may run in parallel with itself. warn *)
+              None
+            else
+              (* unprotected write, but not on a method that may run in parallel with itself
                    (i.e., not a self race). find accesses on a background thread this access might
                    conflict with and report them *)
-                List.filter_map
-                  ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
-                    if
-                      TraceElem.is_write other_snapshot.access
-                      && ThreadsDomain.is_any other_threads
-                    then Some other_snapshot.access
-                    else None )
-                  accesses
-            in
-            if
-              AccessSnapshot.is_unprotected snapshot
-              && ((not (List.is_empty writes_on_background_thread)) || ThreadsDomain.is_any threads)
-            then (
-              let conflict = List.hd writes_on_background_thread in
-              report_thread_safety_violation tenv procdesc
-                ~make_description:make_unprotected_write_description
-                ~report_kind:(WriteWriteRace conflict) snapshot.access threads wobbly_paths ;
-              update_reported snapshot.access pname reported_acc )
-            else reported_acc
-        | _ ->
-            (* Do not report unprotected writes when an access can't run in parallel with itself, or
-               for ObjC_Cpp *)
-            reported_acc )
+              List.find_map accesses ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
+                  if TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
+                  then Some other_snapshot.access
+                  else None )
+          in
+          if
+            AccessSnapshot.is_unprotected snapshot
+            && (Option.is_some conflict || ThreadsDomain.is_any threads)
+          then (
+            report_thread_safety_violation tenv procdesc
+              ~make_description:make_unprotected_write_description
+              ~report_kind:(WriteWriteRace conflict) snapshot.access threads wobbly_paths ;
+            update_reported snapshot.access pname reported_acc )
+          else reported_acc
+      | Access.Write _ | ContainerWrite _ ->
+          (* Do not report unprotected writes for ObjC_Cpp *)
+          reported_acc
       | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
           (* unprotected read. report all writes as conflicts for java. for c++ filter out
              unprotected writes *)
@@ -1239,25 +1230,21 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
             if snapshot1.lock && snapshot2.lock then false
             else ThreadsDomain.can_conflict snapshot1.thread snapshot2.thread
           in
-          let conflicting_writes =
-            List.filter
-              ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
-                if AccessSnapshot.is_unprotected other_snapshot then
-                  TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
-                else
-                  TraceElem.is_write other_snapshot.access && can_conflict snapshot other_snapshot
-                )
-              accesses
+          let is_conflict {snapshot= other_snapshot; threads= other_threads} =
+            if AccessSnapshot.is_unprotected other_snapshot then
+              TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
+            else TraceElem.is_write other_snapshot.access && can_conflict snapshot other_snapshot
           in
-          if not (List.is_empty conflicting_writes) then (
-            let conflict = List.hd_exn conflicting_writes in
-            (* protected read with conflicting unprotected write(s). warn. *)
-            report_thread_safety_violation tenv procdesc
-              ~make_description:(make_read_write_race_description ~read_is_sync:true conflict)
-              ~report_kind:(ReadWriteRace conflict.snapshot.access) snapshot.access threads
-              wobbly_paths ;
-            update_reported snapshot.access pname reported_acc )
-          else reported_acc
+          List.find accesses ~f:is_conflict
+          |> Option.value_map ~default:reported_acc ~f:(fun conflict ->
+                 (* protected read with conflicting unprotected write(s). warn. *)
+                 let make_description =
+                   make_read_write_race_description ~read_is_sync:true conflict
+                 in
+                 let report_kind = ReadWriteRace conflict.snapshot.access in
+                 report_thread_safety_violation tenv procdesc ~make_description ~report_kind
+                   snapshot.access threads wobbly_paths ;
+                 update_reported snapshot.access pname reported_acc )
   in
   let report_accesses_on_location (grouped_accesses : reported_access list) reported_acc =
     (* reset the reported reads and writes for each memory location *)
