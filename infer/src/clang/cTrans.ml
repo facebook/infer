@@ -370,8 +370,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp =
       try
-        let i = Int64.of_string integer_literal_info.Clang_ast_t.ili_value in
-        let exp = Exp.int (IntLit.of_int64 i) in
+        let i = IntLit.of_string integer_literal_info.Clang_ast_t.ili_value in
+        let exp = Exp.int i in
         exp
       with Failure _ ->
         (* Parse error: return a nondeterministic value *)

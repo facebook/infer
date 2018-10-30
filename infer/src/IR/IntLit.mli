@@ -33,6 +33,8 @@ val of_int32 : int32 -> t
 
 val of_int64 : int64 -> t
 
+val of_string : string -> t
+
 val geq : t -> t -> bool
 
 val gt : t -> t -> bool [@@warning "-32"]

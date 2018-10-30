@@ -34,7 +34,7 @@ void new_int2_Bad() {
   dst = new int32_t[len];
 }
 
-void new_int3_Bad_FN() {
+void new_int3_Bad() {
   uint64_t len = 18446744073709551615; // (1 << 64) - 1
   int32_t* dst;
   dst = new int32_t[len];

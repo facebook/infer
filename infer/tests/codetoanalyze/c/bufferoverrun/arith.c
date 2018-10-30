@@ -172,7 +172,7 @@ void use_uint64_max_Good() {
   arr[x - y] = 0;
 }
 
-void use_uint64_max_Bad_FN() {
+void use_uint64_max_Bad() {
   char arr[10];
   uint64_t x = UINT64_MAX;
   uint64_t y = UINT64_MAX - 15;

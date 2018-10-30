@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 (** signed and unsigned integer literals *)
-type t = bool * Int64.t * bool
+type t = bool * Z.t * bool
 
 exception OversizedShift
 
@@ -18,7 +18,7 @@ exception OversizedShift
    and the second whether it is a pointer *)
 
 let area u i =
-  match (i < 0L, u) with
+  match (Z.(i < zero), u) with
   | true, false ->
       (* only representable as signed *) 1
   | false, _ ->
@@ -34,11 +34,11 @@ let to_signed (unsigned, i, ptr) =
 
 let compare (unsigned1, i1, _) (unsigned2, i2, _) =
   let n = Bool.compare unsigned1 unsigned2 in
-  if n <> 0 then n else Int64.compare i1 i2
+  if n <> 0 then n else Z.compare i1 i2
 
 
 let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =
-  [%compare: int * Int64.t] (area unsigned1 i1, i1) (area unsigned2 i2, i2)
+  [%compare: int * Z.t] (area unsigned1 i1, i1) (area unsigned2 i2, i2)
 
 
 let eq i1 i2 = Int.equal (compare_value i1 i2) 0
@@ -53,21 +53,27 @@ let geq i1 i2 = compare_value i1 i2 >= 0
 
 let gt i1 i2 = compare_value i1 i2 > 0
 
-let of_int64 i = (false, i, false)
+let of_z z_of_int i = (false, z_of_int i, false)
 
-let of_int32 i = of_int64 (Int64.of_int32 i)
+let of_int64 = of_z Z.of_int64
 
-let of_int i = of_int64 (Int64.of_int i)
+let of_int32 = of_z Z.of_int32
 
-let to_int (_, i, _) = Int64.to_int i
+let of_int = of_z Z.of_int
 
-let to_int_exn (_, i, _) = Int64.to_int_exn i
+let of_string = of_z Z.of_string
 
-let to_big_int (_, i, _) = Z.of_int64 i
+let z_to_int_opt i = try Some (Z.to_int i) with Z.Overflow -> None
 
-let to_float (_, i, _) = Int64.to_float i
+let to_int (_, i, _) = z_to_int_opt i
 
-let null = (false, 0L, true)
+let to_int_exn (_, i, _) = Z.to_int i
+
+let to_big_int (_, i, _) = i
+
+let to_float (_, i, _) = Z.to_float i
+
+let null = (false, Z.zero, true)
 
 let zero = of_int 0
 
@@ -77,17 +83,17 @@ let two = of_int 2
 
 let minus_one = of_int (-1)
 
-let isone (_, i, _) = Int64.equal i 1L
+let isone (_, i, _) = Z.(equal i one)
 
-let iszero (_, i, _) = Int64.equal i 0L
+let iszero (_, i, _) = Z.(equal i zero)
 
-let isnull (_, i, ptr) = Int64.equal i 0L && ptr
+let isnull (_, i, ptr) = Z.(equal i zero) && ptr
 
-let isminusone (unsigned, i, _) = (not unsigned) && Int64.equal i (-1L)
+let isminusone (unsigned, i, _) = (not unsigned) && Z.(equal i minus_one)
 
-let isnegative (unsigned, i, _) = (not unsigned) && i < 0L
+let isnegative (unsigned, i, _) = (not unsigned) && Z.(lt i zero)
 
-let neg (unsigned, i, ptr) = (unsigned, Int64.neg i, ptr)
+let neg (unsigned, i, ptr) = (unsigned, Z.neg i, ptr)
 
 let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
   (unsigned1 || unsigned2, binop i1 i2, ptr1 || ptr2)
@@ -95,48 +101,46 @@ let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
 
 let lift1 unop (unsigned, i, ptr) = (unsigned, unop i, ptr)
 
-let add i1 i2 = lift Int64.( + ) i1 i2
+let add i1 i2 = lift Z.( + ) i1 i2
 
-let mul i1 i2 = lift Int64.( * ) i1 i2
+let mul i1 i2 = lift Z.( * ) i1 i2
 
-let div i1 i2 = lift Int64.( / ) i1 i2
+let div i1 i2 = lift Z.( / ) i1 i2
 
-let rem i1 i2 = lift Int64.rem i1 i2
+let rem i1 i2 = lift Z.rem i1 i2
 
-let logand i1 i2 = lift Int64.bit_and i1 i2
+let logand i1 i2 = lift Z.logand i1 i2
 
-let logor i1 i2 = lift Int64.bit_or i1 i2
+let logor i1 i2 = lift Z.logor i1 i2
 
-let logxor i1 i2 = lift Int64.bit_xor i1 i2
+let logxor i1 i2 = lift Z.logxor i1 i2
 
-let lognot i = lift1 Int64.bit_not i
+let lognot i = lift1 Z.lognot i
 
 let sub i1 i2 = add i1 (neg i2)
 
 let shift_left (unsigned1, i1, ptr1) (_, i2, _) =
-  match Int64.to_int i2 with
+  match z_to_int_opt i2 with
   | None ->
-      L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
+      L.(die InternalError) "Shifting failed with operand %a" Z.pp_print i2
   | Some i2 ->
       if i2 < 0 || i2 >= 64 then raise OversizedShift ;
-      let res = Int64.shift_left i1 i2 in
+      let res = Z.shift_left i1 i2 in
       (unsigned1, res, ptr1)
 
 
 let shift_right (unsigned1, i1, ptr1) (_, i2, _) =
-  match Int64.to_int i2 with
+  match z_to_int_opt i2 with
   | None ->
-      L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
+      L.(die InternalError) "Shifting failed with operand %a" Z.pp_print i2
   | Some i2 ->
       if i2 < 0 || i2 >= 64 then raise OversizedShift ;
-      let res = Int64.shift_right i1 i2 in
+      let res = Z.shift_right i1 i2 in
       (unsigned1, res, ptr1)
 
 
-let pp f (unsigned, n, ptr) =
-  if ptr && Int64.equal n 0L then F.pp_print_string f "null"
-  else if unsigned then F.fprintf f "%Lu" n
-  else F.fprintf f "%Ld" n
+let pp f (_, n, ptr) =
+  if ptr && Z.(equal n zero) then F.pp_print_string f "null" else Z.pp_print f n
 
 
 let to_string i = F.asprintf "%a" pp i

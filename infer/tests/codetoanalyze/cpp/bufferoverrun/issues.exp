@@ -54,6 +54,8 @@ codetoanalyze/cpp/bufferoverrun/simple_vector.cpp, my_vector_oob_Bad, 2, BUFFER_
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int1_Bad, 3, INFERBO_ALLOC_IS_BIG, no_bucket, ERROR, [Assignment,Alloc: Length: 4611686018427387903]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int2_Bad, 3, INFERBO_ALLOC_IS_BIG, no_bucket, ERROR, [Assignment,Alloc: Length: 9223372036854775807]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int2_Bad, 3, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Assignment,Binop: (4 * 9223372036854775807):unsigned64]
+codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INFERBO_ALLOC_IS_BIG, no_bucket, ERROR, [Assignment,Alloc: Length: 18446744073709551615]
+codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Assignment,Binop: (4 * 18446744073709551615):unsigned64]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, normal_array_bo, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 42 Size: 42]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, std_array_bo_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 42 Size: 42]
 codetoanalyze/cpp/bufferoverrun/symb_arr.cpp, symb_arr_alloc_symb_arr_access_bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayAccess: Offset: 10 Size: 10]
