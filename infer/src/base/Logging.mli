@@ -126,8 +126,8 @@ val d_info : string -> unit
 val d_indent : int -> unit
 (** dump an indentation *)
 
-val d_increase_indent : int -> unit
+val d_increase_indent : unit -> unit
 (** dump command to increase the indentation level *)
 
-val d_decrease_indent : int -> unit
+val d_decrease_indent : unit -> unit
 (** dump command to decrease the indentation level *)

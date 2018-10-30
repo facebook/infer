@@ -864,7 +864,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
           (Prop.prop_sub split.sub p, path) )
       posts'
   in
-  L.d_increase_indent 1 ;
+  L.d_increase_indent () ;
   L.d_strln "New footprint:" ;
   Prop.d_pi_sigma split.missing_pi split.missing_sigma ;
   L.d_ln () ;
@@ -885,7 +885,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
   L.d_ln () ;
   L.d_strln "Instantiated post:" ;
   Propgraph.d_proplist Prop.prop_emp (List.map ~f:fst instantiated_post) ;
-  L.d_decrease_indent 1 ;
+  L.d_decrease_indent () ;
   L.d_ln () ;
   let compute_result post_p =
     let post_p' =
@@ -1147,14 +1147,14 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
   let spec_pre = BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre in
   L.d_printfln "EXECUTING SPEC %d/%d" n nspecs ;
   L.d_strln "ACTUAL PRECONDITION =" ;
-  L.d_increase_indent 1 ;
+  L.d_increase_indent () ;
   Prop.d_prop actual_pre ;
-  L.d_decrease_indent 1 ;
+  L.d_decrease_indent () ;
   L.d_ln () ;
   L.d_strln "SPEC =" ;
-  L.d_increase_indent 1 ;
+  L.d_increase_indent () ;
   L.d_pp BiabductionSummary.pp_spec spec ;
-  L.d_decrease_indent 1 ;
+  L.d_decrease_indent () ;
   L.d_ln () ;
   SymOp.pay () ;
   (* pay one symop *)

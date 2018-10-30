@@ -80,7 +80,7 @@ let bounds_check tenv pname prop len e =
 let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp (t : Typ.t)
     (off : Sil.offset list) inst : Sil.atom list * Sil.strexp * Typ.t =
   if Config.trace_rearrange then (
-    L.d_increase_indent 1 ;
+    L.d_increase_indent () ;
     L.d_strln "entering create_struct_values" ;
     L.d_str "typ: " ;
     Typ.d_full t ;
@@ -177,7 +177,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     let _, se, _ = res in
     L.d_strln "exiting create_struct_values, returning" ;
     Sil.d_sexp se ;
-    L.d_decrease_indent 1 ;
+    L.d_decrease_indent () ;
     L.d_ln () ;
     L.d_ln () ) ;
   res
@@ -1101,7 +1101,7 @@ let pp_rearrangement_error message prop lexp =
 (** do re-arrangement for an iter whose current element is a pointsto *)
 let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
-    L.d_increase_indent 1 ;
+    L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange_ptsto" ;
     L.d_str "lexp: " ;
     Sil.d_exp lexp ;
@@ -1149,7 +1149,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_strln "exiting iter_rearrange_ptsto, returning results" ;
     Prop.d_proplist_with_typ (List.map ~f:(Prop.prop_iter_to_prop tenv) res) ;
-    L.d_decrease_indent 1 ;
+    L.d_decrease_indent () ;
     L.d_ln () ;
     L.d_ln () ) ;
   res
@@ -1361,12 +1361,12 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
       | Tstruct _ ->
           (* access through field: get the struct type from the field *)
           if Config.trace_rearrange then (
-            L.d_increase_indent 1 ;
+            L.d_increase_indent () ;
             L.d_printfln "iter_rearrange: root of lexp accesses field %a" Typ.Fieldname.pp f ;
             L.d_str "  struct type from field: " ;
             Typ.d_full fld_typ ;
             L.d_ln () ;
-            L.d_decrease_indent 1 ;
+            L.d_decrease_indent () ;
             L.d_ln () ) ;
           fld_typ
       | _ ->
@@ -1378,7 +1378,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
   in
   let typ = root_typ_of_offsets (Sil.exp_get_offsets lexp) in
   if Config.trace_rearrange then (
-    L.d_increase_indent 1 ;
+    L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange" ;
     L.d_str "lexp: " ;
     Sil.d_exp lexp ;
@@ -1469,7 +1469,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
   if Config.trace_rearrange then (
     L.d_strln "exiting iter_rearrange, returning results" ;
     Prop.d_proplist_with_typ (List.map ~f:(Prop.prop_iter_to_prop tenv) res) ;
-    L.d_decrease_indent 1 ;
+    L.d_decrease_indent () ;
     L.d_ln () ;
     L.d_ln () ) ;
   res

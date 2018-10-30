@@ -1019,7 +1019,7 @@ let check_junk pname tenv prop =
           if should_remove_hpred entries then (
             let part = if fp_part then "footprint" else "normal" in
             L.d_printfln ".... Prop with garbage in %s part ...." part ;
-            L.d_increase_indent 1 ;
+            L.d_increase_indent () ;
             L.d_strln "PROP:" ;
             Prop.d_prop prop ;
             L.d_ln () ;
@@ -1052,7 +1052,7 @@ let check_junk pname tenv prop =
               in
               List.iter ~f:do_entry entries ; !res
             in
-            L.d_decrease_indent 1 ;
+            L.d_decrease_indent () ;
             let is_undefined =
               Option.value_map ~f:PredSymb.is_undef ~default:false alloc_attribute
             in

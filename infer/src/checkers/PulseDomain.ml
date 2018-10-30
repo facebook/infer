@@ -306,13 +306,13 @@ module Domain : AbstractDomain.S with type astate = t = struct
       in
       if has_converged then (
         L.d_strln "Join unified addresses:" ;
-        L.d_increase_indent 1 ;
+        L.d_increase_indent () ;
         Container.iter state.subst ~fold:AddressUF.fold_sets
           ~f:(fun ((repr : AddressUF.Repr.t), set) ->
             L.d_printfln "%a=%a" AbstractAddress.pp
               (repr :> AbstractAddress.t)
               AddressUnionSet.pp set ) ;
-        L.d_decrease_indent 1 ;
+        L.d_decrease_indent () ;
         let stack = AliasingDomain.map (to_canonical_address state.subst) state.astate.stack in
         let invalids =
           InvalidAddressesDomain.map (to_canonical_address state.subst) state.astate.invalids

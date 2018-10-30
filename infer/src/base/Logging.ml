@@ -348,8 +348,8 @@ let setup_log_file () =
 
 (** delayable print action *)
 type print_action =
-  | PTdecrease_indent : int -> print_action
-  | PTincrease_indent : int -> print_action
+  | PTdecrease_indent : print_action
+  | PTincrease_indent : print_action
   | PTstr : {s: string; color: Pp.color option; ln: bool} -> print_action
   | PTwarning : string -> print_action
   | PTerror : string -> print_action
@@ -377,12 +377,10 @@ let pp_maybe_with_color ?color pp fmt x =
 
 (** Execute the delayed print actions *)
 let force_delayed_print fmt = function
-  | PTdecrease_indent n ->
-      for _ = 1 to n do
-        F.fprintf fmt "@]"
-      done
-  | PTincrease_indent n ->
-      F.fprintf fmt "%s@[" (String.make (2 * n) ' ')
+  | PTdecrease_indent ->
+      F.pp_close_box fmt ()
+  | PTincrease_indent ->
+      F.fprintf fmt "  @["
   | PTstr {s; color; ln} ->
       pp_maybe_with_color ?color F.pp_print_string fmt s ;
       if ln then F.pp_force_newline fmt ()
@@ -458,7 +456,7 @@ let d_indent indent =
 
 
 (** dump command to increase the indentation level *)
-let d_increase_indent (indent : int) = add_print_action (PTincrease_indent indent)
+let d_increase_indent () = add_print_action PTincrease_indent
 
 (** dump command to decrease the indentation level *)
-let d_decrease_indent (indent : int) = add_print_action (PTdecrease_indent indent)
+let d_decrease_indent () = add_print_action PTdecrease_indent
