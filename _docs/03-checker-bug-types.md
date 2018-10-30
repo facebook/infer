@@ -224,6 +224,12 @@ This is a C++ and Objective C error reported whenever:
 
 The above may happen through a chain of calls. Above, `x` may also be a container (an array, a vector, etc).
 
+### Fixing Lock Consistency Violation reports
+
+- Mark one of the offending public methods as private, if possible.  This may silence the warning, since Infer looks for a pair of non-private methods.  Of course, this will not always be possible.
+- Avoid the offending access (most often the read).  Again, this may not be possible.
+- Use synchronization to protect the read, by using the lock protecting the corresponding write.
+
 <a name="MEMORY_LEAK"></a>
 
 ## Memory leak
