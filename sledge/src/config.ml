@@ -90,7 +90,7 @@ type t =
             example, $(b,Control-Control.exec_inst) enables all tracing in
             the $(b,Control) module except the $(b,Control.exec_inst)
             function. *)
-  ; trace_all: bool  (** Enable all debug tracing. *) }
+  ; trace_all: bool [@aka ["v"]]  (** Enable all debug tracing. *) }
 [@@deriving cmdliner]
 
 let run main =
