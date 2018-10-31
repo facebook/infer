@@ -188,7 +188,7 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
             | _ ->
                 (* TODO: Raise an exception when given unexpected arguments.  Before that, we need
                    to fix the frontend to parse user defined `new` correctly. *)
-                L.(debug BufferOverrun Verbose) "Unexpected types of arguments for __placement_new" ;
+                L.d_error "Unexpected types of arguments for __placement_new" ;
                 src_exp1
         in
         let v = Sem.eval src_exp mem in
@@ -335,7 +335,7 @@ module StdArray = struct
   let at _size (array_exp, _) (index_exp, _) =
     (* TODO? use size *)
     let exec _ ~ret:(id, _) mem =
-      L.(debug BufferOverrun Verbose) "Using model std::array<_, %Ld>::at" _size ;
+      L.d_printfln_escaped "Using model std::array<_, %Ld>::at" _size ;
       BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
     and check {location} mem cond_set =
       BoUtils.Check.lindex ~array_exp ~index_exp mem location cond_set
@@ -344,9 +344,8 @@ module StdArray = struct
 
 
   let no_model =
-    let exec {pname; location} ~ret:_ mem =
-      L.(debug BufferOverrun Verbose)
-        "No model for %a at %a" Typ.Procname.pp pname Location.pp location ;
+    let exec {pname} ~ret:_ mem =
+      L.d_printfln "No model for %a" Typ.Procname.pp pname ;
       mem
     in
     {exec; check= no_check}

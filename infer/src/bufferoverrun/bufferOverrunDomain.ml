@@ -784,9 +784,7 @@ module MemReach = struct
    fun ploc v s ->
     if can_strong_update ploc then strong_update ploc v s
     else
-      let () =
-        L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
-      in
+      let () = L.d_printfln "Weak update for %a <- %a" PowLoc.pp ploc Val.pp v in
       weak_update ploc v s
 
 

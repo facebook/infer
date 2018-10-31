@@ -139,124 +139,98 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
 
 
-  let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit =
-   fun instr pre post ->
-    L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
-    L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
-    L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr ~print_types:true Pp.text) instr ;
-    L.(debug BufferOverrun Verbose) "@\n@\n" ;
-    L.(debug BufferOverrun Verbose) "@[<v 2>Post-state : @,%a" Dom.Mem.pp post ;
-    L.(debug BufferOverrun Verbose) "@]@\n" ;
-    L.(debug BufferOverrun Verbose) "================================@\n@."
-
-
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate
       =
    fun mem {pdesc; tenv; extras= symbol_table} node instr ->
-    let output_mem =
-      match instr with
-      | Load (id, _, _, _) when Ident.is_none id ->
-          mem
-      | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar -> (
-        match Pvar.get_initializer_pname pvar with
-        | Some callee_pname -> (
+    match instr with
+    | Load (id, _, _, _) when Ident.is_none id ->
+        mem
+    | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar -> (
+      match Pvar.get_initializer_pname pvar with
+      | Some callee_pname -> (
+        match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+        | Some callee_summary -> (
+          match Payload.of_summary callee_summary with
+          | Some payload ->
+              let callee_mem = BufferOverrunSummary.get_output payload in
+              let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
+              Dom.Mem.add_stack (Loc.of_id id) v mem
+          | None ->
+              L.d_printfln "/!\\ Initializer of global constant %a has no inferbo payload"
+                (Pvar.pp Pp.text) pvar ;
+              Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+        | None ->
+            L.d_printfln "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text) pvar ;
+            Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+      | None ->
+          L.d_printfln "/!\\ Failed to get initializer name of global constant %a"
+            (Pvar.pp Pp.text) pvar ;
+          Dom.Mem.add_unknown id ~location mem )
+    | Load (id, exp, _, _) ->
+        BoUtils.Exec.load_val id (Sem.eval exp mem) mem
+    | Store (exp1, _, exp2, location) ->
+        let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
+        let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
+        let mem =
+          let sym_exps =
+            Dom.Relation.SymExp.of_exps ~get_int_sym_f:(Sem.get_sym_f mem)
+              ~get_offset_sym_f:(Sem.get_offset_sym_f mem) ~get_size_sym_f:(Sem.get_size_sym_f mem)
+              exp2
+          in
+          Dom.Mem.store_relation locs sym_exps mem
+        in
+        let mem = Dom.Mem.update_mem locs v mem in
+        let mem =
+          if PowLoc.is_singleton locs && not v.represents_multiple_values then
+            let loc_v = PowLoc.min_elt locs in
+            let pname = Procdesc.get_proc_name pdesc in
+            match Typ.Procname.get_method pname with
+            | "__inferbo_empty" when Loc.is_return loc_v -> (
+              match Sem.get_formals pdesc with
+              | [(formal, _)] ->
+                  let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
+                  Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+              | _ ->
+                  assert false )
+            | _ ->
+                Dom.Mem.store_simple_alias loc_v exp2 mem
+          else mem
+        in
+        let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
+        mem
+    | Prune (exp, _, _, _) ->
+        Sem.Prune.prune exp mem
+    | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
+        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+        match Models.Call.dispatch tenv callee_pname params with
+        | Some {Models.exec} ->
+            let node_hash = CFG.Node.hash node in
+            let model_env =
+              Models.mk_model_env callee_pname node_hash location tenv symbol_table
+            in
+            exec model_env ~ret mem
+        | None -> (
           match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
           | Some callee_summary -> (
             match Payload.of_summary callee_summary with
             | Some payload ->
-                let callee_mem = BufferOverrunSummary.get_output payload in
-                let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
-                Dom.Mem.add_stack (Loc.of_id id) v mem
+                let callee_pdesc = Summary.get_proc_desc callee_summary in
+                instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
             | None ->
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Initializer of global constant %a at %a has no inferbo payload@\n"
-                  (Pvar.pp Pp.text) pvar Location.pp location ;
+                (* This may happen for procedures with a biabduction model. *)
+                L.d_printfln "/!\\ Call to %a has no inferbo payload" Typ.Procname.pp callee_pname ;
                 Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
           | None ->
-              L.(debug BufferOverrun Verbose)
-                "/!\\ Unknown initializer of global constant %a at %a@\n" (Pvar.pp Pp.text) pvar
-                Location.pp location ;
-              Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
-        | None ->
-            L.(debug BufferOverrun Verbose)
-              "/!\\ Failed to get initializer name of global constant %a at %a@\n"
-              (Pvar.pp Pp.text) pvar Location.pp location ;
-            Dom.Mem.add_unknown id ~location mem )
-      | Load (id, exp, _, _) ->
-          BoUtils.Exec.load_val id (Sem.eval exp mem) mem
-      | Store (exp1, _, exp2, location) ->
-          let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
-          let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
-          let mem =
-            let sym_exps =
-              Dom.Relation.SymExp.of_exps ~get_int_sym_f:(Sem.get_sym_f mem)
-                ~get_offset_sym_f:(Sem.get_offset_sym_f mem)
-                ~get_size_sym_f:(Sem.get_size_sym_f mem) exp2
-            in
-            Dom.Mem.store_relation locs sym_exps mem
-          in
-          let mem = Dom.Mem.update_mem locs v mem in
-          let mem =
-            if PowLoc.is_singleton locs && not v.represents_multiple_values then
-              let loc_v = PowLoc.min_elt locs in
-              let pname = Procdesc.get_proc_name pdesc in
-              match Typ.Procname.get_method pname with
-              | "__inferbo_empty" when Loc.is_return loc_v -> (
-                match Sem.get_formals pdesc with
-                | [(formal, _)] ->
-                    let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
-                    Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
-                | _ ->
-                    assert false )
-              | _ ->
-                  Dom.Mem.store_simple_alias loc_v exp2 mem
-            else mem
-          in
-          let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
-          mem
-      | Prune (exp, _, _, _) ->
-          Sem.Prune.prune exp mem
-      | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
-          let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-          match Models.Call.dispatch tenv callee_pname params with
-          | Some {Models.exec} ->
-              let node_hash = CFG.Node.hash node in
-              let model_env =
-                Models.mk_model_env callee_pname node_hash location tenv symbol_table
-              in
-              exec model_env ~ret mem
-          | None -> (
-            match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
-            | Some callee_summary -> (
-              match Payload.of_summary callee_summary with
-              | Some payload ->
-                  let callee_pdesc = Summary.get_proc_desc callee_summary in
-                  instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
-              | None ->
-                  (* This may happen for procedures with a biabduction model. *)
-                  L.(debug BufferOverrun Verbose)
-                    "/!\\ Call to %a at %a has no inferbo payload@\n" Typ.Procname.pp callee_pname
-                    Location.pp location ;
-                  Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
-            | None ->
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
-                  location ;
-                Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
-      | Call ((id, _), fun_exp, _, location, _) ->
-          let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-          let () =
-            L.(debug BufferOverrun Verbose)
-              "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp location
-          in
-          Dom.Mem.add_unknown id ~location mem
-      | Remove_temps (temps, _) ->
-          Dom.Mem.remove_temps temps mem
-      | Abstract _ | Nullify _ ->
-          mem
-    in
-    print_debug_info instr mem output_mem ;
-    output_mem
+              L.d_printfln "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
+              Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
+    | Call ((id, _), fun_exp, _, location, _) ->
+        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+        let () = L.d_printfln "/!\\ Call to non-const function %a" Exp.pp fun_exp in
+        Dom.Mem.add_unknown id ~location mem
+    | Remove_temps (temps, _) ->
+        Dom.Mem.remove_temps temps mem
+    | Abstract _ | Nullify _ ->
+        mem
 
 
   let pp_session_name node fmt = F.fprintf fmt "bufferoverrun %a" CFG.Node.pp_id (CFG.Node.id node)
@@ -799,12 +773,6 @@ let extract_pre = Analyzer.extract_pre
 
 let extract_post = Analyzer.extract_post
 
-let print_summary : Typ.Procname.t -> BufferOverrunSummary.t -> unit =
- fun proc_name s ->
-  L.(debug BufferOverrun Medium)
-    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name BufferOverrunSummary.pp s
-
-
 let get_local_decls proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let accum_local_decls acc {ProcAttributes.name} =
@@ -836,9 +804,6 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
     match exit_mem with
     | Some exit_mem ->
         let post = (exit_mem, cond_set) in
-        ( if Config.bo_debug >= 1 then
-          let proc_name = Procdesc.get_proc_name proc_desc in
-          print_summary proc_name post ) ;
         Payload.update_summary post summary
     | _ ->
         summary
