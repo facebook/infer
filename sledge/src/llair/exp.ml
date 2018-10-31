@@ -620,7 +620,7 @@ and simp_dq x y =
 and simp_and x y =
   match (x, y) with
   (* i && j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
       integer (Z.logand ~bits i j) typ
   (* e && true ==> e *)
   | Integer {data; typ= Integer {bits= 1}}, e
@@ -642,7 +642,7 @@ and simp_and x y =
 and simp_or x y =
   match (x, y) with
   (* i || j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
       integer (Z.logor ~bits i j) typ
   (* e || true ==> true *)
   | (Integer {data; typ= Integer {bits= 1}} as t), _
@@ -664,7 +664,7 @@ and simp_or x y =
 let simp_xor x y =
   match (x, y) with
   (* i xor j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
       integer (Z.logxor ~bits i j) typ
   (* true xor b ==> ¬b *)
   | Integer {data; typ= Integer {bits= 1}}, b
@@ -679,7 +679,7 @@ let simp_xor x y =
 let simp_shl x y =
   match (x, y) with
   (* i shl j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.fits_int j ->
       integer (Z.shift_left ~bits i (Z.to_int j)) typ
   (* e shl 0 ==> e *)
@@ -689,7 +689,7 @@ let simp_shl x y =
 let simp_lshr x y =
   match (x, y) with
   (* i lshr j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.fits_int j ->
       integer (Z.shift_right_trunc ~bits i (Z.to_int j)) typ
   (* e lshr 0 ==> e *)
@@ -699,7 +699,7 @@ let simp_lshr x y =
 let simp_ashr x y =
   match (x, y) with
   (* i ashr j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.fits_int j ->
       integer (Z.shift_right ~bits i (Z.to_int j)) typ
   (* e ashr 0 ==> e *)
@@ -752,7 +752,7 @@ let simp_sub typ x y =
 let simp_div x y =
   match (x, y) with
   (* i / j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
       integer (Z.div ~bits i j) typ
   (* e / 1 ==> e *)
   | Integer {data}, e when Z.equal Z.one data -> e
@@ -770,7 +770,7 @@ let simp_udiv x y =
 let simp_rem x y =
   match (x, y) with
   (* i % j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
       integer (Z.rem ~bits i j) typ
   (* e % 1 ==> 0 *)
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
