@@ -19,6 +19,11 @@ rather than nearest enclosing
 ** NEXT normalize arithmetic exps to polynomials
 and sort terms
 ** when Xor exps have types, simplify e xor e to 0
+** treat Typ.ptr as an integer of some particular size (i.e. ptr = intptr)
+- normalizing e.g. p - q to the polynomial p + (-1 * q) forces this interpretation of types
+- options are to handle Pointer _ as Integer {bits= 64} everywhere, or
+- to remove Pointer and just use Integer
+- keeping Pointer makes Typ.equal finer than semantically justified, but may be unproblematic and otherwise worthwhile for reporting/debugging
 ** ? remove src typ from Convert
 ** ? distribute addition over multiplication
 for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
@@ -129,6 +134,7 @@ but they are currently the same for all functions: i8*
 + after entry block (and recursively everything reachable from it) is xlated, map over the function block list looking up from the table to get order of conts to match order of blocks
 ** ? format #line directives in programs
 * frontend
+** ? translate PtrToInt and IntToPtr as cast when sizes match
 ** use llvm.lifetime.{start,end} to determine where to (alloc and?) free locals
 ** hoist alloca's to the beginning of the entry block whenever possible
 ** clean up translation of intrinsics

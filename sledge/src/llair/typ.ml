@@ -104,15 +104,19 @@ let struct_ =
 
 let bool = integer ~bits:1
 let siz = integer ~bits:64
+
+(** [ptr] is semantically equivalent to [siz], but has a distinct
+    representation because the element type is important for [Global]s *)
 let ptr = pointer ~elt:(integer ~bits:8)
 
 (** Queries *)
 
 let rec prim_bit_size_of = function
   | Integer {bits} | Float {bits} -> Some bits
+  | Pointer _ -> prim_bit_size_of siz
   | Array {elt; len} ->
       Option.map (prim_bit_size_of elt) ~f:(fun n -> n * len)
-  | Function _ | Pointer _ | Tuple _ | Struct _ | Opaque _ -> None
+  | Function _ | Tuple _ | Struct _ | Opaque _ -> None
 
 let castable t0 t1 =
   match (t0, t1) with
