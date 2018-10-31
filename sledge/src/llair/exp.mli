@@ -50,7 +50,6 @@ type t = private
   | Ord  (** Ordered test (neither arg is nan) *)
   | Uno  (** Unordered test (some arg is nan) *)
   | Add  (** Addition *)
-  | Sub  (** Subtraction *)
   | Mul  (** Multiplication *)
   | Div  (** Division *)
   | Udiv  (** Unsigned division *)

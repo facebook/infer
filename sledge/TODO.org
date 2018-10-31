@@ -18,7 +18,6 @@ rather than nearest enclosing
 * llair
 ** NEXT normalize arithmetic exps to polynomials
 and sort terms
-** when Sub exps have types, simplify e - e to 0
 ** when Xor exps have types, simplify e xor e to 0
 ** ? remove src typ from Convert
 ** ? distribute addition over multiplication

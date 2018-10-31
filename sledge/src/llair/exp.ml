@@ -15,6 +15,7 @@ module Z = struct
   let pp = Z.pp_print
   let zero = Z.zero
   let one = Z.one
+  let minus_one = Z.minus_one
   let to_int = Z.to_int
   let numbits = Z.numbits
   let fits_int = Z.fits_int
@@ -32,8 +33,6 @@ module Z = struct
 
   let clamp_cmp ~signed bits op x y =
     op (clamp ~signed bits x) (clamp ~signed bits y)
-
-  let neg ~bits z = Z.neg (clamp bits ~signed:true z)
 
   let clamp_bop ~signed bits op x y =
     clamp ~signed bits (op (clamp ~signed bits x) (clamp ~signed bits y))
@@ -92,7 +91,6 @@ module T0 = struct
     | Uno
     (* binary: arithmetic, numeric and pointer *)
     | Add
-    | Sub
     | Mul
     | Div
     | Udiv
@@ -181,7 +179,6 @@ module T = struct
       | Ord -> pf "ord"
       | Uno -> pf "uno"
       | Add -> pf "+"
-      | Sub -> pf "-"
       | Mul -> pf "*"
       | Div -> pf "/"
       | Udiv -> pf "udiv"
@@ -267,8 +264,8 @@ let invariant ?(partial = false) e =
       | [Integer {typ}] -> assert (Typ.equal src typ)
       | _ -> assert_arity 1 ) ;
       assert (Typ.convertible src dst)
-  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add | Sub | Mul
-   |Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
+  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add | Mul | Div
+   |Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
     | [Integer {typ= Integer {bits= m}}; Integer {typ= Integer {bits= n}}]
       ->
@@ -708,24 +705,14 @@ let rec simp_add x y =
         ; arg= Integer {data= i; typ= Integer {bits} as typ} }
     , Integer {data= j} ) ->
       simp_add arg (integer (Z.add ~bits i j) typ)
-  (* (i-e) + j ==> (i+j)-e *)
+  (* (i+e) + j ==> (i+j)+e *)
   | ( App
         { op=
-            App {op= Sub; arg= Integer {data= i; typ= Integer {bits} as typ}}
+            App {op= Add; arg= Integer {data= i; typ= Integer {bits} as typ}}
         ; arg }
     , Integer {data= j} ) ->
-      simp_sub (integer (Z.add ~bits i j) typ) arg
+      simp_add (integer (Z.add ~bits i j) typ) arg
   | _ -> App {op= App {op= Add; arg= x}; arg= y}
-
-and simp_sub x y =
-  match (x, y) with
-  (* i - j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
-      integer (Z.sub ~bits i j) typ
-  (* e - i ==> e + (-i) *)
-  | _, Integer {data; typ= Integer {bits} as typ} ->
-      simp_add x (integer (Z.neg ~bits data) typ)
-  | _ -> App {op= App {op= Sub; arg= x}; arg= y}
 
 let simp_mul x y =
   match (x, y) with
@@ -736,6 +723,14 @@ let simp_mul x y =
   | Integer {data}, e when Z.equal Z.one data -> e
   | e, Integer {data} when Z.equal Z.one data -> e
   | _ -> App {op= App {op= Mul; arg= x}; arg= y}
+
+let simp_sub typ x y =
+  match (x, y) with
+  (* i - j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.sub ~bits i j) typ
+  (* x - y ==> x + (-1 * y) *)
+  | _ -> simp_add x (simp_mul (integer Z.minus_one typ) y)
 
 let simp_div x y =
   match (x, y) with
@@ -788,7 +783,6 @@ let app1 ?(partial = false) op arg =
   | App {op= Ord; arg= x}, y -> simp_ord x y
   | App {op= Uno; arg= x}, y -> simp_uno x y
   | App {op= Add; arg= x}, y -> simp_add x y
-  | App {op= Sub; arg= x}, y -> simp_sub x y
   | App {op= Mul; arg= x}, y -> simp_mul x y
   | App {op= Div; arg= x}, y -> simp_div x y
   | App {op= Udiv; arg= x}, y -> simp_udiv x y
@@ -824,8 +818,8 @@ let ule = app2 Ule
 let ord = app2 Ord
 let uno = app2 Uno
 let add typ = app2 Add
-let sub typ = app2 Sub
 let mul typ = app2 Mul
+let sub = simp_sub
 let div = app2 Div
 let udiv = app2 Udiv
 let rem = app2 Rem
