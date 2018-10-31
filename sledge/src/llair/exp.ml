@@ -246,6 +246,21 @@ type exp = t
 
 (** Invariant *)
 
+let typ_of = function
+  | App {op= App {op= Add {typ} | Mul {typ}}}
+   |Integer {typ}
+   |App {op= Convert {dst= typ}} ->
+      Some typ
+  | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule}}
+    ->
+      Some Typ.bool
+  | _ -> None
+
+let type_check typ e =
+  assert (Option.for_all ~f:(Typ.castable typ) (typ_of e))
+
+let type_check2 typ e f = type_check typ e ; type_check typ f
+
 let invariant ?(partial = false) e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
@@ -267,9 +282,10 @@ let invariant ?(partial = false) e =
   | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add _ | Mul _
    |Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
-    | [Integer {typ= Integer {bits= m}}; Integer {typ= Integer {bits= n}}]
-      ->
-        assert (m = n)
+    | [x; y] -> (
+      match (typ_of x, typ_of y) with
+      | Some typ, Some typ' -> assert (Typ.castable typ typ')
+      | _ -> assert true )
     | _ -> assert_arity 2 )
   | Splat | Memory | Concat | Ord | Uno | Select -> assert_arity 2
   | Conditional | Update -> assert_arity 3
@@ -818,8 +834,15 @@ let ult = app2 Ult
 let ule = app2 Ule
 let ord = app2 Ord
 let uno = app2 Uno
-let add typ = app2 (Add {typ})
-let mul typ = app2 (Mul {typ})
+
+let add typ x y =
+  type_check2 typ x y ;
+  app2 (Add {typ}) x y
+
+let mul typ x y =
+  type_check2 typ x y ;
+  app2 (Mul {typ}) x y
+
 let sub = simp_sub
 let div = app2 Div
 let udiv = app2 Udiv
@@ -828,7 +851,7 @@ let urem = app2 Urem
 let and_ = app2 And
 let or_ = app2 Or
 let xor = app2 Xor
-let not_ = simp_not
+let not_ typ x = type_check typ x ; simp_not typ x
 let shl = app2 Shl
 let lshr = app2 Lshr
 let ashr = app2 Ashr

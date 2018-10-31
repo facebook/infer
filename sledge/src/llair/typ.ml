@@ -123,7 +123,7 @@ let castable t0 t1 =
   | Pointer _, Pointer _ -> true
   | _ -> (
     match (prim_bit_size_of t0, prim_bit_size_of t1) with
-    | Some n0, Some n1 -> Int.equal n0 n1
+    | Some n0, Some n1 -> n0 = n1
     | _ -> false )
 
 let rec convertible t0 t1 =
