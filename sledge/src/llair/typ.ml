@@ -104,6 +104,7 @@ let struct_ =
 
 let bool = integer ~bits:1
 let siz = integer ~bits:64
+let ptr = pointer ~elt:(integer ~bits:8)
 
 (** Queries *)
 

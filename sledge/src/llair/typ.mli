@@ -36,6 +36,7 @@ include Invariant.S with type t := t
 
 val bool : t
 val siz : t
+val ptr : t
 val function_ : return:t option -> args:t vector -> t
 val integer : bits:int -> t
 val float : bits:int -> enc:[`Extended | `IEEE | `Pair] -> t

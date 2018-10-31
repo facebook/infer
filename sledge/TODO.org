@@ -23,7 +23,6 @@ and sort terms
 ** ? remove src typ from Convert
 ** ? distribute addition over multiplication
 for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
-** ? conflate null and 0
 ** add config to pp e.g. Exp.t as sexps
 ** add check for variable non-occurrence to Exp.rename
 ** define version of map that transforms args of Struct_rec

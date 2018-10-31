@@ -30,11 +30,12 @@ type t = private
       (** Address of named code block within parent function *)
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | Null  (** Pointer value that never refers to an object *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Memory  (** Size-tagged byte-array *)
   | Concat  (** Byte-array concatenation *)
-  | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
+  | Integer of {data: Z.t; typ: Typ.t}
+      (** Integer constant, or if [typ] is a [Pointer], null pointer value
+          that never refers to an object *)
   | Float of {data: string}  (** Floating-point constant *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)

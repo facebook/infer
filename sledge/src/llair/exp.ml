@@ -71,7 +71,6 @@ module T0 = struct
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
     (* pointer and memory constants and operations *)
-    | Null
     | Splat
     | Memory
     | Concat
@@ -161,7 +160,7 @@ module T = struct
       | Var {name; id} -> pf "%%%s_%d" name id
       | Nondet {msg} -> pf "nondet \"%s\"" msg
       | Label {name} -> pf "%s" name
-      | Null -> pf "null"
+      | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
       | Splat -> pf "^"
       | Memory -> pf "⟨_,_⟩"
       | App {op= App {op= Memory; arg= siz}; arg= bytes} ->
@@ -262,8 +261,7 @@ let invariant ?(partial = false) e =
   | Integer {data; typ= Integer {bits}} ->
       assert_arity 0 ;
       assert (Z.numbits data <= bits)
-  | Var _ | Nondet _ | Label _ | Null | Integer _ | Float _ ->
-      assert_arity 0
+  | Var _ | Nondet _ | Label _ | Integer _ | Float _ -> assert_arity 0
   | Convert {dst; src} ->
       ( match args with
       | [Integer {typ}] -> assert (Typ.equal src typ)
@@ -441,8 +439,8 @@ let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 let var x = x
 let nondet msg = Nondet {msg} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
-let null = Null |> check invariant
 let integer data typ = Integer {data; typ} |> check invariant
+let null = integer Z.zero Typ.ptr
 let bool b = integer (Z.of_bool b) Typ.bool
 let float data = Float {data} |> check invariant
 
@@ -846,7 +844,7 @@ let update ~rcd ~elt ~idx = app3 Update rcd elt idx
 
 let struct_rec key =
   let memo_id = Hashtbl.create key in
-  let dummy = Null in
+  let dummy = null in
   Staged.stage
   @@ fun ~id elt_thks ->
   match Hashtbl.find memo_id id with
