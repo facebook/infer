@@ -7,8 +7,6 @@
 
 open! IStd
 
-type debug = Default | DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-
 module VisitCount : sig
   type t
 end
@@ -28,11 +26,12 @@ module type S = sig
 
   val compute_post :
        ?do_narrowing:bool
-    -> ?debug:debug
+    -> ?pp_instr:(TransferFunctions.Domain.astate -> Sil.instr -> (Format.formatter -> unit) option)
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
-  (** compute and return the postcondition for the given procedure starting from [initial]. *)
+  (** compute and return the postcondition for the given procedure starting from [initial].
+      [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
   val exec_cfg :
        ?do_narrowing:bool

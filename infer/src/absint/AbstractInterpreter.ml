@@ -10,14 +10,6 @@ module F = Format
 module L = Logging
 module AnalysisState = State
 
-type debug =
-  | Default
-  | DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-      (** If Default is used from LowerHil, debug html files will be opened twice and closed twice (boom!),
-          because both LowerHil-AI and SIL-AI want to print instructions and pre/post states.
-          When using LowerHil-AI, we're not interested in the underlying SIL instructions,
-          it's the only case where want to disable it. *)
-
 type exec_node_schedule_result = ReachedFixPoint | DidNotReachFixPoint
 
 module VisitCount : sig
@@ -49,6 +41,11 @@ module State = struct
   let post {post} = post
 end
 
+(** use this as [pp_instr] everywhere a SIL CFG is expected *)
+let pp_sil_instr _ instr =
+  Some (fun f -> F.fprintf f "@[<h>%a;@]@;" (Sil.pp_instr ~print_types:false Pp.text) instr)
+
+
 module type S = sig
   module TransferFunctions : TransferFunctions.SIL
 
@@ -58,7 +55,7 @@ module type S = sig
 
   val compute_post :
        ?do_narrowing:bool
-    -> ?debug:debug
+    -> ?pp_instr:(TransferFunctions.Domain.astate -> Sil.instr -> (Format.formatter -> unit) option)
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
@@ -128,59 +125,84 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
   (** reference to log errors only at the innermost recursive call *)
   let logged_error = ref false
 
-  let exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map =
-    let on_instrs instrs =
-      if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-      then
-        NodePrinter.start_session
-          ~pp_name:(TransferFunctions.pp_session_name node)
-          (Node.underlying_node node) ;
-      let astate_post =
-        let compute_post pre instr =
-          AnalysisState.set_instr instr ;
+  let dump_html ~pp_instr pre instr post_result =
+    let pp_post_error f (exn, _, instr) =
+      F.fprintf f "Analysis stopped in `%a` by error: %a."
+        (Sil.pp_instr ~print_types:false Pp.text)
+        instr Exn.pp exn
+    in
+    let pp_post f post =
+      match post with
+      | Ok astate_post ->
+          if phys_equal astate_post pre then F.pp_print_string f "STATE UNCHANGED"
+          else F.fprintf f "STATE:@\n@[%a@]" Domain.pp astate_post
+      | Error err ->
+          pp_post_error f err
+    in
+    let pp_all f =
+      (* we pass [pre] to [pp_instr] because HIL needs it to interpret temporary variables *)
+      match (pp_instr pre instr, post_result) with
+      | None, Ok _ ->
+          ()
+      | None, Error err ->
+          pp_post_error f err
+      | Some pp_instr, _ ->
+          Format.fprintf f "@[<h>INSTR=  %t@]@\n@\n%a@\n" pp_instr pp_post post_result
+    in
+    L.d_printfln_escaped "%t" pp_all
+
+
+  let exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map =
+    let instrs = CFG.instrs node in
+    if Config.write_html then
+      NodePrinter.start_session
+        ~pp_name:(TransferFunctions.pp_session_name node)
+        (Node.underlying_node node) ;
+    let post =
+      if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
+      let compute_post pre instr =
+        AnalysisState.set_instr instr ;
+        let result =
           try
             let post = TransferFunctions.exec_instr pre proc_data node instr in
             (* don't forget to reset this so we output messages for future errors too *)
             logged_error := false ;
-            post
-          with
-          | AbstractDomain.Stop_analysis as exn ->
-              raise_notrace exn
-          | exn ->
-              IExn.reraise_after exn ~f:(fun () ->
-                  if not !logged_error then (
-                    L.internal_error "In instruction %a@\n"
-                      (Sil.pp_instr ~print_types:true Pp.text)
-                      instr ;
-                    logged_error := true ) )
+            Ok post
+          with exn ->
+            (* delay reraising to get a chance to write the debug HTML *)
+            let backtrace = Caml.Printexc.get_raw_backtrace () in
+            Error (exn, backtrace, instr)
         in
-        Instrs.fold ~f:compute_post ~init:pre instrs
+        if Config.write_html then dump_html ~pp_instr pre instr result ;
+        result
       in
-      if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-      then (
-        let pp_post f =
-          if phys_equal astate_post pre then F.pp_print_string f "= PRE"
-          else Domain.pp f astate_post
-        in
-        L.d_printfln_escaped "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %t@]@." Domain.pp pre
-          (Instrs.pp Pp.text) instrs pp_post ;
-        NodePrinter.finish_session (Node.underlying_node node) ) ;
-      InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
+      if Instrs.is_empty instrs then
+        (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+        compute_post pre Sil.skip_instr
+      else
+        Instrs.fold ~init:(Ok pre) instrs ~f:(fun astate_result instr ->
+            Result.bind astate_result ~f:(fun astate -> compute_post astate instr) )
     in
-    let instrs = CFG.instrs node in
-    if Instrs.is_empty instrs then
-      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      on_instrs (Instrs.singleton Sil.skip_instr)
-    else on_instrs instrs
+    if Config.write_html then NodePrinter.finish_session (Node.underlying_node node) ;
+    match post with
+    | Ok astate_post ->
+        InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
+    | Error (AbstractDomain.Stop_analysis, _, _) ->
+        raise_notrace AbstractDomain.Stop_analysis
+    | Error (exn, backtrace, instr) ->
+        if not !logged_error then (
+          L.internal_error "In instruction %a@\n" (Sil.pp_instr ~print_types:true Pp.text) instr ;
+          logged_error := true ) ;
+        Caml.Printexc.raise_with_backtrace exn backtrace
 
 
   (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
      So, as of now, the termination of narrowing is not guaranteed in general. *)
-  let exec_node ~debug ({ProcData.pdesc} as proc_data) node ~is_loop_head ~is_narrowing astate_pre
-      inv_map =
+  let exec_node ~pp_instr ({ProcData.pdesc} as proc_data) node ~is_loop_head ~is_narrowing
+      astate_pre inv_map =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
-      let inv_map' = exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map in
+      let inv_map' = exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map in
       (inv_map', DidNotReachFixPoint)
     in
     if InvariantMap.mem node_id inv_map then
@@ -234,14 +256,15 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
   (** compute and return an invariant map for [pdesc] *)
   let make_exec_pdesc ~exec_cfg_internal ({ProcData.pdesc} as proc_data) ~do_narrowing ~initial =
-    exec_cfg_internal ~debug:Default (CFG.from_pdesc pdesc) proc_data ~do_narrowing ~initial
+    exec_cfg_internal ~pp_instr:pp_sil_instr (CFG.from_pdesc pdesc) proc_data ~do_narrowing
+      ~initial
 
 
   (** compute and return the postcondition of [pdesc] *)
-  let make_compute_post ~exec_cfg_internal ?(debug = Default) ({ProcData.pdesc} as proc_data)
-      ~do_narrowing ~initial =
+  let make_compute_post ~exec_cfg_internal ?(pp_instr = pp_sil_instr)
+      ({ProcData.pdesc} as proc_data) ~do_narrowing ~initial =
     let cfg = CFG.from_pdesc pdesc in
-    let inv_map = exec_cfg_internal ~debug cfg proc_data ~do_narrowing ~initial in
+    let inv_map = exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
 
@@ -251,17 +274,17 @@ module MakeWithScheduler
 struct
   include AbstractInterpreterCommon (TransferFunctions)
 
-  let rec exec_worklist ~debug cfg ({ProcData.pdesc} as proc_data) work_queue inv_map =
+  let rec exec_worklist ~pp_instr cfg ({ProcData.pdesc} as proc_data) work_queue inv_map =
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist ~debug cfg proc_data work_queue' inv_map
+        exec_worklist ~pp_instr cfg proc_data work_queue' inv_map
     | Some (node, _, work_queue') ->
         let inv_map_post, work_queue_post =
           match compute_pre cfg node inv_map with
           | Some astate_pre -> (
               let is_loop_head = CFG.is_loop_head pdesc node in
               match
-                exec_node ~debug proc_data node ~is_loop_head ~is_narrowing:false astate_pre
+                exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing:false astate_pre
                   inv_map
               with
               | inv_map, ReachedFixPoint ->
@@ -271,23 +294,23 @@ struct
           | None ->
               (inv_map, work_queue')
         in
-        exec_worklist ~debug cfg proc_data work_queue_post inv_map_post
+        exec_worklist ~pp_instr cfg proc_data work_queue_post inv_map_post
     | None ->
         inv_map
 
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg_internal ~debug cfg proc_data ~do_narrowing:_ ~initial =
+  let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing:_ ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map, _did_not_reach_fix_point =
-      exec_node ~debug proc_data start_node ~is_loop_head:false ~is_narrowing:false initial
+      exec_node ~pp_instr proc_data start_node ~is_loop_head:false ~is_narrowing:false initial
         InvariantMap.empty
     in
     let work_queue = Scheduler.schedule_succs (Scheduler.empty cfg) start_node in
-    exec_worklist ~debug cfg proc_data work_queue inv_map
+    exec_worklist ~pp_instr cfg proc_data work_queue inv_map
 
 
-  let exec_cfg ?do_narrowing:_ = exec_cfg_internal ~debug:Default ~do_narrowing:false
+  let exec_cfg ?do_narrowing:_ = exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing:false
 
   let exec_pdesc ?do_narrowing:_ = make_exec_pdesc ~exec_cfg_internal ~do_narrowing:false
 
@@ -313,42 +336,45 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     NodePrinter.finish_session underlying_node
 
 
-  let exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head ~is_narrowing =
+  let exec_wto_node ~pp_instr cfg proc_data inv_map node ~is_loop_head ~is_narrowing =
     match compute_pre cfg node inv_map with
     | Some astate_pre ->
-        exec_node ~debug proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map
+        exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map
     | None ->
         L.(die InternalError) "Could not compute the pre of a node"
 
 
-  let rec exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head ~is_narrowing rest =
-    match exec_wto_node ~debug cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
+  let rec exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing rest
+      =
+    match exec_wto_node ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
     | inv_map, ReachedFixPoint ->
         inv_map
     | inv_map, DidNotReachFixPoint ->
-        let inv_map = exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map rest in
-        exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing rest
+        let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map rest in
+        exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing
+          rest
 
 
-  and exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map
+  and exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map
       (partition : CFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
         inv_map
     | Node {node; next} ->
         let inv_map =
-          exec_wto_node ~debug cfg proc_data ~is_narrowing inv_map node ~is_loop_head:false |> fst
+          exec_wto_node ~pp_instr cfg proc_data ~is_narrowing inv_map node ~is_loop_head:false
+          |> fst
         in
-        exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
     | Component {head; rest; next} ->
         let inv_map =
-          exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:false ~is_narrowing
+          exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~is_narrowing
             rest
         in
-        exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
 
 
-  let exec_cfg_internal ~debug cfg proc_data ~do_narrowing ~initial =
+  let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial =
     let wto = CFG.wto cfg in
     let exec_cfg ~is_narrowing inv_map =
       match wto with
@@ -357,9 +383,10 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
       | Node {node= start_node; next} as wto ->
           if Config.write_html then debug_wto wto start_node ;
           let inv_map, _did_not_reach_fix_point =
-            exec_node ~debug proc_data start_node ~is_loop_head:false ~is_narrowing initial inv_map
+            exec_node ~pp_instr proc_data start_node ~is_loop_head:false ~is_narrowing initial
+              inv_map
           in
-          exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
+          exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
       | Component _ ->
           L.(die InternalError) "Did not expect the start node to be part of a loop"
     in
@@ -367,7 +394,7 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     if do_narrowing then exec_cfg ~is_narrowing:true inv_map else inv_map
 
 
-  let exec_cfg ?(do_narrowing = false) = exec_cfg_internal ~debug:Default ~do_narrowing
+  let exec_cfg ?(do_narrowing = false) = exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing
 
   let exec_pdesc ?(do_narrowing = false) = make_exec_pdesc ~exec_cfg_internal ~do_narrowing
 

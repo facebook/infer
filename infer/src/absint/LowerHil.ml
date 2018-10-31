@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 module type HilConfig = sig
   val include_array_indexes : bool
@@ -16,6 +15,14 @@ module DefaultConfig : HilConfig = struct
   let include_array_indexes = false
 end
 
+(** HIL adds a map from temporary variables to access paths to each domain *)
+module MakeHILDomain (Domain : AbstractDomain.S) = struct
+  include AbstractDomain.Pair (Domain) (IdAccessPathMapDomain)
+
+  (** hides HIL implementation details *)
+  let pp fmt (astate, _) = Domain.pp fmt astate
+end
+
 module Make
     (MakeTransferFunctions : TransferFunctions.MakeHIL)
     (HilConfig : HilConfig)
@@ -23,24 +30,11 @@ module Make
 struct
   module TransferFunctions = MakeTransferFunctions (CFG)
   module CFG = TransferFunctions.CFG
-  module Domain = AbstractDomain.Pair (TransferFunctions.Domain) (IdAccessPathMapDomain)
+  module Domain = MakeHILDomain (TransferFunctions.Domain)
 
   type extras = TransferFunctions.extras
 
   let pp_session_name = TransferFunctions.pp_session_name
-
-  let pp_pre_post pre post hil_instr node =
-    if Config.write_html then (
-      let underyling_node = CFG.Node.underlying_node node in
-      NodePrinter.start_session ~pp_name:(pp_session_name node) underyling_node ;
-      let pp_post f =
-        if phys_equal post pre then Format.pp_print_string f "= PRE"
-        else TransferFunctions.Domain.pp f post
-      in
-      L.d_printfln_escaped "PRE: %a@.INSTR: %a@.POST: %t@." TransferFunctions.Domain.pp pre
-        HilInstr.pp hil_instr pp_post ;
-      NodePrinter.finish_session underyling_node )
-
 
   let is_java_unlock pname actuals =
     (* would check is_java, but we want to include builtins too *)
@@ -77,11 +71,9 @@ struct
             id_map actual_state
         in
         let actual_state'' = TransferFunctions.exec_instr actual_state' extras node hil_instr in
-        pp_pre_post actual_state actual_state'' hil_instr node ;
         (actual_state'', IdAccessPathMapDomain.empty)
     | Instr hil_instr ->
         let actual_state' = TransferFunctions.exec_instr actual_state extras node hil_instr in
-        pp_pre_post actual_state actual_state' hil_instr node ;
         if phys_equal actual_state actual_state' then astate else (actual_state', id_map)
     | Ignore ->
         astate
@@ -94,12 +86,21 @@ module MakeAbstractInterpreterWithConfig
 struct
   module Interpreter = AbstractInterpreter.MakeRPO (Make (MakeTransferFunctions) (HilConfig) (CFG))
 
-  let debug = AbstractInterpreter.DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-
   let compute_post ({ProcData.pdesc; tenv} as proc_data) ~initial =
     Preanal.do_preanalysis pdesc tenv ;
     let initial' = (initial, IdAccessPathMapDomain.empty) in
-    Option.map ~f:fst (Interpreter.compute_post ~debug proc_data ~initial:initial')
+    let pp_instr (_, id_map) instr =
+      let f_resolve_id id = IdAccessPathMapDomain.find_opt id id_map in
+      let hil_translation =
+        HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr
+      in
+      match hil_translation with
+      | Instr hil_instr ->
+          Some (fun f -> Format.fprintf f "@[<h>%a@];@;" HilInstr.pp hil_instr)
+      | Bind _ | Unbind _ | Ignore ->
+          None
+    in
+    Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst
 end
 
 module MakeAbstractInterpreter = MakeAbstractInterpreterWithConfig (DefaultConfig)
