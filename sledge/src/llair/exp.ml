@@ -523,6 +523,50 @@ let simp_cond cnd thn els =
   | _ ->
       App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
 
+let simp_and x y =
+  match (x, y) with
+  (* i && j *)
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+      integer (Z.logand ~bits i j) typ
+  (* e && true ==> e *)
+  | Integer {data; typ= Integer {bits= 1}}, e
+   |e, Integer {data; typ= Integer {bits= 1}}
+    when Z.is_true data ->
+      e
+  (* e && false ==> 0 *)
+  | (Integer {data; typ= Integer {bits= 1}} as f), _
+   |_, (Integer {data; typ= Integer {bits= 1}} as f)
+    when Z.is_false data ->
+      f
+  | _ ->
+      let c = compare x y in
+      (* e && e ==> e *)
+      if c = 0 then x
+      else if c < 0 then App {op= App {op= And; arg= x}; arg= y}
+      else App {op= App {op= And; arg= y}; arg= x}
+
+let simp_or x y =
+  match (x, y) with
+  (* i || j *)
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+      integer (Z.logor ~bits i j) typ
+  (* e || true ==> true *)
+  | (Integer {data; typ= Integer {bits= 1}} as t), _
+   |_, (Integer {data; typ= Integer {bits= 1}} as t)
+    when Z.is_true data ->
+      t
+  (* e || false ==> e *)
+  | Integer {data; typ= Integer {bits= 1}}, e
+   |e, Integer {data; typ= Integer {bits= 1}}
+    when Z.is_false data ->
+      e
+  | _ ->
+      let c = compare x y in
+      (* e || e ==> e *)
+      if c = 0 then x
+      else if c < 0 then App {op= App {op= Or; arg= x}; arg= y}
+      else App {op= App {op= Or; arg= y}; arg= x}
+
 let rec simp_not (typ : Typ.t) exp =
   match (exp, typ) with
   (* ¬(x = y) ==> x != y *)
@@ -616,50 +660,6 @@ and simp_dq x y =
       if c = 0 then bool false
       else if c < 0 then App {op= App {op= Dq; arg= x}; arg= y}
       else App {op= App {op= Dq; arg= y}; arg= x}
-
-and simp_and x y =
-  match (x, y) with
-  (* i && j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
-      integer (Z.logand ~bits i j) typ
-  (* e && true ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_true data ->
-      e
-  (* e && false ==> 0 *)
-  | (Integer {data; typ= Integer {bits= 1}} as f), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as f)
-    when Z.is_false data ->
-      f
-  | _ ->
-      let c = compare x y in
-      (* e && e ==> e *)
-      if c = 0 then x
-      else if c < 0 then App {op= App {op= And; arg= x}; arg= y}
-      else App {op= App {op= And; arg= y}; arg= x}
-
-and simp_or x y =
-  match (x, y) with
-  (* i || j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
-      integer (Z.logor ~bits i j) typ
-  (* e || true ==> true *)
-  | (Integer {data; typ= Integer {bits= 1}} as t), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as t)
-    when Z.is_true data ->
-      t
-  (* e || false ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_false data ->
-      e
-  | _ ->
-      let c = compare x y in
-      (* e || e ==> e *)
-      if c = 0 then x
-      else if c < 0 then App {op= App {op= Or; arg= x}; arg= y}
-      else App {op= App {op= Or; arg= y}; arg= x}
 
 let simp_xor x y =
   match (x, y) with
