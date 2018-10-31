@@ -30,28 +30,33 @@ module Z = struct
   let clamp ~signed bits z =
     if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits
 
-  let clamp_binop ~signed bits op x y =
+  let clamp_cmp ~signed bits op x y =
     op (clamp ~signed bits x) (clamp ~signed bits y)
 
-  let leq ~bits x y = clamp_binop ~signed:true bits Z.leq x y
-  let geq ~bits x y = clamp_binop ~signed:true bits Z.geq x y
-  let lt ~bits x y = clamp_binop ~signed:true bits Z.lt x y
-  let gt ~bits x y = clamp_binop ~signed:true bits Z.gt x y
-  let uleq ~bits x y = clamp_binop ~signed:false bits Z.leq x y
-  let ugeq ~bits x y = clamp_binop ~signed:false bits Z.geq x y
-  let ult ~bits x y = clamp_binop ~signed:false bits Z.lt x y
-  let ugt ~bits x y = clamp_binop ~signed:false bits Z.gt x y
   let neg ~bits z = Z.neg (clamp bits ~signed:true z)
-  let add ~bits x y = clamp_binop ~signed:true bits Z.add x y
-  let sub ~bits x y = clamp_binop ~signed:true bits Z.sub x y
-  let mul ~bits x y = clamp_binop ~signed:true bits Z.mul x y
-  let div ~bits x y = clamp_binop ~signed:true bits Z.div x y
-  let rem ~bits x y = clamp_binop ~signed:true bits Z.rem x y
-  let udiv ~bits x y = clamp_binop ~signed:false bits Z.div x y
-  let urem ~bits x y = clamp_binop ~signed:false bits Z.rem x y
-  let logand ~bits x y = clamp_binop ~signed:true bits Z.logand x y
-  let logor ~bits x y = clamp_binop ~signed:true bits Z.logor x y
-  let logxor ~bits x y = clamp_binop ~signed:true bits Z.logxor x y
+
+  let clamp_bop ~signed bits op x y =
+    clamp ~signed bits (op (clamp ~signed bits x) (clamp ~signed bits y))
+
+  let eq ~bits x y = clamp_cmp ~signed:true bits Z.equal x y
+  let leq ~bits x y = clamp_cmp ~signed:true bits Z.leq x y
+  let geq ~bits x y = clamp_cmp ~signed:true bits Z.geq x y
+  let lt ~bits x y = clamp_cmp ~signed:true bits Z.lt x y
+  let gt ~bits x y = clamp_cmp ~signed:true bits Z.gt x y
+  let uleq ~bits x y = clamp_cmp ~signed:false bits Z.leq x y
+  let ugeq ~bits x y = clamp_cmp ~signed:false bits Z.geq x y
+  let ult ~bits x y = clamp_cmp ~signed:false bits Z.lt x y
+  let ugt ~bits x y = clamp_cmp ~signed:false bits Z.gt x y
+  let add ~bits x y = clamp_bop ~signed:true bits Z.add x y
+  let sub ~bits x y = clamp_bop ~signed:true bits Z.sub x y
+  let mul ~bits x y = clamp_bop ~signed:true bits Z.mul x y
+  let div ~bits x y = clamp_bop ~signed:true bits Z.div x y
+  let rem ~bits x y = clamp_bop ~signed:true bits Z.rem x y
+  let udiv ~bits x y = clamp_bop ~signed:false bits Z.div x y
+  let urem ~bits x y = clamp_bop ~signed:false bits Z.rem x y
+  let logand ~bits x y = clamp_bop ~signed:true bits Z.logand x y
+  let logor ~bits x y = clamp_bop ~signed:true bits Z.logor x y
+  let logxor ~bits x y = clamp_bop ~signed:true bits Z.logxor x y
   let shift_left ~bits z i = Z.shift_left (clamp bits ~signed:true z) i
   let shift_right ~bits z i = Z.shift_right (clamp bits ~signed:true z) i
 
@@ -552,7 +557,8 @@ let rec simp_not (typ : Typ.t) exp =
 and simp_eq x y =
   match (x, y) with
   (* i = j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
+  | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
+      bool (Z.eq ~bits i j)
   (* e+i = j ==> e = j-i *)
   | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
     , Integer {data= j; typ= Integer {bits} as typ} ) ->
@@ -577,7 +583,8 @@ and simp_eq x y =
 and simp_dq x y =
   match (x, y) with
   (* i != j *)
-  | Integer {data= i}, Integer {data= j} -> bool (not (Z.equal i j))
+  | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
+      bool (not (Z.eq ~bits i j))
   (* e+i != j ==> e != j-i *)
   | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
     , Integer {data= j; typ= Integer {bits} as typ} ) ->
