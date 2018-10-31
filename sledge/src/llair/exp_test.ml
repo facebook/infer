@@ -10,7 +10,7 @@ let%test_module _ =
     let pf = Format.printf "%t%a@." (fun _ -> Trace.flush ()) Exp.pp
     let char = Typ.integer ~bits:8
     let ( ! ) i = Exp.integer (Z.of_int i) char
-    let ( + ) = Exp.add
+    let ( + ) = Exp.add char
     let ( && ) = Exp.and_
     let ( || ) = Exp.or_
 

@@ -39,7 +39,7 @@ let assume cnd pre =
  *)
 let alloc_spec us reg num len =
   let loc = Exp.var reg in
-  let siz = Exp.mul num len in
+  let siz = Exp.mul Typ.siz num len in
   let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
   let post = Sh.seg seg in
   let foot = Sh.extend_us xs Sh.emp in
@@ -160,9 +160,9 @@ let memmov_foot us dst src len =
   let arr_dst, us, xs = fresh_var "a" us xs in
   let arr_mid, us, xs = fresh_var "a" us xs in
   let arr_src, us, xs = fresh_var "a" us xs in
-  let src_dst = Exp.sub src dst in
+  let src_dst = Exp.sub Typ.siz src dst in
   let mem_dst = Exp.memory ~siz:src_dst ~arr:arr_dst in
-  let siz_mid = Exp.sub len src_dst in
+  let siz_mid = Exp.sub Typ.siz len src_dst in
   let mem_mid = Exp.memory ~siz:siz_mid ~arr:arr_mid in
   let mem_src = Exp.memory ~siz:src_dst ~arr:arr_src in
   let mem_mid_src = Exp.concat mem_mid mem_src in
@@ -179,7 +179,8 @@ let memmov_foot us dst src len =
   in
   let foot =
     Sh.and_ eq_mem_dst_mid_src
-      (Sh.and_ (Exp.lt dst src) (Sh.and_ (Exp.lt src (Exp.add dst len)) seg))
+      (Sh.and_ (Exp.lt dst src)
+         (Sh.and_ (Exp.lt src (Exp.add Typ.ptr dst len)) seg))
   in
   (xs, bas, siz, mem_dst, mem_mid, mem_src, foot)
 
@@ -249,7 +250,11 @@ let strlen_spec us reg ptr =
   let {xs; seg} = fresh_seg ~loc:ptr us in
   let foot = Sh.seg seg in
   let {Sh.loc= p; bas= b; len= m} = seg in
-  let ret = Exp.sub (Exp.add (Exp.sub b p) m) (Exp.integer Z.one Typ.siz) in
+  let ret =
+    Exp.sub Typ.siz
+      (Exp.add Typ.siz (Exp.sub Typ.siz b p) m)
+      (Exp.integer Z.one Typ.siz)
+  in
   let post = Sh.and_ (Exp.eq (Exp.var reg) ret) foot in
   {xs; foot; post}
 

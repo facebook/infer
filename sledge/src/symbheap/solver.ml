@@ -118,7 +118,8 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
             (Exp.memory ~siz:n ~arr:a0)
             (Exp.memory ~siz:o_n ~arr:a1)))
       (Sh.star
-         (Sh.seg {loc= Exp.add k n; bas= b; len= m; siz= o_n; arr= a1})
+         (Sh.seg
+            {loc= Exp.add Typ.ptr k n; bas= b; len= m; siz= o_n; arr= a1})
          (Sh.rem_seg msg min))
   in
   let sub =
@@ -163,7 +164,11 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg
-                  {loc= Exp.add l o; bas= b'; len= m'; siz= n_o; arr= a1'})
+                  { loc= Exp.add Typ.ptr l o
+                  ; bas= b'
+                  ; len= m'
+                  ; siz= n_o
+                  ; arr= a1' })
                (Sh.rem_seg ssg sub))))
   in
   {goal with us; com; min; xs; sub; zs}
@@ -233,7 +238,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let l_k = Exp.integer l_k Typ.siz and ko_ln = Exp.integer ko_ln Typ.siz in
-  let ln = Exp.add l n in
+  let ln = Exp.add Typ.ptr l n in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
@@ -285,7 +290,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
   let l_k = Exp.integer l_k Typ.siz in
   let ko_l = Exp.integer ko_l Typ.siz in
   let ln_ko = Exp.integer ln_ko Typ.siz in
-  let ko = Exp.add k o in
+  let ko = Exp.add Typ.ptr k o in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
@@ -382,7 +387,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let k_l = Exp.integer k_l Typ.siz in
   let ln_ko = Exp.integer ln_ko Typ.siz in
-  let ko = Exp.add k o in
+  let ko = Exp.add Typ.ptr k o in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
   let com = Sh.star (Sh.seg msg) com in
@@ -430,7 +435,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let k_l = Exp.integer k_l Typ.siz in
   let ln_k = Exp.integer ln_k Typ.siz in
   let ko_ln = Exp.integer ko_ln Typ.siz in
-  let ln = Exp.add l n in
+  let ln = Exp.add Typ.ptr l n in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
@@ -473,8 +478,8 @@ let excise_seg ({sub} as goal) msg ssg =
   match[@warning "-p"] Z.sign k_l with
   (* k-l < 0 so k < l *)
   | -1 -> (
-      let ko = Exp.add k o in
-      let ln = Exp.add l n in
+      let ko = Exp.add Typ.ptr k o in
+      let ln = Exp.add Typ.ptr l n in
       Congruence.difference sub.cong ko ln
       >>= fun ko_ln ->
       match[@warning "-p"] Z.sign ko_ln with
@@ -513,8 +518,8 @@ let excise_seg ({sub} as goal) msg ssg =
       | 1 -> Some (excise_seg_sub_prefix goal msg ssg o_n) ) )
   (* k-l > 0 so k > l *)
   | 1 -> (
-      let ko = Exp.add k o in
-      let ln = Exp.add l n in
+      let ko = Exp.add Typ.ptr k o in
+      let ln = Exp.add Typ.ptr l n in
       Congruence.difference sub.cong ko ln
       >>= fun ko_ln ->
       match[@warning "-p"] Z.sign ko_ln with

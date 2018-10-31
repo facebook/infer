@@ -316,11 +316,12 @@ let ptr_fld x ~ptr ~fld ~lltyp =
   let offset =
     Llvm_target.DataLayout.offset_of_element lltyp fld x.lldatalayout
   in
-  Exp.add ptr (Exp.integer (Z.of_int64 offset) Typ.siz)
+  Exp.add Typ.ptr ptr (Exp.integer (Z.of_int64 offset) Typ.siz)
 
 let ptr_idx x ~ptr ~idx ~llelt =
   let stride = Llvm_target.DataLayout.abi_size llelt x.lldatalayout in
-  Exp.add ptr (Exp.mul (Exp.integer (Z.of_int64 stride) Typ.siz) idx)
+  Exp.add Typ.ptr ptr
+    (Exp.mul Typ.siz (Exp.integer (Z.of_int64 stride) Typ.siz) idx)
 
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
  fun x typ arg -> Exp.convert ~dst:(i32 x) ~src:typ arg
@@ -420,10 +421,11 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
   [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
   ;
   let xlate_rand i = xlate_value x (Llvm.operand llv i) in
+  let typ = lazy (xlate_type x (Llvm.type_of llv)) in
   let cast () = xlate_rand 0 in
   let convert signed =
     let rand = Llvm.operand llv 0 in
-    let dst = xlate_type x (Llvm.type_of llv) in
+    let dst = Lazy.force typ in
     let src = xlate_type x (Llvm.type_of rand) in
     let arg = xlate_value x rand in
     Exp.convert ~signed ~dst ~src arg
@@ -472,9 +474,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | Some Ule -> unordered_or Exp.le
     | Some Une -> unordered_or Exp.dq
     | Some True -> binary (fun _ _ -> Exp.bool true) )
-  | Add | FAdd -> binary Exp.add
-  | Sub | FSub -> binary Exp.sub
-  | Mul | FMul -> binary Exp.mul
+  | Add | FAdd -> binary (Exp.add (Lazy.force typ))
+  | Sub | FSub -> binary (Exp.sub (Lazy.force typ))
+  | Mul | FMul -> binary (Exp.mul (Lazy.force typ))
   | SDiv | FDiv -> binary Exp.div
   | UDiv -> binary Exp.udiv
   | SRem | FRem -> binary Exp.rem
@@ -1187,7 +1189,7 @@ let xlate_instr :
             Llair.Block.mk ~lbl:(lbl i) ~params:[] ~cmnd:Vector.empty ~term
           in
           let match_filter =
-            jump_unwind (Exp.sub (Exp.integer Z.zero i32) typeid)
+            jump_unwind (Exp.sub i32 (Exp.integer Z.zero i32) typeid)
           in
           let xlate_clause i =
             let clause = Llvm.operand instr i in

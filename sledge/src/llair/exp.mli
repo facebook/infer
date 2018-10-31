@@ -149,9 +149,9 @@ val ult : t -> t -> t
 val ule : t -> t -> t
 val ord : t -> t -> t
 val uno : t -> t -> t
-val add : t -> t -> t
-val sub : t -> t -> t
-val mul : t -> t -> t
+val add : Typ.t -> t -> t -> t
+val sub : Typ.t -> t -> t -> t
+val mul : Typ.t -> t -> t -> t
 val div : t -> t -> t
 val udiv : t -> t -> t
 val rem : t -> t -> t

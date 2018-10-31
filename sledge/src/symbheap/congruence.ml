@@ -126,9 +126,9 @@ let invariant r =
 
 let map_sum e ~f =
   match e with
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer _ as i} ->
+  | Exp.App {op= App {op= Add; arg= a}; arg= Integer {typ} as i} ->
       let a' = f a in
-      if a' == a then e else Exp.add a' i
+      if a' == a then e else Exp.add typ a' i
   | a -> f a
 
 let fold_sum e ~init ~f =
@@ -143,8 +143,8 @@ let base_of = function
 (** solve a+i = b for a, yielding a = b-i *)
 let solve_for_base ai b =
   match ai with
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer _ as i} ->
-      (a, Exp.sub b i)
+  | Exp.App {op= App {op= Add; arg= a}; arg= Integer {typ} as i} ->
+      (a, Exp.sub typ b i)
   | _ -> (ai, b)
 
 (** [norm r a+i] = [a'+k] where [r] implies [a+i=a'+k] and [a'] is a rep *)
