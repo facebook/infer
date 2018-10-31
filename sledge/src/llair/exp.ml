@@ -90,8 +90,8 @@ module T0 = struct
     | Ord
     | Uno
     (* binary: arithmetic, numeric and pointer *)
-    | Add
-    | Mul
+    | Add of {typ: Typ.t}
+    | Mul of {typ: Typ.t}
     | Div
     | Udiv
     | Rem
@@ -178,8 +178,8 @@ module T = struct
       | Ule -> pf "u<="
       | Ord -> pf "ord"
       | Uno -> pf "uno"
-      | Add -> pf "+"
-      | Mul -> pf "*"
+      | Add _ -> pf "+"
+      | Mul _ -> pf "*"
       | Div -> pf "/"
       | Udiv -> pf "udiv"
       | Rem -> pf "rem"
@@ -264,8 +264,8 @@ let invariant ?(partial = false) e =
       | [Integer {typ}] -> assert (Typ.equal src typ)
       | _ -> assert_arity 1 ) ;
       assert (Typ.convertible src dst)
-  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add | Mul | Div
-   |Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
+  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add _ | Mul _
+   |Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
     | [Integer {typ= Integer {bits= m}}; Integer {typ= Integer {bits= n}}]
       ->
@@ -555,7 +555,7 @@ and simp_eq x y =
   | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
       bool (Z.eq ~bits i j)
   (* e+i = j ==> e = j-i *)
-  | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
+  | ( App {op= App {op= Add _; arg= e}; arg= Integer {data= i}}
     , Integer {data= j; typ= Integer {bits} as typ} ) ->
       simp_eq e (integer (Z.sub ~bits j i) typ)
   (* b = false ==> ¬b *)
@@ -581,7 +581,7 @@ and simp_dq x y =
   | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
       bool (not (Z.eq ~bits i j))
   (* e+i != j ==> e != j-i *)
-  | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
+  | ( App {op= App {op= Add _; arg= e}; arg= Integer {data= i}}
     , Integer {data= j; typ= Integer {bits} as typ} ) ->
       simp_dq e (integer (Z.sub ~bits j i) typ)
   (* b != false ==> b *)
@@ -690,31 +690,32 @@ let simp_ashr x y =
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> App {op= App {op= Ashr; arg= x}; arg= y}
 
-let rec simp_add x y =
+let rec simp_add typ x y =
   match (x, y) with
   (* i + j *)
   | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
       integer (Z.add ~bits i j) typ
   (* i + e ==> e + i *)
-  | Integer _, _ -> simp_add y x
+  | Integer _, _ -> simp_add typ y x
   (* e + 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   (* (e+i) + j ==> e+(i+j) *)
   | ( App
-        { op= App {op= Add; arg}
+        { op= App {op= Add _; arg}
         ; arg= Integer {data= i; typ= Integer {bits} as typ} }
     , Integer {data= j} ) ->
-      simp_add arg (integer (Z.add ~bits i j) typ)
+      simp_add typ arg (integer (Z.add ~bits i j) typ)
   (* (i+e) + j ==> (i+j)+e *)
   | ( App
         { op=
-            App {op= Add; arg= Integer {data= i; typ= Integer {bits} as typ}}
+            App
+              {op= Add _; arg= Integer {data= i; typ= Integer {bits} as typ}}
         ; arg }
     , Integer {data= j} ) ->
-      simp_add (integer (Z.add ~bits i j) typ) arg
-  | _ -> App {op= App {op= Add; arg= x}; arg= y}
+      simp_add typ (integer (Z.add ~bits i j) typ) arg
+  | _ -> App {op= App {op= Add {typ}; arg= x}; arg= y}
 
-let simp_mul x y =
+let simp_mul typ x y =
   match (x, y) with
   (* i * j *)
   | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
@@ -722,7 +723,7 @@ let simp_mul x y =
   (* e * 1 ==> e *)
   | Integer {data}, e when Z.equal Z.one data -> e
   | e, Integer {data} when Z.equal Z.one data -> e
-  | _ -> App {op= App {op= Mul; arg= x}; arg= y}
+  | _ -> App {op= App {op= Mul {typ}; arg= x}; arg= y}
 
 let simp_sub typ x y =
   match (x, y) with
@@ -730,7 +731,7 @@ let simp_sub typ x y =
   | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
       integer (Z.sub ~bits i j) typ
   (* x - y ==> x + (-1 * y) *)
-  | _ -> simp_add x (simp_mul (integer Z.minus_one typ) y)
+  | _ -> simp_add typ x (simp_mul typ (integer Z.minus_one typ) y)
 
 let simp_div x y =
   match (x, y) with
@@ -782,8 +783,8 @@ let app1 ?(partial = false) op arg =
   | App {op= Ule; arg= x}, y -> simp_ule x y
   | App {op= Ord; arg= x}, y -> simp_ord x y
   | App {op= Uno; arg= x}, y -> simp_uno x y
-  | App {op= Add; arg= x}, y -> simp_add x y
-  | App {op= Mul; arg= x}, y -> simp_mul x y
+  | App {op= Add {typ}; arg= x}, y -> simp_add typ x y
+  | App {op= Mul {typ}; arg= x}, y -> simp_mul typ x y
   | App {op= Div; arg= x}, y -> simp_div x y
   | App {op= Udiv; arg= x}, y -> simp_udiv x y
   | App {op= Rem; arg= x}, y -> simp_rem x y
@@ -817,8 +818,8 @@ let ult = app2 Ult
 let ule = app2 Ule
 let ord = app2 Ord
 let uno = app2 Uno
-let add typ = app2 Add
-let mul typ = app2 Mul
+let add typ = app2 (Add {typ})
+let mul typ = app2 (Mul {typ})
 let sub = simp_sub
 let div = app2 Div
 let udiv = app2 Udiv

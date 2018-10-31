@@ -126,25 +126,24 @@ let invariant r =
 
 let map_sum e ~f =
   match e with
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer {typ} as i} ->
+  | Exp.App {op= App {op= Add {typ}; arg= a}; arg= i} ->
       let a' = f a in
       if a' == a then e else Exp.add typ a' i
   | a -> f a
 
 let fold_sum e ~init ~f =
   match e with
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer _} -> f init a
+  | Exp.App {op= App {op= Add _; arg= a}; arg= Integer _} -> f init a
   | a -> f init a
 
 let base_of = function
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer _} -> a
+  | Exp.App {op= App {op= Add _; arg= a}; arg= Integer _} -> a
   | a -> a
 
 (** solve a+i = b for a, yielding a = b-i *)
 let solve_for_base ai b =
   match ai with
-  | Exp.App {op= App {op= Add; arg= a}; arg= Integer {typ} as i} ->
-      (a, Exp.sub typ b i)
+  | Exp.App {op= App {op= Add {typ}; arg= a}; arg= i} -> (a, Exp.sub typ b i)
   | _ -> (ai, b)
 
 (** [norm r a+i] = [a'+k] where [r] implies [a+i=a'+k] and [a'] is a rep *)
@@ -430,7 +429,7 @@ let difference r a b =
   (* a - b = (c+i) - (d+j) *)
   ( match solve_for_base dj ci with
   (* d = (c+i)-j = c+(i-j) & c = d *)
-  | d, App {op= App {op= Add; arg= c}; arg= Integer {data= i_j}}
+  | d, App {op= App {op= Add _; arg= c}; arg= Integer {data= i_j}}
     when Exp.equal d c ->
       (* a - b = (c+i) - (d+j) = i-j *)
       Some i_j

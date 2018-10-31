@@ -67,7 +67,7 @@ let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
          (List.map ~f:(map_seg ~f:(Congruence.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
            let b_o = function
-             | Exp.App {op= App {op= Add; arg}; arg= Integer {data; _}} ->
+             | Exp.App {op= App {op= Add _; arg}; arg= Integer {data; _}} ->
                  (arg, data)
              | e -> (e, Z.zero)
            in
