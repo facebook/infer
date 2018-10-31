@@ -455,8 +455,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               astate_acc
           | AccessExpression.FieldOffset (ae, _)
           | ArrayOffset (ae, _, [])
-          | Dereference ae
-          | AddressOf ae ->
+          | AddressOf ae
+          | Dereference ae ->
               add_sinks_for_access astate_acc ae
           | AccessExpression.ArrayOffset (ae, _, indexes) ->
               let dummy_call_site = CallSite.make BuiltinDecl.__array_access loc in

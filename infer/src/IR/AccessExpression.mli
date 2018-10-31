@@ -7,24 +7,31 @@
 
 open! IStd
 
-type t =
+type t = private
   | Base of AccessPath.base
-  | FieldOffset of t * Typ.Fieldname.t
-  (* field access *)
-  | ArrayOffset of t * Typ.t * t list
-  (* array access *)
-  | AddressOf of t
-  (* address of operator & *)
-  | Dereference of t
-  (* dereference operator * *)
+  | FieldOffset of t * Typ.Fieldname.t  (** field access *)
+  | ArrayOffset of t * Typ.t * t list  (** array access *)
+  | AddressOf of t  (** "address of" operator [&] *)
+  | Dereference of t  (** "dereference" operator [*] *)
 [@@deriving compare]
 
-module Access : sig
-  type access_expr = t [@@deriving compare]
+val base : AccessPath.base -> t
 
-  type t =
+val field_offset : t -> Typ.Fieldname.t -> t
+
+val array_offset : t -> Typ.t -> t list -> t
+
+val address_of : t -> t
+  [@@warning "-32"]
+(** guarantees that we never build [AddressOf (Dereference t)] expressions: these become [t] *)
+
+val dereference : t -> t
+(** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
+
+module Access : sig
+  type nonrec t =
     | FieldAccess of Typ.Fieldname.t
-    | ArrayAccess of Typ.t * access_expr list
+    | ArrayAccess of Typ.t * t list
     | TakeAddress
     | Dereference
   [@@deriving compare]
@@ -61,5 +68,3 @@ val of_lhs_exp :
   -> f_resolve_id:(Var.t -> t option)
   -> t option
 (** convert [lhs_exp] to an access expression, resolving identifiers using [f_resolve_id] *)
-
-val normalize : t -> t

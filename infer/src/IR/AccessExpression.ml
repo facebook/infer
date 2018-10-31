@@ -12,13 +12,70 @@ type typ_ = Typ.t
 
 let compare_typ_ _ _ = 0
 
-type t =
-  | Base of AccessPath.base
-  | FieldOffset of t * Typ.Fieldname.t
-  | ArrayOffset of t * typ_ * t list
-  | AddressOf of t
-  | Dereference of t
-[@@deriving compare]
+(** Module where unsafe construction of [t] is allowed. In the rest of the code, and especially in
+    clients of the whole [AccessExpression] module, we do not want to allow constructing access
+    expressions directly as they could introduce de-normalized expressions of the form [AddressOf
+    (Dereference t)] or [Dereference (AddressOf t)].
+
+    We could make only the types of [AddressOf] and [Dereference] private but that proved too
+    cumbersome...  *)
+module T : sig
+  type t = private
+    | Base of AccessPath.base
+    | FieldOffset of t * Typ.Fieldname.t
+    | ArrayOffset of t * Typ.t * t list
+    | AddressOf of t
+    | Dereference of t
+  [@@deriving compare]
+
+  val base : AccessPath.base -> t
+
+  val field_offset : t -> Typ.Fieldname.t -> t
+
+  val array_offset : t -> Typ.t -> t list -> t
+
+  val address_of : t -> t
+
+  val dereference : t -> t
+
+  val replace_base : remove_deref_after_base:bool -> AccessPath.base -> t -> t
+end = struct
+  type t =
+    | Base of AccessPath.base
+    | FieldOffset of t * Typ.Fieldname.t
+    | ArrayOffset of t * typ_ * t list
+    | AddressOf of t
+    | Dereference of t
+  [@@deriving compare]
+
+  let base base = Base base
+
+  let field_offset t field = FieldOffset (t, field)
+
+  let array_offset t typ elements = ArrayOffset (t, typ, elements)
+
+  let address_of = function Dereference t -> t | t -> AddressOf t
+
+  let dereference = function AddressOf t -> t | t -> Dereference t
+
+  let rec replace_base ~remove_deref_after_base base_new access_expr =
+    let replace_base_inner = replace_base ~remove_deref_after_base base_new in
+    match access_expr with
+    | Dereference (Base _) ->
+        if remove_deref_after_base then Base base_new else Dereference (Base base_new)
+    | Base _ ->
+        Base base_new
+    | FieldOffset (ae, fld) ->
+        FieldOffset (replace_base_inner ae, fld)
+    | ArrayOffset (ae, typ, aes) ->
+        ArrayOffset (replace_base_inner ae, typ, aes)
+    | AddressOf ae ->
+        AddressOf (replace_base_inner ae)
+    | Dereference ae ->
+        Dereference (replace_base_inner ae)
+end
+
+include T
 
 let may_pp_typ fmt typ =
   if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
@@ -44,11 +101,9 @@ let rec pp fmt = function
 
 
 module Access = struct
-  type access_expr = t [@@deriving compare]
-
-  type t =
+  type nonrec t =
     | FieldAccess of Typ.Fieldname.t
-    | ArrayAccess of typ_ * access_expr list
+    | ArrayAccess of typ_ * t list
     | TakeAddress
     | Dereference
   [@@deriving compare]
@@ -95,9 +150,7 @@ let rec to_access_path t =
         let access_paths = to_access_paths index_aes in
         let base, accesses = to_access_path_ ae in
         (base, AccessPath.ArrayAccess (typ, access_paths) :: accesses)
-    | AddressOf ae ->
-        to_access_path_ ae
-    | Dereference ae ->
+    | AddressOf ae | Dereference ae ->
         to_access_path_ ae
   in
   let base, accesses = to_access_path_ t in
@@ -111,23 +164,6 @@ let rec get_base = function
       base
   | FieldOffset (ae, _) | ArrayOffset (ae, _, _) | AddressOf ae | Dereference ae ->
       get_base ae
-
-
-let rec replace_base ~remove_deref_after_base base_new access_expr =
-  let replace_base_inner = replace_base ~remove_deref_after_base base_new in
-  match access_expr with
-  | Dereference (Base _) ->
-      if remove_deref_after_base then Base base_new else Dereference (Base base_new)
-  | Base _ ->
-      Base base_new
-  | FieldOffset (ae, fld) ->
-      FieldOffset (replace_base_inner ae, fld)
-  | ArrayOffset (ae, typ, aes) ->
-      ArrayOffset (replace_base_inner ae, typ, aes)
-  | AddressOf ae ->
-      AddressOf (replace_base_inner ae)
-  | Dereference ae ->
-      Dereference (replace_base_inner ae)
 
 
 let is_base = function Base _ -> true | _ -> false
@@ -164,32 +200,9 @@ let base_of_id id typ = (Var.of_id id, typ)
 
 let base_of_pvar pvar typ = (Var.of_pvar pvar, typ)
 
-let of_pvar pvar typ = AddressOf (Base (base_of_pvar pvar typ))
+let of_pvar pvar typ = address_of (base (base_of_pvar pvar typ))
 
-let of_id id typ = Base (base_of_id id typ)
-
-(* cancel out consective *&'s *)
-let rec normalize t =
-  match t with
-  | Base _ ->
-      t
-  | Dereference (AddressOf t1) ->
-      normalize t1
-  | FieldOffset (t1, fieldname) ->
-      let t1' = normalize t1 in
-      if phys_equal t1 t1' then t else normalize (FieldOffset (t1', fieldname))
-  | ArrayOffset (t1, typ, tlist) ->
-      let t1' = normalize t1 in
-      let tlist' = IList.map_changed ~f:normalize ~equal tlist in
-      if phys_equal t1 t1' && phys_equal tlist tlist' then t
-      else normalize (ArrayOffset (t1', typ, tlist'))
-  | Dereference t1 ->
-      let t1' = normalize t1 in
-      if phys_equal t1 t1' then t else normalize (Dereference t1')
-  | AddressOf t1 ->
-      let t1' = normalize t1 in
-      if phys_equal t1 t1' then t else normalize (AddressOf t1')
-
+let of_id id typ = base (base_of_id id typ)
 
 (* Adapted from AccessPath.of_exp. *)
 let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id : Var.t -> t option) =
@@ -198,11 +211,11 @@ let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id : Var.t ->
     | Exp.Var id -> (
       match f_resolve_id (Var.of_id id) with
       | Some access_expr ->
-          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          let access_expr' = if add_deref then dereference access_expr else access_expr in
           add_accesses access_expr' :: acc
       | None ->
           let access_expr = of_id id typ in
-          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          let access_expr' = if add_deref then dereference access_expr else access_expr in
           add_accesses access_expr' :: acc )
     | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar -> (
       match f_resolve_id (Var.of_pvar pvar) with
@@ -216,21 +229,21 @@ let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id : Var.t ->
           add_accesses access_expr' :: acc
       | None ->
           let access_expr = of_pvar pvar typ in
-          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          let access_expr' = if add_deref then dereference access_expr else access_expr in
           add_accesses access_expr' :: acc )
     | Exp.Lvar pvar ->
         let access_expr = of_pvar pvar typ in
-        let access_expr' = if add_deref then Dereference access_expr else access_expr in
+        let access_expr' = if add_deref then dereference access_expr else access_expr in
         add_accesses access_expr' :: acc
     | Exp.Lfield (root_exp, fld, root_exp_typ) ->
-        let add_field_access_expr access_expr = add_accesses (FieldOffset (access_expr, fld)) in
+        let add_field_access_expr access_expr = add_accesses (field_offset access_expr fld) in
         of_exp_ root_exp root_exp_typ add_field_access_expr acc
     | Exp.Lindex (root_exp, index_exp) ->
         let index_access_exprs =
           if include_array_indexes then of_exp_ index_exp typ Fn.id [] else []
         in
         let add_array_access_expr access_expr =
-          add_accesses (ArrayOffset (access_expr, typ, index_access_exprs))
+          add_accesses (array_offset access_expr typ index_access_exprs)
         in
         let array_typ = Typ.mk_array typ in
         of_exp_ root_exp array_typ add_array_access_expr acc
@@ -245,14 +258,14 @@ let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id : Var.t ->
     | Exp.Const _ | Closure _ | Sizeof _ ->
         acc
   in
-  IList.map_changed ~f:normalize ~equal (of_exp_ exp0 typ0 Fn.id [])
+  of_exp_ exp0 typ0 Fn.id []
 
 
 let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id : Var.t -> t option) =
   match lhs_exp with
   | Exp.Lfield _ when not add_deref -> (
       let res = of_exp ~include_array_indexes ~add_deref:true lhs_exp typ ~f_resolve_id in
-      match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
+      match res with [lhs_ae] -> Some (address_of lhs_ae) | _ -> None )
   | Exp.Lindex _ when not add_deref -> (
       let res =
         let typ' =
@@ -265,7 +278,7 @@ let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id : Va
         in
         of_exp ~include_array_indexes ~add_deref:true lhs_exp typ' ~f_resolve_id
       in
-      match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
+      match res with [lhs_ae] -> Some (address_of lhs_ae) | _ -> None )
   | _ -> (
       let res = of_exp ~include_array_indexes ~add_deref lhs_exp typ ~f_resolve_id in
       match res with [lhs_ae] -> Some lhs_ae | _ -> None )

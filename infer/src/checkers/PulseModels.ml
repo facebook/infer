@@ -41,19 +41,19 @@ module Cplusplus = struct
 
 
   let placement_new : model =
-   fun location ~ret ~actuals astate ->
+   fun location ~ret:(ret_var, _) ~actuals astate ->
     match List.rev actuals with
     | HilExp.AccessExpression expr :: other_actuals ->
         let new_address = PulseDomain.AbstractAddress.mk_fresh () in
         PulseDomain.write location expr new_address astate
-        >>= PulseDomain.write location (Base ret) new_address
+        >>| PulseDomain.write_var ret_var new_address
         >>= PulseDomain.read_all location
               (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
     | _ :: other_actuals ->
         PulseDomain.read_all location
           (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
           astate
-        >>= PulseDomain.write location (Base ret) (PulseDomain.AbstractAddress.mk_fresh ())
+        >>| PulseDomain.write_var ret_var (PulseDomain.AbstractAddress.mk_fresh ())
     | _ ->
         Ok astate
 end
@@ -66,10 +66,7 @@ module StdVector = struct
 
 
   let deref_internal_array vector =
-    AccessExpression.ArrayOffset
-      ( AccessExpression.Dereference (AccessExpression.FieldOffset (vector, internal_array))
-      , Typ.void
-      , [] )
+    AccessExpression.(array_offset (dereference (field_offset vector internal_array)) Typ.void [])
 
 
   let at : model =
@@ -77,7 +74,7 @@ module StdVector = struct
     match actuals with
     | [AccessExpression vector; _index] ->
         PulseDomain.read location (deref_internal_array vector) astate
-        >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.Base ret) loc astate
+        >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.base ret) loc astate
     | _ ->
         Ok (PulseDomain.havoc_var (fst ret) astate)
 

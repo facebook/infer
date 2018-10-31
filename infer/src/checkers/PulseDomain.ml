@@ -492,6 +492,11 @@ module Operations = struct
             walk actor ~on_last addr' path astate )
 
 
+  let write_var var addr astate =
+    let stack = AliasingDomain.add var addr astate.stack in
+    {astate with stack}
+
+
   (** add addresses to the state to give a address to the destination of the given access path *)
   let walk_access_expr ~on_last astate access_expr location =
     let (access_var, _), access_list = AccessExpression.to_accesses access_expr in
@@ -501,8 +506,7 @@ module Operations = struct
         access_list ;
     match (on_last, access_list) with
     | `Overwrite new_addr, [] ->
-        let stack = AliasingDomain.add access_var new_addr astate.stack in
-        Ok ({astate with stack}, new_addr)
+        Ok (write_var access_var new_addr astate, new_addr)
     | `Access, _ | `Overwrite _, _ :: _ ->
         let astate, base_addr =
           match AliasingDomain.find_opt access_var astate.stack with

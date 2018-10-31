@@ -49,9 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
       | [AccessExpression destroyed_access] ->
-          let destroyed_object =
-            AccessExpression.normalize (AccessExpression.Dereference destroyed_access)
-          in
+          let destroyed_object = AccessExpression.dereference destroyed_access in
           PulseDomain.invalidate
             (CppDestructor (callee_pname, destroyed_object, call_loc))
             call_loc destroyed_object astate
@@ -60,9 +58,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
       match actuals with
       | AccessExpression constructor_access :: rest ->
-          let constructed_object =
-            AccessExpression.normalize (AccessExpression.Dereference constructor_access)
-          in
+          let constructed_object = AccessExpression.dereference constructor_access in
           PulseDomain.havoc call_loc constructed_object astate >>= read_all rest
       | _ ->
           Ok astate )

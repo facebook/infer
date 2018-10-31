@@ -27,12 +27,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let rec is_heap_access ae =
-    match ae with
-    | AccessExpression.FieldOffset _ | AccessExpression.ArrayOffset _ ->
+    match (ae : AccessExpression.t) with
+    | FieldOffset _ | ArrayOffset _ ->
         true
-    | AccessExpression.Dereference ae | AccessExpression.AddressOf ae ->
+    | Dereference ae | AddressOf ae ->
         is_heap_access ae
-    | AccessExpression.Base _ ->
+    | Base _ ->
         false
 
 

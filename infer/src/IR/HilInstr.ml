@@ -55,7 +55,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
     | AccessExpression rhs_access_expr ->
         Bind (lhs_id, rhs_access_expr)
     | _ ->
-        Instr (Assign (AccessExpression.Base (lhs_id, rhs_typ), rhs_hil_exp, loc))
+        Instr (Assign (AccessExpression.base (lhs_id, rhs_typ), rhs_hil_exp, loc))
   in
   match instr with
   | Load (lhs_id, rhs_exp, rhs_typ, loc) ->
@@ -98,7 +98,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
             let dummy_base_var =
               Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
             in
-            AccessExpression.Base (dummy_base_var, Typ.void_star)
+            AccessExpression.base (dummy_base_var, Typ.void_star)
         | _ ->
             L.(die InternalError)
               "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc

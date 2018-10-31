@@ -50,7 +50,7 @@ module MaybeUninitVars = struct
       match Tenv.lookup tenv name_struct with
       | Some {fields} ->
           List.fold fields ~init:maybe_uninit_vars ~f:(fun acc (fn, _, _) ->
-              remove (AccessExpression.FieldOffset (Base base, fn)) acc )
+              remove (AccessExpression.field_offset (AccessExpression.base base) fn) acc )
       | _ ->
           maybe_uninit_vars )
     | _ ->
@@ -60,7 +60,7 @@ module MaybeUninitVars = struct
   let remove_dereference_access base maybe_uninit_vars =
     match base with
     | _, {Typ.desc= Tptr _} ->
-        remove (AccessExpression.Dereference (Base base)) maybe_uninit_vars
+        remove (AccessExpression.dereference (AccessExpression.base base)) maybe_uninit_vars
     | _ ->
         maybe_uninit_vars
 
@@ -68,7 +68,9 @@ module MaybeUninitVars = struct
   let remove_all_array_elements base maybe_uninit_vars =
     match base with
     | _, {Typ.desc= Tptr (elt, _)} ->
-        remove (AccessExpression.ArrayOffset (Base base, elt, [])) maybe_uninit_vars
+        remove
+          (AccessExpression.array_offset (AccessExpression.base base) elt [])
+          maybe_uninit_vars
     | _ ->
         maybe_uninit_vars
 

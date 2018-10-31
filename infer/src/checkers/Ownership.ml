@@ -190,13 +190,13 @@ module Domain = struct
 
   (* handle assigning directly to a base var *)
   let handle_var_assign ?(is_operator_equal = false) lhs_base rhs_exp loc summary astate =
-    match rhs_exp with
-    | HilExp.Constant _ when not (Var.is_cpp_temporary (fst lhs_base)) ->
+    match (rhs_exp : HilExp.t) with
+    | Constant _ when not (Var.is_cpp_temporary (fst lhs_base)) ->
         add lhs_base CapabilityDomain.Owned astate
-    | HilExp.AccessExpression (Base rhs_base | AddressOf (Base rhs_base))
+    | AccessExpression (Base rhs_base | AddressOf (Base rhs_base))
       when not (Var.appears_in_source_code (fst rhs_base)) ->
         copy_or_borrow_var lhs_base rhs_base astate
-    | HilExp.Closure (_, captured_vars) ->
+    | Closure (_, captured_vars) ->
         (* TODO: can be folded into the case above once we have proper AccessExpressions *)
         let vars_captured_by_ref =
           List.fold captured_vars
@@ -205,10 +205,10 @@ module Domain = struct
             ~init:VarSet.empty
         in
         borrow_vars lhs_base vars_captured_by_ref astate
-    | HilExp.AccessExpression (Base rhs_base)
+    | AccessExpression (Base rhs_base)
       when (not is_operator_equal) && Typ.is_reference (snd rhs_base) ->
         copy_or_borrow_var lhs_base rhs_base astate
-    | HilExp.AccessExpression (AddressOf (Base rhs_base)) when not is_operator_equal ->
+    | AccessExpression (AddressOf (Base rhs_base)) when not is_operator_equal ->
         borrow_vars lhs_base (VarSet.singleton rhs_base) astate
     | _ ->
         (* TODO: support capability transfer between source vars, other assignment modes *)

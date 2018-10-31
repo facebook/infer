@@ -282,7 +282,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold apl ~init:acc ~f:(fun acc (base, _) ->
-                      MaybeUninitVars.remove (AccessExpression.Base base) acc )
+                      MaybeUninitVars.remove (AccessExpression.base base) acc )
               | _ ->
                   acc )
         in
@@ -308,7 +308,7 @@ module Initial = struct
     List.fold (Procdesc.get_locals pdesc) ~init:[]
       ~f:(fun acc (var_data : ProcAttributes.var_data) ->
         let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
-        let base_access_expr = AccessExpression.Base (Var.of_pvar pvar, var_data.typ) in
+        let base_access_expr = AccessExpression.base (Var.of_pvar pvar, var_data.typ) in
         match var_data.typ.Typ.desc with
         | Typ.Tstruct qual_name
         (* T30105165 remove filtering after we improve union translation *)
@@ -318,7 +318,7 @@ module Initial = struct
               let flist =
                 List.fold
                   ~f:(fun acc' (fn, _, _) ->
-                    AccessExpression.FieldOffset (base_access_expr, fn) :: acc' )
+                    AccessExpression.field_offset base_access_expr fn :: acc' )
                   ~init:acc fields
               in
               base_access_expr :: flist
@@ -327,9 +327,9 @@ module Initial = struct
           | _ ->
               acc )
         | Typ.Tarray {elt} ->
-            AccessExpression.ArrayOffset (base_access_expr, elt, []) :: acc
+            AccessExpression.array_offset base_access_expr elt [] :: acc
         | Typ.Tptr _ ->
-            base_access_expr :: AccessExpression.Dereference base_access_expr :: acc
+            base_access_expr :: AccessExpression.dereference base_access_expr :: acc
         | _ ->
             base_access_expr :: acc )
 end

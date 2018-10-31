@@ -43,6 +43,8 @@ val havoc_var : Var.t -> t -> t
 
 val havoc : Location.t -> AccessExpression.t -> t -> t access_result
 
+val write_var : Var.t -> AbstractAddress.t -> t -> t
+
 val write : Location.t -> AccessExpression.t -> AbstractAddress.t -> t -> t access_result
 
 val invalidate : PulseInvalidation.t -> Location.t -> AccessExpression.t -> t -> t access_result

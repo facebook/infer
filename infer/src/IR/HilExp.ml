@@ -116,12 +116,10 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
         let ae =
           match f_resolve_id (Var.of_id id) with
           | Some access_expr ->
-              if add_deref then AccessExpression.normalize (Dereference access_expr)
-              else access_expr
+              if add_deref then AccessExpression.dereference access_expr else access_expr
           | None ->
               let access_expr = AccessExpression.of_id id typ in
-              if add_deref then AccessExpression.normalize (Dereference access_expr)
-              else access_expr
+              if add_deref then AccessExpression.dereference access_expr else access_expr
         in
         AccessExpression ae
     | UnOp (op, e, typ_opt) ->
