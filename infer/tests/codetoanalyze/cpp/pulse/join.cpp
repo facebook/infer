@@ -13,7 +13,7 @@ struct list {
   struct foo* foo;
 };
 
-int visit_list(struct list* head, int cond) {
+int invalidate_node_alias_bad(struct list* head, int cond) {
   int* result = 0;
   struct list* x = head;
   if (cond) {
@@ -23,6 +23,7 @@ int visit_list(struct list* head, int cond) {
     x = x->next;
     struct list* y = x->next;
     result = x->foo->val;
+    delete result;
   }
   return *result;
 }

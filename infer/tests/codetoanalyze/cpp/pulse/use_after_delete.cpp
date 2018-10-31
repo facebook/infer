@@ -51,7 +51,7 @@ void double_delete_bad() {
   delete s;
 }
 
-Simple* delete_in_branch_bad(bool b) {
+Simple* FN_delete_in_branch_bad(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -76,7 +76,7 @@ void use_in_branch_bad(bool b) {
   }
 }
 
-void delete_in_loop_bad() {
+void FN_delete_in_loop_bad() {
   auto s = new Simple{1};
   for (int i = 0; i < 10; i++) {
     delete s;
@@ -90,7 +90,7 @@ void delete_in_loop_ok() {
   }
 }
 
-void FP_delete_ref_in_loop_ok(int j, std::vector<std::string> v) {
+void delete_ref_in_loop_ok(int j, std::vector<std::string> v) {
   int i = 0;
   for (int i = 0; i < 10; i++) {
     auto s = &v[i];
@@ -106,7 +106,7 @@ void use_in_loop_bad() {
   }
 }
 
-Simple* FP_gated_delete_abort_ok(bool b) {
+Simple* gated_delete_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -115,7 +115,7 @@ Simple* FP_gated_delete_abort_ok(bool b) {
   return s;
 }
 
-Simple* FP_gated_exit_abort_ok(bool b) {
+Simple* gated_exit_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -124,7 +124,7 @@ Simple* FP_gated_exit_abort_ok(bool b) {
   return s;
 }
 
-Simple* FP_gated_delete_throw_ok(bool b) {
+Simple* gated_delete_throw_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;

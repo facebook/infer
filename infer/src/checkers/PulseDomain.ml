@@ -149,14 +149,13 @@ module InvalidAddressesDomain : sig
   val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
   (** None denotes a valid location *)
 
-  val map : (AbstractAddress.t -> AbstractAddress.t) -> astate -> astate
-  (** translate invalid addresses according to the mapping *)
+  val is_invalid : AbstractAddress.t -> astate -> bool
 end = struct
   include AbstractDomain.Map (AbstractAddress) (Invalidation)
 
-  let map f invalids = fold (fun key value map -> add (f key) value map) invalids empty
-
   let get_invalidation address invalids = find_opt address invalids
+
+  let is_invalid address invalids = mem address invalids
 end
 
 (** the domain *)
@@ -168,7 +167,7 @@ let initial =
   ; invalids=
       InvalidAddressesDomain.empty
       (* TODO: this makes the analysis go a bit overboard with the Nullptr reports. *)
-      (* (\* always recall that 0 is invalid *\)
+      (* (* always recall that 0 is invalid *)
          InvalidAddressesDomain.add AbstractAddress.nullptr Nullptr InvalidAddressesDomain.empty *)
   }
 
@@ -201,11 +200,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
       let compare_size _ _ = 0
 
-      let merge ~from ~to_ =
-        (* building the actual set is only useful to display what equalities where discovered in the
-           HTML debug output *)
-        if Config.debug_mode then to_ := Set.union !from !to_
-
+      let merge ~from ~to_ = to_ := Set.union !from !to_
 
       let pp f x = Set.pp f !x
     end
@@ -290,6 +285,42 @@ module Domain : AbstractDomain.S with type astate = t = struct
       {subst; astate= {heap; stack; invalids}}
 
 
+    (** compute new set of invalid addresses for a given join state *)
+    let to_invalids {subst; astate= {invalids= old_invalids}} =
+      (* iterate over all discovered equivalence classes *)
+      AddressUF.fold_sets subst ~init:InvalidAddressesDomain.empty
+        ~f:(fun new_invalids (repr, set) ->
+          (* Add [repr] as an invalid address if *all* the addresses it represents were known to
+             be invalid. This is unsound but avoids false positives for now. *)
+          if
+            AddressUnionSet.Set.for_all
+              (fun addr -> InvalidAddressesDomain.is_invalid addr old_invalids)
+              !set
+          then
+            (* join the invalidation reasons for all the invalidations of the representative *)
+            let reason =
+              AddressUnionSet.Set.fold
+                (fun address reason ->
+                  (* this is safe because of [for_all] above *)
+                  let reason' =
+                    Option.value_exn (InvalidAddressesDomain.get_invalidation address old_invalids)
+                  in
+                  match reason with
+                  | None ->
+                      Some reason'
+                  | Some reason ->
+                      Some (Invalidation.join reason reason') )
+                !set None
+            in
+            InvalidAddressesDomain.add
+              (repr :> AbstractAddress.t)
+              ((* safe because [!set] cannot be empty so there is at least one address to join from
+                  *)
+               Option.value_exn reason)
+              new_invalids
+          else new_invalids )
+
+
     let rec normalize state =
       let one_addr subst addr edges heap_has_converged =
         Memory.Edges.fold
@@ -314,9 +345,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
               AddressUnionSet.pp set ) ;
         L.d_decrease_indent () ;
         let stack = AliasingDomain.map (to_canonical_address state.subst) state.astate.stack in
-        let invalids =
-          InvalidAddressesDomain.map (to_canonical_address state.subst) state.astate.invalids
-        in
+        let invalids = to_invalids state in
         {heap; stack; invalids} )
       else normalize {state with astate= {state.astate with heap}}
   end
