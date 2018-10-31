@@ -839,6 +839,8 @@ let rec simp_not (typ : Typ.t) exp =
   | ( App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
     , Integer {bits= 1} ) ->
       simp_cond cnd (simp_not typ thn) (simp_not typ els)
+  (* ¬false ==> true ¬true ==> false *)
+  | Integer {data}, Integer {bits= 1} -> bool (Z.is_false data)
   (* ¬b ==> false = b *)
   | b, Integer {bits= 1} -> App {op= App {op= Eq; arg= bool false}; arg= b}
   (* ¬e ==> true xor e *)

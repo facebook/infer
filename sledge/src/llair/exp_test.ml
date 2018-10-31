@@ -178,7 +178,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pf (z != z) ;
-      [%expect {| (0 = -1) |}]
+      [%expect {| 0 |}]
 
     let%expect_test _ =
       pf (!1 = !0) ;
