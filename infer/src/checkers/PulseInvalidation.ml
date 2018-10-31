@@ -22,7 +22,7 @@ let issue_type_of_cause = function
   | CppDelete _ ->
       IssueType.use_after_delete
   | CppDestructor _ ->
-      IssueType.use_after_lifetime
+      IssueType.use_after_destructor
   | Nullptr ->
       IssueType.null_dereference
   | StdVectorPushBack _ ->

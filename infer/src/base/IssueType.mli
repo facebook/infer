@@ -293,6 +293,8 @@ val unsafe_guarded_by_access : t
 
 val use_after_delete : t
 
+val use_after_destructor : t
+
 val use_after_free : t
 
 val use_after_lifetime : t
