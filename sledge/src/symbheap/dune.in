@@ -10,12 +10,11 @@ let deps = ["import"; "trace"; "llair_"]
 
 ;;
 Jbuild_plugin.V1.send
-@@ Format.sprintf
-     {|
+@@ Format.sprintf {|
 (library
  (name symbheap)
  %s
- (libraries %s)
- (inline_tests))
+ (libraries %s))
 |}
-     (flags deps) (libraries deps)
+     (flags `lib deps)
+     (libraries deps)

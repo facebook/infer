@@ -28,7 +28,7 @@ let coverage_ppx =
 let ppx_flags =
   match Jbuild_plugin.V1.context with "dev" -> "--debug" | _ -> ""
 
-let flags deps =
+let flags exe_or_lib deps =
   Printf.sprintf
     {|(flags (%s %s))
       (ocamlc_flags (%s))
@@ -46,10 +46,12 @@ let flags deps =
          ppx_sexp_value
          ppx_trace
          %s
-         %s))|}
+         %s))
+      %s|}
     common_flags
     (String.concat " "
        (List.map (fun d -> "-open " ^ String.capitalize_ascii d) deps))
     ocamlc_flags ocamlopt_flags ppx_flags coverage_ppx
+    (match exe_or_lib with `lib -> "(inline_tests)" | _ -> "")
 
 let libraries deps = String.concat " " deps

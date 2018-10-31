@@ -18,4 +18,5 @@ Jbuild_plugin.V1.send
  %s
  (libraries core_kernel zarith %s))
 |}
-     (flags deps) (libraries deps)
+     (flags `lib deps)
+     (libraries deps)

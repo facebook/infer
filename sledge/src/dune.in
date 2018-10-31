@@ -24,4 +24,5 @@ Jbuild_plugin.V1.send
  %s
  (libraries cmdliner %s))
 |}
-     (flags deps) (libraries deps)
+     (flags `exe deps)
+     (libraries deps)
