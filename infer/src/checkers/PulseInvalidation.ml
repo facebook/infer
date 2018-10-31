@@ -26,7 +26,7 @@ let issue_type_of_cause = function
   | Nullptr ->
       IssueType.null_dereference
   | StdVectorPushBack _ ->
-      IssueType.use_after_lifetime
+      IssueType.vector_invalidation
 
 
 let get_location = function
