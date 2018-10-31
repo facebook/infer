@@ -22,14 +22,14 @@
     require inductive reasoning. *)
 
 type t = private
+  | App of {op: t; arg: t}
+      (** Application of function symbol to argument, curried *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
-  | App of {op: t; arg: t}
-      (** Application of function symbol to argument, curried *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Memory  (** Size-tagged byte-array *)
   | Concat  (** Byte-array concatenation *)

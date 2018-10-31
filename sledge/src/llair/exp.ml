@@ -16,6 +16,7 @@ module Z = struct
   let zero = Z.zero
   let one = Z.one
   let minus_one = Z.minus_one
+  let sign = Z.sign
   let to_int = Z.to_int
   let numbits = Z.numbits
   let fits_int = Z.fits_int
@@ -65,10 +66,10 @@ end
 
 module T0 = struct
   type t =
+    | App of {op: t; arg: t}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
-    | App of {op: t; arg: t}
     (* pointer and memory constants and operations *)
     | Splat
     | Memory
@@ -179,7 +180,8 @@ module T = struct
       | Ord -> pf "ord"
       | Uno -> pf "uno"
       | Add _ -> pf "+"
-      | Mul _ -> pf "*"
+      | Mul _ -> pf "@<1>×"
+      | App {op= App {op= Add _ | Mul _}} -> pp_poly fs exp
       | Div -> pf "/"
       | Udiv -> pf "udiv"
       | Rem -> pf "rem"
@@ -223,6 +225,31 @@ module T = struct
     in
     fix_flip pp_ (fun _ _ -> ()) fs exp
 
+  and pp_mono fs m =
+    let rec pp_mono fs m =
+      match m with
+      | App {op= App {op= Mul _; arg= m}; arg= f} ->
+          Format.fprintf fs "%a@ @<2>× %a" pp_mono m pp f
+      | e -> pp fs e
+    in
+    match m with
+    | App {op= App {op= Mul _; arg= m}; arg= Integer _ as c} ->
+        Format.fprintf fs "(%a@ @<2>× %a)" pp c pp_mono m
+    | App {op= App {op= Mul _}} -> Format.fprintf fs "(%a)" pp_mono m
+    | _ -> pp_mono fs m
+
+  and pp_poly fs p =
+    let rec pp_poly fs p =
+      match p with
+      | App {op= App {op= Add _; arg= p}; arg= m} ->
+          Format.fprintf fs "%a@ + @[%a@]" pp_poly p pp_mono m
+      | m -> Format.fprintf fs "@[%a@]" pp_mono m
+    in
+    match p with
+    | App {op= App {op= Add _}} ->
+        Format.fprintf fs "@[<hov 1>(%a)@]" pp_poly p
+    | _ -> pp_poly fs p
+
   and pp_record fs elts =
     [%Trace.fprintf
       fs "%a"
@@ -261,6 +288,93 @@ let type_check typ e =
 
 let type_check2 typ e f = type_check typ e ; type_check typ f
 
+let coefficient = function
+  | App {op= App {op= Mul _}; arg= Integer {data}} -> data
+  | _ -> Z.one
+
+let indeterminate = function
+  | App {op= App {op= Mul _; arg}; arg= Integer _} -> arg
+  | x -> x
+
+(* a polynomial is a sum of monomials, e.g.
+ *     (…(c₀ × x₀ + c₁ × x₁) + …) + cᵤ × xᵤ
+ *     for constants cᵢ and indeterminants xᵢ
+ *   with at most one constant
+ *     which is not 0
+ *   where no non-constant monomial has coefficient 0 or 1
+ *   where monomials are unique and sorted modulo their coefficients
+ *   represented as left-associated Add expressions
+ *     so the constant is the right-most and shallowest Add arg
+ * a monomial is a product of factors, e.g.
+ *     ((…(x₀ × x₁) × …) × xᵤ) × c
+ *     for constant c and indeterminants xᵢ
+ *   with at most one constant (aka the coefficient)
+ *     which, if 0 or 1, is the only factor
+ *   represented as left-associated Mul expressions
+ *   where factors are sorted in increasing order wrt compare
+ *     so the constant coefficient is the right-most and shallowest Mul arg
+ * a factor is either
+ *   a constant (Integer)
+ *   or an indeterminate (non-Add/Mul/Integer)
+ *)
+
+let assert_polynomial ?(partial = false) p =
+  let rec assert_poly ?typ:typ0 ?bound p =
+    let assert_sorted mono =
+      Option.iter bound ~f:(fun bound ->
+          assert (compare (indeterminate mono) (indeterminate bound) < 0) )
+    in
+    let assert_monomial ?typ:typ0 m =
+      let rec assert_mono ?typ:typ0 ?bound m =
+        let assert_sorted fact =
+          Option.iter bound ~f:(fun bound -> assert (compare fact bound <= 0)
+          )
+        in
+        let assert_factor = function
+          | Integer _ | App {op= App {op= Add _ | Mul _}} -> assert false
+          | Add _ | Mul _ | App {op= Add _ | Mul _} -> assert partial
+          | _ -> assert true
+        in
+        match m with
+        | App {op= App {op= Mul _}; arg= Integer _} -> assert false
+        | App {op= App {op= Mul {typ}; arg= mono}; arg= fact} ->
+            assert (Option.for_all ~f:(Typ.castable typ) typ0) ;
+            assert_factor fact ;
+            assert_sorted fact ;
+            assert_mono ~typ ~bound:fact mono
+        | fact -> assert_factor fact ; assert_sorted fact
+      in
+      match m with
+      | App
+          { op= App {op= Mul {typ}; arg= mono}
+          ; arg= Integer {data; typ= typ'} } ->
+          assert (Option.for_all ~f:(Typ.castable typ) typ0) ;
+          assert (Typ.castable typ typ') ;
+          assert (Option.exists ~f:(( < ) 1) (Typ.prim_bit_size_of typ)) ;
+          assert (not (Z.equal Z.zero data)) ;
+          assert (not (Z.equal Z.one data)) ;
+          assert_mono ~typ mono
+      | mono -> assert_mono mono
+    in
+    match p with
+    | App {op= App {op= Add _}; arg= Integer _} -> assert false
+    | App {op= App {op= Add {typ}; arg= poly}; arg= mono} ->
+        assert (Option.for_all ~f:(Typ.castable typ) typ0) ;
+        assert_monomial ~typ mono ;
+        assert_sorted mono ;
+        assert_poly ~bound:mono ~typ poly
+    | mono ->
+        assert_monomial ?typ:typ0 mono ;
+        assert_sorted mono
+  in
+  match p with
+  | App {op= App {op= Add {typ}; arg= poly}; arg= Integer {data; typ= typ'}}
+    ->
+      assert (Typ.castable typ typ') ;
+      assert (not (Z.equal Z.zero data)) ;
+      assert_poly ~typ poly
+  | poly -> assert_poly poly
+
 let invariant ?(partial = false) e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
@@ -279,8 +393,9 @@ let invariant ?(partial = false) e =
       | [Integer {typ}] -> assert (Typ.equal src typ)
       | _ -> assert_arity 1 ) ;
       assert (Typ.convertible src dst)
-  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add _ | Mul _
-   |Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
+  | Add _ | Mul _ -> assert_polynomial ~partial e
+  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Div | Udiv | Rem
+   |Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
     | [x; y] -> (
       match (typ_of x, typ_of y) with
@@ -514,6 +629,127 @@ let simp_ule x y =
 let simp_ord x y = App {op= App {op= Ord; arg= x}; arg= y}
 let simp_uno x y = App {op= App {op= Uno; arg= x}; arg= y}
 
+(* see assert_polynomial for representation invariants of polynomials
+ * suffixes are used on function names to indicate their type, e.g.
+ *   mul_mf multiplies a monomial by a factor, and
+ *   mul_pm multiplies a polynomial by a monomial
+ *)
+let rec simp_mul typ axs bys =
+  let bits =
+    match Typ.prim_bit_size_of typ with
+    | Some bits -> bits
+    | None -> fail "multiplication not defined at type %a" Typ.pp typ ()
+  in
+  let one = integer Z.one typ in
+  let mul_mf x y =
+    match (x, y) with
+    | Integer {data; typ= Integer {bits= 1}}, _ when Z.is_false data -> x
+    | _, Integer {data; typ= Integer {bits= 1}} when Z.is_false data -> y
+    | Integer {typ= Integer {bits= 1}}, y -> y
+    | x, Integer {typ= Integer {bits= 1}} -> x
+    | Integer {data}, y when Z.equal Z.one data -> y
+    | x, Integer {data} when Z.equal Z.one data -> x
+    | _, Integer {data} when Z.equal Z.zero data -> y
+    | Integer {data}, _ when Z.equal Z.zero data -> x
+    | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+        integer (Z.mul ~bits i j) typ
+    | _ -> App {op= App {op= Mul {typ}; arg= x}; arg= y}
+  in
+  let rec mul_mm axs bys =
+    match (axs, bys) with
+    | Integer {data}, by0N when Z.equal Z.one data -> by0N
+    | ax0J, Integer {data} when Z.equal Z.one data -> ax0J
+    | ax0J, by0N -> (
+      match
+        match (ax0J, by0N) with
+        | ( App {op= App {op= Mul _; arg= ax0I}; arg= axJ}
+          , App {op= App {op= Mul _; arg= by0M}; arg= byN} ) ->
+            (ax0I, axJ, by0M, byN)
+        | App {op= App {op= Mul _; arg= ax0I}; arg= axJ}, byN ->
+            (ax0I, axJ, one, byN)
+        | axJ, App {op= App {op= Mul _; arg= by0M}; arg= byN} ->
+            (one, axJ, by0M, byN)
+        | axJ, byN -> (one, axJ, one, byN)
+      with
+      | ax0I, Integer {data= i}, by0M, Integer {data= j} ->
+          mul_mf (mul_mm ax0I by0M) (integer (Z.mul ~bits i j) typ)
+      | ax0I, axJ, by0M, byN ->
+          if compare axJ byN < 0 then mul_mf (mul_mm ax0J by0M) byN
+          else mul_mf (mul_mm ax0I by0N) axJ )
+  in
+  let rec mul_pm ax0J by =
+    match ax0J with
+    | App {op= App {op= Add _; arg= ax0I}; arg= axJ} ->
+        simp_add typ (mul_pm ax0I by) (mul_mm axJ by)
+    | _ -> mul_mm ax0J by
+  in
+  let rec mul_pp axs by0N =
+    match by0N with
+    | App {op= App {op= Add _; arg= by0M}; arg= byN} ->
+        simp_add typ (mul_pp axs by0M) (mul_pm axs byN)
+    | _ -> mul_pm axs by0N
+  in
+  mul_pp axs bys
+
+and simp_add typ axs bys =
+  let bits =
+    match Typ.prim_bit_size_of typ with
+    | Some bits -> bits
+    | None -> fail "addition not defined at type %a" Typ.pp typ ()
+  in
+  let zero = integer Z.zero typ in
+  let add_pm x y =
+    match (x, y) with
+    | Integer {data}, y when Z.equal Z.zero data -> y
+    | x, Integer {data} when Z.equal Z.zero data -> x
+    | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+        integer (Z.add ~bits i j) typ
+    | _ -> App {op= App {op= Add {typ}; arg= x}; arg= y}
+  in
+  let rec add_pp axs bys =
+    match (axs, bys) with
+    | Integer {data}, by0N when Z.equal Z.zero data -> by0N
+    | ax0J, Integer {data} when Z.equal Z.zero data -> ax0J
+    | ax0J, by0N -> (
+      match
+        match (ax0J, by0N) with
+        | ( App {op= App {op= Add _; arg= ax0I}; arg= axJ}
+          , App {op= App {op= Add _; arg= by0M}; arg= byN} ) ->
+            (ax0I, axJ, by0M, byN)
+        | App {op= App {op= Add _; arg= ax0I}; arg= axJ}, byN ->
+            (ax0I, axJ, zero, byN)
+        | axJ, App {op= App {op= Add _; arg= by0M}; arg= byN} ->
+            (zero, axJ, by0M, byN)
+        | axJ, byN -> (zero, axJ, zero, byN)
+      with
+      | ax0I, Integer {data= i}, by0M, Integer {data= j} ->
+          add_pm (add_pp ax0I by0M) (integer (Z.add ~bits i j) typ)
+      | ax0I, axJ, by0M, byN ->
+          let xJ = indeterminate axJ in
+          let yN = indeterminate byN in
+          let ord = compare xJ yN in
+          if ord < 0 then add_pm (add_pp ax0J by0M) byN
+          else if ord > 0 then add_pm (add_pp ax0I by0N) axJ
+          else
+            let aJ = coefficient axJ in
+            let bN = coefficient byN in
+            let c = Z.add ~bits aJ bN in
+            if Z.equal Z.zero c then add_pp ax0I by0M
+            else add_pm (add_pp ax0I by0M) (simp_mul typ (integer c typ) xJ)
+      )
+  in
+  add_pp axs bys
+
+let simp_negate typ x = simp_mul typ (integer Z.minus_one typ) x
+
+let simp_sub typ x y =
+  match (x, y) with
+  (* i - j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.sub ~bits i j) typ
+  (* x - y ==> x + (-1 * y) *)
+  | _ -> simp_add typ x (simp_negate typ y)
+
 let simp_cond cnd thn els =
   match cnd with
   (* ¬(true ? t : e) ==> t *)
@@ -610,25 +846,38 @@ let rec simp_not (typ : Typ.t) exp =
       App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
 
 and simp_eq x y =
-  match (x, y) with
-  (* i = j *)
+  let coeff_sign = function
+    | Integer {data} | App {op= App {op= Mul _}; arg= Integer {data}} ->
+        Z.sign data
+    | _ -> 1
+  in
+  match
+    match (x, y) with
+    | (App {op= App {op= Add {typ} | Mul {typ}}} | Integer {typ}), _
+     |_, (App {op= App {op= Add {typ} | Mul {typ}}} | Integer {typ}) -> (
+      match simp_sub typ x y with
+      (* x = y ==> x' = -y' where x-y = x' + y' *)
+      | App {op= App {op= Add {typ}; arg= x'}; arg= y'} ->
+          if coeff_sign y' < 0 then (x', simp_negate typ y')
+          else (simp_negate typ x', y')
+      (* x = y ==> x-y = 0 *)
+      | x_y ->
+          let x_y =
+            if coeff_sign x_y < 0 then simp_negate typ x_y else x_y
+          in
+          (x_y, integer Z.zero typ) )
+    | _ -> (x, y)
+  with
   | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
+      (* i = j *)
       bool (Z.eq ~bits i j)
-  (* e+i = j ==> e = j-i *)
-  | ( App {op= App {op= Add _; arg= e}; arg= Integer {data= i}}
-    , Integer {data= j; typ= Integer {bits} as typ} ) ->
-      simp_eq e (integer (Z.sub ~bits j i) typ)
-  (* b = false ==> ¬b *)
   | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b
-    when Z.is_false data ->
-      simp_not Typ.bool b
-  (* b = true ==> b *)
-  | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b
-    when Z.is_true data ->
-      b
-  | _ ->
+   |Integer {data; typ= Integer {bits= 1}}, b ->
+      if Z.is_false data then (* b = false ==> ¬b *)
+        simp_not Typ.bool b
+      else (* b = true ==> b *)
+        b
+  | x, y ->
       let c = compare x y in
       (* e = e ==> true *)
       if c = 0 then bool true
@@ -636,30 +885,10 @@ and simp_eq x y =
       else App {op= App {op= Eq; arg= x}; arg= y}
 
 and simp_dq x y =
-  match (x, y) with
-  (* i != j *)
-  | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
-      bool (not (Z.eq ~bits i j))
-  (* e+i != j ==> e != j-i *)
-  | ( App {op= App {op= Add _; arg= e}; arg= Integer {data= i}}
-    , Integer {data= j; typ= Integer {bits} as typ} ) ->
-      simp_dq e (integer (Z.sub ~bits j i) typ)
-  (* b != false ==> b *)
-  | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b
-    when Z.is_false data ->
-      b
-  (* b != true ==> ¬b *)
-  | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b
-    when Z.is_true data ->
-      simp_not Typ.bool b
-  | _ ->
-      let c = compare x y in
-      (* e = e ==> false *)
-      if c = 0 then bool false
-      else if c < 0 then App {op= App {op= Dq; arg= x}; arg= y}
-      else App {op= App {op= Dq; arg= y}; arg= x}
+  match simp_eq x y with
+  | App {op= App {op= Eq; arg= x}; arg= y} ->
+      App {op= App {op= Dq; arg= x}; arg= y}
+  | b -> simp_not Typ.bool b
 
 let simp_xor x y =
   match (x, y) with
@@ -705,49 +934,6 @@ let simp_ashr x y =
   (* e ashr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> App {op= App {op= Ashr; arg= x}; arg= y}
-
-let rec simp_add typ x y =
-  match (x, y) with
-  (* i + j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
-      integer (Z.add ~bits i j) typ
-  (* i + e ==> e + i *)
-  | Integer _, _ -> simp_add typ y x
-  (* e + 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  (* (e+i) + j ==> e+(i+j) *)
-  | ( App
-        { op= App {op= Add _; arg}
-        ; arg= Integer {data= i; typ= Integer {bits} as typ} }
-    , Integer {data= j} ) ->
-      simp_add typ arg (integer (Z.add ~bits i j) typ)
-  (* (i+e) + j ==> (i+j)+e *)
-  | ( App
-        { op=
-            App
-              {op= Add _; arg= Integer {data= i; typ= Integer {bits} as typ}}
-        ; arg }
-    , Integer {data= j} ) ->
-      simp_add typ (integer (Z.add ~bits i j) typ) arg
-  | _ -> App {op= App {op= Add {typ}; arg= x}; arg= y}
-
-let simp_mul typ x y =
-  match (x, y) with
-  (* i * j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
-      integer (Z.mul ~bits i j) typ
-  (* e * 1 ==> e *)
-  | Integer {data}, e when Z.equal Z.one data -> e
-  | e, Integer {data} when Z.equal Z.one data -> e
-  | _ -> App {op= App {op= Mul {typ}; arg= x}; arg= y}
-
-let simp_sub typ x y =
-  match (x, y) with
-  (* i - j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
-      integer (Z.sub ~bits i j) typ
-  (* x - y ==> x + (-1 * y) *)
-  | _ -> simp_add typ x (simp_mul typ (integer Z.minus_one typ) y)
 
 let simp_div x y =
   match (x, y) with
@@ -839,11 +1025,12 @@ let add typ x y =
   type_check2 typ x y ;
   app2 (Add {typ}) x y
 
+let sub typ x y = type_check2 typ x y ; simp_sub typ x y
+
 let mul typ x y =
   type_check2 typ x y ;
   app2 (Mul {typ}) x y
 
-let sub = simp_sub
 let div = app2 Div
 let udiv = app2 Udiv
 let rem = app2 Rem

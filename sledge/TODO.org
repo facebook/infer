@@ -16,17 +16,14 @@ rather than nearest enclosing
 ** revise spec of strlen to account for non-max length strings
 ** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
 * llair
-** NEXT normalize arithmetic exps to polynomials
-and sort terms
 ** when Xor exps have types, simplify e xor e to 0
+** normalize polynomial equations by dividing coefficients by their gcd
 ** treat Typ.ptr as an integer of some particular size (i.e. ptr = intptr)
 - normalizing e.g. p - q to the polynomial p + (-1 * q) forces this interpretation of types
 - options are to handle Pointer _ as Integer {bits= 64} everywhere, or
 - to remove Pointer and just use Integer
 - keeping Pointer makes Typ.equal finer than semantically justified, but may be unproblematic and otherwise worthwhile for reporting/debugging
 ** ? remove src typ from Convert
-** ? distribute addition over multiplication
-for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
 ** add config to pp e.g. Exp.t as sexps
 ** add check for variable non-occurrence to Exp.rename
 ** define version of map that transforms args of Struct_rec

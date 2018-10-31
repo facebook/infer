@@ -48,6 +48,8 @@ val opaque : name:string -> t
 
 (** Queries *)
 
+val prim_bit_size_of : t -> int option
+
 val is_sized : t -> bool
 (** Holds of types which are first-class and have a statically-known size. *)
 
