@@ -46,6 +46,7 @@ BISECT_DIR=$(CURDIR)/_coverage/out
 
 .PHONY: coverage
 coverage: setup
+	@rm -rf _coverage
 	@mkdir -p $(BISECT_DIR)
 	@BISECT_FILE=$(BISECT_DIR)/bisect dune build --force @_build/coverage/runtest
 	@find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I _build/coverage/ -text _coverage/summary.txt -html _coverage/
