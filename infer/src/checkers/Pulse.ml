@@ -42,6 +42,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_call _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
+    let read_all args astate =
+      PulseDomain.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
+    in
     match call with
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
@@ -54,8 +57,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             call_loc destroyed_object astate
       | _ ->
           Ok astate )
+    | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
+      match actuals with
+      | AccessExpression constructor_access :: rest ->
+          let constructed_object =
+            AccessExpression.normalize (AccessExpression.Dereference constructor_access)
+          in
+          PulseDomain.havoc call_loc constructed_object astate >>= read_all rest
+      | _ ->
+          Ok astate )
     | _ ->
-        PulseDomain.read_all call_loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+        read_all actuals astate
 
 
   let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =

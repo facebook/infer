@@ -92,7 +92,7 @@ struct A {
 
 A getA();
 
-int FP_struct_inside_loop_ok(std::vector<int> numbers) {
+int struct_inside_loop_ok(std::vector<int> numbers) {
   int sum;
   for (auto number : numbers) {
     A a = getA();

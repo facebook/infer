@@ -36,7 +36,7 @@ int FP_reinit_after_explicit_destructor_ok() {
   return *s.f;
 }
 
-void FP_placement_new_explicit_destructor_ok() {
+void placement_new_explicit_destructor_ok() {
   char buf[sizeof(S)];
   {
     S* s = new (buf) S(1);
@@ -156,7 +156,7 @@ void return_placement_new_ok() {
   return new (mem) S(2);
 }
 
-void FP_destructor_in_loop_ok() {
+void destructor_in_loop_ok() {
   for (int i = 0; i < 10; i++) {
     S s(1);
   }
