@@ -130,6 +130,10 @@ val is_compile_constant : t -> bool
 (** Is the variable's value a compile-time constant? Always (potentially incorrectly) returns
     [false] for non-globals. *)
 
+val is_ice : t -> bool
+(** Is the variable's type an integral constant expression? Always (potentially incorrectly) returns
+    [false] for non-globals. *)
+
 val is_pod : t -> bool
 (** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
     [true] for non-globals. *)

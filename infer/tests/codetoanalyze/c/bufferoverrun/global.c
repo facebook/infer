@@ -21,3 +21,15 @@ void compare_global_const_enum_bad_FN() {
   if (global_const < 10)
     arr[10] = 1;
 }
+
+const int global_const_ten = 10;
+
+void use_global_const_ten_Good() {
+  char arr[20];
+  arr[global_const_ten] = 0;
+}
+
+void use_global_const_ten_Bad() {
+  char arr[5];
+  arr[global_const_ten] = 0;
+}

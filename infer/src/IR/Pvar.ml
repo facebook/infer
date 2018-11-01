@@ -256,6 +256,8 @@ let is_compile_constant pvar =
   match pvar.pv_kind with Global_var {is_constexpr} -> is_constexpr | _ -> false
 
 
+let is_ice pvar = match pvar.pv_kind with Global_var {is_ice} -> is_ice | _ -> false
+
 let is_pod pvar = match pvar.pv_kind with Global_var {is_pod} -> is_pod | _ -> true
 
 let get_initializer_pname {pv_name; pv_kind} =

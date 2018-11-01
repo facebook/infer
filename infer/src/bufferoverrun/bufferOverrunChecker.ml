@@ -145,7 +145,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
         mem
-    | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar -> (
+    | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar || Pvar.is_ice pvar
+      -> (
       match Pvar.get_initializer_pname pvar with
       | Some callee_pname -> (
         match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
