@@ -42,18 +42,16 @@ module Cplusplus = struct
 
   let placement_new : model =
    fun location ~ret:(ret_var, _) ~actuals astate ->
+    let read_all args astate =
+      PulseDomain.read_all location (List.concat_map args ~f:HilExp.get_access_exprs) astate
+    in
     match List.rev actuals with
     | HilExp.AccessExpression expr :: other_actuals ->
-        let new_address = PulseDomain.AbstractAddress.mk_fresh () in
-        PulseDomain.write location expr new_address astate
-        >>| PulseDomain.write_var ret_var new_address
-        >>= PulseDomain.read_all location
-              (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
+        PulseDomain.read location expr astate
+        >>= fun (astate, address) ->
+        Ok (PulseDomain.write_var ret_var address astate) >>= read_all other_actuals
     | _ :: other_actuals ->
-        PulseDomain.read_all location
-          (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
-          astate
-        >>| PulseDomain.write_var ret_var (PulseDomain.AbstractAddress.mk_fresh ())
+        read_all other_actuals astate >>| PulseDomain.havoc_var ret_var
     | _ ->
         Ok astate
 end

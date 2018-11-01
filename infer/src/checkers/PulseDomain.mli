@@ -11,8 +11,6 @@ module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
   val nullptr : t
-
-  val mk_fresh : unit -> t
 end
 
 type t

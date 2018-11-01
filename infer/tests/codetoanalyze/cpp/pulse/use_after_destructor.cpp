@@ -141,6 +141,15 @@ S* placement_new_aliasing2_bad() {
   return alias; // bad, returning freed memory
 }
 
+S* placement_new_aliasing3_bad() {
+  S* s = new S(1);
+  s->~S();
+  S* alias = s;
+  auto alias_placement = new (s) S(2);
+  delete s; // this deletes alias too
+  return alias; // bad, returning freed memory
+}
+
 void placement_new_non_var_ok() {
   struct M {
     S* s;
