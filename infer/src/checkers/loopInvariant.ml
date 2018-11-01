@@ -8,8 +8,11 @@ open! IStd
 module L = Logging
 module InvariantVars = AbstractDomain.FiniteSet (Var)
 module VarsInLoop = AbstractDomain.FiniteSet (Var)
+module InvalidatedVars = AbstractDomain.FiniteSet (Var)
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module Models = InvariantModels
+
+let debug fmt = L.(debug Analysis Medium) fmt
 
 (** Map loop header node -> all nodes in the loop *)
 module LoopHeadToLoopNodes = Procdesc.NodeMap
@@ -20,10 +23,8 @@ let is_defined_outside loop_nodes reaching_defs var =
   |> Option.value ~default:true
 
 
-let is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname params =
-  List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) params
-  &&
-  (* Take into account invariance behavior of modeled functions *)
+let is_fun_pure tenv ~is_inv_by_default callee_pname params =
+  (* Take into account purity behavior of modeled functions *)
   match Models.Call.dispatch tenv callee_pname params with
   | Some inv ->
       InvariantModels.is_invariant inv
@@ -55,17 +56,19 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_def
                 when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
                   true
               | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _) when equals_var id ->
-                  is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname
-                    params
+                  is_fun_pure tenv ~is_inv_by_default callee_pname params
+                  && (* check if all params are invariant *)
+                     List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) params
               | _ ->
                   false ) )
        loop_nodes
 
 
-let is_exp_invariant inv_vars loop_nodes reaching_defs exp =
+let is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs exp =
   Var.get_all_vars_in_exp exp
   |> Sequence.for_all ~f:(fun var ->
-         InvariantVars.mem var inv_vars || is_defined_outside loop_nodes reaching_defs var )
+         (not (InvalidatedVars.mem var invalidated_vars))
+         && (InvariantVars.mem var inv_vars || is_defined_outside loop_nodes reaching_defs var) )
 
 
 let get_vars_in_loop loop_nodes =
@@ -97,14 +100,55 @@ let get_vars_in_loop loop_nodes =
     loop_nodes VarsInLoop.empty
 
 
+let get_loaded_object var node invalidated_vars =
+  Procdesc.Node.get_instrs node
+  |> Instrs.fold
+       ~f:(fun acc instr ->
+         match instr with
+         | Sil.Load (id, Lvar pvar, typ, _) when Var.equal var (Var.of_id id) && Typ.is_pointer typ
+           ->
+             InvalidatedVars.add (Var.of_pvar pvar) acc
+         | _ ->
+             acc )
+       ~init:invalidated_vars
+
+
+let get_vars_to_invalidate node params invalidated_vars : InvalidatedVars.t =
+  List.fold ~init:invalidated_vars
+    ~f:(fun acc (arg_exp, _) ->
+      Var.get_all_vars_in_exp arg_exp
+      |> Sequence.fold ~init:acc ~f:(fun acc var ->
+             get_loaded_object var node (InvalidatedVars.add var acc) ) )
+    params
+
+
+(* If there is a call to an impure function in the loop, invalidate
+   all its non-primitive arguments. Once invalidated, it should be
+   never added again. *)
+let get_invalidated_vars_in_loop tenv ~is_inv_by_default loop_nodes =
+  LoopNodes.fold
+    (fun node acc ->
+      Procdesc.Node.get_instrs node
+      |> Instrs.fold ~init:acc ~f:(fun acc instr ->
+             match instr with
+             | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _)
+               when not (is_fun_pure tenv ~is_inv_by_default callee_pname params) ->
+                 get_vars_to_invalidate node params (InvalidatedVars.add (Var.of_id id) acc)
+             | _ ->
+                 acc ) )
+    loop_nodes InvalidatedVars.empty
+
+
 (* A variable is invariant if
      - its reaching definition is outside of the loop
      - o.w. its definition is constant or invariant itself *)
 let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loop_head loop_nodes =
-  let process_var_once var inv_vars =
+  let process_var_once var inv_vars invalidated_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
-    if InvariantVars.mem var inv_vars || Var.is_none var then (inv_vars, false)
+    if
+      InvariantVars.mem var inv_vars || Var.is_none var || InvalidatedVars.mem var invalidated_vars
+    then (inv_vars, false)
     else
       let loop_head_id = Procdesc.Node.get_id loop_head in
       ReachingDefs.Analyzer.extract_post loop_head_id reaching_defs_invariant_map
@@ -117,7 +161,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
                     else if
                       (* its definition is unique and invariant *)
                       is_def_unique_and_satisfy tenv var def_nodes ~is_inv_by_default
-                        (is_exp_invariant inv_vars loop_nodes reaching_defs)
+                        (is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs)
                     then (InvariantVars.add var inv_vars, true)
                     else (inv_vars, false) )
              |> Option.value (* if a var is not declared, it must be invariant *)
@@ -127,16 +171,18 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
   let vars_in_loop = get_vars_in_loop loop_nodes in
   (* until there are no changes to inv_vars, keep repeatedly
      processing all the variables that occur in the loop nodes *)
+  let invalidated_vars = get_invalidated_vars_in_loop tenv ~is_inv_by_default loop_nodes in
   let rec find_fixpoint inv_vars =
     let inv_vars', modified =
       InvariantVars.fold
         (fun var (inv_vars, is_mod) ->
-          let inv_vars', is_mod' = process_var_once var inv_vars in
+          let inv_vars', is_mod' = process_var_once var inv_vars invalidated_vars in
           (inv_vars', is_mod || is_mod') )
         vars_in_loop (inv_vars, false)
     in
     if modified then find_fixpoint inv_vars' else inv_vars'
   in
+  debug "\n>>> Invalidated vars: %a\n" InvalidatedVars.pp invalidated_vars ;
   find_fixpoint InvariantVars.empty
 
 
