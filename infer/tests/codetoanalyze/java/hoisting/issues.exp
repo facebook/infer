@@ -32,3 +32,7 @@ codetoanalyze/java/hoisting/HoistIndirect.java, HoistIndirect.get_ith(int,int[])
 codetoanalyze/java/hoisting/HoistIndirect.java, HoistIndirect.nested_change_dont_hoist_FP(int[][],int,int[]):void, 2, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int HoistIndirect.regionFirst(int[]) at line 152]
 codetoanalyze/java/hoisting/HoistIndirect.java, HoistIndirect.regionFirst(int[]):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int HoistIndirect.regionFirst(int[])]
 codetoanalyze/java/hoisting/HoistIndirect.java, HoistIndirect.this_modification_outside_hoist(int):int, 4, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int HoistIndirect.get() at line 111]
+codetoanalyze/java/hoisting/HoistNoIndirectMod.java, HoistNoIndirectMod.calcNext():int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int HoistNoIndirectMod.calcNext()]
+codetoanalyze/java/hoisting/HoistNoIndirectMod.java, HoistNoIndirectMod.calcSame():int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int HoistNoIndirectMod.calcSame()]
+codetoanalyze/java/hoisting/HoistNoIndirectMod.java, HoistNoIndirectMod.increment_dont_hoist_FP(int):int, 2, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int HoistNoIndirectMod.calcNext() at line 27]
+codetoanalyze/java/hoisting/HoistNoIndirectMod.java, HoistNoIndirectMod.modify_and_increment_dont_hoist_FP(int):int, 3, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int HoistNoIndirectMod.calcNext() at line 35]
