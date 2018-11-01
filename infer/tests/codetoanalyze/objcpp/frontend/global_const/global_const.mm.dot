@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" [label="2: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 14, column 36]\n " shape="box"]
+"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm|ice>$__someFields.field1:float=1 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm|ice>$__someFields.field2:float=2 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm|ice>$__someFields.field3:float=3 [line 14, column 36]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_2" [label="2: Exit fields \n  " color=yellow style=filled]
 	
 
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" [label="3:  Return Stmt \n   n$0=*&__return_param:Fields* [line 20, column 19]\n  n$1=_fun_Fields_(n$0:Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:Fields const &) [line 20, column 26]\n " shape="box"]
+"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" [label="3:  Return Stmt \n   n$0=*&__return_param:Fields* [line 20, column 19]\n  n$1=_fun_Fields_(n$0:Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm|ice>$__someFields:Fields const &) [line 20, column 26]\n " shape="box"]
 	
 
 	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_2" ;

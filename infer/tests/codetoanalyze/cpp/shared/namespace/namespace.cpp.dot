@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double [line 55, column 7]\n  *&j:double=n$1 [line 55, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 55, column 7]\n  *&j:double=n$1 [line 55, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
@@ -54,7 +54,7 @@ digraph cfg {
 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" [label="2: Exit __infer_globals_initializer_bar::pi \n  " color=yellow style=filled]
 	
 
-"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double=3.1416 [line 27, column 1]\n " shape="box"]
+"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double=3.1416 [line 27, column 1]\n " shape="box"]
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" ;
@@ -76,7 +76,7 @@ digraph cfg {
 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" [label="2: Exit bar::value \n  " color=yellow style=filled]
 	
 
-"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double [line 28, column 29]\n  *&return:double=(2 * n$0) [line 28, column 18]\n " shape="box"]
+"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 28, column 29]\n  *&return:double=(2 * n$0) [line 28, column 18]\n " shape="box"]
 	
 
 	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" ;

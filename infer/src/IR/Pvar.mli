@@ -94,6 +94,7 @@ val mk_callee : Mangled.t -> Typ.Procname.t -> t
 
 val mk_global :
      ?is_constexpr:bool
+  -> ?is_ice:bool
   -> ?is_pod:bool
   -> ?is_static_local:bool
   -> ?is_static_global:bool

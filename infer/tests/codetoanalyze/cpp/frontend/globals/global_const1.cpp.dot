@@ -18,7 +18,7 @@ digraph cfg {
 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 15, column 1]\n " shape="box"]
+"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int=2 [line 15, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" ;
@@ -40,11 +40,11 @@ digraph cfg {
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 19, column 10]\n  *&return:int=n$0 [line 19, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n  *&return:int=n$0 [line 19, column 3]\n " shape="box"]
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$2=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 18, column 15]\n  *&local:int=n$2 [line 18, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$2=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$2 [line 18, column 3]\n " shape="box"]
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;

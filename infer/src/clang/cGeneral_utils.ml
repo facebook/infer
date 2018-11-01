@@ -121,6 +121,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
         Some source_file
   in
   let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
+  let is_ice = var_decl_info.Clang_ast_t.vdi_is_init_ice in
   let is_pod =
     CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr
     |> Option.bind ~f:(function
@@ -142,7 +143,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
     && (not var_decl_info.Clang_ast_t.vdi_is_static_data_member)
     && match var_decl_info.Clang_ast_t.vdi_storage_class with Some "static" -> true | _ -> false
   in
-  Pvar.mk_global ~is_constexpr ~is_pod
+  Pvar.mk_global ~is_constexpr ~is_ice ~is_pod
     ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
     ?translation_unit (mk_name name_string simple_name)
 

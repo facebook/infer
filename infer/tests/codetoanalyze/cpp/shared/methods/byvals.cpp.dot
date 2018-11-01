@@ -51,7 +51,7 @@ digraph cfg {
 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_2" [label="2: Exit __infer_globals_initializer_pass_by_val::dummy_struct \n  " color=yellow style=filled]
 	
 
-"dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp>$pass_by_val::dummy_struct.x:int=0 [line 15, column 25]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp>$pass_by_val::dummy_struct.y:int*=null [line 15, column 25]\n " shape="box"]
+"dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.x:int=0 [line 15, column 25]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.y:int*=null [line 15, column 25]\n " shape="box"]
 	
 
 	 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" -> "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_2" ;

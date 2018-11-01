@@ -25,6 +25,7 @@ type pvar_kind =
   | Global_var of
       { translation_unit: translation_unit
       ; is_constexpr: bool (* is it compile constant? *)
+      ; is_ice: bool (* is it integral constant expression? *)
       ; is_pod: bool
       ; is_static_local: bool
       ; is_static_global: bool }  (** global variable *)
@@ -77,9 +78,10 @@ let pp_ f pv =
       F.fprintf f "%a|abducedRetvar" Mangled.pp name
   | Abduced_ref_param (_, index, _) ->
       F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
-  | Global_var {translation_unit; is_constexpr; is_pod} ->
-      F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
+  | Global_var {translation_unit; is_constexpr; is_ice; is_pod} ->
+      F.fprintf f "#GB<%a%s%s%s>$%a" pp_translation_unit translation_unit
         (if is_constexpr then "|const" else "")
+        (if is_ice then "|ice" else "")
         (if not is_pod then "|!pod" else "")
         Mangled.pp name
   | Seed_var ->
@@ -215,11 +217,12 @@ let mk_callee (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
 
 
 (** create a global variable with the given name *)
-let mk_global ?(is_constexpr = false) ?(is_pod = true) ?(is_static_local = false)
+let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_static_local = false)
     ?(is_static_global = false) ?translation_unit (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
-  ; pv_kind= Global_var {translation_unit; is_constexpr; is_pod; is_static_local; is_static_global}
+  ; pv_kind=
+      Global_var {translation_unit; is_constexpr; is_ice; is_pod; is_static_local; is_static_global}
   }
 
 
