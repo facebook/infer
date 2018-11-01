@@ -41,6 +41,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
+  let exec_assign lhs_access (rhs_exp : HilExp.t) loc astate =
+    (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
+    match rhs_exp with
+    | AccessExpression rhs_access ->
+        PulseDomain.read loc rhs_access astate
+        >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
+    | Constant (Cint address) when IntLit.iszero address ->
+        PulseDomain.write loc lhs_access PulseDomain.AbstractAddress.nullptr astate
+    | _ ->
+        PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
+        >>= PulseDomain.havoc loc lhs_access
+
+
   let exec_call _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
     let read_all args astate =
       PulseDomain.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
@@ -62,6 +75,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           PulseDomain.havoc call_loc constructed_object astate >>= read_all rest
       | _ ->
           Ok astate )
+    | Direct (Typ.Procname.ObjC_Cpp callee_pname)
+      when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
+      match actuals with
+      (* We want to assign *lhs to *rhs when rhs is materialized temporary created in constructor *)
+      | [AccessExpression lhs; (HilExp.AccessExpression (AddressOf (Base rhs_base)) as rhs_exp)]
+        when Var.is_cpp_temporary (fst rhs_base) ->
+          let lhs_deref = AccessExpression.dereference lhs in
+          exec_assign lhs_deref rhs_exp call_loc astate
+      | _ ->
+          read_all actuals astate )
     | _ ->
         read_all actuals astate
 
@@ -86,19 +109,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
-        let result =
-          match rhs_exp with
-          | AccessExpression rhs_access ->
-              PulseDomain.read loc rhs_access astate
-              >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
-          | Constant (Cint address) when IntLit.iszero address ->
-              PulseDomain.write loc lhs_access PulseDomain.AbstractAddress.nullptr astate
-          | _ ->
-              PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-              >>= PulseDomain.havoc loc lhs_access
-        in
-        check_error summary result
+        exec_assign lhs_access rhs_exp loc astate |> check_error summary
     | Assume (condition, _, _, loc) ->
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->

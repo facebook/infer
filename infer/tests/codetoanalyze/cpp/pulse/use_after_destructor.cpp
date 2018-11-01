@@ -29,7 +29,7 @@ void nested_scope_destructor_ok() {
   { S s(1); }
 }
 
-int FP_reinit_after_explicit_destructor_ok() {
+int reinit_after_explicit_destructor_ok() {
   S s(1);
   s.~S();
   s = S(2);
