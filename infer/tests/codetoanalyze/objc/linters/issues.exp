@@ -30,6 +30,7 @@ codetoanalyze/objc/linters/badpointer.m, bad5, 97, BAD_POINTER_COMPARISON, no_bu
 codetoanalyze/objc/linters/badpointer.m, bad6, 104, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
 codetoanalyze/objc/linters/badpointer.m, bad8, 119, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
 codetoanalyze/objc/linters/badpointer.m, bad9, 126, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
+codetoanalyze/objc/linters/dispatch.m, B_sharedInstanceBAD, 33, WRONG_SCOPE_FOR_DISPATCH_ONCE_T, no_bucket, WARNING, []
 codetoanalyze/objc/linters/implicit_cast.m, Implicit_cast_call_with_boxed_int, 67, POINTER_TO_INTEGRAL_IMPLICIT_CAST, no_bucket, WARNING, []
 codetoanalyze/objc/linters/implicit_cast.m, Implicit_cast_call_with_string, 60, POINTER_TO_INTEGRAL_IMPLICIT_CAST, no_bucket, WARNING, []
 codetoanalyze/objc/linters/implicit_cast.m, Implicit_cast_ivar_dictionary_item_call_funct_with_int, 45, POINTER_TO_INTEGRAL_IMPLICIT_CAST, no_bucket, WARNING, []
