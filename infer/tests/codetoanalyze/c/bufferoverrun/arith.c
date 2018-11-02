@@ -255,7 +255,7 @@ void unsigned_prune_zero2_Good(unsigned int y) {
   }
 }
 
-void call_unsigned_prune_zero2_Good_FP() { unsigned_prune_zero2_Good(0); }
+void call_unsigned_prune_zero2_Good() { unsigned_prune_zero2_Good(0); }
 
 void unsigned_prune_ge1_Good(unsigned int x, unsigned int y) {
   if (x >= y) {

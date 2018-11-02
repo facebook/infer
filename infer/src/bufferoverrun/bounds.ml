@@ -615,6 +615,8 @@ module Bound = struct
         overapprox_max
 
 
+  let zero : t = Linear (Z.zero, SymLinear.zero)
+
   let widen_l : t -> t -> t =
    fun x y ->
     match (x, y) with
@@ -627,7 +629,7 @@ module Bound = struct
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
         y
     | _ ->
-        if le x y then x else MInf
+        if le x y then x else if le zero x && le zero y then zero else MInf
 
 
   let widen_u : t -> t -> t =
@@ -642,10 +644,8 @@ module Bound = struct
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
         y
     | _ ->
-        if le y x then x else PInf
+        if le y x then x else if le x zero && le y zero then zero else PInf
 
-
-  let zero : t = Linear (Z.zero, SymLinear.zero)
 
   let one : t = Linear (Z.one, SymLinear.zero)
 

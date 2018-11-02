@@ -55,7 +55,7 @@ codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 1, EXPENSIVE_EXECUTIO
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 2 + 5 * (-m.lb + 20), degree = 1]
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 4 + 5 * (-m.lb + 20), degree = 1]
 codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 201, degree = 0]
-codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Assignment,Binop: ([-oo, +oo] + 1):signed32]
+codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Assignment,Binop: ([3, +oo] + 1):signed32]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1205, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1205, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 4, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1205, degree = 0]
