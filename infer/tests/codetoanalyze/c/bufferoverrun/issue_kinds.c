@@ -241,3 +241,24 @@ void False_Issue_Type_l3_unknown_function_Bad() {
     }
   }
 }
+
+int mone_to_one() {
+  int x = unknown_function();
+  if (x >= -1 && x <= 1) {
+    return x;
+  } else {
+    return 0;
+  }
+}
+
+void two_safety_conditions(int n) {
+  char a[10];
+  int y = mone_to_one();
+  if (unknown_function()) {
+    a[n] = 0; // should be L1 when n=10
+  } else {
+    a[n + y] = 0; // should be L2 when n=10
+  }
+}
+
+void call_two_safety_conditions_l1_and_l2_Bad() { two_safety_conditions(10); }

@@ -708,7 +708,7 @@ module ConditionWithTrace = struct
     else issue_type
 
 
-  let check_aux cwt =
+  let check cwt =
     let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond in
     match report_issue_type with
     | None ->
@@ -728,14 +728,11 @@ module ConditionWithTrace = struct
         {report_issue_type; propagate}
 
 
-  let check ~report cwt =
-    let {report_issue_type; propagate} = check_aux cwt in
-    match report_issue_type with
-    | Some issue_type ->
+  let report ~report ((cwt, checked) as default) =
+    Option.value_map checked.report_issue_type ~default ~f:(fun issue_type ->
         report cwt.cond cwt.trace issue_type ;
-        if propagate then Some {cwt with reported= Some (Reported.make issue_type)} else None
-    | None ->
-        Option.some_if propagate cwt
+        if checked.propagate then ({cwt with reported= Some (Reported.make issue_type)}, checked)
+        else default )
 
 
   let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
@@ -755,48 +752,54 @@ module ConditionSet = struct
 
   let empty = []
 
-  let try_merge ~existing ~new_ =
+  let try_merge ~existing:(existing_cwt, existing_checked) ~new_:(new_cwt, new_checked) =
     (* we don't want to remove issues that would end up in a higher bucket,
      e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
-    if ConditionWithTrace.have_similar_bounds existing new_ then
-      match ConditionWithTrace.xcompare ~lhs:existing ~rhs:new_ with
+    match (existing_checked.report_issue_type, new_checked.report_issue_type) with
+    | _, None ->
+        `AddAndStop
+    | Some existing_issue_type, Some new_issue_type
+      when IssueType.equal existing_issue_type new_issue_type
+           && ConditionWithTrace.have_similar_bounds existing_cwt new_cwt -> (
+      match ConditionWithTrace.xcompare ~lhs:existing_cwt ~rhs:new_cwt with
       | `LeftSubsumesRight ->
           `DoNotAddAndStop
       | `RightSubsumesLeft ->
           `RemoveExistingAndContinue
       | `NotComparable ->
-          `KeepExistingAndContinue
-    else `KeepExistingAndContinue
+          `KeepExistingAndContinue )
+    | _, _ ->
+        `KeepExistingAndContinue
 
 
   let join_one condset new_ =
-    let rec aux ~new_ acc ~same = function
+    let pp_cond fmt (cond, _) = ConditionWithTrace.pp fmt cond in
+    let rec aux acc ~same = function
       | [] ->
           if Config.bo_debug >= 3 then
-            L.(debug BufferOverrun Verbose)
-              "[InferboPO] Adding new condition %a@." ConditionWithTrace.pp new_ ;
+            L.d_printfln "[InferboPO] Adding new condition %a@." pp_cond new_ ;
           if same then new_ :: condset else new_ :: acc
       | existing :: rest as existings -> (
         match try_merge ~existing ~new_ with
+        | `AddAndStop ->
+            new_ :: (if same then condset else List.rev_append acc existings)
         | `DoNotAddAndStop ->
             if Config.bo_debug >= 3 then
-              L.(debug BufferOverrun Verbose)
-                "[InferboPO] Not adding condition %a (because of existing %a)@."
-                ConditionWithTrace.pp new_ ConditionWithTrace.pp existing ;
+              L.d_printfln "[InferboPO] Not adding condition %a (because of existing %a)@." pp_cond
+                new_ pp_cond existing ;
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
             if Config.bo_debug >= 3 then
-              L.(debug BufferOverrun Verbose)
-                "[InferboPO] Removing condition %a (because of new %a)@." ConditionWithTrace.pp
-                existing ConditionWithTrace.pp new_ ;
-            aux ~new_ acc ~same:false rest
+              L.d_printfln "[InferboPO] Removing condition %a (because of new %a)@." pp_cond
+                existing pp_cond new_ ;
+            aux acc ~same:false rest
         | `KeepExistingAndContinue ->
-            aux ~new_ (existing :: acc) ~same rest )
+            aux (existing :: acc) ~same rest )
     in
-    aux ~new_ [] ~same:true condset
+    aux [] ~same:true condset
 
 
-  let join condset1 condset2 = List.fold_left ~f:join_one condset1 ~init:condset2
+  let merge condset1 condset2 = List.rev_append condset1 condset2
 
   let add_opt location val_traces condset = function
     | None ->
@@ -804,7 +807,7 @@ module ConditionSet = struct
     | Some cond ->
         let trace = ConditionTrace.make location val_traces in
         let cwt = ConditionWithTrace.make cond trace in
-        join [cwt] condset
+        cwt :: condset
 
 
   let add_array_access location ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
@@ -834,12 +837,24 @@ module ConditionSet = struct
       | None ->
           condset
       | Some cwt ->
-          join_one condset cwt
+          cwt :: condset
     in
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let check_all ~report condset = List.filter_map condset ~f:(ConditionWithTrace.check ~report)
+  let check_all ~report condset =
+    let condset = List.map condset ~f:(fun cwt -> (cwt, ConditionWithTrace.check cwt)) in
+    let conds_to_report, rest =
+      List.partition_tf condset ~f:(fun (_, {report_issue_type}) ->
+          Option.is_some report_issue_type )
+    in
+    let conds_reported =
+      List.fold conds_to_report ~init:[] ~f:join_one
+      |> List.map ~f:(ConditionWithTrace.report ~report)
+    in
+    List.rev_append conds_reported rest
+    |> List.filter_map ~f:(fun (cwt, {propagate}) -> Option.some_if propagate cwt)
+
 
   let pp_summary : F.formatter -> _ t0 -> unit =
    fun fmt condset ->
