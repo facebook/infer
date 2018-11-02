@@ -285,8 +285,8 @@ module Val = struct
     {bot with itv; traces= TraceSet.join x.traces y.traces}
 
 
-  let get_symbols : t -> Itv.Symbol.t list =
-   fun x -> List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
+  let get_symbols : t -> Itv.SymbolSet.t =
+   fun x -> Itv.SymbolSet.union (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
 
 
   let normalize : t -> t =
@@ -301,9 +301,9 @@ module Val = struct
    fun x (eval_sym, trace_of_sym) location ->
     let symbols = get_symbols x in
     let traces_caller =
-      List.fold symbols
-        ~f:(fun traces symbol -> TraceSet.join (trace_of_sym symbol) traces)
-        ~init:TraceSet.empty
+      Itv.SymbolSet.fold
+        (fun symbol traces -> TraceSet.join (trace_of_sym symbol) traces)
+        symbols TraceSet.empty
     in
     let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
     {x with itv= Itv.subst x.itv eval_sym; arrayblk= ArrayBlk.subst x.arrayblk eval_sym; traces}

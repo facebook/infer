@@ -139,8 +139,8 @@ module SymLinear = struct
     Option.value_map (get_mone_symbol_opt x) ~default:false ~f:(fun s' -> Symb.Symbol.equal s s')
 
 
-  let get_symbols : t -> Symb.Symbol.t list =
-   fun x -> M.fold (fun symbol _coeff acc -> symbol :: acc) x []
+  let get_symbols : t -> Symb.SymbolSet.t =
+   fun x -> M.fold (fun symbol _coeff acc -> Symb.SymbolSet.add symbol acc) x Symb.SymbolSet.empty
 
 
   (* we can give integer bounds (obviously 0) only when all symbols are unsigned *)
@@ -773,13 +773,13 @@ module Bound = struct
 
   let div_const_u = div_const Symb.BoundEnd.UpperBound
 
-  let get_symbols : t -> Symb.Symbol.t list = function
+  let get_symbols : t -> Symb.SymbolSet.t = function
     | MInf | PInf ->
-        []
+        Symb.SymbolSet.empty
     | Linear (_, se) ->
         SymLinear.get_symbols se
     | MinMax (_, _, _, _, s) ->
-        [s]
+        Symb.SymbolSet.singleton s
 
 
   let are_similar b1 b2 =

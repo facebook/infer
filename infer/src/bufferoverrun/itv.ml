@@ -29,9 +29,9 @@ module Boolean = struct
 end
 
 open Ints
-module Symbol = Symb.Symbol
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
+module SymbolSet = Symb.SymbolSet
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
 module NonNegativeBound = struct
@@ -797,8 +797,8 @@ module ItvPure = struct
     if is_invalid (l, u) then NonBottom x else if Bound.eq l u then prune_diff x l else NonBottom x
 
 
-  let get_symbols : t -> Symbol.t list =
-   fun (l, u) -> List.append (Bound.get_symbols l) (Bound.get_symbols u)
+  let get_symbols : t -> SymbolSet.t =
+   fun (l, u) -> SymbolSet.union (Bound.get_symbols l) (Bound.get_symbols u)
 
 
   let make_positive : t -> t =
@@ -978,9 +978,9 @@ let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t =
  fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
 
 
-let get_symbols : t -> Symbol.t list = function
+let get_symbols : t -> SymbolSet.t = function
   | Bottom ->
-      []
+      SymbolSet.empty
   | NonBottom x ->
       ItvPure.get_symbols x
 

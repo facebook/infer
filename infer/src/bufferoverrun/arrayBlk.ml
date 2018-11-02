@@ -65,12 +65,12 @@ module ArrInfo = struct
    fun fmt arr -> Format.fprintf fmt "offset : %a, size : %a" Itv.pp arr.offset Itv.pp arr.size
 
 
-  let get_symbols : t -> Itv.Symbol.t list =
+  let get_symbols : t -> Itv.SymbolSet.t =
    fun arr ->
     let s1 = Itv.get_symbols arr.offset in
     let s2 = Itv.get_symbols arr.size in
     let s3 = Itv.get_symbols arr.stride in
-    List.concat [s1; s2; s3]
+    Itv.SymbolSet.union3 s1 s2 s3
 
 
   let normalize : t -> t =
@@ -145,8 +145,9 @@ let subst : astate -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> astate =
  fun a eval_sym -> map (fun info -> ArrInfo.subst info eval_sym) a
 
 
-let get_symbols : astate -> Itv.Symbol.t list =
- fun a -> List.concat_map ~f:(fun (_, ai) -> ArrInfo.get_symbols ai) (bindings a)
+let get_symbols : astate -> Itv.SymbolSet.t =
+ fun a ->
+  fold (fun _ ai acc -> Itv.SymbolSet.union acc (ArrInfo.get_symbols ai)) a Itv.SymbolSet.empty
 
 
 let normalize : astate -> astate = fun a -> map ArrInfo.normalize a

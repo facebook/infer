@@ -108,7 +108,8 @@ module ArrayAccessCondition = struct
   [@@deriving compare]
 
   let get_symbols c =
-    ItvPure.get_symbols c.offset @ ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
+    Symb.SymbolSet.union3 (ItvPure.get_symbols c.offset) (ItvPure.get_symbols c.idx)
+      (ItvPure.get_symbols c.size)
 
 
   let pp : F.formatter -> t -> unit =
@@ -325,7 +326,7 @@ module BinaryOperationCondition = struct
     ; lhs: ItvPure.astate
     ; rhs: ItvPure.astate }
 
-  let get_symbols c = ItvPure.get_symbols c.lhs @ ItvPure.get_symbols c.rhs
+  let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
 
   let subst eval_sym c =
     match (ItvPure.subst c.lhs eval_sym, ItvPure.subst c.rhs eval_sym) with
@@ -675,7 +676,7 @@ module ConditionWithTrace = struct
 
   let subst (eval_sym, trace_of_sym) rel_map caller_relation callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
-    if List.is_empty symbols then
+    if Symb.SymbolSet.is_empty symbols then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
@@ -685,8 +686,9 @@ module ConditionWithTrace = struct
         None
     | Some cond ->
         let traces_caller =
-          List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
-              ValTraceSet.join (trace_of_sym symbol) val_traces )
+          Symb.SymbolSet.fold
+            (fun symbol val_traces -> ValTraceSet.join (trace_of_sym symbol) val_traces)
+            symbols ValTraceSet.empty
         in
         let trace =
           ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace

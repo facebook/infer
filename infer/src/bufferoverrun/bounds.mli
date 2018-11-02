@@ -103,7 +103,7 @@ module Bound : sig
 
   val div_const_u : t -> Ints.NonZeroInt.t -> t sexp_option
 
-  val get_symbols : t -> Symb.Symbol.t list
+  val get_symbols : t -> Symb.SymbolSet.t
 
   val are_similar : t -> t -> bool
 

@@ -106,6 +106,12 @@ module SymbolTable = struct
         s
 end
 
+module SymbolSet = struct
+  include PrettyPrintable.MakePPSet (Symbol)
+
+  let union3 x y z = union (union x y) z
+end
+
 module SymbolMap = struct
   include PrettyPrintable.MakePPMap (Symbol)
 

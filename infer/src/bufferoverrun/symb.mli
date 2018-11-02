@@ -53,6 +53,12 @@ module Symbol : sig
   val bound_end : t -> BoundEnd.t
 end
 
+module SymbolSet : sig
+  include PrettyPrintable.PPSet with type elt = Symbol.t
+
+  val union3 : t -> t -> t -> t
+end
+
 module SymbolMap : sig
   include PrettyPrintable.PPMap with type key = Symbol.t
 

@@ -25,9 +25,9 @@ module Boolean : sig
   val is_true : t -> bool
 end
 
-module Symbol = Symb.Symbol
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
+module SymbolSet = Symb.SymbolSet
 
 module NonNegativePolynomial : sig
   include AbstractDomain.WithTop
@@ -134,7 +134,7 @@ module ItvPure : sig
        | `LeftSubsumesRight
        | `RightSubsumesLeft ]
 
-  val get_symbols : t -> Symbol.t list
+  val get_symbols : t -> SymbolSet.t
 
   val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted
 
@@ -197,7 +197,7 @@ val neg : t -> t
 
 val normalize : t -> t
 
-val get_symbols : t -> Symbol.t list
+val get_symbols : t -> SymbolSet.t
 
 val eq : t -> t -> bool
 
