@@ -69,7 +69,6 @@ codetoanalyze/c/bufferoverrun/global.c, compare_global_variable_bad, 3, BUFFER_O
 codetoanalyze/c/bufferoverrun/global.c, use_global_const_ten_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 10 Size: 5]
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Assignment,Binop: ([0, +oo] + 1):signed32]
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
-codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 10, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Assignment,Assignment,Binop: ([1, +oo] + 1):signed32]
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 11, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_loop, 11, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/inf_loop.c, inf_loop, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []

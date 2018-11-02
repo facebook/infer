@@ -465,27 +465,27 @@ module ItvPure = struct
     | `Equal, `Equal ->
         `Equal
     | `NotComparable, _ | _, `NotComparable -> (
-      match Bound.xcompare ~lhs:u1 ~rhs:l2 with
-      | `LeftSmallerThanRight ->
+      match (Bound.xcompare ~lhs:u1 ~rhs:l2, Bound.xcompare ~lhs:u2 ~rhs:l1) with
+      | `Equal, `Equal ->
+          `Equal (* weird, though *)
+      | (`Equal | `LeftSmallerThanRight), _ ->
           `LeftSmallerThanRight
-      | u1l2 -> (
-        match (Bound.xcompare ~lhs:u2 ~rhs:l1, u1l2) with
-        | `LeftSmallerThanRight, _ ->
-            `RightSmallerThanLeft
-        | `Equal, `Equal ->
-            `Equal (* weird, though *)
-        | _, `Equal ->
-            `LeftSmallerThanRight
-        | _ ->
-            `NotComparable ) )
-    | (`LeftSmallerThanRight | `Equal), (`LeftSmallerThanRight | `Equal) ->
-        `LeftSmallerThanRight
-    | (`RightSmallerThanLeft | `Equal), (`RightSmallerThanLeft | `Equal) ->
-        `RightSmallerThanLeft
-    | `LeftSmallerThanRight, `RightSmallerThanLeft ->
-        `LeftSubsumesRight
+      | _, (`Equal | `LeftSmallerThanRight) ->
+          `RightSmallerThanLeft
+      | (`NotComparable | `RightSmallerThanLeft), (`NotComparable | `RightSmallerThanLeft) ->
+          `NotComparable )
+    | `Equal, `LeftSmallerThanRight
+    | `RightSmallerThanLeft, `Equal
     | `RightSmallerThanLeft, `LeftSmallerThanRight ->
         `RightSubsumesLeft
+    | `Equal, `RightSmallerThanLeft
+    | `LeftSmallerThanRight, `Equal
+    | `LeftSmallerThanRight, `RightSmallerThanLeft ->
+        `LeftSubsumesRight
+    | `LeftSmallerThanRight, `LeftSmallerThanRight ->
+        `LeftSmallerThanRight
+    | `RightSmallerThanLeft, `RightSmallerThanLeft ->
+        `RightSmallerThanLeft
 
 
   let join : t -> t -> t =
