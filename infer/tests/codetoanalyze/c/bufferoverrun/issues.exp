@@ -1,6 +1,5 @@
 codetoanalyze/c/bufferoverrun/arith.c, call_two_safety_conditions2_Bad, 1, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Parameter: s,Binop: ([0, +oo] + 15):unsigned32 by call to `two_safety_conditions2_Bad` ]
 codetoanalyze/c/bufferoverrun/arith.c, call_unsigned_prune_ge1_Good_FP, 0, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Call,Parameter: x,Binop: (0 - 1):unsigned32 by call to `unsigned_prune_ge1_Good` ]
-codetoanalyze/c/bufferoverrun/arith.c, call_unsigned_prune_zero1_Good_FP, 0, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Call,Parameter: x,Binop: (0 - 1):unsigned32 by call to `unsigned_prune_zero1_Good` ]
 codetoanalyze/c/bufferoverrun/arith.c, call_unsigned_prune_zero2_Good_FP, 0, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Call,Parameter: y,Assignment,Binop: ([-oo, 0] - 1):unsigned32 by call to `unsigned_prune_zero2_Good` ]
 codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_addition_Bad, 4, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Assignment,Binop: (2000000000 + 2000000000):signed32]
 codetoanalyze/c/bufferoverrun/arith.c, integer_overflow_by_addition_Bad, 5, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []

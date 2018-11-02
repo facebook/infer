@@ -247,7 +247,7 @@ void unsigned_prune_zero1_Good(unsigned int x) {
   }
 }
 
-void call_unsigned_prune_zero1_Good_FP() { unsigned_prune_zero1_Good(0); }
+void call_unsigned_prune_zero1_Good() { unsigned_prune_zero1_Good(0); }
 
 void unsigned_prune_zero2_Good(unsigned int y) {
   unsigned int x = y;

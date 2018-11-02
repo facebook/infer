@@ -750,8 +750,8 @@ module ItvPure = struct
 
   let prune_diff : t -> Bound.t -> t bottom_lifted =
    fun ((l, u) as itv) b ->
-    if Bound.eq l b then normalize (Bound.plus_l l Bound.one, u)
-    else if Bound.eq u b then normalize (l, Bound.plus_u u Bound.mone)
+    if Bound.le b l then normalize (prune_gt itv (of_bound b))
+    else if Bound.le u b then normalize (prune_lt itv (of_bound b))
     else NonBottom itv
 
 
