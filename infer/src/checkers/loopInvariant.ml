@@ -100,25 +100,41 @@ let get_vars_in_loop loop_nodes =
     loop_nodes VarsInLoop.empty
 
 
-let get_loaded_object var node invalidated_vars =
-  Procdesc.Node.get_instrs node
-  |> Instrs.fold
-       ~f:(fun acc instr ->
-         match instr with
-         | Sil.Load (id, Lvar pvar, typ, _) when Var.equal var (Var.of_id id) && Typ.is_pointer typ
-           ->
-             InvalidatedVars.add (Var.of_pvar pvar) acc
-         | _ ->
-             acc )
-       ~init:invalidated_vars
+(* get all the ptr variables (and their dependencies) occurring on the
+   RHS of the definition of a given variable. *)
+let get_ptr_vars_in_defn_path node var =
+  let rec aux node var =
+    let invalidate_exp exp_rhs init =
+      Var.get_all_vars_in_exp exp_rhs
+      |> Sequence.fold ~init ~f:(fun acc var ->
+             List.fold_left ~init:(InvalidatedVars.add var acc)
+               ~f:(fun acc node -> InvalidatedVars.union (aux node var) acc)
+               (node :: Procdesc.Node.get_preds node) )
+    in
+    Procdesc.Node.get_instrs node
+    |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
+           match instr with
+           | Sil.Load (id, exp_rhs, typ, _) when Var.equal var (Var.of_id id) && Typ.is_pointer typ
+             ->
+               invalidate_exp exp_rhs acc
+           | Sil.Store (Exp.Lvar pvar, typ, exp_rhs, _)
+             when Var.equal var (Var.of_pvar pvar) && Typ.is_pointer typ ->
+               invalidate_exp exp_rhs acc
+           | _ ->
+               acc )
+  in
+  aux node var
 
 
 let get_vars_to_invalidate node params invalidated_vars : InvalidatedVars.t =
   List.fold ~init:invalidated_vars
-    ~f:(fun acc (arg_exp, _) ->
+    ~f:(fun acc (arg_exp, typ) ->
       Var.get_all_vars_in_exp arg_exp
       |> Sequence.fold ~init:acc ~f:(fun acc var ->
-             get_loaded_object var node (InvalidatedVars.add var acc) ) )
+             if Typ.is_pointer typ then
+               let dep_vars = get_ptr_vars_in_defn_path node var in
+               InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
+             else acc ) )
     params
 
 

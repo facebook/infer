@@ -139,6 +139,16 @@ class HoistIndirect {
     return d;
   }
 
+  int independent_hoist(int size, Test t) {
+    int d = 0;
+    for (int i = 0; i < size; i++) {
+      set_ith(i, array);
+      t.foo(size); // hoist call to foo
+      d += get_ith(size, array); // don't hoist since array changes
+    }
+    return d;
+  }
+
   static int regionFirst(int[] region) {
     return region[0];
   }
@@ -147,10 +157,35 @@ class HoistIndirect {
     dest[0] = source[0] + 1;
   }
 
-  void nested_change_dont_hoist_FP(int[][] nextRegionM, int p, int[] tempRegion) {
+  static void sumDest(int[] source, int[] dest, int x) {
+    dest[0] = source[0] + x;
+  }
+
+  void irvar_change_dont_hoist(int[][] nextRegionM, int p, int[] tempRegion) {
     for (int i = 0; i < 10; i++) {
       if (i < regionFirst(nextRegionM[p])) {
-        incrDest(tempRegion, nextRegionM[p]);
+        incrDest(tempRegion, nextRegionM[p]); // invalidate nextRegionM
+      }
+    }
+  }
+
+  void tmp_irvar_change_dont_hoist(int[][] nextRegionM, int p, int[] tempRegion) {
+    for (int i = 0; i < 10; i++) {
+      if (i < regionFirst(nextRegionM[p])) {
+        int[] arr = nextRegionM[p];
+        incrDest(tempRegion, arr); // invalidate nextRegionM
+      }
+    }
+  }
+
+  int double_me(int p) {
+    return 2 * p;
+  }
+
+  void irvar_independent_hoist(int[][] nextRegionM, int p, int[] tempRegion) {
+    for (int i = 0; i < 10; i++) {
+      if (i < regionFirst(nextRegionM[p]) + double_me(p)) { // double_me(p) can be hoisted
+        sumDest(tempRegion, nextRegionM[p], i); // invalidate nextRegionM
       }
     }
   }
