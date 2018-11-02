@@ -843,16 +843,9 @@ module ConditionSet = struct
 
 
   let check_all ~report condset =
-    let condset = List.map condset ~f:(fun cwt -> (cwt, ConditionWithTrace.check cwt)) in
-    let conds_to_report, rest =
-      List.partition_tf condset ~f:(fun (_, {report_issue_type}) ->
-          Option.is_some report_issue_type )
-    in
-    let conds_reported =
-      List.fold conds_to_report ~init:[] ~f:join_one
-      |> List.map ~f:(ConditionWithTrace.report ~report)
-    in
-    List.rev_append conds_reported rest
+    List.map condset ~f:(fun cwt -> (cwt, ConditionWithTrace.check cwt))
+    |> List.fold ~init:[] ~f:join_one
+    |> List.map ~f:(ConditionWithTrace.report ~report)
     |> List.filter_map ~f:(fun (cwt, {propagate}) -> Option.some_if propagate cwt)
 
 
