@@ -782,17 +782,7 @@ module Bound = struct
         Symb.SymbolSet.singleton s
 
 
-  let are_similar b1 b2 =
-    match (b1, b2) with
-    | MInf, MInf ->
-        true
-    | PInf, PInf ->
-        true
-    | (Linear _ | MinMax _), (Linear _ | MinMax _) ->
-        true
-    | _ ->
-        false
-
+  let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
 
   let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
 

@@ -87,6 +87,7 @@ codetoanalyze/c/bufferoverrun/issue_kinds.c, call_to_alloc_may_be_big2_is_big_Ba
 codetoanalyze/c/bufferoverrun/issue_kinds.c, call_to_alloc_may_be_big2_is_big_Bad, 1, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Parameter: n,Binop: (100000000 + [0, +oo]):signed32 by call to `alloc_may_be_big2_Silenced` ]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, call_two_safety_conditions_l1_and_l2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,ArrayDeclaration,Parameter: n,ArrayAccess: Offset: 10 Size: 10 by call to `two_safety_conditions` ]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, call_two_safety_conditions_l1_and_l2_Bad, 0, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Call,ArrayDeclaration,Parameter: n,ArrayAccess: Offset: [9, 11] Size: 10 by call to `two_safety_conditions` ]
+codetoanalyze/c/bufferoverrun/issue_kinds.c, deduplicate_issues_Bad, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Unknown value from: unknown_function,Assignment,ArrayAccess: Offset: [10, +oo] Size: 10]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_call_to_s2_symbolic_widened_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Offset: [1, +oo] Size: 1 by call to `s2_symbolic_widened_Bad` ]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_call_to_s2_symbolic_widened_Bad, 0, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Parameter: n,Assignment,Binop: ([1, +oo] + 1):signed32 by call to `s2_symbolic_widened_Bad` ]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_concrete_overrun_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 10 Size: 10]
