@@ -221,10 +221,19 @@ module Domain : AbstractDomain.S with type astate = t = struct
     let union_one_edge subst src_addr access dst_addr union_heap =
       let src_addr = to_canonical_address subst src_addr in
       let dst_addr = to_canonical_address subst dst_addr in
-      match Memory.find_edge_opt src_addr access union_heap with
-      | None ->
+      match
+        (Memory.find_edge_opt src_addr access union_heap, (access : AccessExpression.Access.t))
+      with
+      | Some dst_addr', _ when AbstractAddress.equal dst_addr dst_addr' ->
+          (* same edge *)
+          (union_heap, `No_new_equality)
+      | _, ArrayAccess _ ->
+          (* do not trust array accesses for now, replace the destination of the edge by a fresh location *)
+          ( Memory.add_edge src_addr access (AbstractAddress.mk_fresh ()) union_heap
+          , `No_new_equality )
+      | None, _ ->
           (Memory.add_edge src_addr access dst_addr union_heap, `No_new_equality)
-      | Some dst_addr' ->
+      | Some dst_addr', _ ->
           (* new equality [dst_addr = dst_addr'] found *)
           ignore (AddressUF.union subst dst_addr dst_addr') ;
           (union_heap, `New_equality)

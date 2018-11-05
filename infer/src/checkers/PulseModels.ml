@@ -63,8 +63,10 @@ module StdVector = struct
       "__internal_array"
 
 
+  let to_internal_array vector = AccessExpression.field_offset vector internal_array
+
   let deref_internal_array vector =
-    AccessExpression.(array_offset (dereference (field_offset vector internal_array)) Typ.void [])
+    AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void [])
 
 
   let at : model =
@@ -81,9 +83,13 @@ module StdVector = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        let deref_array = deref_internal_array vector in
-        PulseDomain.invalidate (StdVectorPushBack (vector, location)) location deref_array astate
-        >>= PulseDomain.havoc location deref_array
+        let array = to_internal_array vector in
+        (* all elements should be invalidated *)
+        let array_elements = deref_internal_array vector in
+        let invalidation = PulseInvalidation.StdVectorPushBack (vector, location) in
+        PulseDomain.invalidate invalidation location array_elements astate
+        >>= PulseDomain.invalidate invalidation location array
+        >>= PulseDomain.havoc location array
     | _ ->
         Ok astate
 end
