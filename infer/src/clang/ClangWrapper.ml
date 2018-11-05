@@ -66,9 +66,17 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
            pass it now.
 
            Using clang instead of gcc may trigger warnings about unsupported optimization flags;
-           passing -Wno-ignored-optimization-argument prevents that. *)
+           passing -Wno-ignored-optimization-argument prevents that.
+
+           Clang adds "-faddrsig" by default on ELF targets. This is ok in itself, but for some
+           reason that flag is the only one to show up *after* the source file name in the -cc1
+           commands emitted by [clang -### ...]. Passing [-fno-addrsig] ensures that the source
+           path is always the last argument.  *)
          ClangCommand.append_args
-           ["-fno-cxx-modules"; "-Qunused-arguments"; "-Wno-ignored-optimization-argument"]
+           [ "-fno-cxx-modules"
+           ; "-Qunused-arguments"
+           ; "-Wno-ignored-optimization-argument"
+           ; "-fno-addrsig" ]
       |> (* If -fembed-bitcode is passed, it leads to multiple cc1 commands, which try to read .bc
             files that don't get generated, and fail. So pass -fembed-bitcode=off to disable. *)
          ClangCommand.append_args ["-fembed-bitcode=off"]
