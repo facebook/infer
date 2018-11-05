@@ -110,7 +110,7 @@ let rec root_of_lexp lexp =
 
 
 (** Checks whether an expression denotes a location by pointer arithmetic.
-    Currently, catches array - indexing expressions such as a[i] only. *)
+    Currently, catches array-indexing expressions such as a[i] only. *)
 let rec pointer_arith = function
   | Lfield (e, _, _) ->
       pointer_arith e

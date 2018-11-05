@@ -531,7 +531,7 @@ let sigma_get_unsigned_exps sigma =
 
 
 (** Collapse consecutive indices that should be added. For instance,
-    this function reduces x[1][1] to x[2]. The [typ] argument is used
+    this function reduces [x[1][1]] to [x[2]]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
 let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let typ_is_base (typ1 : Typ.t) =

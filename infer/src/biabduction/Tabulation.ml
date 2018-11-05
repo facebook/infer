@@ -474,7 +474,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
 
 
 (** Post process the instantiated post after the function call so that
-    x.f |-> se becomes x |-> \{ f: se \}.
+    x.f |-> se becomes x |-> { f: se }.
     Also, update any Aresource attributes to refer to the caller *)
 let post_process_post tenv caller_pname callee_pname loc actual_pre
     ((post : Prop.exposed Prop.t), post_path) =

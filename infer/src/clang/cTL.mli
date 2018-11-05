@@ -63,7 +63,7 @@ type t =
                                    there exists a node defining a super class in the hierarchy of the class
                                    defined by the current node (if any) where  phi holds *)
   | ET of ALVar.alexp list * transitions option * t
-      (** ET[T][l] phi <=> there exists a descentant an of the current node such that an is of type in set T
+      (** ET [T] [l] phi <=> there exists a descentant an of the current node such that an is of type in set T
           making a transition to a node an' via label l, such that in an phi holds. *)
   | InObjCClass of t * t
 [@@deriving compare]

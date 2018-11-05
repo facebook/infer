@@ -19,8 +19,8 @@ let mem_idlist i l = List.exists ~f:(Ident.equal i) l
     considered during pattern matching *)
 type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
-(** Checks e1 = e2[sub ++ sub'] for some sub' with dom(sub') subseteq vars.
-    Returns (sub ++ sub', vars - dom(sub')). *)
+(** Checks [e1 = e2[sub ++ sub']] for some [sub'] with [dom(sub') subseteq vars].
+    Returns [(sub ++ sub', vars - dom(sub'))]. *)
 let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
   let check_equal sub vars e1 e2 =
     let e2_inst = Sil.exp_sub sub e2 in
@@ -93,8 +93,8 @@ let exp_list_match es1 sub vars es2 =
     (List.zip es1 es2)
 
 
-(** Checks sexp1 = sexp2[sub ++ sub'] for some sub' with
-    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')).
+(** Checks [sexp1 = sexp2[sub ++ sub']] for some [sub'] with
+    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))].
     WARNING: This function does not consider the fact that the analyzer
     sometimes forgets fields of hpred. It can possibly cause a problem. *)
 let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
@@ -115,8 +115,8 @@ let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
         None )
 
 
-(** Checks fsel1 = fsel2[sub ++ sub'] for some sub' with
-    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
+(** Checks [fsel1 = fsel2[sub ++ sub']] for some [sub'] with
+    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))]. *)
 and fsel_match fsel1 sub vars fsel2 =
   match (fsel1, fsel2) with
   | [], [] ->
@@ -139,8 +139,8 @@ and fsel_match fsel1 sub vars fsel2 =
       else None
 
 
-(** Checks isel1 = isel2[sub ++ sub'] for some sub' with
-    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
+(** Checks [isel1 = isel2[sub ++ sub']] for some [sub'] with
+    [dom(sub') subseteq vars]. Returns [(sub ++ sub', vars - dom(sub'))]. *)
 and isel_match isel1 sub vars isel2 =
   match (isel1, isel2) with
   | [], [] ->
@@ -543,8 +543,8 @@ and hpara_dll_match_with_impl tenv impl_ok para1 para2 : bool =
 
 (** [prop_match_with_impl p condition vars hpat hpats]
     returns [(subst, p_leftover)] such that
-    1) [dom(subst) = vars]
-    2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
+    + [dom(subst) = vars]
+    + [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
     Using the flag [field], we can control the strength of |-. *)
 let prop_match_with_impl tenv p condition vars hpat hpats =
   prop_match_with_impl_sub tenv p condition Sil.sub_empty vars hpat hpats
