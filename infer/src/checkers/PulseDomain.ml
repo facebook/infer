@@ -547,9 +547,7 @@ module Operations = struct
 
 
   let havoc_var var astate =
-    if AliasingDomain.mem var astate.stack then
-      {astate with stack= AliasingDomain.remove var astate.stack}
-    else astate
+    {astate with stack= AliasingDomain.add var (AbstractAddress.mk_fresh ()) astate.stack}
 
 
   let havoc location (access_expr : AccessExpression.t) astate =

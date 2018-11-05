@@ -6,7 +6,7 @@ codetoanalyze/cpp/pulse/use_after_delete.cpp, double_delete_bad, 3, USE_AFTER_DE
 codetoanalyze/cpp/pulse/use_after_delete.cpp, reassign_field_of_deleted_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 37, column 3 here,accessed `s->f` here]
 codetoanalyze/cpp/pulse/use_after_delete.cpp, return_deleted_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 24, column 3 here,accessed `s` here]
 codetoanalyze/cpp/pulse/use_after_delete.cpp, use_in_branch_bad, 4, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 73, column 3 here,accessed `s` here]
-codetoanalyze/cpp/pulse/use_after_delete.cpp, use_in_loop_bad, 4, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 103, column 3 here,accessed `s->f` here]
+codetoanalyze/cpp/pulse/use_after_delete.cpp, use_in_loop_bad, 4, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 102, column 3 here,accessed `s->f` here]
 codetoanalyze/cpp/pulse/use_after_destructor.cpp, double_destructor_bad, 5, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [invalidated by destructor call `S_~S(s)` at line 54, column 3 here,accessed `s` here]
 codetoanalyze/cpp/pulse/use_after_destructor.cpp, placement_new_aliasing1_bad, 5, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete alias` at line 132, column 3 here,accessed `s` here]
 codetoanalyze/cpp/pulse/use_after_destructor.cpp, placement_new_aliasing2_bad, 5, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 140, column 3 here,accessed `alias` here]
