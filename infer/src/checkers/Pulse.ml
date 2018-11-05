@@ -123,6 +123,7 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (Transf
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
+  PulseDomain.AbstractAddress.init () ;
   ( try ignore (Analyzer.compute_post proc_data ~initial:PulseDomain.initial)
     with AbstractDomain.Stop_analysis -> () ) ;
   summary

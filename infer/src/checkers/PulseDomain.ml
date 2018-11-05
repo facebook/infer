@@ -22,6 +22,8 @@ module AbstractAddress : sig
   val mk_fresh : unit -> t
 
   val pp : F.formatter -> t -> unit
+
+  val init : unit -> unit
 end = struct
   type t = int [@@deriving compare]
 
@@ -38,6 +40,8 @@ end = struct
 
 
   let pp = F.pp_print_int
+
+  let init () = next_fresh := 1
 end
 
 (* {3 Heap domain } *)
