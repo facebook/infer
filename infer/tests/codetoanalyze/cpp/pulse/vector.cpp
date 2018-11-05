@@ -38,7 +38,7 @@ void FP_reserve_then_push_back_ok(std::vector<int>& vec) {
   std::cout << *elt << "\n";
 }
 
-void reserve_then_push_back_loop_ok(std::vector<int>& vec,
+void FP_reserve_then_push_back_loop_ok(std::vector<int>& vec,
                                     std::vector<int>& vec_other) {
   vec.reserve(vec.size() + vec_other.size());
   int* elt = &vec[1];
@@ -48,7 +48,7 @@ void reserve_then_push_back_loop_ok(std::vector<int>& vec,
   std::cout << *elt << "\n";
 }
 
-void init_fill_then_push_back_loop_ok(std::vector<int>& vec_other) {
+void FP_init_fill_then_push_back_loop_ok(std::vector<int>& vec_other) {
   std::vector<int> vec(vec_other.size());
   int* elt = &vec[1];
   for (const auto& i : vec_other) {

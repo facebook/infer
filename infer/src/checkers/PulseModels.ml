@@ -88,7 +88,6 @@ module StdVector = struct
         let array_elements = deref_internal_array vector in
         let invalidation = PulseInvalidation.StdVectorPushBack (vector, location) in
         PulseDomain.invalidate invalidation location array_elements astate
-        >>= PulseDomain.invalidate invalidation location array
         >>= PulseDomain.havoc location array
     | _ ->
         Ok astate

@@ -51,7 +51,7 @@ void double_delete_bad() {
   delete s;
 }
 
-Simple* FN_delete_in_branch_bad(bool b) {
+Simple* delete_in_branch_bad(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -76,7 +76,7 @@ void use_in_branch_bad(bool b) {
   }
 }
 
-void FN_delete_in_loop_bad() {
+void delete_in_loop_bad() {
   auto s = new Simple{1};
   for (int i = 0; i < 10; i++) {
     delete s;
@@ -105,7 +105,7 @@ void use_in_loop_bad() {
   }
 }
 
-Simple* gated_delete_abort_ok(bool b) {
+Simple* FP_gated_delete_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -114,7 +114,7 @@ Simple* gated_delete_abort_ok(bool b) {
   return s;
 }
 
-Simple* gated_exit_abort_ok(bool b) {
+Simple* FP_gated_exit_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -123,7 +123,7 @@ Simple* gated_exit_abort_ok(bool b) {
   return s;
 }
 
-Simple* gated_delete_throw_ok(bool b) {
+Simple* FP_gated_delete_throw_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;

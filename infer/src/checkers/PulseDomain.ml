@@ -61,6 +61,8 @@ module Memory : sig
 
   val fold : (AbstractAddress.t -> edges -> 'accum -> 'accum) -> t -> 'accum -> 'accum
 
+  val mem : AbstractAddress.t -> t -> bool
+
   val pp : F.formatter -> t -> unit
 
   val add_edge : AbstractAddress.t -> AccessExpression.Access.t -> AbstractAddress.t -> t -> t
@@ -88,6 +90,8 @@ end = struct
   let for_all = Graph.for_all
 
   let fold = Graph.fold
+
+  let mem = Graph.mem
 
   let pp = Graph.pp ~pp_value:(Edges.pp ~pp_value:AbstractAddress.pp)
 
@@ -150,16 +154,15 @@ module InvalidAddressesDomain : sig
 
   val add : AbstractAddress.t -> Invalidation.t -> astate -> astate
 
+  val fold :
+    (AbstractAddress.t -> Invalidation.t -> 'accum -> 'accum) -> astate -> 'accum -> 'accum
+
   val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
   (** None denotes a valid location *)
-
-  val is_invalid : AbstractAddress.t -> astate -> bool
 end = struct
   include AbstractDomain.Map (AbstractAddress) (Invalidation)
 
   let get_invalidation address invalids = find_opt address invalids
-
-  let is_invalid address invalids = mem address invalids
 end
 
 (** the domain *)
@@ -299,39 +302,43 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
 
     (** compute new set of invalid addresses for a given join state *)
-    let to_invalids {subst; astate= {invalids= old_invalids}} =
-      (* iterate over all discovered equivalence classes *)
-      AddressUF.fold_sets subst ~init:InvalidAddressesDomain.empty
-        ~f:(fun new_invalids (repr, set) ->
-          (* Add [repr] as an invalid address if *all* the addresses it represents were known to
-             be invalid. This is unsound but avoids false positives for now. *)
-          if
-            AddressUnionSet.Set.for_all
-              (fun addr -> InvalidAddressesDomain.is_invalid addr old_invalids)
-              !set
-          then
-            (* join the invalidation reasons for all the invalidations of the representative *)
-            let reason =
-              AddressUnionSet.Set.fold
-                (fun address reason ->
-                  (* this is safe because of [for_all] above *)
-                  let reason' =
-                    Option.value_exn (InvalidAddressesDomain.get_invalidation address old_invalids)
-                  in
-                  match reason with
-                  | None ->
-                      Some reason'
-                  | Some reason ->
-                      Some (Invalidation.join reason reason') )
-                !set None
-            in
-            InvalidAddressesDomain.add
-              (repr :> AbstractAddress.t)
-              ((* safe because [!set] cannot be empty so there is at least one address to join from
-                  *)
-               Option.value_exn reason)
+    let to_invalids {subst; astate= {invalids= old_invalids} as astate} =
+      (* Is the address reachable from the stack variables? Since the new heap only has addresses
+         reachable from stack variables it suffices to check if the address appears in either the
+         heap or the stack. *)
+      let address_is_live astate address =
+        Memory.mem address astate.heap
+        || AliasingDomain.exists (fun _ value -> AbstractAddress.equal value address) astate.stack
+      in
+      (* given a previously known invalid address [old_address], add the new address that
+         represents it to [new_invalids] *)
+      let add_old_invalid astate old_address old_invalid new_invalids =
+        (* the address has to make sense for the new heap *)
+        let repr = AddressUF.find subst old_address in
+        let new_address = (repr :> AbstractAddress.t) in
+        match InvalidAddressesDomain.get_invalidation new_address new_invalids with
+        | Some new_invalid ->
+            (* We have seen a representative of this address already: join. This can happen when
+               several previously invalid addresses correspond to the same representative in
+               [subst]. Doing the join of all known invalidation reasons to make results more
+               deterministic(?).  *)
+            InvalidAddressesDomain.add new_address
+              (Invalidation.join new_invalid old_invalid)
               new_invalids
-          else new_invalids )
+        | None ->
+            (* only record the old invalidation fact if the address is still reachable (helps
+               convergence) *)
+            if address_is_live astate new_address then
+              InvalidAddressesDomain.add new_address old_invalid new_invalids
+            else
+              (* we can forget about the fact that this location is invalid since nothing can
+                   refer to it anymore *)
+              new_invalids
+      in
+      InvalidAddressesDomain.fold
+        (fun old_address old_invalid new_invalids ->
+          add_old_invalid astate old_address old_invalid new_invalids )
+        old_invalids InvalidAddressesDomain.empty
 
 
     let rec normalize state =
