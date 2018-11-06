@@ -32,11 +32,11 @@ digraph cfg {
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_2" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 35, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 35, column 13]\n  *&v:int=n$12 [line 35, column 5]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" [label="9:  DeclStmt \n   n$13=_fun___variable_initialization(&v:int) [line 35, column 5]\n  _=*&x:conversion_operator::X [line 35, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 35, column 13]\n  *&v:int=n$12 [line 35, column 5]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,1:_Bool) [line 33, column 5]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" [label="10:  DeclStmt \n   n$17=_fun___variable_initialization(&x:conversion_operator::X) [line 33, column 3]\n  n$16=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,1:_Bool) [line 33, column 5]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" ;
@@ -72,11 +72,11 @@ digraph cfg {
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_2" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 64, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 64, column 13]\n  *&v:int=n$12 [line 64, column 5]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" [label="9:  DeclStmt \n   n$13=_fun___variable_initialization(&v:int) [line 64, column 5]\n  _=*&x:conversion_operator::X [line 64, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 64, column 13]\n  *&v:int=n$12 [line 64, column 5]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,1:int,1:_Bool) [line 62, column 5]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" [label="10:  DeclStmt \n   n$17=_fun___variable_initialization(&x:conversion_operator::X) [line 62, column 3]\n  n$16=_fun_conversion_operator::X_X(&x:conversion_operator::X*,1:int,1:_Bool) [line 62, column 5]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" ;
@@ -112,22 +112,22 @@ digraph cfg {
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_2" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 55, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 55, column 13]\n  *&v:int=n$12 [line 55, column 5]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" [label="9:  DeclStmt \n   n$13=_fun___variable_initialization(&v:int) [line 55, column 5]\n  _=*&x:conversion_operator::X [line 55, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 55, column 13]\n  *&v:int=n$12 [line 55, column 5]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,0:_Bool) [line 53, column 5]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" [label="10:  DeclStmt \n   n$17=_fun___variable_initialization(&x:conversion_operator::X) [line 53, column 3]\n  n$16=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,0:_Bool) [line 53, column 5]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" [label="1: Start conversion_operator::y_branch_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$10:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X v:int 0$?%__sil_tmpSIL_materialize_temp__n$20:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$19:conversion_operator::X y:conversion_operator::Y \n  " color=yellow style=filled]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" [label="1: Start conversion_operator::y_branch_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$12:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$11:conversion_operator::X v:int 0$?%__sil_tmpSIL_materialize_temp__n$24:conversion_operator::X const  0$?%__sil_tmpSIL_materialize_temp__n$23:conversion_operator::X y:conversion_operator::Y \n  " color=yellow style=filled]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" ;
 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" [label="2: Exit conversion_operator::y_branch_div0 \n  " color=yellow style=filled]
 	
 
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" [label="3:  Return Stmt \n   _=*&y:conversion_operator::Y [line 49, column 13]\n  n$4=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X*) [line 49, column 13]\n  n$5=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 49, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X [line 49, column 10]\n  n$7=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X&) [line 49, column 10]\n  *&return:int=n$7 [line 49, column 3]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" [label="3:  Return Stmt \n   n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X) [line 49, column 10]\n  n$5=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const ) [line 49, column 13]\n  _=*&y:conversion_operator::Y [line 49, column 13]\n  n$4=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X*) [line 49, column 13]\n  n$6=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 49, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X [line 49, column 10]\n  n$9=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmpSIL_materialize_temp__n$0:conversion_operator::X&) [line 49, column 10]\n  *&return:int=n$9 [line 49, column 3]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" ;
@@ -135,24 +135,24 @@ digraph cfg {
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_4" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&y:conversion_operator::Y [line 45, column 10]\n  n$13=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$10:conversion_operator::X*) [line 45, column 10]\n  n$14=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$10:conversion_operator::X const &) [line 45, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X [line 45, column 7]\n  n$16=_fun_conversion_operator::X_operator_bool(&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X&) [line 45, column 7]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   n$18=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$11:conversion_operator::X) [line 45, column 7]\n  n$16=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$12:conversion_operator::X const ) [line 45, column 10]\n  _=*&y:conversion_operator::Y [line 45, column 10]\n  n$15=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$12:conversion_operator::X*) [line 45, column 10]\n  n$17=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$11:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$12:conversion_operator::X const &) [line 45, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$11:conversion_operator::X [line 45, column 7]\n  n$20=_fun_conversion_operator::X_operator_bool(&0$?%__sil_tmpSIL_materialize_temp__n$11:conversion_operator::X&) [line 45, column 7]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" ;
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$16, true); [line 45, column 7]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$20, true); [line 45, column 7]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$16, false); [line 45, column 7]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$20, false); [line 45, column 7]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_4" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" [label="8:  Return Stmt \n   n$17=*&v:int [line 47, column 16]\n  *&return:int=(1 / n$17) [line 47, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" [label="8:  Return Stmt \n   n$21=*&v:int [line 47, column 16]\n  *&return:int=(1 / n$21) [line 47, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" [label="9:  DeclStmt \n   _=*&y:conversion_operator::Y [line 46, column 16]\n  n$23=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$20:conversion_operator::X*) [line 46, column 16]\n  n$24=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$19:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$20:conversion_operator::X const &) [line 46, column 13]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$19:conversion_operator::X [line 46, column 13]\n  n$26=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmpSIL_materialize_temp__n$19:conversion_operator::X&) [line 46, column 13]\n  *&v:int=n$26 [line 46, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" [label="9:  DeclStmt \n   n$33=_fun___variable_initialization(&v:int) [line 46, column 5]\n  n$30=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$23:conversion_operator::X) [line 46, column 13]\n  n$28=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$24:conversion_operator::X const ) [line 46, column 16]\n  _=*&y:conversion_operator::Y [line 46, column 16]\n  n$27=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$24:conversion_operator::X*) [line 46, column 16]\n  n$29=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$23:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$24:conversion_operator::X const &) [line 46, column 13]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$23:conversion_operator::X [line 46, column 13]\n  n$32=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmpSIL_materialize_temp__n$23:conversion_operator::X&) [line 46, column 13]\n  *&v:int=n$32 [line 46, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" ;
@@ -164,7 +164,7 @@ digraph cfg {
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_10" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" [label="12:  DeclStmt \n   n$29=_fun_conversion_operator::Y_Y(&y:conversion_operator::Y*) [line 42, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" [label="12:  DeclStmt \n   n$37=_fun___variable_initialization(&y:conversion_operator::Y) [line 42, column 3]\n  n$36=_fun_conversion_operator::Y_Y(&y:conversion_operator::Y*) [line 42, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" ;
@@ -227,7 +227,7 @@ digraph cfg {
 "operator_X#Y#conversion_operator(class conversion_operator::X)#(9875474444891926125).86894a9a1bdbf53dc3721d092420d60c_2" [label="2: Exit conversion_operator::Y_operator_X \n  " color=yellow style=filled]
 	
 
-"operator_X#Y#conversion_operator(class conversion_operator::X)#(9875474444891926125).86894a9a1bdbf53dc3721d092420d60c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:conversion_operator::X* [line 27, column 18]\n  n$2=*&this:conversion_operator::Y* [line 27, column 27]\n  n$3=*n$2.f:int [line 27, column 27]\n  n$4=*&this:conversion_operator::Y* [line 27, column 30]\n  n$5=*n$4.b:int [line 27, column 30]\n  n$6=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const *,n$3:int,n$5:_Bool) [line 27, column 25]\n  n$7=_fun_conversion_operator::X_X(n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 27, column 25]\n " shape="box"]
+"operator_X#Y#conversion_operator(class conversion_operator::X)#(9875474444891926125).86894a9a1bdbf53dc3721d092420d60c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:conversion_operator::X* [line 27, column 18]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const ) [line 27, column 25]\n  n$2=*&this:conversion_operator::Y* [line 27, column 27]\n  n$3=*n$2.f:int [line 27, column 27]\n  n$4=*&this:conversion_operator::Y* [line 27, column 30]\n  n$5=*n$4.b:int [line 27, column 30]\n  n$6=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const *,n$3:int,n$5:_Bool) [line 27, column 25]\n  n$8=_fun_conversion_operator::X_X(n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 27, column 25]\n " shape="box"]
 	
 
 	 "operator_X#Y#conversion_operator(class conversion_operator::X)#(9875474444891926125).86894a9a1bdbf53dc3721d092420d60c_3" -> "operator_X#Y#conversion_operator(class conversion_operator::X)#(9875474444891926125).86894a9a1bdbf53dc3721d092420d60c_2" ;

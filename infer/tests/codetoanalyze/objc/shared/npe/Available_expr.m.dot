@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  DeclStmt \n   *&p:int*=null [line 16, column 3]\n " shape="box"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 16, column 3]\n  *&p:int*=null [line 16, column 3]\n " shape="box"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" ;

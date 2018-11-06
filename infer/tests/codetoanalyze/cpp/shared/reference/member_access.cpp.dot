@@ -7,11 +7,11 @@ digraph cfg {
 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_2" [label="2: Exit access_ptr \n  " color=yellow style=filled]
 	
 
-"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" [label="3:  DeclStmt \n   n$1=*&x:X* [line 20, column 11]\n  _=*n$1:X [line 20, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 20, column 11]\n  *&c:int=n$3 [line 20, column 3]\n " shape="box"]
+"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 20, column 3]\n  n$1=*&x:X* [line 20, column 11]\n  _=*n$1:X [line 20, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 20, column 11]\n  *&c:int=n$3 [line 20, column 3]\n " shape="box"]
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_2" ;
-"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" [label="4:  DeclStmt \n   n$4=*&x:X* [line 19, column 11]\n  n$5=*n$4.f:int [line 19, column 11]\n  *&f:int=n$5 [line 19, column 3]\n " shape="box"]
+"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 19, column 3]\n  n$5=*&x:X* [line 19, column 11]\n  n$6=*n$5.f:int [line 19, column 11]\n  *&f:int=n$6 [line 19, column 3]\n " shape="box"]
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_2" [label="2: Exit access_ref \n  " color=yellow style=filled]
 	
 
-"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" [label="3:  DeclStmt \n   n$1=*&x:X& [line 15, column 11]\n  _=*n$1:X [line 15, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 15, column 11]\n  *&c:int=n$3 [line 15, column 3]\n " shape="box"]
+"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 15, column 3]\n  n$1=*&x:X& [line 15, column 11]\n  _=*n$1:X [line 15, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 15, column 11]\n  *&c:int=n$3 [line 15, column 3]\n " shape="box"]
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_2" ;
-"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" [label="4:  DeclStmt \n   n$4=*&x:X& [line 14, column 11]\n  n$5=*n$4.f:int [line 14, column 11]\n  *&f:int=n$5 [line 14, column 3]\n " shape="box"]
+"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 14, column 3]\n  n$5=*&x:X& [line 14, column 11]\n  n$6=*n$5.f:int [line 14, column 11]\n  *&f:int=n$6 [line 14, column 3]\n " shape="box"]
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" ;

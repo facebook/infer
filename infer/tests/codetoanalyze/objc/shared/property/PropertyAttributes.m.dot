@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA_init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$7=_fun___variable_initialization(&a:PropertyA*) [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA_init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA_init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$16=_fun___variable_initialization(&other:PropertyA*) [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA_init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;

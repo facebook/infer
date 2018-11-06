@@ -35,12 +35,12 @@ digraph cfg {
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_3" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_10" [label="10:  DeclStmt \n   *&v2:int=0 [line 21, column 3]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&v2:int) [line 21, column 3]\n  *&v2:int=0 [line 21, column 3]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_10" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" ;
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_10" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 21, column 3]\n " shape="box"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_11" [label="11:  DeclStmt \n   n$6=_fun___variable_initialization(&v1:int) [line 21, column 3]\n  *&v1:int=0 [line 21, column 3]\n " shape="box"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_11" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_10" ;
@@ -75,16 +75,16 @@ digraph cfg {
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_4" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" [label="9:  DeclStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int& [line 10, column 12]\n  n$5=*n$4:int [line 10, column 12]\n  *&v3:int=n$5 [line 10, column 3]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" [label="9:  DeclStmt \n   n$6=_fun___variable_initialization(&v3:int) [line 10, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int& [line 10, column 12]\n  n$5=*n$4:int [line 10, column 12]\n  *&v3:int=n$5 [line 10, column 3]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_3" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_10" [label="10:  DeclStmt \n   *&v2:int=1 [line 9, column 3]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_10" [label="10:  DeclStmt \n   n$7=_fun___variable_initialization(&v2:int) [line 9, column 3]\n  *&v2:int=1 [line 9, column 3]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_10" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" ;
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_10" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 9, column 3]\n " shape="box"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_11" [label="11:  DeclStmt \n   n$8=_fun___variable_initialization(&v1:int) [line 9, column 3]\n  *&v1:int=0 [line 9, column 3]\n " shape="box"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_11" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_10" ;
@@ -119,11 +119,11 @@ digraph cfg {
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_4" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" [label="9:  DeclStmt \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 16, column 12]\n  *&v3:int=n$5 [line 16, column 3]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" [label="9:  DeclStmt \n   n$6=_fun___variable_initialization(&v3:int) [line 16, column 3]\n  n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 16, column 12]\n  *&v3:int=n$5 [line 16, column 3]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_3" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_10" [label="10:  DeclStmt \n   *&v1:int=0 [line 15, column 3]\n " shape="box"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_10" [label="10:  DeclStmt \n   n$7=_fun___variable_initialization(&v1:int) [line 15, column 3]\n  *&v1:int=0 [line 15, column 3]\n " shape="box"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_10" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" ;
@@ -248,7 +248,7 @@ digraph cfg {
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  DeclStmt \n   n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 27, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:int=n$7 [line 27, column 18]\n  *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$3 [line 27, column 3]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  DeclStmt \n   n$9=_fun___variable_initialization(&r:int const &) [line 27, column 3]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:int const ) [line 27, column 18]\n  n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 27, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:int=n$7 [line 27, column 18]\n  *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$3 [line 27, column 3]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" ;

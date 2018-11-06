@@ -33,11 +33,11 @@ digraph cfg {
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_2" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" [label="4:  DeclStmt \n   n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&y:int) [line 38, column 3]\n  n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" [label="5:  DeclStmt \n   n$3=*&a:NonnullA* [line 37, column 19]\n  n$4=_fun_NonnullA_getA(n$3:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$4 [line 37, column 3]\n " shape="box"]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&a1:NonnullA*) [line 37, column 3]\n  n$4=*&a:NonnullA* [line 37, column 19]\n  n$5=_fun_NonnullA_getA(n$4:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$5 [line 37, column 3]\n " shape="box"]
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" ;

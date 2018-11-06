@@ -14,7 +14,7 @@ struct Aggregate {
   ~Aggregate() {}
 };
 
-void FP_aggregate_reassign_ok() {
+void aggregate_reassign_ok() {
   const int len = 5;
   Aggregate arr[len];
   for (int i = 0; i < len; i++) {
@@ -29,7 +29,7 @@ struct AggregateWithConstructedField {
   std::string str;
 };
 
-void FP_aggregate_reassign2_ok() {
+void aggregate_reassign2_ok() {
   AggregateWithConstructedField arr[10];
   for (int i = 0; i < 10; i++) {
     // this is translated as string(&(a.str), "hi"). need to make sure this is
@@ -43,7 +43,7 @@ struct NestedAggregate {
   AggregateWithConstructedField a;
 };
 
-void FP_aggregate_reassign3_ok() {
+void aggregate_reassign3_ok() {
   NestedAggregate arr[10];
   for (int i = 0; i < 10; i++) {
     // this is translated as std::basic_string(&(a.str), "hi"). need to make

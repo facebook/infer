@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_7" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_2" ;
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" [label="8:  DeclStmt \n   n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" [label="8:  DeclStmt \n   n$4=_fun___variable_initialization(&c:objc_class*) [line 103, column 3]\n  n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" ;
@@ -61,18 +61,18 @@ digraph cfg {
 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" [label="2: Exit A_calling_super \n  " color=yellow style=filled]
 	
 
-"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" [label="3:  Message Call: test_class \n   n$18=_fun_C_test_class() [line 82, column 3]\n " shape="box"]
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" [label="3:  Message Call: test_class \n   n$19=_fun_C_test_class() [line 82, column 3]\n " shape="box"]
 	
 
 	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A_class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle* stringsBundlePath:NSString* \n  " color=yellow style=filled]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A_class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$31:NSBundle* stringsBundlePath:NSString* \n  " color=yellow style=filled]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_2" [label="2: Exit A_class_method_fst_arg_of_class_method_inside_instance_method \n  " color=yellow style=filled]
 	
 
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" [label="3:  Return Stmt \n   n$27=*&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A_class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle* [line 120, column 10]\n  *&return:NSBundle*=n$27 [line 120, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" [label="3:  Return Stmt \n   n$28=*&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A_class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle* [line 120, column 10]\n  *&return:NSBundle*=n$28 [line 120, column 3]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_2" ;
@@ -80,32 +80,32 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE(n$29, true); [line 119, column 12]\n " shape="invhouse"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE(n$30, true); [line 119, column 12]\n " shape="invhouse"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!n$29, false); [line 119, column 12]\n " shape="invhouse"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!n$30, false); [line 119, column 12]\n " shape="invhouse"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle*=n$29 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$31:NSBundle*=n$30 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" [label="8:  ConditionalStmt Branch \n   n$31=_fun_NSBundle_mainBundle() [line 119, column 59]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle*=n$31 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" [label="8:  ConditionalStmt Branch \n   n$32=_fun_NSBundle_mainBundle() [line 119, column 59]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$31:NSBundle*=n$32 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" [label="9:  BinaryConditionalStmt Init \n   n$28=*&stringsBundlePath:NSString* [line 119, column 37]\n  n$29=_fun_NSBundle_bundleWithPath:(n$28:NSString*) [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" [label="9:  BinaryConditionalStmt Init \n   n$29=*&stringsBundlePath:NSString* [line 119, column 37]\n  n$30=_fun_NSBundle_bundleWithPath:(n$29:NSString*) [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" ;
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" [label="10:  BinaryOperatorStmt: Assign \n   n$32=*&0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle* [line 119, column 12]\n  *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A_class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$32 [line 119, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" [label="10:  BinaryOperatorStmt: Assign \n   n$33=*&0$?%__sil_tmpSIL_temp_conditional___n$31:NSBundle* [line 119, column 12]\n  *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A_class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$33 [line 119, column 3]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" [label="11:  DeclStmt \n   n$35=_fun_NSBundle_bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$33=_fun_NSString_stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$34=_fun_NSString_stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$36=_fun_NSBundle_pathForResource:ofType:(n$35:NSBundle*,n$33:NSString*,n$34:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$36 [line 116, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" [label="11:  DeclStmt \n   n$38=_fun___variable_initialization(&stringsBundlePath:NSString*) [line 116, column 3]\n  n$36=_fun_NSBundle_bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$34=_fun_NSString_stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$35=_fun_NSString_stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$37=_fun_NSBundle_pathForResource:ofType:(n$36:NSBundle*,n$34:NSString*,n$35:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$37 [line 116, column 3]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" ;
@@ -131,16 +131,16 @@ digraph cfg {
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" [label="5:  BinaryOperatorStmt: NE \n   n$23=*sizeof(t=A):objc_class* [line 94, column 7]\n  n$24=*&c:objc_class* [line 94, column 15]\n " shape="box"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" [label="5:  BinaryOperatorStmt: NE \n   n$24=*sizeof(t=A):objc_class* [line 94, column 7]\n  n$25=*&c:objc_class* [line 94, column 15]\n " shape="box"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" ;
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" [label="6: Prune (true branch, if) \n   PRUNE((n$23 != n$24), true); [line 94, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" [label="6: Prune (true branch, if) \n   PRUNE((n$24 != n$25), true); [line 94, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_8" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$23 != n$24), false); [line 94, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$24 != n$25), false); [line 94, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" ;
@@ -203,7 +203,7 @@ digraph cfg {
 "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_2" [label="2: Exit A_class_method_fst_arg_of_class_method \n  " color=yellow style=filled]
 	
 
-"class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" [label="3:  Return Stmt \n   n$26=_fun_NSBundle_bundleForClass:(sizeof(t=A):unsigned long) [line 111, column 10]\n  *&return:NSBundle*=n$26 [line 111, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" [label="3:  Return Stmt \n   n$27=_fun_NSBundle_bundleForClass:(sizeof(t=A):unsigned long) [line 111, column 10]\n  *&return:NSBundle*=n$27 [line 111, column 3]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" -> "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_2" ;
@@ -214,7 +214,7 @@ digraph cfg {
 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A_init \n  " color=yellow style=filled]
 	
 
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Message Call: init \n   n$19=*&self:A* [line 86, column 3]\n  n$20=_fun_NSObject_init(n$19:A*) [line 86, column 3]\n " shape="box"]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Message Call: init \n   n$20=*&self:A* [line 86, column 3]\n  n$21=_fun_NSObject_init(n$20:A*) [line 86, column 3]\n " shape="box"]
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
@@ -225,7 +225,7 @@ digraph cfg {
 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" [label="2: Exit A_loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$22=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n  *&return:NSString*=n$22 [line 90, column 3]\n " shape="box"]
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$23=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n  *&return:NSString*=n$23 [line 90, column 3]\n " shape="box"]
 	
 
 	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" ;
@@ -240,7 +240,7 @@ digraph cfg {
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_2" ;
-"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 73, column 10]\n  n$14=_fun_NSObject_init(n$13:B*) virtual [line 73, column 10]\n  *&b:B*=n$14 [line 73, column 3]\n " shape="box"]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$15=_fun___variable_initialization(&b:B*) [line 73, column 3]\n  n$13=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 73, column 10]\n  n$14=_fun_NSObject_init(n$13:B*) virtual [line 73, column 10]\n  *&b:B*=n$14 [line 73, column 3]\n " shape="box"]
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" ;
@@ -258,7 +258,7 @@ digraph cfg {
 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" [label="3:  Return Stmt \n   n$16=*&object:B* [line 78, column 11]\n  n$17=_fun_B_isC:(n$16:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n  *&return:_Bool=n$17 [line 78, column 3]\n " shape="box"]
+"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" [label="3:  Return Stmt \n   n$17=*&object:B* [line 78, column 11]\n  n$18=_fun_B_isC:(n$17:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n  *&return:_Bool=n$18 [line 78, column 3]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" -> "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_2" ;

@@ -1,6 +1,3 @@
-codetoanalyze/cpp/pulse/basics.cpp, FP_aggregate_reassign2_ok, 5, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [invalidated by destructor call `AggregateWithConstructedField_~AggregateWithConstructedField(a)` at line 39, column 3 here,accessed `a.str` here]
-codetoanalyze/cpp/pulse/basics.cpp, FP_aggregate_reassign3_ok, 5, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [invalidated by destructor call `NestedAggregate_~NestedAggregate(a)` at line 53, column 3 here,accessed `a.a.str` here]
-codetoanalyze/cpp/pulse/basics.cpp, FP_aggregate_reassign_ok, 4, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [invalidated by destructor call `Aggregate_~Aggregate(s)` at line 25, column 3 here,accessed `s.i` here]
 codetoanalyze/cpp/pulse/basics.cpp, multiple_invalidations_branch_bad, 6, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete ptr` at line 60, column 5 here,accessed `*(ptr)` here]
 codetoanalyze/cpp/pulse/basics.cpp, multiple_invalidations_loop_bad, 8, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete ptr` at line 70, column 7 here,accessed `*(ptr)` here]
 codetoanalyze/cpp/pulse/join.cpp, invalidate_node_alias_bad, 12, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete result` at line 26, column 5 here,accessed `*(result)` here]

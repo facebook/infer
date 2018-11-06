@@ -64,15 +64,15 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   n$15=*&context:CGContext* [line 22, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$16 [line 22, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   n$17=_fun___variable_initialization(&newImage:CGImage*) [line 22, column 3]\n  n$15=*&context:CGContext* [line 22, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$16 [line 22, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$17=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$17 [line 21, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$19=_fun___variable_initialization(&context:CGContext*) [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" [label="12:  DeclStmt \n   *&z:int=3 [line 20, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" [label="12:  DeclStmt \n   n$20=_fun___variable_initialization(&z:int) [line 20, column 3]\n  *&z:int=3 [line 20, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" ;

@@ -7,23 +7,23 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$1=*&a:int [line 13, column 11]\n  *&a:int=(n$1 - 1) [line 13, column 11]\n  *&e:int=n$1 [line 13, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&e:int) [line 13, column 3]\n  n$1=*&a:int [line 13, column 11]\n  *&a:int=(n$1 - 1) [line 13, column 11]\n  *&e:int=n$1 [line 13, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$2=*&a:int [line 12, column 11]\n  *&a:int=(n$2 - 1) [line 12, column 11]\n  n$3=*&a:int [line 12, column 11]\n  *&d:int=n$3 [line 12, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&d:int) [line 12, column 3]\n  n$3=*&a:int [line 12, column 11]\n  *&a:int=(n$3 - 1) [line 12, column 11]\n  n$4=*&a:int [line 12, column 11]\n  *&d:int=n$4 [line 12, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$4=*&a:int [line 11, column 11]\n  *&a:int=(n$4 + 1) [line 11, column 11]\n  *&c:int=n$4 [line 11, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&c:int) [line 11, column 3]\n  n$6=*&a:int [line 11, column 11]\n  *&a:int=(n$6 + 1) [line 11, column 11]\n  *&c:int=n$6 [line 11, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   n$5=*&a:int [line 10, column 11]\n  *&a:int=(n$5 + 1) [line 10, column 11]\n  n$6=*&a:int [line 10, column 11]\n  *&b:int=n$6 [line 10, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   n$10=_fun___variable_initialization(&b:int) [line 10, column 3]\n  n$8=*&a:int [line 10, column 11]\n  *&a:int=(n$8 + 1) [line 10, column 11]\n  n$9=*&a:int [line 10, column 11]\n  *&b:int=n$9 [line 10, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  DeclStmt \n   *&a:int=3 [line 9, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  DeclStmt \n   n$11=_fun___variable_initialization(&a:int) [line 9, column 3]\n  *&a:int=3 [line 9, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;

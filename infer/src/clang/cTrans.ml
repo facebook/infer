@@ -2230,7 +2230,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* Nothing to do if no init expression and not a variable length array *)
           mk_trans_result var_exp_typ {empty_control with root_nodes= trans_state.succ_nodes} )
     | Some ie ->
-        (*For init expr, translate how to compute it and assign to the var*)
+        (* For init expr, translate how to compute it and assign to the var *)
         let var_exp, _ = var_exp_typ in
         let context = trans_state.context in
         let sil_loc =
@@ -2256,7 +2256,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             let sil_e1', ie_typ = res_trans_ie.return in
             Some {empty_control with instrs= [Sil.Store (var_exp, ie_typ, sil_e1', sil_loc)]}
         in
-        let all_res_trans = res_trans_ie.control :: Option.to_list assign_trans_control_opt in
+        let pre_init_opt =
+          match var_exp with
+          | Exp.Lvar _ ->
+              let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__variable_initialization) in
+              let ret_id = Ident.create_fresh Ident.knormal in
+              Some
+                { empty_control with
+                  instrs=
+                    [ Sil.Call
+                        ((ret_id, Typ.void), sil_fun, [var_exp_typ], sil_loc, CallFlags.default) ]
+                }
+          | _ ->
+              None
+        in
+        let all_res_trans =
+          Option.to_list pre_init_opt
+          @ (res_trans_ie.control :: Option.to_list assign_trans_control_opt)
+        in
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:DeclStmt
           var_stmt_info all_res_trans
         |> mk_trans_result var_exp_typ

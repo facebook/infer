@@ -42,11 +42,11 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_8" -> "main1.38f534a9576db7ec6ebcbca8c111f942_7" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  DeclStmt \n   *&x:int=7 [line 11, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  DeclStmt \n   n$22=_fun___variable_initialization(&x:int) [line 11, column 3]\n  *&x:int=7 [line 11, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_9" -> "main1.38f534a9576db7ec6ebcbca8c111f942_8" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_10" [label="10:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int=3 [line 10, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_10" [label="10:  DeclStmt \n   n$23=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int) [line 10, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int=3 [line 10, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_10" -> "main1.38f534a9576db7ec6ebcbca8c111f942_9" ;
@@ -80,7 +80,7 @@ digraph cfg {
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" [label="6:  DeclStmt \n   *&bla:int=3 [line 19, column 5]\n " shape="box"]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" [label="6:  DeclStmt \n   n$21=_fun___variable_initialization(&bla:int) [line 19, column 5]\n  *&bla:int=3 [line 19, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" ;

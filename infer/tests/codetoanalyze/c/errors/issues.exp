@@ -31,7 +31,7 @@ codetoanalyze/c/errors/memory_leaks/cleanup_attribute.c, FP_cleanup_malloc_good,
 codetoanalyze/c/errors/memory_leaks/cleanup_attribute.c, FP_cleanup_string_good, 2, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 3, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 5, NULL_TEST_AFTER_DEREFERENCE, no_bucket
-codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 2, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 5, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, simple_leak, 2, MEMORY_LEAK, no_bucket
@@ -72,7 +72,7 @@ codetoanalyze/c/errors/null_dereference/getc.c, crash_rewind, 4, NULL_DEREFERENC
 codetoanalyze/c/errors/null_dereference/getc.c, crash_ungetc, 5, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/getc.c, crash_vfprintf, 5, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/getcwd.c, getcwd_no_buf_no_check_bad, 2, NULL_DEREFERENCE, B1
-codetoanalyze/c/errors/null_dereference/getcwd.c, getcwd_no_buf_no_free_bad, 3, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/null_dereference/getcwd.c, getcwd_no_buf_no_free_bad, 6, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/null_dereference/getcwd.c, getcwd_no_check_bad, 3, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref2_bad, 0, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref_bad, 0, NULL_DEREFERENCE, B1

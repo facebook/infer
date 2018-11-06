@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:Person[10*4] 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$5:Person 0$?%__sil_tmpSIL_materialize_temp__n$8:Person \n  " color=yellow style=filled]
+"array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:Person[10*4] 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$6:Person 0$?%__sil_tmpSIL_materialize_temp__n$10:Person \n  " color=yellow style=filled]
 	
 
 	 "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_1" -> "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_4" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_3" -> "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_2" ;
-"array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_4" [label="4:  DeclStmt \n   n$3=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 16, column 21]\n  n$4=_fun_Person_Person(&arr[0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 16, column 21]\n  n$6=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$5:Person*) [line 16, column 31]\n  n$7=_fun_Person_Person(&arr[1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$5:Person&) [line 16, column 31]\n  n$9=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$8:Person*) [line 16, column 41]\n  n$10=_fun_Person_Person(&arr[2]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$8:Person&) [line 16, column 41]\n " shape="box"]
+"array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&arr:Person[10*4]) [line 16, column 3]\n  n$4=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person) [line 16, column 21]\n  n$3=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 16, column 21]\n  n$5=_fun_Person_Person(&arr[0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 16, column 21]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$6:Person) [line 16, column 31]\n  n$7=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$6:Person*) [line 16, column 31]\n  n$9=_fun_Person_Person(&arr[1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$6:Person&) [line 16, column 31]\n  n$12=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$10:Person) [line 16, column 41]\n  n$11=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$10:Person*) [line 16, column 41]\n  n$13=_fun_Person_Person(&arr[2]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$10:Person&) [line 16, column 41]\n " shape="box"]
 	
 
 	 "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_4" -> "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_2" [label="2: Exit initialization_c_style \n  " color=yellow style=filled]
 	
 
-"initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_3" [label="3:  DeclStmt \n   n$1=_fun_Z_Z(&z2:Z*) [line 32, column 12]\n " shape="box"]
+"initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&z2:Z) [line 32, column 3]\n  n$1=_fun_Z_Z(&z2:Z*) [line 32, column 12]\n " shape="box"]
 	
 
 	 "initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_3" -> "initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_2" ;
-"initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_4" [label="4:  DeclStmt \n   *&z[0].a:int=1 [line 31, column 20]\n  *&z[0].b:int=2 [line 31, column 20]\n  *&z[1].a:int=2 [line 31, column 28]\n  *&z[1].b:int=3 [line 31, column 28]\n " shape="box"]
+"initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&z:Z[2*8]) [line 31, column 3]\n  *&z[0].a:int=1 [line 31, column 20]\n  *&z[0].b:int=2 [line 31, column 20]\n  *&z[1].a:int=2 [line 31, column 28]\n  *&z[1].b:int=3 [line 31, column 28]\n " shape="box"]
 	
 
 	 "initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_4" -> "initialization_c_style#16495589501342328206.0d90448020e72c05f693b9221dac03f8_3" ;
@@ -37,19 +37,19 @@ digraph cfg {
 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_2" [label="2: Exit initialization_mixed_styles_not_handled_correctly \n  " color=yellow style=filled]
 	
 
-"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" [label="3:  DeclStmt \n   n$1=_fun_Z_Z(&z2:Z*) [line 40, column 12]\n " shape="box"]
+"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&z2:Z) [line 40, column 3]\n  n$1=_fun_Z_Z(&z2:Z*) [line 40, column 12]\n " shape="box"]
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" -> "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_2" ;
-"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" [label="4:  DeclStmt \n   *&z[0].a:int=1 [line 39, column 20]\n  *&z[0].b:int=2 [line 39, column 20]\n  n$2=_fun_Z_Z(&z[1]:Z*,&old:Z&) [line 39, column 28]\n " shape="box"]
+"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&z:Z[2*8]) [line 39, column 3]\n  *&z[0].a:int=1 [line 39, column 20]\n  *&z[0].b:int=2 [line 39, column 20]\n  n$3=_fun_Z_Z(&z[1]:Z*,&old:Z&) [line 39, column 28]\n " shape="box"]
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" -> "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" ;
-"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_5" [label="5:  DeclStmt \n   n$3=_fun_Z_Z(&old:Z*) [line 38, column 12]\n " shape="box"]
+"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&old:Z) [line 38, column 3]\n  n$5=_fun_Z_Z(&old:Z*) [line 38, column 12]\n " shape="box"]
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_5" -> "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" ;
-"matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_1" [label="1: Start matrix_of_person\nFormals: \nLocals:  arr:Person[2*4][2*8] 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$5:Person 0$?%__sil_tmpSIL_materialize_temp__n$8:Person 0$?%__sil_tmpSIL_materialize_temp__n$11:Person \n  " color=yellow style=filled]
+"matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_1" [label="1: Start matrix_of_person\nFormals: \nLocals:  arr:Person[2*4][2*8] 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$6:Person 0$?%__sil_tmpSIL_materialize_temp__n$10:Person 0$?%__sil_tmpSIL_materialize_temp__n$14:Person \n  " color=yellow style=filled]
 	
 
 	 "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_1" -> "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_4" ;
@@ -60,7 +60,7 @@ digraph cfg {
 	
 
 	 "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_3" -> "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_2" ;
-"matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_4" [label="4:  DeclStmt \n   n$3=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 21, column 23]\n  n$4=_fun_Person_Person(&arr[0][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 21, column 23]\n  n$6=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$5:Person*) [line 21, column 33]\n  n$7=_fun_Person_Person(&arr[0][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$5:Person&) [line 21, column 33]\n  n$9=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$8:Person*) [line 21, column 43]\n  n$10=_fun_Person_Person(&arr[1][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$8:Person&) [line 21, column 43]\n  n$12=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$11:Person*) [line 21, column 53]\n  n$13=_fun_Person_Person(&arr[1][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$11:Person&) [line 21, column 53]\n " shape="box"]
+"matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_4" [label="4:  DeclStmt \n   n$18=_fun___variable_initialization(&arr:Person[2*4][2*8]) [line 21, column 3]\n  n$4=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person) [line 21, column 23]\n  n$3=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 21, column 23]\n  n$5=_fun_Person_Person(&arr[0][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 21, column 23]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$6:Person) [line 21, column 33]\n  n$7=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$6:Person*) [line 21, column 33]\n  n$9=_fun_Person_Person(&arr[0][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$6:Person&) [line 21, column 33]\n  n$12=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$10:Person) [line 21, column 43]\n  n$11=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$10:Person*) [line 21, column 43]\n  n$13=_fun_Person_Person(&arr[1][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$10:Person&) [line 21, column 43]\n  n$16=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$14:Person) [line 21, column 53]\n  n$15=_fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$14:Person*) [line 21, column 53]\n  n$17=_fun_Person_Person(&arr[1][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$14:Person&) [line 21, column 53]\n " shape="box"]
 	
 
 	 "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_4" -> "matrix_of_person#2881910427017022824.27f7f148c4911c13b3061cef6fe2673d_3" ;

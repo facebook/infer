@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" -> "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_3" ;
-"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" [label="5:  DeclStmt \n   n$7=_fun_item_item(&i:item*) [line 33, column 8]\n " shape="box"]
+"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&i:item) [line 33, column 3]\n  n$7=_fun_item_item(&i:item*) [line 33, column 8]\n " shape="box"]
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" -> "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" ;

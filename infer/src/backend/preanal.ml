@@ -40,15 +40,19 @@ module VarDomain = Liveness.Domain
 
 (** computes the non-nullified reaching definitions at the end of each node by building on the
     results of a liveness analysis to be precise, what we want to compute is:
+
     to_nullify := (live_before U non_nullifed_reaching_defs) - live_after
+
     non_nullified_reaching_defs := non_nullified_reaching_defs - to_nullify
+
     Note that this can't be done with by combining the results of reaching definitions and liveness
     after the fact, nor can it be done with liveness alone. We will insert nullify instructions for
     each pvar in to_nullify afer we finish the analysis. Nullify instructions speed up the analysis
     by enabling it to GC state that will no longer be read. *)
 module NullifyTransferFunctions = struct
-  (* (reaching non-nullified vars) * (vars to nullify) *)
+  (** (reaching non-nullified vars) * (vars to nullify) *)
   module Domain = AbstractDomain.Pair (VarDomain) (VarDomain)
+
   module CFG = ProcCfg.Exceptional
 
   type extras = LivenessAnalysis.invariant_map

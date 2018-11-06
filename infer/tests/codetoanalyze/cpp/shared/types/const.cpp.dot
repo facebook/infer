@@ -15,19 +15,19 @@ digraph cfg {
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_3" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" [label="5:  DeclStmt \n   *&cx:int=0 [line 16, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&cx:int const ) [line 16, column 3]\n  *&cx:int=0 [line 16, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" [label="6:  Call _fun_const_in_param2 \n   n$3=_fun_const_in_param2(&x:int*) [line 14, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" [label="6:  Call _fun_const_in_param2 \n   n$4=_fun_const_in_param2(&x:int*) [line 14, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" [label="7:  Call _fun_const_in_param1 \n   n$4=_fun_const_in_param1(&x:int*) [line 13, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" [label="7:  Call _fun_const_in_param1 \n   n$5=_fun_const_in_param1(&x:int*) [line 13, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" [label="8:  DeclStmt \n   *&x:int=1 [line 12, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" [label="8:  DeclStmt \n   n$6=_fun___variable_initialization(&x:int) [line 12, column 3]\n  *&x:int=1 [line 12, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" ;
@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" -> "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_2" ;
-"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" [label="4:  DeclStmt \n   *&p:int*=null [line 23, column 3]\n " shape="box"]
+"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 23, column 3]\n  *&p:int*=null [line 23, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" -> "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" ;
@@ -57,7 +57,7 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" -> "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_2" ;
-"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" [label="4:  DeclStmt \n   *&p:int*=null [line 27, column 3]\n " shape="box"]
+"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" -> "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" ;
@@ -72,7 +72,7 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" -> "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_2" ;
-"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" [label="4:  DeclStmt \n   *&cp:int* const =null [line 32, column 3]\n " shape="box"]
+"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&cp:int* const ) [line 32, column 3]\n  *&cp:int* const =null [line 32, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" -> "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" ;

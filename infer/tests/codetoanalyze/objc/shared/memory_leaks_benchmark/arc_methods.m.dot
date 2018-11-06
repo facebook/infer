@@ -11,19 +11,19 @@ digraph cfg {
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$0=*&a2:ArcMethodsA* [line 43, column 21]\n  *&ab:ArcMethodsA*=n$0 [line 43, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&ab:ArcMethodsA*) [line 43, column 3]\n  n$0=*&a2:ArcMethodsA* [line 43, column 21]\n  *&ab:ArcMethodsA*=n$0 [line 43, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$1=_fun_ArcMethodsA_someA() [line 42, column 21]\n  *&a2:ArcMethodsA*=n$1 [line 42, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&a2:ArcMethodsA*) [line 42, column 3]\n  n$2=_fun_ArcMethodsA_someA() [line 42, column 21]\n  *&a2:ArcMethodsA*=n$2 [line 42, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$2=*&a1:ArcMethodsA* [line 41, column 21]\n  *&aa:ArcMethodsA*=n$2 [line 41, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$5=_fun___variable_initialization(&aa:ArcMethodsA*) [line 41, column 3]\n  n$4=*&a1:ArcMethodsA* [line 41, column 21]\n  *&aa:ArcMethodsA*=n$4 [line 41, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$3=_fun_ArcMethodsA_newA() [line 40, column 21]\n  *&a1:ArcMethodsA*=n$3 [line 40, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$7=_fun___variable_initialization(&a1:ArcMethodsA*) [line 40, column 3]\n  n$6=_fun_ArcMethodsA_newA() [line 40, column 21]\n  *&a1:ArcMethodsA*=n$6 [line 40, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" ;
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&a:ArcMethodsA*) [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
@@ -49,11 +49,11 @@ digraph cfg {
 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" [label="2: Exit ArcMethodsA_someA \n  " color=yellow style=filled]
 	
 
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" [label="3:  Return Stmt \n   n$3=*&a:ArcMethodsA* [line 28, column 10]\n  *&return:ArcMethodsA*=n$3 [line 28, column 3]\n " shape="box"]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" [label="3:  Return Stmt \n   n$4=*&a:ArcMethodsA* [line 28, column 10]\n  *&return:ArcMethodsA*=n$4 [line 28, column 3]\n " shape="box"]
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" ;
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$5=_fun_NSObject_init(n$4:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$5 [line 26, column 3]\n " shape="box"]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&a:ArcMethodsA*) [line 26, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$6=_fun_NSObject_init(n$5:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$6 [line 26, column 3]\n " shape="box"]
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;

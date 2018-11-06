@@ -120,6 +120,8 @@ let __throw = create_procname "__throw"
 
 let __unwrap_exception = create_procname "__unwrap_exception"
 
+let __variable_initialization = create_procname "__variable_initialization"
+
 let abort = create_procname "abort"
 
 let exit = create_procname "exit"

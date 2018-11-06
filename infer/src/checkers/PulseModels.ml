@@ -6,6 +6,7 @@
  *)
 open! IStd
 open Result.Monad_infix
+module L = Logging
 
 type exec_fun =
      Location.t
@@ -24,6 +25,18 @@ module C = struct
         PulseDomain.invalidate (CFree (deleted_access, location)) location deleted_access astate
     | _ ->
         Ok astate
+
+
+  let variable_initialization : model =
+   fun location ~ret:_ ~actuals astate ->
+    match actuals with
+    | [AccessExpression (AddressOf access_expr)] ->
+        PulseDomain.havoc location access_expr astate
+    | _ ->
+        L.die InternalError
+          "The frontend is not supposed to produce __variable_initialization(e) where e is not of \
+           the form `&exp`. Got [%a]."
+          (Pp.seq ~sep:", " HilExp.pp) actuals
 end
 
 module Cplusplus = struct
@@ -104,8 +117,9 @@ end
 let builtins_dispatcher =
   let builtins =
     [ (BuiltinDecl.__delete, Cplusplus.delete)
-    ; (BuiltinDecl.free, C.free)
-    ; (BuiltinDecl.__placement_new, Cplusplus.placement_new) ]
+    ; (BuiltinDecl.__placement_new, Cplusplus.placement_new)
+    ; (BuiltinDecl.__variable_initialization, C.variable_initialization)
+    ; (BuiltinDecl.free, C.free) ]
   in
   let builtins_map =
     Hashtbl.create

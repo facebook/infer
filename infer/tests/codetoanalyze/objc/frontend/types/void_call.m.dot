@@ -53,20 +53,20 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$9=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 38, column 15]\n  *&o:AClass*=n$9 [line 38, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$10=_fun___variable_initialization(&o:AClass*) [line 38, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 38, column 15]\n  *&o:AClass*=n$9 [line 38, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$10=*&x:int [line 36, column 12]\n  n$11=_fun_bar1(n$10:int) [line 36, column 7]\n  *&x:int=n$11 [line 36, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$11=*&x:int [line 36, column 12]\n  n$12=_fun_bar1(n$11:int) [line 36, column 7]\n  *&x:int=n$12 [line 36, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  Call _fun_foo1 \n   n$12=*&x:int [line 34, column 8]\n  n$13=_fun_foo1(n$12:int) [line 34, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  Call _fun_foo1 \n   n$13=*&x:int [line 34, column 8]\n  n$14=_fun_foo1(n$13:int) [line 34, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   *&x:int=1 [line 33, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) [line 33, column 3]\n  *&x:int=1 [line 33, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;

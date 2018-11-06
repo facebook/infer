@@ -31,19 +31,19 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$6=_fun_foo::Rectangle_Rectangle(&rect2:foo::Rectangle*) [line 49, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$7=_fun___variable_initialization(&rect2:foo::Rectangle) [line 49, column 3]\n  n$6=_fun_foo::Rectangle_Rectangle(&rect2:foo::Rectangle*) [line 49, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  Call _fun_bar::Rectangle_set_values \n   _=*&rect1:bar::Rectangle [line 47, column 3]\n  n$8=_fun_bar::Rectangle_set_values(&rect1:bar::Rectangle&,3:int,4:int) [line 47, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  Call _fun_bar::Rectangle_set_values \n   _=*&rect1:bar::Rectangle [line 47, column 3]\n  n$9=_fun_bar::Rectangle_set_values(&rect1:bar::Rectangle&,3:int,4:int) [line 47, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$9=_fun_bar::Rectangle_Rectangle(&rect1:bar::Rectangle*) [line 46, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$11=_fun___variable_initialization(&rect1:bar::Rectangle) [line 46, column 3]\n  n$10=_fun_bar::Rectangle_Rectangle(&rect1:bar::Rectangle*) [line 46, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$10=_fun_foo::my_record_(&x:foo::my_record*) [line 44, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$13=_fun___variable_initialization(&x:foo::my_record) [line 44, column 3]\n  n$12=_fun_foo::my_record_(&x:foo::my_record*) [line 44, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
@@ -54,7 +54,7 @@ digraph cfg {
 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" [label="2: Exit __infer_globals_initializer_bar::pi \n  " color=yellow style=filled]
 	
 
-"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double=3.1416 [line 27, column 1]\n " shape="box"]
+"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double const ) [line 27, column 1]\n  *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double=3.1416 [line 27, column 1]\n " shape="box"]
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" ;
@@ -65,7 +65,7 @@ digraph cfg {
 "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_2" [label="2: Exit __infer_globals_initializer_bar::rect \n  " color=yellow style=filled]
 	
 
-"rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_3" [label="3:  DeclStmt \n   n$0=_fun_bar::Rectangle_Rectangle(&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|!pod>$bar::rect:bar::Rectangle*) [line 36, column 3]\n " shape="box"]
+"rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|!pod>$bar::rect:bar::Rectangle) [line 30, column 1]\n  n$0=_fun_bar::Rectangle_Rectangle(&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|!pod>$bar::rect:bar::Rectangle*) [line 36, column 3]\n " shape="box"]
 	
 
 	 "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_3" -> "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_2" ;

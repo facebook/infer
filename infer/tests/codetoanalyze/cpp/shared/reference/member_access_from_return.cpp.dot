@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$0=_fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X*) [line 13, column 3]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X) [line 13, column 1]\n  n$0=_fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X*) [line 13, column 3]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -40,11 +40,11 @@ digraph cfg {
 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   n$1=_fun_get_ptr() [line 24, column 11]\n  _=*n$1:X [line 24, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 24, column 11]\n  *&c:int=n$3 [line 24, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 24, column 3]\n  n$1=_fun_get_ptr() [line 24, column 11]\n  _=*n$1:X [line 24, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 24, column 11]\n  *&c:int=n$3 [line 24, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" ;
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   n$4=_fun_get_ptr() [line 23, column 11]\n  n$5=*n$4.f:int [line 23, column 11]\n  *&f:int=n$5 [line 23, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 23, column 3]\n  n$5=_fun_get_ptr() [line 23, column 11]\n  n$6=*n$5.f:int [line 23, column 11]\n  *&f:int=n$6 [line 23, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" ;
@@ -55,11 +55,11 @@ digraph cfg {
 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
 	
 
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$1=_fun_get_ref() [line 19, column 11]\n  _=*n$1:X [line 19, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 19, column 11]\n  *&c:int=n$3 [line 19, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 19, column 3]\n  n$1=_fun_get_ref() [line 19, column 11]\n  _=*n$1:X [line 19, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 19, column 11]\n  *&c:int=n$3 [line 19, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$4=_fun_get_ref() [line 18, column 11]\n  n$5=*n$4.f:int [line 18, column 11]\n  *&f:int=n$5 [line 18, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 18, column 3]\n  n$5=_fun_get_ref() [line 18, column 11]\n  n$6=*n$5.f:int [line 18, column 11]\n  *&f:int=n$6 [line 18, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" ;

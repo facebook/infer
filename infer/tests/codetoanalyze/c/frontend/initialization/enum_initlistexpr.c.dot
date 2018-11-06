@@ -3,8 +3,20 @@ digraph cfg {
 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_1" [label="1: Start union_initialize_FIXME\nFormals: \nLocals:  set_f1_implicit:U set_f2:U set_f1:U \n  " color=yellow style=filled]
 	
 
-	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_1" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" ;
+	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_1" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" ;
 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" [label="2: Exit union_initialize_FIXME \n  " color=yellow style=filled]
 	
 
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&set_f1_implicit:U) [line 15, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" ;
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&set_f2:U) [line 14, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" ;
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&set_f1:U) [line 13, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" ;
 }

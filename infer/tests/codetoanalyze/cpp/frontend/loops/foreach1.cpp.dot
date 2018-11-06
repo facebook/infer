@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_9" -> "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$3:iterator __begin1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$9:iterator 0$?%__sil_tmp__temp_return_n$17:iterator 0$?%__sil_tmp__temp_construct_n$19:iterator 0$?%__sil_tmp__temp_construct_n$21:iterator temp:int value:int __range1:vec& vector:vec \n  " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$3:iterator __begin1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$11:iterator 0$?%__sil_tmp__temp_return_n$21:iterator 0$?%__sil_tmp__temp_construct_n$23:iterator 0$?%__sil_tmp__temp_construct_n$25:iterator temp:int value:int __range1:vec& vector:vec \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" ;
@@ -47,44 +47,44 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=*&__range1:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec_end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) [line 35, column 18]\n  n$8=_fun_iterator_iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$10=_fun___variable_initialization(&__end1:iterator) [line 35, column 18]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator) [line 35, column 18]\n  n$4=*&__range1:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec_end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) [line 35, column 18]\n  n$9=_fun_iterator_iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$10=*&__range1:vec& [line 35, column 18]\n  _=*n$10:vec [line 35, column 18]\n  n$13=_fun_vec_begin(n$10:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator*) [line 35, column 18]\n  n$14=_fun_iterator_iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator&) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$18=_fun___variable_initialization(&__begin1:iterator) [line 35, column 18]\n  n$16=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator) [line 35, column 18]\n  n$12=*&__range1:vec& [line 35, column 18]\n  _=*n$12:vec [line 35, column 18]\n  n$15=_fun_vec_begin(n$12:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator*) [line 35, column 18]\n  n$17=_fun_iterator_iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator&) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator_operator++ \n   n$18=_fun_iterator_operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$17:iterator*) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator_operator++ \n   n$22=_fun_iterator_operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$21:iterator*) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$20=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$19:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$22=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$21:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$23=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$19:iterator,&0$?%__sil_tmp__temp_construct_n$21:iterator) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$24=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$23:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$26=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$25:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$27=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$23:iterator,&0$?%__sil_tmp__temp_construct_n$25:iterator) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" ;
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8: Prune (true branch, for loop) \n   PRUNE(n$23, true); [line 35, column 18]\n " shape="invhouse"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8: Prune (true branch, for loop) \n   PRUNE(n$27, true); [line 35, column 18]\n " shape="invhouse"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!n$23, false); [line 35, column 18]\n " shape="invhouse"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!n$27, false); [line 35, column 18]\n " shape="invhouse"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" [label="10:  DeclStmt \n   n$26=*&value:int [line 36, column 16]\n  n$27=*&value:int [line 36, column 24]\n  *&temp:int=((n$26 * n$27) + 10) [line 36, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" [label="10:  DeclStmt \n   n$32=_fun___variable_initialization(&temp:int) [line 36, column 5]\n  n$30=*&value:int [line 36, column 16]\n  n$31=*&value:int [line 36, column 24]\n  *&temp:int=((n$30 * n$31) + 10) [line 36, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$29=_fun_iterator_operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$29 [line 35, column 8]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$35=_fun___variable_initialization(&value:int) [line 35, column 8]\n  n$34=_fun_iterator_operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$34 [line 35, column 8]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   *&__range1:vec&=&vector [line 35, column 20]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   n$37=_fun___variable_initialization(&__range1:vec&) [line 35, column 20]\n  *&__range1:vec&=&vector [line 35, column 20]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" [label="13:  DeclStmt \n   n$31=_fun_vec_vec(&vector:vec*,10:int) [line 34, column 7]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" [label="13:  DeclStmt \n   n$39=_fun___variable_initialization(&vector:vec) [line 34, column 3]\n  n$38=_fun_vec_vec(&vector:vec*,10:int) [line 34, column 7]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" ;

@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   *&c:int=10 [line 16, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&c:int) [line 16, column 5]\n  *&c:int=10 [line 16, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" ;

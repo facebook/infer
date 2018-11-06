@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_2" [label="2: Exit __infer_globals_initializer_y \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" [label="3:  DeclStmt \n   n$0=_fun_anonymous_union_nestedoperators_union.cpp:13:1_(&#GB<codetoanalyze/cpp/frontend/nestedoperators/union.cpp>$y:anonymous_union_nestedoperators_union.cpp:13:1*) [line 23, column 3]\n " shape="box"]
+"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/nestedoperators/union.cpp>$y:anonymous_union_nestedoperators_union.cpp:13:1) [line 13, column 1]\n  n$0=_fun_anonymous_union_nestedoperators_union.cpp:13:1_(&#GB<codetoanalyze/cpp/frontend/nestedoperators/union.cpp>$y:anonymous_union_nestedoperators_union.cpp:13:1*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" -> "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_2" ;

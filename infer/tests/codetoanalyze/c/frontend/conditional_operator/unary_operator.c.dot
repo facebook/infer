@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" [label="1: Start dereference_ifthenelse\nFormals:  p:int*\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int* y:int 0$?%__sil_tmpSIL_temp_conditional___n$5:int* 0$?%__sil_tmpSIL_temp_conditional___n$10:int* x:int \n  " color=yellow style=filled]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" [label="1: Start dereference_ifthenelse\nFormals:  p:int*\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int* y:int 0$?%__sil_tmpSIL_temp_conditional___n$5:int* 0$?%__sil_tmpSIL_temp_conditional___n$11:int* x:int \n  " color=yellow style=filled]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" [label="15:  DeclStmt \n   n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int* [line 12, column 13]\n  n$9=*n$8:int [line 12, column 11]\n  *&y:int=n$9 [line 12, column 3]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" [label="15:  DeclStmt \n   n$10=_fun___variable_initialization(&y:int) [line 12, column 3]\n  n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int* [line 12, column 13]\n  n$9=*n$8:int [line 12, column 11]\n  *&y:int=n$9 [line 12, column 3]\n " shape="box"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" ;
@@ -73,15 +73,15 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19:  ConditionalStmt Branch \n   n$11=*&p:int* [line 10, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$11 [line 10, column 9]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19:  ConditionalStmt Branch \n   n$12=*&p:int* [line 10, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$11:int*=n$12 [line 10, column 9]\n " shape="box"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" [label="20:  ConditionalStmt Branch \n   n$12=*&p:int* [line 10, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$12 [line 10, column 9]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" [label="20:  ConditionalStmt Branch \n   n$13=*&p:int* [line 10, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$11:int*=n$13 [line 10, column 9]\n " shape="box"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" [label="21:  BinaryOperatorStmt: Assign \n   n$13=*&0$?%__sil_tmpSIL_temp_conditional___n$10:int* [line 10, column 9]\n  n$14=*n$13:int [line 10, column 7]\n  *&x:int=n$14 [line 10, column 3]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" [label="21:  BinaryOperatorStmt: Assign \n   n$14=*&0$?%__sil_tmpSIL_temp_conditional___n$11:int* [line 10, column 9]\n  n$15=*n$14:int [line 10, column 7]\n  *&x:int=n$15 [line 10, column 3]\n " shape="box"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" ;

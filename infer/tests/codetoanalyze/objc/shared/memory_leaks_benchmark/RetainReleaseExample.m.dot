@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&a:RRA*) [line 23, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;

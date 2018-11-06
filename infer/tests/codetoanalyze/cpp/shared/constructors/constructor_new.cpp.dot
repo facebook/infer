@@ -32,7 +32,7 @@ digraph cfg {
 	
 
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_8" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_3" ;
-"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_9" [label="9:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 89, column 31]\n  n$4=_fun___new_array((sizeof(t=constructor_new::Person) * n$3):unsigned long) [line 89, column 20]\n  *&tarray:constructor_new::Person*=n$4 [line 89, column 3]\n " shape="box"]
+"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&tarray:constructor_new::Person*) [line 89, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 89, column 31]\n  n$4=_fun___new_array((sizeof(t=constructor_new::Person) * n$3):unsigned long) [line 89, column 20]\n  *&tarray:constructor_new::Person*=n$4 [line 89, column 3]\n " shape="box"]
 	
 
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_9" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_2" ;
@@ -43,7 +43,7 @@ digraph cfg {
 "array_of_person_with_constant_size#constructor_new#10198805942353567956.2cf0ba8d0780ec60bbcca4089ec2aee6_2" [label="2: Exit constructor_new::array_of_person_with_constant_size \n  " color=yellow style=filled]
 	
 
-"array_of_person_with_constant_size#constructor_new#10198805942353567956.2cf0ba8d0780ec60bbcca4089ec2aee6_3" [label="3:  DeclStmt \n   n$1=_fun___new_array((sizeof(t=constructor_new::Person) * 10):unsigned long) [line 93, column 62]\n  n$2=_fun_constructor_new::Person_Person(n$1[0]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$3=_fun_constructor_new::Person_Person(n$1[1]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$4=_fun_constructor_new::Person_Person(n$1[2]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$5=_fun_constructor_new::Person_Person(n$1[3]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$6=_fun_constructor_new::Person_Person(n$1[4]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$7=_fun_constructor_new::Person_Person(n$1[5]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$8=_fun_constructor_new::Person_Person(n$1[6]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$9=_fun_constructor_new::Person_Person(n$1[7]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$10=_fun_constructor_new::Person_Person(n$1[8]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$11=_fun_constructor_new::Person_Person(n$1[9]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  *&tarray:constructor_new::Person*=n$1 [line 93, column 45]\n " shape="box"]
+"array_of_person_with_constant_size#constructor_new#10198805942353567956.2cf0ba8d0780ec60bbcca4089ec2aee6_3" [label="3:  DeclStmt \n   n$12=_fun___variable_initialization(&tarray:constructor_new::Person*) [line 93, column 45]\n  n$1=_fun___new_array((sizeof(t=constructor_new::Person) * 10):unsigned long) [line 93, column 62]\n  n$2=_fun_constructor_new::Person_Person(n$1[0]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$3=_fun_constructor_new::Person_Person(n$1[1]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$4=_fun_constructor_new::Person_Person(n$1[2]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$5=_fun_constructor_new::Person_Person(n$1[3]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$6=_fun_constructor_new::Person_Person(n$1[4]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$7=_fun_constructor_new::Person_Person(n$1[5]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$8=_fun_constructor_new::Person_Person(n$1[6]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$9=_fun_constructor_new::Person_Person(n$1[7]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$10=_fun_constructor_new::Person_Person(n$1[8]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  n$11=_fun_constructor_new::Person_Person(n$1[9]:constructor_new::Person[_*_](*)) [line 93, column 66]\n  *&tarray:constructor_new::Person*=n$1 [line 93, column 45]\n " shape="box"]
 	
 
 	 "array_of_person_with_constant_size#constructor_new#10198805942353567956.2cf0ba8d0780ec60bbcca4089ec2aee6_3" -> "array_of_person_with_constant_size#constructor_new#10198805942353567956.2cf0ba8d0780ec60bbcca4089ec2aee6_2" ;
@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_3" -> "constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_2" ;
-"constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 28, column 15]\n  n$4=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,5:int) [line 28, column 19]\n  *&p:constructor_new::Person*=n$3 [line 28, column 3]\n " shape="box"]
+"constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&p:constructor_new::Person*) [line 28, column 3]\n  n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 28, column 15]\n  n$4=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,5:int) [line 28, column 19]\n  *&p:constructor_new::Person*=n$3 [line 28, column 3]\n " shape="box"]
 	
 
 	 "constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_4" -> "constructor_1_arg_new_div0#constructor_new#798841234716809588.2c010a7c7293e961b9ed8149c3f3debe_3" ;
@@ -73,7 +73,7 @@ digraph cfg {
 	
 
 	 "constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_3" -> "constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_2" ;
-"constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 33, column 15]\n  n$4=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,5:int,6:int,7:int) [line 33, column 19]\n  *&p:constructor_new::Person*=n$3 [line 33, column 3]\n " shape="box"]
+"constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&p:constructor_new::Person*) [line 33, column 3]\n  n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 33, column 15]\n  n$4=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,5:int,6:int,7:int) [line 33, column 19]\n  *&p:constructor_new::Person*=n$3 [line 33, column 3]\n " shape="box"]
 	
 
 	 "constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_4" -> "constructor_3_args_new_div0#constructor_new#13438839859480315932.2122014ebac449e6fb981ba75ba0617e_3" ;
@@ -113,11 +113,11 @@ digraph cfg {
 	
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_9" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_4" ;
-"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_10" [label="10:  DeclStmt \n   n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 71, column 15]\n  n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 71, column 26]\n  n$9=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,n$8:int) [line 71, column 19]\n  *&p:constructor_new::Person*=n$3 [line 71, column 3]\n " shape="box"]
+"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_10" [label="10:  DeclStmt \n   n$10=_fun___variable_initialization(&p:constructor_new::Person*) [line 71, column 3]\n  n$3=_fun___new(sizeof(t=constructor_new::Person):unsigned long) [line 71, column 15]\n  n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 71, column 26]\n  n$9=_fun_constructor_new::Person_Person(n$3:constructor_new::Person*,n$8:int) [line 71, column 19]\n  *&p:constructor_new::Person*=n$3 [line 71, column 3]\n " shape="box"]
 	
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_10" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_3" ;
-"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_11" [label="11:  DeclStmt \n   *&z:int=6 [line 70, column 3]\n " shape="box"]
+"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_11" [label="11:  DeclStmt \n   n$11=_fun___variable_initialization(&z:int) [line 70, column 3]\n  *&z:int=6 [line 70, column 3]\n " shape="box"]
 	
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_11" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_5" ;
@@ -132,7 +132,7 @@ digraph cfg {
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_2" ;
-"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=float):unsigned long) [line 43, column 15]\n  *n$3:float=5.4 [line 43, column 15]\n  *&x1:float*=n$3 [line 43, column 3]\n " shape="box"]
+"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x1:float*) [line 43, column 3]\n  n$3=_fun___new(sizeof(t=float):unsigned long) [line 43, column 15]\n  *n$3:float=5.4 [line 43, column 15]\n  *&x1:float*=n$3 [line 43, column 3]\n " shape="box"]
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" ;
@@ -191,7 +191,7 @@ digraph cfg {
 	
 
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_11" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_6" ;
-"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_12" [label="12:  DeclStmt \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int [line 76, column 21]\n  n$11=_fun___new_array((sizeof(t=int;nbytes=4) * n$10):unsigned long) [line 76, column 13]\n  *&x2:int*=n$11 [line 76, column 3]\n " shape="box"]
+"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_12" [label="12:  DeclStmt \n   n$12=_fun___variable_initialization(&x2:int*) [line 76, column 3]\n  n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int [line 76, column 21]\n  n$11=_fun___new_array((sizeof(t=int;nbytes=4) * n$10):unsigned long) [line 76, column 13]\n  *&x2:int*=n$11 [line 76, column 3]\n " shape="box"]
 	
 
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_12" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_5" ;
@@ -206,7 +206,7 @@ digraph cfg {
 	
 
 	 "int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_3" -> "int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_2" ;
-"int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_4" [label="4:  DeclStmt \n   n$11=_fun___new_array((sizeof(t=int;nbytes=4) * 100):unsigned long) [line 83, column 14]\n  *n$11[0]:int=1 [line 83, column 26]\n  *n$11[1]:int=2 [line 83, column 26]\n  *n$11[2]:int=3 [line 83, column 26]\n  *n$11[3]:int=4 [line 83, column 26]\n  *n$11[4]:int=5 [line 83, column 26]\n  *n$11[5]:int=6 [line 83, column 26]\n  *n$11[6]:int=7 [line 83, column 26]\n  *n$11[7]:int=8 [line 83, column 26]\n  *n$11[8]:int=9 [line 83, column 26]\n  *n$11[9]:int=10 [line 83, column 26]\n  *&arr:int*=n$11 [line 83, column 3]\n " shape="box"]
+"int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_4" [label="4:  DeclStmt \n   n$12=_fun___variable_initialization(&arr:int*) [line 83, column 3]\n  n$11=_fun___new_array((sizeof(t=int;nbytes=4) * 100):unsigned long) [line 83, column 14]\n  *n$11[0]:int=1 [line 83, column 26]\n  *n$11[1]:int=2 [line 83, column 26]\n  *n$11[2]:int=3 [line 83, column 26]\n  *n$11[3]:int=4 [line 83, column 26]\n  *n$11[4]:int=5 [line 83, column 26]\n  *n$11[5]:int=6 [line 83, column 26]\n  *n$11[6]:int=7 [line 83, column 26]\n  *n$11[7]:int=8 [line 83, column 26]\n  *n$11[8]:int=9 [line 83, column 26]\n  *n$11[9]:int=10 [line 83, column 26]\n  *&arr:int*=n$11 [line 83, column 3]\n " shape="box"]
 	
 
 	 "int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_4" -> "int_array_init#constructor_new#14099932616230884357.69a63438c3aee293029f068d373c29c3_3" ;
@@ -221,7 +221,7 @@ digraph cfg {
 	
 
 	 "int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_3" -> "int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_2" ;
-"int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 48, column 13]\n  *n$3:int=0 [line 48, column 21]\n  *&x1:int*=n$3 [line 48, column 3]\n " shape="box"]
+"int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x1:int*) [line 48, column 3]\n  n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 48, column 13]\n  *n$3:int=0 [line 48, column 21]\n  *&x1:int*=n$3 [line 48, column 3]\n " shape="box"]
 	
 
 	 "int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_4" -> "int_init_empty#constructor_new#15413029864213743197.d5b807871fe4ea10e898a381f0edef4d_3" ;
@@ -236,7 +236,7 @@ digraph cfg {
 	
 
 	 "int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_3" -> "int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_2" ;
-"int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_4" [label="4:  DeclStmt \n   *&x1:int=0 [line 53, column 3]\n " shape="box"]
+"int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&x1:int) [line 53, column 3]\n  *&x1:int=0 [line 53, column 3]\n " shape="box"]
 	
 
 	 "int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_4" -> "int_init_empty_list#constructor_new#3613770932207490177.2b4662eed1a13d3237e163f39bc6397c_3" ;
@@ -251,7 +251,7 @@ digraph cfg {
 	
 
 	 "int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_3" -> "int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_2" ;
-"int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 58, column 13]\n  *n$3:int=0 [line 58, column 13]\n  *&x1:int*=n$3 [line 58, column 3]\n " shape="box"]
+"int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x1:int*) [line 58, column 3]\n  n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 58, column 13]\n  *n$3:int=0 [line 58, column 13]\n  *&x1:int*=n$3 [line 58, column 3]\n " shape="box"]
 	
 
 	 "int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_4" -> "int_init_empty_list_new#constructor_new#18093274870234850959.e77c2840901e6e789e52d55ac81db88f_3" ;
@@ -291,15 +291,15 @@ digraph cfg {
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_9" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_4" ;
-"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_10" [label="10:  DeclStmt \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 65, column 12]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 65, column 20]\n  *n$3:int=n$9 [line 65, column 12]\n  *&x:int*=n$3 [line 65, column 3]\n " shape="box"]
+"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_10" [label="10:  DeclStmt \n   n$10=_fun___variable_initialization(&x:int*) [line 65, column 3]\n  n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 65, column 12]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 65, column 20]\n  *n$3:int=n$9 [line 65, column 12]\n  *&x:int*=n$3 [line 65, column 3]\n " shape="box"]
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_10" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_3" ;
-"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_11" [label="11:  DeclStmt \n   n$10=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 64, column 12]\n  n$11=_fun_constructor_new::getValue(4:int) [line 64, column 20]\n  *n$10:int=n$11 [line 64, column 12]\n  *&y:int*=n$10 [line 64, column 3]\n " shape="box"]
+"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_11" [label="11:  DeclStmt \n   n$13=_fun___variable_initialization(&y:int*) [line 64, column 3]\n  n$11=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 64, column 12]\n  n$12=_fun_constructor_new::getValue(4:int) [line 64, column 20]\n  *n$11:int=n$12 [line 64, column 12]\n  *&y:int*=n$11 [line 64, column 3]\n " shape="box"]
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_11" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_5" ;
-"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_12" [label="12:  DeclStmt \n   *&z:int=6 [line 63, column 3]\n " shape="box"]
+"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_12" [label="12:  DeclStmt \n   n$14=_fun___variable_initialization(&z:int) [line 63, column 3]\n  *&z:int=6 [line 63, column 3]\n " shape="box"]
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_12" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_11" ;
@@ -314,7 +314,7 @@ digraph cfg {
 	
 
 	 "int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_3" -> "int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_2" ;
-"int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_4" [label="4:  DeclStmt \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 38, column 13]\n  *n$3:int=5 [line 38, column 13]\n  *&x1:int*=n$3 [line 38, column 3]\n " shape="box"]
+"int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x1:int*) [line 38, column 3]\n  n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 38, column 13]\n  *n$3:int=5 [line 38, column 13]\n  *&x1:int*=n$3 [line 38, column 3]\n " shape="box"]
 	
 
 	 "int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_4" -> "int_init_number#constructor_new#16564762083428359974.2a1c04c2e924068dd02b097712efe518_3" ;
@@ -329,7 +329,7 @@ digraph cfg {
 	
 
 	 "matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_3" -> "matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_2" ;
-"matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_4" [label="4:  DeclStmt \n   n$13=_fun___new_array((sizeof(t=constructor_new::Person*) * 10):unsigned long) [line 97, column 21]\n  *&tarray:constructor_new::Person**=n$13 [line 97, column 3]\n " shape="box"]
+"matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&tarray:constructor_new::Person**) [line 97, column 3]\n  n$13=_fun___new_array((sizeof(t=constructor_new::Person*) * 10):unsigned long) [line 97, column 21]\n  *&tarray:constructor_new::Person**=n$13 [line 97, column 3]\n " shape="box"]
 	
 
 	 "matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_4" -> "matrix_of_person#constructor_new#930045482638918044.730172056e08027af32de0bd9a490291_3" ;

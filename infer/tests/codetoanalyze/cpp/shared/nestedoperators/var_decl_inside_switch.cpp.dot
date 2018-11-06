@@ -12,11 +12,11 @@ digraph cfg {
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_12" ;
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_13" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" [label="4:  DeclStmt \n   n$2=*&a:int [line 9, column 19]\n  *&x:int=n$2 [line 9, column 11]\n " shape="box"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&x:int) [line 9, column 11]\n  n$2=*&a:int [line 9, column 19]\n  *&x:int=n$2 [line 9, column 11]\n " shape="box"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_5" [label="5:  Return Stmt \n   n$4=*&x:int [line 16, column 14]\n  *&return:int=n$4 [line 16, column 7]\n " shape="box"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_5" [label="5:  Return Stmt \n   n$5=*&x:int [line 16, column 14]\n  *&return:int=n$5 [line 16, column 7]\n " shape="box"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_5" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_2" ;

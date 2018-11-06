@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=Bicycle):unsigned long) [line 12, column 19]\n  *&bike:Bicycle*=n$2 [line 12, column 3]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&bike:Bicycle*) [line 12, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Bicycle):unsigned long) [line 12, column 19]\n  *&bike:Bicycle*=n$2 [line 12, column 3]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" ;

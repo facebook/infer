@@ -7,7 +7,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$1=_fun_B_A(&b:B*,5:int) [line 16, column 16]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&b:B) [line 16, column 14]\n  n$1=_fun_B_A(&b:B*,5:int) [line 16, column 16]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;

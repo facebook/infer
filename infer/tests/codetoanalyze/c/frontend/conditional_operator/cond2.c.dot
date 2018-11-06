@@ -196,12 +196,12 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_27" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_20" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$10=_fun___variable_initialization(&n:int) [line 14, column 3]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_10" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_11" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   *&y:int=19 [line 13, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   n$11=_fun___variable_initialization(&y:int) [line 13, column 3]\n  *&y:int=19 [line 13, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_29" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_21" ;
@@ -218,16 +218,16 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_32" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_33" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_33" [label="33:  BinaryOperatorStmt: LT \n   n$11=*&x:int [line 10, column 21]\n  *&x:int=(n$11 + 1) [line 10, column 21]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_33" [label="33:  BinaryOperatorStmt: LT \n   n$13=*&x:int [line 10, column 21]\n  *&x:int=(n$13 + 1) [line 10, column 21]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_33" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_34" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_33" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_35" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_34" [label="34: Prune (true branch, if) \n   PRUNE((7 < n$11), true); [line 10, column 16]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_34" [label="34: Prune (true branch, if) \n   PRUNE((7 < n$13), true); [line 10, column 16]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_34" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_35" [label="35: Prune (false branch, if) \n   PRUNE(!(7 < n$11), false); [line 10, column 16]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_35" [label="35: Prune (false branch, if) \n   PRUNE(!(7 < n$13), false); [line 10, column 16]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_35" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" ;
@@ -235,7 +235,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   *&x:int=5 [line 9, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   n$16=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=5 [line 9, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_37" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_31" ;
