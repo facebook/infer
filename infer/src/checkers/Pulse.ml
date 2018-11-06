@@ -83,6 +83,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         when Var.is_cpp_temporary (fst rhs_base) ->
           let lhs_deref = AccessExpression.dereference lhs in
           exec_assign lhs_deref rhs_exp call_loc astate
+      (* copy assignment *)
+      | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
+          let lhs_deref = AccessExpression.dereference lhs in
+          let rhs_deref = AccessExpression.dereference rhs in
+          PulseDomain.havoc call_loc lhs_deref astate
+          >>= fun astate -> PulseDomain.read call_loc rhs_deref astate >>| fst
       | _ ->
           read_all actuals astate )
     | _ ->

@@ -36,6 +36,14 @@ int reinit_after_explicit_destructor_ok() {
   return *s.f;
 }
 
+int reinit_after_explicit_destructor2_ok() {
+  S s(1);
+  S s2(2);
+  s.~S();
+  s = s2;
+  return *s.f;
+}
+
 void placement_new_explicit_destructor_ok() {
   char buf[sizeof(S)];
   {
