@@ -122,27 +122,26 @@ end = struct
     Graph.find_opt addr memory >>= Edges.find_opt access
 end
 
-(* {3 Stack domain } *)
+(** Stacks: map variables to values.
 
-(** to be used as maps values *)
-module AbstractAddressDomain_JoinIsMin : AbstractDomain.S with type astate = AbstractAddress.t =
-struct
-  type astate = AbstractAddress.t
+    This is defined as an abstract domain but the domain operations are mostly meaningless on their
+    own. It so happens that the join on abstract states uses the join of stacks provided by this
+    functor followed by normalization wrt the unification found between abstract locations so it's
+    convenient to define stacks as elements of this domain. *)
+module Stack =
+  AbstractDomain.Map
+    (Var)
+    (struct
+      type astate = AbstractAddress.t
 
-  let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
+      let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
 
-  let join l1 l2 = min l1 l2
+      let join l1 l2 = min l1 l2
 
-  let widen ~prev ~next ~num_iters:_ = join prev next
+      let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let pp = AbstractAddress.pp
-end
-
-(* It so happens that the join we want on stacks is this followed by normalization wrt the
-   unification found between abstract locations, so it's convenient to define stacks as elements of
-   this domain. Do not use the domain operations outside of {!Domain} though as they are mostly
-   meaningless on their own. *)
-module AliasingDomain = AbstractDomain.Map (Var) (AbstractAddressDomain_JoinIsMin)
+      let pp = AbstractAddress.pp
+    end)
 
 (** Attributes attached to addresses. This keeps track of which addresses are invalid, but is also
    used by models for bookkeeping. *)
@@ -195,11 +194,11 @@ end = struct
 end
 
 (** the domain *)
-type t = {heap: Memory.t; stack: AliasingDomain.astate; attributes: AttributesDomain.astate}
+type t = {heap: Memory.t; stack: Stack.astate; attributes: AttributesDomain.astate}
 
 let initial =
   { heap= Memory.empty
-  ; stack= AliasingDomain.empty
+  ; stack= Stack.empty
   ; attributes=
       AttributesDomain.empty
       (* TODO: this makes the analysis go a bit overboard with the Nullptr reports. *)
@@ -213,7 +212,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
   let piecewise_lessthan lhs rhs =
     AttributesDomain.( <= ) ~lhs:lhs.attributes ~rhs:rhs.attributes
-    && AliasingDomain.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack
+    && Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack
     && Memory.for_all
          (fun addr_src edges ->
            Memory.Edges.for_all
@@ -291,7 +290,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
       (* start graph exploration *)
       let visited = Addresses.empty in
       let _, union_heap =
-        AliasingDomain.fold
+        Stack.fold
           (fun _var addr (visited, union_heap) -> visit_address subst visited heap addr union_heap)
           stack (visited, union_heap)
       in
@@ -302,7 +301,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
       ignore
         ((* Use [Caml.Map.merge] to detect the variables present in both stacks. Build an empty
             result map since we don't use the result. *)
-         AliasingDomain.merge
+         Stack.merge
            (fun _var addr1_opt addr2_opt ->
              Option.both addr1_opt addr2_opt
              |> Option.iter ~f:(fun (addr1, addr2) ->
@@ -324,7 +323,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
       let heap = visit_stack subst heap1 stack1 Memory.empty |> visit_stack subst heap2 stack2 in
       (* This keeps all the variables and picks one representative address for each variable in
          common thanks to [AbstractAddressDomain_JoinIsMin] *)
-      let stack = AliasingDomain.join stack1 stack2 in
+      let stack = Stack.join stack1 stack2 in
       (* basically union *)
       let attributes = AttributesDomain.join attributes1 attributes2 in
       {subst; astate= {heap; stack; attributes}}
@@ -337,7 +336,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
          heap or the stack. *)
       let address_is_live astate address =
         Memory.mem address astate.heap
-        || AliasingDomain.exists (fun _ value -> AbstractAddress.equal value address) astate.stack
+        || Stack.exists (fun _ value -> AbstractAddress.equal value address) astate.stack
       in
       let add_old_attribute astate old_address old_attribute new_attributes =
         (* the address has to make sense for the new heap *)
@@ -388,7 +387,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
               (repr :> AbstractAddress.t)
               AddressUnionSet.pp set ) ;
         L.d_decrease_indent () ;
-        let stack = AliasingDomain.map (to_canonical_address state.subst) state.astate.stack in
+        let stack = Stack.map (to_canonical_address state.subst) state.astate.stack in
         let attributes = to_attributes state in
         {heap; stack; attributes} )
       else normalize {state with astate= {state.astate with heap}}
@@ -450,7 +449,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
 
   let pp fmt {heap; stack; attributes} =
     F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@;attributes=@[<hv>%a@];@]}"
-      Memory.pp heap AliasingDomain.pp stack AttributesDomain.pp attributes
+      Memory.pp heap Stack.pp stack AttributesDomain.pp attributes
 end
 
 (* {2 Access operations on the domain} *)
@@ -537,7 +536,7 @@ module Operations = struct
 
 
   let write_var var addr astate =
-    let stack = AliasingDomain.add var addr astate.stack in
+    let stack = Stack.add var addr astate.stack in
     {astate with stack}
 
 
@@ -553,12 +552,12 @@ module Operations = struct
         Ok (write_var access_var new_addr astate, new_addr)
     | `Access, _ | `Overwrite _, _ :: _ ->
         let astate, base_addr =
-          match AliasingDomain.find_opt access_var astate.stack with
+          match Stack.find_opt access_var astate.stack with
           | Some addr ->
               (astate, addr)
           | None ->
               let addr = AbstractAddress.mk_fresh () in
-              let stack = AliasingDomain.add access_var addr astate.stack in
+              let stack = Stack.add access_var addr astate.stack in
               ({astate with stack}, addr)
         in
         let actor = {access_expr; location} in
@@ -587,7 +586,7 @@ module Operations = struct
 
 
   let havoc_var var astate =
-    {astate with stack= AliasingDomain.add var (AbstractAddress.mk_fresh ()) astate.stack}
+    {astate with stack= Stack.add var (AbstractAddress.mk_fresh ()) astate.stack}
 
 
   let havoc location (access_expr : AccessExpression.t) astate =
