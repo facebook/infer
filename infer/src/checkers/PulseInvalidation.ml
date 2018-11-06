@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module L = Logging
 
 type t =
   | CFree of AccessExpression.t * Location.t
@@ -54,28 +53,3 @@ let pp f = function
   | StdVectorPushBack (access_expr, location) ->
       F.fprintf f "potentially invalidated by call to `std::vector::push_back(%a, ..)` at %a"
         AccessExpression.pp access_expr Location.pp location
-
-
-module Domain : AbstractDomain.S with type astate = t = struct
-  type astate = t
-
-  let pp = pp
-
-  let join i1 i2 =
-    if [%compare.equal: t] i1 i2 then i1
-    else
-      (* take the max, but it should be unusual for the same location to be invalidated in two
-         different ways *)
-      let kept, forgotten = if compare i1 i2 >= 0 then (i1, i2) else (i2, i1) in
-      L.debug Analysis Quiet
-        "forgetting about invalidation %a for address already invalidated by %a@\n" pp forgotten pp
-        kept ;
-      kept
-
-
-  let ( <= ) ~lhs ~rhs = compare lhs rhs <= 0
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-end
-
-include Domain

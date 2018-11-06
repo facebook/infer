@@ -12,9 +12,10 @@ type t =
   | CppDestructor of Typ.Procname.t * AccessExpression.t * Location.t
   | Nullptr
   | StdVectorPushBack of AccessExpression.t * Location.t
+[@@deriving compare]
 
 val issue_type_of_cause : t -> IssueType.t
 
 val get_location : t -> Location.t option
 
-include AbstractDomain.S with type astate = t
+val pp : Format.formatter -> t -> unit

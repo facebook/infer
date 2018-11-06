@@ -144,38 +144,67 @@ end
    meaningless on their own. *)
 module AliasingDomain = AbstractDomain.Map (Var) (AbstractAddressDomain_JoinIsMin)
 
-(* {3 Invalid addresses domain } *)
+(** Attributes attached to addresses. This keeps track of which addresses are invalid, but is also
+   used by models for bookkeeping. *)
+module AttributesDomain : sig
+  module Attributes : AbstractDomain.S
 
-(** Locations known to be invalid for some reason *)
-module InvalidAddressesDomain : sig
-  include AbstractDomain.S
+  include module type of AbstractDomain.Map (AbstractAddress) (Attributes)
 
   val empty : astate
 
-  val add : AbstractAddress.t -> Invalidation.t -> astate -> astate
-
-  val fold :
-    (AbstractAddress.t -> Invalidation.t -> 'accum -> 'accum) -> astate -> 'accum -> 'accum
+  val invalidate : AbstractAddress.t -> Invalidation.t -> astate -> astate
 
   val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
   (** None denotes a valid location *)
 end = struct
-  include AbstractDomain.Map (AbstractAddress) (Invalidation)
+  module Attribute = struct
+    (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
+       efficient (only need to look at the first element in the set of attributes to know if an
+       address is invalid) *)
+    type t = Invalid of Invalidation.t [@@deriving compare]
 
-  let get_invalidation address invalids = find_opt address invalids
+    let pp f = function Invalid invalidation -> Invalidation.pp f invalidation
+  end
+
+  module Attributes = AbstractDomain.FiniteSet (Attribute)
+  include AbstractDomain.Map (AbstractAddress) (Attributes)
+
+  let add_attribute address attribute attribute_map =
+    let attributes =
+      match find_opt address attribute_map with
+      | Some old_attributes ->
+          Attributes.add attribute old_attributes
+      | None ->
+          Attributes.singleton attribute
+    in
+    add address attributes attribute_map
+
+
+  let invalidate address invalidation attribute_map =
+    add_attribute address (Attribute.Invalid invalidation) attribute_map
+
+
+  let get_invalidation address attribute_map =
+    (* Since we often want to find out whether an address is invalid this case is optimised. Since
+       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
+       an address is invalid or not. *)
+    find_opt address attribute_map
+    |> Option.bind ~f:Attributes.min_elt_opt
+    |> Option.map ~f:(function Attribute.Invalid invalidation -> invalidation)
 end
 
 (** the domain *)
-type t = {heap: Memory.t; stack: AliasingDomain.astate; invalids: InvalidAddressesDomain.astate}
+type t = {heap: Memory.t; stack: AliasingDomain.astate; attributes: AttributesDomain.astate}
 
 let initial =
   { heap= Memory.empty
   ; stack= AliasingDomain.empty
-  ; invalids=
-      InvalidAddressesDomain.empty
+  ; attributes=
+      AttributesDomain.empty
       (* TODO: this makes the analysis go a bit overboard with the Nullptr reports. *)
       (* (* always recall that 0 is invalid *)
-         InvalidAddressesDomain.add AbstractAddress.nullptr Nullptr InvalidAddressesDomain.empty *)
+         AttributesDomain.add AbstractAddress.nullptr Nullptr AttributesDomain.empty *)
   }
 
 
@@ -183,7 +212,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
   type astate = t
 
   let piecewise_lessthan lhs rhs =
-    InvalidAddressesDomain.( <= ) ~lhs:lhs.invalids ~rhs:rhs.invalids
+    AttributesDomain.( <= ) ~lhs:lhs.attributes ~rhs:rhs.attributes
     && AliasingDomain.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack
     && Memory.for_all
          (fun addr_src edges ->
@@ -285,8 +314,8 @@ module Domain : AbstractDomain.S with type astate = t = struct
            stack1 stack2)
 
 
-    let from_astate_union {heap= heap1; stack= stack1; invalids= invalids1}
-        {heap= heap2; stack= stack2; invalids= invalids2} =
+    let from_astate_union {heap= heap1; stack= stack1; attributes= attributes1}
+        {heap= heap2; stack= stack2; attributes= attributes2} =
       let subst = AddressUF.create () in
       (* gather equalities from the stacks *)
       populate_subst_from_stacks subst stack1 stack2 ;
@@ -297,12 +326,12 @@ module Domain : AbstractDomain.S with type astate = t = struct
          common thanks to [AbstractAddressDomain_JoinIsMin] *)
       let stack = AliasingDomain.join stack1 stack2 in
       (* basically union *)
-      let invalids = InvalidAddressesDomain.join invalids1 invalids2 in
-      {subst; astate= {heap; stack; invalids}}
+      let attributes = AttributesDomain.join attributes1 attributes2 in
+      {subst; astate= {heap; stack; attributes}}
 
 
-    (** compute new set of invalid addresses for a given join state *)
-    let to_invalids {subst; astate= {invalids= old_invalids} as astate} =
+    (** compute new address attributes for a given join state *)
+    let to_attributes {subst; astate= {attributes= old_attributes} as astate} =
       (* Is the address reachable from the stack variables? Since the new heap only has addresses
          reachable from stack variables it suffices to check if the address appears in either the
          heap or the stack. *)
@@ -310,35 +339,30 @@ module Domain : AbstractDomain.S with type astate = t = struct
         Memory.mem address astate.heap
         || AliasingDomain.exists (fun _ value -> AbstractAddress.equal value address) astate.stack
       in
-      (* given a previously known invalid address [old_address], add the new address that
-         represents it to [new_invalids] *)
-      let add_old_invalid astate old_address old_invalid new_invalids =
+      let add_old_attribute astate old_address old_attribute new_attributes =
         (* the address has to make sense for the new heap *)
         let repr = AddressUF.find subst old_address in
         let new_address = (repr :> AbstractAddress.t) in
-        match InvalidAddressesDomain.get_invalidation new_address new_invalids with
-        | Some new_invalid ->
-            (* We have seen a representative of this address already: join. This can happen when
-               several previously invalid addresses correspond to the same representative in
-               [subst]. Doing the join of all known invalidation reasons to make results more
-               deterministic(?).  *)
-            InvalidAddressesDomain.add new_address
-              (Invalidation.join new_invalid old_invalid)
-              new_invalids
+        match AttributesDomain.find_opt new_address new_attributes with
+        | Some new_attribute ->
+            (* We have seen a representative of this address already: join.  *)
+            AttributesDomain.add new_address
+              (AttributesDomain.Attributes.join new_attribute old_attribute)
+              new_attributes
         | None ->
-            (* only record the old invalidation fact if the address is still reachable (helps
+            (* only record the attributes fact if the address is still reachable (helps
                convergence) *)
             if address_is_live astate new_address then
-              InvalidAddressesDomain.add new_address old_invalid new_invalids
+              AttributesDomain.add new_address old_attribute new_attributes
             else
-              (* we can forget about the fact that this location is invalid since nothing can
-                   refer to it anymore *)
-              new_invalids
+              (* we can forget about the attributes for this address since nothing can refer to it
+                 anymore *)
+              new_attributes
       in
-      InvalidAddressesDomain.fold
-        (fun old_address old_invalid new_invalids ->
-          add_old_invalid astate old_address old_invalid new_invalids )
-        old_invalids InvalidAddressesDomain.empty
+      AttributesDomain.fold
+        (fun old_address old_attribute new_attributes ->
+          add_old_attribute astate old_address old_attribute new_attributes )
+        old_attributes AttributesDomain.empty
 
 
     let rec normalize state =
@@ -365,8 +389,8 @@ module Domain : AbstractDomain.S with type astate = t = struct
               AddressUnionSet.pp set ) ;
         L.d_decrease_indent () ;
         let stack = AliasingDomain.map (to_canonical_address state.subst) state.astate.stack in
-        let invalids = to_invalids state in
-        {heap; stack; invalids} )
+        let attributes = to_attributes state in
+        {heap; stack; attributes} )
       else normalize {state with astate= {state.astate with heap}}
   end
 
@@ -424,9 +448,9 @@ module Domain : AbstractDomain.S with type astate = t = struct
     else join prev next
 
 
-  let pp fmt {heap; stack; invalids} =
-    F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@;invalids=@[<hv>%a@];@]}" Memory.pp
-      heap AliasingDomain.pp stack InvalidAddressesDomain.pp invalids
+  let pp fmt {heap; stack; attributes} =
+    F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@;attributes=@[<hv>%a@];@]}"
+      Memory.pp heap AliasingDomain.pp stack AttributesDomain.pp attributes
 end
 
 (* {2 Access operations on the domain} *)
@@ -469,15 +493,15 @@ module Diagnostic = struct
     Invalidation.issue_type_of_cause invalidated_by
 end
 
+type 'a access_result = ('a, Diagnostic.t) result
+
 (** operations on the domain *)
 module Operations = struct
   open Result.Monad_infix
 
-  type 'a access_result = ('a, Diagnostic.t) result
-
   (** Check that the address is not known to be invalid *)
   let check_addr_access actor address astate =
-    match InvalidAddressesDomain.get_invalidation address astate.invalids with
+    match AttributesDomain.get_invalidation address astate.attributes with
     | Some invalidated_by ->
         Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; address})
     | None ->
@@ -559,7 +583,7 @@ module Operations = struct
 
   (** Add the given address to the set of know invalid addresses. *)
   let mark_invalid actor address astate =
-    {astate with invalids= InvalidAddressesDomain.add address actor astate.invalids}
+    {astate with attributes= AttributesDomain.invalidate address actor astate.attributes}
 
 
   let havoc_var var astate =
