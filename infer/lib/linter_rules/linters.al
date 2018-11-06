@@ -278,5 +278,5 @@ DEFINE-CHECKER WRONG_SCOPE_FOR_DISPATCH_ONCE_T = {
 
 		SET message = "Variables of type dispatch_once_t must have global or static scope. The result of using this type with automatic or dynamic allocation is undefined.";
 		SET severity = "WARNING";
-		SET mode = "OFF";
+		SET mode = "ON";
 };
