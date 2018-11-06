@@ -11,10 +11,14 @@
 @interface TimeSpent () {
   AnalyticsTimeSpent* _timeSpent;
 }
+
+@property(weak) TimeSpent* weakSelfRef;
+@property(strong) TimeSpent* strongSelfRef;
 @end
 
 @implementation TimeSpent {
   ListAdapter* _listAdapter;
+  TimeSpent* _strongSelfRef2;
 }
 
 - (instancetype)init {
@@ -27,6 +31,20 @@
     _listAdapter.dataSource = self;
   }
   return self;
+}
+
+- (instancetype)init_bad_ref {
+  if (self = [super init]) {
+    _weakSelfRef = self;
+    _strongSelfRef = self;
+  }
+}
+
+- (instancetype)init_bad_ref2 {
+  if (self = [super init]) {
+    _weakSelfRef = self;
+    _strongSelfRef2 = self;
+  }
 }
 
 - (instancetype)init_bad {
