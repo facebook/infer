@@ -31,14 +31,23 @@ void push_back_in_loop_ok(std::vector<int>& vec, std::vector<int>& vec_other) {
   }
 }
 
-void FP_reserve_then_push_back_ok(std::vector<int>& vec) {
+void reserve_then_push_back_ok(std::vector<int>& vec) {
   vec.reserve(vec.size() + 1);
   int* elt = &vec[1];
   vec.push_back(42);
   std::cout << *elt << "\n";
 }
 
-void FP_reserve_then_push_back_loop_ok(std::vector<int>& vec,
+void FN_reserve_too_small_bad() {
+  std::vector<int> vec;
+  vec.reserve(1);
+  vec.push_back(32);
+  int* elt = &vec[0];
+  vec.push_back(52);
+  std::cout << *elt << "\n";
+}
+
+void reserve_then_push_back_loop_ok(std::vector<int>& vec,
                                     std::vector<int>& vec_other) {
   vec.reserve(vec.size() + vec_other.size());
   int* elt = &vec[1];

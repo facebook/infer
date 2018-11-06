@@ -96,16 +96,33 @@ module StdVector = struct
         Ok (PulseDomain.havoc_var (fst ret) astate)
 
 
+  let reserve : model =
+   fun location ~ret:_ ~actuals astate ->
+    match actuals with
+    | [AccessExpression vector; _value] ->
+        PulseDomain.StdVector.mark_reserved location vector astate
+    | _ ->
+        Ok astate
+
+
   let push_back : model =
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        let array = to_internal_array vector in
-        (* all elements should be invalidated *)
-        let array_elements = deref_internal_array vector in
-        let invalidation = PulseInvalidation.StdVectorPushBack (vector, location) in
-        PulseDomain.invalidate invalidation location array_elements astate
-        >>= PulseDomain.havoc location array
+        PulseDomain.StdVector.is_reserved location vector astate
+        >>= fun (astate, is_reserved) ->
+        if is_reserved then
+          (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
+             (a perfect analysis would also make sure we don't exceed the reserved size) *)
+          Ok astate
+        else
+          (* simulate a re-allocation of the underlying array every time an element is added *)
+          let array = to_internal_array vector in
+          (* all elements should be invalidated *)
+          let array_elements = deref_internal_array vector in
+          let invalidation = PulseInvalidation.StdVectorPushBack (vector, location) in
+          PulseDomain.invalidate invalidation location array_elements astate
+          >>= PulseDomain.havoc location array
     | _ ->
         Ok astate
 end
@@ -115,7 +132,8 @@ module ProcNameDispatcher = struct
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ -"std" &:: "vector" &:: "operator[]" &--> StdVector.at
-      ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back ]
+      ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back
+      ; -"std" &:: "vector" &:: "reserve" &--> StdVector.reserve ]
 end
 
 let builtins_dispatcher =

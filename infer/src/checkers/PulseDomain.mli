@@ -35,6 +35,12 @@ end
 
 type 'a access_result = ('a, Diagnostic.t) result
 
+module StdVector : sig
+  val is_reserved : Location.t -> AccessExpression.t -> t -> (t * bool) access_result
+
+  val mark_reserved : Location.t -> AccessExpression.t -> t -> t access_result
+end
+
 val read : Location.t -> AccessExpression.t -> t -> (t * AbstractAddress.t) access_result
 
 val read_all : Location.t -> AccessExpression.t list -> t -> t access_result

@@ -156,14 +156,22 @@ module AttributesDomain : sig
 
   val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
   (** None denotes a valid location *)
+
+  val std_vector_reserve : AbstractAddress.t -> astate -> astate
+
+  val is_std_vector_reserved : AbstractAddress.t -> astate -> bool
 end = struct
   module Attribute = struct
     (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
        efficient (only need to look at the first element in the set of attributes to know if an
        address is invalid) *)
-    type t = Invalid of Invalidation.t [@@deriving compare]
+    type t = Invalid of Invalidation.t | StdVectorReserve [@@deriving compare]
 
-    let pp f = function Invalid invalidation -> Invalidation.pp f invalidation
+    let pp f = function
+      | Invalid invalidation ->
+          Invalidation.pp f invalidation
+      | StdVectorReserve ->
+          F.pp_print_string f "std::vector::reserve()"
   end
 
   module Attributes = AbstractDomain.FiniteSet (Attribute)
@@ -190,7 +198,17 @@ end = struct
        an address is invalid or not. *)
     find_opt address attribute_map
     |> Option.bind ~f:Attributes.min_elt_opt
-    |> Option.map ~f:(function Attribute.Invalid invalidation -> invalidation)
+    |> Option.bind ~f:(function Attribute.Invalid invalidation -> Some invalidation | _ -> None)
+
+
+  let std_vector_reserve address attribute_map =
+    add_attribute address Attribute.StdVectorReserve attribute_map
+
+
+  let is_std_vector_reserved address attribute_map =
+    find_opt address attribute_map
+    |> Option.value_map ~default:false ~f:(fun attributes ->
+           Attributes.mem Attribute.StdVectorReserve attributes )
 end
 
 (** the domain *)
@@ -620,6 +638,21 @@ module Operations = struct
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
     check_addr_access {access_expr; location} addr astate >>| mark_invalid cause addr
+end
+
+module StdVector = struct
+  open Result.Monad_infix
+
+  let is_reserved location vector_access_expr astate =
+    Operations.read location vector_access_expr astate
+    >>| fun (astate, addr) ->
+    (astate, AttributesDomain.is_std_vector_reserved addr astate.attributes)
+
+
+  let mark_reserved location vector_access_expr astate =
+    Operations.read location vector_access_expr astate
+    >>| fun (astate, addr) ->
+    {astate with attributes= AttributesDomain.std_vector_reserve addr astate.attributes}
 end
 
 include Domain
