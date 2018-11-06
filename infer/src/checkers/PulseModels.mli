@@ -15,4 +15,4 @@ type exec_fun =
 
 type model = exec_fun
 
-val dispatch : Typ.Procname.t -> model option
+val dispatch : Typ.Procname.t -> CallFlags.t -> model option

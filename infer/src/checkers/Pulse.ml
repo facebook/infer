@@ -89,18 +89,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         read_all actuals astate
 
 
-  let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
+  let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc astate =
     let model =
       match call with
       | Indirect _ ->
           (* function pointer, etc.: skip for now *)
           None
       | Direct callee_pname ->
-          PulseModels.dispatch callee_pname
+          PulseModels.dispatch callee_pname flags
     in
     match model with
     | None ->
-        exec_call ret call actuals _flags call_loc astate >>| PulseDomain.havoc_var (fst ret)
+        exec_call ret call actuals flags call_loc astate >>| PulseDomain.havoc_var (fst ret)
     | Some model ->
         model call_loc ~ret ~actuals astate
 

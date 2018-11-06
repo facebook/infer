@@ -17,6 +17,10 @@ type exec_fun =
 
 type model = exec_fun
 
+module Misc = struct
+  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok PulseDomain.initial
+end
+
 module C = struct
   let free : model =
    fun location ~ret:_ ~actuals astate ->
@@ -119,7 +123,10 @@ let builtins_dispatcher =
     [ (BuiltinDecl.__delete, Cplusplus.delete)
     ; (BuiltinDecl.__placement_new, Cplusplus.placement_new)
     ; (BuiltinDecl.__variable_initialization, C.variable_initialization)
-    ; (BuiltinDecl.free, C.free) ]
+    ; (BuiltinDecl.abort, Misc.early_exit)
+    ; (BuiltinDecl.exit, Misc.early_exit)
+    ; (BuiltinDecl.free, C.free)
+    ; (BuiltinDecl.objc_cpp_throw, Misc.early_exit) ]
   in
   let builtins_map =
     Hashtbl.create
@@ -137,9 +144,13 @@ let builtins_dispatcher =
   fun proc_name -> Hashtbl.find builtins_map proc_name
 
 
-let dispatch proc_name =
+let dispatch proc_name flags =
   match builtins_dispatcher proc_name with
   | Some _ as result ->
       result
-  | None ->
-      ProcNameDispatcher.dispatch () proc_name
+  | None -> (
+    match ProcNameDispatcher.dispatch () proc_name with
+    | Some _ as result ->
+        result
+    | None ->
+        if flags.CallFlags.cf_noreturn then Some Misc.early_exit else None )

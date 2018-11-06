@@ -105,7 +105,7 @@ void use_in_loop_bad() {
   }
 }
 
-Simple* FP_gated_delete_abort_ok(bool b) {
+Simple* gated_delete_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -114,7 +114,7 @@ Simple* FP_gated_delete_abort_ok(bool b) {
   return s;
 }
 
-Simple* FP_gated_exit_abort_ok(bool b) {
+Simple* gated_exit_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -123,7 +123,7 @@ Simple* FP_gated_exit_abort_ok(bool b) {
   return s;
 }
 
-Simple* FP_gated_delete_throw_ok(bool b) {
+Simple* gated_delete_throw_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
