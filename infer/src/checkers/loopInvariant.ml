@@ -102,32 +102,42 @@ let get_vars_in_loop loop_nodes =
     loop_nodes VarsInLoop.empty
 
 
+module ProcessedPair = struct
+  type t = Var.t * Procdesc.Node.t [@@deriving compare]
+end
+
+module ProcessedPairSet = Caml.Set.Make (ProcessedPair)
+
 (* get all the ptr variables (and their dependencies) occurring on the
    RHS of the definition of a given variable. *)
 let get_ptr_vars_in_defn_path node loop_head var =
-  let rec aux node var =
-    let invalidate_exp exp_rhs init =
-      Var.get_all_vars_in_exp exp_rhs
-      |> Sequence.fold ~init ~f:(fun acc var ->
-             List.fold_left ~init:(InvalidatedVars.add var acc)
-               ~f:(fun acc node -> InvalidatedVars.union (aux node var) acc)
-               ( node
-               :: (if Procdesc.Node.equal node loop_head then [] else Procdesc.Node.get_preds node)
-               ) )
-    in
-    Procdesc.Node.get_instrs node
-    |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
-           match instr with
-           | Sil.Load (id, exp_rhs, typ, _)
-             when Var.equal var (Var.of_id id) && is_non_primitive typ ->
-               invalidate_exp exp_rhs acc
-           | Sil.Store (Exp.Lvar pvar, typ, exp_rhs, _)
-             when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
-               invalidate_exp exp_rhs acc
-           | _ ->
-               acc )
+  let rec aux node var processed_pairs =
+    if ProcessedPairSet.mem (var, node) processed_pairs then InvalidatedVars.empty
+    else
+      let invalidate_exp exp_rhs init =
+        let node_list =
+          node :: (if Procdesc.Node.equal node loop_head then [] else Procdesc.Node.get_preds node)
+        in
+        let processed_pairs' = ProcessedPairSet.add (var, node) processed_pairs in
+        Var.get_all_vars_in_exp exp_rhs
+        |> Sequence.fold ~init ~f:(fun acc rhs_var ->
+               List.fold_left ~init:(InvalidatedVars.add rhs_var acc)
+                 ~f:(fun acc node -> InvalidatedVars.union (aux node rhs_var processed_pairs') acc)
+                 node_list )
+      in
+      Procdesc.Node.get_instrs node
+      |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
+             match instr with
+             | Sil.Load (id, exp_rhs, typ, _)
+               when Var.equal var (Var.of_id id) && is_non_primitive typ ->
+                 invalidate_exp exp_rhs acc
+             | Sil.Store (Exp.Lvar pvar, typ, exp_rhs, _)
+               when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
+                 invalidate_exp exp_rhs acc
+             | _ ->
+                 acc )
   in
-  aux node var
+  aux node var ProcessedPairSet.empty
 
 
 let get_vars_to_invalidate node loop_head params invalidated_vars : InvalidatedVars.t =
