@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Core
-
 val reraise_after : f:(unit -> unit) -> exn -> 'a
 (** Reraise the exception after doing f. Always reraise immediately after catching the exception,
     otherwise the backtrace can be wrong. *)

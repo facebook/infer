@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-open Core
+open Core_kernel
 
 (* NOTE: All variants must be also added to `all_commands` below *)
 type t = Analyze | Capture | Compile | Diff | Events | Explore | Report | ReportDiff | Run

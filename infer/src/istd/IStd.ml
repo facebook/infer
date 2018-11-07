@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include Core
+include Core_kernel
 
 [@@@warning "-32"]
 

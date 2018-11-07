@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Core
+open! Core_kernel
 
 let ( = ) (v1 : [> ]) (v2 : [> ]) = Polymorphic_compare.( = ) v1 v2

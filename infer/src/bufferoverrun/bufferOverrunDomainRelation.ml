@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open Core
 open AbsLoc
 open! AbstractDomain.Types
 module F = Format

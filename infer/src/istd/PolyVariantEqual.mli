@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Core
+open! Core_kernel
 
 (** Open to bring equality [(=)] for polymorphic variants into scope *)
 
