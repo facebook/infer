@@ -1,5 +1,8 @@
 INFER_MODEL/cpp/include/infer_model/vector_bufferoverrun.h, std::vector<Int_no_copy,std::allocator<Int_no_copy>>_erase, 2, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Binop: (this[*].infer_size - [-oo, +oo]):unsigned64]
 INFER_MODEL/cpp/include/infer_model/vector_bufferoverrun.h, std::vector<int,std::allocator<int>>_insert<std::__list_iterator<int,_void_*>_>, 7, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Binop: (this[*].infer_size + [-oo, +oo]):unsigned64]
+codetoanalyze/cpp/bufferoverrun/arith.cpp, range_bool_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 1 Size: 1]
+codetoanalyze/cpp/bufferoverrun/arith.cpp, range_bool_Good_FP, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 2 Size: 2]
+codetoanalyze/cpp/bufferoverrun/arith.cpp, sizeof_bool_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 1 Size: 1]
 codetoanalyze/cpp/bufferoverrun/class.cpp, access_after_new_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,Parameter: n,ArrayAccess: Offset: 15 Size: 10 by call to `my_class_access_nth` ]
 codetoanalyze/cpp/bufferoverrun/class.cpp, array_member_malloc2_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/class.cpp, array_member_malloc_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Offset: 10 Size: 5]

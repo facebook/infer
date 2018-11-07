@@ -91,7 +91,7 @@ let ikind_to_string = function
 let width_of_ikind {IntegerWidths.char_width; short_width; int_width; long_width; longlong_width} =
   function
   | IBool ->
-      1
+      8
   | ISChar | IChar | IUChar ->
       char_width
   | IShort | IUShort ->
@@ -120,7 +120,9 @@ let range_of_ikind =
       let bound = Z.(shift_left ~$1) (bits - 1) in
       Z.(~-bound, bound - ~$1)
   in
-  fun integer_widths x -> range (width_of_ikind integer_widths x) ~unsigned:(ikind_is_unsigned x)
+  fun integer_widths x ->
+    let bits_for_range = match x with IBool -> 1 | _ -> width_of_ikind integer_widths x in
+    range bits_for_range ~unsigned:(ikind_is_unsigned x)
 
 
 let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
