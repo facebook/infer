@@ -415,7 +415,7 @@ module CppSanitizer = struct
       (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
 
 
-  let get pname =
+  let get pname _tenv =
     let qualified_pname = Typ.Procname.get_qualifiers pname in
     List.find_map
       ~f:(fun (qualifiers, kind) ->

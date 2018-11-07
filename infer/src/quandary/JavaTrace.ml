@@ -484,7 +484,9 @@ end
 module JavaSink = Sink.Make (SinkKind)
 
 module JavaSanitizer = struct
-  type t = All [@@deriving compare]
+  type t = All | StringConcatenation [@@deriving compare]
+
+  let equal = [%compare.equal: t]
 
   let external_sanitizers =
     List.map
@@ -492,22 +494,34 @@ module JavaSanitizer = struct
       (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
 
 
-  let get = function
+  let get_external_sanitizer class_name method_name =
+    let procedure_string = Printf.sprintf "%s.%s" class_name method_name in
+    List.find_map
+      ~f:(fun procedure_regex ->
+        if Str.string_match procedure_regex procedure_string 0 then Some All else None )
+      external_sanitizers
+
+
+  let get pname tenv =
+    match pname with
     | Typ.Procname.Java java_pname ->
-        let procedure_string =
-          Printf.sprintf "%s.%s"
-            (Typ.Procname.Java.get_class_name java_pname)
-            (Typ.Procname.Java.get_method java_pname)
+        let method_name = Typ.Procname.Java.get_method java_pname in
+        let sanitizer_matching_supertype typename =
+          match (Typ.Name.name typename, method_name) with
+          | "java.lang.StringBuilder", "append" ->
+              Some StringConcatenation
+          | class_name, method_name ->
+              get_external_sanitizer class_name method_name
         in
-        List.find_map
-          ~f:(fun procedure_regex ->
-            if Str.string_match procedure_regex procedure_string 0 then Some All else None )
-          external_sanitizers
+        PatternMatch.supertype_find_map_opt tenv sanitizer_matching_supertype
+          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
     | _ ->
         None
 
 
-  let pp fmt = function All -> F.pp_print_string fmt "All"
+  let pp fmt kind =
+    F.pp_print_string fmt
+      (match kind with All -> "All" | StringConcatenation -> "StringConcatenation")
 end
 
 include Trace.Make (struct
@@ -517,8 +531,11 @@ include Trace.Make (struct
 
   let get_report source sink sanitizers =
     match (Source.kind source, Sink.kind sink) with
-    | _ when not (List.is_empty sanitizers) ->
-        (* assume any sanitizer clears all forms of taint *)
+    | _ when List.mem sanitizers Sanitizer.All ~equal:Sanitizer.equal ->
+        (* the All sanitizer clears any form of taint; don't report *)
+        None
+    | _, ClassLoading when List.mem sanitizers Sanitizer.StringConcatenation ~equal:Sanitizer.equal
+      ->
         None
     | (Endpoint _ | Intent | UserControlledString | UserControlledURI), CreateIntent ->
         (* creating Intent from user-congrolled data *)

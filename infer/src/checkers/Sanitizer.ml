@@ -11,7 +11,7 @@ module F = Format
 module type S = sig
   type t [@@deriving compare]
 
-  val get : Typ.Procname.t -> t option
+  val get : Typ.Procname.t -> Tenv.t -> t option
 
   val pp : F.formatter -> t -> unit
 end
@@ -19,7 +19,7 @@ end
 module Dummy = struct
   type t = unit [@@deriving compare]
 
-  let get _ = None
+  let get _ _ = None
 
   let pp _ _ = ()
 end

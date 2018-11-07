@@ -717,7 +717,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | None ->
                   astate_with_summary
               | Some ret_base -> (
-                match TraceDomain.Sanitizer.get callee_pname with
+                match TraceDomain.Sanitizer.get callee_pname proc_data.tenv with
                 | Some sanitizer ->
                     let ret_ap = AccessPath.Abs.Exact (ret_base, []) in
                     let ret_trace = access_path_get_trace ret_ap astate_with_summary proc_data in

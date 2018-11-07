@@ -28,7 +28,7 @@ public class ClassLoading {
     We don't want to report it as we consider that string concatenation
     sanitizes the user-controlled string for class loading.
   */
-  public void FP_clipboardToClassForNameWithConcatenationGood() {
+  public void clipboardToClassForNameWithConcatenationGood() {
     String javaFileName = "blabla." + this.getUserControlledString();
     try {
       Class cls = Class.forName(javaFileName);
