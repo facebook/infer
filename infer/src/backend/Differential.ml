@@ -128,12 +128,12 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-let issue_of_cost (cost_info, cost_polynomial) ~delta ~prev_cost ~curr_cost =
+let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
-    if CostDomain.BasicCost.is_top cost_polynomial then IssueType.infinite_execution_time_call
-    else if CostDomain.BasicCost.is_zero cost_polynomial then IssueType.zero_execution_time_call
+    if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_execution_time_call
+    else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
     else IssueType.performance_variation
   in
   let qualifier =
@@ -146,7 +146,7 @@ let issue_of_cost (cost_info, cost_polynomial) ~delta ~prev_cost ~curr_cost =
     in
     Format.asprintf "Max degree %a from %a to %a. Cost is %a (degree is %a)" pp_delta delta
       CostDomain.BasicCost.pp_degree prev_cost CostDomain.BasicCost.pp_degree curr_cost
-      CostDomain.BasicCost.pp cost_polynomial CostDomain.BasicCost.pp_degree cost_polynomial
+      CostDomain.BasicCost.pp curr_cost CostDomain.BasicCost.pp_degree curr_cost
   in
   let line = cost_info.Jsonbug_t.loc.lnum in
   let column = cost_info.Jsonbug_t.loc.cnum in
@@ -192,25 +192,23 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
             List.max_elt l ~compare:(fun (_, c1) (_, c2) ->
                 CostDomain.BasicCost.compare_by_degree c1 c2 )
           in
-          Option.value_exn max |> snd
+          Option.value_exn max
         in
-        let curr_cost = max_degree_polynomial current in
-        let prev_cost = max_degree_polynomial previous in
+        let curr_cost_info, curr_cost = max_degree_polynomial current in
+        let _, prev_cost = max_degree_polynomial previous in
         let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
         if cmp > 0 then
           (* introduced *)
           let left' =
-            List.rev_map_append
-              ~f:(fun c -> issue_of_cost c ~delta:`Increased ~prev_cost ~curr_cost)
-              current left
+            let issue = issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost in
+            issue :: left
           in
           (left', both, right)
         else if cmp < 0 then
           (* fixed *)
           let right' =
-            List.rev_map_append
-              ~f:(fun c -> issue_of_cost c ~delta:`Decreased ~prev_cost ~curr_cost)
-              current right
+            let issue = issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost in
+            issue :: right
           in
           (left, both, right')
         else
