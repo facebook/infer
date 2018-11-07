@@ -104,14 +104,16 @@ let get_vars_in_loop loop_nodes =
 
 (* get all the ptr variables (and their dependencies) occurring on the
    RHS of the definition of a given variable. *)
-let get_ptr_vars_in_defn_path node var =
+let get_ptr_vars_in_defn_path node loop_head var =
   let rec aux node var =
     let invalidate_exp exp_rhs init =
       Var.get_all_vars_in_exp exp_rhs
       |> Sequence.fold ~init ~f:(fun acc var ->
              List.fold_left ~init:(InvalidatedVars.add var acc)
                ~f:(fun acc node -> InvalidatedVars.union (aux node var) acc)
-               (node :: Procdesc.Node.get_preds node) )
+               ( node
+               :: (if Procdesc.Node.equal node loop_head then [] else Procdesc.Node.get_preds node)
+               ) )
     in
     Procdesc.Node.get_instrs node
     |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
@@ -128,13 +130,13 @@ let get_ptr_vars_in_defn_path node var =
   aux node var
 
 
-let get_vars_to_invalidate node params invalidated_vars : InvalidatedVars.t =
+let get_vars_to_invalidate node loop_head params invalidated_vars : InvalidatedVars.t =
   List.fold ~init:invalidated_vars
     ~f:(fun acc (arg_exp, typ) ->
       Var.get_all_vars_in_exp arg_exp
       |> Sequence.fold ~init:acc ~f:(fun acc var ->
              if is_non_primitive typ then
-               let dep_vars = get_ptr_vars_in_defn_path node var in
+               let dep_vars = get_ptr_vars_in_defn_path node loop_head var in
                InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
              else acc ) )
     params
@@ -143,7 +145,7 @@ let get_vars_to_invalidate node params invalidated_vars : InvalidatedVars.t =
 (* If there is a call to an impure function in the loop, invalidate
    all its non-primitive arguments. Once invalidated, it should be
    never added again. *)
-let get_invalidated_vars_in_loop tenv ~is_inv_by_default loop_nodes =
+let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node
@@ -151,7 +153,8 @@ let get_invalidated_vars_in_loop tenv ~is_inv_by_default loop_nodes =
              match instr with
              | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _)
                when not (is_fun_pure tenv ~is_inv_by_default callee_pname params) ->
-                 get_vars_to_invalidate node params (InvalidatedVars.add (Var.of_id id) acc)
+                 get_vars_to_invalidate node loop_head params
+                   (InvalidatedVars.add (Var.of_id id) acc)
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty
@@ -189,7 +192,9 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
   let vars_in_loop = get_vars_in_loop loop_nodes in
   (* until there are no changes to inv_vars, keep repeatedly
      processing all the variables that occur in the loop nodes *)
-  let invalidated_vars = get_invalidated_vars_in_loop tenv ~is_inv_by_default loop_nodes in
+  let invalidated_vars =
+    get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes
+  in
   let rec find_fixpoint inv_vars =
     let inv_vars', modified =
       InvariantVars.fold
