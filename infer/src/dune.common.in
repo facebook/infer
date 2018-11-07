@@ -65,7 +65,7 @@ let common_libraries =
     ; "base"
     ; "base64"
     ; "cmdliner"
-    ; "core"
+    ; "core_kernel"
     ; "elina"
     ; "mtime.clock.os"
     ; "ocamlgraph"

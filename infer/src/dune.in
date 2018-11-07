@@ -33,7 +33,7 @@ let infer_binaries =
 let infer_cflags =
   common_cflags
   @ [ "-open"
-    ; "Core"
+    ; "Core_kernel"
     ; "-open"
     ; "InferStdlib"
     ; "-open"

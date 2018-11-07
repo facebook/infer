@@ -117,11 +117,11 @@ Error: This variant expression is expected to have type 'a list
 
 - All modules open `IStd` using `open! IStd`. This is to make that fact more explicit (there's also
   the compilation flag mentioned above), and also it helps merlin find the right types. In
-  particular this also opens `Core.Std`.
+  particular this also opens `Core_kernel.Std`.
 
 - Do not add anything to `IStd` unless you have a compelling reason to do so, for instance if you
   find some utility function is missing and is not provided by
-  [`Core`](https://ocaml.janestreet.com/ocaml-core/latest/doc/core/).
+  [`Core_kernel`](https://ocaml.janestreet.com/ocaml-core/latest/doc/core_kernel/).
 
 - Polymorphic equality is disabled; use type-specific equality instead, even for primitive types
   (e.g., `Int.equal`). However, if your module uses a lot of polymorphic variants with no arguments

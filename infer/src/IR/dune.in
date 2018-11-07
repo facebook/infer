@@ -13,7 +13,7 @@ Format.sprintf
 (library
  (name InferIR)
  (public_name InferIR)
- (flags (%s -open Core -open InferStdlib -open IStd -open InferGenerated -open InferBase))
+ (flags (%s -open Core_kernel -open InferStdlib -open IStd -open InferGenerated -open InferBase))
  (ocamlopt_flags (%s))
  (libraries %s)
  (preprocess (pps ppx_compare))

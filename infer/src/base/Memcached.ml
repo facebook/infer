@@ -106,7 +106,7 @@ let stop pid () =
   disconnect () ;
   Signal.send Signal.term (`Pid pid) |> ignore ;
   Unix.wait (`Pid pid) |> ignore ;
-  in_results_dir ~f:(fun () -> Unix.remove memcached_socket_relative) ;
+  in_results_dir ~f:(fun () -> Unix.unlink memcached_socket_relative) ;
   Out_channel.(with_file memcached_log ~append:true ~f:(fun ch -> output_lines ch stats))
 
 

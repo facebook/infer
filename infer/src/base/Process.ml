@@ -36,6 +36,7 @@ let create_process_and_wait ~prog ~args =
 
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
+  let open Core in (* fork *)
   let pipe_in, pipe_out = Unix.pipe () in
   match Unix.fork () with
   | `In_the_child ->
