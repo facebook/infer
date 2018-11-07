@@ -42,12 +42,14 @@ module Runner = struct
   let create ~jobs ~f =
     PerfEvent.(
       log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
+    ResultsDatabase.db_close () ;
     let pool =
       ProcessPool.create ~jobs ~f
         ~child_prelude:
           ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
            fork_protect ~f:(fun () -> () ))
     in
+    ResultsDatabase.new_database_connection () ;
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     pool
 
