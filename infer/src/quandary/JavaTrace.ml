@@ -261,6 +261,7 @@ module JavaSource = Source.Make (SourceKind)
 
 module SinkKind = struct
   type t =
+    | ClassLoading
     | CreateFile  (** sink that creates a file *)
     | CreateIntent  (** sink that creates an Intent *)
     | OpenDrawableResource  (** sink that inflates a Drawable resource from an integer ID *)
@@ -279,6 +280,8 @@ module SinkKind = struct
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
+    | "ClassLoading" ->
+        ClassLoading
     | "CreateFile" ->
         CreateFile
     | "CreateIntent" ->
@@ -417,6 +420,10 @@ module SinkKind = struct
               taint_all CreateFile
           | "java.io.ObjectInputStream", "<init>" ->
               taint_all Deserialization
+          | "java.lang.Class", "forName" | "java.lang.ClassLoader", "loadClass" ->
+              taint_nth 0 ClassLoading
+          | "java.lang.ClassLoader", "defineClass" ->
+              taint_nth 1 ClassLoading
           | "java.lang.ProcessBuilder", "<init>" ->
               taint_all ShellExec
           | "java.lang.ProcessBuilder", "command" ->
@@ -444,6 +451,8 @@ module SinkKind = struct
   let pp fmt kind =
     F.fprintf fmt
       ( match kind with
+      | ClassLoading ->
+          "ClassLoading"
       | CreateFile ->
           "CreateFile"
       | CreateIntent ->
@@ -548,9 +557,9 @@ include Trace.Make (struct
         Some IssueType.create_intent_from_uri
     | PrivateData, Logging ->
         Some IssueType.logging_private_data
-    | (Intent | UserControlledString | UserControlledURI), ShellExec ->
+    | (Intent | UserControlledString | UserControlledURI), (ClassLoading | ShellExec) ->
         Some IssueType.shell_injection
-    | Endpoint _, ShellExec ->
+    | Endpoint _, (ClassLoading | ShellExec) ->
         Some IssueType.shell_injection_risk
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
