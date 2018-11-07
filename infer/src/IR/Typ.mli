@@ -288,6 +288,8 @@ val is_pointer : t -> bool
 
 val is_reference : t -> bool
 
+val is_struct : t -> bool
+
 val has_block_prefix : string -> bool
 
 val unsome : string -> t option -> t

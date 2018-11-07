@@ -14,6 +14,8 @@ class HoistIndirect {
 
     int a = 0;
 
+    int[] test_array;
+
     int foo(int x) {
       return x + 10;
     }
@@ -145,6 +147,15 @@ class HoistIndirect {
       set_ith(i, array);
       t.foo(size); // hoist call to foo
       d += get_ith(size, array); // don't hoist since array changes
+    }
+    return d;
+  }
+
+  int modified_inner_array_dont_hoist(int size, Test t) {
+    int d = 0;
+    for (int i = 0; i < size; i++) {
+      set_ith(i, t.test_array);
+      d += t.foo(t.test_array[0]); // don't hoist since t.test_array changes
     }
     return d;
   }

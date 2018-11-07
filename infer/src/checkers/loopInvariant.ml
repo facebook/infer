@@ -37,6 +37,8 @@ let is_fun_pure tenv ~is_inv_by_default callee_pname params =
         is_inv_by_default )
 
 
+let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ
+
 (* check if the def of var is unique and invariant *)
 let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_default
     is_exp_invariant =
@@ -114,11 +116,11 @@ let get_ptr_vars_in_defn_path node var =
     Procdesc.Node.get_instrs node
     |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
            match instr with
-           | Sil.Load (id, exp_rhs, typ, _) when Var.equal var (Var.of_id id) && Typ.is_pointer typ
-             ->
+           | Sil.Load (id, exp_rhs, typ, _)
+             when Var.equal var (Var.of_id id) && is_non_primitive typ ->
                invalidate_exp exp_rhs acc
            | Sil.Store (Exp.Lvar pvar, typ, exp_rhs, _)
-             when Var.equal var (Var.of_pvar pvar) && Typ.is_pointer typ ->
+             when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
                invalidate_exp exp_rhs acc
            | _ ->
                acc )
@@ -131,7 +133,7 @@ let get_vars_to_invalidate node params invalidated_vars : InvalidatedVars.t =
     ~f:(fun acc (arg_exp, typ) ->
       Var.get_all_vars_in_exp arg_exp
       |> Sequence.fold ~init:acc ~f:(fun acc var ->
-             if Typ.is_pointer typ then
+             if is_non_primitive typ then
                let dep_vars = get_ptr_vars_in_defn_path node var in
                InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
              else acc ) )
