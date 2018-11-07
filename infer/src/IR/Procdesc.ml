@@ -619,17 +619,31 @@ let get_wto pdesc =
       wto
 
 
-(** Get loop heads for widening. *)
+(** Get loop heads for widening.
+   It collects all target nodes of back-edges in a depth-first traversal.
+   We need to use the exceptional CFG otherwise we will miss loop heads in catch clauses.
+*)
 let get_loop_heads pdesc =
   match pdesc.loop_heads with
   | Some lh ->
       lh
   | None ->
-      let wto = get_wto pdesc in
-      let lh =
-        WeakTopologicalOrder.Partition.fold_heads wto ~init:NodeSet.empty ~f:(fun acc head ->
-            NodeSet.add head acc )
+      let rec set_loop_head_rec visited heads wl =
+        match wl with
+        | [] ->
+            heads
+        | (n, ancester) :: wl' ->
+            if NodeSet.mem n visited then
+              if NodeSet.mem n ancester then set_loop_head_rec visited (NodeSet.add n heads) wl'
+              else set_loop_head_rec visited heads wl'
+            else
+              let ancester = NodeSet.add n ancester in
+              let succs = List.append (Node.get_succs n) (Node.get_exn n) in
+              let works = List.map ~f:(fun m -> (m, ancester)) succs in
+              set_loop_head_rec (NodeSet.add n visited) heads (List.append works wl')
       in
+      let start_wl = [(get_start_node pdesc, NodeSet.empty)] in
+      let lh = set_loop_head_rec NodeSet.empty NodeSet.empty start_wl in
       pdesc.loop_heads <- Some lh ;
       lh
 
