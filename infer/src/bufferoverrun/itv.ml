@@ -412,6 +412,26 @@ module NonNegativePolynomial = struct
         Format.pp_print_int fmt (NonNegativeNonTopPolynomial.degree p)
 
 
+  let pp_degree_hum fmt p =
+    match p with
+    | Top ->
+        Format.pp_print_string fmt "Top"
+    | NonTop p -> (
+      match NonNegativeNonTopPolynomial.degree p with
+      | 0 ->
+          Format.pp_print_string fmt "constant"
+      | 1 ->
+          Format.pp_print_string fmt "linear"
+      | 2 ->
+          Format.pp_print_string fmt "quadratic"
+      | 3 ->
+          Format.pp_print_string fmt "cubic"
+      | 4 ->
+          Format.pp_print_string fmt "quartic"
+      | d ->
+          Format.fprintf fmt "O(N^%d)" d )
+
+
   let encode astate = Marshal.to_string astate [] |> B64.encode
 
   let decode enc_str = Marshal.from_string (B64.decode enc_str) 0

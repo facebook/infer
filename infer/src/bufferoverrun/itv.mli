@@ -58,6 +58,8 @@ module NonNegativePolynomial : sig
 
   val pp_degree : Format.formatter -> astate -> unit
 
+  val pp_degree_hum : Format.formatter -> astate -> unit
+
   val encode : astate -> string
 
   val decode : string -> astate

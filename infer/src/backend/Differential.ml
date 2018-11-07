@@ -144,9 +144,15 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
       | `Increased ->
           Format.fprintf fmt "increased"
     in
-    Format.asprintf "Max degree %a from %a to %a. Cost is %a (degree is %a)" pp_delta delta
-      CostDomain.BasicCost.pp_degree prev_cost CostDomain.BasicCost.pp_degree curr_cost
-      CostDomain.BasicCost.pp curr_cost CostDomain.BasicCost.pp_degree curr_cost
+    let pp_raw_cost fmt cost_polynomial =
+      if Config.developer_mode then
+        Format.fprintf fmt " Cost is %a (degree is %a)" CostDomain.BasicCost.pp cost_polynomial
+          CostDomain.BasicCost.pp_degree cost_polynomial
+      else ()
+    in
+    Format.asprintf "Complexity %a from %a to %a.%a" pp_delta delta
+      CostDomain.BasicCost.pp_degree_hum prev_cost CostDomain.BasicCost.pp_degree_hum curr_cost
+      pp_raw_cost curr_cost
   in
   let line = cost_info.Jsonbug_t.loc.lnum in
   let column = cost_info.Jsonbug_t.loc.cnum in
