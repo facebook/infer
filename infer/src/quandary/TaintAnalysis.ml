@@ -744,7 +744,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   end
 
   module Analyzer =
-    LowerHil.MakeAbstractInterpreterWithConfig (HilConfig) (ProcCfg.Exceptional)
+    LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (HilConfig)
+      (ProcCfg.Exceptional)
       (TransferFunctions)
 
   (* sanity checks for summaries. should only be used in developer mode *)

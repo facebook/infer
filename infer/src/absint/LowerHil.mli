@@ -35,6 +35,7 @@ end
 
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)
 module MakeAbstractInterpreterWithConfig
+    (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
@@ -54,5 +55,6 @@ module MakeAbstractInterpreter
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
   include module type of
-    MakeAbstractInterpreterWithConfig (DefaultConfig) (CFG) (MakeTransferFunctions)
+    MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig) (CFG)
+      (MakeTransferFunctions)
 end

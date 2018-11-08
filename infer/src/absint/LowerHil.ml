@@ -93,11 +93,12 @@ struct
 end
 
 module MakeAbstractInterpreterWithConfig
+    (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) =
 struct
-  module Interpreter = AbstractInterpreter.MakeRPO (Make (MakeTransferFunctions) (HilConfig) (CFG))
+  module Interpreter = MakeAbstractInterpreter (Make (MakeTransferFunctions) (HilConfig) (CFG))
 
   let compute_post ({ProcData.pdesc; tenv} as proc_data) ~initial =
     Preanal.do_preanalysis pdesc tenv ;
@@ -116,4 +117,5 @@ struct
     Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst
 end
 
-module MakeAbstractInterpreter = MakeAbstractInterpreterWithConfig (DefaultConfig)
+module MakeAbstractInterpreter =
+  MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig)

@@ -125,7 +125,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer =
+  LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeWTO) (LowerHil.DefaultConfig)
+    (ProcCfg.Exceptional)
+    (TransferFunctions)
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
