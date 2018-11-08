@@ -182,20 +182,13 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 					 HOLDS-NEXT)
          HOLDS-IN-NODE BlockExpr;
 
-// * Alternative ways of writing this check:
-//			 SET report_when =
-//				 		 WHEN
-//				 			 captures_cxx_references()
-//				 		 HOLDS-IN-NODE BlockDecl;
-//
-//		SET report_when =
-//		is_node(BlockDecl) AND captures_cxx_references();
-
 	  SET message =
 	        "C++ Reference variable(s) %cxx_ref_captured_in_block% captured by Objective-C block";
 
-	  SET suggestion = "C++ References are unmanaged and may be invalid by the time the block executes.";
+	  SET suggestion = "This will very likely cause a crash because C++ References are unmanaged and may be invalid by the time the block executes.";
 
+    SET severity = "ERROR";
+		SET mode = "ON";
 	};
 
 	// If the declaration has availability attributes, check that it's compatible with
