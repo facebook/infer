@@ -27,3 +27,17 @@ int invalidate_node_alias_bad(struct list* head, int cond) {
   }
   return *result;
 }
+
+struct BasicStruct {
+  // force destructor calls to be injected
+  virtual void some_method() {}
+};
+
+int nested_loops_ok() {
+  while (true) {
+    BasicStruct x;
+    for (;;) {
+      x.some_method();
+    }
+  }
+}

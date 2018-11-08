@@ -46,22 +46,37 @@ end
 
 (* {3 Heap domain } *)
 
+module Attribute = struct
+  (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
+       efficient (only need to look at the first element in the set of attributes to know if an
+       address is invalid) *)
+  type t = Invalid of Invalidation.t | StdVectorReserve [@@deriving compare]
+
+  let pp f = function
+    | Invalid invalidation ->
+        Invalidation.pp f invalidation
+    | StdVectorReserve ->
+        F.pp_print_string f "std::vector::reserve()"
+end
+
+module Attributes = AbstractDomain.FiniteSet (Attribute)
+
 module Memory : sig
   module Edges : module type of PrettyPrintable.MakePPMap (AccessExpression.Access)
 
   type edges = AbstractAddress.t Edges.t
 
+  type cell = edges * Attributes.t
+
   type t
 
   val empty : t
 
-  val find_opt : AbstractAddress.t -> t -> edges option
+  val find_opt : AbstractAddress.t -> t -> cell option
 
-  val for_all : (AbstractAddress.t -> edges -> bool) -> t -> bool
+  val for_all : (AbstractAddress.t -> cell -> bool) -> t -> bool
 
-  val fold : (AbstractAddress.t -> edges -> 'accum -> 'accum) -> t -> 'accum -> 'accum
-
-  val mem : AbstractAddress.t -> t -> bool
+  val fold : (AbstractAddress.t -> cell -> 'accum -> 'accum) -> t -> 'accum -> 'accum
 
   val pp : F.formatter -> t -> unit
 
@@ -72,36 +87,43 @@ module Memory : sig
 
   val find_edge_opt :
     AbstractAddress.t -> AccessExpression.Access.t -> t -> AbstractAddress.t option
+
+  val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
+
+  val invalidate : AbstractAddress.t -> Invalidation.t -> t -> t
+
+  val get_invalidation : AbstractAddress.t -> t -> Invalidation.t option
+  (** None denotes a valid location *)
+
+  val std_vector_reserve : AbstractAddress.t -> t -> t
+
+  val is_std_vector_reserved : AbstractAddress.t -> t -> bool
 end = struct
   module Edges = PrettyPrintable.MakePPMap (AccessExpression.Access)
 
   type edges = AbstractAddress.t Edges.t
 
+  type cell = edges * Attributes.t
+
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
-  (* {3 Monomorphic {!PPMap} interface as needed } *)
+  type t = cell Graph.t
 
-  type t = AbstractAddress.t Edges.t Graph.t
+  let pp =
+    Graph.pp ~pp_value:(Pp.pair ~fst:(Edges.pp ~pp_value:AbstractAddress.pp) ~snd:Attributes.pp)
 
-  let empty = Graph.empty
-
-  let find_opt = Graph.find_opt
-
-  let for_all = Graph.for_all
-
-  let fold = Graph.fold
-
-  let mem = Graph.mem
-
-  let pp = Graph.pp ~pp_value:(Edges.pp ~pp_value:AbstractAddress.pp)
 
   (* {3 Helper functions to traverse the two maps at once } *)
 
   let add_edge addr_src access addr_end memory =
-    let edges =
-      match Graph.find_opt addr_src memory with Some edges -> edges | None -> Edges.empty
+    let edges, attrs =
+      match Graph.find_opt addr_src memory with
+      | Some edges_attrs ->
+          edges_attrs
+      | None ->
+          (Edges.empty, Attributes.empty)
     in
-    Graph.add addr_src (Edges.add access addr_end edges) memory
+    Graph.add addr_src (Edges.add access addr_end edges, attrs) memory
 
 
   (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
@@ -119,7 +141,61 @@ end = struct
 
   let find_edge_opt addr access memory =
     let open Option.Monad_infix in
-    Graph.find_opt addr memory >>= Edges.find_opt access
+    Graph.find_opt addr memory >>| fst >>= Edges.find_opt access
+
+
+  let add_attributes addr attrs memory =
+    let edges, old_attrs =
+      match Graph.find_opt addr memory with
+      | Some edges_old_attrs ->
+          edges_old_attrs
+      | None ->
+          (Edges.empty, Attributes.empty)
+    in
+    if phys_equal old_attrs attrs then memory
+    else Graph.add addr (edges, Attributes.union attrs old_attrs) memory
+
+
+  let add_attribute address attribute memory =
+    Graph.update address
+      (function
+        | Some (edges, old_attributes) ->
+            Some (edges, Attributes.add attribute old_attributes)
+        | None ->
+            Some (Edges.empty, Attributes.singleton attribute))
+      memory
+
+
+  let invalidate address invalidation memory =
+    add_attribute address (Attribute.Invalid invalidation) memory
+
+
+  let get_invalidation address memory =
+    (* Since we often want to find out whether an address is invalid this case is optimised. Since
+       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
+       an address is invalid or not. *)
+    Graph.find_opt address memory |> Option.map ~f:snd
+    |> Option.bind ~f:Attributes.min_elt_opt
+    |> Option.bind ~f:(function Attribute.Invalid invalidation -> Some invalidation | _ -> None)
+
+
+  let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
+
+  let is_std_vector_reserved address memory =
+    Graph.find_opt address memory |> Option.map ~f:snd
+    |> Option.value_map ~default:false ~f:(fun attributes ->
+           Attributes.mem Attribute.StdVectorReserve attributes )
+
+
+  (* {3 Monomorphic {!PPMap} interface as needed } *)
+
+  let empty = Graph.empty
+
+  let find_opt = Graph.find_opt
+
+  let for_all = Graph.for_all
+
+  let fold = Graph.fold
 end
 
 (** Stacks: map variables to values.
@@ -143,101 +219,36 @@ module Stack =
       let pp = AbstractAddress.pp
     end)
 
-(** Attributes attached to addresses. This keeps track of which addresses are invalid, but is also
-   used by models for bookkeeping. *)
-module AttributesDomain : sig
-  module Attributes : AbstractDomain.S
-
-  include module type of AbstractDomain.Map (AbstractAddress) (Attributes)
-
-  val empty : astate
-
-  val invalidate : AbstractAddress.t -> Invalidation.t -> astate -> astate
-
-  val get_invalidation : AbstractAddress.t -> astate -> Invalidation.t option
-  (** None denotes a valid location *)
-
-  val std_vector_reserve : AbstractAddress.t -> astate -> astate
-
-  val is_std_vector_reserved : AbstractAddress.t -> astate -> bool
-end = struct
-  module Attribute = struct
-    (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
-       efficient (only need to look at the first element in the set of attributes to know if an
-       address is invalid) *)
-    type t = Invalid of Invalidation.t | StdVectorReserve [@@deriving compare]
-
-    let pp f = function
-      | Invalid invalidation ->
-          Invalidation.pp f invalidation
-      | StdVectorReserve ->
-          F.pp_print_string f "std::vector::reserve()"
-  end
-
-  module Attributes = AbstractDomain.FiniteSet (Attribute)
-  include AbstractDomain.Map (AbstractAddress) (Attributes)
-
-  let add_attribute address attribute attribute_map =
-    let attributes =
-      match find_opt address attribute_map with
-      | Some old_attributes ->
-          Attributes.add attribute old_attributes
-      | None ->
-          Attributes.singleton attribute
-    in
-    add address attributes attribute_map
-
-
-  let invalidate address invalidation attribute_map =
-    add_attribute address (Attribute.Invalid invalidation) attribute_map
-
-
-  let get_invalidation address attribute_map =
-    (* Since we often want to find out whether an address is invalid this case is optimised. Since
-       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
-       an address is invalid or not. *)
-    find_opt address attribute_map
-    |> Option.bind ~f:Attributes.min_elt_opt
-    |> Option.bind ~f:(function Attribute.Invalid invalidation -> Some invalidation | _ -> None)
-
-
-  let std_vector_reserve address attribute_map =
-    add_attribute address Attribute.StdVectorReserve attribute_map
-
-
-  let is_std_vector_reserved address attribute_map =
-    find_opt address attribute_map
-    |> Option.value_map ~default:false ~f:(fun attributes ->
-           Attributes.mem Attribute.StdVectorReserve attributes )
-end
-
 (** the domain *)
-type t = {heap: Memory.t; stack: Stack.astate; attributes: AttributesDomain.astate}
+type t = {heap: Memory.t; stack: Stack.astate}
 
 let initial =
-  { heap= Memory.empty
-  ; stack= Stack.empty
-  ; attributes=
-      AttributesDomain.empty
-      (* TODO: this makes the analysis go a bit overboard with the Nullptr reports. *)
-      (* (* always recall that 0 is invalid *)
-         AttributesDomain.add AbstractAddress.nullptr Nullptr AttributesDomain.empty *)
-  }
+  { heap=
+      Memory.empty
+      (* TODO: we could record that 0 is an invalid address at this point but this makes the
+         analysis go a bit overboard with the Nullptr reports. *)
+  ; stack= Stack.empty }
 
 
 module Domain : AbstractDomain.S with type astate = t = struct
   type astate = t
 
   let piecewise_lessthan lhs rhs =
-    AttributesDomain.( <= ) ~lhs:lhs.attributes ~rhs:rhs.attributes
-    && Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack
+    Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack
     && Memory.for_all
-         (fun addr_src edges ->
+         (fun addr_src (edges_lhs, attrs_lhs) ->
+           let edges_rhs_opt, attrs_rhs =
+             let cell = Memory.find_opt addr_src rhs.heap in
+             (Option.map ~f:fst cell, Option.value_map ~default:Attributes.empty ~f:snd cell)
+           in
            Memory.Edges.for_all
-             (fun edge addr_dst ->
-               Memory.find_edge_opt addr_src edge rhs.heap
-               |> Option.exists ~f:(fun addr -> AbstractAddress.equal addr addr_dst) )
-             edges )
+             (fun access_lhs addr_dst ->
+               Option.bind edges_rhs_opt ~f:(fun edges_rhs ->
+                   Memory.Edges.find_opt access_lhs edges_rhs )
+               |> Option.map ~f:(AbstractAddress.equal addr_dst)
+               |> Option.value ~default:false )
+             edges_lhs
+           && Attributes.( <= ) ~lhs:attrs_lhs ~rhs:attrs_rhs )
          lhs.heap
 
 
@@ -300,8 +311,9 @@ module Domain : AbstractDomain.S with type astate = t = struct
           |> visit_address subst visited heap addr_dst
         in
         Memory.find_opt addr heap
-        |> Option.fold ~init:(visited, union_heap) ~f:(fun visited_union_heap edges ->
-               Memory.Edges.fold visit_edge edges visited_union_heap )
+        |> Option.fold ~init:(visited, union_heap) ~f:(fun (visited, union_heap) (edges, attrs) ->
+               let union_heap = Memory.add_attributes addr attrs union_heap in
+               Memory.Edges.fold visit_edge edges (visited, union_heap) )
 
 
     let visit_stack subst heap stack union_heap =
@@ -331,8 +343,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
            stack1 stack2)
 
 
-    let from_astate_union {heap= heap1; stack= stack1; attributes= attributes1}
-        {heap= heap2; stack= stack2; attributes= attributes2} =
+    let from_astate_union {heap= heap1; stack= stack1} {heap= heap2; stack= stack2} =
       let subst = AddressUF.create () in
       (* gather equalities from the stacks *)
       populate_subst_from_stacks subst stack1 stack2 ;
@@ -342,48 +353,12 @@ module Domain : AbstractDomain.S with type astate = t = struct
       (* This keeps all the variables and picks one representative address for each variable in
          common thanks to [AbstractAddressDomain_JoinIsMin] *)
       let stack = Stack.join stack1 stack2 in
-      (* basically union *)
-      let attributes = AttributesDomain.join attributes1 attributes2 in
-      {subst; astate= {heap; stack; attributes}}
-
-
-    (** compute new address attributes for a given join state *)
-    let to_attributes {subst; astate= {attributes= old_attributes} as astate} =
-      (* Is the address reachable from the stack variables? Since the new heap only has addresses
-         reachable from stack variables it suffices to check if the address appears in either the
-         heap or the stack. *)
-      let address_is_live astate address =
-        Memory.mem address astate.heap
-        || Stack.exists (fun _ value -> AbstractAddress.equal value address) astate.stack
-      in
-      let add_old_attribute astate old_address old_attribute new_attributes =
-        (* the address has to make sense for the new heap *)
-        let repr = AddressUF.find subst old_address in
-        let new_address = (repr :> AbstractAddress.t) in
-        match AttributesDomain.find_opt new_address new_attributes with
-        | Some new_attribute ->
-            (* We have seen a representative of this address already: join.  *)
-            AttributesDomain.add new_address
-              (AttributesDomain.Attributes.join new_attribute old_attribute)
-              new_attributes
-        | None ->
-            (* only record the attributes fact if the address is still reachable (helps
-               convergence) *)
-            if address_is_live astate new_address then
-              AttributesDomain.add new_address old_attribute new_attributes
-            else
-              (* we can forget about the attributes for this address since nothing can refer to it
-                 anymore *)
-              new_attributes
-      in
-      AttributesDomain.fold
-        (fun old_address old_attribute new_attributes ->
-          add_old_attribute astate old_address old_attribute new_attributes )
-        old_attributes AttributesDomain.empty
+      {subst; astate= {heap; stack}}
 
 
     let rec normalize state =
-      let one_addr subst addr edges heap_has_converged =
+      let one_addr subst addr (edges, attrs) (heap, has_converged) =
+        let heap = Memory.add_attributes addr attrs heap in
         Memory.Edges.fold
           (fun access addr_dest (heap, has_converged) ->
             match union_one_edge subst addr access addr_dest heap with
@@ -391,7 +366,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
                 (heap, has_converged)
             | heap, `New_equality ->
                 (heap, false) )
-          edges heap_has_converged
+          edges (heap, has_converged)
       in
       let heap, has_converged =
         Memory.fold (one_addr state.subst) state.astate.heap (Memory.empty, true)
@@ -406,8 +381,7 @@ module Domain : AbstractDomain.S with type astate = t = struct
               AddressUnionSet.pp set ) ;
         L.d_decrease_indent () ;
         let stack = Stack.map (to_canonical_address state.subst) state.astate.stack in
-        let attributes = to_attributes state in
-        {heap; stack; attributes} )
+        {heap; stack} )
       else normalize {state with astate= {state.astate with heap}}
   end
 
@@ -465,9 +439,8 @@ module Domain : AbstractDomain.S with type astate = t = struct
     else join prev next
 
 
-  let pp fmt {heap; stack; attributes} =
-    F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@;attributes=@[<hv>%a@];@]}"
-      Memory.pp heap Stack.pp stack AttributesDomain.pp attributes
+  let pp fmt {heap; stack} =
+    F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@]}" Memory.pp heap Stack.pp stack
 end
 
 (* {2 Access operations on the domain} *)
@@ -518,7 +491,7 @@ module Operations = struct
 
   (** Check that the address is not known to be invalid *)
   let check_addr_access actor address astate =
-    match AttributesDomain.get_invalidation address astate.attributes with
+    match Memory.get_invalidation address astate.heap with
     | Some invalidated_by ->
         Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; address})
     | None ->
@@ -600,7 +573,7 @@ module Operations = struct
 
   (** Add the given address to the set of know invalid addresses. *)
   let mark_invalid actor address astate =
-    {astate with attributes= AttributesDomain.invalidate address actor astate.attributes}
+    {astate with heap= Memory.invalidate address actor astate.heap}
 
 
   let havoc_var var astate =
@@ -645,14 +618,12 @@ module StdVector = struct
 
   let is_reserved location vector_access_expr astate =
     Operations.read location vector_access_expr astate
-    >>| fun (astate, addr) ->
-    (astate, AttributesDomain.is_std_vector_reserved addr astate.attributes)
+    >>| fun (astate, addr) -> (astate, Memory.is_std_vector_reserved addr astate.heap)
 
 
   let mark_reserved location vector_access_expr astate =
     Operations.read location vector_access_expr astate
-    >>| fun (astate, addr) ->
-    {astate with attributes= AttributesDomain.std_vector_reserve addr astate.attributes}
+    >>| fun (astate, addr) -> {astate with heap= Memory.std_vector_reserve addr astate.heap}
 end
 
 include Domain
