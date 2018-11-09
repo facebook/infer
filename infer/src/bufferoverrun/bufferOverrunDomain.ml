@@ -207,6 +207,8 @@ module Val = struct
 
   let shiftrt : t -> t -> t = lift_itv Itv.shiftrt
 
+  let band_sem : t -> t -> t = lift_itv Itv.band_sem
+
   let lt_sem : t -> t -> t = lift_cmp_itv Itv.lt_sem
 
   let gt_sem : t -> t -> t = lift_cmp_itv Itv.gt_sem

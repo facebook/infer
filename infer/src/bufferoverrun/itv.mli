@@ -221,6 +221,8 @@ val shiftlt : t -> t -> t
 
 val shiftrt : t -> t -> t
 
+val band_sem : t -> t -> t
+
 val eq_sem : t -> t -> Boolean.t
 
 val ge_sem : t -> t -> Boolean.t

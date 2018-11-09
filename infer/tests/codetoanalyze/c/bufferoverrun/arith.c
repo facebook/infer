@@ -335,3 +335,85 @@ void two_safety_conditions2_Bad(uint32_t s) {
 void call_two_safety_conditions2_Bad() {
   two_safety_conditions2_Bad(15); // integer overflow L5: [0, +oo] + 15
 }
+
+void band_positive_constant_Good() {
+  char a[3];
+  int x = 6 & 2; // y is 2
+  a[x] = 0;
+}
+
+void band_positive_constant_Bad() {
+  char a[2];
+  int x = 6 & 2; // y is 2
+  a[x] = 0;
+}
+
+void band_negative_constant_Good() {
+  char a[1];
+  int x = (-3) & (-2); // x is -4
+  a[x + 4] = 0;
+}
+
+void band_negative_constant_Bad() {
+  char a[1];
+  int x = (-3) & (-2); // x is -4
+  a[x + 5] = 0;
+}
+
+void band_constant_Good() {
+  char a[2];
+  int x = (-3) & 1; // x is 1
+  a[x] = 0;
+}
+
+void band_constant_Bad() {
+  char a[1];
+  int x = (-3) & 1; // x is 1
+  a[x] = 0;
+}
+
+void band_positive_Good() {
+  char a[9];
+  int x = unknown_nat();
+  int y = unknown_nat();
+  if (x <= 10 && y <= 8) {
+    int z = x & y; // z is [0, 8]
+    a[z] = 0;
+  }
+}
+
+void band_positive_Bad() {
+  char a[5];
+  int x = unknown_nat();
+  int y = unknown_nat();
+  if (x <= 10 && y <= 8) {
+    int z = x & y; // z is [0, 8]
+    a[z] = 0;
+  }
+}
+
+void band_negative_Good() {
+  char a[3];
+  int x = unknown_function();
+  int y = unknown_function();
+  if (x <= -3 && y <= -2) {
+    int z = x & y; // z is [-oo, -3]
+    z = z + 5; // z is [-oo, 2]
+    if (z >= 0) {
+      a[z] = 0;
+    }
+  }
+}
+
+void band_negative_Bad() {
+  char a[2];
+  int x = unknown_function();
+  int y = unknown_function();
+  if (x <= -3 && y <= -2) {
+    int z = x & y; // z is [-oo, -3]
+    z = z + 5; // z is [-oo, 2]
+    if (z >= 0) {
+      a[z] = 0;
+    }
+  }
+}

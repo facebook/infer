@@ -696,6 +696,17 @@ module ItvPure = struct
         top
 
 
+  let band_sem : t -> t -> t =
+   fun x y ->
+    match (is_const x, is_const y) with
+    | Some x', Some y' ->
+        if Z.(equal x' y') then x else of_big_int Z.(x' land y')
+    | _, _ ->
+        if is_ge_zero x && is_ge_zero y then (Bound.zero, Bound.overapprox_min (ub x) (ub y))
+        else if is_le_zero x && is_le_zero y then (Bound.MInf, Bound.overapprox_min (ub x) (ub y))
+        else top
+
+
   let lt_sem : t -> t -> Boolean.t =
    fun (l1, u1) (l2, u2) ->
     if Bound.lt u1 l2 then Boolean.True else if Bound.le u2 l1 then Boolean.False else Boolean.Top
@@ -965,6 +976,8 @@ let mod_sem : t -> t -> t = lift2 ItvPure.mod_sem
 let shiftlt : t -> t -> t = lift2 ItvPure.shiftlt
 
 let shiftrt : t -> t -> t = lift2 ItvPure.shiftrt
+
+let band_sem : t -> t -> t = lift2 ItvPure.band_sem
 
 let lt_sem : t -> t -> Boolean.t = bind2b ItvPure.lt_sem
 

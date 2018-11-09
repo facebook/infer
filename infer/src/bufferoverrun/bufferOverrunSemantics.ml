@@ -229,7 +229,9 @@ and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
       Val.eq_sem v1 v2
   | Binop.Ne ->
       Val.ne_sem v1 v2
-  | Binop.BAnd | Binop.BXor | Binop.BOr ->
+  | Binop.BAnd ->
+      Val.band_sem v1 v2
+  | Binop.BXor | Binop.BOr ->
       Val.unknown_bit v1
   | Binop.LAnd ->
       Val.land_sem v1 v2
