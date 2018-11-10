@@ -750,6 +750,8 @@ module Bound = struct
         Some (if NonZeroInt.is_positive n then MInf else PInf)
     | PInf ->
         Some (if NonZeroInt.is_positive n then PInf else MInf)
+    | Linear (c, x') when SymLinear.is_zero x' ->
+        Some (Linear (Z.(c / (n :> Z.t)), SymLinear.zero))
     | Linear (c, x') when NonZeroInt.is_multiple c n -> (
       match SymLinear.exact_div_const_exn x' n with
       | x'' ->

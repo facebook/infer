@@ -307,6 +307,34 @@ void minmax_div_const_Bad(int n) {
   }
 }
 
+void div_const_Good() {
+  int a[3];
+  int x = 5 / 2;
+  a[x] = 0;
+}
+
+void div_const_Bad() {
+  int a[2];
+  int x = 5 / 2;
+  a[x] = 0;
+}
+
+void div_const2_FP(int n) {
+  int a[1];
+  int x = (n * 2 + 1) / 2;
+  a[x] = 0;
+}
+
+void minmax_div_const2_Good() {
+  div_const2(-1);
+  div_const2(0);
+}
+
+void minmax_div_const2_Bad_FN() {
+  div_const2(1);
+  div_const2(-2);
+}
+
 uint32_t unknown_nat() {
   uint32_t x = unknown_function();
   if (x >= 0) {
