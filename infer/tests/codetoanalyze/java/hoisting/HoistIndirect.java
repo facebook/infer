@@ -52,7 +52,6 @@ class HoistIndirect {
             return_only(t),
             size); // foo' and return_only's arguments are variant, hence don't hoist
       }
-      ;
     }
 
     // t changes deep in the call stack
@@ -66,13 +65,27 @@ class HoistIndirect {
       return d;
     }
 
-    // foo(3) is ok to hoist, but can't detect this right now
-    int indirect_modification_hoist_FN(int size) {
+    // foo(3) is ok to hoist
+    int indirect_modification_hoist(int size) {
       int d = 0;
       Test t = new Test();
       for (int i = 0; i < size; i++) {
         set_test(t); // this (and t) is invalidated here
         d = foo(3); // foo becomes variant due to implicit arg. this being invalidated above
+      }
+      return d;
+    }
+
+    void set_only_first_param(Test test, Test no_mod) {
+      test.a = 5;
+    }
+
+    int indirect_modification_only_second_call_hoist(int size, Test t, Test no_mod_t) {
+      int d = 0;
+      for (int i = 0; i < size; i++) {
+        set_only_first_param(t, no_mod_t);
+        d = get_test(t); // don't hoist since t changes
+        d = get_test(no_mod_t); // hoist since no_mod_t doesn't change
       }
       return d;
     }
@@ -86,11 +99,12 @@ class HoistIndirect {
     return svar;
   }
 
-  int indirect_this_modification_dont_hoist(int size) {
+  // can't deal with static variables yet because they don't appear as parameters
+  int indirect_this_modification_dont_hoist_FP(int size) {
     int d = 0;
 
     for (int i = 0; i < size; i++) {
-      d = get(); // don't hoist since this.svar changes in the loop
+      d = get(); // don't hoist since HoistIndirect.svar changes in the loop
       set();
     }
     return d;
@@ -198,6 +212,30 @@ class HoistIndirect {
       if (i < regionFirst(nextRegionM[p]) + double_me(p)) { // double_me(p) can be hoisted
         sumDest(tempRegion, nextRegionM[p], i); // invalidate nextRegionM
       }
+    }
+  }
+
+  void unmodified_arg_hoist(int[][] nextRegionM, int p, int[] tempRegion) {
+    for (int i = 0; i < 10; i++) {
+      if (i
+          < regionFirst(nextRegionM[p])
+              + regionFirst(tempRegion)) { // regionFirst(tempRegion) can be hoisted
+        sumDest(tempRegion, nextRegionM[p], i); // invalidate nextRegionM
+      }
+    }
+  }
+
+  // arr is modified via aliasing
+  void alias(int[] arr) {
+
+    int[] new_arr = arr;
+    new_arr[0] = 4;
+  }
+
+  void alias_dont_hoist_FP(int[] arr) {
+    for (int i = 0; i < 10; i++) {
+      alias(arr); // alias modifies arr
+      get_ith(0, arr); // don't hoist
     }
   }
 }

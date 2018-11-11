@@ -23,18 +23,19 @@ let is_defined_outside loop_nodes reaching_defs var =
   |> Option.value ~default:true
 
 
-let is_fun_pure tenv ~is_inv_by_default callee_pname params =
+let get_purity tenv ~is_inv_by_default callee_pname args =
   (* Take into account purity behavior of modeled functions *)
-  match Models.Call.dispatch tenv callee_pname params with
+  let all_params_modified = PurityDomain.all_params_modified args in
+  match Models.Call.dispatch tenv callee_pname args with
   | Some inv ->
-      InvariantModels.is_invariant inv
+      PurityDomain.with_purity (InvariantModels.is_invariant inv) all_params_modified
   | None -> (
     (* If there is no model, invoke purity analysis to see if function is pure *)
     match Ondemand.analyze_proc_name callee_pname with
-    | Some {Summary.payloads= {Payloads.purity= Some is_pure}} ->
-        is_pure
+    | Some {Summary.payloads= {Payloads.purity= Some purity_summary}} ->
+        purity_summary
     | _ ->
-        is_inv_by_default )
+        PurityDomain.with_purity is_inv_by_default all_params_modified )
 
 
 let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ
@@ -57,10 +58,10 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_def
               | Sil.Store (exp_lhs, _, exp_rhs, _)
                 when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
                   true
-              | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _) when equals_var id ->
-                  is_fun_pure tenv ~is_inv_by_default callee_pname params
+              | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
+                  PurityDomain.is_pure (get_purity tenv ~is_inv_by_default callee_pname args)
                   && (* check if all params are invariant *)
-                     List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) params
+                     List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
               | _ ->
                   false ) )
        loop_nodes
@@ -140,16 +141,20 @@ let get_ptr_vars_in_defn_path node loop_head var =
   aux node var ProcessedPairSet.empty
 
 
-let get_vars_to_invalidate node loop_head params invalidated_vars : InvalidatedVars.t =
-  List.fold ~init:invalidated_vars
-    ~f:(fun acc (arg_exp, typ) ->
-      Var.get_all_vars_in_exp arg_exp
-      |> Sequence.fold ~init:acc ~f:(fun acc var ->
-             if is_non_primitive typ then
-               let dep_vars = get_ptr_vars_in_defn_path node loop_head var in
-               InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
-             else acc ) )
-    params
+let get_vars_to_invalidate node loop_head args modified_params invalidated_vars : InvalidatedVars.t
+    =
+  List.foldi ~init:invalidated_vars
+    ~f:(fun i acc (arg_exp, typ) ->
+      if PurityDomain.ModifiedParamIndices.mem i modified_params then (
+        debug "Invalidate %a \n" Exp.pp arg_exp ;
+        Var.get_all_vars_in_exp arg_exp
+        |> Sequence.fold ~init:acc ~f:(fun acc var ->
+               if is_non_primitive typ then
+                 let dep_vars = get_ptr_vars_in_defn_path node loop_head var in
+                 InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
+               else acc ) )
+      else acc )
+    args
 
 
 (* If there is a call to an impure function in the loop, invalidate
@@ -161,10 +166,12 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
-             | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _)
-               when not (is_fun_pure tenv ~is_inv_by_default callee_pname params) ->
-                 get_vars_to_invalidate node loop_head params
-                   (InvalidatedVars.add (Var.of_id id) acc)
+             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) ->
+                 let purity = get_purity tenv ~is_inv_by_default callee_pname args in
+                 Option.value_map (PurityDomain.get_modified_params purity) ~default:acc
+                   ~f:(fun modified_params ->
+                     get_vars_to_invalidate node loop_head args modified_params
+                       (InvalidatedVars.add (Var.of_id id) acc) )
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty

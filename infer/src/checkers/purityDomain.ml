@@ -6,8 +6,34 @@
  *)
 open! IStd
 module F = Format
-module Pure = AbstractDomain.BooleanAnd
+module ModifiedParamIndices = AbstractDomain.FiniteSet (Int)
+module Domain = AbstractDomain.BottomLifted (ModifiedParamIndices)
+include Domain
 
-type summary = Pure.astate
+let pure = AbstractDomain.Types.Bottom
 
-let pp_summary fmt summary = F.fprintf fmt "@\n Purity summary: %a @\n" Pure.pp summary
+let is_pure = Domain.is_empty
+
+let impure modified_args = AbstractDomain.Types.NonBottom modified_args
+
+let with_purity is_pure modified_args =
+  if is_pure then AbstractDomain.Types.Bottom else impure modified_args
+
+
+let all_params_modified args =
+  List.foldi ~init:ModifiedParamIndices.empty
+    ~f:(fun i acc _ -> ModifiedParamIndices.add i acc)
+    args
+
+
+let get_modified_params astate =
+  match astate with
+  | AbstractDomain.Types.NonBottom modified_args ->
+      Some modified_args
+  | AbstractDomain.Types.Bottom ->
+      None
+
+
+type summary = Domain.astate
+
+let pp_summary fmt astate = F.fprintf fmt "@\n Purity summary: %a @\n" Domain.pp astate
