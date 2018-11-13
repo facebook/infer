@@ -336,14 +336,21 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     let pp_symbs fmt (last, others) =
       List.rev_append others [last] |> Pp.seq ~sep:" * " pp_symb_exp fmt
     in
-    let rec pp_sub symbs fmt {const; terms} =
-      if not (NonNegativeInt.is_zero const) then
-        F.fprintf fmt " + %a%a" pp_coeff const pp_symbs symbs ;
-      M.iter (fun s p -> pp_sub (add_symb s symbs) fmt p) terms
+    let rec pp_sub ~print_plus symbs fmt {const; terms} =
+      if not (NonNegativeInt.is_zero const) then (
+        if print_plus then F.pp_print_string fmt " + " ;
+        F.fprintf fmt "%a%a" pp_coeff const pp_symbs symbs ) ;
+      M.iter (fun s p -> pp_sub ~print_plus:true (add_symb s symbs) fmt p) terms
     in
     fun fmt {const; terms} ->
-      NonNegativeInt.pp fmt const ;
-      M.iter (fun s p -> pp_sub ((s, PositiveInt.one), []) fmt p) terms
+      let const_not_zero = not (NonNegativeInt.is_zero const) in
+      if const_not_zero || M.is_empty terms then NonNegativeInt.pp fmt const ;
+      M.fold
+        (fun s p print_plus ->
+          pp_sub ~print_plus ((s, PositiveInt.one), []) fmt p ;
+          true )
+        terms const_not_zero
+      |> ignore
 end
 
 module NonNegativePolynomial = struct
