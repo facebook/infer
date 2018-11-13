@@ -314,7 +314,18 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     fun p eval_sym -> match subst p eval_sym with p -> NonTop p | exception ReturnTop -> Top
 
 
-  let rec degree {terms} : int = M.fold (fun _ p acc -> max acc (degree p + 1)) terms 0
+  (** Emit a pair (d,t) where d is the degree of the polynomial and t is the first term with such degree *)
+  let rec degree_with_term {terms} =
+    M.fold
+      (fun t p acc ->
+        let d, p' = degree_with_term p in
+        max acc (d + 1, mult_symb p' t) )
+      terms (0, one)
+
+
+  let degree p = fst (degree_with_term p)
+
+  let degree_term p = snd (degree_with_term p)
 
   let pp : F.formatter -> t -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
@@ -423,20 +434,9 @@ module NonNegativePolynomial = struct
     match p with
     | Top ->
         Format.pp_print_string fmt "Top"
-    | NonTop p -> (
-      match NonNegativeNonTopPolynomial.degree p with
-      | 0 ->
-          Format.pp_print_string fmt "constant"
-      | 1 ->
-          Format.pp_print_string fmt "linear"
-      | 2 ->
-          Format.pp_print_string fmt "quadratic"
-      | 3 ->
-          Format.pp_print_string fmt "cubic"
-      | 4 ->
-          Format.pp_print_string fmt "quartic"
-      | d ->
-          Format.fprintf fmt "O(N^%d)" d )
+    | NonTop p ->
+        Format.fprintf fmt "O(%a)" NonNegativeNonTopPolynomial.pp
+          (NonNegativeNonTopPolynomial.degree_term p)
 
 
   let encode astate = Marshal.to_string astate [] |> B64.encode
