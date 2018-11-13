@@ -73,7 +73,8 @@ module Symbol = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt {pname; id; unsigned; path; bound_end} ->
-    F.fprintf fmt "%a.%s" SymbolPath.pp path (BoundEnd.to_string bound_end) ;
+    SymbolPath.pp fmt path ;
+    if Config.developer_mode then Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end) ;
     if Config.bo_debug > 1 then
       let symbol_name = if unsigned then 'u' else 's' in
       F.fprintf fmt "(%s-%c$%d)" (Typ.Procname.to_string pname) symbol_name id
