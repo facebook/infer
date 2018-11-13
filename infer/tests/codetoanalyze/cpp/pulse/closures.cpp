@@ -133,3 +133,22 @@ S& FN_ref_capture_return_local_lambda_bad() {
   // woops, this returns a ref to a local!
   return f();
 }
+
+struct C {
+  int val() const;
+  ~C();
+};
+
+struct D {
+  void add(int v);
+  ~D();
+};
+
+void capture_multiple_vars_by_value_ok(C c, C c2) {
+  auto f = [=]() -> D* {
+    auto d = new D();
+    d->add(c.val());
+    d->add(c2.val());
+    return d;
+  };
+}

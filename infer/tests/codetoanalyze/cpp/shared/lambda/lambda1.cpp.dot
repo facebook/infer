@@ -129,6 +129,29 @@ digraph cfg {
 	
 
 	 "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_5" -> "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_4" ;
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_1" [label="1: Start struct_capture\nFormals: \nLocals:  f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 0$?%__sil_tmpSIL_materialize_temp__n$9:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 y:SomeStruct x:SomeStruct \n  " color=yellow style=filled]
+	
+
+	 "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_1" -> "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_6" ;
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_2" [label="2: Exit struct_capture \n  " color=yellow style=filled]
+	
+
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_3" [label="3:  Return Stmt \n   n$1=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_operator()(&f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12&) [line 78, column 10]\n  *&return:int=n$1 [line 78, column 3]\n  _=*&f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 [line 78, column 12]\n  n$3=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_~(&f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*) [line 78, column 12]\n  _=*&y:SomeStruct [line 78, column 12]\n  n$5=_fun_SomeStruct_~SomeStruct(&y:SomeStruct*) [line 78, column 12]\n  _=*&x:SomeStruct [line 78, column 12]\n  n$7=_fun_SomeStruct_~SomeStruct(&x:SomeStruct*) [line 78, column 12]\n " shape="box"]
+	
+
+	 "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_3" -> "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_2" ;
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12) [line 77, column 3]\n  n$12=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$9:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12) [line 77, column 12]\n  n$11=*&x:SomeStruct [line 77, column 12]\n  n$10=*&y:SomeStruct [line 77, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$9:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12=(_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_operator(),(n$11 &x:SomeStruct),(n$10 &y:SomeStruct)) [line 77, column 12]\n  n$13=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_(&f:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*,&0$?%__sil_tmpSIL_materialize_temp__n$9:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12&) [line 77, column 12]\n " shape="box"]
+	
+
+	 "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_4" -> "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_3" ;
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_5" [label="5:  DeclStmt \n   n$16=_fun___variable_initialization(&y:SomeStruct) [line 76, column 3]\n  n$15=_fun_SomeStruct_SomeStruct(&y:SomeStruct*) [line 76, column 14]\n " shape="box"]
+	
+
+	 "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_5" -> "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_4" ;
+"struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_6" [label="6:  DeclStmt \n   n$18=_fun___variable_initialization(&x:SomeStruct) [line 75, column 3]\n  n$17=_fun_SomeStruct_SomeStruct(&x:SomeStruct*) [line 75, column 14]\n " shape="box"]
+	
+
+	 "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_6" -> "struct_capture#7773507847510274281.f3db763dc0b20b24ec397f7802254c90_5" ;
 "capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_1" [label="1: Start Capture_capture_this_explicit\nFormals:  this:Capture*\nLocals:  lambda:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19 0$?%__sil_tmpSIL_materialize_temp__n$3:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19 \n  " color=yellow style=filled]
 	
 
@@ -201,6 +224,24 @@ digraph cfg {
 
 	 "Capture#Capture#{15371931494294124755|constexpr}.9ede96f2e081983279c43accbd64cbd2_1" -> "Capture#Capture#{15371931494294124755|constexpr}.9ede96f2e081983279c43accbd64cbd2_2" ;
 "Capture#Capture#{15371931494294124755|constexpr}.9ede96f2e081983279c43accbd64cbd2_2" [label="2: Exit Capture_Capture \n  " color=yellow style=filled]
+	
+
+"SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_1" [label="1: Start SomeStruct_SomeStruct\nFormals:  this:SomeStruct* __param_0:SomeStruct const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_1" -> "SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_3" ;
+"SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_2" [label="2: Exit SomeStruct_SomeStruct \n  " color=yellow style=filled]
+	
+
+"SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_3" [label="3:  Constructor Init \n   n$2=*&this:SomeStruct* [line 69, column 8]\n  n$3=*&__param_0:SomeStruct const & [line 69, column 8]\n  n$4=*n$3.f:int [line 69, column 8]\n  *n$2.f:int=n$4 [line 69, column 8]\n " shape="box"]
+	
+
+	 "SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_3" -> "SomeStruct#SomeStruct#{11805166137496297040|constexpr}.1073d62b309830aceab7dd0d11fb9801_2" ;
+"SomeStruct#SomeStruct#{2573478938230069461}.1e11401e11e8aaa8f38010f41863587a_1" [label="1: Start SomeStruct_SomeStruct\nFormals:  this:SomeStruct*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "SomeStruct#SomeStruct#{2573478938230069461}.1e11401e11e8aaa8f38010f41863587a_1" -> "SomeStruct#SomeStruct#{2573478938230069461}.1e11401e11e8aaa8f38010f41863587a_2" ;
+"SomeStruct#SomeStruct#{2573478938230069461}.1e11401e11e8aaa8f38010f41863587a_2" [label="2: Exit SomeStruct_SomeStruct \n  " color=yellow style=filled]
 	
 
 "operator()#lambda_shared_lambda_lambda1.cpp:17:17#foo#(10761403337571939980).fc34b2fdd4414d044515387308a2caa2_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:17:17_operator()\nFormals:  this:foo::lambda_shared_lambda_lambda1.cpp:17:17*\nLocals:  \n  " color=yellow style=filled]
@@ -319,7 +360,7 @@ digraph cfg {
 "#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_2" [label="2: Exit Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19_ \n  " color=yellow style=filled]
 	
 
-"#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19* [line 51, column 19]\n  n$3=*&__param_0:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19& [line 51, column 19]\n  n$4=*n$3.:Capture* [line 51, column 19]\n  *n$2.:Capture*=n$4 [line 51, column 19]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19* [line 51, column 19]\n  n$3=*&__param_0:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19& [line 51, column 19]\n  n$4=*n$3.__anon_field_0:Capture* [line 51, column 19]\n  *n$2.__anon_field_0:Capture*=n$4 [line 51, column 19]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_3" -> "#lambda_shared_lambda_lambda1.cpp:51:19#capture_this_explicit#Capture#{15581681824770184595|constexp.7bc69d386faff7f8ffc9dc392a5988cf_2" ;
@@ -337,7 +378,7 @@ digraph cfg {
 "#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_2" [label="2: Exit Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19_ \n  " color=yellow style=filled]
 	
 
-"#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19* [line 55, column 19]\n  n$3=*&__param_0:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19& [line 55, column 19]\n  n$4=_fun_Capture_Capture(n$2.:Capture*,n$3.:Capture&) [line 55, column 19]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19* [line 55, column 19]\n  n$3=*&__param_0:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19& [line 55, column 19]\n  n$4=_fun_Capture_Capture(n$2.__anon_field_0:Capture*,n$3.__anon_field_0:Capture&) [line 55, column 19]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_3" -> "#lambda_shared_lambda_lambda1.cpp:55:19#capture_star_this#Capture#{9456129203468966420|constexpr}.524c805f606049237b74db978143df13_2" ;
@@ -359,7 +400,7 @@ digraph cfg {
 "#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_2" [label="2: Exit Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19_ \n  " color=yellow style=filled]
 	
 
-"#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19* [line 61, column 19]\n  n$3=*&__param_0:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19& [line 61, column 19]\n  n$4=*n$3.:Capture* [line 61, column 19]\n  *n$2.:Capture*=n$4 [line 61, column 19]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19* [line 61, column 19]\n  n$3=*&__param_0:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19& [line 61, column 19]\n  n$4=*n$3.__anon_field_0:Capture* [line 61, column 19]\n  *n$2.__anon_field_0:Capture*=n$4 [line 61, column 19]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_3" -> "#lambda_shared_lambda_lambda1.cpp:61:19#capture_this_with_equal#Capture#{16013381636753347826|conste.5c764d68be3baa1f6ef1128e1dbea59f_2" ;
@@ -381,10 +422,58 @@ digraph cfg {
 "#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_2" [label="2: Exit Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19_ \n  " color=yellow style=filled]
 	
 
-"#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19* [line 65, column 19]\n  n$3=*&__param_0:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19& [line 65, column 19]\n  n$4=*n$3.:Capture* [line 65, column 19]\n  *n$2.:Capture*=n$4 [line 65, column 19]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_3" [label="3:  Constructor Init \n   n$2=*&this:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19* [line 65, column 19]\n  n$3=*&__param_0:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19& [line 65, column 19]\n  n$4=*n$3.__anon_field_0:Capture* [line 65, column 19]\n  *n$2.__anon_field_0:Capture*=n$4 [line 65, column 19]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_3" -> "#lambda_shared_lambda_lambda1.cpp:65:19#capture_this_with_auto#Capture#{10854495330849287568|constex.920289afd6e5ecdf220f6692ec06788a_2" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_operator()\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_3" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 77, column 30]\n  n$1=*&y.f:int [line 77, column 36]\n  *&return:int=(n$0 + n$1) [line 77, column 23]\n " shape="box"]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(3957024350029978205).24bdda6ed01a44c4f20e0211a02e4440_2" ;
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* __param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_1" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_4" ;
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_ \n  " color=yellow style=filled]
+	
+
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_3" [label="3:  Constructor Init \n   n$2=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  n$3=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$4=_fun_SomeStruct_SomeStruct(n$2.__anon_field_1:SomeStruct*,n$3.__anon_field_1:SomeStruct&) [line 77, column 12]\n " shape="box"]
+	
+
+	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_3" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_2" ;
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_4" [label="4:  Constructor Init \n   n$5=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  n$6=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$7=_fun_SomeStruct_SomeStruct(n$5.__anon_field_0:SomeStruct*,n$6.__anon_field_0:SomeStruct&) [line 77, column 12]\n " shape="box"]
+	
+
+	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_4" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{11897634387038574730|constexpr}.496c30dbc77f6f3561a71876edb6137e_3" ;
+"__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12___infer_inner_destructor_~\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_1" -> "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" ;
+"__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12___infer_inner_destructor_~ \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" [label="3:  Destruction \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0.__anon_field_1:SomeStruct [line 77, column 12]\n  n$4=_fun_SomeStruct_~SomeStruct(n$0.__anon_field_1:SomeStruct*) [line 77, column 12]\n  _=*n$0.__anon_field_0:SomeStruct [line 77, column 12]\n  n$2=_fun_SomeStruct_~SomeStruct(n$0.__anon_field_0:SomeStruct*) [line 77, column 12]\n " shape="box"]
+	
+
+	 "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" -> "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_2" ;
+"~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_1" [label="1: Start struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_~\nFormals:  this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_1" -> "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" ;
+"~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12_~ \n  " color=yellow style=filled]
+	
+
+"~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" [label="3:  Destruction \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 [line 77, column 12]\n  n$2=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12___infer_inner_destructor_~(n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*) [line 77, column 12]\n " shape="box"]
+	
+
+	 "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" -> "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_2" ;
 "operator()#lambda_shared_lambda_lambda1.cpp:9:15#bar#(7708532531154088338).ffe36bb5dd46814f3461661fb80e3e06_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:9:15_operator()\nFormals:  this:bar::lambda_shared_lambda_lambda1.cpp:9:15*\nLocals:  i:int \n  " color=yellow style=filled]
 	
 

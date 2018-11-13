@@ -65,3 +65,15 @@ class Capture {
     auto lambda = [&]() { return this; };
   }
 };
+
+struct SomeStruct {
+  int f;
+  ~SomeStruct();
+};
+
+int struct_capture() {
+  SomeStruct x;
+  SomeStruct y;
+  auto f = [x, y]() { return x.f + y.f; };
+  return f();
+}
