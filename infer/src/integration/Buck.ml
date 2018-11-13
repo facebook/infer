@@ -122,7 +122,22 @@ end
 let accepted_buck_commands = ["build"]
 
 let parameters_with_argument =
-  ["--build-report"; "--config"; "-j"; "--num-threads"; "--out"; "-v"; "--verbose"]
+  [ "--buck-binary"
+  ; "--build-report"
+  ; "--build-state-file"
+  ; "-c"
+  ; "--config"
+  ; "--config-file"
+  ; "-j"
+  ; "--just-build"
+  ; "--num-threads"
+  ; "--out"
+  ; "--output-events-to-file"
+  ; "--output-test-events-to-file"
+  ; "--rulekeys-log-path"
+  ; "--target-platforms"
+  ; "-v"
+  ; "--verbose" ]
 
 
 let get_accepted_buck_kinds_pattern () =
