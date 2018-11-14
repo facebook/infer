@@ -61,18 +61,25 @@ module SymLinear = struct
     (singleton_one lb, singleton_one ub)
 
 
-  let pp1 : F.formatter -> Symb.Symbol.t * NonZeroInt.t -> unit =
-   fun fmt (s, c) ->
+  let pp1 : is_beginning:bool -> F.formatter -> Symb.Symbol.t -> NonZeroInt.t -> unit =
+   fun ~is_beginning f s c ->
     let c = (c :> Z.t) in
-    if Z.(equal c one) then Symb.Symbol.pp fmt s
-    else if Z.(equal c minus_one) then F.fprintf fmt "-%a" Symb.Symbol.pp s
-    else F.fprintf fmt "%ax%a" Z.pp_print c Symb.Symbol.pp s
+    let c =
+      if is_beginning then c
+      else if Z.gt c Z.zero then ( F.pp_print_string f " + " ; c )
+      else ( F.pp_print_string f " - " ; Z.neg c )
+    in
+    if Z.(equal c one) then Symb.Symbol.pp f s
+    else if Z.(equal c minus_one) then F.fprintf f "-%a" Symb.Symbol.pp s
+    else F.fprintf f "%a⋅%a" Z.pp_print c Symb.Symbol.pp s
 
 
-  let pp : F.formatter -> t -> unit =
-   fun fmt x ->
-    if M.is_empty x then F.pp_print_string fmt "empty"
-    else Pp.seq ~sep:" + " pp1 fmt (M.bindings x)
+  let pp : is_beginning:bool -> F.formatter -> t -> unit =
+   fun ~is_beginning f x ->
+    if M.is_empty x then if is_beginning then F.pp_print_string f "0" else ()
+    else
+      (M.fold (fun s c is_beginning -> pp1 ~is_beginning f s c ; false) x is_beginning : bool)
+      |> ignore
 
 
   let zero : t = M.empty
@@ -225,19 +232,22 @@ module Bound = struct
   let equal = [%compare.equal: t]
 
   let pp : F.formatter -> t -> unit =
-   fun fmt -> function
+   fun f -> function
     | MInf ->
-        F.pp_print_string fmt "-oo"
+        F.pp_print_string f "-oo"
     | PInf ->
-        F.pp_print_string fmt "+oo"
+        F.pp_print_string f "+oo"
     | Linear (c, x) ->
-        if SymLinear.is_zero x then Z.pp_print fmt c
-        else if Z.(equal c zero) then SymLinear.pp fmt x
-        else F.fprintf fmt "%a + %a" SymLinear.pp x Z.pp_print c
+        if SymLinear.is_zero x then Z.pp_print f c
+        else (
+          SymLinear.pp ~is_beginning:true f x ;
+          if not Z.(equal c zero) then
+            if Z.gt c Z.zero then F.fprintf f " + %a" Z.pp_print c
+            else F.fprintf f " - %a" Z.pp_print (Z.neg c) )
     | MinMax (c, sign, m, d, x) ->
-        if Z.(equal c zero) then (Sign.pp ~need_plus:false) fmt sign
-        else F.fprintf fmt "%a%a" Z.pp_print c (Sign.pp ~need_plus:true) sign ;
-        F.fprintf fmt "%a(%a, %a)" MinMax.pp m Z.pp_print d Symb.Symbol.pp x
+        if Z.(equal c zero) then (Sign.pp ~need_plus:false) f sign
+        else F.fprintf f "%a%a" Z.pp_print c (Sign.pp ~need_plus:true) sign ;
+        F.fprintf f "%a(%a, %a)" MinMax.pp m Z.pp_print d Symb.Symbol.pp x
 
 
   let of_bound_end = function Symb.BoundEnd.LowerBound -> MInf | Symb.BoundEnd.UpperBound -> PInf

@@ -33,7 +33,7 @@ codetoanalyze/c/bufferoverrun/array_content.c, array_min_index_from_one_FP, 3, C
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_arr10_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_arr_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_ptr_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
-codetoanalyze/c/bufferoverrun/array_dynlength.c, init_variable_array, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Offset: [3xlen + 1, 3xlen + 1] Size: [3xlen + 1, 3xlen + 1]]
+codetoanalyze/c/bufferoverrun/array_dynlength.c, init_variable_array, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Offset: [3⋅len + 1, 3⋅len + 1] Size: [3⋅len + 1, 3⋅len + 1]]
 codetoanalyze/c/bufferoverrun/array_field.c, array_field_access_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 20 Size: 10]
 codetoanalyze/c/bufferoverrun/array_field.c, decreasing_pointer_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Assignment,Assignment,Assignment,ArrayAccess: Offset: -1 Size: 2]
 codetoanalyze/c/bufferoverrun/big_array.c, use_big_array_bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,ArrayDeclaration,Assignment,Return,Assignment,ArrayAccess: Offset: 999999999 Size: 26460]

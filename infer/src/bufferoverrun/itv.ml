@@ -333,7 +333,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
       else ((s, PositiveInt.one), last :: others)
     in
     let pp_coeff fmt (c : NonNegativeInt.t) =
-      if Z.((c :> Z.t) > one) then F.fprintf fmt "%a * " NonNegativeInt.pp c
+      if Z.((c :> Z.t) > one) then F.fprintf fmt "%a ⋅ " NonNegativeInt.pp c
     in
     let pp_exp fmt (e : PositiveInt.t) =
       if Z.((e :> Z.t) > one) then F.fprintf fmt "^%a" PositiveInt.pp e
@@ -345,22 +345,33 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     let pp_symb fmt symb = pp_magic_parentheses S.pp fmt symb in
     let pp_symb_exp fmt (symb, exp) = F.fprintf fmt "%a%a" pp_symb symb pp_exp exp in
     let pp_symbs fmt (last, others) =
-      List.rev_append others [last] |> Pp.seq ~sep:" * " pp_symb_exp fmt
+      List.rev_append others [last] |> Pp.seq ~sep:" × " pp_symb_exp fmt
     in
     let rec pp_sub ~print_plus symbs fmt {const; terms} =
-      if not (NonNegativeInt.is_zero const) then (
-        if print_plus then F.pp_print_string fmt " + " ;
-        F.fprintf fmt "%a%a" pp_coeff const pp_symbs symbs ) ;
-      M.iter (fun s p -> pp_sub ~print_plus:true (add_symb s symbs) fmt p) terms
+      let print_plus =
+        if not (NonNegativeInt.is_zero const) then (
+          if print_plus then F.pp_print_string fmt " + " ;
+          F.fprintf fmt "%a%a" pp_coeff const pp_symbs symbs ;
+          true )
+        else print_plus
+      in
+      ( M.fold
+          (fun s p print_plus ->
+            pp_sub ~print_plus (add_symb s symbs) fmt p ;
+            true )
+          terms print_plus
+        : bool )
+      |> ignore
     in
     fun fmt {const; terms} ->
       let const_not_zero = not (NonNegativeInt.is_zero const) in
       if const_not_zero || M.is_empty terms then NonNegativeInt.pp fmt const ;
-      M.fold
-        (fun s p print_plus ->
-          pp_sub ~print_plus ((s, PositiveInt.one), []) fmt p ;
-          true )
-        terms const_not_zero
+      ( M.fold
+          (fun s p print_plus ->
+            pp_sub ~print_plus ((s, PositiveInt.one), []) fmt p ;
+            true )
+          terms const_not_zero
+        : bool )
       |> ignore
 end
 
