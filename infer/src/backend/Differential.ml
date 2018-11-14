@@ -150,9 +150,13 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
           CostDomain.BasicCost.pp_degree cost_polynomial
       else ()
     in
-    Format.asprintf "Complexity of this function has %a from %a to %a.%a" pp_delta delta
-      CostDomain.BasicCost.pp_degree_hum prev_cost CostDomain.BasicCost.pp_degree_hum curr_cost
-      pp_raw_cost curr_cost
+    Format.asprintf "Complexity of this function has %a from %a to %a.%a"
+      (MarkupFormatter.wrap_bold pp_delta)
+      delta
+      (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
+      prev_cost
+      (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
+      curr_cost pp_raw_cost curr_cost
   in
   let line = cost_info.Jsonbug_t.loc.lnum in
   let column = cost_info.Jsonbug_t.loc.cnum in
