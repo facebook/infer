@@ -24,6 +24,8 @@ codetoanalyze/cpp/bufferoverrun/class.cpp, placement_new_overload1_Bad, 3, BUFFE
 codetoanalyze/cpp/bufferoverrun/class.cpp, placement_new_overload2_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/class.cpp, return_class_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Return,ArrayAccess: Offset: 5 Size: 5]
 codetoanalyze/cpp/bufferoverrun/class.cpp, use_global_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 32 Size: 30]
+codetoanalyze/cpp/bufferoverrun/cpp_is_tricky.cpp, CppIsTricky::vector_size_Bad, 1, BUFFER_OVERRUN_U5, no_bucket, ERROR, [Unknown value from: __infer_skip_function,Call,Parameter: __il,ArrayAccess: Offset: [-oo, +oo] Size: [0, +oo]]
+codetoanalyze/cpp/bufferoverrun/cpp_is_tricky.cpp, CppIsTricky::vector_size_Bad, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Assignment,Binop: (1 - [0, +oo]):unsigned64]
 codetoanalyze/cpp/bufferoverrun/external.cpp, extern_bad, 5, BUFFER_OVERRUN_U5, no_bucket, ERROR, [Unknown value from: lib,Assignment,ArrayAccess: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/external.cpp, extern_bad, 10, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 30 Size: 10]
 codetoanalyze/cpp/bufferoverrun/folly_split.cpp, folly_split::do_not_ignore_empty2_Good, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Call,Call,Binop: (4 * [1, +oo]):unsigned64]

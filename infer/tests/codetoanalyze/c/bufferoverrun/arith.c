@@ -445,3 +445,8 @@ void band_negative_Bad() {
     }
   }
 }
+
+#define FOUR_GIGABYTES 0xFFFFFFFF
+#define ALMOST_FOUR_GIGABYTES (85 * FOUR_GIGABYTES / 100)
+
+void simple_overflow_Bad() { auto x = ALMOST_FOUR_GIGABYTES; }

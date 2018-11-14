@@ -27,3 +27,34 @@ void diverge_on_narrowing() {
     x = x->f;
   }
 }
+
+void join_minmax_with_sum_unsigned_Good(unsigned int x, unsigned int y) {
+  char a[x + y + 1];
+  int i = 0;
+  while (i < x + y) {
+    if (i > 5) {
+      y = 0;
+    }
+    i++;
+  }
+  a[i] = 2;
+}
+
+void call_join_minmax_with_sum_unsigned_Good() {
+  join_minmax_with_sum_unsigned_Good(15, 50);
+}
+
+void join_minmax_with_sum_signed_Good_FP(int x, int y) {
+  int s = x + y;
+  if (s < 0)
+    s = 0;
+  char a[s + 1];
+  int i = 0;
+  while (i < x + y) {
+    if (i > 5) {
+      y = 0;
+    }
+    i++;
+  }
+  a[i] = 2;
+}
