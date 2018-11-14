@@ -157,9 +157,10 @@ module Exec = struct
           Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       )
     in
+    let deref_path = Itv.SymbolPath.index path in
     let allocsite =
       let alloc_num = Itv.Counter.next new_alloc_num in
-      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
+      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some deref_path)
     in
     let mem =
       let arr =
@@ -172,13 +173,12 @@ module Exec = struct
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
     let deref_loc = Loc.of_allocsite allocsite in
-    let path = Itv.SymbolPath.index path in
     let represents_multiple_values =
       match array_kind with CSymArray_Array -> true | CSymArray_Pointer -> false
       (* unsound but avoids many FPs for non-array pointers *)
     in
-    decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth deref_loc
-      typ mem
+    decl_sym_val pname deref_path tenv ~node_hash location ~represents_multiple_values ~depth
+      deref_loc typ mem
 
 
   let decl_sym_java_ptr :
