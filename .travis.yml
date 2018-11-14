@@ -2,7 +2,6 @@ sudo: required
 language: c
 os:
   - linux
-  - osx
 services: docker
 osx_image: xcode7.3
 before_install:

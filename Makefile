@@ -776,7 +776,7 @@ devsetup: Makefile.autoconf
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Please run:$(TERM_RESET)' >&2; \
 	  echo >&2; \
-	  echo '$(TERM_INFO)  eval $$(opam config env)$(TERM_RESET)' >&2; \
+	  echo "$(TERM_INFO)  eval \$$($(OPAM) config env)$(TERM_RESET)" >&2; \
 	fi
 
 GHPAGES ?= no
