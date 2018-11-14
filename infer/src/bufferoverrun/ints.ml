@@ -91,5 +91,13 @@ module PositiveInt = struct
 
   let succ = Z.succ
 
-  let pp = Z.pp_print
+  let ten = Z.of_int 10
+
+  let exponent_chars = [|"⁰"; "¹"; "²"; "³"; "⁴"; "⁵"; "⁶"; "⁷"; "⁸"; "⁹"|]
+
+  let rec pp_exponent f i =
+    if not Z.(i <= zero) then (
+      let d, r = Z.ediv_rem i ten in
+      pp_exponent f d ;
+      F.pp_print_string f exponent_chars.(Z.to_int r) )
 end

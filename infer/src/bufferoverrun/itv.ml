@@ -336,7 +336,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
       if Z.((c :> Z.t) > one) then F.fprintf fmt "%a ⋅ " NonNegativeInt.pp c
     in
     let pp_exp fmt (e : PositiveInt.t) =
-      if Z.((e :> Z.t) > one) then F.fprintf fmt "^%a" PositiveInt.pp e
+      if Z.((e :> Z.t) > one) then PositiveInt.pp_exponent fmt e
     in
     let pp_magic_parentheses pp fmt x =
       let s = F.asprintf "%a" pp x in

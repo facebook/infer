@@ -81,5 +81,5 @@ module PositiveInt : sig
 
   val succ : t -> t
 
-  val pp : F.formatter -> t -> unit
+  val pp_exponent : F.formatter -> t -> unit
 end
