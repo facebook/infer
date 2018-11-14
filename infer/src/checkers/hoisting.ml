@@ -75,8 +75,17 @@ let do_report summary Call.({pname; loc}) loop_head_loc =
   Reporting.log_error summary ~loc ~ltr IssueType.invariant_call message
 
 
-let should_report proc_desc Call.({pname; node; params}) inferbo_invariant_map =
-  (not Config.hoisting_report_only_expensive)
+let should_report tenv proc_desc Call.({pname; node; params}) inferbo_invariant_map =
+  (* If a function is modeled as variant for hoisting (like
+     List.size or __cast ), we don't want to report it *)
+  let is_variant_for_hoisting =
+    match InvariantModels.Call.dispatch tenv pname [] with
+    | Some inv ->
+        InvariantModels.is_variant_for_hoisting inv
+    | None ->
+        false
+  in
+  ((not is_variant_for_hoisting) && not Config.hoisting_report_only_expensive)
   ||
   (* only report if function call has expensive/symbolic cost *)
   match Ondemand.analyze_proc_name pname with
@@ -120,7 +129,7 @@ let checker ({Callbacks.tenv; summary; proc_desc} as callback_args) : Summary.t 
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
         (fun call ->
-          if should_report proc_desc call inferbo_invariant_map then
+          if should_report tenv proc_desc call inferbo_invariant_map then
             do_report summary call loop_head_loc )
         inv_instrs )
     loop_head_to_inv_instrs ;

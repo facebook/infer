@@ -6,6 +6,8 @@ codetoanalyze/java/hoisting/Hoist.java, Hoist.clash_function_calls_hoist(int):vo
 codetoanalyze/java/hoisting/Hoist.java, Hoist.dep_not_invariant_dont_hoist(int,int[]):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Hoist.dep_not_invariant_dont_hoist(int,int[])]
 codetoanalyze/java/hoisting/Hoist.java, Hoist.dumb_foo():void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Hoist.dumb_foo()]
 codetoanalyze/java/hoisting/Hoist.java, Hoist.foo(int,int):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int Hoist.foo(int,int)]
+codetoanalyze/java/hoisting/Hoist.java, Hoist.get_array_length_dont_hoist(int[]):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Hoist.get_array_length_dont_hoist(int[])]
+codetoanalyze/java/hoisting/Hoist.java, Hoist.instanceof_dont_hoist(Hoist$EmptyFoo):boolean, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function boolean Hoist.instanceof_dont_hoist(Hoist$EmptyFoo)]
 codetoanalyze/java/hoisting/Hoist.java, Hoist.legit_hoist(int,int[]):void, 5, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int Hoist.foo(int,int) at line 73]
 codetoanalyze/java/hoisting/Hoist.java, Hoist.loop_guard_hoist(int,int[]):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Hoist.loop_guard_hoist(int,int[])]
 codetoanalyze/java/hoisting/Hoist.java, Hoist.loop_guard_hoist(int,int[]):void, 4, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to int Hoist.foo(int,int) at line 65]

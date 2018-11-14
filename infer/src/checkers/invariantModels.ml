@@ -6,27 +6,32 @@
  *)
 
 open! IStd
+module BuiltinInvariantSet = Caml.Set.Make (String)
 
 type model = Invariant | Variant | VariantForHoisting
 
-(* Even though functions marked with VariantForHoisting are pure, we
-   don't want to report them in hoisting. Hence, we model them as
-   Variant. *)
-let is_invariant = function
-  | Invariant ->
-      true
-  | VariantForHoisting ->
-      not Config.loop_hoisting
-  | Variant ->
-      false
+let is_invariant = function Invariant -> true | VariantForHoisting -> true | Variant -> false
 
+let is_variant_for_hoisting = function VariantForHoisting -> true | _ -> false
+
+let invariants =
+  BuiltinInvariantSet.of_list
+    [ "__instanceof"
+    ; "__cast"
+    ; "__get_array_length"
+    ; "__get_type_of"
+    ; "__infer_assume"
+    ; "__infer_skip"
+    ; "__infer_fail" ]
+
+
+let invariant_builtins _ s = BuiltinInvariantSet.mem s invariants
 
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     make_dispatcher
-      [ -"__cast" <>--> VariantForHoisting
-      ; +PatternMatch.implements_collection &:: "iterator" <>--> Variant
+      [ +PatternMatch.implements_collection &:: "iterator" <>--> Variant
       ; +PatternMatch.implements_iterator &:: "hasNext" <>--> Variant
       ; +PatternMatch.implements_enumeration &:: "hasMoreElements" <>--> Variant
       ; +PatternMatch.implements_enumeration &:: "nextElement" <>--> Variant
@@ -63,7 +68,7 @@ module Call = struct
       ; +PatternMatch.implements_io "Reader" &:: "read" <>--> Variant
       ; +PatternMatch.implements_io "BufferedReader" &:: "readLine" <>--> Variant
       ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> Invariant
-      ; -"__new" <>--> Variant
+      ; +invariant_builtins <>--> VariantForHoisting
       ; +(fun _ name -> BuiltinDecl.is_declared (Typ.Procname.from_string_c_fun name))
-        <>--> VariantForHoisting ]
+        <>--> Variant ]
 end
