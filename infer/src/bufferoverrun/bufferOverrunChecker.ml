@@ -52,7 +52,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Option.find_map (Loc.get_path l) ~f:(fun partial ->
             try
               let locs = eval_locs_sympath_partial partial in
-              if PowLoc.is_singleton locs then Some (PowLoc.choose locs) else None
+              match PowLoc.is_singleton_or_more locs with
+              | IContainer.Singleton loc ->
+                  Some loc
+              | _ ->
+                  None
             with Caml.Not_found -> None )
       in
       let ret_alias =
@@ -182,19 +186,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let mem = Dom.Mem.update_mem locs v mem in
         let mem =
-          if PowLoc.is_singleton locs && not v.represents_multiple_values then
-            let loc_v = PowLoc.min_elt locs in
-            let pname = Procdesc.get_proc_name pdesc in
-            match Typ.Procname.get_method pname with
-            | "__inferbo_empty" when Loc.is_return loc_v -> (
-              match Sem.get_formals pdesc with
-              | [(formal, _)] ->
-                  let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
-                  Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
-              | _ ->
-                  assert false )
+          if not v.represents_multiple_values then
+            match PowLoc.is_singleton_or_more locs with
+            | IContainer.Singleton loc_v -> (
+                let pname = Procdesc.get_proc_name pdesc in
+                match Typ.Procname.get_method pname with
+                | "__inferbo_empty" when Loc.is_return loc_v -> (
+                  match Sem.get_formals pdesc with
+                  | [(formal, _)] ->
+                      let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
+                      Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+                  | _ ->
+                      assert false )
+                | _ ->
+                    Dom.Mem.store_simple_alias loc_v exp2 mem )
             | _ ->
-                Dom.Mem.store_simple_alias loc_v exp2 mem
+                mem
           else mem
         in
         let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in

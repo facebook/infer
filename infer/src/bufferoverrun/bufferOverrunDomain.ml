@@ -526,9 +526,11 @@ module Alias = struct
    fun formal loc e a ->
     let a = lift (AliasMap.store loc e) a in
     let locs = Val.get_all_locs formal in
-    if PowLoc.is_singleton locs then
-      (fst a, AliasRet.L (AliasTarget.of_empty (PowLoc.min_elt locs)))
-    else a
+    match PowLoc.is_singleton_or_more locs with
+    | IContainer.Singleton loc ->
+        (fst a, AliasRet.L (AliasTarget.of_empty loc))
+    | _ ->
+        a
 
 
   let remove_temp : Ident.t -> astate -> astate =

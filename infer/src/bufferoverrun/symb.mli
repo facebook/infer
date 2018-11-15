@@ -63,8 +63,6 @@ module SymbolMap : sig
   include PrettyPrintable.PPMap with type key = Symbol.t
 
   val for_all2 : f:(key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool
-
-  val is_singleton : 'a t -> (key * 'a) option
 end
 
 module SymbolTable : sig

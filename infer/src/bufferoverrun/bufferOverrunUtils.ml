@@ -26,8 +26,12 @@ module Exec = struct
     let locs = val_ |> Dom.Val.get_all_locs in
     let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
-    if PowLoc.is_singleton locs && not v.represents_multiple_values then
-      Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
+    if not v.represents_multiple_values then
+      match PowLoc.is_singleton_or_more locs with
+      | IContainer.Singleton loc ->
+          Dom.Mem.load_simple_alias id loc mem
+      | _ ->
+          mem
     else mem
 
 

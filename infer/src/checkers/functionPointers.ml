@@ -46,10 +46,15 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
 
 let find_procname var astate =
   match Domain.find_opt (Ident.to_string var) astate with
-  | Some procnames ->
-      if ProcnameSet.is_empty procnames then None
-      else Some (ProcnameSet.min_elt procnames)
-        (* TODO: handle multiple procnames, e.g. with non-determinism branching *)
+  | Some procnames -> (
+    match ProcnameSet.is_singleton_or_more procnames with
+    | IContainer.Empty ->
+        None
+    | IContainer.Singleton procname ->
+        Some procname
+    | IContainer.More ->
+        Some (ProcnameSet.min_elt procnames)
+        (* TODO: handle multiple procnames, e.g. with non-determinism branching *) )
   | None ->
       None
 

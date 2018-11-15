@@ -154,10 +154,11 @@ let normalize : astate -> astate = fun a -> map ArrInfo.normalize a
 
 let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> astate -> astate -> astate =
  fun arr_info_prune a1 a2 ->
-  if Int.equal (cardinal a2) 1 then
-    let k, v2 = choose a2 in
-    if mem k a1 then add k (arr_info_prune (find k a1) v2) a1 else a1
-  else a1
+  match is_singleton_or_more a2 with
+  | IContainer.Singleton (k, v2) ->
+      if mem k a1 then add k (arr_info_prune (find k a1) v2) a1 else a1
+  | _ ->
+      a1
 
 
 let prune_comp : Binop.t -> astate -> astate -> astate =

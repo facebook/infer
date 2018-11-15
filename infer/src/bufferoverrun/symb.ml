@@ -123,13 +123,4 @@ module SymbolMap = struct
         true
     | exception Exit ->
         false
-
-
-  let is_singleton : 'a t -> (key * 'a) option =
-   fun m ->
-    if is_empty m then None
-    else
-      let ((kmin, _) as binding) = min_binding m in
-      let kmax, _ = max_binding m in
-      if Symbol.equal kmin kmax then Some binding else None
 end

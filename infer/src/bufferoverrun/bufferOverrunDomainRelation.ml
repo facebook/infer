@@ -1364,25 +1364,24 @@ module Make (Manager : Manager_S) = struct
         VarSet.fold (fun var acc -> VarMap.add var id acc) vars pack_ids
       in
       let vars_ids = pack_ids_of_vars vars x in
-      let num_vars_ids = PackSet.cardinal vars_ids in
-      if Int.equal num_vars_ids 0 then
-        let id = get_new_id () in
-        {x with pack_ids= set_pack_id_of_vars vars id x.pack_ids}
-      else if Int.equal num_vars_ids 1 then
-        let id = PackSet.choose vars_ids in
-        {x with pack_ids= set_pack_id_of_vars vars id x.pack_ids}
-      else
-        let id = PackSet.min_elt vars_ids in
-        let other_ids = PackSet.remove id vars_ids in
-        let pack_ids =
-          x.pack_ids |> set_pack_id_of_vars vars id
-          |> VarMap.map (PackSet.subst ~from:other_ids ~to_:id)
-        in
-        let packs =
-          let v = val_of_pack_ids vars_ids x in
-          x.packs |> PackMap.remove_packs other_ids |> PackMap.add id v
-        in
-        {pack_ids; packs}
+      match PackSet.is_singleton_or_more vars_ids with
+      | IContainer.Empty ->
+          let id = get_new_id () in
+          {x with pack_ids= set_pack_id_of_vars vars id x.pack_ids}
+      | IContainer.Singleton id ->
+          {x with pack_ids= set_pack_id_of_vars vars id x.pack_ids}
+      | IContainer.More ->
+          let id = PackSet.min_elt vars_ids in
+          let other_ids = PackSet.remove id vars_ids in
+          let pack_ids =
+            x.pack_ids |> set_pack_id_of_vars vars id
+            |> VarMap.map (PackSet.subst ~from:other_ids ~to_:id)
+          in
+          let packs =
+            let v = val_of_pack_ids vars_ids x in
+            x.packs |> PackMap.remove_packs other_ids |> PackMap.add id v
+          in
+          {pack_ids; packs}
 
 
     let subst ~forget_free subst_map x =

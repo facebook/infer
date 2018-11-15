@@ -16,6 +16,7 @@ val singleton_or_more :
 (* O(1) *)
 
 val is_singleton : fold:('t, 'a, 'a singleton_or_more) Container.fold -> 't -> bool
+  [@@warning "-32"]
 
 val mem_nth : fold:('t, _, int) Container.fold -> 't -> int -> bool
 

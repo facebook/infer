@@ -122,9 +122,6 @@ module PowLoc = struct
   let append_field ploc ~fn =
     if is_bot ploc then singleton Loc.unknown
     else fold (fun l -> add (Loc.append_field l ~fn)) ploc empty
-
-
-  let is_singleton x = Int.equal (cardinal x) 1
 end
 
 (** unsound but ok for bug catching *)
@@ -133,5 +130,9 @@ let always_strong_update = true
 let can_strong_update : PowLoc.t -> bool =
  fun ploc ->
   if always_strong_update then true
-  else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
-  else false
+  else
+    match PowLoc.is_singleton_or_more ploc with
+    | IContainer.Singleton loc ->
+        Loc.is_var loc
+    | _ ->
+        false

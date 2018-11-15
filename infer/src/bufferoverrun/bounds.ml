@@ -104,8 +104,8 @@ module SymLinear = struct
      given coefficient. *)
   let one_symbol_of_coeff : NonZeroInt.t -> t -> Symb.Symbol.t option =
    fun coeff x ->
-    match M.is_singleton x with
-    | Some (k, v) when Z.equal (v :> Z.t) (coeff :> Z.t) ->
+    match M.is_singleton_or_more x with
+    | IContainer.Singleton (k, v) when Z.equal (v :> Z.t) (coeff :> Z.t) ->
         Some k
     | _ ->
         None

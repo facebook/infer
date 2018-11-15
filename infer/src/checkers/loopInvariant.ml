@@ -44,27 +44,23 @@ let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ
 let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_default
     is_exp_invariant =
   let equals_var id = Var.equal var (Var.of_id id) in
-  (* Use O(1) is_singleton check *)
-  (* tedious parameter wrangling to make IContainer's fold interface happy *)
-  IContainer.is_singleton
-    ~fold:(fun s ~init ~f -> LoopNodes.fold (fun node acc -> f acc node) s init)
-    loop_nodes
-  && LoopNodes.for_all
-       (fun node ->
-         Procdesc.Node.get_instrs node
-         |> Instrs.exists ~f:(function
-              | Sil.Load (id, exp_rhs, _, _) when equals_var id && is_exp_invariant exp_rhs ->
-                  true
-              | Sil.Store (exp_lhs, _, exp_rhs, _)
-                when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
-                  true
-              | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
-                  PurityDomain.is_pure (get_purity tenv ~is_inv_by_default callee_pname args)
-                  && (* check if all params are invariant *)
-                     List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
-              | _ ->
-                  false ) )
-       loop_nodes
+  match LoopNodes.is_singleton_or_more loop_nodes with
+  | IContainer.Singleton node ->
+      Procdesc.Node.get_instrs node
+      |> Instrs.exists ~f:(function
+           | Sil.Load (id, exp_rhs, _, _) when equals_var id && is_exp_invariant exp_rhs ->
+               true
+           | Sil.Store (exp_lhs, _, exp_rhs, _)
+             when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
+               true
+           | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
+               PurityDomain.is_pure (get_purity tenv ~is_inv_by_default callee_pname args)
+               && (* check if all params are invariant *)
+                  List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
+           | _ ->
+               false )
+  | _ ->
+      false
 
 
 let is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs exp =

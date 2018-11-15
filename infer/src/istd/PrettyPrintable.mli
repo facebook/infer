@@ -21,6 +21,8 @@ end
 module type PPSet = sig
   include Caml.Set.S
 
+  val is_singleton_or_more : t -> elt IContainer.singleton_or_more
+
   val pp_element : F.formatter -> elt -> unit
 
   val pp : F.formatter -> t -> unit
@@ -28,6 +30,8 @@ end
 
 module type PPMap = sig
   include Caml.Map.S
+
+  val is_singleton_or_more : 'a t -> (key * 'a) IContainer.singleton_or_more
 
   val pp_key : F.formatter -> key -> unit
 
