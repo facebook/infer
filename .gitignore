@@ -76,6 +76,9 @@ ocaml.prefs
 /infer/src/.paths
 org.eclipse.core.resources.prefs
 
+# vscode
+.vscode/
+
 # Arcanist
 /arcanist/.phutil_module_cache
 
