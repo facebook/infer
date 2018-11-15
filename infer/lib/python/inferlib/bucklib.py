@@ -114,7 +114,7 @@ class NotFoundInJar(Exception):
 
 def load_json_report(opened_jar, path):
     try:
-        return json.loads(opened_jar.read(path).decode())
+        return json.loads(opened_jar.read(path).decode('utf-8'))
     except KeyError:
         raise NotFoundInJar
 
