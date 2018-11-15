@@ -458,18 +458,21 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
                  ~f:(fun acc (endpoint_pname, {order; ui}) ->
-                   (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
+                   (* skip methods on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
                      OrderDomain.fold
                        (report_remote_block ui_explain event endpoint_lock endpoint_pname)
                        order acc
                    else acc ) )
   in
-  match ui with
-  | AbstractDomain.Types.Bottom ->
-      report_map'
-  | AbstractDomain.Types.NonBottom ui_explain ->
-      EventDomain.fold (report_on_current_elem ui_explain) events report_map'
+  (* do not report starvation/strict mode warnings on constructors, keep that for callers *)
+  if Typ.Procname.is_constructor current_pname then report_map'
+  else
+    match ui with
+    | AbstractDomain.Types.Bottom ->
+        report_map'
+    | AbstractDomain.Types.NonBottom ui_explain ->
+        EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
 let reporting {Callbacks.procedures; source_file} =
