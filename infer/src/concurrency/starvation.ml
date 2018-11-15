@@ -231,11 +231,10 @@ end = struct
       if Reporting.is_suppressed tenv pdesc issue_type then ()
       else Reporting.log_issue_external pname Exceptions.Error ~loc ~ltr issue_type message
     in
-    let mk_deduped_report reports ({message} as report) =
+    let mk_deduped_report ({message} as report) =
       { report with
-        message=
-          Printf.sprintf "%s %d more report(s) on the same line suppressed." message
-            (List.length reports - 1) }
+        message= Printf.sprintf "%s Additional report(s) on the same line were suppressed." message
+      }
     in
     let log_reports compare loc = function
       | [] ->
@@ -244,7 +243,7 @@ end = struct
           log_report loc report
       | reports ->
           List.max_elt ~compare reports
-          |> Option.iter ~f:(fun (_, rep) -> mk_deduped_report reports rep |> log_report loc)
+          |> Option.iter ~f:(fun (_, rep) -> mk_deduped_report rep |> log_report loc)
     in
     let filter_map_deadlock = function {problem= Deadlock l} as r -> Some (l, r) | _ -> None in
     let filter_map_starvation = function
