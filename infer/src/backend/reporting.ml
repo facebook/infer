@@ -92,9 +92,16 @@ let log_issue_external procname severity ~loc ~ltr ?access issue_type error_mess
 
 let log_error_using_state summary exn =
   if !BiabductionConfig.footprint then
-    let node = Errlog.BackendNode {node= State.get_node_exn ()} in
+    let node' =
+      match State.get_node () with
+      | Some n ->
+          n
+      | None ->
+          Procdesc.get_start_node (Summary.get_proc_desc summary)
+    in
+    let node = Errlog.BackendNode {node= node'} in
     let session = State.get_session () in
-    let loc = State.get_loc_exn () in
+    let loc = match State.get_loc () with Some l -> l | None -> Procdesc.Node.get_loc node' in
     let ltr = State.get_loc_trace () in
     log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr exn
 
