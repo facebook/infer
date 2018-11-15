@@ -199,6 +199,7 @@ let ui_matcher_records =
   ; { default with
       classname= "android.app.Service"
     ; methods= ["onBind"; "onCreate"; "onDestroy"; "onStartCommand"] }
+  ; {default with classname= "android.app.Application"; methods= ["onCreate"]}
   ; { default with
       classname= "android.app.Activity"
     ; methods= ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
