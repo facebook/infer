@@ -74,13 +74,15 @@ module Event = struct
 
   let make_acquire lock loc = make (LockAcquire lock) loc
 
-  let make_blocking_call ~caller ~callee sev loc =
-    let descr = F.asprintf "calls %a from %a" pname_pp callee pname_pp caller in
+  let make_call_descr callee = F.asprintf "calls %a" pname_pp callee
+
+  let make_blocking_call callee sev loc =
+    let descr = make_call_descr callee in
     make (MayBlock (descr, sev)) loc
 
 
-  let make_strict_mode_call ~caller ~callee loc =
-    let descr = F.asprintf "calls %a from %a" pname_pp callee pname_pp caller in
+  let make_strict_mode_call callee loc =
+    let descr = make_call_descr callee in
     make (StrictModeCall descr) loc
 
 
@@ -261,14 +263,14 @@ let acquire ({lock_state; events; order} as astate) loc lock =
   ; order= add_order_pairs lock_state new_event order }
 
 
-let blocking_call ~caller ~callee sev loc ({lock_state; events; order} as astate) =
-  let new_event = Event.make_blocking_call ~caller ~callee sev loc in
+let blocking_call callee sev loc ({lock_state; events; order} as astate) =
+  let new_event = Event.make_blocking_call callee sev loc in
   { astate with
     events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
 
 
-let strict_mode_call ~caller ~callee loc ({lock_state; events; order} as astate) =
-  let new_event = Event.make_strict_mode_call ~caller ~callee loc in
+let strict_mode_call callee loc ({lock_state; events; order} as astate) =
+  let new_event = Event.make_strict_mode_call callee loc in
   { astate with
     events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
 

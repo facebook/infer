@@ -42,7 +42,7 @@ module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
     type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
     [@@deriving compare]
 
-    let pp fmt {elem; loc} = F.fprintf fmt "%a at %a" Elem.pp elem Location.pp loc
+    let pp fmt {elem} = Elem.pp fmt elem
   end
 
   include T

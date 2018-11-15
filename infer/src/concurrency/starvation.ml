@@ -82,32 +82,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match instr with
     | Call (_, Direct callee, actuals, _, loc) -> (
-        let caller = Procdesc.get_proc_name pdesc in
-        match get_lock callee actuals with
-        | Lock ->
-            do_lock actuals loc astate
-        | Unlock ->
-            do_unlock actuals astate
-        | LockedIfTrue ->
-            astate
-        | NoEffect when should_skip_analysis tenv callee actuals ->
-            astate
-        | NoEffect when is_synchronized_library_call tenv callee ->
-            (* model a synchronized call without visible internal behaviour *)
-            do_lock actuals loc astate |> do_unlock actuals
-        | NoEffect when is_on_ui_thread callee ->
-            let explanation = F.asprintf "it calls %a" pname_pp callee in
-            Domain.set_on_ui_thread astate loc explanation
-        | NoEffect when StarvationModels.is_strict_mode_violation tenv callee actuals ->
-            Domain.strict_mode_call ~caller ~callee loc astate
-        | NoEffect -> (
-          match may_block tenv callee actuals with
-          | Some sev ->
-              Domain.blocking_call ~caller ~callee sev loc astate
-          | None ->
-              Payload.read pdesc callee
-              |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
-        )
+      match get_lock callee actuals with
+      | Lock ->
+          do_lock actuals loc astate
+      | Unlock ->
+          do_unlock actuals astate
+      | LockedIfTrue ->
+          astate
+      | NoEffect when should_skip_analysis tenv callee actuals ->
+          astate
+      | NoEffect when is_synchronized_library_call tenv callee ->
+          (* model a synchronized call without visible internal behaviour *)
+          do_lock actuals loc astate |> do_unlock actuals
+      | NoEffect when is_on_ui_thread callee ->
+          let explanation = F.asprintf "it calls %a" pname_pp callee in
+          Domain.set_on_ui_thread astate loc explanation
+      | NoEffect when StarvationModels.is_strict_mode_violation tenv callee actuals ->
+          Domain.strict_mode_call callee loc astate
+      | NoEffect -> (
+        match may_block tenv callee actuals with
+        | Some sev ->
+            Domain.blocking_call callee sev loc astate
+        | None ->
+            Payload.read pdesc callee
+            |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) ) )
     | _ ->
         astate
 

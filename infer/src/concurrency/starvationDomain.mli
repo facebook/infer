@@ -81,16 +81,9 @@ val acquire : astate -> Location.t -> Lock.t -> astate
 
 val release : astate -> Lock.t -> astate
 
-val blocking_call :
-     caller:Typ.Procname.t
-  -> callee:Typ.Procname.t
-  -> Event.severity_t
-  -> Location.t
-  -> astate
-  -> astate
+val blocking_call : Typ.Procname.t -> Event.severity_t -> Location.t -> astate -> astate
 
-val strict_mode_call :
-  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Location.t -> astate -> astate
+val strict_mode_call : Typ.Procname.t -> Location.t -> astate -> astate
 
 val set_on_ui_thread : astate -> Location.t -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
