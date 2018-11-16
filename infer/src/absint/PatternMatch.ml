@@ -58,6 +58,8 @@ let implements_iterator = implements "java.util.Iterator"
 
 let implements_collection = implements "java.util.Collection"
 
+let implements_list = implements "java.util.List"
+
 let implements_pseudo_collection t s =
   implements "android.util.SparseArray" t s
   || implements "android.util.SparseIntArray" t s
@@ -72,9 +74,17 @@ let implements_io class_name = implements ("java.io." ^ class_name)
 
 let implements_map = implements "java.util.Map"
 
+let implements_map_entry = implements "java.util.Map$Entry"
+
 let implements_queue = implements "java.util.Queue"
 
 let implements_lang class_name = implements ("java.lang." ^ class_name)
+
+let implements_google class_name = implements ("com.google." ^ class_name)
+
+let implements_android class_name = implements ("android." ^ class_name)
+
+let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class_name)
 
 (** The type the method is invoked on *)
 let get_this_type proc_attributes =

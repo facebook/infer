@@ -9,6 +9,8 @@ import java.util.Iterator;
 public class IteratorTest {
 
   public void appendTo(Iterator<?> parts) {
-    while (parts.hasNext()) {}
+    while (parts.hasNext()) {
+      System.out.println(parts.next());
+    }
   }
 }

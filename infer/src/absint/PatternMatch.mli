@@ -43,6 +43,9 @@ val implements_pseudo_collection : Tenv.t -> string -> bool
 val implements_enumeration : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Enumeration *)
 
+val implements_jackson : string -> Tenv.t -> string -> bool
+(** Check whether class implements a class from Jackson *)
+
 val implements_inject : string -> Tenv.t -> string -> bool
 (** Check whether class implements a Javax Inject *)
 
@@ -52,11 +55,23 @@ val implements_io : string -> Tenv.t -> string -> bool
 val implements_map : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Map *)
 
+val implements_map_entry : Tenv.t -> string -> bool
+(** Check whether class implements a Java's Map$Entry *)
+
 val implements_queue : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Queue *)
 
 val implements_lang : string -> Tenv.t -> string -> bool
 (** Check whether class implements a Java's lang *)
+
+val implements_list : Tenv.t -> string -> bool
+(** Check whether class implements a Java's list *)
+
+val implements_google : string -> Tenv.t -> string -> bool
+(** Check whether class implements a class of Google  *)
+
+val implements_android : string -> Tenv.t -> string -> bool
+(** Check whether class implements a class of Android  *)
 
 val supertype_exists : Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> bool) -> Typ.Name.t -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)

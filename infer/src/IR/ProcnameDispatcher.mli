@@ -165,6 +165,13 @@ module type Common = sig
     -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Separates names (accepts ALL template arguments on the left one) *)
 
+  val ( &::+ ) :
+       ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    -> ('context -> string -> bool)
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+  (** Separates names that satisfies the given function (accepts ALL
+     template arguments on the left one) *)
+
   val ( <>:: ) :
        ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
     -> string

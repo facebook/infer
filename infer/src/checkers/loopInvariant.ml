@@ -30,12 +30,13 @@ let get_purity tenv ~is_inv_by_default callee_pname args =
   | Some inv ->
       PurityDomain.with_purity (InvariantModels.is_invariant inv) all_params_modified
   | None -> (
-    (* If there is no model, invoke purity analysis to see if function is pure *)
-    match Ondemand.analyze_proc_name callee_pname with
-    | Some {Summary.payloads= {Payloads.purity= Some purity_summary}} ->
-        purity_summary
-    | _ ->
-        PurityDomain.with_purity is_inv_by_default all_params_modified )
+      debug "No model for %a \n" Typ.Procname.pp callee_pname ;
+      (* If there is no model, invoke purity analysis to see if function is pure *)
+      match Ondemand.analyze_proc_name callee_pname with
+      | Some {Summary.payloads= {Payloads.purity= Some purity_summary}} ->
+          purity_summary
+      | _ ->
+          PurityDomain.with_purity is_inv_by_default all_params_modified )
 
 
 let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ

@@ -173,7 +173,9 @@ public class ArrayListTest {
   public void iterate_while_has_next(ArrayList<Integer> list) {
     Iterator itr = list.iterator();
 
-    while (itr.hasNext()) {}
+    while (itr.hasNext()) {
+      System.out.println(itr.next());
+    }
   }
 
   public void iterate_over_arraylist_with_inner(ArrayList<Integer> list1) {
