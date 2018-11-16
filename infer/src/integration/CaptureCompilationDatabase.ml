@@ -74,7 +74,9 @@ let get_compilation_database_files_buck ~prog ~args =
       let targets_args = Buck.store_args_in_file targets in
       let build_args =
         (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline))
-        @ ("--config" :: "*//cxx.pch_enabled=false" :: targets_args)
+        @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
+          "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
+          :: "--config" :: "*//cxx.modules=False" :: targets_args
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
