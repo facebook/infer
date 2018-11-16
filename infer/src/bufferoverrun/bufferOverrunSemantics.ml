@@ -161,11 +161,9 @@ let rec eval : Exp.t -> Mem.astate -> Val.t =
         Val.Itv.top
 
 
-(* NOTE: multidimensional array is not supported yet *)
 and eval_lindex array_exp index_exp mem =
   let array_v, index_v = (eval array_exp mem, eval index_exp mem) in
-  let arr = Val.plus_pi array_v index_v in
-  if ArrayBlk.is_bot (Val.get_array_blk arr) then
+  if ArrayBlk.is_bot (Val.get_array_blk array_v) then
     match array_exp with
     | Exp.Lfield _ when not (PowLoc.is_bot (Val.get_pow_loc array_v)) ->
         (* It handles the case accessing an array field of struct,
@@ -177,7 +175,13 @@ and eval_lindex array_exp index_exp mem =
         Val.plus_pi (Mem.find_set (Val.get_pow_loc array_v) mem) index_v
     | _ ->
         Val.of_pow_loc PowLoc.unknown
-  else arr
+  else
+    match array_exp with
+    | Exp.Lindex _ ->
+        (* It handles multi-dimensional arrays. *)
+        Mem.find_set (Val.get_all_locs array_v) mem
+    | _ ->
+        Val.plus_pi array_v index_v
 
 
 and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Val.t =

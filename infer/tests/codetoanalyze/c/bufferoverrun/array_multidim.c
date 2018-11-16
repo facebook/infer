@@ -51,7 +51,7 @@ void multidim_arr5_Good() {
   a[0][5] = 0;
 }
 
-void multidim_arr5_Bad_FN() {
+void multidim_arr5_Bad() {
   int a[1][10];
   a[0][0] = 0;
   a[0][10] = 0;

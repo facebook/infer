@@ -40,6 +40,7 @@ codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr1_Bad, 2, BUFFER_OVE
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr2_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 3 Size: 3]
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr4_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 6 Size: 3]
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr4_Good_FP, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 5 Size: 3]
+codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr5_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/big_array.c, use_big_array_bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,ArrayDeclaration,Assignment,Return,Assignment,ArrayAccess: Offset: 999999999 Size: 26460]
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 13, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
