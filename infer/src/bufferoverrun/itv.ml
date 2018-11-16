@@ -539,9 +539,9 @@ module ItvPure = struct
     if Bound.equal l u then Bound.pp fmt l
     else
       match Bound.is_same_symbol l u with
-      | Some symbol ->
+      | Some symbol when Config.bo_debug < 3 ->
           Symb.SymbolPath.pp fmt symbol
-      | None ->
+      | _ ->
           F.fprintf fmt "[%a, %a]" Bound.pp l Bound.pp u
 
 
@@ -887,6 +887,16 @@ let ub : t -> Bound.t = function
       ItvPure.ub x
   | Bottom ->
       L.(die InternalError) "upper bound of bottom"
+
+
+let get_bound itv (be : Symb.BoundEnd.t) =
+  match (itv, be) with
+  | Bottom, _ ->
+      Bottom
+  | NonBottom x, LowerBound ->
+      NonBottom (ItvPure.lb x)
+  | NonBottom x, UpperBound ->
+      NonBottom (ItvPure.ub x)
 
 
 let false_sem = NonBottom ItvPure.false_sem

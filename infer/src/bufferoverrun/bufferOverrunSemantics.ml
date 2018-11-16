@@ -335,25 +335,21 @@ let eval_sympath params sympath mem =
 
 
 let mk_eval_sym_trace callee_pdesc actual_exps caller_mem =
-  let formals = get_formals callee_pdesc in
-  let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem) actual_exps in
-  let params = ParamBindings.make formals actuals in
-  let eval_sym_traced s =
+  let params =
+    let formals = get_formals callee_pdesc in
+    let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem) actual_exps in
+    ParamBindings.make formals actuals
+  in
+  let eval_sym s =
+    let sympath = Symb.Symbol.path s in
+    let itv, _ = eval_sympath params sympath caller_mem in
+    Itv.get_bound itv (Symb.Symbol.bound_end s)
+  in
+  let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
     let itv, traces = eval_sympath params sympath caller_mem in
-    if Itv.eq itv Itv.bot then (Bottom, TraceSet.empty)
-    else
-      let get_bound =
-        match Symb.Symbol.bound_end s with
-        | Symb.BoundEnd.LowerBound ->
-            Itv.lb
-        | Symb.BoundEnd.UpperBound ->
-            Itv.ub
-      in
-      (NonBottom (get_bound itv), traces)
+    if Itv.eq itv Itv.bot then TraceSet.empty else traces
   in
-  let eval_sym s = fst (eval_sym_traced s) in
-  let trace_of_sym s = snd (eval_sym_traced s) in
   let eval_locpath partial = eval_locpath params partial caller_mem in
   ((eval_sym, trace_of_sym), eval_locpath)
 
