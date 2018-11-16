@@ -109,11 +109,7 @@ let standard_matchers =
       ; methods= ["transact"]
       ; actuals_pred=
           (fun actuals ->
-            List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) }
-    ; { default with
-        classname= "android.accounts.AccountManager"
-      ; methods= ["setUserData"]
-      ; search_superclasses= false } ]
+            List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) } ]
   in
   let low_sev =
     [ { default with

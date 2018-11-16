@@ -15,13 +15,15 @@ class AccMgr {
   String key, data;
   Object lock;
 
+  // not OK: setUserData may cause stalls, but the general belief is that it's rare
   @UiThread
-  void onUiThreadBad() throws InterruptedException {
+  void onUiThreadOk() throws InterruptedException {
     am.setUserData(account, key, data);
   }
 
+  // ditto
   @UiThread
-  void lockOnUiThreadBad() throws InterruptedException {
+  void lockOnUiThreadOk() throws InterruptedException {
     synchronized (lock) {
     }
   }

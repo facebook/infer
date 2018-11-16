@@ -5,16 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import android.accounts.AccountManager;
 import android.app.Activity;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.RemoteException;
 
 // test is for recognizing Activity lifecycle methods
 class MyActivity extends Activity {
-  AccountManager am;
+  Binder b;
 
   private void bad() {
-    am.setUserData(null, null, null);
+    try {
+      b.transact(0, null, null, 0);
+    } catch (RemoteException r) {
+    }
   }
 
   // overrides so no Bad suffixes
