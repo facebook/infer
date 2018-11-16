@@ -261,10 +261,9 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
   | Exp.Lfield (e, fn, _) ->
       let locs = eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
       Mem.find_set locs mem
-  | Exp.Lindex (e1, e2) ->
-      let arr = eval e1 mem in
-      let idx = eval e2 mem in
-      Val.plus_pi arr idx
+  | Exp.Lindex (e, _) ->
+      let locs = eval e mem |> Val.get_all_locs in
+      Mem.find_set locs mem
   | Exp.Const _ | Exp.UnOp _ | Exp.Sizeof _ | Exp.Exn _ | Exp.Closure _ ->
       Val.bot
 
