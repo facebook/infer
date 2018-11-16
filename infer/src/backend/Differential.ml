@@ -136,56 +136,59 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
     else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
     else IssueType.performance_variation
   in
-  let qualifier =
-    let pp_delta fmt delta =
-      match delta with
-      | `Decreased ->
-          Format.fprintf fmt "decreased"
-      | `Increased ->
-          Format.fprintf fmt "increased"
+  if (not Config.filtering) || issue_type.IssueType.enabled then
+    let qualifier =
+      let pp_delta fmt delta =
+        match delta with
+        | `Decreased ->
+            Format.fprintf fmt "decreased"
+        | `Increased ->
+            Format.fprintf fmt "increased"
+      in
+      let pp_raw_cost fmt cost_polynomial =
+        if Config.developer_mode then
+          Format.fprintf fmt " Cost is %a (degree is %a)" CostDomain.BasicCost.pp cost_polynomial
+            CostDomain.BasicCost.pp_degree cost_polynomial
+        else ()
+      in
+      Format.asprintf "Complexity of this function has %a from %a to %a.%a"
+        (MarkupFormatter.wrap_bold pp_delta)
+        delta
+        (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
+        prev_cost
+        (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
+        curr_cost pp_raw_cost curr_cost
     in
-    let pp_raw_cost fmt cost_polynomial =
-      if Config.developer_mode then
-        Format.fprintf fmt " Cost is %a (degree is %a)" CostDomain.BasicCost.pp cost_polynomial
-          CostDomain.BasicCost.pp_degree cost_polynomial
-      else ()
+    let line = cost_info.Jsonbug_t.loc.lnum in
+    let column = cost_info.Jsonbug_t.loc.cnum in
+    let trace =
+      [Errlog.make_trace_element 0 {Location.line; col= column; file= source_file} "" []]
     in
-    Format.asprintf "Complexity of this function has %a from %a to %a.%a"
-      (MarkupFormatter.wrap_bold pp_delta)
-      delta
-      (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
-      prev_cost
-      (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
-      curr_cost pp_raw_cost curr_cost
-  in
-  let line = cost_info.Jsonbug_t.loc.lnum in
-  let column = cost_info.Jsonbug_t.loc.cnum in
-  let trace =
-    [Errlog.make_trace_element 0 {Location.line; col= column; file= source_file} "" []]
-  in
-  let severity = Exceptions.Warning in
-  { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
-  ; qualifier
-  ; severity= Exceptions.severity_string severity
-  ; visibility= Exceptions.string_of_visibility Exceptions.Exn_user
-  ; line
-  ; column
-  ; procedure= cost_info.Jsonbug_t.procedure_id
-  ; procedure_start_line= 0
-  ; file
-  ; bug_trace= InferPrint.loc_trace_to_jsonbug_record trace severity
-  ; key= ""
-  ; node_key= None
-  ; hash= cost_info.Jsonbug_t.hash
-  ; dotty= None
-  ; infer_source_loc= None
-  ; bug_type_hum= issue_type.IssueType.hum
-  ; linters_def_file= None
-  ; doc_url= None
-  ; traceview_id= None
-  ; censored_reason= InferPrint.censored_reason issue_type source_file
-  ; access= None
-  ; extras= None }
+    let severity = Exceptions.Warning in
+    Some
+      { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
+      ; qualifier
+      ; severity= Exceptions.severity_string severity
+      ; visibility= Exceptions.string_of_visibility Exceptions.Exn_user
+      ; line
+      ; column
+      ; procedure= cost_info.Jsonbug_t.procedure_id
+      ; procedure_start_line= line
+      ; file
+      ; bug_trace= InferPrint.loc_trace_to_jsonbug_record trace severity
+      ; key= ""
+      ; node_key= None
+      ; hash= cost_info.Jsonbug_t.hash
+      ; dotty= None
+      ; infer_source_loc= None
+      ; bug_type_hum= issue_type.IssueType.hum
+      ; linters_def_file= None
+      ; doc_url= None
+      ; traceview_id= None
+      ; censored_reason= InferPrint.censored_reason issue_type source_file
+      ; access= None
+      ; extras= None }
+  else None
 
 
 (** Differential of cost reports, based on degree variations.
@@ -207,18 +210,18 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
         let curr_cost_info, curr_cost = max_degree_polynomial current in
         let _, prev_cost = max_degree_polynomial previous in
         let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
+        let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
         if cmp > 0 then
           (* introduced *)
           let left' =
-            let issue = issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost in
-            issue :: left
+            issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost |> concat_opt left
           in
           (left', both, right)
         else if cmp < 0 then
           (* fixed *)
           let right' =
-            let issue = issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost in
-            issue :: right
+            issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+            |> concat_opt right
           in
           (left, both, right')
         else

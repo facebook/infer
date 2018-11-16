@@ -240,6 +240,14 @@ type json_issue_printer_typ =
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
 
+let procedure_id_of_procname proc_name =
+  match Typ.Procname.get_language proc_name with
+  | Language.Java ->
+      Typ.Procname.to_unique_id proc_name
+  | _ ->
+      Typ.Procname.to_string proc_name
+
+
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
@@ -288,13 +296,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
               Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
         else base_qualifier
       in
-      let procedure =
-        match Typ.Procname.get_language proc_name with
-        | Language.Java ->
-            Typ.Procname.to_unique_id proc_name
-        | _ ->
-            Typ.Procname.to_string proc_name
-      in
       let bug =
         { Jsonbug_j.bug_type
         ; qualifier
@@ -302,7 +303,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; visibility
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
-        ; procedure
+        ; procedure= procedure_id_of_procname proc_name
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
@@ -353,7 +354,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           let file = SourceFile.to_rel_path loc.Location.file in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
-          ; procedure_id= Typ.Procname.to_string proc_name
+          ; procedure_id= procedure_id_of_procname proc_name
           ; polynomial= CostDomain.BasicCost.encode post
           ; hum }
         in
