@@ -51,7 +51,10 @@ let setup () =
       ResultsDir.assert_results_dir "please run an infer analysis first"
   | Events ->
       ResultsDir.assert_results_dir "have you run infer before?" ) ;
-  if CLOpt.is_originator then ( RunState.add_run_to_sequence () ; RunState.store () ) ;
+  if CLOpt.is_originator then (
+    RunState.add_run_to_sequence () ;
+    RunState.store () ;
+    if Config.memcached then Memcached.start () ) ;
   ()
 
 

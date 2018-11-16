@@ -73,6 +73,7 @@ let diff driver_mode =
   let current_report, current_costs = save_report Current in
   (* Some files in the current checkout may be deleted in the old checkout. If we kept the results of the previous capture and analysis around, we would report issues on these files again in the previous checkout, which is wrong. Do not do anything too smart for now and just delete all results from the analysis of the current checkout. *)
   ResultsDir.delete_capture_and_analysis_data () ;
+  if Config.memcached then ( Memcached.(connect () ; flush_all () ; disconnect ()) ) ;
   (* TODO(t15553258) bail if nothing to analyze (configurable, some people might care about bugs
      fixed more than about time to analyze) *)
   checkout Previous ;

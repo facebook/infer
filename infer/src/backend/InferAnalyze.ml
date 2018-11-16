@@ -20,13 +20,15 @@ let clear_caches () =
 (** Create tasks to analyze an execution environment *)
 let analyze_source_file : SourceFile.t Tasks.doer =
  fun source_file ->
+  if Config.memcached then Memcached.connect () ;
   DB.Results_dir.init source_file ;
   let exe_env = Exe_env.mk () in
   L.task_progress SourceFile.pp source_file ~f:(fun () ->
       (* clear cache for each source file to avoid it growing unboundedly *)
       clear_caches () ;
       Callbacks.analyze_file exe_env source_file ;
-      if Config.write_html then Printer.write_all_html_files source_file )
+      if Config.write_html then Printer.write_all_html_files source_file ) ;
+  if Config.memcached then Memcached.disconnect ()
 
 
 let output_json_makefile_stats clusters =

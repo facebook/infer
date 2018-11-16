@@ -1224,6 +1224,13 @@ INTERNAL OPTIONS
        --max-nesting-reset
            Cancel the effect of --max-nesting.
 
+       --memcached
+           Activates: EXPERIMENTAL: Use memcached caching summaries during
+           analysis. (Conversely: --no-memcached)
+
+       --memcached-size-mb int
+           EXPERIMENTAL: Default memcached size in megabytes. (default: 2048)
+
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.
            start line, end line, class, method name, etc.) when Infer is run

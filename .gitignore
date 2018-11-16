@@ -70,6 +70,9 @@ duplicates.txt
 /infer/tests/.idea/runConfigurations
 /infer/tests/.idea/copyright/profiles_settings.xml
 
+# VS code
+.vscode
+
 # Eclipse settings files
 ocaml.prefs
 /infer/.paths

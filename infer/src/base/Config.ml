@@ -1567,6 +1567,16 @@ and method_decls_info =
      method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
+and memcached =
+  CLOpt.mk_bool ~long:"memcached" ~default:false
+    "EXPERIMENTAL: Use memcached caching summaries during analysis."
+
+
+and memcached_size_mb =
+  CLOpt.mk_int ~long:"memcached-size-mb" ~default:2048
+    "EXPERIMENTAL: Default memcached size in megabytes."
+
+
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:InferCommand.[(Analyze, manual_buck_flavors)]
@@ -2721,6 +2731,10 @@ and loop_hoisting = !loop_hoisting
 and max_nesting = !max_nesting
 
 and method_decls_info = !method_decls_info
+
+and memcached = !memcached
+
+and memcached_size_mb = !memcached_size_mb
 
 and merge = !merge
 

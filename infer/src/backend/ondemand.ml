@@ -228,17 +228,38 @@ let analyze_proc ?caller_pdesc callee_pdesc =
   Some (run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc)
 
 
+let hash_procname proc_name = Typ.Procname.to_unique_id proc_name |> Utils.string_crc_hex32
+
+let memcache_get proc_name =
+  if not Config.memcached then None
+  else
+    let key = hash_procname proc_name in
+    Summary.SummaryServer.get ~key
+
+
+let memcache_set proc_name summ =
+  if Config.memcached then
+    let key = hash_procname proc_name in
+    Summary.SummaryServer.set ~key summ
+
+
 let analyze_proc_desc ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
     try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
-      let summary_option =
-        let proc_attributes = Procdesc.get_attributes callee_pdesc in
-        if should_be_analyzed proc_attributes then analyze_proc ~caller_pdesc callee_pdesc
-        else Summary.get callee_pname
+      let summary_option, update_memcached =
+        match memcache_get callee_pname with
+        | Some summ_opt ->
+            (summ_opt, false)
+        | None ->
+            let proc_attributes = Procdesc.get_attributes callee_pdesc in
+            if should_be_analyzed proc_attributes then
+              (analyze_proc ~caller_pdesc callee_pdesc, true)
+            else (Summary.get callee_pname, true)
       in
+      if update_memcached then memcache_set callee_pname summary_option ;
       Typ.Procname.Hash.add cache callee_pname summary_option ;
       summary_option
 
@@ -259,15 +280,20 @@ let analyze_proc_name ?caller_pdesc callee_pname =
   else
     let cache = Lazy.force cached_results in
     try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
-      let summary_option =
-        if procedure_should_be_analyzed callee_pname then
-          match get_proc_desc callee_pname with
-          | Some callee_pdesc ->
-              analyze_proc ?caller_pdesc callee_pdesc
-          | None ->
-              Summary.get callee_pname
-        else Summary.get callee_pname
+      let summary_option, update_memcached =
+        match memcache_get callee_pname with
+        | Some summ_opt ->
+            (summ_opt, false)
+        | None ->
+            if procedure_should_be_analyzed callee_pname then
+              match get_proc_desc callee_pname with
+              | Some callee_pdesc ->
+                  (analyze_proc ?caller_pdesc callee_pdesc, true)
+              | None ->
+                  (Summary.get callee_pname, true)
+            else (Summary.get callee_pname, true)
       in
+      if update_memcached then memcache_set callee_pname summary_option ;
       Typ.Procname.Hash.add cache callee_pname summary_option ;
       summary_option
 

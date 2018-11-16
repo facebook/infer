@@ -472,6 +472,10 @@ val max_nesting : int option
 
 val method_decls_info : string option
 
+val memcached : bool
+
+val memcached_size_mb : int
+
 val merge : bool
 
 val ml_buckets :

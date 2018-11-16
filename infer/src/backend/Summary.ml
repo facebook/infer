@@ -260,3 +260,12 @@ let reset_all ~filter () =
            Serialization.write_to_file summary_serializer filename ~data:blank_summary )
   in
   Procedures.get_all ~filter () |> List.iter ~f:reset
+
+
+module SummaryValue = struct
+  type nonrec t = t option
+
+  let label = "summary"
+end
+
+module SummaryServer = Memcached.Make (SummaryValue)

@@ -107,3 +107,7 @@ val store : t -> unit
 (** Save summary for the procedure into the spec database *)
 
 val reset_all : filter:Filtering.procedures_filter -> unit -> unit
+
+module SummaryValue : Memcached.Value with type t = t option
+
+module SummaryServer : Memcached.Server with module Value = SummaryValue
