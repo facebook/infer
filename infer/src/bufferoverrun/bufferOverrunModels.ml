@@ -320,9 +320,9 @@ module StdArray = struct
         ~represents_multiple_values ~depth loc ~inst_num ~new_sym_num ~new_alloc_num mem =
       let offset = Itv.zero in
       let size = Itv.of_int64 length in
-      BoUtils.Exec.decl_sym_arr ~decl_sym_val BoUtils.Exec.CSymArray_Array pname symbol_table path
-        tenv ~node_hash location ~represents_multiple_values ~depth loc typ ~offset ~size ~inst_num
-        ~new_sym_num ~new_alloc_num mem
+      BoUtils.Exec.decl_sym_arr ~decl_sym_val Symb.SymbolPath.CSymArray_Array pname symbol_table
+        path tenv ~node_hash location ~represents_multiple_values ~depth loc typ ~offset ~size
+        ~inst_num ~new_sym_num ~new_alloc_num mem
     in
     {declare_local; declare_symbolic}
 

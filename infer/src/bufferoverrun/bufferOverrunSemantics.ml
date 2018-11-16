@@ -313,7 +313,7 @@ and eval_locpath params p mem =
   | Symb.SymbolPath.Pvar _ ->
       let v = eval_sympath_partial params p mem in
       Val.get_all_locs v
-  | Symb.SymbolPath.Index p ->
+  | Symb.SymbolPath.Index (_, p) ->
       let v = eval_sympath_partial params p mem in
       Val.get_all_locs v
   | Symb.SymbolPath.Field (fn, p) ->

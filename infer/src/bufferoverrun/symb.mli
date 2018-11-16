@@ -15,7 +15,12 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type partial = private Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
+  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer [@@deriving compare]
+
+  type partial = private
+    | Pvar of Pvar.t
+    | Index of c_sym_array_kind * partial
+    | Field of Typ.Fieldname.t * partial
   [@@deriving compare]
 
   type t = private Normal of partial | Offset of partial | Length of partial
@@ -24,7 +29,7 @@ module SymbolPath : sig
 
   val of_pvar : Pvar.t -> partial
 
-  val index : partial -> partial
+  val index : array_kind:c_sym_array_kind -> partial -> partial
 
   val field : partial -> Typ.Fieldname.t -> partial
 

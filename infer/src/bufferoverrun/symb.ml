@@ -16,7 +16,12 @@ module BoundEnd = struct
 end
 
 module SymbolPath = struct
-  type partial = Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
+  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer [@@deriving compare]
+
+  type partial =
+    | Pvar of Pvar.t
+    | Index of c_sym_array_kind * partial
+    | Field of Typ.Fieldname.t * partial
   [@@deriving compare]
 
   type t = Normal of partial | Offset of partial | Length of partial [@@deriving compare]
@@ -27,7 +32,7 @@ module SymbolPath = struct
 
   let field p fn = Field (fn, p)
 
-  let index p = Index p
+  let index ~array_kind p = Index (array_kind, p)
 
   let normal p = Normal p
 
@@ -38,7 +43,7 @@ module SymbolPath = struct
   let rec pp_partial fmt = function
     | Pvar pvar ->
         Pvar.pp_value fmt pvar
-    | Index p ->
+    | Index (_, p) ->
         F.fprintf fmt "%a[*]" pp_partial p
     | Field (fn, p) ->
         F.fprintf fmt "%a.%s" pp_partial p (Typ.Fieldname.to_flat_string fn)

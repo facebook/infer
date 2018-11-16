@@ -67,11 +67,9 @@ module Exec : sig
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 
-  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer
-
   val decl_sym_arr :
        decl_sym_val:decl_sym_val
-    -> c_sym_array_kind
+    -> Symb.SymbolPath.c_sym_array_kind
     -> Typ.Procname.t
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial

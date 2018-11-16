@@ -112,8 +112,6 @@ module Exec = struct
     (mem, inst_num + 1)
 
 
-  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer
-
   type decl_sym_val =
        Typ.Procname.t
     -> Itv.SymbolPath.partial
@@ -129,7 +127,7 @@ module Exec = struct
 
   let decl_sym_arr :
          decl_sym_val:decl_sym_val
-      -> c_sym_array_kind
+      -> Symb.SymbolPath.c_sym_array_kind
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
@@ -161,7 +159,7 @@ module Exec = struct
           Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       )
     in
-    let deref_path = Itv.SymbolPath.index path in
+    let deref_path = Itv.SymbolPath.index ~array_kind path in
     let allocsite =
       let alloc_num = Itv.Counter.next new_alloc_num in
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some deref_path)

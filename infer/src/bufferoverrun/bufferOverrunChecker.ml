@@ -304,7 +304,7 @@ module Init = struct
           | {desc= Typ.Tarray {elt}} ->
               BoUtils.Exec.decl_sym_arr
                 ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-                BoUtils.Exec.CSymArray_Array pname symbol_table path tenv ~node_hash location
+                Symb.SymbolPath.CSymArray_Array pname symbol_table path tenv ~node_hash location
                 ~represents_multiple_values ~depth loc elt ~inst_num ~new_sym_num ~new_alloc_num
                 mem
           | _ ->
@@ -314,7 +314,7 @@ module Init = struct
                 ~inst_num ~new_alloc_num mem )
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field)
-              BoUtils.Exec.CSymArray_Pointer pname symbol_table path tenv ~node_hash location
+              Symb.SymbolPath.CSymArray_Pointer pname symbol_table path tenv ~node_hash location
               ~represents_multiple_values ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length; stride} ->
             let size =
@@ -328,7 +328,7 @@ module Init = struct
             let stride = Option.map ~f:IntLit.to_int_exn stride in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              BoUtils.Exec.CSymArray_Array pname symbol_table path tenv ~node_hash location
+              Symb.SymbolPath.CSymArray_Array pname symbol_table path tenv ~node_hash location
               ~represents_multiple_values ~depth loc elt ~offset ?size ?stride ~inst_num
               ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
