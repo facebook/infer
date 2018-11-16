@@ -50,7 +50,7 @@ module NonNegativePolynomial : sig
 
   val min_default_left : astate -> astate -> astate
 
-  val subst : astate -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> astate
+  val subst : astate -> Bound.eval_sym -> astate
 
   val degree : astate -> int option
 
@@ -138,7 +138,7 @@ module ItvPure : sig
 
   val get_symbols : t -> SymbolSet.t
 
-  val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted
+  val subst : t -> Bound.eval_sym -> t bottom_lifted
 
   val neg : t -> t
 
@@ -253,4 +253,4 @@ val prune_eq : t -> t -> t
 
 val prune_ne : t -> t -> t
 
-val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t
+val subst : t -> Bound.eval_sym -> t

@@ -35,6 +35,8 @@ module Bound : sig
     | MinMax of Z.t * sign * min_max * Z.t * Symb.Symbol.t
     | PInf
 
+  type eval_sym = t Symb.Symbol.eval
+
   val compare : t -> t -> int
 
   val equal : t -> t -> bool
@@ -109,15 +111,9 @@ module Bound : sig
 
   val is_not_infty : t -> bool
 
-  val subst_lb :
-       t
-    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
-    -> t AbstractDomain.Types.bottom_lifted
+  val subst_lb : t -> eval_sym -> t AbstractDomain.Types.bottom_lifted
 
-  val subst_ub :
-       t
-    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
-    -> t AbstractDomain.Types.bottom_lifted
+  val subst_ub : t -> eval_sym -> t AbstractDomain.Types.bottom_lifted
 
   val simplify_bound_ends_from_paths : t -> t
 

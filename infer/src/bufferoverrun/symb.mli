@@ -38,6 +38,8 @@ end
 module Symbol : sig
   type t
 
+  type 'res eval = t -> 'res AbstractDomain.Types.bottom_lifted
+
   val compare : t -> t -> int
 
   val is_unsigned : t -> bool

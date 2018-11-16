@@ -289,12 +289,7 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst :
-         (Symb.Symbol.t -> Bound.t bottom_lifted)
-      -> Relation.SubstMap.t
-      -> Relation.astate
-      -> t
-      -> t option =
+  let subst : Bound.eval_sym -> Relation.SubstMap.t -> Relation.astate -> t -> t option =
    fun eval_sym rel_map caller_relation c ->
     match
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)

@@ -229,6 +229,8 @@ module Bound = struct
     | PInf
   [@@deriving compare]
 
+  type eval_sym = t Symb.Symbol.eval
+
   let equal = [%compare.equal: t]
 
   let pp : F.formatter -> t -> unit =
@@ -812,8 +814,7 @@ module Bound = struct
 
 
   (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as possible according to [subst_pos]. *)
-  let subst :
-      subst_pos:Symb.BoundEnd.t -> t -> (Symb.Symbol.t -> t bottom_lifted) -> t bottom_lifted =
+  let subst : subst_pos:Symb.BoundEnd.t -> t -> eval_sym -> t bottom_lifted =
    fun ~subst_pos x eval_sym ->
     let get s =
       match eval_sym s with

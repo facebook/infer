@@ -295,11 +295,7 @@ module Val = struct
    fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
 
 
-  let subst :
-         t
-      -> (Symb.Symbol.t -> Bounds.Bound.t bottom_lifted) * (Symb.Symbol.t -> TraceSet.t)
-      -> Location.t
-      -> t =
+  let subst : t -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> TraceSet.t) -> Location.t -> t =
    fun x (eval_sym, trace_of_sym) location ->
     let symbols = get_symbols x in
     let traces_caller =

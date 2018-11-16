@@ -79,7 +79,7 @@ module type NonNegativeSymbol = sig
 
   val int_ub : t -> NonNegativeInt.t option
 
-  val subst : t -> (Symb.Symbol.t -> t bottom_lifted) -> (NonNegativeInt.t, t) Bounds.valclass
+  val subst : t -> t Symb.Symbol.eval -> (NonNegativeInt.t, t) Bounds.valclass
 
   val pp : F.formatter -> t -> unit
 end
@@ -780,7 +780,7 @@ module ItvPure = struct
 
   let normalize : t -> t bottom_lifted = fun x -> if is_invalid x then Bottom else NonBottom x
 
-  let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted =
+  let subst : t -> Bound.eval_sym -> t bottom_lifted =
    fun (l, u) eval_sym ->
     match (Bound.subst_lb l eval_sym, Bound.subst_ub u eval_sym) with
     | NonBottom l, NonBottom u ->
@@ -1025,7 +1025,7 @@ let prune_eq : t -> t -> t = bind2 ItvPure.prune_eq
 
 let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne
 
-let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t =
+let subst : t -> Bound.eval_sym -> t =
  fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
 
 

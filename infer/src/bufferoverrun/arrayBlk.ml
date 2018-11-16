@@ -56,7 +56,7 @@ module ArrInfo = struct
 
   let diff : t -> t -> Itv.astate = fun arr1 arr2 -> Itv.minus arr1.offset arr2.offset
 
-  let subst : t -> (Symb.Symbol.t -> Bounds.Bound.t bottom_lifted) -> t =
+  let subst : t -> Bound.eval_sym -> t =
    fun arr eval_sym ->
     {arr with offset= Itv.subst arr.offset eval_sym; size= Itv.subst arr.size eval_sym}
 
@@ -141,7 +141,7 @@ let get_pow_loc : astate -> PowLoc.t =
   fold pow_loc_of_allocsite array PowLoc.bot
 
 
-let subst : astate -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> astate =
+let subst : astate -> Bound.eval_sym -> astate =
  fun a eval_sym -> map (fun info -> ArrInfo.subst info eval_sym) a
 
 

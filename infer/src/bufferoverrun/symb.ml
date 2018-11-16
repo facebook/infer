@@ -57,6 +57,8 @@ module Symbol = struct
   type t =
     {id: int; pname: Typ.Procname.t; unsigned: bool; path: SymbolPath.t; bound_end: BoundEnd.t}
 
+  type 'res eval = t -> 'res AbstractDomain.Types.bottom_lifted
+
   let compare s1 s2 =
     (* Symbols only make sense within a given function, so shouldn't be compared across function boundaries. *)
     assert (phys_equal s1.pname s2.pname) ;
