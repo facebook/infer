@@ -128,9 +128,9 @@ type 'inst strexp0 =
           There are two conditions imposed / used in the array case.
           First, if some index and value pair appears inside an array
           in a strexp, then the index is less than the length of the array.
-          For instance, x |->[10 | e1: v1] implies that e1 <= 9.
+          For instance, x |-> [10 | e1: v1] implies that e1 <= 9.
           Second, if two indices appear in an array, they should be different.
-          For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
+          For instance, x |-> [10 | e1: v1, e2: v2] implies that e1 != e2. *)
 [@@deriving compare]
 
 type strexp = inst strexp0
@@ -1478,7 +1478,7 @@ let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
 
 (** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1],
     [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
-    then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, zs'_/ zs\]]
+    then the result of the instantiation is [b[e1 / x, e2 / y, elist / xs, zs'_/ zs]]
     for some fresh [_zs'].*)
 let hpara_instantiate para e1 e2 elist =
   let subst_for_svars =
@@ -1502,7 +1502,7 @@ let hpara_instantiate para e1 e2 elist =
 (** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
     [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
     then the result of the instantiation is
-    [b\[cell / x, blink / y, flink / z, elist / xs, zs'_/ zs\]]
+    [b[cell / x, blink / y, flink / z, elist / xs, zs'_/ zs]]
     for some fresh [_zs'].*)
 let hpara_dll_instantiate (para : hpara_dll) cell blink flink elist =
   let subst_for_svars =

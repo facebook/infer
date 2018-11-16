@@ -13,7 +13,7 @@ module F = Format
 
 type parameters = string list [@@deriving compare]
 
-(** Type to represent one @Annotation. *)
+(** Type to represent one [@Annotation]. *)
 type t =
   { class_name: string  (** name of the annotation *)
   ; parameters: parameters  (** currently only one string parameter *) }

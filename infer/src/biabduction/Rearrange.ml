@@ -706,7 +706,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   Prop.prop_iter_set_state iter offsets_default
 
 
-(** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
+(** If [lexp] is an access to a field that is annotated with [@GuardedBy], add constraints to [prop]
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints tenv prop lexp pdesc =
   let lookup = Tenv.lookup tenv in

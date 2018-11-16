@@ -15,7 +15,7 @@ module Access : sig
     | ContainerRead of AccessPath.t * Typ.Procname.t  (** Read of container object *)
     | ContainerWrite of AccessPath.t * Typ.Procname.t  (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
-        (** Call to method of interface not annotated with @ThreadSafe *)
+        (** Call to method of interface not annotated with [@ThreadSafe] *)
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
@@ -73,7 +73,7 @@ module ThreadsDomain : sig
         etc.) *)
     | AnyThreadButSelf
         (** Current thread can run in parallel with other threads, but not with a copy of itself.
-        (concretization : {% \{ t | t \in TIDs ^ t != t_cur \} %} ) *)
+        (concretization : {%latex:\{ t | t \in TIDs ^ t != t_cur \}%} ) *)
     | AnyThread
         (** Current thread can run in parallel with any thread, including itself (concretization:
             set of all TIDs ) *)
@@ -176,7 +176,7 @@ end
 
 module Attribute : sig
   type t =
-    | Functional  (** holds a value returned from a callee marked @Functional *)
+    | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | Choice of Choice.t  (** holds a boolean choice variable *)
 
   include PrettyPrintable.PrintableOrderedType with type t := t

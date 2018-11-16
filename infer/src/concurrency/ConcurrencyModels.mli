@@ -24,9 +24,9 @@ val get_thread : Typ.Procname.t -> thread
 
 val runs_on_ui_thread : Tenv.t -> Procdesc.t -> string option
 (** We don't want to warn on methods that run on the UI thread because they should always be
-    single-threaded. Assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount,
-    @OnUnbind, @OnUnmount always run on the UI thread.  Also assume that any superclass
-    marked @UiThread implies all methods are on UI thread. Return Some string explaining why
+    single-threaded. Assume that methods annotated with [@UiThread], [@OnEvent], [@OnBind], [@OnMount],
+    [@OnUnbind], [@OnUnmount] always run on the UI thread.  Also assume that any superclass
+    marked [@UiThread] implies all methods are on UI thread. Return Some string explaining why
     this method is on the UI thread, else return None. *)
 
 val get_current_class_and_annotated_superclasses :

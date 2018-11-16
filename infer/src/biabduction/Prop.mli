@@ -221,10 +221,10 @@ val prop_atom_and : Tenv.t -> ?footprint:bool -> normal t -> atom -> normal t
 (** Conjoin a pure atomic predicate by normal conjunction. *)
 
 val conjoin_eq : Tenv.t -> ?footprint:bool -> Exp.t -> Exp.t -> normal t -> normal t
-(** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
+(** Conjoin [exp1] = [exp2] with a symbolic heap [prop]. *)
 
 val conjoin_neq : Tenv.t -> ?footprint:bool -> Exp.t -> Exp.t -> normal t -> normal t
-(** Conjoin [exp1]!=[exp2] with a symbolic heap [prop]. *)
+(** Conjoin [exp1] != [exp2] with a symbolic heap [prop]. *)
 
 val get_pure : 'a t -> atom list
 (** Return the pure part of [prop]. *)

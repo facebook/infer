@@ -59,7 +59,7 @@ let long_st = "long"
 
 let short_st = "short"
 
-(** {2 Encoding of primitive types when they are the element type of arrays } *)
+(** {2 Encoding of primitive types when they are the element type of arrays} *)
 
 let boolean_code = "Z"
 

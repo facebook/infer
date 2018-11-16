@@ -29,7 +29,7 @@ val is_box : Typ.Procname.t -> bool
 (** return true if the given procname boxes a primitive type into a reference type *)
 
 val is_thread_confined_method : Tenv.t -> Procdesc.t -> bool
-(** Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
+(** Methods in [@ThreadConfined] classes and methods annotated with [@ThreadConfined] are assumed to all
    run on the same thread. For the moment we won't warn on accesses resulting from use of such
    methods at all. In future we should account for races between these methods and methods from
    completely different classes that don't necessarily run on the same thread as the confined
@@ -46,7 +46,7 @@ val get_current_class_and_threadsafe_superclasses :
 
 val is_thread_safe_method : Typ.Procname.t -> Tenv.t -> bool
 (** returns true if method or overriden method in superclass
-    is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
-    as an alias of @ThreadSafe in a .inferconfig file. *)
+    is [@ThreadSafe], [@ThreadSafe(enableChecks = true)], or is defined
+    as an alias of [@ThreadSafe] in a .inferconfig file. *)
 
 val is_marked_thread_safe : Procdesc.t -> Tenv.t -> bool

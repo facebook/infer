@@ -200,9 +200,9 @@ exception Unsat
 
 (** Add an equation [b+j] = [a+i] using [a] as the new rep. This removes [b]
     from the [cls] and [use] maps, as it is no longer a rep. The [rep] map
-    is updated to map each element of [b]'s [cls] (including [b]) to [a].
-    This also adjusts the offsets in [b]'s [cls] and merges it into [a]'s.
-    Likewise [b]'s [use] exps are merged into [a]'s. Finally, [b]'s [use]
+    is updated to map each element of [b] 's [cls] (including [b]) to [a].
+    This also adjusts the offsets in [b] 's [cls] and merges it into [a] 's.
+    Likewise [b] 's [use] exps are merged into [a] 's. Finally, [b] 's [use]
     exps are used to traverse one step up the expression dag, looking for
     new equations involving a super-expression of [b], whose rep changed. *)
 let add_directed_equation r ~exp:bj ~rep:ai =

@@ -128,7 +128,7 @@ val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
 (** get the list of annotations on the return value of [pdesc] *)
 
 val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
-(** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return
+(** return true if the given predicate evaluates to true on the annotation of [pdesc] 's return
     value *)
 
 val pname_has_return_annot :
@@ -136,12 +136,12 @@ val pname_has_return_annot :
   -> attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
   -> (Annot.Item.t -> bool)
   -> bool
-(** return true if the given predicate evaluates to true on the annotation of [pname]'s return
+(** return true if the given predicate evaluates to true on the annotation of [pname] 's return
     value. the function [attrs_of_pname] should resolve the proc attributes of [pname].
     Specs.proc_resolve_attributes is a good choice for this resolution function. *)
 
 val pdesc_return_annot_ends_with : Procdesc.t -> string -> bool
-(** return true if [pdesc]'s return value is annotated with a value ending with the given string *)
+(** return true if [pdesc] 's return value is annotated with a value ending with the given string *)
 
 val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 

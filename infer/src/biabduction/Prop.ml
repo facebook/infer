@@ -1817,7 +1817,7 @@ let mk_ptsto_lvar tenv expand_structs inst ((pvar : Pvar.t), texp, expo) : Sil.h
   Normalize.mk_ptsto_exp tenv expand_structs (Lvar pvar, texp, expo) inst
 
 
-(** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
+(** Conjoin [exp1] = [exp2] with a symbolic heap [prop]. *)
 let conjoin_eq tenv ?(footprint = false) exp1 exp2 prop =
   Normalize.prop_atom_and tenv ~footprint prop (Aeq (exp1, exp2))
 

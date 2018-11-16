@@ -398,8 +398,10 @@ module Domain : AbstractDomain.S with type astate = t = struct
       addresses l, l', access path a, and graph G, we write l –a–> l' ∈ G if there is a path labelled
       by a from l to l' in G (in particular, if a is empty then l –a–> l' ∈ G for all l, l').
 
+      {v
       ∀ i ∈ {1,2}, ∀ l, x, a, ∀ l' ∈ Ii, ((x, l) ∈ Si ∧ l –a–> l' ∈ Gi)
                                          => (x, σ(l)) ∈ S ∧ σ(l) –a–> σ(l') ∈ G ∧ σ(l') ∈ I
+      v}
 
       For now the implementation gives back a larger heap than necessary, where all the previously
       reachable location are still reachable (up to the substitution) instead of only the locations

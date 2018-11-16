@@ -34,7 +34,7 @@ module Tags = struct
   (** describes a NPE that comes from field not nullable *)
   let field_not_null_checked = "field_not_null_checked"
 
-  (** @Nullable-annoted field/param/retval that causes a warning *)
+  (** [@Nullable]-annoted field/param/retval that causes a warning *)
   let nullable_src = "nullable_src"
 
   (** Weak variable captured in a block that causes a warning *)

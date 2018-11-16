@@ -7,7 +7,7 @@
 
 (** Symbolic Execution *)
 
-(** generic command: ∀xs.{foot}-{post} *)
+(** generic command: [∀xs.{foot}-{post}] *)
 type spec = {xs: Var.Set.t; foot: Sh.t; post: Sh.t}
 
 type xseg = {us: Var.Set.t; xs: Var.Set.t; seg: Sh.seg}

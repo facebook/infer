@@ -43,7 +43,7 @@ and t =
   | Lvar of Pvar.t  (** The address of a program variable *)
   | Lfield of t * Typ.Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
-  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
+  | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data
 [@@deriving compare]
 
@@ -110,7 +110,7 @@ let rec root_of_lexp lexp =
 
 
 (** Checks whether an expression denotes a location by pointer arithmetic.
-    Currently, catches array-indexing expressions such as a[i] only. *)
+    Currently, catches array-indexing expressions such as [a[i]] only. *)
 let rec pointer_arith = function
   | Lfield (e, _, _) ->
       pointer_arith e

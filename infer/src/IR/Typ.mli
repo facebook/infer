@@ -368,7 +368,7 @@ module Procname : sig
 
     val is_vararg : t -> bool
     (** Check if the proc name has the type of a java vararg.
-          Note: currently only checks that the last argument has type Object[]. *)
+          Note: currently only checks that the last argument has type [Object[]]. *)
 
     val is_lambda : t -> bool
     (** Check if the proc name comes from a lambda expression *)
@@ -474,8 +474,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
   (** Type of procedure names.
   WithBlockParameters is used for creating an instantiation of a method that contains block parameters
   and it's called with concrete blocks. For example:
-  foo(Block block) {block();}
-  bar() {foo(my_block)} is executed as  foo_my_block() {my_block(); }
+  [foo(Block block) {block();}]
+  [bar() {foo(my_block)}] is executed as  [foo_my_block() {my_block(); }]
   where foo_my_block is created with WithBlockParameters (foo, [my_block]) *)
   type t =
     | Java of Java.t

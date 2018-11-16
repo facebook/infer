@@ -20,12 +20,13 @@ val call_matches :
   [@@warning "-32"]
 (** [call_matches C methods] builds a method matcher for calls [C.foo] where
     [foo] is in [methods].  Optional arguments change default behaviour:
-    - [search_superclasses=true] will match calls [S.foo] where [S] is a superclass of [C].
-      Defaults to [true].
-    - [method_prefix=true] will match calls [C.foo] where [foo] is a prefix of a string in [methods]
-      Defaults to [false].
-    - [actuals_pred] is a predicate that runs on the expressions fed as arguments to the call, and
-      which must return [true] for the matcher to return [true]. The default returns [true]. *)
+    {ul
+    {- [search_superclasses=true] will match calls [S.foo] where [S] is a superclass of [C].
+      Defaults to [true].}
+    {- [method_prefix=true] will match calls [C.foo] where [foo] is a prefix of a string in [methods]
+      Defaults to [false].}
+    {- [actuals_pred] is a predicate that runs on the expressions fed as arguments to the call, and
+      which must return [true] for the matcher to return [true]. The default returns [true].}} *)
 
 type record =
   { search_superclasses: bool

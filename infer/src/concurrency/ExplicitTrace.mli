@@ -38,7 +38,7 @@ module type TraceElem = sig
   (** Push given callsite onto trace, extending the call chain by one. *)
 
   (** A powerset of traces, where there is at most one trace for each dinstinct pair of [elem] and
-      [loc].  The traces in the set have priority over those [add]ed.  [join] is non-deterministic
+      [loc].  The traces in the set have priority over those [add]-ed.  [join] is non-deterministic
       as to which representative is kept (due to the implementation of [Set.union]). *)
   module FiniteSet : FiniteSet with type elt = t
 end

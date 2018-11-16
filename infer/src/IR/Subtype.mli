@@ -31,8 +31,9 @@ val case_analysis : Tenv.t -> Typ.Name.t * t -> Typ.Name.t * t -> t option * t o
 (** [case_analysis tenv (c1, st1) (c2, st2)] performs case analysis on [c1 <: c2] according
     to [st1] and [st2].
     [case_analysis] returns a pair:
-    - whether [st1] and [st2] admit [c1 <: c2], and in case returns the updated subtype [st1]
-    - whether [st1] and [st2] admit [not(c1 <: c2)], and in case returns the updated subtype [st1] *)
+    {ul
+     {- whether [st1] and [st2] admit [c1 <: c2], and in case returns the updated subtype [st1]}
+     {- whether [st1] and [st2] admit [not(c1 <: c2)], and in case returns the updated subtype [st1]}} *)
 
 val is_known_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 (** [is_known_subtype tenv c1 c2] returns true if there is enough information in [tenv] to prove

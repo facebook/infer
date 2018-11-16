@@ -394,7 +394,7 @@ let is_runtime_exception tenv typename =
 (** Checks if the class name is a Java exception *)
 let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
 
-(** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
+(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument,
     including for supertypes*)
 let check_class_attributes check tenv = function
   | Typ.Procname.Java java_pname ->
@@ -404,7 +404,7 @@ let check_class_attributes check tenv = function
       false
 
 
-(** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
+(** tests whether any class attributes (e.g., [@ThreadSafe]) pass check of first argument,
     for the current class only*)
 let check_current_class_attributes check tenv = function
   | Typ.Procname.Java java_pname -> (
@@ -417,7 +417,7 @@ let check_current_class_attributes check tenv = function
       false
 
 
-(** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
+(** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
 let rec find_superclasses_with_attributes check tenv tname =
   match Tenv.lookup tenv tname with
   | Some struct_typ ->

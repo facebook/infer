@@ -11,7 +11,7 @@ open! IStd
 (** Implementation of "Smart" Pattern Matching for higher order singly-linked list predicate.
 
     Used for detecting on a given program if some data scructures are matching some predefined higher-order list predicates. When it is the case, these predicates can be used as possible candidates for abstracting the data-structures.
-    See {{: http://dx.doi.org/10.1007/978-3-540-73368-3_22 }  CAV 2007 } for the therory involved.
+    See {{:http://dx.doi.org/10.1007/978-3-540-73368-3_22} CAV 2007} for the therory involved.
 *)
 
 (* TODO: missing documentation *)
