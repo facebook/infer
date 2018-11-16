@@ -9,7 +9,7 @@
 
 (** Segment of memory starting at [loc] containing a byte-array [arr] of
     size [siz], contained in an enclosing allocation-block starting at [bas]
-    of length [len]. Byte-array expressions are either [Var]iables or
+    of length [len]. Byte-array expressions are either [Var]-iables or
     [Splat] vectors. *)
 type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
 

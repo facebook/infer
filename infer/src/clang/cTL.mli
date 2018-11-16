@@ -59,7 +59,7 @@ type t =
       (** EU(phi1, phi2) <=>
                                          there exists a path from the current node such that phi1 holds until phi2 holds *)
   | EH of ALVar.alexp list * t
-      (** EH[classes]phi <=>
+      (** EH [classes] phi <=>
                                    there exists a node defining a super class in the hierarchy of the class
                                    defined by the current node (if any) where  phi holds *)
   | ET of ALVar.alexp list * transitions option * t

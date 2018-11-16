@@ -30,7 +30,7 @@ val string_of_access : access -> string
 type mem_kind =
   | Mmalloc  (** memory allocated with malloc *)
   | Mnew  (** memory allocated with new *)
-  | Mnew_array  (** memory allocated with new[] *)
+  | Mnew_array  (** memory allocated with [new[]] *)
   | Mobjc  (** memory allocated with objective-c alloc *)
 [@@deriving compare]
 
