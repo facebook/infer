@@ -460,7 +460,8 @@ module Report = struct
         let issue_type =
           if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
         in
-        Reporting.log_warning summary ~loc:location issue_type desc
+        let ltr = [Errlog.make_trace_element 0 location "Here" []] in
+        Reporting.log_warning summary ~loc:location ~ltr issue_type desc
     (* special case for `exit` when we're at the end of a block / procedure *)
     | Sil.Call (_, Const (Cfun pname), _, _, _)
       when String.equal (Typ.Procname.get_method pname) "exit"
@@ -468,7 +469,8 @@ module Report = struct
         ()
     | _ ->
         let location = Sil.instr_get_loc instr in
-        Reporting.log_error summary ~loc:location IssueType.unreachable_code_after
+        let ltr = [Errlog.make_trace_element 0 location "Here" []] in
+        Reporting.log_error summary ~loc:location ~ltr IssueType.unreachable_code_after
           "Unreachable code after statement"
 
 
