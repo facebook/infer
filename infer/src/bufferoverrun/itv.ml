@@ -626,6 +626,8 @@ module ItvPure = struct
 
   let minus : t -> t -> t = fun i1 i2 -> plus i1 (neg i2)
 
+  let succ : t -> t = fun x -> plus x one
+
   let mult_const : Z.t -> t -> t =
    fun n ((l, u) as itv) ->
     match NonZeroInt.of_big_int n with

@@ -250,11 +250,10 @@ module ArrayAccessCondition = struct
        For arrays : we want to check that 0 <= idx < size
        For adding into arraylists: we want to check that 0 <= idx <= size *)
     let real_idx = ItvPure.plus c.offset c.idx in
-    let size = ItvPure.make_positive c.size in
+    let size = ItvPure.make_positive (if is_collection_add then ItvPure.succ c.size else c.size) in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
-      if is_collection_add then ItvPure.le_sem real_idx size
-      else if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Itv.Boolean.true_
+      if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Itv.Boolean.true_
       else ItvPure.lt_sem real_idx size
     in
     let not_underrun =

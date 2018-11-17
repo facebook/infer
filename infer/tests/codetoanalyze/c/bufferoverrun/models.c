@@ -97,6 +97,21 @@ void memcpy_good4() {
   memcpy(dst, src, sizeof(dst));
 }
 
+void memcpy_len(size_t len) {
+  char dst[len];
+  char src[len];
+  memcpy(dst, src, len);
+}
+
+void call_memcpy_len1_Good() { memcpy_len(40); }
+
+extern size_t unknown_uint();
+
+void call_memcpy_len2_Good_FP() {
+  size_t x = unknown();
+  memcpy_len(x);
+}
+
 void memmove_bad1() {
   int arr1[10];
   int arr2[20];

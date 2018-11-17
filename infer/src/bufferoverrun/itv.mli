@@ -146,6 +146,8 @@ module ItvPure : sig
 
   val minus : t -> t -> t
 
+  val succ : t -> t
+
   val mult : t -> t -> t
 end
 
