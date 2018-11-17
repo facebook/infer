@@ -107,8 +107,22 @@ BUILD_SYSTEMS_TESTS += \
 	racerd_dedup
 
 DIRECT_TESTS += \
-  java_checkers java_classloads java_eradicate java_infer java_lab java_tracing java_quandary \
-  java_racerd java_stability java_crashcontext java_hoisting java_hoistingExpensive java_starvation java_performance java_purity
+  java_checkers \
+  java_classloads \
+  java_crashcontext \
+  java_eradicate \
+  java_hoisting \
+  java_hoistingExpensive \
+  java_infer \
+  java_lab \
+  java_performance \
+  java_purity \
+  java_quandary \
+  java_racerd \
+  java_stability \
+  java_starvation \
+  java_tracing \
+
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif

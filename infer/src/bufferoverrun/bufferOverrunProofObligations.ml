@@ -260,7 +260,8 @@ module ArrayAccessCondition = struct
        For adding into collections : we want to check that 0 <= idx <= size *)
     let real_idx = ItvPure.plus c.offset c.idx in
     let size =
-      ItvPure.make_positive (if c.is_collection_add then ItvPure.succ c.size else c.size)
+      let size_pos = ItvPure.make_positive c.size in
+      if c.is_collection_add then ItvPure.succ size_pos else size_pos
     in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
