@@ -102,6 +102,7 @@ module ArrayAccessCondition = struct
     { offset: ItvPure.astate
     ; idx: ItvPure.astate
     ; size: ItvPure.astate
+    ; is_collection_add: bool
     ; idx_sym_exp: Relation.SymExp.t option
     ; size_sym_exp: Relation.SymExp.t option
     ; relation: Relation.astate }
@@ -117,10 +118,12 @@ module ArrayAccessCondition = struct
     let pp_offset fmt =
       if not (ItvPure.is_zero c.offset) then F.fprintf fmt "%a + " ItvPure.pp c.offset
     in
-    F.fprintf fmt "%t%a < %a" pp_offset ItvPure.pp c.idx ItvPure.pp (ItvPure.make_positive c.size) ;
+    let cmp = if c.is_collection_add then "<=" else "<" in
+    F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
+      (ItvPure.make_positive c.size) ;
     if Option.is_some Config.bo_relational_domain then
-      F.fprintf fmt "@,%a < %a when %a" Relation.SymExp.pp_opt c.idx_sym_exp Relation.SymExp.pp_opt
-        c.size_sym_exp Relation.pp c.relation
+      F.fprintf fmt "@,%a %s %a when %a" Relation.SymExp.pp_opt c.idx_sym_exp cmp
+        Relation.SymExp.pp_opt c.size_sym_exp Relation.pp c.relation
 
 
   let pp_description : F.formatter -> t -> unit =
@@ -132,25 +135,29 @@ module ArrayAccessCondition = struct
         F.fprintf fmt "%a (= %a + %a)" ItvPure.pp (ItvPure.plus c.offset c.idx) ItvPure.pp c.offset
           ItvPure.pp c.idx
     in
-    F.fprintf fmt "Offset: %t Size: %a" pp_offset ItvPure.pp (ItvPure.make_positive c.size)
+    F.fprintf fmt "Offset%s: %t Size: %a"
+      (if c.is_collection_add then " added" else "")
+      pp_offset ItvPure.pp (ItvPure.make_positive c.size)
 
 
   let make :
          offset:ItvPure.t
       -> idx:ItvPure.t
       -> size:ItvPure.t
+      -> is_collection_add:bool
       -> idx_sym_exp:Relation.SymExp.t option
       -> size_sym_exp:Relation.SymExp.t option
       -> relation:Relation.astate
       -> t option =
-   fun ~offset ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation ->
+   fun ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
-    else Some {offset; idx; size; idx_sym_exp; size_sym_exp; relation}
+    else Some {offset; idx; size; is_collection_add; idx_sym_exp; size_sym_exp; relation}
 
 
-  let have_similar_bounds {offset= loff; idx= lidx; size= lsiz}
-      {offset= roff; idx= ridx; size= rsiz} =
-    ItvPure.have_similar_bounds loff roff
+  let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; is_collection_add= lcol}
+      {offset= roff; idx= ridx; size= rsiz; is_collection_add= rcol} =
+    Bool.equal lcol rcol
+    && ItvPure.have_similar_bounds loff roff
     && ItvPure.have_similar_bounds lidx ridx
     && ItvPure.have_similar_bounds lsiz rsiz
 
@@ -159,58 +166,60 @@ module ArrayAccessCondition = struct
     ItvPure.has_infty offset || ItvPure.has_infty idx || ItvPure.has_infty size
 
 
-  let xcompare ~lhs:{offset= loff; idx= lidx; size= lsiz} ~rhs:{offset= roff; idx= ridx; size= rsiz}
-      =
-    let offcmp = ItvPure.xcompare ~lhs:loff ~rhs:roff in
-    let idxcmp = ItvPure.xcompare ~lhs:lidx ~rhs:ridx in
-    let sizcmp = ItvPure.xcompare ~lhs:lsiz ~rhs:rsiz in
-    match (offcmp, idxcmp, sizcmp) with
-    | `Equal, `Equal, `Equal ->
-        `Equal
-    | `NotComparable, _, _ | _, `NotComparable, _ ->
-        `NotComparable
-    | `Equal, `Equal, (`LeftSmallerThanRight | `LeftSubsumesRight) ->
-        `LeftSubsumesRight
-    | `Equal, `Equal, (`RightSmallerThanLeft | `RightSubsumesLeft) ->
-        `RightSubsumesLeft
-    | (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight)
-      ->
-        `LeftSubsumesRight
-    | (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft)
-      ->
-        `RightSubsumesLeft
-    | (`Equal | `LeftSmallerThanRight), (`Equal | `LeftSmallerThanRight), _
-    | (`Equal | `RightSmallerThanLeft), (`Equal | `RightSmallerThanLeft), _ ->
-        let lidxpos = ItvPure.le_sem (ItvPure.neg lidx) loff in
-        let ridxpos = ItvPure.le_sem (ItvPure.neg ridx) roff in
-        if not (Itv.Boolean.equal lidxpos ridxpos) then `NotComparable
-        else if Itv.Boolean.is_true lidxpos then
-          (* both idx >= 0 *)
-          match (offcmp, idxcmp, sizcmp) with
-          | ( (`Equal | `LeftSmallerThanRight)
-            , (`Equal | `LeftSmallerThanRight)
-            , (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft) ) ->
-              `RightSubsumesLeft
-          | ( (`Equal | `RightSmallerThanLeft)
-            , (`Equal | `RightSmallerThanLeft)
-            , (`Equal | `LeftSmallerThanRight | `LeftSubsumesRight) ) ->
-              `LeftSubsumesRight
-          | _ ->
-              `NotComparable
-        else if Itv.Boolean.is_false lidxpos then
-          (* both idx < 0, size doesn't matter *)
-          match (offcmp, idxcmp) with
-          | `Equal, `LeftSmallerThanRight | `LeftSmallerThanRight, `Equal ->
-              `LeftSubsumesRight
-          | `Equal, `RightSmallerThanLeft | `RightSmallerThanLeft, `Equal ->
-              `RightSubsumesLeft
-          | `Equal, `Equal ->
-              `Equal
-          | _ ->
-              `NotComparable
-        else `NotComparable
-    | _ ->
-        `NotComparable
+  let xcompare ~lhs:{offset= loff; idx= lidx; size= lsiz; is_collection_add= lcol}
+      ~rhs:{offset= roff; idx= ridx; size= rsiz; is_collection_add= rcol} =
+    if not (Bool.equal lcol rcol) then `NotComparable
+    else
+      let offcmp = ItvPure.xcompare ~lhs:loff ~rhs:roff in
+      let idxcmp = ItvPure.xcompare ~lhs:lidx ~rhs:ridx in
+      let sizcmp = ItvPure.xcompare ~lhs:lsiz ~rhs:rsiz in
+      match (offcmp, idxcmp, sizcmp) with
+      | `Equal, `Equal, `Equal ->
+          `Equal
+      | `NotComparable, _, _ | _, `NotComparable, _ ->
+          `NotComparable
+      | `Equal, `Equal, (`LeftSmallerThanRight | `LeftSubsumesRight) ->
+          `LeftSubsumesRight
+      | `Equal, `Equal, (`RightSmallerThanLeft | `RightSubsumesLeft) ->
+          `RightSubsumesLeft
+      | (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight), (`Equal | `LeftSubsumesRight)
+        ->
+          `LeftSubsumesRight
+      | (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft), (`Equal | `RightSubsumesLeft)
+        ->
+          `RightSubsumesLeft
+      | (`Equal | `LeftSmallerThanRight), (`Equal | `LeftSmallerThanRight), _
+      | (`Equal | `RightSmallerThanLeft), (`Equal | `RightSmallerThanLeft), _ ->
+          let lidxpos = ItvPure.le_sem (ItvPure.neg lidx) loff in
+          let ridxpos = ItvPure.le_sem (ItvPure.neg ridx) roff in
+          if not (Itv.Boolean.equal lidxpos ridxpos) then `NotComparable
+          else if Itv.Boolean.is_true lidxpos then
+            (* both idx >= 0 *)
+            match (offcmp, idxcmp, sizcmp) with
+            | ( (`Equal | `LeftSmallerThanRight)
+              , (`Equal | `LeftSmallerThanRight)
+              , (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft) ) ->
+                `RightSubsumesLeft
+            | ( (`Equal | `RightSmallerThanLeft)
+              , (`Equal | `RightSmallerThanLeft)
+              , (`Equal | `LeftSmallerThanRight | `LeftSubsumesRight) ) ->
+                `LeftSubsumesRight
+            | _ ->
+                `NotComparable
+          else if Itv.Boolean.is_false lidxpos then
+            (* both idx < 0, size doesn't matter *)
+            match (offcmp, idxcmp) with
+            | `Equal, `LeftSmallerThanRight | `LeftSmallerThanRight, `Equal ->
+                `LeftSubsumesRight
+            | `Equal, `RightSmallerThanLeft | `RightSmallerThanLeft, `Equal ->
+                `RightSubsumesLeft
+            | `Equal, `Equal ->
+                `Equal
+            | _ ->
+                `NotComparable
+          else `NotComparable
+      | _ ->
+          `NotComparable
 
 
   let filter1 : real_idx:ItvPure.t -> t -> bool =
@@ -244,13 +253,15 @@ module ArrayAccessCondition = struct
 
 
   (* check buffer overrun and return its confidence *)
-  let check : is_collection_add:bool -> t -> checked_condition =
-   fun ~is_collection_add c ->
+  let check : t -> checked_condition =
+   fun c ->
     (* idx = [il, iu], size = [sl, su],
        For arrays : we want to check that 0 <= idx < size
-       For adding into arraylists: we want to check that 0 <= idx <= size *)
+       For adding into collections : we want to check that 0 <= idx <= size *)
     let real_idx = ItvPure.plus c.offset c.idx in
-    let size = ItvPure.make_positive (if is_collection_add then ItvPure.succ c.size else c.size) in
+    let size =
+      ItvPure.make_positive (if c.is_collection_add then ItvPure.succ c.size else c.size)
+    in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
       if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Itv.Boolean.true_
@@ -297,7 +308,7 @@ module ArrayAccessCondition = struct
         let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
         let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
         let relation = Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation in
-        Some {offset; idx; size; idx_sym_exp; size_sym_exp; relation}
+        Some {c with offset; idx; size; idx_sym_exp; size_sym_exp; relation}
     | _ ->
         None
 
@@ -469,21 +480,19 @@ end
 module Condition = struct
   type t =
     | AllocSize of AllocSizeCondition.t
-    | ArrayAccess of {is_collection_add: bool; c: ArrayAccessCondition.t}
+    | ArrayAccess of ArrayAccessCondition.t
     | BinaryOperation of BinaryOperationCondition.t
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
-  let make_array_access ~is_collection_add =
-    Option.map ~f:(fun c -> ArrayAccess {is_collection_add; c})
-
+  let make_array_access = Option.map ~f:(fun c -> ArrayAccess c)
 
   let make_binary_operation = Option.map ~f:(fun c -> BinaryOperation c)
 
   let get_symbols = function
     | AllocSize c ->
         AllocSizeCondition.get_symbols c
-    | ArrayAccess {c} ->
+    | ArrayAccess c ->
         ArrayAccessCondition.get_symbols c
     | BinaryOperation c ->
         BinaryOperationCondition.get_symbols c
@@ -492,9 +501,8 @@ module Condition = struct
   let subst eval_sym rel_map caller_relation = function
     | AllocSize c ->
         AllocSizeCondition.subst eval_sym c |> make_alloc_size
-    | ArrayAccess {is_collection_add; c} ->
-        ArrayAccessCondition.subst eval_sym rel_map caller_relation c
-        |> make_array_access ~is_collection_add
+    | ArrayAccess c ->
+        ArrayAccessCondition.subst eval_sym rel_map caller_relation c |> make_array_access
     | BinaryOperation c ->
         BinaryOperationCondition.subst eval_sym c |> make_binary_operation
 
@@ -503,7 +511,7 @@ module Condition = struct
     match (c1, c2) with
     | AllocSize c1, AllocSize c2 ->
         AllocSizeCondition.have_similar_bounds c1 c2
-    | ArrayAccess {c= c1}, ArrayAccess {c= c2} ->
+    | ArrayAccess c1, ArrayAccess c2 ->
         ArrayAccessCondition.have_similar_bounds c1 c2
     | BinaryOperation c1, BinaryOperation c2 ->
         BinaryOperationCondition.have_similar_bounds c1 c2
@@ -512,7 +520,7 @@ module Condition = struct
 
 
   let has_infty = function
-    | ArrayAccess {c} ->
+    | ArrayAccess c ->
         ArrayAccessCondition.has_infty c
     | BinaryOperation c ->
         BinaryOperationCondition.has_infty c
@@ -524,8 +532,7 @@ module Condition = struct
     match (lhs, rhs) with
     | AllocSize lhs, AllocSize rhs ->
         AllocSizeCondition.xcompare ~lhs ~rhs
-    | ArrayAccess {is_collection_add= b1; c= lhs}, ArrayAccess {is_collection_add= b2; c= rhs}
-      when Bool.equal b1 b2 ->
+    | ArrayAccess lhs, ArrayAccess rhs ->
         ArrayAccessCondition.xcompare ~lhs ~rhs
     | BinaryOperation lhs, BinaryOperation rhs ->
         BinaryOperationCondition.xcompare ~lhs ~rhs
@@ -536,7 +543,7 @@ module Condition = struct
   let pp fmt = function
     | AllocSize c ->
         AllocSizeCondition.pp fmt c
-    | ArrayAccess {c} ->
+    | ArrayAccess c ->
         ArrayAccessCondition.pp fmt c
     | BinaryOperation c ->
         BinaryOperationCondition.pp fmt c
@@ -545,7 +552,7 @@ module Condition = struct
   let pp_description fmt = function
     | AllocSize c ->
         AllocSizeCondition.pp_description fmt c
-    | ArrayAccess {c} ->
+    | ArrayAccess c ->
         ArrayAccessCondition.pp_description fmt c
     | BinaryOperation c ->
         BinaryOperationCondition.pp_description fmt c
@@ -554,16 +561,16 @@ module Condition = struct
   let check = function
     | AllocSize c ->
         AllocSizeCondition.check c
-    | ArrayAccess {is_collection_add; c} ->
-        ArrayAccessCondition.check ~is_collection_add c
+    | ArrayAccess c ->
+        ArrayAccessCondition.check c
     | BinaryOperation c ->
         BinaryOperationCondition.check c
 
 
   let forget_locs locs x =
     match x with
-    | ArrayAccess {is_collection_add; c} ->
-        ArrayAccess {is_collection_add; c= ArrayAccessCondition.forget_locs locs c}
+    | ArrayAccess c ->
+        ArrayAccess (ArrayAccessCondition.forget_locs locs c)
     | AllocSize _ | BinaryOperation _ ->
         x
 end
@@ -806,8 +813,9 @@ module ConditionSet = struct
 
   let add_array_access location ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
       ~relation val_traces condset =
-    ArrayAccessCondition.make ~offset ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
-    |> Condition.make_array_access ~is_collection_add
+    ArrayAccessCondition.make ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
+      ~relation
+    |> Condition.make_array_access
     |> add_opt location val_traces condset
 
 
