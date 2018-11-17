@@ -180,6 +180,8 @@ codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_or_Ok, 3, CONDITION_ALW
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_or_Ok, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_constant.c, call_fromHex2_200_Good_FP, 3, BUFFER_OVERRUN_L3, no_bucket, ERROR, [ArrayDeclaration,Call,Assignment,Return,Assignment,ArrayAccess: Offset: [-28, 16] Size: 17]
 codetoanalyze/c/bufferoverrun/prune_constant.c, call_fromHex2_sym_Good_FP, 3, BUFFER_OVERRUN_L3, no_bucket, ERROR, [ArrayDeclaration,Call,Assignment,Return,Assignment,ArrayAccess: Offset: [-28, 16] Size: 17]
+codetoanalyze/c/bufferoverrun/prune_constant.c, call_prune_add2_2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,ArrayDeclaration,Parameter: x,ArrayAccess: Offset: 10 Size: 10 by call to `prune_add2` ]
+codetoanalyze/c/bufferoverrun/prune_constant.c, call_prune_sub2_2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,ArrayDeclaration,Parameter: x,ArrayAccess: Offset: 10 Size: 10 by call to `prune_sub2` ]
 codetoanalyze/c/bufferoverrun/prune_constant.c, prune_constant_false_Ok, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_constant.c, prune_constant_not_Bad, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_constant.c, prune_constant_not_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 1 Size: 1]

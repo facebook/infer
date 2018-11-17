@@ -80,3 +80,51 @@ void call_fromHex2_200_Good_FP() {
   int idx = fromHex(200);
   arr[idx + 1] = 'H';
 }
+
+void prune_add1(unsigned int x) {
+  int a[10];
+  if (x + 1 < 11) {
+    a[x] = 0;
+  }
+}
+
+void call_prune_add1_1_Good() { prune_add1(5); }
+
+void call_prune_add1_2_Good() { prune_add1(10); }
+
+void prune_add2(unsigned int x) {
+  int a[10];
+  if (x + 1 < 12) {
+    a[x] = 0;
+  }
+}
+
+void call_prune_add2_1_Good() { prune_add2(5); }
+
+void call_prune_add2_2_Bad() { prune_add2(10); }
+
+void call_prune_add2_3_Good() { prune_add2(100); }
+
+void prune_sub1(unsigned int x) {
+  int a[10];
+  if (9 > x - 1) {
+    a[x] = 0;
+  }
+}
+
+void call_prune_sub1_1_Good() { prune_sub1(5); }
+
+void call_prune_sub1_2_Good() { prune_sub1(10); }
+
+void prune_sub2(unsigned int x) {
+  int a[10];
+  if (10 > x - 1) {
+    a[x] = 0;
+  }
+}
+
+void call_prune_sub2_1_Good() { prune_sub2(5); }
+
+void call_prune_sub2_2_Bad() { prune_sub2(10); }
+
+void call_prune_sub2_3_Good() { prune_sub2(100); }

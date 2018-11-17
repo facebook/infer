@@ -405,7 +405,7 @@ module Prune = struct
         astate
 
 
-  let prune_binop_left : Exp.t -> astate -> astate =
+  let rec prune_binop_left : Exp.t -> astate -> astate =
    fun e ({mem} as astate) ->
     match e with
     | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
@@ -435,6 +435,23 @@ module Prune = struct
           update_mem_in_prune lv v' astate
       | None ->
           astate )
+    | Exp.BinOp
+        ( ((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as comp)
+        , Exp.BinOp (Binop.PlusA t, e1, e2)
+        , e3 ) ->
+        (* NOTE: The transposition may introduce a new integer overflow or hide an existing one.
+           Be careful when you take into account integer overflows in the abstract semantics [eval]
+           in the future. *)
+        astate
+        |> prune_binop_left (Exp.BinOp (comp, e1, Exp.BinOp (Binop.MinusA t, e3, e2)))
+        |> prune_binop_left (Exp.BinOp (comp, e2, Exp.BinOp (Binop.MinusA t, e3, e1)))
+    | Exp.BinOp
+        ( ((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as comp)
+        , Exp.BinOp (Binop.MinusA t, e1, e2)
+        , e3 ) ->
+        astate
+        |> prune_binop_left (Exp.BinOp (comp, e1, Exp.BinOp (Binop.PlusA t, e3, e2)))
+        |> prune_binop_left (Exp.BinOp (comp_rev comp, e2, Exp.BinOp (Binop.MinusA t, e1, e3)))
     | _ ->
         astate
 
@@ -442,13 +459,9 @@ module Prune = struct
   let prune_binop_right : Exp.t -> astate -> astate =
    fun e astate ->
     match e with
-    | Exp.BinOp ((Binop.Lt as c), e', Exp.Var x)
-    | Exp.BinOp ((Binop.Gt as c), e', Exp.Var x)
-    | Exp.BinOp ((Binop.Le as c), e', Exp.Var x)
-    | Exp.BinOp ((Binop.Ge as c), e', Exp.Var x)
-    | Exp.BinOp ((Binop.Eq as c), e', Exp.Var x)
-    | Exp.BinOp ((Binop.Ne as c), e', Exp.Var x) ->
-        prune_binop_left (Exp.BinOp (comp_rev c, Exp.Var x, e')) astate
+    | Exp.BinOp (((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as c), e1, e2)
+      ->
+        prune_binop_left (Exp.BinOp (comp_rev c, e2, e1)) astate
     | _ ->
         astate
 
