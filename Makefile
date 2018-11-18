@@ -107,6 +107,7 @@ BUILD_SYSTEMS_TESTS += \
 	racerd_dedup
 
 DIRECT_TESTS += \
+  java_bufferoverrun \
   java_checkers \
   java_classloads \
   java_crashcontext \
