@@ -273,13 +273,13 @@ module Init = struct
       -> Loc.t
       -> Typ.typ
       -> inst_num:int
-      -> new_sym_num:Itv.Counter.t
+      -> new_sym_num:Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
    fun pname symbol_table path tenv ~node_hash location ~represents_multiple_values loc typ
        ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
-    let new_alloc_num = Itv.Counter.make 1 in
+    let new_alloc_num = Counter.make 1 in
     let rec decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth
         ~may_last_field loc typ mem =
       if depth > max_depth then mem
@@ -374,7 +374,7 @@ module Init = struct
       -> Dom.Mem.astate =
    fun pname tenv ~node_hash location symbol_table ~represents_multiple_values ~inst_num formals
        mem ->
-    let new_sym_num = Itv.Counter.make 0 in
+    let new_sym_num = Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
       let path = Itv.SymbolPath.of_pvar pvar in

@@ -43,14 +43,14 @@ module AllocSizeCondition = struct
     | (`LeftSmallerThanRight | `RightSmallerThanLeft) as cmp ->
         let lpos = ItvPure.le_sem ItvPure.zero lhs in
         let rpos = ItvPure.le_sem ItvPure.zero rhs in
-        if not (Itv.Boolean.equal lpos rpos) then `NotComparable
-        else if Itv.Boolean.is_true lpos then
+        if not (Boolean.equal lpos rpos) then `NotComparable
+        else if Boolean.is_true lpos then
           match cmp with
           | `LeftSmallerThanRight ->
               `RightSubsumesLeft
           | `RightSmallerThanLeft ->
               `LeftSubsumesRight
-        else if Itv.Boolean.is_false lpos then
+        else if Boolean.is_false lpos then
           match cmp with
           | `LeftSmallerThanRight ->
               `LeftSubsumesRight
@@ -192,8 +192,8 @@ module ArrayAccessCondition = struct
       | (`Equal | `RightSmallerThanLeft), (`Equal | `RightSmallerThanLeft), _ ->
           let lidxpos = ItvPure.le_sem (ItvPure.neg lidx) loff in
           let ridxpos = ItvPure.le_sem (ItvPure.neg ridx) roff in
-          if not (Itv.Boolean.equal lidxpos ridxpos) then `NotComparable
-          else if Itv.Boolean.is_true lidxpos then
+          if not (Boolean.equal lidxpos ridxpos) then `NotComparable
+          else if Boolean.is_true lidxpos then
             (* both idx >= 0 *)
             match (offcmp, idxcmp, sizcmp) with
             | ( (`Equal | `LeftSmallerThanRight)
@@ -206,7 +206,7 @@ module ArrayAccessCondition = struct
                 `LeftSubsumesRight
             | _ ->
                 `NotComparable
-          else if Itv.Boolean.is_false lidxpos then
+          else if Boolean.is_false lidxpos then
             (* both idx < 0, size doesn't matter *)
             match (offcmp, idxcmp) with
             | `Equal, `LeftSmallerThanRight | `LeftSmallerThanRight, `Equal ->
@@ -265,18 +265,17 @@ module ArrayAccessCondition = struct
     in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
-      if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Itv.Boolean.true_
+      if Relation.lt_sat_opt c.idx_sym_exp c.size_sym_exp c.relation then Boolean.True
       else ItvPure.lt_sem real_idx size
     in
     let not_underrun =
-      if Relation.le_sat_opt (Some Relation.SymExp.zero) c.idx_sym_exp c.relation then
-        Itv.Boolean.true_
+      if Relation.le_sat_opt (Some Relation.SymExp.zero) c.idx_sym_exp c.relation then Boolean.True
       else ItvPure.le_sem ItvPure.zero real_idx
     in
     (* il >= 0 and iu < sl, definitely not an error *)
-    if Itv.Boolean.is_true not_overrun && Itv.Boolean.is_true not_underrun then
+    if Boolean.is_true not_overrun && Boolean.is_true not_underrun then
       {report_issue_type= None; propagate= false} (* iu < 0 or il >= su, definitely an error *)
-    else if Itv.Boolean.is_false not_overrun || Itv.Boolean.is_false not_underrun then
+    else if Boolean.is_false not_overrun || Boolean.is_false not_underrun then
       {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
     else if

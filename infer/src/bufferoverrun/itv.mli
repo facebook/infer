@@ -9,22 +9,6 @@ open! IStd
 open! AbstractDomain.Types
 module F = Format
 module Bound = Bounds.Bound
-module Counter = Counter
-
-module Boolean : sig
-  type t
-
-  val top : t
-
-  val true_ : t
-
-  val equal : t -> t -> bool
-
-  val is_false : t -> bool
-
-  val is_true : t -> bool
-end
-
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
 module SymbolSet = Symb.SymbolSet

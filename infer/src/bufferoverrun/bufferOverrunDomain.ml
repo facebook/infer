@@ -160,7 +160,7 @@ module Val = struct
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
-      -> Itv.Counter.t
+      -> Counter.t
       -> Location.t
       -> t =
    fun ~represents_multiple_values ?(unsigned = false) loc pname symbol_table path new_sym_num
@@ -184,9 +184,9 @@ module Val = struct
 
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
 
-  let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.Boolean.t) -> t -> t -> t =
+  let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> t -> t -> t =
    fun f x y ->
-    let b = if has_pointer x || has_pointer y then Itv.Boolean.top else f x.itv y.itv in
+    let b = if has_pointer x || has_pointer y then Boolean.Top else f x.itv y.itv in
     let itv = Itv.of_bool b in
     {bot with itv; traces= TraceSet.join x.traces y.traces}
 

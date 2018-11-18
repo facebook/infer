@@ -142,8 +142,8 @@ module Exec = struct
       -> ?size:Itv.t
       -> ?stride:int
       -> inst_num:int
-      -> new_sym_num:Itv.Counter.t
-      -> new_alloc_num:Itv.Counter.t
+      -> new_sym_num:Counter.t
+      -> new_alloc_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun ~decl_sym_val array_kind pname symbol_table path tenv ~node_hash location
@@ -161,7 +161,7 @@ module Exec = struct
     in
     let deref_path = Itv.SymbolPath.index ~array_kind path in
     let allocsite =
-      let alloc_num = Itv.Counter.next new_alloc_num in
+      let alloc_num = Counter.next new_alloc_num in
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some deref_path)
     in
     let mem =
@@ -195,12 +195,12 @@ module Exec = struct
       -> Loc.t
       -> Typ.t
       -> inst_num:int
-      -> new_alloc_num:Itv.Counter.t
+      -> new_alloc_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun ~decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth loc typ
        ~inst_num ~new_alloc_num mem ->
-    let alloc_num = Itv.Counter.next new_alloc_num in
+    let alloc_num = Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
     let allocsite =
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
@@ -223,7 +223,7 @@ module Exec = struct
       -> Location.t
       -> represents_multiple_values:bool
       -> Loc.t
-      -> new_sym_num:Itv.Counter.t
+      -> new_sym_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun pname symbol_table path location ~represents_multiple_values loc ~new_sym_num mem ->

@@ -84,8 +84,8 @@ module Exec : sig
     -> ?size:Itv.t
     -> ?stride:int
     -> inst_num:int
-    -> new_sym_num:Itv.Counter.t
-    -> new_alloc_num:Itv.Counter.t
+    -> new_sym_num:Counter.t
+    -> new_alloc_num:Counter.t
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 
@@ -101,7 +101,7 @@ module Exec : sig
     -> Loc.t
     -> Typ.t
     -> inst_num:int
-    -> new_alloc_num:Itv.Counter.t
+    -> new_alloc_num:Counter.t
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 
@@ -112,7 +112,7 @@ module Exec : sig
     -> Location.t
     -> represents_multiple_values:bool
     -> Loc.t
-    -> new_sym_num:Itv.Counter.t
+    -> new_sym_num:Counter.t
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 

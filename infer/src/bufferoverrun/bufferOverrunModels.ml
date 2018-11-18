@@ -52,8 +52,8 @@ type declare_symbolic_fun =
   -> depth:int
   -> Loc.t
   -> inst_num:int
-  -> new_sym_num:Itv.Counter.t
-  -> new_alloc_num:Itv.Counter.t
+  -> new_sym_num:Counter.t
+  -> new_alloc_num:Counter.t
   -> Dom.Mem.astate
   -> Dom.Mem.astate
 

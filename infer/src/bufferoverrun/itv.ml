@@ -12,22 +12,6 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Bound = Bounds.Bound
-module Counter = Counter
-
-module Boolean = struct
-  type t = Bottom | False | True | Top [@@deriving compare]
-
-  let top = Top
-
-  let true_ = True
-
-  let equal = [%compare.equal: t]
-
-  let is_false = function False -> true | _ -> false
-
-  let is_true = function True -> true | _ -> false
-end
-
 open Ints
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
@@ -618,9 +602,11 @@ module ItvPure = struct
     (l', u')
 
 
-  let lnot : t -> Boolean.t =
-   fun x -> if is_true x then Boolean.False else if is_false x then Boolean.True else Boolean.Top
+  let to_bool : t -> Boolean.t =
+   fun x -> if is_false x then Boolean.False else if is_true x then Boolean.True else Boolean.Top
 
+
+  let lnot : t -> Boolean.t = fun x -> to_bool x |> Boolean.not_
 
   let plus : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.plus_l l1 l2, Bound.plus_u u1 u2)
 
@@ -755,19 +741,9 @@ module ItvPure = struct
     else Boolean.Top
 
 
-  let land_sem : t -> t -> Boolean.t =
-   fun x y ->
-    if is_true x && is_true y then Boolean.True
-    else if is_false x || is_false y then Boolean.False
-    else Boolean.Top
+  let land_sem : t -> t -> Boolean.t = fun x y -> Boolean.and_ (to_bool x) (to_bool y)
 
-
-  let lor_sem : t -> t -> Boolean.t =
-   fun x y ->
-    if is_true x || is_true y then Boolean.True
-    else if is_false x && is_false y then Boolean.False
-    else Boolean.Top
-
+  let lor_sem : t -> t -> Boolean.t = fun x y -> Boolean.or_ (to_bool x) (to_bool y)
 
   let min_sem : t -> t -> t =
    fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_min u1 u2)
