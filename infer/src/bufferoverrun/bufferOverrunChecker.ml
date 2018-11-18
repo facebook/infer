@@ -745,11 +745,10 @@ module Report = struct
       | Trace.Return location ->
           (Errlog.make_trace_element (depth - 1) location "Return" [] :: trace, depth - 1)
       | Trace.SymAssign (loc, location) ->
-          if Loc.contains_allocsite loc then (* ugly, don't show *)
-            (trace, depth)
-          else
+          if Loc.is_pretty loc then
             let desc = Format.asprintf "Parameter: %a" Loc.pp loc in
             (Errlog.make_trace_element depth location desc [] :: trace, depth)
+          else (trace, depth)
       | Trace.UnknownFrom (pname_opt, location) ->
           let desc = Format.asprintf "Unknown value from: %a" Trace.pp_pname_opt pname_opt in
           (Errlog.make_trace_element depth location desc [] :: trace, depth)

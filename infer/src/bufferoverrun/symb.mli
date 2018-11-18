@@ -27,6 +27,8 @@ module SymbolPath : sig
 
   val pp : F.formatter -> t -> unit
 
+  val pp_partial : F.formatter -> partial -> unit
+
   val of_pvar : Pvar.t -> partial
 
   val index : array_kind:c_sym_array_kind -> partial -> partial

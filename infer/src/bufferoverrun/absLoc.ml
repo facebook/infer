@@ -24,9 +24,14 @@ module Allocsite = struct
   let pp fmt = function
     | Unknown ->
         F.fprintf fmt "Unknown"
-    | Known {proc_name : string; node_hash : int; inst_num : int; dimension : int} ->
-        F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension
+    | Known {path= Some path} when Config.bo_debug < 1 ->
+        Symb.SymbolPath.pp_partial fmt path
+    | Known {proc_name; node_hash; inst_num; dimension; path} ->
+        F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension ;
+        Option.iter path ~f:(fun path -> F.fprintf fmt "(%a)" Symb.SymbolPath.pp_partial path)
 
+
+  let is_pretty = function Known {path= Some _} -> true | _ -> false
 
   let to_string x = F.asprintf "%a" pp x
 
@@ -71,13 +76,13 @@ module Loc = struct
 
   let is_var = function Var _ -> true | _ -> false
 
-  let rec contains_allocsite = function
+  let rec is_pretty = function
     | Var _ ->
-        false
-    | Allocsite _ ->
         true
+    | Allocsite a ->
+        Allocsite.is_pretty a
     | Field (loc, _) ->
-        contains_allocsite loc
+        is_pretty loc
 
 
   let of_var v = Var v
