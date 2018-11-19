@@ -46,20 +46,14 @@ let make_trace_element lt_level lt_loc lt_description lt_node_tags =
 type loc_trace = loc_trace_elem list
 
 let concat_traces labelled_traces =
-  match labelled_traces with
-  | [] ->
-      []
-  | [(_, t)] ->
-      t
-  | _ ->
-      List.fold_right labelled_traces ~init:[] ~f:(fun labelled_trace res ->
-          match labelled_trace with
-          | _, [] ->
-              res
-          | "", trace ->
-              trace @ res
-          | label, ({lt_loc} :: _ as trace) ->
-              (make_trace_element 0 lt_loc label [] :: trace) @ res )
+  List.fold_right labelled_traces ~init:[] ~f:(fun labelled_trace res ->
+      match labelled_trace with
+      | _, [] ->
+          res
+      | "", trace ->
+          trace @ res
+      | label, ({lt_loc} :: _ as trace) ->
+          (make_trace_element 0 lt_loc label [] :: trace) @ res )
 
 
 let compute_local_exception_line loc_trace =
