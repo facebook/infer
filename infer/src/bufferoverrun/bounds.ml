@@ -71,7 +71,7 @@ module SymLinear = struct
     in
     if Z.(equal c one) then Symb.Symbol.pp f s
     else if Z.(equal c minus_one) then F.fprintf f "-%a" Symb.Symbol.pp s
-    else F.fprintf f "%a⋅%a" Z.pp_print c Symb.Symbol.pp s
+    else F.fprintf f "%a%s%a" Z.pp_print c SpecialChars.dot_operator Symb.Symbol.pp s
 
 
   let pp : is_beginning:bool -> F.formatter -> t -> unit =

@@ -17,7 +17,7 @@ let top_bar_size_default = 100
 let min_acceptable_progress_bar = 10
 
 (** infer rulez *)
-let job_prefix = "⊢ "
+let job_prefix = SpecialChars.right_tack ^ " "
 
 (** {2 Task bar} *)
 

@@ -311,13 +311,16 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
   let degree_term p = snd (degree_with_term p)
 
+  let multiplication_sep = F.sprintf " %s " SpecialChars.multiplication_sign
+
   let pp : F.formatter -> t -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
       if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
       else ((s, PositiveInt.one), last :: others)
     in
     let pp_coeff fmt (c : NonNegativeInt.t) =
-      if Z.((c :> Z.t) > one) then F.fprintf fmt "%a ⋅ " NonNegativeInt.pp c
+      if Z.((c :> Z.t) > one) then
+        F.fprintf fmt "%a %s " NonNegativeInt.pp c SpecialChars.dot_operator
     in
     let pp_exp fmt (e : PositiveInt.t) =
       if Z.((e :> Z.t) > one) then PositiveInt.pp_exponent fmt e
@@ -329,7 +332,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     let pp_symb fmt symb = pp_magic_parentheses S.pp fmt symb in
     let pp_symb_exp fmt (symb, exp) = F.fprintf fmt "%a%a" pp_symb symb pp_exp exp in
     let pp_symbs fmt (last, others) =
-      List.rev_append others [last] |> Pp.seq ~sep:" × " pp_symb_exp fmt
+      List.rev_append others [last] |> Pp.seq ~sep:multiplication_sep pp_symb_exp fmt
     in
     let rec pp_sub ~print_plus symbs fmt {const; terms} =
       let print_plus =
