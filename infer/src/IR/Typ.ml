@@ -740,7 +740,7 @@ module Procname = struct
     let is_autogen_method {method_name} = String.contains method_name '$'
 
     (** Check if the proc name has the type of a java vararg.
-      Note: currently only checks that the last argument has type [Object[]]. *)
+      Note: currently only checks that the last argument has type [Object\[\]]. *)
     let is_vararg {parameters} =
       match List.last parameters with Some {type_name= "java.lang.Object[]"} -> true | _ -> false
 

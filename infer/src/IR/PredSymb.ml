@@ -45,7 +45,7 @@ let get_sentinel_func_attribute_value attr_list =
 type mem_kind =
   | Mmalloc  (** memory allocated with malloc *)
   | Mnew  (** memory allocated with new *)
-  | Mnew_array  (** memory allocated with [new[]] *)
+  | Mnew_array  (** memory allocated with [new\[\]] *)
   | Mobjc  (** memory allocated with objective-c alloc *)
 [@@deriving compare]
 

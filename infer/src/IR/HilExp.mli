@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type t =
-  | AccessExpression of AccessExpression.t  (** access path (e.g., x.f.g or [x[i]]) *)
+  | AccessExpression of AccessExpression.t  (** access path (e.g., x.f.g or [x\[i\]]) *)
   | UnaryOperator of Unop.t * t * Typ.t option
       (** Unary operator with type of the result if known *)
   | BinaryOperator of Binop.t * t * t  (** Binary operator *)

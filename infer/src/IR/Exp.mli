@@ -37,7 +37,7 @@ and t =
   | Lvar of Pvar.t  (** The address of a program variable *)
   | Lfield of t * Typ.Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
-  | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
+  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
 [@@deriving compare]
 
@@ -75,7 +75,7 @@ val get_undefined : bool -> t
 
 val pointer_arith : t -> bool
 (** Checks whether an expression denotes a location using pointer arithmetic.
-    Currently, catches array - indexing expressions such as [a[i]] only. *)
+    Currently, catches array - indexing expressions such as [a\[i\]] only. *)
 
 val has_local_addr : t -> bool
 (** returns true if the expression operates on address of local variable *)

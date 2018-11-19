@@ -489,7 +489,7 @@ val sigma_to_sigma_ne : hpred list -> (atom list * hpred list) list
 val hpara_instantiate : hpara -> Exp.t -> Exp.t -> Exp.t list -> Ident.t list * hpred list
 (** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1],
     [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
-    then the result of the instantiation is [b[e1 / x, e2 / y, elist / xs, _zs'/ zs]]
+    then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*)
 
 val hpara_dll_instantiate :
@@ -497,7 +497,7 @@ val hpara_dll_instantiate :
 (** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
     [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
     then the result of the instantiation is
-    [b[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs]]
+    [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*)
 
 val custom_error : Pvar.t

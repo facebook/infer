@@ -368,7 +368,7 @@ module Procname : sig
 
     val is_vararg : t -> bool
     (** Check if the proc name has the type of a java vararg.
-          Note: currently only checks that the last argument has type [Object[]]. *)
+          Note: currently only checks that the last argument has type [Object\[\]]. *)
 
     val is_lambda : t -> bool
     (** Check if the proc name comes from a lambda expression *)
