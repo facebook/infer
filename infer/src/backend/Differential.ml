@@ -164,7 +164,7 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
     let trace =
       [Errlog.make_trace_element 0 {Location.line; col= column; file= source_file} "" []]
     in
-    let severity = Exceptions.Warning in
+    let severity = Exceptions.Advice in
     Some
       { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
       ; qualifier
