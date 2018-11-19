@@ -857,14 +857,7 @@ let make_trace ~report_kind original_path pdesc =
     (* create a trace for one of the conflicts and append it to the trace for the original sink *)
     let conflict_trace = make_trace_for_sink conflict_sink in
     let conflict_end = get_end_loc conflict_trace in
-    let get_start_loc = function head :: _ -> head.Errlog.lt_loc | [] -> Location.dummy in
-    let first_trace_spacer =
-      Errlog.make_trace_element 0 (get_start_loc original_trace) label1 []
-    in
-    let second_trace_spacer =
-      Errlog.make_trace_element 0 (get_start_loc conflict_trace) label2 []
-    in
-    ( (first_trace_spacer :: original_trace) @ (second_trace_spacer :: conflict_trace)
+    ( Errlog.concat_traces [(label1, original_trace); (label2, conflict_trace)]
     , original_end
     , conflict_end )
   in

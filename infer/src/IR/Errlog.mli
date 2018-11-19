@@ -28,6 +28,8 @@ val make_trace_element : int -> Location.t -> string -> node_tag list -> loc_tra
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 
+val concat_traces : (string * loc_trace) list -> loc_trace
+
 val compute_local_exception_line : loc_trace -> int option
 (** Look at all the trace steps and find those that are arising any exception,
     then bind them to the closest step at level 0.
