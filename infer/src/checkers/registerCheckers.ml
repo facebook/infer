@@ -116,19 +116,13 @@ let all_checkers =
           ( if Config.hoisting_report_only_expensive then
             [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
           else [] )
-        @
-        if Config.purity then
-          [(Procedure Purity.checker, Language.Clang); (Procedure Purity.checker, Language.Java)]
-        else [] ) }
+        @ if Config.purity then [(Procedure Purity.checker, Language.Java)] else [] ) }
   ; { name= "Starvation analysis"
     ; active= Config.starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
         ; (Cluster Starvation.reporting, Language.Java) ] }
-  ; { name= "purity"
-    ; active= Config.purity
-    ; callbacks=
-        [(Procedure Purity.checker, Language.Clang); (Procedure Purity.checker, Language.Java)] }
+  ; {name= "purity"; active= Config.purity; callbacks= [(Procedure Purity.checker, Language.Java)]}
   ; { name= "Class loading analysis"
     ; active= Config.class_loads
     ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] } ]
