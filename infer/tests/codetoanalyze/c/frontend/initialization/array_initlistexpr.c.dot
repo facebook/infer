@@ -7,7 +7,7 @@ digraph cfg {
 "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_2" [label="2: Exit init_const_array \n  " color=yellow style=filled]
 	
 
-"init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int[3*4][2*12]) [line 10, column 3]\n  n$0=*&z:int [line 10, column 19]\n  *&a[0][0]:int=(n$0 + 1) [line 10, column 18]\n  *&a[0][1]:int=2 [line 10, column 18]\n  *&a[0][2]:int=3 [line 10, column 18]\n  *&a[1][0]:int=5 [line 10, column 33]\n  *&a[1][1]:int=6 [line 10, column 33]\n  *&a[1][2]:int=7 [line 10, column 33]\n " shape="box"]
+"init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int[3*4][2*12]) [line 10, column 3]\n  n$0=*&z:int [line 10, column 19]\n  *&a[0][0]:int=(n$0 + 1) [line 10, column 18]\n  *&a[0][1]:int=2 [line 10, column 18]\n  *&a[0][2]:int=3 [line 10, column 18]\n  *&a[1][0]:int=5 [line 10, column 33]\n  *&a[1][1]:int=6 [line 10, column 33]\n  *&a[1][2]:int=7 [line 10, column 33]\n  REMOVE_TEMPS(n$0,n$1); [line 10, column 33]\n  NULLIFY(&z); [line 10, column 33]\n  NULLIFY(&a); [line 10, column 33]\n  APPLY_ABSTRACTION; [line 10, column 33]\n " shape="box"]
 	
 
 	 "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_3" -> "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_2" ;
@@ -18,11 +18,11 @@ digraph cfg {
 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_2" [label="2: Exit init_variable_array \n  " color=yellow style=filled]
 	
 
-"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" [label="3:  Fallback node \n   n$0=*&len:int [line 15, column 9]\n  n$1=*&x:int [line 15, column 15]\n  n$2=_fun___set_array_length(&a:int[_*4],((n$0 + n$1) + 1):int) [line 15, column 9]\n " shape="box"]
+"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" [label="3:  Fallback node \n   n$0=*&len:int [line 15, column 9]\n  n$1=*&x:int [line 15, column 15]\n  n$2=_fun___set_array_length(&a:int[_*4],((n$0 + n$1) + 1):int) [line 15, column 9]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 15, column 9]\n  NULLIFY(&x); [line 15, column 9]\n  NULLIFY(&len); [line 15, column 9]\n  NULLIFY(&a); [line 15, column 9]\n  APPLY_ABSTRACTION; [line 15, column 9]\n " shape="box"]
 	
 
 	 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" -> "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_2" ;
-"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) [line 14, column 3]\n  n$3=*&len:int [line 14, column 15]\n  *&x:int=(2 * n$3) [line 14, column 3]\n " shape="box"]
+"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) [line 14, column 3]\n  n$3=*&len:int [line 14, column 15]\n  *&x:int=(2 * n$3) [line 14, column 3]\n  REMOVE_TEMPS(n$3,n$4); [line 14, column 3]\n " shape="box"]
 	
 
 	 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_4" -> "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" ;

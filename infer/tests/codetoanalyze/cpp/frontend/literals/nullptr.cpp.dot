@@ -7,7 +7,7 @@ digraph cfg {
 "getPtr#4816258365355431750.3065f9a978ec924d84739cae55c710c4_2" [label="2: Exit getPtr \n  " color=yellow style=filled]
 	
 
-"getPtr#4816258365355431750.3065f9a978ec924d84739cae55c710c4_3" [label="3:  Return Stmt \n   *&return:int*=null [line 8, column 17]\n " shape="box"]
+"getPtr#4816258365355431750.3065f9a978ec924d84739cae55c710c4_3" [label="3:  Return Stmt \n   *&return:int*=null [line 8, column 17]\n  APPLY_ABSTRACTION; [line 8, column 17]\n " shape="box"]
 	
 
 	 "getPtr#4816258365355431750.3065f9a978ec924d84739cae55c710c4_3" -> "getPtr#4816258365355431750.3065f9a978ec924d84739cae55c710c4_2" ;

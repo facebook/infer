@@ -7,19 +7,19 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 25, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   n$0=_fun___variable_initialization(&i:int) [line 24, column 3]\n  *&i:int=(2 + (2 - 0)) [line 24, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   n$0=_fun___variable_initialization(&i:int) [line 24, column 3]\n  *&i:int=(2 + (2 - 0)) [line 24, column 3]\n  REMOVE_TEMPS(n$0); [line 24, column 3]\n  NULLIFY(&i); [line 24, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   *&today:int=(2 + 1) [line 23, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   *&today:int=(2 + 1) [line 23, column 3]\n  NULLIFY(&today); [line 23, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$1=*&today:int [line 22, column 11]\n  *&today:int=(n$1 + 4) [line 22, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$1=*&today:int [line 22, column 11]\n  *&today:int=(n$1 + 4) [line 22, column 3]\n  REMOVE_TEMPS(n$1); [line 22, column 3]\n  NULLIFY(&today); [line 22, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   *&today:int=0 [line 20, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   *&today:int=0 [line 20, column 3]\n  NULLIFY(&today); [line 20, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;

@@ -4,18 +4,18 @@ digraph cfg {
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_1" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_2" [label="2: Exit ProtocolProcdescMain \n  " color=yellow style=filled]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_2" [label="2: Exit ProtocolProcdescMain \n   NULLIFY(&bike); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" [label="3:  Return Stmt \n   *&return:int=0 [line 16, column 3]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" [label="3:  Return Stmt \n   *&return:int=0 [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_2" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:Bicycle* [line 14, column 4]\n  n$1=_fun_StreetVehicle_signalStop(n$0:Bicycle*) virtual [line 14, column 3]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:Bicycle* [line 14, column 4]\n  n$1=_fun_StreetVehicle_signalStop(n$0:Bicycle*) virtual [line 14, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 14, column 3]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&bike:Bicycle*) [line 12, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Bicycle):unsigned long) [line 12, column 19]\n  *&bike:Bicycle*=n$2 [line 12, column 3]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&bike:Bicycle*) [line 12, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Bicycle):unsigned long) [line 12, column 19]\n  *&bike:Bicycle*=n$2 [line 12, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 12, column 3]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" ;

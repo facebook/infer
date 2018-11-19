@@ -7,7 +7,7 @@ digraph cfg {
 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
 	
 
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 134, column 18]\n " shape="box"]
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 134, column 18]\n  APPLY_ABSTRACTION; [line 134, column 18]\n " shape="box"]
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_2" [label="2: Exit test_switch1 \n  " color=yellow style=filled]
 	
 
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 33, column 3]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_2" ;
@@ -31,15 +31,15 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 13, column 10]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 13, column 10]\n  REMOVE_TEMPS(n$0); [line 13, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 13, column 10]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 13, column 10]\n  REMOVE_TEMPS(n$0); [line 13, column 10]\n  NULLIFY(&value); [line 13, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char const *) [line 31, column 5]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char const *) [line 31, column 5]\n  REMOVE_TEMPS(n$1); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
@@ -48,19 +48,19 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf(\"(2/def)HELLO WORLD!\":char const *) [line 28, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf(\"(2/def)HELLO WORLD!\":char const *) [line 28, column 9]\n  REMOVE_TEMPS(n$4); [line 28, column 9]\n  APPLY_ABSTRACTION; [line 28, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(1)HELLO WORLD!\":char const *) [line 24, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(1)HELLO WORLD!\":char const *) [line 24, column 9]\n  REMOVE_TEMPS(n$6); [line 24, column 9]\n  APPLY_ABSTRACTION; [line 24, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" [label="12:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 21, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" [label="12:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 21, column 9]\n  REMOVE_TEMPS(n$8); [line 21, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" [label="13:  BinaryOperatorStmt: Assign \n   n$9=*&value:int [line 19, column 11]\n  *&x:int=(n$9 + 1) [line 19, column 7]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" [label="13:  BinaryOperatorStmt: Assign \n   n$9=*&value:int [line 19, column 11]\n  *&x:int=(n$9 + 1) [line 19, column 7]\n  APPLY_ABSTRACTION; [line 19, column 7]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" ;
@@ -72,15 +72,15 @@ digraph cfg {
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 26, column 7]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 26, column 7]\n  REMOVE_TEMPS(n$2); [line 26, column 7]\n  APPLY_ABSTRACTION; [line 26, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 26, column 7]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 26, column 7]\n  REMOVE_TEMPS(n$2); [line 26, column 7]\n  APPLY_ABSTRACTION; [line 26, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 23, column 7]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 23, column 7]\n  REMOVE_TEMPS(n$2); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" ;
@@ -89,7 +89,7 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" [label="20: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 20, column 7]\n " shape="invhouse"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" [label="20: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 20, column 7]\n  REMOVE_TEMPS(n$2); [line 20, column 7]\n  APPLY_ABSTRACTION; [line 20, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" ;
@@ -98,7 +98,7 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" [label="22:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 11, column 3]\n  *&value:int=0 [line 11, column 3]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" [label="22:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 11, column 3]\n  *&value:int=0 [line 11, column 3]\n  REMOVE_TEMPS(n$14); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
@@ -109,15 +109,15 @@ digraph cfg {
 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_2" [label="2: Exit test_switch10 \n  " color=yellow style=filled]
 	
 
-"test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 185, column 3]\n " shape="box"]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 185, column 3]\n  APPLY_ABSTRACTION; [line 185, column 3]\n " shape="box"]
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_2" ;
-"test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" [label="4:  SwitchStmt \n   *&value:int=7 [line 184, column 11]\n  n$0=*&value:int [line 184, column 11]\n " shape="box"]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" [label="4:  SwitchStmt \n   *&value:int=7 [line 184, column 11]\n  n$0=*&value:int [line 184, column 11]\n  REMOVE_TEMPS(n$0); [line 184, column 11]\n  NULLIFY(&value); [line 184, column 11]\n " shape="box"]
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" ;
-"test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 183, column 3]\n  *&value:int=0 [line 183, column 3]\n " shape="box"]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 183, column 3]\n  *&value:int=0 [line 183, column 3]\n  REMOVE_TEMPS(n$3); [line 183, column 3]\n  NULLIFY(&value); [line 183, column 3]\n " shape="box"]
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" ;
@@ -128,7 +128,7 @@ digraph cfg {
 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_2" [label="2: Exit test_switch11 \n  " color=yellow style=filled]
 	
 
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" [label="3:  Return Stmt \n   *&return:int=0 [line 194, column 3]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" [label="3:  Return Stmt \n   *&return:int=0 [line 194, column 3]\n  APPLY_ABSTRACTION; [line 194, column 3]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_2" ;
@@ -136,45 +136,45 @@ digraph cfg {
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 190, column 20]\n  NULLIFY(&value); [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" ;
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 190, column 20]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 190, column 20]\n  REMOVE_TEMPS(n$1); [line 190, column 20]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 190, column 20]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 190, column 20]\n  REMOVE_TEMPS(n$1); [line 190, column 20]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 190, column 20]\n  APPLY_ABSTRACTION; [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 190, column 20]\n  APPLY_ABSTRACTION; [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 190, column 20]\n  *&value:int=n$2 [line 190, column 11]\n  n$3=*&value:int [line 190, column 11]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 190, column 20]\n  *&value:int=n$2 [line 190, column 11]\n  n$3=*&value:int [line 190, column 11]\n  REMOVE_TEMPS(n$2); [line 190, column 11]\n  NULLIFY(&value); [line 190, column 11]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 190, column 11]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" ;
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 192, column 7]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 192, column 7]\n  REMOVE_TEMPS(n$4); [line 192, column 7]\n  APPLY_ABSTRACTION; [line 192, column 7]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 191, column 5]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 191, column 5]\n  REMOVE_TEMPS(n$3); [line 191, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 191, column 5]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 191, column 5]\n  REMOVE_TEMPS(n$3); [line 191, column 5]\n  APPLY_ABSTRACTION; [line 191, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" [label="14:  DeclStmt \n   n$6=_fun___variable_initialization(&value:int) [line 189, column 3]\n  *&value:int=0 [line 189, column 3]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" [label="14:  DeclStmt \n   n$6=_fun___variable_initialization(&value:int) [line 189, column 3]\n  *&value:int=0 [line 189, column 3]\n  REMOVE_TEMPS(n$6); [line 189, column 3]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" ;
@@ -185,44 +185,44 @@ digraph cfg {
 "test_switch2.0717c55583f10f472ddb2d73d867e556_2" [label="2: Exit test_switch2 \n  " color=yellow style=filled]
 	
 
-"test_switch2.0717c55583f10f472ddb2d73d867e556_3" [label="3:  Return Stmt \n   *&return:int=0 [line 56, column 3]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_3" [label="3:  Return Stmt \n   *&return:int=0 [line 56, column 3]\n  APPLY_ABSTRACTION; [line 56, column 3]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_3" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_2" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 38, column 11]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 38, column 11]\n  NULLIFY(&value); [line 38, column 11]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_4" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_16" ;
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_4" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_17" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 50, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 50, column 7]\n  NULLIFY(&z); [line 50, column 7]\n  APPLY_ABSTRACTION; [line 50, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_5" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 48, column 7]\n  *&something:int=(n$3 + 1) [line 48, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 48, column 7]\n  *&something:int=(n$3 + 1) [line 48, column 7]\n  REMOVE_TEMPS(n$3); [line 48, column 7]\n  NULLIFY(&something); [line 48, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_6" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_5" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 47, column 7]\n  *&something:int=1 [line 47, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 47, column 7]\n  *&something:int=1 [line 47, column 7]\n  REMOVE_TEMPS(n$4); [line 47, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_7" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_6" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 43, column 7]\n  *&z:int=9 [line 43, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 43, column 7]\n  *&z:int=9 [line 43, column 7]\n  APPLY_ABSTRACTION; [line 43, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_8" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_9" [label="9:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 41, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_9" [label="9:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 41, column 7]\n  REMOVE_TEMPS(n$7); [line 41, column 7]\n  APPLY_ABSTRACTION; [line 41, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_9" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 53, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 53, column 5]\n  APPLY_ABSTRACTION; [line 53, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_10" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 53, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 53, column 5]\n  APPLY_ABSTRACTION; [line 53, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_11" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 52, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 52, column 5]\n  APPLY_ABSTRACTION; [line 52, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_12" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
@@ -231,7 +231,7 @@ digraph cfg {
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_13" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_10" ;
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_13" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_11" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 46, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 46, column 5]\n  APPLY_ABSTRACTION; [line 46, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_14" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
@@ -240,15 +240,15 @@ digraph cfg {
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_15" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_12" ;
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_15" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_13" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 40, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 40, column 5]\n  REMOVE_TEMPS(n$0); [line 40, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_16" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_9" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 40, column 5]\n " shape="invhouse"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 40, column 5]\n  REMOVE_TEMPS(n$0); [line 40, column 5]\n  APPLY_ABSTRACTION; [line 40, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 37, column 3]\n  *&value:int=0 [line 37, column 3]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 37, column 3]\n  *&value:int=0 [line 37, column 3]\n  REMOVE_TEMPS(n$9); [line 37, column 3]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_18" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_4" ;
@@ -259,40 +259,40 @@ digraph cfg {
 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_2" [label="2: Exit test_switch3 \n  " color=yellow style=filled]
 	
 
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" [label="3:  Return Stmt \n   *&return:int=0 [line 74, column 3]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" [label="3:  Return Stmt \n   *&return:int=0 [line 74, column 3]\n  APPLY_ABSTRACTION; [line 74, column 3]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_2" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 61, column 11]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 61, column 11]\n  NULLIFY(&value); [line 61, column 11]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 69, column 7]\n  *&z:int=9 [line 69, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 69, column 7]\n  *&z:int=9 [line 69, column 7]\n  APPLY_ABSTRACTION; [line 69, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" [label="6:  UnaryOperator \n   n$4=*&something:int [line 67, column 7]\n  *&something:int=(n$4 + 1) [line 67, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" [label="6:  UnaryOperator \n   n$4=*&something:int [line 67, column 7]\n  *&something:int=(n$4 + 1) [line 67, column 7]\n  REMOVE_TEMPS(n$4); [line 67, column 7]\n  NULLIFY(&something); [line 67, column 7]\n  APPLY_ABSTRACTION; [line 67, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 66, column 7]\n  *&something:int=1 [line 66, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 66, column 7]\n  *&something:int=1 [line 66, column 7]\n  REMOVE_TEMPS(n$5); [line 66, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" [label="8:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 63, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" [label="8:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 63, column 7]\n  REMOVE_TEMPS(n$7); [line 63, column 7]\n  APPLY_ABSTRACTION; [line 63, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 71, column 5]\n " shape="invhouse"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 71, column 5]\n  REMOVE_TEMPS(n$0); [line 71, column 5]\n  APPLY_ABSTRACTION; [line 71, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 71, column 5]\n " shape="invhouse"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 71, column 5]\n  REMOVE_TEMPS(n$0); [line 71, column 5]\n  APPLY_ABSTRACTION; [line 71, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 70, column 5]\n " shape="invhouse"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 70, column 5]\n  REMOVE_TEMPS(n$0); [line 70, column 5]\n  APPLY_ABSTRACTION; [line 70, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
@@ -301,7 +301,7 @@ digraph cfg {
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 65, column 5]\n " shape="invhouse"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 65, column 5]\n  REMOVE_TEMPS(n$0); [line 65, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" ;
@@ -310,7 +310,7 @@ digraph cfg {
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 62, column 5]\n " shape="invhouse"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 62, column 5]\n  REMOVE_TEMPS(n$0); [line 62, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" ;
@@ -319,7 +319,7 @@ digraph cfg {
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 60, column 3]\n  *&value:int=0 [line 60, column 3]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 60, column 3]\n  *&value:int=0 [line 60, column 3]\n  REMOVE_TEMPS(n$9); [line 60, column 3]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" ;
@@ -330,44 +330,44 @@ digraph cfg {
 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_2" [label="2: Exit test_switch4 \n  " color=yellow style=filled]
 	
 
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 97, column 3]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 97, column 3]\n  APPLY_ABSTRACTION; [line 97, column 3]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_2" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 79, column 11]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 79, column 11]\n  NULLIFY(&value); [line 79, column 11]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" ;
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 91, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 91, column 7]\n  NULLIFY(&z); [line 91, column 7]\n  APPLY_ABSTRACTION; [line 91, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 89, column 7]\n  *&something:int=(n$3 + 1) [line 89, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 89, column 7]\n  *&something:int=(n$3 + 1) [line 89, column 7]\n  REMOVE_TEMPS(n$3); [line 89, column 7]\n  NULLIFY(&something); [line 89, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 88, column 7]\n  *&something:int=1 [line 88, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 88, column 7]\n  *&something:int=1 [line 88, column 7]\n  REMOVE_TEMPS(n$4); [line 88, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 84, column 7]\n  *&z:int=9 [line 84, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 84, column 7]\n  *&z:int=9 [line 84, column 7]\n  APPLY_ABSTRACTION; [line 84, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" [label="9:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 82, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" [label="9:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 82, column 7]\n  REMOVE_TEMPS(n$7); [line 82, column 7]\n  APPLY_ABSTRACTION; [line 82, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 94, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 94, column 5]\n  APPLY_ABSTRACTION; [line 94, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 94, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 94, column 5]\n  APPLY_ABSTRACTION; [line 94, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 93, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 93, column 5]\n  APPLY_ABSTRACTION; [line 93, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
@@ -376,7 +376,7 @@ digraph cfg {
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" ;
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 87, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 87, column 5]\n  APPLY_ABSTRACTION; [line 87, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
@@ -385,15 +385,15 @@ digraph cfg {
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" ;
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 81, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 81, column 5]\n  REMOVE_TEMPS(n$0); [line 81, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 81, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 81, column 5]\n  REMOVE_TEMPS(n$0); [line 81, column 5]\n  APPLY_ABSTRACTION; [line 81, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 78, column 3]\n  *&value:int=0 [line 78, column 3]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 78, column 3]\n  *&value:int=0 [line 78, column 3]\n  REMOVE_TEMPS(n$9); [line 78, column 3]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" ;
@@ -404,7 +404,7 @@ digraph cfg {
 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_2" [label="2: Exit test_switch5 \n  " color=yellow style=filled]
 	
 
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" [label="3:  Return Stmt \n   *&return:int=0 [line 113, column 3]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" [label="3:  Return Stmt \n   *&return:int=0 [line 113, column 3]\n  APPLY_ABSTRACTION; [line 113, column 3]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_2" ;
@@ -417,11 +417,11 @@ digraph cfg {
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" ;
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 102, column 10]\n " shape="invhouse"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 102, column 10]\n  REMOVE_TEMPS(n$0); [line 102, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 102, column 10]\n " shape="invhouse"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 102, column 10]\n  REMOVE_TEMPS(n$0); [line 102, column 10]\n  NULLIFY(&value); [line 102, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" ;
@@ -430,11 +430,11 @@ digraph cfg {
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" ;
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 109, column 9]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 109, column 9]\n  REMOVE_TEMPS(n$3); [line 109, column 9]\n  APPLY_ABSTRACTION; [line 109, column 9]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" [label="10:  BinaryOperatorStmt: Assign \n   n$5=*&value:int [line 106, column 11]\n  *&x:int=(n$5 + 1) [line 106, column 7]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" [label="10:  BinaryOperatorStmt: Assign \n   n$5=*&value:int [line 106, column 11]\n  *&x:int=(n$5 + 1) [line 106, column 7]\n  APPLY_ABSTRACTION; [line 106, column 7]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
@@ -442,15 +442,15 @@ digraph cfg {
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 0), true); [line 108, column 7]\n " shape="invhouse"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 0), true); [line 108, column 7]\n  REMOVE_TEMPS(n$1); [line 108, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$1 == 0), false); [line 108, column 7]\n " shape="invhouse"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$1 == 0), false); [line 108, column 7]\n  REMOVE_TEMPS(n$1); [line 108, column 7]\n  APPLY_ABSTRACTION; [line 108, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 101, column 3]\n  *&value:int=0 [line 101, column 3]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 101, column 3]\n  *&value:int=0 [line 101, column 3]\n  REMOVE_TEMPS(n$9); [line 101, column 3]\n  APPLY_ABSTRACTION; [line 101, column 3]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
@@ -461,7 +461,7 @@ digraph cfg {
 "test_switch6.a23e54b3840073f4ece330ef3c560915_2" [label="2: Exit test_switch6 \n  " color=yellow style=filled]
 	
 
-"test_switch6.a23e54b3840073f4ece330ef3c560915_3" [label="3:  Return Stmt \n   *&return:int=0 [line 131, column 3]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_3" [label="3:  Return Stmt \n   *&return:int=0 [line 131, column 3]\n  APPLY_ABSTRACTION; [line 131, column 3]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_3" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_2" ;
@@ -469,57 +469,57 @@ digraph cfg {
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_4" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_10" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_5" [label="5:  BinaryOperatorStmt: GT \n   n$1=*&value:int [line 118, column 11]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_5" [label="5:  BinaryOperatorStmt: GT \n   n$1=*&value:int [line 118, column 11]\n  NULLIFY(&value); [line 118, column 11]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_5" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_6" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_5" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_7" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 118, column 11]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 118, column 11]\n  REMOVE_TEMPS(n$1); [line 118, column 11]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_6" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_8" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 118, column 11]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 118, column 11]\n  REMOVE_TEMPS(n$1); [line 118, column 11]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_7" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_9" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 118, column 11]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 118, column 11]\n  APPLY_ABSTRACTION; [line 118, column 11]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_8" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_4" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 118, column 11]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 118, column 11]\n  APPLY_ABSTRACTION; [line 118, column 11]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_9" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_4" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 118, column 11]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 118, column 11]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 118, column 11]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_21" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_22" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_11" [label="11:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) [line 126, column 7]\n  *&z:int=9 [line 126, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_11" [label="11:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) [line 126, column 7]\n  *&z:int=9 [line 126, column 7]\n  APPLY_ABSTRACTION; [line 126, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_11" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_12" [label="12:  UnaryOperator \n   n$6=*&something:int [line 124, column 7]\n  *&something:int=(n$6 + 1) [line 124, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_12" [label="12:  UnaryOperator \n   n$6=*&something:int [line 124, column 7]\n  *&something:int=(n$6 + 1) [line 124, column 7]\n  REMOVE_TEMPS(n$6); [line 124, column 7]\n  NULLIFY(&something); [line 124, column 7]\n  APPLY_ABSTRACTION; [line 124, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_12" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_13" [label="13:  DeclStmt \n   n$7=_fun___variable_initialization(&something:int) [line 123, column 7]\n  *&something:int=1 [line 123, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_13" [label="13:  DeclStmt \n   n$7=_fun___variable_initialization(&something:int) [line 123, column 7]\n  *&something:int=1 [line 123, column 7]\n  REMOVE_TEMPS(n$7); [line 123, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_13" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_12" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_14" [label="14:  Call _fun_printf \n   n$9=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 120, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_14" [label="14:  Call _fun_printf \n   n$9=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 120, column 7]\n  REMOVE_TEMPS(n$9); [line 120, column 7]\n  APPLY_ABSTRACTION; [line 120, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_14" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$2 == 3), true); [line 128, column 5]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$2 == 3), true); [line 128, column 5]\n  REMOVE_TEMPS(n$2); [line 128, column 5]\n  APPLY_ABSTRACTION; [line 128, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_15" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$2 == 3), false); [line 128, column 5]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$2 == 3), false); [line 128, column 5]\n  REMOVE_TEMPS(n$2); [line 128, column 5]\n  APPLY_ABSTRACTION; [line 128, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_16" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 127, column 5]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 127, column 5]\n  REMOVE_TEMPS(n$2); [line 127, column 5]\n  APPLY_ABSTRACTION; [line 127, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_17" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
@@ -528,7 +528,7 @@ digraph cfg {
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_18" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_15" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_18" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_16" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_19" [label="19: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 122, column 5]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_19" [label="19: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 122, column 5]\n  REMOVE_TEMPS(n$2); [line 122, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_19" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_13" ;
@@ -537,7 +537,7 @@ digraph cfg {
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_20" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_17" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_20" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_18" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 119, column 5]\n " shape="invhouse"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 119, column 5]\n  REMOVE_TEMPS(n$2); [line 119, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_21" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_14" ;
@@ -546,7 +546,7 @@ digraph cfg {
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_19" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_20" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_23" [label="23:  DeclStmt \n   n$11=_fun___variable_initialization(&value:int) [line 117, column 3]\n  *&value:int=0 [line 117, column 3]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_23" [label="23:  DeclStmt \n   n$11=_fun___variable_initialization(&value:int) [line 117, column 3]\n  *&value:int=0 [line 117, column 3]\n  REMOVE_TEMPS(n$11); [line 117, column 3]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_23" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_5" ;
@@ -557,7 +557,7 @@ digraph cfg {
 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_2" [label="2: Exit test_switch7 \n  " color=yellow style=filled]
 	
 
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" [label="3:  Return Stmt \n   *&return:int=0 [line 151, column 3]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" [label="3:  Return Stmt \n   *&return:int=0 [line 151, column 3]\n  APPLY_ABSTRACTION; [line 151, column 3]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_2" ;
@@ -566,31 +566,31 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 146, column 7]\n  *&z:int=9 [line 146, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 146, column 7]\n  *&z:int=9 [line 146, column 7]\n  APPLY_ABSTRACTION; [line 146, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" [label="6:  UnaryOperator \n   n$4=*&something:int [line 144, column 7]\n  *&something:int=(n$4 + 1) [line 144, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" [label="6:  UnaryOperator \n   n$4=*&something:int [line 144, column 7]\n  *&something:int=(n$4 + 1) [line 144, column 7]\n  REMOVE_TEMPS(n$4); [line 144, column 7]\n  NULLIFY(&something); [line 144, column 7]\n  APPLY_ABSTRACTION; [line 144, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 143, column 7]\n  *&something:int=1 [line 143, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 143, column 7]\n  *&something:int=1 [line 143, column 7]\n  REMOVE_TEMPS(n$5); [line 143, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" [label="8:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 140, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" [label="8:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 140, column 7]\n  REMOVE_TEMPS(n$7); [line 140, column 7]\n  APPLY_ABSTRACTION; [line 140, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 148, column 5]\n " shape="invhouse"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 148, column 5]\n  REMOVE_TEMPS(n$0); [line 148, column 5]\n  APPLY_ABSTRACTION; [line 148, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 148, column 5]\n " shape="invhouse"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 148, column 5]\n  REMOVE_TEMPS(n$0); [line 148, column 5]\n  APPLY_ABSTRACTION; [line 148, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 147, column 5]\n " shape="invhouse"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 147, column 5]\n  REMOVE_TEMPS(n$0); [line 147, column 5]\n  APPLY_ABSTRACTION; [line 147, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
@@ -599,7 +599,7 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 142, column 5]\n " shape="invhouse"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 142, column 5]\n  REMOVE_TEMPS(n$0); [line 142, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" ;
@@ -608,7 +608,7 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 139, column 5]\n " shape="invhouse"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 139, column 5]\n  REMOVE_TEMPS(n$0); [line 139, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" ;
@@ -617,7 +617,7 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 137, column 3]\n  *&value:int=0 [line 137, column 3]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 137, column 3]\n  *&value:int=0 [line 137, column 3]\n  REMOVE_TEMPS(n$9); [line 137, column 3]\n  NULLIFY(&value); [line 137, column 3]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" ;
@@ -628,7 +628,7 @@ digraph cfg {
 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" [label="2: Exit test_switch8 \n  " color=yellow style=filled]
 	
 
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" [label="3:  Return Stmt \n   *&return:int=0 [line 173, column 3]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" [label="3:  Return Stmt \n   *&return:int=0 [line 173, column 3]\n  APPLY_ABSTRACTION; [line 173, column 3]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" ;
@@ -641,15 +641,15 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 156, column 10]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 156, column 10]\n  REMOVE_TEMPS(n$0); [line 156, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 156, column 10]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 156, column 10]\n  REMOVE_TEMPS(n$0); [line 156, column 10]\n  NULLIFY(&value); [line 156, column 10]\n  NULLIFY(&a); [line 156, column 10]\n  NULLIFY(&something); [line 156, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" [label="8:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) [line 171, column 5]\n  *&a:int=0 [line 171, column 5]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" [label="8:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) [line 171, column 5]\n  *&a:int=0 [line 171, column 5]\n  REMOVE_TEMPS(n$1); [line 171, column 5]\n  APPLY_ABSTRACTION; [line 171, column 5]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
@@ -662,56 +662,56 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE((n$3 == 0), true); [line 157, column 13]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE((n$3 == 0), true); [line 157, column 13]\n  REMOVE_TEMPS(n$3); [line 157, column 13]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!(n$3 == 0), false); [line 157, column 13]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!(n$3 == 0), false); [line 157, column 13]\n  REMOVE_TEMPS(n$3); [line 157, column 13]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" [label="13:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=1 [line 157, column 13]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" [label="13:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=1 [line 157, column 13]\n  APPLY_ABSTRACTION; [line 157, column 13]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" [label="14:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=2 [line 157, column 13]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" [label="14:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=2 [line 157, column 13]\n  APPLY_ABSTRACTION; [line 157, column 13]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" [label="15:  SwitchStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 157, column 13]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" [label="15:  SwitchStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 157, column 13]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 157, column 13]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" [label="16:  DeclStmt \n   n$6=_fun___variable_initialization(&z:int) [line 166, column 9]\n  *&z:int=9 [line 166, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" [label="16:  DeclStmt \n   n$6=_fun___variable_initialization(&z:int) [line 166, column 9]\n  *&z:int=9 [line 166, column 9]\n  APPLY_ABSTRACTION; [line 166, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" [label="17:  UnaryOperator \n   n$9=*&something:int [line 163, column 9]\n  *&something:int=(n$9 + 1) [line 163, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" [label="17:  UnaryOperator \n   n$9=*&something:int [line 163, column 9]\n  *&something:int=(n$9 + 1) [line 163, column 9]\n  REMOVE_TEMPS(n$9); [line 163, column 9]\n  APPLY_ABSTRACTION; [line 163, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" [label="18:  DeclStmt \n   n$10=_fun___variable_initialization(&something:int) [line 162, column 9]\n  *&something:int=1 [line 162, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" [label="18:  DeclStmt \n   n$10=_fun___variable_initialization(&something:int) [line 162, column 9]\n  *&something:int=1 [line 162, column 9]\n  REMOVE_TEMPS(n$10); [line 162, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" [label="19:  Return Stmt \n   *&return:int=0 [line 160, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" [label="19:  Return Stmt \n   *&return:int=0 [line 160, column 9]\n  APPLY_ABSTRACTION; [line 160, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" [label="20:  Call _fun_printf \n   n$11=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 159, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" [label="20:  Call _fun_printf \n   n$11=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 159, column 9]\n  REMOVE_TEMPS(n$11); [line 159, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$4 == 3), true); [line 168, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$4 == 3), true); [line 168, column 7]\n  REMOVE_TEMPS(n$4); [line 168, column 7]\n  APPLY_ABSTRACTION; [line 168, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" [label="22: Prune (false branch, switch) \n   PRUNE(!(n$4 == 3), false); [line 168, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" [label="22: Prune (false branch, switch) \n   PRUNE(!(n$4 == 3), false); [line 168, column 7]\n  REMOVE_TEMPS(n$4); [line 168, column 7]\n  APPLY_ABSTRACTION; [line 168, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" [label="23: Prune (true branch, switch) \n   PRUNE((n$4 == 2), true); [line 167, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" [label="23: Prune (true branch, switch) \n   PRUNE((n$4 == 2), true); [line 167, column 7]\n  REMOVE_TEMPS(n$4); [line 167, column 7]\n  APPLY_ABSTRACTION; [line 167, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
@@ -720,7 +720,7 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" [label="25: Prune (true branch, switch) \n   PRUNE((n$4 == 1), true); [line 161, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" [label="25: Prune (true branch, switch) \n   PRUNE((n$4 == 1), true); [line 161, column 7]\n  REMOVE_TEMPS(n$4); [line 161, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" ;
@@ -729,7 +729,7 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$4 == 0), true); [line 158, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$4 == 0), true); [line 158, column 7]\n  REMOVE_TEMPS(n$4); [line 158, column 7]\n  NULLIFY(&value); [line 158, column 7]\n  NULLIFY(&a); [line 158, column 7]\n  NULLIFY(&something); [line 158, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" ;
@@ -738,7 +738,7 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" [label="29:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 155, column 3]\n  *&value:int=0 [line 155, column 3]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" [label="29:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 155, column 3]\n  *&value:int=0 [line 155, column 3]\n  REMOVE_TEMPS(n$14); [line 155, column 3]\n  APPLY_ABSTRACTION; [line 155, column 3]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
@@ -749,15 +749,15 @@ digraph cfg {
 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_2" [label="2: Exit test_switch9 \n  " color=yellow style=filled]
 	
 
-"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 179, column 3]\n " shape="box"]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 179, column 3]\n  APPLY_ABSTRACTION; [line 179, column 3]\n " shape="box"]
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_2" ;
-"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 178, column 11]\n " shape="box"]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 178, column 11]\n  REMOVE_TEMPS(n$0); [line 178, column 11]\n  NULLIFY(&value); [line 178, column 11]\n " shape="box"]
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" ;
-"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 177, column 3]\n  *&value:int=0 [line 177, column 3]\n " shape="box"]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 177, column 3]\n  *&value:int=0 [line 177, column 3]\n  REMOVE_TEMPS(n$3); [line 177, column 3]\n " shape="box"]
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" ;

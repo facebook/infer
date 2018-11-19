@@ -7,19 +7,19 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   n$0=_fun___variable_initialization(&overflow_int:int) [line 18, column 3]\n  *&overflow_int:int=9223372036854775808 [line 18, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   n$0=_fun___variable_initialization(&overflow_int:int) [line 18, column 3]\n  *&overflow_int:int=9223372036854775808 [line 18, column 3]\n  REMOVE_TEMPS(n$0); [line 18, column 3]\n  NULLIFY(&overflow_int); [line 18, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   n$1=_fun___variable_initialization(&large_int:int) [line 17, column 3]\n  *&large_int:int=9223372036854775807 [line 17, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   n$1=_fun___variable_initialization(&large_int:int) [line 17, column 3]\n  *&large_int:int=9223372036854775807 [line 17, column 3]\n  REMOVE_TEMPS(n$1); [line 17, column 3]\n  NULLIFY(&large_int); [line 17, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/c/frontend/arithmetic/int_const.c>$main.kDuration:int const ) [line 15, column 3]\n  *&#GB<codetoanalyze/c/frontend/arithmetic/int_const.c>$main.kDuration:int=3 [line 15, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/c/frontend/arithmetic/int_const.c>$main.kDuration:int const ) [line 15, column 3]\n  *&#GB<codetoanalyze/c/frontend/arithmetic/int_const.c>$main.kDuration:int=3 [line 15, column 3]\n  REMOVE_TEMPS(n$2); [line 15, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

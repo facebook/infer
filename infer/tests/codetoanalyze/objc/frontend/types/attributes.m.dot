@@ -4,22 +4,22 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n   NULLIFY(&aStdRef); [line 41, column 1]\n  NULLIFY(&aStrongRef); [line 41, column 1]\n  NULLIFY(&aWeakRef); [line 41, column 1]\n  NULLIFY(&anAutoRelRef); [line 41, column 1]\n  NULLIFY(&anUnsafeUnretRef); [line 41, column 1]\n " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 40, column 3]\n  APPLY_ABSTRACTION; [line 40, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:A* [line 37, column 22]\n  *&anUnsafeUnretRef:A*=n$0 [line 37, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:A* [line 37, column 22]\n  *&anUnsafeUnretRef:A*=n$0 [line 37, column 3]\n  REMOVE_TEMPS(n$0); [line 37, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&aStdRef:A* [line 35, column 18]\n  *&anAutoRelRef:A*=n$1 [line 35, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&aStdRef:A* [line 35, column 18]\n  *&anAutoRelRef:A*=n$1 [line 35, column 3]\n  REMOVE_TEMPS(n$1); [line 35, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:A* [line 33, column 14]\n  *&aWeakRef:A*=n$2 [line 33, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:A* [line 33, column 14]\n  *&aWeakRef:A*=n$2 [line 33, column 3]\n  REMOVE_TEMPS(n$2); [line 33, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -27,31 +27,31 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&aStrongRef:A* [line 29, column 13]\n  *&aStdRef:A*=n$3 [line 29, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&aStrongRef:A* [line 29, column 13]\n  *&aStdRef:A*=n$3 [line 29, column 3]\n  REMOVE_TEMPS(n$3); [line 29, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 27, column 16]\n  *&aStrongRef:A*=n$4 [line 27, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 27, column 16]\n  *&aStrongRef:A*=n$4 [line 27, column 3]\n  REMOVE_TEMPS(n$4); [line 27, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&aStdRef:A*) [line 24, column 3]\n  *&aStdRef:A*=null [line 24, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&aStdRef:A*) [line 24, column 3]\n  *&aStdRef:A*=null [line 24, column 3]\n  REMOVE_TEMPS(n$5); [line 24, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$6=_fun___variable_initialization(&anAutoRelRef:A__autoreleasing *) [line 23, column 3]\n  *&anAutoRelRef:A__autoreleasing *=null [line 23, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$6=_fun___variable_initialization(&anAutoRelRef:A__autoreleasing *) [line 23, column 3]\n  *&anAutoRelRef:A__autoreleasing *=null [line 23, column 3]\n  REMOVE_TEMPS(n$6); [line 23, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$7=_fun___variable_initialization(&anUnsafeUnretRef:A__unsafe_unretained *) [line 22, column 3]\n  *&anUnsafeUnretRef:A__unsafe_unretained *=null [line 22, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$7=_fun___variable_initialization(&anUnsafeUnretRef:A__unsafe_unretained *) [line 22, column 3]\n  *&anUnsafeUnretRef:A__unsafe_unretained *=null [line 22, column 3]\n  REMOVE_TEMPS(n$7); [line 22, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&aStrongRef:A*) [line 21, column 3]\n  *&aStrongRef:A*=null [line 21, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&aStrongRef:A*) [line 21, column 3]\n  *&aStrongRef:A*=null [line 21, column 3]\n  REMOVE_TEMPS(n$8); [line 21, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&aWeakRef:A__weak *) [line 20, column 3]\n  *&aWeakRef:A__weak *=null [line 20, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&aWeakRef:A__weak *) [line 20, column 3]\n  *&aWeakRef:A__weak *=null [line 20, column 3]\n  REMOVE_TEMPS(n$9); [line 20, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;

@@ -7,7 +7,7 @@ digraph cfg {
 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" [label="2: Exit objc_blockMy_manager_m_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$9 + 3) [line 24, column 5]\n " shape="box"]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$9 + 3) [line 24, column 5]\n  REMOVE_TEMPS(n$9); [line 24, column 5]\n  NULLIFY(&z); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
 	
 
 	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
@@ -15,14 +15,14 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" [label="2: Exit My_manager_m \n  " color=yellow style=filled]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" [label="2: Exit My_manager_m \n   NULLIFY(&p); [line 32, column 1]\n " color=yellow style=filled]
 	
 
 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" [label="3: + \n  " ]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
@@ -31,35 +31,35 @@ digraph cfg {
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" ;
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n  REMOVE_TEMPS(n$0); [line 28, column 7]\n  NULLIFY(&z); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n  REMOVE_TEMPS(n$0); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n  REMOVE_TEMPS(n$1,n$2); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n  REMOVE_TEMPS(n$3); [line 31, column 5]\n  NULLIFY(&z); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  REMOVE_TEMPS(n$5); [line 27, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$6 \n   n$6=*&b:_fn_(*) [line 26, column 3]\n  n$7=n$6() [line 26, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$6 \n   n$6=*&b:_fn_(*) [line 26, column 3]\n  n$7=n$6() [line 26, column 3]\n  REMOVE_TEMPS(n$6,n$7); [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,(n$8 &z:int)) [line 23, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,(n$8 &z:int)) [line 23, column 3]\n  REMOVE_TEMPS(n$8); [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   n$10=_fun___variable_initialization(&z:int) [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   n$10=_fun___variable_initialization(&z:int) [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n  REMOVE_TEMPS(n$10); [line 22, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" ;

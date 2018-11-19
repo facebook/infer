@@ -37,18 +37,7 @@ let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   pdesc
 
 
-(** Iterate over all the nodes in the cfg *)
-let iter_all_nodes ~sorted cfg ~f =
-  let do_proc_desc _ (pdesc : Procdesc.t) =
-    List.iter ~f:(fun node -> f pdesc node) (Procdesc.get_nodes pdesc)
-  in
-  if not sorted then Typ.Procname.Hash.iter do_proc_desc cfg
-  else
-    iter_over_sorted_procs cfg ~f:(fun pdesc ->
-        Procdesc.get_nodes pdesc
-        |> List.sort ~compare:Procdesc.Node.compare
-        |> List.iter ~f:(fun node -> f pdesc node) )
-
+let iter_sorted cfg ~f = iter_over_sorted_procs cfg ~f
 
 let store source_file cfg =
   let save_proc _ proc_desc =

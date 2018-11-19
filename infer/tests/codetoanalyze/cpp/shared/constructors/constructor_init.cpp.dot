@@ -4,18 +4,18 @@ digraph cfg {
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_1" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" [label="2: Exit delegate_constr_f2_div0 \n   NULLIFY(&b); [line 50, column 1]\n " color=yellow style=filled]
 	
 
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 49, column 14]\n  *&return:int=(1 / n$0) [line 49, column 3]\n  _=*&b:B [line 49, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 49, column 16]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 49, column 14]\n  *&return:int=(1 / n$0) [line 49, column 3]\n  _=*&b:B [line 49, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 49, column 16]\n  REMOVE_TEMPS(_,n$0,n$2); [line 49, column 16]\n  APPLY_ABSTRACTION; [line 49, column 16]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) [line 48, column 3]\n  n$4=*&b.f:int [line 48, column 15]\n  *&v:int=(1 / n$4) [line 48, column 3]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) [line 48, column 3]\n  n$4=*&b.f:int [line 48, column 15]\n  *&v:int=(1 / n$4) [line 48, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 48, column 3]\n  NULLIFY(&v); [line 48, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) [line 47, column 3]\n  n$6=_fun_B_B(&b:B*,-1:int,0:int) [line 47, column 5]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) [line 47, column 3]\n  n$6=_fun_B_B(&b:B*,-1:int,0:int) [line 47, column 5]\n  REMOVE_TEMPS(n$6,n$7); [line 47, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" ;
@@ -23,18 +23,18 @@ digraph cfg {
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_1" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" [label="2: Exit delegate_constr_f_div0 \n   NULLIFY(&b); [line 44, column 1]\n " color=yellow style=filled]
 	
 
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 43, column 14]\n  *&return:int=(1 / n$0) [line 43, column 3]\n  _=*&b:B [line 43, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 43, column 16]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 43, column 14]\n  *&return:int=(1 / n$0) [line 43, column 3]\n  _=*&b:B [line 43, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 43, column 16]\n  REMOVE_TEMPS(_,n$0,n$2); [line 43, column 16]\n  APPLY_ABSTRACTION; [line 43, column 16]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) [line 42, column 3]\n  n$4=*&b.f2:int [line 42, column 15]\n  *&v:int=(1 / n$4) [line 42, column 3]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) [line 42, column 3]\n  n$4=*&b.f2:int [line 42, column 15]\n  *&v:int=(1 / n$4) [line 42, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 42, column 3]\n  NULLIFY(&v); [line 42, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) [line 41, column 3]\n  n$6=_fun_B_B(&b:B*,-1:int,1:int) [line 41, column 5]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) [line 41, column 3]\n  n$6=_fun_B_B(&b:B*,-1:int,1:int) [line 41, column 5]\n  REMOVE_TEMPS(n$6,n$7); [line 41, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" ;
@@ -42,14 +42,14 @@ digraph cfg {
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_1" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" ;
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" [label="2: Exit f2_div0 \n  " color=yellow style=filled]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" [label="2: Exit f2_div0 \n   NULLIFY(&b); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 27, column 14]\n  *&return:int=(1 / n$0) [line 27, column 3]\n  _=*&b:B [line 27, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 27, column 16]\n " shape="box"]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 27, column 14]\n  *&return:int=(1 / n$0) [line 27, column 3]\n  _=*&b:B [line 27, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 27, column 16]\n  REMOVE_TEMPS(_,n$0,n$2); [line 27, column 16]\n  APPLY_ABSTRACTION; [line 27, column 16]\n " shape="box"]
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" ;
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 26, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 26, column 5]\n " shape="box"]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 26, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 26, column 5]\n  REMOVE_TEMPS(n$4,n$5); [line 26, column 5]\n " shape="box"]
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" ;
@@ -57,14 +57,14 @@ digraph cfg {
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_1" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" ;
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" [label="2: Exit f_div0 \n  " color=yellow style=filled]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" [label="2: Exit f_div0 \n   NULLIFY(&b); [line 33, column 1]\n " color=yellow style=filled]
 	
 
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 32, column 14]\n  *&return:int=(1 / n$0) [line 32, column 3]\n  _=*&b:B [line 32, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 32, column 16]\n " shape="box"]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 32, column 14]\n  *&return:int=(1 / n$0) [line 32, column 3]\n  _=*&b:B [line 32, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 32, column 16]\n  REMOVE_TEMPS(_,n$0,n$2); [line 32, column 16]\n  APPLY_ABSTRACTION; [line 32, column 16]\n " shape="box"]
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" ;
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 31, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 31, column 5]\n " shape="box"]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 31, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 31, column 5]\n  REMOVE_TEMPS(n$4,n$5); [line 31, column 5]\n " shape="box"]
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" ;
@@ -72,26 +72,26 @@ digraph cfg {
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_1" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" [label="2: Exit f_f2_div1 \n  " color=yellow style=filled]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" [label="2: Exit f_f2_div1 \n   NULLIFY(&b); [line 58, column 1]\n " color=yellow style=filled]
 	
 
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 57, column 10]\n  n$1=*&v2:int [line 57, column 14]\n  *&return:int=(n$0 + n$1) [line 57, column 3]\n  _=*&b:B [line 57, column 14]\n  n$3=_fun_B_~B(&b:B*) [line 57, column 14]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 57, column 10]\n  n$1=*&v2:int [line 57, column 14]\n  *&return:int=(n$0 + n$1) [line 57, column 3]\n  _=*&b:B [line 57, column 14]\n  n$3=_fun_B_~B(&b:B*) [line 57, column 14]\n  REMOVE_TEMPS(_,n$0,n$1,n$3); [line 57, column 14]\n  NULLIFY(&v); [line 57, column 14]\n  NULLIFY(&v2); [line 57, column 14]\n  APPLY_ABSTRACTION; [line 57, column 14]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&v3:int) [line 56, column 3]\n  n$5=*&b.t.v:int [line 56, column 16]\n  *&v3:int=(1 / n$5) [line 56, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&v3:int) [line 56, column 3]\n  n$5=*&b.t.v:int [line 56, column 16]\n  *&v3:int=(1 / n$5) [line 56, column 3]\n  REMOVE_TEMPS(n$5,n$6); [line 56, column 3]\n  NULLIFY(&v3); [line 56, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&v2:int) [line 55, column 3]\n  n$7=*&b.f2:int [line 55, column 16]\n  *&v2:int=(1 / n$7) [line 55, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&v2:int) [line 55, column 3]\n  n$7=*&b.f2:int [line 55, column 16]\n  *&v2:int=(1 / n$7) [line 55, column 3]\n  REMOVE_TEMPS(n$7,n$8); [line 55, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   n$10=_fun___variable_initialization(&v:int) [line 54, column 3]\n  n$9=*&b.f:int [line 54, column 15]\n  *&v:int=(1 / n$9) [line 54, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   n$10=_fun___variable_initialization(&v:int) [line 54, column 3]\n  n$9=*&b.f:int [line 54, column 15]\n  *&v:int=(1 / n$9) [line 54, column 3]\n  REMOVE_TEMPS(n$9,n$10); [line 54, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   n$12=_fun___variable_initialization(&b:B) [line 53, column 3]\n  n$11=_fun_B_B(&b:B*,1:int) [line 53, column 5]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   n$12=_fun___variable_initialization(&b:B) [line 53, column 3]\n  n$11=_fun_B_B(&b:B*,1:int) [line 53, column 5]\n  REMOVE_TEMPS(n$11,n$12); [line 53, column 5]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" ;
@@ -99,14 +99,14 @@ digraph cfg {
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_1" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" [label="2: Exit t_div0 \n   NULLIFY(&b); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 37, column 14]\n  *&return:int=(1 / n$0) [line 37, column 3]\n  _=*&b:B [line 37, column 18]\n  n$2=_fun_B_~B(&b:B*) [line 37, column 18]\n " shape="box"]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 37, column 14]\n  *&return:int=(1 / n$0) [line 37, column 3]\n  _=*&b:B [line 37, column 18]\n  n$2=_fun_B_~B(&b:B*) [line 37, column 18]\n  REMOVE_TEMPS(_,n$0,n$2); [line 37, column 18]\n  APPLY_ABSTRACTION; [line 37, column 18]\n " shape="box"]
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 36, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 36, column 5]\n " shape="box"]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) [line 36, column 3]\n  n$4=_fun_B_B(&b:B*,0:int) [line 36, column 5]\n  REMOVE_TEMPS(n$4,n$5); [line 36, column 5]\n " shape="box"]
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" ;
@@ -117,7 +117,7 @@ digraph cfg {
 "A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_2" [label="2: Exit A_A \n  " color=yellow style=filled]
 	
 
-"A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_3" [label="3:  Constructor Init \n   n$2=*&this:A* [line 10, column 14]\n  n$3=*&f:int [line 10, column 16]\n  *n$2.f:int=n$3 [line 10, column 14]\n " shape="box"]
+"A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_3" [label="3:  Constructor Init \n   n$2=*&this:A* [line 10, column 14]\n  n$3=*&f:int [line 10, column 16]\n  *n$2.f:int=n$3 [line 10, column 14]\n  REMOVE_TEMPS(n$2,n$3); [line 10, column 14]\n  NULLIFY(&f); [line 10, column 14]\n  NULLIFY(&this); [line 10, column 14]\n  APPLY_ABSTRACTION; [line 10, column 14]\n " shape="box"]
 	
 
 	 "A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_3" -> "A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_2" ;
@@ -128,15 +128,15 @@ digraph cfg {
 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_2" [label="2: Exit B_B \n  " color=yellow style=filled]
 	
 
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" [label="3:  Constructor Init \n   n$2=*&this:B* [line 20, column 27]\n  n$3=*&a:int [line 20, column 29]\n  n$4=_fun_B::T_T(n$2.t:B::T*,n$3:int) [line 20, column 27]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" [label="3:  Constructor Init \n   n$2=*&this:B* [line 20, column 27]\n  n$3=*&a:int [line 20, column 29]\n  n$4=_fun_B::T_T(n$2.t:B::T*,n$3:int) [line 20, column 27]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 20, column 27]\n  NULLIFY(&a); [line 20, column 27]\n  NULLIFY(&this); [line 20, column 27]\n  APPLY_ABSTRACTION; [line 20, column 27]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_2" ;
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" [label="4:  Constructor Init \n   n$5=*&this:B* [line 20, column 20]\n  n$6=*&a:int [line 20, column 23]\n  *n$5.f2:int=n$6 [line 20, column 20]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" [label="4:  Constructor Init \n   n$5=*&this:B* [line 20, column 20]\n  n$6=*&a:int [line 20, column 23]\n  *n$5.f2:int=n$6 [line 20, column 20]\n  REMOVE_TEMPS(n$5,n$6); [line 20, column 20]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" ;
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" [label="5:  Constructor Init \n   n$7=*&this:B* [line 20, column 14]\n  n$8=*&a:int [line 20, column 16]\n  n$9=_fun_A_A(n$7:B*,n$8:int) [line 20, column 14]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" [label="5:  Constructor Init \n   n$7=*&this:B* [line 20, column 14]\n  n$8=*&a:int [line 20, column 16]\n  n$9=_fun_A_A(n$7:B*,n$8:int) [line 20, column 14]\n  REMOVE_TEMPS(n$7,n$8,n$9); [line 20, column 14]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" ;
@@ -147,11 +147,11 @@ digraph cfg {
 "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_2" [label="2: Exit B_B \n  " color=yellow style=filled]
 	
 
-"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:B* [line 22, column 32]\n  n$2=*&b:int [line 22, column 37]\n  *n$1.f2:int=n$2 [line 22, column 32]\n " shape="box"]
+"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:B* [line 22, column 32]\n  n$2=*&b:int [line 22, column 37]\n  *n$1.f2:int=n$2 [line 22, column 32]\n  REMOVE_TEMPS(n$1,n$2); [line 22, column 32]\n  NULLIFY(&b); [line 22, column 32]\n  NULLIFY(&this); [line 22, column 32]\n  APPLY_ABSTRACTION; [line 22, column 32]\n " shape="box"]
 	
 
 	 "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" -> "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_2" ;
-"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" [label="4:  Constructor Init \n   n$3=*&this:B* [line 22, column 21]\n  n$4=*&a:int [line 22, column 23]\n  n$5=*&b:int [line 22, column 27]\n  n$6=_fun_B_B(n$3:B*,(n$4 + n$5):int) [line 22, column 21]\n " shape="box"]
+"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" [label="4:  Constructor Init \n   n$3=*&this:B* [line 22, column 21]\n  n$4=*&a:int [line 22, column 23]\n  n$5=*&b:int [line 22, column 27]\n  n$6=_fun_B_B(n$3:B*,(n$4 + n$5):int) [line 22, column 21]\n  REMOVE_TEMPS(n$3,n$4,n$5,n$6); [line 22, column 21]\n  NULLIFY(&a); [line 22, column 21]\n " shape="box"]
 	
 
 	 "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" -> "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" ;
@@ -162,7 +162,7 @@ digraph cfg {
 "T#T#B#{10782891829941482898}.2f080fd8e7f17199a0e7ff14c49d6dba_2" [label="2: Exit B::T_T \n  " color=yellow style=filled]
 	
 
-"T#T#B#{10782891829941482898}.2f080fd8e7f17199a0e7ff14c49d6dba_3" [label="3:  Constructor Init \n   n$2=*&this:B::T* [line 16, column 16]\n  n$3=*&v:int [line 16, column 18]\n  *n$2.v:int=n$3 [line 16, column 16]\n " shape="box"]
+"T#T#B#{10782891829941482898}.2f080fd8e7f17199a0e7ff14c49d6dba_3" [label="3:  Constructor Init \n   n$2=*&this:B::T* [line 16, column 16]\n  n$3=*&v:int [line 16, column 18]\n  *n$2.v:int=n$3 [line 16, column 16]\n  REMOVE_TEMPS(n$2,n$3); [line 16, column 16]\n  NULLIFY(&v); [line 16, column 16]\n  NULLIFY(&this); [line 16, column 16]\n  APPLY_ABSTRACTION; [line 16, column 16]\n " shape="box"]
 	
 
 	 "T#T#B#{10782891829941482898}.2f080fd8e7f17199a0e7ff14c49d6dba_3" -> "T#T#B#{10782891829941482898}.2f080fd8e7f17199a0e7ff14c49d6dba_2" ;

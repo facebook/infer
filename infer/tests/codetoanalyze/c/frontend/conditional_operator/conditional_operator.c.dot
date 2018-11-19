@@ -12,23 +12,23 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_8" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&b:int [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n " shape="invhouse"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&b:int [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n  REMOVE_TEMPS(n$1); [line 12, column 32]\n " shape="invhouse"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&b:int [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n " shape="invhouse"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&b:int [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n  REMOVE_TEMPS(n$1); [line 12, column 32]\n  NULLIFY(&b); [line 12, column 32]\n " shape="invhouse"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_7" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  ConditionalStmt Branch \n   n$2=*&b:int [line 12, column 36]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$2 [line 12, column 32]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  ConditionalStmt Branch \n   n$2=*&b:int [line 12, column 36]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$2 [line 12, column 32]\n  REMOVE_TEMPS(n$2); [line 12, column 32]\n  NULLIFY(&b); [line 12, column 32]\n  APPLY_ABSTRACTION; [line 12, column 32]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 12, column 32]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 12, column 32]\n  APPLY_ABSTRACTION; [line 12, column 32]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_7" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_8" [label="8:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 12, column 32]\n  n$4=_fun_test2(n$3:int) [line 12, column 26]\n  *&return:int=n$4 [line 12, column 19]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_8" [label="8:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 12, column 32]\n  n$4=_fun_test2(n$3:int) [line 12, column 26]\n  *&return:int=n$4 [line 12, column 19]\n  REMOVE_TEMPS(n$3,n$4); [line 12, column 19]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 12, column 19]\n  APPLY_ABSTRACTION; [line 12, column 19]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_8" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "test1.5a105e8b9d40e1329780d62ea2265d8a_2" [label="2: Exit test1 \n  " color=yellow style=filled]
 	
 
-"test1.5a105e8b9d40e1329780d62ea2265d8a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 10]\n  *&return:int=n$0 [line 16, column 3]\n " shape="box"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 10]\n  *&return:int=n$0 [line 16, column 3]\n  REMOVE_TEMPS(n$0); [line 16, column 3]\n  NULLIFY(&x); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_3" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_2" ;
@@ -48,23 +48,23 @@ digraph cfg {
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_4" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_9" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&b:int [line 15, column 11]\n  PRUNE(n$2, true); [line 15, column 11]\n " shape="invhouse"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&b:int [line 15, column 11]\n  PRUNE(n$2, true); [line 15, column 11]\n  REMOVE_TEMPS(n$2); [line 15, column 11]\n " shape="invhouse"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_5" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_7" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&b:int [line 15, column 11]\n  PRUNE(!n$2, false); [line 15, column 11]\n " shape="invhouse"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&b:int [line 15, column 11]\n  PRUNE(!n$2, false); [line 15, column 11]\n  REMOVE_TEMPS(n$2); [line 15, column 11]\n  NULLIFY(&b); [line 15, column 11]\n " shape="invhouse"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_6" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_8" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_7" [label="7:  ConditionalStmt Branch \n   n$3=*&b:int [line 15, column 15]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 15, column 11]\n " shape="box"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_7" [label="7:  ConditionalStmt Branch \n   n$3=*&b:int [line 15, column 15]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 15, column 11]\n  REMOVE_TEMPS(n$3); [line 15, column 11]\n  NULLIFY(&b); [line 15, column 11]\n  APPLY_ABSTRACTION; [line 15, column 11]\n " shape="box"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_7" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_4" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 15, column 11]\n " shape="box"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 15, column 11]\n  APPLY_ABSTRACTION; [line 15, column 11]\n " shape="box"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_8" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_4" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) [line 15, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 15, column 11]\n  *&x:int=n$4 [line 15, column 3]\n " shape="box"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) [line 15, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 15, column 11]\n  *&x:int=n$4 [line 15, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 15, column 3]\n " shape="box"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_9" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_3" ;
@@ -75,7 +75,7 @@ digraph cfg {
 "test2.ad0234829205b9033196ba818f7a872b_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2.ad0234829205b9033196ba818f7a872b_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 10, column 27]\n  *&return:int=n$0 [line 10, column 20]\n " shape="box"]
+"test2.ad0234829205b9033196ba818f7a872b_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 10, column 27]\n  *&return:int=n$0 [line 10, column 20]\n  REMOVE_TEMPS(n$0); [line 10, column 20]\n  NULLIFY(&x); [line 10, column 20]\n  APPLY_ABSTRACTION; [line 10, column 20]\n " shape="box"]
 	
 
 	 "test2.ad0234829205b9033196ba818f7a872b_3" -> "test2.ad0234829205b9033196ba818f7a872b_2" ;
@@ -86,7 +86,7 @@ digraph cfg {
 "test3.8ad8757baa8564dc136c1e07507f4a98_2" [label="2: Exit test3 \n  " color=yellow style=filled]
 	
 
-"test3.8ad8757baa8564dc136c1e07507f4a98_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 21, column 10]\n  *&return:int=n$0 [line 21, column 3]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 21, column 10]\n  *&return:int=n$0 [line 21, column 3]\n  REMOVE_TEMPS(n$0); [line 21, column 3]\n  NULLIFY(&x); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_3" -> "test3.8ad8757baa8564dc136c1e07507f4a98_2" ;
@@ -98,24 +98,24 @@ digraph cfg {
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_5" -> "test3.8ad8757baa8564dc136c1e07507f4a98_7" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 20, column 11]\n " shape="invhouse"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 20, column 11]\n  REMOVE_TEMPS(n$1); [line 20, column 11]\n " shape="invhouse"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_6" -> "test3.8ad8757baa8564dc136c1e07507f4a98_8" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$1 [line 20, column 11]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$1 [line 20, column 11]\n  REMOVE_TEMPS(n$1); [line 20, column 11]\n  APPLY_ABSTRACTION; [line 20, column 11]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_7" -> "test3.8ad8757baa8564dc136c1e07507f4a98_4" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=1 [line 20, column 11]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=1 [line 20, column 11]\n  APPLY_ABSTRACTION; [line 20, column 11]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_8" -> "test3.8ad8757baa8564dc136c1e07507f4a98_4" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_9" [label="9:  BinaryConditionalStmt Init \n   n$1=*&b:int [line 20, column 11]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_9" [label="9:  BinaryConditionalStmt Init \n   n$1=*&b:int [line 20, column 11]\n  NULLIFY(&b); [line 20, column 11]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_9" -> "test3.8ad8757baa8564dc136c1e07507f4a98_5" ;
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_9" -> "test3.8ad8757baa8564dc136c1e07507f4a98_6" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_10" [label="10:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) [line 20, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 20, column 11]\n  *&x:int=n$3 [line 20, column 3]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_10" [label="10:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) [line 20, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 20, column 11]\n  *&x:int=n$3 [line 20, column 3]\n  REMOVE_TEMPS(n$3,n$4); [line 20, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 20, column 3]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_10" -> "test3.8ad8757baa8564dc136c1e07507f4a98_3" ;
@@ -134,24 +134,24 @@ digraph cfg {
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_4" -> "test4.86985e105f79b95d6bc918fb45ec7727_6" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 24, column 33]\n " shape="invhouse"]
+"test4.86985e105f79b95d6bc918fb45ec7727_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 24, column 33]\n  REMOVE_TEMPS(n$0); [line 24, column 33]\n " shape="invhouse"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_5" -> "test4.86985e105f79b95d6bc918fb45ec7727_7" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$0 [line 24, column 33]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$0 [line 24, column 33]\n  REMOVE_TEMPS(n$0); [line 24, column 33]\n  APPLY_ABSTRACTION; [line 24, column 33]\n " shape="box"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_6" -> "test4.86985e105f79b95d6bc918fb45ec7727_3" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 24, column 33]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 24, column 33]\n  APPLY_ABSTRACTION; [line 24, column 33]\n " shape="box"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_7" -> "test4.86985e105f79b95d6bc918fb45ec7727_3" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 24, column 33]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 24, column 33]\n  NULLIFY(&b); [line 24, column 33]\n " shape="box"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_8" -> "test4.86985e105f79b95d6bc918fb45ec7727_4" ;
 	 "test4.86985e105f79b95d6bc918fb45ec7727_8" -> "test4.86985e105f79b95d6bc918fb45ec7727_5" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_9" [label="9:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 24, column 33]\n  n$3=_fun_test2(n$2:int) [line 24, column 27]\n  *&return:int=n$3 [line 24, column 20]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_9" [label="9:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 24, column 33]\n  n$3=_fun_test2(n$2:int) [line 24, column 27]\n  *&return:int=n$3 [line 24, column 20]\n  REMOVE_TEMPS(n$2,n$3); [line 24, column 20]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 24, column 20]\n  APPLY_ABSTRACTION; [line 24, column 20]\n " shape="box"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_9" -> "test4.86985e105f79b95d6bc918fb45ec7727_2" ;
@@ -170,24 +170,24 @@ digraph cfg {
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_4" -> "test5.e3d704f3542b44a621ebed70dc0efe13_6" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 26, column 27]\n " shape="invhouse"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 26, column 27]\n  REMOVE_TEMPS(n$0); [line 26, column 27]\n " shape="invhouse"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_5" -> "test5.e3d704f3542b44a621ebed70dc0efe13_7" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$0 [line 26, column 27]\n " shape="box"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$0 [line 26, column 27]\n  REMOVE_TEMPS(n$0); [line 26, column 27]\n  APPLY_ABSTRACTION; [line 26, column 27]\n " shape="box"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_6" -> "test5.e3d704f3542b44a621ebed70dc0efe13_3" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 26, column 27]\n " shape="box"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 26, column 27]\n  APPLY_ABSTRACTION; [line 26, column 27]\n " shape="box"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_7" -> "test5.e3d704f3542b44a621ebed70dc0efe13_3" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 26, column 27]\n " shape="box"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 26, column 27]\n  NULLIFY(&b); [line 26, column 27]\n " shape="box"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_8" -> "test5.e3d704f3542b44a621ebed70dc0efe13_4" ;
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_8" -> "test5.e3d704f3542b44a621ebed70dc0efe13_5" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_9" [label="9:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 26, column 27]\n  *&return:int=n$2 [line 26, column 20]\n " shape="box"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_9" [label="9:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 26, column 27]\n  *&return:int=n$2 [line 26, column 20]\n  REMOVE_TEMPS(n$2); [line 26, column 20]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 26, column 20]\n  APPLY_ABSTRACTION; [line 26, column 20]\n " shape="box"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_9" -> "test5.e3d704f3542b44a621ebed70dc0efe13_2" ;
@@ -199,7 +199,7 @@ digraph cfg {
 "test6.4cfad7076129962ee70c36839a1e3e15_2" [label="2: Exit test6 \n  " color=yellow style=filled]
 	
 
-"test6.4cfad7076129962ee70c36839a1e3e15_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n  *&return:int=n$0 [line 30, column 3]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n  *&return:int=n$0 [line 30, column 3]\n  REMOVE_TEMPS(n$0); [line 30, column 3]\n  NULLIFY(&z); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_3" -> "test6.4cfad7076129962ee70c36839a1e3e15_2" ;
@@ -215,15 +215,15 @@ digraph cfg {
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_6" -> "test6.4cfad7076129962ee70c36839a1e3e15_8" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_7" [label="7:  ConditionalStmt Branch \n   n$2=*&p:int* [line 29, column 16]\n  n$3=*n$2:int [line 29, column 15]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 29, column 11]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_7" [label="7:  ConditionalStmt Branch \n   n$2=*&p:int* [line 29, column 16]\n  n$3=*n$2:int [line 29, column 15]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 29, column 11]\n  REMOVE_TEMPS(n$2,n$3); [line 29, column 11]\n  NULLIFY(&p); [line 29, column 11]\n  APPLY_ABSTRACTION; [line 29, column 11]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_7" -> "test6.4cfad7076129962ee70c36839a1e3e15_4" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 29, column 11]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 29, column 11]\n  APPLY_ABSTRACTION; [line 29, column 11]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_8" -> "test6.4cfad7076129962ee70c36839a1e3e15_4" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 29, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 29, column 11]\n  *&z:int=n$4 [line 29, column 3]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 29, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 29, column 11]\n  *&z:int=n$4 [line 29, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 29, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 29, column 3]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_9" -> "test6.4cfad7076129962ee70c36839a1e3e15_3" ;
@@ -242,24 +242,24 @@ digraph cfg {
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_4" -> "test7.b04083e53e242626595e2b8ea327e525_6" ;
-"test7.b04083e53e242626595e2b8ea327e525_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 33, column 27]\n " shape="invhouse"]
+"test7.b04083e53e242626595e2b8ea327e525_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 33, column 27]\n  REMOVE_TEMPS(n$1); [line 33, column 27]\n " shape="invhouse"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_5" -> "test7.b04083e53e242626595e2b8ea327e525_7" ;
-"test7.b04083e53e242626595e2b8ea327e525_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$1 [line 33, column 27]\n " shape="box"]
+"test7.b04083e53e242626595e2b8ea327e525_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$1 [line 33, column 27]\n  REMOVE_TEMPS(n$1); [line 33, column 27]\n  APPLY_ABSTRACTION; [line 33, column 27]\n " shape="box"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_6" -> "test7.b04083e53e242626595e2b8ea327e525_3" ;
-"test7.b04083e53e242626595e2b8ea327e525_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=2 [line 33, column 27]\n " shape="box"]
+"test7.b04083e53e242626595e2b8ea327e525_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=2 [line 33, column 27]\n  APPLY_ABSTRACTION; [line 33, column 27]\n " shape="box"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_7" -> "test7.b04083e53e242626595e2b8ea327e525_3" ;
-"test7.b04083e53e242626595e2b8ea327e525_8" [label="8:  BinaryConditionalStmt Init \n   n$0=_fun_test2(2:int) [line 33, column 37]\n  n$1=_fun_test2((2 + n$0):int) [line 33, column 27]\n " shape="box"]
+"test7.b04083e53e242626595e2b8ea327e525_8" [label="8:  BinaryConditionalStmt Init \n   n$0=_fun_test2(2:int) [line 33, column 37]\n  n$1=_fun_test2((2 + n$0):int) [line 33, column 27]\n  REMOVE_TEMPS(n$0); [line 33, column 27]\n " shape="box"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_8" -> "test7.b04083e53e242626595e2b8ea327e525_4" ;
 	 "test7.b04083e53e242626595e2b8ea327e525_8" -> "test7.b04083e53e242626595e2b8ea327e525_5" ;
-"test7.b04083e53e242626595e2b8ea327e525_9" [label="9:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 33, column 27]\n  *&return:int=n$3 [line 33, column 20]\n " shape="box"]
+"test7.b04083e53e242626595e2b8ea327e525_9" [label="9:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 33, column 27]\n  *&return:int=n$3 [line 33, column 20]\n  REMOVE_TEMPS(n$3); [line 33, column 20]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 33, column 20]\n  APPLY_ABSTRACTION; [line 33, column 20]\n " shape="box"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_9" -> "test7.b04083e53e242626595e2b8ea327e525_2" ;

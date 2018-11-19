@@ -7,7 +7,7 @@ digraph cfg {
 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_2" [label="2: Exit functional_cast \n  " color=yellow style=filled]
 	
 
-"functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) [line 13, column 26]\n  *&a:int=(2 + 3.4) [line 13, column 26]\n " shape="box"]
+"functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) [line 13, column 26]\n  *&a:int=(2 + 3.4) [line 13, column 26]\n  REMOVE_TEMPS(n$1); [line 13, column 26]\n  NULLIFY(&a); [line 13, column 26]\n  APPLY_ABSTRACTION; [line 13, column 26]\n " shape="box"]
 	
 
 	 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" -> "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" [label="2: Exit stat_cast \n  " color=yellow style=filled]
 	
 
-"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&la:long long) [line 10, column 3]\n  n$1=*&a:int [line 10, column 41]\n  *&la:long long=n$1 [line 10, column 3]\n " shape="box"]
+"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&la:long long) [line 10, column 3]\n  n$1=*&a:int [line 10, column 41]\n  *&la:long long=n$1 [line 10, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 10, column 3]\n  NULLIFY(&a); [line 10, column 3]\n  NULLIFY(&la); [line 10, column 3]\n  APPLY_ABSTRACTION; [line 10, column 3]\n " shape="box"]
 	
 
 	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" ;

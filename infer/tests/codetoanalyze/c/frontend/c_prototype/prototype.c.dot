@@ -7,11 +7,11 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int,3:int) [line 18, column 11]\n  *&total:int=n$0 [line 18, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int,3:int) [line 18, column 11]\n  *&total:int=n$0 [line 18, column 3]\n  REMOVE_TEMPS(n$0); [line 18, column 3]\n  NULLIFY(&total); [line 18, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "sum.1d623b89683f9ce4e074de1676d12416_2" [label="2: Exit sum \n  " color=yellow style=filled]
 	
 
-"sum.1d623b89683f9ce4e074de1676d12416_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 23, column 32]\n  n$1=*&b:int [line 23, column 36]\n  *&return:int=(n$0 + n$1) [line 23, column 25]\n " shape="box"]
+"sum.1d623b89683f9ce4e074de1676d12416_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 23, column 32]\n  n$1=*&b:int [line 23, column 36]\n  *&return:int=(n$0 + n$1) [line 23, column 25]\n  REMOVE_TEMPS(n$0,n$1); [line 23, column 25]\n  NULLIFY(&a); [line 23, column 25]\n  NULLIFY(&b); [line 23, column 25]\n  APPLY_ABSTRACTION; [line 23, column 25]\n " shape="box"]
 	
 
 	 "sum.1d623b89683f9ce4e074de1676d12416_3" -> "sum.1d623b89683f9ce4e074de1676d12416_2" ;

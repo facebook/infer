@@ -28,8 +28,8 @@ val create : unit -> t
 val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 (** Create a new procdesc and add it to the cfg *)
 
-val iter_all_nodes : sorted:bool -> t -> f:(Procdesc.t -> Procdesc.Node.t -> unit) -> unit
-(** Iterate over all the nodes in the cfg *)
+val iter_sorted : t -> f:(Procdesc.t -> unit) -> unit
+(** Iterate over all the proc descs in the cfg in ascending order *)
 
 val inline_java_synthetic_methods : t -> unit
 (** Inline the java synthetic methods in the cfg (in-place) *)

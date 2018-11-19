@@ -1170,7 +1170,14 @@ let print_icfg source fmt cfg =
     if Config.dotty_cfg_libs || SourceFile.equal loc.Location.file source then
       F.fprintf fmt "%a@\n" (pp_cfgnode pdesc) node
   in
-  Cfg.iter_all_nodes ~sorted:true cfg ~f:print_node
+  let print_pdesc tenv_opt pdesc =
+    Option.iter tenv_opt ~f:(fun tenv -> Preanal.do_preanalysis pdesc tenv) ;
+    Procdesc.get_nodes pdesc
+    |> List.sort ~compare:Procdesc.Node.compare
+    |> List.iter ~f:(fun node -> print_node pdesc node)
+  in
+  let tenv = Tenv.load source in
+  Cfg.iter_sorted cfg ~f:(fun pdesc -> print_pdesc tenv pdesc)
 
 
 let write_icfg_dotty_to_file source cfg fname =

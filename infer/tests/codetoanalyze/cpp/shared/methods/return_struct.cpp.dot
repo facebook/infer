@@ -4,14 +4,14 @@ digraph cfg {
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" ;
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" [label="2: Exit test \n  " color=yellow style=filled]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" [label="2: Exit test \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 22, column 1]\n  NULLIFY(&x); [line 22, column 1]\n " color=yellow style=filled]
 	
 
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n  _=*&x:X [line 21, column 16]\n  n$2=_fun_X_~X(&x:X*) [line 21, column 16]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n  _=*&x:X [line 21, column 16]\n  n$2=_fun_X_~X(&x:X*) [line 21, column 16]\n  REMOVE_TEMPS(_,n$0,n$2); [line 21, column 16]\n  APPLY_ABSTRACTION; [line 21, column 16]\n " shape="box"]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&x:X) [line 20, column 3]\n  n$9=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:X) [line 20, column 9]\n  n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A_get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) [line 20, column 9]\n  n$10=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&x:X) [line 20, column 3]\n  n$9=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:X) [line 20, column 9]\n  n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A_get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) [line 20, column 9]\n  n$10=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n  REMOVE_TEMPS(_,n$5,n$8,n$9,n$10,n$11); [line 20, column 9]\n  NULLIFY(&a); [line 20, column 9]\n " shape="box"]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;
@@ -19,14 +19,14 @@ digraph cfg {
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" ;
-"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" [label="2: Exit A_get \n  " color=yellow style=filled]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" [label="2: Exit A_get \n   NULLIFY(&x); [line 16, column 3]\n " color=yellow style=filled]
 	
 
-"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 5]\n  n$1=_fun_X_X(n$0:X*,&x:X&) [line 15, column 12]\n  _=*&x:X [line 15, column 12]\n  n$3=_fun_X_~X(&x:X*) [line 15, column 12]\n " shape="box"]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 5]\n  n$1=_fun_X_X(n$0:X*,&x:X&) [line 15, column 12]\n  _=*&x:X [line 15, column 12]\n  n$3=_fun_X_~X(&x:X*) [line 15, column 12]\n  REMOVE_TEMPS(_,n$0,n$1,n$3); [line 15, column 12]\n  NULLIFY(&__return_param); [line 15, column 12]\n  APPLY_ABSTRACTION; [line 15, column 12]\n " shape="box"]
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" ;
-"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&x:X) [line 14, column 5]\n  n$5=_fun_X_X(&x:X*) [line 14, column 7]\n " shape="box"]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&x:X) [line 14, column 5]\n  n$5=_fun_X_X(&x:X*) [line 14, column 7]\n  REMOVE_TEMPS(n$5,n$6); [line 14, column 7]\n " shape="box"]
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" ;
@@ -37,7 +37,7 @@ digraph cfg {
 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" [label="3:  Constructor Init \n   n$2=*&this:X* [line 8, column 8]\n  n$3=*&__param_0:X& [line 8, column 8]\n  n$4=*n$3.f:int [line 8, column 8]\n  *n$2.f:int=n$4 [line 8, column 8]\n " shape="box"]
+"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" [label="3:  Constructor Init \n   n$2=*&this:X* [line 8, column 8]\n  n$3=*&__param_0:X& [line 8, column 8]\n  n$4=*n$3.f:int [line 8, column 8]\n  *n$2.f:int=n$4 [line 8, column 8]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 8, column 8]\n  NULLIFY(&this); [line 8, column 8]\n  NULLIFY(&__param_0); [line 8, column 8]\n  APPLY_ABSTRACTION; [line 8, column 8]\n " shape="box"]
 	
 
 	 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" -> "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_2" ;

@@ -7,7 +7,7 @@ digraph cfg {
 "is_pointer_example#993450452211025736.0084d63d3d455165560d25605d8a30c1_2" [label="2: Exit is_pointer_example \n  " color=yellow style=filled]
 	
 
-"is_pointer_example#993450452211025736.0084d63d3d455165560d25605d8a30c1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 10, column 28]\n " shape="box"]
+"is_pointer_example#993450452211025736.0084d63d3d455165560d25605d8a30c1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 10, column 28]\n  APPLY_ABSTRACTION; [line 10, column 28]\n " shape="box"]
 	
 
 	 "is_pointer_example#993450452211025736.0084d63d3d455165560d25605d8a30c1_3" -> "is_pointer_example#993450452211025736.0084d63d3d455165560d25605d8a30c1_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "is_trivial_example#10742835098923825644.8d15716e7ef1310064fb1fe16e18181f_2" [label="2: Exit is_trivial_example \n  " color=yellow style=filled]
 	
 
-"is_trivial_example#10742835098923825644.8d15716e7ef1310064fb1fe16e18181f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 8, column 28]\n " shape="box"]
+"is_trivial_example#10742835098923825644.8d15716e7ef1310064fb1fe16e18181f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 8, column 28]\n  APPLY_ABSTRACTION; [line 8, column 28]\n " shape="box"]
 	
 
 	 "is_trivial_example#10742835098923825644.8d15716e7ef1310064fb1fe16e18181f_3" -> "is_trivial_example#10742835098923825644.8d15716e7ef1310064fb1fe16e18181f_2" ;

@@ -11,32 +11,32 @@ digraph cfg {
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_3" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_4" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_4" [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 18, column 3]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_4" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_2" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&i:int [line 18, column 7]\n " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&i:int [line 18, column 7]\n  NULLIFY(&i); [line 18, column 7]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" ;
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 9), true); [line 18, column 7]\n " shape="invhouse"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 9), true); [line 18, column 7]\n  REMOVE_TEMPS(n$0); [line 18, column 7]\n " shape="invhouse"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_8" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 9), false); [line 18, column 7]\n " shape="invhouse"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 9), false); [line 18, column 7]\n  REMOVE_TEMPS(n$0); [line 18, column 7]\n " shape="invhouse"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_8" [label="8:  Return Stmt \n   *&return:int=(9 / 0) [line 19, column 5]\n " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_8" [label="8:  Return Stmt \n   *&return:int=(9 / 0) [line 19, column 5]\n  APPLY_ABSTRACTION; [line 19, column 5]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_8" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_2" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" [label="9:  Return Stmt \n   *&return:int=(4 / 0) [line 21, column 5]\n " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" [label="9:  Return Stmt \n   *&return:int=(4 / 0) [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_2" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" [label="10:  DeclStmt \n   n$3=_fun___variable_initialization(&i:int) [line 17, column 3]\n  *&i:int=n$2 [line 17, column 3]\n " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" [label="10:  DeclStmt \n   n$3=_fun___variable_initialization(&i:int) [line 17, column 3]\n  *&i:int=n$2 [line 17, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 17, column 3]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" ;

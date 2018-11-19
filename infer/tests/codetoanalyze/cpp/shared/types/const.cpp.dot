@@ -4,30 +4,30 @@ digraph cfg {
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_1" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_2" [label="2: Exit call_const_params_with_address \n  " color=yellow style=filled]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_2" [label="2: Exit call_const_params_with_address \n   NULLIFY(&cx); [line 20, column 1]\n  NULLIFY(&x); [line 20, column 1]\n " color=yellow style=filled]
 	
 
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_3" [label="3:  Call _fun_const_in_param2 \n   n$1=_fun_const_in_param2(&cx:int const *) [line 19, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_3" [label="3:  Call _fun_const_in_param2 \n   n$1=_fun_const_in_param2(&cx:int const *) [line 19, column 3]\n  REMOVE_TEMPS(n$1); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_3" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_2" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" [label="4:  Call _fun_const_in_param1 \n   n$2=_fun_const_in_param1(&cx:int const *) [line 18, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" [label="4:  Call _fun_const_in_param1 \n   n$2=_fun_const_in_param1(&cx:int const *) [line 18, column 3]\n  REMOVE_TEMPS(n$2); [line 18, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_3" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&cx:int const ) [line 16, column 3]\n  *&cx:int=0 [line 16, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&cx:int const ) [line 16, column 3]\n  *&cx:int=0 [line 16, column 3]\n  REMOVE_TEMPS(n$3); [line 16, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_4" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" [label="6:  Call _fun_const_in_param2 \n   n$4=_fun_const_in_param2(&x:int*) [line 14, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" [label="6:  Call _fun_const_in_param2 \n   n$4=_fun_const_in_param2(&x:int*) [line 14, column 3]\n  REMOVE_TEMPS(n$4); [line 14, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_5" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" [label="7:  Call _fun_const_in_param1 \n   n$5=_fun_const_in_param1(&x:int*) [line 13, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" [label="7:  Call _fun_const_in_param1 \n   n$5=_fun_const_in_param1(&x:int*) [line 13, column 3]\n  REMOVE_TEMPS(n$5); [line 13, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_6" ;
-"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" [label="8:  DeclStmt \n   n$6=_fun___variable_initialization(&x:int) [line 12, column 3]\n  *&x:int=1 [line 12, column 3]\n " shape="box"]
+"call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" [label="8:  DeclStmt \n   n$6=_fun___variable_initialization(&x:int) [line 12, column 3]\n  *&x:int=1 [line 12, column 3]\n  REMOVE_TEMPS(n$6); [line 12, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_8" -> "call_const_params_with_address#9224946220162093338.ede5d9916aae78a9bdce4ac18328cdb4_7" ;
@@ -35,14 +35,14 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_1" -> "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" ;
-"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_2" [label="2: Exit call_const_params_with_pointer1 \n  " color=yellow style=filled]
+"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_2" [label="2: Exit call_const_params_with_pointer1 \n   NULLIFY(&p); [line 25, column 1]\n " color=yellow style=filled]
 	
 
-"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" [label="3:  Call _fun_const_in_param1 \n   n$1=*&p:int* [line 24, column 19]\n  n$2=_fun_const_in_param1(n$1:int*) [line 24, column 3]\n " shape="box"]
+"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" [label="3:  Call _fun_const_in_param1 \n   n$1=*&p:int* [line 24, column 19]\n  n$2=_fun_const_in_param1(n$1:int*) [line 24, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" -> "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_2" ;
-"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 23, column 3]\n  *&p:int*=null [line 23, column 3]\n " shape="box"]
+"call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 23, column 3]\n  *&p:int*=null [line 23, column 3]\n  REMOVE_TEMPS(n$3); [line 23, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_4" -> "call_const_params_with_pointer1#3193967915651281089.e26879dad7f44305c11fcc69c90dba86_3" ;
@@ -50,14 +50,14 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_1" -> "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" ;
-"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_2" [label="2: Exit call_const_params_with_pointer2 \n  " color=yellow style=filled]
+"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_2" [label="2: Exit call_const_params_with_pointer2 \n   NULLIFY(&p); [line 29, column 1]\n " color=yellow style=filled]
 	
 
-"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" [label="3:  Call _fun_const_in_param2 \n   n$1=*&p:int* [line 28, column 19]\n  n$2=_fun_const_in_param2(n$1:int*) [line 28, column 3]\n " shape="box"]
+"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" [label="3:  Call _fun_const_in_param2 \n   n$1=*&p:int* [line 28, column 19]\n  n$2=_fun_const_in_param2(n$1:int*) [line 28, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" -> "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_2" ;
-"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
+"call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  REMOVE_TEMPS(n$3); [line 27, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_4" -> "call_const_params_with_pointer2#3191133374674320806.7e564aa4edfd75304391a38942d7e07f_3" ;
@@ -65,14 +65,14 @@ digraph cfg {
 	
 
 	 "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_1" -> "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" ;
-"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_2" [label="2: Exit call_const_params_with_pointer3 \n  " color=yellow style=filled]
+"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_2" [label="2: Exit call_const_params_with_pointer3 \n   NULLIFY(&cp); [line 34, column 1]\n " color=yellow style=filled]
 	
 
-"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" [label="3:  Call _fun_const_in_param2 \n   n$1=*&cp:int* [line 33, column 19]\n  n$2=_fun_const_in_param2(n$1:int*) [line 33, column 3]\n " shape="box"]
+"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" [label="3:  Call _fun_const_in_param2 \n   n$1=*&cp:int* [line 33, column 19]\n  n$2=_fun_const_in_param2(n$1:int*) [line 33, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" -> "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_2" ;
-"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&cp:int* const ) [line 32, column 3]\n  *&cp:int* const =null [line 32, column 3]\n " shape="box"]
+"call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&cp:int* const ) [line 32, column 3]\n  *&cp:int* const =null [line 32, column 3]\n  REMOVE_TEMPS(n$3); [line 32, column 3]\n " shape="box"]
 	
 
 	 "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_4" -> "call_const_params_with_pointer3#3191979998627854051.cb64d3f1c70e7ecb4d702fb494a6ddf9_3" ;
@@ -83,7 +83,7 @@ digraph cfg {
 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_2" [label="2: Exit const_in_param1 \n  " color=yellow style=filled]
 	
 
-"const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 7, column 45]\n  n$1=*n$0:int [line 7, column 44]\n  *&return:int=n$1 [line 7, column 37]\n " shape="box"]
+"const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 7, column 45]\n  n$1=*n$0:int [line 7, column 44]\n  *&return:int=n$1 [line 7, column 37]\n  REMOVE_TEMPS(n$0,n$1); [line 7, column 37]\n  NULLIFY(&p); [line 7, column 37]\n  APPLY_ABSTRACTION; [line 7, column 37]\n " shape="box"]
 	
 
 	 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" -> "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_2" ;
@@ -94,7 +94,7 @@ digraph cfg {
 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_2" [label="2: Exit const_in_param2 \n  " color=yellow style=filled]
 	
 
-"const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 9, column 51]\n  n$1=*n$0:int [line 9, column 50]\n  *&return:int=n$1 [line 9, column 43]\n " shape="box"]
+"const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 9, column 51]\n  n$1=*n$0:int [line 9, column 50]\n  *&return:int=n$1 [line 9, column 43]\n  REMOVE_TEMPS(n$0,n$1); [line 9, column 43]\n  NULLIFY(&p); [line 9, column 43]\n  APPLY_ABSTRACTION; [line 9, column 43]\n " shape="box"]
 	
 
 	 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" -> "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_2" ;

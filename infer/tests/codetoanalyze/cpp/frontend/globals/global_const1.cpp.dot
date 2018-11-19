@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ) [line 11, column 1]\n  n$0=_fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ) [line 11, column 1]\n  n$0=_fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n  REMOVE_TEMPS(n$0,n$1); [line 11, column 9]\n  APPLY_ABSTRACTION; [line 11, column 9]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int const ) [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int=2 [line 15, column 1]\n " shape="box"]
+"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int const ) [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int=2 [line 15, column 1]\n  REMOVE_TEMPS(n$0); [line 15, column 1]\n  APPLY_ABSTRACTION; [line 15, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n  REMOVE_TEMPS(n$0,n$1); [line 13, column 19]\n  NULLIFY(&__return_param); [line 13, column 19]\n  APPLY_ABSTRACTION; [line 13, column 19]\n " shape="box"]
 	
 
 	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
@@ -40,11 +40,11 @@ digraph cfg {
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n  *&return:int=n$0 [line 19, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n  *&return:int=n$0 [line 19, column 3]\n  REMOVE_TEMPS(n$0); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&local:int) [line 18, column 3]\n  n$2=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$2 [line 18, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&local:int) [line 18, column 3]\n  n$2=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$2 [line 18, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 18, column 3]\n  NULLIFY(&local); [line 18, column 3]\n " shape="box"]
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;
