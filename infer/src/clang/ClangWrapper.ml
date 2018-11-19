@@ -51,7 +51,7 @@ let check_for_existing_file args =
     check_for_existing_file_arg all_args
 
 
-(** Given a clang command, return a list of new commands to run according to the results of [`clang -### [args]`]. *)
+(** Given a clang command, return a list of new commands to run according to the results of [clang -### \[args\]]. *)
 let clang_driver_action_items : ClangCommand.t -> action_item list =
  fun cmd ->
   let clang_hashhashhash =
@@ -124,7 +124,7 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
 
 
 (** Given a list of arguments for clang [args], return a list of new commands to run according to
-    the results of [`clang -### [args]`] if the command can be analysed. *)
+    the results of [clang -### \[args\]] if the command can be analysed. *)
 let normalize ~prog ~args : action_item list =
   let cmd = ClangCommand.mk ~is_driver:true ClangQuotes.SingleQuotes ~prog ~args in
   if ClangCommand.may_capture cmd then clang_driver_action_items cmd else [DriverCommand cmd]

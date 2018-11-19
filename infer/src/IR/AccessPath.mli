@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Module for naming heap locations via the path used to access them (e.g., [x.f.g, y[a].b]) *)
+(** Module for naming heap locations via the path used to access them (e.g., [x.f.g, y\[a\].b]) *)
 
 type base = Var.t * Typ.t [@@deriving compare]
 
@@ -53,7 +53,7 @@ val of_lhs_exp :
 (** convert [lhs_exp] to an access path, resolving identifiers using [f_resolve_id] *)
 
 val append : t -> access list -> t
-(** append new accesses to an existing access path; e.g., [append_access x.f [g, h]] produces
+(** append new accesses to an existing access path; e.g., [append_access x.f \[g, h\]] produces
     `x.f.g.h` *)
 
 val is_prefix : t -> t -> bool
@@ -113,7 +113,7 @@ module Abs : sig
   (** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
 
   val ( <= ) : lhs:t -> rhs:t -> bool
-  (** return true if \gamma(lhs) \subseteq \gamma(rhs) *)
+  (** return true if {%\gamma(lhs) \subseteq \gamma(rhs)%} *)
 
   val pp : Format.formatter -> t -> unit
 end

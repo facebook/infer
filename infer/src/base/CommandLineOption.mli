@@ -95,7 +95,7 @@ val mk_string_list :
   -> ?default_to_string:(string list -> string)
   -> ?f:(string -> string)
   -> string list ref t
-(** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
+(** [mk_string_list] defines a [string list ref], initialized to [\[\]] unless overridden by
     [~default].  Each argument of an occurrence of the option will be prepended to the list, so the
     final value will be in the reverse order they appeared on the command line.
 
@@ -127,7 +127,7 @@ val mk_symbol_opt :
 val mk_symbol_seq :
   ?default:'a list -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a list ref t
 (** [mk_symbol_seq long symbols] defines a command line flag [--long <symbol sequence>] where
-    [<symbol sequence>] is a comma-separated sequence of [<symbol>]-s such that [(<symbol>,_)] is an
+    [<symbol sequence>] is a comma-separated sequence of [<symbol>] such that [(<symbol>,_)] is an
     element of [symbols]. *)
 
 val mk_json : Yojson.Basic.json ref t
@@ -184,7 +184,7 @@ val mk_command_doc :
      {- [short_description] is a one-line description of the command}
      {- [options] can be either [`Replace blocks], which populates the OPTIONS section with [blocks],
     or [`Prepend blocks], in which case the options from the command are used, prepended by
-    [blocks]. If unspecified it defaults to [`Prepend []].}
+    [blocks]. If unspecified it defaults to [`Prepend \[\]].}
     {- All the other [section_name] options correspond to the contents of the section [section_name].
     Some are mandatory and some are not.}}
 *)
