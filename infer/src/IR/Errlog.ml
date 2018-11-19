@@ -45,6 +45,23 @@ let make_trace_element lt_level lt_loc lt_description lt_node_tags =
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 
+let concat_traces labelled_traces =
+  match labelled_traces with
+  | [] ->
+      []
+  | [(_, t)] ->
+      t
+  | _ ->
+      List.fold_right labelled_traces ~init:[] ~f:(fun labelled_trace res ->
+          match labelled_trace with
+          | _, [] ->
+              res
+          | "", trace ->
+              trace @ res
+          | label, ({lt_loc} :: _ as trace) ->
+              (make_trace_element 0 lt_loc label [] :: trace) @ res )
+
+
 let compute_local_exception_line loc_trace =
   let open Base.Continue_or_stop in
   let compute_local_exception_line (last_known_step_at_level_zero_opt, line_opt) step =
@@ -101,15 +118,7 @@ let merge_err_data err_data1 err_data2 =
   ; session= 0
   ; loc= {err_data1.loc with col= -1}
   ; loc_in_ml_source= None
-  ; loc_trace=
-      ( match (err_data1.loc_trace, err_data2.loc_trace) with
-      | [], _ ->
-          err_data2.loc_trace
-      | _, [] ->
-          err_data1.loc_trace
-      | te :: _, _ ->
-          err_data1.loc_trace
-          @ (make_trace_element 0 te.lt_loc "-----------" [] :: err_data2.loc_trace) )
+  ; loc_trace= concat_traces [("", err_data1.loc_trace); ("-----------", err_data2.loc_trace)]
   ; err_class= Exceptions.Checker
   ; visibility= Exceptions.Exn_user
   ; linters_def_file= None
