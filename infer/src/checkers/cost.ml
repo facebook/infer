@@ -790,8 +790,8 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
          {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
   with
   | Some (exit_cost, _) ->
-      L.internal_error "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"
-        Typ.Procname.pp
+      L.(debug Analysis Verbose)
+        "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
         BasicCost.pp exit_cost ;
