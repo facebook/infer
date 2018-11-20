@@ -16,27 +16,20 @@ let call_matches ?(search_superclasses = true) ?(method_prefix = false)
     else fun current_method target_method -> String.equal current_method target_method
   in
   let class_matcher =
-    let is_target_class =
-      let target = Typ.Name.Java.from_string clazz in
-      fun tname -> Typ.Name.equal tname target
-    in
-    if search_superclasses then fun tenv classname ->
-      let is_target_struct tname _ = is_target_class tname in
-      PatternMatch.supertype_exists tenv is_target_struct classname
-    else fun _ classname -> is_target_class classname
+    if search_superclasses then
+      let target = "class " ^ clazz in
+      let is_target tname _ = Typ.Name.to_string tname |> String.equal target in
+      fun tenv pname ->
+        Typ.Procname.get_class_type_name pname
+        |> Option.exists ~f:(PatternMatch.supertype_exists tenv is_target)
+    else fun _tenv pname ->
+      Typ.Procname.get_class_name pname |> Option.exists ~f:(String.equal clazz)
   in
   (fun tenv pn actuals ->
     actuals_pred actuals
     &&
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let mthd = Typ.Procname.Java.get_method java_pname in
-        List.exists methods ~f:(method_matcher mthd)
-        &&
-        let classname = Typ.Procname.Java.get_class_type_name java_pname in
-        class_matcher tenv classname
-    | _ ->
-        false )
+    let mthd = Typ.Procname.get_method pn in
+    List.exists methods ~f:(method_matcher mthd) && class_matcher tenv pn )
   |> Staged.stage
 
 

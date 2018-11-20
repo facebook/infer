@@ -20,106 +20,107 @@ end
 
 type container_access = ContainerRead | ContainerWrite
 
-let get_container_access =
-  let is_cpp_container_read =
-    let is_container_operator pname_qualifiers =
-      match QualifiedCppName.extract_last pname_qualifiers with
-      | Some (last, _) ->
-          String.equal last "operator[]"
-      | None ->
-          false
-    in
-    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
-    fun pname ->
-      let pname_qualifiers = Typ.Procname.get_qualifiers pname in
-      QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
-      || is_container_operator pname_qualifiers
-  and is_cpp_container_write =
-    let matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
-    in
-    fun pname ->
-      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+let is_java_container_write =
+  let open MethodMatcher in
+  let array_methods =
+    ["append"; "clear"; "delete"; "put"; "remove"; "removeAt"; "removeAtRange"; "setValueAt"]
   in
-  fun pn tenv ->
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
-        let get_container_access_ typename =
-          match (Typ.Name.name typename, Typ.Procname.Java.get_method java_pname) with
-          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-            , ( "append"
-              | "clear"
-              | "delete"
-              | "put"
-              | "remove"
-              | "removeAt"
-              | "removeAtRange"
-              | "setValueAt" ) ) ->
-              Some ContainerWrite
-          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-            , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") ) ->
-              Some ContainerRead
-          | ( "android.support.v4.util.SimpleArrayMap"
-            , ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt" | "setValueAt")
-            ) ->
-              Some ContainerWrite
-          | ( "android.support.v4.util.SimpleArrayMap"
-            , ( "containsKey"
-              | "containsValue"
-              | "get"
-              | "hashCode"
-              | "indexOfKey"
-              | "isEmpty"
-              | "keyAt"
-              | "size"
-              | "valueAt" ) ) ->
-              Some ContainerRead
-          | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release") ->
-              Some ContainerWrite
-          | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") ->
-              Some ContainerWrite
-          | ( "java.util.List"
-            , ( "contains"
-              | "containsAll"
-              | "equals"
-              | "get"
-              | "hashCode"
-              | "indexOf"
-              | "isEmpty"
-              | "iterator"
-              | "lastIndexOf"
-              | "listIterator"
-              | "size"
-              | "toArray" ) ) ->
-              Some ContainerRead
-          | "java.util.Map", ("clear" | "put" | "putAll" | "remove") ->
-              Some ContainerWrite
-          | ( "java.util.Map"
-            , ( "containsKey"
-              | "containsValue"
-              | "entrySet"
-              | "equals"
-              | "get"
-              | "hashCode"
-              | "isEmpty"
-              | "keySet"
-              | "size"
-              | "values" ) ) ->
-              Some ContainerRead
-          | _ ->
-              None
-        in
-        PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
-    (* The following order matters: we want to check if pname is a container write
-             before we check if pname is a container read. This is due to a different
-             treatment between std::map::operator[] and all other operator[]. *)
-    | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_container_write pname ->
-        Some ContainerWrite
-    | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_container_read pname ->
-        Some ContainerRead
-    | _ ->
-        None
+  [ { default with
+      classname= "android.support.v4.util.Pools$SimplePool"; methods= ["acquire"; "release"] }
+  ; { default with
+      classname= "android.support.v4.util.SimpleArrayMap"
+    ; methods= ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"] }
+  ; {default with classname= "android.support.v4.util.SparseArrayCompat"; methods= array_methods}
+  ; {default with classname= "android.util.SparseArray"; methods= array_methods}
+  ; {default with classname= "java.util.List"; methods= ["add"; "addAll"; "clear"; "remove"; "set"]}
+  ; {default with classname= "java.util.Map"; methods= ["clear"; "put"; "putAll"; "remove"]} ]
+  |> of_records
+
+
+let is_java_container_read =
+  let open MethodMatcher in
+  let array_methods = ["clone"; "get"; "indexOfKey"; "indexOfValue"; "keyAt"; "size"; "valueAt"] in
+  [ { default with
+      classname= "android.support.v4.util.SimpleArrayMap"
+    ; methods=
+        [ "containsKey"
+        ; "containsValue"
+        ; "get"
+        ; "hashCode"
+        ; "indexOfKey"
+        ; "isEmpty"
+        ; "keyAt"
+        ; "size"
+        ; "valueAt" ] }
+  ; {default with classname= "android.support.v4.util.SparseArrayCompat"; methods= array_methods}
+  ; {default with classname= "android.util.SparseArray"; methods= array_methods}
+  ; { default with
+      classname= "java.util.List"
+    ; methods=
+        [ "contains"
+        ; "containsAll"
+        ; "equals"
+        ; "get"
+        ; "hashCode"
+        ; "indexOf"
+        ; "isEmpty"
+        ; "iterator"
+        ; "lastIndexOf"
+        ; "listIterator"
+        ; "size"
+        ; "toArray" ] }
+  ; { default with
+      classname= "java.util.Map"
+    ; methods=
+        [ "containsKey"
+        ; "containsValue"
+        ; "entrySet"
+        ; "equals"
+        ; "get"
+        ; "hashCode"
+        ; "isEmpty"
+        ; "keySet"
+        ; "size"
+        ; "values" ] } ]
+  |> of_records
+
+
+let is_cpp_container_read =
+  let is_container_operator pname_qualifiers =
+    QualifiedCppName.extract_last pname_qualifiers
+    |> Option.exists ~f:(fun (last, _) -> String.equal last "operator[]")
+  in
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
+  fun pname ->
+    let pname_qualifiers = Typ.Procname.get_qualifiers pname in
+    QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
+    || is_container_operator pname_qualifiers
+
+
+let is_cpp_container_write =
+  let matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
+  in
+  fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+
+
+let get_container_access pn tenv =
+  match pn with
+  | Typ.Procname.Java _ when is_java_container_write tenv pn [] ->
+      Some ContainerWrite
+  | Typ.Procname.Java _ when is_java_container_read tenv pn [] ->
+      Some ContainerRead
+  | Typ.Procname.Java _ ->
+      None
+  (* The following order matters: we want to check if pname is a container write
+       before we check if pname is a container read. This is due to a different
+       treatment between std::map::operator[] and all other operator[]. *)
+  | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
+      Some ContainerWrite
+  | (Typ.Procname.ObjC_Cpp _ | C _) when is_cpp_container_read pn ->
+      Some ContainerRead
+  | _ ->
+      None
 
 
 (** holds of procedure names which should not be analyzed in order to avoid known sources of

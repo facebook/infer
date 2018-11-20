@@ -490,7 +490,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   val equal : t -> t -> bool
 
-  val get_class_type_name : t -> Name.t option [@@warning "-32"]
+  val get_class_type_name : t -> Name.t option
 
   val get_class_name : t -> string option
 
