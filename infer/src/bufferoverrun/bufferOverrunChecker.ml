@@ -671,7 +671,7 @@ module Report = struct
                 let callee_pdesc = Summary.get_proc_desc callee_summary in
                 instantiate_cond tenv integer_type_widths callee_pdesc params mem callee_payload
                   location
-                |> PO.ConditionSet.merge cond_set
+                |> PO.ConditionSet.join cond_set
             | None ->
                 (* no inferbo payload *) cond_set )
           | None ->

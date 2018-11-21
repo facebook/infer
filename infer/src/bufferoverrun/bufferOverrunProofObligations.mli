@@ -59,7 +59,7 @@ module ConditionSet : sig
     -> t
     -> t
 
-  val merge : t -> t -> t
+  val join : t -> t -> t
 
   val subst :
        summary_t

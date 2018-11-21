@@ -335,35 +335,6 @@ void minmax_div_const2_Bad_FN() {
   div_const2(-2);
 }
 
-uint32_t unknown_nat() {
-  uint32_t x = unknown_function();
-  if (x >= 0) {
-    return x;
-  } else {
-    return 0;
-  }
-}
-
-void two_safety_conditions2_Bad(uint32_t s) {
-  uint32_t x = unknown_nat();
-  uint32_t y, z;
-
-  if (unknown_function()) {
-    y = 0;
-  } else {
-    y = 80;
-  }
-  z = x + y; // integer overflow L5: [0, +oo] + [0, 80]
-
-  if (s >= 10 && s <= 20) {
-    z = x + s; // [0, +oo] + [max(10, s.lb), min(20, s.ub)]
-  }
-}
-
-void call_two_safety_conditions2_Bad() {
-  two_safety_conditions2_Bad(15); // integer overflow L5: [0, +oo] + 15
-}
-
 void band_positive_constant_Good() {
   char a[3];
   int x = 6 & 2; // y is 2
