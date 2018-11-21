@@ -136,7 +136,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$34=_fun___variable_initialization(&stop:_Bool*) [line 45, column 3]\n  n$33=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=n$33 [line 45, column 3]\n  REMOVE_TEMPS(n$33,n$34); [line 45, column 3]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$34=_fun___variable_initialization(&stop:_Bool*) [line 45, column 3]\n  n$33=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$33 [line 45, column 3]\n  REMOVE_TEMPS(n$33,n$34); [line 45, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" ;

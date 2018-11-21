@@ -176,7 +176,7 @@ digraph cfg {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$68=_fun___variable_initialization(&x:int*) [line 92, column 3]\n  n$67=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 92, column 12]\n  *&x:int*=n$67 [line 92, column 3]\n  REMOVE_TEMPS(n$67,n$68); [line 92, column 3]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$68=_fun___variable_initialization(&x:int*) [line 92, column 3]\n  n$67=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 92, column 12]\n  *&x:int*=(int*)n$67 [line 92, column 3]\n  REMOVE_TEMPS(n$67,n$68); [line 92, column 3]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
@@ -199,7 +199,7 @@ digraph cfg {
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" [label="6:  DeclStmt \n   n$81=_fun___variable_initialization(&x:int*) [line 101, column 3]\n  n$80=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 101, column 12]\n  *&x:int*=n$80 [line 101, column 3]\n  REMOVE_TEMPS(n$80,n$81); [line 101, column 3]\n " shape="box"]
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" [label="6:  DeclStmt \n   n$81=_fun___variable_initialization(&x:int*) [line 101, column 3]\n  n$80=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 101, column 12]\n  *&x:int*=(int*)n$80 [line 101, column 3]\n  REMOVE_TEMPS(n$80,n$81); [line 101, column 3]\n " shape="box"]
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" ;
@@ -241,7 +241,7 @@ digraph cfg {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_3" ;
-"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$59=_fun___variable_initialization(&x:int*) [line 86, column 3]\n  n$58=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 86, column 12]\n  *&x:int*=n$58 [line 86, column 3]\n  REMOVE_TEMPS(n$58,n$59); [line 86, column 3]\n " shape="box"]
+"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$59=_fun___variable_initialization(&x:int*) [line 86, column 3]\n  n$58=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 86, column 12]\n  *&x:int*=(int*)n$58 [line 86, column 3]\n  REMOVE_TEMPS(n$58,n$59); [line 86, column 3]\n " shape="box"]
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;

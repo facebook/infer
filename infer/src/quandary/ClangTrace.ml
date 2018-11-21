@@ -97,7 +97,7 @@ module SourceKind = struct
               false
         in
         (* accessed global will be passed to us as the only parameter *)
-        match actuals with
+        match List.map actuals ~f:HilExp.ignore_cast with
         | [HilExp.AccessExpression access_expr] ->
             let access_path = AccessExpression.to_access_path access_expr in
             if is_gflag access_path then

@@ -73,7 +73,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_access_expr =
-        match exp_of_sil ~add_deref:true lhs_exp typ with
+        match HilExp.ignore_cast (exp_of_sil ~add_deref:true lhs_exp typ) with
         | AccessExpression access_expr ->
             access_expr
         | BinaryOperator (_, exp0, exp1) -> (
@@ -92,7 +92,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
                   Location.pp_file_pos loc ) )
-        | Constant (Const.Cint i) ->
+        | HilExp.Constant (Const.Cint i) ->
             (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
                debugging. doesn't really matter what we do here, so just create a dummy var *)
             let dummy_base_var =

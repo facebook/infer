@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int*) [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=n$0 [line 14, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 14, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int*) [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=(int*)n$0 [line 14, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 14, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" ;

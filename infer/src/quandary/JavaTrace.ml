@@ -118,7 +118,7 @@ module SourceKind = struct
           (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname))
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       (* accessed global will be passed to us as the only parameter *)
-      match actuals with
+      match List.map actuals ~f:HilExp.ignore_cast with
       | [HilExp.AccessExpression access_expr] -> (
         match AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, _), _ ->

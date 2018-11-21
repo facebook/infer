@@ -58,8 +58,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let nullable_usedef_chain_of exp lhs astate loc =
+  let rec nullable_usedef_chain_of exp lhs astate loc =
     match exp with
+    | HilExp.Cast (_, e) ->
+        nullable_usedef_chain_of e lhs astate loc
     | HilExp.Constant (Cint n) when IntLit.isnull n ->
         Some (UseDefChain.NullDefAssign (loc, lhs))
     | HilExp.AccessExpression access_expr -> (
@@ -78,7 +80,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         None
 
 
-  let extract_null_compare_expr = function
+  let rec extract_null_compare_expr = function
+    | HilExp.Cast (_, e) ->
+        extract_null_compare_expr e
     | HilExp.BinaryOperator ((Eq | Ne), HilExp.AccessExpression access_expr, exp)
     | HilExp.BinaryOperator ((Eq | Ne), exp, HilExp.AccessExpression access_expr) ->
         Option.some_if (HilExp.is_null_literal exp) (AccessExpression.to_access_path access_expr)

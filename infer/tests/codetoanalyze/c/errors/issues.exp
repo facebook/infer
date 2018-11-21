@@ -30,7 +30,8 @@ codetoanalyze/c/errors/local_vars/local_vars.c, t, 8, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/errors/memory_leaks/cleanup_attribute.c, FP_cleanup_malloc_good, 4, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/cleanup_attribute.c, FP_cleanup_string_good, 2, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 3, MEMORY_LEAK, no_bucket
-codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 5, NULL_TEST_AFTER_DEREFERENCE, no_bucket
+codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak2, 3, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak2, 5, NULL_TEST_AFTER_DEREFERENCE, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 5, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket

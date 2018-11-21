@@ -22,6 +22,15 @@ void common_realloc_leak() {
     free(q);
 }
 
+void common_realloc_leak2() {
+  float *p, *q;
+  p = (float*)malloc(sizeof(float));
+  q = (float*)realloc(p, sizeof(float) * 42);
+  // if realloc fails, then p becomes unreachable
+  if (q != NULL)
+    free(q);
+}
+
 int* allocate() {
   int* p = NULL;
   do {

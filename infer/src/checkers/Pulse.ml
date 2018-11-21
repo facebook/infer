@@ -41,7 +41,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_assign lhs_access (rhs_exp : HilExp.t) loc astate =
+  let rec exec_assign lhs_access (rhs_exp : HilExp.t) loc astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
     match rhs_exp with
     | AccessExpression rhs_access ->
@@ -49,6 +49,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
     | Constant (Cint address) when IntLit.iszero address ->
         PulseDomain.write loc lhs_access PulseDomain.AbstractAddress.nullptr astate
+    | Cast (_, e) ->
+        exec_assign lhs_access e loc astate
     | _ ->
         PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
         >>= PulseDomain.havoc loc lhs_access

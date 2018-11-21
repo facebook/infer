@@ -545,6 +545,8 @@ let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_clas
 
 let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true | _ -> false
 
+let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false
+
 let has_block_prefix s =
   match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) s with
   | _ :: _ :: _ ->

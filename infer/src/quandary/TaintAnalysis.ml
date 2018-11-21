@@ -98,7 +98,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     let add_actual_source source index actuals access_tree proc_data =
-      match List.nth_exn actuals index with
+      match HilExp.ignore_cast (List.nth_exn actuals index) with
       | HilExp.AccessExpression actual_ae_raw ->
           let actual_ap =
             AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae_raw)
@@ -334,7 +334,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               in
               let actual_trace' = TraceDomain.add_sink sink' actual_trace in
               report_trace actual_trace' callee_site proc_data ;
-              match exp with
+              match HilExp.ignore_cast exp with
               | HilExp.AccessExpression actual_ae_raw
                 when not
                        (TraceDomain.Sources.Footprint.is_empty
@@ -390,7 +390,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             in
             (projected_ap_opt, Option.value ~default:TaintDomain.empty_node caller_node_opt)
         | Var.LogicalVar id when Ident.is_footprint id -> (
-          match List.nth actuals (Ident.get_stamp id) with
+          match Option.map (List.nth actuals (Ident.get_stamp id)) ~f:HilExp.ignore_cast with
           | Some (HilExp.AccessExpression actual_ae) ->
               let projected_ap =
                 project ~formal_ap ~actual_ap:(AccessExpression.to_access_path actual_ae)
@@ -502,8 +502,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               astate
         else astate
       in
-      let add_sources_sinks_for_exp exp loc astate =
+      let rec add_sources_sinks_for_exp exp loc astate =
         match exp with
+        | HilExp.Cast (_, e) ->
+            add_sources_sinks_for_exp e loc astate
         | HilExp.AccessExpression access_expr ->
             add_sinks_for_access_path access_expr loc astate
             |> add_sources_for_access_path access_expr loc
@@ -603,7 +605,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     (AccessPath.Abs.Abstracted (AccessExpression.to_access_path receiver_ae))
                     other_actuals astate_acc
               | TaintSpec.Propagate_to_actual actual_index, _ -> (
-                match List.nth actuals actual_index with
+                match Option.map (List.nth actuals actual_index) ~f:HilExp.ignore_cast with
                 | Some (HilExp.AccessExpression actual_ae) ->
                     propagate_to_access_path
                       (AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae))
@@ -619,7 +621,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             match Typ.Procname.get_method callee_pname with
             | "operator=" when not (Typ.Procname.is_java callee_pname) -> (
               (* treat unknown calls to C++ operator= as assignment *)
-              match actuals with
+              match List.map actuals ~f:HilExp.ignore_cast with
               | [AccessExpression lhs_access_expr; rhs_exp] ->
                   exec_write lhs_access_expr rhs_exp access_tree
               | [AccessExpression lhs_access_expr; rhs_exp; HilExp.AccessExpression access_expr] -> (

@@ -103,7 +103,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary callee_formals_opt
       =
     List.iteri actuals ~f:(fun idx e ->
-        match e with
+        match HilExp.ignore_cast e with
         | HilExp.AccessExpression access_expr ->
             let _, t = AccessExpression.get_base access_expr in
             if
@@ -185,7 +185,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then
         report_intra rhs_access_expr loc summary
     in
-    let check_hil_expr ~loc = function
+    let rec check_hil_expr ~loc = function
+      | HilExp.Cast (_, e) ->
+          check_hil_expr ~loc e
       | HilExp.AccessExpression access_expr ->
           check_access_expr ~loc access_expr
       | _ ->
@@ -251,7 +253,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let maybe_uninit_vars =
           List.foldi ~init:astate.maybe_uninit_vars actuals ~f:(fun idx acc actual_exp ->
-              match actual_exp with
+              match HilExp.ignore_cast actual_exp with
               | HilExp.AccessExpression access_expr -> (
                   let access_expr_to_remove =
                     match access_expr with AddressOf ae -> ae | _ -> access_expr

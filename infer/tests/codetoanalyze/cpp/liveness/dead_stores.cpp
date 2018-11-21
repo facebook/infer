@@ -249,11 +249,17 @@ int init_capture6_ok() {
 
 char* global;
 
-void FP_assign_array_tricky_ok() {
+void assign_array_tricky_ok() {
   char arr[1];
   global = arr;
-  *(int*)arr = 123; // think this is a bug in the frontend... this instruction
-  // looks like &arr:int = 123
+  *(int*)arr = 123;
+}
+
+// Currently the frontend does not translate the casting of pointers to float.
+void FP_assign_array_tricky2_ok() {
+  char arr[1];
+  global = arr;
+  *(float*)arr = 1.0;
 }
 
 void placement_new_ok(int len, int* ptr) {
