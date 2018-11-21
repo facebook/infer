@@ -22,10 +22,11 @@ type model_env =
   ; node_hash: int
   ; location: Location.t
   ; tenv: Tenv.t
+  ; integer_type_widths: Typ.IntegerWidths.t
   ; symbol_table: Itv.SymbolTable.t }
 
-let mk_model_env pname node_hash location tenv symbol_table =
-  {pname; node_hash; location; tenv; symbol_table}
+let mk_model_env pname node_hash location tenv integer_type_widths symbol_table =
+  {pname; node_hash; location; tenv; integer_type_widths; symbol_table}
 
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
@@ -80,9 +81,9 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
       (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None)
 
 
-let check_alloc_size size_exp {location} mem cond_set =
+let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
   let _, _, length0, _ = get_malloc_info size_exp in
-  let v_length = Sem.eval length0 mem in
+  let v_length = Sem.eval integer_type_widths length0 mem in
   match Dom.Val.get_itv v_length with
   | Bottom ->
       cond_set
@@ -106,25 +107,25 @@ let set_uninitialized location (typ : Typ.t) ploc mem =
 
 
 let malloc size_exp =
-  let exec {pname; node_hash; location; tenv} ~ret:(id, _) mem =
+  let exec {pname; node_hash; location; tenv; integer_type_widths} ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
-    let length = Sem.eval length0 mem in
+    let length = Sem.eval integer_type_widths length0 mem in
     let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
     let path = Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:None ~f:Loc.get_path in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
     let size_exp_opt =
       let size_exp = Option.value dyn_length ~default:length0 in
-      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) size_exp
+      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
     in
     let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size |> Dom.Val.set_traces traces in
     mem
     |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt
     |> set_uninitialized location typ (Dom.Val.get_array_locs v)
-    |> BoUtils.Exec.init_array_fields tenv pname path ~node_hash typ (Dom.Val.get_array_locs v)
-         ?dyn_length
+    |> BoUtils.Exec.init_array_fields tenv integer_type_widths pname path ~node_hash typ
+         (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size size_exp in
   {exec; check}
 
@@ -136,35 +137,38 @@ let calloc size_exp stride_exp =
 
 let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem = mem
-  and check {location} mem cond_set =
-    BoUtils.Check.lindex_byte ~array_exp:dest_exp ~byte_index_exp:size_exp mem location cond_set
-    |> BoUtils.Check.lindex_byte ~array_exp:src_exp ~byte_index_exp:size_exp mem location
+  and check {location; integer_type_widths} mem cond_set =
+    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp mem
+      location cond_set
+    |> BoUtils.Check.lindex_byte integer_type_widths ~array_exp:src_exp ~byte_index_exp:size_exp
+         mem location
   in
   {exec; check}
 
 
 let memset arr_exp size_exp =
   let exec _ ~ret:_ mem = mem
-  and check {location} mem cond_set =
-    BoUtils.Check.lindex_byte ~array_exp:arr_exp ~byte_index_exp:size_exp mem location cond_set
+  and check {location; integer_type_widths} mem cond_set =
+    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp mem
+      location cond_set
   in
   {exec; check}
 
 
 let realloc src_exp size_exp =
-  let exec {location; tenv} ~ret:(id, _) mem =
+  let exec {location; tenv; integer_type_widths} ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, _, length0, dyn_length = get_malloc_info size_exp in
-    let length = Sem.eval length0 mem in
+    let length = Sem.eval integer_type_widths length0 mem in
     let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
     let v =
-      Sem.eval src_exp mem
+      Sem.eval integer_type_widths src_exp mem
       |> Dom.Val.set_array_size (Dom.Val.get_itv length)
       |> Dom.Val.set_traces traces
     in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
-        let dyn_length = Dom.Val.get_itv (Sem.eval dyn_length mem) in
+        let dyn_length = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
         BoUtils.Exec.set_dyn_length tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
   and check = check_alloc_size size_exp in
   {exec; check}
@@ -178,7 +182,7 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
       malloc size_exp
   | _, _ ->
-      let exec _ ~ret:(id, _) mem =
+      let exec {integer_type_widths} ~ret:(id, _) mem =
         let src_exp =
           if Typ.is_pointer_to_void t1 then src_exp1
           else
@@ -191,16 +195,16 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
                 L.d_error "Unexpected types of arguments for __placement_new" ;
                 src_exp1
         in
-        let v = Sem.eval src_exp mem in
+        let v = Sem.eval integer_type_widths src_exp mem in
         Dom.Mem.add_stack (Loc.of_id id) v mem
       in
       {exec; check= no_check}
 
 
 let inferbo_min e1 e2 =
-  let exec _ ~ret:(id, _) mem =
-    let i1 = Sem.eval e1 mem |> Dom.Val.get_itv in
-    let i2 = Sem.eval e2 mem |> Dom.Val.get_itv in
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let i1 = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_itv in
+    let i2 = Sem.eval integer_type_widths e2 mem |> Dom.Val.get_itv in
     let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
     mem |> Dom.Mem.add_stack (Loc.of_id id) v
   in
@@ -208,9 +212,9 @@ let inferbo_min e1 e2 =
 
 
 let inferbo_set_size e1 e2 =
-  let exec _model_env ~ret:_ mem =
-    let locs = Sem.eval e1 mem |> Dom.Val.get_pow_loc in
-    let size = Sem.eval e2 mem |> Dom.Val.get_itv in
+  let exec {integer_type_widths} ~ret:_ mem =
+    let locs = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_pow_loc in
+    let size = Sem.eval integer_type_widths e2 mem |> Dom.Val.get_itv in
     Dom.Mem.transform_mem ~f:(Dom.Val.set_array_size size) locs mem
   and check = check_alloc_size e2 in
   {exec; check}
@@ -229,17 +233,18 @@ let bottom =
 
 
 let infer_print e =
-  let exec {location} ~ret:_ mem =
+  let exec {location; integer_type_widths} ~ret:_ mem =
     L.(debug BufferOverrun Medium)
-      "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp (Sem.eval e mem) ;
+      "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp
+      (Sem.eval integer_type_widths e mem) ;
     mem
   in
   {exec; check= no_check}
 
 
 let get_array_length array_exp =
-  let exec _ ~ret mem =
-    let arr = Sem.eval_arr array_exp mem in
+  let exec {integer_type_widths} ~ret mem =
+    let arr = Sem.eval_arr integer_type_widths array_exp mem in
     let traces = Dom.Val.get_traces arr in
     let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
     let result = Dom.Val.of_itv ~traces length in
@@ -249,10 +254,10 @@ let get_array_length array_exp =
 
 
 let set_array_length array length_exp =
-  let exec {pname; node_hash; location} ~ret:_ mem =
+  let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
     match array with
     | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
-        let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
+        let length = Sem.eval integer_type_widths length_exp mem |> Dom.Val.get_itv in
         let stride = Option.map ~f:IntLit.to_int_exn stride in
         let path = Some (Symb.SymbolPath.of_pvar array_pvar) in
         let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
@@ -267,14 +272,16 @@ let set_array_length array length_exp =
 
 
 module Split = struct
-  let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
+  let std_vector integer_type_widths ~adds_at_least_one (vector_exp, vector_typ) location mem =
     let traces = BufferOverrunTrace.(Set.singleton (Call location)) in
     let increment_itv = if adds_at_least_one then Itv.pos else Itv.nat in
     let increment = Dom.Val.of_itv ~traces increment_itv in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
     let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
     let vector_size_locs =
-      Sem.eval vector_exp mem |> Dom.Val.get_all_locs |> PowLoc.append_field ~fn:size_field
+      Sem.eval integer_type_widths vector_exp mem
+      |> Dom.Val.get_all_locs
+      |> PowLoc.append_field ~fn:size_field
     in
     Dom.Mem.transform_mem ~f:(Dom.Val.plus_a increment) vector_size_locs mem
 end
@@ -282,8 +289,8 @@ end
 module Boost = struct
   module Split = struct
     let std_vector vector_arg =
-      let exec {location} ~ret:_ mem =
-        Split.std_vector ~adds_at_least_one:true vector_arg location mem
+      let exec {location; integer_type_widths} ~ret:_ mem =
+        Split.std_vector integer_type_widths ~adds_at_least_one:true vector_arg location mem
       in
       {exec; check= no_check}
   end
@@ -292,16 +299,16 @@ end
 module Folly = struct
   module Split = struct
     let std_vector vector_arg ignore_empty_opt =
-      let exec {location} ~ret:_ mem =
+      let exec {location; integer_type_widths} ~ret:_ mem =
         let adds_at_least_one =
           match ignore_empty_opt with
           | Some ignore_empty_exp ->
-              Sem.eval ignore_empty_exp mem |> Dom.Val.get_itv |> Itv.is_false
+              Sem.eval integer_type_widths ignore_empty_exp mem |> Dom.Val.get_itv |> Itv.is_false
           | None ->
               (* default: ignore_empty is false *)
               true
         in
-        Split.std_vector ~adds_at_least_one vector_arg location mem
+        Split.std_vector integer_type_widths ~adds_at_least_one vector_arg location mem
       in
       {exec; check= no_check}
   end
@@ -334,11 +341,11 @@ module StdArray = struct
 
   let at _size (array_exp, _) (index_exp, _) =
     (* TODO? use size *)
-    let exec _ ~ret:(id, _) mem =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
       L.d_printfln_escaped "Using model std::array<_, %Ld>::at" _size ;
-      BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
-    and check {location} mem cond_set =
-      BoUtils.Check.lindex ~array_exp ~index_exp mem location cond_set
+      BoUtils.Exec.load_val id (Sem.eval_lindex integer_type_widths array_exp index_exp mem) mem
+    and check {location; integer_type_widths} mem cond_set =
+      BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp mem location cond_set
     in
     {exec; check}
 
@@ -415,77 +422,83 @@ module Collection = struct
 
   let add alist_id = {exec= change_size_by ~size_f:incr_size alist_id; check= no_check}
 
-  let get_size alist mem = BoUtils.Exec.get_alist_size (Sem.eval alist mem) mem
+  let get_size integer_type_widths alist mem =
+    BoUtils.Exec.get_alist_size (Sem.eval integer_type_widths alist mem) mem
+
 
   let size array_exp =
-    let exec _ ~ret mem =
-      let size = get_size array_exp mem in
+    let exec {integer_type_widths} ~ret mem =
+      let size = get_size integer_type_widths array_exp mem in
       model_by_value size ret mem
     in
     {exec; check= no_check}
 
 
   let iterator alist =
-    let exec _ ~ret mem =
-      let itr = Sem.eval alist mem in
+    let exec {integer_type_widths} ~ret mem =
+      let itr = Sem.eval integer_type_widths alist mem in
       model_by_value itr ret mem
     in
     {exec; check= no_check}
 
 
   let hasNext iterator =
-    let exec _ ~ret mem =
+    let exec {integer_type_widths} ~ret mem =
       (* Set the size of the iterator to be [0, size-1], so that range
          will be size of the collection. *)
-      let collection_size = get_size iterator mem |> Dom.Val.get_iterator_itv in
+      let collection_size =
+        get_size integer_type_widths iterator mem |> Dom.Val.get_iterator_itv
+      in
       model_by_value collection_size ret mem
     in
     {exec; check= no_check}
 
 
   let addAll alist_id alist_to_add =
-    let exec _model_env ~ret mem =
-      let to_add_length = get_size alist_to_add mem in
-      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id _model_env ~ret mem
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let to_add_length = get_size integer_type_widths alist_to_add mem in
+      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id model_env ~ret mem
     in
     {exec; check= no_check}
 
 
   let add_at_index (alist_id : Ident.t) index_exp =
-    let check {location} mem cond_set =
+    let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~array_exp ~index_exp ~is_collection_add:true mem location
-        cond_set
+      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp
+        ~is_collection_add:true mem location cond_set
     in
     {exec= change_size_by ~size_f:incr_size alist_id; check}
 
 
   let remove_at_index alist_id index_exp =
-    let check {location} mem cond_set =
+    let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~array_exp ~index_exp mem location cond_set
+      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp mem location
+        cond_set
     in
     {exec= change_size_by ~size_f:decr_size alist_id; check}
 
 
   let addAll_at_index alist_id index_exp alist_to_add =
-    let exec _model_env ~ret mem =
-      let to_add_length = get_size alist_to_add mem in
-      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id _model_env ~ret mem
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let to_add_length = get_size integer_type_widths alist_to_add mem in
+      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id model_env ~ret mem
     in
-    let check {location} mem cond_set =
+    let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~index_exp ~array_exp ~is_collection_add:true mem location
-        cond_set
+      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp
+        ~is_collection_add:true mem location cond_set
     in
     {exec; check}
 
 
   let get_or_set_at_index alist_id index_exp =
     let exec _model_env ~ret:_ mem = mem in
-    let check {location} mem cond_set =
+    let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~index_exp ~array_exp mem location cond_set
+      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp mem location
+        cond_set
     in
     {exec; check}
 end

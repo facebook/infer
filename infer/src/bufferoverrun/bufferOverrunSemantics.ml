@@ -131,8 +131,8 @@ let rec must_alias_cmp : Exp.t -> Mem.astate -> bool =
       false
 
 
-let rec eval : Exp.t -> Mem.astate -> Val.t =
- fun exp mem ->
+let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
+ fun integer_type_widths exp mem ->
   if must_alias_cmp exp mem then Val.of_int 0
   else
     match exp with
@@ -142,17 +142,18 @@ let rec eval : Exp.t -> Mem.astate -> Val.t =
         let ploc = Loc.of_pvar pvar in
         if Mem.is_stack_loc ploc mem then Mem.find ploc mem else Val.of_loc ploc
     | Exp.UnOp (uop, e, _) ->
-        eval_unop uop e mem
+        eval_unop integer_type_widths uop e mem
     | Exp.BinOp (bop, e1, e2) ->
-        eval_binop bop e1 e2 mem
+        eval_binop integer_type_widths bop e1 e2 mem
     | Exp.Const c ->
         eval_const c
     | Exp.Cast (_, e) ->
-        eval e mem
+        eval integer_type_widths e mem
     | Exp.Lfield (e, fn, _) ->
-        eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
+        eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn
+        |> Val.of_pow_loc
     | Exp.Lindex (e1, e2) ->
-        eval_lindex e1 e2 mem
+        eval_lindex integer_type_widths e1 e2 mem
     | Exp.Sizeof {nbytes= Some size} ->
         Val.of_int size
     | Exp.Sizeof {nbytes= None} ->
@@ -161,8 +162,10 @@ let rec eval : Exp.t -> Mem.astate -> Val.t =
         Val.Itv.top
 
 
-and eval_lindex array_exp index_exp mem =
-  let array_v, index_v = (eval array_exp mem, eval index_exp mem) in
+and eval_lindex integer_type_widths array_exp index_exp mem =
+  let array_v, index_v =
+    (eval integer_type_widths array_exp mem, eval integer_type_widths index_exp mem)
+  in
   if ArrayBlk.is_bot (Val.get_array_blk array_v) then
     match array_exp with
     | Exp.Lfield _ when not (PowLoc.is_bot (Val.get_pow_loc array_v)) ->
@@ -184,9 +187,9 @@ and eval_lindex array_exp index_exp mem =
         Val.plus_pi array_v index_v
 
 
-and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Val.t =
- fun unop e mem ->
-  let v = eval e mem in
+and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.astate -> Val.t =
+ fun integer_type_widths unop e mem ->
+  let v = eval integer_type_widths e mem in
   match unop with
   | Unop.Neg ->
       Val.neg v
@@ -196,10 +199,10 @@ and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Val.t =
       Val.lnot v
 
 
-and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
- fun binop e1 e2 mem ->
-  let v1 = eval e1 mem in
-  let v2 = eval e2 mem in
+and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
+ fun integer_type_widths binop e1 e2 mem ->
+  let v1 = eval integer_type_widths e1 mem in
+  let v2 = eval integer_type_widths e2 mem in
   match binop with
   | Binop.PlusA _ ->
       Val.plus_a v1 v2
@@ -247,8 +250,8 @@ and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
    when "x" is a program variable, (eval_arr "x") returns array blocks
    the "x" is pointing to, on the other hand, (eval "x") returns the
    abstract location of "x". *)
-let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
- fun exp mem ->
+let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
+ fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id -> (
     match Mem.find_alias id mem with
@@ -259,14 +262,14 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
   | Exp.Lvar pvar ->
       Mem.find_set (PowLoc.singleton (Loc.of_pvar pvar)) mem
   | Exp.BinOp (bop, e1, e2) ->
-      eval_binop bop e1 e2 mem
+      eval_binop integer_type_widths bop e1 e2 mem
   | Exp.Cast (_, e) ->
-      eval_arr e mem
+      eval_arr integer_type_widths e mem
   | Exp.Lfield (e, fn, _) ->
-      let locs = eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
+      let locs = eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
       Mem.find_set locs mem
   | Exp.Lindex (e, _) ->
-      let locs = eval e mem |> Val.get_all_locs in
+      let locs = eval integer_type_widths e mem |> Val.get_all_locs in
       Mem.find_set locs mem
   | Exp.Const _ | Exp.UnOp _ | Exp.Sizeof _ | Exp.Exn _ | Exp.Closure _ ->
       Val.bot
@@ -334,10 +337,10 @@ let eval_sympath params sympath mem =
       (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
 
 
-let mk_eval_sym_trace callee_pdesc actual_exps caller_mem =
+let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =
   let params =
     let formals = get_formals callee_pdesc in
-    let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem) actual_exps in
+    let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
     ParamBindings.make formals actuals
   in
   let eval_sym s =
@@ -354,15 +357,17 @@ let mk_eval_sym_trace callee_pdesc actual_exps caller_mem =
   ((eval_sym, trace_of_sym), eval_locpath)
 
 
-let mk_eval_sym callee_pdesc actual_exps caller_mem =
-  fst (fst (mk_eval_sym_trace callee_pdesc actual_exps caller_mem))
+let mk_eval_sym integer_type_widths callee_pdesc actual_exps caller_mem =
+  fst (fst (mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem))
 
 
-let get_sym_f mem e = Val.get_sym (eval e mem)
+let get_sym_f integer_type_widths mem e = Val.get_sym (eval integer_type_widths e mem)
 
-let get_offset_sym_f mem e = Val.get_offset_sym (eval e mem)
+let get_offset_sym_f integer_type_widths mem e =
+  Val.get_offset_sym (eval integer_type_widths e mem)
 
-let get_size_sym_f mem e = Val.get_size_sym (eval e mem)
+
+let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
 
 module Prune = struct
   type astate = {prune_pairs: PrunePairs.astate; mem: Mem.astate}
@@ -405,8 +410,8 @@ module Prune = struct
         astate
 
 
-  let rec prune_binop_left : Exp.t -> astate -> astate =
-   fun e ({mem} as astate) ->
+  let rec prune_binop_left : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+   fun integer_type_widths e ({mem} as astate) ->
     match e with
     | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
     | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
@@ -415,7 +420,7 @@ module Prune = struct
       match Mem.find_simple_alias x mem with
       | Some lv ->
           let v = Mem.find lv mem in
-          let v' = Val.prune_comp comp v (eval e' mem) in
+          let v' = Val.prune_comp comp v (eval integer_type_widths e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
           astate )
@@ -423,7 +428,7 @@ module Prune = struct
       match Mem.find_simple_alias x mem with
       | Some lv ->
           let v = Mem.find lv mem in
-          let v' = Val.prune_eq v (eval e' mem) in
+          let v' = Val.prune_eq v (eval integer_type_widths e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
           astate )
@@ -431,7 +436,7 @@ module Prune = struct
       match Mem.find_simple_alias x mem with
       | Some lv ->
           let v = Mem.find lv mem in
-          let v' = Val.prune_ne v (eval e' mem) in
+          let v' = Val.prune_ne v (eval integer_type_widths e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
           astate )
@@ -443,84 +448,96 @@ module Prune = struct
            Be careful when you take into account integer overflows in the abstract semantics [eval]
            in the future. *)
         astate
-        |> prune_binop_left (Exp.BinOp (comp, e1, Exp.BinOp (Binop.MinusA t, e3, e2)))
-        |> prune_binop_left (Exp.BinOp (comp, e2, Exp.BinOp (Binop.MinusA t, e3, e1)))
+        |> prune_binop_left integer_type_widths
+             (Exp.BinOp (comp, e1, Exp.BinOp (Binop.MinusA t, e3, e2)))
+        |> prune_binop_left integer_type_widths
+             (Exp.BinOp (comp, e2, Exp.BinOp (Binop.MinusA t, e3, e1)))
     | Exp.BinOp
         ( ((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as comp)
         , Exp.BinOp (Binop.MinusA t, e1, e2)
         , e3 ) ->
         astate
-        |> prune_binop_left (Exp.BinOp (comp, e1, Exp.BinOp (Binop.PlusA t, e3, e2)))
-        |> prune_binop_left (Exp.BinOp (comp_rev comp, e2, Exp.BinOp (Binop.MinusA t, e1, e3)))
+        |> prune_binop_left integer_type_widths
+             (Exp.BinOp (comp, e1, Exp.BinOp (Binop.PlusA t, e3, e2)))
+        |> prune_binop_left integer_type_widths
+             (Exp.BinOp (comp_rev comp, e2, Exp.BinOp (Binop.MinusA t, e1, e3)))
     | _ ->
         astate
 
 
-  let prune_binop_right : Exp.t -> astate -> astate =
-   fun e astate ->
+  let prune_binop_right : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+   fun integer_type_widths e astate ->
     match e with
     | Exp.BinOp (((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as c), e1, e2)
       ->
-        prune_binop_left (Exp.BinOp (comp_rev c, e2, e1)) astate
+        prune_binop_left integer_type_widths (Exp.BinOp (comp_rev c, e2, e1)) astate
     | _ ->
         astate
 
 
-  let is_unreachable_constant : Exp.t -> Mem.astate -> bool =
-   fun e m ->
-    let v = eval e m in
+  let is_unreachable_constant : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> bool =
+   fun integer_type_widths e m ->
+    let v = eval integer_type_widths e m in
     Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
     && PowLoc.is_bot (Val.get_pow_loc v)
     && ArrayBlk.is_bot (Val.get_array_blk v)
 
 
-  let prune_unreachable : Exp.t -> astate -> astate =
-   fun e ({mem} as astate) ->
-    if is_unreachable_constant e mem || Mem.is_relation_unsat mem then {astate with mem= Mem.bot}
+  let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+   fun integer_type_widths e ({mem} as astate) ->
+    if is_unreachable_constant integer_type_widths e mem || Mem.is_relation_unsat mem then
+      {astate with mem= Mem.bot}
     else astate
 
 
-  let rec prune_helper e astate =
+  let rec prune_helper integer_type_widths e astate =
     let astate =
-      astate |> prune_unreachable e |> prune_unop e |> prune_binop_left e |> prune_binop_right e
+      astate
+      |> prune_unreachable integer_type_widths e
+      |> prune_unop e
+      |> prune_binop_left integer_type_widths e
+      |> prune_binop_right integer_type_widths e
     in
     match e with
     | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-        prune_helper e astate
+        prune_helper integer_type_widths e astate
     | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-        prune_helper (Exp.UnOp (Unop.LNot, e, None)) astate
+        prune_helper integer_type_widths (Exp.UnOp (Unop.LNot, e, None)) astate
     | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
-        prune_helper (Exp.Var x) astate
+        prune_helper integer_type_widths (Exp.Var x) astate
     | Exp.BinOp (Binop.LAnd, e1, e2) ->
-        astate |> prune_helper e1 |> prune_helper e2
+        astate |> prune_helper integer_type_widths e1 |> prune_helper integer_type_widths e2
     | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
         astate
-        |> prune_helper (Exp.UnOp (Unop.LNot, e1, t))
-        |> prune_helper (Exp.UnOp (Unop.LNot, e2, t))
+        |> prune_helper integer_type_widths (Exp.UnOp (Unop.LNot, e1, t))
+        |> prune_helper integer_type_widths (Exp.UnOp (Unop.LNot, e2, t))
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ge as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Eq as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ne as c), e1, e2), _) ->
-        prune_helper (Exp.BinOp (comp_not c, e1, e2)) astate
+        prune_helper integer_type_widths (Exp.BinOp (comp_not c, e1, e2)) astate
     | _ ->
         astate
 
 
-  let prune : Exp.t -> Mem.astate -> Mem.astate =
-   fun e mem ->
+  let prune : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Mem.astate =
+   fun integer_type_widths e mem ->
     let mem = Mem.apply_latest_prune e mem in
     let mem =
-      let constrs = Relation.Constraints.of_exp e ~get_sym_f:(get_sym_f mem) in
+      let constrs = Relation.Constraints.of_exp e ~get_sym_f:(get_sym_f integer_type_widths mem) in
       Mem.meet_constraints constrs mem
     in
-    let {mem; prune_pairs} = prune_helper e {mem; prune_pairs= PrunePairs.empty} in
+    let {mem; prune_pairs} =
+      prune_helper integer_type_widths e {mem; prune_pairs= PrunePairs.empty}
+    in
     Mem.set_prune_pairs prune_pairs mem
 end
 
 let get_matching_pairs :
        Tenv.t
+    -> Typ.IntegerWidths.t
     -> Val.t
     -> Val.t
     -> Exp.t option
@@ -528,7 +545,7 @@ let get_matching_pairs :
     -> Mem.astate
     -> Mem.astate
     -> (Relation.Var.t * Relation.SymExp.t option) list =
- fun tenv callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
+ fun tenv integer_type_widths callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
   let get_offset_sym v = Val.get_offset_sym v in
   let get_size_sym v = Val.get_size_sym v in
   let get_field_name (fn, _, _) = fn in
@@ -543,7 +560,9 @@ let get_matching_pairs :
     Option.value_map (Val.get_sym_var v1) ~default:l ~f:(fun var ->
         let sym_exp_opt =
           Option.first_some
-            (Relation.SymExp.of_exp_opt ~get_sym_f:(get_sym_f caller_mem) e2_opt)
+            (Relation.SymExp.of_exp_opt
+               ~get_sym_f:(get_sym_f integer_type_widths caller_mem)
+               e2_opt)
             (Relation.SymExp.of_sym (Val.get_sym v2))
         in
         (var, sym_exp_opt) :: l )
@@ -611,17 +630,26 @@ let rec list_fold2_def :
 
 
 let get_subst_map :
-    Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate -> Relation.SubstMap.t =
- fun tenv callee_pdesc params caller_mem callee_exit_mem ->
+       Tenv.t
+    -> Typ.IntegerWidths.t
+    -> Procdesc.t
+    -> (Exp.t * 'a) list
+    -> Mem.astate
+    -> Mem.astate
+    -> Relation.SubstMap.t =
+ fun tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem ->
   let add_pair (formal, typ) (actual, actual_exp) rel_l =
     let callee_v = Mem.find (Loc.of_pvar formal) callee_exit_mem in
     let new_rel_matching =
-      get_matching_pairs tenv callee_v actual actual_exp typ caller_mem callee_exit_mem
+      get_matching_pairs tenv integer_type_widths callee_v actual actual_exp typ caller_mem
+        callee_exit_mem
     in
     List.rev_append new_rel_matching rel_l
   in
   let formals = get_formals callee_pdesc in
-  let actuals = List.map ~f:(fun (a, _) -> (eval a caller_mem, Some a)) params in
+  let actuals =
+    List.map ~f:(fun (a, _) -> (eval integer_type_widths a caller_mem, Some a)) params
+  in
   let rel_pairs =
     list_fold2_def ~default:(Val.Itv.top, None) ~f:add_pair formals actuals ~init:[]
   in

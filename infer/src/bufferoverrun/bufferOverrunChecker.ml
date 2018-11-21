@@ -27,11 +27,13 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun
 end)
 
+type extras = {symbol_table: Itv.SymbolTable.t; integer_type_widths: Typ.IntegerWidths.t}
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
 
-  type extras = Itv.SymbolTable.t
+  type nonrec extras = extras
 
   let instantiate_ret (id, _) callee_pname ~callee_exit_mem eval_sym_trace
       eval_locs_sympath_partial mem location =
@@ -75,9 +77,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
 
 
-  let instantiate_param tenv pdesc params callee_exit_mem eval_sym_trace location mem =
+  let instantiate_param tenv integer_type_widths pdesc params callee_exit_mem eval_sym_trace
+      location mem =
     let formals = Sem.get_formals pdesc in
-    let actuals = List.map ~f:(fun (a, _) -> Sem.eval a mem) params in
+    let actuals = List.map ~f:(fun (a, _) -> Sem.eval integer_type_widths a mem) params in
     let f mem formal actual =
       match (snd formal).Typ.desc with
       | Typ.Tptr (typ, _) -> (
@@ -122,6 +125,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let instantiate_mem :
          Tenv.t
+      -> Typ.IntegerWidths.t
       -> Ident.t * Typ.t
       -> Procdesc.t
       -> Typ.Procname.t
@@ -130,14 +134,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> BufferOverrunSummary.t
       -> Location.t
       -> Dom.Mem.astate =
-   fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
+   fun tenv integer_type_widths ret callee_pdesc callee_pname params caller_mem summary location ->
     let callee_exit_mem = BufferOverrunSummary.get_output summary in
-    let rel_subst_map = Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem in
-    let eval_sym_trace, eval_locpath = Sem.mk_eval_sym_trace callee_pdesc params caller_mem in
+    let rel_subst_map =
+      Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
+    in
+    let eval_sym_trace, eval_locpath =
+      Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
+    in
     let caller_mem =
       instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace eval_locpath caller_mem
         location
-      |> instantiate_param tenv callee_pdesc params callee_exit_mem eval_sym_trace location
+      |> instantiate_param tenv integer_type_widths callee_pdesc params callee_exit_mem
+           eval_sym_trace location
       |> forget_ret_relation ret callee_pname
     in
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
@@ -145,7 +154,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate
       =
-   fun mem {pdesc; tenv; extras= symbol_table} node instr ->
+   fun mem {pdesc; tenv; extras= {symbol_table; integer_type_widths}} node instr ->
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
         mem
@@ -172,14 +181,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
     | Load (id, exp, _, _) ->
-        BoUtils.Exec.load_val id (Sem.eval exp mem) mem
+        BoUtils.Exec.load_val id (Sem.eval integer_type_widths exp mem) mem
     | Store (exp1, _, exp2, location) ->
-        let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
-        let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
+        let locs = Sem.eval integer_type_widths exp1 mem |> Dom.Val.get_all_locs in
+        let v =
+          Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location)
+        in
         let mem =
           let sym_exps =
-            Dom.Relation.SymExp.of_exps ~get_int_sym_f:(Sem.get_sym_f mem)
-              ~get_offset_sym_f:(Sem.get_offset_sym_f mem) ~get_size_sym_f:(Sem.get_size_sym_f mem)
+            Dom.Relation.SymExp.of_exps
+              ~get_int_sym_f:(Sem.get_sym_f integer_type_widths mem)
+              ~get_offset_sym_f:(Sem.get_offset_sym_f integer_type_widths mem)
+              ~get_size_sym_f:(Sem.get_size_sym_f integer_type_widths mem)
               exp2
           in
           Dom.Mem.store_relation locs sym_exps mem
@@ -207,14 +220,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
         mem
     | Prune (exp, _, _, _) ->
-        Sem.Prune.prune exp mem
+        Sem.Prune.prune integer_type_widths exp mem
     | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.Node.hash node in
             let model_env =
-              Models.mk_model_env callee_pname node_hash location tenv symbol_table
+              Models.mk_model_env callee_pname node_hash location tenv integer_type_widths
+                symbol_table
             in
             exec model_env ~ret mem
         | None -> (
@@ -223,7 +237,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match Payload.of_summary callee_summary with
             | Some payload ->
                 let callee_pdesc = Summary.get_proc_desc callee_summary in
-                instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
+                instantiate_mem tenv integer_type_widths ret callee_pdesc callee_pname params mem
+                  payload location
             | None ->
                 (* This may happen for procedures with a biabduction model. *)
                 L.d_printfln "/!\\ Call to %a has no inferbo payload" Typ.Procname.pp callee_pname ;
@@ -267,6 +282,7 @@ module Init = struct
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> node_hash:int
       -> Location.t
       -> represents_multiple_values:bool
@@ -276,8 +292,8 @@ module Init = struct
       -> new_sym_num:Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
-   fun pname symbol_table path tenv ~node_hash location ~represents_multiple_values loc typ
-       ~inst_num ~new_sym_num mem ->
+   fun pname symbol_table path tenv integer_type_widths ~node_hash location
+       ~represents_multiple_values loc typ ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
     let new_alloc_num = Counter.make 1 in
     let rec decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth
@@ -334,7 +350,9 @@ module Init = struct
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch tenv typename with
           | Some {Models.declare_symbolic} ->
-              let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
+              let model_env =
+                Models.mk_model_env pname node_hash location tenv integer_type_widths symbol_table
+              in
               declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env
                 ~represents_multiple_values ~depth loc ~inst_num ~new_sym_num ~new_alloc_num mem
           | None ->
@@ -364,6 +382,7 @@ module Init = struct
   let declare_symbolic_parameters :
          Typ.Procname.t
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> node_hash:int
       -> Location.t
       -> Itv.SymbolTable.t
@@ -372,14 +391,14 @@ module Init = struct
       -> (Pvar.t * Typ.t) list
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun pname tenv ~node_hash location symbol_table ~represents_multiple_values ~inst_num formals
-       mem ->
+   fun pname tenv integer_type_widths ~node_hash location symbol_table ~represents_multiple_values
+       ~inst_num formals mem ->
     let new_sym_num = Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
       let path = Itv.SymbolPath.of_pvar pvar in
       let mem =
-        declare_symbolic_val pname symbol_table path tenv ~node_hash location
+        declare_symbolic_val pname symbol_table path tenv integer_type_widths ~node_hash location
           ~represents_multiple_values loc typ ~inst_num ~new_sym_num mem
       in
       (mem, inst_num + 1)
@@ -387,7 +406,8 @@ module Init = struct
     List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
 
 
-  let initial_state {ProcData.pdesc; tenv; extras= symbol_table} start_node =
+  let initial_state {ProcData.pdesc; tenv; extras= {symbol_table; integer_type_widths}} start_node
+      =
     let node_hash = CFG.Node.hash start_node in
     let location = CFG.Node.loc start_node in
     let pname = Procdesc.get_proc_name pdesc in
@@ -401,7 +421,9 @@ module Init = struct
       | Typ.Tstruct typname -> (
         match Models.TypName.dispatch tenv typname with
         | Some {Models.declare_local} ->
-            let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
+            let model_env =
+              Models.mk_model_env pname node_hash location tenv integer_type_widths symbol_table
+            in
             declare_local ~decl_local model_env loc ~inst_num ~represents_multiple_values
               ~dimension mem
         | None ->
@@ -418,7 +440,7 @@ module Init = struct
     let mem = Dom.Mem.init in
     let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) (Procdesc.get_locals pdesc) in
     let formals = Sem.get_formals pdesc in
-    declare_symbolic_parameters pname tenv ~node_hash location symbol_table
+    declare_symbolic_parameters pname tenv integer_type_widths ~node_hash location symbol_table
       ~represents_multiple_values:false ~inst_num formals mem
 end
 
@@ -475,50 +497,61 @@ module Report = struct
 
 
   let check_binop_array_access :
-         is_plus:bool
+         Typ.IntegerWidths.t
+      -> is_plus:bool
       -> e1:Exp.t
       -> e2:Exp.t
       -> Location.t
       -> Dom.Mem.astate
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
-   fun ~is_plus ~e1 ~e2 location mem cond_set ->
-    let arr = Sem.eval e1 mem in
-    let idx = Sem.eval e2 mem in
-    let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) e2 in
+   fun integer_type_widths ~is_plus ~e1 ~e2 location mem cond_set ->
+    let arr = Sem.eval integer_type_widths e1 mem in
+    let idx = Sem.eval integer_type_widths e2 mem in
+    let idx_sym_exp =
+      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) e2
+    in
     let relation = Dom.Mem.get_relation mem in
     BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus location cond_set
 
 
   let check_binop :
-         bop:Binop.t
+         Typ.IntegerWidths.t
+      -> bop:Binop.t
       -> e1:Exp.t
       -> e2:Exp.t
       -> Location.t
       -> Dom.Mem.astate
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
-   fun ~bop ~e1 ~e2 location mem cond_set ->
+   fun integer_type_widths ~bop ~e1 ~e2 location mem cond_set ->
     match bop with
     | Binop.PlusPI ->
-        check_binop_array_access ~is_plus:true ~e1 ~e2 location mem cond_set
+        check_binop_array_access integer_type_widths ~is_plus:true ~e1 ~e2 location mem cond_set
     | Binop.MinusPI ->
-        check_binop_array_access ~is_plus:false ~e1 ~e2 location mem cond_set
+        check_binop_array_access integer_type_widths ~is_plus:false ~e1 ~e2 location mem cond_set
     | _ ->
         cond_set
 
 
   let check_expr_for_array_access :
-      Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun exp location mem cond_set ->
+         Typ.IntegerWidths.t
+      -> Exp.t
+      -> Location.t
+      -> Dom.Mem.astate
+      -> PO.ConditionSet.t
+      -> PO.ConditionSet.t =
+   fun integer_type_widths exp location mem cond_set ->
     let rec check_sub_expr exp cond_set =
       match exp with
       | Exp.Lindex (array_exp, index_exp) ->
           cond_set |> check_sub_expr array_exp |> check_sub_expr index_exp
-          |> BoUtils.Check.lindex ~array_exp ~index_exp mem location
+          |> BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp mem location
       | Exp.BinOp (_, e1, e2) ->
           cond_set |> check_sub_expr e1 |> check_sub_expr e2
-      | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
+      | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e ->
+          check_sub_expr e cond_set
+      | Exp.Cast (_, e) ->
           check_sub_expr e cond_set
       | Exp.Closure {captured_vars} ->
           List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
@@ -529,12 +562,12 @@ module Report = struct
     let cond_set = check_sub_expr exp cond_set in
     match exp with
     | Exp.Var _ ->
-        let arr = Sem.eval exp mem in
+        let arr = Sem.eval integer_type_widths exp mem in
         let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
         let relation = Dom.Mem.get_relation mem in
         BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true location cond_set
     | Exp.BinOp (bop, e1, e2) ->
-        check_binop ~bop ~e1 ~e2 location mem cond_set
+        check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
     | _ ->
         cond_set
 
@@ -542,8 +575,8 @@ module Report = struct
   let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
     match bop with
     | Binop.PlusA (Some _) | Binop.MinusA (Some _) | Binop.Mult (Some _) ->
-        let lhs_v = Sem.eval lhs mem in
-        let rhs_v = Sem.eval rhs mem in
+        let lhs_v = Sem.eval integer_type_widths lhs mem in
+        let rhs_v = Sem.eval integer_type_widths rhs mem in
         BoUtils.Check.binary_operation integer_type_widths bop ~lhs:lhs_v ~rhs:rhs_v location
           cond_set
     | _ ->
@@ -576,19 +609,24 @@ module Report = struct
 
   let instantiate_cond :
          Tenv.t
+      -> Typ.IntegerWidths.t
       -> Procdesc.t
       -> (Exp.t * Typ.t) list
       -> Dom.Mem.astate
       -> Payload.t
       -> Location.t
       -> PO.ConditionSet.t =
-   fun tenv callee_pdesc params caller_mem summary location ->
+   fun tenv integer_type_widths callee_pdesc params caller_mem summary location ->
     let callee_exit_mem = BufferOverrunSummary.get_output summary in
     let callee_cond = BufferOverrunSummary.get_cond_set summary in
-    let rel_subst_map = Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem in
+    let rel_subst_map =
+      Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
+    in
     let pname = Procdesc.get_proc_name callee_pdesc in
     let caller_rel = Dom.Mem.get_relation caller_mem in
-    let eval_sym_trace, _ = Sem.mk_eval_sym_trace callee_pdesc params caller_mem in
+    let eval_sym_trace, _ =
+      Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
+    in
     PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel pname location
 
 
@@ -606,11 +644,11 @@ module Report = struct
     match instr with
     | Sil.Load (_, exp, _, location) ->
         cond_set
-        |> check_expr_for_array_access exp location mem
+        |> check_expr_for_array_access integer_type_widths exp location mem
         |> check_expr_for_integer_overflow integer_type_widths exp location mem
     | Sil.Store (lexp, _, rexp, location) ->
         cond_set
-        |> check_expr_for_array_access lexp location mem
+        |> check_expr_for_array_access integer_type_widths lexp location mem
         |> check_expr_for_integer_overflow integer_type_widths lexp location mem
         |> check_expr_for_integer_overflow integer_type_widths rexp location mem
     | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
@@ -622,14 +660,17 @@ module Report = struct
         | Some {Models.check} ->
             let node_hash = CFG.Node.hash node in
             let pname = Procdesc.get_proc_name pdesc in
-            check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
+            check
+              (Models.mk_model_env pname node_hash location tenv integer_type_widths symbol_table)
+              mem cond_set
         | None -> (
           match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
           | Some callee_summary -> (
             match Payload.of_summary callee_summary with
             | Some callee_payload ->
                 let callee_pdesc = Summary.get_proc_desc callee_summary in
-                instantiate_cond tenv callee_pdesc params mem callee_payload location
+                instantiate_cond tenv integer_type_widths callee_pdesc params mem callee_payload
+                  location
                 |> PO.ConditionSet.merge cond_set
             | None ->
                 (* no inferbo payload *) cond_set )
@@ -796,7 +837,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
  fun {proc_desc; tenv; integer_type_widths; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
   let symbol_table = Itv.SymbolTable.empty () in
-  let pdata = ProcData.make proc_desc tenv symbol_table in
+  let pdata = ProcData.make proc_desc tenv {symbol_table; integer_type_widths} in
   let cfg = CFG.from_pdesc proc_desc in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
   let inv_map = Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata in

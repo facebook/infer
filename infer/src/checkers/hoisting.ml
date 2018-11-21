@@ -75,7 +75,8 @@ let do_report summary Call.({pname; loc}) loop_head_loc =
   Reporting.log_error summary ~loc ~ltr IssueType.invariant_call message
 
 
-let should_report tenv proc_desc Call.({pname; node; params}) inferbo_invariant_map =
+let should_report tenv proc_desc Call.({pname; node; params}) integer_type_widths
+    inferbo_invariant_map =
   (* If a function is modeled as variant for hoisting (like
      List.size or __cast ), we don't want to report it *)
   let is_variant_for_hoisting =
@@ -95,14 +96,15 @@ let should_report tenv proc_desc Call.({pname; node; params}) inferbo_invariant_
       let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
       let inferbo_mem = BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map in
       (* get the cost of the function call *)
-      Cost.instantiate_cost ~caller_pdesc:proc_desc ~inferbo_caller_mem:inferbo_mem
-        ~callee_pname:pname ~params ~callee_cost:cost
+      Cost.instantiate_cost integer_type_widths ~caller_pdesc:proc_desc
+        ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~params ~callee_cost:cost
       |> Itv.NonNegativePolynomial.is_symbolic
   | _ ->
       false
 
 
-let checker ({Callbacks.tenv; summary; proc_desc} as callback_args) : Summary.t =
+let checker ({Callbacks.tenv; summary; proc_desc; integer_type_widths} as callback_args) :
+    Summary.t =
   let cfg = InstrCFG.from_pdesc proc_desc in
   let proc_data = ProcData.make_default proc_desc tenv in
   (* computes reaching defs: node -> (var -> node set) *)
@@ -129,7 +131,7 @@ let checker ({Callbacks.tenv; summary; proc_desc} as callback_args) : Summary.t 
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
         (fun call ->
-          if should_report tenv proc_desc call inferbo_invariant_map then
+          if should_report tenv proc_desc call integer_type_widths inferbo_invariant_map then
             do_report summary call loop_head_loc )
         inv_instrs )
     loop_head_to_inv_instrs ;

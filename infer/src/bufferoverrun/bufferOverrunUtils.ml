@@ -236,7 +236,7 @@ module Exec = struct
     Dom.Mem.add_heap loc size mem
 
 
-  let init_array_fields tenv pname path ~node_hash typ locs ?dyn_length mem =
+  let init_array_fields tenv integer_type_widths pname path ~node_hash typ locs ?dyn_length mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
       let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in
       let field_loc = PowLoc.append_field locs ~fn:field_name in
@@ -246,7 +246,7 @@ module Exec = struct
             let length = Itv.of_int_lit length in
             let length =
               Option.value_map dyn_length ~default:length ~f:(fun dyn_length ->
-                  let i = Dom.Val.get_itv (Sem.eval dyn_length mem) in
+                  let i = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
                   Itv.plus i length )
             in
             let stride = Option.map stride ~f:IntLit.to_int_exn in
@@ -336,9 +336,10 @@ module Check = struct
     check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces location cond_set
 
 
-  let collection_access ~array_exp ~index_exp ?(is_collection_add = false) mem location cond_set =
-    let idx = Sem.eval index_exp mem in
-    let arr = Sem.eval array_exp mem in
+  let collection_access integer_type_widths ~array_exp ~index_exp ?(is_collection_add = false) mem
+      location cond_set =
+    let idx = Sem.eval integer_type_widths index_exp mem in
+    let arr = Sem.eval integer_type_widths array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in
     let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
     let idx = Dom.Val.get_itv idx in
@@ -347,10 +348,12 @@ module Check = struct
       ~is_collection_add location cond_set
 
 
-  let lindex ~array_exp ~index_exp mem location cond_set =
-    let idx = Sem.eval index_exp mem in
-    let arr = Sem.eval_arr array_exp mem in
-    let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) index_exp in
+  let lindex integer_type_widths ~array_exp ~index_exp mem location cond_set =
+    let idx = Sem.eval integer_type_widths index_exp mem in
+    let arr = Sem.eval_arr integer_type_widths array_exp mem in
+    let idx_sym_exp =
+      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) index_exp
+    in
     let relation = Dom.Mem.get_relation mem in
     array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true location cond_set
 
@@ -368,9 +371,9 @@ module Check = struct
       location cond_set ~is_collection_add:true
 
 
-  let lindex_byte ~array_exp ~byte_index_exp mem location cond_set =
-    let idx = Sem.eval byte_index_exp mem in
-    let arr = Sem.eval_arr array_exp mem in
+  let lindex_byte integer_type_widths ~array_exp ~byte_index_exp mem location cond_set =
+    let idx = Sem.eval integer_type_widths byte_index_exp mem in
+    let arr = Sem.eval_arr integer_type_widths array_exp mem in
     let relation = Dom.Mem.get_relation mem in
     array_access_byte ~arr ~idx ~relation ~is_plus:true location cond_set
 

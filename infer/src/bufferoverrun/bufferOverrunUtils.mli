@@ -118,6 +118,7 @@ module Exec : sig
 
   val init_array_fields :
        Tenv.t
+    -> Typ.IntegerWidths.t
     -> Typ.Procname.t
     -> Itv.SymbolPath.partial option
     -> node_hash:int
@@ -142,7 +143,8 @@ module Check : sig
     -> PO.ConditionSet.t
 
   val lindex :
-       array_exp:Exp.t
+       Typ.IntegerWidths.t
+    -> array_exp:Exp.t
     -> index_exp:Exp.t
     -> Dom.Mem.astate
     -> Location.t
@@ -150,7 +152,8 @@ module Check : sig
     -> PO.ConditionSet.t
 
   val lindex_byte :
-       array_exp:Exp.t
+       Typ.IntegerWidths.t
+    -> array_exp:Exp.t
     -> byte_index_exp:Exp.t
     -> Dom.Mem.astate
     -> Location.t
@@ -158,7 +161,8 @@ module Check : sig
     -> PO.ConditionSet.t
 
   val collection_access :
-       array_exp:Exp.t
+       Typ.IntegerWidths.t
+    -> array_exp:Exp.t
     -> index_exp:Exp.t
     -> ?is_collection_add:bool
     -> Dom.Mem.astate

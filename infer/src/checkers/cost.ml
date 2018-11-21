@@ -34,7 +34,8 @@ module Node = ProcCfg.DefaultNode
    The nodes in the domain of the map are those in the path reaching the current node.
 *)
 
-let instantiate_cost ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
+let instantiate_cost integer_type_widths ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params
+    ~callee_cost =
   match Ondemand.get_proc_desc callee_pname with
   | None ->
       L.(die InternalError)
@@ -48,7 +49,10 @@ let instantiate_cost ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~ca
           callee_cost Typ.Procname.pp callee_pname
     | Some _ ->
         let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
-        let eval_sym = BufferOverrunSemantics.mk_eval_sym callee_pdesc params inferbo_caller_mem in
+        let eval_sym =
+          BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_pdesc params
+            inferbo_caller_mem
+        in
         BasicCost.subst callee_cost eval_sym )
 
 
@@ -56,12 +60,15 @@ module TransferFunctionsNodesBasicCost = struct
   module CFG = InstrCFG
   module Domain = NodesBasicCostDomain
 
-  type extras = BufferOverrunChecker.invariant_map
+  type extras =
+    { inferbo_invariant_map: BufferOverrunChecker.invariant_map
+    ; integer_type_widths: Typ.IntegerWidths.t }
 
   let cost_atomic_instruction = BasicCost.one
 
-  let exec_instr_cost inferbo_mem (astate : CostDomain.NodeInstructionToCostMap.astate)
-      {ProcData.pdesc} (node : CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate =
+  let exec_instr_cost integer_type_widths inferbo_mem
+      (astate : CostDomain.NodeInstructionToCostMap.astate) {ProcData.pdesc} (node : CFG.Node.t)
+      instr : CostDomain.NodeInstructionToCostMap.astate =
     let key = CFG.Node.id node in
     let astate' =
       match instr with
@@ -70,8 +77,8 @@ module TransferFunctionsNodesBasicCost = struct
             match Payload.read pdesc callee_pname with
             | Some {post= callee_cost} ->
                 if BasicCost.is_symbolic callee_cost then
-                  instantiate_cost ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem
-                    ~callee_pname ~params ~callee_cost
+                  instantiate_cost integer_type_widths ~caller_pdesc:pdesc
+                    ~inferbo_caller_mem:inferbo_mem ~callee_pname ~params ~callee_cost
                 else callee_cost
             | None ->
                 cost_atomic_instruction
@@ -95,9 +102,10 @@ module TransferFunctionsNodesBasicCost = struct
     astate'
 
 
-  let exec_instr costmap ({ProcData.extras= inferbo_invariant_map} as pdata) node instr =
+  let exec_instr costmap ({ProcData.extras= {inferbo_invariant_map; integer_type_widths}} as pdata)
+      node instr =
     let inferbo_mem = BufferOverrunChecker.extract_pre (CFG.Node.id node) inferbo_invariant_map in
-    let costmap = exec_instr_cost inferbo_mem costmap pdata node instr in
+    let costmap = exec_instr_cost integer_type_widths inferbo_mem costmap pdata node instr in
     costmap
 
 
@@ -732,7 +740,7 @@ let check_and_report_top_and_bottom cost proc_desc summary =
   else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
 
 
-let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
+let checker ({Callbacks.tenv; proc_desc; integer_type_widths} as callback_args) : Summary.t =
   let inferbo_invariant_map, summary =
     BufferOverrunChecker.compute_invariant_map_and_check callback_args
   in
@@ -752,7 +760,10 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   let instr_cfg = InstrCFG.from_pdesc proc_desc in
   let invariant_map_NodesBasicCost =
-    let proc_data = ProcData.make proc_desc tenv inferbo_invariant_map in
+    let proc_data =
+      ProcData.make proc_desc tenv
+        TransferFunctionsNodesBasicCost.{inferbo_invariant_map; integer_type_widths}
+    in
     (*compute_WCET cfg invariant_map min_trees in *)
     AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
   in
