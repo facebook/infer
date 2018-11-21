@@ -52,37 +52,43 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  (* given the purity of the callee and the respective args, find
-     parameters of the current pdesc that match, i.e have been
-     modified by the callee.
+  (* given the modified parameters and the args of the callee, find
+     parameter indices of the current procedure that match, i.e have
+     been modified by the callee. Note that index counting starts from
+     0, reserved for the implicit parameter (formal) this .
 
      E.g. : for the below call to 'impure_fun' in 'foo', we return 2
-     (i.e. index of a).
+     (i.e. index of a wrt. foo's formals).
 
      void foo (int x, Object a, Object b){
         for (...){
-           impure_fun(b, 10, a); // modifies only 4th argument, i.e. a
+           impure_fun(b, 10, a); // modifies only 3rd argument, i.e. a
         }
      }
   *)
-  let find_params_matching_modified_args formals args callee_summary =
+  let find_params_matching_modified_args formals callee_args callee_modified_params =
+    let vars_of_modified_args =
+      List.foldi ~init:ModifiedVarSet.empty
+        ~f:(fun i modified_acc arg_exp ->
+          if Domain.ModifiedParamIndices.mem i callee_modified_params then (
+            debug "Argument %a is modified.\n" HilExp.pp arg_exp ;
+            HilExp.get_access_exprs arg_exp
+            |> List.fold ~init:modified_acc ~f:(fun modified_acc ae ->
+                   ModifiedVarSet.add (AccessExpression.get_base ae |> fst) modified_acc ) )
+          else modified_acc )
+        callee_args
+    in
+    (* find the respective parameter of the proc, matching the modified vars *)
+    get_modified_params formals ~f:(fun formal_var ->
+        ModifiedVarSet.mem formal_var vars_of_modified_args )
+
+
+  (* if the callee is impure, find the parameters that have been modified by the callee *)
+  let find_modified_if_impure formals args callee_summary =
     match Domain.get_modified_params callee_summary with
     | Some callee_modified_params ->
-        let vars_of_modified_args =
-          List.foldi ~init:ModifiedVarSet.empty
-            ~f:(fun i modified_acc arg_exp ->
-              if Domain.ModifiedParamIndices.mem i callee_modified_params then (
-                debug "Argument %a is modified.\n" HilExp.pp arg_exp ;
-                HilExp.get_access_exprs arg_exp
-                |> List.fold ~init:modified_acc ~f:(fun modified_acc ae ->
-                       ModifiedVarSet.add (AccessExpression.get_base ae |> fst) modified_acc ) )
-              else modified_acc )
-            args
-        in
-        Domain.impure
-          ((* find the respective parameter of pdesc, matching the modified vars *)
-           get_modified_params formals ~f:(fun formal_var ->
-               ModifiedVarSet.mem formal_var vars_of_modified_args ))
+        debug "Callee modified params %a \n" Domain.ModifiedParamIndices.pp callee_modified_params ;
+        Domain.impure (find_params_matching_modified_args formals args callee_modified_params)
     | None ->
         Domain.pure
 
@@ -93,16 +99,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (ae, _, _) when is_heap_access ae ->
         track_modified_params formals ae |> Domain.join astate
     | Call (_, Direct called_pname, args, _, _) ->
-        let all_params_modified = Domain.all_params_modified args in
+        let matching_modified =
+          find_params_matching_modified_args formals args (Domain.all_params_modified args)
+        in
         Domain.join astate
           ( match InvariantModels.Call.dispatch tenv called_pname [] with
           | Some inv ->
-              Domain.with_purity (InvariantModels.is_invariant inv) all_params_modified
+              Domain.with_purity (InvariantModels.is_invariant inv) matching_modified
           | None ->
               Payload.read pdesc called_pname
-              |> Option.value_map ~default:(Domain.impure all_params_modified) ~f:(fun summary ->
+              |> Option.value_map ~default:(Domain.impure matching_modified) ~f:(fun summary ->
                      debug "Reading from %a \n" Typ.Procname.pp called_pname ;
-                     find_params_matching_modified_args formals args summary ) )
+                     find_modified_if_impure formals args summary ) )
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
