@@ -172,6 +172,10 @@ val of_int_lit : IntLit.t -> t
 
 val of_int64 : Int64.t -> t
 
+val is_const : t -> Z.t option
+
+val eq_const : Z.t -> t -> bool
+
 val make_sym :
   ?unsigned:bool -> Typ.Procname.t -> Symb.SymbolTable.t -> Symb.SymbolPath.t -> Counter.t -> t
 
@@ -199,9 +203,13 @@ val range : t -> ItvRange.t
 
 val div : t -> t -> t
 
+val div_const : t -> Z.t -> t
+
 val minus : t -> t -> t
 
 val mult : t -> t -> t
+
+val mult_const : t -> Z.t -> t
 
 val plus : t -> t -> t
 

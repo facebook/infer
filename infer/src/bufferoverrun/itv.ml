@@ -574,11 +574,13 @@ module ItvPure = struct
   let is_const : t -> Z.t option =
    fun (l, u) ->
     match (Bound.is_const l, Bound.is_const u) with
-    | Some n, Some m when Z.equal n m ->
-        Some n
+    | (Some n as z), Some m when Z.equal n m ->
+        z
     | _, _ ->
         None
 
+
+  let eq_const : Z.t -> t -> bool = fun z (l, u) -> Bound.eq_const z l && Bound.eq_const z u
 
   let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
 
@@ -940,6 +942,10 @@ let bind1 : (ItvPure.t -> t) -> t -> t = bind1_gen ~bot:Bottom
 
 let bind1b : (ItvPure.t -> Boolean.t) -> t -> Boolean.t = bind1_gen ~bot:Boolean.Bottom
 
+let bind1bool : (ItvPure.t -> bool) -> t -> bool = bind1_gen ~bot:false
+
+let bind1zo : (ItvPure.t -> Z.t option) -> t -> Z.t option = bind1_gen ~bot:None
+
 let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
  fun f x y ->
   match (x, y) with
@@ -972,13 +978,21 @@ let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t
   NonBottom (ItvPure.make_sym ~unsigned pname symbol_table path new_sym_num)
 
 
+let is_const : astate -> Z.t option = bind1zo ItvPure.is_const
+
+let eq_const : Z.t -> astate -> bool = fun z -> bind1bool (ItvPure.eq_const z)
+
 let neg : t -> t = lift1 ItvPure.neg
 
 let lnot : t -> Boolean.t = bind1b ItvPure.lnot
 
 let mult : t -> t -> t = lift2 ItvPure.mult
 
+let mult_const : t -> Z.t -> t = fun x z -> lift1 (fun x -> ItvPure.mult_const z x) x
+
 let div : t -> t -> t = lift2 ItvPure.div
+
+let div_const : t -> Z.t -> t = fun x z -> lift1 (fun x -> ItvPure.div_const x z) x
 
 let mod_sem : t -> t -> t = lift2 ItvPure.mod_sem
 

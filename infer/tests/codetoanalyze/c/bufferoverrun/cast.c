@@ -17,9 +17,14 @@ void cast_Bad_FN() {
   *(int32_t*)arr = 123;
 }
 
-void cast2_Good_FP() {
+void cast2_Good() {
   int32_t arr[4];
   *(((char*)arr) + 4) = 123;
+}
+
+void cast2_Bad() {
+  int32_t arr[4];
+  *(((char*)arr) + 20) = 123;
 }
 
 void cast_unsigned_to_signed_Good() {

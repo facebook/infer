@@ -33,7 +33,7 @@ void multidim_arr3_Good() {
   };
 }
 
-void multidim_arr4_Good_FP() {
+void multidim_arr4_Good() {
   int a[3][2];
   int* p = a;
   *(p + 5) = 0;
@@ -55,4 +55,20 @@ void multidim_arr5_Bad() {
   int a[1][10];
   a[0][0] = 0;
   a[0][10] = 0;
+}
+
+void multidim_arr6_Good() {
+  int a[3][2];
+  int b[10];
+  int* p = a;
+  *p = 5;
+  b[a[0][0]] = 1;
+}
+
+void multidim_arr6_Bad_FN() {
+  int a[3][2];
+  int b[5];
+  int* p = a;
+  *p = 5;
+  b[a[0][0]] = 1;
 }

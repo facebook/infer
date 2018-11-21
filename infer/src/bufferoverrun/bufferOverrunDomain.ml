@@ -319,6 +319,13 @@ module Val = struct
    fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
 
 
+  let set_array_stride : Z.t -> t -> t =
+   fun new_stride v ->
+    let stride = ArrayBlk.strideof (get_array_blk v) in
+    if Itv.eq_const new_stride stride then v
+    else {v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
+
+
   module Itv = struct
     let m1_255 = of_itv Itv.m1_255
 

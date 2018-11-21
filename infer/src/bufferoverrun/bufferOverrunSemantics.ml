@@ -131,6 +131,15 @@ let rec must_alias_cmp : Exp.t -> Mem.astate -> bool =
       false
 
 
+let set_array_stride integer_type_widths typ v =
+  match typ with
+  | Typ.({desc= Tptr ({desc= Tint ikind}, Pk_pointer)}) ->
+      let width = Typ.width_of_ikind integer_type_widths ikind in
+      Val.set_array_stride (Z.of_int (width / 8)) v
+  | _ ->
+      v
+
+
 let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
  fun integer_type_widths exp mem ->
   if must_alias_cmp exp mem then Val.of_int 0
@@ -147,8 +156,9 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
         eval_binop integer_type_widths bop e1 e2 mem
     | Exp.Const c ->
         eval_const c
-    | Exp.Cast (_, e) ->
-        eval integer_type_widths e mem
+    | Exp.Cast (t, e) ->
+        let v = eval integer_type_widths e mem in
+        set_array_stride integer_type_widths t v
     | Exp.Lfield (e, fn, _) ->
         eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn
         |> Val.of_pow_loc
@@ -263,8 +273,9 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
       Mem.find_set (PowLoc.singleton (Loc.of_pvar pvar)) mem
   | Exp.BinOp (bop, e1, e2) ->
       eval_binop integer_type_widths bop e1 e2 mem
-  | Exp.Cast (_, e) ->
-      eval_arr integer_type_widths e mem
+  | Exp.Cast (t, e) ->
+      let v = eval_arr integer_type_widths e mem in
+      set_array_stride integer_type_widths t v
   | Exp.Lfield (e, fn, _) ->
       let locs = eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
       Mem.find_set locs mem

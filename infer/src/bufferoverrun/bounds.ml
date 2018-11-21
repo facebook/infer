@@ -430,11 +430,10 @@ module Bound = struct
 
   let xcompare = PartialOrder.of_le ~le
 
-  let is_const : t -> bool = function
-    | Linear (_, se) when SymLinear.is_zero se ->
-        true
-    | _ ->
-        false
+  let is_const : t -> bool = function Linear (_, se) -> SymLinear.is_zero se | _ -> false
+
+  let eq_const : Z.t -> t -> bool =
+   fun z -> function Linear (z', se) -> SymLinear.is_zero se && Z.(equal z' z) | _ -> false
 
 
   let neg : t -> t = function

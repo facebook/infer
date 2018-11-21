@@ -93,6 +93,16 @@ module ArrInfo = struct
 
 
   let set_size : Itv.t -> t -> t = fun size arr -> {arr with size}
+
+  (* Set new stride only when the previous stride is a constant interval. *)
+  let set_stride : Z.t -> t -> t =
+   fun new_stride ({offset; size; stride} as arr) ->
+    Option.value_map (Itv.is_const stride) ~default:arr ~f:(fun stride ->
+        assert ((not Z.(equal stride zero)) && not Z.(equal new_stride zero)) ;
+        if Z.equal new_stride stride then arr
+        else
+          let set itv = Itv.div_const (Itv.mult_const itv stride) new_stride in
+          {offset= set offset; size= set size; stride= Itv.of_big_int new_stride} )
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -110,6 +120,8 @@ let make : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> astate =
 let offsetof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
 
 let sizeof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
+
+let strideof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.stride) a Itv.bot
 
 let sizeof_byte : astate -> Itv.t =
  fun a -> fold (fun _ arr -> Itv.join (Itv.mult arr.ArrInfo.size arr.ArrInfo.stride)) a Itv.bot
@@ -170,3 +182,5 @@ let prune_eq : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_
 let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
 
 let set_size : Itv.t -> astate -> astate = fun size a -> map (ArrInfo.set_size size) a
+
+let set_stride : Z.t -> astate -> astate = fun stride a -> map (ArrInfo.set_stride stride) a

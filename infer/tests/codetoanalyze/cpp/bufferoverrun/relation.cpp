@@ -116,6 +116,6 @@ size_t id(size_t s) {
 void FP_call_id_Ok() {
   size_t s1 = 5;
   size_t s2 = id(1 + s1);
-  char* arr = (char*)malloc(s2 * sizeof(char*));
+  char* arr = (char*)malloc(s2 * sizeof(char));
   arr[s1] = 0;
 }
