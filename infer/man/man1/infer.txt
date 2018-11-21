@@ -578,6 +578,10 @@ OPTIONS
            Activates: Enable --ownership and disable all other checkers
            (Conversely: --no-ownership-only)           See also infer-analyze(1).
 
+       --perf-profiler-data-file file
+           Specify the file containing perf profiler data to read       
+    See also infer-analyze(1).
+
        --pmd-xml
            Activates: Output issues in (PMD) XML format (Conversely:
            --no-pmd-xml)           See also infer-run(1).

@@ -1062,6 +1062,12 @@ let register_perf_stats_report () =
 
 
 let main ~report_json =
+  ( if Config.loop_hoisting then
+    match Config.perf_profiler_data_file with
+    | Some fname ->
+        LoadPerfData.read_file_perf_data fname
+    | _ ->
+        () ) ;
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
     let costs_report_format_kind =

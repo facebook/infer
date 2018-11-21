@@ -466,6 +466,8 @@ val log_events : bool
 
 val log_file : string
 
+val perf_profiler_data_file : string option
+
 val loop_hoisting : bool
 
 val max_nesting : int option
