@@ -56,6 +56,17 @@ module SymbolPath = struct
         F.fprintf fmt "%a.offset" pp_partial p
     | Length p ->
         F.fprintf fmt "%a.length" pp_partial p
+
+
+  let rec represents_multiple_values = function
+    | Pvar _ ->
+        false
+    | Index (CSymArray_Array, _) ->
+        true
+    | Index (CSymArray_Pointer, p)
+    (* unsound but avoids many FPs for non-array pointers *)
+    | Field (_, p) ->
+        represents_multiple_values p
 end
 
 module Symbol = struct

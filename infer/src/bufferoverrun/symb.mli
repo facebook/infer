@@ -40,6 +40,8 @@ module SymbolPath : sig
   val offset : partial -> t
 
   val length : partial -> t
+
+  val represents_multiple_values : partial -> bool
 end
 
 module Symbol : sig

@@ -154,8 +154,7 @@ module Val = struct
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
   let make_sym :
-         represents_multiple_values:bool
-      -> ?unsigned:bool
+         ?unsigned:bool
       -> Loc.t
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
@@ -163,8 +162,8 @@ module Val = struct
       -> Counter.t
       -> Location.t
       -> t =
-   fun ~represents_multiple_values ?(unsigned = false) loc pname symbol_table path new_sym_num
-       location ->
+   fun ?(unsigned = false) loc pname symbol_table path new_sym_num location ->
+    let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
     { bot with
       itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
     ; sym= Relation.Sym.of_loc loc

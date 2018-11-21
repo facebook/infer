@@ -60,7 +60,6 @@ module Exec : sig
     -> Tenv.t
     -> node_hash:int
     -> Location.t
-    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -76,7 +75,6 @@ module Exec : sig
     -> Tenv.t
     -> node_hash:int
     -> Location.t
-    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -96,7 +94,6 @@ module Exec : sig
     -> Tenv.t
     -> node_hash:int
     -> Location.t
-    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -110,7 +107,6 @@ module Exec : sig
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial
     -> Location.t
-    -> represents_multiple_values:bool
     -> Loc.t
     -> new_sym_num:Counter.t
     -> Dom.Mem.astate

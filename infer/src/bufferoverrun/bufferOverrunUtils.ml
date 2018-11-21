@@ -118,7 +118,6 @@ module Exec = struct
     -> Tenv.t
     -> node_hash:int
     -> Location.t
-    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -134,7 +133,6 @@ module Exec = struct
       -> Tenv.t
       -> node_hash:int
       -> Location.t
-      -> represents_multiple_values:bool
       -> depth:int
       -> Loc.t
       -> Typ.t
@@ -146,9 +144,8 @@ module Exec = struct
       -> new_alloc_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun ~decl_sym_val array_kind pname symbol_table path tenv ~node_hash location
-       ~represents_multiple_values ~depth loc typ ?offset ?size ?stride ~inst_num ~new_sym_num
-       ~new_alloc_num mem ->
+   fun ~decl_sym_val array_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
+       ?offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
       option_value offset (fun () ->
@@ -167,6 +164,7 @@ module Exec = struct
     let mem =
       let arr =
         let elem = Trace.SymAssign (loc, location) in
+        let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
         Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
         |> Dom.Val.add_trace_elem elem
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
@@ -175,12 +173,7 @@ module Exec = struct
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
     let deref_loc = Loc.of_allocsite allocsite in
-    let represents_multiple_values =
-      match array_kind with CSymArray_Array -> true | CSymArray_Pointer -> false
-      (* unsound but avoids many FPs for non-array pointers *)
-    in
-    decl_sym_val pname deref_path tenv ~node_hash location ~represents_multiple_values ~depth
-      deref_loc typ mem
+    decl_sym_val pname deref_path tenv ~node_hash location ~depth deref_loc typ mem
 
 
   let decl_sym_java_ptr :
@@ -190,7 +183,6 @@ module Exec = struct
       -> Tenv.t
       -> node_hash:int
       -> Location.t
-      -> represents_multiple_values:bool
       -> depth:int
       -> Loc.t
       -> Typ.t
@@ -198,8 +190,8 @@ module Exec = struct
       -> new_alloc_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun ~decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth loc typ
-       ~inst_num ~new_alloc_num mem ->
+   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
+       mem ->
     let alloc_num = Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
     let allocsite =
@@ -207,13 +199,13 @@ module Exec = struct
     in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v =
+      let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
       Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
       |> Dom.Val.add_trace_elem elem
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     let mem = Dom.Mem.add_heap loc v mem in
-    decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth alloc_loc
-      typ mem
+    decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
 
 
   let decl_sym_collection :
@@ -221,13 +213,13 @@ module Exec = struct
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Location.t
-      -> represents_multiple_values:bool
       -> Loc.t
       -> new_sym_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun pname symbol_table path location ~represents_multiple_values loc ~new_sym_num mem ->
+   fun pname symbol_table path location loc ~new_sym_num mem ->
     let size =
+      let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
       Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       |> Dom.Val.of_itv
       |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
