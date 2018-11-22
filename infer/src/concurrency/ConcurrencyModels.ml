@@ -9,7 +9,11 @@ open! IStd
 module F = Format
 module MF = MarkupFormatter
 
-type lock = Lock | Unlock | LockedIfTrue | NoEffect
+type lock_effect =
+  | Lock of HilExp.t list
+  | Unlock of HilExp.t list
+  | LockedIfTrue of HilExp.t list
+  | NoEffect
 
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
@@ -41,116 +45,179 @@ let get_thread = function
       UnknownThread
 
 
-let cpp_lock_types_matcher =
-  QualifiedCppName.Match.of_fuzzy_qual_names
-    [ "apache::thrift::concurrency::ReadWriteMutex"
+module Clang : sig
+  val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
+
+  val lock_types_matcher : QualifiedCppName.Match.quals_matcher
+end = struct
+  type lock_model = {cls: string; lck: string list; tlk: string list; unl: string list}
+
+  let lock_models =
+    let def = {cls= ""; lck= ["lock"]; tlk= ["try_lock"]; unl= ["unlock"]} in
+    let shd =
+      { cls= "std::shared_mutex"
+      ; lck= "lock_shared" :: def.lck
+      ; tlk= "try_lock_shared" :: def.tlk
+      ; unl= "unlock_shared" :: def.unl }
+    in
+    let rwm =
+      { cls= "apache::thrift::concurrency::ReadWriteMutex"
+      ; lck= ["acquireRead"; "acquireWrite"]
+      ; tlk= ["attemptRead"; "attemptWrite"]
+      ; unl= ["release"] }
+    in
+    [ {def with cls= "apache::thrift::concurrency::Monitor"; tlk= "timedlock" :: def.tlk}
+    ; {def with cls= "apache::thrift::concurrency::Mutex"; tlk= "timedlock" :: def.tlk}
+    ; {rwm with cls= "apache::thrift::concurrency::NoStarveReadWriteMutex"}
+    ; rwm
+    ; {shd with cls= "boost::shared_mutex"}
+    ; {def with cls= "boost::mutex"}
+    ; {def with cls= "folly::MicroSpinLock"}
+    ; {shd with cls= "folly::RWSpinLock"}
+    ; {shd with cls= "folly::SharedMutex"}
+    ; {shd with cls= "folly::SharedMutexImpl"}
+    ; {def with cls= "folly::SpinLock"}
+    ; {def with cls= "std::shared_lock"}
+    ; {def with cls= "std::mutex"}
+    ; shd
+    ; {def with cls= "std::unique_lock"; tlk= "owns_lock" :: def.tlk} ]
+
+
+  let mk_model_matcher ~f =
+    let lock_methods =
+      List.concat_map lock_models ~f:(fun mdl ->
+          List.map (f mdl) ~f:(fun mtd -> mdl.cls ^ "::" ^ mtd) )
+    in
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names lock_methods in
+    fun pname ->
+      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+
+
+  let is_lock = mk_model_matcher ~f:(fun mdl -> mdl.lck)
+
+  let is_unlock = mk_model_matcher ~f:(fun mdl -> mdl.unl)
+
+  let is_trylock = mk_model_matcher ~f:(fun mdl -> mdl.tlk)
+
+  let lock_types_matcher =
+    let class_names = List.map lock_models ~f:(fun mdl -> mdl.cls) in
+    QualifiedCppName.Match.of_fuzzy_qual_names class_names
+
+
+  (* TODO std::scoped_lock *)
+
+  let guards =
+    [ "apache::thrift::concurrency::Guard"
+    ; "apache::thrift::concurrency::Synchronized"
+    ; "apache::thrift::concurrency::RWGuard"
+    ; "folly::SharedMutex::ReadHolder"
+    ; "folly::SharedMutex::WriteHolder"
     ; "folly::LockedPtr"
-    ; "folly::MicroSpinLock"
-    ; "folly::RWSpinLock"
-    ; "folly::SharedMutex"
-      (* NB not impl as in [matcher_lock] as this is just a type, not a call *)
-    ; "folly::SpinLock"
     ; "folly::SpinLockGuard"
-    ; "std::mutex" ]
+    ; "std::lock_guard"
+    ; "std::shared_lock"
+    ; "std::unique_lock" ]
 
 
-let get_lock =
-  let is_cpp_lock =
-    let matcher_lock =
-      QualifiedCppName.Match.of_fuzzy_qual_names
-        [ "apache::thrift::concurrency::ReadWriteMutex::acquireRead"
-        ; "apache::thrift::concurrency::ReadWriteMutex::acquireWrite"
-        ; "folly::MicroSpinLock::lock"
-        ; "folly::RWSpinLock::lock"
-        ; "folly::RWSpinLock::lock_shared"
-        ; "folly::SharedMutexImpl::lockExclusiveImpl"
-        ; "folly::SharedMutexImpl::lockSharedImpl"
-        ; "folly::SpinLock::lock"
-        ; "std::lock"
-        ; "std::mutex::lock"
-        ; "std::unique_lock::lock" ]
+  let get_guard_constructor, get_guard_destructor =
+    let get_class_and_qual_name guard =
+      let qual_name = QualifiedCppName.of_qual_string guard in
+      let class_name, _ = Option.value_exn (QualifiedCppName.extract_last qual_name) in
+      (class_name, qual_name)
     in
-    let matcher_lock_constructor =
-      QualifiedCppName.Match.of_fuzzy_qual_names
-        [ "folly::LockedPtr::LockedPtr"
-        ; "folly::SpinLockGuard::SpinLockGuard"
-        ; "std::lock_guard::lock_guard"
-        ; "std::unique_lock::unique_lock" ]
-    in
+    ( (fun guard ->
+        let class_name, qual_name = get_class_and_qual_name guard in
+        let qual_constructor = QualifiedCppName.append_qualifier qual_name ~qual:class_name in
+        QualifiedCppName.to_qual_string qual_constructor )
+    , fun guard ->
+        let class_name, qual_name = get_class_and_qual_name guard in
+        let qual_destructor =
+          QualifiedCppName.append_qualifier qual_name ~qual:("~" ^ class_name)
+        in
+        QualifiedCppName.to_qual_string qual_destructor )
+
+
+  let is_guard_lock =
+    let constructors = List.map guards ~f:get_guard_constructor in
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names constructors in
     fun pname actuals ->
-      QualifiedCppName.Match.match_qualifiers matcher_lock (Typ.Procname.get_qualifiers pname)
-      || QualifiedCppName.Match.match_qualifiers matcher_lock_constructor
-           (Typ.Procname.get_qualifiers pname)
-         (* Passing additional parameter allows to defer the lock *)
-         && Int.equal 2 (List.length actuals)
-  and is_cpp_unlock =
-    let matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names
-        [ "apache::thrift::concurrency::ReadWriteMutex::release"
-        ; "folly::LockedPtr::~LockedPtr"
-        ; "folly::MicroSpinLock::unlock"
-        ; "folly::RWSpinLock::unlock"
-        ; "folly::RWSpinLock::unlock_shared"
-        ; "folly::SharedMutexImpl::unlock"
-        ; "folly::SharedMutexImpl::unlock_shared"
-        ; "folly::SpinLock::unlock"
-        ; "folly::SpinLockGuard::~SpinLockGuard"
-        ; "std::lock_guard::~lock_guard"
-        ; "std::mutex::unlock"
-        ; "std::unique_lock::unlock"
-        ; "std::unique_lock::~unique_lock" ]
-    in
+      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+      (* Passing additional parameter allows to defer the lock *)
+      && Int.equal 2 (List.length actuals)
+
+
+  let is_guard_unlock =
+    let destructors = List.map guards ~f:get_guard_destructor in
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names destructors in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
-  and is_cpp_trylock =
-    let matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names
-        ["folly::SpinLock::try_lock"; "std::unique_lock::owns_lock"; "std::unique_lock::try_lock"]
-    in
+
+
+  let is_std_lock =
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::lock"] in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
-  in
-  fun pname actuals ->
+
+
+  let get_lock_effect pname actuals =
+    let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
+    let snd_arg = match actuals with _ :: x :: _ -> [x] | _ -> [] in
+    if is_std_lock pname then Lock actuals
+    else if is_lock pname then Lock fst_arg
+    else if is_guard_lock pname actuals then Lock snd_arg
+    else if is_unlock pname then Unlock fst_arg
+    else if is_guard_unlock pname then Unlock snd_arg
+    else if is_trylock pname then LockedIfTrue fst_arg
+    else NoEffect
+end
+
+module Java : sig
+  val get_lock_effect : Typ.Procname.t -> Typ.Procname.Java.t -> HilExp.t list -> lock_effect
+end = struct
+  let std_locks =
+    [ "java.util.concurrent.locks.Lock"
+    ; "java.util.concurrent.locks.ReentrantLock"
+    ; "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+    ; "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" ]
+
+
+  let is_lock classname methodname =
+    List.mem std_locks classname ~equal:String.equal
+    && List.mem ["lock"; "lockInterruptibly"] methodname ~equal:String.equal
+    || String.equal classname "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock"
+       && List.mem ["readLock"; "updateLock"; "writeLock"] methodname ~equal:String.equal
+
+
+  let is_unlock classname methodname =
+    String.equal methodname "unlock" && List.mem std_locks classname ~equal:String.equal
+
+
+  let is_trylock classname methodname =
+    String.equal methodname "tryLock" && List.mem std_locks classname ~equal:String.equal
+
+
+  let get_lock_effect pname java_pname actuals =
+    let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
+    if is_thread_utils_method "assertHoldsLock" pname then Lock fst_arg
+    else
+      let classname = Typ.Procname.Java.get_class_name java_pname in
+      let methodname = Typ.Procname.Java.get_method java_pname in
+      if is_lock classname methodname then Lock fst_arg
+      else if is_unlock classname methodname then Unlock fst_arg
+      else if is_trylock classname methodname then LockedIfTrue fst_arg
+      else NoEffect
+end
+
+let get_lock_effect pname actuals =
+  let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
+  if Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute then Lock fst_arg
+  else if Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute then Unlock fst_arg
+  else
     match pname with
-    | Typ.Procname.Java java_pname -> (
-        if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
-        else
-          match
-            (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-          with
-          | ( ( "java.util.concurrent.locks.Lock"
-              | "java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-            , ("lock" | "lockInterruptibly") ) ->
-              Lock
-          | ( ( "java.util.concurrent.locks.Lock"
-              | "java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-            , "unlock" ) ->
-              Unlock
-          | ( ( "java.util.concurrent.locks.Lock"
-              | "java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-            , "tryLock" ) ->
-              LockedIfTrue
-          | ( "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock"
-            , ("readLock" | "updateLock" | "writeLock") ) ->
-              Lock
-          | _ ->
-              NoEffect )
-    | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_lock pname actuals ->
-        Lock
-    | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_unlock pname ->
-        Unlock
-    | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_trylock pname ->
-        LockedIfTrue
-    | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
-        Lock
-    | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
-        Unlock
+    | Typ.Procname.Java java_pname ->
+        Java.get_lock_effect pname java_pname actuals
+    | Typ.Procname.(ObjC_Cpp _ | C _) ->
+        Clang.get_lock_effect pname actuals
     | _ ->
         NoEffect
 
@@ -269,3 +336,6 @@ let runs_on_ui_thread =
                  (MF.monospaced_to_string Annotations.ui_thread))
         | _ ->
             None )
+
+
+let cpp_lock_types_matcher = Clang.lock_types_matcher

@@ -58,9 +58,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open ConcurrencyModels in
     let open StarvationModels in
     let is_formal base = FormalMap.is_formal base extras in
-    let get_path actuals =
+    let get_lock_path actuals =
       match actuals with
-      | HilExp.AccessExpression access_exp :: _ -> (
+      | HilExp.AccessExpression access_exp -> (
         match AccessExpression.to_access_path access_exp with
         | (((Var.ProgramVar pvar, _) as base), _) as path
           when is_formal base || Pvar.is_global pvar ->
@@ -68,26 +68,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             (* ignore paths on local or logical variables *)
             None )
-      | HilExp.Constant (Const.Cclass class_id) :: _ ->
+      | HilExp.Constant (Const.Cclass class_id) ->
           (* this is a synchronized/lock(CLASSNAME.class) construct *)
           Some (lock_of_class class_id)
       | _ ->
           None
     in
-    let do_lock actuals loc astate =
-      get_path actuals |> Option.value_map ~default:astate ~f:(Domain.acquire astate loc)
+    let do_lock locks loc astate =
+      List.filter_map ~f:get_lock_path locks |> Domain.acquire astate loc
     in
-    let do_unlock actuals astate =
-      get_path actuals |> Option.value_map ~default:astate ~f:(Domain.release astate)
-    in
+    let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     match instr with
     | Call (_, Direct callee, actuals, _, loc) -> (
-      match get_lock callee actuals with
-      | Lock ->
-          do_lock actuals loc astate
-      | Unlock ->
-          do_unlock actuals astate
-      | LockedIfTrue ->
+      match get_lock_effect callee actuals with
+      | Lock locks ->
+          do_lock locks loc astate
+      | Unlock locks ->
+          do_unlock locks astate
+      | LockedIfTrue _ ->
           astate
       | NoEffect when should_skip_analysis tenv callee actuals ->
           astate
@@ -141,8 +139,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         | _ ->
             FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
       in
-      Option.value_map lock ~default:StarvationDomain.empty
-        ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
+      StarvationDomain.acquire StarvationDomain.empty loc (Option.to_list lock)
   in
   let initial =
     ConcurrencyModels.runs_on_ui_thread tenv proc_desc

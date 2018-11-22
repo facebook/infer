@@ -414,16 +414,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | _ ->
                   ThreadsDomain.AnyThread
             in
-            match get_lock callee_pname actuals with
-            | Lock ->
+            match get_lock_effect callee_pname actuals with
+            | Lock _ ->
                 { astate with
                   locks= LocksDomain.acquire_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
-            | Unlock ->
+            | Unlock _ ->
                 { astate with
                   locks= LocksDomain.release_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
-            | LockedIfTrue ->
+            | LockedIfTrue _ ->
                 let attribute_map =
                   AttributeMapDomain.add_attribute ret_access_path (Choice Choice.LockHeld)
                     astate.attribute_map

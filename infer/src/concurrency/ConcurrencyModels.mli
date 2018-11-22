@@ -8,7 +8,12 @@
 open! IStd
 module F = Format
 
-type lock = Lock | Unlock | LockedIfTrue | NoEffect
+(** effect of call plus Hil expressions being un/locked, if known *)
+type lock_effect =
+  | Lock of HilExp.t list
+  | Unlock of HilExp.t list
+  | LockedIfTrue of HilExp.t list
+  | NoEffect
 
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
@@ -16,7 +21,7 @@ val is_thread_utils_method : string -> Typ.Procname.t -> bool
 (** return true if the given method name is a utility class for checking what thread we're on
     TODO: clean this up so it takes only a procname *)
 
-val get_lock : Typ.Procname.t -> HilExp.t list -> lock
+val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 (** describe how this procedure behaves with respect to locking *)
 
 val get_thread : Typ.Procname.t -> thread

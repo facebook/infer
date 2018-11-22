@@ -255,12 +255,16 @@ let add_order_pairs lock_state event acc =
     LockState.fold_over_events add_first_and_eventually lock_state acc
 
 
-let acquire ({lock_state; events; order} as astate) loc lock =
-  let new_event = Event.make_acquire lock loc in
+let acquire ({lock_state; events; order} as astate) loc locks =
+  let new_events = List.map locks ~f:(fun lock -> Event.make_acquire lock loc) in
   { astate with
-    lock_state= LockState.acquire lock new_event lock_state
-  ; events= EventDomain.add new_event events
-  ; order= add_order_pairs lock_state new_event order }
+    events= List.fold new_events ~init:events ~f:(fun acc e -> EventDomain.add e acc)
+  ; order=
+      List.fold new_events ~init:order ~f:(fun acc e ->
+          OrderDomain.union acc (add_order_pairs lock_state e order) )
+  ; lock_state=
+      List.fold2_exn locks new_events ~init:lock_state ~f:(fun acc lock e ->
+          LockState.acquire lock e acc ) }
 
 
 let blocking_call callee sev loc ({lock_state; events; order} as astate) =
@@ -275,8 +279,9 @@ let strict_mode_call callee loc ({lock_state; events; order} as astate) =
     events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
 
 
-let release ({lock_state} as astate) lock =
-  {astate with lock_state= LockState.release lock lock_state}
+let release ({lock_state} as astate) locks =
+  { astate with
+    lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
 let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname loc callee_summary =

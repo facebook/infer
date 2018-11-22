@@ -77,9 +77,11 @@ type astate =
 
 include AbstractDomain.WithBottom with type astate := astate
 
-val acquire : astate -> Location.t -> Lock.t -> astate
+val acquire : astate -> Location.t -> Lock.t list -> astate
+(** simultaneously acquire a number of locks, no-op if list is empty *)
 
-val release : astate -> Lock.t -> astate
+val release : astate -> Lock.t list -> astate
+(** simultaneously release a number of locks, no-op if list is empty *)
 
 val blocking_call : Typ.Procname.t -> Event.severity_t -> Location.t -> astate -> astate
 
