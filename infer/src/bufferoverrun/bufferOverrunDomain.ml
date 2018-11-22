@@ -434,56 +434,12 @@ module AliasMap = struct
   let find : Ident.t -> astate -> AliasTarget.astate option = find_opt
 end
 
-module AliasRet = struct
-  type astate = Bot | L of AliasTarget.astate | Top
-
-  let bot = Bot
-
-  let ( <= ) : lhs:astate -> rhs:astate -> bool =
-   fun ~lhs ~rhs ->
-    match (lhs, rhs) with
-    | Bot, _ | _, Top ->
-        true
-    | Top, _ | _, Bot ->
-        false
-    | L loc1, L loc2 ->
-        AliasTarget.equal loc1 loc2
-
-
-  let join : astate -> astate -> astate =
-   fun x y ->
-    match (x, y) with
-    | Top, _ | _, Top ->
-        Top
-    | Bot, a | a, Bot ->
-        a
-    | L loc1, L loc2 ->
-        if AliasTarget.equal loc1 loc2 then x else Top
-
-
-  let widen : prev:astate -> next:astate -> num_iters:int -> astate =
-   fun ~prev ~next ~num_iters:_ -> join prev next
-
-
-  let pp : F.formatter -> astate -> unit =
-   fun fmt x ->
-    match x with
-    | Top ->
-        F.pp_print_char fmt 'T'
-    | L loc ->
-        AliasTarget.pp fmt loc
-    | Bot ->
-        F.pp_print_string fmt "_|_"
-
-
-  let find : astate -> AliasTarget.astate option =
-   fun x -> match x with L loc -> Some loc | _ -> None
-end
+module AliasRet = AbstractDomain.Flat (AliasTarget)
 
 module Alias = struct
   include AbstractDomain.Pair (AliasMap) (AliasRet)
 
-  let bot : astate = (AliasMap.empty, AliasRet.bot)
+  let bot : astate = (AliasMap.empty, AliasRet.empty)
 
   let lift : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
    fun f a -> (f (fst a), snd a)
@@ -493,7 +449,7 @@ module Alias = struct
 
   let find : Ident.t -> astate -> AliasTarget.astate option = fun x -> lift_v (AliasMap.find x)
 
-  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.find (snd x)
+  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.get (snd x)
 
   let load : Ident.t -> AliasTarget.astate -> astate -> astate =
    fun id loc -> lift (AliasMap.load id loc)
@@ -504,7 +460,7 @@ module Alias = struct
     let a = lift (AliasMap.store loc e) a in
     match e with
     | Exp.Var l when Loc.is_return loc ->
-        let update_ret retl = (fst a, AliasRet.L retl) in
+        let update_ret retl = (fst a, AliasRet.v retl) in
         Option.value_map (find l a) ~default:a ~f:update_ret
     | _ ->
         a
@@ -516,7 +472,7 @@ module Alias = struct
     let locs = Val.get_all_locs formal in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
-        (fst a, AliasRet.L (AliasTarget.of_empty loc))
+        (fst a, AliasRet.v (AliasTarget.of_empty loc))
     | _ ->
         a
 

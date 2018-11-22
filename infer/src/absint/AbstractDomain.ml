@@ -172,6 +172,53 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
   let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
 end
 
+module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
+  type astate = Bot | V of V.t | Top
+
+  let empty = Bot
+
+  let is_empty = function Bot -> true | _ -> false
+
+  let top = Top
+
+  let ( <= ) ~lhs ~rhs =
+    phys_equal lhs rhs
+    ||
+    match (lhs, rhs) with
+    | Bot, _ | _, Top ->
+        true
+    | Top, _ | _, Bot ->
+        false
+    | V v1, V v2 ->
+        V.equal v1 v2
+
+
+  let join a1 a2 =
+    match (a1, a2) with
+    | Top, _ | _, Top ->
+        Top
+    | Bot, a | a, Bot ->
+        a
+    | V v1, V v2 ->
+        if V.equal v1 v2 then a1 else Top
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp f = function
+    | Bot ->
+        F.pp_print_string f "_|_"
+    | V v ->
+        V.pp f v
+    | Top ->
+        F.pp_print_char f 'T'
+
+
+  let v x = V x
+
+  let get = function V v -> Some v | Bot | Top -> None
+end
+
 module FiniteSetOfPPSet (S : PrettyPrintable.PPSet) = struct
   include S
 

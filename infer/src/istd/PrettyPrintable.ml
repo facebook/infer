@@ -10,6 +10,14 @@ module F = Format
 
 (** Wrappers for making pretty-printable modules *)
 
+module type PrintableEquatableType = sig
+  type t
+
+  val equal : t -> t -> bool
+
+  val pp : F.formatter -> t -> unit
+end
+
 module type PrintableOrderedType = sig
   include Caml.Set.OrderedType
 

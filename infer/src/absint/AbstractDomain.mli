@@ -88,6 +88,17 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
 
+(** Flat abstract domain: Bottom, Top, and non-comparable elements in between *)
+module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
+  include WithBottom
+
+  include WithTop with type astate := astate
+
+  val v : V.t -> astate
+
+  val get : astate -> V.t option
+end
+
 (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
 module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : sig

@@ -12,6 +12,14 @@ module F = Format
 
 val pp_collection : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 
+module type PrintableEquatableType = sig
+  type t
+
+  val equal : t -> t -> bool
+
+  val pp : F.formatter -> t -> unit
+end
+
 module type PrintableOrderedType = sig
   include Caml.Set.OrderedType
 
