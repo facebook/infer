@@ -124,7 +124,8 @@ module Exec : sig
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 
-  val set_dyn_length : Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.astate -> Dom.Mem.astate
+  val set_dyn_length :
+    Location.t -> Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.astate -> Dom.Mem.astate
 end
 
 module Check : sig

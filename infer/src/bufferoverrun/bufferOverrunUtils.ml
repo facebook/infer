@@ -69,8 +69,8 @@ module Exec = struct
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let mem =
       let arr =
-        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
-        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+        let traces = TraceSet.singleton (Trace.ArrDecl location) in
+        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem else Dom.Mem.add_heap loc arr mem
@@ -98,15 +98,15 @@ module Exec = struct
     let path = Loc.get_path loc in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let alloc_loc = Loc.of_allocsite allocsite in
+    let traces = TraceSet.singleton (Trace.ArrDecl location) in
     let mem =
       let alist =
-        Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
-        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+        Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack loc alist mem
       else
-        let size = Dom.Val.Itv.zero in
+        let size = Dom.Val.of_itv ~traces Itv.zero in
         Dom.Mem.add_heap loc alist mem |> Dom.Mem.add_heap alloc_loc size
     in
     (mem, inst_num + 1)
@@ -163,10 +163,9 @@ module Exec = struct
     in
     let mem =
       let arr =
-        let elem = Trace.SymAssign (loc, location) in
+        let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
         let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
-        |> Dom.Val.add_trace_elem elem
+        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
       in
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
@@ -193,15 +192,14 @@ module Exec = struct
    fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
        mem ->
     let alloc_num = Counter.next new_alloc_num in
-    let elem = Trace.SymAssign (loc, location) in
     let allocsite =
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
     in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
-      |> Dom.Val.add_trace_elem elem
+      let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
+      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     let mem = Dom.Mem.add_heap loc v mem in
@@ -218,11 +216,11 @@ module Exec = struct
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun pname symbol_table path location loc ~new_sym_num mem ->
+    let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
     let size =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
       Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
-      |> Dom.Val.of_itv
-      |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
+      |> Dom.Val.of_itv ~traces
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     Dom.Mem.add_heap loc size mem
@@ -246,7 +244,10 @@ module Exec = struct
               Allocsite.make pname ~node_hash ~inst_num ~dimension ~path:field_path
             in
             let offset, size = (Itv.zero, length) in
-            let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size in
+            let v =
+              let traces = TraceSet.empty (* TODO: location of field declaration *) in
+              Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
+            in
             mem |> Dom.Mem.strong_update field_loc v
             |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->
@@ -268,7 +269,7 @@ module Exec = struct
     init_fields path typ locs 1 ?dyn_length mem
 
 
-  let rec set_dyn_length tenv typ locs dyn_length mem =
+  let rec set_dyn_length location tenv typ locs dyn_length mem =
     match typ.Typ.desc with
     | Tstruct typename -> (
       match Tenv.lookup tenv typename with
@@ -277,11 +278,13 @@ module Exec = struct
           let field_loc = PowLoc.append_field locs ~fn:field_name in
           match field_typ.Typ.desc with
           | Tarray {length= Some length} ->
-              let length = Itv.plus (Itv.of_int_lit length) dyn_length in
-              let v = Dom.Mem.find_set field_loc mem |> Dom.Val.set_array_size length in
+              let length = Itv.plus (Itv.of_int_lit length) dyn_length |> Dom.Val.of_itv in
+              let v =
+                Dom.Mem.find_set field_loc mem |> Dom.Val.set_array_length location ~length
+              in
               Dom.Mem.strong_update field_loc v mem
           | _ ->
-              set_dyn_length tenv field_typ field_loc dyn_length mem )
+              set_dyn_length location tenv field_typ field_loc dyn_length mem )
       | _ ->
           mem )
     | _ ->

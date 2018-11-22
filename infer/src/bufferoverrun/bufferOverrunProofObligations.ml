@@ -625,9 +625,7 @@ module ConditionTrace = struct
 
 
   let make_call_and_subst ~traces_caller ~callee_pname call_site ct =
-    let val_traces =
-      ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces call_site
-    in
+    let val_traces = ValTraceSet.call call_site ~traces_caller ~traces_callee:ct.val_traces in
     {ct with cond_trace= Inter {callee_pname; call_site}; val_traces}
 
 

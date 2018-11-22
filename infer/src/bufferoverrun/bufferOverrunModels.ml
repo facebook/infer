@@ -118,7 +118,7 @@ let malloc size_exp =
       let size_exp = Option.value dyn_length ~default:length0 in
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
     in
-    let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size |> Dom.Val.set_traces traces in
+    let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces in
     mem
     |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt
@@ -159,16 +159,13 @@ let realloc src_exp size_exp =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, _, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
-    let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
     let v =
-      Sem.eval integer_type_widths src_exp mem
-      |> Dom.Val.set_array_size (Dom.Val.get_itv length)
-      |> Dom.Val.set_traces traces
+      Sem.eval integer_type_widths src_exp mem |> Dom.Val.set_array_length location ~length
     in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
         let dyn_length = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
-        BoUtils.Exec.set_dyn_length tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
+        BoUtils.Exec.set_dyn_length location tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
   and check = check_alloc_size size_exp in
   {exec; check}
 
@@ -211,10 +208,10 @@ let inferbo_min e1 e2 =
 
 
 let inferbo_set_size e1 e2 =
-  let exec {integer_type_widths} ~ret:_ mem =
+  let exec {integer_type_widths; location} ~ret:_ mem =
     let locs = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_pow_loc in
-    let size = Sem.eval integer_type_widths e2 mem |> Dom.Val.get_itv in
-    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_size size) locs mem
+    let length = Sem.eval integer_type_widths e2 mem in
+    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) locs mem
   and check = check_alloc_size e2 in
   {exec; check}
 
@@ -256,11 +253,13 @@ let set_array_length array length_exp =
   let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
     match array with
     | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
-        let length = Sem.eval integer_type_widths length_exp mem |> Dom.Val.get_itv in
+        let length = Sem.eval integer_type_widths length_exp mem in
         let stride = Option.map ~f:IntLit.to_int_exn stride in
         let path = Some (Symb.SymbolPath.of_pvar array_pvar) in
         let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
-        let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size:length in
+        let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+        let size = Dom.Val.get_itv length in
+        let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
         mem
         |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
         |> set_uninitialized location elt (Dom.Val.get_array_locs v)
@@ -272,9 +271,7 @@ let set_array_length array length_exp =
 
 module Split = struct
   let std_vector integer_type_widths ~adds_at_least_one (vector_exp, vector_typ) location mem =
-    let traces = BufferOverrunTrace.(Set.singleton (Call location)) in
-    let increment_itv = if adds_at_least_one then Itv.pos else Itv.nat in
-    let increment = Dom.Val.of_itv ~traces increment_itv in
+    let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
     let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
     let vector_size_locs =
@@ -282,7 +279,8 @@ module Split = struct
       |> Dom.Val.get_all_locs
       |> PowLoc.append_field ~fn:size_field
     in
-    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a increment) vector_size_locs mem
+    let f_trace _ traces = TraceSet.add_elem (Trace.Return location) traces in
+    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
 end
 
 module Boost = struct
@@ -402,7 +400,7 @@ module Collection = struct
       let alloc_loc = Loc.of_allocsite allocsite in
       let init_size = Dom.Val.of_int 0 in
       let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces init_size) in
-      let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.set_traces traces in
+      let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces in
       mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap alloc_loc init_size
     in
     {exec; check= no_check}

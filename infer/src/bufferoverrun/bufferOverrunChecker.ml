@@ -184,9 +184,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         BoUtils.Exec.load_val id (Sem.eval integer_type_widths exp mem) mem
     | Store (exp1, _, exp2, location) ->
         let locs = Sem.eval integer_type_widths exp1 mem |> Dom.Val.get_all_locs in
-        let v =
-          Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location)
-        in
+        let v = Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location in
         let mem =
           let sym_exps =
             Dom.Relation.SymExp.of_exps

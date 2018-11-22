@@ -92,7 +92,7 @@ module ArrInfo = struct
    fun arr1 arr2 -> {arr1 with offset= Itv.prune_ne arr1.offset arr2.offset}
 
 
-  let set_size : Itv.t -> t -> t = fun size arr -> {arr with size}
+  let set_length : Itv.t -> t -> t = fun size arr -> {arr with size}
 
   (* Set new stride only when the previous stride is a constant interval. *)
   let set_stride : Z.t -> t -> t =
@@ -181,6 +181,6 @@ let prune_eq : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_
 
 let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
 
-let set_size : Itv.t -> astate -> astate = fun size a -> map (ArrInfo.set_size size) a
+let set_length : Itv.t -> astate -> astate = fun length a -> map (ArrInfo.set_length length) a
 
 let set_stride : Z.t -> astate -> astate = fun stride a -> map (ArrInfo.set_stride stride) a

@@ -160,8 +160,9 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
         let v = eval integer_type_widths e mem in
         set_array_stride integer_type_widths t v
     | Exp.Lfield (e, fn, _) ->
-        eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn
-        |> Val.of_pow_loc
+        let v = eval integer_type_widths e mem in
+        let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in
+        Val.of_pow_loc locs ~traces:(Val.get_traces v)
     | Exp.Lindex (e1, e2) ->
         eval_lindex integer_type_widths e1 e2 mem
     | Exp.Sizeof {nbytes= Some size} ->
@@ -187,7 +188,7 @@ and eval_lindex integer_type_widths array_exp index_exp mem =
              x.f[n] in the concrete semantics.  *)
         Val.plus_pi (Mem.find_set (Val.get_pow_loc array_v) mem) index_v
     | _ ->
-        Val.of_pow_loc PowLoc.unknown
+        Val.of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
   else
     match array_exp with
     | Exp.Lindex _ ->

@@ -130,8 +130,6 @@ module Val = struct
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
-  let set_traces : TraceSet.t -> t -> t = fun traces x -> {x with traces}
-
   let of_itv ?(traces = TraceSet.empty) itv = {bot with itv; traces}
 
   let of_int n = of_itv (Itv.of_int n)
@@ -140,15 +138,17 @@ module Val = struct
 
   let of_loc : Loc.t -> t = fun x -> {bot with powloc= PowLoc.singleton x}
 
-  let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}
+  let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
-  let of_array_alloc : Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> t =
-   fun allocsite ~stride ~offset ~size ->
+  let of_array_alloc :
+      Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> traces:TraceSet.t -> t =
+   fun allocsite ~stride ~offset ~size ~traces ->
     let stride = Option.value_map stride ~default:Itv.nat ~f:Itv.of_int in
     { bot with
       arrayblk= ArrayBlk.make allocsite ~offset ~size ~stride
     ; offset_sym= Relation.Sym.of_allocsite_offset allocsite
-    ; size_sym= Relation.Sym.of_allocsite_size allocsite }
+    ; size_sym= Relation.Sym.of_allocsite_size allocsite
+    ; traces }
 
 
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
@@ -177,8 +177,9 @@ module Val = struct
 
   let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool; sym= Relation.Sym.top}
 
-  let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
-   fun f x y -> {bot with itv= f x.itv y.itv; traces= TraceSet.join x.traces y.traces}
+  let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> ?f_trace:_ -> t -> t -> t =
+   fun f ?(f_trace = TraceSet.join) x y ->
+    {bot with itv= f x.itv y.itv; traces= f_trace x.traces y.traces}
 
 
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
@@ -190,23 +191,23 @@ module Val = struct
     {bot with itv; traces= TraceSet.join x.traces y.traces}
 
 
-  let plus_a : t -> t -> t = lift_itv Itv.plus
+  let plus_a = lift_itv Itv.plus
 
-  let minus_a : t -> t -> t = lift_itv Itv.minus
+  let minus_a = lift_itv Itv.minus
 
   let get_iterator_itv : t -> t = fun i -> {bot with itv= Itv.get_iterator_itv i.itv}
 
-  let mult : t -> t -> t = lift_itv Itv.mult
+  let mult = lift_itv Itv.mult
 
-  let div : t -> t -> t = lift_itv Itv.div
+  let div = lift_itv Itv.div
 
-  let mod_sem : t -> t -> t = lift_itv Itv.mod_sem
+  let mod_sem = lift_itv Itv.mod_sem
 
-  let shiftlt : t -> t -> t = lift_itv Itv.shiftlt
+  let shiftlt = lift_itv Itv.shiftlt
 
-  let shiftrt : t -> t -> t = lift_itv Itv.shiftrt
+  let shiftrt = lift_itv Itv.shiftrt
 
-  let band_sem : t -> t -> t = lift_itv Itv.band_sem
+  let band_sem = lift_itv Itv.band_sem
 
   let lt_sem : t -> t -> t = lift_cmp_itv Itv.lt_sem
 
@@ -302,7 +303,7 @@ module Val = struct
         (fun symbol traces -> TraceSet.join (trace_of_sym symbol) traces)
         symbols TraceSet.empty
     in
-    let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
+    let traces = TraceSet.call location ~traces_caller ~traces_callee:x.traces in
     {x with itv= Itv.subst x.itv eval_sym; arrayblk= ArrayBlk.subst x.arrayblk eval_sym; traces}
     (* normalize bottom *)
     |> normalize
@@ -314,8 +315,13 @@ module Val = struct
     {x with traces}
 
 
-  let set_array_size : Itv.t -> t -> t =
-   fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
+  let add_assign_trace_elem location x = add_trace_elem (Trace.Assign location) x
+
+  let set_array_length : Location.t -> length:t -> t -> t =
+   fun location ~length v ->
+    { v with
+      arrayblk= ArrayBlk.set_length length.itv v.arrayblk
+    ; traces= TraceSet.add_elem (Trace.ArrDecl location) length.traces }
 
 
   let set_array_stride : Z.t -> t -> t =
@@ -331,6 +337,8 @@ module Val = struct
     let nat = of_itv Itv.nat
 
     let one = of_itv Itv.one
+
+    let pos = of_itv Itv.pos
 
     let top = of_itv Itv.top
 

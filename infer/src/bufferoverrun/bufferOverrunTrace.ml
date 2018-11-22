@@ -91,7 +91,7 @@ module Set = struct
 
   let add_elem elem t = if is_empty t then singleton elem else map (BoTrace.add_elem elem) t
 
-  let instantiate ~traces_caller ~traces_callee location =
+  let call location ~traces_caller ~traces_callee =
     if is_empty traces_caller then
       map
         (fun trace_callee -> BoTrace.add_elem_last (BoTrace.Call location) trace_callee)
