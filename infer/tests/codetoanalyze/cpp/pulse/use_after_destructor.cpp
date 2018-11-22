@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 
+namespace use_after_destructor {
+
 struct S {
   int* f;
   S(int i) {
@@ -229,3 +231,16 @@ void FP_destructor_order_empty_destructor_ok() {
   B b;
   a.f = &b;
 }
+
+void FP_allocate_in_branch_ok(bool b) {
+  std::unique_ptr<A> a1;
+  std::unique_ptr<A> a2;
+  std::unique_ptr<A>* a3 = &a1;
+
+  if (b) {
+    a2 = std::make_unique<A>(*a1);
+    a3 = &a2;
+  } // current join makes a1 and a2 equal
+} // we get `use after destructor` for a1, after destructor call for a2
+
+} // namespace use_after_destructor
