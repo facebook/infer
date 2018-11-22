@@ -126,7 +126,7 @@ module Exec = struct
 
   let decl_sym_arr :
          decl_sym_val:decl_sym_val
-      -> Symb.SymbolPath.c_sym_array_kind
+      -> Symb.SymbolPath.deref_kind
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
@@ -144,7 +144,7 @@ module Exec = struct
       -> new_alloc_num:Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun ~decl_sym_val array_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
+   fun ~decl_sym_val deref_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
        ?offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
@@ -156,7 +156,7 @@ module Exec = struct
           Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       )
     in
-    let deref_path = Itv.SymbolPath.index ~array_kind path in
+    let deref_path = Itv.SymbolPath.deref ~deref_kind path in
     let allocsite =
       let alloc_num = Counter.next new_alloc_num in
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some deref_path)

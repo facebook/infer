@@ -318,7 +318,7 @@ let rec eval_sympath_partial params p mem =
       L.(debug BufferOverrun Verbose)
         "Symbol %a is not found in parameters.@\n" (Pvar.pp Pp.text) x ;
       Val.Itv.top )
-  | Symb.SymbolPath.Index _ | Symb.SymbolPath.Field _ ->
+  | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ ->
       let locs = eval_locpath params p mem in
       Mem.find_set locs mem
 
@@ -328,7 +328,7 @@ and eval_locpath params p mem =
   | Symb.SymbolPath.Pvar _ ->
       let v = eval_sympath_partial params p mem in
       Val.get_all_locs v
-  | Symb.SymbolPath.Index (_, p) ->
+  | Symb.SymbolPath.Deref (_, p) ->
       let v = eval_sympath_partial params p mem in
       Val.get_all_locs v
   | Symb.SymbolPath.Field (fn, p) ->

@@ -68,7 +68,7 @@ module Exec : sig
 
   val decl_sym_arr :
        decl_sym_val:decl_sym_val
-    -> Symb.SymbolPath.c_sym_array_kind
+    -> Symb.SymbolPath.deref_kind
     -> Typ.Procname.t
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial

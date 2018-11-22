@@ -15,11 +15,11 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer [@@deriving compare]
+  type deref_kind = Deref_ArrayIndex | Deref_CPointer [@@deriving compare]
 
   type partial = private
     | Pvar of Pvar.t
-    | Index of c_sym_array_kind * partial
+    | Deref of deref_kind * partial
     | Field of Typ.Fieldname.t * partial
   [@@deriving compare]
 
@@ -31,7 +31,7 @@ module SymbolPath : sig
 
   val of_pvar : Pvar.t -> partial
 
-  val index : array_kind:c_sym_array_kind -> partial -> partial
+  val deref : deref_kind:deref_kind -> partial -> partial
 
   val field : partial -> Typ.Fieldname.t -> partial
 

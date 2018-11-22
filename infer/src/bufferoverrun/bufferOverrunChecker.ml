@@ -310,7 +310,7 @@ module Init = struct
           | {desc= Typ.Tarray {elt}} ->
               BoUtils.Exec.decl_sym_arr
                 ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-                Symb.SymbolPath.CSymArray_Array pname symbol_table path tenv ~node_hash location
+                Symb.SymbolPath.Deref_ArrayIndex pname symbol_table path tenv ~node_hash location
                 ~depth loc elt ~inst_num ~new_sym_num ~new_alloc_num mem
           | _ ->
               BoUtils.Exec.decl_sym_java_ptr
@@ -318,7 +318,7 @@ module Init = struct
                 pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem )
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field)
-              Symb.SymbolPath.CSymArray_Pointer pname symbol_table path tenv ~node_hash location
+              Symb.SymbolPath.Deref_CPointer pname symbol_table path tenv ~node_hash location
               ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length; stride} ->
             let size =
@@ -332,7 +332,7 @@ module Init = struct
             let stride = Option.map ~f:IntLit.to_int_exn stride in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              Symb.SymbolPath.CSymArray_Array pname symbol_table path tenv ~node_hash location
+              Symb.SymbolPath.Deref_ArrayIndex pname symbol_table path tenv ~node_hash location
               ~depth loc elt ~offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch tenv typename with
