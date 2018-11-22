@@ -385,6 +385,18 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Simple l)
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
+
+
+  type astate = t
+
+  let ( <= ) ~lhs ~rhs = equal lhs rhs
+
+  let join x y =
+    assert (equal x y) ;
+    x
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
 (* Relations between values of logical variables(registers) and
@@ -402,63 +414,28 @@ end
    and x, where %r=v.empty() and x=v.size.  So, if %r!=0, x is pruned
    by x=0.  On the other hand, if %r==0, x is pruned by x>=1.  *)
 module AliasMap = struct
-  module M = Caml.Map.Make (Ident)
+  include AbstractDomain.Map (Ident) (AliasTarget)
 
-  type t = AliasTarget.t M.t
-
-  type astate = t
-
-  let bot : t = M.empty
-
-  let ( <= ) : lhs:t -> rhs:t -> bool =
-   fun ~lhs ~rhs ->
-    let is_in_rhs k v =
-      match M.find k rhs with v' -> AliasTarget.equal v v' | exception Caml.Not_found -> false
-    in
-    M.for_all is_in_rhs lhs
-
-
-  let join : t -> t -> t =
-   fun x y ->
-    let join_v _ v1_opt v2_opt =
-      match (v1_opt, v2_opt) with
-      | None, None ->
-          None
-      | Some v, None | None, Some v ->
-          Some v
-      | Some v1, Some v2 ->
-          if AliasTarget.equal v1 v2 then Some v1 else assert false
-    in
-    M.merge join_v x y
-
-
-  let widen : prev:t -> next:t -> num_iters:int -> t =
-   fun ~prev ~next ~num_iters:_ -> join prev next
-
-
-  let pp : F.formatter -> t -> unit =
-   fun fmt x ->
+  let pp fmt x =
     let pp_sep fmt () = F.fprintf fmt ", @," in
     let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
     (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
     F.fprintf fmt "@[<hov 2>{ " ;
-    F.pp_print_list ~pp_sep pp1 fmt (M.bindings x) ;
+    F.pp_print_list ~pp_sep pp1 fmt (bindings x) ;
     F.fprintf fmt " }@]"
 
 
-  let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc m -> M.add id loc m
+  let load : Ident.t -> AliasTarget.astate -> astate -> astate = add
 
-  let store : Loc.t -> Exp.t -> t -> t =
-   fun l _ m -> M.filter (fun _ y -> not (AliasTarget.use l y)) m
+  let store : Loc.t -> Exp.t -> astate -> astate =
+   fun l _ m -> filter (fun _ y -> not (AliasTarget.use l y)) m
 
 
-  let find : Ident.t -> t -> AliasTarget.t option = fun k m -> M.find_opt k m
-
-  let remove : Ident.t -> t -> t = M.remove
+  let find : Ident.t -> astate -> AliasTarget.astate option = find_opt
 end
 
 module AliasRet = struct
-  type astate = Bot | L of AliasTarget.t | Top
+  type astate = Bot | L of AliasTarget.astate | Top
 
   let bot = Bot
 
@@ -499,13 +476,14 @@ module AliasRet = struct
         F.pp_print_string fmt "_|_"
 
 
-  let find : astate -> AliasTarget.t option = fun x -> match x with L loc -> Some loc | _ -> None
+  let find : astate -> AliasTarget.astate option =
+   fun x -> match x with L loc -> Some loc | _ -> None
 end
 
 module Alias = struct
   include AbstractDomain.Pair (AliasMap) (AliasRet)
 
-  let bot : astate = (AliasMap.bot, AliasRet.bot)
+  let bot : astate = (AliasMap.empty, AliasRet.bot)
 
   let lift : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
    fun f a -> (f (fst a), snd a)
@@ -513,11 +491,11 @@ module Alias = struct
 
   let lift_v : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f (fst a)
 
-  let find : Ident.t -> astate -> AliasTarget.t option = fun x -> lift_v (AliasMap.find x)
+  let find : Ident.t -> astate -> AliasTarget.astate option = fun x -> lift_v (AliasMap.find x)
 
-  let find_ret : astate -> AliasTarget.t option = fun x -> AliasRet.find (snd x)
+  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.find (snd x)
 
-  let load : Ident.t -> AliasTarget.t -> astate -> astate =
+  let load : Ident.t -> AliasTarget.astate -> astate -> astate =
    fun id loc -> lift (AliasMap.load id loc)
 
 
@@ -719,7 +697,7 @@ module MemReach = struct
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
+  let find_alias : Ident.t -> t -> AliasTarget.astate option = fun k m -> Alias.find k m.alias
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
    fun k m ->
@@ -730,9 +708,9 @@ module MemReach = struct
         None
 
 
-  let find_ret_alias : t -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
+  let find_ret_alias : t -> AliasTarget.astate option = fun m -> Alias.find_ret m.alias
 
-  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
+  let load_alias : Ident.t -> AliasTarget.astate -> t -> t =
    fun id loc m -> {m with alias= Alias.load id loc m.alias}
 
 
@@ -936,7 +914,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.t option =
+  let find_alias : Ident.t -> t -> AliasTarget.astate option =
    fun k -> f_lift_default ~default:None (MemReach.find_alias k)
 
 
@@ -944,11 +922,11 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
-  let find_ret_alias : t -> AliasTarget.t option =
+  let find_ret_alias : t -> AliasTarget.astate option =
     f_lift_default ~default:None MemReach.find_ret_alias
 
 
-  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
+  let load_alias : Ident.t -> AliasTarget.astate -> t -> t =
    fun id loc -> f_lift (MemReach.load_alias id loc)
 
 
