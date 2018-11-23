@@ -9,10 +9,14 @@ open! IStd
 
 val dot_operator : string
 
+val down_tack : string
+
+val leftwards_double_arrow : string
+
 val multiplication_sign : string
 
 val right_tack : string
 
 val superscript_digits : string * string Array.t
 
-val leftwards_double_arrow : string
+val up_tack : string

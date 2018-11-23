@@ -25,6 +25,10 @@ let utf8 =
 
 let dot_operator = if utf8 then "⋅" else "."
 
+let down_tack = if utf8 then "⊤" else "T"
+
+let leftwards_double_arrow = if utf8 then "⇐" else "<="
+
 let multiplication_sign = if utf8 then "×" else "x"
 
 let right_tack = if utf8 then "⊢" else "|-"
@@ -34,4 +38,4 @@ let superscript_digits =
   else ("^", [|"0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"|])
 
 
-let leftwards_double_arrow = if utf8 then "⇐" else "<="
+let up_tack = if utf8 then "⊥" else "_|_"

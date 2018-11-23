@@ -103,7 +103,7 @@ module BottomLifted (Domain : S) = struct
 
   let pp fmt = function
     | Bottom ->
-        F.pp_print_string fmt "_|_"
+        F.pp_print_string fmt SpecialChars.up_tack
     | NonBottom astate ->
         Domain.pp fmt astate
 end
@@ -145,7 +145,11 @@ module TopLifted (Domain : S) = struct
           NonTop (Domain.widen ~prev ~next ~num_iters)
 
 
-  let pp fmt = function Top -> F.pp_print_char fmt 'T' | NonTop astate -> Domain.pp fmt astate
+  let pp fmt = function
+    | Top ->
+        F.pp_print_string fmt SpecialChars.down_tack
+    | NonTop astate ->
+        Domain.pp fmt astate
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct
@@ -207,11 +211,11 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
 
   let pp f = function
     | Bot ->
-        F.pp_print_string f "_|_"
+        F.pp_print_string f SpecialChars.up_tack
     | V v ->
         V.pp f v
     | Top ->
-        F.pp_print_char f 'T'
+        F.pp_print_string f SpecialChars.down_tack
 
 
   let v x = V x
