@@ -1342,10 +1342,6 @@ INTERNAL OPTIONS
        --profiler-samples-reset
            Cancel the effect of --profiler-samples.
 
-       --racerd-use-path-stability
-           Activates: Use access path stability to prune RacerD false
-           positives (Conversely: --no-racerd-use-path-stability)
-
        --reactive-capture
            Activates: Compile source files only when required by analyzer
            (clang only) (Conversely: --no-reactive-capture)

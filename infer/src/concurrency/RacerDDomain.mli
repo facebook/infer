@@ -200,19 +200,6 @@ module AttributeMapDomain : sig
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
 end
 
-module StabilityDomain : sig
-  include AbstractDomain.WithBottom
-
-  val add_assign : AccessPath.t -> HilExp.t -> astate -> astate
-
-  val add_path : AccessPath.t -> astate -> astate
-
-  val exists_proper_prefix : AccessPath.t -> astate -> bool
-
-  val integrate_summary :
-    HilExp.t list -> Procdesc.t option -> callee:astate -> caller:astate -> astate
-end
-
 type astate =
   { threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
   ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
@@ -220,9 +207,7 @@ type astate =
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.astate  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.astate
-        (** map of access paths to attributes such as owned, functional, ... *)
-  ; wobbly_paths: StabilityDomain.astate
-        (** Record the "touched" paths that can compromise the race detection **) }
+        (** map of access paths to attributes such as owned, functional, ... *) }
 
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which
@@ -232,8 +217,7 @@ type summary =
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate
-  ; wobbly_paths: StabilityDomain.astate }
+  ; return_attributes: AttributeSetDomain.astate }
 
 val empty_summary : summary
 

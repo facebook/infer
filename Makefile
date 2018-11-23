@@ -120,7 +120,6 @@ DIRECT_TESTS += \
   java_purity \
   java_quandary \
   java_racerd \
-  java_stability \
   java_starvation \
   java_tracing \
 
@@ -136,7 +135,6 @@ ifneq ($(filter build_systems_tests config_tests test test-replace,${MAKECMDGOAL
 build_genrule_print: build_buck_print
 build_genrule_replace: build_buck_replace
 build_genrule_test: build_buck_test
-direct_java_racerd_path_stability_test: direct_java_racerd_test
 endif
 endif
 ifneq ($(MVN),no)

@@ -371,8 +371,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let ownership =
           OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate.ownership
         in
-        let wobbly_paths = StabilityDomain.add_path ret_access_path astate.wobbly_paths in
-        {astate with accesses; ownership; wobbly_paths}
+        {astate with accesses; ownership}
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let ret_access_path = (ret_base, []) in
         let accesses_with_unannotated_calls =
@@ -383,8 +382,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
             astate.ownership proc_data
         in
-        let wobbly_paths = StabilityDomain.add_path ret_access_path astate.wobbly_paths in
-        let astate = {astate with accesses; wobbly_paths} in
+        let astate = {astate with accesses} in
         let astate =
           match get_thread callee_pname with
           | BackgroundThread ->
@@ -440,13 +438,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       in
                       {summary with accesses= rebased_accesses} )
                 with
-                | Some
-                    { threads
-                    ; locks
-                    ; accesses
-                    ; return_ownership
-                    ; return_attributes
-                    ; wobbly_paths= callee_wps } ->
+                | Some {threads; locks; accesses; return_ownership; return_attributes} ->
                     let locks =
                       LocksDomain.integrate_summary ~caller_astate:astate.locks
                         ~callee_astate:locks
@@ -462,15 +454,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     let attribute_map =
                       AttributeMapDomain.add ret_access_path return_attributes astate.attribute_map
                     in
-                    let wobbly_paths =
-                      StabilityDomain.integrate_summary actuals callee_pdesc ~callee:callee_wps
-                        ~caller:wobbly_paths
-                    in
                     let threads =
                       ThreadsDomain.integrate_summary ~caller_astate:astate.threads
                         ~callee_astate:threads
                     in
-                    {locks; threads; accesses; ownership; attribute_map; wobbly_paths}
+                    {locks; threads; accesses; ownership; attribute_map}
                 | None ->
                     call_without_summary callee_pname ret_access_path call_flags actuals astate )
         in
@@ -533,10 +521,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let attribute_map =
           AttributeMapDomain.propagate_assignment lhs_access_path rhs_exp astate.attribute_map
         in
-        let wobbly_paths =
-          StabilityDomain.add_assign lhs_access_path rhs_exp astate.wobbly_paths
-        in
-        {astate with accesses; ownership; attribute_map; wobbly_paths}
+        {astate with accesses; ownership; attribute_map}
     | Assume (assume_exp, _, _, loc) ->
         let rec eval_binop op var e1 e2 =
           match (eval_bexp var e1, eval_bexp var e2) with
@@ -691,7 +676,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         {RacerDDomain.empty with ownership; threads}
     in
     match Analyzer.compute_post proc_data ~initial with
-    | Some {threads; locks; accesses; ownership; attribute_map; wobbly_paths} ->
+    | Some {threads; locks; accesses; ownership; attribute_map} ->
         let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
@@ -702,7 +687,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           try AttributeMapDomain.find return_var_ap attribute_map with Caml.Not_found ->
             AttributeSetDomain.empty
         in
-        let post = {threads; locks; accesses; return_ownership; return_attributes; wobbly_paths} in
+        let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Payload.update_summary post summary
     | None ->
         summary
@@ -872,28 +857,12 @@ let make_trace ~report_kind original_path pdesc =
       (original_trace, original_end, None)
 
 
-(* Checking for a wobbly path *)
-let is_contaminated access wobbly_paths =
-  let ignore_var ((v, _), _) = Var.is_global v || Var.is_return v in
-  let open RacerDDomain in
-  match TraceElem.kind access with
-  | TraceElem.Kind.Read access_path
-  | Write access_path
-  (* Access paths rooted in static variables are always race-prone,
-       hence do not complain about contamination. *)
-    when not (ignore_var access_path) ->
-      StabilityDomain.exists_proper_prefix access_path wobbly_paths
-  | _ ->
-      false
-
-
 let log_issue current_pname ~loc ~ltr ~access issue_type error_message =
   Reporting.log_issue_external current_pname Exceptions.Error ~loc ~ltr ~access issue_type
     error_message
 
 
-let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread
-    wobbly_paths =
+let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread =
   let open RacerDDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path ((_, sinks) as path) =
@@ -903,19 +872,18 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
        trace, it's probably going to be too confusing to be actionable. Skip it. *)
     if (not Config.filtering) || (not (Typ.Procname.is_java pname)) || is_full_trace then
-      if (not Config.racerd_use_path_stability) || not (is_contaminated access wobbly_paths) then
-        let final_sink_site = PathDomain.Sink.call_site final_sink in
-        let initial_sink_site = PathDomain.Sink.call_site initial_sink in
-        let loc = CallSite.loc initial_sink_site in
-        let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
-        (* what the potential bug is *)
-        let description = make_description pname final_sink_site initial_sink_site initial_sink in
-        (* why we are reporting it *)
-        let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
-        let error_message = F.sprintf "%s%s" description explanation in
-        let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
-        let access = IssueAuxData.encode (pname, access, end_locs) in
-        log_issue pname ~loc ~ltr ~access issue_type error_message
+      let final_sink_site = PathDomain.Sink.call_site final_sink in
+      let initial_sink_site = PathDomain.Sink.call_site initial_sink in
+      let loc = CallSite.loc initial_sink_site in
+      let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
+      (* what the potential bug is *)
+      let description = make_description pname final_sink_site initial_sink_site initial_sink in
+      (* why we are reporting it *)
+      let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
+      let error_message = F.sprintf "%s%s" description explanation in
+      let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
+      let access = IssueAuxData.encode (pname, access, end_locs) in
+      log_issue pname ~loc ~ltr ~access issue_type error_message
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
@@ -932,7 +900,7 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
           Typ.Procname.pp reported_pname class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation tenv pdesc ~make_description ~report_kind:UnannotatedInterface
-        access thread RacerDDomain.StabilityDomain.empty
+        access thread
   | _ ->
       (* skip reporting on C++ *)
       ()
@@ -951,8 +919,7 @@ type reported_access =
   { threads: RacerDDomain.ThreadsDomain.astate
   ; snapshot: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
-  ; procdesc: Procdesc.t
-  ; wobbly_paths: RacerDDomain.StabilityDomain.astate }
+  ; procdesc: Procdesc.t }
 
 let make_read_write_race_description ~read_is_sync (conflict : reported_access) pname
     final_sink_site initial_sink_site final_sink =
@@ -1156,8 +1123,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
           {reported with reported_unannotated_calls; reported_sites}
     else reported
   in
-  let report_unsafe_access accesses reported_acc {snapshot; threads; tenv; procdesc; wobbly_paths}
-      =
+  let report_unsafe_access accesses reported_acc {snapshot; threads; tenv; procdesc} =
     let pname = Procdesc.get_proc_name procdesc in
     if is_duplicate_report snapshot.access pname reported_acc then reported_acc
     else
@@ -1192,7 +1158,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
           then (
             report_thread_safety_violation tenv procdesc
               ~make_description:make_unprotected_write_description
-              ~report_kind:(WriteWriteRace conflict) snapshot.access threads wobbly_paths ;
+              ~report_kind:(WriteWriteRace conflict) snapshot.access threads ;
             update_reported snapshot.access pname reported_acc )
           else reported_acc
       | Access.Write _ | ContainerWrite _ ->
@@ -1215,7 +1181,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
                  in
                  let report_kind = ReadWriteRace conflict.snapshot.access in
                  report_thread_safety_violation tenv procdesc ~make_description ~report_kind
-                   snapshot.access threads wobbly_paths ;
+                   snapshot.access threads ;
                  update_reported snapshot.access pname reported_acc )
       | Access.Read _ | ContainerRead _ ->
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
@@ -1236,7 +1202,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
                  in
                  let report_kind = ReadWriteRace conflict.snapshot.access in
                  report_thread_safety_violation tenv procdesc ~make_description ~report_kind
-                   snapshot.access threads wobbly_paths ;
+                   snapshot.access threads ;
                  update_reported snapshot.access pname reported_acc )
   in
   let report_accesses_on_location (grouped_accesses : reported_access list) reported_acc =
@@ -1262,9 +1228,9 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
    that x.f.g may point to during execution *)
 let make_results_table file_env =
   let open RacerDDomain in
-  let aggregate_post acc ({threads; accesses; wobbly_paths}, tenv, procdesc) =
+  let aggregate_post acc ({threads; accesses}, tenv, procdesc) =
     AccessDomain.fold
-      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc; wobbly_paths} acc)
+      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc} acc)
       accesses acc
   in
   List.filter_map file_env ~f:(fun (tenv, proc_desc) ->

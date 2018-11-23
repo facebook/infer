@@ -561,8 +561,6 @@ val quandary_sinks : Yojson.Basic.json
 
 val quiet : bool
 
-val racerd_use_path_stability : bool
-
 val reactive_mode : bool
 
 val reactive_capture : bool
