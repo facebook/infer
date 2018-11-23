@@ -41,8 +41,6 @@ module Bound : sig
 
   val equal : t -> t -> bool
 
-  val pp : F.formatter -> t -> unit
-
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 
   val of_int : int -> t
