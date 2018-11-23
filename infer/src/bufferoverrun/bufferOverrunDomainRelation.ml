@@ -417,6 +417,8 @@ module Make (Manager : Manager_S) = struct
   module Var = struct
     include Apron.Var
 
+    let equal = [%compare.equal: t]
+
     let pp = print
 
     let dummy = of_string "dummy"
@@ -516,48 +518,11 @@ module Make (Manager : Manager_S) = struct
   end
 
   module Sym = struct
-    type astate = Bot | V of Var.t | Top [@@deriving compare]
+    include AbstractDomain.Flat (Var)
 
-    let ( <= ) ~lhs ~rhs =
-      match (lhs, rhs) with
-      | Bot, _ ->
-          true
-      | _, Bot ->
-          false
-      | _, Top ->
-          true
-      | Top, _ ->
-          false
-      | V x, V y ->
-          Int.equal (Var.compare x y) 0
+    let bot = empty
 
-
-    let join x y =
-      match (x, y) with
-      | Bot, a | a, Bot ->
-          a
-      | _, Top | Top, _ ->
-          Top
-      | V x', V y' ->
-          if Int.equal (Var.compare x' y') 0 then x else Top
-
-
-    let widen ~prev ~next ~num_iters:_ = join prev next
-
-    let pp fmt = function
-      | Bot ->
-          F.fprintf fmt "_|_"
-      | Top ->
-          F.fprintf fmt "T"
-      | V x ->
-          Var.pp fmt x
-
-
-    let bot = Bot
-
-    let top = Top
-
-    let lift f x = V (f x)
+    let lift f x = v (f x)
 
     let of_loc = lift Var.of_loc
 
@@ -569,7 +534,7 @@ module Make (Manager : Manager_S) = struct
 
     let of_allocsite_size = lift Var.of_allocsite_size
 
-    let get_var = function V x -> Some x | Bot | Top -> None
+    let get_var = get
   end
 
   module Env = struct
@@ -664,7 +629,7 @@ module Make (Manager : Manager_S) = struct
     let env_of_raw re = Env.of_vars_array (vars_array_of_raw re)
 
     let raw_of_exp ~get_sym_f e : raw option =
-      let try_get_sym_f e = match get_sym_f e with Sym.V x -> Some (Texpr1.Var x) | _ -> None in
+      let try_get_sym_f e = get_sym_f e |> Sym.get_var |> Option.map ~f:(fun x -> Texpr1.Var x) in
       let rec raw_of_exp' e =
         match e with
         | Exp.UnOp (Unop.Neg, e', _) -> (
@@ -697,7 +662,7 @@ module Make (Manager : Manager_S) = struct
 
     let raw_offset_of_exp ~get_int_sym_f ~get_offset_sym_f e =
       let try_get_offset_sym_f e =
-        match get_offset_sym_f e with Sym.V x -> Some (Texpr1.Var x) | _ -> None
+        get_offset_sym_f e |> Sym.get_var |> Option.map ~f:(fun x -> Texpr1.Var x)
       in
       let rec raw_offset_of_exp' e =
         match e with
@@ -721,7 +686,7 @@ module Make (Manager : Manager_S) = struct
 
     let raw_size_of_exp ~get_size_sym_f e =
       let try_get_size_sym_f e =
-        match get_size_sym_f e with Sym.V x -> Some (Texpr1.Var x) | _ -> None
+        get_size_sym_f e |> Sym.get_var |> Option.map ~f:(fun x -> Texpr1.Var x)
       in
       let rec raw_size_of_exp' e =
         match e with
@@ -767,7 +732,7 @@ module Make (Manager : Manager_S) = struct
 
     let one = of_big_int Z.one
 
-    let of_sym s = match s with Sym.V x -> Some (of_raw (Texpr1.Var x)) | _ -> None
+    let of_sym s = Sym.get_var s |> Option.map ~f:(fun x -> of_raw (Texpr1.Var x))
 
     let of_var var = of_raw (Texpr1.Var var)
 
@@ -928,7 +893,11 @@ module Make (Manager : Manager_S) = struct
       in
       match e with
       | Exp.Var _ | Exp.Lvar _ | Exp.Cast _ | Exp.Lfield _ | Exp.Lindex _ -> (
-        match get_sym_f e with Sym.V x -> of_raw_symexp (Texpr1.Var x) Tcons1.DISEQ | _ -> empty )
+        match get_sym_f e |> Sym.get_var with
+        | Some x ->
+            of_raw_symexp (Texpr1.Var x) Tcons1.DISEQ
+        | None ->
+            empty )
       | Exp.BinOp (Binop.Eq, e1, e2) | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ne, e1, e2), _) ->
           of_bin_compare Tcons1.EQ e1 e2
       | Exp.BinOp (Binop.Ne, e1, e2) | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
