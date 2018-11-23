@@ -57,10 +57,6 @@ module Bound : sig
 
   val is_symbolic : t -> bool
 
-  val big_int_lb : t -> Z.t sexp_option
-
-  val big_int_ub : t -> Z.t sexp_option
-
   val le : t -> t -> bool
 
   val lt : t -> t -> bool
@@ -127,11 +123,19 @@ end
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
 
 module NonNegativeBound : sig
-  type t = Bound.t
+  type t = Bound.t [@@deriving compare]
+
+  val pp : Format.formatter -> t -> unit
 
   val zero : t
 
   val of_bound : t -> t
 
+  val int_lb : t -> Ints.NonNegativeInt.t
+
+  val int_ub : t -> Ints.NonNegativeInt.t option
+
   val classify : t -> (Ints.NonNegativeInt.t, t) valclass
+
+  val subst : t -> Bound.eval_sym -> (Ints.NonNegativeInt.t, t) valclass
 end

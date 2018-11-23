@@ -17,45 +17,6 @@ module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
 module SymbolSet = Symb.SymbolSet
 
-(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
-module NonNegativeBound = struct
-  type t = Bound.t [@@deriving compare]
-
-  let pp = Bound.pp
-
-  let zero = Bound.zero
-
-  let of_bound b = if Bound.le b zero then zero else b
-
-  let int_lb b =
-    Bound.big_int_lb b
-    |> Option.bind ~f:NonNegativeInt.of_big_int
-    |> Option.value ~default:NonNegativeInt.zero
-
-
-  let int_ub b = Bound.big_int_ub b |> Option.map ~f:NonNegativeInt.of_big_int_exn
-
-  let classify = function
-    | Bound.PInf ->
-        Bounds.ValTop
-    | Bound.MInf ->
-        assert false
-    | b -> (
-      match Bound.is_const b with
-      | None ->
-          Bounds.Symbolic b
-      | Some c ->
-          Bounds.Constant (NonNegativeInt.of_big_int_exn c) )
-
-
-  let subst b map =
-    match Bound.subst_ub b map with
-    | Bottom ->
-        Bounds.Constant NonNegativeInt.zero
-    | NonBottom b ->
-        of_bound b |> classify
-end
-
 module type NonNegativeSymbol = sig
   type t [@@deriving compare]
 
@@ -363,7 +324,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 end
 
 module NonNegativePolynomial = struct
-  module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBound)
+  module NonNegativeNonTopPolynomial = MakePolynomial (Bounds.NonNegativeBound)
   include AbstractDomain.TopLifted (NonNegativeNonTopPolynomial)
 
   let zero = NonTop NonNegativeNonTopPolynomial.zero

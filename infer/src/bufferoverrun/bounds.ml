@@ -937,9 +937,19 @@ type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
 module NonNegativeBound = struct
   type t = Bound.t [@@deriving compare]
 
+  let pp = Bound.pp
+
   let zero = Bound.zero
 
-  let of_bound b = if Bound.le b Bound.zero then Bound.zero else b
+  let of_bound b = if Bound.le b zero then zero else b
+
+  let int_lb b =
+    Bound.big_int_lb b
+    |> Option.bind ~f:NonNegativeInt.of_big_int
+    |> Option.value ~default:NonNegativeInt.zero
+
+
+  let int_ub b = Bound.big_int_ub b |> Option.map ~f:NonNegativeInt.of_big_int_exn
 
   let classify = function
     | Bound.PInf ->
@@ -952,4 +962,12 @@ module NonNegativeBound = struct
           Symbolic b
       | Some c ->
           Constant (NonNegativeInt.of_big_int_exn c) )
+
+
+  let subst b map =
+    match Bound.subst_ub b map with
+    | Bottom ->
+        Constant NonNegativeInt.zero
+    | NonBottom b ->
+        of_bound b |> classify
 end
