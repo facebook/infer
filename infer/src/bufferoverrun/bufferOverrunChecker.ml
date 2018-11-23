@@ -206,7 +206,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   match Sem.get_formals pdesc with
                   | [(formal, _)] ->
                       let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
-                      Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+                      Dom.Mem.store_empty_alias formal_v loc_v mem
                   | _ ->
                       assert false )
                 | _ ->

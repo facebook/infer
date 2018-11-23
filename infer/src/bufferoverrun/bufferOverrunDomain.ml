@@ -416,74 +416,93 @@ end
 module AliasMap = struct
   include AbstractDomain.Map (Ident) (AliasTarget)
 
-  let pp fmt x =
-    let pp_sep fmt () = F.fprintf fmt ", @," in
-    let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
-    (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
-    F.fprintf fmt "@[<hov 2>{ " ;
-    F.pp_print_list ~pp_sep pp1 fmt (bindings x) ;
-    F.fprintf fmt " }@]"
+  let pp : F.formatter -> astate -> unit =
+   fun fmt x ->
+    if not (is_empty x) then
+      let pp_sep fmt () = F.fprintf fmt ", @," in
+      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
+      F.pp_print_list ~pp_sep pp1 fmt (bindings x)
 
 
   let load : Ident.t -> AliasTarget.astate -> astate -> astate = add
 
-  let store : Loc.t -> Exp.t -> astate -> astate =
-   fun l _ m -> filter (fun _ y -> not (AliasTarget.use l y)) m
+  let store : Loc.t -> astate -> astate =
+   fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
 
 
   let find : Ident.t -> astate -> AliasTarget.astate option = find_opt
 end
 
-module AliasRet = AbstractDomain.Flat (AliasTarget)
+module AliasRet = struct
+  include AbstractDomain.Flat (AliasTarget)
+
+  let pp : F.formatter -> astate -> unit = fun fmt x -> F.pp_print_string fmt "ret=" ; pp fmt x
+end
 
 module Alias = struct
-  include AbstractDomain.Pair (AliasMap) (AliasRet)
+  type astate = {map: AliasMap.astate; ret: AliasRet.astate}
 
-  let bot : astate = (AliasMap.empty, AliasRet.empty)
+  let ( <= ) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else AliasMap.( <= ) ~lhs:lhs.map ~rhs:rhs.map && AliasRet.( <= ) ~lhs:lhs.ret ~rhs:rhs.ret
 
-  let lift : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
-   fun f a -> (f (fst a), snd a)
+
+  let join x y =
+    if phys_equal x y then x else {map= AliasMap.join x.map y.map; ret= AliasRet.join x.ret y.ret}
 
 
-  let lift_v : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f (fst a)
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next then prev
+    else
+      { map= AliasMap.widen ~prev:prev.map ~next:next.map ~num_iters
+      ; ret= AliasRet.widen ~prev:prev.ret ~next:next.ret ~num_iters }
 
-  let find : Ident.t -> astate -> AliasTarget.astate option = fun x -> lift_v (AliasMap.find x)
 
-  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.get (snd x)
+  let pp fmt x =
+    F.fprintf fmt "@[<hov 2>{ %a%s%a }@]" AliasMap.pp x.map
+      (if AliasMap.is_empty x.map then "" else ", ")
+      AliasRet.pp x.ret
+
+
+  let bot : astate = {map= AliasMap.empty; ret= AliasRet.empty}
+
+  let lift_map : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
+   fun f a -> {a with map= f a.map}
+
+
+  let bind_map : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f a.map
+
+  let find : Ident.t -> astate -> AliasTarget.astate option = fun x -> bind_map (AliasMap.find x)
+
+  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.get x.ret
 
   let load : Ident.t -> AliasTarget.astate -> astate -> astate =
-   fun id loc -> lift (AliasMap.load id loc)
+   fun id loc -> lift_map (AliasMap.load id loc)
 
 
   let store_simple : Loc.t -> Exp.t -> astate -> astate =
    fun loc e a ->
-    let a = lift (AliasMap.store loc e) a in
+    let a = lift_map (AliasMap.store loc) a in
     match e with
     | Exp.Var l when Loc.is_return loc ->
-        let update_ret retl = (fst a, AliasRet.v retl) in
+        let update_ret retl = {a with ret= AliasRet.v retl} in
         Option.value_map (find l a) ~default:a ~f:update_ret
     | _ ->
         a
 
 
-  let store_empty : Val.t -> Loc.t -> Exp.t -> astate -> astate =
-   fun formal loc e a ->
-    let a = lift (AliasMap.store loc e) a in
+  let store_empty : Val.t -> Loc.t -> astate -> astate =
+   fun formal loc a ->
+    let a = lift_map (AliasMap.store loc) a in
     let locs = Val.get_all_locs formal in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
-        (fst a, AliasRet.v (AliasTarget.of_empty loc))
+        {a with ret= AliasRet.v (AliasTarget.of_empty loc)}
     | _ ->
         a
 
 
-  let remove_temp : Ident.t -> astate -> astate =
-   fun temp (alias_map, alias_ret) -> (AliasMap.remove temp alias_map, alias_ret)
-
-
-  let pp : F.formatter -> astate -> unit =
-   fun fmt (aliasmap, aliasret) ->
-    F.fprintf fmt "AliasMap:@;%a@;AliasRet:@;%a" AliasMap.pp aliasmap AliasRet.pp aliasret
+  let remove_temp : Ident.t -> astate -> astate = fun temp -> lift_map (AliasMap.remove temp)
 end
 
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
@@ -629,8 +648,8 @@ module MemReach = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    F.fprintf fmt "StackLocs:@;%a@;MemPure:@;%a@;%a@;%a" StackLocs.pp x.stack_locs MemPure.pp
-      x.mem_pure Alias.pp x.alias LatestPrune.pp x.latest_prune ;
+    F.fprintf fmt "StackLocs:@;%a@;MemPure:@;%a@;Alias:@;%a@;%a" StackLocs.pp x.stack_locs
+      MemPure.pp x.mem_pure Alias.pp x.alias LatestPrune.pp x.latest_prune ;
     if Option.is_some Config.bo_relational_domain then
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
@@ -674,8 +693,8 @@ module MemReach = struct
    fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
 
 
-  let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
-   fun formal loc e m -> {m with alias= Alias.store_empty formal loc e m.alias}
+  let store_empty_alias : Val.t -> Loc.t -> t -> t =
+   fun formal loc m -> {m with alias= Alias.store_empty formal loc m.alias}
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
@@ -894,8 +913,8 @@ module Mem = struct
    fun loc e -> f_lift (MemReach.store_simple_alias loc e)
 
 
-  let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
-   fun formal loc e -> f_lift (MemReach.store_empty_alias formal loc e)
+  let store_empty_alias : Val.t -> Loc.t -> t -> t =
+   fun formal loc -> f_lift (MemReach.store_empty_alias formal loc)
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> f_lift (MemReach.add_stack_loc k)
