@@ -78,4 +78,4 @@ module ConditionSet : sig
   val forget_locs : AbsLoc.PowLoc.t -> t -> t
 end
 
-val description : Condition.t -> ConditionTrace.t -> string
+val description : markup:bool -> Condition.t -> ConditionTrace.t -> string

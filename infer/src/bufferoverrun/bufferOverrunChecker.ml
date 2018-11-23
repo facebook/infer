@@ -785,15 +785,15 @@ module Report = struct
    fun summary cond_set ->
     let report cond trace issue_type =
       let location = PO.ConditionTrace.get_report_location trace in
-      let description = PO.description cond trace in
+      let description ~markup = PO.description ~markup cond trace in
       let trace =
         match TraceSet.choose_shortest (PO.ConditionTrace.get_val_traces trace) with
         | trace ->
-            make_err_trace trace description
+            make_err_trace trace (description ~markup:false)
         | exception _ ->
-            [Errlog.make_trace_element 0 location description []]
+            [Errlog.make_trace_element 0 location (description ~markup:false) []]
       in
-      Reporting.log_error summary ~loc:location ~ltr:trace issue_type description
+      Reporting.log_error summary ~loc:location ~ltr:trace issue_type (description ~markup:true)
     in
     PO.ConditionSet.check_all ~report cond_set
 

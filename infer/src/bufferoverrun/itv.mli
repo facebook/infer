@@ -62,6 +62,8 @@ module ItvPure : sig
 
   val pp : F.formatter -> t -> unit
 
+  val pp_mark : markup:bool -> F.formatter -> t -> unit
+
   val mone : t
 
   val zero : t

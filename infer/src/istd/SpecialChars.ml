@@ -32,3 +32,6 @@ let right_tack = if utf8 then "⊢" else "|-"
 let superscript_digits =
   if utf8 then ("", [|"⁰"; "¹"; "²"; "³"; "⁴"; "⁵"; "⁶"; "⁷"; "⁸"; "⁹"|])
   else ("^", [|"0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"|])
+
+
+let leftwards_double_arrow = if utf8 then "⇐" else "<="

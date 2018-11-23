@@ -14,3 +14,5 @@ val multiplication_sign : string
 val right_tack : string
 
 val superscript_digits : string * string Array.t
+
+val leftwards_double_arrow : string

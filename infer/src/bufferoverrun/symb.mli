@@ -25,7 +25,7 @@ module SymbolPath : sig
 
   type t = private Normal of partial | Offset of partial | Length of partial
 
-  val pp : F.formatter -> t -> unit
+  val pp_mark : markup:bool -> F.formatter -> t -> unit
 
   val pp_partial : F.formatter -> partial -> unit
 
@@ -53,7 +53,7 @@ module Symbol : sig
 
   val is_unsigned : t -> bool
 
-  val pp : F.formatter -> t -> unit
+  val pp_mark : markup:bool -> F.formatter -> t -> unit
 
   val equal : t -> t -> bool
 

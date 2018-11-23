@@ -43,6 +43,8 @@ module Bound : sig
 
   val pp : F.formatter -> t -> unit
 
+  val pp_mark : markup:bool -> F.formatter -> t -> unit
+
   val of_int : int -> t
 
   val of_big_int : Z.t -> t

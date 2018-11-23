@@ -67,6 +67,9 @@ module SymbolPath = struct
     (* unsound but avoids many FPs for non-array pointers *)
     | Field (_, p) ->
         represents_multiple_values p
+
+
+  let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 end
 
 module Symbol = struct
@@ -97,6 +100,8 @@ module Symbol = struct
       let symbol_name = if unsigned then 'u' else 's' in
       F.fprintf fmt "(%s-%c$%d)" (Typ.Procname.to_string pname) symbol_name id
 
+
+  let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
   let is_unsigned : t -> bool = fun x -> x.unsigned
 

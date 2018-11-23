@@ -385,6 +385,7 @@ module NonNegativePolynomial = struct
   let top_lifted_increasing ~f p1 p2 =
     match (p1, p2) with Top, _ | _, Top -> Top | NonTop p1, NonTop p2 -> NonTop (f p1 p2)
 
+
   let plus = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.plus
 
   let mult = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.mult
@@ -520,16 +521,18 @@ module ItvPure = struct
    fun ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ -> (Bound.widen_l l1 l2, Bound.widen_u u1 u2)
 
 
-  let pp : F.formatter -> t -> unit =
-   fun fmt (l, u) ->
-    if Bound.equal l u then Bound.pp fmt l
+  let pp_mark : markup:bool -> F.formatter -> t -> unit =
+   fun ~markup fmt (l, u) ->
+    if Bound.equal l u then Bound.pp_mark ~markup fmt l
     else
       match Bound.is_same_symbol l u with
       | Some symbol when Config.bo_debug < 3 ->
-          Symb.SymbolPath.pp fmt symbol
+          Symb.SymbolPath.pp_mark ~markup fmt symbol
       | _ ->
-          F.fprintf fmt "[%a, %a]" Bound.pp l Bound.pp u
+          F.fprintf fmt "[%a, %a]" (Bound.pp_mark ~markup) l (Bound.pp_mark ~markup) u
 
+
+  let pp = pp_mark ~markup:false
 
   let of_bound bound = (bound, bound)
 

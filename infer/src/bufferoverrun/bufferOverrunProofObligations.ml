@@ -24,7 +24,9 @@ module AllocSizeCondition = struct
 
   let pp fmt length = F.fprintf fmt "alloc(%a)" ItvPure.pp length
 
-  let pp_description fmt length = F.fprintf fmt "Length: %a" ItvPure.pp length
+  let pp_description ~markup fmt length =
+    F.fprintf fmt "Length: %a" (ItvPure.pp_mark ~markup) length
+
 
   let make ~length = if ItvPure.is_invalid length then None else Some length
 
@@ -126,18 +128,19 @@ module ArrayAccessCondition = struct
         Relation.SymExp.pp_opt c.size_sym_exp Relation.pp c.relation
 
 
-  let pp_description : F.formatter -> t -> unit =
-   fun fmt c ->
+  let pp_description : markup:bool -> F.formatter -> t -> unit =
+   fun ~markup fmt c ->
     let pp_offset fmt =
-      if ItvPure.is_zero c.offset then ItvPure.pp fmt c.idx
-      else if ItvPure.is_zero c.idx then ItvPure.pp fmt c.offset
+      if ItvPure.is_zero c.offset then ItvPure.pp_mark ~markup fmt c.idx
+      else if ItvPure.is_zero c.idx then ItvPure.pp_mark ~markup fmt c.offset
       else
-        F.fprintf fmt "%a (= %a + %a)" ItvPure.pp (ItvPure.plus c.offset c.idx) ItvPure.pp c.offset
-          ItvPure.pp c.idx
+        F.fprintf fmt "%a (%s %a + %a)" (ItvPure.pp_mark ~markup) (ItvPure.plus c.offset c.idx)
+          SpecialChars.leftwards_double_arrow (ItvPure.pp_mark ~markup) c.offset
+          (ItvPure.pp_mark ~markup) c.idx
     in
     F.fprintf fmt "Offset%s: %t Size: %a"
       (if c.is_collection_add then " added" else "")
-      pp_offset ItvPure.pp (ItvPure.make_positive c.size)
+      pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
 
 
   let make :
@@ -322,7 +325,14 @@ module BinaryOperationCondition = struct
 
   let equal_binop = [%compare.equal: binop_t]
 
-  let binop_to_string = function Plus -> "+" | Minus -> "-" | Mult -> "*"
+  let binop_to_string = function
+    | Plus ->
+        "+"
+    | Minus ->
+        "-"
+    | Mult ->
+        SpecialChars.multiplication_sign
+
 
   type t =
     { binop: binop_t
@@ -378,8 +388,9 @@ module BinaryOperationCondition = struct
           `NotComparable
 
 
-  let pp fmt {binop; typ; integer_widths; lhs; rhs} =
-    F.fprintf fmt "(%a %s %a):" ItvPure.pp lhs (binop_to_string binop) ItvPure.pp rhs ;
+  let pp_description ~markup fmt {binop; typ; integer_widths; lhs; rhs} =
+    F.fprintf fmt "(%a %s %a):" (ItvPure.pp_mark ~markup) lhs (binop_to_string binop)
+      (ItvPure.pp_mark ~markup) rhs ;
     match typ with
     | Typ.IBool ->
         F.fprintf fmt "bool"
@@ -389,7 +400,7 @@ module BinaryOperationCondition = struct
           (Typ.width_of_ikind integer_widths typ)
 
 
-  let pp_description = pp
+  let pp = pp_description ~markup:false
 
   let is_mult_one binop lhs rhs =
     equal_binop binop Mult && (ItvPure.is_one lhs || ItvPure.is_one rhs)
@@ -549,13 +560,13 @@ module Condition = struct
         BinaryOperationCondition.pp fmt c
 
 
-  let pp_description fmt = function
+  let pp_description ~markup fmt = function
     | AllocSize c ->
-        AllocSizeCondition.pp_description fmt c
+        AllocSizeCondition.pp_description ~markup fmt c
     | ArrayAccess c ->
-        ArrayAccessCondition.pp_description fmt c
+        ArrayAccessCondition.pp_description ~markup fmt c
     | BinaryOperation c ->
-        BinaryOperationCondition.pp_description fmt c
+        BinaryOperationCondition.pp_description ~markup fmt c
 
 
   let check = function
@@ -867,5 +878,5 @@ module ConditionSet = struct
    fun condset -> List.map condset ~f:ConditionWithTrace.for_summary
 end
 
-let description cond trace =
-  F.asprintf "%a%a" Condition.pp_description cond ConditionTrace.pp_description trace
+let description ~markup cond trace =
+  F.asprintf "%a%a" (Condition.pp_description ~markup) cond ConditionTrace.pp_description trace
