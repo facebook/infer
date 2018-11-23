@@ -69,7 +69,7 @@ module Exec = struct
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let mem =
       let arr =
-        let traces = TraceSet.singleton (Trace.ArrDecl location) in
+        let traces = Trace.(Set.singleton location ArrayDeclaration) in
         Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
       in
@@ -98,7 +98,7 @@ module Exec = struct
     let path = Loc.get_path loc in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let alloc_loc = Loc.of_allocsite allocsite in
-    let traces = TraceSet.singleton (Trace.ArrDecl location) in
+    let traces = Trace.(Set.singleton location ArrayDeclaration) in
     let mem =
       let alist =
         Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
@@ -163,7 +163,7 @@ module Exec = struct
     in
     let mem =
       let arr =
-        let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
+        let traces = Trace.(Set.singleton location (Parameter loc)) in
         let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
         Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
@@ -198,7 +198,7 @@ module Exec = struct
     let alloc_loc = Loc.of_allocsite allocsite in
     let v =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-      let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
+      let traces = Trace.(Set.singleton location (Trace.Parameter loc)) in
       Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
@@ -216,9 +216,9 @@ module Exec = struct
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun pname symbol_table path location loc ~new_sym_num mem ->
-    let traces = TraceSet.singleton (Trace.SymAssign (loc, location)) in
     let size =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
+      let traces = Trace.(Set.singleton location (Parameter loc)) in
       Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       |> Dom.Val.of_itv ~traces
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
@@ -305,9 +305,8 @@ module Check = struct
               offset
         in
         let arr_traces = Dom.Val.get_traces arr in
-        let traces = TraceSet.merge ~arr_traces ~idx_traces location in
         PO.ConditionSet.add_array_access location ~size:length ~offset ~idx ~size_sym_exp
-          ~idx_sym_exp ~relation ~is_collection_add traces cond_set
+          ~idx_sym_exp ~relation ~is_collection_add ~idx_traces ~arr_traces cond_set
     | _ ->
         cond_set
 
@@ -378,15 +377,12 @@ module Check = struct
     let rhs_itv = Dom.Val.get_itv rhs in
     match (lhs_itv, rhs_itv) with
     | NonBottom lhs_itv, NonBottom rhs_itv ->
-        let traces =
-          TraceSet.join (Dom.Val.get_traces lhs) (Dom.Val.get_traces rhs)
-          |> TraceSet.add_elem (Trace.Binop location)
-        in
         L.(debug BufferOverrun Verbose)
           "@[<v 2>Add condition :@,bop:%s@,  lhs: %a@,  rhs: %a@,@]@." (Binop.str Pp.text bop)
           Itv.ItvPure.pp lhs_itv Itv.ItvPure.pp rhs_itv ;
         PO.ConditionSet.add_binary_operation integer_type_widths location bop ~lhs:lhs_itv
-          ~rhs:rhs_itv traces cond_set
+          ~rhs:rhs_itv ~lhs_traces:(Dom.Val.get_traces lhs) ~rhs_traces:(Dom.Val.get_traces rhs)
+          cond_set
     | _, _ ->
         cond_set
 end

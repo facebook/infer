@@ -17,7 +17,6 @@ module L = Logging
 module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
-module TraceSet = Trace.Set
 
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunSummary.t
@@ -40,10 +39,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
-            let v =
-              Dom.Val.subst v eval_sym_trace location
-              |> Dom.Val.add_trace_elem (Trace.Return location)
-            in
+            let v = Dom.Val.subst v eval_sym_trace location in
             Dom.Mem.add_heap loc v acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from locs callee_exit_mem in
@@ -71,7 +67,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ret_val = Dom.Mem.find ret_loc callee_exit_mem in
     let ret_var = Loc.of_var (Var.of_id id) in
     Dom.Val.subst ret_val eval_sym_trace location
-    |> Dom.Val.add_trace_elem (Trace.Return location)
     |> Fn.flip (Dom.Mem.add_stack ret_var) mem
     |> instantiate_ret_alias
     |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
@@ -748,50 +743,15 @@ module Report = struct
       ~init:PO.ConditionSet.empty
 
 
-  let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
-   fun trace issue_desc ->
-    let f elem (trace, depth) =
-      match elem with
-      | Trace.Alloc location ->
-          let desc = "Alloc: " ^ issue_desc in
-          (Errlog.make_trace_element depth location desc [] :: trace, depth)
-      | Trace.ArrAccess location ->
-          let desc = "ArrayAccess: " ^ issue_desc in
-          (Errlog.make_trace_element depth location desc [] :: trace, depth)
-      | Trace.ArrDecl location ->
-          (Errlog.make_trace_element depth location "ArrayDeclaration" [] :: trace, depth)
-      | Trace.Assign location ->
-          (Errlog.make_trace_element depth location "Assignment" [] :: trace, depth)
-      | Trace.Binop location ->
-          let desc = "Binop: " ^ issue_desc in
-          (Errlog.make_trace_element depth location desc [] :: trace, depth)
-      | Trace.Call location ->
-          (Errlog.make_trace_element depth location "Call" [] :: trace, depth + 1)
-      | Trace.Return location ->
-          (Errlog.make_trace_element (depth - 1) location "Return" [] :: trace, depth - 1)
-      | Trace.SymAssign (loc, location) ->
-          if Loc.is_pretty loc then
-            let desc = Format.asprintf "Parameter: %a" Loc.pp loc in
-            (Errlog.make_trace_element depth location desc [] :: trace, depth)
-          else (trace, depth)
-      | Trace.UnknownFrom (pname_opt, location) ->
-          let desc = Format.asprintf "Unknown value from: %a" Trace.pp_pname_opt pname_opt in
-          (Errlog.make_trace_element depth location desc [] :: trace, depth)
-    in
-    List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
-
-
   let report_errors : Summary.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary cond_set ->
     let report cond trace issue_type =
       let location = PO.ConditionTrace.get_report_location trace in
       let description ~markup = PO.description ~markup cond trace in
       let trace =
-        match TraceSet.choose_shortest (PO.ConditionTrace.get_val_traces trace) with
-        | trace ->
-            make_err_trace trace (description ~markup:false)
-        | exception _ ->
-            [Errlog.make_trace_element 0 location (description ~markup:false) []]
+        let description = description ~markup:false in
+        Trace.Issue.make_err_trace ~description (PO.ConditionTrace.get_val_traces trace)
+        |> Errlog.concat_traces
       in
       Reporting.log_error summary ~loc:location ~ltr:trace issue_type (description ~markup:true)
     in

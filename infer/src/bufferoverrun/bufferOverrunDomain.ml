@@ -59,7 +59,7 @@ module Val = struct
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
    fun ~callee_pname ~location ->
-    let traces = TraceSet.singleton (Trace.UnknownFrom (callee_pname, location)) in
+    let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
     { itv= Itv.top
     ; sym= Relation.Sym.top
     ; powloc= PowLoc.unknown
@@ -167,7 +167,7 @@ module Val = struct
     { bot with
       itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
     ; sym= Relation.Sym.of_loc loc
-    ; traces= TraceSet.singleton (Trace.SymAssign (loc, location))
+    ; traces= Trace.(Set.singleton location (Parameter loc))
     ; represents_multiple_values }
 
 
@@ -309,19 +309,16 @@ module Val = struct
     |> normalize
 
 
-  let add_trace_elem : Trace.elem -> t -> t =
-   fun elem x ->
-    let traces = TraceSet.add_elem elem x.traces in
+  let add_assign_trace_elem location x =
+    let traces = Trace.(Set.add_elem location Assign) x.traces in
     {x with traces}
 
-
-  let add_assign_trace_elem location x = add_trace_elem (Trace.Assign location) x
 
   let set_array_length : Location.t -> length:t -> t -> t =
    fun location ~length v ->
     { v with
       arrayblk= ArrayBlk.set_length length.itv v.arrayblk
-    ; traces= TraceSet.add_elem (Trace.ArrDecl location) length.traces }
+    ; traces= Trace.(Set.add_elem location ArrayDeclaration) length.traces }
 
 
   let set_array_stride : Z.t -> t -> t =

@@ -9,11 +9,11 @@ open! IStd
 open! AbstractDomain.Types
 module F = Format
 module L = Logging
-module ItvPure = Itv.ItvPure
-module Relation = BufferOverrunDomainRelation
-module MF = MarkupFormatter
-module ValTraceSet = BufferOverrunTrace.Set
 module Bound = Bounds.Bound
+module ItvPure = Itv.ItvPure
+module MF = MarkupFormatter
+module Relation = BufferOverrunDomainRelation
+module ValTrace = BufferOverrunTrace
 
 type checked_condition = {report_issue_type: IssueType.t option; propagate: bool}
 
@@ -591,7 +591,7 @@ module ConditionTrace = struct
   [@@deriving compare]
 
   type 'cond_trace t0 =
-    {cond_trace: 'cond_trace; issue_location: Location.t; val_traces: ValTraceSet.t}
+    {cond_trace: 'cond_trace; issue_location: Location.t; val_traces: ValTrace.Issue.t}
   [@@deriving compare]
 
   type t = intra_cond_trace t0 [@@deriving compare]
@@ -610,9 +610,9 @@ module ConditionTrace = struct
       | Inter {callee_pname; call_site} ->
           let pname = Typ.Procname.to_string callee_pname in
           F.fprintf fmt " by call to %s at %a (%a)" pname Location.pp_file_pos call_site
-            ValTraceSet.pp ct.val_traces
+            ValTrace.Issue.pp ct.val_traces
       | Intra ->
-          F.fprintf fmt " (%a)" ValTraceSet.pp ct.val_traces
+          F.fprintf fmt " (%a)" ValTrace.Issue.pp ct.val_traces
 
 
   let pp_description : F.formatter -> t -> unit =
@@ -631,16 +631,16 @@ module ConditionTrace = struct
    fun ct -> match ct.cond_trace with Intra -> ct.issue_location | Inter {call_site} -> call_site
 
 
-  let make : Location.t -> ValTraceSet.t -> t =
+  let make : Location.t -> ValTrace.Issue.t -> t =
    fun issue_location val_traces -> {issue_location; cond_trace= Intra; val_traces}
 
 
   let make_call_and_subst ~traces_caller ~callee_pname call_site ct =
-    let val_traces = ValTraceSet.call call_site ~traces_caller ~traces_callee:ct.val_traces in
+    let val_traces = ValTrace.Issue.call call_site traces_caller ct.val_traces in
     {ct with cond_trace= Inter {callee_pname; call_site}; val_traces}
 
 
-  let has_unknown ct = ValTraceSet.has_unknown ct.val_traces
+  let has_unknown ct = ValTrace.Issue.has_unknown ct.val_traces
 
   let check issue_type_u5 : _ t0 -> IssueType.t option =
    fun ct -> if has_unknown ct then Some issue_type_u5 else None
@@ -697,8 +697,8 @@ module ConditionWithTrace = struct
     | Some cond ->
         let traces_caller =
           Symb.SymbolSet.fold
-            (fun symbol val_traces -> ValTraceSet.join (trace_of_sym symbol) val_traces)
-            symbols ValTraceSet.empty
+            (fun symbol val_traces -> ValTrace.Set.join (trace_of_sym symbol) val_traces)
+            symbols ValTrace.Set.empty
         in
         let trace =
           ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
@@ -818,22 +818,25 @@ module ConditionSet = struct
 
 
   let add_array_access location ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
-      ~relation val_traces condset =
+      ~relation ~idx_traces ~arr_traces condset =
     ArrayAccessCondition.make ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
       ~relation
     |> Condition.make_array_access
-    |> add_opt location val_traces condset
+    |> add_opt location
+         (ValTrace.Issue.(binary location ArrayAccess) idx_traces arr_traces)
+         condset
 
 
   let add_alloc_size location ~length val_traces condset =
     AllocSizeCondition.make ~length |> Condition.make_alloc_size
-    |> add_opt location val_traces condset
+    |> add_opt location (ValTrace.Issue.alloc location val_traces) condset
 
 
-  let add_binary_operation integer_type_widths location bop ~lhs ~rhs val_traces condset =
+  let add_binary_operation integer_type_widths location bop ~lhs ~rhs ~lhs_traces ~rhs_traces
+      condset =
     BinaryOperationCondition.make integer_type_widths bop ~lhs ~rhs
     |> Condition.make_binary_operation
-    |> add_opt location val_traces condset
+    |> add_opt location (ValTrace.Issue.(binary location Binop) lhs_traces rhs_traces) condset
 
 
   let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site =

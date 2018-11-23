@@ -15,7 +15,6 @@ module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
 module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
-module TraceSet = Trace.Set
 
 type model_env =
   { pname: Typ.Procname.t
@@ -87,10 +86,7 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
   | Bottom ->
       cond_set
   | NonBottom length ->
-      let alloc_trace_elem = BufferOverrunTrace.Alloc location in
-      let traces =
-        Dom.Val.get_traces v_length |> BufferOverrunTrace.Set.add_elem alloc_trace_elem
-      in
+      let traces = Dom.Val.get_traces v_length in
       PO.ConditionSet.add_alloc_size location ~length traces cond_set
 
 
@@ -110,7 +106,7 @@ let malloc size_exp =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
-    let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+    let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path = Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:None ~f:Loc.get_path in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
@@ -257,7 +253,7 @@ let set_array_length array length_exp =
         let stride = Option.map ~f:IntLit.to_int_exn stride in
         let path = Some (Symb.SymbolPath.of_pvar array_pvar) in
         let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
-        let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+        let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
         let size = Dom.Val.get_itv length in
         let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
         mem
@@ -279,7 +275,7 @@ module Split = struct
       |> Dom.Val.get_all_locs
       |> PowLoc.append_field ~fn:size_field
     in
-    let f_trace _ traces = TraceSet.add_elem (Trace.Return location) traces in
+    let f_trace _ traces = Trace.(Set.add_elem location Through) traces in
     Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
 end
 
@@ -399,7 +395,7 @@ module Collection = struct
       let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
       let alloc_loc = Loc.of_allocsite allocsite in
       let init_size = Dom.Val.of_int 0 in
-      let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces init_size) in
+      let traces = Trace.(Set.singleton location ArrayDeclaration) in
       let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces in
       mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap alloc_loc init_size
     in

@@ -9,7 +9,6 @@ open! IStd
 open! AbstractDomain.Types
 module ItvPure = Itv.ItvPure
 module Relation = BufferOverrunDomainRelation
-module ValTraceSet = BufferOverrunTrace.Set
 
 module Condition : sig
   type t
@@ -20,7 +19,7 @@ module ConditionTrace : sig
 
   val get_report_location : t -> Location.t
 
-  val get_val_traces : t -> ValTraceSet.t
+  val get_val_traces : t -> BufferOverrunTrace.Issue.t
 end
 
 module ConditionSet : sig
@@ -43,11 +42,12 @@ module ConditionSet : sig
     -> idx_sym_exp:Relation.SymExp.t option
     -> size_sym_exp:Relation.SymExp.t option
     -> relation:Relation.astate
-    -> ValTraceSet.t
+    -> idx_traces:BufferOverrunTrace.Set.t
+    -> arr_traces:BufferOverrunTrace.Set.t
     -> t
     -> t
 
-  val add_alloc_size : Location.t -> length:ItvPure.astate -> ValTraceSet.t -> t -> t
+  val add_alloc_size : Location.t -> length:ItvPure.astate -> BufferOverrunTrace.Set.t -> t -> t
 
   val add_binary_operation :
        Typ.IntegerWidths.t
@@ -55,7 +55,8 @@ module ConditionSet : sig
     -> Binop.t
     -> lhs:ItvPure.astate
     -> rhs:ItvPure.astate
-    -> ValTraceSet.t
+    -> lhs_traces:BufferOverrunTrace.Set.t
+    -> rhs_traces:BufferOverrunTrace.Set.t
     -> t
     -> t
 
@@ -63,7 +64,7 @@ module ConditionSet : sig
 
   val subst :
        summary_t
-    -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> ValTraceSet.t)
+    -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> BufferOverrunTrace.Set.t)
     -> Relation.SubstMap.t
     -> Relation.astate
     -> Typ.Procname.t

@@ -10,27 +10,30 @@ open AbsLoc
 module F = Format
 
 module BoTrace = struct
-  type elem =
-    | Alloc of Location.t
-    | ArrAccess of Location.t
-    | ArrDecl of Location.t
-    | Assign of Location.t
-    | Binop of Location.t
-    | Call of Location.t
-    | Return of Location.t
-    | SymAssign of Loc.t * Location.t
-    | UnknownFrom of Typ.Procname.t option * Location.t
+  type final = UnknownFrom of Typ.Procname.t option [@@deriving compare]
+
+  type elem = ArrayDeclaration | Assign | Parameter of Loc.t | Through [@@deriving compare]
+
+  type t =
+    | Empty
+    | Final of {location: Location.t; kind: final}
+    | Elem of {location: Location.t; length: int; kind: elem; from: t}
+    | Call of {location: Location.t; length: int; caller: t; callee: t}
   [@@deriving compare]
 
-  type t = {length: int; trace: elem list} [@@deriving compare]
+  let length = function Empty -> 0 | Final _ -> 1 | Elem {length} | Call {length} -> length
 
-  let singleton elem = {length= 1; trace= [elem]}
+  let compare t1 t2 = [%compare: int * t] (length t1, t1) (length t2, t2)
 
-  let add_elem elem t = {length= t.length + 1; trace= elem :: t.trace}
+  let final location kind = Final {location; kind}
 
-  let add_elem_last elem t = {length= t.length + 1; trace= t.trace @ [elem]}
+  let add_elem location kind from = Elem {location; length= length from + 1; from; kind}
 
-  let append x y = {length= x.length + y.length; trace= x.trace @ y.trace}
+  let singleton location kind = add_elem location kind Empty
+
+  let call location ~caller ~callee =
+    Call {location; length= 1 + length caller + length callee; caller; callee}
+
 
   let pp_pname_opt fmt = function
     | None ->
@@ -39,42 +42,95 @@ module BoTrace = struct
         Typ.Procname.pp fmt pname
 
 
-  let pp_elem : F.formatter -> elem -> unit =
-   fun fmt elem ->
-    match elem with
-    | Alloc location ->
-        F.fprintf fmt "Alloc (%a)" Location.pp_file_pos location
-    | ArrAccess location ->
-        F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos location
-    | ArrDecl location ->
-        F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos location
-    | Assign location ->
-        F.fprintf fmt "Assign (%a)" Location.pp_file_pos location
-    | Binop location ->
-        F.fprintf fmt "Binop (%a)" Location.pp_file_pos location
-    | Call location ->
-        F.fprintf fmt "Call (%a)" Location.pp_file_pos location
-    | Return location ->
-        F.fprintf fmt "Return (%a)" Location.pp_file_pos location
-    | SymAssign (loc, location) ->
-        F.fprintf fmt "SymAssign (%a, %a)" Loc.pp loc Location.pp_file_pos location
-    | UnknownFrom (pname_opt, location) ->
-        F.fprintf fmt "UnknownFrom (%a, %a)" pp_pname_opt pname_opt Location.pp_file_pos location
+  let pp_location = Location.pp_file_pos
+
+  let pp_final f = function
+    | UnknownFrom pname_opt ->
+        F.fprintf f "UnknownFrom `%a`" pp_pname_opt pname_opt
 
 
-  let pp : F.formatter -> t -> unit =
-   fun fmt t ->
-    let pp_sep fmt () = F.pp_print_string fmt " :: " in
-    F.pp_print_list ~pp_sep pp_elem fmt t.trace
+  let pp_elem f = function
+    | ArrayDeclaration ->
+        F.pp_print_string f "ArrayDeclaration"
+    | Assign ->
+        F.pp_print_string f "Assign"
+    | Parameter loc ->
+        F.fprintf f "Parameter `%a`" Loc.pp loc
+    | Through ->
+        F.pp_print_string f "Through"
 
 
-  let is_unknown_elem = function UnknownFrom _ -> true | _ -> false
+  let rec pp f = function
+    | Empty ->
+        F.pp_print_string f "<empty>"
+    | Final {location; kind} ->
+        F.fprintf f "%a (%a)" pp_final kind pp_location location
+    | Elem {location; from; kind} ->
+        F.fprintf f "%a%a (%a)" pp_arrow from pp_elem kind pp_location location
+    | Call {location; caller; callee} ->
+        F.fprintf f "%aCall (%a) -> %a" pp_arrow caller pp_location location pp callee
 
-  let has_unknown x = List.exists x.trace ~f:is_unknown_elem
+
+  and pp_arrow f = function Empty -> () | t -> F.fprintf f "%a -> " pp t
+
+  let rec has_unknown = function
+    | Empty ->
+        false
+    | Final {kind= UnknownFrom _} ->
+        true
+    | Elem {from} ->
+        has_unknown from
+    | Call {caller; callee} ->
+        has_unknown caller || has_unknown callee
+
+
+  let final_err_desc = function
+    | UnknownFrom pname_opt ->
+        F.asprintf "Unknown value from: %a" pp_pname_opt pname_opt
+
+
+  let elem_err_desc = function
+    | ArrayDeclaration ->
+        "Array declaration"
+    | Assign ->
+        "Assignment"
+    | Parameter loc ->
+        if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
+    | Through ->
+        "Through"
+
+
+  let rec make_err_trace depth t tail =
+    match t with
+    | Empty ->
+        tail
+    | Final {location; kind} ->
+        let desc = final_err_desc kind in
+        Errlog.make_trace_element depth location desc [] :: tail
+    | Elem {location; kind; from} ->
+        let desc = elem_err_desc kind in
+        let tail =
+          if String.is_empty desc then tail
+          else Errlog.make_trace_element depth location desc [] :: tail
+        in
+        make_err_trace depth from tail
+    | Call {location; caller; callee} ->
+        let desc = "Call" in
+        let tail =
+          Errlog.make_trace_element depth location desc []
+          :: make_err_trace (depth + 1) callee tail
+        in
+        make_err_trace depth caller tail
 end
 
 module Set = struct
   include AbstractDomain.FiniteSet (BoTrace)
+
+  let set_singleton = singleton
+
+  let singleton location elem = singleton (BoTrace.singleton location elem)
+
+  let singleton_final location kind = set_singleton (BoTrace.final location kind)
 
   (* currently, we keep only one trace for efficiency *)
   let join x y =
@@ -82,48 +138,123 @@ module Set = struct
     else if is_empty y then x
     else
       let tx, ty = (min_elt x, min_elt y) in
-      if Int.( <= ) tx.length ty.length then x else y
+      if Int.( <= ) (BoTrace.length tx) (BoTrace.length ty) then x else y
 
 
   let choose_shortest set = min_elt set
 
-  let singleton elem = singleton (BoTrace.singleton elem)
+  let add_elem location elem t =
+    if is_empty t then singleton location elem else map (BoTrace.add_elem location elem) t
 
-  let add_elem elem t = if is_empty t then singleton elem else map (BoTrace.add_elem elem) t
+
+  let non_empty t = if is_empty t then set_singleton BoTrace.Empty else t
 
   let call location ~traces_caller ~traces_callee =
-    if is_empty traces_caller then
-      map
-        (fun trace_callee -> BoTrace.add_elem_last (BoTrace.Call location) trace_callee)
-        traces_callee
-    else
-      fold
-        (fun trace_callee traces ->
-          fold
-            (fun trace_caller traces ->
-              let new_trace_caller = BoTrace.add_elem (BoTrace.Call location) trace_caller in
-              let new_trace = BoTrace.append trace_callee new_trace_caller in
-              add new_trace traces )
-            traces_caller traces )
-        traces_callee empty
-
-
-  let merge ~arr_traces ~idx_traces location =
-    if is_empty idx_traces then
-      map (fun arr_traces -> BoTrace.add_elem (BoTrace.ArrAccess location) arr_traces) arr_traces
-    else
-      fold
-        (fun idx_traces traces ->
-          fold
-            (fun arr_traces traces ->
-              let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess location) idx_traces in
-              let new_trace = BoTrace.append new_trace_idx arr_traces in
-              add new_trace traces )
-            arr_traces traces )
-        idx_traces empty
+    let traces_caller = non_empty traces_caller in
+    let traces_callee = non_empty traces_callee in
+    fold
+      (fun caller traces ->
+        fold
+          (fun callee traces -> add (BoTrace.call location ~caller ~callee) traces)
+          traces_callee traces )
+      traces_caller empty
 
 
   let has_unknown t = exists BoTrace.has_unknown t
+
+  let make_err_trace depth set tail =
+    if is_empty set then tail else BoTrace.make_err_trace depth (choose_shortest set) tail
+
+
+  let length set = if is_empty set then 0 else BoTrace.length (choose_shortest set)
+end
+
+module Issue = struct
+  type elem = Alloc [@@deriving compare]
+
+  type binary = ArrayAccess (* offset, length *) | Binop [@@deriving compare]
+
+  type t =
+    | Elem of {location: Location.t; length: int; kind: elem; from: Set.t}
+    | Binary of {location: Location.t; length: int; kind: binary; left: Set.t; right: Set.t}
+    | Call of {location: Location.t; length: int; caller: Set.t; callee: t}
+  [@@deriving compare]
+
+  let length = function Elem {length} | Binary {length} | Call {length} -> length
+
+  let compare t1 t2 = [%compare: int * t] (length t1, t1) (length t2, t2)
+
+  let alloc location from = Elem {location; length= 1 + Set.length from; kind= Alloc; from}
+
+  let binary location kind left right =
+    Binary {location; length= 3 + Set.length left + Set.length right; kind; left; right}
+
+
+  let call location caller callee =
+    Call {location; length= 1 + Set.length caller + length callee; caller; callee}
+
+
+  let rec has_unknown = function
+    | Elem {from} ->
+        Set.has_unknown from
+    | Binary {left; right} ->
+        Set.has_unknown left || Set.has_unknown right
+    | Call {caller; callee} ->
+        Set.has_unknown caller || has_unknown callee
+
+
+  let binary_labels = function ArrayAccess -> ("Offset", "Length") | Binop -> ("LHS", "RHS")
+
+  let pp_elem f = function Alloc -> F.pp_print_string f "Alloc"
+
+  let pp_binary f = function
+    | ArrayAccess ->
+        F.pp_print_string f "ArrayAccess"
+    | Binop ->
+        F.pp_print_string f "Binop"
+
+
+  let pp_location = Location.pp_file_pos
+
+  let rec pp f = function
+    | Elem {location; kind; from} ->
+        F.fprintf f "{%a} -> %a (%a)" Set.pp from pp_elem kind pp_location location
+    | Binary {location; kind; left; right} ->
+        let left_label, right_label = binary_labels kind in
+        F.fprintf f "{%s: %a} {%s: %a} %a (%a)" left_label Set.pp left right_label Set.pp right
+          pp_binary kind pp_location location
+    | Call {location; caller; callee} ->
+        F.fprintf f "{%a} Call (%a) -> %a" Set.pp caller pp_location location pp callee
+
+
+  let elem_err_desc ~description = function Alloc -> "Allocation: " ^ description
+
+  let binary_err_desc ~description = function
+    | ArrayAccess ->
+        "Array access: " ^ description
+    | Binop ->
+        "Binary operation: " ^ description
+
+
+  let format_label label = F.sprintf "<%s trace>" label
+
+  let make_err_trace ~description t =
+    let rec aux depth = function
+      | Elem {location; kind; from} ->
+          let desc = elem_err_desc ~description kind in
+          [("", Set.make_err_trace depth from [Errlog.make_trace_element depth location desc []])]
+      | Binary {location; kind; left; right} ->
+          let left_label, right_label = binary_labels kind in
+          let desc = binary_err_desc ~description kind in
+          [ (format_label left_label, Set.make_err_trace depth left [])
+          ; (format_label right_label, Set.make_err_trace depth right [])
+          ; ("", [Errlog.make_trace_element depth location desc []]) ]
+      | Call {location; caller; callee} ->
+          let desc = "Call" in
+          ("", Set.make_err_trace depth caller [Errlog.make_trace_element depth location desc []])
+          :: aux (depth + 1) callee
+    in
+    aux 0 t
 end
 
 include BoTrace
