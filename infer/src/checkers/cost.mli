@@ -15,5 +15,5 @@ val instantiate_cost :
   -> inferbo_caller_mem:BufferOverrunDomain.Mem.astate option
   -> callee_pname:Typ.Procname.t
   -> params:(Exp.t * 'a) list
-  -> callee_cost:Itv.NonNegativePolynomial.astate
-  -> Itv.NonNegativePolynomial.astate
+  -> callee_cost:CostDomain.BasicCost.astate
+  -> CostDomain.BasicCost.astate

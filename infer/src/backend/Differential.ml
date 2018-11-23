@@ -61,12 +61,12 @@ module CostsSummary = struct
   type previous_current = {previous: int; current: int}
 
   let count costs =
-    let count_aux t (e : Itv.NonNegativePolynomial.astate) =
-      match Itv.NonNegativePolynomial.degree e with
+    let count_aux t (e : CostDomain.BasicCost.astate) =
+      match CostDomain.BasicCost.degree e with
       | None ->
-          assert (Itv.NonNegativePolynomial.is_top e) ;
+          assert (CostDomain.BasicCost.is_top e) ;
           {t with top= t.top + 1}
-      | Some d when Itv.NonNegativePolynomial.is_zero e ->
+      | Some d when CostDomain.BasicCost.is_zero e ->
           assert (Int.equal d 0) ;
           {t with zero= t.zero + 1}
       | Some d ->
@@ -75,7 +75,7 @@ module CostsSummary = struct
     in
     List.fold ~init
       ~f:(fun acc (v : Jsonbug_t.cost_item) ->
-        count_aux acc (Itv.NonNegativePolynomial.decode v.polynomial) )
+        count_aux acc (CostDomain.BasicCost.decode v.polynomial) )
       costs
 
 

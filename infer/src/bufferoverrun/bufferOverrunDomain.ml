@@ -357,15 +357,15 @@ module MemPure = struct
 
   let bot = empty
 
-  let range : filter_loc:(Loc.t -> bool) -> astate -> Itv.NonNegativePolynomial.astate =
+  let range : filter_loc:(Loc.t -> bool) -> astate -> Polynomials.NonNegativePolynomial.astate =
    fun ~filter_loc mem ->
     fold
       (fun loc v acc ->
         if filter_loc loc then
           v |> Val.get_itv |> Itv.range |> Itv.ItvRange.to_top_lifted_polynomial
-          |> Itv.NonNegativePolynomial.mult acc
+          |> Polynomials.NonNegativePolynomial.mult acc
         else acc )
-      mem Itv.NonNegativePolynomial.one
+      mem Polynomials.NonNegativePolynomial.one
 end
 
 module AliasTarget = struct
@@ -813,7 +813,7 @@ module MemReach = struct
     fun locs m -> add_from_locs m.mem_pure locs PowLoc.empty
 
 
-  let range : filter_loc:(Loc.t -> bool) -> t -> Itv.NonNegativePolynomial.astate =
+  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.astate =
    fun ~filter_loc {mem_pure} -> MemPure.range ~filter_loc mem_pure
 
 

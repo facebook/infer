@@ -91,14 +91,14 @@ let should_report tenv proc_desc Call.({pname; node; params}) integer_type_width
   (* only report if function call has expensive/symbolic cost *)
   match Ondemand.analyze_proc_name pname with
   | Some {Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost}}}
-    when Itv.NonNegativePolynomial.is_symbolic cost ->
+    when CostDomain.BasicCost.is_symbolic cost ->
       let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
       let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
       let inferbo_mem = BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map in
       (* get the cost of the function call *)
       Cost.instantiate_cost integer_type_widths ~caller_pdesc:proc_desc
         ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~params ~callee_cost:cost
-      |> Itv.NonNegativePolynomial.is_symbolic
+      |> CostDomain.BasicCost.is_symbolic
   | _ ->
       false
 

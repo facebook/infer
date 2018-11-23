@@ -13,46 +13,10 @@ module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
 module SymbolSet = Symb.SymbolSet
 
-module NonNegativePolynomial : sig
-  include AbstractDomain.WithTop
-
-  val zero : astate
-
-  val one : astate
-
-  val of_int_exn : int -> astate
-
-  val is_symbolic : astate -> bool
-
-  val is_top : astate -> bool
-
-  val is_zero : astate -> bool
-
-  val plus : astate -> astate -> astate
-
-  val mult : astate -> astate -> astate
-
-  val min_default_left : astate -> astate -> astate
-
-  val subst : astate -> Bound.eval_sym -> astate
-
-  val degree : astate -> int option
-
-  val compare_by_degree : astate -> astate -> int
-
-  val pp_degree : Format.formatter -> astate -> unit
-
-  val pp_degree_hum : Format.formatter -> astate -> unit
-
-  val encode : astate -> string
-
-  val decode : string -> astate
-end
-
 module ItvRange : sig
   type t
 
-  val to_top_lifted_polynomial : t -> NonNegativePolynomial.astate
+  val to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.astate
 end
 
 module ItvPure : sig
