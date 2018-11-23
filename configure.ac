@@ -185,11 +185,11 @@ AC_PROG_OCAMLLEX
 AC_ASSERT_PROG([ocamllex], [$OCAMLLEX])
 AC_CHECK_TOOL([MENHIR], [menhir], [no])
 AC_ASSERT_PROG([menhir], [$MENHIR])
-AC_ASSERT_OCAML_PKG([atdgen], [], [])
+AC_ASSERT_OCAML_PKG([atdgen])
 AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
-AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.5])
+AC_ASSERT_OCAML_PKG([oUnit])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
@@ -226,8 +226,8 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVAC], [javac], [no])
   AC_ASSERT_PROG([javac], [$JAVAC])
   AC_ASSERT_PROG([java], [$JAVA])
-  AC_ASSERT_OCAML_PKG([javalib], [], [2.3.3])
-  AC_ASSERT_OCAML_PKG([sawja], [], [1.5.2])
+  AC_ASSERT_OCAML_PKG([javalib])
+  AC_ASSERT_OCAML_PKG([sawja])
 
   AC_MSG_CHECKING([for JAVA_HOME])
   cat - <<_ACEOF >conftest.java

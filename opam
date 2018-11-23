@@ -38,7 +38,7 @@ depends: [
   "ocaml" {>="4.06.0"}
   "ocamlfind" {build}
   "ocamlgraph"
-  "ounit" {="2.0.5"}
+  "ounit" {>="2.0.5"}
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
   "sawja" {>="1.5.4"}
