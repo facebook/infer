@@ -189,7 +189,7 @@ AC_ASSERT_OCAML_PKG([atdgen], [], [])
 AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
-AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
+AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.5])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
@@ -202,6 +202,12 @@ AC_ARG_VAR([OPAMSWITCH], [Opam switch used for building infer.])
 
 AC_CHECK_TOOL([OPAM], [opam], [no])
 AS_IF([test "$OPAM" != "no"], [
+  AC_MSG_CHECKING([opam version])
+  opam_version=$(opam --version)
+  case $opam_version in
+    2.*) AC_MSG_RESULT([$opam_version]); break;;
+    *) AC_MSG_ERROR([opam version $opam_version is not supported, please install opam version 2 instead]); break;;
+  esac
   AC_MSG_CHECKING([current opam root])
   OPAMROOT=$("$OPAM" config var root)
   AC_MSG_RESULT([$OPAMROOT])
@@ -222,7 +228,6 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_ASSERT_PROG([java], [$JAVA])
   AC_ASSERT_OCAML_PKG([javalib], [], [2.3.3])
   AC_ASSERT_OCAML_PKG([sawja], [], [1.5.2])
-  AC_ASSERT_OCAML_PKG([ptrees])
 
   AC_MSG_CHECKING([for JAVA_HOME])
   cat - <<_ACEOF >conftest.java

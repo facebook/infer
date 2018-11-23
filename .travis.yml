@@ -2,6 +2,7 @@ sudo: required
 language: c
 os:
   - linux
+  - osx
 services: docker
 osx_image: xcode7.3
 before_install:
@@ -11,10 +12,9 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install opam; fi
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 60 ./build-infer.sh --yes java --opam-switch 4.06.1 --only-setup-opam; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam config env`; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y --no-action -k git infer .; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y infer; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 60 ./build-infer.sh --yes java --user-opam-switch --only-setup-opam; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam env`; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install --yes infer .; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/local_install_tests.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/docker_tests.sh; fi

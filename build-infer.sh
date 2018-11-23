@@ -13,12 +13,10 @@ set -u
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR"
-INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-OCAML_VERSION_DEFAULT="4.06.1+flambda"
-INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION_DEFAULT"
-
+INFER_OPAM_DEFAULT_SWITCH="ocaml-variants.4.06.1+flambda"
+INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -30,9 +28,9 @@ function usage() {
   echo
   echo " options:"
   echo "   -h,--help             show this message"
-  echo "   --no-opam-lock        do not use the opam.lock file and let opam resolve dependencies"
+  echo "   --no-opam-lock        do not use the opam.locked file and let opam resolve dependencies"
   echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
-  echo "   --opam-switch         specify the opam switch where to install infer (default: $INFER_OPAM_SWITCH_DEFAULT)"
+  echo "   --user-opam-switch    use the current opam switch to install infer (default: $INFER_OPAM_DEFAULT_SWITCH)"
   echo "   -y,--yes              automatically agree to everything"
   echo
   echo " examples:"
@@ -48,10 +46,9 @@ INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_SWITCH_DEFAULT}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
-OCAML_VERSION=${OCAML_VERSION:-$OCAML_VERSION_DEFAULT}
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
-OPAM_LOCK_URL=${OPAM_LOCK_URL:-https://github.com/rgrinberg/opam-lock}
 USE_OPAM_LOCK=${USE_OPAM_LOCK:-yes}
+USER_OPAM_SWITCH=no
 
 ORIG_ARGS="$*"
 
@@ -83,10 +80,8 @@ while [[ $# > 0 ]]; do
       shift
       continue
      ;;
-    --opam-switch)
-      shift
-      [[ $# > 0 ]] || (usage; exit 1)
-      INFER_OPAM_SWITCH="$1"
+    --user-opam-switch)
+      USER_OPAM_SWITCH=yes
       shift
       continue
      ;;
@@ -108,115 +103,90 @@ while [[ $# > 0 ]]; do
 done
 
 # if no arguments then build both clang and Java
-if [ "$BUILD_CLANG" = "no" ] && [ "$BUILD_JAVA" = "no" ]; then
+if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
   BUILD_CLANG=yes
   BUILD_JAVA=yes
 fi
 
 # enable --yes option for some commands in non-interactive mode
 YES=
-if [ "$INTERACTIVE" = "no" ]; then
+if [ "$INTERACTIVE" == "no" ]; then
   YES=--yes
 fi
-# --yes by default for opam commands
-export OPAMYES=1
-
-check_installed () {
-  local cmd="$1"
-  if ! which "$cmd" >/dev/null 2>&1; then
-    echo "dependency not found: '$cmd'" >&2
-    exit 1
-  fi
-}
-
-opam_retry () {
-  "$@" || ( \
-    echo >&2; \
-    printf '*** `%s` failed\n' "$*" >&2; \
-    echo '*** Updating opam then retrying' >&2; \
-    opam update && \
-    "$@" || ( \
-      echo >&2; \
-      printf '*** ERROR: `%s` failed\n' "$*" >&2; \
-      exit 1 \
-    ) \
-  ) \
-}
+# --yes by default for opam commands except if we are using the user's opam switch
+if [ "$INTERACTIVE" == "no" ] || [ "$USER_OPAM_SWITCH" == "no" ]; then
+    export OPAMYES=true
+fi
 
 setup_opam () {
-    opam_retry opam init --compiler="$OCAML_VERSION" -j "$JOBS" --no-setup
-    if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
-        opam_retry opam switch set -j "$JOBS" "$INFER_OPAM_SWITCH" --alias-of "$OCAML_VERSION"
-    else
-        opam_retry opam switch set -j "$JOBS" "$INFER_OPAM_SWITCH"
+    opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup
+    opam_switch_create_if_needed "$INFER_OPAM_SWITCH"
+    opam switch set "$INFER_OPAM_SWITCH"
+}
+
+install_opam_deps () {
+    local locked=
+    if [ "$USE_OPAM_LOCK" == yes ]; then
+        locked=--locked
     fi
+    opam install --deps-only $locked infer "$INFER_ROOT"
 }
 
-# Install and record the infer dependencies in opam. The main trick is to install the
-# $INFER_DEPS_DIR directory instead of the much larger infer repository. That directory contains
-# just enough to pretend it installs infer.
-install_infer-deps () {
-    # remove previous infer-deps pin, which might have conflicting dependencies
-    opam pin remove infer-deps --no-action
-    INFER_TMP_DEPS_DIR="$(mktemp -d "$INFER_ROOT"/dependencies/infer-deps-XXXX)"
-    INFER_TMP_PACKAGE_NAME="$(basename "$INFER_TMP_DEPS_DIR")"
-    cp -a "$INFER_DEPS_DIR"/* "$INFER_TMP_DEPS_DIR"
-    # give unique name to the package to force opam to recheck the dependencies are all installed
-    opam pin add --no-action "$INFER_TMP_PACKAGE_NAME" "$INFER_TMP_DEPS_DIR"
-    opam install -j "$JOBS" --deps-only "$INFER_TMP_PACKAGE_NAME"
-    opam pin remove "$INFER_TMP_PACKAGE_NAME"
-    rm -fr "$INFER_TMP_DEPS_DIR"
-    # pin infer so that opam doesn't violate its package constraints when the user does
-    # "opam upgrade"
-    opam pin add infer-deps "$INFER_DEPS_DIR"
+# temporary
+# https://github.com/ocaml/opam-repository/issues/13040
+warn_javalib_sandbox () {
+    echo "*** Did opam just fail to install javalib? If so you need to disable sandboxing." >&2
+    echo "*** Delete the following lines in $(opam var root)/config:" >&2
+    echo >&2
+    echo '  wrap-build-commands:' >&2
+    echo '    ["%{hooks}%/sandbox.sh" "build"] {os = "linux" | os = "macos"}' >&2
+    echo '  wrap-install-commands:' >&2
+    echo '    ["%{hooks}%/sandbox.sh" "install"] {os = "linux" | os = "macos"}' >&2
+    echo '  wrap-remove-commands:' >&2
+    echo '    ["%{hooks}%/sandbox.sh" "remove"] {os = "linux" | os = "macos"}' >&2
+    echo >&2
+    echo "*** once you are done don't forget to enable sandboxing again with" >&2
+    echo >&2
+    echo "  opam init --reinit -ni" >&2
+    exit 1
 }
-
-install_locked_deps() {
-    if ! opam lock 2> /dev/null; then
-        echo "opam-lock not found in the current switch, installing from '$OPAM_LOCK_URL'..." >&2
-        opam pin add -k git lock "$OPAM_LOCK_URL"
-    fi
-    opam lock --install < "$INFER_ROOT"/opam.lock
-}
-
-install_opam_deps() {
-    if [ "$USE_OPAM_LOCK" = yes ]; then
-        install_locked_deps
-    else
-        install_infer-deps
-    fi
-}
-
 
 echo "initializing opam... " >&2
-check_installed opam
-setup_opam
-eval $(SHELL=bash opam config env --switch="$INFER_OPAM_SWITCH")
+. "$INFER_ROOT"/scripts/opam_utils.sh
+# workaround bug in opam regarding symlinks
+# https://github.com/ocaml/opam/issues/3622
+OPAMROOT=${OPAMROOT:-"$HOME"/.opam}
+OPAMROOT=$(realpath "$OPAMROOT")
+export OPAMROOT
+if [ "$USER_OPAM_SWITCH" == "no" ]; then
+    setup_opam
+fi
+eval $(SHELL=bash opam env)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
-opam_retry install_opam_deps
+opam_retry install_opam_deps || warn_javalib_sandbox
 
-if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
+if [ "$ONLY_SETUP_OPAM" == "yes" ]; then
   exit 0
 fi
 
 echo "preparing build... " >&2
-if [ "$BUILD_CLANG" = "no" ]; then
+if [ "$BUILD_CLANG" == "no" ]; then
   SKIP_SUBMODULES=true ./autogen.sh > /dev/null
 else
   ./autogen.sh > /dev/null
 fi
 
-if [ "$BUILD_CLANG" = "no" ]; then
+if [ "$BUILD_CLANG" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-c-analyzers"
 fi
-if [ "$BUILD_JAVA" = "no" ]; then
+if [ "$BUILD_JAVA" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"
 fi
 
 ./configure $INFER_CONFIGURE_OPTS
 
-if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
+if [ "$BUILD_CLANG" == "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
   echo ""
   echo "  Warning: you are not using a release of Infer. The C and"
   echo "  Objective-C analyses require a custom clang to be compiled"
@@ -235,7 +205,7 @@ if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-
 
   confirm="n"
   printf "Are you sure you want to compile clang? (y/N) "
-  if [ "$INTERACTIVE" = "no" ]; then
+  if [ "$INTERACTIVE" == "no" ]; then
     confirm="y"
     echo "$confirm"
   else

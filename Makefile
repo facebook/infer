@@ -689,33 +689,20 @@ conf-clean: clean
 	$(REMOVE_DIR) $(MODELS_DIR)/objc/out/
 
 
-# opam package to hold infer dependencies
-INFER_PKG_OPAMLOCK=infer-lock-deps
-
 # phony because it depends on opam's internal state
-.PHONY: opam.lock
-opam.lock: opam
-	$(QUIET)if test x"$$(git status --porcelain -- opam)" != "x"; then \
-	  echo "ERROR: Changes to 'opam' detected." 1>&2; \
-	  echo "ERROR: Please commit or revert your changes before updating opam.lock." 1>&2; \
-	  echo "ERROR: This is because opam.lock is generated from the HEAD commit." 1>&2; \
-	  exit 1; \
-	fi
+.PHONY: opam.locked
+opam.locked: opam
 # allow users to not force a run of opam update since it's very slow
 ifeq ($(NO_OPAM_UPDATE),)
 	$(QUIET)$(call silent_on_success,opam update,$(OPAM) update)
 endif
-	$(QUIET)$(call silent_on_success,installing dependencies $(INFER_PKG_OPAMLOCK) opam package,\
-	  OPAMSWITCH=$(OPAMSWITCH); \
-	  $(OPAM) pin add --yes --no-action -k git $(INFER_PKG_OPAMLOCK) .#HEAD; \
-	  $(OPAM) install --deps-only --yes $(INFER_PKG_OPAMLOCK))
-	$(QUIET)$(call silent_on_success,generating opam.lock,\
-	  $(OPAM) lock --pkg  $(INFER_PKG_OPAMLOCK) > opam.lock)
+	$(QUIET)$(call silent_on_success,generating opam.locked,\
+	  $(OPAM) lock .)
 
 # This is a magical version number that doesn't reinstall the world when added on top of what we
-# have in opam.lock. To upgrade this version number, manually try to install several utop versions
+# have in opam.locked. To upgrade this version number, manually try to install several utop versions
 # until you find one that doesn't recompile the world. TODO(t20828442): get rid of magic
-OPAM_DEV_DEPS = ocp-indent merlin utop.2.2.0 webbrowser
+OPAM_DEV_DEPS = ocamlformat.0.8 ocp-indent merlin utop.2.2.0 webbrowser
 
 ifneq ($(EMACS),no)
 OPAM_DEV_DEPS += tuareg
@@ -726,10 +713,6 @@ devsetup: Makefile.autoconf
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
-	$(QUIET)echo '$(TERM_INFO)*** Running `opam config setup -a`$(TERM_RESET)' >&2
-	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
-	$(QUIET)$(call silent_on_success,installing ocamlformat,\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin add --yes ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 3) https://github.com/ocaml-ppx/ocamlformat.git#$$(grep version .ocamlformat | cut -d ' ' -f 3)-opam1)
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
@@ -791,7 +774,7 @@ devsetup: Makefile.autoconf
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Please run:$(TERM_RESET)' >&2; \
 	  echo >&2; \
-	  echo "$(TERM_INFO)  eval \$$($(OPAM) config env)$(TERM_RESET)" >&2; \
+	  echo "$(TERM_INFO)  eval \$$($(OPAM) env)$(TERM_RESET)" >&2; \
 	fi
 
 GHPAGES ?= no

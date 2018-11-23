@@ -15,6 +15,6 @@ AC_DEFUN([AC_ASSERT_OCAML_MIN_VERSION],
       m4_newline([  Please upgrade to OCaml >= $1. If you are using opam, you can run])
       m4_newline([dnl
     opam switch $1
-    eval \$(opam config env)])
+    eval \$(opam env)])
 ])])])
 ])

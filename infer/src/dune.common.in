@@ -57,7 +57,7 @@ let common_cflags =
 let common_optflags = match build_mode with Opt -> ["-O3"] | Default | Test -> []
 
 let common_libraries =
-  (if java then ["javalib"; "ptrees"; "sawja"] else [])
+  (if java then ["javalib"; "sawja"] else [])
   @ [ "ANSITerminal"
     ; "apron"
     ; "apron.octMPQ"

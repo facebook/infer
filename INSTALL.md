@@ -14,7 +14,7 @@ page to install Infer.
 Here are the prerequisites to be able to compile Infer on MacOSX. This
 is required to compile everything from source.
 
-- opam 1.2.2 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
+- opam >= 2.0.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
 - sqlite
 - pkg-config
@@ -41,7 +41,7 @@ brew cask install java
 Here are the prerequisites to be able to compile Infer on Linux. This
 is required to compile everything from source.
 
-- opam 1.2.2
+- opam >= 2.0.0
 - Python 2.7
 - pkg-config
 - Java (only needed for the Java analysis)

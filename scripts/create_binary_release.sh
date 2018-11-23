@@ -39,7 +39,7 @@ pushd "$ROOT_DIR"
 rm -fr "$RELEASE_NAME"
 
 ./build-infer.sh --only-setup-opam
-eval $(opam config env)
+eval $(opam env)
 touch .release
 ./autogen.sh
 ./configure --prefix="/$RELEASE_NAME"

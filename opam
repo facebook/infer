@@ -1,30 +1,23 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name: "infer"
 version: "0.15.0"
-maintainer: "opam-devel@lists.ocaml.org"
+synopsis: "A static analyzer for Java, C, C++, and Objective-C"
+maintainer: "the infer team"
 authors: "Facebook"
 homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
-dev-repo: "https://github.com/facebook/infer.git"
+dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 build: [
   ["./autogen.sh"]
   ["./configure"
      "--disable-c-analyzers"
      "--prefix=%{prefix}%"]
-  ["make" "-j%{jobs}%"]
+  [make "-j%{jobs}%"]
 ]
 install: [
-  ["make" "install"]
+  [make "install"]
 ]
-remove: [
-  ["./autogen.sh"]
-  ["./configure"
-     "--disable-c-analyzers"
-     "--prefix=%{prefix}%"]
-  ["make" "uninstall"]
-]
-ocaml-version: [ >= "4.04.2" ]
 depends: [
   "ANSITerminal" {>="0.7"}
   "apron"
@@ -42,6 +35,7 @@ depends: [
   "elina" {>="1.1"}
   "javalib" {>="2.3.5"}
   "mtime"
+  "ocaml" {>="4.06.0"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {="2.0.5"}
