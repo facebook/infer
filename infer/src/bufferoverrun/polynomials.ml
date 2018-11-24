@@ -10,6 +10,20 @@ open! AbstractDomain.Types
 module Bound = Bounds.Bound
 open Ints
 
+module Degree = struct
+  type t = NonNegativeInt.t [@@deriving compare]
+
+  let zero = NonNegativeInt.zero
+
+  let succ = NonNegativeInt.succ
+
+  let to_int = NonNegativeInt.to_int_exn
+
+  let is_zero = NonNegativeInt.is_zero
+
+  let pp = NonNegativeInt.pp
+end
+
 module type NonNegativeSymbol = sig
   type t [@@deriving compare]
 
@@ -257,8 +271,8 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     M.fold
       (fun t p acc ->
         let d, p' = degree_with_term p in
-        max acc (d + 1, mult_symb p' t) )
-      terms (0, one)
+        max acc (Degree.succ d, mult_symb p' t) )
+      terms (Degree.zero, one)
 
 
   let degree p = fst (degree_with_term p)
@@ -371,7 +385,9 @@ module NonNegativePolynomial = struct
     | NonTop _, Top ->
         -1
     | NonTop p1, NonTop p2 ->
-        NonNegativeNonTopPolynomial.degree p1 - NonNegativeNonTopPolynomial.degree p2
+        Degree.compare
+          (NonNegativeNonTopPolynomial.degree p1)
+          (NonNegativeNonTopPolynomial.degree p2)
 
 
   let pp_degree fmt p =
@@ -379,7 +395,7 @@ module NonNegativePolynomial = struct
     | Top ->
         Format.pp_print_string fmt "Top"
     | NonTop p ->
-        Format.pp_print_int fmt (NonNegativeNonTopPolynomial.degree p)
+        Degree.pp fmt (NonNegativeNonTopPolynomial.degree p)
 
 
   let pp_degree_hum fmt p =

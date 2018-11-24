@@ -8,6 +8,16 @@
 open! IStd
 module Bound = Bounds.Bound
 
+module Degree : sig
+  type t [@@deriving compare]
+
+  val to_int : t -> int
+
+  val is_zero : t -> bool
+
+  val pp : Format.formatter -> t -> unit
+end
+
 module NonNegativePolynomial : sig
   include AbstractDomain.WithTop
 
@@ -33,7 +43,7 @@ module NonNegativePolynomial : sig
 
   val subst : astate -> Bound.eval_sym -> astate
 
-  val degree : astate -> int option
+  val degree : astate -> Degree.t option
 
   val compare_by_degree : astate -> astate -> int
 

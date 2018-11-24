@@ -57,11 +57,15 @@ module NonNegativeInt : sig
 
   val of_big_int_exn : Z.t -> t
 
+  val to_int_exn : t -> int
+
   val is_zero : t -> bool
 
   val is_one : t -> bool
 
   val ( <= ) : lhs:t -> rhs:t -> bool
+
+  val succ : t -> t
 
   val ( + ) : t -> t -> t
 

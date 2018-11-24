@@ -609,7 +609,7 @@ type extras_TransferFunctionsWCET =
 
 let compute_errlog_extras cost =
   { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp cost)
-  ; cost_degree= BasicCost.degree cost }
+  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.to_int }
 
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -641,7 +641,7 @@ module TransferFunctionsWCET = struct
     let degree_str =
       match BasicCost.degree cost with
       | Some degree ->
-          Format.sprintf ", degree = %d" degree
+          Format.asprintf ", degree = %a" Polynomials.Degree.pp degree
       | None ->
           ""
     in

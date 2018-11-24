@@ -54,9 +54,11 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
 
 
 module CostsSummary = struct
-  type 'a count = {top: 'a; zero: 'a; degrees: 'a Int.Map.t}
+  module DegreeMap = Caml.Map.Make (Polynomials.Degree)
 
-  let init = {top= 0; zero= 0; degrees= Int.Map.empty}
+  type 'a count = {top: 'a; zero: 'a; degrees: 'a DegreeMap.t}
+
+  let init = {top= 0; zero= 0; degrees= DegreeMap.empty}
 
   type previous_current = {previous: int; current: int}
 
@@ -67,10 +69,12 @@ module CostsSummary = struct
           assert (CostDomain.BasicCost.is_top e) ;
           {t with top= t.top + 1}
       | Some d when CostDomain.BasicCost.is_zero e ->
-          assert (Int.equal d 0) ;
+          assert (Polynomials.Degree.is_zero d) ;
           {t with zero= t.zero + 1}
       | Some d ->
-          let degrees = Int.Map.update t.degrees d ~f:(function None -> 1 | Some x -> x + 1) in
+          let degrees =
+            DegreeMap.update d (function None -> Some 1 | Some x -> Some (x + 1)) t.degrees
+          in
           {t with degrees}
     in
     List.fold ~init
@@ -81,16 +85,18 @@ module CostsSummary = struct
 
   let pair_counts ~current_counts ~previous_counts =
     let compute_degrees current previous =
-      let merge_aux ~key:_ v =
-        match v with
-        | `Both (current, previous) ->
+      let merge_aux _ cur_opt prev_opt =
+        match (cur_opt, prev_opt) with
+        | Some current, Some previous ->
             Some {current; previous}
-        | `Left current ->
+        | Some current, None ->
             Some {current; previous= 0}
-        | `Right previous ->
+        | None, Some previous ->
             Some {current= 0; previous}
+        | None, None ->
+            None
       in
-      Int.Map.merge ~f:merge_aux current previous
+      DegreeMap.merge merge_aux current previous
     in
     { top= {current= current_counts.top; previous= previous_counts.top}
     ; zero= {current= current_counts.zero; previous= previous_counts.zero}
@@ -102,10 +108,12 @@ module CostsSummary = struct
     let previous_counts = count previous_costs in
     let paired_counts = pair_counts ~current_counts ~previous_counts in
     let json_degrees =
-      Int.Map.to_alist ~key_order:`Increasing paired_counts.degrees
+      DegreeMap.bindings paired_counts.degrees
       |> List.map ~f:(fun (key, {current; previous}) ->
-             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)]
-         )
+             `Assoc
+               [ ("degree", `Int (Polynomials.Degree.to_int key))
+               ; ("current", `Int current)
+               ; ("previous", `Int previous) ] )
     in
     let create_assoc current previous =
       `Assoc [("current", `Int current); ("previous", `Int previous)]

@@ -71,7 +71,11 @@ module NonNegativeInt = struct
     i
 
 
+  let to_int_exn = Z.to_int
+
   let ( <= ) ~lhs ~rhs = lhs <= rhs
+
+  let succ = Z.succ
 
   let ( + ) = Z.( + )
 
