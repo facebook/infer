@@ -32,7 +32,7 @@ end
 module MakeSink (TraceElem : TraceElem.S) = struct
   include TraceElem
 
-  let get _ _ _ _ = None
+  let get _ _ _ _ = []
 
   let indexes _ = IntSet.empty
 

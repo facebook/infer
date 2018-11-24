@@ -331,12 +331,12 @@ module SinkKind = struct
           let indexes =
             IntSet.of_list (List.mapi ~f:(fun param_num _ -> param_num + offset) actuals_to_taint)
           in
-          Some (kind, indexes)
+          Some [(kind, indexes)]
         in
         (* taint the nth non-"this" parameter (0-indexed) *)
         let taint_nth n kind =
           let first_index = if Typ.Procname.Java.is_static java_pname then n else n + 1 in
-          if first_index < List.length actuals then Some (kind, IntSet.singleton first_index)
+          if first_index < List.length actuals then Some [(kind, IntSet.singleton first_index)]
           else None
         in
         let get_external_sink class_name method_name =
@@ -444,8 +444,9 @@ module SinkKind = struct
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
           (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
+        |> Option.value ~default:[]
     | pname when BuiltinDecl.is_declared pname ->
-        None
+        []
     | pname ->
         L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
 

@@ -239,7 +239,7 @@ module SinkKind = struct
 
   (* taint the nth parameter (0-indexed) *)
   let taint_nth n kind actuals =
-    if n < List.length actuals then Some (kind, IntSet.singleton n) else None
+    if n < List.length actuals then [(kind, IntSet.singleton n)] else []
 
 
   (* taint all parameters after the nth (exclusive) *)
@@ -248,13 +248,13 @@ module SinkKind = struct
       List.filter_mapi ~f:(fun actual_num _ -> Option.some_if (actual_num > n) actual_num) actuals
     with
     | [] ->
-        None
+        []
     | to_taint ->
-        Some (kind, IntSet.of_list to_taint)
+        [(kind, IntSet.of_list to_taint)]
 
 
   let taint_all kind actuals =
-    Some (kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))
+    [(kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))]
 
 
   (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
@@ -266,12 +266,14 @@ module SinkKind = struct
           let kind = of_string kind in
           try
             let n = int_of_string index in
-            taint_nth n kind actuals
+            let taint = taint_nth n kind actuals in
+            Option.some_if (not (List.is_empty taint)) taint
           with Failure _ ->
             (* couldn't parse the index, just taint everything *)
-            taint_all kind actuals
+            Some (taint_all kind actuals)
         else None )
       external_sinks
+    |> Option.value ~default:[]
 
 
   let get pname actuals _ _ =
@@ -326,13 +328,13 @@ module SinkKind = struct
             | Some (Const.Cint i) ->
                 (* check if the data kind might be CURLOPT_URL *)
                 IntLit.to_int i
-                |> Option.bind ~f:(fun n ->
-                       if controls_request n then taint_after_nth 1 URL actuals else None )
+                |> Option.value_map ~default:[] ~f:(fun n ->
+                       if controls_request n then taint_after_nth 1 URL actuals else [] )
             | _ ->
                 (* can't statically resolve data kind; taint it just in case *)
                 taint_after_nth 1 URL actuals )
           | None ->
-              None )
+              [] )
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
           taint_all ShellExec actuals
       | "openat" ->
@@ -353,7 +355,7 @@ module SinkKind = struct
       | _ ->
           get_external_sink pname actuals )
     | Typ.Procname.Block _ ->
-        None
+        []
     | pname ->
         L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
 

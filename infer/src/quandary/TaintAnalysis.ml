@@ -468,11 +468,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   proc_data.ProcData.tenv
               in
               let astate_acc_result =
-                match sinks with
-                | None ->
-                    astate_acc
-                | Some sink ->
-                    add_sink sink dummy_actuals astate proc_data dummy_call_site
+                List.fold sinks ~init:astate_acc ~f:(fun astate sink ->
+                    add_sink sink dummy_actuals astate proc_data dummy_call_site )
               in
               add_sinks_for_access astate_acc_result ae
         in
@@ -671,13 +668,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let astate_with_sink =
               if List.is_empty actuals then astate
               else
-                match
+                let sinks =
                   TraceDomain.Sink.get call_site actuals call_flags proc_data.ProcData.tenv
-                with
-                | Some sink ->
-                    add_sink sink actuals astate proc_data call_site
-                | None ->
-                    astate
+                in
+                List.fold sinks ~init:astate ~f:(fun astate sink ->
+                    add_sink sink actuals astate proc_data call_site )
             in
             let astate_with_summary =
               let sources = TraceDomain.Source.get call_site actuals proc_data.tenv in
