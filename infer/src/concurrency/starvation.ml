@@ -13,7 +13,7 @@ let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
-let is_on_ui_thread pn =
+let is_ui_thread_model pn =
   ConcurrencyModels.(match get_thread pn with MainThread -> true | _ -> false)
 
 
@@ -25,7 +25,7 @@ let is_nonblocking tenv proc_desc =
   let is_class_suppressed =
     PatternMatch.get_this_type proc_attributes
     |> Option.bind ~f:(PatternMatch.type_get_annotation tenv)
-    |> Option.value_map ~default:false ~f:Annotations.ia_is_nonblocking
+    |> Option.exists ~f:Annotations.ia_is_nonblocking
   in
   is_method_suppressed || is_class_suppressed
 
@@ -39,13 +39,14 @@ module Payload = SummaryPayload.Make (struct
 end)
 
 (* using an indentifier for a class object, create an access path representing that lock;
-   this is for synchronizing on class objects only *)
-let lock_of_class class_id =
-  let ident = Ident.create_normal class_id 0 in
+   this is for synchronizing on Java class objects only *)
+let lock_of_class =
   let type_name = Typ.Name.Java.from_string "java.lang.Class" in
   let typ = Typ.mk (Typ.Tstruct type_name) in
   let typ' = Typ.mk (Typ.Tptr (typ, Typ.Pk_pointer)) in
-  AccessPath.of_id ident typ'
+  fun class_id ->
+    let ident = Ident.create_normal class_id 0 in
+    AccessPath.of_id ident typ'
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -57,13 +58,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
-    let is_formal base = FormalMap.is_formal base extras in
-    let get_lock_path actuals =
-      match actuals with
+    let get_lock_path = function
       | HilExp.AccessExpression access_exp -> (
         match AccessExpression.to_access_path access_exp with
         | (((Var.ProgramVar pvar, _) as base), _) as path
-          when is_formal base || Pvar.is_global pvar ->
+          when FormalMap.is_formal base extras || Pvar.is_global pvar ->
             Some (AccessPath.inner_class_normalize path)
         | _ ->
             (* ignore paths on local or logical variables *)
@@ -78,6 +77,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       List.filter_map ~f:get_lock_path locks |> Domain.acquire astate loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
+    let do_call callee loc =
+      Payload.read pdesc callee
+      |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc)
+    in
+    let is_java = Procdesc.get_proc_name pdesc |> Typ.Procname.is_java in
     match instr with
     | Call (_, Direct callee, actuals, _, loc) -> (
       match get_lock_effect callee actuals with
@@ -91,19 +95,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
       | NoEffect when is_synchronized_library_call tenv callee ->
           (* model a synchronized call without visible internal behaviour *)
-          do_lock actuals loc astate |> do_unlock actuals
-      | NoEffect when is_on_ui_thread callee ->
+          let locks = List.hd actuals |> Option.to_list in
+          do_lock locks loc astate |> do_unlock locks
+      | NoEffect when is_java && is_ui_thread_model callee ->
           let explanation = F.asprintf "it calls %a" pname_pp callee in
           Domain.set_on_ui_thread astate loc explanation
-      | NoEffect when StarvationModels.is_strict_mode_violation tenv callee actuals ->
+      | NoEffect when is_java && StarvationModels.is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call callee loc astate
-      | NoEffect -> (
+      | NoEffect when is_java -> (
         match may_block tenv callee actuals with
         | Some sev ->
             Domain.blocking_call callee sev loc astate
         | None ->
-            Payload.read pdesc callee
-            |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) ) )
+            do_call callee loc )
+      | NoEffect ->
+          (* in C++/Obj C we only care about deadlocks, not starvation errors *)
+          do_call callee loc )
     | _ ->
         astate
 
@@ -113,16 +120,8 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
-let die_if_not_java proc_desc =
-  let is_java =
-    Procdesc.get_proc_name proc_desc |> Typ.Procname.get_language |> Language.(equal Java)
-  in
-  if not is_java then L.(die InternalError "Not supposed to run on non-Java code yet.")
-
-
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let open StarvationDomain in
-  die_if_not_java proc_desc ;
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
@@ -295,13 +294,16 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
 
 
 let should_report pdesc =
+  Procdesc.get_access pdesc <> PredSymb.Private
+  &&
   match Procdesc.get_proc_name pdesc with
   | Typ.Procname.Java java_pname ->
-      Procdesc.get_access pdesc <> PredSymb.Private
-      && (not (Typ.Procname.Java.is_autogen_method java_pname))
+      (not (Typ.Procname.Java.is_autogen_method java_pname))
       && not (Typ.Procname.Java.is_class_initializer java_pname)
+  | Typ.Procname.ObjC_Cpp _ ->
+      true
   | _ ->
-      L.(die InternalError "Not supposed to run on non-Java code.")
+      false
 
 
 let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
@@ -474,7 +476,6 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
 
 let reporting {Callbacks.procedures; source_file} =
   let report_procedure ((tenv, proc_desc) as env) =
-    die_if_not_java proc_desc ;
     if should_report proc_desc then
       Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
       |> Option.iter ~f:(fun summary ->

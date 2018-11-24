@@ -63,6 +63,7 @@ DIRECT_TESTS += \
   cpp_quandary cpp_quandaryBO \
   cpp_racerd \
   cpp_siof \
+	cpp_starvation \
   cpp_uninit \
 
 ifneq ($(BUCK),no)

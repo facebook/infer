@@ -121,7 +121,9 @@ let all_checkers =
     ; active= Config.starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; (Cluster Starvation.reporting, Language.Java) ] }
+        ; (Cluster Starvation.reporting, Language.Java)
+        ; (Procedure Starvation.analyze_procedure, Language.Clang)
+        ; (Cluster Starvation.reporting, Language.Clang) ] }
   ; {name= "purity"; active= Config.purity; callbacks= [(Procedure Purity.checker, Language.Java)]}
   ; { name= "Class loading analysis"
     ; active= Config.class_loads
