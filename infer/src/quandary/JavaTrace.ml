@@ -64,11 +64,12 @@ module SourceKind = struct
     let get_external_source class_name method_name =
       (* check the list of externally specified sources *)
       let procedure = class_name ^ "." ^ method_name in
-      List.find_map
-        ~f:(fun (procedure_regex, kind) ->
-          if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
-          else None )
-        external_sources
+      let sources =
+        List.filter_map external_sources ~f:(fun (procedure_regex, kind) ->
+            if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
+            else None )
+      in
+      Option.some_if (not (List.is_empty sources)) sources
     in
     match pname with
     | Typ.Procname.Java pname ->
@@ -76,46 +77,47 @@ module SourceKind = struct
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", "getIntent" ->
-              Some (Intent, return)
+              Some [(Intent, return)]
           | "android.content.Intent", "<init>"
             when actual_has_type 2 "android.net.Uri" actuals tenv ->
               (* taint the [this] parameter passed to the constructor *)
-              Some (IntentFromURI, Some 0)
+              Some [(IntentFromURI, Some 0)]
           | ( "android.content.Intent"
             , ( "parseUri"
               | "setData"
               | "setDataAndNormalize"
               | "setDataAndType"
               | "setDataAndTypeAndNormalize" ) ) ->
-              Some (IntentFromURI, return)
+              Some [(IntentFromURI, return)]
           | "android.content.Intent", "getStringExtra" ->
-              Some (Intent, return)
+              Some [(Intent, return)]
           | "android.content.SharedPreferences", "getString" ->
-              Some (PrivateData, return)
+              Some [(PrivateData, return)]
           | ( ("android.content.ClipboardManager" | "android.text.ClipboardManager")
             , ("getPrimaryClip" | "getText") ) ->
-              Some (UserControlledString, return)
+              Some [(UserControlledString, return)]
           | ( "android.location.Location"
             , ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ) ->
-              Some (PrivateData, return)
+              Some [(PrivateData, return)]
           | ( "android.telephony.TelephonyManager"
             , ( "getDeviceId"
               | "getLine1Number"
               | "getSimSerialNumber"
               | "getSubscriberId"
               | "getVoiceMailNumber" ) ) ->
-              Some (PrivateData, return)
+              Some [(PrivateData, return)]
           | "android.webkit.WebResourceRequest", "getUrl" ->
-              Some (UserControlledURI, return)
+              Some [(UserControlledURI, return)]
           | "android.widget.EditText", "getText" ->
-              Some (UserControlledString, return)
+              Some [(UserControlledString, return)]
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
-              Some (Other, return)
+              Some [(Other, return)]
           | class_name, method_name ->
               get_external_source class_name method_name
         in
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
           (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname))
+        |> Option.value ~default:[]
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       (* accessed global will be passed to us as the only parameter *)
       match List.map actuals ~f:HilExp.ignore_cast with
@@ -126,14 +128,14 @@ module SourceKind = struct
             (* checking substring instead of prefix because we expect field names like
                com.myapp.R$drawable.whatever *)
             if String.is_substring ~substring:AndroidFramework.drawable_prefix pvar_string then
-              Some (DrawableResource pvar, None)
-            else None
+              [(DrawableResource pvar, None)]
+            else []
         | _ ->
-            None )
+            [] )
       | _ ->
-          None )
+          [] )
     | pname when BuiltinDecl.is_declared pname ->
-        None
+        []
     | pname ->
         L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
 

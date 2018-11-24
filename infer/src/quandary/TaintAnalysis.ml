@@ -482,12 +482,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let var, _ = AccessExpression.get_base access_expr in
         if Var.is_global var then
           let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
-          match
+          let sources =
             TraceDomain.Source.get dummy_call_site
               [HilExp.AccessExpression access_expr]
               proc_data.tenv
-          with
-          | Some {TraceDomain.Source.source} ->
+          in
+          List.fold sources ~init:astate ~f:(fun astate {TraceDomain.Source.source} ->
               let access_path =
                 AccessPath.Abs.Exact (AccessExpression.to_access_path access_expr)
               in
@@ -497,9 +497,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               in
               TaintDomain.add_node access_path
                 (TraceDomain.add_source source trace, subtree)
-                astate
-          | None ->
-              astate
+                astate )
         else astate
       in
       let rec add_sources_sinks_for_exp exp loc astate =
@@ -681,26 +679,23 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 | None ->
                     astate
             in
-            let source = TraceDomain.Source.get call_site actuals proc_data.tenv in
-            let astate_with_source =
-              match source with
-              | Some {TraceDomain.Source.source; index= None} ->
-                  Option.value_map
-                    ~f:(fun ret_base -> add_return_source source ret_base astate_with_sink)
-                    ~default:astate_with_sink dummy_ret_opt
-              | Some {TraceDomain.Source.source; index= Some index} ->
-                  add_actual_source source index actuals astate_with_sink proc_data
-              | None ->
-                  astate_with_sink
-            in
             let astate_with_summary =
-              if Option.is_some source then
-                (* don't use a summary for a procedure that is a direct source *)
-                astate_with_source
-              else
+              let sources = TraceDomain.Source.get call_site actuals proc_data.tenv in
+              match sources with
+              | _ :: _ ->
+                  (* don't use a summary for a procedure that is a direct source *)
+                  List.fold sources ~init:astate_with_sink
+                    ~f:(fun astate {TraceDomain.Source.source; index} ->
+                      match index with
+                      | None ->
+                          Option.value_map dummy_ret_opt ~default:astate ~f:(fun ret_base ->
+                              add_return_source source ret_base astate )
+                      | Some index ->
+                          add_actual_source source index actuals astate_with_sink proc_data )
+              | [] -> (
                 match Payload.read proc_data.pdesc callee_pname with
                 | None ->
-                    handle_unknown_call callee_pname astate_with_source
+                    handle_unknown_call callee_pname astate_with_sink
                 | Some summary -> (
                     let ret_typ = snd ret_ap in
                     let access_tree = TaintSpecification.of_summary_access_tree summary in
@@ -709,10 +704,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                         access_tree
                     with
                     | Some model ->
-                        handle_model callee_pname astate_with_source model
+                        handle_model callee_pname astate_with_sink model
                     | None ->
-                        apply_summary dummy_ret_opt actuals access_tree astate_with_source
-                          proc_data call_site )
+                        apply_summary dummy_ret_opt actuals access_tree astate_with_sink proc_data
+                          call_site ) )
             in
             let astate_with_sanitizer =
               match dummy_ret_opt with

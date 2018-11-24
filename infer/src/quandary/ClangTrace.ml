@@ -59,13 +59,11 @@ module SourceKind = struct
   (* return Some(source kind) if [procedure_name] is in the list of externally specified sources *)
   let get_external_source qualified_pname =
     let return = None in
-    List.find_map
-      ~f:(fun (qualifiers, kind, index) ->
+    List.filter_map external_sources ~f:(fun (qualifiers, kind, index) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then
           let source_index = try Some (int_of_string index) with Failure _ -> return in
           Some (of_string kind, source_index)
         else None )
-      external_sources
 
 
   let get pname actuals tenv =
@@ -80,7 +78,7 @@ module SourceKind = struct
         with
         | ( ["std"; ("basic_istream" | "basic_iostream")]
           , ("getline" | "read" | "readsome" | "operator>>") ) ->
-            Some (ReadFile, Some 1)
+            [(ReadFile, Some 1)]
         | _ ->
             get_external_source qualified_pname )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
@@ -109,18 +107,18 @@ module SourceKind = struct
                 | None ->
                     Typ.void_star.desc
               in
-              Some (CommandLineFlag (global_pvar, typ_desc), None)
-            else None
+              [(CommandLineFlag (global_pvar, typ_desc), None)]
+            else []
         | _ ->
-            None )
+            [] )
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "getenv" ->
-          Some (EnvironmentVariable, return)
+          [(EnvironmentVariable, return)]
       | _ ->
           get_external_source (Typ.Procname.get_qualifiers pname) )
     | Typ.Procname.Block _ ->
-        None
+        []
     | pname ->
         L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
 
