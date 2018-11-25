@@ -182,11 +182,26 @@ module Val = struct
     {bot with itv= f x.itv y.itv; traces= f_trace x.traces y.traces}
 
 
-  let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
-
-  let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> t -> t -> t =
-   fun f x y ->
-    let b = if has_pointer x || has_pointer y then Boolean.Top else f x.itv y.itv in
+  let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
+   fun cmp_itv cmp_loc x y ->
+    let b =
+      match
+        ( x.itv
+        , PowLoc.is_bot x.powloc
+        , ArrayBlk.is_bot x.arrayblk
+        , y.itv
+        , PowLoc.is_bot y.powloc
+        , ArrayBlk.is_bot y.arrayblk )
+      with
+      | NonBottom _, true, true, NonBottom _, true, true ->
+          cmp_itv x.itv y.itv
+      | Bottom, false, true, Bottom, false, true ->
+          PowLoc.lift_cmp cmp_loc x.powloc y.powloc
+      | Bottom, true, false, Bottom, true, false ->
+          ArrayBlk.lift_cmp_itv cmp_itv cmp_loc x.arrayblk y.arrayblk
+      | _ ->
+          Boolean.Top
+    in
     let itv = Itv.of_bool b in
     {bot with itv; traces= TraceSet.join x.traces y.traces}
 
@@ -209,21 +224,21 @@ module Val = struct
 
   let band_sem = lift_itv Itv.band_sem
 
-  let lt_sem : t -> t -> t = lift_cmp_itv Itv.lt_sem
+  let lt_sem : t -> t -> t = lift_cmp_itv Itv.lt_sem Boolean.EqualOrder.strict_cmp
 
-  let gt_sem : t -> t -> t = lift_cmp_itv Itv.gt_sem
+  let gt_sem : t -> t -> t = lift_cmp_itv Itv.gt_sem Boolean.EqualOrder.strict_cmp
 
-  let le_sem : t -> t -> t = lift_cmp_itv Itv.le_sem
+  let le_sem : t -> t -> t = lift_cmp_itv Itv.le_sem Boolean.EqualOrder.loose_cmp
 
-  let ge_sem : t -> t -> t = lift_cmp_itv Itv.ge_sem
+  let ge_sem : t -> t -> t = lift_cmp_itv Itv.ge_sem Boolean.EqualOrder.loose_cmp
 
-  let eq_sem : t -> t -> t = lift_cmp_itv Itv.eq_sem
+  let eq_sem : t -> t -> t = lift_cmp_itv Itv.eq_sem Boolean.EqualOrder.eq
 
-  let ne_sem : t -> t -> t = lift_cmp_itv Itv.ne_sem
+  let ne_sem : t -> t -> t = lift_cmp_itv Itv.ne_sem Boolean.EqualOrder.ne
 
-  let land_sem : t -> t -> t = lift_cmp_itv Itv.land_sem
+  let land_sem : t -> t -> t = lift_cmp_itv Itv.land_sem Boolean.EqualOrder.top
 
-  let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem
+  let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem Boolean.EqualOrder.top
 
   (* TODO: get rid of those cases *)
   let warn_against_pruning_multiple_values : t -> t =

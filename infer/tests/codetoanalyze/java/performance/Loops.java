@@ -66,7 +66,7 @@ public class Loops {
     public float[] f;
   }
 
-  static boolean similar_SHOULD_NOT_REPORT_CONDITION_ALWAYS_TRUE_OR_FALSE(C[] x, C[] y) {
+  static boolean similar(C[] x, C[] y) {
     if (x == null || y == null || x.length != y.length) {
       return false;
     }

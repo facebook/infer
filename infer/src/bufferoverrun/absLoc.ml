@@ -21,6 +21,18 @@ module Allocsite = struct
         ; path: Symb.SymbolPath.partial option }
   [@@deriving compare]
 
+  let eq as1 as2 =
+    match (as1, as2) with
+    | Unknown, _ | _, Unknown ->
+        Boolean.Top
+    | Known {path= Some _}, Known {path= Some _} ->
+        (* Known with a path are parameters, parameters may alias *) Boolean.Top
+    | Known {path= Some _}, Known {path= None} | Known {path= None}, Known {path= Some _} ->
+        Boolean.False
+    | Known {path= None}, Known {path= None} ->
+        Boolean.of_bool ([%compare.equal: t] as1 as2)
+
+
   let pp fmt = function
     | Unknown ->
         F.fprintf fmt "Unknown"
@@ -56,6 +68,10 @@ module Loc = struct
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
+
+  let eq l1 l2 =
+    match (l1, l2) with Allocsite as1, Allocsite as2 -> Allocsite.eq as1 as2 | _ -> Boolean.Top
+
 
   let unknown = Allocsite Allocsite.unknown
 
@@ -127,6 +143,14 @@ module PowLoc = struct
   let append_field ploc ~fn =
     if is_bot ploc then singleton Loc.unknown
     else fold (fun l -> add (Loc.append_field l ~fn)) ploc empty
+
+
+  let lift_cmp cmp_loc ploc1 ploc2 =
+    match (is_singleton_or_more ploc1, is_singleton_or_more ploc2) with
+    | IContainer.Singleton loc1, IContainer.Singleton loc2 ->
+        Boolean.EqualOrder.of_equal cmp_loc (Loc.eq loc1 loc2)
+    | _ ->
+        Boolean.Top
 end
 
 (** unsound but ok for bug catching *)

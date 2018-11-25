@@ -103,6 +103,12 @@ module ArrInfo = struct
         else
           let set itv = Itv.div_const (Itv.mult_const itv stride) new_stride in
           {offset= set offset; size= set size; stride= Itv.of_big_int new_stride} )
+
+
+  let lift_cmp_itv cmp_itv arr1 arr2 =
+    if Itv.eq arr1.stride arr2.stride && Itv.eq arr1.size arr2.size then
+      cmp_itv arr1.offset arr2.offset
+    else Boolean.Top
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -184,3 +190,13 @@ let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_
 let set_length : Itv.t -> astate -> astate = fun length a -> map (ArrInfo.set_length length) a
 
 let set_stride : Z.t -> astate -> astate = fun stride a -> map (ArrInfo.set_stride stride) a
+
+let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =
+  match (is_singleton_or_more arr1, is_singleton_or_more arr2) with
+  | IContainer.Singleton (as1, ai1), IContainer.Singleton (as2, ai2) ->
+      Boolean.EqualOrder.(
+        of_equal
+          {on_equal= ArrInfo.lift_cmp_itv cmp_itv ai1 ai2; on_not_equal= cmp_loc.on_not_equal}
+          (Allocsite.eq as1 as2))
+  | _ ->
+      Boolean.Top

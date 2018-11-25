@@ -193,3 +193,37 @@ void nested_loop_prune_Good(int length) {
     }
   }
 }
+
+void bad_if_alias(int* x, int* y) {
+  char a[1];
+  if (x == y) {
+    a[1] = 'A';
+  }
+}
+
+void call_bad_if_alias_Bad_AlreadyReported() {
+  int x;
+  bad_if_alias(x, x);
+}
+
+void call_bad_if_alias_Good() {
+  int x, y;
+  bad_if_alias(x, y);
+}
+
+void bad_if_not_alias(int* x, int* y) {
+  char a[1];
+  if (x != y) {
+    a[1] = 'B';
+  }
+}
+
+void call_bad_if_not_alias_Good() {
+  int x;
+  bad_if_not_alias(x, x);
+}
+
+void call_bad_if_not_alias_Bad_AlreadyReported() {
+  int x, y;
+  bad_if_not_alias(x, y);
+}
