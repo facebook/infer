@@ -134,6 +134,7 @@ module Check : sig
     -> idx_sym_exp:Relation.SymExp.t option
     -> relation:Relation.t
     -> is_plus:bool
+    -> last_included:bool
     -> Location.t
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t
@@ -142,6 +143,7 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> index_exp:Exp.t
+    -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t
@@ -151,6 +153,7 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> byte_index_exp:Exp.t
+    -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t
@@ -160,7 +163,7 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> index_exp:Exp.t
-    -> ?is_collection_add:bool
+    -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t

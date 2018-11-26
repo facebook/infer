@@ -490,7 +490,8 @@ module Report = struct
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) e2
     in
     let relation = Dom.Mem.get_relation mem in
-    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus location cond_set
+    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included:false
+      location cond_set
 
 
   let check_binop :
@@ -524,7 +525,8 @@ module Report = struct
       match exp with
       | Exp.Lindex (array_exp, index_exp) ->
           cond_set |> check_sub_expr array_exp |> check_sub_expr index_exp
-          |> BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp mem location
+          |> BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false
+               mem location
       | Exp.BinOp (_, e1, e2) ->
           cond_set |> check_sub_expr e1 |> check_sub_expr e2
       | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e ->
@@ -543,7 +545,8 @@ module Report = struct
         let arr = Sem.eval integer_type_widths exp mem in
         let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
         let relation = Dom.Mem.get_relation mem in
-        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true location cond_set
+        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true
+          ~last_included:false location cond_set
     | Exp.BinOp (bop, e1, e2) ->
         check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
     | _ ->

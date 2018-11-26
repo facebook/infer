@@ -38,7 +38,7 @@ module ConditionSet : sig
     -> offset:ItvPure.t
     -> idx:ItvPure.t
     -> size:ItvPure.t
-    -> is_collection_add:bool
+    -> last_included:bool
     -> idx_sym_exp:Relation.SymExp.t option
     -> size_sym_exp:Relation.SymExp.t option
     -> relation:Relation.t

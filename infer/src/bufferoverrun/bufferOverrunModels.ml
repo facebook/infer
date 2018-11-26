@@ -133,10 +133,10 @@ let calloc size_exp stride_exp =
 let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem = mem
   and check {location; integer_type_widths} mem cond_set =
-    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp mem
-      location cond_set
+    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
+      ~last_included:true mem location cond_set
     |> BoUtils.Check.lindex_byte integer_type_widths ~array_exp:src_exp ~byte_index_exp:size_exp
-         mem location
+         ~last_included:true mem location
   in
   {exec; check}
 
@@ -144,8 +144,8 @@ let memcpy dest_exp src_exp size_exp =
 let memset arr_exp size_exp =
   let exec _ ~ret:_ mem = mem
   and check {location; integer_type_widths} mem cond_set =
-    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp mem
-      location cond_set
+    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp
+      ~last_included:true mem location cond_set
   in
   {exec; check}
 
@@ -338,7 +338,8 @@ module StdArray = struct
       L.d_printfln_escaped "Using model std::array<_, %Ld>::at" _size ;
       BoUtils.Exec.load_val id (Sem.eval_lindex integer_type_widths array_exp index_exp mem) mem
     and check {location; integer_type_widths} mem cond_set =
-      BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp mem location cond_set
+      BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem
+        location cond_set
     in
     {exec; check}
 
@@ -455,8 +456,8 @@ module Collection = struct
   let add_at_index (alist_id : Ident.t) index_exp =
     let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp
-        ~is_collection_add:true mem location cond_set
+      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp ~last_included:true
+        mem location cond_set
     in
     {exec= change_size_by ~size_f:incr_size alist_id; check}
 
@@ -464,8 +465,8 @@ module Collection = struct
   let remove_at_index alist_id index_exp =
     let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp mem location
-        cond_set
+      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp
+        ~last_included:false mem location cond_set
     in
     {exec= change_size_by ~size_f:decr_size alist_id; check}
 
@@ -477,8 +478,8 @@ module Collection = struct
     in
     let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp
-        ~is_collection_add:true mem location cond_set
+      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp ~last_included:true
+        mem location cond_set
     in
     {exec; check}
 
@@ -487,8 +488,8 @@ module Collection = struct
     let exec _model_env ~ret:_ mem = mem in
     let check {location; integer_type_widths} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp mem location
-        cond_set
+      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp
+        ~last_included:false mem location cond_set
     in
     {exec; check}
 end

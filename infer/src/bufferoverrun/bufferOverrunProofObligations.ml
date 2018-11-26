@@ -104,7 +104,7 @@ module ArrayAccessCondition = struct
     { offset: ItvPure.t
     ; idx: ItvPure.t
     ; size: ItvPure.t
-    ; is_collection_add: bool
+    ; last_included: bool
     ; idx_sym_exp: Relation.SymExp.t option
     ; size_sym_exp: Relation.SymExp.t option
     ; relation: Relation.t }
@@ -120,7 +120,7 @@ module ArrayAccessCondition = struct
     let pp_offset fmt =
       if not (ItvPure.is_zero c.offset) then F.fprintf fmt "%a + " ItvPure.pp c.offset
     in
-    let cmp = if c.is_collection_add then "<=" else "<" in
+    let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
       (ItvPure.make_positive c.size) ;
     if Option.is_some Config.bo_relational_domain then
@@ -139,7 +139,7 @@ module ArrayAccessCondition = struct
           (ItvPure.pp_mark ~markup) c.idx
     in
     F.fprintf fmt "Offset%s: %t Size: %a"
-      (if c.is_collection_add then " added" else "")
+      (if c.last_included then " added" else "")
       pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
 
 
@@ -147,18 +147,18 @@ module ArrayAccessCondition = struct
          offset:ItvPure.t
       -> idx:ItvPure.t
       -> size:ItvPure.t
-      -> is_collection_add:bool
+      -> last_included:bool
       -> idx_sym_exp:Relation.SymExp.t option
       -> size_sym_exp:Relation.SymExp.t option
       -> relation:Relation.t
       -> t option =
-   fun ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation ->
+   fun ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp ~relation ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
-    else Some {offset; idx; size; is_collection_add; idx_sym_exp; size_sym_exp; relation}
+    else Some {offset; idx; size; last_included; idx_sym_exp; size_sym_exp; relation}
 
 
-  let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; is_collection_add= lcol}
-      {offset= roff; idx= ridx; size= rsiz; is_collection_add= rcol} =
+  let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; last_included= lcol}
+      {offset= roff; idx= ridx; size= rsiz; last_included= rcol} =
     Bool.equal lcol rcol
     && ItvPure.have_similar_bounds loff roff
     && ItvPure.have_similar_bounds lidx ridx
@@ -169,8 +169,8 @@ module ArrayAccessCondition = struct
     ItvPure.has_infty offset || ItvPure.has_infty idx || ItvPure.has_infty size
 
 
-  let xcompare ~lhs:{offset= loff; idx= lidx; size= lsiz; is_collection_add= lcol}
-      ~rhs:{offset= roff; idx= ridx; size= rsiz; is_collection_add= rcol} =
+  let xcompare ~lhs:{offset= loff; idx= lidx; size= lsiz; last_included= lcol}
+      ~rhs:{offset= roff; idx= ridx; size= rsiz; last_included= rcol} =
     if not (Bool.equal lcol rcol) then `NotComparable
     else
       let offcmp = ItvPure.xcompare ~lhs:loff ~rhs:roff in
@@ -264,7 +264,7 @@ module ArrayAccessCondition = struct
     let real_idx = ItvPure.plus c.offset c.idx in
     let size =
       let size_pos = ItvPure.make_positive c.size in
-      if c.is_collection_add then ItvPure.succ size_pos else size_pos
+      if c.last_included then ItvPure.succ size_pos else size_pos
     in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
@@ -817,9 +817,9 @@ module ConditionSet = struct
         join [cwt] condset
 
 
-  let add_array_access location ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
+  let add_array_access location ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
       ~relation ~idx_traces ~arr_traces condset =
-    ArrayAccessCondition.make ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
+    ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
       ~relation
     |> Condition.make_array_access
     |> add_opt location
