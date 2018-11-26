@@ -77,8 +77,8 @@ let do_report summary Call.({pname; loc}) ~issue loop_head_loc =
 
 let model_satisfies ~f tenv pname = InvariantModels.Call.dispatch tenv pname [] |> Option.exists ~f
 
-let get_issue_to_report tenv proc_desc Call.({pname; node; params}) integer_type_widths
-    inferbo_invariant_map =
+let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths inferbo_invariant_map
+    =
   (* If a function is modeled as variant for hoisting (like
      List.size or __cast ), we don't want to report it *)
   let is_variant_for_hoisting =
@@ -93,10 +93,12 @@ let get_issue_to_report tenv proc_desc Call.({pname; node; params}) integer_type
       when CostDomain.BasicCost.is_symbolic cost ->
         let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
         let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
-        let inferbo_mem = BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map in
+        let inferbo_mem =
+          Option.value_exn (BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map)
+        in
         (* get the cost of the function call *)
-        Cost.instantiate_cost integer_type_widths ~caller_pdesc:proc_desc
-          ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~params ~callee_cost:cost
+        Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+          ~callee_pname:pname ~params ~callee_cost:cost
         |> CostDomain.BasicCost.is_symbolic
     | _ ->
         false
@@ -136,7 +138,7 @@ let checker ({Callbacks.tenv; summary; proc_desc; integer_type_widths} as callba
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
         (fun call ->
-          get_issue_to_report tenv proc_desc call integer_type_widths inferbo_invariant_map
+          get_issue_to_report tenv call integer_type_widths inferbo_invariant_map
           |> Option.iter ~f:(fun issue -> do_report summary call ~issue loop_head_loc) )
         inv_instrs )
     loop_head_to_inv_instrs ;
