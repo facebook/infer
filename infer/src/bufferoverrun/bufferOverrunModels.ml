@@ -107,7 +107,7 @@ let malloc size_exp =
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
-    let path = Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:None ~f:Loc.get_path in
+    let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
     let size_exp_opt =
@@ -389,9 +389,7 @@ module Collection = struct
   let new_list _ =
     let exec {pname; node_hash; location} ~ret:(id, _) mem =
       let loc = Loc.of_id id in
-      let path =
-        Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:None ~f:Loc.get_path
-      in
+      let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
       let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
       let alloc_loc = Loc.of_allocsite allocsite in
       let init_size = Dom.Val.of_int 0 in

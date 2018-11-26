@@ -142,14 +142,14 @@ let set_array_stride integer_type_widths typ v =
 
 let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
  fun integer_type_widths exp mem ->
-  if must_alias_cmp exp mem then Val.of_int 0
+  if must_alias_cmp exp mem then Val.Itv.zero
   else
     match exp with
     | Exp.Var id ->
         Mem.find_stack (Var.of_id id |> Loc.of_var) mem
     | Exp.Lvar pvar ->
-        let ploc = Loc.of_pvar pvar in
-        if Mem.is_stack_loc ploc mem then Mem.find ploc mem else Val.of_loc ploc
+        let loc = Loc.of_pvar pvar in
+        if Mem.is_stack_loc loc mem then Mem.find loc mem else Val.of_loc loc
     | Exp.UnOp (uop, e, _) ->
         eval_unop integer_type_widths uop e mem
     | Exp.BinOp (bop, e1, e2) ->
@@ -174,27 +174,30 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
 
 
 and eval_lindex integer_type_widths array_exp index_exp mem =
-  let array_v, index_v =
-    (eval integer_type_widths array_exp mem, eval integer_type_widths index_exp mem)
-  in
+  let array_v = eval integer_type_widths array_exp mem in
   if ArrayBlk.is_bot (Val.get_array_blk array_v) then
     match array_exp with
-    | Exp.Lfield _ when not (PowLoc.is_bot (Val.get_pow_loc array_v)) ->
-        (* It handles the case accessing an array field of struct,
+    | Exp.Lfield _ ->
+        let array_locs = Val.get_pow_loc array_v in
+        if PowLoc.is_bot array_locs then Val.unknown_locs
+        else
+          (* It handles the case accessing an array field of struct,
              e.g., x.f[n] .  Since our abstract domain distinguishes
              memory sections for each array fields in struct, it finds
              the memory section using the abstract memory, though the
              memory lookup is not required to evaluate the address of
              x.f[n] in the concrete semantics.  *)
-        Val.plus_pi (Mem.find_set (Val.get_pow_loc array_v) mem) index_v
+          let index_v = eval integer_type_widths index_exp mem in
+          Val.plus_pi (Mem.find_set array_locs mem) index_v
     | _ ->
-        Val.of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
+        Val.unknown_locs
   else
     match array_exp with
     | Exp.Lindex _ ->
         (* It handles multi-dimensional arrays. *)
         Mem.find_set (Val.get_all_locs array_v) mem
     | _ ->
+        let index_v = eval integer_type_widths index_exp mem in
         Val.plus_pi array_v index_v
 
 
@@ -271,7 +274,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
     | Some (AliasTarget.Empty _) | None ->
         Val.bot )
   | Exp.Lvar pvar ->
-      Mem.find_set (PowLoc.singleton (Loc.of_pvar pvar)) mem
+      Mem.find (Loc.of_pvar pvar) mem
   | Exp.BinOp (bop, e1, e2) ->
       eval_binop integer_type_widths bop e1 e2 mem
   | Exp.Cast (t, e) ->

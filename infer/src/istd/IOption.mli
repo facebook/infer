@@ -9,3 +9,6 @@ open! IStd
 
 val find_value_exn : 'a option -> 'a
 (** Like [Option.value_exn] but raises [Caml.Not_found] when called with [None]. *)
+
+val value_default_f : f:(unit -> 'a) -> 'a option -> 'a
+(** Like [Option.value ~default:(f ())] but [f] is called only if [None]. *)

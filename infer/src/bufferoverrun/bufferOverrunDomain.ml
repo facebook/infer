@@ -343,6 +343,8 @@ module Val = struct
     else {v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
 
 
+  let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
+
   module Itv = struct
     let m1_255 = of_itv Itv.m1_255
 

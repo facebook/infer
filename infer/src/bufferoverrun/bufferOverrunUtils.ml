@@ -146,13 +146,12 @@ module Exec = struct
       -> Dom.Mem.astate =
    fun ~decl_sym_val deref_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
        ?offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
-    let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
-      option_value offset (fun () ->
+      IOption.value_default_f offset ~f:(fun () ->
           Itv.make_sym pname symbol_table (Itv.SymbolPath.offset path) new_sym_num )
     in
     let size =
-      option_value size (fun () ->
+      IOption.value_default_f size ~f:(fun () ->
           Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       )
     in

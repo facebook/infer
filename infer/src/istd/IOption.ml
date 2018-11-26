@@ -8,3 +8,5 @@
 open! IStd
 
 let find_value_exn = function None -> raise Caml.Not_found | Some v -> v
+
+let value_default_f ~f = function None -> f () | Some v -> v
