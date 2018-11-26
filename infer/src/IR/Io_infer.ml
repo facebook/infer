@@ -33,46 +33,24 @@ module Html = struct
 <title>|}
       ^ fname
       ^ {|</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <style type="text/css">
-body { color:#000000; background-color:#ffffff }
-body { font-family:Helvetica, sans-serif; font-size:10pt }
+body { background-color:#fff; color:#000; font-family:Helvetica, sans-serif; font-size:10pt }
 h1 { font-size:14pt }
-.code { border-collapse:collapse; width:100%; }
-.code { font-family: "Andale Mono", monospace; font-size:10pt }
-.code { line-height: 1.2em }
-.comment { color: green; font-style: oblique }
-.keyword { color: blue }
-.string_literal { color: red }
+.code { border-collapse:collapse; width:100%; font-family: "Andale Mono", monospace; font-size:10pt; line-height: 1.2em }
 .color_black { color: black }
 .color_blue { color: blue }
 .color_green { color: green }
-.color_red { color: red }
 .color_orange { color: orange }
-.directive { color: darkmagenta }
-.expansion { display: none; }
-.visited:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
-.visited { color: darkmagenta; background-color:LemonChiffon; position: relative }
-.dangling:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
-.dangling { color: gray; background-color:white; position: relative }
-.num { width:2.5em; padding-right:2ex; background-color:#eeeeee }
-.num { text-align:right; font-size: smaller }
-.num { color:#444444 }
-.line { padding-left: 1ex; border-left: 3px solid #ccc }
-.line { white-space: pre }
-.msg { background-color:#fff8b4; color:#000000 }
-.msg { -webkit-box-shadow:1px 1px 7px #000 }
-.msg { -webkit-border-radius:5px }
-.msg { font-family:Helvetica, sans-serif; font-size: smaller }
-.msg { font-weight: bold }
-.msg { float:left }
-.msg { padding:0.5em 1ex 0.5em 1ex }
-.msg { margin-top:10px; margin-bottom:10px }
-.msg { max-width:60em; word-wrap: break-word; white-space: pre-wrap;}
-.mrange { background-color:#dfddf3 }
-.mrange { border-bottom:1px solid #6F9DBE }
-.PathIndex { font-weight: bold }
-table.simpletable { padding: 5px; font-size:12pt; margin:20px; border-collapse: collapse; border-spacing: 0px; }
-td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2ex; }
+.color_red { color: red }
+.line { border-left: 3px solid #ccc; padding-left: 1ex; white-space: pre; }
+.msg { background-color:#fff8b4; color:#000; float:left; font-family:Helvetica, sans-serif; font-size: smaller; font-weight: bold; margin-bottom:10px; margin-top:10px; max-width:60em; padding:0.5em 1ex 0.5em 1ex; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; white-space: pre-wrap; word-wrap: break-word; }
+.num { background-color:#eee; color:#444; font-size: smaller; padding-right:2ex; text-align:right; width:2.5em; }
+.dangling { background-color:white; color: gray; }
+.visited { background-color:LemonChiffon; color: darkmagenta; }
+.tooltip { display: none; background-color:#FFF0F0; border: 2px solid #F00; font-weight: normal; left:10em; padding: 2px; position: absolute; top: -1em; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; z-index: 1}
+.with_tooltip { position: relative; }
+.with_tooltip:hover .tooltip, .visited:hover .tooltip { display: block; }
 </style>
 </head>
 <body>
@@ -146,7 +124,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
       let descr = if String.equal description "" then "N" else String.prefix description 1 in
       let style_class = if not isvisited then "dangling" else "visited" in
       F.asprintf
-        "<span class='%s'>%s_%d<span class='expansion'>node%d preds:%a succs:%a exn:%a \
+        "<span class='%s with_tooltip'>%s_%d<span class='tooltip'>node%d preds:%a succs:%a exn:%a \
          %s%s</span></span>"
         style_class descr id id (Pp.seq F.pp_print_int) preds (Pp.seq F.pp_print_int) succs
         (Pp.seq F.pp_print_int) exn description
