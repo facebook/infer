@@ -257,11 +257,14 @@ module Val = struct
   let lift_prune2 :
       (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.t -> ArrayBlk.t -> ArrayBlk.t) -> t -> t -> t =
    fun f g x y ->
-    warn_against_pruning_multiple_values
-      { x with
-        itv= f x.itv y.itv
-      ; arrayblk= g x.arrayblk y.arrayblk
-      ; traces= TraceSet.join x.traces y.traces }
+    let itv = f x.itv y.itv in
+    let arrayblk = g x.arrayblk y.arrayblk in
+    if phys_equal itv x.itv && phys_equal arrayblk x.arrayblk then
+      (* x hasn't changed, don't join traces *)
+      x
+    else
+      warn_against_pruning_multiple_values
+        {x with itv; arrayblk; traces= TraceSet.join x.traces y.traces}
 
 
   let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero
