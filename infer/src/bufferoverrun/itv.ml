@@ -29,15 +29,13 @@ module ItvRange = struct
     |> Bound.simplify_bound_ends_from_paths |> Bounds.NonNegativeBound.of_bound
 
 
-  let to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.astate =
+  let to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.t =
    fun r -> Polynomials.NonNegativePolynomial.of_non_negative_bound r
 end
 
 module ItvPure = struct
   (** (l, u) represents the closed interval [l; u] (of course infinite bounds are open) *)
-  type astate = Bound.t * Bound.t [@@deriving compare]
-
-  type t = astate
+  type t = Bound.t * Bound.t [@@deriving compare]
 
   let lb : t -> Bound.t = fst
 
@@ -416,8 +414,6 @@ end
 
 include AbstractDomain.BottomLifted (ItvPure)
 
-type t = astate
-
 let compare : t -> t -> int =
  fun x y ->
   match (x, y) with
@@ -428,7 +424,7 @@ let compare : t -> t -> int =
   | _, Bottom ->
       1
   | NonBottom x, NonBottom y ->
-      ItvPure.compare_astate x y
+      ItvPure.compare x y
 
 
 let bot : t = Bottom
@@ -486,13 +482,13 @@ let of_bool = function
       unknown_bool
 
 
-let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
+let of_int : int -> t = fun n -> NonBottom (ItvPure.of_int n)
 
-let of_big_int : Z.t -> astate = fun n -> NonBottom (ItvPure.of_big_int n)
+let of_big_int : Z.t -> t = fun n -> NonBottom (ItvPure.of_big_int n)
 
-let of_int_lit : IntLit.t -> astate = fun n -> of_big_int (IntLit.to_big_int n)
+let of_int_lit : IntLit.t -> t = fun n -> of_big_int (IntLit.to_big_int n)
 
-let of_int64 : Int64.t -> astate = fun n -> of_big_int (Z.of_int64 n)
+let of_int64 : Int64.t -> t = fun n -> of_big_int (Z.of_int64 n)
 
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
@@ -555,9 +551,9 @@ let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t
   NonBottom (ItvPure.make_sym ~unsigned pname symbol_table path new_sym_num)
 
 
-let is_const : astate -> Z.t option = bind1zo ItvPure.is_const
+let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 
-let eq_const : Z.t -> astate -> bool = fun z -> bind1bool (ItvPure.eq_const z)
+let eq_const : Z.t -> t -> bool = fun z -> bind1bool (ItvPure.eq_const z)
 
 let neg : t -> t = lift1 ItvPure.neg
 

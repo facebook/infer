@@ -12,7 +12,7 @@ module Domain = ResourceLeakDomain
 
 (* Boilerplate to write/read our summaries alongside the summaries of other analyzers *)
 module Payload = SummaryPayload.Make (struct
-  type t = Domain.astate
+  type t = Domain.t
 
   let update_payloads resources_payload (payloads : Payloads.t) =
     {payloads with resources= Some resources_payload}
@@ -30,7 +30,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type nonrec extras = extras
 
   (* Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv} _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) {ProcData.pdesc; tenv} _ (instr : HilInstr.t) =
     let is_closeable procname tenv =
       match procname with
       | Typ.Procname.Java java_procname ->
@@ -109,7 +109,7 @@ let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
       Reporting.log_error summary ~loc:last_loc IssueType.resource_leak message
   in
   (* Convert the abstract state to a summary. for now, just the identity function *)
-  let convert_to_summary (post : Domain.astate) : Domain.summary =
+  let convert_to_summary (post : Domain.t) : Domain.summary =
     (* 4(a) *)
     post
   in

@@ -9,11 +9,9 @@ module F = Format
 module MF = MarkupFormatter
 
 module type FiniteSet = sig
-  include PrettyPrintable.PPSet
+  include AbstractDomain.FiniteSetS
 
-  include AbstractDomain.WithBottom with type astate = t
-
-  val with_callsite : astate -> CallSite.t -> astate
+  val with_callsite : t -> CallSite.t -> t
 end
 
 module type TraceElem = sig

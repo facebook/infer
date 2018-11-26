@@ -12,7 +12,7 @@ module Set = struct
 
   (** TODO (12086310): best-case behavior of some operations can be improved by adding "abstracted"
       bool recording whether an abstracted access path has been introduced *)
-  type astate = APSet.t
+  type t = APSet.t
 
   let pp = APSet.pp
 

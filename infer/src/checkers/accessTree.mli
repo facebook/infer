@@ -15,7 +15,7 @@ module type S = sig
 
   module BaseMap = AccessPath.BaseMap
 
-  type node = TraceDomain.astate * tree
+  type node = TraceDomain.t * tree
 
   and tree =
     | Subtree of node AccessMap.t
@@ -33,27 +33,26 @@ module type S = sig
                                                         g |-> (T2, Subtree {}) }) }
       ]}
   *)
-  type t = node BaseMap.t
 
-  include AbstractDomain.WithBottom with type astate = t
+  include AbstractDomain.WithBottom with type t = node BaseMap.t
 
   val empty_node : node
 
-  val make_node : TraceDomain.astate -> node AccessMap.t -> node
+  val make_node : TraceDomain.t -> node AccessMap.t -> node
 
-  val make_access_node : TraceDomain.astate -> AccessPath.access -> TraceDomain.astate -> node
+  val make_access_node : TraceDomain.t -> AccessPath.access -> TraceDomain.t -> node
   (** for testing only *)
 
-  val make_normal_leaf : TraceDomain.astate -> node
+  val make_normal_leaf : TraceDomain.t -> node
   (** create a leaf node with no successors *)
 
-  val make_starred_leaf : TraceDomain.astate -> node
+  val make_starred_leaf : TraceDomain.t -> node
   (** create a leaf node with a wildcard successor *)
 
   val get_node : AccessPath.Abs.t -> t -> node option
   (** retrieve the node associated with the given access path *)
 
-  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.astate option
+  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.t option
   (** retrieve the trace associated with the given access path *)
 
   val add_node : AccessPath.Abs.t -> node -> t -> t
@@ -61,7 +60,7 @@ module type S = sig
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
 
-  val add_trace : AccessPath.Abs.t -> TraceDomain.astate -> t -> t
+  val add_trace : AccessPath.Abs.t -> TraceDomain.t -> t -> t
   (** add the given access path to the tree and associate its last access with with the given trace.
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
@@ -72,7 +71,7 @@ module type S = sig
   val fold : ('a -> AccessPath.Abs.t -> node -> 'a) -> t -> 'a -> 'a
   (** apply a function to each (access path, node) pair in the tree. *)
 
-  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.t -> 'a) -> t -> 'a -> 'a
 
   val exists : (AccessPath.Abs.t -> node -> bool) -> t -> bool
 
@@ -99,5 +98,5 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) :
 module PathSet (Config : Config) : sig
   include module type of Make (AbstractDomain.BooleanOr) (Config)
 
-  val mem : AccessPath.Abs.t -> astate -> bool
+  val mem : AccessPath.Abs.t -> t -> bool
 end

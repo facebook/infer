@@ -8,16 +8,15 @@
 open! IStd
 
 module type Spec = sig
-  type astate
+  type t
 
-  val initial : astate
+  val initial : t
 
-  val exec_instr :
-    astate -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> astate
+  val exec_instr : t -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> t
 
-  val report : astate -> Location.t -> Typ.Procname.t -> unit
+  val report : t -> Location.t -> Typ.Procname.t -> unit
 
-  val compare : astate -> astate -> int
+  val compare : t -> t -> int
 end
 
 module type S = sig

@@ -18,7 +18,7 @@ module ValTrace = BufferOverrunTrace
 type checked_condition = {report_issue_type: IssueType.t option; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = ItvPure.astate
+  type t = ItvPure.t
 
   let get_symbols = ItvPure.get_symbols
 
@@ -101,13 +101,13 @@ end
 
 module ArrayAccessCondition = struct
   type t =
-    { offset: ItvPure.astate
-    ; idx: ItvPure.astate
-    ; size: ItvPure.astate
+    { offset: ItvPure.t
+    ; idx: ItvPure.t
+    ; size: ItvPure.t
     ; is_collection_add: bool
     ; idx_sym_exp: Relation.SymExp.t option
     ; size_sym_exp: Relation.SymExp.t option
-    ; relation: Relation.astate }
+    ; relation: Relation.t }
   [@@deriving compare]
 
   let get_symbols c =
@@ -150,7 +150,7 @@ module ArrayAccessCondition = struct
       -> is_collection_add:bool
       -> idx_sym_exp:Relation.SymExp.t option
       -> size_sym_exp:Relation.SymExp.t option
-      -> relation:Relation.astate
+      -> relation:Relation.t
       -> t option =
    fun ~offset ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
@@ -302,7 +302,7 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst : Bound.eval_sym -> Relation.SubstMap.t -> Relation.astate -> t -> t option =
+  let subst : Bound.eval_sym -> Relation.SubstMap.t -> Relation.t -> t -> t option =
    fun eval_sym rel_map caller_relation c ->
     match
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
@@ -338,8 +338,8 @@ module BinaryOperationCondition = struct
     { binop: binop_t
     ; typ: Typ.ikind
     ; integer_widths: Typ.IntegerWidths.t
-    ; lhs: ItvPure.astate
-    ; rhs: ItvPure.astate }
+    ; lhs: ItvPure.t
+    ; rhs: ItvPure.t }
 
   let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
 

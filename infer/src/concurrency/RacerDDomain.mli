@@ -53,20 +53,20 @@ module PathDomain :
 module LocksDomain : sig
   include AbstractDomain.WithBottom
 
-  val acquire_lock : astate -> astate
+  val acquire_lock : t -> t
   (** record acquisition of a lock *)
 
-  val release_lock : astate -> astate
+  val release_lock : t -> t
   (** record release of a lock *)
 
-  val integrate_summary : caller_astate:astate -> callee_astate:astate -> astate
+  val integrate_summary : caller_astate:t -> callee_astate:t -> t
   (** integrate current state with a callee summary *)
 end
 
 (** Abstraction of threads that may run in parallel with the current thread.
     NoThread < AnyThreadExceptSelf < AnyThread *)
 module ThreadsDomain : sig
-  type astate =
+  type t =
     | NoThread
         (** No threads can run in parallel with the current thread (concretization: empty set). We
         assume this by default unless we see evidence to the contrary (annotations, use of locks,
@@ -78,14 +78,14 @@ module ThreadsDomain : sig
         (** Current thread can run in parallel with any thread, including itself (concretization:
             set of all TIDs ) *)
 
-  include AbstractDomain.WithBottom with type astate := astate
+  include AbstractDomain.WithBottom with type t := t
 
-  val can_conflict : astate -> astate -> bool
+  val can_conflict : t -> t -> bool
   (** return true if two accesses with these thread values can run concurrently *)
 
-  val is_any : astate -> bool
+  val is_any : t -> bool
 
-  val integrate_summary : caller_astate:astate -> callee_astate:astate -> astate
+  val integrate_summary : caller_astate:t -> callee_astate:t -> t
   (** integrate current state with a callee summary *)
 end
 
@@ -108,7 +108,7 @@ module AccessSnapshot : sig
 
   type t = private
     { access: PathDomain.Sink.t
-    ; thread: ThreadsDomain.astate
+    ; thread: ThreadsDomain.t
     ; lock: bool
     ; ownership_precondition: OwnershipPrecondition.t }
 
@@ -116,8 +116,8 @@ module AccessSnapshot : sig
 
   val make :
        PathDomain.Sink.t
-    -> LocksDomain.astate
-    -> ThreadsDomain.astate
+    -> LocksDomain.t
+    -> ThreadsDomain.t
     -> OwnershipPrecondition.t
     -> Procdesc.t
     -> t
@@ -135,34 +135,33 @@ module AccessDomain : module type of AbstractDomain.FiniteSet (AccessSnapshot)
 (** Powerset domain on the formal indexes in OwnedIf with a distinguished bottom element (Owned)
     and top element (Unowned) *)
 module OwnershipAbstractValue : sig
-  type astate = private
+  type t = private
     | Owned  (** Owned value; bottom of the lattice *)
     | OwnedIf of IntSet.t  (** Owned if the formals at the given indexes are owned in the caller *)
     | Unowned  (** Unowned value; top of the lattice *)
   [@@deriving compare]
 
-  val owned : astate
+  val owned : t
 
-  val unowned : astate
+  val unowned : t
 
-  val make_owned_if : int -> astate
+  val make_owned_if : int -> t
 
-  include AbstractDomain.S with type astate := astate
+  include AbstractDomain.S with type t := t
 end
 
 module OwnershipDomain : sig
   include module type of AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
 
-  val get_owned : AccessPath.t -> astate -> OwnershipAbstractValue.astate
+  val get_owned : AccessPath.t -> t -> OwnershipAbstractValue.t
 
-  val is_owned : AccessPath.t -> astate -> bool
+  val is_owned : AccessPath.t -> t -> bool
 
   val find : [`Use_get_owned_instead] [@@warning "-32"]
 
-  val propagate_assignment : AccessPath.t -> HilExp.t -> astate -> astate
+  val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
 
-  val propagate_return :
-    AccessPath.t -> OwnershipAbstractValue.astate -> HilExp.t list -> astate -> astate
+  val propagate_return : AccessPath.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
 end
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
@@ -187,40 +186,40 @@ module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute
 module AttributeMapDomain : sig
   include module type of AbstractDomain.InvertedMap (AccessPath) (AttributeSetDomain)
 
-  val add : AccessPath.t -> AttributeSetDomain.astate -> astate -> astate
+  val add : AccessPath.t -> AttributeSetDomain.t -> t -> t
 
-  val has_attribute : AccessPath.t -> Attribute.t -> astate -> bool
+  val has_attribute : AccessPath.t -> Attribute.t -> t -> bool
 
-  val get_choices : AccessPath.t -> astate -> Choice.t list
+  val get_choices : AccessPath.t -> t -> Choice.t list
   (** get the choice attributes associated with the given access path *)
 
-  val add_attribute : AccessPath.t -> Attribute.t -> astate -> astate
+  val add_attribute : AccessPath.t -> Attribute.t -> t -> t
 
-  val propagate_assignment : AccessPath.t -> HilExp.t -> astate -> astate
+  val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
 end
 
-type astate =
-  { threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
-  ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
-  ; accesses: AccessDomain.astate
+type t =
+  { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
+  ; locks: LocksDomain.t  (** boolean that is true if a lock must currently be held *)
+  ; accesses: AccessDomain.t
         (** read and writes accesses performed without ownership permissions *)
-  ; ownership: OwnershipDomain.astate  (** map of access paths to ownership predicates *)
-  ; attribute_map: AttributeMapDomain.astate
+  ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
+  ; attribute_map: AttributeMapDomain.t
         (** map of access paths to attributes such as owned, functional, ... *) }
 
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which
     may escape *)
 type summary =
-  { threads: ThreadsDomain.astate
-  ; locks: LocksDomain.astate
-  ; accesses: AccessDomain.astate
-  ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate }
+  { threads: ThreadsDomain.t
+  ; locks: LocksDomain.t
+  ; accesses: AccessDomain.t
+  ; return_ownership: OwnershipAbstractValue.t
+  ; return_attributes: AttributeSetDomain.t }
 
 val empty_summary : summary
 
-include AbstractDomain.WithBottom with type astate := astate
+include AbstractDomain.WithBottom with type t := t
 
 val pp_summary : F.formatter -> summary -> unit

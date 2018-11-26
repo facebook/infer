@@ -105,8 +105,6 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
   *)
   type t = {const: NonNegativeInt.t; terms: t M.t}
 
-  type astate = t
-
   let of_non_negative_int : NonNegativeInt.t -> t = fun const -> {const; terms= M.empty}
 
   let zero = of_non_negative_int NonNegativeInt.zero

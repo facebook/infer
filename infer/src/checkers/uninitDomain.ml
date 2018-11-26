@@ -94,10 +94,7 @@ module Record
     (Domain2 : AbstractDomain.S)
     (Domain3 : AbstractDomain.S) =
 struct
-  type astate =
-    { maybe_uninit_vars: Domain1.astate
-    ; aliased_vars: Domain2.astate
-    ; prepost: Domain3.astate prepost }
+  type t = {maybe_uninit_vars: Domain1.t; aliased_vars: Domain2.t; prepost: Domain3.t prepost}
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true

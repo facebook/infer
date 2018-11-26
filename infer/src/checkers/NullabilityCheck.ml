@@ -179,7 +179,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let find_nullable_ap ap (aps, _) = NullableAP.find ap aps
 
-  let assume_pnames_notnull ap (aps, checked_pnames) : Domain.astate =
+  let assume_pnames_notnull ap (aps, checked_pnames) : Domain.t =
     let remove_call_sites ap aps =
       let add_diff (to_remove : CallSites.t) ap call_sites map =
         let remaining_call_sites = CallSites.diff call_sites to_remove in
@@ -235,7 +235,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         check_nil_in_objc_container proc_data loc other_args astate
 
 
-  let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr : HilInstr.t) : Domain.astate =
+  let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr : HilInstr.t) : Domain.t =
     let is_pointer_assignment tenv lhs rhs =
       (* the rhs has type int when assigning the lhs to null *)
       if HilExp.is_null_literal rhs then true

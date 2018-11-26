@@ -10,7 +10,7 @@ module F = Format
 module Domain = LithoDomain
 
 module Payload = SummaryPayload.Make (struct
-  type t = Domain.astate
+  type t = Domain.t
 
   let update_payloads astate (payloads : Payloads.t) = {payloads with litho= Some astate}
 
@@ -208,7 +208,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr astate (proc_data : extras ProcData.t) _ (instr : HilInstr.t) : Domain.astate =
+  let exec_instr astate (proc_data : extras ProcData.t) _ (instr : HilInstr.t) : Domain.t =
     let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
     match instr with
     | Call
@@ -276,7 +276,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   | Some post ->
       if RequiredProps.should_report proc_desc tenv then RequiredProps.report post tenv summary ;
       if GraphQLGetters.should_report proc_desc then GraphQLGetters.report post summary ;
-      let postprocess astate formal_map : Domain.astate =
+      let postprocess astate formal_map : Domain.t =
         let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
         Domain.substitute ~f_sub astate
       in

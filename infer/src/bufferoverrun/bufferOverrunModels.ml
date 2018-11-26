@@ -28,9 +28,9 @@ let mk_model_env pname node_hash location tenv integer_type_widths symbol_table 
   {pname; node_hash; location; tenv; integer_type_widths; symbol_table}
 
 
-type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
+type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 
-type check_fun = model_env -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t
+type check_fun = model_env -> Dom.Mem.t -> PO.ConditionSet.t -> PO.ConditionSet.t
 
 type model = {exec: exec_fun; check: check_fun}
 
@@ -41,8 +41,8 @@ type declare_local_fun =
   -> inst_num:int
   -> represents_multiple_values:bool
   -> dimension:int
-  -> Dom.Mem.astate
-  -> Dom.Mem.astate * int
+  -> Dom.Mem.t
+  -> Dom.Mem.t * int
 
 type declare_symbolic_fun =
      decl_sym_val:BoUtils.Exec.decl_sym_val
@@ -53,8 +53,8 @@ type declare_symbolic_fun =
   -> inst_num:int
   -> new_sym_num:Counter.t
   -> new_alloc_num:Counter.t
-  -> Dom.Mem.astate
-  -> Dom.Mem.astate
+  -> Dom.Mem.t
+  -> Dom.Mem.t
 
 type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
 

@@ -15,36 +15,34 @@ module type S = sig
 
   module BaseMap = AccessPath.BaseMap
 
-  type node = TraceDomain.astate * tree
+  type node = TraceDomain.t * tree
  and tree = Subtree of node AccessMap.t | Star
 
-  type t = node BaseMap.t
-
-  include AbstractDomain.WithBottom with type astate = t
+  include AbstractDomain.WithBottom with type t = node BaseMap.t
 
   val empty_node : node
 
-  val make_node : TraceDomain.astate -> node AccessMap.t -> node
+  val make_node : TraceDomain.t -> node AccessMap.t -> node
 
-  val make_access_node : TraceDomain.astate -> AccessPath.access -> TraceDomain.astate -> node
+  val make_access_node : TraceDomain.t -> AccessPath.access -> TraceDomain.t -> node
 
-  val make_normal_leaf : TraceDomain.astate -> node
+  val make_normal_leaf : TraceDomain.t -> node
 
-  val make_starred_leaf : TraceDomain.astate -> node
+  val make_starred_leaf : TraceDomain.t -> node
 
   val get_node : AccessPath.Abs.t -> t -> node option
 
-  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.astate option
+  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.t option
 
   val add_node : AccessPath.Abs.t -> node -> t -> t
 
-  val add_trace : AccessPath.Abs.t -> TraceDomain.astate -> t -> t
+  val add_trace : AccessPath.Abs.t -> TraceDomain.t -> t -> t
 
   val node_join : node -> node -> node
 
   val fold : ('a -> AccessPath.Abs.t -> node -> 'a) -> t -> 'a -> 'a
 
-  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.t -> 'a) -> t -> 'a -> 'a
 
   val exists : (AccessPath.Abs.t -> node -> bool) -> t -> bool
 
@@ -90,13 +88,11 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
   module BaseMap = AccessPath.BaseMap
 
-  type node = TraceDomain.astate * tree
+  type node = TraceDomain.t * tree
 
   and tree = Subtree of node AccessMap.t | Star
 
   type t = node BaseMap.t
-
-  type astate = t
 
   let empty = BaseMap.empty
 
@@ -364,7 +360,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
     BaseMap.fold (fun base node acc -> node_fold f base node acc) tree acc_
 
 
-  let trace_fold (f : 'a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) =
+  let trace_fold (f : 'a -> AccessPath.Abs.t -> TraceDomain.t -> 'a) =
     let f_ acc ap (trace, _) = f acc ap trace in
     fold f_
 

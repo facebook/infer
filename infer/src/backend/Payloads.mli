@@ -9,18 +9,18 @@ open! IStd
 
 (** analysis results *)
 type t =
-  { annot_map: AnnotReachabilityDomain.astate option
+  { annot_map: AnnotReachabilityDomain.t option
   ; biabduction: BiabductionSummary.t option
   ; buffer_overrun: BufferOverrunSummary.t option
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
   ; crashcontext_frame: Stacktree_t.stacktree option
-  ; litho: LithoDomain.astate option
+  ; litho: LithoDomain.t option
   ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
-  ; siof: SiofDomain.Summary.astate option
+  ; siof: SiofDomain.Summary.t option
   ; starvation: StarvationDomain.summary option
   ; typestate: TypeState.t option
   ; uninit: UninitDomain.Summary.t option }

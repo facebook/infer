@@ -16,13 +16,11 @@ module SymbolSet = Symb.SymbolSet
 module ItvRange : sig
   type t
 
-  val to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.astate
+  val to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.t
 end
 
 module ItvPure : sig
-  type astate [@@deriving compare]
-
-  type t = astate
+  type t [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 
@@ -103,7 +101,7 @@ end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)
 
-type t = astate [@@deriving compare]
+val compare : t -> t -> int
 
 val bot : t
 (** _|_ *)

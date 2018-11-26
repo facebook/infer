@@ -51,26 +51,26 @@ module type S = sig
 
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
-  type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
+  type invariant_map = TransferFunctions.Domain.t State.t InvariantMap.t
 
   val compute_post :
        ?do_narrowing:bool
-    -> ?pp_instr:(TransferFunctions.Domain.astate -> Sil.instr -> (Format.formatter -> unit) option)
+    -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
-    -> TransferFunctions.Domain.astate option
+    -> initial:TransferFunctions.Domain.t
+    -> TransferFunctions.Domain.t option
 
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
+    -> initial:TransferFunctions.Domain.t
     -> invariant_map
 
   val exec_pdesc :
        ?do_narrowing:bool
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
+    -> initial:TransferFunctions.Domain.t
     -> invariant_map
 
   val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
@@ -87,7 +87,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
   module Domain = TransferFunctions.Domain
 
-  type invariant_map = Domain.astate State.t InvariantMap.t
+  type invariant_map = Domain.t State.t InvariantMap.t
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map = InvariantMap.find_opt node_id inv_map

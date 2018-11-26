@@ -12,9 +12,9 @@ module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 
 module Exec : sig
-  val get_alist_size : Dom.Val.t -> Dom.Mem.astate -> Dom.Val.astate
+  val get_alist_size : Dom.Val.t -> Dom.Mem.t -> Dom.Val.t
 
-  val load_val : Ident.t -> Dom.Val.astate -> Dom.Mem.astate -> Dom.Mem.astate
+  val load_val : Ident.t -> Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
 
   type decl_local =
        Typ.Procname.t
@@ -25,8 +25,8 @@ module Exec : sig
     -> inst_num:int
     -> represents_multiple_values:bool
     -> dimension:int
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate * int
+    -> Dom.Mem.t
+    -> Dom.Mem.t * int
 
   val decl_local_array :
        decl_local:decl_local
@@ -40,8 +40,8 @@ module Exec : sig
     -> inst_num:int
     -> represents_multiple_values:bool
     -> dimension:int
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate * int
+    -> Dom.Mem.t
+    -> Dom.Mem.t * int
 
   val decl_local_collection :
        Typ.Procname.t
@@ -51,8 +51,8 @@ module Exec : sig
     -> inst_num:int
     -> represents_multiple_values:bool
     -> dimension:int
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate * int
+    -> Dom.Mem.t
+    -> Dom.Mem.t * int
 
   type decl_sym_val =
        Typ.Procname.t
@@ -63,8 +63,8 @@ module Exec : sig
     -> depth:int
     -> Loc.t
     -> Typ.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   val decl_sym_arr :
        decl_sym_val:decl_sym_val
@@ -84,8 +84,8 @@ module Exec : sig
     -> inst_num:int
     -> new_sym_num:Counter.t
     -> new_alloc_num:Counter.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   val decl_sym_java_ptr :
        decl_sym_val:decl_sym_val
@@ -99,8 +99,8 @@ module Exec : sig
     -> Typ.t
     -> inst_num:int
     -> new_alloc_num:Counter.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   val decl_sym_collection :
        Typ.Procname.t
@@ -109,8 +109,8 @@ module Exec : sig
     -> Location.t
     -> Loc.t
     -> new_sym_num:Counter.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   val init_array_fields :
        Tenv.t
@@ -121,11 +121,10 @@ module Exec : sig
     -> Typ.t
     -> PowLoc.t
     -> ?dyn_length:Exp.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
-  val set_dyn_length :
-    Location.t -> Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.astate -> Dom.Mem.astate
+  val set_dyn_length : Location.t -> Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.t -> Dom.Mem.t
 end
 
 module Check : sig
@@ -133,7 +132,7 @@ module Check : sig
        arr:Dom.Val.t
     -> idx:Dom.Val.t
     -> idx_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.astate
+    -> relation:Relation.t
     -> is_plus:bool
     -> Location.t
     -> PO.ConditionSet.t
@@ -143,7 +142,7 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> index_exp:Exp.t
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t
@@ -152,7 +151,7 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> byte_index_exp:Exp.t
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t
@@ -162,7 +161,7 @@ module Check : sig
     -> array_exp:Exp.t
     -> index_exp:Exp.t
     -> ?is_collection_add:bool
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
     -> Location.t
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t

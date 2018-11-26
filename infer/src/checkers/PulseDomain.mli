@@ -15,9 +15,7 @@ module AbstractAddress : sig
   val init : unit -> unit
 end
 
-type t
-
-include AbstractDomain.S with type astate = t
+include AbstractDomain.S
 
 val initial : t
 

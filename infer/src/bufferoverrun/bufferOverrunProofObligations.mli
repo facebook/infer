@@ -35,26 +35,26 @@ module ConditionSet : sig
 
   val add_array_access :
        Location.t
-    -> offset:ItvPure.astate
-    -> idx:ItvPure.astate
-    -> size:ItvPure.astate
+    -> offset:ItvPure.t
+    -> idx:ItvPure.t
+    -> size:ItvPure.t
     -> is_collection_add:bool
     -> idx_sym_exp:Relation.SymExp.t option
     -> size_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.astate
+    -> relation:Relation.t
     -> idx_traces:BufferOverrunTrace.Set.t
     -> arr_traces:BufferOverrunTrace.Set.t
     -> t
     -> t
 
-  val add_alloc_size : Location.t -> length:ItvPure.astate -> BufferOverrunTrace.Set.t -> t -> t
+  val add_alloc_size : Location.t -> length:ItvPure.t -> BufferOverrunTrace.Set.t -> t -> t
 
   val add_binary_operation :
        Typ.IntegerWidths.t
     -> Location.t
     -> Binop.t
-    -> lhs:ItvPure.astate
-    -> rhs:ItvPure.astate
+    -> lhs:ItvPure.t
+    -> rhs:ItvPure.t
     -> lhs_traces:BufferOverrunTrace.Set.t
     -> rhs_traces:BufferOverrunTrace.Set.t
     -> t
@@ -66,7 +66,7 @@ module ConditionSet : sig
        summary_t
     -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> BufferOverrunTrace.Set.t)
     -> Relation.SubstMap.t
-    -> Relation.astate
+    -> Relation.t
     -> Typ.Procname.t
     -> Location.t
     -> t

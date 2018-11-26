@@ -13,7 +13,7 @@ module F = Format
     you'll diverge at loops if you don't widen *)
 
 module PathCountDomain = struct
-  type astate = PathCount of int | Top
+  type t = PathCount of int | Top
 
   let make_path_count c =
     (* guarding against overflow *)

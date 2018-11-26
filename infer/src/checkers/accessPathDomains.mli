@@ -17,19 +17,19 @@ open! IStd
 module Set : sig
   include AbstractDomain.WithBottom
 
-  val of_list : AccessPath.Abs.t list -> astate
+  val of_list : AccessPath.Abs.t list -> t
 
-  val mem : AccessPath.Abs.t -> astate -> bool
+  val mem : AccessPath.Abs.t -> t -> bool
   (** return true if {% \gamma(\{ap\}) \subseteq \gamma(aps) %}.
       note: this is worst-case linear in the size of the set *)
 
-  val mem_fuzzy : AccessPath.Abs.t -> astate -> bool
+  val mem_fuzzy : AccessPath.Abs.t -> t -> bool
   (** more permissive version of [mem]; return true if {% \gamma(\{a\}) \cap \gamma(aps) != \{\} %}.
       note: this is worst-case linear in the size of the set *)
 
-  val add : AccessPath.Abs.t -> astate -> astate
+  val add : AccessPath.Abs.t -> t -> t
 
-  val normalize : astate -> astate
+  val normalize : t -> t
   (** simplify an access path set to its canonical representation by eliminating redundancies
       between (1) pairs of abstracted access_paths, and (2) exact access paths and abstracted
       access paths. warning: this is quadratic in the size of the set! use sparingly *)

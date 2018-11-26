@@ -55,7 +55,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
     let get_lock_path = function

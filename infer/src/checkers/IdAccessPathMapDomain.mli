@@ -9,10 +9,4 @@ open! IStd
 
 (** mapping of ids to raw access paths. useful for id-normalizing access paths *)
 
-module IdMap = Var.Map
-
-type astate = AccessExpression.t IdMap.t
-
-include module type of IdMap
-
-include AbstractDomain.WithBottom with type astate := astate
+include AbstractDomain.MapS with type key = Var.t and type value = AccessExpression.t

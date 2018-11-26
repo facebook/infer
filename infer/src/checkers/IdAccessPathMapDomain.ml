@@ -9,9 +9,11 @@ open! IStd
 module IdMap = Var.Map
 module L = Logging
 
-type astate = AccessExpression.t IdMap.t
+include (IdMap : module type of IdMap with type 'a t := 'a IdMap.t)
 
-include IdMap
+type t = AccessExpression.t IdMap.t
+
+type value = AccessExpression.t
 
 let pp fmt astate = IdMap.pp ~pp_value:AccessExpression.pp fmt astate
 

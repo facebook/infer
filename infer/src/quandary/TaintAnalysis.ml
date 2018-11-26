@@ -444,8 +444,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.trace_fold add_to_caller_tree summary caller_access_tree
 
 
-    let exec_instr (astate : Domain.astate) (proc_data : extras ProcData.t) _ (instr : HilInstr.t)
-        =
+    let exec_instr (astate : Domain.t) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
       (* not all sinks are function calls; we might want to treat an array or field access as a
          sink too. do this by pretending an access is a call to a dummy function and using the
          existing machinery for adding function call sinks *)

@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 
 module Types : sig
   type 'astate bottom_lifted = Bottom | NonBottom of 'astate
@@ -23,16 +22,14 @@ exception Stop_analysis
 (** Abstract domains and domain combinators *)
 
 module type S = sig
-  type astate
+  include PrettyPrintable.PrintableType
 
-  val ( <= ) : lhs:astate -> rhs:astate -> bool
+  val ( <= ) : lhs:t -> rhs:t -> bool
   (** the partial order induced by join *)
 
-  val join : astate -> astate -> astate
+  val join : t -> t -> t
 
-  val widen : prev:astate -> next:astate -> num_iters:int -> astate
-
-  val pp : F.formatter -> astate -> unit
+  val widen : prev:t -> next:t -> num_iters:int -> t
 end
 
 include
@@ -41,19 +38,19 @@ include
     [@@@warning "-60"]
 
     (** a trivial domain *)
-    module Empty : S with type astate = unit
+    module Empty : S with type t = unit
 end
 
 (** A domain with an explicit bottom value *)
 module type WithBottom = sig
   include S
 
-  val empty : astate
+  val empty : t
   (** The bottom value of the domain.
       Naming it empty instead of bottom helps to bind the empty
       value for sets and maps to the natural definition for bottom *)
 
-  val is_empty : astate -> bool
+  val is_empty : t -> bool
   (** Return true if this is the bottom value *)
 end
 
@@ -61,106 +58,103 @@ end
 module type WithTop = sig
   include S
 
-  val top : astate
+  val top : t
 end
 
 (** Lift a pre-domain to a domain *)
-module BottomLifted (Domain : S) : sig
-  type astate = Domain.astate bottom_lifted
+module BottomLifted (Domain : S) : WithBottom with type t = Domain.t bottom_lifted
 
-  include WithBottom with type astate := astate
-end
+(* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
-(** Create a domain with Top element from a pre-domain *)
 include
   sig
-    (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-
     [@@@warning "-60"]
 
-    module TopLifted (Domain : S) : sig
-      type astate = Domain.astate top_lifted
-
-      include WithTop with type astate := astate
-    end
+    (** Create a domain with Top element from a pre-domain *)
+    module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 end
 
 (** Cartesian product of two domains. *)
-module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
+module Pair (Domain1 : S) (Domain2 : S) : S with type t = Domain1.t * Domain2.t
 
 (** Flat abstract domain: Bottom, Top, and non-comparable elements in between *)
 module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
   include WithBottom
 
-  include WithTop with type astate := astate
+  include WithTop with type t := t
 
-  val v : V.t -> astate
+  val v : V.t -> t
 
-  val get : astate -> V.t option
+  val get : t -> V.t option
+end
+
+module type FiniteSetS = sig
+  include PrettyPrintable.PPSet
+
+  include WithBottom with type t := t
 end
 
 (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
-module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : sig
-  include module type of PPSet with type elt = PPSet.elt
-
-  include WithBottom with type astate = t
-end
+module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
 
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
-module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) : sig
-  include module type of PrettyPrintable.MakePPSet (Element)
+module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) :
+  FiniteSetS with type elt = Element.t
 
-  include WithBottom with type astate = t
+module type InvertedSetS = sig
+  include PrettyPrintable.PPSet
+
+  include S with type t := t
 end
 
 (** Lift a set to a powerset domain ordered by superset, so the join operator is intersection *)
-module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) : sig
-  include module type of PrettyPrintable.MakePPSet (Element)
+module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) :
+  InvertedSetS with type elt = Element.t
 
-  include S with type astate = t
+module type MapS = sig
+  include PrettyPrintable.PPMonoMap
+
+  include WithBottom with type t := t
 end
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else.
     Uses PPMap as the underlying map *)
-module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) : sig
-  include module type of PPMap with type key = PPMap.key
-
-  include WithBottom with type astate = ValueDomain.astate t
-end
+module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
+  MapS with type key = PPMap.key and type value = ValueDomain.t
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else *)
-module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) : sig
-  include module type of PrettyPrintable.MakePPMap (Key)
+module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
+  MapS with type key = Key.t and type value = ValueDomain.t
 
-  include WithBottom with type astate = ValueDomain.astate t
+module type InvertedMapS = sig
+  include PrettyPrintable.PPMonoMap
+
+  include S with type t := t
 end
 
 (** Map domain ordered by intersection over the set of bindings, so the top element is the empty
     map. Every element implictly maps to top unless it is explicitly bound to something else *)
-module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) : sig
-  include module type of PrettyPrintable.MakePPMap (Key)
+module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
+  InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
-  include S with type astate = ValueDomain.astate t
-end
+(* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
-(** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
-    true in both conditional branches. *)
 include
   sig
-    (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-
     [@@@warning "-60"]
 
-    module BooleanAnd : S with type astate = bool
+    (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
+    true in both conditional branches. *)
+    module BooleanAnd : S with type t = bool
 end
 
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
-module BooleanOr : WithBottom with type astate = bool
+module BooleanOr : WithBottom with type t = bool
 
 module type MaxCount = sig
   val max : int
@@ -170,21 +164,21 @@ end
 (** Domain keeping a non-negative count with a bounded maximum value. The count can be only
     incremented and decremented *)
 module CountDomain (MaxCount : MaxCount) : sig
-  include WithBottom with type astate = private int
+  include WithBottom with type t = private int
 
-  val top : astate [@@warning "-32"]
+  val top : t [@@warning "-32"]
   (** maximum value *)
 
-  val is_top : astate -> bool [@@warning "-32"]
+  val is_top : t -> bool [@@warning "-32"]
   (** return true if this is the maximum value *)
 
-  val increment : astate -> astate
+  val increment : t -> t
   (** bump the count by one if it is less than the max *)
 
-  val decrement : astate -> astate
+  val decrement : t -> t
   (** descrease the count by one if it is greater than 0 *)
 
-  val add : astate -> astate -> astate
+  val add : t -> t -> t
   (** capped sum of two states *)
 end
 
@@ -193,14 +187,14 @@ end
     longest common prefix (so [c;b;a] join [f;g;b;c;a] = [a]), so the top element is the empty
     stack. *)
 module StackDomain (Element : PrettyPrintable.PrintableOrderedType) : sig
-  include S with type astate = Element.t list
+  include S with type t = Element.t list
 
-  val push : Element.t -> astate -> astate
+  val push : Element.t -> t -> t
 
-  val pop : astate -> astate
+  val pop : t -> t
   (** throws exception on empty *)
 
-  val empty : astate
+  val empty : t
 
-  val is_empty : astate -> bool
+  val is_empty : t -> bool
 end

@@ -20,11 +20,11 @@ end
 module VarSet = AbstractDomain.FiniteSet (Base)
 
 module CapabilityDomain = struct
-  type astate =
+  type t =
     | InvalidatedAt of Location.t
         (** neither owned nor borrowed; we can't safely do anything with this value. tagged with the
         location where invalidation occurred. *)
-    | BorrowedFrom of VarSet.astate
+    | BorrowedFrom of VarSet.t
         (** not owned, but borrowed from existing reference(s). for now, permits both reads and writes *)
     | Owned
         (** owned. permits reads, writes, and ownership transfer (e.g. call a destructor, delete, or free) *)
@@ -315,7 +315,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate : Domain.astate) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
     | Assign (lhs_access_exp, rhs_exp, loc) -> (
@@ -388,7 +388,7 @@ let report_invalid_return post end_loc summary =
            List.mem ~equal:Mangled.equal locals mangled )
   in
   (* look for return values that are borrowed from (now-invalid) local variables *)
-  let report_invalid_return base (capability : CapabilityDomain.astate) =
+  let report_invalid_return base (capability : CapabilityDomain.t) =
     if Var.is_return (fst base) then
       match capability with
       | BorrowedFrom vars ->

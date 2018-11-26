@@ -17,17 +17,15 @@ module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
 module Val = struct
-  type astate =
-    { itv: Itv.astate
-    ; sym: Relation.Sym.astate
-    ; powloc: PowLoc.astate
-    ; arrayblk: ArrayBlk.astate
-    ; offset_sym: Relation.Sym.astate
-    ; size_sym: Relation.Sym.astate
+  type t =
+    { itv: Itv.t
+    ; sym: Relation.Sym.t
+    ; powloc: PowLoc.t
+    ; arrayblk: ArrayBlk.t
+    ; offset_sym: Relation.Sym.t
+    ; size_sym: Relation.Sym.t
     ; traces: TraceSet.t
     ; represents_multiple_values: bool }
-
-  type t = astate
 
   let bot : t =
     { itv= Itv.bot
@@ -112,21 +110,21 @@ module Val = struct
 
   let get_itv : t -> Itv.t = fun x -> x.itv
 
-  let get_sym : t -> Relation.Sym.astate = fun x -> x.sym
+  let get_sym : t -> Relation.Sym.t = fun x -> x.sym
 
   let get_sym_var : t -> Relation.Var.t option = fun x -> Relation.Sym.get_var x.sym
 
   let get_pow_loc : t -> PowLoc.t = fun x -> x.powloc
 
-  let get_array_blk : t -> ArrayBlk.astate = fun x -> x.arrayblk
+  let get_array_blk : t -> ArrayBlk.t = fun x -> x.arrayblk
 
   let get_array_locs : t -> PowLoc.t = fun x -> ArrayBlk.get_pow_loc x.arrayblk
 
   let get_all_locs : t -> PowLoc.t = fun x -> PowLoc.join x.powloc (get_array_locs x)
 
-  let get_offset_sym : t -> Relation.Sym.astate = fun x -> x.offset_sym
+  let get_offset_sym : t -> Relation.Sym.t = fun x -> x.offset_sym
 
-  let get_size_sym : t -> Relation.Sym.astate = fun x -> x.size_sym
+  let get_size_sym : t -> Relation.Sym.t = fun x -> x.size_sym
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
@@ -253,11 +251,7 @@ module Val = struct
 
 
   let lift_prune2 :
-         (Itv.t -> Itv.t -> Itv.t)
-      -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate)
-      -> t
-      -> t
-      -> t =
+      (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.t -> ArrayBlk.t -> ArrayBlk.t) -> t -> t -> t =
    fun f g x y ->
     warn_against_pruning_multiple_values
       { x with
@@ -282,7 +276,7 @@ module Val = struct
 
   (* In the pointer arithmetics, it returns top, if we cannot
      precisely follow the physical memory model, e.g., (&x + 1). *)
-  let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t =
+  let lift_pi : (ArrayBlk.t -> Itv.t -> ArrayBlk.t) -> t -> t -> t =
    fun f x y ->
     let traces = TraceSet.join x.traces y.traces in
     if is_pointer_to_non_array x then {bot with itv= Itv.top; traces}
@@ -371,7 +365,7 @@ module MemPure = struct
 
   let bot = empty
 
-  let range : filter_loc:(Loc.t -> bool) -> astate -> Polynomials.NonNegativePolynomial.astate =
+  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc mem ->
     fold
       (fun loc v acc ->
@@ -401,8 +395,6 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Empty l)
 
 
-  type astate = t
-
   let ( <= ) ~lhs ~rhs = equal lhs rhs
 
   let join x y =
@@ -430,7 +422,7 @@ end
 module AliasMap = struct
   include AbstractDomain.Map (Ident) (AliasTarget)
 
-  let pp : F.formatter -> astate -> unit =
+  let pp : F.formatter -> t -> unit =
    fun fmt x ->
     if not (is_empty x) then
       let pp_sep fmt () = F.fprintf fmt ", @," in
@@ -438,23 +430,21 @@ module AliasMap = struct
       F.pp_print_list ~pp_sep pp1 fmt (bindings x)
 
 
-  let load : Ident.t -> AliasTarget.astate -> astate -> astate = add
+  let load : Ident.t -> AliasTarget.t -> t -> t = add
 
-  let store : Loc.t -> astate -> astate =
-   fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
+  let store : Loc.t -> t -> t = fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
 
-
-  let find : Ident.t -> astate -> AliasTarget.astate option = find_opt
+  let find : Ident.t -> t -> AliasTarget.t option = find_opt
 end
 
 module AliasRet = struct
   include AbstractDomain.Flat (AliasTarget)
 
-  let pp : F.formatter -> astate -> unit = fun fmt x -> F.pp_print_string fmt "ret=" ; pp fmt x
+  let pp : F.formatter -> t -> unit = fun fmt x -> F.pp_print_string fmt "ret=" ; pp fmt x
 end
 
 module Alias = struct
-  type astate = {map: AliasMap.astate; ret: AliasRet.astate}
+  type t = {map: AliasMap.t; ret: AliasRet.t}
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -478,23 +468,19 @@ module Alias = struct
       AliasRet.pp x.ret
 
 
-  let bot : astate = {map= AliasMap.empty; ret= AliasRet.empty}
+  let bot : t = {map= AliasMap.empty; ret= AliasRet.empty}
 
-  let lift_map : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
-   fun f a -> {a with map= f a.map}
+  let lift_map : (AliasMap.t -> AliasMap.t) -> t -> t = fun f a -> {a with map= f a.map}
 
+  let bind_map : (AliasMap.t -> 'a) -> t -> 'a = fun f a -> f a.map
 
-  let bind_map : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f a.map
+  let find : Ident.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find x)
 
-  let find : Ident.t -> astate -> AliasTarget.astate option = fun x -> bind_map (AliasMap.find x)
+  let find_ret : t -> AliasTarget.t option = fun x -> AliasRet.get x.ret
 
-  let find_ret : astate -> AliasTarget.astate option = fun x -> AliasRet.get x.ret
+  let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc -> lift_map (AliasMap.load id loc)
 
-  let load : Ident.t -> AliasTarget.astate -> astate -> astate =
-   fun id loc -> lift_map (AliasMap.load id loc)
-
-
-  let store_simple : Loc.t -> Exp.t -> astate -> astate =
+  let store_simple : Loc.t -> Exp.t -> t -> t =
    fun loc e a ->
     let a = lift_map (AliasMap.store loc) a in
     match e with
@@ -505,7 +491,7 @@ module Alias = struct
         a
 
 
-  let store_empty : Val.t -> Loc.t -> astate -> astate =
+  let store_empty : Val.t -> Loc.t -> t -> t =
    fun formal loc a ->
     let a = lift_map (AliasMap.store loc) a in
     let locs = Val.get_all_locs formal in
@@ -516,7 +502,7 @@ module Alias = struct
         a
 
 
-  let remove_temp : Ident.t -> astate -> astate = fun temp -> lift_map (AliasMap.remove temp)
+  let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove temp)
 end
 
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
@@ -541,11 +527,11 @@ module LatestPrune = struct
      prunings.
 
      Top: No information about the latest pruning. *)
-  type astate =
-    | Latest of PrunePairs.astate
-    | TrueBranch of Pvar.t * PrunePairs.astate
-    | FalseBranch of Pvar.t * PrunePairs.astate
-    | V of Pvar.t * PrunePairs.astate * PrunePairs.astate
+  type t =
+    | Latest of PrunePairs.t
+    | TrueBranch of Pvar.t * PrunePairs.t
+    | FalseBranch of Pvar.t * PrunePairs.t
+    | V of Pvar.t * PrunePairs.t * PrunePairs.t
     | Top
 
   let pvar_pp = Pvar.pp Pp.text
@@ -614,14 +600,12 @@ module LatestPrune = struct
 end
 
 module MemReach = struct
-  type astate =
-    { stack_locs: StackLocs.astate
-    ; mem_pure: MemPure.astate
-    ; alias: Alias.astate
-    ; latest_prune: LatestPrune.astate
-    ; relation: Relation.astate }
-
-  type t = astate
+  type t =
+    { stack_locs: StackLocs.t
+    ; mem_pure: MemPure.t
+    ; alias: Alias.t
+    ; latest_prune: LatestPrune.t
+    ; relation: Relation.t }
 
   let init : t =
     { stack_locs= StackLocs.bot
@@ -686,7 +670,7 @@ module MemReach = struct
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.astate option = fun k m -> Alias.find k m.alias
+  let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
    fun k m ->
@@ -697,9 +681,9 @@ module MemReach = struct
         None
 
 
-  let find_ret_alias : t -> AliasTarget.astate option = fun m -> Alias.find_ret m.alias
+  let find_ret_alias : t -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
 
-  let load_alias : Ident.t -> AliasTarget.astate -> t -> t =
+  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
    fun id loc m -> {m with alias= Alias.load id loc m.alias}
 
 
@@ -782,7 +766,7 @@ module MemReach = struct
    fun temps m -> List.fold temps ~init:m ~f:(fun acc temp -> remove_temp temp acc)
 
 
-  let set_prune_pairs : PrunePairs.astate -> t -> t =
+  let set_prune_pairs : PrunePairs.t -> t -> t =
    fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
 
 
@@ -827,15 +811,15 @@ module MemReach = struct
     fun locs m -> add_from_locs m.mem_pure locs PowLoc.empty
 
 
-  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.astate =
+  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc {mem_pure} -> MemPure.range ~filter_loc mem_pure
 
 
-  let get_relation : t -> Relation.astate = fun m -> m.relation
+  let get_relation : t -> Relation.t = fun m -> m.relation
 
   let is_relation_unsat : t -> bool = fun m -> Relation.is_unsat m.relation
 
-  let lift_relation : (Relation.astate -> Relation.astate) -> t -> t =
+  let lift_relation : (Relation.t -> Relation.t) -> t -> t =
    fun f m -> {m with relation= f m.relation}
 
 
@@ -871,8 +855,6 @@ end
 module Mem = struct
   include AbstractDomain.BottomLifted (MemReach)
 
-  type t = astate
-
   let bot : t = Bottom
 
   let init : t = NonBottom MemReach.init
@@ -903,7 +885,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.astate option =
+  let find_alias : Ident.t -> t -> AliasTarget.t option =
    fun k -> f_lift_default ~default:None (MemReach.find_alias k)
 
 
@@ -911,11 +893,11 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
-  let find_ret_alias : t -> AliasTarget.astate option =
+  let find_ret_alias : t -> AliasTarget.t option =
     f_lift_default ~default:None MemReach.find_ret_alias
 
 
-  let load_alias : Ident.t -> AliasTarget.astate -> t -> t =
+  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
    fun id loc -> f_lift (MemReach.load_alias id loc)
 
 
@@ -962,7 +944,7 @@ module Mem = struct
 
   let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
 
-  let set_prune_pairs : PrunePairs.astate -> t -> t =
+  let set_prune_pairs : PrunePairs.t -> t -> t =
    fun prune_pairs -> f_lift (MemReach.set_prune_pairs prune_pairs)
 
 
@@ -972,7 +954,7 @@ module Mem = struct
    fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
 
 
-  let get_relation : t -> Relation.astate =
+  let get_relation : t -> Relation.t =
    fun m -> f_lift_default ~default:Relation.bot MemReach.get_relation m
 
 

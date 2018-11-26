@@ -37,6 +37,6 @@ let integrate_summary callee_pname loc astate callee_summary =
          add new_event astate |> union summary )
 
 
-type summary = astate
+type summary = t
 
 let pp_summary = pp

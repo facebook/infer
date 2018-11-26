@@ -10,13 +10,13 @@ module L = Logging
 module MF = MarkupFormatter
 
 module UseDefChain = struct
-  type astate =
+  type t =
     | DependsOn of (Location.t * AccessPath.t)
     | NullDefCompare of (Location.t * AccessPath.t)
     | NullDefAssign of (Location.t * AccessPath.t)
   [@@deriving compare]
 
-  let ( <= ) ~lhs ~rhs = compare_astate lhs rhs <= 0
+  let ( <= ) ~lhs ~rhs = compare lhs rhs <= 0
 
   (* Keep only one chain in join/widen as we are going to report only one
    * trace to the user eventually. *)
@@ -34,9 +34,9 @@ module UseDefChain = struct
 
 
   module Set = Caml.Set.Make (struct
-    type t = astate
+    type nonrec t = t
 
-    let compare = compare_astate
+    let compare = compare
   end)
 end
 
@@ -90,7 +90,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         None
 
 
-  let exec_instr (astate : Domain.astate) proc_data _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) proc_data _ (instr : HilInstr.t) =
     match instr with
     | Assume (expr, _, _, loc) -> (
       match extract_null_compare_expr expr with

@@ -23,11 +23,7 @@ end
 module type S = sig
   include Spec
 
-  type t
-
-  type astate = t
-
-  include AbstractDomain.WithBottom with type astate := astate
+  include AbstractDomain.WithBottom
 
   module Sources : sig
     (** Set of sources returned by callees of the current function *)
@@ -41,9 +37,7 @@ module type S = sig
     (** Set of sanitizers that have been applied to these sources *)
     module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
-
-    type t = astate
+    type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 
     val empty : t
 

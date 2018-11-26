@@ -12,8 +12,8 @@ val checker : Callbacks.proc_callback_t
 val instantiate_cost :
      Typ.IntegerWidths.t
   -> caller_pdesc:Procdesc.t
-  -> inferbo_caller_mem:BufferOverrunDomain.Mem.astate option
+  -> inferbo_caller_mem:BufferOverrunDomain.Mem.t option
   -> callee_pname:Typ.Procname.t
   -> params:(Exp.t * 'a) list
-  -> callee_cost:CostDomain.BasicCost.astate
-  -> CostDomain.BasicCost.astate
+  -> callee_cost:CostDomain.BasicCost.t
+  -> CostDomain.BasicCost.t

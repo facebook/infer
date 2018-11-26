@@ -9,11 +9,9 @@ open! IStd
 
 (** A powerset domain of traces, with bottom = empty and join = union *)
 module type FiniteSet = sig
-  include PrettyPrintable.PPSet
+  include AbstractDomain.FiniteSetS
 
-  include AbstractDomain.WithBottom with type astate = t
-
-  val with_callsite : astate -> CallSite.t -> astate
+  val with_callsite : t -> CallSite.t -> t
   (** Push given callsite onto all traces in set. Cf [TraceElem.with_callsite] *)
 end
 

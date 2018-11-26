@@ -67,8 +67,8 @@ module TransferFunctionsNodesBasicCost = struct
   let cost_atomic_instruction = BasicCost.one
 
   let exec_instr_cost integer_type_widths inferbo_mem
-      (astate : CostDomain.NodeInstructionToCostMap.astate) {ProcData.pdesc} (node : CFG.Node.t)
-      instr : CostDomain.NodeInstructionToCostMap.astate =
+      (astate : CostDomain.NodeInstructionToCostMap.t) {ProcData.pdesc} (node : CFG.Node.t) instr :
+      CostDomain.NodeInstructionToCostMap.t =
     let key = CFG.Node.id node in
     let astate' =
       match instr with
@@ -315,7 +315,7 @@ module ControlFlowCost = struct
       { mutable size: int
       ; mutable items: Item.t ARList.t
       ; mutable sums: Sum.t ARList.t
-      ; mutable cost: BasicCost.astate }
+      ; mutable cost: BasicCost.t }
 
     let create e =
       let items, sums =
@@ -387,7 +387,7 @@ module ControlFlowCost = struct
       sum_items t |> List.iter ~f:(fun item -> infer_equalities_by_removing_item ~on_infer t item)
 
 
-    let init_cost : of_node:(Node.id -> BasicCost.astate) -> t -> unit =
+    let init_cost : of_node:(Node.id -> BasicCost.t) -> t -> unit =
      fun ~of_node t ->
       let min_if_node cost item =
         match item with `Node node -> BasicCost.min_default_left cost (of_node node) | _ -> cost
@@ -396,8 +396,8 @@ module ControlFlowCost = struct
 
 
     let improve_cost_from_sums :
-           on_improve:(Sum.t -> BasicCost.astate -> BasicCost.astate -> unit)
-        -> of_item:(Item.t -> BasicCost.astate)
+           on_improve:(Sum.t -> BasicCost.t -> BasicCost.t -> unit)
+        -> of_item:(Item.t -> BasicCost.t)
         -> t
         -> unit =
      fun ~on_improve ~of_item t ->
@@ -604,7 +604,7 @@ module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; get_node_nb_exec: Node.id -> BasicCost.astate
+  ; get_node_nb_exec: Node.id -> BasicCost.t
   ; summary: Summary.t }
 
 let compute_errlog_extras cost =
@@ -669,7 +669,7 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost get_node_nb_exec m : BasicCost.astate =
+  let map_cost get_node_nb_exec m : BasicCost.t =
     CostDomain.NodeInstructionToCostMap.fold
       (fun ((node_id, _) as instr_node_id) c acc ->
         let t = get_node_nb_exec node_id in
@@ -685,8 +685,8 @@ module TransferFunctionsWCET = struct
       m BasicCost.zero
 
 
-  let exec_instr ((_, reported_so_far) : Domain.astate) {ProcData.extras} (node : CFG.Node.t) instr
-      : Domain.astate =
+  let exec_instr ((_, reported_so_far) : Domain.t) {ProcData.extras} (node : CFG.Node.t) instr :
+      Domain.t =
     let {basic_cost_map= invariant_map_cost; get_node_nb_exec; summary} = extras in
     let cost_node =
       let instr_node_id = CFG.Node.id node in

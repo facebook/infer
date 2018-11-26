@@ -125,10 +125,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> Procdesc.t
       -> Typ.Procname.t
       -> (Exp.t * Typ.t) list
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> BufferOverrunSummary.t
       -> Location.t
-      -> Dom.Mem.astate =
+      -> Dom.Mem.t =
    fun tenv integer_type_widths ret callee_pdesc callee_pname params caller_mem summary location ->
     let callee_exit_mem = BufferOverrunSummary.get_output summary in
     let rel_subst_map =
@@ -147,8 +147,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
 
 
-  let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate
-      =
+  let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
    fun mem {pdesc; tenv; extras= {symbol_table; integer_type_widths}} node instr ->
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
@@ -369,8 +368,8 @@ module Init = struct
       -> Itv.SymbolTable.t
       -> inst_num:int
       -> (Pvar.t * Typ.t) list
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate =
+      -> Dom.Mem.t
+      -> Dom.Mem.t =
    fun pname tenv integer_type_widths ~node_hash location symbol_table ~inst_num formals mem ->
     let new_sym_num = Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
@@ -481,7 +480,7 @@ module Report = struct
       -> e1:Exp.t
       -> e2:Exp.t
       -> Location.t
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun integer_type_widths ~is_plus ~e1 ~e2 location mem cond_set ->
@@ -500,7 +499,7 @@ module Report = struct
       -> e1:Exp.t
       -> e2:Exp.t
       -> Location.t
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun integer_type_widths ~bop ~e1 ~e2 location mem cond_set ->
@@ -517,7 +516,7 @@ module Report = struct
          Typ.IntegerWidths.t
       -> Exp.t
       -> Location.t
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun integer_type_widths exp location mem cond_set ->
@@ -591,7 +590,7 @@ module Report = struct
       -> Typ.IntegerWidths.t
       -> Procdesc.t
       -> (Exp.t * Typ.t) list
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> Payload.t
       -> Location.t
       -> PO.ConditionSet.t =
@@ -616,7 +615,7 @@ module Report = struct
       -> Itv.SymbolTable.t
       -> CFG.Node.t
       -> Sil.instr
-      -> Dom.Mem.astate
+      -> Dom.Mem.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun pdesc tenv integer_type_widths symbol_table node instr mem cond_set ->
@@ -661,7 +660,7 @@ module Report = struct
         cond_set
 
 
-  let print_debug_info : Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t -> unit =
+  let print_debug_info : Sil.instr -> Dom.Mem.t -> PO.ConditionSet.t -> unit =
    fun instr pre cond_set ->
     L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
     L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
@@ -680,7 +679,7 @@ module Report = struct
       -> CFG.t
       -> CFG.Node.t
       -> Instrs.not_reversed_t
-      -> Dom.Mem.astate AbstractInterpreter.State.t
+      -> Dom.Mem.t AbstractInterpreter.State.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun summary pdesc tenv integer_type_widths symbol_table cfg node instrs state cond_set ->

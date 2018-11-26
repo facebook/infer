@@ -12,12 +12,10 @@ val get_java_class : Typ.Procname.t -> string option
 
 module Event : ExplicitTrace.TraceElem with type elem_t = ClassLoad.t
 
-include AbstractDomain.WithBottom
+include AbstractDomain.FiniteSetS with type elt = Event.t
 
-include PrettyPrintable.PPSet with type t = astate and type elt = Event.t
-
-type summary = astate
+type summary = t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : Typ.Procname.t -> Location.t -> astate -> summary -> astate
+val integrate_summary : Typ.Procname.t -> Location.t -> t -> summary -> t

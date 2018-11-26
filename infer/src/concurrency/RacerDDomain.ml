@@ -204,7 +204,7 @@ module LocksDomain = struct
 end
 
 module ThreadsDomain = struct
-  type astate = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
+  type t = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
 
   let empty = NoThread
 
@@ -222,7 +222,7 @@ module ThreadsDomain = struct
     | AnyThread, _ ->
         false
     | _ ->
-        Int.equal 0 (compare_astate lhs rhs)
+        Int.equal 0 (compare lhs rhs)
 
 
   let join astate1 astate2 =
@@ -285,7 +285,7 @@ module AccessSnapshot = struct
 
   type t =
     { access: PathDomain.Sink.t
-    ; thread: ThreadsDomain.astate
+    ; thread: ThreadsDomain.t
     ; lock: bool
     ; ownership_precondition: OwnershipPrecondition.t }
   [@@deriving compare]
@@ -326,7 +326,7 @@ module AccessDomain = struct
 end
 
 module OwnershipAbstractValue = struct
-  type astate = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
+  type t = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
 
   let owned = Owned
 
@@ -521,12 +521,12 @@ module AttributeMapDomain = struct
     add lhs_access_path rhs_attributes attribute_map
 end
 
-type astate =
-  { threads: ThreadsDomain.astate
-  ; locks: LocksDomain.astate
-  ; accesses: AccessDomain.astate
-  ; ownership: OwnershipDomain.astate
-  ; attribute_map: AttributeMapDomain.astate }
+type t =
+  { threads: ThreadsDomain.t
+  ; locks: LocksDomain.t
+  ; accesses: AccessDomain.t
+  ; ownership: OwnershipDomain.t
+  ; attribute_map: AttributeMapDomain.t }
 
 let empty =
   let threads = ThreadsDomain.empty in
@@ -577,11 +577,11 @@ let widen ~prev ~next ~num_iters =
 
 
 type summary =
-  { threads: ThreadsDomain.astate
-  ; locks: LocksDomain.astate
-  ; accesses: AccessDomain.astate
-  ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate }
+  { threads: ThreadsDomain.t
+  ; locks: LocksDomain.t
+  ; accesses: AccessDomain.t
+  ; return_ownership: OwnershipAbstractValue.t
+  ; return_attributes: AttributeSetDomain.t }
 
 let empty_summary =
   { threads= ThreadsDomain.empty

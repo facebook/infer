@@ -20,21 +20,21 @@ module type S = sig
   module Sym : sig
     include AbstractDomain.S
 
-    val bot : astate
+    val bot : t
 
-    val top : astate
+    val top : t
 
-    val of_loc : Loc.t -> astate
+    val of_loc : Loc.t -> t
 
-    val of_loc_offset : Loc.t -> astate
+    val of_loc_offset : Loc.t -> t
 
-    val of_loc_size : Loc.t -> astate
+    val of_loc_size : Loc.t -> t
 
-    val of_allocsite_offset : Allocsite.t -> astate
+    val of_allocsite_offset : Allocsite.t -> t
 
-    val of_allocsite_size : Allocsite.t -> astate
+    val of_allocsite_size : Allocsite.t -> t
 
-    val get_var : astate -> Var.t option
+    val get_var : t -> Var.t option
   end
 
   module SymExp : sig
@@ -44,18 +44,18 @@ module type S = sig
 
     val zero : t
 
-    val of_sym : Sym.astate -> t option
+    val of_sym : Sym.t -> t option
 
-    val of_exp : get_sym_f:(Exp.t -> Sym.astate) -> Exp.t -> t option
+    val of_exp : get_sym_f:(Exp.t -> Sym.t) -> Exp.t -> t option
 
     val of_exps :
-         get_int_sym_f:(Exp.t -> Sym.astate)
-      -> get_offset_sym_f:(Exp.t -> Sym.astate)
-      -> get_size_sym_f:(Exp.t -> Sym.astate)
+         get_int_sym_f:(Exp.t -> Sym.t)
+      -> get_offset_sym_f:(Exp.t -> Sym.t)
+      -> get_size_sym_f:(Exp.t -> Sym.t)
       -> Exp.t
       -> t option * t option * t option
 
-    val of_exp_opt : get_sym_f:(Exp.t -> Sym.astate) -> Exp.t option -> t option
+    val of_exp_opt : get_sym_f:(Exp.t -> Sym.t) -> Exp.t option -> t option
 
     val plus : t -> t -> t
 
@@ -65,7 +65,7 @@ module type S = sig
   module Constraints : sig
     type t
 
-    val of_exp : get_sym_f:(Exp.t -> Sym.astate) -> Exp.t -> t
+    val of_exp : get_sym_f:(Exp.t -> Sym.t) -> Exp.t -> t
   end
 
   module SubstMap : sig
@@ -82,40 +82,35 @@ module type S = sig
 
   val set_deserialize : unit -> unit
 
-  val compare_astate : astate -> astate -> int
+  val compare : t -> t -> int
 
-  val empty : astate
+  val empty : t
 
-  val bot : astate
+  val bot : t
 
-  val is_unsat : astate -> bool
+  val is_unsat : t -> bool
 
-  val lt_sat_opt : SymExp.t option -> SymExp.t option -> astate -> bool
+  val lt_sat_opt : SymExp.t option -> SymExp.t option -> t -> bool
 
-  val le_sat_opt : SymExp.t option -> SymExp.t option -> astate -> bool
+  val le_sat_opt : SymExp.t option -> SymExp.t option -> t -> bool
 
-  val meet_constraints : Constraints.t -> astate -> astate
+  val meet_constraints : Constraints.t -> t -> t
 
-  val store_relation :
-    PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> astate -> astate
+  val store_relation : PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> t -> t
 
-  val init_param : Loc.t -> astate -> astate
+  val init_param : Loc.t -> t -> t
 
   val init_array :
-    Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> astate -> astate
+    Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t
 
-  val forget_locs : PowLoc.t -> astate -> astate
+  val forget_locs : PowLoc.t -> t -> t
 
-  val instantiate : caller:astate -> callee:astate -> SubstMap.t -> astate
+  val instantiate : caller:t -> callee:t -> SubstMap.t -> t
 end
 
 module NoRelation = struct
   module UnitDom = struct
-    type astate = unit [@@deriving compare]
-
-    type t = astate [@@deriving compare]
-
-    let compare_astate _ _ = 0
+    type t = unit [@@deriving compare]
 
     let f1 _ = ()
 
@@ -944,9 +939,9 @@ module Make (Manager : Manager_S) = struct
   end
 
   module Val = struct
-    type astate = Manager.domain_t Abstract1.t
+    type t = Manager.domain_t Abstract1.t
 
-    let compare_astate = Compares.compare_abstract1
+    let compare = Compares.compare_abstract1
 
     let bot = Abstract1.bottom man Env.empty
 
@@ -1075,7 +1070,7 @@ module Make (Manager : Manager_S) = struct
 
     let le_sat e1 e2 x = sat_tcons (Tcons1.make (SymExp.minus e2 e1) Tcons1.SUPEQ) x
 
-    let subst : forget_free:bool -> SubstMap.t -> astate -> astate =
+    let subst : forget_free:bool -> SubstMap.t -> t -> t =
       let forget_free_vars vars_in_subst_map x =
         let free_vars = VarSet.diff (Env.to_vars_set (Abstract1.env x)) vars_in_subst_map in
         let free_vars = VarSet.remove Var.return free_vars in
@@ -1138,7 +1133,7 @@ module Make (Manager : Manager_S) = struct
   end
 
   module PackedVal = struct
-    type astate = {pack_ids: Pack.t VarMap.t; packs: Val.astate PackMap.t} [@@deriving compare]
+    type t = {pack_ids: Pack.t VarMap.t; packs: Val.t PackMap.t} [@@deriving compare]
 
     let empty = {pack_ids= VarMap.empty; packs= PackMap.empty}
 
@@ -1509,7 +1504,7 @@ module Make (Manager : Manager_S) = struct
 
   include AbstractDomain.BottomLifted (PackedVal)
 
-  let compare_astate x y =
+  let compare x y =
     match (x, y) with
     | Bottom, Bottom ->
         0
@@ -1518,59 +1513,57 @@ module Make (Manager : Manager_S) = struct
     | _, Bottom ->
         1
     | NonBottom x', NonBottom y' ->
-        PackedVal.compare_astate x' y'
+        PackedVal.compare x' y'
 
 
-  let empty : astate = NonBottom PackedVal.empty
+  let empty : t = NonBottom PackedVal.empty
 
-  let bot : astate = Bottom
+  let bot : t = Bottom
 
-  let is_unsat : astate -> bool = function Bottom -> true | NonBottom _ -> false
+  let is_unsat : t -> bool = function Bottom -> true | NonBottom _ -> false
 
-  let lift_default : default:'a -> (PackedVal.astate -> 'a) -> astate -> 'a =
+  let lift_default : default:'a -> (PackedVal.t -> 'a) -> t -> 'a =
    fun ~default f -> function Bottom -> default | NonBottom x -> f x
 
 
-  let lift : (PackedVal.astate -> PackedVal.astate) -> astate -> astate =
+  let lift : (PackedVal.t -> PackedVal.t) -> t -> t =
    fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
 
 
-  let lift2 : (PackedVal.astate -> PackedVal.astate -> astate) -> astate -> astate -> astate =
+  let lift2 : (PackedVal.t -> PackedVal.t -> t) -> t -> t -> t =
    fun f x y ->
     match (x, y) with Bottom, _ | _, Bottom -> Bottom | NonBottom x', NonBottom y' -> f x' y'
 
 
-  let lt_sat_opt : SymExp.t option -> SymExp.t option -> astate -> bool =
+  let lt_sat_opt : SymExp.t option -> SymExp.t option -> t -> bool =
    fun e1_opt e2_opt -> lift_default ~default:true (PackedVal.lt_sat_opt e1_opt e2_opt)
 
 
-  let le_sat_opt : SymExp.t option -> SymExp.t option -> astate -> bool =
+  let le_sat_opt : SymExp.t option -> SymExp.t option -> t -> bool =
    fun e1_opt e2_opt -> lift_default ~default:true (PackedVal.le_sat_opt e1_opt e2_opt)
 
 
-  let meet_constraints : Constraints.t -> astate -> astate =
+  let meet_constraints : Constraints.t -> t -> t =
    fun constrs -> lift_default ~default:Bottom (PackedVal.meet_constraints constrs)
 
 
-  let store_relation :
-      PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> astate -> astate =
+  let store_relation : PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> t -> t =
    fun locs texpr_opts -> lift_default ~default:Bottom (PackedVal.store_relation locs texpr_opts)
 
 
-  let init_param : Loc.t -> astate -> astate =
+  let init_param : Loc.t -> t -> t =
    fun loc -> lift_default ~default:Bottom (PackedVal.init_param loc)
 
 
   let init_array :
-      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> astate -> astate
-      =
+      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t =
    fun allocsite ~offset ~size ~size_exp_opt ->
     lift_default ~default:Bottom (PackedVal.init_array allocsite ~offset ~size ~size_exp_opt)
 
 
-  let forget_locs : PowLoc.t -> astate -> astate = fun locs -> lift (PackedVal.forget_locs locs)
+  let forget_locs : PowLoc.t -> t -> t = fun locs -> lift (PackedVal.forget_locs locs)
 
-  let instantiate : caller:astate -> callee:astate -> SubstMap.t -> astate =
+  let instantiate : caller:t -> callee:t -> SubstMap.t -> t =
    fun ~caller ~callee subst_map ->
     lift2 (fun caller callee -> PackedVal.instantiate ~caller ~callee subst_map) caller callee
 end

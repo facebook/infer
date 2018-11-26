@@ -44,8 +44,8 @@ module Exec = struct
     -> inst_num:int
     -> represents_multiple_values:bool
     -> dimension:int
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate * int
+    -> Dom.Mem.t
+    -> Dom.Mem.t * int
 
   let decl_local_array :
          decl_local:decl_local
@@ -59,8 +59,8 @@ module Exec = struct
       -> inst_num:int
       -> represents_multiple_values:bool
       -> dimension:int
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate * int =
+      -> Dom.Mem.t
+      -> Dom.Mem.t * int =
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num
        ~represents_multiple_values ~dimension mem ->
     let offset = Itv.zero in
@@ -92,8 +92,8 @@ module Exec = struct
       -> inst_num:int
       -> represents_multiple_values:bool
       -> dimension:int
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate * int =
+      -> Dom.Mem.t
+      -> Dom.Mem.t * int =
    fun pname ~node_hash location loc ~inst_num ~represents_multiple_values ~dimension mem ->
     let path = Loc.get_path loc in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
@@ -121,8 +121,8 @@ module Exec = struct
     -> depth:int
     -> Loc.t
     -> Typ.t
-    -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 
   let decl_sym_arr :
          decl_sym_val:decl_sym_val
@@ -142,8 +142,8 @@ module Exec = struct
       -> inst_num:int
       -> new_sym_num:Counter.t
       -> new_alloc_num:Counter.t
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate =
+      -> Dom.Mem.t
+      -> Dom.Mem.t =
    fun ~decl_sym_val deref_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
        ?offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let offset =
@@ -186,8 +186,8 @@ module Exec = struct
       -> Typ.t
       -> inst_num:int
       -> new_alloc_num:Counter.t
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate =
+      -> Dom.Mem.t
+      -> Dom.Mem.t =
    fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
        mem ->
     let alloc_num = Counter.next new_alloc_num in
@@ -212,8 +212,8 @@ module Exec = struct
       -> Location.t
       -> Loc.t
       -> new_sym_num:Counter.t
-      -> Dom.Mem.astate
-      -> Dom.Mem.astate =
+      -> Dom.Mem.t
+      -> Dom.Mem.t =
    fun pname symbol_table path location loc ~new_sym_num mem ->
     let size =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in

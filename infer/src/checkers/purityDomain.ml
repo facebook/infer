@@ -34,6 +34,6 @@ let get_modified_params astate =
       None
 
 
-type summary = Domain.astate
+type summary = Domain.t
 
 let pp_summary fmt astate = F.fprintf fmt "@\n Purity summary: %a @\n" Domain.pp astate

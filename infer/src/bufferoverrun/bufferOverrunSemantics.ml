@@ -21,7 +21,7 @@ let eval_const : Const.t -> Val.t = function
       Val.Itv.top
 
 
-let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool =
+let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
  fun e1 e2 m ->
   match (e1, e2) with
   | Exp.Var x1, Exp.Var x2 -> (
@@ -56,7 +56,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool =
       false
 
 
-and must_alias_opt : Exp.t option -> Exp.t option -> Mem.astate -> bool =
+and must_alias_opt : Exp.t option -> Exp.t option -> Mem.t -> bool =
  fun e1_opt e2_opt m ->
   match (e1_opt, e2_opt) with
   | Some e1, Some e2 ->
@@ -101,7 +101,7 @@ let comp_not : Binop.t -> Binop.t = function
       assert false
 
 
-let rec must_alias_cmp : Exp.t -> Mem.astate -> bool =
+let rec must_alias_cmp : Exp.t -> Mem.t -> bool =
  fun e m ->
   match e with
   | Exp.BinOp (Binop.Lt, e1, e2) | Exp.BinOp (Binop.Gt, e1, e2) | Exp.BinOp (Binop.Ne, e1, e2) ->
@@ -140,7 +140,7 @@ let set_array_stride integer_type_widths typ v =
       v
 
 
-let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
+let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   if must_alias_cmp exp mem then Val.Itv.zero
   else
@@ -201,7 +201,7 @@ and eval_lindex integer_type_widths array_exp index_exp mem =
         Val.plus_pi array_v index_v
 
 
-and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.astate -> Val.t =
+and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths unop e mem ->
   let v = eval integer_type_widths e mem in
   match unop with
@@ -213,7 +213,7 @@ and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.astate -> Val.t =
       Val.lnot v
 
 
-and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
+and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths binop e1 e2 mem ->
   let v1 = eval integer_type_widths e1 mem in
   let v2 = eval integer_type_widths e2 mem in
@@ -264,7 +264,7 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.astate 
    when "x" is a program variable, (eval_arr "x") returns array blocks
    the "x" is pointing to, on the other hand, (eval "x") returns the
    abstract location of "x". *)
-let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Val.t =
+let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id -> (
@@ -385,7 +385,7 @@ let get_offset_sym_f integer_type_widths mem e =
 let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
 
 module Prune = struct
-  type astate = {prune_pairs: PrunePairs.astate; mem: Mem.astate}
+  type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
 
   let update_mem_in_prune lv v {prune_pairs; mem} =
     let prune_pairs = PrunePairs.add lv v prune_pairs in
@@ -393,7 +393,7 @@ module Prune = struct
     {prune_pairs; mem}
 
 
-  let prune_unop : Exp.t -> astate -> astate =
+  let prune_unop : Exp.t -> t -> t =
    fun e ({mem} as astate) ->
     match e with
     | Exp.Var x -> (
@@ -425,7 +425,7 @@ module Prune = struct
         astate
 
 
-  let rec prune_binop_left : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+  let rec prune_binop_left : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
     match e with
     | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
@@ -480,7 +480,7 @@ module Prune = struct
         astate
 
 
-  let prune_binop_right : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+  let prune_binop_right : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e astate ->
     match e with
     | Exp.BinOp (((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as c), e1, e2)
@@ -490,7 +490,7 @@ module Prune = struct
         astate
 
 
-  let is_unreachable_constant : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> bool =
+  let is_unreachable_constant : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> bool =
    fun integer_type_widths e m ->
     let v = eval integer_type_widths e m in
     Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
@@ -498,7 +498,7 @@ module Prune = struct
     && ArrayBlk.is_bot (Val.get_array_blk v)
 
 
-  let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> astate -> astate =
+  let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
     if is_unreachable_constant integer_type_widths e mem || Mem.is_relation_unsat mem then
       {astate with mem= Mem.bot}
@@ -537,7 +537,7 @@ module Prune = struct
         astate
 
 
-  let prune : Typ.IntegerWidths.t -> Exp.t -> Mem.astate -> Mem.astate =
+  let prune : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Mem.t =
    fun integer_type_widths e mem ->
     let mem = Mem.apply_latest_prune e mem in
     let mem =
@@ -557,8 +557,8 @@ let get_matching_pairs :
     -> Val.t
     -> Exp.t option
     -> Typ.t
-    -> Mem.astate
-    -> Mem.astate
+    -> Mem.t
+    -> Mem.t
     -> (Relation.Var.t * Relation.SymExp.t option) list =
  fun tenv integer_type_widths callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
   let get_offset_sym v = Val.get_offset_sym v in
@@ -649,8 +649,8 @@ let get_subst_map :
     -> Typ.IntegerWidths.t
     -> Procdesc.t
     -> (Exp.t * 'a) list
-    -> Mem.astate
-    -> Mem.astate
+    -> Mem.t
+    -> Mem.t
     -> Relation.SubstMap.t =
  fun tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem ->
   let add_pair (formal, typ) (actual, actual_exp) rel_l =

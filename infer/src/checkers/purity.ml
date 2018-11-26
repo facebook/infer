@@ -93,7 +93,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.pure
 
 
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv; ProcData.extras= formals} _
+  let exec_instr (astate : Domain.t) {ProcData.pdesc; tenv; ProcData.extras= formals} _
       (instr : HilInstr.t) =
     match instr with
     | Assign (ae, _, _) when is_heap_access ae ->

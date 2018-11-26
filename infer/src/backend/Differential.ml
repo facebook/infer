@@ -63,7 +63,7 @@ module CostsSummary = struct
   type previous_current = {previous: int; current: int}
 
   let count costs =
-    let count_aux t (e : CostDomain.BasicCost.astate) =
+    let count_aux t (e : CostDomain.BasicCost.t) =
       match CostDomain.BasicCost.degree e with
       | None ->
           assert (CostDomain.BasicCost.is_top e) ;

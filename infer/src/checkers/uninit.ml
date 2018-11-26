@@ -162,7 +162,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let maybe_uninit_vars = MaybeUninitVars.remove access_expr maybe_uninit_vars in
           if remove_fields then
             let base = AccessExpression.get_base access_expr in
-            MaybeUninitVars.remove_init_fields base var_formal maybe_uninit_vars init_formals
+            let init_formals' = MaybeUninitVars.of_list (D.elements init_formals) in
+            MaybeUninitVars.remove_init_fields base var_formal maybe_uninit_vars init_formals'
           else maybe_uninit_vars
       | _ ->
           maybe_uninit_vars )
@@ -179,7 +180,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc; extras= {formals; summary}; tenv} _
+  let exec_instr (astate : Domain.t) {ProcData.pdesc; extras= {formals; summary}; tenv} _
       (instr : HilInstr.t) =
     let check_access_expr ~loc rhs_access_expr =
       if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then

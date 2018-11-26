@@ -208,7 +208,7 @@ module Stack =
   AbstractDomain.Map
     (Var)
     (struct
-      type astate = AbstractAddress.t
+      type t = AbstractAddress.t
 
       let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
 
@@ -220,7 +220,7 @@ module Stack =
     end)
 
 (** the domain *)
-type t = {heap: Memory.t; stack: Stack.astate}
+type astate = {heap: Memory.t; stack: Stack.t}
 
 let initial =
   { heap=
@@ -230,8 +230,8 @@ let initial =
   ; stack= Stack.empty }
 
 
-module Domain : AbstractDomain.S with type astate = t = struct
-  type astate = t
+module Domain : AbstractDomain.S with type t = astate = struct
+  type t = astate
 
   let piecewise_lessthan lhs rhs =
     Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack

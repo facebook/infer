@@ -144,7 +144,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
-      (astate : Domain.astate) =
+      (astate : Domain.t) =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
@@ -171,7 +171,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Some {empty_summary with accesses= callee_accesses; return_ownership}
 
 
-  let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.astate) =
+  let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.t) =
     let open RacerDModels in
     let get_receiver_ap actuals =
       match List.hd actuals with
@@ -235,7 +235,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       AccessDomain.map expand_precondition accesses
 
 
-  let add_callee_accesses (caller_astate : Domain.astate) callee_accesses locks threads actuals
+  let add_callee_accesses (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname pdesc loc =
     let open Domain in
     let conjoin_ownership_precondition actual_exp actual_indexes :
@@ -356,8 +356,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let exec_instr (astate : Domain.astate) ({ProcData.tenv; pdesc} as proc_data) _
-      (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) ({ProcData.tenv; pdesc} as proc_data) _ (instr : HilInstr.t) =
     let open Domain in
     let open RacerDModels in
     let open ConcurrencyModels in
@@ -553,7 +552,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               (* non-boolean expression; can't evaluate it *)
               None
         in
-        let add_choice bool_value (acc : Domain.astate) = function
+        let add_choice bool_value (acc : Domain.t) = function
           | Choice.LockHeld ->
               let locks =
                 if bool_value then LocksDomain.acquire_lock acc.locks
@@ -916,7 +915,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
 
 
 type reported_access =
-  { threads: RacerDDomain.ThreadsDomain.astate
+  { threads: RacerDDomain.ThreadsDomain.t
   ; snapshot: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
   ; procdesc: Procdesc.t }

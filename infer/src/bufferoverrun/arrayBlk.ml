@@ -15,8 +15,6 @@ module Bound = Bounds.Bound
 module ArrInfo = struct
   type t = {offset: Itv.t; size: Itv.t; stride: Itv.t} [@@deriving compare]
 
-  type astate = t
-
   let top : t = {offset= Itv.top; size= Itv.top; stride= Itv.top}
 
   let make : offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
@@ -52,9 +50,9 @@ module ArrInfo = struct
 
   let plus_offset : t -> Itv.t -> t = fun arr i -> {arr with offset= Itv.plus arr.offset i}
 
-  let minus_offset : t -> Itv.astate -> t = fun arr i -> {arr with offset= Itv.minus arr.offset i}
+  let minus_offset : t -> Itv.t -> t = fun arr i -> {arr with offset= Itv.minus arr.offset i}
 
-  let diff : t -> t -> Itv.astate = fun arr1 arr2 -> Itv.minus arr1.offset arr2.offset
+  let diff : t -> t -> Itv.t = fun arr1 arr2 -> Itv.minus arr1.offset arr2.offset
 
   let subst : t -> Bound.eval_sym -> t =
    fun arr eval_sym ->
@@ -113,35 +111,31 @@ end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
 
-let bot : astate = empty
+let bot : t = empty
 
-let unknown : astate = add Allocsite.unknown ArrInfo.top bot
+let unknown : t = add Allocsite.unknown ArrInfo.top bot
 
-let is_bot : astate -> bool = is_empty
+let is_bot : t -> bool = is_empty
 
-let make : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> astate =
+let make : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
  fun a ~offset ~size ~stride -> singleton a (ArrInfo.make ~offset ~size ~stride)
 
 
-let offsetof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
+let offsetof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
 
-let sizeof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
+let sizeof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
 
-let strideof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.stride) a Itv.bot
+let strideof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.stride) a Itv.bot
 
-let sizeof_byte : astate -> Itv.t =
+let sizeof_byte : t -> Itv.t =
  fun a -> fold (fun _ arr -> Itv.join (Itv.mult arr.ArrInfo.size arr.ArrInfo.stride)) a Itv.bot
 
 
-let plus_offset : astate -> Itv.t -> astate =
- fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
+let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 
+let minus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.minus_offset a i) arr
 
-let minus_offset : astate -> Itv.t -> astate =
- fun arr i -> map (fun a -> ArrInfo.minus_offset a i) arr
-
-
-let diff : astate -> astate -> Itv.t =
+let diff : t -> t -> Itv.t =
  fun arr1 arr2 ->
   let diff_join k a2 acc =
     match find k arr1 with
@@ -153,24 +147,24 @@ let diff : astate -> astate -> Itv.t =
   fold diff_join arr2 Itv.bot
 
 
-let get_pow_loc : astate -> PowLoc.t =
+let get_pow_loc : t -> PowLoc.t =
  fun array ->
   let pow_loc_of_allocsite k _ acc = PowLoc.add (Loc.of_allocsite k) acc in
   fold pow_loc_of_allocsite array PowLoc.bot
 
 
-let subst : astate -> Bound.eval_sym -> astate =
+let subst : t -> Bound.eval_sym -> t =
  fun a eval_sym -> map (fun info -> ArrInfo.subst info eval_sym) a
 
 
-let get_symbols : astate -> Itv.SymbolSet.t =
+let get_symbols : t -> Itv.SymbolSet.t =
  fun a ->
   fold (fun _ ai acc -> Itv.SymbolSet.union acc (ArrInfo.get_symbols ai)) a Itv.SymbolSet.empty
 
 
-let normalize : astate -> astate = fun a -> map ArrInfo.normalize a
+let normalize : t -> t = fun a -> map ArrInfo.normalize a
 
-let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> astate -> astate -> astate =
+let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> t -> t -> t =
  fun arr_info_prune a1 a2 ->
   match is_singleton_or_more a2 with
   | IContainer.Singleton (k, v2) ->
@@ -179,17 +173,15 @@ let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> astate -> astate -> asta
       a1
 
 
-let prune_comp : Binop.t -> astate -> astate -> astate =
- fun c a1 a2 -> do_prune (ArrInfo.prune_comp c) a1 a2
+let prune_comp : Binop.t -> t -> t -> t = fun c a1 a2 -> do_prune (ArrInfo.prune_comp c) a1 a2
 
+let prune_eq : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
 
-let prune_eq : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
+let prune_ne : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
 
-let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
+let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length length) a
 
-let set_length : Itv.t -> astate -> astate = fun length a -> map (ArrInfo.set_length length) a
-
-let set_stride : Z.t -> astate -> astate = fun stride a -> map (ArrInfo.set_stride stride) a
+let set_stride : Z.t -> t -> t = fun stride a -> map (ArrInfo.set_stride stride) a
 
 let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =
   match (is_singleton_or_more arr1, is_singleton_or_more arr2) with

@@ -58,7 +58,7 @@ let is_modelled =
 
 
 module Payload = SummaryPayload.Make (struct
-  type t = SiofDomain.Summary.astate
+  type t = SiofDomain.Summary.t
 
   let update_payloads astate (payloads : Payloads.t) = {payloads with siof= Some astate}
 

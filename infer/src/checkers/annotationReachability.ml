@@ -36,7 +36,7 @@ module Domain = struct
         else (AnnotReachabilityDomain.add annot sink_map' annot_map, previous_vstate)
 
 
-  let stop_tracking ((annot_map, _) : astate) = (annot_map, Bottom)
+  let stop_tracking ((annot_map, _) : t) = (annot_map, Bottom)
 
   let add_tracking_var var ((annot_map, previous_vstate) as astate) =
     match previous_vstate with
@@ -59,7 +59,7 @@ module Domain = struct
 end
 
 module Payload = SummaryPayload.Make (struct
-  type t = AnnotReachabilityDomain.astate
+  type t = AnnotReachabilityDomain.t
 
   let update_payloads annot_map (payloads : Payloads.t) = {payloads with annot_map= Some annot_map}
 
@@ -236,7 +236,7 @@ module AnnotationSpec = struct
     ; sink_predicate: predicate
     ; sanitizer_predicate: predicate
     ; sink_annotation: Annot.t
-    ; report: Callbacks.proc_callback_args -> AnnotReachabilityDomain.astate -> unit }
+    ; report: Callbacks.proc_callback_args -> AnnotReachabilityDomain.t -> unit }
 
   (* The default sanitizer does not sanitize anything *)
   let default_sanitizer _ _ = false

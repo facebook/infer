@@ -67,32 +67,29 @@ end
 
 module UIThreadDomain :
   AbstractDomain.WithBottom
-  with type astate = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
+  with type t = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
 
-type astate =
-  { lock_state: LockState.astate
-  ; events: EventDomain.astate
-  ; order: OrderDomain.astate
-  ; ui: UIThreadDomain.astate }
+type t =
+  {lock_state: LockState.t; events: EventDomain.t; order: OrderDomain.t; ui: UIThreadDomain.t}
 
-include AbstractDomain.WithBottom with type astate := astate
+include AbstractDomain.WithBottom with type t := t
 
-val acquire : astate -> Location.t -> Lock.t list -> astate
+val acquire : t -> Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
 
-val release : astate -> Lock.t list -> astate
+val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
-val blocking_call : Typ.Procname.t -> Event.severity_t -> Location.t -> astate -> astate
+val blocking_call : Typ.Procname.t -> Event.severity_t -> Location.t -> t -> t
 
-val strict_mode_call : Typ.Procname.t -> Location.t -> astate -> astate
+val strict_mode_call : Typ.Procname.t -> Location.t -> t -> t
 
-val set_on_ui_thread : astate -> Location.t -> string -> astate
+val set_on_ui_thread : t -> Location.t -> string -> t
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
-type summary = astate
+type summary = t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : astate -> Typ.Procname.t -> Location.t -> summary -> astate
+val integrate_summary : t -> Typ.Procname.t -> Location.t -> summary -> t

@@ -172,8 +172,6 @@ module UIThreadExplanationDomain = struct
     let pp = String.pp
   end)
 
-  type astate = t
-
   let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
@@ -200,11 +198,8 @@ module UIThreadDomain = struct
           (UIThreadExplanationDomain.with_callsite ui_explain callsite)
 end
 
-type astate =
-  { lock_state: LockState.astate
-  ; events: EventDomain.astate
-  ; order: OrderDomain.astate
-  ; ui: UIThreadDomain.astate }
+type t =
+  {lock_state: LockState.t; events: EventDomain.t; order: OrderDomain.t; ui: UIThreadDomain.t}
 
 let empty =
   { lock_state= LockState.empty
@@ -312,6 +307,6 @@ let set_on_ui_thread ({ui} as astate) loc explain =
   {astate with ui}
 
 
-type summary = astate
+type summary = t
 
 let pp_summary = pp

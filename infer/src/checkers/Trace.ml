@@ -21,11 +21,7 @@ end
 module type S = sig
   include Spec
 
-  type t
-
-  type astate = t
-
-  include AbstractDomain.WithBottom with type astate := astate
+  include AbstractDomain.WithBottom
 
   module Sources : sig
     module Known : module type of AbstractDomain.FiniteSet (Source)
@@ -36,9 +32,7 @@ module type S = sig
 
     module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
-
-    type t = astate
+    type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 
     val empty : t
 
@@ -171,9 +165,7 @@ module Make (Spec : Spec) = struct
     module Footprint = AccessTree.PathSet (FootprintConfig)
     module Sanitizers = AbstractDomain.FiniteSet (Sanitizer)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
-
-    type t = astate
+    type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 
     let ( <= ) ~lhs ~rhs =
       if phys_equal lhs rhs then true
@@ -255,8 +247,6 @@ module Make (Spec : Spec) = struct
     ; sinks: Sinks.t
           (** last callees in the trace that transitively called a tainted function (if any) *)
     ; passthroughs: Passthrough.Set.t  (** calls that occurred between source and sink *) }
-
-  type astate = t
 
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
 

@@ -22,14 +22,14 @@ module type S = sig
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
   (** invariant map from node id -> state representing postcondition for node id *)
-  type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
+  type invariant_map = TransferFunctions.Domain.t State.t InvariantMap.t
 
   val compute_post :
        ?do_narrowing:bool
-    -> ?pp_instr:(TransferFunctions.Domain.astate -> Sil.instr -> (Format.formatter -> unit) option)
+    -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
-    -> TransferFunctions.Domain.astate option
+    -> initial:TransferFunctions.Domain.t
+    -> TransferFunctions.Domain.t option
   (** compute and return the postcondition for the given procedure starting from [initial].
       [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
@@ -37,14 +37,14 @@ module type S = sig
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
+    -> initial:TransferFunctions.Domain.t
     -> invariant_map
   (** compute and return invariant map for the given CFG/procedure starting from [initial]. *)
 
   val exec_pdesc :
        ?do_narrowing:bool
     -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate
+    -> initial:TransferFunctions.Domain.t
     -> invariant_map
   (** compute and return invariant map for the given procedure starting from [initial] *)
 

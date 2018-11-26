@@ -19,21 +19,17 @@ open! Types
 exception Stop_analysis
 
 module type S = sig
-  type astate
+  include PrettyPrintable.PrintableType
 
-  val ( <= ) : lhs:astate -> rhs:astate -> bool
+  val ( <= ) : lhs:t -> rhs:t -> bool
 
-  (* fst \sqsubseteq snd? *)
+  val join : t -> t -> t
 
-  val join : astate -> astate -> astate
-
-  val widen : prev:astate -> next:astate -> num_iters:int -> astate
-
-  val pp : F.formatter -> astate -> unit
+  val widen : prev:t -> next:t -> num_iters:int -> t
 end
 
-module Empty : S with type astate = unit = struct
-  type astate = unit
+module Empty : S with type t = unit = struct
+  type t = unit
 
   let ( <= ) ~lhs:() ~rhs:() = true
 
@@ -47,19 +43,19 @@ end
 module type WithBottom = sig
   include S
 
-  val empty : astate
+  val empty : t
 
-  val is_empty : astate -> bool
+  val is_empty : t -> bool
 end
 
 module type WithTop = sig
   include S
 
-  val top : astate
+  val top : t
 end
 
 module BottomLifted (Domain : S) = struct
-  type astate = Domain.astate bottom_lifted
+  type t = Domain.t bottom_lifted
 
   let empty = Bottom
 
@@ -109,7 +105,7 @@ module BottomLifted (Domain : S) = struct
 end
 
 module TopLifted (Domain : S) = struct
-  type astate = Domain.astate top_lifted
+  type t = Domain.t top_lifted
 
   let top = Top
 
@@ -153,7 +149,7 @@ module TopLifted (Domain : S) = struct
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct
-  type astate = Domain1.astate * Domain2.astate
+  type t = Domain1.t * Domain2.t
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -177,7 +173,7 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
 end
 
 module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
-  type astate = Bot | V of V.t | Top
+  type t = Bot | V of V.t | Top
 
   let empty = Bot
 
@@ -223,10 +219,14 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
   let get = function V v -> Some v | Bot | Top -> None
 end
 
+module type FiniteSetS = sig
+  include PrettyPrintable.PPSet
+
+  include WithBottom with type t := t
+end
+
 module FiniteSetOfPPSet (S : PrettyPrintable.PPSet) = struct
   include S
-
-  type astate = t
 
   let ( <= ) ~lhs ~rhs = if phys_equal lhs rhs then true else subset lhs rhs
 
@@ -238,10 +238,14 @@ end
 module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) =
   FiniteSetOfPPSet (PrettyPrintable.MakePPSet (Element))
 
+module type InvertedSetS = sig
+  include PrettyPrintable.PPSet
+
+  include S with type t := t
+end
+
 module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   include PrettyPrintable.MakePPSet (Element)
-
-  type astate = t
 
   let ( <= ) ~lhs ~rhs = if phys_equal lhs rhs then true else subset rhs lhs
 
@@ -250,10 +254,18 @@ module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
-  include M
+module type MapS = sig
+  include PrettyPrintable.PPMonoMap
 
-  type astate = ValueDomain.astate M.t
+  include WithBottom with type t := t
+end
+
+module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
+  include (M : PrettyPrintable.PPMap with type 'a t := 'a M.t and type key = M.key)
+
+  type t = ValueDomain.t M.t
+
+  type value = ValueDomain.t
 
   (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
   let ( <= ) ~lhs ~rhs =
@@ -298,26 +310,31 @@ module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end
 
-module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) =
-  MapOfPPMap (PrettyPrintable.MakePPMap (Key)) (ValueDomain)
+module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
+  module M = PrettyPrintable.MakePPMap (Key)
+  include MapOfPPMap (M) (ValueDomain)
+end
+
+module type InvertedMapS = sig
+  include PrettyPrintable.PPMonoMap
+
+  include S with type t := t
+end
 
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
-  module M = PrettyPrintable.MakePPMap (Key)
-  include M
-
-  type astate = ValueDomain.astate M.t
+  include PrettyPrintable.MakePPMonoMap (Key) (ValueDomain)
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      try M.for_all (fun k rhs_v -> ValueDomain.( <= ) ~lhs:(M.find k lhs) ~rhs:rhs_v) rhs
+      try for_all (fun k rhs_v -> ValueDomain.( <= ) ~lhs:(find k lhs) ~rhs:rhs_v) rhs
       with Caml.Not_found -> false
 
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
-      M.merge
+      merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
           | Some v1, Some v2 ->
@@ -330,7 +347,7 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
-      M.merge
+      merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
           | Some v1, Some v2 ->
@@ -338,13 +355,10 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
           | _ ->
               None )
         prev next
-
-
-  let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end
 
 module BooleanAnd = struct
-  type astate = bool
+  type t = bool
 
   let ( <= ) ~lhs ~rhs = lhs || not rhs
 
@@ -356,7 +370,7 @@ module BooleanAnd = struct
 end
 
 module BooleanOr = struct
-  type astate = bool
+  type t = bool
 
   let empty = false
 
@@ -376,7 +390,7 @@ module type MaxCount = sig
 end
 
 module CountDomain (MaxCount : MaxCount) = struct
-  type astate = int
+  type t = int
 
   let top =
     assert (MaxCount.max > 0) ;
@@ -405,7 +419,7 @@ module CountDomain (MaxCount : MaxCount) = struct
 end
 
 module StackDomain (Element : PrettyPrintable.PrintableOrderedType) = struct
-  type astate = Element.t list
+  type t = Element.t list
 
   let push = List.cons
 

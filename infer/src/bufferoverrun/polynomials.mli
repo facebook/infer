@@ -21,37 +21,37 @@ end
 module NonNegativePolynomial : sig
   include AbstractDomain.WithTop
 
-  val zero : astate
+  val zero : t
 
-  val one : astate
+  val one : t
 
-  val of_int_exn : int -> astate
+  val of_int_exn : int -> t
 
-  val is_symbolic : astate -> bool
+  val is_symbolic : t -> bool
 
-  val is_top : astate -> bool
+  val is_top : t -> bool
 
-  val is_zero : astate -> bool
+  val is_zero : t -> bool
 
-  val of_non_negative_bound : Bounds.NonNegativeBound.t -> astate
+  val of_non_negative_bound : Bounds.NonNegativeBound.t -> t
 
-  val plus : astate -> astate -> astate
+  val plus : t -> t -> t
 
-  val mult : astate -> astate -> astate
+  val mult : t -> t -> t
 
-  val min_default_left : astate -> astate -> astate
+  val min_default_left : t -> t -> t
 
-  val subst : astate -> Bound.eval_sym -> astate
+  val subst : t -> Bound.eval_sym -> t
 
-  val degree : astate -> Degree.t option
+  val degree : t -> Degree.t option
 
-  val compare_by_degree : astate -> astate -> int
+  val compare_by_degree : t -> t -> int
 
-  val pp_degree : Format.formatter -> astate -> unit
+  val pp_degree : Format.formatter -> t -> unit
 
-  val pp_degree_hum : Format.formatter -> astate -> unit
+  val pp_degree_hum : Format.formatter -> t -> unit
 
-  val encode : astate -> string
+  val encode : t -> string
 
-  val decode : string -> astate
+  val decode : string -> t
 end

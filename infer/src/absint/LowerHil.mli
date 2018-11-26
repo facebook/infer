@@ -28,7 +28,7 @@ module Make
 
   type extras = TransferFunctions.extras
 
-  val exec_instr : Domain.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.astate
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
@@ -44,8 +44,8 @@ module MakeAbstractInterpreterWithConfig
 
   val compute_post :
        Interpreter.TransferFunctions.extras ProcData.t
-    -> initial:MakeTransferFunctions(CFG).Domain.astate
-    -> MakeTransferFunctions(CFG).Domain.astate option
+    -> initial:MakeTransferFunctions(CFG).Domain.t
+    -> MakeTransferFunctions(CFG).Domain.t option
   (** compute and return the postcondition for the given procedure starting from [initial]. If
       [debug] is true, print html debugging output. *)
 end
