@@ -208,7 +208,11 @@ module Val = struct
 
   let minus_a = lift_itv Itv.minus
 
-  let get_iterator_itv : t -> t = fun i -> {bot with itv= Itv.get_iterator_itv i.itv}
+  let get_iterator_itv : t -> t =
+   fun i ->
+    let itv = Itv.get_iterator_itv i.itv in
+    of_itv itv ~traces:i.traces
+
 
   let mult = lift_itv Itv.mult
 
