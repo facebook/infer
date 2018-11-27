@@ -118,7 +118,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       else if phys_equal result right then F.pp_print_string f "= RIGHT"
       else Domain.pp f result
     in
-    L.d_printfln_escaped "LEFT: %a@.RIGHT: %t@.RESULT: %t@." Domain.pp left pp_right pp_result ;
+    L.d_printfln_escaped "LEFT:   %a@.RIGHT:  %t@.RESULT: %t@." Domain.pp left pp_right pp_result ;
     NodePrinter.finish_session underlying_node
 
 
