@@ -11,19 +11,19 @@ digraph cfg {
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&ab:ArcMethodsA*) [line 43, column 3]\n  n$0=*&a2:ArcMethodsA* [line 43, column 21]\n  *&ab:ArcMethodsA*=n$0 [line 43, column 3]\n  EXIT_SCOPE(n$0,n$1,a2,ab); [line 43, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&ab:ArcMethodsA*) assign_last [line 43, column 3]\n  n$0=*&a2:ArcMethodsA* [line 43, column 21]\n  *&ab:ArcMethodsA*=n$0 [line 43, column 3]\n  EXIT_SCOPE(n$0,n$1,a2,ab); [line 43, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&a2:ArcMethodsA*) [line 42, column 3]\n  n$2=_fun_ArcMethodsA_someA() [line 42, column 21]\n  *&a2:ArcMethodsA*=n$2 [line 42, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 42, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&a2:ArcMethodsA*) assign_last [line 42, column 3]\n  n$2=_fun_ArcMethodsA_someA() [line 42, column 21]\n  *&a2:ArcMethodsA*=n$2 [line 42, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 42, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$5=_fun___variable_initialization(&aa:ArcMethodsA*) [line 41, column 3]\n  n$4=*&a1:ArcMethodsA* [line 41, column 21]\n  *&aa:ArcMethodsA*=n$4 [line 41, column 3]\n  EXIT_SCOPE(n$4,n$5,aa,a1); [line 41, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$5=_fun___variable_initialization(&aa:ArcMethodsA*) assign_last [line 41, column 3]\n  n$4=*&a1:ArcMethodsA* [line 41, column 21]\n  *&aa:ArcMethodsA*=n$4 [line 41, column 3]\n  EXIT_SCOPE(n$4,n$5,aa,a1); [line 41, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$7=_fun___variable_initialization(&a1:ArcMethodsA*) [line 40, column 3]\n  n$6=_fun_ArcMethodsA_newA() [line 40, column 21]\n  *&a1:ArcMethodsA*=n$6 [line 40, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 40, column 3]\n " shape="box"]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$7=_fun___variable_initialization(&a1:ArcMethodsA*) assign_last [line 40, column 3]\n  n$6=_fun_ArcMethodsA_newA() [line 40, column 21]\n  *&a1:ArcMethodsA*=n$6 [line 40, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 40, column 3]\n " shape="box"]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" ;
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&a:ArcMethodsA*) [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n  EXIT_SCOPE(n$1,n$2,n$3); [line 21, column 3]\n " shape="box"]
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&a:ArcMethodsA*) assign_last [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n  EXIT_SCOPE(n$1,n$2,n$3); [line 21, column 3]\n " shape="box"]
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" ;
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&a:ArcMethodsA*) [line 26, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$6=_fun_NSObject_init(n$5:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$6 [line 26, column 3]\n  EXIT_SCOPE(n$5,n$6,n$7); [line 26, column 3]\n " shape="box"]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&a:ArcMethodsA*) assign_last [line 26, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$6=_fun_NSObject_init(n$5:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$6 [line 26, column 3]\n  EXIT_SCOPE(n$5,n$6,n$7); [line 26, column 3]\n " shape="box"]
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;

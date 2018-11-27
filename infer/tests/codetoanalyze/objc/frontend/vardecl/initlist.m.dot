@@ -7,7 +7,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int[3*4][2*12]) [line 13, column 3]\n  n$0=*&z:int [line 13, column 19]\n  *&a[0][0]:int=(n$0 + 1) [line 13, column 18]\n  *&a[0][1]:int=2 [line 13, column 18]\n  *&a[0][2]:int=3 [line 13, column 18]\n  *&a[1][0]:int=5 [line 13, column 33]\n  *&a[1][1]:int=6 [line 13, column 33]\n  *&a[1][2]:int=7 [line 13, column 33]\n  NULLIFY(&z); [line 13, column 33]\n  NULLIFY(&a); [line 13, column 33]\n  EXIT_SCOPE(n$0,n$1,z,a); [line 13, column 33]\n  APPLY_ABSTRACTION; [line 13, column 33]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int[3*4][2*12]) assign_last [line 13, column 3]\n  n$0=*&z:int [line 13, column 19]\n  *&a[0][0]:int=(n$0 + 1) [line 13, column 18]\n  *&a[0][1]:int=2 [line 13, column 18]\n  *&a[0][2]:int=3 [line 13, column 18]\n  *&a[1][0]:int=5 [line 13, column 33]\n  *&a[1][1]:int=6 [line 13, column 33]\n  *&a[1][2]:int=7 [line 13, column 33]\n  NULLIFY(&z); [line 13, column 33]\n  NULLIFY(&a); [line 13, column 33]\n  EXIT_SCOPE(n$0,n$1,z,a); [line 13, column 33]\n  APPLY_ABSTRACTION; [line 13, column 33]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
@@ -29,15 +29,15 @@ digraph cfg {
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n   NULLIFY(&c1); [line 24, column 1]\n  NULLIFY(&c2); [line 24, column 1]\n " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&a:C*[3*8]) [line 23, column 3]\n  n$0=*&c1:C* [line 23, column 15]\n  n$1=_fun_NSObject_init(n$0:C*) virtual [line 23, column 14]\n  *&a[0]:C*=n$1 [line 23, column 13]\n  n$2=*&c1:C* [line 23, column 25]\n  *&a[1]:C*=n$2 [line 23, column 13]\n  n$3=*&c2:C* [line 23, column 29]\n  *&a[2]:C*=n$3 [line 23, column 13]\n  NULLIFY(&a); [line 23, column 13]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,c2,a,c1); [line 23, column 13]\n  APPLY_ABSTRACTION; [line 23, column 13]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&a:C*[3*8]) assign_last [line 23, column 3]\n  n$0=*&c1:C* [line 23, column 15]\n  n$1=_fun_NSObject_init(n$0:C*) virtual [line 23, column 14]\n  *&a[0]:C*=n$1 [line 23, column 13]\n  n$2=*&c1:C* [line 23, column 25]\n  *&a[1]:C*=n$2 [line 23, column 13]\n  n$3=*&c2:C* [line 23, column 29]\n  *&a[2]:C*=n$3 [line 23, column 13]\n  NULLIFY(&a); [line 23, column 13]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,c2,a,c1); [line 23, column 13]\n  APPLY_ABSTRACTION; [line 23, column 13]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&c2:C*) [line 22, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 22, column 11]\n  *&c2:C*=n$5 [line 22, column 3]\n  EXIT_SCOPE(n$5,n$6); [line 22, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&c2:C*) assign_last [line 22, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 22, column 11]\n  *&c2:C*=n$5 [line 22, column 3]\n  EXIT_SCOPE(n$5,n$6); [line 22, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&c1:C*) [line 21, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 21, column 11]\n  *&c1:C*=n$7 [line 21, column 3]\n  EXIT_SCOPE(n$7,n$8); [line 21, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&c1:C*) assign_last [line 21, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 21, column 11]\n  *&c1:C*=n$7 [line 21, column 3]\n  EXIT_SCOPE(n$7,n$8); [line 21, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;

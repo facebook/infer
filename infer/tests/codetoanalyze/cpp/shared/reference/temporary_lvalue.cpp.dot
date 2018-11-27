@@ -18,7 +18,7 @@ digraph cfg {
 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" [label="2: Exit div0_function_param_cast \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 15, column 49]\n " color=yellow style=filled]
 	
 
-"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" [label="3:  Return Stmt \n   n$1=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const ) [line 15, column 45]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 15, column 45]\n  n$2=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &) [line 15, column 41]\n  *&return:int=n$2 [line 15, column 34]\n  EXIT_SCOPE(n$1,n$2,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 15, column 34]\n  APPLY_ABSTRACTION; [line 15, column 34]\n " shape="box"]
+"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" [label="3:  Return Stmt \n   n$1=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const ) assign_last [line 15, column 45]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 15, column 45]\n  n$2=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &) [line 15, column 41]\n  *&return:int=n$2 [line 15, column 34]\n  EXIT_SCOPE(n$1,n$2,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 15, column 34]\n  APPLY_ABSTRACTION; [line 15, column 34]\n " shape="box"]
 	
 
 	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" ;
@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_2" ;
-"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&a:int const &) [line 11, column 3]\n  n$4=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:int const ) [line 11, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:int=0 [line 11, column 18]\n  *&a:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$3 [line 11, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_materialize_temp__n$3); [line 11, column 3]\n " shape="box"]
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&a:int const &) assign_last [line 11, column 3]\n  n$4=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:int const ) assign_last [line 11, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:int=0 [line 11, column 18]\n  *&a:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$3 [line 11, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_materialize_temp__n$3); [line 11, column 3]\n " shape="box"]
 	
 
 	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" ;
@@ -48,7 +48,7 @@ digraph cfg {
 	
 
 	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_2" ;
-"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&a:int) [line 19, column 3]\n  *&a:int=0 [line 19, column 3]\n  EXIT_SCOPE(n$2); [line 19, column 3]\n " shape="box"]
+"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&a:int) assign_last [line 19, column 3]\n  *&a:int=0 [line 19, column 3]\n  EXIT_SCOPE(n$2); [line 19, column 3]\n " shape="box"]
 	
 
 	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" ;

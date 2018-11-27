@@ -48,7 +48,7 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" [label="13:  DeclStmt \n   n$6=_fun___variable_initialization(&a:int) [line 21, column 10]\n  n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 21, column 18]\n  *&a:int=n$5 [line 21, column 10]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 21, column 10]\n  EXIT_SCOPE(n$5,n$6,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 21, column 10]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" [label="13:  DeclStmt \n   n$6=_fun___variable_initialization(&a:int) assign_last [line 21, column 10]\n  n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 21, column 18]\n  *&a:int=n$5 [line 21, column 10]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 21, column 10]\n  EXIT_SCOPE(n$5,n$6,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 21, column 10]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" ;
@@ -57,15 +57,15 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$9=*&a:int [line 22, column 15]\n  n$10=*&result:int [line 22, column 5]\n  *&result:int=(n$10 + n$9) [line 22, column 5]\n  EXIT_SCOPE(n$9,n$10); [line 22, column 5]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$9=*&a:int [line 22, column 15]\n  n$10=*&result:int [line 22, column 5]\n  *&result:int=(n$10 + n$9) [line 22, column 5]\n  NULLIFY(&a); [line 22, column 5]\n  EXIT_SCOPE(n$9,n$10,a); [line 22, column 5]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" [label="16:  DeclStmt \n   n$12=_fun___variable_initialization(&result:int) [line 20, column 3]\n  *&result:int=0 [line 20, column 3]\n  EXIT_SCOPE(n$12); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" [label="16:  DeclStmt \n   n$12=_fun___variable_initialization(&result:int) assign_last [line 20, column 3]\n  *&result:int=0 [line 20, column 3]\n  EXIT_SCOPE(n$12); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" [label="17:  DeclStmt \n   n$13=_fun___variable_initialization(&x:int) [line 19, column 3]\n  *&x:int=10 [line 19, column 3]\n  EXIT_SCOPE(n$13); [line 19, column 3]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" [label="17:  DeclStmt \n   n$13=_fun___variable_initialization(&x:int) assign_last [line 19, column 3]\n  *&x:int=10 [line 19, column 3]\n  EXIT_SCOPE(n$13); [line 19, column 3]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" ;
@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" [label="7:  DeclStmt \n   n$3=_fun___variable_initialization(&a:int) [line 11, column 10]\n  n$2=*&x:int [line 11, column 18]\n  *&a:int=n$2 [line 11, column 10]\n  EXIT_SCOPE(n$2,n$3); [line 11, column 10]\n " shape="box"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" [label="7:  DeclStmt \n   n$3=_fun___variable_initialization(&a:int) assign_last [line 11, column 10]\n  n$2=*&x:int [line 11, column 18]\n  *&a:int=n$2 [line 11, column 10]\n  EXIT_SCOPE(n$2,n$3); [line 11, column 10]\n " shape="box"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" ;
@@ -101,15 +101,15 @@ digraph cfg {
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$6=*&a:int [line 12, column 15]\n  n$7=*&result:int [line 12, column 5]\n  *&result:int=(n$7 + n$6) [line 12, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 12, column 5]\n " shape="box"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$6=*&a:int [line 12, column 15]\n  n$7=*&result:int [line 12, column 5]\n  *&result:int=(n$7 + n$6) [line 12, column 5]\n  NULLIFY(&a); [line 12, column 5]\n  EXIT_SCOPE(n$6,n$7,a); [line 12, column 5]\n " shape="box"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" [label="10:  DeclStmt \n   n$9=_fun___variable_initialization(&result:int) [line 10, column 3]\n  *&result:int=0 [line 10, column 3]\n  EXIT_SCOPE(n$9); [line 10, column 3]\n  APPLY_ABSTRACTION; [line 10, column 3]\n " shape="box"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" [label="10:  DeclStmt \n   n$9=_fun___variable_initialization(&result:int) assign_last [line 10, column 3]\n  *&result:int=0 [line 10, column 3]\n  EXIT_SCOPE(n$9); [line 10, column 3]\n  APPLY_ABSTRACTION; [line 10, column 3]\n " shape="box"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" [label="11:  DeclStmt \n   n$10=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=10 [line 9, column 3]\n  EXIT_SCOPE(n$10); [line 9, column 3]\n " shape="box"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" [label="11:  DeclStmt \n   n$10=_fun___variable_initialization(&x:int) assign_last [line 9, column 3]\n  *&x:int=10 [line 9, column 3]\n  EXIT_SCOPE(n$10); [line 9, column 3]\n " shape="box"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" ;

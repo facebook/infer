@@ -52,11 +52,11 @@ digraph cfg {
 	
 
 	 "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_5" -> "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_4" ;
-"unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=&a [line 27, column 3]\n  EXIT_SCOPE(n$8,a); [line 27, column 3]\n " shape="box"]
+"unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&p:int*) assign_last [line 27, column 3]\n  *&p:int*=&a [line 27, column 3]\n  EXIT_SCOPE(n$8,a); [line 27, column 3]\n " shape="box"]
 	
 
 	 "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_6" -> "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_5" ;
-"unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_7" [label="7:  DeclStmt \n   n$9=_fun___variable_initialization(&a:int) [line 26, column 3]\n  *&a:int=3 [line 26, column 3]\n  EXIT_SCOPE(n$9); [line 26, column 3]\n " shape="box"]
+"unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_7" [label="7:  DeclStmt \n   n$9=_fun___variable_initialization(&a:int) assign_last [line 26, column 3]\n  *&a:int=3 [line 26, column 3]\n  EXIT_SCOPE(n$9); [line 26, column 3]\n " shape="box"]
 	
 
 	 "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_7" -> "unbox_ptr#3550280956167916174.75d50cc2e2dfffd1cc23613b01fc878b_6" ;
@@ -79,11 +79,11 @@ digraph cfg {
 	
 
 	 "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_5" -> "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_4" ;
-"unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&r:int&) [line 17, column 3]\n  *&r:int&=&a [line 17, column 3]\n  EXIT_SCOPE(n$8,a); [line 17, column 3]\n " shape="box"]
+"unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&r:int&) assign_last [line 17, column 3]\n  *&r:int&=&a [line 17, column 3]\n  EXIT_SCOPE(n$8,a); [line 17, column 3]\n " shape="box"]
 	
 
 	 "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_6" -> "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_5" ;
-"unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_7" [label="7:  DeclStmt \n   n$9=_fun___variable_initialization(&a:int) [line 16, column 3]\n  *&a:int=3 [line 16, column 3]\n  EXIT_SCOPE(n$9); [line 16, column 3]\n " shape="box"]
+"unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_7" [label="7:  DeclStmt \n   n$9=_fun___variable_initialization(&a:int) assign_last [line 16, column 3]\n  *&a:int=3 [line 16, column 3]\n  EXIT_SCOPE(n$9); [line 16, column 3]\n " shape="box"]
 	
 
 	 "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_7" -> "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_6" ;

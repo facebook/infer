@@ -7,7 +7,7 @@ digraph cfg {
 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" [label="2: Exit MyClass_aClassMethod \n   NULLIFY(&myClass); [line 20, column 1]\n " color=yellow style=filled]
 	
 
-"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&myClass:MyClass*) [line 19, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 19, column 22]\n  *&myClass:MyClass*=n$0 [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1,myClass); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&myClass:MyClass*) assign_last [line 19, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 19, column 22]\n  *&myClass:MyClass*=n$0 [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1,myClass); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" ;

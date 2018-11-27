@@ -92,9 +92,18 @@ module NullifyTransferFunctions = struct
       match instr with
       | Sil.Load (lhs_id, _, _, _) ->
           (VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify)
-      | Sil.Call ((id, _), _, _, _, _) ->
-          let active_defs' = VarDomain.add (Var.of_id id) active_defs in
-          (active_defs', to_nullify)
+      | Sil.Call ((id, _), _, actuals, _, {CallFlags.cf_assign_last_arg}) ->
+          let active_defs = VarDomain.add (Var.of_id id) active_defs in
+          let active_defs =
+            if cf_assign_last_arg then
+              match IList.split_last_rev actuals with
+              | Some ((Exp.Lvar pvar, _), _) ->
+                  VarDomain.add (Var.of_pvar pvar) active_defs
+              | _ ->
+                  active_defs
+            else active_defs
+          in
+          (active_defs, to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
       | Sil.Store _ | Prune _ | ExitScope _ | Abstract _ ->

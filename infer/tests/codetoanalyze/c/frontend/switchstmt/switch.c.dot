@@ -68,7 +68,7 @@ digraph cfg {
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" [label="15:  DeclStmt \n   n$11=_fun___variable_initialization(&x:int) [line 17, column 7]\n  *&x:int=1 [line 17, column 7]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" [label="15:  DeclStmt \n   n$11=_fun___variable_initialization(&x:int) assign_last [line 17, column 7]\n  *&x:int=1 [line 17, column 7]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" ;
@@ -98,7 +98,7 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" [label="22:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 11, column 3]\n  *&value:int=0 [line 11, column 3]\n  EXIT_SCOPE(n$14); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" [label="22:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) assign_last [line 11, column 3]\n  *&value:int=0 [line 11, column 3]\n  EXIT_SCOPE(n$14); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
@@ -117,7 +117,7 @@ digraph cfg {
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" ;
-"test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 183, column 3]\n  *&value:int=0 [line 183, column 3]\n  NULLIFY(&value); [line 183, column 3]\n  EXIT_SCOPE(n$3,value); [line 183, column 3]\n " shape="box"]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) assign_last [line 183, column 3]\n  *&value:int=0 [line 183, column 3]\n  NULLIFY(&value); [line 183, column 3]\n  EXIT_SCOPE(n$3,value); [line 183, column 3]\n " shape="box"]
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" ;
@@ -174,7 +174,7 @@ digraph cfg {
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" [label="14:  DeclStmt \n   n$6=_fun___variable_initialization(&value:int) [line 189, column 3]\n  *&value:int=0 [line 189, column 3]\n  EXIT_SCOPE(n$6); [line 189, column 3]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" [label="14:  DeclStmt \n   n$6=_fun___variable_initialization(&value:int) assign_last [line 189, column 3]\n  *&value:int=0 [line 189, column 3]\n  EXIT_SCOPE(n$6); [line 189, column 3]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" ;
@@ -202,11 +202,11 @@ digraph cfg {
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_6" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_5" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 47, column 7]\n  *&something:int=1 [line 47, column 7]\n  EXIT_SCOPE(n$4); [line 47, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) assign_last [line 47, column 7]\n  *&something:int=1 [line 47, column 7]\n  EXIT_SCOPE(n$4); [line 47, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_7" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_6" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 43, column 7]\n  *&z:int=9 [line 43, column 7]\n  APPLY_ABSTRACTION; [line 43, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) assign_last [line 43, column 7]\n  *&z:int=9 [line 43, column 7]\n  APPLY_ABSTRACTION; [line 43, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_8" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
@@ -248,7 +248,7 @@ digraph cfg {
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 37, column 3]\n  *&value:int=0 [line 37, column 3]\n  EXIT_SCOPE(n$9); [line 37, column 3]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) assign_last [line 37, column 3]\n  *&value:int=0 [line 37, column 3]\n  EXIT_SCOPE(n$9); [line 37, column 3]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_18" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_4" ;
@@ -268,7 +268,7 @@ digraph cfg {
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 69, column 7]\n  *&z:int=9 [line 69, column 7]\n  APPLY_ABSTRACTION; [line 69, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) assign_last [line 69, column 7]\n  *&z:int=9 [line 69, column 7]\n  APPLY_ABSTRACTION; [line 69, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
@@ -276,7 +276,7 @@ digraph cfg {
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 66, column 7]\n  *&something:int=1 [line 66, column 7]\n  EXIT_SCOPE(n$5); [line 66, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) assign_last [line 66, column 7]\n  *&something:int=1 [line 66, column 7]\n  EXIT_SCOPE(n$5); [line 66, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" ;
@@ -319,7 +319,7 @@ digraph cfg {
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" ;
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 60, column 3]\n  *&value:int=0 [line 60, column 3]\n  EXIT_SCOPE(n$9); [line 60, column 3]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) assign_last [line 60, column 3]\n  *&value:int=0 [line 60, column 3]\n  EXIT_SCOPE(n$9); [line 60, column 3]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" ;
@@ -347,11 +347,11 @@ digraph cfg {
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) [line 88, column 7]\n  *&something:int=1 [line 88, column 7]\n  EXIT_SCOPE(n$4); [line 88, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&something:int) assign_last [line 88, column 7]\n  *&something:int=1 [line 88, column 7]\n  EXIT_SCOPE(n$4); [line 88, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 84, column 7]\n  *&z:int=9 [line 84, column 7]\n  APPLY_ABSTRACTION; [line 84, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) assign_last [line 84, column 7]\n  *&z:int=9 [line 84, column 7]\n  APPLY_ABSTRACTION; [line 84, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
@@ -393,7 +393,7 @@ digraph cfg {
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 78, column 3]\n  *&value:int=0 [line 78, column 3]\n  EXIT_SCOPE(n$9); [line 78, column 3]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) assign_last [line 78, column 3]\n  *&value:int=0 [line 78, column 3]\n  EXIT_SCOPE(n$9); [line 78, column 3]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" ;
@@ -450,7 +450,7 @@ digraph cfg {
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 101, column 3]\n  *&value:int=0 [line 101, column 3]\n  EXIT_SCOPE(n$9); [line 101, column 3]\n  APPLY_ABSTRACTION; [line 101, column 3]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" [label="14:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) assign_last [line 101, column 3]\n  *&value:int=0 [line 101, column 3]\n  EXIT_SCOPE(n$9); [line 101, column 3]\n  APPLY_ABSTRACTION; [line 101, column 3]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
@@ -495,7 +495,7 @@ digraph cfg {
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_21" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_22" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_11" [label="11:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) [line 126, column 7]\n  *&z:int=9 [line 126, column 7]\n  APPLY_ABSTRACTION; [line 126, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_11" [label="11:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) assign_last [line 126, column 7]\n  *&z:int=9 [line 126, column 7]\n  APPLY_ABSTRACTION; [line 126, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_11" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
@@ -503,7 +503,7 @@ digraph cfg {
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_12" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_13" [label="13:  DeclStmt \n   n$7=_fun___variable_initialization(&something:int) [line 123, column 7]\n  *&something:int=1 [line 123, column 7]\n  EXIT_SCOPE(n$7); [line 123, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_13" [label="13:  DeclStmt \n   n$7=_fun___variable_initialization(&something:int) assign_last [line 123, column 7]\n  *&something:int=1 [line 123, column 7]\n  EXIT_SCOPE(n$7); [line 123, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_13" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_12" ;
@@ -546,7 +546,7 @@ digraph cfg {
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_19" ;
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_20" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_23" [label="23:  DeclStmt \n   n$11=_fun___variable_initialization(&value:int) [line 117, column 3]\n  *&value:int=0 [line 117, column 3]\n  EXIT_SCOPE(n$11); [line 117, column 3]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_23" [label="23:  DeclStmt \n   n$11=_fun___variable_initialization(&value:int) assign_last [line 117, column 3]\n  *&value:int=0 [line 117, column 3]\n  EXIT_SCOPE(n$11); [line 117, column 3]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_23" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_5" ;
@@ -566,7 +566,7 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) [line 146, column 7]\n  *&z:int=9 [line 146, column 7]\n  APPLY_ABSTRACTION; [line 146, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&z:int) assign_last [line 146, column 7]\n  *&z:int=9 [line 146, column 7]\n  APPLY_ABSTRACTION; [line 146, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
@@ -574,7 +574,7 @@ digraph cfg {
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) [line 143, column 7]\n  *&something:int=1 [line 143, column 7]\n  EXIT_SCOPE(n$5); [line 143, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" [label="7:  DeclStmt \n   n$5=_fun___variable_initialization(&something:int) assign_last [line 143, column 7]\n  *&something:int=1 [line 143, column 7]\n  EXIT_SCOPE(n$5); [line 143, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" ;
@@ -617,7 +617,7 @@ digraph cfg {
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" ;
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) [line 137, column 3]\n  *&value:int=0 [line 137, column 3]\n  NULLIFY(&value); [line 137, column 3]\n  EXIT_SCOPE(n$9,value); [line 137, column 3]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" [label="17:  DeclStmt \n   n$9=_fun___variable_initialization(&value:int) assign_last [line 137, column 3]\n  *&value:int=0 [line 137, column 3]\n  NULLIFY(&value); [line 137, column 3]\n  EXIT_SCOPE(n$9,value); [line 137, column 3]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" ;
@@ -645,11 +645,11 @@ digraph cfg {
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 156, column 10]\n  NULLIFY(&value); [line 156, column 10]\n  NULLIFY(&a); [line 156, column 10]\n  NULLIFY(&something); [line 156, column 10]\n  EXIT_SCOPE(n$0,value,a,something); [line 156, column 10]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 156, column 10]\n  NULLIFY(&value); [line 156, column 10]\n  EXIT_SCOPE(n$0,value); [line 156, column 10]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" [label="8:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) [line 171, column 5]\n  *&a:int=0 [line 171, column 5]\n  EXIT_SCOPE(n$1); [line 171, column 5]\n  APPLY_ABSTRACTION; [line 171, column 5]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" [label="8:  DeclStmt \n   n$1=_fun___variable_initialization(&a:int) assign_last [line 171, column 5]\n  *&a:int=0 [line 171, column 5]\n  NULLIFY(&a); [line 171, column 5]\n  EXIT_SCOPE(n$1,a); [line 171, column 5]\n  APPLY_ABSTRACTION; [line 171, column 5]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
@@ -683,15 +683,15 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" [label="16:  DeclStmt \n   n$6=_fun___variable_initialization(&z:int) [line 166, column 9]\n  *&z:int=9 [line 166, column 9]\n  APPLY_ABSTRACTION; [line 166, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" [label="16:  DeclStmt \n   n$6=_fun___variable_initialization(&z:int) assign_last [line 166, column 9]\n  *&z:int=9 [line 166, column 9]\n  APPLY_ABSTRACTION; [line 166, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" [label="17:  UnaryOperator \n   n$9=*&something:int [line 163, column 9]\n  *&something:int=(n$9 + 1) [line 163, column 9]\n  EXIT_SCOPE(n$9); [line 163, column 9]\n  APPLY_ABSTRACTION; [line 163, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" [label="17:  UnaryOperator \n   n$9=*&something:int [line 163, column 9]\n  *&something:int=(n$9 + 1) [line 163, column 9]\n  NULLIFY(&something); [line 163, column 9]\n  EXIT_SCOPE(n$9,something); [line 163, column 9]\n  APPLY_ABSTRACTION; [line 163, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" [label="18:  DeclStmt \n   n$10=_fun___variable_initialization(&something:int) [line 162, column 9]\n  *&something:int=1 [line 162, column 9]\n  EXIT_SCOPE(n$10); [line 162, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" [label="18:  DeclStmt \n   n$10=_fun___variable_initialization(&something:int) assign_last [line 162, column 9]\n  *&something:int=1 [line 162, column 9]\n  EXIT_SCOPE(n$10); [line 162, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" ;
@@ -729,7 +729,7 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$4 == 0), true); [line 158, column 7]\n  NULLIFY(&value); [line 158, column 7]\n  NULLIFY(&a); [line 158, column 7]\n  NULLIFY(&something); [line 158, column 7]\n  EXIT_SCOPE(n$4,value,a,something); [line 158, column 7]\n " shape="invhouse"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$4 == 0), true); [line 158, column 7]\n  NULLIFY(&value); [line 158, column 7]\n  EXIT_SCOPE(n$4,value); [line 158, column 7]\n " shape="invhouse"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" ;
@@ -738,7 +738,7 @@ digraph cfg {
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" ;
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" [label="29:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) [line 155, column 3]\n  *&value:int=0 [line 155, column 3]\n  EXIT_SCOPE(n$14); [line 155, column 3]\n  APPLY_ABSTRACTION; [line 155, column 3]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" [label="29:  DeclStmt \n   n$14=_fun___variable_initialization(&value:int) assign_last [line 155, column 3]\n  *&value:int=0 [line 155, column 3]\n  EXIT_SCOPE(n$14); [line 155, column 3]\n  APPLY_ABSTRACTION; [line 155, column 3]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
@@ -757,7 +757,7 @@ digraph cfg {
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" ;
-"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) [line 177, column 3]\n  *&value:int=0 [line 177, column 3]\n  EXIT_SCOPE(n$3); [line 177, column 3]\n " shape="box"]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&value:int) assign_last [line 177, column 3]\n  *&value:int=0 [line 177, column 3]\n  EXIT_SCOPE(n$3); [line 177, column 3]\n " shape="box"]
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" ;

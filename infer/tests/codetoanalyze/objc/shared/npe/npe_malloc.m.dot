@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" ;
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&person:Person*) [line 23, column 3]\n  n$2=_fun_malloc_no_fail(sizeof(t=Person;nbytes=8):Person) [line 23, column 43]\n  *&person:Person*=n$2 [line 23, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 23, column 3]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&person:Person*) assign_last [line 23, column 3]\n  n$2=_fun_malloc_no_fail(sizeof(t=Person;nbytes=8):Person) [line 23, column 43]\n  *&person:Person*=n$2 [line 23, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" ;

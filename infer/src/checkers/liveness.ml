@@ -13,6 +13,9 @@ module F = Format
 module VarSet = AbstractDomain.FiniteSet (Var)
 module Domain = VarSet
 
+(* only kill pvars that are local; don't kill those that can escape *)
+let is_always_in_scope pvar = Pvar.is_return pvar || Pvar.is_global pvar
+
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -57,7 +60,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
     | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
         let astate' =
-          if Pvar.is_global lhs_pvar then astate (* never kill globals *)
+          if is_always_in_scope lhs_pvar then astate (* never kill globals *)
           else Domain.remove (Var.of_pvar lhs_pvar) astate
         in
         exp_add_live rhs_exp astate'
@@ -65,9 +68,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         exp_add_live lhs_exp astate |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
-    | Sil.Call ((ret_id, _), call_exp, actuals, _, _) ->
+    | Sil.Call ((ret_id, _), call_exp, actuals, _, {CallFlags.cf_assign_last_arg}) ->
+        let actuals_to_read, astate =
+          if cf_assign_last_arg then
+            match IList.split_last_rev actuals with
+            | Some ((Exp.Lvar pvar, _), actuals') when not (is_always_in_scope pvar) ->
+                (actuals', Domain.remove (Var.of_pvar pvar) astate)
+            | _ ->
+                (actuals, astate)
+          else (actuals, astate)
+        in
         Domain.remove (Var.of_id ret_id) astate
-        |> exp_add_live call_exp |> add_live_actuals actuals call_exp
+        |> exp_add_live call_exp
+        |> add_live_actuals actuals_to_read call_exp
     | Sil.ExitScope _ | Abstract _ | Nullify _ ->
         astate
 

@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_3" -> "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_2" ;
-"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:copy_array_field::X) [line 24, column 3]\n  n$3=_fun_copy_array_field::X_X(&x2:copy_array_field::X*,&x1:copy_array_field::X&) [line 24, column 10]\n  EXIT_SCOPE(n$3,n$4,x1); [line 24, column 10]\n " shape="box"]
+"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:copy_array_field::X) assign_last [line 24, column 3]\n  n$3=_fun_copy_array_field::X_X(&x2:copy_array_field::X*,&x1:copy_array_field::X&) [line 24, column 10]\n  EXIT_SCOPE(n$3,n$4,x1); [line 24, column 10]\n " shape="box"]
 	
 
 	 "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_4" -> "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_3" ;
@@ -19,11 +19,11 @@ digraph cfg {
 	
 
 	 "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_5" -> "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_4" ;
-"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:copy_array_field::X) [line 22, column 3]\n  n$5=_fun_copy_array_field::X_X(&x1:copy_array_field::X*) [line 22, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 22, column 5]\n " shape="box"]
+"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:copy_array_field::X) assign_last [line 22, column 3]\n  n$5=_fun_copy_array_field::X_X(&x1:copy_array_field::X*) [line 22, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 22, column 5]\n " shape="box"]
 	
 
 	 "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_6" -> "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_5" ;
-"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_7" [label="7:  DeclStmt \n   n$7=_fun___variable_initialization(&a:int) [line 21, column 3]\n  *&a:int=0 [line 21, column 3]\n  EXIT_SCOPE(n$7); [line 21, column 3]\n " shape="box"]
+"no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_7" [label="7:  DeclStmt \n   n$7=_fun___variable_initialization(&a:int) assign_last [line 21, column 3]\n  *&a:int=0 [line 21, column 3]\n  EXIT_SCOPE(n$7); [line 21, column 3]\n " shape="box"]
 	
 
 	 "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_7" -> "no_npe#copy_array_field#15879390968573954131.8ea76552f08038187f112d283020a67e_6" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_3" -> "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_2" ;
-"npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:copy_array_field::X) [line 16, column 3]\n  n$3=_fun_copy_array_field::X_X(&x2:copy_array_field::X*,&x1:copy_array_field::X&) [line 16, column 10]\n  EXIT_SCOPE(n$3,n$4,x1); [line 16, column 10]\n " shape="box"]
+"npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:copy_array_field::X) assign_last [line 16, column 3]\n  n$3=_fun_copy_array_field::X_X(&x2:copy_array_field::X*,&x1:copy_array_field::X&) [line 16, column 10]\n  EXIT_SCOPE(n$3,n$4,x1); [line 16, column 10]\n " shape="box"]
 	
 
 	 "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_4" -> "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_3" ;
@@ -46,7 +46,7 @@ digraph cfg {
 	
 
 	 "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_5" -> "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_4" ;
-"npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:copy_array_field::X) [line 14, column 3]\n  n$5=_fun_copy_array_field::X_X(&x1:copy_array_field::X*) [line 14, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 14, column 5]\n " shape="box"]
+"npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:copy_array_field::X) assign_last [line 14, column 3]\n  n$5=_fun_copy_array_field::X_X(&x1:copy_array_field::X*) [line 14, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 14, column 5]\n " shape="box"]
 	
 
 	 "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_6" -> "npe#copy_array_field#77301322902488828.946ed5a43ad43585633fa030996f9ad5_5" ;

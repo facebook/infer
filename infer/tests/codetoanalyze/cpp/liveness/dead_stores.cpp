@@ -496,4 +496,13 @@ void unused_attribute_ok() {
   UNUSED(x);
 }
 
+struct ChainedCalls {
+  ChainedCalls chained(int i);
+};
+
+ChainedCalls chain_method_calls_ok() {
+  ChainedCalls x;
+  return x.chained(5).chained(6);
+}
+
 } // namespace dead_stores

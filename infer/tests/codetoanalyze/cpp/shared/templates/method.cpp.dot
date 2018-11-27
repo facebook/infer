@@ -11,11 +11,11 @@ digraph cfg {
 	
 
 	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_2" ;
-"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::Getter) [line 39, column 3]\n  n$3=_fun_method::Getter_Getter(&g:method::Getter*) [line 39, column 10]\n  EXIT_SCOPE(n$3,n$4); [line 39, column 10]\n " shape="box"]
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::Getter) assign_last [line 39, column 3]\n  n$3=_fun_method::Getter_Getter(&g:method::Getter*) [line 39, column 10]\n  EXIT_SCOPE(n$3,n$4); [line 39, column 10]\n " shape="box"]
 	
 
 	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" ;
-"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2:method::X2) [line 38, column 3]\n  n$5=_fun_method::X2_X2(&x2:method::X2*) [line 38, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 38, column 6]\n " shape="box"]
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2:method::X2) assign_last [line 38, column 3]\n  n$5=_fun_method::X2_X2(&x2:method::X2*) [line 38, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 38, column 6]\n " shape="box"]
 	
 
 	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" ;
@@ -30,15 +30,15 @@ digraph cfg {
 	
 
 	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_2" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X3>) [line 52, column 3]\n  n$3=_fun_method::GetterTempl<method::X3>_GetterTempl(&g:method::GetterTempl<method::X3>*) [line 52, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 52, column 19]\n " shape="box"]
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X3>) assign_last [line 52, column 3]\n  n$3=_fun_method::GetterTempl<method::X3>_GetterTempl(&g:method::GetterTempl<method::X3>*) [line 52, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 52, column 19]\n " shape="box"]
 	
 
 	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x3:method::X3) [line 51, column 3]\n  n$5=_fun_method::X3_X3(&x3:method::X3*) [line 51, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 51, column 6]\n " shape="box"]
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x3:method::X3) assign_last [line 51, column 3]\n  n$5=_fun_method::X3_X3(&x3:method::X3*) [line 51, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 51, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x2:method::X2) [line 50, column 3]\n  n$7=_fun_method::X2_X2(&x2:method::X2*) [line 50, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 50, column 6]\n " shape="box"]
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x2:method::X2) assign_last [line 50, column 3]\n  n$7=_fun_method::X2_X2(&x2:method::X2*) [line 50, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 50, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" ;
@@ -53,15 +53,15 @@ digraph cfg {
 	
 
 	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_2" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X2>) [line 59, column 3]\n  n$3=_fun_method::GetterTempl<method::X2>_GetterTempl(&g:method::GetterTempl<method::X2>*) [line 59, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 59, column 19]\n " shape="box"]
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X2>) assign_last [line 59, column 3]\n  n$3=_fun_method::GetterTempl<method::X2>_GetterTempl(&g:method::GetterTempl<method::X2>*) [line 59, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 59, column 19]\n " shape="box"]
 	
 
 	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2_2:method::X2) [line 58, column 3]\n  n$5=_fun_method::X2_X2(&x2_2:method::X2*) [line 58, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 58, column 6]\n " shape="box"]
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2_2:method::X2) assign_last [line 58, column 3]\n  n$5=_fun_method::X2_X2(&x2_2:method::X2*) [line 58, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 58, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x2_1:method::X2) [line 57, column 3]\n  n$7=_fun_method::X2_X2(&x2_1:method::X2*) [line 57, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 57, column 6]\n " shape="box"]
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x2_1:method::X2) assign_last [line 57, column 3]\n  n$7=_fun_method::X2_X2(&x2_1:method::X2*) [line 57, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 57, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" ;
@@ -76,11 +76,11 @@ digraph cfg {
 	
 
 	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_2" ;
-"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::Getter) [line 45, column 3]\n  n$3=_fun_method::Getter_Getter(&g:method::Getter*) [line 45, column 10]\n  EXIT_SCOPE(n$3,n$4); [line 45, column 10]\n " shape="box"]
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::Getter) assign_last [line 45, column 3]\n  n$3=_fun_method::Getter_Getter(&g:method::Getter*) [line 45, column 10]\n  EXIT_SCOPE(n$3,n$4); [line 45, column 10]\n " shape="box"]
 	
 
 	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" ;
-"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:method::X1) [line 44, column 3]\n  n$5=_fun_method::X1_X1(&x1:method::X1*) [line 44, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 44, column 6]\n " shape="box"]
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:method::X1) assign_last [line 44, column 3]\n  n$5=_fun_method::X1_X1(&x1:method::X1*) [line 44, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 44, column 6]\n " shape="box"]
 	
 
 	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" ;
@@ -95,15 +95,15 @@ digraph cfg {
 	
 
 	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_2" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X2>) [line 66, column 3]\n  n$3=_fun_method::GetterTempl<method::X2>_GetterTempl(&g:method::GetterTempl<method::X2>*) [line 66, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 66, column 19]\n " shape="box"]
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X2>) assign_last [line 66, column 3]\n  n$3=_fun_method::GetterTempl<method::X2>_GetterTempl(&g:method::GetterTempl<method::X2>*) [line 66, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 66, column 19]\n " shape="box"]
 	
 
 	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2:method::X2) [line 65, column 3]\n  n$5=_fun_method::X2_X2(&x2:method::X2*) [line 65, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 65, column 6]\n " shape="box"]
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x2:method::X2) assign_last [line 65, column 3]\n  n$5=_fun_method::X2_X2(&x2:method::X2*) [line 65, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 65, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x1:method::X1) [line 64, column 3]\n  n$7=_fun_method::X1_X1(&x1:method::X1*) [line 64, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 64, column 6]\n " shape="box"]
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x1:method::X1) assign_last [line 64, column 3]\n  n$7=_fun_method::X1_X1(&x1:method::X1*) [line 64, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 64, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" ;
@@ -118,15 +118,15 @@ digraph cfg {
 	
 
 	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_2" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X1>) [line 73, column 3]\n  n$3=_fun_method::GetterTempl<method::X1>_GetterTempl(&g:method::GetterTempl<method::X1>*) [line 73, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 73, column 19]\n " shape="box"]
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&g:method::GetterTempl<method::X1>) assign_last [line 73, column 3]\n  n$3=_fun_method::GetterTempl<method::X1>_GetterTempl(&g:method::GetterTempl<method::X1>*) [line 73, column 19]\n  EXIT_SCOPE(n$3,n$4); [line 73, column 19]\n " shape="box"]
 	
 
 	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1_2:method::X1) [line 72, column 3]\n  n$5=_fun_method::X1_X1(&x1_2:method::X1*) [line 72, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 72, column 6]\n " shape="box"]
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1_2:method::X1) assign_last [line 72, column 3]\n  n$5=_fun_method::X1_X1(&x1_2:method::X1*) [line 72, column 6]\n  EXIT_SCOPE(n$5,n$6); [line 72, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x1_1:method::X1) [line 71, column 3]\n  n$7=_fun_method::X1_X1(&x1_1:method::X1*) [line 71, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 71, column 6]\n " shape="box"]
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x1_1:method::X1) assign_last [line 71, column 3]\n  n$7=_fun_method::X1_X1(&x1_1:method::X1*) [line 71, column 6]\n  EXIT_SCOPE(n$7,n$8); [line 71, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" ;

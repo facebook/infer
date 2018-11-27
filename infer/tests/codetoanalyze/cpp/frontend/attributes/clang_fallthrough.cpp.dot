@@ -66,7 +66,7 @@ digraph cfg {
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" [label="14:  DeclStmt \n   n$10=_fun___variable_initialization(&res:int) [line 11, column 3]\n  *&res:int=5 [line 11, column 3]\n  EXIT_SCOPE(n$10); [line 11, column 3]\n " shape="box"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" [label="14:  DeclStmt \n   n$10=_fun___variable_initialization(&res:int) assign_last [line 11, column 3]\n  *&res:int=5 [line 11, column 3]\n  EXIT_SCOPE(n$10); [line 11, column 3]\n " shape="box"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" ;

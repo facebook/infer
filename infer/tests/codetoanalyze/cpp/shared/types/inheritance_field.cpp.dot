@@ -60,7 +60,7 @@ digraph cfg {
 	
 
 	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_2" ;
-"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1*) [line 37, column 3]\n  n$3=*&s:Sub* [line 37, column 14]\n  *&b:Sub*=n$3 [line 37, column 3]\n  NULLIFY(&s); [line 37, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 37, column 3]\n " shape="box"]
+"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1*) assign_last [line 37, column 3]\n  n$3=*&s:Sub* [line 37, column 14]\n  *&b:Sub*=n$3 [line 37, column 3]\n  NULLIFY(&s); [line 37, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 37, column 3]\n " shape="box"]
 	
 
 	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" ;
@@ -79,7 +79,7 @@ digraph cfg {
 	
 
 	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_2" ;
-"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1&) [line 43, column 3]\n  n$3=*&s:Sub& [line 43, column 14]\n  *&b:Sub&=n$3 [line 43, column 3]\n  NULLIFY(&s); [line 43, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 43, column 3]\n " shape="box"]
+"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1&) assign_last [line 43, column 3]\n  n$3=*&s:Sub& [line 43, column 14]\n  *&b:Sub&=n$3 [line 43, column 3]\n  NULLIFY(&s); [line 43, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 43, column 3]\n " shape="box"]
 	
 
 	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" ;
@@ -147,7 +147,7 @@ digraph cfg {
 	
 
 	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_2" ;
-"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1*) [line 66, column 3]\n  n$3=*&s:Sub* [line 66, column 14]\n  *&b:Sub*=n$3 [line 66, column 3]\n  NULLIFY(&s); [line 66, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 66, column 3]\n " shape="box"]
+"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&b:Base1*) assign_last [line 66, column 3]\n  n$3=*&s:Sub* [line 66, column 14]\n  *&b:Sub*=n$3 [line 66, column 3]\n  NULLIFY(&s); [line 66, column 3]\n  EXIT_SCOPE(n$3,n$4,s); [line 66, column 3]\n " shape="box"]
 	
 
 	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" ;

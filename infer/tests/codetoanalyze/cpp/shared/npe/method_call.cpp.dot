@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" ;
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:X*) [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n  EXIT_SCOPE(n$4); [line 14, column 3]\n " shape="box"]
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:X*) assign_last [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n  EXIT_SCOPE(n$4); [line 14, column 3]\n " shape="box"]
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" ;

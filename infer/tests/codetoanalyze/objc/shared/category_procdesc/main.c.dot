@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int*) [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=(int*)n$0 [line 14, column 3]\n  EXIT_SCOPE(n$0,n$1,x); [line 14, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int*) assign_last [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=(int*)n$0 [line 14, column 3]\n  EXIT_SCOPE(n$0,n$1,x); [line 14, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&person:EOCPerson*) [line 12, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$5=_fun_NSObject_init(n$4:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$5 [line 12, column 3]\n  EXIT_SCOPE(n$4,n$5,n$6); [line 12, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&person:EOCPerson*) assign_last [line 12, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$5=_fun_NSObject_init(n$4:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$5 [line 12, column 3]\n  EXIT_SCOPE(n$4,n$5,n$6); [line 12, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" ;

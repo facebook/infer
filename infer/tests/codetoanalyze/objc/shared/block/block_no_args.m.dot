@@ -47,7 +47,7 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  EXIT_SCOPE(n$5); [line 27, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) assign_last [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  EXIT_SCOPE(n$5); [line 27, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
@@ -59,7 +59,7 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   n$10=_fun___variable_initialization(&z:int) [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n  EXIT_SCOPE(n$10); [line 22, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   n$10=_fun___variable_initialization(&z:int) assign_last [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n  EXIT_SCOPE(n$10); [line 22, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" ;

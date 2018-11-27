@@ -18,7 +18,7 @@ digraph cfg {
 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" [label="2: Exit objc_blockA_test2_3 \n   NULLIFY(&p); [line 40, column 3]\n " color=yellow style=filled]
 	
 
-"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$9=_fun___variable_initialization(&p:objc_object*) [line 39, column 5]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 39, column 12]\n  *&p:objc_object*=n$8 [line 39, column 5]\n  EXIT_SCOPE(n$8,n$9,p); [line 39, column 5]\n  APPLY_ABSTRACTION; [line 39, column 5]\n " shape="box"]
+"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$9=_fun___variable_initialization(&p:objc_object*) assign_last [line 39, column 5]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 39, column 12]\n  *&p:objc_object*=n$8 [line 39, column 5]\n  EXIT_SCOPE(n$8,n$9,p); [line 39, column 5]\n  APPLY_ABSTRACTION; [line 39, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" -> "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" ;

@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" [label="8:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) [line 20, column 37]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 20, column 45]\n  *&z:int=n$3 [line 20, column 37]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 20, column 37]\n  NULLIFY(&z); [line 20, column 37]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$0,z); [line 20, column 37]\n  APPLY_ABSTRACTION; [line 20, column 37]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" [label="8:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) assign_last [line 20, column 37]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 20, column 45]\n  *&z:int=n$3 [line 20, column 37]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 20, column 37]\n  NULLIFY(&z); [line 20, column 37]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$0,z); [line 20, column 37]\n  APPLY_ABSTRACTION; [line 20, column 37]\n " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_2" ;
@@ -60,7 +60,7 @@ digraph cfg {
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" [label="8:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) [line 18, column 37]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 18, column 54]\n  n$2=_fun_ret_ptr(n$1:int) [line 18, column 46]\n  n$3=*n$2.field:int [line 18, column 45]\n  *&z:int=n$3 [line 18, column 37]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 18, column 37]\n  NULLIFY(&z); [line 18, column 37]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$0,z); [line 18, column 37]\n  APPLY_ABSTRACTION; [line 18, column 37]\n " shape="box"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" [label="8:  DeclStmt \n   n$4=_fun___variable_initialization(&z:int) assign_last [line 18, column 37]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 18, column 54]\n  n$2=_fun_ret_ptr(n$1:int) [line 18, column 46]\n  n$3=*n$2.field:int [line 18, column 45]\n  *&z:int=n$3 [line 18, column 37]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 18, column 37]\n  NULLIFY(&z); [line 18, column 37]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$0,z); [line 18, column 37]\n  APPLY_ABSTRACTION; [line 18, column 37]\n " shape="box"]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_2" ;
@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 15, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:s* [line 15, column 12]\n  n$4=*n$3.field:int [line 15, column 11]\n  *&z:int=n$4 [line 15, column 3]\n  NULLIFY(&z); [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,z,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) assign_last [line 15, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:s* [line 15, column 12]\n  n$4=*n$3.field:int [line 15, column 11]\n  *&z:int=n$4 [line 15, column 3]\n  NULLIFY(&z); [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,z,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_2" ;

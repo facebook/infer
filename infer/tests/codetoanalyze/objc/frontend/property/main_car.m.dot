@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&honda:Car*) [line 11, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Car):unsigned long) [line 11, column 17]\n  n$7=_fun_NSObject_init(n$6:Car*) virtual [line 11, column 16]\n  *&honda:Car*=n$7 [line 11, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8); [line 11, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&honda:Car*) assign_last [line 11, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Car):unsigned long) [line 11, column 17]\n  n$7=_fun_NSObject_init(n$6:Car*) virtual [line 11, column 16]\n  *&honda:Car*=n$7 [line 11, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8); [line 11, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

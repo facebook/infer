@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$20=_fun___variable_initialization(&n:NSNumber*) [line 35, column 3]\n  n$19=_fun_NSNumber_numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$19 [line 35, column 3]\n  EXIT_SCOPE(n$19,n$20,n); [line 35, column 3]\n " shape="box"]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$20=_fun___variable_initialization(&n:NSNumber*) assign_last [line 35, column 3]\n  n$19=_fun_NSNumber_numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$19 [line 35, column 3]\n  EXIT_SCOPE(n$19,n$20,n); [line 35, column 3]\n " shape="box"]
 	
 
 	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$17=_fun___variable_initialization(&n:NSNumber*) [line 30, column 3]\n  n$16=_fun_NSNumber_numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$16 [line 30, column 3]\n  EXIT_SCOPE(n$16,n$17,n); [line 30, column 3]\n " shape="box"]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$17=_fun___variable_initialization(&n:NSNumber*) assign_last [line 30, column 3]\n  n$16=_fun_NSNumber_numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$16 [line 30, column 3]\n  EXIT_SCOPE(n$16,n$17,n); [line 30, column 3]\n " shape="box"]
 	
 
 	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
@@ -41,7 +41,7 @@ digraph cfg {
 	
 
 	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&n:NSNumber*) [line 25, column 3]\n  n$13=_fun_NSNumber_numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$13 [line 25, column 3]\n  EXIT_SCOPE(n$13,n$14,n); [line 25, column 3]\n " shape="box"]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&n:NSNumber*) assign_last [line 25, column 3]\n  n$13=_fun_NSNumber_numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$13 [line 25, column 3]\n  EXIT_SCOPE(n$13,n$14,n); [line 25, column 3]\n " shape="box"]
 	
 
 	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&n:NSNumber*) [line 20, column 3]\n  n$10=_fun_NSNumber_numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$10 [line 20, column 3]\n  EXIT_SCOPE(n$10,n$11,n); [line 20, column 3]\n " shape="box"]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&n:NSNumber*) assign_last [line 20, column 3]\n  n$10=_fun_NSNumber_numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$10 [line 20, column 3]\n  EXIT_SCOPE(n$10,n$11,n); [line 20, column 3]\n " shape="box"]
 	
 
 	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
@@ -71,15 +71,15 @@ digraph cfg {
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&n:NSNumber*) [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,n$6,n); [line 15, column 3]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&n:NSNumber*) assign_last [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,n$6,n); [line 15, column 3]\n " shape="box"]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y:int) [line 14, column 3]\n  *&y:int=5 [line 14, column 3]\n  EXIT_SCOPE(n$7); [line 14, column 3]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y:int) assign_last [line 14, column 3]\n  *&y:int=5 [line 14, column 3]\n  EXIT_SCOPE(n$7); [line 14, column 3]\n " shape="box"]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x:int) [line 13, column 3]\n  *&x:int=4 [line 13, column 3]\n  EXIT_SCOPE(n$8); [line 13, column 3]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&x:int) assign_last [line 13, column 3]\n  *&x:int=4 [line 13, column 3]\n  EXIT_SCOPE(n$8); [line 13, column 3]\n " shape="box"]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" ;
@@ -94,7 +94,7 @@ digraph cfg {
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   n$25=_fun___variable_initialization(&s:NSString*) [line 40, column 3]\n  n$23=_fun_strdup((char const *)\"hello world\":char const *) [line 40, column 19]\n  n$24=_fun_NSString_stringWithUTF8String:((char const *)n$23:char const *) [line 40, column 17]\n  *&s:NSString*=n$24 [line 40, column 3]\n  EXIT_SCOPE(n$23,n$24,n$25,s); [line 40, column 3]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   n$25=_fun___variable_initialization(&s:NSString*) assign_last [line 40, column 3]\n  n$23=_fun_strdup((char const *)\"hello world\":char const *) [line 40, column 19]\n  n$24=_fun_NSString_stringWithUTF8String:((char const *)n$23:char const *) [line 40, column 17]\n  *&s:NSString*=n$24 [line 40, column 3]\n  EXIT_SCOPE(n$23,n$24,n$25,s); [line 40, column 3]\n " shape="box"]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;

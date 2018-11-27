@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&aa:A*) [line 24, column 3]\n  n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A_child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n  NULLIFY(&a); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,a); [line 24, column 3]\n " shape="box"]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&aa:A*) assign_last [line 24, column 3]\n  n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A_child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n  NULLIFY(&a); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,a); [line 24, column 3]\n " shape="box"]
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" ;
@@ -37,7 +37,7 @@ digraph cfg {
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   n$10=_fun___variable_initialization(&aa:A*) [line 29, column 3]\n  n$8=*&a:A* [line 29, column 12]\n  n$9=_fun_A_child(n$8:A*) [line 29, column 11]\n  *&aa:A*=n$9 [line 29, column 3]\n  NULLIFY(&a); [line 29, column 3]\n  EXIT_SCOPE(n$8,n$9,n$10,a); [line 29, column 3]\n " shape="box"]
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   n$10=_fun___variable_initialization(&aa:A*) assign_last [line 29, column 3]\n  n$8=*&a:A* [line 29, column 12]\n  n$9=_fun_A_child(n$8:A*) [line 29, column 11]\n  *&aa:A*=n$9 [line 29, column 3]\n  NULLIFY(&a); [line 29, column 3]\n  EXIT_SCOPE(n$8,n$9,n$10,a); [line 29, column 3]\n " shape="box"]
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" ;

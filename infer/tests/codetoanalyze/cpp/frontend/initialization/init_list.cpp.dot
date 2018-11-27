@@ -7,7 +7,7 @@ digraph cfg {
 "init_in_binop#init_list#8348250075128359911.7adaa67964536570064366a92056cf46_2" [label="2: Exit init_list::init_in_binop \n  " color=yellow style=filled]
 	
 
-"init_in_binop#init_list#8348250075128359911.7adaa67964536570064366a92056cf46_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 51, column 34]\n  n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_init_list__n$2:int) [line 51, column 42]\n  *&0$?%__sil_tmpSIL_init_list__n$2:int=0 [line 51, column 42]\n  *&x:int=(-n$1 & ~&0$?%__sil_tmpSIL_init_list__n$2) [line 51, column 29]\n  NULLIFY(&0$?%__sil_tmpSIL_init_list__n$2); [line 51, column 29]\n  NULLIFY(&x); [line 51, column 29]\n  EXIT_SCOPE(n$1,n$3,0$?%__sil_tmpSIL_init_list__n$2,x); [line 51, column 29]\n  APPLY_ABSTRACTION; [line 51, column 29]\n " shape="box"]
+"init_in_binop#init_list#8348250075128359911.7adaa67964536570064366a92056cf46_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 51, column 34]\n  n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_init_list__n$2:int) assign_last [line 51, column 42]\n  *&0$?%__sil_tmpSIL_init_list__n$2:int=0 [line 51, column 42]\n  *&x:int=(-n$1 & ~&0$?%__sil_tmpSIL_init_list__n$2) [line 51, column 29]\n  NULLIFY(&0$?%__sil_tmpSIL_init_list__n$2); [line 51, column 29]\n  NULLIFY(&x); [line 51, column 29]\n  EXIT_SCOPE(n$1,n$3,0$?%__sil_tmpSIL_init_list__n$2,x); [line 51, column 29]\n  APPLY_ABSTRACTION; [line 51, column 29]\n " shape="box"]
 	
 
 	 "init_in_binop#init_list#8348250075128359911.7adaa67964536570064366a92056cf46_3" -> "init_in_binop#init_list#8348250075128359911.7adaa67964536570064366a92056cf46_2" ;
@@ -18,19 +18,19 @@ digraph cfg {
 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_2" [label="2: Exit init_list::list_init \n   NULLIFY(&yref); [line 49, column 1]\n  NULLIFY(&y); [line 49, column 1]\n  NULLIFY(&ty); [line 49, column 1]\n " color=yellow style=filled]
 	
 
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&ty:init_list::Y[3*24]) [line 48, column 3]\n  *&ty[0].z:int=1 [line 48, column 14]\n  *&ty[0].x.a:int=2 [line 48, column 18]\n  *&ty[0].x.p:int*=null [line 48, column 18]\n  n$1=_fun_init_list::Y_Y(&ty[1]:init_list::Y*,&y:init_list::Y&) [line 48, column 33]\n  n$2=*&yref:init_list::Y& [line 48, column 36]\n  n$3=_fun_init_list::Y_Y(&ty[2]:init_list::Y*,n$2:init_list::Y&) [line 48, column 36]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,ty,y,yref); [line 48, column 36]\n  APPLY_ABSTRACTION; [line 48, column 36]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&ty:init_list::Y[3*24]) assign_last [line 48, column 3]\n  *&ty[0].z:int=1 [line 48, column 14]\n  *&ty[0].x.a:int=2 [line 48, column 18]\n  *&ty[0].x.p:int*=null [line 48, column 18]\n  n$1=_fun_init_list::Y_Y(&ty[1]:init_list::Y*,&y:init_list::Y&) [line 48, column 33]\n  n$2=*&yref:init_list::Y& [line 48, column 36]\n  n$3=_fun_init_list::Y_Y(&ty[2]:init_list::Y*,n$2:init_list::Y&) [line 48, column 36]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,ty,y,yref); [line 48, column 36]\n  APPLY_ABSTRACTION; [line 48, column 36]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_2" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&yref:init_list::Y&) [line 47, column 3]\n  *&yref:init_list::Y&=&y [line 47, column 3]\n  EXIT_SCOPE(n$5); [line 47, column 3]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&yref:init_list::Y&) assign_last [line 47, column 3]\n  *&yref:init_list::Y&=&y [line 47, column 3]\n  EXIT_SCOPE(n$5); [line 47, column 3]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_3" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y:init_list::Y) [line 46, column 3]\n  n$6=_fun_init_list::Y_Y(&y:init_list::Y*) [line 46, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 46, column 5]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y:init_list::Y) assign_last [line 46, column 3]\n  n$6=_fun_init_list::Y_Y(&y:init_list::Y*) [line 46, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 46, column 5]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_4" ;
-"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&ti:int[4*4]) [line 45, column 3]\n  *&ti[0]:int=1 [line 45, column 15]\n  *&ti[1]:int=2 [line 45, column 15]\n  NULLIFY(&ti); [line 45, column 15]\n  EXIT_SCOPE(n$8,ti); [line 45, column 15]\n " shape="box"]
+"list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&ti:int[4*4]) assign_last [line 45, column 3]\n  *&ti[0]:int=1 [line 45, column 15]\n  *&ti[1]:int=2 [line 45, column 15]\n  NULLIFY(&ti); [line 45, column 15]\n  EXIT_SCOPE(n$8,ti); [line 45, column 15]\n " shape="box"]
 	
 
 	 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_6" -> "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_5" ;
@@ -45,19 +45,19 @@ digraph cfg {
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&c:init_list::C) [line 41, column 3]\n  n$5=_fun_init_list::C_C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 41, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 41, column 5]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&c:init_list::C) assign_last [line 41, column 3]\n  n$5=_fun_init_list::C_C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 41, column 5]\n  EXIT_SCOPE(n$5,n$6); [line 41, column 5]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y2:init_list::Y) [line 39, column 3]\n  *&y2.z:int=1 [line 39, column 7]\n  *&y2.x.a:int=2 [line 39, column 11]\n  *&y2.x.p:int*=null [line 39, column 11]\n  NULLIFY(&y2); [line 39, column 11]\n  EXIT_SCOPE(n$7,y2); [line 39, column 11]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&y2:init_list::Y) assign_last [line 39, column 3]\n  *&y2.z:int=1 [line 39, column 7]\n  *&y2.x.a:int=2 [line 39, column 11]\n  *&y2.x.p:int*=null [line 39, column 11]\n  NULLIFY(&y2); [line 39, column 11]\n  EXIT_SCOPE(n$7,y2); [line 39, column 11]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   n$9=_fun___variable_initialization(&y1:init_list::Y) [line 38, column 3]\n  *&y1.z:int=1 [line 38, column 7]\n  n$8=_fun_init_list::X_X(&y1.x:init_list::X*,&x:init_list::X&) [line 38, column 11]\n  EXIT_SCOPE(n$8,n$9,y1); [line 38, column 11]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   n$9=_fun___variable_initialization(&y1:init_list::Y) assign_last [line 38, column 3]\n  *&y1.z:int=1 [line 38, column 7]\n  n$8=_fun_init_list::X_X(&y1.x:init_list::X*,&x:init_list::X&) [line 38, column 11]\n  EXIT_SCOPE(n$8,n$9,y1); [line 38, column 11]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" [label="7:  DeclStmt \n   n$10=_fun___variable_initialization(&x:init_list::X) [line 37, column 3]\n  *&x.a:int=1 [line 37, column 6]\n  *&x.p:int*=null [line 37, column 6]\n  EXIT_SCOPE(n$10); [line 37, column 6]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" [label="7:  DeclStmt \n   n$10=_fun___variable_initialization(&x:init_list::X) assign_last [line 37, column 3]\n  *&x.a:int=1 [line 37, column 6]\n  *&x.p:int*=null [line 37, column 6]\n  EXIT_SCOPE(n$10); [line 37, column 6]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" ;
@@ -68,15 +68,15 @@ digraph cfg {
 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_2" [label="2: Exit init_list::zero_init_primitive \n   NULLIFY(&p); [line 29, column 1]\n " color=yellow style=filled]
 	
 
-"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&f:float) [line 28, column 3]\n  *&f:float=0. [line 28, column 3]\n  NULLIFY(&f); [line 28, column 3]\n  EXIT_SCOPE(n$1,f); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
+"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&f:float) assign_last [line 28, column 3]\n  *&f:float=0. [line 28, column 3]\n  NULLIFY(&f); [line 28, column 3]\n  EXIT_SCOPE(n$1,f); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
 	
 
 	 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" -> "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_2" ;
-"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&p:int*) [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  EXIT_SCOPE(n$2,p); [line 27, column 3]\n " shape="box"]
+"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&p:int*) assign_last [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n  EXIT_SCOPE(n$2,p); [line 27, column 3]\n " shape="box"]
 	
 
 	 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_4" -> "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" ;
-"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&i:int) [line 26, column 3]\n  *&i:int=0 [line 26, column 3]\n  NULLIFY(&i); [line 26, column 3]\n  EXIT_SCOPE(n$3,i); [line 26, column 3]\n " shape="box"]
+"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&i:int) assign_last [line 26, column 3]\n  *&i:int=0 [line 26, column 3]\n  NULLIFY(&i); [line 26, column 3]\n  EXIT_SCOPE(n$3,i); [line 26, column 3]\n " shape="box"]
 	
 
 	 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_5" -> "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_4" ;
@@ -91,11 +91,11 @@ digraph cfg {
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" ;
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&c:init_list::C) [line 33, column 3]\n  n$3=_fun_init_list::C_C(&c:init_list::C*) [line 33, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 33, column 5]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&c:init_list::C) assign_last [line 33, column 3]\n  n$3=_fun_init_list::C_C(&c:init_list::C*) [line 33, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 33, column 5]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" ;
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&y:init_list::Y) [line 32, column 3]\n  *&y.z:int=0 [line 32, column 7]\n  *&y.x.a:int=0 [line 32, column 7]\n  *&y.x.p:int*=null [line 32, column 7]\n  NULLIFY(&y); [line 32, column 7]\n  EXIT_SCOPE(n$5,y); [line 32, column 7]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&y:init_list::Y) assign_last [line 32, column 3]\n  *&y.z:int=0 [line 32, column 7]\n  *&y.x.a:int=0 [line 32, column 7]\n  *&y.x.p:int*=null [line 32, column 7]\n  NULLIFY(&y); [line 32, column 7]\n  EXIT_SCOPE(n$5,y); [line 32, column 7]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" ;

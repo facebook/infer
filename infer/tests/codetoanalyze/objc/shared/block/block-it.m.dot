@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_2" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&a:NSArray*) [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray_init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n  EXIT_SCOPE(n$7,n$8,n$9); [line 18, column 3]\n " shape="box"]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&a:NSArray*) assign_last [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray_init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n  EXIT_SCOPE(n$7,n$8,n$9); [line 18, column 3]\n " shape="box"]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" ;
@@ -86,7 +86,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" [label="5:  DeclStmt \n   n$12=_fun___variable_initialization(&idx:unsigned long) [line 48, column 8]\n  *&idx:unsigned long=(unsigned long)0 [line 48, column 8]\n  EXIT_SCOPE(n$12); [line 48, column 8]\n  APPLY_ABSTRACTION; [line 48, column 8]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" [label="5:  DeclStmt \n   n$12=_fun___variable_initialization(&idx:unsigned long) assign_last [line 48, column 8]\n  *&idx:unsigned long=(unsigned long)0 [line 48, column 8]\n  EXIT_SCOPE(n$12); [line 48, column 8]\n  APPLY_ABSTRACTION; [line 48, column 8]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" ;
@@ -103,7 +103,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_8" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$14 < n$16), false); [line 48, column 28]\n  NULLIFY(&idx); [line 48, column 28]\n  EXIT_SCOPE(n$14,n$16,objects,idx,enumerateObjectsUsingBlock,object); [line 48, column 28]\n  APPLY_ABSTRACTION; [line 48, column 28]\n " shape="invhouse"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$14 < n$16), false); [line 48, column 28]\n  NULLIFY(&idx); [line 48, column 28]\n  EXIT_SCOPE(n$14,n$16,objects,idx,enumerateObjectsUsingBlock); [line 48, column 28]\n  APPLY_ABSTRACTION; [line 48, column 28]\n " shape="invhouse"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
@@ -116,7 +116,7 @@ digraph cfg {
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" ;
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" [label="12: Prune (true branch, if) \n   PRUNE((n$18 == 1), true); [line 52, column 9]\n  NULLIFY(&idx); [line 52, column 9]\n  EXIT_SCOPE(n$18,objects,idx,enumerateObjectsUsingBlock,object); [line 52, column 9]\n  APPLY_ABSTRACTION; [line 52, column 9]\n " shape="invhouse"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" [label="12: Prune (true branch, if) \n   PRUNE((n$18 == 1), true); [line 52, column 9]\n  NULLIFY(&idx); [line 52, column 9]\n  EXIT_SCOPE(n$18,objects,idx,enumerateObjectsUsingBlock); [line 52, column 9]\n  APPLY_ABSTRACTION; [line 52, column 9]\n " shape="invhouse"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
@@ -124,11 +124,11 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" [label="14:  Call n$22 \n   n$22=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$23=*&object:objc_object* [line 51, column 32]\n  n$24=*&idx:unsigned long [line 51, column 40]\n  n$25=*&stop:_Bool* [line 51, column 45]\n  n$26=n$22(n$23:objc_object*,n$24:unsigned long,n$25:_Bool*) [line 51, column 5]\n  EXIT_SCOPE(n$22,n$23,n$24,n$25,n$26); [line 51, column 5]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" [label="14:  Call n$22 \n   n$22=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$23=*&object:objc_object* [line 51, column 32]\n  n$24=*&idx:unsigned long [line 51, column 40]\n  n$25=*&stop:_Bool* [line 51, column 45]\n  n$26=n$22(n$23:objc_object*,n$24:unsigned long,n$25:_Bool*) [line 51, column 5]\n  EXIT_SCOPE(n$22,n$23,n$24,n$25,n$26,object); [line 51, column 5]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" [label="15:  DeclStmt \n   n$30=_fun___variable_initialization(&object:objc_object*) [line 50, column 5]\n  n$28=*&objects:NSArray* [line 50, column 17]\n  n$27=*&idx:unsigned long [line 50, column 25]\n  n$29=_fun_NSArray_objectAtIndexedSubscript:(n$28:NSArray*,n$27:unsigned long) virtual [line 50, column 17]\n  *&object:objc_object*=n$29 [line 50, column 5]\n  EXIT_SCOPE(n$27,n$28,n$29,n$30); [line 50, column 5]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" [label="15:  DeclStmt \n   n$30=_fun___variable_initialization(&object:objc_object*) assign_last [line 50, column 5]\n  n$28=*&objects:NSArray* [line 50, column 17]\n  n$27=*&idx:unsigned long [line 50, column 25]\n  n$29=_fun_NSArray_objectAtIndexedSubscript:(n$28:NSArray*,n$27:unsigned long) virtual [line 50, column 17]\n  *&object:objc_object*=n$29 [line 50, column 5]\n  EXIT_SCOPE(n$27,n$28,n$29,n$30); [line 50, column 5]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" ;
@@ -136,19 +136,19 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$34=_fun___variable_initialization(&stop:_Bool*) [line 45, column 3]\n  n$33=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$33 [line 45, column 3]\n  EXIT_SCOPE(n$33,n$34); [line 45, column 3]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$34=_fun___variable_initialization(&stop:_Bool*) assign_last [line 45, column 3]\n  n$33=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$33 [line 45, column 3]\n  EXIT_SCOPE(n$33,n$34); [line 45, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" [label="18:  DeclStmt \n   n$40=_fun___variable_initialization(&enumerateObjectsUsingBlock:_fn_(*)) [line 37, column 3]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun_objc_blockMyBlock_array_trans_2) [line 37, column 3]\n  EXIT_SCOPE(n$40); [line 37, column 3]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" [label="18:  DeclStmt \n   n$40=_fun___variable_initialization(&enumerateObjectsUsingBlock:_fn_(*)) assign_last [line 37, column 3]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun_objc_blockMyBlock_array_trans_2) [line 37, column 3]\n  EXIT_SCOPE(n$40); [line 37, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" [label="19:  DeclStmt \n   n$42=_fun___variable_initialization(&objects:NSArray*) [line 34, column 3]\n  n$41=*&a:NSArray* [line 34, column 22]\n  *&objects:NSArray*=n$41 [line 34, column 3]\n  EXIT_SCOPE(n$41,n$42,a); [line 34, column 3]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" [label="19:  DeclStmt \n   n$42=_fun___variable_initialization(&objects:NSArray*) assign_last [line 34, column 3]\n  n$41=*&a:NSArray* [line 34, column 22]\n  *&objects:NSArray*=n$41 [line 34, column 3]\n  EXIT_SCOPE(n$41,n$42,a); [line 34, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" [label="20:  DeclStmt \n   n$45=_fun___variable_initialization(&a:NSArray*) [line 32, column 3]\n  n$43=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 32, column 17]\n  n$44=_fun_NSArray_init(n$43:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$44 [line 32, column 3]\n  EXIT_SCOPE(n$43,n$44,n$45); [line 32, column 3]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" [label="20:  DeclStmt \n   n$45=_fun___variable_initialization(&a:NSArray*) assign_last [line 32, column 3]\n  n$43=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 32, column 17]\n  n$44=_fun_NSArray_init(n$43:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$44 [line 32, column 3]\n  EXIT_SCOPE(n$43,n$44,n$45); [line 32, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" ;

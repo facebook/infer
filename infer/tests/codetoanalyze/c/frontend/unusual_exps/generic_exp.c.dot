@@ -7,11 +7,11 @@ digraph cfg {
 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_2" [label="2: Exit test_typename \n  " color=yellow style=filled]
 	
 
-"test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&z:int) [line 14, column 3]\n  *&z:int=3 [line 14, column 3]\n  NULLIFY(&z); [line 14, column 3]\n  EXIT_SCOPE(n$0,z); [line 14, column 3]\n  APPLY_ABSTRACTION; [line 14, column 3]\n " shape="box"]
+"test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&z:int) assign_last [line 14, column 3]\n  *&z:int=3 [line 14, column 3]\n  NULLIFY(&z); [line 14, column 3]\n  EXIT_SCOPE(n$0,z); [line 14, column 3]\n  APPLY_ABSTRACTION; [line 14, column 3]\n " shape="box"]
 	
 
 	 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" -> "test_typename.b2359812ef4a83b4e2638a11e6c522b3_2" ;
-"test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int) [line 13, column 3]\n  *&x:int=2 [line 13, column 3]\n  NULLIFY(&x); [line 13, column 3]\n  EXIT_SCOPE(n$1,x); [line 13, column 3]\n " shape="box"]
+"test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int) assign_last [line 13, column 3]\n  *&x:int=2 [line 13, column 3]\n  NULLIFY(&x); [line 13, column 3]\n  EXIT_SCOPE(n$1,x); [line 13, column 3]\n " shape="box"]
 	
 
 	 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" -> "test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" ;

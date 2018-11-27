@@ -32,7 +32,7 @@ int invalidate_node_alias_bad(struct list* head, int cond) {
   return *result;
 }
 
-void FP_list_delete_ok(struct list** l) {
+void list_delete_ok(struct list** l) {
   auto head = *l;
   *l = nullptr;
   while (head) {
@@ -63,7 +63,7 @@ int nested_loops_ok() {
 extern bool some_bool();
 extern BasicStruct mk_basic_struct();
 
-void FP_cond_inside_loop_ok() {
+void cond_inside_loop_ok() {
   while (true) {
     BasicStruct x;
     if (some_bool()) {

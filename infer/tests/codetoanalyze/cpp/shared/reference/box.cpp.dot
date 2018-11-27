@@ -7,15 +7,15 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&r); [line 12, column 1]\n  NULLIFY(&v); [line 12, column 1]\n  NULLIFY(&p); [line 12, column 1]\n " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&p:int*) [line 11, column 3]\n  *&p:int*=&v [line 11, column 3]\n  EXIT_SCOPE(n$1,p,v); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&p:int*) assign_last [line 11, column 3]\n  *&p:int*=&v [line 11, column 3]\n  EXIT_SCOPE(n$1,p,v); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&r:int&) [line 10, column 3]\n  *&r:int&=&v [line 10, column 3]\n  EXIT_SCOPE(n$2,r); [line 10, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&r:int&) assign_last [line 10, column 3]\n  *&r:int&=&v [line 10, column 3]\n  EXIT_SCOPE(n$2,r); [line 10, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&v:int) [line 9, column 3]\n  *&v:int=3 [line 9, column 3]\n  EXIT_SCOPE(n$3); [line 9, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&v:int) assign_last [line 9, column 3]\n  *&v:int=3 [line 9, column 3]\n  EXIT_SCOPE(n$3); [line 9, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;

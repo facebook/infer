@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&s:NSString*) [line 18, column 5]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 18, column 19]\n  *&s:NSString*=n$3 [line 18, column 5]\n  EXIT_SCOPE(n$3,n$4,s); [line 18, column 5]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&s:NSString*) assign_last [line 18, column 5]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 18, column 19]\n  *&s:NSString*=n$3 [line 18, column 5]\n  EXIT_SCOPE(n$3,n$4,s); [line 18, column 5]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$13=_fun___variable_initialization(&s:NSString*) [line 26, column 3]\n  n$12=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 26, column 17]\n  *&s:NSString*=n$12 [line 26, column 3]\n  EXIT_SCOPE(n$12,n$13); [line 26, column 3]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$13=_fun___variable_initialization(&s:NSString*) assign_last [line 26, column 3]\n  n$12=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 26, column 17]\n  *&s:NSString*=n$12 [line 26, column 3]\n  EXIT_SCOPE(n$12,n$13); [line 26, column 3]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" ;

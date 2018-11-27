@@ -49,7 +49,7 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_12" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&y3:int) [line 24, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 24, column 13]\n  n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 24, column 27]\n  *&y3:int=(n$3 + n$7) [line 24, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 24, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$4); [line 24, column 3]\n  NULLIFY(&y3); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$7,n$8,0$?%__sil_tmpSIL_temp_conditional___n$0,0$?%__sil_tmpSIL_temp_conditional___n$4,y3); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&y3:int) assign_last [line 24, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 24, column 13]\n  n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 24, column 27]\n  *&y3:int=(n$3 + n$7) [line 24, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 24, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$4); [line 24, column 3]\n  NULLIFY(&y3); [line 24, column 3]\n  EXIT_SCOPE(n$3,n$7,n$8,0$?%__sil_tmpSIL_temp_conditional___n$0,0$?%__sil_tmpSIL_temp_conditional___n$4,y3); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_2" ;
@@ -73,7 +73,7 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" [label="19:  DeclStmt \n   n$13=_fun___variable_initialization(&y2:int) [line 22, column 3]\n  n$12=*&0$?%__sil_tmpSIL_temp_conditional___n$9:int [line 22, column 18]\n  *&y2:int=(77 + n$12) [line 22, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$9); [line 22, column 3]\n  NULLIFY(&y2); [line 22, column 3]\n  EXIT_SCOPE(n$12,n$13,0$?%__sil_tmpSIL_temp_conditional___n$9,y2); [line 22, column 3]\n " shape="box"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" [label="19:  DeclStmt \n   n$13=_fun___variable_initialization(&y2:int) assign_last [line 22, column 3]\n  n$12=*&0$?%__sil_tmpSIL_temp_conditional___n$9:int [line 22, column 18]\n  *&y2:int=(77 + n$12) [line 22, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$9); [line 22, column 3]\n  NULLIFY(&y2); [line 22, column 3]\n  EXIT_SCOPE(n$12,n$13,0$?%__sil_tmpSIL_temp_conditional___n$9,y2); [line 22, column 3]\n " shape="box"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" ;
@@ -98,7 +98,7 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" [label="25:  DeclStmt \n   n$18=_fun___variable_initialization(&y1:int) [line 20, column 3]\n  n$17=*&0$?%__sil_tmpSIL_temp_conditional___n$14:int [line 20, column 13]\n  *&y1:int=(n$17 + 77) [line 20, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$14); [line 20, column 3]\n  NULLIFY(&y1); [line 20, column 3]\n  EXIT_SCOPE(n$17,n$18,0$?%__sil_tmpSIL_temp_conditional___n$14,y1); [line 20, column 3]\n " shape="box"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" [label="25:  DeclStmt \n   n$18=_fun___variable_initialization(&y1:int) assign_last [line 20, column 3]\n  n$17=*&0$?%__sil_tmpSIL_temp_conditional___n$14:int [line 20, column 13]\n  *&y1:int=(n$17 + 77) [line 20, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$14); [line 20, column 3]\n  NULLIFY(&y1); [line 20, column 3]\n  EXIT_SCOPE(n$17,n$18,0$?%__sil_tmpSIL_temp_conditional___n$14,y1); [line 20, column 3]\n " shape="box"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" ;

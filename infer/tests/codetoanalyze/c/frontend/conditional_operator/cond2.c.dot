@@ -196,12 +196,12 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_27" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_20" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$10=_fun___variable_initialization(&n:int) [line 14, column 3]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$6); [line 14, column 3]\n  NULLIFY(&n); [line 14, column 3]\n  EXIT_SCOPE(n$9,n$10,0$?%__sil_tmpSIL_temp_conditional___n$6,n); [line 14, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$10=_fun___variable_initialization(&n:int) assign_last [line 14, column 3]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$6); [line 14, column 3]\n  NULLIFY(&n); [line 14, column 3]\n  EXIT_SCOPE(n$9,n$10,0$?%__sil_tmpSIL_temp_conditional___n$6,n); [line 14, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_10" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_11" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   n$11=_fun___variable_initialization(&y:int) [line 13, column 3]\n  *&y:int=19 [line 13, column 3]\n  EXIT_SCOPE(n$11); [line 13, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   n$11=_fun___variable_initialization(&y:int) assign_last [line 13, column 3]\n  *&y:int=19 [line 13, column 3]\n  EXIT_SCOPE(n$11); [line 13, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_29" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_21" ;
@@ -235,7 +235,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   n$16=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=5 [line 9, column 3]\n  EXIT_SCOPE(n$16); [line 9, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   n$16=_fun___variable_initialization(&x:int) assign_last [line 9, column 3]\n  *&x:int=5 [line 9, column 3]\n  EXIT_SCOPE(n$16); [line 9, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_37" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_31" ;

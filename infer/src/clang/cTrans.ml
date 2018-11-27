@@ -236,7 +236,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let create_call_instr trans_state (return_type : Typ.t) function_sil params_sil sil_loc
       call_flags ~is_objc_method ~is_inherited_ctor =
     let ret_id_typ = (Ident.create_fresh Ident.knormal, return_type) in
-    let ret_id', params, initd_exps, ret_exps =
+    let ret_id', params, initd_exps, ret_exps, call_flags =
       (* Assumption: should_add_return_param will return true only for struct types *)
       if CType_decl.should_add_return_param return_type ~is_objc_method then
         let param_type = Typ.mk (Typ.Tptr (return_type, Typ.Pk_pointer)) in
@@ -272,13 +272,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (*                   value doesn't work good anyway. This may need to be revisited later*)
         let ret_param = (var_exp, param_type) in
         let ret_exp = (var_exp, return_type) in
-        (mk_fresh_void_id_typ (), params_sil @ [ret_param], [var_exp], ret_exp)
+        ( mk_fresh_void_id_typ ()
+        , params_sil @ [ret_param]
+        , [var_exp]
+        , ret_exp
+        , {call_flags with CallFlags.cf_assign_last_arg= true} )
       else
         ( ret_id_typ
         , params_sil
         , []
-        , let i, t = ret_id_typ in
-          (Exp.Var i, t) )
+        , (let i, t = ret_id_typ in
+           (Exp.Var i, t))
+        , call_flags )
     in
     let forwarded_params, forwarded_init_instrs =
       if is_inherited_ctor then get_forwarded_params trans_state sil_loc else ([], [])
@@ -2265,8 +2270,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 { empty_control with
                   instrs=
                     [ Sil.Call
-                        ((ret_id, Typ.void), sil_fun, [var_exp_typ], sil_loc, CallFlags.default) ]
-                }
+                        ( (ret_id, Typ.void)
+                        , sil_fun
+                        , [var_exp_typ]
+                        , sil_loc
+                        , {CallFlags.default with cf_assign_last_arg= true} ) ] }
           | _ ->
               None
         in

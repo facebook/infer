@@ -64,7 +64,7 @@ digraph cfg {
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_8" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_4" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) [line 15, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 15, column 11]\n  *&x:int=n$4 [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 15, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 15, column 3]\n " shape="box"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) assign_last [line 15, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 15, column 11]\n  *&x:int=n$4 [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 15, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 15, column 3]\n " shape="box"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_9" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_3" ;
@@ -115,7 +115,7 @@ digraph cfg {
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_9" -> "test3.8ad8757baa8564dc136c1e07507f4a98_5" ;
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_9" -> "test3.8ad8757baa8564dc136c1e07507f4a98_6" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_10" [label="10:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) [line 20, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 20, column 11]\n  *&x:int=n$3 [line 20, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 20, column 3]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 20, column 3]\n " shape="box"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_10" [label="10:  DeclStmt \n   n$4=_fun___variable_initialization(&x:int) assign_last [line 20, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 20, column 11]\n  *&x:int=n$3 [line 20, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 20, column 3]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 20, column 3]\n " shape="box"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_10" -> "test3.8ad8757baa8564dc136c1e07507f4a98_3" ;
@@ -223,7 +223,7 @@ digraph cfg {
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_8" -> "test6.4cfad7076129962ee70c36839a1e3e15_4" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) [line 29, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 29, column 11]\n  *&z:int=n$4 [line 29, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 29, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 29, column 3]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_9" [label="9:  DeclStmt \n   n$5=_fun___variable_initialization(&z:int) assign_last [line 29, column 3]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 29, column 11]\n  *&z:int=n$4 [line 29, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 29, column 3]\n  EXIT_SCOPE(n$4,n$5,0$?%__sil_tmpSIL_temp_conditional___n$1); [line 29, column 3]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_9" -> "test6.4cfad7076129962ee70c36839a1e3e15_3" ;

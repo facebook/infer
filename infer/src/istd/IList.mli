@@ -27,6 +27,10 @@ val inter : cmp:('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 val fold_last : 'a list -> init:'b -> f:('b -> 'a -> 'b) -> f_last:('b -> 'a -> 'b) -> 'b
 (** like fold, but apply f_last to the last element *)
 
+val split_last_rev : 'a list -> ('a * 'a list) option
+(** [split_last_rev l] is [Some (last, rev_prefix)] where [last :: (List.rev rev_prefix) == l],
+    [None] if [l] is empty *)
+
 val append_no_duplicates : cmp:('a -> 'a -> int) -> ('a list -> 'a list -> 'a list) Staged.t
 (** [append_no_duplicates list1 list2], assuming that list1 and list2 have no duplicates on their
     own, it computes list1 @ (filtered list2), so it keeps the order of both lists and has no

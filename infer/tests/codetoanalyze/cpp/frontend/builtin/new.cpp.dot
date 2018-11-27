@@ -26,11 +26,11 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&i:int*) [line 10, column 3]\n  n$4=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 10, column 12]\n  *&i:int*=n$4 [line 10, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 10, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&i:int*) assign_last [line 10, column 3]\n  n$4=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 10, column 12]\n  *&i:int*=n$4 [line 10, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 10, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n  NULLIFY(&x); [line 9, column 3]\n  EXIT_SCOPE(n$6,x); [line 9, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&x:int) assign_last [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n  NULLIFY(&x); [line 9, column 3]\n  EXIT_SCOPE(n$6,x); [line 9, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
@@ -41,7 +41,7 @@ digraph cfg {
 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" [label="2: Exit test_placement \n   NULLIFY(&p); [line 24, column 78]\n " color=yellow style=filled]
 	
 
-"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  DeclStmt \n   n$6=_fun___variable_initialization(&p:A*) [line 24, column 45]\n  n$3=*&ptr:void* [line 24, column 60]\n  n$1=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$1 + 1) [line 24, column 65]\n  n$2=*&ptr2:int* [line 24, column 65]\n  n$4=_fun___placement_new(sizeof(t=A):unsigned long,n$3:void*,n$2:void*) [line 24, column 55]\n  n$5=_fun_A_A(n$4:A*) [line 24, column 73]\n  *&p:A*=n$4 [line 24, column 45]\n  NULLIFY(&ptr2); [line 24, column 45]\n  NULLIFY(&ptr); [line 24, column 45]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,n$5,n$6,ptr2,ptr,p); [line 24, column 45]\n  APPLY_ABSTRACTION; [line 24, column 45]\n " shape="box"]
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  DeclStmt \n   n$6=_fun___variable_initialization(&p:A*) assign_last [line 24, column 45]\n  n$3=*&ptr:void* [line 24, column 60]\n  n$1=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$1 + 1) [line 24, column 65]\n  n$2=*&ptr2:int* [line 24, column 65]\n  n$4=_fun___placement_new(sizeof(t=A):unsigned long,n$3:void*,n$2:void*) [line 24, column 55]\n  n$5=_fun_A_A(n$4:A*) [line 24, column 73]\n  *&p:A*=n$4 [line 24, column 45]\n  NULLIFY(&ptr2); [line 24, column 45]\n  NULLIFY(&ptr); [line 24, column 45]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,n$5,n$6,ptr2,ptr,p); [line 24, column 45]\n  APPLY_ABSTRACTION; [line 24, column 45]\n " shape="box"]
 	
 
 	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" ;

@@ -15,6 +15,7 @@ module F = Format
 type t =
   { cf_virtual: bool
   ; cf_interface: bool
+  ; cf_assign_last_arg: bool
   ; cf_noreturn: bool
   ; cf_is_objc_block: bool
   ; cf_targets: Typ.Procname.t list

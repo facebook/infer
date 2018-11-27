@@ -40,7 +40,7 @@ digraph cfg {
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" [label="11:  DeclStmt \n   n$10=_fun___variable_initialization(&size:int) [line 20, column 3]\n  *&size:int=0 [line 20, column 3]\n  EXIT_SCOPE(n$10); [line 20, column 3]\n " shape="box"]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" [label="11:  DeclStmt \n   n$10=_fun___variable_initialization(&size:int) assign_last [line 20, column 3]\n  *&size:int=0 [line 20, column 3]\n  EXIT_SCOPE(n$10); [line 20, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" ;
@@ -80,7 +80,7 @@ digraph cfg {
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" [label="10:  DeclStmt \n   n$31=_fun___variable_initialization(&obj:objc_object*) [line 37, column 3]\n  *&obj:objc_object*=null [line 37, column 3]\n  EXIT_SCOPE(n$31,obj); [line 37, column 3]\n " shape="box"]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" [label="10:  DeclStmt \n   n$31=_fun___variable_initialization(&obj:objc_object*) assign_last [line 37, column 3]\n  *&obj:objc_object*=null [line 37, column 3]\n  EXIT_SCOPE(n$31,obj); [line 37, column 3]\n " shape="box"]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" ;
@@ -116,11 +116,11 @@ digraph cfg {
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" [label="9:  DeclStmt \n   n$19=_fun___variable_initialization(&item:NSArray*) [line 29, column 3]\n  *&item:NSArray*=null [line 29, column 3]\n  EXIT_SCOPE(n$19,item); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" [label="9:  DeclStmt \n   n$19=_fun___variable_initialization(&item:NSArray*) assign_last [line 29, column 3]\n  *&item:NSArray*=null [line 29, column 3]\n  EXIT_SCOPE(n$19,item); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" [label="10:  DeclStmt \n   n$20=_fun___variable_initialization(&size:int) [line 28, column 3]\n  *&size:int=0 [line 28, column 3]\n  EXIT_SCOPE(n$20); [line 28, column 3]\n " shape="box"]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" [label="10:  DeclStmt \n   n$20=_fun___variable_initialization(&size:int) assign_last [line 28, column 3]\n  *&size:int=0 [line 28, column 3]\n  EXIT_SCOPE(n$20); [line 28, column 3]\n " shape="box"]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" ;

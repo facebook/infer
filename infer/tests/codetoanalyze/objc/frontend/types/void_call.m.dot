@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$10=_fun___variable_initialization(&o:AClass*) [line 38, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 38, column 15]\n  *&o:AClass*=n$9 [line 38, column 3]\n  EXIT_SCOPE(n$9,n$10); [line 38, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$10=_fun___variable_initialization(&o:AClass*) assign_last [line 38, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 38, column 15]\n  *&o:AClass*=n$9 [line 38, column 3]\n  EXIT_SCOPE(n$9,n$10); [line 38, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -66,7 +66,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) [line 33, column 3]\n  *&x:int=1 [line 33, column 3]\n  EXIT_SCOPE(n$15); [line 33, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) assign_last [line 33, column 3]\n  *&x:int=1 [line 33, column 3]\n  EXIT_SCOPE(n$15); [line 33, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;

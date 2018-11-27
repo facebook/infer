@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_2" ;
-"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&s:NSString*) [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n  EXIT_SCOPE(n$1,n$2); [line 21, column 3]\n " shape="box"]
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&s:NSString*) assign_last [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n  EXIT_SCOPE(n$1,n$2); [line 21, column 3]\n " shape="box"]
 	
 
 	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_3" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_2" ;
-"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&s:NSString*) [line 27, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$4 [line 27, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 27, column 3]\n " shape="box"]
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&s:NSString*) assign_last [line 27, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$4 [line 27, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 27, column 3]\n " shape="box"]
 	
 
 	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_3" ;
