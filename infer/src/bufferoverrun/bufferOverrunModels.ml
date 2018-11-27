@@ -30,7 +30,7 @@ let mk_model_env pname node_hash location tenv integer_type_widths symbol_table 
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 
-type check_fun = model_env -> Dom.Mem.t -> PO.ConditionSet.t -> PO.ConditionSet.t
+type check_fun = model_env -> Dom.Mem.t -> PO.ConditionSet.checked_t -> PO.ConditionSet.checked_t
 
 type model = {exec: exec_fun; check: check_fun}
 

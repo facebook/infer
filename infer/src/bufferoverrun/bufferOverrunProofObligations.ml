@@ -15,10 +15,12 @@ module MF = MarkupFormatter
 module Relation = BufferOverrunDomainRelation
 module ValTrace = BufferOverrunTrace
 
-type checked_condition = {report_issue_type: IssueType.t option; propagate: bool}
+type report_issue_type = NotIssue | Issue of IssueType.t | SymbolicIssue
+
+type checked_condition = {report_issue_type: report_issue_type; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = ItvPure.t
+  type t = ItvPure.t [@@deriving compare]
 
   let get_symbols = ItvPure.get_symbols
 
@@ -66,23 +68,23 @@ module AllocSizeCondition = struct
   let check length =
     match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
     | `Equal | `RightSubsumesLeft ->
-        {report_issue_type= Some IssueType.inferbo_alloc_is_zero; propagate= false}
+        {report_issue_type= Issue IssueType.inferbo_alloc_is_zero; propagate= false}
     | `LeftSmallerThanRight ->
-        {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
+        {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
     | _ -> (
         let is_symbolic = ItvPure.is_symbolic length in
         match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
         | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
-            {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
+            {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
         | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
-            { report_issue_type= Some IssueType.inferbo_alloc_may_be_negative
+            { report_issue_type= Issue IssueType.inferbo_alloc_may_be_negative
             ; propagate= is_symbolic }
         | cmp_mone -> (
           match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
           | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
-              {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
+              {report_issue_type= Issue IssueType.inferbo_alloc_is_big; propagate= false}
           | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
-              {report_issue_type= Some IssueType.inferbo_alloc_may_be_big; propagate= is_symbolic}
+              {report_issue_type= Issue IssueType.inferbo_alloc_may_be_big; propagate= is_symbolic}
           | cmp_big ->
               let propagate =
                 match (cmp_mone, cmp_big) with
@@ -92,7 +94,8 @@ module AllocSizeCondition = struct
                 | _ ->
                     false
               in
-              {report_issue_type= None; propagate} ) )
+              if propagate then {report_issue_type= SymbolicIssue; propagate}
+              else {report_issue_type= NotIssue; propagate} ) )
 
 
   let subst eval_sym length =
@@ -277,27 +280,27 @@ module ArrayAccessCondition = struct
     in
     (* il >= 0 and iu < sl, definitely not an error *)
     if Boolean.is_true not_overrun && Boolean.is_true not_underrun then
-      {report_issue_type= None; propagate= false} (* iu < 0 or il >= su, definitely an error *)
+      {report_issue_type= NotIssue; propagate= false} (* iu < 0 or il >= su, definitely an error *)
     else if Boolean.is_false not_overrun || Boolean.is_false not_underrun then
-      {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
+      {report_issue_type= Issue IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
     else if
       Bound.is_not_infty (ItvPure.ub real_idx) && Bound.le (ItvPure.ub size) (ItvPure.ub real_idx)
-    then {report_issue_type= Some IssueType.buffer_overrun_l2; propagate= false}
+    then {report_issue_type= Issue IssueType.buffer_overrun_l2; propagate= false}
       (* symbolic il >= sl, probably an error *)
     else if
       Bound.is_symbolic (ItvPure.lb real_idx) && Bound.le (ItvPure.lb size) (ItvPure.lb real_idx)
-    then {report_issue_type= Some IssueType.buffer_overrun_s2; propagate= true}
+    then {report_issue_type= Issue IssueType.buffer_overrun_s2; propagate= true}
     else
       (* other symbolic bounds are probably too noisy *)
       let is_symbolic =
         ItvPure.is_symbolic c.offset || ItvPure.is_symbolic c.idx || ItvPure.is_symbolic size
       in
       let report_issue_type =
-        if Config.bo_debug <= 3 && is_symbolic then None
-        else if filter1 ~real_idx c then Some IssueType.buffer_overrun_l5
-        else if filter2 ~real_idx c then Some IssueType.buffer_overrun_l4
-        else Some IssueType.buffer_overrun_l3
+        if Config.bo_debug <= 3 && is_symbolic then SymbolicIssue
+        else if filter1 ~real_idx c then Issue IssueType.buffer_overrun_l5
+        else if filter2 ~real_idx c then Issue IssueType.buffer_overrun_l4
+        else Issue IssueType.buffer_overrun_l3
       in
       {report_issue_type; propagate= is_symbolic}
 
@@ -340,6 +343,7 @@ module BinaryOperationCondition = struct
     ; integer_widths: Typ.IntegerWidths.t
     ; lhs: ItvPure.t
     ; rhs: ItvPure.t }
+  [@@deriving compare]
 
   let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
 
@@ -431,7 +435,7 @@ module BinaryOperationCondition = struct
 
 
   let check ({binop; typ; integer_widths; lhs; rhs} as c) =
-    if is_mult_one binop lhs rhs then {report_issue_type= None; propagate= false}
+    if is_mult_one binop lhs rhs then {report_issue_type= NotIssue; propagate= false}
     else
       let v =
         match binop with
@@ -452,20 +456,21 @@ module BinaryOperationCondition = struct
         (* typ_lb <= v_lb and v_ub <= typ_ub, not an error *)
         ((not check_underflow) || Bound.le typ_lb v_lb)
         && ((not check_overflow) || Bound.le v_ub typ_ub)
-      then {report_issue_type= None; propagate= false}
+      then {report_issue_type= NotIssue; propagate= false}
       else if
         (* v_ub < typ_lb or typ_ub < v_lb, definitely an error *)
         (check_underflow && Bound.lt v_ub typ_lb) || (check_overflow && Bound.lt typ_ub v_lb)
-      then {report_issue_type= Some IssueType.integer_overflow_l1; propagate= false}
+      then {report_issue_type= Issue IssueType.integer_overflow_l1; propagate= false}
       else if
         (* -oo != v_lb < typ_lb or typ_ub < v_ub != +oo, probably an error *)
         (check_underflow && Bound.lt v_lb typ_lb && Bound.is_not_infty v_lb)
         || (check_overflow && Bound.lt typ_ub v_ub && Bound.is_not_infty v_ub)
-      then {report_issue_type= Some IssueType.integer_overflow_l2; propagate= false}
+      then {report_issue_type= Issue IssueType.integer_overflow_l2; propagate= false}
       else
         let is_symbolic = ItvPure.is_symbolic v in
         let report_issue_type =
-          if Config.bo_debug <= 3 && is_symbolic then None else Some IssueType.integer_overflow_l5
+          if Config.bo_debug <= 3 && is_symbolic then SymbolicIssue
+          else Issue IssueType.integer_overflow_l5
         in
         {report_issue_type; propagate= is_symbolic}
 
@@ -493,6 +498,9 @@ module Condition = struct
     | AllocSize of AllocSizeCondition.t
     | ArrayAccess of ArrayAccessCondition.t
     | BinaryOperation of BinaryOperationCondition.t
+  [@@deriving compare]
+
+  let equal = [%compare.equal: t]
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
@@ -673,6 +681,8 @@ module ConditionWithTrace = struct
     F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp_summary trace
 
 
+  let have_same_bounds {cond= cond1} {cond= cond2} = Condition.equal cond1 cond2
+
   let have_similar_bounds {cond= cond1} {cond= cond2} = Condition.have_similar_bounds cond1 cond2
 
   let xcompare ~lhs ~rhs =
@@ -718,34 +728,34 @@ module ConditionWithTrace = struct
     else issue_type
 
 
-  let check_aux cwt =
+  let check cwt =
     let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond in
     match report_issue_type with
-    | None ->
+    | NotIssue | SymbolicIssue ->
         checked
-    | Some issue_type ->
+    | Issue issue_type ->
         let issue_type = set_u5 cwt issue_type in
         (* Only report if the precision has improved.
         This is approximated by: only report if the issue_type has changed. *)
         let report_issue_type =
           match cwt.reported with
           | Some reported when Reported.equal reported issue_type ->
-              (* already reported and the precision hasn't improved *) None
+              (* already reported and the precision hasn't improved *) SymbolicIssue
           | _ ->
               (* either never reported or already reported but the precision has improved *)
-              Some issue_type
+              Issue issue_type
         in
         {report_issue_type; propagate}
 
 
-  let check ~report cwt =
-    let {report_issue_type; propagate} = check_aux cwt in
-    match report_issue_type with
-    | Some issue_type ->
+  let report ~report ((cwt, checked) as default) =
+    match checked.report_issue_type with
+    | NotIssue | SymbolicIssue ->
+        default
+    | Issue issue_type ->
         report cwt.cond cwt.trace issue_type ;
-        if propagate then Some {cwt with reported= Some (Reported.make issue_type)} else None
-    | None ->
-        Option.some_if propagate cwt
+        if checked.propagate then ({cwt with reported= Some (Reported.make issue_type)}, checked)
+        else default
 
 
   let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
@@ -759,54 +769,67 @@ module ConditionSet = struct
 
   type t = ConditionTrace.intra_cond_trace t0
 
+  type checked_t = (ConditionTrace.intra_cond_trace ConditionWithTrace.t0 * checked_condition) list
+
   type summary_t = unit t0
 
   (* invariant: join_one of one of the elements should return the original list *)
 
   let empty = []
 
-  let try_merge ~existing ~new_ =
+  let try_merge ~existing:(existing_cwt, existing_checked) ~new_:(new_cwt, new_checked) =
     (* we don't want to remove issues that would end up in a higher bucket,
      e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
-    if ConditionWithTrace.have_similar_bounds existing new_ then
-      match ConditionWithTrace.xcompare ~lhs:existing ~rhs:new_ with
+    let try_deduplicate () =
+      match ConditionWithTrace.xcompare ~lhs:existing_cwt ~rhs:new_cwt with
       | `LeftSubsumesRight ->
           `DoNotAddAndStop
       | `RightSubsumesLeft ->
           `RemoveExistingAndContinue
       | `NotComparable ->
           `KeepExistingAndContinue
-    else `KeepExistingAndContinue
+    in
+    match (existing_checked.report_issue_type, new_checked.report_issue_type) with
+    | _, NotIssue ->
+        `DoNotAddAndStop
+    | SymbolicIssue, SymbolicIssue when ConditionWithTrace.have_same_bounds existing_cwt new_cwt ->
+        try_deduplicate ()
+    | Issue existing_issue_type, Issue new_issue_type
+      when IssueType.equal existing_issue_type new_issue_type
+           && ConditionWithTrace.have_similar_bounds existing_cwt new_cwt ->
+        try_deduplicate ()
+    | _, _ ->
+        `KeepExistingAndContinue
 
 
   let join_one condset new_ =
-    let rec aux ~new_ acc ~same = function
+    let pp_cond fmt (cond, _) = ConditionWithTrace.pp fmt cond in
+    let rec aux acc ~same = function
       | [] ->
           if Config.bo_debug >= 3 then
-            L.(debug BufferOverrun Verbose)
-              "[InferboPO] Adding new condition %a@." ConditionWithTrace.pp new_ ;
+            L.d_printfln "[InferboPO] Adding new condition %a@." pp_cond new_ ;
           if same then new_ :: condset else new_ :: acc
       | existing :: rest as existings -> (
         match try_merge ~existing ~new_ with
         | `DoNotAddAndStop ->
             if Config.bo_debug >= 3 then
-              L.(debug BufferOverrun Verbose)
-                "[InferboPO] Not adding condition %a (because of existing %a)@."
-                ConditionWithTrace.pp new_ ConditionWithTrace.pp existing ;
+              L.d_printfln "[InferboPO] Not adding condition %a (because of existing %a)@." pp_cond
+                new_ pp_cond existing ;
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
             if Config.bo_debug >= 3 then
-              L.(debug BufferOverrun Verbose)
-                "[InferboPO] Removing condition %a (because of new %a)@." ConditionWithTrace.pp
-                existing ConditionWithTrace.pp new_ ;
-            aux ~new_ acc ~same:false rest
+              L.d_printfln "[InferboPO] Removing condition %a (because of new %a)@." pp_cond
+                existing pp_cond new_ ;
+            aux acc ~same:false rest
         | `KeepExistingAndContinue ->
-            aux ~new_ (existing :: acc) ~same rest )
+            aux (existing :: acc) ~same rest )
     in
-    aux ~new_ [] ~same:true condset
+    aux [] ~same:true condset
 
 
-  let join condset1 condset2 = List.fold_left ~f:join_one condset1 ~init:condset2
+  let join condset1 condset2 = List.fold condset2 ~init:condset1 ~f:join_one
+
+  let check_one cwt = (cwt, ConditionWithTrace.check cwt)
 
   let add_opt location val_traces condset = function
     | None ->
@@ -814,7 +837,7 @@ module ConditionSet = struct
     | Some cond ->
         let trace = ConditionTrace.make location val_traces in
         let cwt = ConditionWithTrace.make cond trace in
-        join [cwt] condset
+        join_one condset (check_one cwt)
 
 
   let add_array_access location ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
@@ -848,12 +871,16 @@ module ConditionSet = struct
       | None ->
           condset
       | Some cwt ->
-          join_one condset cwt
+          join_one condset (check_one cwt)
     in
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let check_all ~report condset = List.filter_map condset ~f:(ConditionWithTrace.check ~report)
+  let check_all ~report condset =
+    condset
+    |> List.map ~f:(ConditionWithTrace.report ~report)
+    |> List.filter_map ~f:(fun (cwt, {propagate}) -> Option.some_if propagate cwt)
+
 
   let pp_summary : F.formatter -> _ t0 -> unit =
    fun fmt condset ->
@@ -865,11 +892,12 @@ module ConditionSet = struct
     F.fprintf fmt "@]"
 
 
-  let pp : Format.formatter -> t -> unit =
+  let pp : Format.formatter -> checked_t -> unit =
    fun fmt condset ->
     let pp_sep fmt () = F.fprintf fmt ",@;" in
+    let pp_elem fmt (x, _) = ConditionWithTrace.pp fmt x in
     F.fprintf fmt "Safety conditions:@;@[<hov 2>{ %a }@]"
-      (IList.pp_print_list ~max:30 ~pp_sep ConditionWithTrace.pp)
+      (IList.pp_print_list ~max:30 ~pp_sep pp_elem)
       condset
 
 

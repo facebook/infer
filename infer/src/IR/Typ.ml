@@ -15,6 +15,7 @@ module F = Format
 
 module IntegerWidths = struct
   type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
+  [@@deriving compare]
 
   let java = {char_width= 16; short_width= 16; int_width= 32; long_width= 64; longlong_width= 64}
 

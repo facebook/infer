@@ -7,7 +7,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void trivial() {
+void trivial_Bad() {
   int a[10];
   a[10] = 0; /* BUG */
+}
+
+void malloc_zero_Bad() {
+  char* x;
+  x = malloc(0);
+  x = malloc(1);
 }

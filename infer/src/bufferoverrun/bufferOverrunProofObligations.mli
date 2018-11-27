@@ -25,11 +25,13 @@ end
 module ConditionSet : sig
   type t
 
+  type checked_t
+
   type summary_t
 
-  val empty : t
+  val empty : checked_t
 
-  val pp : Format.formatter -> t -> unit
+  val pp : Format.formatter -> checked_t -> unit
 
   val pp_summary : Format.formatter -> summary_t -> unit
 
@@ -44,10 +46,11 @@ module ConditionSet : sig
     -> relation:Relation.t
     -> idx_traces:BufferOverrunTrace.Set.t
     -> arr_traces:BufferOverrunTrace.Set.t
-    -> t
-    -> t
+    -> checked_t
+    -> checked_t
 
-  val add_alloc_size : Location.t -> length:ItvPure.t -> BufferOverrunTrace.Set.t -> t -> t
+  val add_alloc_size :
+    Location.t -> length:ItvPure.t -> BufferOverrunTrace.Set.t -> checked_t -> checked_t
 
   val add_binary_operation :
        Typ.IntegerWidths.t
@@ -57,10 +60,10 @@ module ConditionSet : sig
     -> rhs:ItvPure.t
     -> lhs_traces:BufferOverrunTrace.Set.t
     -> rhs_traces:BufferOverrunTrace.Set.t
-    -> t
-    -> t
+    -> checked_t
+    -> checked_t
 
-  val join : t -> t -> t
+  val join : checked_t -> checked_t -> checked_t
 
   val subst :
        summary_t
@@ -69,9 +72,9 @@ module ConditionSet : sig
     -> Relation.t
     -> Typ.Procname.t
     -> Location.t
-    -> t
+    -> checked_t
 
-  val check_all : report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> t -> t
+  val check_all : report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> checked_t -> t
   (** Check the conditions, call [report] on those that trigger an issue, returns those that needs to be propagated to callers. *)
 
   val for_summary : t -> summary_t

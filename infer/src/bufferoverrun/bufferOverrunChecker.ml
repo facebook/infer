@@ -481,8 +481,8 @@ module Report = struct
       -> e2:Exp.t
       -> Location.t
       -> Dom.Mem.t
-      -> PO.ConditionSet.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t
+      -> PO.ConditionSet.checked_t =
    fun integer_type_widths ~is_plus ~e1 ~e2 location mem cond_set ->
     let arr = Sem.eval integer_type_widths e1 mem in
     let idx = Sem.eval integer_type_widths e2 mem in
@@ -501,8 +501,8 @@ module Report = struct
       -> e2:Exp.t
       -> Location.t
       -> Dom.Mem.t
-      -> PO.ConditionSet.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t
+      -> PO.ConditionSet.checked_t =
    fun integer_type_widths ~bop ~e1 ~e2 location mem cond_set ->
     match bop with
     | Binop.PlusPI ->
@@ -518,8 +518,8 @@ module Report = struct
       -> Exp.t
       -> Location.t
       -> Dom.Mem.t
-      -> PO.ConditionSet.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t
+      -> PO.ConditionSet.checked_t =
    fun integer_type_widths exp location mem cond_set ->
     let rec check_sub_expr exp cond_set =
       match exp with
@@ -596,7 +596,7 @@ module Report = struct
       -> Dom.Mem.t
       -> Payload.t
       -> Location.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t =
    fun tenv integer_type_widths callee_pdesc params caller_mem summary location ->
     let callee_exit_mem = BufferOverrunSummary.get_output summary in
     let callee_cond = BufferOverrunSummary.get_cond_set summary in
@@ -619,8 +619,8 @@ module Report = struct
       -> CFG.Node.t
       -> Sil.instr
       -> Dom.Mem.t
-      -> PO.ConditionSet.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t
+      -> PO.ConditionSet.checked_t =
    fun pdesc tenv integer_type_widths symbol_table node instr mem cond_set ->
     match instr with
     | Sil.Load (_, exp, _, location) ->
@@ -663,7 +663,7 @@ module Report = struct
         cond_set
 
 
-  let print_debug_info : Sil.instr -> Dom.Mem.t -> PO.ConditionSet.t -> unit =
+  let print_debug_info : Sil.instr -> Dom.Mem.t -> PO.ConditionSet.checked_t -> unit =
    fun instr pre cond_set ->
     L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
     L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
@@ -683,8 +683,8 @@ module Report = struct
       -> CFG.Node.t
       -> Instrs.not_reversed_t
       -> Dom.Mem.t AbstractInterpreter.State.t
-      -> PO.ConditionSet.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t
+      -> PO.ConditionSet.checked_t =
    fun summary pdesc tenv integer_type_widths symbol_table cfg node instrs state cond_set ->
     match state with
     | _ when Instrs.is_empty instrs ->
@@ -717,9 +717,9 @@ module Report = struct
       -> Itv.SymbolTable.t
       -> CFG.t
       -> Analyzer.invariant_map
-      -> PO.ConditionSet.t
+      -> PO.ConditionSet.checked_t
       -> CFG.Node.t
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t =
    fun summary pdesc tenv integer_type_widths symbol_table cfg inv_map cond_set node ->
     match Analyzer.extract_state (CFG.Node.id node) inv_map with
     | Some state ->
@@ -738,14 +738,14 @@ module Report = struct
       -> Itv.SymbolTable.t
       -> CFG.t
       -> Analyzer.invariant_map
-      -> PO.ConditionSet.t =
+      -> PO.ConditionSet.checked_t =
    fun summary pdesc tenv integer_type_widths symbol_table cfg inv_map ->
     CFG.fold_nodes cfg
       ~f:(check_node summary pdesc tenv integer_type_widths symbol_table cfg inv_map)
       ~init:PO.ConditionSet.empty
 
 
-  let report_errors : Summary.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
+  let report_errors : Summary.t -> PO.ConditionSet.checked_t -> PO.ConditionSet.t =
    fun summary cond_set ->
     let report cond trace issue_type =
       let location = PO.ConditionTrace.get_report_location trace in

@@ -13,6 +13,7 @@ module F = Format
 
 module IntegerWidths : sig
   type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
+  [@@deriving compare]
 
   val java : t
 

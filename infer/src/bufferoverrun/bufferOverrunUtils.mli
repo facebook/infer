@@ -136,8 +136,8 @@ module Check : sig
     -> is_plus:bool
     -> last_included:bool
     -> Location.t
-    -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
 
   val lindex :
        Typ.IntegerWidths.t
@@ -146,8 +146,8 @@ module Check : sig
     -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
-    -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
 
   val lindex_byte :
        Typ.IntegerWidths.t
@@ -156,8 +156,8 @@ module Check : sig
     -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
-    -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
 
   val collection_access :
        Typ.IntegerWidths.t
@@ -166,8 +166,8 @@ module Check : sig
     -> last_included:bool
     -> Dom.Mem.t
     -> Location.t
-    -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
 
   val binary_operation :
        Typ.IntegerWidths.t
@@ -175,6 +175,6 @@ module Check : sig
     -> lhs:Dom.Val.t
     -> rhs:Dom.Val.t
     -> Location.t
-    -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
 end
