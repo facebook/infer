@@ -405,6 +405,8 @@ let untrusted_buffer_access = from_string ~enabled:false "UNTRUSTED_BUFFER_ACCES
 
 let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
 
+let untrusted_deserialization_risk = from_string "UNTRUSTED_DESERIALIZATION_RISK"
+
 let untrusted_file = from_string "UNTRUSTED_FILE"
 
 let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"

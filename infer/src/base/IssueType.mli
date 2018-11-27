@@ -305,6 +305,8 @@ val untrusted_buffer_access : t
 
 val untrusted_deserialization : t
 
+val untrusted_deserialization_risk : t
+
 val untrusted_file : t
 
 val untrusted_file_risk : t
