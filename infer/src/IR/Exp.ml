@@ -318,3 +318,8 @@ let zero_of_type typ =
 
 
 let zero_of_type_exn typ = Option.value_exn (zero_of_type typ)
+
+let rec ignore_cast e = match e with Cast (_, e) -> ignore_cast e | _ -> e
+
+let rec ignore_integer_cast e =
+  match e with Cast (t, e) when Typ.is_int t -> ignore_integer_cast e | _ -> e

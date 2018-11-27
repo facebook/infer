@@ -139,3 +139,7 @@ val zero_of_type : Typ.t -> t option
 (** Returns the zero value of a type, for int, float and ptr types *)
 
 val zero_of_type_exn : Typ.t -> t
+
+val ignore_cast : t -> t
+
+val ignore_integer_cast : t -> t

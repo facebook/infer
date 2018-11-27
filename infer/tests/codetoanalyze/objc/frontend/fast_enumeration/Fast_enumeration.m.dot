@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" [label="5:  BinaryOperatorStmt: Assign \n   n$12=*&items:NSArray* [line 30, column 19]\n  n$13=_fun_NSArray_objectAtIndex:(n$12:NSArray*,3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$13 [line 30, column 11]\n  n$14=*&item:NSArray* [line 30, column 11]\n  REMOVE_TEMPS(n$12,n$13); [line 30, column 11]\n " shape="box"]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" [label="5:  BinaryOperatorStmt: Assign \n   n$12=*&items:NSArray* [line 30, column 19]\n  n$13=_fun_NSArray_objectAtIndex:(n$12:NSArray*,(unsigned long)3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$13 [line 30, column 11]\n  n$14=*&item:NSArray* [line 30, column 11]\n  REMOVE_TEMPS(n$12,n$13); [line 30, column 11]\n " shape="box"]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" ;

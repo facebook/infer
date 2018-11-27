@@ -68,7 +68,7 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$19=_fun___variable_initialization(&context:CGContext*) [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n  REMOVE_TEMPS(n$18,n$19); [line 21, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$19=_fun___variable_initialization(&context:CGContext*) [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n  REMOVE_TEMPS(n$18,n$19); [line 21, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;

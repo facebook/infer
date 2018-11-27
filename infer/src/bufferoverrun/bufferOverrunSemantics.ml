@@ -428,6 +428,8 @@ module Prune = struct
   let rec prune_binop_left : Typ.IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
     match e with
+    | Exp.BinOp (comp, Exp.Cast (_, e1), e2) ->
+        prune_binop_left integer_type_widths (Exp.BinOp (comp, e1, e2)) astate
     | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
     | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
     | Exp.BinOp ((Binop.Le as comp), Exp.Var x, e')
@@ -513,11 +515,18 @@ module Prune = struct
       |> prune_binop_left integer_type_widths e
       |> prune_binop_right integer_type_widths e
     in
+    let is_const_zero x =
+      match Exp.ignore_integer_cast x with
+      | Exp.Const (Const.Cint i) ->
+          IntLit.iszero i
+      | _ ->
+          false
+    in
     match e with
-    | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-        prune_helper integer_type_widths e astate
-    | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-        prune_helper integer_type_widths (Exp.UnOp (Unop.LNot, e, None)) astate
+    | Exp.BinOp (Binop.Ne, e1, e2) when is_const_zero e2 ->
+        prune_helper integer_type_widths e1 astate
+    | Exp.BinOp (Binop.Eq, e1, e2) when is_const_zero e2 ->
+        prune_helper integer_type_widths (Exp.UnOp (Unop.LNot, e1, None)) astate
     | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
         prune_helper integer_type_widths (Exp.Var x) astate
     | Exp.BinOp (Binop.LAnd, e1, e2) ->

@@ -483,6 +483,8 @@ let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
       ([], exp_typ)
   | `BitCast when Typ.is_pointer_to_int cast_typ ->
       ([], (Exp.Cast (cast_typ, exp), cast_typ))
+  | `IntegralCast when Typ.is_unsigned_int cast_typ ->
+      ([], (Exp.Cast (cast_typ, exp), cast_typ))
   | `BitCast | `IntegralCast | `IntegralToBoolean ->
       (* This is treated as a nop by returning the same expressions exps*)
       ([], (exp, cast_typ))

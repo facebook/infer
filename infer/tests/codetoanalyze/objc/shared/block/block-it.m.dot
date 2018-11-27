@@ -86,7 +86,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" [label="5:  DeclStmt \n   n$12=_fun___variable_initialization(&idx:unsigned long) [line 48, column 8]\n  *&idx:unsigned long=0 [line 48, column 8]\n  REMOVE_TEMPS(n$12); [line 48, column 8]\n  APPLY_ABSTRACTION; [line 48, column 8]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" [label="5:  DeclStmt \n   n$12=_fun___variable_initialization(&idx:unsigned long) [line 48, column 8]\n  *&idx:unsigned long=(unsigned long)0 [line 48, column 8]\n  REMOVE_TEMPS(n$12); [line 48, column 8]\n  APPLY_ABSTRACTION; [line 48, column 8]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" ;

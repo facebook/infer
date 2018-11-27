@@ -55,15 +55,15 @@ digraph cfg {
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_6" ;
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_7" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 12), true); [line 23, column 7]\n  REMOVE_TEMPS(n$0); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if) \n   PRUNE(((unsigned int)n$0 == (unsigned int)12), true); [line 23, column 7]\n  REMOVE_TEMPS(n$0); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_6" -> "other_enum_test.100f3583adf0259001be6c944828c44a_8" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 12), false); [line 23, column 7]\n  REMOVE_TEMPS(n$0); [line 23, column 7]\n  NULLIFY(&foo_a); [line 23, column 7]\n  NULLIFY(&foo_g); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n  REMOVE_TEMPS(n$0); [line 23, column 7]\n  NULLIFY(&foo_a); [line 23, column 7]\n  NULLIFY(&foo_g); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_7" -> "other_enum_test.100f3583adf0259001be6c944828c44a_9" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n  *&return:int=(n$1 / n$2) [line 24, column 5]\n  REMOVE_TEMPS(n$1,n$2); [line 24, column 5]\n  NULLIFY(&foo_a); [line 24, column 5]\n  NULLIFY(&foo_g); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n  *&return:int=((unsigned int)n$1 / (unsigned int)n$2) [line 24, column 5]\n  REMOVE_TEMPS(n$1,n$2); [line 24, column 5]\n  NULLIFY(&foo_a); [line 24, column 5]\n  NULLIFY(&foo_g); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_8" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;

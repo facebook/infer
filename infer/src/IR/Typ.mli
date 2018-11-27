@@ -293,6 +293,10 @@ val is_reference : t -> bool
 
 val is_struct : t -> bool
 
+val is_int : t -> bool
+
+val is_unsigned_int : t -> bool
+
 val has_block_prefix : string -> bool
 
 val unsome : string -> t option -> t

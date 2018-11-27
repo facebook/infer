@@ -101,7 +101,7 @@ digraph cfg {
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$18=_fun_dispatch_time(0:unsigned long long,(2 * 1000000000):long long) [line 46, column 18]\n  n$19=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$23=_fun_dispatch_after(n$18:unsigned long long,n$19:NSObject*,(_fun_objc_blockDispatchEx_dispatch_after_example_3):_fn_(*)) block_params [line 46, column 3]\n  REMOVE_TEMPS(n$18,n$19,n$23); [line 46, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$18=_fun_dispatch_time(0:unsigned long long,((unsigned long long)2 * 1000000000):long long) [line 46, column 18]\n  n$19=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$23=_fun_dispatch_after(n$18:unsigned long long,n$19:NSObject*,(_fun_objc_blockDispatchEx_dispatch_after_example_3):_fn_(*)) block_params [line 46, column 3]\n  REMOVE_TEMPS(n$18,n$19,n$23); [line 46, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" ;
@@ -120,7 +120,7 @@ digraph cfg {
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$10=_fun_dispatch_get_global_queue(0:long,0:unsigned long) [line 36, column 18]\n  n$14=_fun_dispatch_async(n$10:NSObject*,(_fun_objc_blockDispatchEx_dispatch_async_example_2):_fn_(*)) block_params [line 36, column 3]\n  REMOVE_TEMPS(n$10,n$14); [line 36, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$10=_fun_dispatch_get_global_queue(0:long,(unsigned long)0:unsigned long) [line 36, column 18]\n  n$14=_fun_dispatch_async(n$10:NSObject*,(_fun_objc_blockDispatchEx_dispatch_async_example_2):_fn_(*)) block_params [line 36, column 3]\n  REMOVE_TEMPS(n$10,n$14); [line 36, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" ;

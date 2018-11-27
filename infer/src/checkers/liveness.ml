@@ -34,13 +34,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_live_actuals actuals call_exp live_acc =
     let add_live_actuals_ exps acc =
-      List.fold exps ~f:(fun acc_ (exp, _) -> exp_add_live exp acc_) ~init:acc
+      List.fold exps ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:acc
     in
-    match call_exp with
+    let actuals = List.map actuals ~f:(fun (e, _) -> Exp.ignore_cast e) in
+    match Exp.ignore_cast call_exp with
     | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname -> (
       (* first actual passed to a C++ constructor is actually written, not read *)
       match actuals with
-      | (Exp.Lvar pvar, _) :: exps ->
+      | Exp.Lvar pvar :: exps ->
           Domain.remove (Var.of_pvar pvar) live_acc |> add_live_actuals_ exps
       | exps ->
           add_live_actuals_ exps live_acc )
@@ -103,7 +104,7 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun acc exp ->
         Exp.fold_captured exp
           ~f:(fun acc exp ->
-            match exp with
+            match Exp.ignore_cast exp with
             | Exp.Lvar pvar ->
                 (* captured by reference, add *)
                 Domain.add (Var.of_pvar pvar) acc
@@ -133,7 +134,9 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
-  let is_sentinel_exp = function
+  let rec is_sentinel_exp = function
+    | Exp.Cast (_, e) ->
+        is_sentinel_exp e
     | Exp.Const (Cint i) ->
         IntLit.iszero i || IntLit.isnull i
     | Exp.Const (Cfloat 0.0) ->
@@ -180,11 +183,14 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
       when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp)
       ->
         log_report pvar typ loc
-    | Sil.Call
-        (_, Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)), (Exp.Lvar pvar, typ) :: _, loc, _)
-      when Typ.Procname.is_constructor pname
-           && should_report pvar typ live_vars captured_by_ref_vars ->
-        log_report pvar typ loc
+    | Sil.Call (_, e_fun, (arg, typ) :: _, loc, _) -> (
+      match (Exp.ignore_cast e_fun, Exp.ignore_cast arg) with
+      | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)), Exp.Lvar pvar
+        when Typ.Procname.is_constructor pname
+             && should_report pvar typ live_vars captured_by_ref_vars ->
+          log_report pvar typ loc
+      | _, _ ->
+          () )
     | _ ->
         ()
   in
