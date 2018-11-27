@@ -19,8 +19,8 @@ let update_id_map hil_translation id_map =
   match (hil_translation : HilInstr.translation) with
   | Bind (id, access_path) ->
       IdAccessPathMapDomain.add id access_path id_map
-  | Unbind ids ->
-      List.fold ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:id_map ids
+  | Instr (ExitScope vars) ->
+      List.fold ~f:(fun acc var -> IdAccessPathMapDomain.remove var acc) ~init:id_map vars
   | Instr _ | Ignore ->
       id_map
 
@@ -80,14 +80,14 @@ struct
     let hil_translation =
       HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr
     in
-    let id_map' = update_id_map hil_translation id_map in
     let actual_state', id_map' =
       match hil_translation with
       | Instr hil_instr ->
-          exec_instr_actual extras id_map' node hil_instr actual_state
-      | Bind _ | Unbind _ | Ignore ->
-          (actual_state, id_map')
+          exec_instr_actual extras id_map node hil_instr actual_state
+      | Bind _ | Ignore ->
+          (actual_state, id_map)
     in
+    let id_map' = update_id_map hil_translation id_map' in
     if phys_equal id_map id_map' && phys_equal actual_state actual_state' then astate
     else (actual_state', id_map')
 end
@@ -111,7 +111,7 @@ struct
       match hil_translation with
       | Instr hil_instr ->
           Some (fun f -> Format.fprintf f "@[<h>%a@];@;" HilInstr.pp hil_instr)
-      | Bind _ | Unbind _ | Ignore ->
+      | Bind _ | Ignore ->
           None
     in
     Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst

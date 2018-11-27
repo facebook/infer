@@ -298,7 +298,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with maybe_uninit_vars}
     | Assume (expr, _, _, loc) ->
         check_hil_expr expr ~loc ; astate
-
+    | ExitScope _ ->
+        astate
 
   let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.Node.pp_id (CFG.Node.id node)
 end

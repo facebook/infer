@@ -122,6 +122,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
         dispatch_call ret call actuals flags loc astate |> check_error summary
+    | ExitScope vars ->
+        PulseDomain.remove_vars vars astate
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"

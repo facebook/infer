@@ -611,6 +611,11 @@ module Operations = struct
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
     check_addr_access {access_expr; location} addr astate >>| mark_invalid cause addr
+
+
+  let remove_vars vars astate =
+    let stack = List.fold ~f:(fun var stack -> Stack.remove stack var) ~init:astate.stack vars in
+    if phys_equal stack astate.stack then astate else {astate with stack}
 end
 
 module StdVector = struct

@@ -371,6 +371,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.remove ret_id_typ astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
+    | ExitScope _ ->
+        astate
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "ownership"

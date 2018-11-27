@@ -111,6 +111,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         else astate
+    | ExitScope _ ->
+        astate
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "nullability suggest"

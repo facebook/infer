@@ -232,7 +232,7 @@ void FP_destructor_order_empty_destructor_ok() {
   a.f = &b;
 }
 
-void FP_allocate_in_branch_ok(bool b) {
+void allocate_in_branch_ok(bool b) {
   std::unique_ptr<A> a1;
   std::unique_ptr<A> a2;
   std::unique_ptr<A>* a3 = &a1;
