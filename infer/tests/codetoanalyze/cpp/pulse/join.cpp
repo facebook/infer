@@ -4,6 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+#include <stdlib.h>
+#include <vector>
+
 struct foo {
   int* val;
 };
@@ -28,9 +32,23 @@ int invalidate_node_alias_bad(struct list* head, int cond) {
   return *result;
 }
 
+void FP_list_delete_ok(struct list** l) {
+  auto head = *l;
+  *l = nullptr;
+  while (head) {
+    auto tmp = head;
+    head = head->next;
+    if (tmp->foo) {
+      free(tmp->foo);
+      tmp->foo = nullptr;
+    }
+  }
+}
+
 struct BasicStruct {
-  // force destructor calls to be injected
-  virtual void some_method() {}
+  void some_method() {}
+  BasicStruct();
+  ~BasicStruct();
 };
 
 int nested_loops_ok() {
@@ -39,5 +57,25 @@ int nested_loops_ok() {
     for (;;) {
       x.some_method();
     }
+  }
+}
+
+extern bool some_bool();
+extern BasicStruct mk_basic_struct();
+
+void FP_cond_inside_loop_ok() {
+  while (true) {
+    BasicStruct x;
+    if (some_bool()) {
+      x = mk_basic_struct();
+    }
+
+    x.some_method();
+  }
+}
+
+void nested_loops3_ok(std::vector<BasicStruct>* c) {
+  for (auto& b : *c) {
+    (&b)->~BasicStruct();
   }
 }
