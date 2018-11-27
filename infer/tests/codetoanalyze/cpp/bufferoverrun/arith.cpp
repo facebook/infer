@@ -28,3 +28,30 @@ void range_bool_Bad() {
   bool x = true + false; // x is 1 (true)
   a[x] = 0;
 }
+
+void bool_overflow_Good_FP() {
+  int a[10];
+  if (((bool)-1) - 1) {
+    a[10] = 0;
+  } else {
+    a[5] = 0;
+  }
+}
+
+void bool_overflow_Bad() {
+  int a[10];
+  if (((bool)-1) - 1) {
+    a[10] = 0;
+  } else {
+    a[15] = 0;
+  }
+}
+
+void bool_overflow2_Good_FP() {
+  int a[10];
+  if (((bool)-2) - 1) {
+    a[10] = 0;
+  } else {
+    a[5] = 0;
+  }
+}

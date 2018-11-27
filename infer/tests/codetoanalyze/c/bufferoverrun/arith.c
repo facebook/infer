@@ -450,3 +450,78 @@ void band_negative_Bad() {
 #define ALMOST_FOUR_GIGABYTES (85 * FOUR_GIGABYTES / 100)
 
 void simple_overflow_Bad() { auto x = ALMOST_FOUR_GIGABYTES; }
+
+unsigned int unused_integer_underflow_Good_FP() {
+  unsigned int n = 0;
+  if (n-- == 0) {
+    return 0;
+  } else {
+    return n;
+  }
+}
+
+unsigned int unused_integer_underflow_Bad() {
+  unsigned int n = 0;
+  if (n-- == 0) {
+    return n;
+  } else {
+    return n;
+  }
+}
+
+unsigned int unused_integer_underflow2_Good_FP() {
+  unsigned int n = 0;
+  return n--;
+}
+
+unsigned int unused_integer_underflow2_Bad() {
+  unsigned int n = 0;
+  return --n;
+}
+
+void recover_integer_underflow_Good_FP() {
+  for (unsigned int i = 0; i < 10; i++) {
+    if (unknown_function()) {
+      i--; // right after this, i++ will be called.
+    }
+  }
+}
+
+void recover_integer_underflow_Bad() {
+  for (unsigned int i = 0; i < 10; i++) {
+    if (unknown_function()) {
+      i -= 2;
+    }
+  }
+}
+
+unsigned long scan_hex_Good(char* cp) {
+  unsigned long num_digits = 0, digit, val = 0;
+  while (1) {
+    digit = *cp;
+    if ((digit - '0') <= 9)
+      digit -= '0';
+    else if ((digit - 'a') < 6)
+      digit -= 'a' - 10;
+    else if ((digit - 'A') < 6)
+      digit -= 'A' - 10;
+    else
+      break;
+    val = (val << 4) | digit;
+    ++cp;
+  }
+  return val;
+}
+
+void call_scan_hex_Good_FP() {
+  char* cp = "\0";
+  scan_hex_Good(cp);
+}
+
+int check_addition_overflow_Good(unsigned int x, unsigned int y) {
+  if (((unsigned int)-1) - x < y) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

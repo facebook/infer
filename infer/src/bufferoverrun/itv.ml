@@ -161,6 +161,8 @@ module ItvPure = struct
 
   let is_one : t -> bool = fun (l, u) -> Bound.eq l Bound.one && Bound.eq u Bound.one
 
+  let is_mone : t -> bool = fun (l, u) -> Bound.eq l Bound.mone && Bound.eq u Bound.mone
+
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
 
   let is_false : t -> bool = is_zero
@@ -410,6 +412,11 @@ module ItvPure = struct
 
   let make_positive : t -> t =
    fun ((l, u) as x) -> if Bound.lt l Bound.zero then (Bound.zero, u) else x
+
+
+  let max_of_ikind integer_type_widths ikind =
+    let _, max = Typ.range_of_ikind integer_type_widths ikind in
+    of_big_int max
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -553,6 +560,8 @@ let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t
 
 let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 
+let is_mone = bind1bool ItvPure.is_mone
+
 let eq_const : Z.t -> t -> bool = fun z -> bind1bool (ItvPure.eq_const z)
 
 let neg : t -> t = lift1 ItvPure.neg
@@ -615,3 +624,6 @@ let get_symbols : t -> SymbolSet.t = function
 
 
 let normalize : t -> t = bind1 ItvPure.normalize
+
+let max_of_ikind integer_type_widths ikind =
+  NonBottom (ItvPure.max_of_ikind integer_type_widths ikind)

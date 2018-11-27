@@ -346,6 +346,8 @@ module Val = struct
 
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
 
+  let is_mone x = Itv.is_mone (get_itv x)
+
   module Itv = struct
     let m1_255 = of_itv Itv.m1_255
 

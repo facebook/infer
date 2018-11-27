@@ -158,7 +158,13 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         eval_const c
     | Exp.Cast (t, e) ->
         let v = eval integer_type_widths e mem in
-        set_array_stride integer_type_widths t v
+        let v = set_array_stride integer_type_widths t v in
+        if Typ.is_unsigned_int t && Val.is_mone v then
+          (* We treat "(unsigned int)-1" case specially, because programmers often exploit it to get
+             the max number of the type. *)
+          let ikind = Option.value_exn (Typ.get_ikind_opt t) in
+          Val.of_itv (Itv.max_of_ikind integer_type_widths ikind)
+        else v
     | Exp.Lfield (e, fn, _) ->
         let v = eval integer_type_widths e mem in
         let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in

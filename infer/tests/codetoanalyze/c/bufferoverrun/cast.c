@@ -54,9 +54,18 @@ void cast_signed_to_unsigned_Good() {
   }
 }
 
-void cast_signed_to_unsigned_Bad_FN() {
+void cast_signed_to_unsigned_Bad() {
   char arr[10];
   int32_t x = -1;
+  uint32_t y = (uint32_t)x;
+  if (y > 0) {
+    arr[y] = 0;
+  }
+}
+
+void cast_signed_to_unsigned2_Bad_FN() {
+  char arr[10];
+  int32_t x = -2;
   uint32_t y = (uint32_t)x;
   if (y > 0) {
     arr[y] = 0;

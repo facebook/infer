@@ -138,6 +138,8 @@ val of_int64 : Int64.t -> t
 
 val is_const : t -> Z.t option
 
+val is_mone : t -> bool
+
 val eq_const : Z.t -> t -> bool
 
 val make_sym :
@@ -214,3 +216,5 @@ val prune_eq : t -> t -> t
 val prune_ne : t -> t -> t
 
 val subst : t -> Bound.eval_sym -> t
+
+val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t
