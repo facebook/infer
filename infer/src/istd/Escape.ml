@@ -42,7 +42,6 @@ let escape_csv s =
 let escape_xml s =
   let map = function
     | '"' ->
-        (* on next line to avoid bad indentation *)
         Some "&quot;"
     | '>' ->
         Some "&gt;"
@@ -52,9 +51,6 @@ let escape_xml s =
         Some "&amp;"
     | '%' ->
         Some "&#37;"
-    | c when Char.to_int c > 127 ->
-        (* non-ascii character: escape *)
-        Some ("&#" ^ string_of_int (Char.to_int c) ^ ";")
     | _ ->
         None
   in
