@@ -47,8 +47,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | AccessExpression rhs_access ->
         PulseDomain.read loc rhs_access astate
         >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
-    | Constant (Cint address) when IntLit.iszero address ->
-        PulseDomain.write loc lhs_access PulseDomain.AbstractAddress.nullptr astate
     | Cast (_, e) ->
         exec_assign lhs_access e loc astate
     | _ ->

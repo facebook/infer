@@ -10,8 +10,6 @@ open! IStd
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
-  val nullptr : t
-
   val init : unit -> unit
 end
 

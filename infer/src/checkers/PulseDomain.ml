@@ -15,8 +15,6 @@ module Invalidation = PulseInvalidation
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
-  val nullptr : t
-
   val equal : t -> t -> bool
 
   val mk_fresh : unit -> t
@@ -28,9 +26,6 @@ end = struct
   type t = int [@@deriving compare]
 
   let equal = [%compare.equal: t]
-
-  (** distinguish 0 since it's always an invalid address *)
-  let nullptr = 0
 
   let next_fresh = ref 1
 
