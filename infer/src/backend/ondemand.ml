@@ -291,7 +291,9 @@ let analyze_proc_name ?caller_pdesc callee_pname =
                   (analyze_proc ?caller_pdesc callee_pdesc, true)
               | None ->
                   (Summary.get callee_pname, true)
-            else (Summary.get callee_pname, true)
+            else (
+              EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
+              (Summary.get callee_pname, true) )
       in
       if update_memcached then memcache_set callee_pname summary_option ;
       Typ.Procname.Hash.add cache callee_pname summary_option ;

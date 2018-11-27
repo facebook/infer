@@ -1493,6 +1493,12 @@ and log_file =
     ~default:"logs" "Specify the file to use for logging"
 
 
+and log_skipped =
+  CLOpt.mk_bool ~long:"log-skipped"
+    ~in_help:InferCommand.[(Run, manual_generic)]
+    "Turn on the feature that logs skipped functions (one per file) in a machine-readable format"
+
+
 and perf_profiler_data_file =
   CLOpt.mk_path_opt ~long:"perf-profiler-data-file"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2726,6 +2732,8 @@ and load_average =
 and log_events = !log_events
 
 and log_file = !log_file
+
+and log_skipped = !log_skipped
 
 and perf_profiler_data_file = !perf_profiler_data_file
 

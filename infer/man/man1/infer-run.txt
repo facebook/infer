@@ -89,6 +89,11 @@ OPTIONS
            Activates: Turn on the feature that logs events in a
            machine-readable format (Conversely: --no-log-events)
 
+       --log-skipped
+           Activates: Turn on the feature that logs skipped functions (one
+           per file) in a machine-readable format (Conversely:
+           --no-log-skipped)
+
        --pmd-xml
            Activates: Output issues in (PMD) XML format (Conversely:
            --no-pmd-xml)

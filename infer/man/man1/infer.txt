@@ -542,6 +542,11 @@ OPTIONS
            machine-readable format (Conversely: --no-log-events)       
     See also infer-run(1).
 
+       --log-skipped
+           Activates: Turn on the feature that logs skipped functions (one
+           per file) in a machine-readable format (Conversely:
+           --no-log-skipped)           See also infer-run(1).
+
        --loop-hoisting
            Activates: checker for loop-hoisting (Conversely:
            --no-loop-hoisting)           See also infer-analyze(1).

@@ -38,6 +38,14 @@ module IO = struct
     match !out_chan with Some oc -> Printf.fprintf oc fmt | _ -> Printf.ifprintf stdout fmt
 
 
+  let write_skipped_pname pname =
+    let fname = events_dir ^/ "skipped_functions" ^ log_file_extension in
+    let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
+    Out_channel.output_string oc pname ;
+    Out_channel.output_char oc '\n' ;
+    Out_channel.close oc
+
+
   let dump () =
     let dump_file_to_stdout fname =
       let ic = In_channel.create fname in
@@ -333,6 +341,8 @@ module type S = sig
 
   val log : event -> unit
 
+  val log_skipped_pname : string -> unit
+
   val dump : unit -> unit
 end
 
@@ -382,6 +392,8 @@ module LoggerImpl : S = struct
   let log event = IO.write "%s\n" (create_row event)
 
   let dump = IO.dump
+
+  let log_skipped_pname pname = if Config.log_skipped then IO.write_skipped_pname pname else ()
 end
 
 module DummyLogger : S = struct
@@ -392,6 +404,8 @@ module DummyLogger : S = struct
   let log _ = ()
 
   let dump _ = ()
+
+  let log_skipped_pname _ = ()
 end
 
 (* use real logger if logging is enabled, dummy logger otherwise *)

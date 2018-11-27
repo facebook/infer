@@ -98,4 +98,6 @@ val prepare : unit -> unit
 
 val log : event -> unit
 
+val log_skipped_pname : string -> unit
+
 val dump : unit -> unit
