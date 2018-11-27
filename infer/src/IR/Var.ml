@@ -32,6 +32,10 @@ let of_formal_index formal_index = of_id (Ident.create_footprint Ident.name_spec
 
 let to_exp = function ProgramVar pvar -> Exp.Lvar pvar | LogicalVar id -> Exp.Var id
 
+let get_ident = function ProgramVar _ -> None | LogicalVar id -> Some id
+
+let get_pvar = function ProgramVar pvar -> Some pvar | LogicalVar _ -> None
+
 let get_mangled = function ProgramVar pvar -> Some (Pvar.get_name pvar) | LogicalVar _ -> None
 
 let is_global = function ProgramVar pvar -> Pvar.is_global pvar | LogicalVar _ -> false

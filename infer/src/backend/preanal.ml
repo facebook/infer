@@ -97,7 +97,7 @@ module NullifyTransferFunctions = struct
           (active_defs', to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
-      | Sil.Store _ | Prune _ | Remove_temps _ | Abstract _ ->
+      | Sil.Store _ | Prune _ | ExitScope _ | Abstract _ ->
           astate
       | Sil.Nullify _ ->
           L.(die InternalError)
@@ -129,40 +129,49 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
   (* only nullify pvars that are local; don't nullify those that can escape *)
   let is_local pvar = not (Pvar.is_return pvar || Pvar.is_global pvar) in
-  let node_nullify_instructions loc pvars =
-    List.rev_filter_map pvars ~f:(fun pvar ->
-        if is_local pvar then Some (Sil.Nullify (pvar, loc)) else None )
+  let prepend_node_nullify_instructions loc pvars instrs =
+    List.fold pvars ~init:instrs ~f:(fun instrs pvar ->
+        if is_local pvar then Sil.Nullify (pvar, loc) :: instrs else instrs )
   in
-  let node_removetmps_instruction loc ids =
-    if ids <> [] then Some (Sil.Remove_temps (List.rev ids, loc)) else None
+  let node_deadvars_instruction loc vars =
+    let local_vars =
+      List.rev_filter vars ~f:(function
+        | Var.ProgramVar pvar ->
+            is_local pvar
+        | Var.LogicalVar _ ->
+            true )
+    in
+    if List.is_empty local_vars then None else Some (Sil.ExitScope (local_vars, loc))
   in
   Container.iter nullify_proc_cfg ~fold:ProcCfg.Exceptional.fold_nodes ~f:(fun node ->
       match NullifyAnalysis.extract_post (ProcCfg.Exceptional.Node.id node) nullify_inv_map with
       | Some (_, to_nullify) ->
-          let pvars_to_nullify, ids_to_remove =
+          let dead_vars, pvars_to_nullify =
             VarDomain.fold
-              (fun var (pvars_acc, ids_acc) ->
-                match Var.to_exp var with
-                (* we nullify all address taken variables at the end of the procedure *)
-                | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
-                    (pvar :: pvars_acc, ids_acc)
-                | Exp.Var id ->
-                    (pvars_acc, id :: ids_acc)
-                | _ ->
-                    (pvars_acc, ids_acc) )
+              (fun var (dead_vars, pvars_to_nullify) ->
+                let pvars_to_nullify =
+                  match Var.get_pvar var with
+                  | Some pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                      (* We nullify all address taken variables at the end of the procedure. This is
+                         to avoid setting heap values to 0 that may be aliased somewhere else. *)
+                      pvar :: pvars_to_nullify
+                  | _ ->
+                      pvars_to_nullify
+                in
+                (var :: dead_vars, pvars_to_nullify) )
               to_nullify ([], [])
           in
           let loc = Procdesc.Node.get_last_loc node in
-          node_nullify_instructions loc pvars_to_nullify
-          |> IList.opt_cons (node_removetmps_instruction loc ids_to_remove)
+          Option.to_list (node_deadvars_instruction loc dead_vars)
+          |> prepend_node_nullify_instructions loc pvars_to_nullify
           |> Procdesc.Node.append_instrs node
       | None ->
           () ) ;
-  (* nullify all address taken variables *)
+  (* nullify all address taken variables at the end of the procedure *)
   if not (AddressTaken.Domain.is_empty address_taken_vars) then
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
     let exit_loc = Procdesc.Node.get_last_loc exit_node in
-    node_nullify_instructions exit_loc (AddressTaken.Domain.elements address_taken_vars)
+    prepend_node_nullify_instructions exit_loc (AddressTaken.Domain.elements address_taken_vars) []
     |> Procdesc.Node.append_instrs exit_node
 
 

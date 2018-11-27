@@ -112,7 +112,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         Some call_instr
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         Some (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind))
-    | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
+    | Sil.Nullify _ | Abstract _ | ExitScope _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         None
   in
@@ -198,14 +198,14 @@ let with_block_args_instrs resolved_pdesc substitutions =
   let convert_instr (instrs, id_map) instr =
     let get_block_name_and_load_captured_vars_instrs block_var loc =
       let block_name, extra_formals = Mangled.Map.find block_var substitutions in
-      let ids, id_exp_typs, load_instrs =
+      let dead_vars, id_exp_typs, load_instrs =
         List.map extra_formals ~f:(fun (var, typ) ->
             let id = Ident.create_fresh_specialized_with_blocks Ident.knormal in
             let pvar = Pvar.mk var resolved_pname in
-            (id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
+            (Var.of_id id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
         |> List.unzip3
       in
-      let remove_temps_instr = Sil.Remove_temps (ids, loc) in
+      let remove_temps_instr = Sil.ExitScope (dead_vars, loc) in
       (block_name, id_exp_typs, load_instrs, remove_temps_instr)
     in
     let convert_generic_call return_ids exp origin_args loc call_flags =
@@ -260,7 +260,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
         convert_generic_call return_ids origin_call_exp origin_args loc call_flags
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind) :: instrs, id_map)
-    | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
+    | Sil.Nullify _ | Abstract _ | Sil.ExitScope _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         (instrs, id_map)
   in

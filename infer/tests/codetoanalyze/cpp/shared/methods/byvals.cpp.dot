@@ -7,7 +7,7 @@ digraph cfg {
 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" [label="2: Exit pass_by_val::decltype_by_ref \n  " color=yellow style=filled]
 	
 
-"decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 38, column 58]\n  n$1=*n$0.x:int [line 38, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 38, column 66]\n  n$3=*n$2.y:int* [line 38, column 65]\n  n$4=*n$3:int [line 38, column 64]\n  *&return:int=(n$1 + n$4) [line 38, column 51]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 38, column 51]\n  NULLIFY(&p); [line 38, column 51]\n  APPLY_ABSTRACTION; [line 38, column 51]\n " shape="box"]
+"decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 38, column 58]\n  n$1=*n$0.x:int [line 38, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 38, column 66]\n  n$3=*n$2.y:int* [line 38, column 65]\n  n$4=*n$3:int [line 38, column 64]\n  *&return:int=(n$1 + n$4) [line 38, column 51]\n  NULLIFY(&p); [line 38, column 51]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,p); [line 38, column 51]\n  APPLY_ABSTRACTION; [line 38, column 51]\n " shape="box"]
 	
 
 	 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" -> "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_2" [label="2: Exit pass_by_val::decltype_by_val \n  " color=yellow style=filled]
 	
 
-"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 36, column 56]\n  n$1=*n$0.x:int [line 36, column 56]\n  n$2=*&p:pass_by_val::PlainStruct& [line 36, column 64]\n  n$3=*n$2.y:int* [line 36, column 63]\n  n$4=*n$3:int [line 36, column 62]\n  *&return:int=(n$1 + n$4) [line 36, column 49]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 36, column 49]\n  NULLIFY(&p); [line 36, column 49]\n  APPLY_ABSTRACTION; [line 36, column 49]\n " shape="box"]
+"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 36, column 56]\n  n$1=*n$0.x:int [line 36, column 56]\n  n$2=*&p:pass_by_val::PlainStruct& [line 36, column 64]\n  n$3=*n$2.y:int* [line 36, column 63]\n  n$4=*n$3:int [line 36, column 62]\n  *&return:int=(n$1 + n$4) [line 36, column 49]\n  NULLIFY(&p); [line 36, column 49]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,p); [line 36, column 49]\n  APPLY_ABSTRACTION; [line 36, column 49]\n " shape="box"]
 	
 
 	 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" -> "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" [label="2: Exit pass_by_val::dependent_by_ref \n  " color=yellow style=filled]
 	
 
-"dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct const & [line 48, column 65]\n  n$1=*n$0.x:int [line 48, column 65]\n  n$2=*&p:pass_by_val::PlainStruct const & [line 48, column 73]\n  n$3=*n$2.y:int* [line 48, column 72]\n  n$4=*n$3:int [line 48, column 71]\n  *&return:int=(n$1 + n$4) [line 48, column 58]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 48, column 58]\n  NULLIFY(&p); [line 48, column 58]\n  APPLY_ABSTRACTION; [line 48, column 58]\n " shape="box"]
+"dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct const & [line 48, column 65]\n  n$1=*n$0.x:int [line 48, column 65]\n  n$2=*&p:pass_by_val::PlainStruct const & [line 48, column 73]\n  n$3=*n$2.y:int* [line 48, column 72]\n  n$4=*n$3:int [line 48, column 71]\n  *&return:int=(n$1 + n$4) [line 48, column 58]\n  NULLIFY(&p); [line 48, column 58]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,p); [line 48, column 58]\n  APPLY_ABSTRACTION; [line 48, column 58]\n " shape="box"]
 	
 
 	 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" -> "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_2" [label="2: Exit pass_by_val::dependent_by_val \n  " color=yellow style=filled]
 	
 
-"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 47, column 58]\n  n$1=*n$0.x:int [line 47, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 47, column 66]\n  n$3=*n$2.y:int* [line 47, column 65]\n  n$4=*n$3:int [line 47, column 64]\n  *&return:int=(n$1 + n$4) [line 47, column 51]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 47, column 51]\n  NULLIFY(&p); [line 47, column 51]\n  APPLY_ABSTRACTION; [line 47, column 51]\n " shape="box"]
+"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 47, column 58]\n  n$1=*n$0.x:int [line 47, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 47, column 66]\n  n$3=*n$2.y:int* [line 47, column 65]\n  n$4=*n$3:int [line 47, column 64]\n  *&return:int=(n$1 + n$4) [line 47, column 51]\n  NULLIFY(&p); [line 47, column 51]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,p); [line 47, column 51]\n  APPLY_ABSTRACTION; [line 47, column 51]\n " shape="box"]
 	
 
 	 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" -> "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_2" ;
@@ -51,7 +51,7 @@ digraph cfg {
 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_2" [label="2: Exit __infer_globals_initializer_pass_by_val::dummy_struct \n  " color=yellow style=filled]
 	
 
-"dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct:pass_by_val::PlainStruct) [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.x:int=0 [line 15, column 25]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.y:int*=null [line 15, column 25]\n  REMOVE_TEMPS(n$0); [line 15, column 25]\n  APPLY_ABSTRACTION; [line 15, column 25]\n " shape="box"]
+"dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct:pass_by_val::PlainStruct) [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.x:int=0 [line 15, column 25]\n  *&#GB<codetoanalyze/cpp/shared/methods/byvals.cpp|ice>$pass_by_val::dummy_struct.y:int*=null [line 15, column 25]\n  EXIT_SCOPE(n$0); [line 15, column 25]\n  APPLY_ABSTRACTION; [line 15, column 25]\n " shape="box"]
 	
 
 	 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_3" -> "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_2" ;
@@ -62,7 +62,7 @@ digraph cfg {
 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_2" [label="2: Exit std::forward<int> \n  " color=yellow style=filled]
 	
 
-"forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2305, column 31]\n  *&return:int&=n$0 [line 2305, column 5]\n  REMOVE_TEMPS(n$0); [line 2305, column 5]\n  NULLIFY(&__t); [line 2305, column 5]\n  APPLY_ABSTRACTION; [line 2305, column 5]\n " shape="box"]
+"forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2305, column 31]\n  *&return:int&=n$0 [line 2305, column 5]\n  NULLIFY(&__t); [line 2305, column 5]\n  EXIT_SCOPE(n$0,__t); [line 2305, column 5]\n  APPLY_ABSTRACTION; [line 2305, column 5]\n " shape="box"]
 	
 
 	 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" -> "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_2" ;
@@ -73,7 +73,7 @@ digraph cfg {
 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_2" [label="2: Exit std::forward<int_&> \n  " color=yellow style=filled]
 	
 
-"forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2305, column 31]\n  *&return:int&=n$0 [line 2305, column 5]\n  REMOVE_TEMPS(n$0); [line 2305, column 5]\n  NULLIFY(&__t); [line 2305, column 5]\n  APPLY_ABSTRACTION; [line 2305, column 5]\n " shape="box"]
+"forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2305, column 31]\n  *&return:int&=n$0 [line 2305, column 5]\n  NULLIFY(&__t); [line 2305, column 5]\n  EXIT_SCOPE(n$0,__t); [line 2305, column 5]\n  APPLY_ABSTRACTION; [line 2305, column 5]\n " shape="box"]
 	
 
 	 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" -> "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_2" ;
@@ -84,7 +84,7 @@ digraph cfg {
 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_2" [label="2: Exit pass_by_val::make_id<int,_int_&,_int_&,_int> \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 60, column 1]\n " color=yellow style=filled]
 	
 
-"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" [label="3:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n  n$10=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>) [line 59, column 10]\n  n$2=*&args:int& [line 59, column 35]\n  n$3=_fun_std::forward<int_&>(n$2:int&) [line 59, column 16]\n  n$4=*n$3:int [line 59, column 16]\n  n$5=*&args:int& [line 59, column 35]\n  n$6=_fun_std::forward<int_&>(n$5:int&) [line 59, column 16]\n  n$7=*&args:int& [line 59, column 35]\n  n$8=_fun_std::forward<int>(n$7:int&) [line 59, column 16]\n  n$9=_fun_pass_by_val::Id<int>_Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*,n$4:int,n$6:int&,n$8:int&) [line 59, column 10]\n  n$11=_fun_pass_by_val::Id<int>_Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n  REMOVE_TEMPS(n$0,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9,n$10,n$11); [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  NULLIFY(&__return_param); [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  APPLY_ABSTRACTION; [line 59, column 10]\n " shape="box"]
+"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" [label="3:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n  n$10=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>) [line 59, column 10]\n  n$2=*&args:int& [line 59, column 35]\n  n$3=_fun_std::forward<int_&>(n$2:int&) [line 59, column 16]\n  n$4=*n$3:int [line 59, column 16]\n  n$5=*&args:int& [line 59, column 35]\n  n$6=_fun_std::forward<int_&>(n$5:int&) [line 59, column 16]\n  n$7=*&args:int& [line 59, column 35]\n  n$8=_fun_std::forward<int>(n$7:int&) [line 59, column 16]\n  n$9=_fun_pass_by_val::Id<int>_Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*,n$4:int,n$6:int&,n$8:int&) [line 59, column 10]\n  n$11=_fun_pass_by_val::Id<int>_Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  NULLIFY(&__return_param); [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  NULLIFY(&args); [line 59, column 10]\n  EXIT_SCOPE(n$0,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9,n$10,n$11,args,__return_param,args,args,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 59, column 10]\n  APPLY_ABSTRACTION; [line 59, column 10]\n " shape="box"]
 	
 
 	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_2" ;
@@ -95,15 +95,15 @@ digraph cfg {
 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_2" [label="2: Exit pass_by_val::perfect_forwarding_by_ref \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 65, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 65, column 1]\n  NULLIFY(&b); [line 65, column 1]\n  NULLIFY(&a); [line 65, column 1]\n " color=yellow style=filled]
 	
 
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_3" [label="3:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n  n$6=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>) [line 64, column 10]\n  n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$2:int) [line 64, column 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=2 [line 64, column 29]\n  n$5=_fun_pass_by_val::make_id<int,_int_&,_int_&,_int>(&a:int&,&b:int&,&0$?%__sil_tmpSIL_materialize_temp__n$2:int&,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) [line 64, column 10]\n  n$7=_fun_pass_by_val::Id<int>_Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n  REMOVE_TEMPS(n$0,n$3,n$5,n$6,n$7); [line 64, column 10]\n  NULLIFY(&__return_param); [line 64, column 10]\n  APPLY_ABSTRACTION; [line 64, column 10]\n " shape="box"]
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_3" [label="3:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n  n$6=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>) [line 64, column 10]\n  n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$2:int) [line 64, column 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=2 [line 64, column 29]\n  n$5=_fun_pass_by_val::make_id<int,_int_&,_int_&,_int>(&a:int&,&b:int&,&0$?%__sil_tmpSIL_materialize_temp__n$2:int&,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) [line 64, column 10]\n  n$7=_fun_pass_by_val::Id<int>_Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n  NULLIFY(&__return_param); [line 64, column 10]\n  EXIT_SCOPE(n$0,n$3,n$5,n$6,n$7,a,__return_param,b,0$?%__sil_tmpSIL_materialize_temp__n$2,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 64, column 10]\n  APPLY_ABSTRACTION; [line 64, column 10]\n " shape="box"]
 	
 
 	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_3" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_2" ;
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&b:int) [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n  REMOVE_TEMPS(n$9); [line 63, column 3]\n " shape="box"]
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&b:int) [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n  EXIT_SCOPE(n$9); [line 63, column 3]\n " shape="box"]
 	
 
 	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_3" ;
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" [label="5:  DeclStmt \n   n$10=_fun___variable_initialization(&a:int) [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n  REMOVE_TEMPS(n$10); [line 63, column 3]\n " shape="box"]
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" [label="5:  DeclStmt \n   n$10=_fun___variable_initialization(&a:int) [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n  EXIT_SCOPE(n$10); [line 63, column 3]\n " shape="box"]
 	
 
 	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" ;
@@ -114,7 +114,7 @@ digraph cfg {
 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" [label="2: Exit pass_by_val::plain_struct_by_ref \n  " color=yellow style=filled]
 	
 
-"plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n  *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 21, column 3]\n  NULLIFY(&ptr); [line 21, column 3]\n  NULLIFY(&rref); [line 21, column 3]\n  NULLIFY(&lref); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n  *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n  NULLIFY(&ptr); [line 21, column 3]\n  NULLIFY(&rref); [line 21, column 3]\n  NULLIFY(&lref); [line 21, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,n$5,ptr,rref,lref); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
 	
 
 	 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" -> "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" ;
@@ -125,7 +125,7 @@ digraph cfg {
 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_2" [label="2: Exit pass_by_val::plain_struct_by_val \n  " color=yellow style=filled]
 	
 
-"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 17, column 49]\n  n$1=*n$0.x:int [line 17, column 49]\n  n$2=*&p:pass_by_val::PlainStruct& [line 17, column 57]\n  n$3=*n$2.y:int* [line 17, column 56]\n  n$4=*n$3:int [line 17, column 55]\n  *&return:int=(n$1 + n$4) [line 17, column 42]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 17, column 42]\n  NULLIFY(&p); [line 17, column 42]\n  APPLY_ABSTRACTION; [line 17, column 42]\n " shape="box"]
+"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 17, column 49]\n  n$1=*n$0.x:int [line 17, column 49]\n  n$2=*&p:pass_by_val::PlainStruct& [line 17, column 57]\n  n$3=*n$2.y:int* [line 17, column 56]\n  n$4=*n$3:int [line 17, column 55]\n  *&return:int=(n$1 + n$4) [line 17, column 42]\n  NULLIFY(&p); [line 17, column 42]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,p); [line 17, column 42]\n  APPLY_ABSTRACTION; [line 17, column 42]\n " shape="box"]
 	
 
 	 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" -> "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_2" ;
@@ -136,7 +136,7 @@ digraph cfg {
 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_2" [label="2: Exit pass_by_val::to_double \n  " color=yellow style=filled]
 	
 
-"to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 50, column 34]\n  *&return:double=n$0 [line 50, column 27]\n  REMOVE_TEMPS(n$0); [line 50, column 27]\n  NULLIFY(&x); [line 50, column 27]\n  APPLY_ABSTRACTION; [line 50, column 27]\n " shape="box"]
+"to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 50, column 34]\n  *&return:double=n$0 [line 50, column 27]\n  NULLIFY(&x); [line 50, column 27]\n  EXIT_SCOPE(n$0,x); [line 50, column 27]\n  APPLY_ABSTRACTION; [line 50, column 27]\n " shape="box"]
 	
 
 	 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" -> "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_2" ;
@@ -147,7 +147,7 @@ digraph cfg {
 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_2" [label="2: Exit pass_by_val::tricky_dependent_by_val \n  " color=yellow style=filled]
 	
 
-"tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" [label="3:  Return Stmt \n   n$0=*&t:double [line 55, column 62]\n  *&return:double=n$0 [line 55, column 55]\n  REMOVE_TEMPS(n$0); [line 55, column 55]\n  NULLIFY(&t); [line 55, column 55]\n  APPLY_ABSTRACTION; [line 55, column 55]\n " shape="box"]
+"tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" [label="3:  Return Stmt \n   n$0=*&t:double [line 55, column 62]\n  *&return:double=n$0 [line 55, column 55]\n  NULLIFY(&t); [line 55, column 55]\n  EXIT_SCOPE(n$0,t); [line 55, column 55]\n  APPLY_ABSTRACTION; [line 55, column 55]\n " shape="box"]
 	
 
 	 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" -> "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_2" ;
@@ -158,7 +158,7 @@ digraph cfg {
 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" [label="2: Exit pass_by_val::type_alias_by_ref \n  " color=yellow style=filled]
 	
 
-"type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n  *&return:int=(n$1 + n$3) [line 33, column 3]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 33, column 3]\n  NULLIFY(&p2); [line 33, column 3]\n  NULLIFY(&p1); [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
+"type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n  *&return:int=(n$1 + n$3) [line 33, column 3]\n  NULLIFY(&p2); [line 33, column 3]\n  NULLIFY(&p1); [line 33, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,p2,p1); [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
 	
 
 	 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" -> "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" ;
@@ -169,7 +169,7 @@ digraph cfg {
 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_2" [label="2: Exit pass_by_val::type_alias_by_val \n   NULLIFY(&0$?%__sil_tmp__temp_construct_n$4); [line 31, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$0); [line 31, column 1]\n " color=yellow style=filled]
 	
 
-"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" [label="3:  Return Stmt \n   n$1=*&p1:pass_by_val::PlainStruct& [line 30, column 30]\n  n$2=_fun_pass_by_val::PlainStruct_PlainStruct(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct*,n$1:pass_by_val::PlainStruct&) [line 30, column 30]\n  n$3=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct) [line 30, column 10]\n  n$5=*&p2:pass_by_val::PlainStruct& [line 30, column 56]\n  n$6=_fun_pass_by_val::PlainStruct_PlainStruct(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct*,n$5:pass_by_val::PlainStruct&) [line 30, column 56]\n  n$7=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct) [line 30, column 36]\n  *&return:int=(n$3 + n$7) [line 30, column 3]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$5,n$6,n$7); [line 30, column 3]\n  NULLIFY(&p2); [line 30, column 3]\n  NULLIFY(&p1); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
+"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" [label="3:  Return Stmt \n   n$1=*&p1:pass_by_val::PlainStruct& [line 30, column 30]\n  n$2=_fun_pass_by_val::PlainStruct_PlainStruct(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct*,n$1:pass_by_val::PlainStruct&) [line 30, column 30]\n  n$3=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct) [line 30, column 10]\n  n$5=*&p2:pass_by_val::PlainStruct& [line 30, column 56]\n  n$6=_fun_pass_by_val::PlainStruct_PlainStruct(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct*,n$5:pass_by_val::PlainStruct&) [line 30, column 56]\n  n$7=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct) [line 30, column 36]\n  *&return:int=(n$3 + n$7) [line 30, column 3]\n  NULLIFY(&p2); [line 30, column 3]\n  NULLIFY(&p1); [line 30, column 3]\n  EXIT_SCOPE(n$1,n$2,n$3,n$5,n$6,n$7,p2,p1); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
 	
 
 	 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" -> "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_2" ;
@@ -194,11 +194,11 @@ digraph cfg {
 "PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_2" [label="2: Exit pass_by_val::PlainStruct_PlainStruct \n  " color=yellow style=filled]
 	
 
-"PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_3" [label="3:  Constructor Init \n   n$2=*&this:pass_by_val::PlainStruct* [line 11, column 8]\n  n$3=*&__param_0:pass_by_val::PlainStruct const & [line 11, column 8]\n  n$4=*n$3.y:int* [line 11, column 8]\n  *n$2.y:int*=n$4 [line 11, column 8]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 11, column 8]\n  NULLIFY(&this); [line 11, column 8]\n  NULLIFY(&__param_0); [line 11, column 8]\n  APPLY_ABSTRACTION; [line 11, column 8]\n " shape="box"]
+"PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_3" [label="3:  Constructor Init \n   n$2=*&this:pass_by_val::PlainStruct* [line 11, column 8]\n  n$3=*&__param_0:pass_by_val::PlainStruct const & [line 11, column 8]\n  n$4=*n$3.y:int* [line 11, column 8]\n  *n$2.y:int*=n$4 [line 11, column 8]\n  NULLIFY(&this); [line 11, column 8]\n  NULLIFY(&__param_0); [line 11, column 8]\n  EXIT_SCOPE(n$2,n$3,n$4,this,__param_0); [line 11, column 8]\n  APPLY_ABSTRACTION; [line 11, column 8]\n " shape="box"]
 	
 
 	 "PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_3" -> "PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_2" ;
-"PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_4" [label="4:  Constructor Init \n   n$5=*&this:pass_by_val::PlainStruct* [line 11, column 8]\n  n$6=*&__param_0:pass_by_val::PlainStruct const & [line 11, column 8]\n  n$7=*n$6.x:int [line 11, column 8]\n  *n$5.x:int=n$7 [line 11, column 8]\n  REMOVE_TEMPS(n$5,n$6,n$7); [line 11, column 8]\n " shape="box"]
+"PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_4" [label="4:  Constructor Init \n   n$5=*&this:pass_by_val::PlainStruct* [line 11, column 8]\n  n$6=*&__param_0:pass_by_val::PlainStruct const & [line 11, column 8]\n  n$7=*n$6.x:int [line 11, column 8]\n  *n$5.x:int=n$7 [line 11, column 8]\n  EXIT_SCOPE(n$5,n$6,n$7); [line 11, column 8]\n " shape="box"]
 	
 
 	 "PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_4" -> "PlainStruct#PlainStruct#pass_by_val#{2553093086388184854|constexpr}.e295b1e7e1c5b638011ce60f4cd77a28_3" ;

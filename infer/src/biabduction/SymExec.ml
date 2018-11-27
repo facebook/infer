@@ -1518,8 +1518,9 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
         ret_old_path
           [ Abs.remove_redundant_array_elements current_pname tenv
               (Abs.abstract current_pname tenv prop_) ]
-  | Sil.Remove_temps (temps, _) ->
-      ret_old_path [Prop.exist_quantify tenv temps prop_]
+  | Sil.ExitScope (dead_vars, _) ->
+      let dead_ids = List.filter_map dead_vars ~f:Var.get_ident in
+      ret_old_path [Prop.exist_quantify tenv dead_ids prop_]
 
 
 and diverge prop path =

@@ -416,8 +416,13 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
     ignore (typecheck_expr_simple typestate1 exp1 (Typ.mk Tvoid) TypeOrigin.Undef loc1)
   in
   match instr with
-  | Sil.Remove_temps (idl, _) ->
-      List.fold_right ~f:TypeState.remove_id idl ~init:typestate
+  | Sil.ExitScope (vars, _) ->
+      List.fold_right vars ~init:typestate ~f:(fun var astate ->
+          match var with
+          | Var.LogicalVar id ->
+              TypeState.remove_id id astate
+          | Var.ProgramVar _ ->
+              astate )
   | Sil.Abstract _ | Sil.Nullify _ ->
       typestate
   | Sil.Load (id, e, typ, loc) ->

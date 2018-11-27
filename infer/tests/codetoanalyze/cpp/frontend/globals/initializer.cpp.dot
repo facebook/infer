@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_2" [label="2: Exit __infer_globals_initializer_x \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int) [line 12, column 1]\n  n$0=_fun_foo() [line 12, column 16]\n  *&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int=(n$0 + 5) [line 12, column 1]\n  REMOVE_TEMPS(n$0,n$1); [line 12, column 1]\n  APPLY_ABSTRACTION; [line 12, column 1]\n " shape="box"]
+"__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int) [line 12, column 1]\n  n$0=_fun_foo() [line 12, column 16]\n  *&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int=(n$0 + 5) [line 12, column 1]\n  EXIT_SCOPE(n$0,n$1); [line 12, column 1]\n  APPLY_ABSTRACTION; [line 12, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_3" -> "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_2" [label="2: Exit __infer_globals_initializer_y \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$y:int) [line 13, column 1]\n  n$0=*&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int [line 13, column 16]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$z:int [line 13, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$y:int=((n$0 + n$1) + 1) [line 13, column 1]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13, column 1]\n  APPLY_ABSTRACTION; [line 13, column 1]\n " shape="box"]
+"__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$y:int) [line 13, column 1]\n  n$0=*&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$x:int [line 13, column 16]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$z:int [line 13, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/initializer.cpp>$y:int=((n$0 + n$1) + 1) [line 13, column 1]\n  EXIT_SCOPE(n$0,n$1,n$2); [line 13, column 1]\n  APPLY_ABSTRACTION; [line 13, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_3" -> "__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_2" ;

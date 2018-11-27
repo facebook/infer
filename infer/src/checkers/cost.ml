@@ -78,7 +78,7 @@ module TransferFunctionsNodesBasicCost = struct
           CostDomain.NodeInstructionToCostMap.add key callee_cost astate
       | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
           CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
-      | Sil.Remove_temps _ -> (
+      | Sil.ExitScope _ -> (
         match CFG.Node.kind node with
         | Procdesc.Node.Start_node ->
             CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
@@ -617,9 +617,9 @@ module TransferFunctionsWCET = struct
   type extras = extras_TransferFunctionsWCET
 
   let should_report_on_instr = function
-    | Sil.Call _ | Sil.Load _ | Sil.Prune _ | Sil.Store _ ->
+    | Sil.Call _ | Load _ | Prune _ | Store _ ->
         true
-    | Sil.Abstract _ | Sil.Nullify _ | Sil.Remove_temps _ ->
+    | Sil.Abstract _ | Nullify _ | ExitScope _ ->
         false
 
 

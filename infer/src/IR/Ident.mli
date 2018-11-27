@@ -132,9 +132,6 @@ val pp : Format.formatter -> t -> unit
 val to_string : t -> string
 (** Convert an identifier to a string. *)
 
-val pp_list : Format.formatter -> t list -> unit
-(** Pretty print a list of identifiers. *)
-
 val hashqueue_of_sequence : ?init:unit HashQueue.t -> t Sequence.t -> unit HashQueue.t
 
 val set_of_sequence : ?init:Set.t -> t Sequence.t -> Set.t

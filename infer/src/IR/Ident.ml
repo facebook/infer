@@ -235,9 +235,6 @@ let to_string id = F.asprintf "%a" pp id
 (** Pretty print a name. *)
 let pp_name f name = F.pp_print_string f (name_to_string name)
 
-(** pretty printer for lists of identifiers *)
-let pp_list = Pp.comma_seq pp
-
 module HashQueue = Hash_queue.Make (struct
   type nonrec t = t
 

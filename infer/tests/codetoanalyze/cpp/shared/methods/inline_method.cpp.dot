@@ -7,11 +7,11 @@ digraph cfg {
 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" [label="2: Exit test_call \n  " color=yellow style=filled]
 	
 
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$1=*&a_ptr:A* [line 24, column 3]\n  n$2=*n$1.in:A::AIn* [line 24, column 3]\n  _=*n$2:A::AIn [line 24, column 3]\n  n$4=_fun_A::AIn_fun(n$2:A::AIn*) [line 24, column 3]\n  REMOVE_TEMPS(_,n$1,n$2,n$4); [line 24, column 3]\n  NULLIFY(&a_ptr); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$1=*&a_ptr:A* [line 24, column 3]\n  n$2=*n$1.in:A::AIn* [line 24, column 3]\n  _=*n$2:A::AIn [line 24, column 3]\n  n$4=_fun_A::AIn_fun(n$2:A::AIn*) [line 24, column 3]\n  NULLIFY(&a_ptr); [line 24, column 3]\n  EXIT_SCOPE(_,n$1,n$2,n$4,a_ptr); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" ;
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$5=*&a_ptr:A* [line 23, column 3]\n  _=*n$5:A [line 23, column 3]\n  n$7=_fun_A_fun(n$5:A*) [line 23, column 3]\n  REMOVE_TEMPS(_,n$5,n$7); [line 23, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$5=*&a_ptr:A* [line 23, column 3]\n  _=*n$5:A [line 23, column 3]\n  n$7=_fun_A_fun(n$5:A*) [line 23, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 23, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n  REMOVE_TEMPS(n$0); [line 17, column 5]\n  NULLIFY(&c); [line 17, column 5]\n  APPLY_ABSTRACTION; [line 17, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n  NULLIFY(&c); [line 17, column 5]\n  EXIT_SCOPE(n$0,c); [line 17, column 5]\n  APPLY_ABSTRACTION; [line 17, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&c:int) [line 16, column 5]\n  *&c:int=10 [line 16, column 5]\n  REMOVE_TEMPS(n$2); [line 16, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&c:int) [line 16, column 5]\n  *&c:int=10 [line 16, column 5]\n  EXIT_SCOPE(n$2); [line 16, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" ;

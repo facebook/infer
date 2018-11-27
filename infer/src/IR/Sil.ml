@@ -49,18 +49,18 @@ type instr =
           [ret_id = e_fun(arg_ts);] *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
-  | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
+  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
 [@@deriving compare]
 
 let equal_instr = [%compare.equal: instr]
 
-let skip_instr = Remove_temps ([], Location.dummy)
+let skip_instr = ExitScope ([], Location.dummy)
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
   | Load _ | Store _ | Prune _ | Call _ ->
       false
-  | Nullify _ | Abstract _ | Remove_temps _ ->
+  | Nullify _ | Abstract _ | ExitScope _ ->
       true
 
 
@@ -336,7 +336,7 @@ let instr_get_loc = function
   | Call (_, _, _, loc, _)
   | Nullify (_, loc)
   | Abstract loc
-  | Remove_temps (_, loc) ->
+  | ExitScope (_, loc) ->
       loc
 
 
@@ -354,8 +354,8 @@ let instr_get_exps = function
       [Exp.Lvar pvar]
   | Abstract _ ->
       []
-  | Remove_temps (temps, _) ->
-      List.map ~f:(fun id -> Exp.Var id) temps
+  | ExitScope (vars, _) ->
+      List.map ~f:Var.to_exp vars
 
 
 (** Convert an if_kind to string  *)
@@ -399,8 +399,8 @@ let pp_instr ~print_types pe0 f instr =
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | Abstract loc ->
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
-  | Remove_temps (temps, loc) ->
-      F.fprintf f "REMOVE_TEMPS(%a); [%a]" Ident.pp_list temps Location.pp loc ) ;
+  | ExitScope (vars, loc) ->
+      F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc ) ;
   color_post_wrapper changed f
 
 
@@ -1276,9 +1276,17 @@ let instr_sub_ids ~sub_id_binders f instr =
   | Prune (exp, loc, true_branch, if_kind) ->
       let exp' = exp_sub_ids f exp in
       if phys_equal exp' exp then instr else Prune (exp', loc, true_branch, if_kind)
-  | Remove_temps (ids, loc) ->
-      let ids' = IList.map_changed ~equal:Ident.equal ~f:sub_id ids in
-      if phys_equal ids' ids then instr else Remove_temps (ids', loc)
+  | ExitScope (vars, loc) ->
+      let sub_var var =
+        match var with
+        | Var.ProgramVar _ ->
+            var
+        | Var.LogicalVar ident ->
+            let ident' = sub_id ident in
+            if phys_equal ident ident' then var else Var.of_id ident'
+      in
+      let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
+      if phys_equal vars vars' then instr else ExitScope (vars', loc)
   | Nullify _ | Abstract _ ->
       instr
 

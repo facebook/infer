@@ -7,11 +7,11 @@ digraph cfg {
 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_2" [label="2: Exit temp_object::assign_temp_div0 \n   NULLIFY(&x); [line 29, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 29, column 1]\n " color=yellow style=filled]
 	
 
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" [label="3:  Return Stmt \n   _=*&x:temp_object::X [line 28, column 10]\n  n$1=_fun_temp_object::X_div(&x:temp_object::X&) [line 28, column 10]\n  *&return:int=n$1 [line 28, column 3]\n  _=*&x:temp_object::X [line 28, column 16]\n  n$3=_fun_temp_object::X_~X(&x:temp_object::X*) [line 28, column 16]\n  REMOVE_TEMPS(_,_,n$1,n$3); [line 28, column 16]\n  APPLY_ABSTRACTION; [line 28, column 16]\n " shape="box"]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" [label="3:  Return Stmt \n   _=*&x:temp_object::X [line 28, column 10]\n  n$1=_fun_temp_object::X_div(&x:temp_object::X&) [line 28, column 10]\n  *&return:int=n$1 [line 28, column 3]\n  _=*&x:temp_object::X [line 28, column 16]\n  n$3=_fun_temp_object::X_~X(&x:temp_object::X*) [line 28, column 16]\n  EXIT_SCOPE(_,_,n$1,n$3,x); [line 28, column 16]\n  APPLY_ABSTRACTION; [line 28, column 16]\n " shape="box"]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_2" ;
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:temp_object::X) [line 27, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const ) [line 27, column 9]\n  n$6=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const *,0:int,1:int) [line 27, column 9]\n  n$8=_fun_temp_object::X_X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const &) [line 27, column 9]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 27, column 9]\n " shape="box"]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:temp_object::X) [line 27, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const ) [line 27, column 9]\n  n$6=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const *,0:int,1:int) [line 27, column 9]\n  n$8=_fun_temp_object::X_X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$5:temp_object::X const &) [line 27, column 9]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,0$?%__sil_tmpSIL_materialize_temp__n$5); [line 27, column 9]\n " shape="box"]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_2" [label="2: Exit temp_object::div \n  " color=yellow style=filled]
 	
 
-"div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_3" [label="3:  Return Stmt \n   n$0=*&f:int [line 19, column 29]\n  *&return:int=(1 / n$0) [line 19, column 18]\n  REMOVE_TEMPS(n$0); [line 19, column 18]\n  NULLIFY(&f); [line 19, column 18]\n  APPLY_ABSTRACTION; [line 19, column 18]\n " shape="box"]
+"div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_3" [label="3:  Return Stmt \n   n$0=*&f:int [line 19, column 29]\n  *&return:int=(1 / n$0) [line 19, column 18]\n  NULLIFY(&f); [line 19, column 18]\n  EXIT_SCOPE(n$0,f); [line 19, column 18]\n  APPLY_ABSTRACTION; [line 19, column 18]\n " shape="box"]
 	
 
 	 "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_3" -> "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_2" ;
@@ -33,7 +33,7 @@ digraph cfg {
 "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_2" [label="2: Exit temp_object::getX \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 24, column 40]\n " color=yellow style=filled]
 	
 
-"getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_3" [label="3:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 24, column 24]\n  n$5=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const ) [line 24, column 31]\n  n$2=*&a:int [line 24, column 33]\n  n$3=*&b:int [line 24, column 36]\n  n$4=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 24, column 31]\n  n$6=_fun_temp_object::X_X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 24, column 31]\n  REMOVE_TEMPS(n$0,n$2,n$3,n$4,n$5,n$6); [line 24, column 31]\n  NULLIFY(&a); [line 24, column 31]\n  NULLIFY(&b); [line 24, column 31]\n  NULLIFY(&__return_param); [line 24, column 31]\n  APPLY_ABSTRACTION; [line 24, column 31]\n " shape="box"]
+"getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_3" [label="3:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 24, column 24]\n  n$5=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const ) [line 24, column 31]\n  n$2=*&a:int [line 24, column 33]\n  n$3=*&b:int [line 24, column 36]\n  n$4=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 24, column 31]\n  n$6=_fun_temp_object::X_X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 24, column 31]\n  NULLIFY(&a); [line 24, column 31]\n  NULLIFY(&b); [line 24, column 31]\n  NULLIFY(&__return_param); [line 24, column 31]\n  EXIT_SCOPE(n$0,n$2,n$3,n$4,n$5,n$6,a,b,__return_param,0$?%__sil_tmpSIL_materialize_temp__n$1); [line 24, column 31]\n  APPLY_ABSTRACTION; [line 24, column 31]\n " shape="box"]
 	
 
 	 "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_3" -> "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_2" ;
@@ -44,7 +44,7 @@ digraph cfg {
 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" [label="2: Exit temp_object::getX_field_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 37, column 51]\n " color=yellow style=filled]
 	
 
-"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 37, column 36]\n  n$2=_fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 37, column 36]\n  n$4=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 37, column 36]\n  n$5=_fun_temp_object::div(n$4:int) [line 37, column 32]\n  *&return:int=n$5 [line 37, column 25]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$5); [line 37, column 25]\n  APPLY_ABSTRACTION; [line 37, column 25]\n " shape="box"]
+"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 37, column 36]\n  n$2=_fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 37, column 36]\n  n$4=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 37, column 36]\n  n$5=_fun_temp_object::div(n$4:int) [line 37, column 32]\n  *&return:int=n$5 [line 37, column 25]\n  EXIT_SCOPE(n$2,n$3,n$4,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 37, column 25]\n  APPLY_ABSTRACTION; [line 37, column 25]\n " shape="box"]
 	
 
 	 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" -> "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" ;
@@ -55,7 +55,7 @@ digraph cfg {
 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" [label="2: Exit temp_object::getX_field_div1 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 43, column 51]\n " color=yellow style=filled]
 	
 
-"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 43, column 36]\n  n$2=_fun_temp_object::getX(1:int,0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 43, column 36]\n  n$4=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 43, column 36]\n  n$5=_fun_temp_object::div(n$4:int) [line 43, column 32]\n  *&return:int=n$5 [line 43, column 25]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$5); [line 43, column 25]\n  APPLY_ABSTRACTION; [line 43, column 25]\n " shape="box"]
+"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 43, column 36]\n  n$2=_fun_temp_object::getX(1:int,0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 43, column 36]\n  n$4=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 43, column 36]\n  n$5=_fun_temp_object::div(n$4:int) [line 43, column 32]\n  *&return:int=n$5 [line 43, column 25]\n  EXIT_SCOPE(n$2,n$3,n$4,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 43, column 25]\n  APPLY_ABSTRACTION; [line 43, column 25]\n " shape="box"]
 	
 
 	 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" -> "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" ;
@@ -66,7 +66,7 @@ digraph cfg {
 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" [label="2: Exit temp_object::getX_method_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 39, column 51]\n " color=yellow style=filled]
 	
 
-"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 39, column 33]\n  n$2=_fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 39, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 39, column 33]\n  n$5=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 39, column 33]\n  *&return:int=n$5 [line 39, column 26]\n  REMOVE_TEMPS(_,n$2,n$3,n$5); [line 39, column 26]\n  APPLY_ABSTRACTION; [line 39, column 26]\n " shape="box"]
+"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 39, column 33]\n  n$2=_fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 39, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 39, column 33]\n  n$5=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 39, column 33]\n  *&return:int=n$5 [line 39, column 26]\n  EXIT_SCOPE(_,n$2,n$3,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 39, column 26]\n  APPLY_ABSTRACTION; [line 39, column 26]\n " shape="box"]
 	
 
 	 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" -> "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" ;
@@ -77,7 +77,7 @@ digraph cfg {
 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" [label="2: Exit temp_object::temp_field2_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 33, column 46]\n " color=yellow style=filled]
 	
 
-"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 33, column 37]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int) [line 33, column 37]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 33, column 37]\n  n$4=_fun_temp_object::div(n$3:int) [line 33, column 33]\n  *&return:int=n$4 [line 33, column 26]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4); [line 33, column 26]\n  APPLY_ABSTRACTION; [line 33, column 26]\n " shape="box"]
+"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 33, column 37]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int) [line 33, column 37]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 33, column 37]\n  n$4=_fun_temp_object::div(n$3:int) [line 33, column 33]\n  *&return:int=n$4 [line 33, column 26]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 33, column 26]\n  APPLY_ABSTRACTION; [line 33, column 26]\n " shape="box"]
 	
 
 	 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" -> "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" ;
@@ -88,7 +88,7 @@ digraph cfg {
 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" [label="2: Exit temp_object::temp_field_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 31, column 48]\n " color=yellow style=filled]
 	
 
-"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 31, column 36]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 31, column 36]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 31, column 36]\n  n$4=_fun_temp_object::div(n$3:int) [line 31, column 32]\n  *&return:int=n$4 [line 31, column 25]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4); [line 31, column 25]\n  APPLY_ABSTRACTION; [line 31, column 25]\n " shape="box"]
+"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 31, column 36]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 31, column 36]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 31, column 36]\n  n$4=_fun_temp_object::div(n$3:int) [line 31, column 32]\n  *&return:int=n$4 [line 31, column 25]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 31, column 25]\n  APPLY_ABSTRACTION; [line 31, column 25]\n " shape="box"]
 	
 
 	 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" -> "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" ;
@@ -99,7 +99,7 @@ digraph cfg {
 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" [label="2: Exit temp_object::temp_field_div1 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 41, column 48]\n " color=yellow style=filled]
 	
 
-"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 41, column 36]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,1:int,0:int) [line 41, column 36]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 41, column 36]\n  n$4=_fun_temp_object::div(n$3:int) [line 41, column 32]\n  *&return:int=n$4 [line 41, column 25]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4); [line 41, column 25]\n  APPLY_ABSTRACTION; [line 41, column 25]\n " shape="box"]
+"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 41, column 36]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,1:int,0:int) [line 41, column 36]\n  n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 41, column 36]\n  n$4=_fun_temp_object::div(n$3:int) [line 41, column 32]\n  *&return:int=n$4 [line 41, column 25]\n  EXIT_SCOPE(n$1,n$2,n$3,n$4,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 41, column 25]\n  APPLY_ABSTRACTION; [line 41, column 25]\n " shape="box"]
 	
 
 	 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" -> "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" ;
@@ -110,7 +110,7 @@ digraph cfg {
 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" [label="2: Exit temp_object::temp_method_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 48]\n " color=yellow style=filled]
 	
 
-"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 35, column 33]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 35, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 35, column 33]\n  n$4=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 35, column 33]\n  *&return:int=n$4 [line 35, column 26]\n  REMOVE_TEMPS(_,n$1,n$2,n$4); [line 35, column 26]\n  APPLY_ABSTRACTION; [line 35, column 26]\n " shape="box"]
+"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" [label="3:  Return Stmt \n   n$2=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X) [line 35, column 33]\n  n$1=_fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 35, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 35, column 33]\n  n$4=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 35, column 33]\n  *&return:int=n$4 [line 35, column 26]\n  EXIT_SCOPE(_,n$1,n$2,n$4,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 26]\n  APPLY_ABSTRACTION; [line 35, column 26]\n " shape="box"]
 	
 
 	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" ;
@@ -121,7 +121,7 @@ digraph cfg {
 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" [label="2: Exit temp_object::X_div \n  " color=yellow style=filled]
 	
 
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 16, column 26]\n  n$1=*n$0.f:int [line 16, column 26]\n  *&return:int=(1 / n$1) [line 16, column 15]\n  REMOVE_TEMPS(n$0,n$1); [line 16, column 15]\n  NULLIFY(&this); [line 16, column 15]\n  APPLY_ABSTRACTION; [line 16, column 15]\n " shape="box"]
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 16, column 26]\n  n$1=*n$0.f:int [line 16, column 26]\n  *&return:int=(1 / n$1) [line 16, column 15]\n  NULLIFY(&this); [line 16, column 15]\n  EXIT_SCOPE(n$0,n$1,this); [line 16, column 15]\n  APPLY_ABSTRACTION; [line 16, column 15]\n " shape="box"]
 	
 
 	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
@@ -132,7 +132,7 @@ digraph cfg {
 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 14, column 19]\n  n$2=*&x:temp_object::X const & [line 14, column 23]\n  n$3=*n$2.f:int [line 14, column 23]\n  *n$1.f:int=n$3 [line 14, column 19]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 14, column 19]\n  NULLIFY(&x); [line 14, column 19]\n  NULLIFY(&this); [line 14, column 19]\n  APPLY_ABSTRACTION; [line 14, column 19]\n " shape="box"]
+"X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 14, column 19]\n  n$2=*&x:temp_object::X const & [line 14, column 23]\n  n$3=*n$2.f:int [line 14, column 23]\n  *n$1.f:int=n$3 [line 14, column 19]\n  NULLIFY(&x); [line 14, column 19]\n  NULLIFY(&this); [line 14, column 19]\n  EXIT_SCOPE(n$1,n$2,n$3,x,this); [line 14, column 19]\n  APPLY_ABSTRACTION; [line 14, column 19]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" -> "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_2" ;
@@ -143,7 +143,7 @@ digraph cfg {
 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 12, column 21]\n  n$2=*&a:int [line 12, column 25]\n  *n$1.f:int=n$2 [line 12, column 21]\n  REMOVE_TEMPS(n$1,n$2); [line 12, column 21]\n  NULLIFY(&a); [line 12, column 21]\n  NULLIFY(&this); [line 12, column 21]\n  APPLY_ABSTRACTION; [line 12, column 21]\n " shape="box"]
+"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 12, column 21]\n  n$2=*&a:int [line 12, column 25]\n  *n$1.f:int=n$2 [line 12, column 21]\n  NULLIFY(&a); [line 12, column 21]\n  NULLIFY(&this); [line 12, column 21]\n  EXIT_SCOPE(n$1,n$2,a,this); [line 12, column 21]\n  APPLY_ABSTRACTION; [line 12, column 21]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" ;
@@ -154,7 +154,7 @@ digraph cfg {
 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 11, column 14]\n  n$2=*&a:int [line 11, column 18]\n  *n$1.f:int=n$2 [line 11, column 14]\n  REMOVE_TEMPS(n$1,n$2); [line 11, column 14]\n  NULLIFY(&a); [line 11, column 14]\n  NULLIFY(&this); [line 11, column 14]\n  APPLY_ABSTRACTION; [line 11, column 14]\n " shape="box"]
+"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 11, column 14]\n  n$2=*&a:int [line 11, column 18]\n  *n$1.f:int=n$2 [line 11, column 14]\n  NULLIFY(&a); [line 11, column 14]\n  NULLIFY(&this); [line 11, column 14]\n  EXIT_SCOPE(n$1,n$2,a,this); [line 11, column 14]\n  APPLY_ABSTRACTION; [line 11, column 14]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" ;

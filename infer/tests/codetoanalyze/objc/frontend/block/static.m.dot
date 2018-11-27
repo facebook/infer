@@ -18,7 +18,7 @@ digraph cfg {
 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" [label="2: Exit objc_blockA_test2_3 \n   NULLIFY(&p); [line 40, column 3]\n " color=yellow style=filled]
 	
 
-"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$9=_fun___variable_initialization(&p:objc_object*) [line 39, column 5]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 39, column 12]\n  *&p:objc_object*=n$8 [line 39, column 5]\n  REMOVE_TEMPS(n$8,n$9); [line 39, column 5]\n  APPLY_ABSTRACTION; [line 39, column 5]\n " shape="box"]
+"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$9=_fun___variable_initialization(&p:objc_object*) [line 39, column 5]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 39, column 12]\n  *&p:objc_object*=n$8 [line 39, column 5]\n  EXIT_SCOPE(n$8,n$9,p); [line 39, column 5]\n  APPLY_ABSTRACTION; [line 39, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" -> "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_2" [label="2: Exit objc_blockA_test3_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" [label="3:  UnaryOperator \n   n$14=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 50, column 5]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int=(n$14 + 1) [line 50, column 5]\n  REMOVE_TEMPS(n$14); [line 50, column 5]\n  APPLY_ABSTRACTION; [line 50, column 5]\n " shape="box"]
+"objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" [label="3:  UnaryOperator \n   n$14=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 50, column 5]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int=(n$14 + 1) [line 50, column 5]\n  EXIT_SCOPE(n$14); [line 50, column 5]\n  APPLY_ABSTRACTION; [line 50, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" -> "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_2" [label="2: Exit objc_blockA_test_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 19, column 23]\n  n$2=_fun_NSBundleResourceRequest_init(n$1:A*) virtual [line 19, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object*=n$2 [line 19, column 5]\n  REMOVE_TEMPS(n$1,n$2); [line 19, column 5]\n  APPLY_ABSTRACTION; [line 19, column 5]\n " shape="box"]
+"objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 19, column 23]\n  n$2=_fun_NSBundleResourceRequest_init(n$1:A*) virtual [line 19, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object*=n$2 [line 19, column 5]\n  EXIT_SCOPE(n$1,n$2); [line 19, column 5]\n  APPLY_ABSTRACTION; [line 19, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" -> "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_2" ;
@@ -51,7 +51,7 @@ digraph cfg {
 "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_2" [label="2: Exit objc_blockA_test_leak_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 29, column 23]\n  n$5=_fun_NSBundleResourceRequest_init(n$4:A*) virtual [line 29, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak.sharedInstance:objc_object*=n$5 [line 29, column 5]\n  REMOVE_TEMPS(n$4,n$5); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 29, column 23]\n  n$5=_fun_NSBundleResourceRequest_init(n$4:A*) virtual [line 29, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak.sharedInstance:objc_object*=n$5 [line 29, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" -> "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_2" ;
@@ -62,11 +62,11 @@ digraph cfg {
 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object* [line 23, column 10]\n  *&return:objc_object*=n$0 [line 23, column 3]\n  REMOVE_TEMPS(n$0); [line 23, column 3]\n  APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object* [line 23, column 10]\n  *&return:objc_object*=n$0 [line 23, column 3]\n  EXIT_SCOPE(n$0); [line 23, column 3]\n  APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" ;
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" [label="4:  Call (_fun_objc_blockA_test_1) \n   n$3=(_fun_objc_blockA_test_1)() [line 18, column 3]\n  REMOVE_TEMPS(n$3); [line 18, column 3]\n " shape="box"]
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" [label="4:  Call (_fun_objc_blockA_test_1) \n   n$3=(_fun_objc_blockA_test_1)() [line 18, column 3]\n  EXIT_SCOPE(n$3); [line 18, column 3]\n " shape="box"]
 	
 
 	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" ;
@@ -77,15 +77,15 @@ digraph cfg {
 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" [label="2: Exit A_test2 \n  " color=yellow style=filled]
 	
 
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$7=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 42, column 10]\n  *&return:objc_object*=n$7 [line 42, column 3]\n  REMOVE_TEMPS(n$7); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$7=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 42, column 10]\n  *&return:objc_object*=n$7 [line 42, column 3]\n  EXIT_SCOPE(n$7); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" [label="4:  Call (_fun_objc_blockA_test2_3) \n   n$10=(_fun_objc_blockA_test2_3)() [line 37, column 3]\n  REMOVE_TEMPS(n$10); [line 37, column 3]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" [label="4:  Call (_fun_objc_blockA_test2_3) \n   n$10=(_fun_objc_blockA_test2_3)() [line 37, column 3]\n  EXIT_SCOPE(n$10); [line 37, column 3]\n " shape="box"]
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  BinaryOperatorStmt: Assign \n   n$11=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 36, column 21]\n  n$12=_fun_NSBundleResourceRequest_init(n$11:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object*=n$12 [line 36, column 3]\n  REMOVE_TEMPS(n$11,n$12); [line 36, column 3]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  BinaryOperatorStmt: Assign \n   n$11=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 36, column 21]\n  n$12=_fun_NSBundleResourceRequest_init(n$11:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object*=n$12 [line 36, column 3]\n  EXIT_SCOPE(n$11,n$12); [line 36, column 3]\n " shape="box"]
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" ;
@@ -96,11 +96,11 @@ digraph cfg {
 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" [label="2: Exit A_test3 \n  " color=yellow style=filled]
 	
 
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$13=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 53, column 10]\n  *&return:int=n$13 [line 53, column 3]\n  REMOVE_TEMPS(n$13); [line 53, column 3]\n  APPLY_ABSTRACTION; [line 53, column 3]\n " shape="box"]
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$13=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 53, column 10]\n  *&return:int=n$13 [line 53, column 3]\n  EXIT_SCOPE(n$13); [line 53, column 3]\n  APPLY_ABSTRACTION; [line 53, column 3]\n " shape="box"]
 	
 
 	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" ;
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" [label="4:  Call (_fun_objc_blockA_test3_4) \n   n$15=(_fun_objc_blockA_test3_4)() [line 48, column 3]\n  REMOVE_TEMPS(n$15); [line 48, column 3]\n " shape="box"]
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" [label="4:  Call (_fun_objc_blockA_test3_4) \n   n$15=(_fun_objc_blockA_test3_4)() [line 48, column 3]\n  EXIT_SCOPE(n$15); [line 48, column 3]\n " shape="box"]
 	
 
 	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" ;
@@ -111,7 +111,7 @@ digraph cfg {
 "test_leak#A#class.8240788aa53244827857be0e92d27671_2" [label="2: Exit A_test_leak \n  " color=yellow style=filled]
 	
 
-"test_leak#A#class.8240788aa53244827857be0e92d27671_3" [label="3:  Call (_fun_objc_blockA_test_leak_2) \n   n$6=(_fun_objc_blockA_test_leak_2)() [line 28, column 3]\n  REMOVE_TEMPS(n$6); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
+"test_leak#A#class.8240788aa53244827857be0e92d27671_3" [label="3:  Call (_fun_objc_blockA_test_leak_2) \n   n$6=(_fun_objc_blockA_test_leak_2)() [line 28, column 3]\n  EXIT_SCOPE(n$6); [line 28, column 3]\n  APPLY_ABSTRACTION; [line 28, column 3]\n " shape="box"]
 	
 
 	 "test_leak#A#class.8240788aa53244827857be0e92d27671_3" -> "test_leak#A#class.8240788aa53244827857be0e92d27671_2" ;

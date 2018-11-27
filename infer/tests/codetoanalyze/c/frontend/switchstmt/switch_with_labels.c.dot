@@ -7,16 +7,16 @@ digraph cfg {
 "label_case.83d07a314df100648248d9156212096b_2" [label="2: Exit label_case \n  " color=yellow style=filled]
 	
 
-"label_case.83d07a314df100648248d9156212096b_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 36, column 10]\n  *&return:int=n$0 [line 36, column 3]\n  REMOVE_TEMPS(n$0); [line 36, column 3]\n  NULLIFY(&ret); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 36, column 10]\n  *&return:int=n$0 [line 36, column 3]\n  NULLIFY(&ret); [line 36, column 3]\n  EXIT_SCOPE(n$0,ret); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_3" -> "label_case.83d07a314df100648248d9156212096b_2" ;
-"label_case.83d07a314df100648248d9156212096b_4" [label="4:  SwitchStmt \n   n$1=*&x:char [line 26, column 11]\n  NULLIFY(&x); [line 26, column 11]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_4" [label="4:  SwitchStmt \n   n$1=*&x:char [line 26, column 11]\n  NULLIFY(&x); [line 26, column 11]\n  EXIT_SCOPE(x); [line 26, column 11]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_4" -> "label_case.83d07a314df100648248d9156212096b_12" ;
 	 "label_case.83d07a314df100648248d9156212096b_4" -> "label_case.83d07a314df100648248d9156212096b_13" ;
-"label_case.83d07a314df100648248d9156212096b_5" [label="5:  UnaryOperator \n   n$3=*&ret:int [line 33, column 7]\n  *&ret:int=(n$3 + 1) [line 33, column 7]\n  REMOVE_TEMPS(n$3); [line 33, column 7]\n  APPLY_ABSTRACTION; [line 33, column 7]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_5" [label="5:  UnaryOperator \n   n$3=*&ret:int [line 33, column 7]\n  *&ret:int=(n$3 + 1) [line 33, column 7]\n  EXIT_SCOPE(n$3); [line 33, column 7]\n  APPLY_ABSTRACTION; [line 33, column 7]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_5" -> "label_case.83d07a314df100648248d9156212096b_3" ;
@@ -24,19 +24,19 @@ digraph cfg {
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_6" -> "label_case.83d07a314df100648248d9156212096b_5" ;
-"label_case.83d07a314df100648248d9156212096b_7" [label="7:  UnaryOperator \n   n$6=*&ret:int [line 28, column 7]\n  *&ret:int=(n$6 + 1) [line 28, column 7]\n  REMOVE_TEMPS(n$6); [line 28, column 7]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_7" [label="7:  UnaryOperator \n   n$6=*&ret:int [line 28, column 7]\n  *&ret:int=(n$6 + 1) [line 28, column 7]\n  EXIT_SCOPE(n$6); [line 28, column 7]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_7" -> "label_case.83d07a314df100648248d9156212096b_6" ;
-"label_case.83d07a314df100648248d9156212096b_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 3), true); [line 32, column 5]\n  REMOVE_TEMPS(n$1); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="invhouse"]
+"label_case.83d07a314df100648248d9156212096b_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 3), true); [line 32, column 5]\n  EXIT_SCOPE(n$1); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="invhouse"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_8" -> "label_case.83d07a314df100648248d9156212096b_5" ;
-"label_case.83d07a314df100648248d9156212096b_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 3), false); [line 32, column 5]\n  REMOVE_TEMPS(n$1); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="invhouse"]
+"label_case.83d07a314df100648248d9156212096b_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 3), false); [line 32, column 5]\n  EXIT_SCOPE(n$1); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="invhouse"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_9" -> "label_case.83d07a314df100648248d9156212096b_3" ;
-"label_case.83d07a314df100648248d9156212096b_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 2), true); [line 31, column 5]\n  REMOVE_TEMPS(n$1); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="invhouse"]
+"label_case.83d07a314df100648248d9156212096b_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 2), true); [line 31, column 5]\n  EXIT_SCOPE(n$1); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="invhouse"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_10" -> "label_case.83d07a314df100648248d9156212096b_5" ;
@@ -45,7 +45,7 @@ digraph cfg {
 
 	 "label_case.83d07a314df100648248d9156212096b_11" -> "label_case.83d07a314df100648248d9156212096b_8" ;
 	 "label_case.83d07a314df100648248d9156212096b_11" -> "label_case.83d07a314df100648248d9156212096b_9" ;
-"label_case.83d07a314df100648248d9156212096b_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 1), true); [line 27, column 5]\n  REMOVE_TEMPS(n$1); [line 27, column 5]\n " shape="invhouse"]
+"label_case.83d07a314df100648248d9156212096b_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 1), true); [line 27, column 5]\n  EXIT_SCOPE(n$1); [line 27, column 5]\n " shape="invhouse"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_12" -> "label_case.83d07a314df100648248d9156212096b_7" ;
@@ -54,7 +54,7 @@ digraph cfg {
 
 	 "label_case.83d07a314df100648248d9156212096b_13" -> "label_case.83d07a314df100648248d9156212096b_10" ;
 	 "label_case.83d07a314df100648248d9156212096b_13" -> "label_case.83d07a314df100648248d9156212096b_11" ;
-"label_case.83d07a314df100648248d9156212096b_14" [label="14:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) [line 25, column 3]\n  *&ret:int=0 [line 25, column 3]\n  REMOVE_TEMPS(n$8); [line 25, column 3]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_14" [label="14:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) [line 25, column 3]\n  *&ret:int=0 [line 25, column 3]\n  EXIT_SCOPE(n$8); [line 25, column 3]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_14" -> "label_case.83d07a314df100648248d9156212096b_4" ;
@@ -65,16 +65,16 @@ digraph cfg {
 "label_default.f30729864b0243c0a794ef0254fe7d23_2" [label="2: Exit label_default \n  " color=yellow style=filled]
 	
 
-"label_default.f30729864b0243c0a794ef0254fe7d23_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 21, column 10]\n  *&return:int=n$0 [line 21, column 3]\n  REMOVE_TEMPS(n$0); [line 21, column 3]\n  NULLIFY(&ret); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_3" [label="3:  Return Stmt \n   n$0=*&ret:int [line 21, column 10]\n  *&return:int=n$0 [line 21, column 3]\n  NULLIFY(&ret); [line 21, column 3]\n  EXIT_SCOPE(n$0,ret); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_3" -> "label_default.f30729864b0243c0a794ef0254fe7d23_2" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_4" [label="4:  SwitchStmt \n   n$1=*&x:char [line 10, column 11]\n  NULLIFY(&x); [line 10, column 11]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_4" [label="4:  SwitchStmt \n   n$1=*&x:char [line 10, column 11]\n  NULLIFY(&x); [line 10, column 11]\n  EXIT_SCOPE(x); [line 10, column 11]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_4" -> "label_default.f30729864b0243c0a794ef0254fe7d23_11" ;
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_4" -> "label_default.f30729864b0243c0a794ef0254fe7d23_12" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_5" [label="5:  UnaryOperator \n   n$2=*&ret:int [line 19, column 7]\n  *&ret:int=(n$2 - 1) [line 19, column 7]\n  REMOVE_TEMPS(n$2); [line 19, column 7]\n  APPLY_ABSTRACTION; [line 19, column 7]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_5" [label="5:  UnaryOperator \n   n$2=*&ret:int [line 19, column 7]\n  *&ret:int=(n$2 - 1) [line 19, column 7]\n  EXIT_SCOPE(n$2); [line 19, column 7]\n  APPLY_ABSTRACTION; [line 19, column 7]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_5" -> "label_default.f30729864b0243c0a794ef0254fe7d23_3" ;
@@ -86,19 +86,19 @@ digraph cfg {
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_7" -> "label_default.f30729864b0243c0a794ef0254fe7d23_3" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_8" [label="8:  UnaryOperator \n   n$6=*&ret:int [line 12, column 7]\n  *&ret:int=(n$6 + 1) [line 12, column 7]\n  REMOVE_TEMPS(n$6); [line 12, column 7]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_8" [label="8:  UnaryOperator \n   n$6=*&ret:int [line 12, column 7]\n  *&ret:int=(n$6 + 1) [line 12, column 7]\n  EXIT_SCOPE(n$6); [line 12, column 7]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_8" -> "label_default.f30729864b0243c0a794ef0254fe7d23_6" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$1 == 2), true); [line 14, column 5]\n  REMOVE_TEMPS(n$1); [line 14, column 5]\n  NULLIFY(&ret); [line 14, column 5]\n " shape="invhouse"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$1 == 2), true); [line 14, column 5]\n  NULLIFY(&ret); [line 14, column 5]\n  EXIT_SCOPE(n$1,ret); [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_9" -> "label_default.f30729864b0243c0a794ef0254fe7d23_7" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$1 == 2), false); [line 14, column 5]\n  REMOVE_TEMPS(n$1); [line 14, column 5]\n  APPLY_ABSTRACTION; [line 14, column 5]\n " shape="invhouse"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$1 == 2), false); [line 14, column 5]\n  EXIT_SCOPE(n$1); [line 14, column 5]\n  APPLY_ABSTRACTION; [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_10" -> "label_default.f30729864b0243c0a794ef0254fe7d23_5" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$1 == 1), true); [line 11, column 5]\n  REMOVE_TEMPS(n$1); [line 11, column 5]\n " shape="invhouse"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$1 == 1), true); [line 11, column 5]\n  EXIT_SCOPE(n$1); [line 11, column 5]\n " shape="invhouse"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_11" -> "label_default.f30729864b0243c0a794ef0254fe7d23_8" ;
@@ -107,7 +107,7 @@ digraph cfg {
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_12" -> "label_default.f30729864b0243c0a794ef0254fe7d23_9" ;
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_12" -> "label_default.f30729864b0243c0a794ef0254fe7d23_10" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) [line 9, column 3]\n  *&ret:int=0 [line 9, column 3]\n  REMOVE_TEMPS(n$8); [line 9, column 3]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) [line 9, column 3]\n  *&ret:int=0 [line 9, column 3]\n  EXIT_SCOPE(n$8); [line 9, column 3]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_13" -> "label_default.f30729864b0243c0a794ef0254fe7d23_4" ;

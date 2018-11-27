@@ -7,23 +7,23 @@ digraph cfg {
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&e:int) [line 13, column 3]\n  n$0=*&a:int [line 13, column 11]\n  *&a:int=(n$0 - 1) [line 13, column 11]\n  *&e:int=n$0 [line 13, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 13, column 3]\n  NULLIFY(&a); [line 13, column 3]\n  NULLIFY(&e); [line 13, column 3]\n  APPLY_ABSTRACTION; [line 13, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&e:int) [line 13, column 3]\n  n$0=*&a:int [line 13, column 11]\n  *&a:int=(n$0 - 1) [line 13, column 11]\n  *&e:int=n$0 [line 13, column 3]\n  NULLIFY(&a); [line 13, column 3]\n  NULLIFY(&e); [line 13, column 3]\n  EXIT_SCOPE(n$0,n$1,a,e); [line 13, column 3]\n  APPLY_ABSTRACTION; [line 13, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&d:int) [line 12, column 3]\n  n$2=*&a:int [line 12, column 11]\n  *&a:int=(n$2 - 1) [line 12, column 11]\n  *&d:int=(n$2 - 1) [line 12, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 12, column 3]\n  NULLIFY(&d); [line 12, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&d:int) [line 12, column 3]\n  n$2=*&a:int [line 12, column 11]\n  *&a:int=(n$2 - 1) [line 12, column 11]\n  *&d:int=(n$2 - 1) [line 12, column 3]\n  NULLIFY(&d); [line 12, column 3]\n  EXIT_SCOPE(n$2,n$3,d); [line 12, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&c:int) [line 11, column 3]\n  n$4=*&a:int [line 11, column 11]\n  *&a:int=(n$4 + 1) [line 11, column 11]\n  *&c:int=n$4 [line 11, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 11, column 3]\n  NULLIFY(&c); [line 11, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&c:int) [line 11, column 3]\n  n$4=*&a:int [line 11, column 11]\n  *&a:int=(n$4 + 1) [line 11, column 11]\n  *&c:int=n$4 [line 11, column 3]\n  NULLIFY(&c); [line 11, column 3]\n  EXIT_SCOPE(n$4,n$5,c); [line 11, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$7=_fun___variable_initialization(&b:int) [line 10, column 3]\n  n$6=*&a:int [line 10, column 11]\n  *&a:int=(n$6 + 1) [line 10, column 11]\n  *&b:int=(n$6 + 1) [line 10, column 3]\n  REMOVE_TEMPS(n$6,n$7); [line 10, column 3]\n  NULLIFY(&b); [line 10, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$7=_fun___variable_initialization(&b:int) [line 10, column 3]\n  n$6=*&a:int [line 10, column 11]\n  *&a:int=(n$6 + 1) [line 10, column 11]\n  *&b:int=(n$6 + 1) [line 10, column 3]\n  NULLIFY(&b); [line 10, column 3]\n  EXIT_SCOPE(n$6,n$7,b); [line 10, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  DeclStmt \n   n$8=_fun___variable_initialization(&a:int) [line 9, column 3]\n  *&a:int=3 [line 9, column 3]\n  REMOVE_TEMPS(n$8); [line 9, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  DeclStmt \n   n$8=_fun___variable_initialization(&a:int) [line 9, column 3]\n  *&a:int=3 [line 9, column 3]\n  EXIT_SCOPE(n$8); [line 9, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_7" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;

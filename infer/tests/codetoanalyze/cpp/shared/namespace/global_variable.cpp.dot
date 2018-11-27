@@ -7,7 +7,7 @@ digraph cfg {
 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_2" [label="2: Exit div0_namepace_res \n  " color=yellow style=filled]
 	
 
-"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int [line 29, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int [line 29, column 25]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 29, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int [line 29, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int [line 29, column 25]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 29, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 29, column 3]\n  APPLY_ABSTRACTION; [line 29, column 3]\n " shape="box"]
 	
 
 	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_2" ;
@@ -26,7 +26,7 @@ digraph cfg {
 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" [label="2: Exit div0_static_field \n  " color=yellow style=filled]
 	
 
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 35, column 15]\n  n$1=*&#GB<>$B::v:int [line 35, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 35, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 35, column 15]\n  n$1=*&#GB<>$B::v:int [line 35, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 35, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" ;
@@ -45,7 +45,7 @@ digraph cfg {
 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_2" [label="2: Exit div0_static_field_member_access \n  " color=yellow style=filled]
 	
 
-"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_2" ;

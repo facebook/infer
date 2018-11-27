@@ -205,7 +205,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_actuals_globals astate pdesc loc actuals
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
            at_least_nonbottom
-    | Remove_temps _ | Abstract _ | Nullify _ ->
+    | ExitScope _ | Abstract _ | Nullify _ ->
         astate
 
 

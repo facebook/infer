@@ -7,7 +7,7 @@ digraph cfg {
 "POPSelectValueType#13202608325161396336.7f6967bed79eb95ec02bca4d934e7bf7_2" [label="2: Exit POPSelectValueType \n  " color=yellow style=filled]
 	
 
-"POPSelectValueType#13202608325161396336.7f6967bed79eb95ec02bca4d934e7bf7_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 12, column 40]\n  *&return:int=n$0 [line 12, column 33]\n  REMOVE_TEMPS(n$0); [line 12, column 33]\n  NULLIFY(&v); [line 12, column 33]\n  APPLY_ABSTRACTION; [line 12, column 33]\n " shape="box"]
+"POPSelectValueType#13202608325161396336.7f6967bed79eb95ec02bca4d934e7bf7_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 12, column 40]\n  *&return:int=n$0 [line 12, column 33]\n  NULLIFY(&v); [line 12, column 33]\n  EXIT_SCOPE(n$0,v); [line 12, column 33]\n  APPLY_ABSTRACTION; [line 12, column 33]\n " shape="box"]
 	
 
 	 "POPSelectValueType#13202608325161396336.7f6967bed79eb95ec02bca4d934e7bf7_3" -> "POPSelectValueType#13202608325161396336.7f6967bed79eb95ec02bca4d934e7bf7_2" ;

@@ -7,19 +7,19 @@ digraph cfg {
 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_2" [label="2: Exit crazy_nested \n   NULLIFY(&ref_from_ref); [line 28, column 1]\n  NULLIFY(&a); [line 28, column 1]\n  NULLIFY(&ref_from_val); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_3" [label="3:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_ref:int&) [line 27, column 3]\n  n$1=*&ref_from_val:int& [line 27, column 23]\n  *&b:int=5 [line 27, column 38]\n  n$2=*&b:int [line 27, column 38]\n  *n$1:int=n$2 [line 27, column 23]\n  *&ref_from_ref:int&=n$1 [line 27, column 3]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 27, column 3]\n  NULLIFY(&b); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_3" [label="3:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_ref:int&) [line 27, column 3]\n  n$1=*&ref_from_val:int& [line 27, column 23]\n  *&b:int=5 [line 27, column 38]\n  n$2=*&b:int [line 27, column 38]\n  *n$1:int=n$2 [line 27, column 23]\n  *&ref_from_ref:int&=n$1 [line 27, column 3]\n  NULLIFY(&b); [line 27, column 3]\n  EXIT_SCOPE(n$1,n$2,n$3,b,ref_from_val,ref_from_ref); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_3" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_2" ;
-"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&ref_from_val:int&) [line 26, column 3]\n  *&b:int=4 [line 26, column 27]\n  n$4=*&b:int [line 26, column 27]\n  *&a:int=n$4 [line 26, column 23]\n  *&ref_from_val:int&=&a [line 26, column 3]\n  REMOVE_TEMPS(n$4,n$5); [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n " shape="box"]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&ref_from_val:int&) [line 26, column 3]\n  *&b:int=4 [line 26, column 27]\n  n$4=*&b:int [line 26, column 27]\n  *&a:int=n$4 [line 26, column 23]\n  *&ref_from_val:int&=&a [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n  EXIT_SCOPE(n$4,n$5,b,a); [line 26, column 3]\n " shape="box"]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_4" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_3" ;
-"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:int) [line 22, column 3]\n  n$6=*&a:int [line 22, column 11]\n  *&b:int=n$6 [line 22, column 3]\n  REMOVE_TEMPS(n$6,n$7); [line 22, column 3]\n  NULLIFY(&b); [line 22, column 3]\n " shape="box"]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:int) [line 22, column 3]\n  n$6=*&a:int [line 22, column 11]\n  *&b:int=n$6 [line 22, column 3]\n  NULLIFY(&b); [line 22, column 3]\n  EXIT_SCOPE(n$6,n$7,b,a); [line 22, column 3]\n " shape="box"]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_4" ;
-"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&a:int) [line 21, column 3]\n  *&a:int=3 [line 21, column 3]\n  REMOVE_TEMPS(n$8); [line 21, column 3]\n " shape="box"]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" [label="6:  DeclStmt \n   n$8=_fun___variable_initialization(&a:int) [line 21, column 3]\n  *&a:int=3 [line 21, column 3]\n  EXIT_SCOPE(n$8); [line 21, column 3]\n " shape="box"]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" ;
@@ -30,15 +30,15 @@ digraph cfg {
 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" [label="2: Exit nested \n   NULLIFY(&a); [line 18, column 1]\n  NULLIFY(&ref_from_ref); [line 18, column 1]\n  NULLIFY(&ref_from_val); [line 18, column 1]\n " color=yellow style=filled]
 	
 
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&ref_from_ref:int&) [line 17, column 3]\n  n$1=*&ref_from_val:int& [line 17, column 23]\n  *n$1:int=6 [line 17, column 23]\n  *&ref_from_ref:int&=n$1 [line 17, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&ref_from_ref:int&) [line 17, column 3]\n  n$1=*&ref_from_val:int& [line 17, column 23]\n  *n$1:int=6 [line 17, column 23]\n  *&ref_from_ref:int&=n$1 [line 17, column 3]\n  EXIT_SCOPE(n$1,n$2,ref_from_val,ref_from_ref); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
 	
 
 	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_val:int&) [line 16, column 3]\n  *&a:int=4 [line 16, column 23]\n  *&ref_from_val:int&=&a [line 16, column 3]\n  REMOVE_TEMPS(n$3); [line 16, column 3]\n " shape="box"]
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_val:int&) [line 16, column 3]\n  *&a:int=4 [line 16, column 23]\n  *&ref_from_val:int&=&a [line 16, column 3]\n  EXIT_SCOPE(n$3,a); [line 16, column 3]\n " shape="box"]
 	
 
 	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int) [line 15, column 3]\n  *&a:int=3 [line 15, column 3]\n  REMOVE_TEMPS(n$4); [line 15, column 3]\n " shape="box"]
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int) [line 15, column 3]\n  *&a:int=3 [line 15, column 3]\n  EXIT_SCOPE(n$4,a); [line 15, column 3]\n " shape="box"]
 	
 
 	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" ;
@@ -49,15 +49,15 @@ digraph cfg {
 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" [label="2: Exit normal \n   NULLIFY(&ref_from_val); [line 12, column 1]\n  NULLIFY(&ref_from_ref); [line 12, column 1]\n  NULLIFY(&a); [line 12, column 1]\n " color=yellow style=filled]
 	
 
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&ref_from_ref:int&) [line 11, column 3]\n  n$1=*&ref_from_val:int& [line 11, column 23]\n  *&ref_from_ref:int&=n$1 [line 11, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&ref_from_ref:int&) [line 11, column 3]\n  n$1=*&ref_from_val:int& [line 11, column 23]\n  *&ref_from_ref:int&=n$1 [line 11, column 3]\n  EXIT_SCOPE(n$1,n$2,ref_from_ref,ref_from_val); [line 11, column 3]\n  APPLY_ABSTRACTION; [line 11, column 3]\n " shape="box"]
 	
 
 	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_val:int&) [line 10, column 3]\n  *&ref_from_val:int&=&a [line 10, column 3]\n  REMOVE_TEMPS(n$3); [line 10, column 3]\n " shape="box"]
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" [label="4:  DeclStmt \n   n$3=_fun___variable_initialization(&ref_from_val:int&) [line 10, column 3]\n  *&ref_from_val:int&=&a [line 10, column 3]\n  EXIT_SCOPE(n$3,a); [line 10, column 3]\n " shape="box"]
 	
 
 	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int) [line 9, column 3]\n  *&a:int=3 [line 9, column 3]\n  REMOVE_TEMPS(n$4); [line 9, column 3]\n " shape="box"]
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int) [line 9, column 3]\n  *&a:int=3 [line 9, column 3]\n  EXIT_SCOPE(n$4); [line 9, column 3]\n " shape="box"]
 	
 
 	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" ;

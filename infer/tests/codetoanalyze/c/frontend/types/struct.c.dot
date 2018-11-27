@@ -7,7 +7,7 @@ digraph cfg {
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int=20 [line 16, column 3]\n  NULLIFY(&x); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int=20 [line 16, column 3]\n  NULLIFY(&x); [line 16, column 3]\n  EXIT_SCOPE(x); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;

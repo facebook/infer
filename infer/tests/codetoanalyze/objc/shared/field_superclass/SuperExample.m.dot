@@ -7,7 +7,7 @@ digraph cfg {
 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" [label="2: Exit super_example_main \n   NULLIFY(&a); [line 42, column 1]\n " color=yellow style=filled]
 	
 
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&a:objc_object*) [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject_init(n$0:ASuper*) virtual [line 40, column 21]\n  *&a:objc_object*=n$1 [line 40, column 5]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 40, column 5]\n  APPLY_ABSTRACTION; [line 40, column 5]\n " shape="box"]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&a:objc_object*) [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject_init(n$0:ASuper*) virtual [line 40, column 21]\n  *&a:objc_object*=n$1 [line 40, column 5]\n  EXIT_SCOPE(n$0,n$1,n$2,a); [line 40, column 5]\n  APPLY_ABSTRACTION; [line 40, column 5]\n " shape="box"]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;
@@ -18,15 +18,15 @@ digraph cfg {
 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_2" [label="2: Exit ASuper_init \n  " color=yellow style=filled]
 	
 
-"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" [label="3:  Return Stmt \n   n$0=*&self:ASuper* [line 33, column 10]\n  *&return:objc_object*=n$0 [line 33, column 3]\n  REMOVE_TEMPS(n$0); [line 33, column 3]\n  NULLIFY(&self); [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" [label="3:  Return Stmt \n   n$0=*&self:ASuper* [line 33, column 10]\n  *&return:objc_object*=n$0 [line 33, column 3]\n  NULLIFY(&self); [line 33, column 3]\n  EXIT_SCOPE(n$0,self); [line 33, column 3]\n  APPLY_ABSTRACTION; [line 33, column 3]\n " shape="box"]
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_2" ;
-"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&self:ASuper* [line 32, column 3]\n  *n$1.a:int=4 [line 32, column 3]\n  REMOVE_TEMPS(n$1); [line 32, column 3]\n " shape="box"]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&self:ASuper* [line 32, column 3]\n  *n$1.a:int=4 [line 32, column 3]\n  EXIT_SCOPE(n$1); [line 32, column 3]\n " shape="box"]
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" ;
-"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&self:ASuper* [line 31, column 10]\n  n$3=_fun_BSuper_init(n$2:ASuper*) [line 31, column 10]\n  *&self:ASuper*=n$3 [line 31, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 31, column 3]\n " shape="box"]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&self:ASuper* [line 31, column 10]\n  n$3=_fun_BSuper_init(n$2:ASuper*) [line 31, column 10]\n  *&self:ASuper*=n$3 [line 31, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 31, column 3]\n " shape="box"]
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" ;

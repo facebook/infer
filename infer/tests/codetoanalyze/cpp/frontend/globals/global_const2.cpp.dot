@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ) [line 8, column 1]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=n$1 [line 8, column 1]\n  REMOVE_TEMPS(n$1,n$2); [line 8, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  APPLY_ABSTRACTION; [line 8, column 1]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ) [line 8, column 1]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=n$1 [line 8, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  EXIT_SCOPE(n$1,n$2,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  APPLY_ABSTRACTION; [line 8, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -39,7 +39,7 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int [line 9, column 21]\n  *&return:int=n$0 [line 9, column 14]\n  REMOVE_TEMPS(n$0); [line 9, column 14]\n  APPLY_ABSTRACTION; [line 9, column 14]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int [line 9, column 21]\n  *&return:int=n$0 [line 9, column 14]\n  EXIT_SCOPE(n$0); [line 9, column 14]\n  APPLY_ABSTRACTION; [line 9, column 14]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;

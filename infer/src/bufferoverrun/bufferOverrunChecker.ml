@@ -242,8 +242,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         let () = L.d_printfln "/!\\ Call to non-const function %a" Exp.pp fun_exp in
         Dom.Mem.add_unknown id ~location mem
-    | Remove_temps (temps, _) ->
-        Dom.Mem.remove_temps temps mem
+    | ExitScope (dead_vars, _) ->
+        Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
     | Abstract _ | Nullify _ ->
         mem
 

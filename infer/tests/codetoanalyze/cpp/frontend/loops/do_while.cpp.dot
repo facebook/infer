@@ -7,7 +7,7 @@ digraph cfg {
 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_2" [label="2: Exit test1 \n  " color=yellow style=filled]
 	
 
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n  REMOVE_TEMPS(n$0); [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  EXIT_SCOPE(n$0,x); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_2" ;
@@ -15,15 +15,15 @@ digraph cfg {
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" [label="5: Prune (true branch, do while) \n   n$2=*&b:_Bool [line 19, column 12]\n  PRUNE(n$2, true); [line 19, column 12]\n  REMOVE_TEMPS(n$2); [line 19, column 12]\n  APPLY_ABSTRACTION; [line 19, column 12]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" [label="5: Prune (true branch, do while) \n   n$2=*&b:_Bool [line 19, column 12]\n  PRUNE(n$2, true); [line 19, column 12]\n  EXIT_SCOPE(n$2); [line 19, column 12]\n  APPLY_ABSTRACTION; [line 19, column 12]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" [label="6: Prune (false branch, do while) \n   n$2=*&b:_Bool [line 19, column 12]\n  PRUNE(!n$2, false); [line 19, column 12]\n  REMOVE_TEMPS(n$2); [line 19, column 12]\n  NULLIFY(&b); [line 19, column 12]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" [label="6: Prune (false branch, do while) \n   n$2=*&b:_Bool [line 19, column 12]\n  PRUNE(!n$2, false); [line 19, column 12]\n  NULLIFY(&b); [line 19, column 12]\n  EXIT_SCOPE(n$2,b); [line 19, column 12]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" [label="7:  BinaryOperatorStmt: Assign \n   n$4=*&x:int [line 18, column 9]\n  *&x:int=(n$4 + 4) [line 18, column 5]\n  REMOVE_TEMPS(n$4); [line 18, column 5]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" [label="7:  BinaryOperatorStmt: Assign \n   n$4=*&x:int [line 18, column 9]\n  *&x:int=(n$4 + 4) [line 18, column 5]\n  EXIT_SCOPE(n$4); [line 18, column 5]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
@@ -32,29 +32,29 @@ digraph cfg {
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" [label="9: Prune (true branch, if) \n   n$5=*&a:_Bool [line 12, column 9]\n  PRUNE(n$5, true); [line 12, column 9]\n  REMOVE_TEMPS(n$5); [line 12, column 9]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" [label="9: Prune (true branch, if) \n   n$5=*&a:_Bool [line 12, column 9]\n  PRUNE(n$5, true); [line 12, column 9]\n  EXIT_SCOPE(n$5); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" [label="10: Prune (false branch, if) \n   n$5=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$5, false); [line 12, column 9]\n  REMOVE_TEMPS(n$5); [line 12, column 9]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" [label="10: Prune (false branch, if) \n   n$5=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$5, false); [line 12, column 9]\n  EXIT_SCOPE(n$5); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" [label="11:  BinaryOperatorStmt: Assign \n   n$9=*&x:int [line 13, column 11]\n  *&x:int=(n$9 + 2) [line 13, column 7]\n  REMOVE_TEMPS(n$9); [line 13, column 7]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" [label="11:  BinaryOperatorStmt: Assign \n   n$9=*&x:int [line 13, column 11]\n  *&x:int=(n$9 + 2) [line 13, column 7]\n  EXIT_SCOPE(n$9); [line 13, column 7]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" [label="12:  BinaryOperatorStmt: Assign \n   n$11=*&x:int [line 16, column 11]\n  *&x:int=(n$11 + 3) [line 16, column 7]\n  REMOVE_TEMPS(n$11); [line 16, column 7]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" [label="12:  BinaryOperatorStmt: Assign \n   n$11=*&x:int [line 16, column 11]\n  *&x:int=(n$11 + 3) [line 16, column 7]\n  EXIT_SCOPE(n$11); [line 16, column 7]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" [label="13:  BinaryOperatorStmt: Assign \n   n$13=*&x:int [line 11, column 9]\n  *&x:int=(n$13 + 1) [line 11, column 5]\n  REMOVE_TEMPS(n$13); [line 11, column 5]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" [label="13:  BinaryOperatorStmt: Assign \n   n$13=*&x:int [line 11, column 9]\n  *&x:int=(n$13 + 1) [line 11, column 5]\n  EXIT_SCOPE(n$13); [line 11, column 5]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" ;
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n  REMOVE_TEMPS(n$15); [line 9, column 3]\n  APPLY_ABSTRACTION; [line 9, column 3]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n  EXIT_SCOPE(n$15); [line 9, column 3]\n  APPLY_ABSTRACTION; [line 9, column 3]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;

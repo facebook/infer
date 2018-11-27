@@ -7,11 +7,11 @@ digraph cfg {
 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_2" [label="2: Exit access_ptr \n  " color=yellow style=filled]
 	
 
-"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 20, column 3]\n  n$1=*&x:X* [line 20, column 11]\n  _=*n$1:X [line 20, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 20, column 11]\n  *&c:int=n$3 [line 20, column 3]\n  REMOVE_TEMPS(_,n$1,n$3,n$4); [line 20, column 3]\n  NULLIFY(&c); [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
+"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 20, column 3]\n  n$1=*&x:X* [line 20, column 11]\n  _=*n$1:X [line 20, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 20, column 11]\n  *&c:int=n$3 [line 20, column 3]\n  NULLIFY(&c); [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  EXIT_SCOPE(_,n$1,n$3,n$4,c,x); [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_2" ;
-"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 19, column 3]\n  n$5=*&x:X* [line 19, column 11]\n  n$6=*n$5.f:int [line 19, column 11]\n  *&f:int=n$6 [line 19, column 3]\n  REMOVE_TEMPS(n$5,n$6,n$7); [line 19, column 3]\n  NULLIFY(&f); [line 19, column 3]\n " shape="box"]
+"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 19, column 3]\n  n$5=*&x:X* [line 19, column 11]\n  n$6=*n$5.f:int [line 19, column 11]\n  *&f:int=n$6 [line 19, column 3]\n  NULLIFY(&f); [line 19, column 3]\n  EXIT_SCOPE(n$5,n$6,n$7,f); [line 19, column 3]\n " shape="box"]
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_2" [label="2: Exit access_ref \n  " color=yellow style=filled]
 	
 
-"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 15, column 3]\n  n$1=*&x:X& [line 15, column 11]\n  _=*n$1:X [line 15, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 15, column 11]\n  *&c:int=n$3 [line 15, column 3]\n  REMOVE_TEMPS(_,n$1,n$3,n$4); [line 15, column 3]\n  NULLIFY(&x); [line 15, column 3]\n  NULLIFY(&c); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&c:int) [line 15, column 3]\n  n$1=*&x:X& [line 15, column 11]\n  _=*n$1:X [line 15, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 15, column 11]\n  *&c:int=n$3 [line 15, column 3]\n  NULLIFY(&x); [line 15, column 3]\n  NULLIFY(&c); [line 15, column 3]\n  EXIT_SCOPE(_,n$1,n$3,n$4,x,c); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_2" ;
-"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 14, column 3]\n  n$5=*&x:X& [line 14, column 11]\n  n$6=*n$5.f:int [line 14, column 11]\n  *&f:int=n$6 [line 14, column 3]\n  REMOVE_TEMPS(n$5,n$6,n$7); [line 14, column 3]\n  NULLIFY(&f); [line 14, column 3]\n " shape="box"]
+"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" [label="4:  DeclStmt \n   n$7=_fun___variable_initialization(&f:int) [line 14, column 3]\n  n$5=*&x:X& [line 14, column 11]\n  n$6=*n$5.f:int [line 14, column 11]\n  *&f:int=n$6 [line 14, column 3]\n  NULLIFY(&f); [line 14, column 3]\n  EXIT_SCOPE(n$5,n$6,n$7,f); [line 14, column 3]\n " shape="box"]
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" ;
@@ -37,7 +37,7 @@ digraph cfg {
 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" [label="2: Exit X_call \n  " color=yellow style=filled]
 	
 
-"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 10, column 23]\n  n$1=*n$0.f:int [line 10, column 23]\n  *&return:int=n$1 [line 10, column 16]\n  REMOVE_TEMPS(n$0,n$1); [line 10, column 16]\n  NULLIFY(&this); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="box"]
+"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 10, column 23]\n  n$1=*n$0.f:int [line 10, column 23]\n  *&return:int=n$1 [line 10, column 16]\n  NULLIFY(&this); [line 10, column 16]\n  EXIT_SCOPE(n$0,n$1,this); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="box"]
 	
 
 	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" ;

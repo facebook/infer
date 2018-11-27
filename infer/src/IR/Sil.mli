@@ -47,7 +47,7 @@ type instr =
           [ret_id = e_fun(arg_ts);] *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
-  | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
+  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
 [@@deriving compare]
 
 val equal_instr : instr -> instr -> bool

@@ -121,11 +121,9 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       let hil_exp = exp_of_sil exp (Typ.mk (Tint IBool)) in
       let branch = if true_branch then `Then else `Else in
       Instr (Assume (hil_exp, branch, if_kind, loc))
-  | Nullify (pvar, _) ->
-      Unbind [Var.of_pvar pvar]
-  | Remove_temps (ids, _) ->
-      Unbind (List.map ~f:Var.of_id ids)
+  | ExitScope (vars, _) ->
+      Unbind vars
   (* ignoring for now; will translate as builtin function call if needed *)
-  | Abstract _ ->
+  | Abstract _ | Nullify _ ->
       (* these don't seem useful for most analyses. can translate them later if we want to *)
       Ignore

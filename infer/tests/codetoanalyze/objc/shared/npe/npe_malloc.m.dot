@@ -7,15 +7,15 @@ digraph cfg {
 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" [label="2: Exit NpeMallocC_test \n   NULLIFY(&person); [line 26, column 1]\n " color=yellow style=filled]
 	
 
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" [label="3:  Return Stmt \n   n$0=*&person:Person* [line 25, column 10]\n  *&return:Person*=n$0 [line 25, column 3]\n  REMOVE_TEMPS(n$0); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" [label="3:  Return Stmt \n   n$0=*&person:Person* [line 25, column 10]\n  *&return:Person*=n$0 [line 25, column 3]\n  EXIT_SCOPE(n$0,person); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" ;
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:Person* [line 24, column 3]\n  *n$1.x:int=10 [line 24, column 3]\n  REMOVE_TEMPS(n$1); [line 24, column 3]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:Person* [line 24, column 3]\n  *n$1.x:int=10 [line 24, column 3]\n  EXIT_SCOPE(n$1); [line 24, column 3]\n " shape="box"]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" ;
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&person:Person*) [line 23, column 3]\n  n$2=_fun_malloc_no_fail(sizeof(t=Person;nbytes=8):Person) [line 23, column 43]\n  *&person:Person*=n$2 [line 23, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 23, column 3]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$3=_fun___variable_initialization(&person:Person*) [line 23, column 3]\n  n$2=_fun_malloc_no_fail(sizeof(t=Person;nbytes=8):Person) [line 23, column 43]\n  *&person:Person*=n$2 [line 23, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" ;

@@ -7,11 +7,11 @@ digraph cfg {
 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_2" [label="2: Exit constructor_with_body::test_div0 \n   NULLIFY(&x); [line 31, column 1]\n " color=yellow style=filled]
 	
 
-"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 30, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 30, column 3]\n  REMOVE_TEMPS(_,n$2); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
+"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 30, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 30, column 3]\n  EXIT_SCOPE(_,n$2,x); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
 	
 
 	 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_3" -> "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_2" ;
-"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 29, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*,-2:int,2:int) [line 29, column 5]\n  REMOVE_TEMPS(n$3,n$4); [line 29, column 5]\n " shape="box"]
+"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 29, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*,-2:int,2:int) [line 29, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 29, column 5]\n " shape="box"]
 	
 
 	 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_4" -> "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_2" [label="2: Exit constructor_with_body::test_div0_default_constructor \n   NULLIFY(&x); [line 36, column 1]\n " color=yellow style=filled]
 	
 
-"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 35, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 35, column 3]\n  REMOVE_TEMPS(_,n$2); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 35, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 35, column 3]\n  EXIT_SCOPE(_,n$2,x); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
 	
 
 	 "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_3" -> "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_2" ;
-"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 34, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*) [line 34, column 5]\n  REMOVE_TEMPS(n$3,n$4); [line 34, column 5]\n " shape="box"]
+"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 34, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*) [line 34, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 34, column 5]\n " shape="box"]
 	
 
 	 "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_4" -> "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_3" ;
@@ -37,11 +37,11 @@ digraph cfg {
 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_2" [label="2: Exit constructor_with_body::test_div1 \n   NULLIFY(&x); [line 41, column 1]\n " color=yellow style=filled]
 	
 
-"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 40, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 40, column 3]\n  REMOVE_TEMPS(_,n$2); [line 40, column 3]\n  APPLY_ABSTRACTION; [line 40, column 3]\n " shape="box"]
+"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:constructor_with_body::X [line 40, column 3]\n  n$2=_fun_constructor_with_body::X_div(&x:constructor_with_body::X&) [line 40, column 3]\n  EXIT_SCOPE(_,n$2,x); [line 40, column 3]\n  APPLY_ABSTRACTION; [line 40, column 3]\n " shape="box"]
 	
 
 	 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" -> "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_2" ;
-"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 39, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*,0:int,1:int) [line 39, column 5]\n  REMOVE_TEMPS(n$3,n$4); [line 39, column 5]\n " shape="box"]
+"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:constructor_with_body::X) [line 39, column 3]\n  n$3=_fun_constructor_with_body::X_X(&x:constructor_with_body::X*,0:int,1:int) [line 39, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 39, column 5]\n " shape="box"]
 	
 
 	 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" -> "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" ;
@@ -52,7 +52,7 @@ digraph cfg {
 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" [label="2: Exit constructor_with_body::X_init \n  " color=yellow style=filled]
 	
 
-"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:constructor_with_body::X* [line 12, column 17]\n  *n$1.f:int=0 [line 12, column 17]\n  REMOVE_TEMPS(n$1); [line 12, column 17]\n  NULLIFY(&this); [line 12, column 17]\n  APPLY_ABSTRACTION; [line 12, column 17]\n " shape="box"]
+"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:constructor_with_body::X* [line 12, column 17]\n  *n$1.f:int=0 [line 12, column 17]\n  NULLIFY(&this); [line 12, column 17]\n  EXIT_SCOPE(n$1,this); [line 12, column 17]\n  APPLY_ABSTRACTION; [line 12, column 17]\n " shape="box"]
 	
 
 	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" ;
@@ -63,7 +63,7 @@ digraph cfg {
 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" [label="2: Exit constructor_with_body::X_div \n  " color=yellow style=filled]
 	
 
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 19, column 26]\n  n$1=*n$0.f:int [line 19, column 26]\n  *&return:int=(1 / n$1) [line 19, column 15]\n  REMOVE_TEMPS(n$0,n$1); [line 19, column 15]\n  NULLIFY(&this); [line 19, column 15]\n  APPLY_ABSTRACTION; [line 19, column 15]\n " shape="box"]
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 19, column 26]\n  n$1=*n$0.f:int [line 19, column 26]\n  *&return:int=(1 / n$1) [line 19, column 15]\n  NULLIFY(&this); [line 19, column 15]\n  EXIT_SCOPE(n$0,n$1,this); [line 19, column 15]\n  APPLY_ABSTRACTION; [line 19, column 15]\n " shape="box"]
 	
 
 	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
@@ -74,7 +74,7 @@ digraph cfg {
 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" [label="3:  Call _fun_constructor_with_body::X_init \n   n$1=*&this:constructor_with_body::X* [line 15, column 9]\n  _=*n$1:constructor_with_body::X [line 15, column 9]\n  n$3=_fun_constructor_with_body::X_init(n$1:constructor_with_body::X*) [line 15, column 9]\n  REMOVE_TEMPS(_,n$1,n$3); [line 15, column 9]\n  NULLIFY(&this); [line 15, column 9]\n  APPLY_ABSTRACTION; [line 15, column 9]\n " shape="box"]
+"X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" [label="3:  Call _fun_constructor_with_body::X_init \n   n$1=*&this:constructor_with_body::X* [line 15, column 9]\n  _=*n$1:constructor_with_body::X [line 15, column 9]\n  n$3=_fun_constructor_with_body::X_init(n$1:constructor_with_body::X*) [line 15, column 9]\n  NULLIFY(&this); [line 15, column 9]\n  EXIT_SCOPE(_,n$1,n$3,this); [line 15, column 9]\n  APPLY_ABSTRACTION; [line 15, column 9]\n " shape="box"]
 	
 
 	 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" -> "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_2" ;
@@ -85,15 +85,15 @@ digraph cfg {
 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:constructor_with_body::X* [line 25, column 3]\n  n$2=*&c:int [line 25, column 7]\n  *n$1.f:int=n$2 [line 25, column 3]\n  REMOVE_TEMPS(n$1,n$2); [line 25, column 3]\n  NULLIFY(&c); [line 25, column 3]\n  NULLIFY(&this); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:constructor_with_body::X* [line 25, column 3]\n  n$2=*&c:int [line 25, column 7]\n  *n$1.f:int=n$2 [line 25, column 3]\n  NULLIFY(&c); [line 25, column 3]\n  NULLIFY(&this); [line 25, column 3]\n  EXIT_SCOPE(n$1,n$2,c,this); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_3" -> "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_2" ;
-"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_4" [label="4:  Call _fun_constructor_with_body::X_init \n   n$3=*&this:constructor_with_body::X* [line 24, column 3]\n  _=*n$3:constructor_with_body::X [line 24, column 3]\n  n$5=_fun_constructor_with_body::X_init(n$3:constructor_with_body::X*) [line 24, column 3]\n  REMOVE_TEMPS(_,n$3,n$5); [line 24, column 3]\n " shape="box"]
+"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_4" [label="4:  Call _fun_constructor_with_body::X_init \n   n$3=*&this:constructor_with_body::X* [line 24, column 3]\n  _=*n$3:constructor_with_body::X [line 24, column 3]\n  n$5=_fun_constructor_with_body::X_init(n$3:constructor_with_body::X*) [line 24, column 3]\n  EXIT_SCOPE(_,n$3,n$5); [line 24, column 3]\n " shape="box"]
 	
 
 	 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_4" -> "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_3" ;
-"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&c:int) [line 23, column 3]\n  n$6=*&a:int [line 23, column 11]\n  n$7=*&b:int [line 23, column 15]\n  *&c:int=(n$6 + n$7) [line 23, column 3]\n  REMOVE_TEMPS(n$6,n$7,n$8); [line 23, column 3]\n  NULLIFY(&a); [line 23, column 3]\n  NULLIFY(&b); [line 23, column 3]\n " shape="box"]
+"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&c:int) [line 23, column 3]\n  n$6=*&a:int [line 23, column 11]\n  n$7=*&b:int [line 23, column 15]\n  *&c:int=(n$6 + n$7) [line 23, column 3]\n  NULLIFY(&a); [line 23, column 3]\n  NULLIFY(&b); [line 23, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,a,b); [line 23, column 3]\n " shape="box"]
 	
 
 	 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_5" -> "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_4" ;

@@ -15,19 +15,19 @@ digraph cfg {
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch, if) \n   PRUNE(n$0, true); [line 17, column 7]\n  REMOVE_TEMPS(n$0); [line 17, column 7]\n " shape="invhouse"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch, if) \n   PRUNE(n$0, true); [line 17, column 7]\n  EXIT_SCOPE(n$0); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch, if) \n   PRUNE(!n$0, false); [line 17, column 7]\n  REMOVE_TEMPS(n$0); [line 17, column 7]\n " shape="invhouse"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch, if) \n   PRUNE(!n$0, false); [line 17, column 7]\n  EXIT_SCOPE(n$0,p); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" [label="7:  Return Stmt \n   n$1=*&p:int* [line 18, column 13]\n  n$2=*n$1:int [line 18, column 12]\n  *&return:int=n$2 [line 18, column 5]\n  REMOVE_TEMPS(n$1,n$2); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" [label="7:  Return Stmt \n   n$1=*&p:int* [line 18, column 13]\n  n$2=*n$1:int [line 18, column 12]\n  *&return:int=n$2 [line 18, column 5]\n  EXIT_SCOPE(n$1,n$2,p); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 16, column 3]\n  *&p:int*=null [line 16, column 3]\n  REMOVE_TEMPS(n$5); [line 16, column 3]\n " shape="box"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) [line 16, column 3]\n  *&p:int*=null [line 16, column 3]\n  EXIT_SCOPE(n$5); [line 16, column 3]\n " shape="box"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" ;

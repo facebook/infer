@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_3" -> "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_2" ;
-"destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" [label="4:  Call _fun___infer_skip_function \n   n$1=_fun___infer_skip_function() [line 17, column 3]\n  REMOVE_TEMPS(n$1); [line 17, column 3]\n " shape="box"]
+"destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" [label="4:  Call _fun___infer_skip_function \n   n$1=_fun___infer_skip_function() [line 17, column 3]\n  EXIT_SCOPE(n$1); [line 17, column 3]\n " shape="box"]
 	
 
 	 "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" -> "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_3" ;
@@ -22,15 +22,15 @@ digraph cfg {
 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12, column 10]\n  *&return:int=n$0 [line 12, column 3]\n  REMOVE_TEMPS(n$0); [line 12, column 3]\n  NULLIFY(&x); [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12, column 10]\n  *&return:int=n$0 [line 12, column 3]\n  NULLIFY(&x); [line 12, column 3]\n  EXIT_SCOPE(n$0,x); [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Call _fun___infer_skip_function \n   n$2=_fun___infer_skip_function() [line 11, column 3]\n  REMOVE_TEMPS(n$2); [line 11, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Call _fun___infer_skip_function \n   n$2=_fun___infer_skip_function() [line 11, column 3]\n  EXIT_SCOPE(n$2); [line 11, column 3]\n " shape="box"]
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) [line 10, column 3]\n  n$3=*&p:int* [line 10, column 12]\n  n$4=*n$3:int [line 10, column 11]\n  *&x:int=n$4 [line 10, column 3]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 10, column 3]\n  NULLIFY(&p); [line 10, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) [line 10, column 3]\n  n$3=*&p:int* [line 10, column 12]\n  n$4=*n$3:int [line 10, column 11]\n  *&x:int=n$4 [line 10, column 3]\n  NULLIFY(&p); [line 10, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,p); [line 10, column 3]\n " shape="box"]
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" ;
@@ -41,11 +41,11 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&t); [line 24, column 1]\n " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Call _fun_destroy<int_*> \n   n$1=_fun_destroy<int_*>(&t:int**) [line 23, column 3]\n  REMOVE_TEMPS(n$1); [line 23, column 3]\n  APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Call _fun_destroy<int_*> \n   n$1=_fun_destroy<int_*>(&t:int**) [line 23, column 3]\n  EXIT_SCOPE(n$1,t); [line 23, column 3]\n  APPLY_ABSTRACTION; [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&t:int*) [line 22, column 3]\n  *&t:int*=null [line 22, column 3]\n  REMOVE_TEMPS(n$2); [line 22, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$2=_fun___variable_initialization(&t:int*) [line 22, column 3]\n  *&t:int*=null [line 22, column 3]\n  EXIT_SCOPE(n$2); [line 22, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;

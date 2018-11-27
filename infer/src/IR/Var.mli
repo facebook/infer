@@ -27,6 +27,10 @@ val get_all_vars_in_exp : Exp.t -> t Sequence.t
 
 val to_exp : t -> Exp.t
 
+val get_ident : t -> Ident.t option
+
+val get_pvar : t -> Pvar.t option
+
 val get_mangled : t -> Mangled.t option
 
 val is_global : t -> bool

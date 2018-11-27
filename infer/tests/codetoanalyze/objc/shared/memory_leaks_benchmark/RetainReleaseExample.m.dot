@@ -7,15 +7,15 @@ digraph cfg {
 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" [label="2: Exit retain_release_test \n   NULLIFY(&a); [line 26, column 1]\n " color=yellow style=filled]
 	
 
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 25, column 4]\n  n$1=_fun_NSObject_release(n$0:RRA*) virtual [line 25, column 3]\n  REMOVE_TEMPS(n$0,n$1); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 25, column 4]\n  n$1=_fun_NSObject_release(n$0:RRA*) virtual [line 25, column 3]\n  EXIT_SCOPE(n$0,n$1,a); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$2=*&a:RRA* [line 24, column 4]\n  n$3=_fun_NSObject_retain(n$2:RRA*) virtual [line 24, column 3]\n  REMOVE_TEMPS(n$2,n$3); [line 24, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$2=*&a:RRA* [line 24, column 4]\n  n$3=_fun_NSObject_retain(n$2:RRA*) virtual [line 24, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 24, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&a:RRA*) [line 23, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 23, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&a:RRA*) [line 23, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n  EXIT_SCOPE(n$4,n$5,n$6); [line 23, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;
@@ -26,7 +26,7 @@ digraph cfg {
 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" [label="2: Exit RRA_init \n  " color=yellow style=filled]
 	
 
-"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 17, column 10]\n  *&return:objc_object*=n$0 [line 17, column 3]\n  REMOVE_TEMPS(n$0); [line 17, column 3]\n  NULLIFY(&self); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 17, column 10]\n  *&return:objc_object*=n$0 [line 17, column 3]\n  NULLIFY(&self); [line 17, column 3]\n  EXIT_SCOPE(n$0,self); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
 	
 
 	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" ;

@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   n$0=_fun___variable_initialization(&i:int) [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n  REMOVE_TEMPS(n$0); [line 10, column 8]\n  APPLY_ABSTRACTION; [line 10, column 8]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   n$0=_fun___variable_initialization(&i:int) [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n  EXIT_SCOPE(n$0); [line 10, column 8]\n  APPLY_ABSTRACTION; [line 10, column 8]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n  REMOVE_TEMPS(n$1); [line 10, column 27]\n  APPLY_ABSTRACTION; [line 10, column 27]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n  EXIT_SCOPE(n$1); [line 10, column 27]\n  APPLY_ABSTRACTION; [line 10, column 27]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
@@ -28,19 +28,19 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n  REMOVE_TEMPS(n$2); [line 10, column 19]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n  EXIT_SCOPE(n$2); [line 10, column 19]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n  REMOVE_TEMPS(n$2); [line 10, column 19]\n  NULLIFY(&i); [line 10, column 19]\n  NULLIFY(&j); [line 10, column 19]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n  NULLIFY(&i); [line 10, column 19]\n  NULLIFY(&j); [line 10, column 19]\n  EXIT_SCOPE(n$2,i,j); [line 10, column 19]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: AddAssign \n   n$3=*&j:int [line 11, column 10]\n  n$4=*&j:int [line 11, column 5]\n  *&j:int=(n$4 + n$3) [line 11, column 5]\n  REMOVE_TEMPS(n$3,n$4); [line 11, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: AddAssign \n   n$3=*&j:int [line 11, column 10]\n  n$4=*&j:int [line 11, column 5]\n  *&j:int=(n$4 + n$3) [line 11, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 11, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$6=_fun___variable_initialization(&j:int) [line 9, column 3]\n  *&j:int=0 [line 9, column 3]\n  REMOVE_TEMPS(n$6); [line 9, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   n$6=_fun___variable_initialization(&j:int) [line 9, column 3]\n  *&j:int=0 [line 9, column 3]\n  EXIT_SCOPE(n$6); [line 9, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

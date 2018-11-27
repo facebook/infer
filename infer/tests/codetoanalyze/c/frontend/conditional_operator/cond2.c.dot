@@ -31,20 +31,20 @@ digraph cfg {
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_8" -> "bar.37b51d194a7513e45b56f6524f2d51f2_4" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_9" [label="9:  BinaryOperatorStmt: GT \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 22, column 17]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 22, column 17]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_9" [label="9:  BinaryOperatorStmt: GT \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 22, column 17]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 22, column 17]\n  EXIT_SCOPE(0$?%__sil_tmpSIL_temp_conditional___n$1); [line 22, column 17]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_9" -> "bar.37b51d194a7513e45b56f6524f2d51f2_10" ;
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_9" -> "bar.37b51d194a7513e45b56f6524f2d51f2_11" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_10" [label="10: Prune (true branch, boolean exp) \n   PRUNE((n$2 > 1), true); [line 22, column 16]\n  REMOVE_TEMPS(n$2); [line 22, column 16]\n " shape="invhouse"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_10" [label="10: Prune (true branch, boolean exp) \n   PRUNE((n$2 > 1), true); [line 22, column 16]\n  EXIT_SCOPE(n$2); [line 22, column 16]\n " shape="invhouse"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_10" -> "bar.37b51d194a7513e45b56f6524f2d51f2_12" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_11" [label="11: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 > 1), false); [line 22, column 16]\n  REMOVE_TEMPS(n$2); [line 22, column 16]\n " shape="invhouse"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_11" [label="11: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 > 1), false); [line 22, column 16]\n  EXIT_SCOPE(n$2); [line 22, column 16]\n " shape="invhouse"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_11" -> "bar.37b51d194a7513e45b56f6524f2d51f2_13" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_12" [label="12:  ConditionalStmt Branch \n   *&x:int=1 [line 22, column 39]\n  n$3=*&x:int [line 22, column 39]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$3 [line 22, column 16]\n  REMOVE_TEMPS(n$3); [line 22, column 16]\n  NULLIFY(&x); [line 22, column 16]\n  APPLY_ABSTRACTION; [line 22, column 16]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_12" [label="12:  ConditionalStmt Branch \n   *&x:int=1 [line 22, column 39]\n  n$3=*&x:int [line 22, column 39]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$3 [line 22, column 16]\n  NULLIFY(&x); [line 22, column 16]\n  EXIT_SCOPE(n$3,x); [line 22, column 16]\n  APPLY_ABSTRACTION; [line 22, column 16]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_12" -> "bar.37b51d194a7513e45b56f6524f2d51f2_3" ;
@@ -52,7 +52,7 @@ digraph cfg {
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_13" -> "bar.37b51d194a7513e45b56f6524f2d51f2_3" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_14" [label="14:  Return Stmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 22, column 16]\n  *&return:int=(0 + n$4) [line 22, column 3]\n  REMOVE_TEMPS(n$4); [line 22, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 22, column 3]\n  APPLY_ABSTRACTION; [line 22, column 3]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_14" [label="14:  Return Stmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 22, column 16]\n  *&return:int=(0 + n$4) [line 22, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 22, column 3]\n  EXIT_SCOPE(n$4,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 22, column 3]\n  APPLY_ABSTRACTION; [line 22, column 3]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_14" -> "bar.37b51d194a7513e45b56f6524f2d51f2_2" ;
@@ -65,23 +65,23 @@ digraph cfg {
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_16" -> "bar.37b51d194a7513e45b56f6524f2d51f2_17" ;
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_16" -> "bar.37b51d194a7513e45b56f6524f2d51f2_18" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_17" [label="17: Prune (true branch, boolean exp) \n   PRUNE((n$6 > 1), true); [line 21, column 7]\n  REMOVE_TEMPS(n$6); [line 21, column 7]\n " shape="invhouse"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_17" [label="17: Prune (true branch, boolean exp) \n   PRUNE((n$6 > 1), true); [line 21, column 7]\n  EXIT_SCOPE(n$6); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_17" -> "bar.37b51d194a7513e45b56f6524f2d51f2_19" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_18" [label="18: Prune (false branch, boolean exp) \n   PRUNE(!(n$6 > 1), false); [line 21, column 7]\n  REMOVE_TEMPS(n$6); [line 21, column 7]\n " shape="invhouse"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_18" [label="18: Prune (false branch, boolean exp) \n   PRUNE(!(n$6 > 1), false); [line 21, column 7]\n  EXIT_SCOPE(n$6); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_18" -> "bar.37b51d194a7513e45b56f6524f2d51f2_20" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_19" [label="19:  ConditionalStmt Branch \n   n$7=*&x:int [line 21, column 22]\n  *&x:int=(n$7 + 1) [line 21, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int=(n$7 + 1) [line 21, column 7]\n  REMOVE_TEMPS(n$7); [line 21, column 7]\n  NULLIFY(&x); [line 21, column 7]\n  APPLY_ABSTRACTION; [line 21, column 7]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_19" [label="19:  ConditionalStmt Branch \n   n$7=*&x:int [line 21, column 22]\n  *&x:int=(n$7 + 1) [line 21, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int=(n$7 + 1) [line 21, column 7]\n  NULLIFY(&x); [line 21, column 7]\n  EXIT_SCOPE(n$7,x); [line 21, column 7]\n  APPLY_ABSTRACTION; [line 21, column 7]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_19" -> "bar.37b51d194a7513e45b56f6524f2d51f2_15" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_20" [label="20:  ConditionalStmt Branch \n   n$8=*&x:int [line 21, column 30]\n  *&x:int=(n$8 - 1) [line 21, column 30]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int=n$8 [line 21, column 7]\n  REMOVE_TEMPS(n$8); [line 21, column 7]\n  NULLIFY(&x); [line 21, column 7]\n  APPLY_ABSTRACTION; [line 21, column 7]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_20" [label="20:  ConditionalStmt Branch \n   n$8=*&x:int [line 21, column 30]\n  *&x:int=(n$8 - 1) [line 21, column 30]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int=n$8 [line 21, column 7]\n  NULLIFY(&x); [line 21, column 7]\n  EXIT_SCOPE(n$8,x); [line 21, column 7]\n  APPLY_ABSTRACTION; [line 21, column 7]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_20" -> "bar.37b51d194a7513e45b56f6524f2d51f2_15" ;
-"bar.37b51d194a7513e45b56f6524f2d51f2_21" [label="21:  BinaryOperatorStmt: Assign \n   n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int [line 21, column 7]\n  *&y:int=n$9 [line 21, column 3]\n  REMOVE_TEMPS(n$9); [line 21, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$5); [line 21, column 3]\n  NULLIFY(&y); [line 21, column 3]\n " shape="box"]
+"bar.37b51d194a7513e45b56f6524f2d51f2_21" [label="21:  BinaryOperatorStmt: Assign \n   n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int [line 21, column 7]\n  *&y:int=n$9 [line 21, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$5); [line 21, column 3]\n  NULLIFY(&y); [line 21, column 3]\n  EXIT_SCOPE(n$9,0$?%__sil_tmpSIL_temp_conditional___n$5,y); [line 21, column 3]\n " shape="box"]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_21" -> "bar.37b51d194a7513e45b56f6524f2d51f2_5" ;
@@ -113,7 +113,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_7" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_8" [label="8:  Return Stmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 16, column 16]\n  *&return:int=(0 + n$1) [line 16, column 3]\n  REMOVE_TEMPS(n$1); [line 16, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_8" [label="8:  Return Stmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 16, column 16]\n  *&return:int=(0 + n$1) [line 16, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 16, column 3]\n  EXIT_SCOPE(n$1,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_8" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
@@ -154,11 +154,11 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_17" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_13" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_18" [label="18:  ConditionalStmt Branch \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 15, column 21]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$4 [line 15, column 8]\n  REMOVE_TEMPS(n$4); [line 15, column 8]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 15, column 8]\n  APPLY_ABSTRACTION; [line 15, column 8]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_18" [label="18:  ConditionalStmt Branch \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 15, column 21]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$4 [line 15, column 8]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 15, column 8]\n  EXIT_SCOPE(n$4,0$?%__sil_tmpSIL_temp_conditional___n$3); [line 15, column 8]\n  APPLY_ABSTRACTION; [line 15, column 8]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_18" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_9" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_19" [label="19:  BinaryOperatorStmt: Assign \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 15, column 8]\n  *&n:int=n$5 [line 15, column 3]\n  REMOVE_TEMPS(n$5); [line 15, column 3]\n  NULLIFY(&n); [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 15, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_19" [label="19:  BinaryOperatorStmt: Assign \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 15, column 8]\n  *&n:int=n$5 [line 15, column 3]\n  NULLIFY(&n); [line 15, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 15, column 3]\n  EXIT_SCOPE(n$5,n,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 15, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_19" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" ;
@@ -167,7 +167,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_20" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_21" [label="21: Prune (true branch, boolean exp) \n   PRUNE((3 < 4), true); [line 14, column 13]\n  NULLIFY(&y); [line 14, column 13]\n  NULLIFY(&x); [line 14, column 13]\n  APPLY_ABSTRACTION; [line 14, column 13]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_21" [label="21: Prune (true branch, boolean exp) \n   PRUNE((3 < 4), true); [line 14, column 13]\n  NULLIFY(&y); [line 14, column 13]\n  NULLIFY(&x); [line 14, column 13]\n  EXIT_SCOPE(y,x); [line 14, column 13]\n  APPLY_ABSTRACTION; [line 14, column 13]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_21" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_26" ;
@@ -175,16 +175,16 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_22" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_23" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_23" [label="23:  BinaryOperatorStmt: LT \n   n$7=*&x:int [line 14, column 28]\n  *&x:int=(n$7 + 1) [line 14, column 28]\n  n$8=*&y:int [line 14, column 35]\n  NULLIFY(&y); [line 14, column 35]\n  NULLIFY(&x); [line 14, column 35]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_23" [label="23:  BinaryOperatorStmt: LT \n   n$7=*&x:int [line 14, column 28]\n  *&x:int=(n$7 + 1) [line 14, column 28]\n  n$8=*&y:int [line 14, column 35]\n  NULLIFY(&y); [line 14, column 35]\n  NULLIFY(&x); [line 14, column 35]\n  EXIT_SCOPE(y,x); [line 14, column 35]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_23" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_24" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_23" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_25" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_24" [label="24: Prune (true branch, boolean exp) \n   PRUNE((7 < (n$7 - n$8)), true); [line 14, column 22]\n  REMOVE_TEMPS(n$7,n$8); [line 14, column 22]\n  APPLY_ABSTRACTION; [line 14, column 22]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_24" [label="24: Prune (true branch, boolean exp) \n   PRUNE((7 < (n$7 - n$8)), true); [line 14, column 22]\n  EXIT_SCOPE(n$7,n$8); [line 14, column 22]\n  APPLY_ABSTRACTION; [line 14, column 22]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_24" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_26" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_25" [label="25: Prune (false branch, boolean exp) \n   PRUNE(!(7 < (n$7 - n$8)), false); [line 14, column 22]\n  REMOVE_TEMPS(n$7,n$8); [line 14, column 22]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_25" [label="25: Prune (false branch, boolean exp) \n   PRUNE(!(7 < (n$7 - n$8)), false); [line 14, column 22]\n  EXIT_SCOPE(n$7,n$8); [line 14, column 22]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_25" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_27" ;
@@ -196,12 +196,12 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_27" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_20" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$10=_fun___variable_initialization(&n:int) [line 14, column 3]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n  REMOVE_TEMPS(n$9,n$10); [line 14, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$6); [line 14, column 3]\n  NULLIFY(&n); [line 14, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_28" [label="28:  DeclStmt \n   n$10=_fun___variable_initialization(&n:int) [line 14, column 3]\n  n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$6:int [line 14, column 12]\n  *&n:int=n$9 [line 14, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$6); [line 14, column 3]\n  NULLIFY(&n); [line 14, column 3]\n  EXIT_SCOPE(n$9,n$10,0$?%__sil_tmpSIL_temp_conditional___n$6,n); [line 14, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_10" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_28" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_11" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   n$11=_fun___variable_initialization(&y:int) [line 13, column 3]\n  *&y:int=19 [line 13, column 3]\n  REMOVE_TEMPS(n$11); [line 13, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_29" [label="29:  DeclStmt \n   n$11=_fun___variable_initialization(&y:int) [line 13, column 3]\n  *&y:int=19 [line 13, column 3]\n  EXIT_SCOPE(n$11); [line 13, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_29" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_21" ;
@@ -210,7 +210,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_29" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_31" [label="31: Prune (true branch, if) \n   PRUNE((3 < 4), true); [line 10, column 7]\n  NULLIFY(&x); [line 10, column 7]\n  APPLY_ABSTRACTION; [line 10, column 7]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_31" [label="31: Prune (true branch, if) \n   PRUNE((3 < 4), true); [line 10, column 7]\n  NULLIFY(&x); [line 10, column 7]\n  EXIT_SCOPE(x); [line 10, column 7]\n  APPLY_ABSTRACTION; [line 10, column 7]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_31" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" ;
@@ -223,11 +223,11 @@ digraph cfg {
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_33" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_34" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_33" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_35" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_34" [label="34: Prune (true branch, if) \n   PRUNE((7 < n$13), true); [line 10, column 16]\n  REMOVE_TEMPS(n$13); [line 10, column 16]\n  NULLIFY(&x); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_34" [label="34: Prune (true branch, if) \n   PRUNE((7 < n$13), true); [line 10, column 16]\n  NULLIFY(&x); [line 10, column 16]\n  EXIT_SCOPE(n$13,x); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_34" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_35" [label="35: Prune (false branch, if) \n   PRUNE(!(7 < n$13), false); [line 10, column 16]\n  REMOVE_TEMPS(n$13); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_35" [label="35: Prune (false branch, if) \n   PRUNE(!(7 < n$13), false); [line 10, column 16]\n  EXIT_SCOPE(n$13); [line 10, column 16]\n  APPLY_ABSTRACTION; [line 10, column 16]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_35" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" ;
@@ -235,7 +235,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_36" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_30" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   n$16=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=5 [line 9, column 3]\n  REMOVE_TEMPS(n$16); [line 9, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_37" [label="37:  DeclStmt \n   n$16=_fun___variable_initialization(&x:int) [line 9, column 3]\n  *&x:int=5 [line 9, column 3]\n  EXIT_SCOPE(n$16); [line 9, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_37" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_31" ;

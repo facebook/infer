@@ -369,7 +369,7 @@ module Node = struct
               5
           | Sil.Abstract _ ->
               6
-          | Sil.Remove_temps _ ->
+          | Sil.ExitScope _ ->
               7
         in
         Some instr_key
