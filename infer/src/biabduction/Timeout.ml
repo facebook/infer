@@ -117,5 +117,6 @@ let exe_timeout f x =
         None )
       ~finally:resume_previous_timeout
   with SymOp.Analysis_failure_exe kind ->
-    Errdesc.warning_err (State.get_loc_exn ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
+    let loc = State.get_loc () |> Option.value ~default:Location.dummy in
+    Errdesc.warning_err loc "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
     Some kind
