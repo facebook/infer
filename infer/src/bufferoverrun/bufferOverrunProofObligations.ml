@@ -10,6 +10,7 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Bound = Bounds.Bound
+module Dom = BufferOverrunDomain
 module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module Relation = BufferOverrunDomainRelation
@@ -694,7 +695,7 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst (eval_sym, trace_of_sym) rel_map caller_relation callee_pname call_site cwt =
+  let subst {Dom.eval_sym; trace_of_sym} rel_map caller_relation callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if Symb.SymbolSet.is_empty symbols then
       L.(die InternalError)

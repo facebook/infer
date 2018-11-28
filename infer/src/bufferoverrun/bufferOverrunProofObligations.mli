@@ -67,7 +67,7 @@ module ConditionSet : sig
 
   val subst :
        summary_t
-    -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> BufferOverrunTrace.Set.t)
+    -> BufferOverrunDomain.eval_sym_trace
     -> Relation.SubstMap.t
     -> Relation.t
     -> Typ.Procname.t

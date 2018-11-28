@@ -160,6 +160,9 @@ module PowLoc = struct
         Boolean.EqualOrder.of_equal cmp_loc (Loc.eq loc1 loc2)
     | _ ->
         Boolean.Top
+
+
+  type eval_locpath = Symb.SymbolPath.partial -> t
 end
 
 (** unsound but ok for bug catching *)

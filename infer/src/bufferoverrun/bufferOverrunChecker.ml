@@ -34,8 +34,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type nonrec extras = extras
 
-  let instantiate_ret (id, _) callee_pname ~callee_exit_mem eval_sym_trace
-      eval_locs_sympath_partial mem location =
+  let instantiate_ret (id, _) callee_pname ~callee_exit_mem eval_sym_trace mem location =
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
@@ -49,7 +48,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let subst_loc l =
         Option.find_map (Loc.get_path l) ~f:(fun partial ->
             try
-              let locs = eval_locs_sympath_partial partial in
+              let locs = eval_sym_trace.Dom.eval_locpath partial in
               match PowLoc.is_singleton_or_more locs with
               | IContainer.Singleton loc ->
                   Some loc
@@ -134,12 +133,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let rel_subst_map =
       Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
     in
-    let eval_sym_trace, eval_locpath =
+    let eval_sym_trace =
       Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
     in
     let caller_mem =
-      instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace eval_locpath caller_mem
-        location
+      instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace caller_mem location
       |> instantiate_param tenv integer_type_widths callee_pdesc params callee_exit_mem
            eval_sym_trace location
       |> forget_ret_relation ret callee_pname
@@ -598,7 +596,7 @@ module Report = struct
     in
     let pname = Procdesc.get_proc_name callee_pdesc in
     let caller_rel = Dom.Mem.get_relation caller_mem in
-    let eval_sym_trace, _ =
+    let eval_sym_trace =
       Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
     in
     PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel pname location

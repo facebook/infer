@@ -16,6 +16,11 @@ module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
+type eval_sym_trace =
+  { eval_sym: Bounds.Bound.eval_sym
+  ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
+  ; eval_locpath: PowLoc.eval_locpath }
+
 module Val = struct
   type t =
     { itv: Itv.t
@@ -311,8 +316,8 @@ module Val = struct
    fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
 
 
-  let subst : t -> Bounds.Bound.eval_sym * (Symb.Symbol.t -> TraceSet.t) -> Location.t -> t =
-   fun x (eval_sym, trace_of_sym) location ->
+  let subst : t -> eval_sym_trace -> Location.t -> t =
+   fun x {eval_sym; trace_of_sym} location ->
     let symbols = get_symbols x in
     let traces_caller =
       Itv.SymbolSet.fold

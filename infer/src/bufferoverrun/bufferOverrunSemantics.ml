@@ -375,11 +375,12 @@ let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =
     if Itv.eq itv Itv.bot then TraceSet.empty else traces
   in
   let eval_locpath partial = eval_locpath params partial caller_mem in
-  ((eval_sym, trace_of_sym), eval_locpath)
+  {eval_sym; trace_of_sym; eval_locpath}
 
 
 let mk_eval_sym integer_type_widths callee_pdesc actual_exps caller_mem =
-  fst (fst (mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem))
+  let eval_sym_trace = mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem in
+  eval_sym_trace.eval_sym
 
 
 let get_sym_f integer_type_widths mem e = Val.get_sym (eval integer_type_widths e mem)
