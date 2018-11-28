@@ -9,13 +9,18 @@ open! IStd
 module F = Format
 
 module Access : sig
-  type t = private
-    | Read of AccessPath.t  (** Field or array read *)
-    | Write of AccessPath.t  (** Field or array write *)
-    | ContainerRead of AccessPath.t * Typ.Procname.t  (** Read of container object *)
-    | ContainerWrite of AccessPath.t * Typ.Procname.t  (** Write to container object *)
+  (** Below [original] is the path used to create the access.  
+      [path] may differ from [original] because of substitution of actuals *)
+  type t =
+    | Read of {path: AccessPath.t; original: AccessPath.t}  (** Field or array read *)
+    | Write of {path: AccessPath.t; original: AccessPath.t}  (** Field or array write *)
+    | ContainerRead of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
+        (** Read of container object *)
+    | ContainerWrite of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
+        (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)
+  [@@deriving compare]
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 

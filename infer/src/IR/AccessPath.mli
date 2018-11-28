@@ -74,8 +74,6 @@ val equal : t -> t -> bool
 
 val equal_base : base -> base -> bool
 
-val equal_access : access -> access -> bool
-
 val equal_access_list : access list -> access list -> bool
 
 val pp : Format.formatter -> t -> unit

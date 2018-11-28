@@ -229,8 +229,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             path
       in
       let expand_precondition (snapshot : AccessSnapshot.t) =
-        let access = TraceElem.map ~f:expand_path snapshot.access in
-        AccessSnapshot.make_from_snapshot access snapshot
+        let access' = TraceElem.map ~f:expand_path snapshot.access in
+        if phys_equal snapshot.access access' then snapshot
+        else AccessSnapshot.make_from_snapshot access' snapshot
       in
       AccessDomain.map expand_precondition accesses
 
@@ -781,10 +782,10 @@ let pp_container_access fmt (access_path, access_pname) =
 
 let pp_access fmt sink =
   match RacerDDomain.PathDomain.Sink.kind sink with
-  | Read access_path | Write access_path ->
-      (MF.wrap_monospaced AccessPath.pp) fmt access_path
-  | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname) ->
-      pp_container_access fmt (access_path, access_pname)
+  | Read {path} | Write {path} ->
+      (MF.wrap_monospaced AccessPath.pp) fmt path
+  | ContainerRead {path; pname} | ContainerWrite {path; pname} ->
+      pp_container_access fmt (path, pname)
   | InterfaceCall _ as access ->
       RacerDDomain.Access.pp fmt access
 
@@ -796,13 +797,13 @@ let desc_of_sink sink =
       if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "access to %a" pp_access sink
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerRead (access_path, access_pname) ->
-      if Typ.Procname.equal sink_pname access_pname then
-        F.asprintf "Read of %a" pp_container_access (access_path, access_pname)
+  | ContainerRead {path; pname} ->
+      if Typ.Procname.equal sink_pname pname then
+        F.asprintf "Read of %a" pp_container_access (path, pname)
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerWrite (access_path, access_pname) ->
-      if Typ.Procname.equal sink_pname access_pname then
-        F.asprintf "Write to %a" pp_container_access (access_path, access_pname)
+  | ContainerWrite {path; pname} ->
+      if Typ.Procname.equal sink_pname pname then
+        F.asprintf "Write to %a" pp_container_access (path, pname)
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
   | InterfaceCall _ as access ->
       if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
@@ -1007,10 +1008,10 @@ end = struct
 
     let of_access (access : RacerDDomain.Access.t) =
       match access with
-      | Read ap | Write ap ->
-          Location ap
-      | ContainerRead (ap, _) | ContainerWrite (ap, _) ->
-          Container ap
+      | Read {path} | Write {path} ->
+          Location path
+      | ContainerRead {path} | ContainerWrite {path} ->
+          Container path
       | InterfaceCall pn ->
           Call pn
   end

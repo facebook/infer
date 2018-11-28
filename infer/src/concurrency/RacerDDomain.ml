@@ -21,40 +21,34 @@ let should_skip_var v =
 
 module Access = struct
   type t =
-    | Read of AccessPath.t
-    | Write of AccessPath.t
-    | ContainerRead of AccessPath.t * Typ.Procname.t
-    | ContainerWrite of AccessPath.t * Typ.Procname.t
+    | Read of {path: AccessPath.t; original: AccessPath.t}
+    | Write of {path: AccessPath.t; original: AccessPath.t}
+    | ContainerRead of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
+    | ContainerWrite of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
     | InterfaceCall of Typ.Procname.t
   [@@deriving compare]
 
-  let suffix_matches (_, accesses1) (_, accesses2) =
-    match (List.rev accesses1, List.rev accesses2) with
-    | access1 :: _, access2 :: _ ->
-        AccessPath.equal_access access1 access2
-    | _ ->
-        false
-
-
   let matches ~caller ~callee =
     match (caller, callee) with
-    | Read ap1, Read ap2 | Write ap1, Write ap2 ->
-        suffix_matches ap1 ap2
-    | ContainerRead (ap1, pname1), ContainerRead (ap2, pname2)
-    | ContainerWrite (ap1, pname1), ContainerWrite (ap2, pname2) ->
-        Typ.Procname.equal pname1 pname2 && suffix_matches ap1 ap2
+    | Read {original= ap1}, Read {original= ap2} | Write {original= ap1}, Write {original= ap2} ->
+        AccessPath.equal ap1 ap2
+    | ContainerRead {original= ap1; pname= pname1}, ContainerRead {original= ap2; pname= pname2}
+    | ContainerWrite {original= ap1; pname= pname1}, ContainerWrite {original= ap2; pname= pname2}
+      ->
+        Typ.Procname.equal pname1 pname2 && AccessPath.equal ap1 ap2
     | InterfaceCall pname1, InterfaceCall pname2 ->
         Typ.Procname.equal pname1 pname2
     | _ ->
         false
 
 
-  let make_field_access access_path ~is_write =
-    if is_write then Write access_path else Read access_path
+  let make_field_access path ~is_write =
+    if is_write then Write {path; original= path} else Read {path; original= path}
 
 
-  let make_container_access access_path pname ~is_write =
-    if is_write then ContainerWrite (access_path, pname) else ContainerRead (access_path, pname)
+  let make_container_access path pname ~is_write =
+    if is_write then ContainerWrite {path; original= path; pname}
+    else ContainerRead {path; original= path; pname}
 
 
   let is_write = function
@@ -72,38 +66,39 @@ module Access = struct
 
 
   let get_access_path = function
-    | Read access_path
-    | Write access_path
-    | ContainerWrite (access_path, _)
-    | ContainerRead (access_path, _) ->
-        Some access_path
+    | Read {path} | Write {path} | ContainerWrite {path} | ContainerRead {path} ->
+        Some path
     | InterfaceCall _ ->
         None
 
 
-  let map ~f = function
-    | Read access_path ->
-        Read (f access_path)
-    | Write access_path ->
-        Write (f access_path)
-    | ContainerWrite (access_path, pname) ->
-        ContainerWrite (f access_path, pname)
-    | ContainerRead (access_path, pname) ->
-        ContainerRead (f access_path, pname)
+  let map ~f access =
+    match access with
+    | Read ({path} as record) ->
+        let path' = f path in
+        if phys_equal path path' then access else Read {record with path= path'}
+    | Write ({path} as record) ->
+        let path' = f path in
+        if phys_equal path path' then access else Write {record with path= path'}
+    | ContainerWrite ({path} as record) ->
+        let path' = f path in
+        if phys_equal path path' then access else ContainerWrite {record with path= path'}
+    | ContainerRead ({path} as record) ->
+        let path' = f path in
+        if phys_equal path path' then access else ContainerRead {record with path= path'}
     | InterfaceCall _ as intfcall ->
         intfcall
 
 
   let pp fmt = function
-    | Read access_path ->
-        F.fprintf fmt "Read of %a" AccessPath.pp access_path
-    | Write access_path ->
-        F.fprintf fmt "Write to %a" AccessPath.pp access_path
-    | ContainerRead (access_path, pname) ->
-        F.fprintf fmt "Read of container %a via %a" AccessPath.pp access_path Typ.Procname.pp pname
-    | ContainerWrite (access_path, pname) ->
-        F.fprintf fmt "Write to container %a via %a" AccessPath.pp access_path Typ.Procname.pp
-          pname
+    | Read {path} ->
+        F.fprintf fmt "Read of %a" AccessPath.pp path
+    | Write {path} ->
+        F.fprintf fmt "Write to %a" AccessPath.pp path
+    | ContainerRead {path; pname} ->
+        F.fprintf fmt "Read of container %a via %a" AccessPath.pp path Typ.Procname.pp pname
+    | ContainerWrite {path; pname} ->
+        F.fprintf fmt "Write to container %a via %a" AccessPath.pp path Typ.Procname.pp pname
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
 end
@@ -127,7 +122,10 @@ module TraceElem = struct
 
   let pp fmt {site; kind} = F.fprintf fmt "%a at %a" Access.pp kind CallSite.pp site
 
-  let map ~f {site; kind} = {site; kind= Access.map ~f kind}
+  let map ~f ({kind} as elem) =
+    let kind' = Access.map ~f kind in
+    if phys_equal kind kind' then elem else {elem with kind= kind'}
+
 
   module Set = PrettyPrintable.MakePPSet (struct
     type nonrec t = t
