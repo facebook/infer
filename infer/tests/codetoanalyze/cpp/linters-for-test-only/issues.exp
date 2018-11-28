@@ -1,2 +1,4 @@
 codetoanalyze/cpp/linters-for-test-only/test_constructor.cpp, f, 12, FIND_STATIC_LOCAL_VAR, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_constructor.cpp, g, 17, FIND_CXX_COPY_CONSTRUCTOR, no_bucket, WARNING, []
+codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_bar, 16, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []
+codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_foo, 14, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []

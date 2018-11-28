@@ -1412,6 +1412,14 @@ let is_cxx_copy_constructor an =
       false
 
 
+let is_cxx_method_overriding an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.CXXMethodDecl (_, _, _, _, mdi)) ->
+      not (List.is_empty mdi.xmdi_overriden_methods)
+  | _ ->
+      false
+
+
 let is_init_expr_cxx11_constant an =
   let open Clang_ast_t in
   match an with

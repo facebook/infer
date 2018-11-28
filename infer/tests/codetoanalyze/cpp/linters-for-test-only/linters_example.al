@@ -26,4 +26,8 @@ SET report_when =
 SET message = "Found static local var";
 
 };
-  
+
+DEFINE-CHECKER FIND_CXX_METHOD_OVERRIDES = {
+    SET report_when = is_cxx_method_overriding;
+    SET message = "%decl_name% overrides";
+};

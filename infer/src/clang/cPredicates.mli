@@ -228,7 +228,7 @@ val is_objc_constructor : CLintersContext.context -> bool
 
 val objc_class_has_only_one_constructor_method_named :
   Ctl_parser_types.ast_node -> ALVar.alexp -> bool
-(** true if an ObjC class has only one class method and is a constructor 
+(** true if an ObjC class has only one class method and is a constructor
 whose name matches the provided REGEXP *)
 
 val is_objc_dealloc : CLintersContext.context -> bool
@@ -486,6 +486,12 @@ val is_method_called_by_superclass : Ctl_parser_types.ast_node -> bool
 
 val is_cxx_copy_constructor : Ctl_parser_types.ast_node -> bool
 (** true if the current node is a C++ copy constructor *)
+
+val is_cxx_method_overriding : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is a CXXMethodDecl node and is overriding a
+ *    method in a superclass.
+ *)
 
 val is_init_expr_cxx11_constant : Ctl_parser_types.ast_node -> bool
 (** true if the current node is classified as C++11 constant expression by the AST. It works only for VarDecl init expr *)
