@@ -25,6 +25,8 @@ module SymbolPath : sig
 
   type t = private Normal of partial | Offset of partial | Length of partial
 
+  val equal_partial : partial -> partial -> bool
+
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 
   val pp_partial : F.formatter -> partial -> unit

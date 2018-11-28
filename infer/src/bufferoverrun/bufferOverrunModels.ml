@@ -50,9 +50,7 @@ type declare_symbolic_fun =
   -> model_env
   -> depth:int
   -> Loc.t
-  -> inst_num:int
   -> new_sym_num:Counter.t
-  -> new_alloc_num:Counter.t
   -> Dom.Mem.t
   -> Dom.Mem.t
 
@@ -316,13 +314,12 @@ module StdArray = struct
       BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length ~inst_num
         ~represents_multiple_values ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val path {pname; tenv; node_hash; location; symbol_table} ~depth
-        loc ~inst_num ~new_sym_num ~new_alloc_num mem =
+    let declare_symbolic ~decl_sym_val path {pname; tenv; location; symbol_table} ~depth loc
+        ~new_sym_num mem =
       let offset = Itv.zero in
       let size = Itv.of_int64 length in
       BoUtils.Exec.decl_sym_arr ~decl_sym_val Symb.SymbolPath.Deref_ArrayIndex pname symbol_table
-        path tenv ~node_hash location ~depth loc typ ~offset ~size ~inst_num ~new_sym_num
-        ~new_alloc_num mem
+        path tenv location ~depth loc typ ~offset ~size ~new_sym_num mem
     in
     {declare_local; declare_symbolic}
 
@@ -362,8 +359,7 @@ module StdArray = struct
         ~dimension:_ mem =
       (no_model "local" pname location mem, inst_num)
     in
-    let declare_symbolic ~decl_sym_val:_ _path {pname; location} ~depth:_ _loc ~inst_num:_
-        ~new_sym_num:_ ~new_alloc_num:_ mem =
+    let declare_symbolic ~decl_sym_val:_ _path {pname; location} ~depth:_ _loc ~new_sym_num:_ mem =
       no_model "symbolic" pname location mem
     in
     {declare_local; declare_symbolic}
@@ -381,7 +377,7 @@ module Collection = struct
         ~represents_multiple_values ~dimension mem
     in
     let declare_symbolic ~decl_sym_val:_ path {pname; location; symbol_table} ~depth:_ loc
-        ~inst_num:_ ~new_sym_num ~new_alloc_num:_ mem =
+        ~new_sym_num mem =
       BoUtils.Exec.decl_sym_collection pname symbol_table path location loc ~new_sym_num mem
     in
     {declare_local; declare_symbolic}

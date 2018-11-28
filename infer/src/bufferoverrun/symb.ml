@@ -28,6 +28,8 @@ module SymbolPath = struct
 
   let equal = [%compare.equal: t]
 
+  let equal_partial = [%compare.equal: partial]
+
   let of_pvar pvar = Pvar pvar
 
   let field p fn = Field (fn, p)

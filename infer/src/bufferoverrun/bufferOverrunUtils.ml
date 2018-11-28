@@ -116,7 +116,6 @@ module Exec = struct
        Typ.Procname.t
     -> Itv.SymbolPath.partial
     -> Tenv.t
-    -> node_hash:int
     -> Location.t
     -> depth:int
     -> Loc.t
@@ -131,7 +130,6 @@ module Exec = struct
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Tenv.t
-      -> node_hash:int
       -> Location.t
       -> depth:int
       -> Loc.t
@@ -139,13 +137,11 @@ module Exec = struct
       -> ?offset:Itv.t
       -> ?size:Itv.t
       -> ?stride:int
-      -> inst_num:int
       -> new_sym_num:Counter.t
-      -> new_alloc_num:Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
-   fun ~decl_sym_val deref_kind pname symbol_table path tenv ~node_hash location ~depth loc typ
-       ?offset ?size ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
+   fun ~decl_sym_val deref_kind pname symbol_table path tenv location ~depth loc typ ?offset ?size
+       ?stride ~new_sym_num mem ->
     let offset =
       IOption.value_default_f offset ~f:(fun () ->
           Itv.make_sym pname symbol_table (Itv.SymbolPath.offset path) new_sym_num )
@@ -156,10 +152,7 @@ module Exec = struct
       )
     in
     let deref_path = Itv.SymbolPath.deref ~deref_kind path in
-    let allocsite =
-      let alloc_num = Counter.next new_alloc_num in
-      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some deref_path)
-    in
+    let allocsite = Allocsite.make_param deref_path in
     let mem =
       let arr =
         let traces = Trace.(Set.singleton location (Parameter loc)) in
@@ -171,7 +164,7 @@ module Exec = struct
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
     let deref_loc = Loc.of_allocsite allocsite in
-    decl_sym_val pname deref_path tenv ~node_hash location ~depth deref_loc typ mem
+    decl_sym_val pname deref_path tenv location ~depth deref_loc typ mem
 
 
   let decl_sym_java_ptr :
@@ -179,21 +172,14 @@ module Exec = struct
       -> Typ.Procname.t
       -> Itv.SymbolPath.partial
       -> Tenv.t
-      -> node_hash:int
       -> Location.t
       -> depth:int
       -> Loc.t
       -> Typ.t
-      -> inst_num:int
-      -> new_alloc_num:Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
-   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
-       mem ->
-    let alloc_num = Counter.next new_alloc_num in
-    let allocsite =
-      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
-    in
+   fun ~decl_sym_val pname path tenv location ~depth loc typ mem ->
+    let allocsite = Allocsite.make_param path in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
@@ -202,7 +188,7 @@ module Exec = struct
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     let mem = Dom.Mem.add_heap loc v mem in
-    decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
+    decl_sym_val pname path tenv location ~depth alloc_loc typ mem
 
 
   let decl_sym_collection :

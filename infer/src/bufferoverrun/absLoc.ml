@@ -13,6 +13,7 @@ module F = Format
 module Allocsite = struct
   type t =
     | Unknown
+    | Param of Symb.SymbolPath.partial
     | Known of
         { proc_name: string
         ; node_hash: int
@@ -25,17 +26,23 @@ module Allocsite = struct
     match (as1, as2) with
     | Unknown, _ | _, Unknown ->
         Boolean.Top
-    | Known {path= Some _}, Known {path= Some _} ->
-        (* Known with a path are parameters, parameters may alias *) Boolean.Top
+    | Param _, Param _ ->
+        (* parameters may alias *) Boolean.Top
+    | Known {path= Some p1}, Known {path= Some p2} ->
+        Boolean.of_bool (Symb.SymbolPath.equal_partial p1 p2)
     | Known {path= Some _}, Known {path= None} | Known {path= None}, Known {path= Some _} ->
         Boolean.False
     | Known {path= None}, Known {path= None} ->
         Boolean.of_bool ([%compare.equal: t] as1 as2)
+    | Known _, Param _ | Param _, Known _ ->
+        Boolean.False
 
 
   let pp fmt = function
     | Unknown ->
         F.fprintf fmt "Unknown"
+    | Param path ->
+        Symb.SymbolPath.pp_partial fmt path
     | Known {path= Some path} when Config.bo_debug < 1 ->
         Symb.SymbolPath.pp_partial fmt path
     | Known {proc_name; node_hash; inst_num; dimension; path} ->
@@ -43,7 +50,7 @@ module Allocsite = struct
         Option.iter path ~f:(fun path -> F.fprintf fmt "(%a)" Symb.SymbolPath.pp_partial path)
 
 
-  let is_pretty = function Known {path= Some _} -> true | _ -> false
+  let is_pretty = function Param _ | Known {path= Some _} -> true | _ -> false
 
   let to_string x = F.asprintf "%a" pp x
 
@@ -58,9 +65,11 @@ module Allocsite = struct
     Known {proc_name= Typ.Procname.to_string proc_name; node_hash; inst_num; dimension; path}
 
 
+  let make_param path = Param path
+
   let unknown = Unknown
 
-  let get_path = function Unknown -> None | Known {path} -> path
+  let get_path = function Unknown -> None | Param path -> Some path | Known {path} -> path
 end
 
 module Loc = struct

@@ -58,7 +58,6 @@ module Exec : sig
        Typ.Procname.t
     -> Itv.SymbolPath.partial
     -> Tenv.t
-    -> node_hash:int
     -> Location.t
     -> depth:int
     -> Loc.t
@@ -73,7 +72,6 @@ module Exec : sig
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial
     -> Tenv.t
-    -> node_hash:int
     -> Location.t
     -> depth:int
     -> Loc.t
@@ -81,9 +79,7 @@ module Exec : sig
     -> ?offset:Itv.t
     -> ?size:Itv.t
     -> ?stride:int
-    -> inst_num:int
     -> new_sym_num:Counter.t
-    -> new_alloc_num:Counter.t
     -> Dom.Mem.t
     -> Dom.Mem.t
 
@@ -92,13 +88,10 @@ module Exec : sig
     -> Typ.Procname.t
     -> Itv.SymbolPath.partial
     -> Tenv.t
-    -> node_hash:int
     -> Location.t
     -> depth:int
     -> Loc.t
     -> Typ.t
-    -> inst_num:int
-    -> new_alloc_num:Counter.t
     -> Dom.Mem.t
     -> Dom.Mem.t
 
