@@ -183,12 +183,14 @@ module TransferFunctions = struct
 
   type nonrec extras = extras
 
-  let instantiate_ret (id, _) callee_pname ~callee_exit_mem eval_sym_trace mem location =
-    let copy_reachable_new_locs_from locs mem =
+  let instantiate_mem_reachable (ret_id, _) callee_pdesc callee_pname ~callee_exit_mem
+      ({Dom.eval_locpath} as eval_sym_trace) mem location =
+    let copy_reachable_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
+            let locs = PowLoc.subst_loc loc eval_locpath in
             let v = Dom.Val.subst v eval_sym_trace location in
-            Dom.Mem.add_heap loc v acc )
+            PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from locs callee_exit_mem in
       PowLoc.fold copy reachable_locs mem
@@ -197,7 +199,7 @@ module TransferFunctions = struct
       let subst_loc l =
         Option.find_map (Loc.get_path l) ~f:(fun partial ->
             try
-              let locs = eval_sym_trace.Dom.eval_locpath partial in
+              let locs = eval_locpath partial in
               match PowLoc.is_singleton_or_more locs with
               | IContainer.Singleton loc ->
                   Some loc
@@ -209,55 +211,18 @@ module TransferFunctions = struct
         Option.find_map (Dom.Mem.find_ret_alias callee_exit_mem) ~f:(fun alias_target ->
             Dom.AliasTarget.loc_map alias_target ~f:subst_loc )
       in
-      Option.value_map ret_alias ~default:mem ~f:(fun l -> Dom.Mem.load_alias id l mem)
+      Option.value_map ret_alias ~default:mem ~f:(fun l -> Dom.Mem.load_alias ret_id l mem)
     in
-    let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-    let ret_val = Dom.Mem.find ret_loc callee_exit_mem in
-    let ret_var = Loc.of_var (Var.of_id id) in
-    Dom.Val.subst ret_val eval_sym_trace location
-    |> Fn.flip (Dom.Mem.add_stack ret_var) mem
+    let ret_var = Loc.of_var (Var.of_id ret_id) in
+    let ret_val = Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem in
+    let formals =
+      List.fold (Sem.get_formals callee_pdesc) ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
+          let v = Dom.Mem.find (Loc.of_pvar formal) callee_exit_mem in
+          PowLoc.join acc (Dom.Val.get_all_locs v) )
+    in
+    Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
-    |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
-
-
-  let instantiate_param tenv integer_type_widths pdesc params callee_exit_mem eval_sym_trace
-      location mem =
-    let formals = Sem.get_formals pdesc in
-    let actuals = List.map ~f:(fun (a, _) -> Sem.eval integer_type_widths a mem) params in
-    let f mem formal actual =
-      match (snd formal).Typ.desc with
-      | Typ.Tptr (typ, _) -> (
-        match typ.Typ.desc with
-        | Typ.Tstruct typename -> (
-          match Tenv.lookup tenv typename with
-          | Some str ->
-              let formal_locs =
-                Dom.Mem.find (Loc.of_pvar (fst formal)) callee_exit_mem
-                |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
-              in
-              let instantiate_fld mem (fn, _, _) =
-                let formal_fields = PowLoc.append_field formal_locs ~fn in
-                let v = Dom.Mem.find_set formal_fields callee_exit_mem in
-                let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) ~fn in
-                Dom.Val.subst v eval_sym_trace location
-                |> Fn.flip (Dom.Mem.strong_update actual_fields) mem
-              in
-              List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
-          | _ ->
-              mem )
-        | _ ->
-            let formal_locs =
-              Dom.Mem.find (Loc.of_pvar (fst formal)) callee_exit_mem
-              |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
-            in
-            let v = Dom.Mem.find_set formal_locs callee_exit_mem in
-            let actual_locs = Dom.Val.get_all_locs actual in
-            Dom.Val.subst v eval_sym_trace location
-            |> Fn.flip (Dom.Mem.strong_update actual_locs) mem )
-      | _ ->
-          mem
-    in
-    try List.fold2_exn formals actuals ~init:mem ~f with Invalid_argument _ -> mem
+    |> copy_reachable_locs_from (PowLoc.join formals (Dom.Val.get_all_locs ret_val))
 
 
   let forget_ret_relation ret callee_pname mem =
@@ -286,9 +251,8 @@ module TransferFunctions = struct
       Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
     in
     let caller_mem =
-      instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace caller_mem location
-      |> instantiate_param tenv integer_type_widths callee_pdesc params callee_exit_mem
-           eval_sym_trace location
+      instantiate_mem_reachable ret callee_pdesc callee_pname ~callee_exit_mem eval_sym_trace
+        caller_mem location
       |> forget_ret_relation ret callee_pname
     in
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem

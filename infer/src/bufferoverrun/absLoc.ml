@@ -175,15 +175,12 @@ module PowLoc = struct
 
   type eval_locpath = Symb.SymbolPath.partial -> t
 
+  let subst_loc l (eval_locpath : eval_locpath) =
+    match Loc.get_param_path l with None -> singleton l | Some path -> eval_locpath path
+
+
   let subst x (eval_locpath : eval_locpath) =
-    let subst1 l acc =
-      match Loc.get_param_path l with
-      | None ->
-          add l acc
-      | Some path ->
-          join acc (eval_locpath path)
-    in
-    fold subst1 x empty
+    fold (fun l acc -> join acc (subst_loc l eval_locpath)) x empty
 end
 
 (** unsound but ok for bug catching *)
