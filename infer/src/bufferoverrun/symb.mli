@@ -31,6 +31,8 @@ module SymbolPath : sig
 
   val pp_partial : F.formatter -> partial -> unit
 
+  val pp_partial_paren : paren:bool -> F.formatter -> partial -> unit
+
   val of_pvar : Pvar.t -> partial
 
   val deref : deref_kind:deref_kind -> partial -> partial

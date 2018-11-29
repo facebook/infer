@@ -38,17 +38,20 @@ module Allocsite = struct
         Boolean.False
 
 
-  let pp fmt = function
+  let pp_paren ~paren fmt = function
     | Unknown ->
         F.fprintf fmt "Unknown"
     | Param path ->
-        Symb.SymbolPath.pp_partial fmt path
+        Symb.SymbolPath.pp_partial_paren ~paren fmt path
     | Known {path= Some path} when Config.bo_debug < 1 ->
-        Symb.SymbolPath.pp_partial fmt path
+        Symb.SymbolPath.pp_partial_paren ~paren fmt path
     | Known {proc_name; node_hash; inst_num; dimension; path} ->
         F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension ;
-        Option.iter path ~f:(fun path -> F.fprintf fmt "(%a)" Symb.SymbolPath.pp_partial path)
+        Option.iter path ~f:(fun path ->
+            F.fprintf fmt "(%a)" (Symb.SymbolPath.pp_partial_paren ~paren:false) path )
 
+
+  let pp = pp_paren ~paren:false
 
   let is_pretty = function Param _ | Known {path= Some _} -> true | _ -> false
 
@@ -86,7 +89,9 @@ module Loc = struct
 
   let unknown = Allocsite Allocsite.unknown
 
-  let rec pp fmt = function
+  let rec pp_paren ~paren fmt =
+    let module SP = Symb.SymbolPath in
+    function
     | Var v ->
         Var.pp F.str_formatter v ;
         let s = F.flush_str_formatter () in
@@ -94,10 +99,15 @@ module Loc = struct
           F.pp_print_string fmt (String.sub s ~pos:1 ~len:(String.length s - 1))
         else F.pp_print_string fmt s
     | Allocsite a ->
-        Allocsite.pp fmt a
+        Allocsite.pp_paren ~paren fmt a
+    | Field (Allocsite (Allocsite.Param (SP.Deref (SP.Deref_CPointer, p))), f)
+    | Field (Allocsite (Allocsite.Known {path= Some (SP.Deref (SP.Deref_CPointer, p))}), f) ->
+        F.fprintf fmt "%a->%s" (SP.pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string f)
     | Field (l, f) ->
-        F.fprintf fmt "%a.%a" pp l Typ.Fieldname.pp f
+        F.fprintf fmt "%a.%a" (pp_paren ~paren:true) l Typ.Fieldname.pp f
 
+
+  let pp = pp_paren ~paren:false
 
   let to_string x = F.asprintf "%a" pp x
 

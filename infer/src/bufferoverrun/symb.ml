@@ -42,14 +42,22 @@ module SymbolPath = struct
 
   let length p = Length p
 
-  let rec pp_partial fmt = function
+  let rec pp_partial_paren ~paren fmt = function
     | Pvar pvar ->
         Pvar.pp_value fmt pvar
-    | Deref (_, p) ->
-        F.fprintf fmt "%a[*]" pp_partial p
+    | Deref (Deref_ArrayIndex, p) ->
+        F.fprintf fmt "%a[*]" (pp_partial_paren ~paren:true) p
+    | Deref (Deref_CPointer, p) ->
+        if paren then F.fprintf fmt "(" ;
+        F.fprintf fmt "*%a" (pp_partial_paren ~paren:false) p ;
+        if paren then F.fprintf fmt ")"
+    | Field (fn, Deref (Deref_CPointer, p)) ->
+        F.fprintf fmt "%a->%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
     | Field (fn, p) ->
-        F.fprintf fmt "%a.%s" pp_partial p (Typ.Fieldname.to_flat_string fn)
+        F.fprintf fmt "%a.%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
 
+
+  let pp_partial = pp_partial_paren ~paren:false
 
   let pp fmt = function
     | Normal p ->
