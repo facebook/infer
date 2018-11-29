@@ -153,8 +153,19 @@ let get_pow_loc : t -> PowLoc.t =
   fold pow_loc_of_allocsite array PowLoc.bot
 
 
-let subst : t -> Bound.eval_sym -> t =
- fun a eval_sym -> map (fun info -> ArrInfo.subst info eval_sym) a
+let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> t =
+ fun a eval_sym eval_locpath ->
+  let subst1 l info acc =
+    let info' = ArrInfo.subst info eval_sym in
+    match Allocsite.get_param_path l with
+    | None ->
+        add l info' acc
+    | Some path ->
+        let locs = eval_locpath path in
+        let add_allocsite l acc = match l with Loc.Allocsite a -> add a info' acc | _ -> acc in
+        PowLoc.fold add_allocsite locs acc
+  in
+  fold subst1 a empty
 
 
 let get_symbols : t -> Itv.SymbolSet.t =

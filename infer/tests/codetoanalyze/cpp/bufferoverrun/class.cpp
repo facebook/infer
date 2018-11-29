@@ -296,7 +296,7 @@ class my_class6 {
 
   void dummy_function() {}
 
-  void set_x_two_Good_FP() {
+  void set_x_two_Good() {
     int arr[5];
     *x = 0;
     dummy_function();

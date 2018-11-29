@@ -317,7 +317,7 @@ module Val = struct
 
 
   let subst : t -> eval_sym_trace -> Location.t -> t =
-   fun x {eval_sym; trace_of_sym} location ->
+   fun x {eval_sym; trace_of_sym; eval_locpath} location ->
     let symbols = get_symbols x in
     let traces_caller =
       Itv.SymbolSet.fold
@@ -325,7 +325,11 @@ module Val = struct
         symbols TraceSet.empty
     in
     let traces = TraceSet.call location ~traces_caller ~traces_callee:x.traces in
-    {x with itv= Itv.subst x.itv eval_sym; arrayblk= ArrayBlk.subst x.arrayblk eval_sym; traces}
+    { x with
+      itv= Itv.subst x.itv eval_sym
+    ; powloc= PowLoc.subst x.powloc eval_locpath
+    ; arrayblk= ArrayBlk.subst x.arrayblk eval_sym eval_locpath
+    ; traces }
     (* normalize bottom *)
     |> normalize
 
