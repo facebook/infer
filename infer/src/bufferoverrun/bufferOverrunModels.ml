@@ -56,6 +56,8 @@ type declare_symbolic_fun =
 
 type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
 
+let no_exec _model_env ~ret:_ mem = mem
+
 let no_check _model_env _mem cond_set = cond_set
 
 (* It returns a tuple of:
@@ -211,6 +213,8 @@ let inferbo_set_size e1 e2 =
 
 
 let model_by_value value (id, _) mem = Dom.Mem.add_stack (Loc.of_id id) value mem
+
+let nop = {exec= no_exec; check= no_check}
 
 let by_value =
   let exec ~value _ ~ret mem = model_by_value value ret mem in
@@ -499,6 +503,7 @@ module Call = struct
     make_dispatcher
       [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
+      ; -"__variable_initialization" <>--> nop
       ; -"__exit" <>--> bottom
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
