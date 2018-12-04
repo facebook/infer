@@ -172,7 +172,7 @@ module Init = struct
     in
     let mem = Dom.Mem.init in
     let mem, _ = List.fold ~f:try_decl_local ~init:(mem, 1) (Procdesc.get_locals pdesc) in
-    let formals = Sem.get_formals pdesc in
+    let formals = Dom.get_formals pdesc in
     declare_symbolic_parameters pname tenv integer_type_widths ~node_hash location symbol_table
       formals mem
 end
@@ -216,7 +216,7 @@ module TransferFunctions = struct
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val = Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem in
     let formals =
-      List.fold (Sem.get_formals callee_pdesc) ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
+      List.fold (Dom.get_formals callee_pdesc) ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
           let v = Dom.Mem.find (Loc.of_pvar formal) callee_exit_mem in
           PowLoc.join acc (Dom.Val.get_all_locs v) )
     in
@@ -308,7 +308,7 @@ module TransferFunctions = struct
                 let pname = Procdesc.get_proc_name pdesc in
                 match Typ.Procname.get_method pname with
                 | "__inferbo_empty" when Loc.is_return loc_v -> (
-                  match Sem.get_formals pdesc with
+                  match Dom.get_formals pdesc with
                   | [(formal, _)] ->
                       let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
                       Dom.Mem.store_empty_alias formal_v loc_v mem

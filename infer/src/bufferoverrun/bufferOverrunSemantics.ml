@@ -296,12 +296,6 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
       Val.bot
 
 
-let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
- fun pdesc ->
-  let proc_name = Procdesc.get_proc_name pdesc in
-  Procdesc.get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
-
-
 module ParamBindings = struct
   include PrettyPrintable.MakePPMap (struct
     include Pvar

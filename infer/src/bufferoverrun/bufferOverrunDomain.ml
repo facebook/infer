@@ -21,6 +21,12 @@ type eval_sym_trace =
   ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
   ; eval_locpath: PowLoc.eval_locpath }
 
+let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
+ fun pdesc ->
+  let proc_name = Procdesc.get_proc_name pdesc in
+  Procdesc.get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
+
+
 module Val = struct
   type t =
     { itv: Itv.t
