@@ -108,7 +108,6 @@ end = struct
 
   let guards =
     [ "apache::thrift::concurrency::Guard"
-    ; "apache::thrift::concurrency::Synchronized"
     ; "apache::thrift::concurrency::RWGuard"
     ; "folly::SharedMutex::ReadHolder"
     ; "folly::SharedMutex::WriteHolder"
