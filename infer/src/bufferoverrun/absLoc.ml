@@ -73,8 +73,6 @@ module Allocsite = struct
   let unknown = Unknown
 
   let get_path = function Unknown -> None | Param path -> Some path | Known {path} -> path
-
-  let get_param_path = function Param path -> Some path | Unknown | Known _ -> None
 end
 
 module Loc = struct
@@ -150,15 +148,6 @@ module Loc = struct
         Allocsite.get_path allocsite
     | Field (l, fn) ->
         Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
-
-
-  let rec get_param_path = function
-    | Var _ ->
-        None
-    | Allocsite allocsite ->
-        Allocsite.get_param_path allocsite
-    | Field (l, fn) ->
-        Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
 end
 
 module PowLoc = struct
@@ -184,13 +173,6 @@ module PowLoc = struct
 
 
   type eval_locpath = Symb.SymbolPath.partial -> t
-
-  let subst_loc l (eval_locpath : eval_locpath) =
-    match Loc.get_param_path l with None -> singleton l | Some path -> eval_locpath path
-
-
-  let subst x (eval_locpath : eval_locpath) =
-    fold (fun l acc -> join acc (subst_loc l eval_locpath)) x empty
 end
 
 (** unsound but ok for bug catching *)

@@ -327,23 +327,16 @@ let rec eval_sympath_partial params p mem =
 
 
 and eval_locpath params p mem =
-  let res =
-    match p with
-    | Symb.SymbolPath.Pvar _ ->
-        let v = eval_sympath_partial params p mem in
-        Val.get_all_locs v
-    | Symb.SymbolPath.Deref (_, p) ->
-        let v = eval_sympath_partial params p mem in
-        Val.get_all_locs v
-    | Symb.SymbolPath.Field (fn, p) ->
-        let locs = eval_locpath params p mem in
-        PowLoc.append_field ~fn locs
-  in
-  if PowLoc.is_empty res then (
-    L.(debug BufferOverrun Verbose)
-      "Location value for %a is not found.@\n" Symb.SymbolPath.pp_partial p ;
-    PowLoc.unknown )
-  else res
+  match p with
+  | Symb.SymbolPath.Pvar _ ->
+      let v = eval_sympath_partial params p mem in
+      Val.get_all_locs v
+  | Symb.SymbolPath.Deref (_, p) ->
+      let v = eval_sympath_partial params p mem in
+      Val.get_all_locs v
+  | Symb.SymbolPath.Field (fn, p) ->
+      let locs = eval_locpath params p mem in
+      PowLoc.append_field ~fn locs
 
 
 let eval_sympath params sympath mem =

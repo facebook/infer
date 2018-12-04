@@ -29,8 +29,6 @@ module SymbolPath : sig
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 
-  val pp_partial : F.formatter -> partial -> unit
-
   val pp_partial_paren : paren:bool -> F.formatter -> partial -> unit
 
   val of_pvar : Pvar.t -> partial
