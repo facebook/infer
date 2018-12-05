@@ -59,3 +59,14 @@ void larger_state_FN() {
     }
   }
 }
+
+static int array1[] = {1, 2, 3};
+static int array2[] = {};
+
+// Cvars will initially contain array1 and array2 but will be removed
+// since they are invariant
+void loop_use_global_vars(int x) {
+  for (int i = 0; i < x && array1 != array2; i++) {
+    // do something
+  }
+}
