@@ -344,15 +344,21 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
         L.(die InternalError) "Could not compute the pre of a node"
 
 
-  let rec exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing rest
-      =
+  let rec exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing
+      ~is_first_visit rest =
     match exec_wto_node ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
     | inv_map, ReachedFixPoint ->
-        inv_map
+        if is_narrowing && is_first_visit then
+          exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest
+        else inv_map
     | inv_map, DidNotReachFixPoint ->
-        let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map rest in
-        exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing
-          rest
+        exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest
+
+
+  and exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest =
+    let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map rest in
+    exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing
+      ~is_first_visit:false rest
 
 
   and exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map
@@ -369,7 +375,7 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     | Component {head; rest; next} ->
         let inv_map =
           exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~is_narrowing
-            rest
+            ~is_first_visit:true rest
         in
         exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
 

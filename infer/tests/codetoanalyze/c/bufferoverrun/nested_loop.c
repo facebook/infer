@@ -52,3 +52,29 @@ void nested_loop4_Bad() {
     }
   }
 }
+
+void nested_loop_narrowing_Good() {
+  int i = 0;
+  int a[10];
+
+  while (1) {
+    while (1) {
+      a[i] = 0;
+      for (i = 0; i < 5; i++) {
+      }
+    }
+  }
+}
+
+void nested_loop_narrowing_Bad() {
+  int i = 0;
+  int a[10];
+
+  while (1) {
+    while (1) {
+      a[i] = 0;
+      for (i = 0; i < 10; i++) {
+      }
+    }
+  }
+}
