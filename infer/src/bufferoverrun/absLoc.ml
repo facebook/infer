@@ -13,7 +13,7 @@ module F = Format
 module Allocsite = struct
   type t =
     | Unknown
-    | Param of Symb.SymbolPath.partial
+    | Symbol of Symb.SymbolPath.partial
     | Known of
         { proc_name: string
         ; node_hash: int
@@ -26,7 +26,7 @@ module Allocsite = struct
     match (as1, as2) with
     | Unknown, _ | _, Unknown ->
         Boolean.Top
-    | Param _, Param _ ->
+    | Symbol _, Symbol _ ->
         (* parameters may alias *) Boolean.Top
     | Known {path= Some p1}, Known {path= Some p2} ->
         Boolean.of_bool (Symb.SymbolPath.equal_partial p1 p2)
@@ -34,14 +34,14 @@ module Allocsite = struct
         Boolean.False
     | Known {path= None}, Known {path= None} ->
         Boolean.of_bool ([%compare.equal: t] as1 as2)
-    | Known _, Param _ | Param _, Known _ ->
+    | Known _, Symbol _ | Symbol _, Known _ ->
         Boolean.False
 
 
   let pp_paren ~paren fmt = function
     | Unknown ->
         F.fprintf fmt "Unknown"
-    | Param path ->
+    | Symbol path ->
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
     | Known {path= Some path} when Config.bo_debug < 1 ->
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
@@ -53,7 +53,7 @@ module Allocsite = struct
 
   let pp = pp_paren ~paren:false
 
-  let is_pretty = function Param _ | Known {path= Some _} -> true | _ -> false
+  let is_pretty = function Symbol _ | Known {path= Some _} -> true | _ -> false
 
   let to_string x = F.asprintf "%a" pp x
 
@@ -68,11 +68,11 @@ module Allocsite = struct
     Known {proc_name= Typ.Procname.to_string proc_name; node_hash; inst_num; dimension; path}
 
 
-  let make_param path = Param path
+  let make_symbol path = Symbol path
 
   let unknown = Unknown
 
-  let get_path = function Unknown -> None | Param path -> Some path | Known {path} -> path
+  let get_path = function Unknown -> None | Symbol path -> Some path | Known {path} -> path
 end
 
 module Loc = struct
@@ -98,7 +98,7 @@ module Loc = struct
         else F.pp_print_string fmt s
     | Allocsite a ->
         Allocsite.pp_paren ~paren fmt a
-    | Field (Allocsite (Allocsite.Param (SP.Deref (SP.Deref_CPointer, p))), f)
+    | Field (Allocsite (Allocsite.Symbol (SP.Deref (SP.Deref_CPointer, p))), f)
     | Field (Allocsite (Allocsite.Known {path= Some (SP.Deref (SP.Deref_CPointer, p))}), f) ->
         F.fprintf fmt "%a->%s" (SP.pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string f)
     | Field (l, f) ->

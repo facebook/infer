@@ -153,7 +153,7 @@ module Exec = struct
       )
     in
     let deref_path = Itv.SymbolPath.deref ~deref_kind path in
-    let allocsite = Allocsite.make_param deref_path in
+    let allocsite = Allocsite.make_symbol deref_path in
     let mem =
       let arr =
         let traces = Trace.(Set.singleton location (Parameter loc)) in
@@ -180,7 +180,7 @@ module Exec = struct
       -> Dom.Mem.t
       -> Dom.Mem.t =
    fun ~decl_sym_val pname path tenv location ~depth loc typ mem ->
-    let allocsite = Allocsite.make_param path in
+    let allocsite = Allocsite.make_symbol path in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
