@@ -86,6 +86,15 @@ module StdVector = struct
     AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void [])
 
 
+  let reallocate_internal_array vector vector_f location astate =
+    let array = to_internal_array vector in
+    (* all elements should be invalidated *)
+    let array_elements = deref_internal_array vector in
+    let invalidation = PulseInvalidation.StdVector (vector_f, vector, location) in
+    PulseDomain.invalidate invalidation location array_elements astate
+    >>= PulseDomain.havoc location array
+
+
   let at : model =
    fun location ~ret ~actuals astate ->
     match actuals with
@@ -100,7 +109,8 @@ module StdVector = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        PulseDomain.StdVector.mark_reserved location vector astate
+        reallocate_internal_array vector Reserve location astate
+        >>= PulseDomain.StdVector.mark_reserved location vector
     | _ ->
         Ok astate
 
@@ -117,12 +127,7 @@ module StdVector = struct
           Ok astate
         else
           (* simulate a re-allocation of the underlying array every time an element is added *)
-          let array = to_internal_array vector in
-          (* all elements should be invalidated *)
-          let array_elements = deref_internal_array vector in
-          let invalidation = PulseInvalidation.StdVectorPushBack (vector, location) in
-          PulseDomain.invalidate invalidation location array_elements astate
-          >>= PulseDomain.havoc location array
+          reallocate_internal_array vector PushBack location astate
     | _ ->
         Ok astate
 end
