@@ -22,8 +22,7 @@ module Exec = struct
     Dom.Mem.find_set size_powloc mem
 
 
-  let load_val id val_ mem =
-    let locs = val_ |> Dom.Val.get_all_locs in
+  let load_locs id locs mem =
     let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     if not v.represents_multiple_values then
@@ -34,6 +33,8 @@ module Exec = struct
           mem
     else mem
 
+
+  let load_val id v mem = load_locs id (Dom.Val.get_all_locs v) mem
 
   type decl_local =
        Typ.Procname.t

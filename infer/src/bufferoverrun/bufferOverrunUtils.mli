@@ -14,6 +14,8 @@ module PO = BufferOverrunProofObligations
 module Exec : sig
   val get_alist_size : Dom.Val.t -> Dom.Mem.t -> Dom.Val.t
 
+  val load_locs : Ident.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
+
   val load_val : Ident.t -> Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
 
   type decl_local =

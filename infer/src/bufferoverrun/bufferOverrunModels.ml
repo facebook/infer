@@ -268,15 +268,11 @@ let set_array_length array length_exp =
 
 
 module Split = struct
-  let std_vector integer_type_widths ~adds_at_least_one (vector_exp, vector_typ) location mem =
+  let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
     let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
     let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
-    let vector_size_locs =
-      Sem.eval integer_type_widths vector_exp mem
-      |> Dom.Val.get_all_locs
-      |> PowLoc.append_field ~fn:size_field
-    in
+    let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
     let f_trace _ traces = Trace.(Set.add_elem location Through) traces in
     Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
 end
@@ -284,8 +280,8 @@ end
 module Boost = struct
   module Split = struct
     let std_vector vector_arg =
-      let exec {location; integer_type_widths} ~ret:_ mem =
-        Split.std_vector integer_type_widths ~adds_at_least_one:true vector_arg location mem
+      let exec {location} ~ret:_ mem =
+        Split.std_vector ~adds_at_least_one:true vector_arg location mem
       in
       {exec; check= no_check}
   end
@@ -303,7 +299,7 @@ module Folly = struct
               (* default: ignore_empty is false *)
               true
         in
-        Split.std_vector integer_type_widths ~adds_at_least_one vector_arg location mem
+        Split.std_vector ~adds_at_least_one vector_arg location mem
       in
       {exec; check= no_check}
   end

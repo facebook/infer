@@ -219,11 +219,10 @@ module TransferFunctions = struct
     |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
 
 
-  let instantiate_param tenv integer_type_widths pdesc params callee_exit_mem eval_sym_trace
-      location mem =
+  let instantiate_param tenv pdesc params callee_exit_mem eval_sym_trace location mem =
     let formals = Dom.get_formals pdesc in
-    let actuals = List.map ~f:(fun (a, _) -> Sem.eval integer_type_widths a mem) params in
-    let f mem formal actual =
+    let actuals_locs = List.map ~f:(fun (a, _) -> Sem.eval_locs a mem) params in
+    let f mem formal actual_locs =
       match (snd formal).Typ.desc with
       | Typ.Tptr (typ, _) -> (
         match typ.Typ.desc with
@@ -237,7 +236,7 @@ module TransferFunctions = struct
               let instantiate_fld mem (fn, _, _) =
                 let formal_fields = PowLoc.append_field formal_locs ~fn in
                 let v = Dom.Mem.find_set formal_fields callee_exit_mem in
-                let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) ~fn in
+                let actual_fields = PowLoc.append_field actual_locs ~fn in
                 Dom.Val.subst v eval_sym_trace location
                 |> Fn.flip (Dom.Mem.strong_update actual_fields) mem
               in
@@ -250,13 +249,12 @@ module TransferFunctions = struct
               |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
             in
             let v = Dom.Mem.find_set formal_locs callee_exit_mem in
-            let actual_locs = Dom.Val.get_all_locs actual in
             Dom.Val.subst v eval_sym_trace location
             |> Fn.flip (Dom.Mem.strong_update actual_locs) mem )
       | _ ->
           mem
     in
-    try List.fold2_exn formals actuals ~init:mem ~f with Invalid_argument _ -> mem
+    try List.fold2_exn formals actuals_locs ~init:mem ~f with Invalid_argument _ -> mem
 
 
   let forget_ret_relation ret callee_pname mem =
@@ -294,8 +292,7 @@ module TransferFunctions = struct
     in
     let caller_mem =
       instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace caller_mem location
-      |> instantiate_param tenv integer_type_widths callee_pdesc params callee_exit_mem
-           eval_sym_trace location
+      |> instantiate_param tenv callee_pdesc params callee_exit_mem eval_sym_trace location
       |> forget_ret_relation ret callee_pname
     in
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
@@ -329,9 +326,9 @@ module TransferFunctions = struct
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
     | Load (id, exp, _, _) ->
-        BoUtils.Exec.load_val id (Sem.eval integer_type_widths exp mem) mem
+        BoUtils.Exec.load_locs id (Sem.eval_locs exp mem) mem
     | Store (exp1, _, exp2, location) ->
-        let locs = Sem.eval integer_type_widths exp1 mem |> Dom.Val.get_all_locs in
+        let locs = Sem.eval_locs exp1 mem in
         let v = Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location in
         let mem =
           let sym_exps =

@@ -89,6 +89,8 @@ codetoanalyze/c/bufferoverrun/get_field.c, call_get_field_cond_Bad, 4, BUFFER_OV
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_Good_FP, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_variable_bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
+codetoanalyze/c/bufferoverrun/global.c, copyfilter_Good_FP, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
+codetoanalyze/c/bufferoverrun/global.c, copyfilter_Good_FP, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/global.c, use_global_const_ten_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/c/bufferoverrun/goto_loop.c, goto_infinite_loop, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

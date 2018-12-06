@@ -266,6 +266,31 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Va
       Val.lor_sem v1 v2
 
 
+(**
+  [eval_locs exp mem] is like [eval_locs exp mem |> Val.get_all_locs]
+  but takes some shortcuts to avoid computing useless and/or problematic intermediate values
+*)
+let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
+ fun exp mem ->
+  match exp with
+  | Var id ->
+      Mem.find_stack (Var.of_id id |> Loc.of_var) mem |> Val.get_all_locs
+  | Lvar pvar ->
+      let loc = Loc.of_pvar pvar in
+      if Mem.is_stack_loc loc mem then Mem.find loc mem |> Val.get_all_locs
+      else PowLoc.singleton loc
+  | BinOp ((Binop.MinusPI | Binop.PlusPI), e, _) | Cast (_, e) ->
+      eval_locs e mem
+  | BinOp _ | Closure _ | Const _ | Exn _ | Sizeof _ | UnOp _ ->
+      PowLoc.empty
+  | Lfield (e, fn, _) ->
+      eval_locs e mem |> PowLoc.append_field ~fn
+  | Lindex (((Lfield _ | Lindex _) as e), _) ->
+      Mem.find_set (eval_locs e mem) mem |> Val.get_all_locs
+  | Lindex (e, _) ->
+      eval_locs e mem
+
+
 (* It returns the array value of the input expression.  For example,
    when "x" is a program variable, (eval_arr "x") returns array blocks
    the "x" is pointing to, on the other hand, (eval "x") returns the
@@ -287,10 +312,10 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
       let v = eval_arr integer_type_widths e mem in
       set_array_stride integer_type_widths t v
   | Exp.Lfield (e, fn, _) ->
-      let locs = eval integer_type_widths e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
+      let locs = eval_locs e mem |> PowLoc.append_field ~fn in
       Mem.find_set locs mem
   | Exp.Lindex (e, _) ->
-      let locs = eval integer_type_widths e mem |> Val.get_all_locs in
+      let locs = eval_locs e mem in
       Mem.find_set locs mem
   | Exp.Const _ | Exp.UnOp _ | Exp.Sizeof _ | Exp.Exn _ | Exp.Closure _ ->
       Val.bot
