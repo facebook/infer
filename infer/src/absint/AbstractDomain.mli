@@ -59,6 +59,8 @@ module type WithTop = sig
   include S
 
   val top : t
+
+  val is_top : t -> bool
 end
 
 (** Lift a pre-domain to a domain *)
@@ -106,7 +108,7 @@ module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) :
 module type InvertedSetS = sig
   include PrettyPrintable.PPSet
 
-  include S with type t := t
+  include WithTop with type t := t
 end
 
 (** Lift a set to a powerset domain ordered by superset, so the join operator is intersection *)
@@ -133,7 +135,7 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
 module type InvertedMapS = sig
   include PrettyPrintable.PPMonoMap
 
-  include S with type t := t
+  include WithTop with type t := t
 end
 
 (** Map domain ordered by intersection over the set of bindings, so the top element is the empty
@@ -166,11 +168,8 @@ end
 module CountDomain (MaxCount : MaxCount) : sig
   include WithBottom with type t = private int
 
-  val top : t [@@warning "-32"]
-  (** maximum value *)
-
-  val is_top : t -> bool [@@warning "-32"]
-  (** return true if this is the maximum value *)
+  (** top is maximum value *)
+  include WithTop with type t := t
 
   val increment : t -> t
   (** bump the count by one if it is less than the max *)
@@ -187,14 +186,10 @@ end
     longest common prefix (so [c;b;a] join [f;g;b;c;a] = [a]), so the top element is the empty
     stack. *)
 module StackDomain (Element : PrettyPrintable.PrintableOrderedType) : sig
-  include S with type t = Element.t list
+  include WithTop with type t = Element.t list
 
   val push : Element.t -> t -> t
 
   val pop : t -> t
-  (** throws exception on empty *)
-
-  val empty : t
-
-  val is_empty : t -> bool
+  (** throws exception on empty/top *)
 end

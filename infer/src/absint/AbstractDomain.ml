@@ -52,6 +52,8 @@ module type WithTop = sig
   include S
 
   val top : t
+
+  val is_top : t -> bool
 end
 
 module BottomLifted (Domain : S) = struct
@@ -108,6 +110,8 @@ module TopLifted (Domain : S) = struct
   type t = Domain.t top_lifted
 
   let top = Top
+
+  let is_top = function Top -> true | _ -> false
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -181,6 +185,8 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
 
   let top = Top
 
+  let is_top = function Top -> true | _ -> false
+
   let ( <= ) ~lhs ~rhs =
     phys_equal lhs rhs
     ||
@@ -241,11 +247,15 @@ module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) =
 module type InvertedSetS = sig
   include PrettyPrintable.PPSet
 
-  include S with type t := t
+  include WithTop with type t := t
 end
 
 module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   include PrettyPrintable.MakePPSet (Element)
+
+  let top = empty
+
+  let is_top = is_empty
 
   let ( <= ) ~lhs ~rhs = if phys_equal lhs rhs then true else subset rhs lhs
 
@@ -318,11 +328,15 @@ end
 module type InvertedMapS = sig
   include PrettyPrintable.PPMonoMap
 
-  include S with type t := t
+  include WithTop with type t := t
 end
 
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
   include PrettyPrintable.MakePPMonoMap (Key) (ValueDomain)
+
+  let top = empty
+
+  let is_top = is_empty
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -425,9 +439,9 @@ module StackDomain (Element : PrettyPrintable.PrintableOrderedType) = struct
 
   let pop = List.tl_exn
 
-  let is_empty = List.is_empty
+  let is_top = List.is_empty
 
-  let empty = []
+  let top = []
 
   let pp fmt x = Pp.semicolon_seq Element.pp fmt x
 

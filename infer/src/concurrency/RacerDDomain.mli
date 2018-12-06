@@ -101,8 +101,7 @@ module AccessSnapshot : sig
   module OwnershipPrecondition : sig
     type t =
       | Conjunction of IntSet.t
-          (** Conjunction of "formal index must be owned" predicates.
-                                         true if empty *)
+          (** Conjunction of "formal index must be owned" predicates. true if empty *)
       | False
 
     include PrettyPrintable.PrintableOrderedType with type t := t
@@ -135,7 +134,7 @@ end
 
 (** map of access metadata |-> set of accesses. the map should hold all accesses to a
     possibly-unowned access path *)
-module AccessDomain : module type of AbstractDomain.FiniteSet (AccessSnapshot)
+module AccessDomain : AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
 
 (** Powerset domain on the formal indexes in OwnedIf with a distinguished bottom element (Owned)
     and top element (Unowned) *)
@@ -156,7 +155,8 @@ module OwnershipAbstractValue : sig
 end
 
 module OwnershipDomain : sig
-  include module type of AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
+  include
+    AbstractDomain.MapS with type key = AccessPath.t with type value = OwnershipAbstractValue.t
 
   val get_owned : AccessPath.t -> t -> OwnershipAbstractValue.t
 
@@ -186,10 +186,11 @@ module Attribute : sig
   include PrettyPrintable.PrintableOrderedType with type t := t
 end
 
-module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute)
+module AttributeSetDomain : AbstractDomain.InvertedSetS with type elt = Attribute.t
 
 module AttributeMapDomain : sig
-  include module type of AbstractDomain.InvertedMap (AccessPath) (AttributeSetDomain)
+  include
+    AbstractDomain.InvertedMapS with type key = AccessPath.t with type value = AttributeSetDomain.t
 
   val add : AccessPath.t -> AttributeSetDomain.t -> t -> t
 
