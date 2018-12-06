@@ -588,7 +588,6 @@ and analyzer =
 and ( annotation_reachability
     , biabduction
     , bufferoverrun
-    , check_nullable
     , class_loads
     , cost
     , crashcontext
@@ -599,6 +598,7 @@ and ( annotation_reachability
     , litho
     , liveness
     , loop_hoisting
+    , nullsafe
     , ownership
     , printf_args
     , pulse
@@ -630,9 +630,6 @@ and ( annotation_reachability
     mk_checker ~long:"biabduction" ~default:true
       "the separation logic based bi-abduction analysis using the checkers framework"
   and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
-  and check_nullable =
-    mk_checker ~long:"check-nullable"
-      "checks that values annotated with nullable are always checked for null before dereference"
   and class_loads = mk_checker ~long:"class-loads" ~default:false "Java class loading analysis"
   and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
   and crashcontext =
@@ -652,6 +649,9 @@ and ( annotation_reachability
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and loop_hoisting = mk_checker ~long:"loop-hoisting" ~default:false "checker for loop-hoisting"
+  and nullsafe =
+    mk_checker ~long:"nullsafe" ~deprecated:["-check-nullable"]
+      "[EXPERIMENTAL] Nullable type checker (incomplete: use --eradicate for now)"
   and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
     mk_checker ~long:"printf-args" ~default:true
@@ -715,7 +715,6 @@ and ( annotation_reachability
   ( annotation_reachability
   , biabduction
   , bufferoverrun
-  , check_nullable
   , class_loads
   , cost
   , crashcontext
@@ -726,6 +725,7 @@ and ( annotation_reachability
   , litho
   , liveness
   , loop_hoisting
+  , nullsafe
   , ownership
   , printf_args
   , pulse
@@ -2531,7 +2531,7 @@ and capture_blacklist = !capture_blacklist
 
 and changed_files_index = !changed_files_index
 
-and check_nullable = !check_nullable
+and nullsafe = !nullsafe
 
 and check_version = !check_version
 

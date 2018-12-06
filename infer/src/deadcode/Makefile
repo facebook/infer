@@ -45,8 +45,8 @@ depend:
 	cd .. && \
 	ocamldep -native \
 	  -I IR -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers \
-	  -I clang -I concurrency -I nullsafe -I facebook -I integration -I istd \
-	  -I java -I labs -I quandary -I unit -I unit/clang -I deadcode \
+	  -I clang -I concurrency -I facebook -I integration -I istd -I java \
+	  -I labs -I nullsafe -I quandary -I unit -I unit/clang -I deadcode \
 	   $(ml_src_files) > deadcode/.depend
 
 # circular dependency... not sure how to fix properly

@@ -34,7 +34,7 @@ let all_checkers =
     ; active= Config.annotation_reachability
     ; callbacks= [(Procedure AnnotationReachability.checker, Language.Java)] }
   ; { name= "nullable checks"
-    ; active= Config.check_nullable
+    ; active= Config.nullsafe
     ; callbacks=
         [ (Procedure NullabilityCheck.checker, Language.Clang)
         ; (Procedure NullabilityCheck.checker, Language.Java) ] }

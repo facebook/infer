@@ -134,15 +134,6 @@ OPTIONS
            reactive analysis should start. Source files should be specified
            relative to project root or be absolute           See also infer-analyze(1) and infer-diff(1).
 
-       --check-nullable
-           Activates: checks that values annotated with nullable are always
-           checked for null before dereference (Conversely:
-           --no-check-nullable)           See also infer-analyze(1).
-
-       --check-nullable-only
-           Activates: Enable --check-nullable and disable all other checkers
-           (Conversely: --no-check-nullable-only)           See also infer-analyze(1).
-
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou format       
     See also infer-capture(1).
@@ -570,6 +561,14 @@ OPTIONS
     - cpp from C++ code
            (default: cf)
            See also infer-analyze(1).
+
+       --nullsafe
+           Activates: [EXPERIMENTAL] Nullable type checker (incomplete: use
+           --eradicate for now) (Conversely: --no-nullsafe)           See also infer-analyze(1).
+
+       --nullsafe-only
+           Activates: Enable --nullsafe and disable all other checkers
+           (Conversely: --no-nullsafe-only)           See also infer-analyze(1).
 
        --only-show
            Activates: Show the list of reports and exit (Conversely:

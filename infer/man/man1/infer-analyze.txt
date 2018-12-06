@@ -46,15 +46,6 @@ OPTIONS
            reactive analysis should start. Source files should be specified
            relative to project root or be absolute
 
-       --check-nullable
-           Activates: checks that values annotated with nullable are always
-           checked for null before dereference (Conversely:
-           --no-check-nullable)
-
-       --check-nullable-only
-           Activates: Enable --check-nullable and disable all other checkers
-           (Conversely: --no-check-nullable-only)
-
        --class-loads
            Activates: Java class loading analysis (Conversely:
            --no-class-loads)
@@ -193,6 +184,14 @@ OPTIONS
        --loop-hoisting-only
            Activates: Enable --loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)
+
+       --nullsafe
+           Activates: [EXPERIMENTAL] Nullable type checker (incomplete: use
+           --eradicate for now) (Conversely: --no-nullsafe)
+
+       --nullsafe-only
+           Activates: Enable --nullsafe and disable all other checkers
+           (Conversely: --no-nullsafe-only)
 
        --no-ownership
            Deactivates: the detection of C++ lifetime bugs (Conversely:

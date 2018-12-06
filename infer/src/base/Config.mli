@@ -268,7 +268,7 @@ val captured_dir : string
 
 val changed_files_index : string option
 
-val check_nullable : bool
+val nullsafe : bool
 
 val check_version : string option
 

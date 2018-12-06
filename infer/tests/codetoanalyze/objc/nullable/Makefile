@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS =  --debug-exceptions --no-default-checkers --suggest-nullable --check-nullable --project-root $(TESTS_DIR)
+INFER_OPTIONS =  --debug-exceptions --no-default-checkers --suggest-nullable --nullsafe --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.m)
