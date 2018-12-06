@@ -317,6 +317,8 @@ val untrusted_intent_creation : t
 
 val untrusted_url_risk : t
 
+val untrusted_environment_change_risk : t
+
 val untrusted_variable_length_array : t
 
 val user_controlled_sql_risk : t

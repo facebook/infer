@@ -195,6 +195,7 @@ module SinkKind = struct
   type t =
     | BufferAccess  (** read/write an array *)
     | CreateFile  (** create/open a file *)
+    | EnvironmentChange  (** change environment variable or gflag *)
     | HeapAllocation  (** heap memory allocation *)
     | ShellExec  (** shell exec function *)
     | SQLInjection  (** unescaped query to a SQL database (could be read or write) *)
@@ -212,6 +213,8 @@ module SinkKind = struct
         BufferAccess
     | "CreateFile" ->
         CreateFile
+    | "EnvironmentChange" ->
+        EnvironmentChange
     | "HeapAllocation" ->
         HeapAllocation
     | "ShellExec" ->
@@ -304,6 +307,9 @@ module SinkKind = struct
       | _ ->
           get_external_sink pname actuals )
     | Typ.Procname.C _
+      when String.is_substring ~substring:"SetCommandLineOption" (Typ.Procname.to_string pname) ->
+        taint_nth 1 EnvironmentChange actuals
+    | Typ.Procname.C _
       when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access ->
         taint_all BufferAccess actuals
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length ->
@@ -341,6 +347,8 @@ module SinkKind = struct
           taint_nth 1 CreateFile actuals
       | "popen" ->
           taint_nth 0 ShellExec actuals
+      | "putenv" ->
+          taint_nth 0 EnvironmentChange actuals
       | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode ->
           taint_all HeapAllocation actuals
       | "rename" ->
@@ -367,6 +375,8 @@ module SinkKind = struct
           "BufferAccess"
       | CreateFile ->
           "CreateFile"
+      | EnvironmentChange ->
+          "EnvironmentChange"
       | HeapAllocation ->
           "HeapAllocation"
       | ShellExec ->
@@ -467,8 +477,6 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), URL ->
-        None
     | ( (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ))
       , SQLInjection ) ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
@@ -480,6 +488,9 @@ include Trace.Make (struct
     | (Endpoint _ | UserControlledEndpoint _), (SQLRead | SQLWrite) ->
         (* no injection risk, but still user-controlled *)
         Some IssueType.user_controlled_sql_risk
+    | (Endpoint _ | UserControlledEndpoint _), EnvironmentChange ->
+        (* user-controlled environment mutation *)
+        Some IssueType.untrusted_environment_change_risk
     | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec
       ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
@@ -529,7 +540,8 @@ include Trace.Make (struct
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), (CreateFile | SQLRead | SQLWrite) ->
+    | ( (CommandLineFlag _ | EnvironmentVariable | ReadFile)
+      , (CreateFile | EnvironmentChange | SQLRead | SQLWrite | URL) ) ->
         None
     | Other, _ ->
         (* Other matches everything *)

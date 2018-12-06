@@ -23,6 +23,12 @@ struct request {
   int i;
 };
 
+namespace gflags {
+
+// Mock gflags SetCommandLineOption.
+void SetCommandLineOption(const char* name, const char* value) {}
+} // namespace gflags
+
 namespace facebook {
 namespace fb303 {
 namespace cpp2 {
@@ -51,6 +57,8 @@ class FacebookServiceSvIf {
   void service_this_ok();
   void service_return_param_ok(std::string& _return);
   void service3_endpoint_bad(std::string formal);
+  void service3_endpoint_envchange_putenv_bad(std::string formal);
+  void service3_endpoint_envchange_setoption_bad(std::string formal);
 
  private:
   void FP_private_not_endpoint_ok(std::string formal) {
@@ -212,6 +220,16 @@ class Service3 : Service1 {
   void service3_endpoint_bad(std::string formal) {
     // this should report REMOTE_CODE_EXECUTION_RISK
     system(formal.c_str());
+  }
+
+  void service3_endpoint_envchange_putenv_bad(std::string formal) {
+    // this should report UNTRUSTED_ENVIRONMENT_CHANGE_RISK
+    putenv(const_cast<char*>(formal.c_str()));
+  }
+
+  void service3_endpoint_envchange_setoption_bad(std::string formal) {
+    // this should report UNTRUSTED_ENVIRONMENT_CHANGE_RISK
+    gflags::SetCommandLineOption("teest", formal.c_str());
   }
 };
 

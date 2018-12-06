@@ -407,6 +407,8 @@ let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
 
 let untrusted_deserialization_risk = from_string "UNTRUSTED_DESERIALIZATION_RISK"
 
+let untrusted_environment_change_risk = from_string "UNTRUSTED_ENVIRONMENT_CHANGE_RISK"
+
 let untrusted_file = from_string "UNTRUSTED_FILE"
 
 let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
