@@ -186,7 +186,8 @@ public class ArrayListTest {
     }
   }
 
-  // Control vars include element which is in [-oo,+oo]. Hence, we get T
+  // Control vars include element which is some intValue and list
+  // length. Hence, we get quadratic bound.
   // Simplified version of real code https://fburl.com/a3gge1b7
   public boolean iterate_over_arraylist_shortcut_FP(ArrayList<Integer> list) {
     for (Integer element : list) {

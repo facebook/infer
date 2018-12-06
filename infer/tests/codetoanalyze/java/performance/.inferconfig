@@ -1,0 +1,11 @@
+{
+   "external-java-packages": [
+    "android.",
+    "com.android.",
+    "com.fasterxml",
+    "com.google.",
+    "com.sun.",
+    "io.netty.",
+    "java.",
+    "org."
+  ]}

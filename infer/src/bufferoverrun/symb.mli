@@ -21,6 +21,7 @@ module SymbolPath : sig
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
     | Field of Typ.Fieldname.t * partial
+    | Callsite of CallSite.t
   [@@deriving compare]
 
   type t = private Normal of partial | Offset of partial | Length of partial
@@ -32,6 +33,8 @@ module SymbolPath : sig
   val pp_partial_paren : paren:bool -> F.formatter -> partial -> unit
 
   val of_pvar : Pvar.t -> partial
+
+  val of_callsite : CallSite.t -> partial
 
   val deref : deref_kind:deref_kind -> partial -> partial
 

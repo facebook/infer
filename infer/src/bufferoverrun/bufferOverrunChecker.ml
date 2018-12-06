@@ -265,6 +265,14 @@ module TransferFunctions = struct
     Dom.Mem.forget_locs (PowLoc.add ret_loc (PowLoc.singleton ret_var)) mem
 
 
+  let is_external pname =
+    match pname with
+    | Typ.Procname.Java java_pname ->
+        Typ.Procname.Java.is_external java_pname
+    | _ ->
+        false
+
+
   let instantiate_mem :
          Tenv.t
       -> Typ.IntegerWidths.t
@@ -359,7 +367,7 @@ module TransferFunctions = struct
         mem
     | Prune (exp, _, _, _) ->
         Sem.Prune.prune integer_type_widths exp mem
-    | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
+    | Call (((id, ret_typ) as ret), Const (Cfun callee_pname), params, location, _) -> (
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.exec} ->
@@ -383,7 +391,15 @@ module TransferFunctions = struct
                 Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
           | None ->
               L.d_printfln "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
-              Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
+              if is_external callee_pname then (
+                let node_hash = CFG.Node.hash node in
+                let path = Itv.SymbolPath.of_callsite (CallSite.make callee_pname location) in
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                Init.declare_symbolic_val callee_pname symbol_table path tenv integer_type_widths
+                  ~node_hash location (Loc.of_id id) ret_typ ~new_sym_num:(Counter.make node_hash)
+                  mem )
+              else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         let () = L.d_printfln "/!\\ Call to non-const function %a" Exp.pp fun_exp in
