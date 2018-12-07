@@ -654,7 +654,7 @@ and ( annotation_reachability
       "[EXPERIMENTAL] Nullable type checker (incomplete: use --eradicate for now)"
   and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
-    mk_checker ~long:"printf-args" ~default:true
+    mk_checker ~long:"printf-args" ~default:false
       "the detection of mismatch between the Java printf format strings and the argument types \
        For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
        \"world\")`"

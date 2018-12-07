@@ -249,8 +249,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --annotation-reachability,
            --biabduction, --fragment-retains-view, --immutable-cast,
-           --linters, --liveness, --ownership, --printf-args, --racerd,
-           --siof, --uninit (Conversely: --default-checkers)           See also infer-analyze(1).
+           --linters, --liveness, --ownership, --racerd, --siof, --uninit
+           (Conversely: --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -611,11 +611,11 @@ OPTIONS
            --no-print-logs)           See also infer-analyze(1), infer-capture(1), infer-report(1), and
            infer-run(1).
 
-       --no-printf-args
-           Deactivates: the detection of mismatch between the Java printf
+       --printf-args
+           Activates: the detection of mismatch between the Java printf
            format strings and the argument types For, example, this checker
            will warn about the type error in `printf("Hello %d", "world")`
-           (Conversely: --printf-args)           See also infer-analyze(1).
+           (Conversely: --no-printf-args)           See also infer-analyze(1).
 
        --printf-args-only
            Activates: Enable --printf-args and disable all other checkers
