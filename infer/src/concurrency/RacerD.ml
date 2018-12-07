@@ -413,20 +413,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   ThreadsDomain.AnyThread
             in
             match get_lock_effect callee_pname actuals with
-            | Lock _ ->
+            | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
                 { astate with
                   locks= LocksDomain.acquire_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
-            | Unlock _ ->
+            | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
                 { astate with
                   locks= LocksDomain.release_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
-            | LockedIfTrue _ ->
+            | LockedIfTrue _ | GuardLockedIfTrue _ ->
                 let attribute_map =
                   AttributeMapDomain.add_attribute ret_access_path (Choice Choice.LockHeld)
                     astate.attribute_map
                 in
                 {astate with attribute_map; threads= update_for_lock_use astate.threads}
+            | GuardConstruct {acquire_now= false} ->
+                astate
             | NoEffect -> (
                 let summary_opt = get_summary pdesc callee_pname actuals loc tenv astate in
                 let callee_pdesc = Ondemand.get_proc_desc callee_pname in

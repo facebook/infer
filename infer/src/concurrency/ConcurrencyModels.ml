@@ -8,11 +8,17 @@
 open! IStd
 module F = Format
 module MF = MarkupFormatter
+module L = Logging
 
 type lock_effect =
   | Lock of HilExp.t list
   | Unlock of HilExp.t list
   | LockedIfTrue of HilExp.t list
+  | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
+  | GuardLock of HilExp.t
+  | GuardLockedIfTrue of HilExp.t
+  | GuardUnlock of HilExp.t
+  | GuardDestroy of HilExp.t
   | NoEffect
 
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
@@ -77,96 +83,142 @@ end = struct
     ; {shd with cls= "folly::SharedMutex"}
     ; {shd with cls= "folly::SharedMutexImpl"}
     ; {def with cls= "folly::SpinLock"}
-    ; {def with cls= "std::shared_lock"}
     ; {def with cls= "std::mutex"}
-    ; shd
-    ; {def with cls= "std::unique_lock"; tlk= "owns_lock" :: def.tlk} ]
+    ; shd ]
 
 
-  let mk_model_matcher ~f =
-    let lock_methods =
-      List.concat_map lock_models ~f:(fun mdl ->
-          List.map (f mdl) ~f:(fun mtd -> mdl.cls ^ "::" ^ mtd) )
-    in
-    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names lock_methods in
+  let mk_matcher methods =
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names methods in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
 
 
-  let is_lock = mk_model_matcher ~f:(fun mdl -> mdl.lck)
+  let is_lock, is_unlock, is_trylock, is_std_lock =
+    (* TODO std::try_lock *)
+    let mk_model_matcher ~f =
+      let lock_methods =
+        List.concat_map lock_models ~f:(fun mdl ->
+            List.map (f mdl) ~f:(fun mtd -> mdl.cls ^ "::" ^ mtd) )
+      in
+      mk_matcher lock_methods
+    in
+    ( mk_model_matcher ~f:(fun mdl -> mdl.lck)
+    , mk_model_matcher ~f:(fun mdl -> mdl.unl)
+    , mk_model_matcher ~f:(fun mdl -> mdl.tlk)
+    , mk_matcher ["std::lock"] )
 
-  let is_unlock = mk_model_matcher ~f:(fun mdl -> mdl.unl)
-
-  let is_trylock = mk_model_matcher ~f:(fun mdl -> mdl.tlk)
 
   let lock_types_matcher =
     let class_names = List.map lock_models ~f:(fun mdl -> mdl.cls) in
     QualifiedCppName.Match.of_fuzzy_qual_names class_names
 
 
-  (* TODO std::scoped_lock *)
-
+  (** C++ guard classes used for scope-based lock management. 
+    NB we pretend all classes below implement the mutex interface even though only 
+    [shared_lock] and [unique_lock] do, for simplicity.  The comments summarise which 
+    methods are implemented. *)
   let guards =
-    [ "apache::thrift::concurrency::Guard"
-    ; "apache::thrift::concurrency::RWGuard"
-    ; "folly::SharedMutex::ReadHolder"
-    ; "folly::SharedMutex::WriteHolder"
-    ; "folly::LockedPtr"
-    ; "folly::SpinLockGuard"
-    ; "std::lock_guard"
-    ; "std::shared_lock"
-    ; "std::unique_lock" ]
+    (* TODO std::scoped_lock *)
+    [ (* no lock/unlock *)
+      "apache::thrift::concurrency::Guard"
+    ; (* no lock/unlock *)
+      "apache::thrift::concurrency::RWGuard"
+    ; (* only unlock *)
+      "folly::SharedMutex::ReadHolder"
+    ; (* only unlock *)
+      "folly::SharedMutex::WriteHolder"
+    ; (* read/write locks under operator() etc *)
+      "folly::LockedPtr"
+    ; (* no lock/unlock *)
+      "folly::SpinLockGuard"
+    ; (* no lock/unlock *)
+      "std::lock_guard"
+    ; (* everything *)
+      "std::shared_lock"
+    ; (* everything *)
+      "std::unique_lock" ]
 
 
-  let get_guard_constructor, get_guard_destructor =
+  let ( get_guard_constructor
+      , get_guard_destructor
+      , get_guard_lock
+      , get_guard_unlock
+      , get_guard_trylock ) =
     let get_class_and_qual_name guard =
       let qual_name = QualifiedCppName.of_qual_string guard in
       let class_name, _ = Option.value_exn (QualifiedCppName.extract_last qual_name) in
       (class_name, qual_name)
     in
-    ( (fun guard ->
-        let class_name, qual_name = get_class_and_qual_name guard in
-        let qual_constructor = QualifiedCppName.append_qualifier qual_name ~qual:class_name in
-        QualifiedCppName.to_qual_string qual_constructor )
-    , fun guard ->
-        let class_name, qual_name = get_class_and_qual_name guard in
-        let qual_destructor =
-          QualifiedCppName.append_qualifier qual_name ~qual:("~" ^ class_name)
-        in
-        QualifiedCppName.to_qual_string qual_destructor )
+    let make_with_classname ~f guard =
+      let class_name, qual_name = get_class_and_qual_name guard in
+      let qual = f class_name in
+      let qual_constructor = QualifiedCppName.append_qualifier qual_name ~qual in
+      QualifiedCppName.to_qual_string qual_constructor
+    in
+    let make_lock_unlock ~mthd guard =
+      let qual_name = QualifiedCppName.of_qual_string guard in
+      let qual_mthd = QualifiedCppName.append_qualifier qual_name ~qual:mthd in
+      QualifiedCppName.to_qual_string qual_mthd
+    in
+    let make_trylock ~mthds guard =
+      let qual_name = QualifiedCppName.of_qual_string guard in
+      List.map mthds ~f:(fun qual ->
+          QualifiedCppName.append_qualifier qual_name ~qual |> QualifiedCppName.to_qual_string )
+    in
+    ( make_with_classname ~f:(fun class_name -> class_name)
+    , make_with_classname ~f:(fun class_name -> "~" ^ class_name)
+    , make_lock_unlock ~mthd:"lock"
+    , make_lock_unlock ~mthd:"unlock"
+    , make_trylock ~mthds:["try_lock"; "owns_lock"] )
 
 
-  let is_guard_lock =
-    let constructors = List.map guards ~f:get_guard_constructor in
-    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names constructors in
-    fun pname actuals ->
-      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
-      (* Passing additional parameter allows to defer the lock *)
-      && Int.equal 2 (List.length actuals)
-
-
-  let is_guard_unlock =
-    let destructors = List.map guards ~f:get_guard_destructor in
-    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names destructors in
-    fun pname ->
-      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
-
-
-  let is_std_lock =
-    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::lock"] in
-    fun pname ->
-      QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+  let is_guard_constructor, is_guard_destructor, is_guard_unlock, is_guard_lock, is_guard_trylock =
+    let make ~f =
+      let constructors = List.map guards ~f in
+      mk_matcher constructors
+    in
+    let make_trylock ~f =
+      let methods = List.concat_map guards ~f in
+      mk_matcher methods
+    in
+    ( make ~f:get_guard_constructor
+    , make ~f:get_guard_destructor
+    , make ~f:get_guard_unlock
+    , make ~f:get_guard_lock
+    , make_trylock ~f:get_guard_trylock )
 
 
   let get_lock_effect pname actuals =
+    let log_parse_error error =
+      L.internal_error "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+        actuals
+    in
+    let guard_action ~f ~error =
+      match actuals with [guard] -> f guard | _ -> log_parse_error error ; NoEffect
+    in
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
-    let snd_arg = match actuals with _ :: x :: _ -> [x] | _ -> [] in
     if is_std_lock pname then Lock actuals
     else if is_lock pname then Lock fst_arg
-    else if is_guard_lock pname actuals then Lock snd_arg
     else if is_unlock pname then Unlock fst_arg
-    else if is_guard_unlock pname then Unlock snd_arg
     else if is_trylock pname then LockedIfTrue fst_arg
+    else if is_guard_constructor pname then (
+      match actuals with
+      | [guard; lock] ->
+          GuardConstruct {guard; lock; acquire_now= true}
+      | [guard; lock; _defer_lock] ->
+          GuardConstruct {guard; lock; acquire_now= false}
+      | _ ->
+          log_parse_error "Cannot parse guard constructor call" ;
+          NoEffect )
+    else if is_guard_lock pname then
+      guard_action ~f:(fun guard -> GuardLock guard) ~error:"Can't parse guard lock"
+    else if is_guard_unlock pname then
+      guard_action ~f:(fun guard -> GuardUnlock guard) ~error:"Can't parse guard unlock"
+    else if is_guard_destructor pname then
+      guard_action ~f:(fun guard -> GuardDestroy guard) ~error:"Can't parse guard destructor"
+    else if is_guard_trylock pname then
+      guard_action ~f:(fun guard -> GuardLockedIfTrue guard) ~error:"Can't parse guard trylock"
     else NoEffect
 end
 

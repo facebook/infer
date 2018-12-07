@@ -10,10 +10,16 @@ module F = Format
 
 (** effect of call plus Hil expressions being un/locked, if known *)
 type lock_effect =
-  | Lock of HilExp.t list
-  | Unlock of HilExp.t list
-  | LockedIfTrue of HilExp.t list
-  | NoEffect
+  | Lock of HilExp.t list  (** simultaneously acquire a list of locks *)
+  | Unlock of HilExp.t list  (** simultaneously release a list of locks *)
+  | LockedIfTrue of HilExp.t list  (** simultaneously attempt to acquire a list of locks *)
+  | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
+      (** mutex guard construction - clang only *)
+  | GuardLock of HilExp.t  (** lock underlying mutex via guard - clang only *)
+  | GuardLockedIfTrue of HilExp.t  (** lock underlying mutex if true via guard - clang only *)
+  | GuardUnlock of HilExp.t  (** unlock underlying mutex via guard - clang only *)
+  | GuardDestroy of HilExp.t  (** destroy guard and unlock underlying mutex - clang only *)
+  | NoEffect  (** function call has no lock-relevant effect *)
 
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 

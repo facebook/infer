@@ -69,12 +69,18 @@ module UIThreadDomain :
   AbstractDomain.WithBottom
   with type t = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
 
+module GuardToLockMap : AbstractDomain.WithBottom
+
 type t =
-  {lock_state: LockState.t; events: EventDomain.t; order: OrderDomain.t; ui: UIThreadDomain.t}
+  { events: EventDomain.t
+  ; guard_map: GuardToLockMap.t
+  ; lock_state: LockState.t
+  ; order: OrderDomain.t
+  ; ui: UIThreadDomain.t }
 
 include AbstractDomain.WithBottom with type t := t
 
-val acquire : t -> Location.t -> Lock.t list -> t
+val acquire : recursive_locks:bool -> t -> Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
 
 val release : t -> Lock.t list -> t
@@ -88,8 +94,21 @@ val set_on_ui_thread : t -> Location.t -> string -> t
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
+val add_guard :
+  t -> HilExp.t -> Lock.t -> acquire_now:bool -> recursive_locks:bool -> Location.t -> t
+(** Install a mapping from the guard expression to the lock provided, and optionally lock it. *)
+
+val lock_guard : recursive_locks:bool -> t -> HilExp.t -> Location.t -> t
+(** Acquire the lock the guard was constructed with. *)
+
+val remove_guard : t -> HilExp.t -> t
+(** Destroy the guard and release its lock. *)
+
+val unlock_guard : t -> HilExp.t -> t
+(** Release the lock the guard was constructed with. *)
+
 type summary = t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : t -> Typ.Procname.t -> Location.t -> summary -> t
+val integrate_summary : recursive_locks:bool -> t -> Typ.Procname.t -> Location.t -> summary -> t

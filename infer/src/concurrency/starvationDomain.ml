@@ -11,6 +11,7 @@ module MF = MarkupFormatter
 let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
 module Lock = struct
+  (* TODO (T37174859): change to [HilExp.t] *)
   type t = AccessPath.t
 
   (* compare type, base variable modulo this and access list *)
@@ -198,29 +199,46 @@ module UIThreadDomain = struct
           (UIThreadExplanationDomain.with_callsite ui_explain callsite)
 end
 
+module FlatLock = AbstractDomain.Flat (Lock)
+
+module GuardToLockMap = struct
+  include AbstractDomain.InvertedMap (HilExp) (FlatLock)
+
+  let remove_guard astate guard = remove guard astate
+
+  let add_guard astate ~guard ~lock = add guard (FlatLock.v lock) astate
+end
+
 type t =
-  {lock_state: LockState.t; events: EventDomain.t; order: OrderDomain.t; ui: UIThreadDomain.t}
+  { events: EventDomain.t
+  ; guard_map: GuardToLockMap.t
+  ; lock_state: LockState.t
+  ; order: OrderDomain.t
+  ; ui: UIThreadDomain.t }
 
 let empty =
-  { lock_state= LockState.empty
-  ; events= EventDomain.empty
+  { events= EventDomain.empty
+  ; guard_map= GuardToLockMap.empty
+  ; lock_state= LockState.empty
   ; order= OrderDomain.empty
   ; ui= UIThreadDomain.empty }
 
 
-let is_empty {lock_state; events; order; ui} =
-  UIThreadDomain.is_empty ui && EventDomain.is_empty events && OrderDomain.is_empty order
-  && LockState.is_empty lock_state
+let is_empty {events; guard_map; lock_state; order; ui} =
+  EventDomain.is_empty events && GuardToLockMap.is_empty guard_map && OrderDomain.is_empty order
+  && LockState.is_empty lock_state && UIThreadDomain.is_empty ui
 
 
-let pp fmt {lock_state; events; order; ui} =
-  F.fprintf fmt "{lock_state= %a; events= %a; order= %a; ui= %a}" LockState.pp lock_state
-    EventDomain.pp events OrderDomain.pp order UIThreadDomain.pp ui
+let pp fmt {events; guard_map; lock_state; order; ui} =
+  F.fprintf fmt "{events= %a; guard_map= %a; lock_state= %a;  order= %a; ui= %a}" EventDomain.pp
+    events GuardToLockMap.pp guard_map LockState.pp lock_state OrderDomain.pp order
+    UIThreadDomain.pp ui
 
 
 let join lhs rhs =
-  { lock_state= LockState.join lhs.lock_state rhs.lock_state
-  ; events= EventDomain.join lhs.events rhs.events
+  { events= EventDomain.join lhs.events rhs.events
+  ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
+  ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; order= OrderDomain.join lhs.order rhs.order
   ; ui= UIThreadDomain.join lhs.ui rhs.ui }
 
@@ -228,16 +246,17 @@ let join lhs rhs =
 let widen ~prev ~next ~num_iters:_ = join prev next
 
 let ( <= ) ~lhs ~rhs =
-  UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
-  && EventDomain.( <= ) ~lhs:lhs.events ~rhs:rhs.events
+  EventDomain.( <= ) ~lhs:lhs.events ~rhs:rhs.events
+  && GuardToLockMap.( <= ) ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && OrderDomain.( <= ) ~lhs:lhs.order ~rhs:rhs.order
   && LockState.( <= ) ~lhs:lhs.lock_state ~rhs:rhs.lock_state
+  && UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
 
 
 (* for every lock b held locally, add a pair (b, event) *)
-let add_order_pairs lock_state event acc =
+let add_order_pairs ~recursive_locks lock_state event acc =
   (* add no pairs whatsoever if we already hold that lock *)
-  if LockState.is_taken event lock_state then acc
+  if recursive_locks && LockState.is_taken event lock_state then acc
   else
     let add_first_and_eventually acc f =
       match f.Event.elem with
@@ -250,28 +269,32 @@ let add_order_pairs lock_state event acc =
     LockState.fold_over_events add_first_and_eventually lock_state acc
 
 
-let acquire ({lock_state; events; order} as astate) loc locks =
+let acquire ~recursive_locks ({lock_state; events; order} as astate) loc locks =
   let new_events = List.map locks ~f:(fun lock -> Event.make_acquire lock loc) in
   { astate with
     events= List.fold new_events ~init:events ~f:(fun acc e -> EventDomain.add e acc)
   ; order=
       List.fold new_events ~init:order ~f:(fun acc e ->
-          OrderDomain.union acc (add_order_pairs lock_state e order) )
+          OrderDomain.union acc (add_order_pairs ~recursive_locks lock_state e order) )
   ; lock_state=
       List.fold2_exn locks new_events ~init:lock_state ~f:(fun acc lock e ->
           LockState.acquire lock e acc ) }
 
 
-let blocking_call callee sev loc ({lock_state; events; order} as astate) =
+let make_call_with_event new_event astate =
+  { astate with
+    events= EventDomain.add new_event astate.events
+  ; order= add_order_pairs ~recursive_locks:false astate.lock_state new_event astate.order }
+
+
+let blocking_call callee sev loc astate =
   let new_event = Event.make_blocking_call callee sev loc in
-  { astate with
-    events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
+  make_call_with_event new_event astate
 
 
-let strict_mode_call callee loc ({lock_state; events; order} as astate) =
+let strict_mode_call callee loc astate =
   let new_event = Event.make_strict_mode_call callee loc in
-  { astate with
-    events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
+  make_call_with_event new_event astate
 
 
 let release ({lock_state} as astate) locks =
@@ -279,20 +302,27 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname loc callee_summary =
+let integrate_summary ~recursive_locks ({lock_state; events; order; ui} as astate) callee_pname loc
+    callee_summary =
   let callsite = CallSite.make callee_pname loc in
   let callee_order = OrderDomain.with_callsite callee_summary.order callsite in
   let callee_ui = UIThreadDomain.with_callsite callee_summary.ui callsite in
   let filtered_order =
-    OrderDomain.filter
-      (fun {elem= {eventually}} -> LockState.is_taken eventually lock_state |> not)
-      callee_order
+    if recursive_locks then
+      OrderDomain.filter
+        (fun {elem= {eventually}} -> LockState.is_taken eventually lock_state |> not)
+        callee_order
+    else callee_order
   in
   let callee_events = EventDomain.with_callsite callee_summary.events callsite in
   let filtered_events =
-    EventDomain.filter (fun e -> LockState.is_taken e lock_state |> not) callee_events
+    if recursive_locks then
+      EventDomain.filter (fun e -> LockState.is_taken e lock_state |> not) callee_events
+    else callee_events
   in
-  let order' = EventDomain.fold (add_order_pairs lock_state) filtered_events filtered_order in
+  let order' =
+    EventDomain.fold (add_order_pairs ~recursive_locks lock_state) filtered_events filtered_order
+  in
   { astate with
     events= EventDomain.join events filtered_events
   ; order= OrderDomain.join order order'
@@ -305,6 +335,31 @@ let set_on_ui_thread ({ui} as astate) loc explain =
       (AbstractDomain.Types.NonBottom (UIThreadExplanationDomain.make explain loc))
   in
   {astate with ui}
+
+
+let add_guard astate guard lock ~acquire_now ~recursive_locks loc =
+  let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
+  if acquire_now then acquire ~recursive_locks astate loc [lock] else astate
+
+
+let remove_guard astate guard =
+  GuardToLockMap.find_opt guard astate.guard_map
+  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
+         let locks = FlatLock.get lock_opt |> Option.to_list in
+         let astate = release astate locks in
+         {astate with guard_map= GuardToLockMap.remove_guard astate.guard_map guard} )
+
+
+let unlock_guard astate guard =
+  GuardToLockMap.find_opt guard astate.guard_map
+  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
+         FlatLock.get lock_opt |> Option.to_list |> release astate )
+
+
+let lock_guard ~recursive_locks astate guard loc =
+  GuardToLockMap.find_opt guard astate.guard_map
+  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
+         FlatLock.get lock_opt |> Option.to_list |> acquire astate ~recursive_locks loc )
 
 
 type summary = t

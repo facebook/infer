@@ -58,6 +58,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate : Domain.t) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
+    let log_parse_error error pname actuals =
+      L.internal_error "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+        actuals
+    in
     let get_lock_path = function
       | HilExp.AccessExpression access_exp -> (
         match AccessExpression.to_access_path access_exp with
@@ -73,25 +78,41 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           None
     in
+    let is_java = Procdesc.get_proc_name pdesc |> Typ.Procname.is_java in
     let do_lock locks loc astate =
-      List.filter_map ~f:get_lock_path locks |> Domain.acquire astate loc
+      List.filter_map ~f:get_lock_path locks |> Domain.acquire ~recursive_locks:is_java astate loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
-    let do_call callee loc =
+    let do_call callee loc astate =
       Payload.read pdesc callee
-      |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc)
+      |> Option.value_map ~default:astate
+           ~f:(Domain.integrate_summary ~recursive_locks:is_java astate callee loc)
     in
-    let is_java = Procdesc.get_proc_name pdesc |> Typ.Procname.is_java in
     match instr with
+    | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | ExitScope _ ->
+        astate
+    | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
+        astate
     | Call (_, Direct callee, actuals, _, loc) -> (
       match get_lock_effect callee actuals with
       | Lock locks ->
           do_lock locks loc astate
+      | GuardLock guard ->
+          Domain.lock_guard ~recursive_locks:is_java astate guard loc
+      | GuardConstruct {guard; lock; acquire_now} -> (
+        match get_lock_path lock with
+        | Some lock_path ->
+            Domain.add_guard astate guard lock_path ~acquire_now ~recursive_locks:false loc
+        | None ->
+            log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
+            astate )
       | Unlock locks ->
           do_unlock locks astate
-      | LockedIfTrue _ ->
-          astate
-      | NoEffect when should_skip_analysis tenv callee actuals ->
+      | GuardUnlock guard ->
+          Domain.unlock_guard astate guard
+      | GuardDestroy guard ->
+          Domain.remove_guard astate guard
+      | LockedIfTrue _ | GuardLockedIfTrue _ ->
           astate
       | NoEffect when is_synchronized_library_call tenv callee ->
           (* model a synchronized call without visible internal behaviour *)
@@ -102,17 +123,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Domain.set_on_ui_thread astate loc explanation
       | NoEffect when is_java && StarvationModels.is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call callee loc astate
-      | NoEffect when is_java -> (
-        match may_block tenv callee actuals with
-        | Some sev ->
-            Domain.blocking_call callee sev loc astate
-        | None ->
-            do_call callee loc )
       | NoEffect ->
-          (* in C++/Obj C we only care about deadlocks, not starvation errors *)
-          do_call callee loc )
-    | _ ->
-        astate
+          if is_java then
+            may_block tenv callee actuals
+            |> Option.map ~f:(fun sev -> Domain.blocking_call callee sev loc astate)
+            |> IOption.value_default_f ~f:(fun () -> do_call callee loc astate)
+          else
+            (* in C++/Obj C we only care about deadlocks, not starvation errors *)
+            do_call callee loc astate )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
@@ -126,6 +144,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
   let loc = Procdesc.get_loc proc_desc in
+  let recursive_locks = Procdesc.get_proc_name proc_desc |> Typ.Procname.is_java in
   let initial =
     if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
     else
@@ -138,7 +157,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         | _ ->
             FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
       in
-      StarvationDomain.acquire StarvationDomain.empty loc (Option.to_list lock)
+      StarvationDomain.acquire ~recursive_locks StarvationDomain.empty loc (Option.to_list lock)
   in
   let initial =
     ConcurrencyModels.runs_on_ui_thread tenv proc_desc
@@ -379,6 +398,14 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
     match elem.Order.elem.eventually.elem with
     | MayBlock _ | StrictModeCall _ ->
         report_map
+    | LockAcquire endpoint_lock when Lock.equal endpoint_lock elem.Order.elem.first ->
+        let error_message =
+          Format.asprintf "Potential self deadlock. %a %a twice." pname_pp current_pname Lock.pp
+            endpoint_lock
+        in
+        let ltr = Order.make_trace ~header:"In method" current_pname elem in
+        let loc = Order.get_loc elem in
+        ReportMap.add_deadlock current_pname loc ltr error_message report_map
     | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->

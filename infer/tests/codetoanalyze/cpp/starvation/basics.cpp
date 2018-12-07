@@ -13,7 +13,8 @@ class Basic {
  public:
   Basic() {}
 
-  void thread1() {
+  // deadlock between thread1_bad() and thread2_bad()
+  void thread1_bad() {
     mutex_1.lock();
     mutex_2.lock();
 
@@ -21,7 +22,7 @@ class Basic {
     mutex_1.unlock();
   }
 
-  void thread2() {
+  void thread2_bad() {
     mutex_2.lock();
     mutex_1.lock();
 
@@ -38,12 +39,33 @@ class WithGuard {
  public:
   WithGuard() {}
 
-  void thread1() {
+  // deadlock between thread1_bad() and thread2_bad()
+  void thread1_bad() {
     std::lock_guard<std::mutex> lock1(mutex_1);
     std::lock_guard<std::mutex> lock2(mutex_2);
   }
 
-  void thread2() {
+  void thread2_bad() {
+    std::lock_guard<std::mutex> lock2(mutex_2);
+    std::lock_guard<std::mutex> lock1(mutex_1);
+  }
+
+ private:
+  std::mutex mutex_1;
+  std::mutex mutex_2;
+};
+
+class DeferredGuard {
+ public:
+  DeferredGuard() {}
+
+  // NO deadlock between thread1_bad() and thread2_bad()
+  void thread1_ok() {
+    std::unique_lock<std::mutex> lock1(mutex_1, std::defer_lock);
+    std::unique_lock<std::mutex> lock2(mutex_2);
+  }
+
+  void thread2_ok() {
     std::lock_guard<std::mutex> lock2(mutex_2);
     std::lock_guard<std::mutex> lock1(mutex_1);
   }
@@ -58,13 +80,13 @@ class StdLock {
   StdLock() {}
 
   // no reports, std::lock magically avoids deadlocks
-  void thread1() {
+  void foo_ok() {
     std::lock<std::mutex>(mutex_1, mutex_2);
     mutex_1.unlock();
     mutex_2.unlock();
   }
 
-  void thread2() {
+  void bar_ok() {
     std::lock<std::mutex>(mutex_2, mutex_1);
     mutex_2.unlock();
     mutex_1.unlock();
@@ -74,4 +96,44 @@ class StdLock {
   std::mutex mutex_1;
   std::mutex mutex_2;
 };
+
+class SelfDeadlock {
+ public:
+  SelfDeadlock() {}
+
+  void thread_bad() {
+    mutex_.lock();
+    mutex_.lock();
+    mutex_.unlock();
+    mutex_.unlock();
+  }
+
+  void interproc2_bad() { std::lock_guard<std::mutex> lock(mutex_); }
+
+  void interproc1_bad() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    interproc2_bad();
+  }
+
+  void foo_ok() {
+    { std::lock_guard<std::mutex> lock(mutex_); }
+    int i = 0;
+    { std::lock_guard<std::mutex> lock(mutex_); }
+  }
+
+  void bar_ok() {
+    std::unique_lock<std::mutex> lock1(mutex_, std::defer_lock);
+    std::lock_guard<std::mutex> lock2(mutex_);
+  }
+
+  void complicated_bad() {
+    std::unique_lock<std::mutex> lock1(mutex_, std::defer_lock);
+    std::lock_guard<std::mutex> lock2(mutex_);
+    lock1.lock();
+  }
+
+ private:
+  std::mutex mutex_;
+};
+
 } // namespace basics
