@@ -14,14 +14,6 @@ module SymLinear : sig
   module M = Symb.SymbolMap
 
   type t = Ints.NonZeroInt.t M.t
-
-  val make :
-       unsigned:bool
-    -> Typ.Procname.t
-    -> Symb.SymbolTable.t
-    -> Symb.SymbolPath.t
-    -> Counter.t
-    -> t * t
 end
 
 module Bound : sig
@@ -51,7 +43,11 @@ module Bound : sig
 
   val _255 : t
 
-  val of_sym : SymLinear.t -> t
+  val of_normal_path : Symb.BoundEnd.t -> unsigned:bool -> Symb.SymbolPath.partial -> t
+
+  val of_offset_path : Symb.BoundEnd.t -> Symb.SymbolPath.partial -> t
+
+  val of_length_path : Symb.BoundEnd.t -> Symb.SymbolPath.partial -> t
 
   val is_symbolic : t -> bool
 

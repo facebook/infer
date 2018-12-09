@@ -21,7 +21,7 @@ module SymbolPath : sig
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
     | Field of Typ.Fieldname.t * partial
-    | Callsite of CallSite.t
+    | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
   [@@deriving compare]
 
   type t = private Normal of partial | Offset of partial | Length of partial
@@ -30,11 +30,15 @@ module SymbolPath : sig
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 
+  val pp_partial : F.formatter -> partial -> unit
+
   val pp_partial_paren : paren:bool -> F.formatter -> partial -> unit
 
   val of_pvar : Pvar.t -> partial
 
-  val of_callsite : CallSite.t -> partial
+  val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial
+
+  val get_pvar : partial -> Pvar.t option
 
   val deref : deref_kind:deref_kind -> partial -> partial
 
@@ -47,6 +51,8 @@ module SymbolPath : sig
   val length : partial -> t
 
   val represents_multiple_values : partial -> bool
+
+  val represents_callsite_sound_partial : partial -> bool
 end
 
 module Symbol : sig
@@ -67,6 +73,8 @@ module Symbol : sig
   val path : t -> SymbolPath.t
 
   val bound_end : t -> BoundEnd.t
+
+  val make : unsigned:bool -> SymbolPath.t -> BoundEnd.t -> t
 end
 
 module SymbolSet : sig
@@ -79,13 +87,4 @@ module SymbolMap : sig
   include PrettyPrintable.PPMap with type key = Symbol.t
 
   val for_all2 : f:(key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool
-end
-
-module SymbolTable : sig
-  type t
-
-  val empty : unit -> t
-
-  val lookup :
-    unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> t -> Counter.t -> Symbol.t * Symbol.t
 end

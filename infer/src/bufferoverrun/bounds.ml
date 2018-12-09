@@ -49,18 +49,6 @@ module SymLinear = struct
     M.for_all2 ~f:le_one_pair x y
 
 
-  let make :
-         unsigned:bool
-      -> Typ.Procname.t
-      -> Symb.SymbolTable.t
-      -> Symb.SymbolPath.t
-      -> Counter.t
-      -> t * t =
-   fun ~unsigned pname symbol_table path new_sym_num ->
-    let lb, ub = Symb.SymbolTable.lookup ~unsigned pname path symbol_table new_sym_num in
-    (singleton_one lb, singleton_one ub)
-
-
   let pp1 :
       markup:bool -> is_beginning:bool -> F.formatter -> Symb.Symbol.t -> NonZeroInt.t -> unit =
    fun ~markup ~is_beginning f s c ->
@@ -268,6 +256,17 @@ module Bound = struct
   let _255 = of_int 255
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
+
+  let of_path path_of_partial bound_end ~unsigned partial =
+    let s = Symb.Symbol.make ~unsigned (path_of_partial partial) bound_end in
+    of_sym (SymLinear.singleton_one s)
+
+
+  let of_normal_path = of_path Symb.SymbolPath.normal
+
+  let of_offset_path = of_path Symb.SymbolPath.offset ~unsigned:false
+
+  let of_length_path = of_path Symb.SymbolPath.length ~unsigned:true
 
   let is_symbolic : t -> bool = function
     | MInf | PInf ->

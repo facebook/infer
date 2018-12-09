@@ -13,6 +13,7 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Relation = BufferOverrunDomainRelation
+module SPath = Symb.SymbolPath
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
@@ -26,6 +27,89 @@ let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
   let proc_name = Procdesc.get_proc_name pdesc in
   Procdesc.get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
 
+
+module OndemandEnv = struct
+  type t =
+    { typ_of_param_path: SPath.partial -> Typ.t option
+    ; may_last_field: SPath.partial -> bool
+    ; entry_location: Location.t
+    ; integer_type_widths: Typ.IntegerWidths.t }
+
+  let mk pdesc =
+    let module FormalTyps = Caml.Map.Make (Pvar) in
+    let formal_typs =
+      List.fold (get_formals pdesc) ~init:FormalTyps.empty ~f:(fun acc (formal, typ) ->
+          FormalTyps.add formal typ acc )
+    in
+    fun tenv integer_type_widths ->
+      let rec typ_of_param_path = function
+        | SPath.Pvar x ->
+            FormalTyps.find_opt x formal_typs
+        | SPath.Deref (_, x) ->
+            Option.map (typ_of_param_path x) ~f:(fun typ ->
+                match typ.Typ.desc with
+                | Tptr (typ, _) ->
+                    typ
+                | Tarray {elt} ->
+                    elt
+                | Tvoid ->
+                    Typ.void
+                | _ ->
+                    L.(die InternalError) "Untyped expression is given." )
+        | SPath.Field (fn, x) ->
+            let lookup = Tenv.lookup tenv in
+            Option.map (typ_of_param_path x) ~f:(Typ.Struct.fld_typ ~lookup ~default:Typ.void fn)
+        | SPath.Callsite {ret_typ} ->
+            Some ret_typ
+      in
+      let is_last_field fn (fields : Typ.Struct.field list) =
+        Option.value_map (List.last fields) ~default:false ~f:(fun (last_fn, _, _) ->
+            Typ.Fieldname.equal fn last_fn )
+      in
+      let rec may_last_field = function
+        | SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _ ->
+            true
+        | SPath.Field (fn, x) ->
+            may_last_field x
+            && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
+                   match parent_typ.Typ.desc with
+                   | Tstruct typename ->
+                       let opt_struct = Tenv.lookup tenv typename in
+                       Option.value_map opt_struct ~default:false ~f:(fun str ->
+                           is_last_field fn str.Typ.Struct.fields )
+                   | _ ->
+                       true )
+      in
+      let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
+      {typ_of_param_path; may_last_field; entry_location; integer_type_widths}
+
+
+  let canonical_path typ_of_param_path path =
+    let module KnownFields = Caml.Map.Make (struct
+      type t = Typ.t option * Typ.Fieldname.t [@@deriving compare]
+    end) in
+    let rec helper path =
+      match path with
+      | SPath.Pvar _ | SPath.Callsite _ ->
+          (None, KnownFields.empty)
+      | SPath.Deref (deref_kind, ptr) ->
+          let ptr_opt, known_fields = helper ptr in
+          (Option.map ptr_opt ~f:(fun ptr -> SPath.deref ~deref_kind ptr), known_fields)
+      | SPath.Field (fn, struct_path) -> (
+          let struct_path_opt, known_fields = helper struct_path in
+          let key = (typ_of_param_path (Option.value ~default:struct_path struct_path_opt), fn) in
+          match KnownFields.find_opt key known_fields with
+          | Some _ as canonicalized ->
+              (canonicalized, known_fields)
+          | None ->
+              let field_path =
+                Option.value_map struct_path_opt ~default:path ~f:(fun struct_path ->
+                    SPath.field struct_path fn )
+              in
+              (None, KnownFields.add key field_path known_fields) )
+    in
+    Option.value (helper path |> fst) ~default:path
+end
 
 module Val = struct
   type t =
@@ -145,7 +229,7 @@ module Val = struct
 
   let of_big_int n = of_itv (Itv.of_big_int n)
 
-  let of_loc : Loc.t -> t = fun x -> {bot with powloc= PowLoc.singleton x}
+  let of_loc ?(traces = TraceSet.empty) x = {bot with powloc= PowLoc.singleton x; traces}
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
@@ -161,24 +245,6 @@ module Val = struct
 
 
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
-
-  let make_sym :
-         ?unsigned:bool
-      -> Loc.t
-      -> Typ.Procname.t
-      -> Itv.SymbolTable.t
-      -> Itv.SymbolPath.partial
-      -> Counter.t
-      -> Location.t
-      -> t =
-   fun ?(unsigned = false) loc pname symbol_table path new_sym_num location ->
-    let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-    { bot with
-      itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
-    ; sym= Relation.Sym.of_loc loc
-    ; traces= Trace.(Set.singleton location (Parameter loc))
-    ; represents_multiple_values }
-
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
 
@@ -323,7 +389,7 @@ module Val = struct
 
 
   let subst : t -> eval_sym_trace -> Location.t -> t =
-   fun x {eval_sym; trace_of_sym} location ->
+   fun x {eval_sym; trace_of_sym; eval_locpath} location ->
     let symbols = get_symbols x in
     let traces_caller =
       Itv.SymbolSet.fold
@@ -331,7 +397,11 @@ module Val = struct
         symbols TraceSet.empty
     in
     let traces = TraceSet.call location ~traces_caller ~traces_callee:x.traces in
-    {x with itv= Itv.subst x.itv eval_sym; arrayblk= ArrayBlk.subst x.arrayblk eval_sym; traces}
+    { x with
+      itv= Itv.subst x.itv eval_sym
+    ; powloc= PowLoc.subst x.powloc eval_locpath
+    ; arrayblk= ArrayBlk.subst x.arrayblk eval_sym eval_locpath
+    ; traces }
     (* normalize bottom *)
     |> normalize
 
@@ -358,6 +428,67 @@ module Val = struct
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
 
   let is_mone x = Itv.is_mone (get_itv x)
+
+  let of_path ~may_last_field integer_type_widths location typ path =
+    let is_java = Language.curr_language_is Java in
+    match typ.Typ.desc with
+    | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
+        let l = Loc.of_path path in
+        let traces = TraceSet.singleton location (Trace.Parameter l) in
+        let unsigned = Typ.is_unsigned_int typ in
+        of_itv ~traces (Itv.of_normal_path ~unsigned path)
+    | Tptr (elt, _) ->
+        if is_java then
+          let l = Loc.of_path path in
+          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          {bot with itv= Itv.of_length_path path; powloc= PowLoc.singleton l; traces}
+        else
+          let deref_kind = SPath.Deref_CPointer in
+          let deref_path = SPath.deref ~deref_kind path in
+          let l = Loc.of_path deref_path in
+          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let arrayblk =
+            let allocsite = Allocsite.make_symbol deref_path in
+            let stride =
+              match elt.Typ.desc with
+              | Typ.Tint ikind ->
+                  Itv.of_int (Typ.width_of_ikind integer_type_widths ikind)
+              | _ ->
+                  Itv.nat
+            in
+            let offset = Itv.of_offset_path path in
+            let size = Itv.of_length_path path in
+            ArrayBlk.make allocsite ~stride ~offset ~size
+          in
+          {bot with arrayblk; traces}
+    | Tstruct _ ->
+        let l = Loc.of_path path in
+        let traces = TraceSet.singleton location (Trace.Parameter l) in
+        of_loc ~traces l
+    | Tarray {length; stride} ->
+        let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
+        let l = Loc.of_path deref_path in
+        let traces = TraceSet.singleton location (Trace.Parameter l) in
+        let allocsite = Allocsite.make_symbol deref_path in
+        let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
+        let offset = Itv.zero in
+        let size =
+          Option.value_map length ~default:Itv.top ~f:(fun length ->
+              if may_last_field && (IntLit.iszero length || IntLit.isone length) then
+                Itv.of_length_path path
+              else Itv.of_big_int (IntLit.to_big_int length) )
+        in
+        of_array_alloc allocsite ~stride ~offset ~size ~traces
+
+
+  let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
+   fun ~default {typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
+    Option.value_map (Loc.get_path l) ~default ~f:(fun path ->
+        Option.value_map (typ_of_param_path path) ~default ~f:(fun typ ->
+            let may_last_field = may_last_field path in
+            let path = OndemandEnv.canonical_path typ_of_param_path path in
+            of_path ~may_last_field integer_type_widths entry_location typ path ) )
+
 
   module Itv = struct
     let m1_255 = of_itv Itv.m1_255
@@ -394,6 +525,41 @@ module MemPure = struct
           |> Polynomials.NonNegativePolynomial.mult acc
         else acc )
       mem Polynomials.NonNegativePolynomial.one
+
+
+  let join oenv astate1 astate2 =
+    if phys_equal astate1 astate2 then astate1
+    else
+      merge
+        (fun l v1_opt v2_opt ->
+          match (v1_opt, v2_opt) with
+          | Some v1, Some v2 ->
+              Some (Val.join v1 v2)
+          | Some v1, None | None, Some v1 ->
+              let v2 = Val.on_demand ~default:Val.bot oenv l in
+              Some (Val.join v1 v2)
+          | None, None ->
+              None )
+        astate1 astate2
+
+
+  let widen oenv ~prev ~next ~num_iters =
+    if phys_equal prev next then prev
+    else
+      merge
+        (fun l v1_opt v2_opt ->
+          match (v1_opt, v2_opt) with
+          | Some v1, Some v2 ->
+              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+          | Some v1, None ->
+              let v2 = Val.on_demand ~default:Val.bot oenv l in
+              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+          | None, Some v2 ->
+              let v1 = Val.on_demand ~default:Val.bot oenv l in
+              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+          | None, None ->
+              None )
+        prev next
 end
 
 module AliasTarget = struct
@@ -625,14 +791,17 @@ module MemReach = struct
     ; mem_pure: MemPure.t
     ; alias: Alias.t
     ; latest_prune: LatestPrune.t
-    ; relation: Relation.t }
+    ; relation: Relation.t
+    ; oenv: OndemandEnv.t option }
 
-  let init : t =
+  let init : OndemandEnv.t -> t =
+   fun oenv ->
     { stack_locs= StackLocs.bot
     ; mem_pure= MemPure.bot
     ; alias= Alias.bot
     ; latest_prune= LatestPrune.top
-    ; relation= Relation.empty }
+    ; relation= Relation.empty
+    ; oenv= Some oenv }
 
 
   let ( <= ) ~lhs ~rhs =
@@ -647,21 +816,27 @@ module MemReach = struct
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
-    else
+    else (
+      assert (phys_equal prev.oenv next.oenv) ;
+      let oenv = Option.value_exn prev.oenv in
       { stack_locs= StackLocs.widen ~prev:prev.stack_locs ~next:next.stack_locs ~num_iters
-      ; mem_pure= MemPure.widen ~prev:prev.mem_pure ~next:next.mem_pure ~num_iters
+      ; mem_pure= MemPure.widen oenv ~prev:prev.mem_pure ~next:next.mem_pure ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters
       ; latest_prune= LatestPrune.widen ~prev:prev.latest_prune ~next:next.latest_prune ~num_iters
-      ; relation= Relation.widen ~prev:prev.relation ~next:next.relation ~num_iters }
+      ; relation= Relation.widen ~prev:prev.relation ~next:next.relation ~num_iters
+      ; oenv= prev.oenv } )
 
 
   let join : t -> t -> t =
    fun x y ->
+    assert (phys_equal x.oenv y.oenv) ;
+    let oenv = Option.value_exn x.oenv in
     { stack_locs= StackLocs.join x.stack_locs y.stack_locs
-    ; mem_pure= MemPure.join x.mem_pure y.mem_pure
+    ; mem_pure= MemPure.join oenv x.mem_pure y.mem_pure
     ; alias= Alias.join x.alias y.alias
     ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune
-    ; relation= Relation.join x.relation y.relation }
+    ; relation= Relation.join x.relation y.relation
+    ; oenv= x.oenv }
 
 
   let pp : F.formatter -> t -> unit =
@@ -672,16 +847,22 @@ module MemReach = struct
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
 
+  let unset_oenv x = {x with oenv= None}
+
   let is_stack_loc : Loc.t -> t -> bool = fun l m -> StackLocs.mem l m.stack_locs
 
   let find_opt : Loc.t -> t -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
-  let find_heap : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.Itv.top
+  let find_heap : default:Val.t -> Loc.t -> t -> Val.t =
+   fun ~default l m ->
+    IOption.value_default_f (find_opt l m) ~f:(fun () ->
+        Option.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default oenv l) )
+
 
   let find : Loc.t -> t -> Val.t =
-   fun l m -> if is_stack_loc l m then find_stack l m else find_heap l m
+   fun l m -> if is_stack_loc l m then find_stack l m else find_heap ~default:Val.Itv.top l m
 
 
   let find_set : PowLoc.t -> t -> Val.t =
@@ -756,7 +937,8 @@ module MemReach = struct
    fun ~f locs m ->
     let transform_mem1 l m =
       let add, find =
-        if is_stack_loc l m then (replace_stack, find_stack) else (add_heap, find_heap)
+        if is_stack_loc l m then (replace_stack, find_stack)
+        else (add_heap, find_heap ~default:Val.bot)
       in
       add l (f (find l m)) m
     in
@@ -815,7 +997,7 @@ module MemReach = struct
         {m with latest_prune= LatestPrune.Top}
 
 
-  let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
+  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
       if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
       else if Loc.is_field_of ~loc:root ~field_loc:loc then PowLoc.add loc acc
@@ -828,7 +1010,13 @@ module MemReach = struct
         let reachable_locs = MemPure.fold (add_reachable1 ~root:loc) heap PowLoc.empty in
         add_from_locs heap reachable_locs (PowLoc.add loc acc)
     in
-    fun locs m -> add_from_locs m.mem_pure locs PowLoc.empty
+    let add_param_locs formals mem acc =
+      let add_loc loc _ acc = if Loc.has_param_path formals loc then PowLoc.add loc acc else acc in
+      MemPure.fold add_loc mem acc
+    in
+    fun formals locs m ->
+      let locs = add_param_locs formals m.mem_pure locs in
+      add_from_locs m.mem_pure locs PowLoc.empty
 
 
   let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.t =
@@ -877,7 +1065,7 @@ module Mem = struct
 
   let bot : t = Bottom
 
-  let init : t = NonBottom MemReach.init
+  let init : OndemandEnv.t -> t = fun oenv -> NonBottom (MemReach.init oenv)
 
   let f_lift_default : default:'a -> (MemReach.t -> 'a) -> t -> 'a =
    fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
@@ -952,8 +1140,9 @@ module Mem = struct
 
   let weak_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.weak_update p v)
 
-  let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
-   fun locs -> f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from locs)
+  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
+   fun formals locs ->
+    f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from formals locs)
 
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
@@ -1010,4 +1199,7 @@ module Mem = struct
         caller
     | NonBottom callee ->
         f_lift (fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
+
+
+  let unset_oenv = f_lift MemReach.unset_oenv
 end

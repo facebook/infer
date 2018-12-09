@@ -21,11 +21,10 @@ type model_env =
   ; node_hash: int
   ; location: Location.t
   ; tenv: Tenv.t
-  ; integer_type_widths: Typ.IntegerWidths.t
-  ; symbol_table: Itv.SymbolTable.t }
+  ; integer_type_widths: Typ.IntegerWidths.t }
 
-let mk_model_env pname node_hash location tenv integer_type_widths symbol_table =
-  {pname; node_hash; location; tenv; integer_type_widths; symbol_table}
+let mk_model_env pname node_hash location tenv integer_type_widths =
+  {pname; node_hash; location; tenv; integer_type_widths}
 
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
@@ -50,7 +49,6 @@ type declare_symbolic_fun =
   -> model_env
   -> depth:int
   -> Loc.t
-  -> new_sym_num:Counter.t
   -> Dom.Mem.t
   -> Dom.Mem.t
 
@@ -238,9 +236,12 @@ let infer_print e =
 
 let get_array_length array_exp =
   let exec {integer_type_widths} ~ret mem =
-    let arr = Sem.eval_arr integer_type_widths array_exp mem in
+    let arr = Sem.eval integer_type_widths array_exp mem in
     let traces = Dom.Val.get_traces arr in
-    let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
+    let length =
+      if Language.curr_language_is Java then arr |> Dom.Val.get_itv
+      else arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof
+    in
     let result = Dom.Val.of_itv ~traces length in
     model_by_value result ret mem
   in
@@ -314,12 +315,11 @@ module StdArray = struct
       BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length ~inst_num
         ~represents_multiple_values ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val path {pname; tenv; location; symbol_table} ~depth loc
-        ~new_sym_num mem =
+    let declare_symbolic ~decl_sym_val path {pname; tenv; location} ~depth loc mem =
       let offset = Itv.zero in
       let size = Itv.of_int64 length in
-      BoUtils.Exec.decl_sym_arr ~decl_sym_val Symb.SymbolPath.Deref_ArrayIndex pname symbol_table
-        path tenv location ~depth loc typ ~offset ~size ~new_sym_num mem
+      BoUtils.Exec.decl_sym_arr ~decl_sym_val Symb.SymbolPath.Deref_ArrayIndex pname path tenv
+        location ~depth loc typ ~offset ~size mem
     in
     {declare_local; declare_symbolic}
 
@@ -359,7 +359,7 @@ module StdArray = struct
         ~dimension:_ mem =
       (no_model "local" pname location mem, inst_num)
     in
-    let declare_symbolic ~decl_sym_val:_ _path {pname; location} ~depth:_ _loc ~new_sym_num:_ mem =
+    let declare_symbolic ~decl_sym_val:_ _path {pname; location} ~depth:_ _loc mem =
       no_model "symbolic" pname location mem
     in
     {declare_local; declare_symbolic}
@@ -376,9 +376,8 @@ module Collection = struct
       BoUtils.Exec.decl_local_collection pname ~node_hash location loc ~inst_num
         ~represents_multiple_values ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val:_ path {pname; location; symbol_table} ~depth:_ loc
-        ~new_sym_num mem =
-      BoUtils.Exec.decl_sym_collection pname symbol_table path location loc ~new_sym_num mem
+    let declare_symbolic ~decl_sym_val:_ path {location} ~depth:_ loc mem =
+      BoUtils.Exec.decl_sym_collection path location loc mem
     in
     {declare_local; declare_symbolic}
 

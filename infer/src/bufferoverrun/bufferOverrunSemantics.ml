@@ -142,7 +142,7 @@ let set_array_stride integer_type_widths typ v =
 
 let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
-  if must_alias_cmp exp mem then Val.Itv.zero
+  if (not (Language.curr_language_is Java)) && must_alias_cmp exp mem then Val.Itv.zero
   else
     match exp with
     | Exp.Var id ->
@@ -346,29 +346,33 @@ let rec eval_sympath_partial params p mem =
       L.(debug BufferOverrun Verbose)
         "Symbol %a is not found in parameters.@\n" (Pvar.pp Pp.text) x ;
       Val.Itv.top )
-  | Symb.SymbolPath.Callsite cs ->
+  | Symb.SymbolPath.Callsite {cs} ->
       L.(debug BufferOverrun Verbose)
         "Symbol for %a is not expected to be in parameters.@\n" Typ.Procname.pp (CallSite.pname cs) ;
-      Val.Itv.top
+      Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
   | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ ->
       let locs = eval_locpath params p mem in
       Mem.find_set locs mem
 
 
 and eval_locpath params p mem =
-  match p with
-  | Symb.SymbolPath.Pvar _ ->
-      let v = eval_sympath_partial params p mem in
-      Val.get_all_locs v
-  | Symb.SymbolPath.Deref (_, p) ->
-      let v = eval_sympath_partial params p mem in
-      Val.get_all_locs v
-  | Symb.SymbolPath.Callsite _ ->
-      let v = eval_sympath_partial params p mem in
-      Val.get_all_locs v
-  | Symb.SymbolPath.Field (fn, p) ->
-      let locs = eval_locpath params p mem in
-      PowLoc.append_field ~fn locs
+  let res =
+    match p with
+    | Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _ ->
+        let v = eval_sympath_partial params p mem in
+        Val.get_all_locs v
+    | Symb.SymbolPath.Deref (_, p) ->
+        let v = eval_sympath_partial params p mem in
+        Val.get_all_locs v
+    | Symb.SymbolPath.Field (fn, p) ->
+        let locs = eval_locpath params p mem in
+        PowLoc.append_field ~fn locs
+  in
+  if PowLoc.is_empty res then (
+    L.(debug BufferOverrun Verbose)
+      "Location value for %a is not found.@\n" Symb.SymbolPath.pp_partial p ;
+    PowLoc.unknown )
+  else res
 
 
 let eval_sympath params sympath mem =
@@ -381,7 +385,10 @@ let eval_sympath params sympath mem =
       (ArrayBlk.offsetof (Val.get_array_blk v), Val.get_traces v)
   | Symb.SymbolPath.Length p ->
       let v = eval_sympath_partial params p mem in
-      (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
+      let traces = Val.get_traces v in
+      let itv = ArrayBlk.sizeof (Val.get_array_blk v) in
+      let itv = if Language.curr_language_is Java then Itv.join itv (Val.get_itv v) else itv in
+      (itv, traces)
 
 
 let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =

@@ -52,9 +52,7 @@ class UnknownCallsTest {
     for (Character c : input.toCharArray()) {}
   }
 
-  // We can't instantiate loop_over_charArray properly because I don't
-  // know what to do with the symbol for the call to "toCharArray()"
-  private static void call_loop_over_charArray_FN(StringBuilder out, String in) {
+  private static void call_loop_over_charArray(StringBuilder out, String in) {
     loop_over_charArray(out, in);
   }
 }

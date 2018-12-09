@@ -14,7 +14,6 @@ module L = Logging
 module Bound = Bounds.Bound
 open Ints
 module SymbolPath = Symb.SymbolPath
-module SymbolTable = Symb.SymbolTable
 module SymbolSet = Symb.SymbolSet
 
 module ItvRange = struct
@@ -112,13 +111,6 @@ module ItvPure = struct
   let of_int n = of_bound (Bound.of_int n)
 
   let of_big_int n = of_bound (Bound.of_big_int n)
-
-  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
-      =
-   fun ~unsigned pname symbol_table path new_sym_num ->
-    let lb, ub = Bounds.SymLinear.make ~unsigned pname symbol_table path new_sym_num in
-    (Bound.of_sym lb, Bound.of_sym ub)
-
 
   let mone = of_bound Bound.mone
 
@@ -417,6 +409,19 @@ module ItvPure = struct
   let max_of_ikind integer_type_widths ikind =
     let _, max = Typ.range_of_ikind integer_type_widths ikind in
     of_big_int max
+
+
+  let of_path bound_of_path path =
+    let lb = bound_of_path Symb.BoundEnd.LowerBound path in
+    let ub = bound_of_path Symb.BoundEnd.UpperBound path in
+    (lb, ub)
+
+
+  let of_normal_path ~unsigned = of_path (Bound.of_normal_path ~unsigned)
+
+  let of_offset_path = of_path Bound.of_offset_path
+
+  let of_length_path = of_path Bound.of_length_path
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -552,12 +557,6 @@ let minus : t -> t -> t = lift2 ItvPure.minus
 
 let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
-    =
- fun ?(unsigned = false) pname symbol_table path new_sym_num ->
-  NonBottom (ItvPure.make_sym ~unsigned pname symbol_table path new_sym_num)
-
-
 let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 
 let is_mone = bind1bool ItvPure.is_mone
@@ -627,3 +626,10 @@ let normalize : t -> t = bind1 ItvPure.normalize
 
 let max_of_ikind integer_type_widths ikind =
   NonBottom (ItvPure.max_of_ikind integer_type_widths ikind)
+
+
+let of_normal_path ~unsigned path = NonBottom (ItvPure.of_normal_path ~unsigned path)
+
+let of_offset_path path = NonBottom (ItvPure.of_offset_path path)
+
+let of_length_path path = NonBottom (ItvPure.of_length_path path)

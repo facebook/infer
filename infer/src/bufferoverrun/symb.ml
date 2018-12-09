@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 
 module BoundEnd = struct
-  type t = LowerBound | UpperBound
+  type t = LowerBound | UpperBound [@@deriving compare]
 
   let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
 
@@ -22,7 +22,7 @@ module SymbolPath = struct
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
     | Field of Typ.Fieldname.t * partial
-    | Callsite of CallSite.t
+    | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
   [@@deriving compare]
 
   type t = Normal of partial | Offset of partial | Length of partial [@@deriving compare]
@@ -33,7 +33,7 @@ module SymbolPath = struct
 
   let of_pvar pvar = Pvar pvar
 
-  let of_callsite cs = Callsite cs
+  let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
 
   let field p fn = Field (fn, p)
 
@@ -44,6 +44,15 @@ module SymbolPath = struct
   let offset p = Offset p
 
   let length p = Length p
+
+  let rec get_pvar = function
+    | Pvar pvar ->
+        Some pvar
+    | Deref (_, partial) | Field (_, partial) ->
+        get_pvar partial
+    | Callsite _ ->
+        None
+
 
   let rec pp_partial_paren ~paren fmt = function
     | Pvar pvar ->
@@ -58,7 +67,7 @@ module SymbolPath = struct
         F.fprintf fmt "%a->%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
     | Field (fn, p) ->
         F.fprintf fmt "%a.%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
-    | Callsite cs ->
+    | Callsite {cs} ->
         F.fprintf fmt "%a" Typ.Procname.pp (CallSite.pname cs)
 
 
@@ -94,107 +103,46 @@ module SymbolPath = struct
         represents_callsite_sound_partial p
 
 
-  let represents_partial_sound ~f = function Normal p | Offset p | Length p -> f p
-
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 end
 
 module Symbol = struct
-  type t =
-    | IntraProc of
-        { id: int
-        ; pname: Typ.Procname.t
-        ; unsigned: bool
-        ; path: SymbolPath.t
-        ; bound_end: BoundEnd.t }
-    (* symbols for unknown calls *)
-    | Call of
-        { id: int
-        ; pname: Typ.Procname.t
-        ; unsigned: bool
-        ; path: SymbolPath.t
-        ; bound_end: BoundEnd.t }
+  type extra_bool = bool
+
+  let compare_extra_bool _ _ = 0
+
+  type t = {unsigned: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t} [@@deriving compare]
+
+  let compare x y =
+    let r = compare x y in
+    if Int.equal r 0 then assert (Bool.equal x.unsigned y.unsigned) ;
+    r
+
 
   type 'res eval = t -> 'res AbstractDomain.Types.bottom_lifted
 
-  let compare s1 s2 =
-    match (s1, s2) with
-    | IntraProc s1, IntraProc s2 ->
-        (* Parameter symbols only make sense within a given function, so shouldn't be compared across function boundaries. *)
-        assert (phys_equal s1.pname s2.pname) ;
-        Int.compare s1.id s2.id
-    | Call s1, Call s2 ->
-        Int.compare s1.id s2.id
-    | Call _, IntraProc _ ->
-        -1
-    | IntraProc _, Call _ ->
-        1
-
-
   let equal = [%compare.equal: t]
 
-  let paths_equal s1 s2 =
-    match (s1, s2) with
-    | IntraProc _, Call _ | Call _, IntraProc _ ->
-        false
-    | IntraProc {path= path1}, IntraProc {path= path2} | Call {path= path1}, Call {path= path2} ->
-        SymbolPath.equal path1 path2
+  let paths_equal s1 s2 = SymbolPath.equal s1.path s2.path
 
-
-  let make_intraproc : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
-   fun ~unsigned pname path bound_end id -> IntraProc {id; pname; unsigned; path; bound_end}
-
-
-  let make_call : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
-   fun ~unsigned pname path bound_end id -> Call {id; pname; unsigned; path; bound_end}
+  let make : unsigned:bool -> SymbolPath.t -> BoundEnd.t -> t =
+   fun ~unsigned path bound_end -> {unsigned; path; bound_end}
 
 
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
-    match s with
-    | Call {id; pname; unsigned; path; bound_end} | IntraProc {id; pname; unsigned; path; bound_end}
-      ->
-        SymbolPath.pp fmt path ;
-        if Config.developer_mode then Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end) ;
-        if Config.bo_debug > 1 then
-          let symbol_name = if unsigned then 'u' else 's' in
-          F.fprintf fmt "(%s-%c$%d)" (Typ.Procname.to_string pname) symbol_name id
+    SymbolPath.pp fmt s.path ;
+    if Config.developer_mode then Format.fprintf fmt ".%s" (BoundEnd.to_string s.bound_end) ;
+    if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if s.unsigned then 'u' else 's')
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
-  let is_unsigned : t -> bool = function IntraProc {unsigned} | Call {unsigned} -> unsigned
+  let is_unsigned {unsigned} = unsigned
 
-  let path = function IntraProc {path} | Call {path} -> path
+  let path {path} = path
 
-  let bound_end = function IntraProc {bound_end} | Call {bound_end} -> bound_end
-end
-
-module SymbolTable = struct
-  module M = PrettyPrintable.MakePPMap (SymbolPath)
-
-  type t = (Symbol.t * Symbol.t) M.t ref
-
-  let empty () = ref M.empty
-
-  let lookup ~unsigned pname path symbol_table new_sym_num =
-    match M.find_opt path !symbol_table with
-    | Some s ->
-        s
-    | None ->
-        let s =
-          if
-            SymbolPath.represents_partial_sound ~f:SymbolPath.represents_callsite_sound_partial
-              path
-          then
-            ( Symbol.make_call ~unsigned pname path LowerBound (Counter.next new_sym_num)
-            , Symbol.make_call ~unsigned pname path UpperBound (Counter.next new_sym_num) )
-          else
-            ( Symbol.make_intraproc ~unsigned pname path LowerBound (Counter.next new_sym_num)
-            , Symbol.make_intraproc ~unsigned pname path UpperBound (Counter.next new_sym_num) )
-        in
-        symbol_table := M.add path s !symbol_table ;
-        s
+  let bound_end {bound_end} = bound_end
 end
 
 module SymbolSet = struct

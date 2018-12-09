@@ -128,7 +128,6 @@ module Exec = struct
          decl_sym_val:decl_sym_val
       -> Symb.SymbolPath.deref_kind
       -> Typ.Procname.t
-      -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Tenv.t
       -> Location.t
@@ -138,20 +137,11 @@ module Exec = struct
       -> ?offset:Itv.t
       -> ?size:Itv.t
       -> ?stride:int
-      -> new_sym_num:Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
-   fun ~decl_sym_val deref_kind pname symbol_table path tenv location ~depth loc typ ?offset ?size
-       ?stride ~new_sym_num mem ->
-    let offset =
-      IOption.value_default_f offset ~f:(fun () ->
-          Itv.make_sym pname symbol_table (Itv.SymbolPath.offset path) new_sym_num )
-    in
-    let size =
-      IOption.value_default_f size ~f:(fun () ->
-          Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
-      )
-    in
+   fun ~decl_sym_val deref_kind pname path tenv location ~depth loc typ ?offset ?size ?stride mem ->
+    let offset = IOption.value_default_f offset ~f:(fun () -> Itv.of_offset_path path) in
+    let size = IOption.value_default_f size ~f:(fun () -> Itv.of_length_path path) in
     let deref_path = Itv.SymbolPath.deref ~deref_kind path in
     let allocsite = Allocsite.make_symbol deref_path in
     let mem =
@@ -168,45 +158,13 @@ module Exec = struct
     decl_sym_val pname deref_path tenv location ~depth deref_loc typ mem
 
 
-  let decl_sym_java_ptr :
-         decl_sym_val:decl_sym_val
-      -> Typ.Procname.t
-      -> Itv.SymbolPath.partial
-      -> Tenv.t
-      -> Location.t
-      -> depth:int
-      -> Loc.t
-      -> Typ.t
-      -> Dom.Mem.t
-      -> Dom.Mem.t =
-   fun ~decl_sym_val pname path tenv location ~depth loc typ mem ->
-    let allocsite = Allocsite.make_symbol path in
-    let alloc_loc = Loc.of_allocsite allocsite in
-    let v =
-      let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-      let traces = Trace.(Set.singleton location (Trace.Parameter loc)) in
-      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
-      |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
-    in
-    let mem = Dom.Mem.add_heap loc v mem in
-    decl_sym_val pname path tenv location ~depth alloc_loc typ mem
-
-
-  let decl_sym_collection :
-         Typ.Procname.t
-      -> Itv.SymbolTable.t
-      -> Itv.SymbolPath.partial
-      -> Location.t
-      -> Loc.t
-      -> new_sym_num:Counter.t
-      -> Dom.Mem.t
-      -> Dom.Mem.t =
-   fun pname symbol_table path location loc ~new_sym_num mem ->
+  let decl_sym_collection : Itv.SymbolPath.partial -> Location.t -> Loc.t -> Dom.Mem.t -> Dom.Mem.t
+      =
+   fun path location loc mem ->
     let size =
       let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
       let traces = Trace.(Set.singleton location (Parameter loc)) in
-      Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
-      |> Dom.Val.of_itv ~traces
+      Itv.of_length_path path |> Dom.Val.of_itv ~traces
       |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     Dom.Mem.add_heap loc size mem

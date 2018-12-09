@@ -10,7 +10,6 @@ open! AbstractDomain.Types
 module F = Format
 module Bound = Bounds.Bound
 module SymbolPath = Symb.SymbolPath
-module SymbolTable = Symb.SymbolTable
 module SymbolSet = Symb.SymbolSet
 
 module ItvRange : sig
@@ -142,9 +141,6 @@ val is_mone : t -> bool
 
 val eq_const : Z.t -> t -> bool
 
-val make_sym :
-  ?unsigned:bool -> Typ.Procname.t -> Symb.SymbolTable.t -> Symb.SymbolPath.t -> Counter.t -> t
-
 val lb : t -> Bound.t
 
 val ub : t -> Bound.t
@@ -218,3 +214,9 @@ val prune_ne : t -> t -> t
 val subst : t -> Bound.eval_sym -> t
 
 val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t
+
+val of_normal_path : unsigned:bool -> Symb.SymbolPath.partial -> t
+
+val of_offset_path : Symb.SymbolPath.partial -> t
+
+val of_length_path : Symb.SymbolPath.partial -> t

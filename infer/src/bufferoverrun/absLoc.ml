@@ -73,6 +73,12 @@ module Allocsite = struct
   let unknown = Unknown
 
   let get_path = function Unknown -> None | Symbol path -> Some path | Known {path} -> path
+
+  let get_param_path = function
+    | Symbol path ->
+        Option.some_if (not (Symb.SymbolPath.represents_callsite_sound_partial path)) path
+    | Unknown | Known _ ->
+        None
 end
 
 module Loc = struct
@@ -128,6 +134,16 @@ module Loc = struct
 
   let of_id id = Var (Var.of_id id)
 
+  let rec of_path path =
+    match path with
+    | Symb.SymbolPath.Pvar pvar ->
+        of_pvar pvar
+    | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Callsite _ ->
+        Allocsite (Allocsite.make_symbol path)
+    | Symb.SymbolPath.Field (fn, path) ->
+        Field (of_path path, fn)
+
+
   let append_field l ~fn = Field (l, fn)
 
   let is_return = function
@@ -148,6 +164,21 @@ module Loc = struct
         Allocsite.get_path allocsite
     | Field (l, fn) ->
         Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
+
+
+  let rec get_param_path = function
+    | Var _ ->
+        None
+    | Allocsite allocsite ->
+        Allocsite.get_param_path allocsite
+    | Field (l, fn) ->
+        Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
+
+
+  let has_param_path formals x =
+    Option.value_map (get_path x) ~default:false ~f:(fun x ->
+        Option.value_map (Symb.SymbolPath.get_pvar x) ~default:false ~f:(fun x ->
+            List.exists formals ~f:(fun (formal, _) -> Pvar.equal x formal) ) )
 end
 
 module PowLoc = struct
@@ -173,6 +204,13 @@ module PowLoc = struct
 
 
   type eval_locpath = Symb.SymbolPath.partial -> t
+
+  let subst_loc l (eval_locpath : eval_locpath) =
+    match Loc.get_param_path l with None -> singleton l | Some path -> eval_locpath path
+
+
+  let subst x (eval_locpath : eval_locpath) =
+    fold (fun l acc -> join acc (subst_loc l eval_locpath)) x empty
 end
 
 (** unsound but ok for bug catching *)
