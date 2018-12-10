@@ -8,8 +8,13 @@
 open! IStd
 module L = Logging
 
-let call_matches ?(search_superclasses = true) ?(method_prefix = false)
-    ?(actuals_pred = fun _ -> true) clazz methods =
+(** [call_matches <named args> C methods] builds a method matcher for calls [C.foo] where
+    [foo] is in [methods].  Named arguments change behaviour:
+    - [search_superclasses=true] will match calls [S.foo] where [S] is a superclass of [C].
+    - [method_prefix=true] will match calls [C.foo] where [foo] is a prefix of a string in [methods]
+    - [actuals_pred] is a predicate that runs on the expressions fed as arguments to the call, and
+      which must return [true] for the matcher to return [true]. *)
+let call_matches ~search_superclasses ~method_prefix ~actuals_pred clazz methods =
   let method_matcher =
     if method_prefix then fun current_method target_method ->
       String.is_prefix current_method ~prefix:target_method
@@ -18,7 +23,7 @@ let call_matches ?(search_superclasses = true) ?(method_prefix = false)
   let class_matcher =
     if search_superclasses then
       let target = "class " ^ clazz in
-      let is_target tname _ = Typ.Name.to_string tname |> String.equal target in
+      let is_target tname _tstruct = Typ.Name.to_string tname |> String.equal target in
       fun tenv pname ->
         Typ.Procname.get_class_type_name pname
         |> Option.exists ~f:(PatternMatch.supertype_exists tenv is_target)

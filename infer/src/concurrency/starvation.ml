@@ -141,41 +141,43 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFun
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let open StarvationDomain in
   let pname = Procdesc.get_proc_name proc_desc in
-  let formals = FormalMap.make proc_desc in
-  let proc_data = ProcData.make proc_desc tenv formals in
-  let loc = Procdesc.get_loc proc_desc in
-  let recursive_locks = Procdesc.get_proc_name proc_desc |> Typ.Procname.is_java in
-  let initial =
-    if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
-    else
-      let lock =
-        match pname with
-        | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
-            (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
-            Typ.Procname.Java.get_class_type_name java_pname
-            |> Typ.Name.name |> Ident.string_to_name |> lock_of_class |> Option.some
-        | _ ->
-            FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
-      in
-      StarvationDomain.acquire ~recursive_locks StarvationDomain.empty loc (Option.to_list lock)
-  in
-  let initial =
-    ConcurrencyModels.runs_on_ui_thread tenv proc_desc
-    |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
-  in
-  let filter_blocks =
-    if is_nonblocking tenv proc_desc then fun ({events; order} as astate) ->
-      { astate with
-        events= EventDomain.filter (function {elem= MayBlock _} -> false | _ -> true) events
-      ; order=
-          OrderDomain.filter
-            (function {elem= {eventually= {elem= MayBlock _}}} -> false | _ -> true)
-            order }
-    else Fn.id
-  in
-  Analyzer.compute_post proc_data ~initial
-  |> Option.map ~f:filter_blocks
-  |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
+  if StarvationModels.should_skip_analysis tenv pname [] then summary
+  else
+    let formals = FormalMap.make proc_desc in
+    let proc_data = ProcData.make proc_desc tenv formals in
+    let loc = Procdesc.get_loc proc_desc in
+    let recursive_locks = Procdesc.get_proc_name proc_desc |> Typ.Procname.is_java in
+    let initial =
+      if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
+      else
+        let lock =
+          match pname with
+          | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
+              (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
+              Typ.Procname.Java.get_class_type_name java_pname
+              |> Typ.Name.name |> Ident.string_to_name |> lock_of_class |> Option.some
+          | _ ->
+              FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
+        in
+        StarvationDomain.acquire ~recursive_locks StarvationDomain.empty loc (Option.to_list lock)
+    in
+    let initial =
+      ConcurrencyModels.runs_on_ui_thread tenv proc_desc
+      |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
+    in
+    let filter_blocks =
+      if is_nonblocking tenv proc_desc then fun ({events; order} as astate) ->
+        { astate with
+          events= EventDomain.filter (function {elem= MayBlock _} -> false | _ -> true) events
+        ; order=
+            OrderDomain.filter
+              (function {elem= {eventually= {elem= MayBlock _}}} -> false | _ -> true)
+              order }
+      else Fn.id
+    in
+    Analyzer.compute_post proc_data ~initial
+    |> Option.map ~f:filter_blocks
+    |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
 
 
 (** per-procedure report map, which takes care of deduplication *)
