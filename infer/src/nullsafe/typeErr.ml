@@ -335,8 +335,9 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
     | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed) ->
         let at_index = if indexed then "element at index" else "field" in
         ( IssueType.eradicate_null_field_access
-        , Format.asprintf "Object %a could be null when accessing %s %a. %s" MF.pp_monospaced
-            (Option.value s_opt ~default:"") at_index MF.pp_monospaced
+        , Format.asprintf
+            "Object %a is nullable and is not locally checked for null when accessing %s %a. %s"
+            MF.pp_monospaced (Option.value s_opt ~default:"") at_index MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             origin_description
         , None
@@ -347,7 +348,9 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
           match ann with
           | AnnotatedSignature.Nullable ->
               ( IssueType.eradicate_null_method_call
-              , Format.asprintf "The value of %a in the call to %a could be null. %s"
+              , Format.asprintf
+                  "The value of %a in the call to %a is nullable and is not locally checked for \
+                   null. %s"
                   MF.pp_monospaced (Option.value s_opt ~default:"") MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn)
                   origin_description )
