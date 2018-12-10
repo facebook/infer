@@ -194,7 +194,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Some (HilExp.AccessExpression actual_access_expr) ->
                 Some
                   (Domain.LocalAccessPath.make
-                     (AccessExpression.to_access_path actual_access_expr)
+                     (HilExp.AccessExpression.to_access_path actual_access_expr)
                      caller_pname)
             | _ ->
                 None )
@@ -219,7 +219,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , _ ) ->
         let summary = Payload.read proc_data.pdesc callee_procname in
         let receiver =
-          Domain.LocalAccessPath.make (AccessExpression.to_access_path receiver_ae) caller_pname
+          Domain.LocalAccessPath.make
+            (HilExp.AccessExpression.to_access_path receiver_ae)
+            caller_pname
         in
         if
           ( LithoFramework.is_component_builder callee_procname proc_data.tenv
@@ -252,10 +254,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
            tmp.getBar() *)
         let lhs_access_path =
-          Domain.LocalAccessPath.make (AccessExpression.to_access_path lhs_ae) caller_pname
+          Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path lhs_ae) caller_pname
         in
         let rhs_access_path =
-          Domain.LocalAccessPath.make (AccessExpression.to_access_path rhs_ae) caller_pname
+          Domain.LocalAccessPath.make (HilExp.AccessExpression.to_access_path rhs_ae) caller_pname
         in
         try
           let call_set = Domain.find rhs_access_path astate in

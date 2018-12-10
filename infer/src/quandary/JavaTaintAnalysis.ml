@@ -26,7 +26,7 @@ include TaintAnalysis.Make (struct
       | HilExp.Cast (_, e) ->
           get_receiver_typ tenv e
       | HilExp.AccessExpression access_expr ->
-          AccessPath.get_typ (AccessExpression.to_access_path access_expr) tenv
+          AccessPath.get_typ (HilExp.AccessExpression.to_access_path access_expr) tenv
       | _ ->
           None
     in

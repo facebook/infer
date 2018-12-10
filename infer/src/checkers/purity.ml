@@ -37,13 +37,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (* given a heap access to ae, find which parameter indices of pdesc
      it modifies *)
   let track_modified_params formals ae =
-    let base_var, _ = AccessExpression.get_base ae in
+    let base_var, _ = HilExp.AccessExpression.get_base ae in
     let modified_params = get_modified_params formals ~f:(Var.equal base_var) in
     Domain.impure modified_params
 
 
   let rec is_heap_access ae =
-    match (ae : AccessExpression.t) with
+    match (ae : HilExp.AccessExpression.t) with
     | FieldOffset _ | ArrayOffset _ ->
         true
     | Dereference ae | AddressOf ae ->
@@ -74,7 +74,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             debug "Argument %a is modified.\n" HilExp.pp arg_exp ;
             HilExp.get_access_exprs arg_exp
             |> List.fold ~init:modified_acc ~f:(fun modified_acc ae ->
-                   ModifiedVarSet.add (AccessExpression.get_base ae |> fst) modified_acc ) )
+                   ModifiedVarSet.add (HilExp.AccessExpression.get_base ae |> fst) modified_acc ) )
           else modified_acc )
         callee_args
     in

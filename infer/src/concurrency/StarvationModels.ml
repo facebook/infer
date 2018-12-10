@@ -46,7 +46,7 @@ let timeunit_of_exp =
   in
   let str_of_exp = function
     | HilExp.AccessExpression timeunit_acc_exp ->
-        AccessExpression.to_access_path timeunit_acc_exp |> str_of_access_path
+        HilExp.AccessExpression.to_access_path timeunit_acc_exp |> str_of_access_path
     | _ ->
         None
   in

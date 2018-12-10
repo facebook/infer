@@ -11,20 +11,21 @@ module L = Logging
 
 include (IdMap : module type of IdMap with type 'a t := 'a IdMap.t)
 
-type t = AccessExpression.t IdMap.t
+type t = HilExp.AccessExpression.t IdMap.t
 
-type value = AccessExpression.t
+type value = HilExp.AccessExpression.t
 
-let pp fmt astate = IdMap.pp ~pp_value:AccessExpression.pp fmt astate
+let pp fmt astate = IdMap.pp ~pp_value:HilExp.AccessExpression.pp fmt astate
 
 let check_invariant ap1 ap2 = function
   | Var.ProgramVar pvar when Pvar.is_ssa_frontend_tmp pvar ->
       (* Sawja reuses temporary variables which sometimes breaks this invariant *)
       ()
   | id ->
-      if not (AccessExpression.equal ap1 ap2) then
+      if not (HilExp.AccessExpression.equal ap1 ap2) then
         L.(die InternalError)
-          "Id %a maps to both %a and %a" Var.pp id AccessExpression.pp ap1 AccessExpression.pp ap2
+          "Id %a maps to both %a and %a" Var.pp id HilExp.AccessExpression.pp ap1
+          HilExp.AccessExpression.pp ap2
 
 
 let ( <= ) ~lhs ~rhs =

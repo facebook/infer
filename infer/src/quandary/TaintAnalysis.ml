@@ -74,7 +74,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       match exp with
       | AccessExpression access_expr ->
           exp_get_node_ ~abstracted
-            (AccessExpression.to_access_path access_expr)
+            (HilExp.AccessExpression.to_access_path access_expr)
             access_tree proc_data
       | Cast (_, e) | Exception e | UnaryOperator (_, e, _) ->
           hil_exp_get_node ~abstracted e access_tree proc_data
@@ -101,7 +101,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       match HilExp.ignore_cast (List.nth_exn actuals index) with
       | HilExp.AccessExpression actual_ae_raw ->
           let actual_ap =
-            AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae_raw)
+            AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path actual_ae_raw)
           in
           let trace = access_path_get_trace actual_ap access_tree proc_data in
           TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
@@ -340,7 +340,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                        (TraceDomain.Sources.Footprint.is_empty
                           (TraceDomain.sources actual_trace').footprint) ->
                   let actual_ap =
-                    AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae_raw)
+                    AccessPath.Abs.Abstracted
+                      (HilExp.AccessExpression.to_access_path actual_ae_raw)
                   in
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | _ ->
@@ -393,7 +394,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           match Option.map (List.nth actuals (Ident.get_stamp id)) ~f:HilExp.ignore_cast with
           | Some (HilExp.AccessExpression actual_ae) ->
               let projected_ap =
-                project ~formal_ap ~actual_ap:(AccessExpression.to_access_path actual_ae)
+                project ~formal_ap ~actual_ap:(HilExp.AccessExpression.to_access_path actual_ae)
               in
               let caller_node_opt = access_path_get_node projected_ap access_tree proc_data in
               (Some projected_ap, Option.value ~default:TaintDomain.empty_node caller_node_opt)
@@ -450,14 +451,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
          existing machinery for adding function call sinks *)
       let add_sinks_for_access_path access_expr loc astate =
         let rec add_sinks_for_access astate_acc = function
-          | AccessExpression.Base _ ->
+          | HilExp.AccessExpression.Base _ ->
               astate_acc
-          | AccessExpression.FieldOffset (ae, _)
+          | HilExp.AccessExpression.FieldOffset (ae, _)
           | ArrayOffset (ae, _, [])
           | AddressOf ae
           | Dereference ae ->
               add_sinks_for_access astate_acc ae
-          | AccessExpression.ArrayOffset (ae, _, indexes) ->
+          | HilExp.AccessExpression.ArrayOffset (ae, _, indexes) ->
               let dummy_call_site = CallSite.make BuiltinDecl.__array_access loc in
               let dummy_actuals =
                 List.map ~f:(fun index_ae -> HilExp.AccessExpression index_ae) indexes
@@ -475,7 +476,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         add_sinks_for_access astate access_expr
       in
       let add_sources_for_access_path access_expr loc astate =
-        let var, _ = AccessExpression.get_base access_expr in
+        let var, _ = HilExp.AccessExpression.get_base access_expr in
         if Var.is_global var then
           let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
           let sources =
@@ -485,7 +486,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           in
           List.fold sources ~init:astate ~f:(fun astate {TraceDomain.Source.source} ->
               let access_path =
-                AccessPath.Abs.Exact (AccessExpression.to_access_path access_expr)
+                AccessPath.Abs.Exact (HilExp.AccessExpression.to_access_path access_expr)
               in
               let trace, subtree =
                 Option.value ~default:TaintDomain.empty_node
@@ -510,18 +511,17 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let rhs_node =
           Option.value (hil_exp_get_node rhs_exp astate proc_data) ~default:TaintDomain.empty_node
         in
-        let lhs_access_path = AccessExpression.to_access_path lhs_access_expr in
+        let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
         TaintDomain.add_node (AccessPath.Abs.Exact lhs_access_path) rhs_node astate
       in
       match instr with
-      | Assign (AccessExpression.Base (Var.ProgramVar pvar, _), HilExp.Exception _, _)
-        when Pvar.is_return pvar ->
+      | Assign (Base (Var.ProgramVar pvar, _), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
                wonky. this translation causes problems for us in computing a summary when an
                exception is "returned" from a void function. skip code like this for now, fix via
                t14159157 later *)
           astate
-      | Assign (AccessExpression.Base (Var.ProgramVar pvar, _), rhs_exp, _)
+      | Assign (Base (Var.ProgramVar pvar, _), rhs_exp, _)
         when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp
              && Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
           (* similar to the case above; the Java frontend translates "return no exception" as
@@ -596,13 +596,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | ( TaintSpec.Propagate_to_receiver
                 , AccessExpression receiver_ae :: (_ :: _ as other_actuals) ) ->
                   propagate_to_access_path
-                    (AccessPath.Abs.Abstracted (AccessExpression.to_access_path receiver_ae))
+                    (AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path receiver_ae))
                     other_actuals astate_acc
               | TaintSpec.Propagate_to_actual actual_index, _ -> (
                 match Option.map (List.nth actuals actual_index) ~f:HilExp.ignore_cast with
                 | Some (HilExp.AccessExpression actual_ae) ->
                     propagate_to_access_path
-                      (AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae))
+                      (AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path actual_ae))
                       actuals astate_acc
                 | _ ->
                     astate_acc )
@@ -621,8 +621,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | [AccessExpression lhs_access_expr; rhs_exp; HilExp.AccessExpression access_expr] -> (
                   let dummy_ret_access_expr = access_expr in
                   match dummy_ret_access_expr with
-                  | AccessExpression.Base (Var.ProgramVar pvar, _) when Pvar.is_frontend_tmp pvar
-                    ->
+                  | HilExp.AccessExpression.Base (Var.ProgramVar pvar, _)
+                    when Pvar.is_frontend_tmp pvar ->
                       (* the frontend translates operator=(x, y) as operator=(x, y, dummy_ret) when
                      operator= returns a value type *)
                       exec_write lhs_access_expr rhs_exp access_tree
@@ -652,7 +652,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                    assigning to it. understand this pattern by pretending it's the return value *)
               match List.last actuals with
               | Some (HilExp.AccessExpression access_expr) -> (
-                match AccessExpression.to_access_path access_expr with
+                match HilExp.AccessExpression.to_access_path access_expr with
                 | ((Var.ProgramVar pvar, _) as ret_base), [] when Pvar.is_frontend_tmp pvar ->
                     Some ret_base
                 | _ ->

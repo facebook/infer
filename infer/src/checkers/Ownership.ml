@@ -159,7 +159,8 @@ module Domain = struct
   let exp_add_reads exp loc summary astate =
     List.fold
       ~f:(fun acc access_expr ->
-        access_path_add_read (AccessExpression.to_access_path access_expr) loc summary acc )
+        access_path_add_read (HilExp.AccessExpression.to_access_path access_expr) loc summary acc
+        )
       (HilExp.get_access_exprs exp) ~init:astate
 
 
@@ -235,12 +236,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let get_assigned_base (access_expression : AccessExpression.t) =
+  let get_assigned_base (access_expression : HilExp.AccessExpression.t) =
     match access_expression with
     | Base base ->
         Some base
     | _ ->
-        let base = AccessExpression.get_base access_expression in
+        let base = HilExp.AccessExpression.get_base access_expression in
         (* assume assigning to any field of an aggregate struct re-initalizes the struct *)
         Option.some_if (is_aggregate base) base
 
@@ -254,7 +255,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let acquire_ownership call_exp return_base actuals loc summary astate =
     let aquire_ownership_of_first_param actuals =
       match actuals with
-      | HilExp.AccessExpression (AccessExpression.AddressOf access_expression) :: other_actuals -> (
+      | HilExp.AccessExpression (AddressOf access_expression) :: other_actuals -> (
         match get_assigned_base access_expression with
         | Some constructed_base ->
             let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
@@ -326,7 +327,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* assign to field, array, indirectly with &/*, or a combination *)
           Domain.exp_add_reads rhs_exp loc summary astate
           |> Domain.access_path_add_read
-               (AccessExpression.to_access_path lhs_access_exp)
+               (HilExp.AccessExpression.to_access_path lhs_access_exp)
                loc summary )
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.__variable_initialization ->

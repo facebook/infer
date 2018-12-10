@@ -229,7 +229,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | [arg] when HilExp.is_null_literal arg ->
         astate
     | HilExp.AccessExpression access_expr :: other_args ->
-        let ap = AccessExpression.to_access_path access_expr in
+        let ap = HilExp.AccessExpression.to_access_path access_expr in
         check_nil_in_objc_container proc_data loc other_args (check_ap proc_data loc ap astate)
     | _ :: other_args ->
         check_nil_in_objc_container proc_data loc other_args astate
@@ -257,7 +257,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         remove_nullable_ap (ret_var, []) astate
     | Call (_, Direct callee_pname, HilExp.AccessExpression receiver :: _, _, _)
       when Models.is_check_not_null callee_pname ->
-        assume_pnames_notnull (AccessExpression.to_access_path receiver) astate
+        assume_pnames_notnull (HilExp.AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
         astate
     | Call (ret_var, Direct callee_pname, _, _, loc)
@@ -269,7 +269,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         check_nil_in_objc_container proc_data loc args astate
     | Call (_, Direct callee_pname, HilExp.AccessExpression receiver :: _, _, loc)
       when is_non_objc_instance_method callee_pname ->
-        check_ap proc_data loc (AccessExpression.to_access_path receiver) astate
+        check_ap proc_data loc (HilExp.AccessExpression.to_access_path receiver) astate
     | Call
         ( ((_, ret_typ) as ret_var)
         , Direct callee_pname
@@ -277,7 +277,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , _
         , _ )
       when Typ.is_pointer ret_typ && is_objc_instance_method callee_pname -> (
-      match longest_nullable_prefix (AccessExpression.to_access_path receiver) astate with
+      match longest_nullable_prefix (HilExp.AccessExpression.to_access_path receiver) astate with
       | None ->
           astate
       | Some (_, call_sites) ->
@@ -286,7 +286,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
     | Assign (lhs_access_expr, rhs, loc) -> (
-        let lhs = AccessExpression.to_access_path lhs_access_expr in
+        let lhs = HilExp.AccessExpression.to_access_path lhs_access_expr in
         Option.iter
           ~f:(fun (nullable_ap, call_sites) ->
             if not (is_pointer_assignment proc_data.ProcData.tenv nullable_ap rhs) then
@@ -298,7 +298,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | HilExp.AccessExpression access_expr -> (
           try
             (* Add the lhs to the list of nullable values if the rhs is nullable *)
-            let ap = AccessExpression.to_access_path access_expr in
+            let ap = HilExp.AccessExpression.to_access_path access_expr in
             add_nullable_ap lhs (find_nullable_ap ap astate) astate
           with Caml.Not_found ->
             (* Remove the lhs from the list of nullable values if the rhs is not nullable *)
@@ -307,7 +307,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (* Remove the lhs from the list of nullable values if the rhs is not an access path *)
             remove_nullable_ap lhs astate )
     | Assume (HilExp.AccessExpression access_expr, _, _, _) ->
-        assume_pnames_notnull (AccessExpression.to_access_path access_expr) astate
+        assume_pnames_notnull (HilExp.AccessExpression.to_access_path access_expr) astate
     | Assume
         ( ( HilExp.BinaryOperator (Binop.Ne, HilExp.AccessExpression access_expr, exp)
           | HilExp.BinaryOperator (Binop.Ne, exp, HilExp.AccessExpression access_expr) )
@@ -324,7 +324,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , _
         , _ ) ->
         if HilExp.is_null_literal exp then
-          assume_pnames_notnull (AccessExpression.to_access_path access_expr) astate
+          assume_pnames_notnull (HilExp.AccessExpression.to_access_path access_expr) astate
         else astate
     | _ ->
         astate

@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
       | [AccessExpression destroyed_access] ->
-          let destroyed_object = AccessExpression.dereference destroyed_access in
+          let destroyed_object = HilExp.AccessExpression.dereference destroyed_access in
           PulseDomain.invalidate
             (CppDestructor (callee_pname, destroyed_object, call_loc))
             call_loc destroyed_object astate
@@ -71,7 +71,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
       match actuals with
       | AccessExpression constructor_access :: rest ->
-          let constructed_object = AccessExpression.dereference constructor_access in
+          let constructed_object = HilExp.AccessExpression.dereference constructor_access in
           PulseDomain.havoc call_loc constructed_object astate >>= read_all rest
       | _ ->
           Ok astate )
@@ -81,12 +81,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (* We want to assign *lhs to *rhs when rhs is materialized temporary created in constructor *)
       | [AccessExpression lhs; (HilExp.AccessExpression (AddressOf (Base rhs_base)) as rhs_exp)]
         when Var.is_cpp_temporary (fst rhs_base) ->
-          let lhs_deref = AccessExpression.dereference lhs in
+          let lhs_deref = HilExp.AccessExpression.dereference lhs in
           exec_assign lhs_deref rhs_exp call_loc astate
       (* copy assignment *)
       | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
-          let lhs_deref = AccessExpression.dereference lhs in
-          let rhs_deref = AccessExpression.dereference rhs in
+          let lhs_deref = HilExp.AccessExpression.dereference lhs in
+          let rhs_deref = HilExp.AccessExpression.dereference rhs in
           PulseDomain.havoc call_loc lhs_deref astate
           >>= fun astate -> PulseDomain.read call_loc rhs_deref astate >>| fst
       | _ ->

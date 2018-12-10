@@ -66,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (UseDefChain.NullDefAssign (loc, lhs))
     | HilExp.AccessExpression access_expr -> (
       try
-        let ap = AccessExpression.to_access_path access_expr in
+        let ap = HilExp.AccessExpression.to_access_path access_expr in
         match Domain.find ap astate with
         | UseDefChain.NullDefCompare _ ->
             (* Stop NullDefCompare from propagating here because we want to prevent
@@ -85,7 +85,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         extract_null_compare_expr e
     | HilExp.BinaryOperator ((Eq | Ne), HilExp.AccessExpression access_expr, exp)
     | HilExp.BinaryOperator ((Eq | Ne), exp, HilExp.AccessExpression access_expr) ->
-        Option.some_if (HilExp.is_null_literal exp) (AccessExpression.to_access_path access_expr)
+        Option.some_if (HilExp.is_null_literal exp)
+          (HilExp.AccessExpression.to_access_path access_expr)
     | _ ->
         None
 
@@ -103,7 +104,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* For now we just assume the callee always return non-null *)
         astate
     | Assign (lhs_access_expr, rhs, loc) ->
-        let lhs = AccessExpression.to_access_path lhs_access_expr in
+        let lhs = HilExp.AccessExpression.to_access_path lhs_access_expr in
         if not (is_access_nullable lhs proc_data) then
           match nullable_usedef_chain_of rhs lhs astate loc with
           | Some udchain ->

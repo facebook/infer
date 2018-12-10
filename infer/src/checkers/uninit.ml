@@ -51,7 +51,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let report_intra access_expr loc summary =
     let message =
-      F.asprintf "The value read from %a was never initialized" AccessExpression.pp access_expr
+      F.asprintf "The value read from %a was never initialized" HilExp.AccessExpression.pp
+        access_expr
     in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
     Reporting.log_error summary ~loc ~ltr IssueType.uninitialized_value message
@@ -64,8 +65,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let get_formals pname = Ondemand.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
 
   let should_report_var pdesc tenv maybe_uninit_vars access_expr =
-    let base = AccessExpression.get_base access_expr in
-    match (AccessExpression.get_typ access_expr tenv, base) with
+    let base = HilExp.AccessExpression.get_base access_expr in
+    match (HilExp.AccessExpression.get_typ access_expr tenv, base) with
     | Some typ, (Var.ProgramVar pv, _) ->
         (not (Pvar.is_frontend_tmp pv))
         && (not (Procdesc.is_captured_var pdesc pv))
@@ -85,13 +86,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_struct_field_passed_by_ref callee_formals t access_expr idx =
     is_struct t
-    && (not (AccessExpression.is_base access_expr))
+    && (not (HilExp.AccessExpression.is_base access_expr))
     && function_expects_a_pointer_as_nth_param callee_formals idx
 
 
   let is_array_element_passed_by_ref callee_formals t access_expr idx =
     is_array t
-    && (not (AccessExpression.is_base access_expr))
+    && (not (HilExp.AccessExpression.is_base access_expr))
     && function_expects_a_pointer_as_nth_param callee_formals idx
 
 
@@ -105,7 +106,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     List.iteri actuals ~f:(fun idx e ->
         match HilExp.ignore_cast e with
         | HilExp.AccessExpression access_expr ->
-            let _, t = AccessExpression.get_base access_expr in
+            let _, t = HilExp.AccessExpression.get_base access_expr in
             if
               should_report_var pdesc tenv maybe_uninit_vars access_expr
               && (not (Typ.is_pointer t))
@@ -129,10 +130,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_pointer_assignment tenv lhs rhs =
-    let _, base_typ = AccessExpression.get_base lhs in
+    let _, base_typ = HilExp.AccessExpression.get_base lhs in
     HilExp.is_null_literal rhs
     (* the rhs has type int when assigning the lhs to null *)
-    || Option.equal Typ.equal (AccessExpression.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
+    || Option.equal Typ.equal (HilExp.AccessExpression.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
        && Typ.is_pointer base_typ
 
 
@@ -147,7 +148,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if
           D.exists
             (fun access_expr ->
-              let base = AccessExpression.get_base access_expr in
+              let base = HilExp.AccessExpression.get_base access_expr in
               AccessPath.equal_base base (var_fparam, t) )
             init_formal_params
         then Some var_fparam
@@ -161,7 +162,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Some var_formal ->
           let maybe_uninit_vars = MaybeUninitVars.remove access_expr maybe_uninit_vars in
           if remove_fields then
-            let base = AccessExpression.get_base access_expr in
+            let base = HilExp.AccessExpression.get_base access_expr in
             let init_formals' = MaybeUninitVars.of_list (D.elements init_formals) in
             MaybeUninitVars.remove_init_fields base var_formal maybe_uninit_vars init_formals'
           else maybe_uninit_vars
@@ -195,12 +196,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ()
     in
     let update_prepost access_expr rhs =
-      let lhs_base = AccessExpression.get_base access_expr in
+      let lhs_base = HilExp.AccessExpression.get_base access_expr in
       if
         FormalMap.is_formal lhs_base formals
         && Typ.is_pointer (snd lhs_base)
         && ( (not (is_pointer_assignment tenv access_expr rhs))
-           || not (AccessExpression.is_base access_expr) )
+           || not (HilExp.AccessExpression.is_base access_expr) )
       then
         let pre = D.add access_expr astate.prepost.UninitDomain.pre in
         {astate.prepost with pre}
@@ -209,16 +210,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Assign (lhs_access_expr, rhs_expr, loc) ->
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
-        ( match AccessExpression.get_typ lhs_access_expr tenv with
+        ( match HilExp.AccessExpression.get_typ lhs_access_expr tenv with
         | Some lhs_typ when not (Typ.is_reference lhs_typ) ->
             check_hil_expr ~loc rhs_expr
         | _ ->
             () ) ;
         let maybe_uninit_vars = MaybeUninitVars.remove lhs_access_expr astate.maybe_uninit_vars in
         let maybe_uninit_vars =
-          if AccessExpression.is_base lhs_access_expr then
+          if HilExp.AccessExpression.is_base lhs_access_expr then
             (* if we assign to the root of a struct then we need to remove all the fields *)
-            let lhs_base = AccessExpression.get_base lhs_access_expr in
+            let lhs_base = HilExp.AccessExpression.get_base lhs_access_expr in
             MaybeUninitVars.remove_all_fields tenv lhs_base maybe_uninit_vars
             |> MaybeUninitVars.remove_dereference_access lhs_base
           else maybe_uninit_vars
@@ -259,7 +260,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   let access_expr_to_remove =
                     match access_expr with AddressOf ae -> ae | _ -> access_expr
                   in
-                  match AccessExpression.get_base access_expr with
+                  match HilExp.AccessExpression.get_base access_expr with
                   | _, {Typ.desc= Tarray _} when is_initializing_all_args ->
                       MaybeUninitVars.remove access_expr acc
                   | _, t
@@ -285,7 +286,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold apl ~init:acc ~f:(fun acc (base, _) ->
-                      MaybeUninitVars.remove (AccessExpression.base base) acc )
+                      MaybeUninitVars.remove (HilExp.AccessExpression.base base) acc )
               | _ ->
                   acc )
         in
@@ -301,6 +302,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | ExitScope _ ->
         astate
 
+
   let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
@@ -312,7 +314,7 @@ module Initial = struct
     List.fold (Procdesc.get_locals pdesc) ~init:[]
       ~f:(fun acc (var_data : ProcAttributes.var_data) ->
         let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
-        let base_access_expr = AccessExpression.base (Var.of_pvar pvar, var_data.typ) in
+        let base_access_expr = HilExp.AccessExpression.base (Var.of_pvar pvar, var_data.typ) in
         match var_data.typ.Typ.desc with
         | Typ.Tstruct qual_name
         (* T30105165 remove filtering after we improve union translation *)
@@ -322,7 +324,7 @@ module Initial = struct
               let flist =
                 List.fold
                   ~f:(fun acc' (fn, _, _) ->
-                    AccessExpression.field_offset base_access_expr fn :: acc' )
+                    HilExp.AccessExpression.field_offset base_access_expr fn :: acc' )
                   ~init:acc fields
               in
               base_access_expr :: flist
@@ -331,9 +333,9 @@ module Initial = struct
           | _ ->
               acc )
         | Typ.Tarray {elt} ->
-            AccessExpression.array_offset base_access_expr elt [] :: acc
+            HilExp.AccessExpression.array_offset base_access_expr elt [] :: acc
         | Typ.Tptr _ ->
-            base_access_expr :: AccessExpression.dereference base_access_expr :: acc
+            base_access_expr :: HilExp.AccessExpression.dereference base_access_expr :: acc
         | _ ->
             base_access_expr :: acc )
 end

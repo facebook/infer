@@ -476,7 +476,7 @@ end
 
 (* {2 Access operations on the domain} *)
 
-type actor = {access_expr: AccessExpression.t; location: Location.t} [@@deriving compare]
+type actor = {access_expr: HilExp.AccessExpression.t; location: Location.t} [@@deriving compare]
 
 module Diagnostic = struct
   type t =
@@ -491,7 +491,7 @@ module Diagnostic = struct
     let pp_debug_address f =
       if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
     in
-    F.asprintf "`%a` accesses address %a past its lifetime%t" AccessExpression.pp
+    F.asprintf "`%a` accesses address %a past its lifetime%t" HilExp.AccessExpression.pp
       accessed_by.access_expr Invalidation.pp invalidated_by pp_debug_address
 
 
@@ -506,7 +506,7 @@ module Diagnostic = struct
     in
     invalidated_by_trace
     @ [ Errlog.make_trace_element 0 accessed_by.location
-          (F.asprintf "accessed `%a` here" AccessExpression.pp accessed_by.access_expr)
+          (F.asprintf "accessed `%a` here" HilExp.AccessExpression.pp accessed_by.access_expr)
           [] ]
 
 
@@ -582,7 +582,7 @@ module Operations = struct
   (** add addresses to the state to give a address to the destination of the given access path *)
   let walk_access_expr ~on_last astate access_expr location =
     let (access_var, _), access_list =
-      AccessExpression.to_accesses ~f_array_offset:(fun _ -> ()) access_expr
+      HilExp.AccessExpression.to_accesses ~f_array_offset:(fun _ -> ()) access_expr
     in
     if Config.write_html then
       L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
@@ -632,7 +632,7 @@ module Operations = struct
     {astate with stack= Stack.add var (AbstractAddressSet.mk_fresh ()) astate.stack}
 
 
-  let havoc location (access_expr : AccessExpression.t) astate =
+  let havoc location (access_expr : HilExp.AccessExpression.t) astate =
     match access_expr with
     | Base (access_var, _) ->
         havoc_var access_var astate |> Result.return

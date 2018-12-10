@@ -33,7 +33,7 @@ include TaintAnalysis.Make (struct
           (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
       | Tvoid, HilExp.AccessExpression access_expr :: _ -> (
-        match AccessExpression.to_access_path access_expr with
+        match HilExp.AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []
           when Pvar.is_frontend_tmp pvar ->
             (* no return value, but the frontend has introduced a dummy return variable and will

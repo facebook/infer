@@ -9,10 +9,10 @@ open! IStd
 module F = Format
 
 (** type of a procedure call; either direct or via function pointer *)
-type call = Direct of Typ.Procname.t | Indirect of AccessExpression.t [@@deriving compare]
+type call = Direct of Typ.Procname.t | Indirect of HilExp.AccessExpression.t [@@deriving compare]
 
 type t =
-  | Assign of AccessExpression.t * HilExp.t * Location.t
+  | Assign of HilExp.AccessExpression.t * HilExp.t * Location.t
       (** LHS access expression, RHS expression *)
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
       (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
@@ -26,12 +26,12 @@ val pp : F.formatter -> t -> unit
 (** Result of translating an SIL instruction *)
 type translation =
   | Instr of t  (** HIL instruction to execute *)
-  | Bind of Var.t * AccessExpression.t  (** add binding to identifier map *)
+  | Bind of Var.t * HilExp.AccessExpression.t  (** add binding to identifier map *)
   | Ignore  (** no-op *)
 
 val of_sil :
      include_array_indexes:bool
-  -> f_resolve_id:(Var.t -> AccessExpression.t option)
+  -> f_resolve_id:(Var.t -> HilExp.AccessExpression.t option)
   -> Sil.instr
   -> translation
 (** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an

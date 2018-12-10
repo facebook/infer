@@ -7,15 +7,15 @@
 
 open! IStd
 module F = Format
-module Domain = AbstractDomain.InvertedSet (AccessExpression)
+module Domain = AbstractDomain.InvertedSet (HilExp.AccessExpression)
 
 module MaybeUninitVars = struct
-  include AbstractDomain.FiniteSet (AccessExpression)
+  include AbstractDomain.FiniteSet (HilExp.AccessExpression)
 
   let subst_formal_actual_fields formal_var actual_base_var init_formals =
     map
       (fun access_expr ->
-        let v, t = AccessExpression.get_base access_expr in
+        let v, t = HilExp.AccessExpression.get_base access_expr in
         let v' = if Var.equal v formal_var then actual_base_var else v in
         let t' =
           match t.desc with
@@ -28,7 +28,7 @@ module MaybeUninitVars = struct
           | _ ->
               t
         in
-        AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
+        HilExp.AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
       init_formals
 
 
@@ -50,7 +50,9 @@ module MaybeUninitVars = struct
       match Tenv.lookup tenv name_struct with
       | Some {fields} ->
           List.fold fields ~init:maybe_uninit_vars ~f:(fun acc (fn, _, _) ->
-              remove (AccessExpression.field_offset (AccessExpression.base base) fn) acc )
+              remove
+                (HilExp.AccessExpression.field_offset (HilExp.AccessExpression.base base) fn)
+                acc )
       | _ ->
           maybe_uninit_vars )
     | _ ->
@@ -60,7 +62,9 @@ module MaybeUninitVars = struct
   let remove_dereference_access base maybe_uninit_vars =
     match base with
     | _, {Typ.desc= Tptr _} ->
-        remove (AccessExpression.dereference (AccessExpression.base base)) maybe_uninit_vars
+        remove
+          (HilExp.AccessExpression.dereference (HilExp.AccessExpression.base base))
+          maybe_uninit_vars
     | _ ->
         maybe_uninit_vars
 
@@ -69,14 +73,14 @@ module MaybeUninitVars = struct
     match base with
     | _, {Typ.desc= Tptr (elt, _)} ->
         remove
-          (AccessExpression.array_offset (AccessExpression.base base) elt [])
+          (HilExp.AccessExpression.array_offset (HilExp.AccessExpression.base base) elt [])
           maybe_uninit_vars
     | _ ->
         maybe_uninit_vars
 
 
   let remove_everything_under tenv access_expr maybe_uninit_vars =
-    let base = AccessExpression.get_base access_expr in
+    let base = HilExp.AccessExpression.get_base access_expr in
     maybe_uninit_vars |> remove access_expr |> remove_all_fields tenv base
     |> remove_all_array_elements base |> remove_dereference_access base
 end

@@ -65,7 +65,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let get_lock_path = function
       | HilExp.AccessExpression access_exp -> (
-        match AccessExpression.to_access_path access_exp with
+        match HilExp.AccessExpression.to_access_path access_exp with
         | (((Var.ProgramVar pvar, _) as base), _) as path
           when FormalMap.is_formal base extras || Pvar.is_global pvar ->
             Some (AccessPath.inner_class_normalize path)

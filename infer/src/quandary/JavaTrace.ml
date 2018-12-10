@@ -122,7 +122,7 @@ module SourceKind = struct
       (* accessed global will be passed to us as the only parameter *)
       match List.map actuals ~f:HilExp.ignore_cast with
       | [HilExp.AccessExpression access_expr] -> (
-        match AccessExpression.to_access_path access_expr with
+        match HilExp.AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, _), _ ->
             let pvar_string = Pvar.to_string pvar in
             (* checking substring instead of prefix because we expect field names like

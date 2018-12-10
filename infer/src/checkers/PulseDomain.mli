@@ -36,23 +36,24 @@ end
 type 'a access_result = ('a, Diagnostic.t) result
 
 module StdVector : sig
-  val is_reserved : Location.t -> AccessExpression.t -> t -> (t * bool) access_result
+  val is_reserved : Location.t -> HilExp.AccessExpression.t -> t -> (t * bool) access_result
 
-  val mark_reserved : Location.t -> AccessExpression.t -> t -> t access_result
+  val mark_reserved : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 end
 
-val read : Location.t -> AccessExpression.t -> t -> (t * AbstractAddressSet.t) access_result
+val read : Location.t -> HilExp.AccessExpression.t -> t -> (t * AbstractAddressSet.t) access_result
 
-val read_all : Location.t -> AccessExpression.t list -> t -> t access_result
+val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
 
 val havoc_var : Var.t -> t -> t
 
-val havoc : Location.t -> AccessExpression.t -> t -> t access_result
+val havoc : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
 val write_var : Var.t -> AbstractAddressSet.t -> t -> t
 
-val write : Location.t -> AccessExpression.t -> AbstractAddressSet.t -> t -> t access_result
+val write : Location.t -> HilExp.AccessExpression.t -> AbstractAddressSet.t -> t -> t access_result
 
-val invalidate : PulseInvalidation.t -> Location.t -> AccessExpression.t -> t -> t access_result
+val invalidate :
+  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
 val remove_vars : Var.t list -> t -> t

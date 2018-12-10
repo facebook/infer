@@ -80,10 +80,10 @@ module StdVector = struct
       "__internal_array"
 
 
-  let to_internal_array vector = AccessExpression.field_offset vector internal_array
+  let to_internal_array vector = HilExp.AccessExpression.field_offset vector internal_array
 
   let deref_internal_array vector =
-    AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void [])
+    HilExp.AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void [])
 
 
   let reallocate_internal_array vector vector_f location astate =
@@ -100,7 +100,8 @@ module StdVector = struct
     match actuals with
     | [AccessExpression vector; _index] ->
         PulseDomain.read location (deref_internal_array vector) astate
-        >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.base ret) loc astate
+        >>= fun (astate, loc) ->
+        PulseDomain.write location (HilExp.AccessExpression.base ret) loc astate
     | _ ->
         Ok (PulseDomain.havoc_var (fst ret) astate)
 

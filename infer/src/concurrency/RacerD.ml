@@ -49,7 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let is_receiver_safe = function
       | HilExp.AccessExpression receiver_access_exp :: _ -> (
-          let receiver_access_path = AccessExpression.to_access_path receiver_access_exp in
+          let receiver_access_path = HilExp.AccessExpression.to_access_path receiver_access_exp in
           match AccessPath.truncate receiver_access_path with
           | receiver_prefix, Some receiver_field ->
               is_safe_access receiver_field receiver_prefix tenv
@@ -109,7 +109,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     List.fold
       ~f:(fun acc access_expr ->
-        let base, accesses = AccessExpression.to_access_path access_expr in
+        let base, accesses = HilExp.AccessExpression.to_access_path access_expr in
         add_field_accesses (base, []) acc accesses )
       ~init:accesses (HilExp.get_access_exprs exp)
 
@@ -176,7 +176,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let get_receiver_ap actuals =
       match List.hd actuals with
       | Some (HilExp.AccessExpression receiver_expr) ->
-          AccessExpression.to_access_path receiver_expr
+          HilExp.AccessExpression.to_access_path receiver_expr
       | _ ->
           L.(die InternalError)
             "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
@@ -206,7 +206,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else
       let rec get_access_path = function
         | HilExp.AccessExpression access_expr ->
-            Some (AccessExpression.to_access_path access_expr)
+            Some (HilExp.AccessExpression.to_access_path access_expr)
         | HilExp.Cast (_, e) | HilExp.Exception e ->
             get_access_path e
         | _ ->
@@ -246,7 +246,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* the actual is a constant, so it's owned in the caller. *)
           Conjunction actual_indexes
       | HilExp.AccessExpression access_expr -> (
-          let actual_access_path = AccessExpression.to_access_path access_expr in
+          let actual_access_path = HilExp.AccessExpression.to_access_path access_expr in
           if OwnershipDomain.is_owned actual_access_path caller_astate.ownership then
             (* the actual passed to the current callee is owned. drop all the conditional accesses
                for that actual, since they're all safe *)
@@ -329,7 +329,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     if is_box callee_pname then
       match actuals with
       | HilExp.AccessExpression actual_access_expr :: _ ->
-          let actual_ap = AccessExpression.to_access_path actual_access_expr in
+          let actual_ap = HilExp.AccessExpression.to_access_path actual_access_expr in
           if AttributeMapDomain.has_attribute actual_ap Functional astate.attribute_map then
             (* TODO: check for constants, which are functional? *)
             let attribute_map =
@@ -484,13 +484,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         {astate_callee with ownership; attribute_map}
     | Assign (lhs_access_expr, rhs_exp, loc) ->
-        let lhs_access_path = AccessExpression.to_access_path lhs_access_expr in
+        let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
         let rhs_accesses =
           add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
             astate.ownership proc_data
         in
         let rhs_access_paths =
-          AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
+          HilExp.AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
         in
         let is_functional =
           (not (List.is_empty rhs_access_paths))
@@ -514,8 +514,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                report spurious read/write races *)
             rhs_accesses
           else
-            add_access (AccessExpression lhs_access_expr) loc ~is_write_access:true rhs_accesses
-              astate.locks astate.threads astate.ownership proc_data
+            add_access (HilExp.AccessExpression lhs_access_expr) loc ~is_write_access:true
+              rhs_accesses astate.locks astate.threads astate.ownership proc_data
         in
         let ownership =
           OwnershipDomain.propagate_assignment lhs_access_path rhs_exp astate.ownership
@@ -536,7 +536,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            evaluating it *)
         and eval_bexp var = function
           | HilExp.AccessExpression access_expr ->
-              if AccessPath.equal (AccessExpression.to_access_path access_expr) var then Some true
+              if AccessPath.equal (HilExp.AccessExpression.to_access_path access_expr) var then
+                Some true
               else None
           | HilExp.Constant c ->
               Some (not (Const.iszero_int_float c))
@@ -575,7 +576,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate' =
           match HilExp.get_access_exprs assume_exp with
           | [access_expr] -> (
-              let access_path = AccessExpression.to_access_path access_expr in
+              let access_path = HilExp.AccessExpression.to_access_path access_expr in
               let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
               match eval_bexp access_path assume_exp with
               | Some bool_value ->

@@ -9,17 +9,17 @@ open! IStd
 module F = Format
 module L = Logging
 
-type call = Direct of Typ.Procname.t | Indirect of AccessExpression.t [@@deriving compare]
+type call = Direct of Typ.Procname.t | Indirect of HilExp.AccessExpression.t [@@deriving compare]
 
 let pp_call fmt = function
   | Direct pname ->
       Typ.Procname.pp fmt pname
   | Indirect access_expr ->
-      F.fprintf fmt "*%a" AccessExpression.pp access_expr
+      F.fprintf fmt "*%a" HilExp.AccessExpression.pp access_expr
 
 
 type t =
-  | Assign of AccessExpression.t * HilExp.t * Location.t
+  | Assign of HilExp.AccessExpression.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
   | ExitScope of Var.t list
@@ -27,7 +27,8 @@ type t =
 
 let pp fmt = function
   | Assign (access_expr, exp, loc) ->
-      F.fprintf fmt "%a := %a [%a]" AccessExpression.pp access_expr HilExp.pp exp Location.pp loc
+      F.fprintf fmt "%a := %a [%a]" HilExp.AccessExpression.pp access_expr HilExp.pp exp
+        Location.pp loc
   | Assume (exp, _, _, loc) ->
       F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
   | Call (ret, call, actuals, _, loc) ->
@@ -38,7 +39,7 @@ let pp fmt = function
       F.fprintf fmt "exit scope [%a]" (Pp.seq ~sep:"; " Var.pp) vars
 
 
-type translation = Instr of t | Bind of Var.t * AccessExpression.t | Ignore
+type translation = Instr of t | Bind of Var.t * HilExp.AccessExpression.t | Ignore
 
 (** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an
    SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
@@ -51,10 +52,10 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
   let analyze_id_assignment ?(add_deref = false) lhs_id rhs_exp rhs_typ loc =
     let rhs_hil_exp = exp_of_sil ~add_deref rhs_exp rhs_typ in
     match rhs_hil_exp with
-    | AccessExpression rhs_access_expr ->
+    | HilExp.AccessExpression rhs_access_expr ->
         Bind (lhs_id, rhs_access_expr)
     | _ ->
-        Instr (Assign (AccessExpression.base (lhs_id, rhs_typ), rhs_hil_exp, loc))
+        Instr (Assign (HilExp.AccessExpression.base (lhs_id, rhs_typ), rhs_hil_exp, loc))
   in
   match instr with
   | Load (lhs_id, rhs_exp, rhs_typ, loc) ->
@@ -73,7 +74,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_access_expr =
         match HilExp.ignore_cast (exp_of_sil ~add_deref:true lhs_exp typ) with
-        | AccessExpression access_expr ->
+        | HilExp.AccessExpression access_expr ->
             access_expr
         | BinaryOperator (_, exp0, exp1) -> (
           (* pointer arithmetic. somewhere in one of the expressions, there should be at least
@@ -97,7 +98,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
             let dummy_base_var =
               Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
             in
-            AccessExpression.base (dummy_base_var, Typ.void_star)
+            HilExp.AccessExpression.base (dummy_base_var, Typ.void_star)
         | _ ->
             L.(die InternalError)
               "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc
@@ -109,7 +110,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
         match exp_of_sil call_exp (Typ.mk Tvoid) with
         | Constant (Cfun procname) | Closure (procname, _) ->
             Direct procname
-        | AccessExpression access_expr ->
+        | HilExp.AccessExpression access_expr ->
             Indirect access_expr
         | call_exp ->
             L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp

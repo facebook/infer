@@ -9,4 +9,4 @@ open! IStd
 
 (** mapping of ids to raw access paths. useful for id-normalizing access paths *)
 
-include AbstractDomain.MapS with type key = Var.t and type value = AccessExpression.t
+include AbstractDomain.MapS with type key = Var.t and type value = HilExp.AccessExpression.t
