@@ -855,14 +855,16 @@ module MemReach = struct
 
   let find_stack : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
-  let find_heap : default:Val.t -> Loc.t -> t -> Val.t =
+  let find_heap_default : default:Val.t -> Loc.t -> t -> Val.t =
    fun ~default l m ->
     IOption.value_default_f (find_opt l m) ~f:(fun () ->
         Option.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default oenv l) )
 
 
+  let find_heap : Loc.t -> t -> Val.t = find_heap_default ~default:Val.Itv.top
+
   let find : Loc.t -> t -> Val.t =
-   fun l m -> if is_stack_loc l m then find_stack l m else find_heap ~default:Val.Itv.top l m
+   fun l m -> if is_stack_loc l m then find_stack l m else find_heap l m
 
 
   let find_set : PowLoc.t -> t -> Val.t =
@@ -933,19 +935,27 @@ module MemReach = struct
     PowLoc.fold strong_update1 locs m
 
 
-  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+  let transformi_mem : f:(Loc.t -> Val.t -> Val.t) -> PowLoc.t -> t -> t =
    fun ~f locs m ->
     let transform_mem1 l m =
       let add, find =
         if is_stack_loc l m then (replace_stack, find_stack)
-        else (add_heap, find_heap ~default:Val.bot)
+        else (add_heap, find_heap_default ~default:Val.bot)
       in
-      add l (f (find l m)) m
+      add l (f l (find l m)) m
     in
     PowLoc.fold transform_mem1 locs m
 
 
-  let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
+  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+   fun ~f -> transformi_mem ~f:(fun _ v -> f v)
+
+
+  let weak_update locs v m =
+    transformi_mem
+      ~f:(fun l v' -> if Loc.represents_multiple_values l then Val.join v' v else v)
+      locs m
+
 
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
@@ -1137,8 +1147,6 @@ module Mem = struct
 
 
   let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.strong_update p v)
-
-  let weak_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.weak_update p v)
 
   let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
    fun formals locs ->

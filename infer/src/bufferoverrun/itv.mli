@@ -137,6 +137,8 @@ val of_int64 : Int64.t -> t
 
 val is_const : t -> Z.t option
 
+val is_one : t -> bool
+
 val is_mone : t -> bool
 
 val eq_const : Z.t -> t -> bool

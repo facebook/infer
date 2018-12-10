@@ -19,6 +19,7 @@ module Allocsite = struct
         ; node_hash: int
         ; inst_num: int
         ; dimension: int
+        ; represents_multiple_values: bool
         ; path: Symb.SymbolPath.partial option }
   [@@deriving compare]
 
@@ -63,9 +64,16 @@ module Allocsite = struct
       -> inst_num:int
       -> dimension:int
       -> path:Symb.SymbolPath.partial option
+      -> represents_multiple_values:bool
       -> t =
-   fun proc_name ~node_hash ~inst_num ~dimension ~path ->
-    Known {proc_name= Typ.Procname.to_string proc_name; node_hash; inst_num; dimension; path}
+   fun proc_name ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
+    Known
+      { proc_name= Typ.Procname.to_string proc_name
+      ; node_hash
+      ; inst_num
+      ; dimension
+      ; path
+      ; represents_multiple_values }
 
 
   let make_symbol path = Symbol path
@@ -79,6 +87,16 @@ module Allocsite = struct
         Option.some_if (not (Symb.SymbolPath.represents_callsite_sound_partial path)) path
     | Unknown | Known _ ->
         None
+
+
+  let represents_multiple_values = function
+    | Unknown ->
+        false
+    | Symbol path ->
+        Symb.SymbolPath.represents_multiple_values path
+    | Known {path; represents_multiple_values} ->
+        represents_multiple_values
+        || Option.value_map path ~default:false ~f:Symb.SymbolPath.represents_multiple_values
 end
 
 module Loc = struct
@@ -179,6 +197,15 @@ module Loc = struct
     Option.value_map (get_path x) ~default:false ~f:(fun x ->
         Option.value_map (Symb.SymbolPath.get_pvar x) ~default:false ~f:(fun x ->
             List.exists formals ~f:(fun (formal, _) -> Pvar.equal x formal) ) )
+
+
+  let rec represents_multiple_values = function
+    | Var _ ->
+        false
+    | Allocsite allocsite ->
+        Allocsite.represents_multiple_values allocsite
+    | Field (l, _) ->
+        represents_multiple_values l
 end
 
 module PowLoc = struct
@@ -213,8 +240,7 @@ module PowLoc = struct
     fold (fun l acc -> join acc (subst_loc l eval_locpath)) x empty
 end
 
-(** unsound but ok for bug catching *)
-let always_strong_update = true
+let always_strong_update = false
 
 let can_strong_update : PowLoc.t -> bool =
  fun ploc ->

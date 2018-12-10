@@ -559,6 +559,8 @@ let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
 let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 
+let is_one = bind1bool ItvPure.is_one
+
 let is_mone = bind1bool ItvPure.is_mone
 
 let eq_const : Z.t -> t -> bool = fun z -> bind1bool (ItvPure.eq_const z)

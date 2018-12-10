@@ -67,7 +67,10 @@ module Exec = struct
     let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
+    let allocsite =
+      let represents_multiple_values = represents_multiple_values || not (Itv.is_one size) in
+      Allocsite.make pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values
+    in
     let mem =
       let arr =
         let traces = Trace.(Set.singleton location ArrayDeclaration) in
@@ -97,7 +100,9 @@ module Exec = struct
       -> Dom.Mem.t * int =
    fun pname ~node_hash location loc ~inst_num ~represents_multiple_values ~dimension mem ->
     let path = Loc.get_path loc in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
+    let allocsite =
+      Allocsite.make pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values:true
+    in
     let alloc_loc = Loc.of_allocsite allocsite in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
     let mem =
@@ -185,7 +190,9 @@ module Exec = struct
             in
             let stride = Option.map stride ~f:IntLit.to_int_exn in
             let allocsite =
+              let represents_multiple_values = not (Itv.is_one length) in
               Allocsite.make pname ~node_hash ~inst_num ~dimension ~path:field_path
+                ~represents_multiple_values
             in
             let offset, size = (Itv.zero, length) in
             let v =

@@ -20,7 +20,7 @@ void realloc_Bad() {
   buf2[buf2[0]] = 0;
 }
 
-void realloc_Good_FP() {
+void realloc2_Good() {
   int* buf1 = (int*)malloc(2 * sizeof(int));
   for (int i = 0; i < 2; i++) {
     buf1[i] = 3;

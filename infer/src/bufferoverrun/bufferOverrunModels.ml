@@ -88,17 +88,6 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
       PO.ConditionSet.add_alloc_size location ~length traces cond_set
 
 
-let set_uninitialized location (typ : Typ.t) ploc mem =
-  match typ.desc with
-  | Tint _ | Tfloat _ ->
-      Dom.Mem.weak_update ploc Dom.Val.Itv.top mem
-  | _ ->
-      L.(debug BufferOverrun Verbose)
-        "/!\\ Do not know how to uninitialize type %a at %a@\n" (Typ.pp Pp.text) typ Location.pp
-        location ;
-      mem
-
-
 let malloc size_exp =
   let exec {pname; node_hash; location; tenv; integer_type_widths} ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -106,8 +95,11 @@ let malloc size_exp =
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
+    let allocsite =
+      let represents_multiple_values = not (Itv.is_one size) in
+      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
+    in
     let size_exp_opt =
       let size_exp = Option.value dyn_length ~default:length0 in
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
@@ -116,7 +108,6 @@ let malloc size_exp =
     mem
     |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt
-    |> set_uninitialized location typ (Dom.Val.get_array_locs v)
     |> BoUtils.Exec.init_array_fields tenv integer_type_widths pname path ~node_hash typ
          (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size size_exp in
@@ -251,17 +242,19 @@ let get_array_length array_exp =
 let set_array_length array length_exp =
   let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
     match array with
-    | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
+    | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {stride}} ->
         let length = Sem.eval integer_type_widths length_exp mem in
         let stride = Option.map ~f:IntLit.to_int_exn stride in
         let path = Some (Symb.SymbolPath.of_pvar array_pvar) in
-        let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
         let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
         let size = Dom.Val.get_itv length in
+        let allocsite =
+          let represents_multiple_values = not (Itv.is_one size) in
+          Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path
+            ~represents_multiple_values
+        in
         let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
-        mem
-        |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
-        |> set_uninitialized location elt (Dom.Val.get_array_locs v)
+        Dom.Mem.add_stack (Loc.of_pvar array_pvar) v mem
     | _ ->
         L.(die InternalError) "Unexpected type of first argument for __set_array_length() "
   and check = check_alloc_size length_exp in
@@ -386,7 +379,10 @@ module Collection = struct
     let exec {pname; node_hash; location} ~ret:(id, _) mem =
       let loc = Loc.of_id id in
       let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
-      let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path in
+      let allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path
+          ~represents_multiple_values:true
+      in
       let alloc_loc = Loc.of_allocsite allocsite in
       let init_size = Dom.Val.of_int 0 in
       let traces = Trace.(Set.singleton location ArrayDeclaration) in
