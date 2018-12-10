@@ -19,13 +19,6 @@ module Access : sig
   val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
 end
 
-type access_expression = private
-  | Base of AccessPath.base
-  | FieldOffset of access_expression * Typ.Fieldname.t  (** field access *)
-  | ArrayOffset of access_expression * Typ.t * access_expression list  (** array access *)
-  | AddressOf of access_expression  (** "address of" operator [&] *)
-  | Dereference of access_expression  (** "dereference" operator [*] *)
-
 type t =
   | AccessExpression of access_expression  (** access path (e.g., x.f.g or x[i]) *)
   | UnaryOperator of Unop.t * t * Typ.t option
@@ -38,6 +31,13 @@ type t =
   | Sizeof of Typ.t * t option
       (** C-style sizeof(), and also used to treate a type as an expression. Refer to [Exp] module for
       canonical documentation *)
+
+and access_expression = private
+  | Base of AccessPath.base
+  | FieldOffset of access_expression * Typ.Fieldname.t  (** field access *)
+  | ArrayOffset of access_expression * Typ.t * t option  (** array access *)
+  | AddressOf of access_expression  (** "address of" operator [&] *)
+  | Dereference of access_expression  (** "dereference" operator [*] *)
 [@@deriving compare]
 
 module AccessExpression : sig
@@ -45,13 +45,13 @@ module AccessExpression : sig
 
   val field_offset : access_expression -> Typ.Fieldname.t -> access_expression
 
-  val array_offset : access_expression -> Typ.t -> access_expression list -> access_expression
+  val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
   val dereference : access_expression -> access_expression
   (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
 
   val to_accesses :
-       f_array_offset:(access_expression list -> 'array_index)
+       f_array_offset:(t option -> 'array_index)
     -> access_expression
     -> AccessPath.base * 'array_index Access.t list
 
@@ -74,10 +74,10 @@ module AccessExpression : sig
 
   type nonrec t = access_expression = private
     | Base of AccessPath.base
-    | FieldOffset of access_expression * Typ.Fieldname.t  (** field access *)
-    | ArrayOffset of access_expression * Typ.t * access_expression list  (** array access *)
-    | AddressOf of access_expression  (** "address of" operator [&] *)
-    | Dereference of access_expression  (** "dereference" operator [*] *)
+    | FieldOffset of access_expression * Typ.Fieldname.t
+    | ArrayOffset of access_expression * Typ.t * t option
+    | AddressOf of access_expression
+    | Dereference of access_expression
   [@@deriving compare]
 end
 

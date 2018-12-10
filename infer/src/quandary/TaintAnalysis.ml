@@ -454,14 +454,16 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | HilExp.AccessExpression.Base _ ->
               astate_acc
           | HilExp.AccessExpression.FieldOffset (ae, _)
-          | ArrayOffset (ae, _, [])
+          | ArrayOffset (ae, _, None)
           | AddressOf ae
           | Dereference ae ->
               add_sinks_for_access astate_acc ae
-          | HilExp.AccessExpression.ArrayOffset (ae, _, indexes) ->
+          | HilExp.AccessExpression.ArrayOffset (ae, _, Some index) ->
               let dummy_call_site = CallSite.make BuiltinDecl.__array_access loc in
               let dummy_actuals =
-                List.map ~f:(fun index_ae -> HilExp.AccessExpression index_ae) indexes
+                List.map
+                  ~f:(fun index_ae -> HilExp.AccessExpression index_ae)
+                  (HilExp.get_access_exprs index)
               in
               let sinks =
                 TraceDomain.Sink.get dummy_call_site dummy_actuals CallFlags.default

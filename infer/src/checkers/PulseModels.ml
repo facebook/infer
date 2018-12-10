@@ -83,7 +83,7 @@ module StdVector = struct
   let to_internal_array vector = HilExp.AccessExpression.field_offset vector internal_array
 
   let deref_internal_array vector =
-    HilExp.AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void [])
+    HilExp.AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void None)
 
 
   let reallocate_internal_array vector vector_f location astate =

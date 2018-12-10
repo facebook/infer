@@ -73,7 +73,7 @@ module MaybeUninitVars = struct
     match base with
     | _, {Typ.desc= Tptr (elt, _)} ->
         remove
-          (HilExp.AccessExpression.array_offset (HilExp.AccessExpression.base base) elt [])
+          (HilExp.AccessExpression.array_offset (HilExp.AccessExpression.base base) elt None)
           maybe_uninit_vars
     | _ ->
         maybe_uninit_vars

@@ -333,7 +333,7 @@ module Initial = struct
           | _ ->
               acc )
         | Typ.Tarray {elt} ->
-            HilExp.AccessExpression.array_offset base_access_expr elt [] :: acc
+            HilExp.AccessExpression.array_offset base_access_expr elt None :: acc
         | Typ.Tptr _ ->
             base_access_expr :: HilExp.AccessExpression.dereference base_access_expr :: acc
         | _ ->
