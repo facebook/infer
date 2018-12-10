@@ -259,8 +259,9 @@ let is_recursive_lock event tenv =
     | {Typ.desc= Tptr ({desc= Tstruct name}, _)} | {desc= Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
     | typ ->
-        L.die L.InternalError "Asked if non-struct type %a is a recursive lock type.@."
-          (Typ.pp_full Pp.text) typ
+        L.debug Analysis Verbose "Asked if non-struct type %a is a recursive lock type.@."
+          (Typ.pp_full Pp.text) typ ;
+        true
   in
   match event with
   | {Event.elem= LockAcquire lock_path} ->

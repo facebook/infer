@@ -105,7 +105,7 @@ end = struct
     let qname_str = QualifiedCppName.to_qual_string qname in
     match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
     | None ->
-        L.debug Analysis Medium "is_recursive_lock_type: Could not find lock type %a@."
+        L.debug Analysis Verbose "is_recursive_lock_type: Could not find lock type %a@."
           QualifiedCppName.pp qname ;
         true
     | Some mdl ->
@@ -215,7 +215,7 @@ end = struct
 
   let get_lock_effect pname actuals =
     let log_parse_error error =
-      L.internal_error "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
         actuals
     in
