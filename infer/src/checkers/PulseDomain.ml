@@ -64,7 +64,7 @@ end
 module Attributes = AbstractDomain.FiniteSet (Attribute)
 
 module Memory : sig
-  module Access : PrettyPrintable.PrintableOrderedType with type t = unit AccessExpression.Access.t
+  module Access : PrettyPrintable.PrintableOrderedType with type t = unit HilExp.Access.t
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
@@ -102,9 +102,9 @@ module Memory : sig
   val is_std_vector_reserved : AbstractAddressSet.t -> t -> bool
 end = struct
   module Access = struct
-    type t = unit AccessExpression.Access.t [@@deriving compare]
+    type t = unit HilExp.Access.t [@@deriving compare]
 
-    let pp = AccessExpression.Access.pp (fun _ () -> ())
+    let pp = HilExp.Access.pp (fun _ () -> ())
   end
 
   module Edges = PrettyPrintable.MakePPMap (Access)

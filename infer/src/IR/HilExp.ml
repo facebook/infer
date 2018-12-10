@@ -9,20 +9,147 @@ open! IStd
 module F = Format
 module L = Logging
 
-type t =
-  | AccessExpression of AccessExpression.t
-  | UnaryOperator of Unop.t * t * Typ.t option
-  | BinaryOperator of Binop.t * t * t
-  | Exception of t
-  | Closure of Typ.Procname.t * (AccessPath.base * t) list
-  | Constant of Const.t
-  | Cast of Typ.t * t
-  | Sizeof of Typ.t * t option
-[@@deriving compare]
+type typ_ = Typ.t
+
+let compare_typ_ _ _ = 0
+
+module Access = struct
+  type 'array_index t =
+    | FieldAccess of Typ.Fieldname.t
+    | ArrayAccess of typ_ * 'array_index
+    | TakeAddress
+    | Dereference
+  [@@deriving compare]
+
+  let pp pp_array_index fmt = function
+    | FieldAccess field_name ->
+        Typ.Fieldname.pp fmt field_name
+    | ArrayAccess (_, index) ->
+        F.fprintf fmt "[%a]" pp_array_index index
+    | TakeAddress ->
+        F.pp_print_string fmt "&"
+    | Dereference ->
+        F.pp_print_string fmt "*"
+end
+
+(** Module where unsafe construction of [t] is allowed. In the rest of the code, and especially in
+    clients of the whole [AccessExpression] module, we do not want to allow constructing access
+    expressions directly as they could introduce de-normalized expressions of the form [AddressOf
+    (Dereference t)] or [Dereference (AddressOf t)].
+
+    We could make only the types of [AddressOf] and [Dereference] private but that proved too
+    cumbersome...  *)
+module T : sig
+  type access_expression = private
+    | Base of AccessPath.base
+    | FieldOffset of access_expression * Typ.Fieldname.t  (** field access *)
+    | ArrayOffset of access_expression * typ_ * access_expression list  (** array access *)
+    | AddressOf of access_expression  (** "address of" operator [&] *)
+    | Dereference of access_expression  (** "dereference" operator [*] *)
+  [@@deriving compare]
+
+  type t =
+    | AccessExpression of access_expression
+    | UnaryOperator of Unop.t * t * Typ.t option
+    | BinaryOperator of Binop.t * t * t
+    | Exception of t
+    | Closure of Typ.Procname.t * (AccessPath.base * t) list
+    | Constant of Const.t
+    | Cast of Typ.t * t
+    | Sizeof of Typ.t * t option
+  [@@deriving compare]
+
+  module UnsafeAccessExpression : sig
+    val base : AccessPath.base -> access_expression
+
+    val field_offset : access_expression -> Typ.Fieldname.t -> access_expression
+
+    val array_offset : access_expression -> Typ.t -> access_expression list -> access_expression
+
+    val address_of : access_expression -> access_expression
+
+    val dereference : access_expression -> access_expression
+
+    val replace_base :
+      remove_deref_after_base:bool -> AccessPath.base -> access_expression -> access_expression
+  end
+end = struct
+  type access_expression =
+    | Base of AccessPath.base
+    | FieldOffset of access_expression * Typ.Fieldname.t  (** field access *)
+    | ArrayOffset of access_expression * typ_ * access_expression list  (** array access *)
+    | AddressOf of access_expression  (** "address of" operator [&] *)
+    | Dereference of access_expression  (** "dereference" operator [*] *)
+  [@@deriving compare]
+
+  type t =
+    | AccessExpression of access_expression
+    | UnaryOperator of Unop.t * t * Typ.t option
+    | BinaryOperator of Binop.t * t * t
+    | Exception of t
+    | Closure of Typ.Procname.t * (AccessPath.base * t) list
+    | Constant of Const.t
+    | Cast of Typ.t * t
+    | Sizeof of Typ.t * t option
+  [@@deriving compare]
+
+  module UnsafeAccessExpression = struct
+    let base base = Base base
+
+    let field_offset t field = FieldOffset (t, field)
+
+    let array_offset t typ elements = ArrayOffset (t, typ, elements)
+
+    let address_of = function Dereference t -> t | t -> AddressOf t
+
+    let dereference = function AddressOf t -> t | t -> Dereference t
+
+    let rec replace_base ~remove_deref_after_base base_new access_expr =
+      let replace_base_inner = replace_base ~remove_deref_after_base base_new in
+      match access_expr with
+      | Dereference (Base _) ->
+          if remove_deref_after_base then Base base_new else Dereference (Base base_new)
+      | Base _ ->
+          Base base_new
+      | FieldOffset (ae, fld) ->
+          FieldOffset (replace_base_inner ae, fld)
+      | ArrayOffset (ae, typ, aes) ->
+          ArrayOffset (replace_base_inner ae, typ, aes)
+      | AddressOf ae ->
+          AddressOf (replace_base_inner ae)
+      | Dereference ae ->
+          Dereference (replace_base_inner ae)
+  end
+end
+
+include T
+
+let may_pp_typ fmt typ =
+  if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
+
+
+let rec pp_access_expr fmt = function
+  | Base (pvar, typ) ->
+      Var.pp fmt pvar ; may_pp_typ fmt typ
+  | FieldOffset (Dereference ae, fld) ->
+      F.fprintf fmt "%a->%a" pp_access_expr ae Typ.Fieldname.pp fld
+  | FieldOffset (ae, fld) ->
+      F.fprintf fmt "%a.%a" pp_access_expr ae Typ.Fieldname.pp fld
+  | ArrayOffset (ae, typ, []) ->
+      F.fprintf fmt "%a[_]%a" pp_access_expr ae may_pp_typ typ
+  | ArrayOffset (ae, typ, index_aes) ->
+      F.fprintf fmt "%a[%a]%a" pp_access_expr ae
+        (PrettyPrintable.pp_collection ~pp_item:pp_access_expr)
+        index_aes may_pp_typ typ
+  | AddressOf ae ->
+      F.fprintf fmt "&(%a)" pp_access_expr ae
+  | Dereference ae ->
+      F.fprintf fmt "*(%a)" pp_access_expr ae
+
 
 let rec pp fmt = function
   | AccessExpression access_expr ->
-      AccessExpression.pp fmt access_expr
+      pp_access_expr fmt access_expr
   | UnaryOperator (op, e, _) ->
       F.fprintf fmt "%s%a" (Unop.to_string op) pp e
   | BinaryOperator (op, e1, e2) ->
@@ -48,6 +175,120 @@ let rec pp fmt = function
       let pp_length fmt = Option.iter ~f:(F.fprintf fmt "[%a]" pp) in
       F.fprintf fmt "sizeof(%a%a)" (Typ.pp_full Pp.text) typ pp_length length
 
+
+let get_access_exprs exp0 =
+  let rec get_access_exprs_ exp acc =
+    match exp with
+    | AccessExpression ae ->
+        ae :: acc
+    | Cast (_, e) | UnaryOperator (_, e, _) | Exception e | Sizeof (_, Some e) ->
+        get_access_exprs_ e acc
+    | BinaryOperator (_, e1, e2) ->
+        get_access_exprs_ e1 acc |> get_access_exprs_ e2
+    | Closure (_, captured) ->
+        List.fold captured ~f:(fun acc (_, e) -> get_access_exprs_ e acc) ~init:acc
+    | Constant _ | Sizeof _ ->
+        acc
+  in
+  get_access_exprs_ exp0 []
+
+
+module AccessExpression = struct
+  include UnsafeAccessExpression
+
+  type nonrec t = access_expression = private
+    | Base of AccessPath.base
+    | FieldOffset of access_expression * Typ.Fieldname.t
+    | ArrayOffset of access_expression * typ_ * access_expression list
+    | AddressOf of access_expression
+    | Dereference of access_expression
+  [@@deriving compare]
+
+  let pp = pp_access_expr
+
+  let to_accesses ~f_array_offset ae =
+    let rec aux accesses = function
+      | Base base ->
+          (base, accesses)
+      | FieldOffset (ae, fld) ->
+          aux (Access.FieldAccess fld :: accesses) ae
+      | ArrayOffset (ae, typ, indexes) ->
+          aux (Access.ArrayAccess (typ, f_array_offset indexes) :: accesses) ae
+      | AddressOf ae ->
+          aux (Access.TakeAddress :: accesses) ae
+      | Dereference ae ->
+          aux (Access.Dereference :: accesses) ae
+    in
+    aux [] ae
+
+
+  (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
+  let rec to_access_path t =
+    let rec to_access_path_ t =
+      match t with
+      | Base base ->
+          (base, [])
+      | FieldOffset (ae, fld) ->
+          let base, accesses = to_access_path_ ae in
+          (base, AccessPath.FieldAccess fld :: accesses)
+      | ArrayOffset (ae, typ, index_aes) ->
+          let access_paths = to_access_paths index_aes in
+          let base, accesses = to_access_path_ ae in
+          (base, AccessPath.ArrayAccess (typ, access_paths) :: accesses)
+      | AddressOf ae | Dereference ae ->
+          to_access_path_ ae
+    in
+    let base, accesses = to_access_path_ t in
+    (base, List.rev accesses)
+
+
+  and to_access_paths ts = List.map ~f:to_access_path ts
+
+  let rec get_base = function
+    | Base base ->
+        base
+    | FieldOffset (ae, _) | ArrayOffset (ae, _, _) | AddressOf ae | Dereference ae ->
+        get_base ae
+
+
+  let is_base = function Base _ -> true | _ -> false
+
+  let lookup_field_type_annot tenv base_typ field_name =
+    let lookup = Tenv.lookup tenv in
+    Typ.Struct.get_field_type_and_annotation ~lookup field_name base_typ
+
+
+  let rec get_typ t tenv : Typ.t option =
+    match t with
+    | Base (_, typ) ->
+        Some typ
+    | FieldOffset (ae, fld) -> (
+        let base_typ_opt = get_typ ae tenv in
+        match base_typ_opt with
+        | Some base_typ ->
+            Option.map (lookup_field_type_annot tenv base_typ fld) ~f:fst
+        | None ->
+            None )
+    | ArrayOffset (_, typ, _) ->
+        Some typ
+    | AddressOf ae ->
+        let base_typ_opt = get_typ ae tenv in
+        Option.map base_typ_opt ~f:(fun base_typ -> Typ.mk (Tptr (base_typ, Pk_pointer)))
+    | Dereference ae -> (
+        let base_typ_opt = get_typ ae tenv in
+        match base_typ_opt with Some {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None )
+
+
+  let equal = [%compare.equal: t]
+
+  let base_of_id id typ = (Var.of_id id, typ)
+
+  let base_of_pvar pvar typ = (Var.of_pvar pvar, typ)
+
+  let of_pvar pvar typ = address_of (base (base_of_pvar pvar typ))
+
+  let of_id id typ = base (base_of_id id typ)
+end
 
 let rec get_typ tenv = function
   | AccessExpression access_expr ->
@@ -88,21 +329,99 @@ let rec get_typ tenv = function
       Some (Typ.mk (Typ.Tint Typ.IUInt))
 
 
-let get_access_exprs exp0 =
-  let rec get_access_exprs_ exp acc =
+(* Adapted from AccessPath.of_exp. *)
+let access_exprs_of_exp ~include_array_indexes ~add_deref exp0 typ0
+    ~(f_resolve_id : Var.t -> AccessExpression.t option) =
+  let rec of_exp_ exp typ (add_accesses : AccessExpression.t -> AccessExpression.t) acc :
+      AccessExpression.t list =
     match exp with
-    | AccessExpression ae ->
-        ae :: acc
-    | Cast (_, e) | UnaryOperator (_, e, _) | Exception e | Sizeof (_, Some e) ->
-        get_access_exprs_ e acc
-    | BinaryOperator (_, e1, e2) ->
-        get_access_exprs_ e1 acc |> get_access_exprs_ e2
-    | Closure (_, captured) ->
-        List.fold captured ~f:(fun acc (_, e) -> get_access_exprs_ e acc) ~init:acc
-    | Constant _ | Sizeof _ ->
+    | Exp.Var id -> (
+      match f_resolve_id (Var.of_id id) with
+      | Some access_expr ->
+          let access_expr' =
+            if add_deref then AccessExpression.dereference access_expr else access_expr
+          in
+          add_accesses access_expr' :: acc
+      | None ->
+          let access_expr = AccessExpression.of_id id typ in
+          let access_expr' =
+            if add_deref then AccessExpression.dereference access_expr else access_expr
+          in
+          add_accesses access_expr' :: acc )
+    | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar -> (
+      match f_resolve_id (Var.of_pvar pvar) with
+      | Some access_expr ->
+          (* do not need to add deref here as it was added implicitly in the binding *)
+          (* but need to remove it if add_deref is false *)
+          let access_expr' =
+            if not add_deref then match access_expr with Dereference ae -> ae | _ -> assert false
+            else access_expr
+          in
+          add_accesses access_expr' :: acc
+      | None ->
+          let access_expr = AccessExpression.of_pvar pvar typ in
+          let access_expr' =
+            if add_deref then AccessExpression.dereference access_expr else access_expr
+          in
+          add_accesses access_expr' :: acc )
+    | Exp.Lvar pvar ->
+        let access_expr = AccessExpression.of_pvar pvar typ in
+        let access_expr' =
+          if add_deref then AccessExpression.dereference access_expr else access_expr
+        in
+        add_accesses access_expr' :: acc
+    | Exp.Lfield (root_exp, fld, root_exp_typ) ->
+        let add_field_access_expr access_expr =
+          add_accesses (AccessExpression.field_offset access_expr fld)
+        in
+        of_exp_ root_exp root_exp_typ add_field_access_expr acc
+    | Exp.Lindex (root_exp, index_exp) ->
+        let index_access_exprs =
+          if include_array_indexes then of_exp_ index_exp typ Fn.id [] else []
+        in
+        let add_array_access_expr access_expr =
+          add_accesses (AccessExpression.array_offset access_expr typ index_access_exprs)
+        in
+        let array_typ = Typ.mk_array typ in
+        of_exp_ root_exp array_typ add_array_access_expr acc
+    | Exp.Cast (cast_typ, cast_exp) ->
+        of_exp_ cast_exp cast_typ Fn.id acc
+    | Exp.UnOp (_, unop_exp, _) ->
+        of_exp_ unop_exp typ Fn.id acc
+    | Exp.Exn exn_exp ->
+        of_exp_ exn_exp typ Fn.id acc
+    | Exp.BinOp (_, exp1, exp2) ->
+        of_exp_ exp1 typ Fn.id acc |> of_exp_ exp2 typ Fn.id
+    | Exp.Const _ | Closure _ | Sizeof _ ->
         acc
   in
-  get_access_exprs_ exp0 []
+  of_exp_ exp0 typ0 Fn.id []
+
+
+let access_expr_of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ
+    ~(f_resolve_id : Var.t -> AccessExpression.t option) =
+  match lhs_exp with
+  | Exp.Lfield _ when not add_deref -> (
+      let res =
+        access_exprs_of_exp ~include_array_indexes ~add_deref:true lhs_exp typ ~f_resolve_id
+      in
+      match res with [lhs_ae] -> Some (AccessExpression.address_of lhs_ae) | _ -> None )
+  | Exp.Lindex _ when not add_deref -> (
+      let res =
+        let typ' =
+          match typ.Typ.desc with
+          | Tptr (t, _) ->
+              t
+          | _ ->
+              (* T29630813 investigate cases where this is not a pointer *)
+              typ
+        in
+        access_exprs_of_exp ~include_array_indexes ~add_deref:true lhs_exp typ' ~f_resolve_id
+      in
+      match res with [lhs_ae] -> Some (AccessExpression.address_of lhs_ae) | _ -> None )
+  | _ -> (
+      let res = access_exprs_of_exp ~include_array_indexes ~add_deref lhs_exp typ ~f_resolve_id in
+      match res with [lhs_ae] -> Some lhs_ae | _ -> None )
 
 
 (* convert an SIL expression into an HIL expression. the [f_resolve_id] function should map an SSA
@@ -153,9 +472,7 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
         in
         Closure (closure.name, environment)
     | Lfield (root_exp, fld, root_exp_typ) -> (
-      match
-        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
-      with
+      match access_expr_of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
@@ -173,9 +490,7 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
          literal, e.g. using `const_cast<char*>` *)
         of_sil_ (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
     | Lindex (root_exp, index_exp) -> (
-      match
-        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
-      with
+      match access_expr_of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
@@ -186,9 +501,7 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
                , index_exp ))
             typ )
     | Lvar _ -> (
-      match
-        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
-      with
+      match access_expr_of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
