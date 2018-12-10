@@ -29,17 +29,18 @@ val dereference : t -> t
 (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
 
 module Access : sig
-  type nonrec t =
+  type 'array_index t =
     | FieldAccess of Typ.Fieldname.t
-    | ArrayAccess of Typ.t * t list
+    | ArrayAccess of Typ.t * 'array_index
     | TakeAddress
     | Dereference
   [@@deriving compare]
 
-  val pp : Format.formatter -> t -> unit
+  val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
 end
 
-val to_accesses : t -> AccessPath.base * Access.t list
+val to_accesses :
+  f_array_offset:(t list -> 'array_index) -> t -> AccessPath.base * 'array_index Access.t list
 
 val to_access_path : t -> AccessPath.t
 

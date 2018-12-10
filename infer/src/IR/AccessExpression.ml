@@ -101,34 +101,32 @@ let rec pp fmt = function
 
 
 module Access = struct
-  type nonrec t =
+  type 'array_index t =
     | FieldAccess of Typ.Fieldname.t
-    | ArrayAccess of typ_ * t list
+    | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
   [@@deriving compare]
 
-  let pp fmt = function
+  let pp pp_array_index fmt = function
     | FieldAccess field_name ->
         Typ.Fieldname.pp fmt field_name
-    | ArrayAccess (_, []) ->
-        F.pp_print_string fmt "[_]"
-    | ArrayAccess (_, index_aps) ->
-        F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
+    | ArrayAccess (_, index) ->
+        F.fprintf fmt "[%a]" pp_array_index index
     | TakeAddress ->
         F.pp_print_string fmt "&"
     | Dereference ->
         F.pp_print_string fmt "*"
 end
 
-let to_accesses ae =
+let to_accesses ~f_array_offset ae =
   let rec aux accesses = function
     | Base base ->
         (base, accesses)
     | FieldOffset (ae, fld) ->
         aux (Access.FieldAccess fld :: accesses) ae
-    | ArrayOffset (ae, typ, index_aes) ->
-        aux (Access.ArrayAccess (typ, index_aes) :: accesses) ae
+    | ArrayOffset (ae, typ, indexes) ->
+        aux (Access.ArrayAccess (typ, f_array_offset indexes) :: accesses) ae
     | AddressOf ae ->
         aux (Access.TakeAddress :: accesses) ae
     | Dereference ae ->

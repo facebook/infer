@@ -64,7 +64,9 @@ end
 module Attributes = AbstractDomain.FiniteSet (Attribute)
 
 module Memory : sig
-  module Edges : module type of PrettyPrintable.MakePPMap (AccessExpression.Access)
+  module Access : PrettyPrintable.PrintableOrderedType with type t = unit AccessExpression.Access.t
+
+  module Edges : PrettyPrintable.PPMap with type key = Access.t
 
   type edges = AbstractAddressSet.t Edges.t
 
@@ -82,13 +84,11 @@ module Memory : sig
 
   val pp : F.formatter -> t -> unit
 
-  val add_edge : AbstractAddress.t -> AccessExpression.Access.t -> AbstractAddressSet.t -> t -> t
+  val add_edge : AbstractAddress.t -> Access.t -> AbstractAddressSet.t -> t -> t
 
-  val add_edge_and_back_edge :
-    AbstractAddress.t -> AccessExpression.Access.t -> AbstractAddressSet.t -> t -> t
+  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AbstractAddressSet.t -> t -> t
 
-  val find_edge_opt :
-    AbstractAddress.t -> AccessExpression.Access.t -> t -> AbstractAddressSet.t option
+  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AbstractAddressSet.t option
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
@@ -101,7 +101,13 @@ module Memory : sig
 
   val is_std_vector_reserved : AbstractAddressSet.t -> t -> bool
 end = struct
-  module Edges = PrettyPrintable.MakePPMap (AccessExpression.Access)
+  module Access = struct
+    type t = unit AccessExpression.Access.t [@@deriving compare]
+
+    let pp = AccessExpression.Access.pp (fun _ () -> ())
+  end
+
+  module Edges = PrettyPrintable.MakePPMap (Access)
 
   type edges = AbstractAddressSet.t Edges.t
 
@@ -130,7 +136,7 @@ end = struct
 
   (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
       [*(&x) = &( *x ) = x]. *)
-  let add_edge_and_back_edge addr_src (access : AccessExpression.Access.t) addrs_end memory =
+  let add_edge_and_back_edge addr_src (access : Access.t) addrs_end memory =
     let memory = add_edge addr_src access addrs_end memory in
     match access with
     | ArrayAccess _ | FieldAccess _ ->
@@ -288,9 +294,7 @@ module Domain : AbstractDomain.S with type t = astate = struct
     let union_one_edge subst src_addr access dst_addr union_heap =
       let src_addr = to_canonical_address subst src_addr in
       let dst_addr = to_canonical_address_set subst dst_addr in
-      match
-        (Memory.find_edge_opt src_addr access union_heap, (access : AccessExpression.Access.t))
-      with
+      match (Memory.find_edge_opt src_addr access union_heap, (access : Memory.Access.t)) with
       | Some dst_addr', _ when phys_equal dst_addr dst_addr' ->
           (* same edge *)
           (union_heap, `No_new_equality)
@@ -577,10 +581,12 @@ module Operations = struct
 
   (** add addresses to the state to give a address to the destination of the given access path *)
   let walk_access_expr ~on_last astate access_expr location =
-    let (access_var, _), access_list = AccessExpression.to_accesses access_expr in
+    let (access_var, _), access_list =
+      AccessExpression.to_accesses ~f_array_offset:(fun _ -> ()) access_expr
+    in
     if Config.write_html then
       L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
-        (Pp.seq ~sep:"," AccessExpression.Access.pp)
+        (Pp.seq ~sep:"," Memory.Access.pp)
         access_list ;
     match (on_last, access_list) with
     | `Overwrite new_addr, [] ->
