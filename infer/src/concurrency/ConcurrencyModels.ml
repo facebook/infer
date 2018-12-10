@@ -55,36 +55,61 @@ module Clang : sig
   val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 
   val lock_types_matcher : QualifiedCppName.Match.quals_matcher
+
+  val is_recursive_lock_type : QualifiedCppName.t -> bool
 end = struct
-  type lock_model = {cls: string; lck: string list; tlk: string list; unl: string list}
+  type lock_model =
+    { classname: string
+    ; lock: string list
+    ; trylock: string list
+    ; unlock: string list
+    ; recursive: bool }
 
   let lock_models =
-    let def = {cls= ""; lck= ["lock"]; tlk= ["try_lock"]; unl= ["unlock"]} in
+    let def =
+      {classname= ""; lock= ["lock"]; trylock= ["try_lock"]; unlock= ["unlock"]; recursive= false}
+    in
     let shd =
-      { cls= "std::shared_mutex"
-      ; lck= "lock_shared" :: def.lck
-      ; tlk= "try_lock_shared" :: def.tlk
-      ; unl= "unlock_shared" :: def.unl }
+      { def with
+        lock= "lock_shared" :: def.lock
+      ; trylock= "try_lock_shared" :: def.trylock
+      ; unlock= "unlock_shared" :: def.unlock }
     in
     let rwm =
-      { cls= "apache::thrift::concurrency::ReadWriteMutex"
-      ; lck= ["acquireRead"; "acquireWrite"]
-      ; tlk= ["attemptRead"; "attemptWrite"]
-      ; unl= ["release"] }
+      { def with
+        lock= ["acquireRead"; "acquireWrite"]
+      ; trylock= ["attemptRead"; "attemptWrite"]
+      ; unlock= ["release"] }
     in
-    [ {def with cls= "apache::thrift::concurrency::Monitor"; tlk= "timedlock" :: def.tlk}
-    ; {def with cls= "apache::thrift::concurrency::Mutex"; tlk= "timedlock" :: def.tlk}
-    ; {rwm with cls= "apache::thrift::concurrency::NoStarveReadWriteMutex"}
-    ; rwm
-    ; {shd with cls= "boost::shared_mutex"}
-    ; {def with cls= "boost::mutex"}
-    ; {def with cls= "folly::MicroSpinLock"}
-    ; {shd with cls= "folly::RWSpinLock"}
-    ; {shd with cls= "folly::SharedMutex"}
-    ; {shd with cls= "folly::SharedMutexImpl"}
-    ; {def with cls= "folly::SpinLock"}
-    ; {def with cls= "std::mutex"}
-    ; shd ]
+    [ { def with
+        classname= "apache::thrift::concurrency::Monitor"; trylock= "timedlock" :: def.trylock }
+    ; { def with
+        classname= "apache::thrift::concurrency::Mutex"; trylock= "timedlock" :: def.trylock }
+    ; {rwm with classname= "apache::thrift::concurrency::NoStarveReadWriteMutex"}
+    ; {rwm with classname= "apache::thrift::concurrency::ReadWriteMutex"}
+    ; {shd with classname= "boost::shared_mutex"}
+    ; {def with classname= "boost::mutex"}
+    ; {def with classname= "folly::MicroSpinLock"}
+    ; {shd with classname= "folly::RWSpinLock"}
+    ; {shd with classname= "folly::SharedMutex"}
+    ; {shd with classname= "folly::SharedMutexImpl"}
+    ; {def with classname= "folly::SpinLock"}
+    ; {def with classname= "std::mutex"}
+    ; {def with classname= "std::recursive_mutex"; recursive= true}
+    ; {def with classname= "std::recursive_timed_mutex"; recursive= true}
+    ; {shd with classname= "std::shared_mutex"}
+    ; {def with classname= "std::timed_mutex"} ]
+
+
+  let is_recursive_lock_type qname =
+    let qname_str = QualifiedCppName.to_qual_string qname in
+    match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
+    | None ->
+        L.debug Analysis Medium "is_recursive_lock_type: Could not find lock type %a@."
+          QualifiedCppName.pp qname ;
+        true
+    | Some mdl ->
+        mdl.recursive
 
 
   let mk_matcher methods =
@@ -98,18 +123,18 @@ end = struct
     let mk_model_matcher ~f =
       let lock_methods =
         List.concat_map lock_models ~f:(fun mdl ->
-            List.map (f mdl) ~f:(fun mtd -> mdl.cls ^ "::" ^ mtd) )
+            List.map (f mdl) ~f:(fun mtd -> mdl.classname ^ "::" ^ mtd) )
       in
       mk_matcher lock_methods
     in
-    ( mk_model_matcher ~f:(fun mdl -> mdl.lck)
-    , mk_model_matcher ~f:(fun mdl -> mdl.unl)
-    , mk_model_matcher ~f:(fun mdl -> mdl.tlk)
+    ( mk_model_matcher ~f:(fun mdl -> mdl.lock)
+    , mk_model_matcher ~f:(fun mdl -> mdl.unlock)
+    , mk_model_matcher ~f:(fun mdl -> mdl.trylock)
     , mk_matcher ["std::lock"] )
 
 
   let lock_types_matcher =
-    let class_names = List.map lock_models ~f:(fun mdl -> mdl.cls) in
+    let class_names = List.map lock_models ~f:(fun mdl -> mdl.classname) in
     QualifiedCppName.Match.of_fuzzy_qual_names class_names
 
 
@@ -285,11 +310,9 @@ let get_current_class_and_annotated_superclasses is_annot tenv pname =
       None
 
 
-let find_annotated_or_overriden_annotated_method is_annot pname tenv =
+let find_annotated_or_overriden_annotated_method ~attrs_of_pname is_annot pname tenv =
   PatternMatch.override_find
-    (fun pn ->
-      Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes
-        is_annot )
+    (fun pn -> Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot)
     tenv pname
 
 
@@ -351,11 +374,12 @@ let runs_on_ui_thread =
   in
   let is_annot annot = List.exists annotation_matchers ~f:(fun m -> m annot) in
   let mono_pname = MF.wrap_monospaced Typ.Procname.pp in
-  fun tenv proc_desc ->
+  fun ~attrs_of_pname tenv proc_desc ->
     let pname = Procdesc.get_proc_name proc_desc in
     if
       Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
-      || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
+      || find_annotated_or_overriden_annotated_method ~attrs_of_pname
+           Annotations.ia_is_worker_thread pname tenv
          |> Option.is_some
       || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
          |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
@@ -367,7 +391,7 @@ let runs_on_ui_thread =
         (F.asprintf "%a is annotated %s" mono_pname pname
            (MF.monospaced_to_string Annotations.ui_thread))
     else
-      match find_annotated_or_overriden_annotated_method is_annot pname tenv with
+      match find_annotated_or_overriden_annotated_method ~attrs_of_pname is_annot pname tenv with
       | Some override_pname ->
           Some
             (F.asprintf "class %a overrides %a, which is annotated %s" mono_pname pname mono_pname
@@ -390,3 +414,10 @@ let runs_on_ui_thread =
 
 
 let cpp_lock_types_matcher = Clang.lock_types_matcher
+
+let is_recursive_lock_type = function
+  | Typ.CppClass (qname, _) ->
+      Clang.is_recursive_lock_type qname
+  | _ ->
+      (* non-C++ lock types are always considered recursive *)
+      true

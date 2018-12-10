@@ -80,13 +80,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let is_java = Procdesc.get_proc_name pdesc |> Typ.Procname.is_java in
     let do_lock locks loc astate =
-      List.filter_map ~f:get_lock_path locks |> Domain.acquire ~recursive_locks:is_java astate loc
+      List.filter_map ~f:get_lock_path locks |> Domain.acquire tenv astate loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
       Payload.read pdesc callee
-      |> Option.value_map ~default:astate
-           ~f:(Domain.integrate_summary ~recursive_locks:is_java astate callee loc)
+      |> Option.value_map ~default:astate ~f:(Domain.integrate_summary tenv astate callee loc)
     in
     match instr with
     | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | ExitScope _ ->
@@ -98,11 +97,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Lock locks ->
           do_lock locks loc astate
       | GuardLock guard ->
-          Domain.lock_guard ~recursive_locks:is_java astate guard loc
+          Domain.lock_guard tenv astate guard loc
       | GuardConstruct {guard; lock; acquire_now} -> (
         match get_lock_path lock with
         | Some lock_path ->
-            Domain.add_guard astate guard lock_path ~acquire_now ~recursive_locks:false loc
+            Domain.add_guard tenv astate guard lock_path ~acquire_now loc
         | None ->
             log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
             astate )
@@ -146,7 +145,6 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     let formals = FormalMap.make proc_desc in
     let proc_data = ProcData.make proc_desc tenv formals in
     let loc = Procdesc.get_loc proc_desc in
-    let recursive_locks = Procdesc.get_proc_name proc_desc |> Typ.Procname.is_java in
     let initial =
       if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
       else
@@ -159,10 +157,11 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           | _ ->
               FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
         in
-        StarvationDomain.acquire ~recursive_locks StarvationDomain.empty loc (Option.to_list lock)
+        StarvationDomain.acquire tenv StarvationDomain.empty loc (Option.to_list lock)
     in
     let initial =
-      ConcurrencyModels.runs_on_ui_thread tenv proc_desc
+      ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.proc_resolve_attributes tenv
+        proc_desc
       |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
     in
     let filter_blocks =

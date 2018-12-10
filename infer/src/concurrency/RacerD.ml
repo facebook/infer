@@ -617,7 +617,8 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     let initial =
       let threads =
         if
-          runs_on_ui_thread tenv proc_desc |> Option.is_some
+          runs_on_ui_thread ~attrs_of_pname:Summary.proc_resolve_attributes tenv proc_desc
+          |> Option.is_some
           || is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf
         else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_desc tenv

@@ -33,7 +33,11 @@ val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 val get_thread : Typ.Procname.t -> thread
 (** describe how this procedure behaves with respect to thread access *)
 
-val runs_on_ui_thread : Tenv.t -> Procdesc.t -> string option
+val runs_on_ui_thread :
+     attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
+  -> Tenv.t
+  -> Procdesc.t
+  -> string option
 (** We don't want to warn on methods that run on the UI thread because they should always be
     single-threaded. Assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount,
     @OnUnbind, @OnUnmount always run on the UI thread.  Also assume that any superclass
@@ -44,6 +48,12 @@ val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> (Typ.name * Typ.name list) option
 
 val find_annotated_or_overriden_annotated_method :
-  (Annot.Item.t -> bool) -> BuiltinDecl.t -> Tenv.t -> BuiltinDecl.t sexp_option
+     attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
+  -> (Annot.Item.t -> bool)
+  -> Typ.Procname.t
+  -> Tenv.t
+  -> Typ.Procname.t sexp_option
 
 val cpp_lock_types_matcher : QualifiedCppName.Match.quals_matcher
+
+val is_recursive_lock_type : Typ.name -> bool

@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 module MF = MarkupFormatter
 
 let pname_pp = MF.wrap_monospaced Typ.Procname.pp
@@ -147,7 +148,7 @@ module LockState = struct
         false
 
 
-  let acquire lock_id lock_event map =
+  let acquire map lock_id lock_event =
     let current_value = try find lock_id map with Caml.Not_found -> LockStack.top in
     let new_value = LockStack.push lock_event current_value in
     add lock_id new_value map
@@ -253,10 +254,34 @@ let ( <= ) ~lhs ~rhs =
   && UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
 
 
+let is_recursive_lock event tenv =
+  let is_class_and_recursive_lock = function
+    | {Typ.desc= Tptr ({desc= Tstruct name}, _)} | {desc= Tstruct name} ->
+        ConcurrencyModels.is_recursive_lock_type name
+    | typ ->
+        L.die L.InternalError "Asked if non-struct type %a is a recursive lock type.@."
+          (Typ.pp_full Pp.text) typ
+  in
+  match event with
+  | {Event.elem= LockAcquire lock_path} ->
+      AccessPath.get_typ lock_path tenv |> Option.exists ~f:is_class_and_recursive_lock
+  | _ ->
+      false
+
+
+(** skip adding an order pair [(_, event)] if  
+  - we have no tenv, or,
+  - [event] is not a lock event, or,
+  - we do not hold the lock, or,
+  - the lock is not recursive. *)
+let should_skip tenv_opt event lock_state =
+  Option.exists tenv_opt ~f:(fun tenv ->
+      LockState.is_taken event lock_state && is_recursive_lock event tenv )
+
+
 (* for every lock b held locally, add a pair (b, event) *)
-let add_order_pairs ~recursive_locks lock_state event acc =
-  (* add no pairs whatsoever if we already hold that lock *)
-  if recursive_locks && LockState.is_taken event lock_state then acc
+let add_order_pairs tenv_opt lock_state event acc =
+  if should_skip tenv_opt event lock_state then acc
   else
     let add_first_and_eventually acc f =
       match f.Event.elem with
@@ -269,32 +294,30 @@ let add_order_pairs ~recursive_locks lock_state event acc =
     LockState.fold_over_events add_first_and_eventually lock_state acc
 
 
-let acquire ~recursive_locks ({lock_state; events; order} as astate) loc locks =
+let acquire tenv ({lock_state; events; order} as astate) loc locks =
   let new_events = List.map locks ~f:(fun lock -> Event.make_acquire lock loc) in
   { astate with
     events= List.fold new_events ~init:events ~f:(fun acc e -> EventDomain.add e acc)
   ; order=
       List.fold new_events ~init:order ~f:(fun acc e ->
-          OrderDomain.union acc (add_order_pairs ~recursive_locks lock_state e order) )
-  ; lock_state=
-      List.fold2_exn locks new_events ~init:lock_state ~f:(fun acc lock e ->
-          LockState.acquire lock e acc ) }
+          OrderDomain.union acc (add_order_pairs (Some tenv) lock_state e order) )
+  ; lock_state= List.fold2_exn locks new_events ~init:lock_state ~f:LockState.acquire }
 
 
-let make_call_with_event new_event astate =
+let make_call_with_event tenv_opt new_event astate =
   { astate with
     events= EventDomain.add new_event astate.events
-  ; order= add_order_pairs ~recursive_locks:false astate.lock_state new_event astate.order }
+  ; order= add_order_pairs tenv_opt astate.lock_state new_event astate.order }
 
 
 let blocking_call callee sev loc astate =
   let new_event = Event.make_blocking_call callee sev loc in
-  make_call_with_event new_event astate
+  make_call_with_event None new_event astate
 
 
 let strict_mode_call callee loc astate =
   let new_event = Event.make_strict_mode_call callee loc in
-  make_call_with_event new_event astate
+  make_call_with_event None new_event astate
 
 
 let release ({lock_state} as astate) locks =
@@ -302,26 +325,19 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let integrate_summary ~recursive_locks ({lock_state; events; order; ui} as astate) callee_pname loc
+let integrate_summary tenv ({lock_state; events; order; ui} as astate) callee_pname loc
     callee_summary =
   let callsite = CallSite.make callee_pname loc in
   let callee_order = OrderDomain.with_callsite callee_summary.order callsite in
   let callee_ui = UIThreadDomain.with_callsite callee_summary.ui callsite in
+  let should_keep event = should_skip (Some tenv) event lock_state |> not in
   let filtered_order =
-    if recursive_locks then
-      OrderDomain.filter
-        (fun {elem= {eventually}} -> LockState.is_taken eventually lock_state |> not)
-        callee_order
-    else callee_order
+    OrderDomain.filter (fun {elem= {eventually}} -> should_keep eventually) callee_order
   in
   let callee_events = EventDomain.with_callsite callee_summary.events callsite in
-  let filtered_events =
-    if recursive_locks then
-      EventDomain.filter (fun e -> LockState.is_taken e lock_state |> not) callee_events
-    else callee_events
-  in
+  let filtered_events = EventDomain.filter should_keep callee_events in
   let order' =
-    EventDomain.fold (add_order_pairs ~recursive_locks lock_state) filtered_events filtered_order
+    EventDomain.fold (add_order_pairs (Some tenv) lock_state) filtered_events filtered_order
   in
   { astate with
     events= EventDomain.join events filtered_events
@@ -337,9 +353,9 @@ let set_on_ui_thread ({ui} as astate) loc explain =
   {astate with ui}
 
 
-let add_guard astate guard lock ~acquire_now ~recursive_locks loc =
+let add_guard tenv astate guard lock ~acquire_now loc =
   let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
-  if acquire_now then acquire ~recursive_locks astate loc [lock] else astate
+  if acquire_now then acquire tenv astate loc [lock] else astate
 
 
 let remove_guard astate guard =
@@ -356,10 +372,10 @@ let unlock_guard astate guard =
          FlatLock.get lock_opt |> Option.to_list |> release astate )
 
 
-let lock_guard ~recursive_locks astate guard loc =
+let lock_guard tenv astate guard loc =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         FlatLock.get lock_opt |> Option.to_list |> acquire astate ~recursive_locks loc )
+         FlatLock.get lock_opt |> Option.to_list |> acquire tenv astate loc )
 
 
 type summary = t

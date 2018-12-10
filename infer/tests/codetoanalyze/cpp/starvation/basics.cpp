@@ -136,4 +136,18 @@ class SelfDeadlock {
   std::mutex mutex_;
 };
 
+class PathSensitive {
+ public:
+  void FP_ok() {
+    std::lock_guard<std::mutex> l(mutex_);
+    bool flag = false;
+
+    if (flag) {
+      std::lock_guard<std::mutex> l(mutex_);
+    }
+  }
+
+ private:
+  std::mutex mutex_;
+};
 } // namespace basics
