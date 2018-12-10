@@ -30,7 +30,10 @@ module MakeHILDomain (Domain : AbstractDomain.S) = struct
   include AbstractDomain.Pair (Domain) (IdAccessPathMapDomain)
 
   (** hides HIL implementation details *)
-  let pp fmt (astate, _) = Domain.pp fmt astate
+  let pp fmt (astate, id_map) =
+    if Config.debug_level_analysis >= 3 then
+      Format.fprintf fmt "Id map: @[<h>%a@]@\n" IdAccessPathMapDomain.pp id_map ;
+    Domain.pp fmt astate
 end
 
 module Make
