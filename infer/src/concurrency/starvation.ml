@@ -59,7 +59,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open ConcurrencyModels in
     let open StarvationModels in
     let log_parse_error error pname actuals =
-      L.internal_error "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
+      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Typ.Procname.pp pname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
         actuals
     in
@@ -355,7 +355,7 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
   let _, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let pp_acquire fmt (lock, loc, pname) =
-    F.fprintf fmt "%a (%a in %a)" Lock.pp lock Location.pp loc pname_pp pname
+    F.fprintf fmt "%a (%a in %a)" Lock.pp_human lock Location.pp loc pname_pp pname
   in
   let pp_thread fmt
       ( pname
@@ -401,8 +401,8 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
         report_map
     | LockAcquire endpoint_lock when Lock.equal endpoint_lock elem.Order.elem.first ->
         let error_message =
-          Format.asprintf "Potential self deadlock. %a %a twice." pname_pp current_pname Lock.pp
-            endpoint_lock
+          Format.asprintf "Potential self deadlock. %a %a twice." pname_pp current_pname
+            Lock.pp_human endpoint_lock
         in
         let ltr = Order.make_trace ~header:"In method" current_pname elem in
         let loc = Order.get_loc elem in
@@ -434,7 +434,8 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
           Format.asprintf
             "Method %a runs on UI thread (because %a) and %a, which may be held by another thread \
              which %s."
-            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp lock block_descr
+            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_human lock
+            block_descr
         in
         let first_trace = Event.make_trace ~header:"[Trace 1] " current_pname event in
         let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem in
@@ -453,7 +454,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     | MayBlock (_, sev) ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %a), and may block; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp event
+            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp_human event
         in
         let loc = Event.get_loc event in
         let trace = Event.make_trace current_pname event in
@@ -467,7 +468,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread (because %a), and may violate Strict Mode; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp event
+            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp_human event
         in
         let loc = Event.get_loc event in
         let trace = Event.make_trace current_pname event in

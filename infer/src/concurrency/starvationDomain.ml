@@ -42,7 +42,9 @@ module Lock = struct
           false
 
 
-  let pp fmt (((_, typ), _) as lock) =
+  let pp = AccessPath.pp
+
+  let pp_human fmt (((_, typ), _) as lock) =
     F.fprintf fmt "locks %a in class %a"
       (MF.wrap_monospaced AccessPath.pp)
       lock
@@ -56,6 +58,11 @@ end
 module Event = struct
   type severity_t = Low | Medium | High [@@deriving compare]
 
+  let pp_severity fmt sev =
+    let msg = match sev with Low -> "Low" | Medium -> "Medium" | High -> "High" in
+    F.pp_print_string fmt msg
+
+
   type event_t =
     | LockAcquire of Lock.t
     | MayBlock of (string * severity_t)
@@ -67,12 +74,22 @@ module Event = struct
 
     let pp fmt = function
       | LockAcquire lock ->
-          Lock.pp fmt lock
-      | MayBlock (msg, _) ->
-          F.pp_print_string fmt msg
+          F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
+      | MayBlock (msg, sev) ->
+          F.fprintf fmt "MayBlock(%s, %a)" msg pp_severity sev
       | StrictModeCall msg ->
-          F.pp_print_string fmt msg
+          F.fprintf fmt "StrictModeCall(%s)" msg
   end)
+
+  let pp_human fmt {elem} =
+    match elem with
+    | LockAcquire lock ->
+        Lock.pp_human fmt lock
+    | MayBlock (msg, _) ->
+        F.pp_print_string fmt msg
+    | StrictModeCall msg ->
+        F.pp_print_string fmt msg
+
 
   let make_acquire lock loc = make (LockAcquire lock) loc
 
@@ -90,7 +107,7 @@ module Event = struct
 
   let make_trace ?(header = "") pname elem =
     let trace = make_loc_trace elem in
-    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+    let trace_descr = Format.asprintf "%s%a" header pname_pp pname in
     let start_loc = get_loc elem in
     let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
     header_step :: trace
@@ -106,7 +123,8 @@ module Order = struct
 
     let compare = compare_order_t
 
-    let pp fmt {first} = Lock.pp fmt first
+    let pp fmt {first; eventually} =
+      F.fprintf fmt "{first= %a; eventually= %a}" Lock.pp first Event.pp eventually
   end
 
   include ExplicitTrace.MakeTraceElem (E)
@@ -128,7 +146,7 @@ module Order = struct
 
   let make_trace ?(header = "") pname elem =
     let trace = make_loc_trace elem in
-    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+    let trace_descr = Format.asprintf "%s%a" header pname_pp pname in
     let start_loc = get_loc elem in
     let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
     header_step :: trace
@@ -168,11 +186,7 @@ module LockState = struct
 end
 
 module UIThreadExplanationDomain = struct
-  include ExplicitTrace.MakeTraceElem (struct
-    type t = string [@@deriving compare]
-
-    let pp = String.pp
-  end)
+  include ExplicitTrace.MakeTraceElem (String)
 
   let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
 
@@ -182,7 +196,7 @@ module UIThreadExplanationDomain = struct
 
   let make_trace ?(header = "") pname elem =
     let trace = make_loc_trace elem in
-    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+    let trace_descr = Format.asprintf "%s%a" header pname_pp pname in
     let start_loc = get_loc elem in
     let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
     header_step :: trace

@@ -17,6 +17,8 @@ module Lock : sig
   (** Class of the root variable of the path representing the lock *)
 
   val equal : t -> t -> bool
+
+  val pp_human : F.formatter -> t -> unit
 end
 
 (** Represents the existence of a program path from the current method to the eventual acquisition
@@ -34,6 +36,8 @@ module Event : sig
   include ExplicitTrace.TraceElem with type elem_t = event_t
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
+
+  val pp_human : F.formatter -> t -> unit
 end
 
 module EventDomain : ExplicitTrace.FiniteSet with type elt = Event.t
