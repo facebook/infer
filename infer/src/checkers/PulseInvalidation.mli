@@ -6,7 +6,16 @@
  *)
 open! IStd
 
-type std_vector_function = PushBack | Reserve [@@deriving compare]
+type std_vector_function =
+  | Assign
+  | Clear
+  | Emplace
+  | EmplaceBack
+  | Insert
+  | PushBack
+  | Reserve
+  | ShrinkToFit
+[@@deriving compare]
 
 type t =
   | CFree of HilExp.AccessExpression.t * Location.t

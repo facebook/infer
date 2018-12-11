@@ -95,6 +95,15 @@ module StdVector = struct
     >>= PulseDomain.havoc location array
 
 
+  let invalidate_references invalidation : model =
+   fun location ~ret:_ ~actuals astate ->
+    match actuals with
+    | AccessExpression vector :: _ ->
+        reallocate_internal_array vector invalidation location astate
+    | _ ->
+        Ok astate
+
+
   let at : model =
    fun location ~ret ~actuals astate ->
     match actuals with
@@ -137,9 +146,15 @@ module ProcNameDispatcher = struct
   let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
-      [ -"std" &:: "vector" &:: "operator[]" &--> StdVector.at
+      [ -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
+      ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
+      ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace
+      ; -"std" &:: "vector" &:: "emplace_back" &--> StdVector.invalidate_references EmplaceBack
+      ; -"std" &:: "vector" &:: "insert" &--> StdVector.invalidate_references Insert
+      ; -"std" &:: "vector" &:: "operator[]" &--> StdVector.at
       ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back
-      ; -"std" &:: "vector" &:: "reserve" &--> StdVector.reserve ]
+      ; -"std" &:: "vector" &:: "reserve" &--> StdVector.reserve
+      ; -"std" &:: "vector" &:: "shrink_to_fit" &--> StdVector.invalidate_references ShrinkToFit ]
 end
 
 let builtins_dispatcher =

@@ -7,13 +7,34 @@
 open! IStd
 module F = Format
 
-type std_vector_function = PushBack | Reserve [@@deriving compare]
+type std_vector_function =
+  | Assign
+  | Clear
+  | Emplace
+  | EmplaceBack
+  | Insert
+  | PushBack
+  | Reserve
+  | ShrinkToFit
+[@@deriving compare]
 
 let std_vector_function_pp f = function
+  | Assign ->
+      F.fprintf f "std::vector::assign"
+  | Clear ->
+      F.fprintf f "std::vector::clear"
+  | Emplace ->
+      F.fprintf f "std::vector::emplace"
+  | EmplaceBack ->
+      F.fprintf f "std::vector::emplace_back"
+  | Insert ->
+      F.fprintf f "std::vector::insert"
   | PushBack ->
       F.fprintf f "std::vector::push_back"
   | Reserve ->
       F.fprintf f "std::vector::reserve"
+  | ShrinkToFit ->
+      F.fprintf f "std::vector::shrink_to_fit"
 
 
 type t =

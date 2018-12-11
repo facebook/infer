@@ -71,3 +71,41 @@ void reserve_bad(std::vector<int>& vec) {
   vec.reserve(vec.size() + 1);
   std::cout << *elt << "\n";
 }
+
+void clear_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.clear();
+  std::cout << *elt << "\n";
+}
+
+void assign_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.assign(11, 7);
+  std::cout << *elt << "\n";
+}
+
+void shrink_to_fit_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.shrink_to_fit();
+  std::cout << *elt << "\n";
+}
+
+void insert_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.insert(vec.begin(), 7);
+  std::cout << *elt << "\n";
+}
+
+void FN_emplace_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.emplace(vec.begin(),
+              7); // procname matcher does not match emplace (T37883260)
+  std::cout << *elt << "\n";
+}
+
+void FN_emplace_back_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.emplace_back(7); // procname matcher does not match emplace_back
+                       // (T37883260)
+  std::cout << *elt << "\n";
+}
