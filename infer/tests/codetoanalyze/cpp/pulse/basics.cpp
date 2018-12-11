@@ -100,3 +100,18 @@ int struct_inside_loop_ok(std::vector<int> numbers) {
   }
   return sum;
 }
+
+struct UseAfterSelfDestruct {
+  A a_;
+  int x_;
+  ~UseAfterSelfDestruct() {
+    if (x_ == 0) {
+      a_ = getA();
+    }
+  }
+
+  void reset_ok() {
+    this->~UseAfterSelfDestruct();
+    x_ = a_.f(x_);
+  }
+};

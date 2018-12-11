@@ -61,6 +61,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match call with
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
+      | [AccessExpression (Base (destroyed_var, _))] when Var.is_this destroyed_var ->
+          (* do not invalidate [this] when it is destroyed by calls to [this->~Obj()] *)
+          Ok astate
       | [AccessExpression destroyed_access] ->
           let destroyed_object = HilExp.AccessExpression.dereference destroyed_access in
           PulseDomain.invalidate
