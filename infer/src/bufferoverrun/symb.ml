@@ -68,7 +68,7 @@ module SymbolPath = struct
     | Field (fn, p) ->
         F.fprintf fmt "%a.%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
     | Callsite {cs} ->
-        F.fprintf fmt "%a" Typ.Procname.pp (CallSite.pname cs)
+        F.fprintf fmt "%s" (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname cs))
 
 
   let pp_partial = pp_partial_paren ~paren:false
