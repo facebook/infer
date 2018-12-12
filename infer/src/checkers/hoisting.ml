@@ -66,11 +66,11 @@ let get_hoist_inv_map tenv reaching_defs_invariant_map loop_head_to_source_nodes
 
 let do_report summary Call.({pname; loc}) ~issue loop_head_loc =
   let exp_desc =
-    F.asprintf "Loop-invariant call to %a at %a" Typ.Procname.pp pname Location.pp loc
+    F.asprintf "The call to %a at %a is loop-invariant" Typ.Procname.pp pname Location.pp loc
   in
   let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
   let message =
-    F.asprintf "%s can be moved out of the loop at %a." exp_desc Location.pp loop_head_loc
+    F.asprintf "%s and can be moved out of the loop at %a." exp_desc Location.pp loop_head_loc
   in
   Reporting.log_error summary ~loc ~ltr issue message
 

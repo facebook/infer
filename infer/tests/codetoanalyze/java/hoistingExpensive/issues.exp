@@ -1,1 +1,1 @@
-codetoanalyze/java/hoistingExpensive/HoistExpensive.java, HoistExpensive.symbolic_expensive_hoist(int):void, 2, INVARIANT_CALL, no_bucket, ERROR, [Loop-invariant call to void HoistExpensive.cheap_dont_hoist(int) at line 25]
+codetoanalyze/java/hoistingExpensive/HoistExpensive.java, HoistExpensive.symbolic_expensive_hoist(int):void, 2, INVARIANT_CALL, no_bucket, ERROR, [The call to void HoistExpensive.cheap_dont_hoist(int) at line 25 is loop-invariant]
