@@ -270,7 +270,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "litho"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Exceptional))
 
 let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make_default proc_desc tenv in

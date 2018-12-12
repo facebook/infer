@@ -36,12 +36,7 @@ module MakeHILDomain (Domain : AbstractDomain.S) = struct
     Domain.pp fmt astate
 end
 
-module Make
-    (MakeTransferFunctions : TransferFunctions.MakeHIL)
-    (HilConfig : HilConfig)
-    (CFG : ProcCfg.S) =
-struct
-  module TransferFunctions = MakeTransferFunctions (CFG)
+module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) = struct
   module CFG = TransferFunctions.CFG
   module Domain = MakeHILDomain (TransferFunctions.Domain)
 
@@ -95,13 +90,25 @@ struct
     else (actual_state', id_map')
 end
 
+module type S = sig
+  module Interpreter : AbstractInterpreter.S
+
+  type domain
+
+  val compute_post :
+    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
+end
+
 module MakeAbstractInterpreterWithConfig
     (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)
-    (CFG : ProcCfg.S)
-    (MakeTransferFunctions : TransferFunctions.MakeHIL) =
-struct
-  module Interpreter = MakeAbstractInterpreter (Make (MakeTransferFunctions) (HilConfig) (CFG))
+    (TransferFunctions : TransferFunctions.HIL) :
+  S
+  with type domain = TransferFunctions.Domain.t
+   and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig)) = struct
+  module Interpreter = MakeAbstractInterpreter (Make (TransferFunctions) (HilConfig))
+
+  type domain = TransferFunctions.Domain.t
 
   let compute_post ({ProcData.pdesc; tenv} as proc_data) ~initial =
     Preanal.do_preanalysis pdesc tenv ;
@@ -120,5 +127,6 @@ struct
     Interpreter.compute_post ~pp_instr proc_data ~initial:initial' |> Option.map ~f:fst
 end
 
-module MakeAbstractInterpreter =
+module MakeAbstractInterpreter (TransferFunctions : TransferFunctions.HIL) =
   MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig)
+    (TransferFunctions)

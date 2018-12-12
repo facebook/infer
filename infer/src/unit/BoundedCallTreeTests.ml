@@ -7,7 +7,7 @@
 
 open! IStd
 module TestInterpreter =
-  AnalyzerTester.Make (ProcCfg.Exceptional) (BoundedCallTree.TransferFunctions)
+  AnalyzerTester.Make (BoundedCallTree.TransferFunctions (ProcCfg.Exceptional))
 
 let tests =
   let open OUnit2 in

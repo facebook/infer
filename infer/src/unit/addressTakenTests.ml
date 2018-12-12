@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module TestInterpreter = AnalyzerTester.Make (ProcCfg.Exceptional) (AddressTaken.TransferFunctions)
+module TestInterpreter = AnalyzerTester.Make (AddressTaken.TransferFunctions (ProcCfg.Exceptional))
 
 let tests =
   let open OUnit2 in

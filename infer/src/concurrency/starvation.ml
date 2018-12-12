@@ -135,7 +135,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
+module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let open StarvationDomain in

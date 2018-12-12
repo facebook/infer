@@ -57,9 +57,9 @@ module PathCountTransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node _fmt = ()
 end
 
-module NormalTestInterpreter = AnalyzerTester.Make (ProcCfg.Normal) (PathCountTransferFunctions)
+module NormalTestInterpreter = AnalyzerTester.Make (PathCountTransferFunctions (ProcCfg.Normal))
 module ExceptionalTestInterpreter =
-  AnalyzerTester.Make (ProcCfg.Exceptional) (PathCountTransferFunctions)
+  AnalyzerTester.Make (PathCountTransferFunctions (ProcCfg.Exceptional))
 
 let tests =
   let open OUnit2 in

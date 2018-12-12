@@ -15,13 +15,15 @@ end
 module DefaultConfig : HilConfig
 
 (** Functor for turning HIL transfer functions into SIL transfer functions *)
-module Make
-    (MakeTransferFunctions : TransferFunctions.MakeHIL)
-    (HilConfig : HilConfig)
-    (CFG : ProcCfg.S) : sig
-  module TransferFunctions : module type of MakeTransferFunctions (CFG)
-
-  module CFG : module type of TransferFunctions.CFG
+module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) : sig
+  module CFG :
+    ProcCfg.S
+    with type t = TransferFunctions.CFG.t
+     and type instrs_dir = TransferFunctions.CFG.instrs_dir
+     and type Node.t = TransferFunctions.CFG.Node.t
+     and type Node.id = TransferFunctions.CFG.Node.id
+     and module Node.IdMap = TransferFunctions.CFG.Node.IdMap
+     and module Node.IdSet = TransferFunctions.CFG.Node.IdSet
 
   module Domain :
       module type of AbstractDomain.Pair (TransferFunctions.Domain) (IdAccessPathMapDomain)
@@ -33,28 +35,28 @@ module Make
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
 
+module type S = sig
+  module Interpreter : AbstractInterpreter.S
+
+  type domain
+
+  val compute_post :
+    Interpreter.TransferFunctions.extras ProcData.t -> initial:domain -> domain option
+  (** compute and return the postcondition for the given procedure starting from [initial]. *)
+end
+
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)
 module MakeAbstractInterpreterWithConfig
     (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)
-    (CFG : ProcCfg.S)
-    (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
-  module Interpreter :
-      module type of AbstractInterpreter.MakeRPO (Make (MakeTransferFunctions) (HilConfig) (CFG))
-
-  val compute_post :
-       Interpreter.TransferFunctions.extras ProcData.t
-    -> initial:MakeTransferFunctions(CFG).Domain.t
-    -> MakeTransferFunctions(CFG).Domain.t option
-  (** compute and return the postcondition for the given procedure starting from [initial]. If
-      [debug] is true, print html debugging output. *)
-end
+    (TransferFunctions : TransferFunctions.HIL) :
+  S
+  with type domain = TransferFunctions.Domain.t
+   and module Interpreter = MakeAbstractInterpreter(Make(TransferFunctions)(HilConfig))
 
 (** Simpler version of the above wrapper that uses the default HIL config *)
-module MakeAbstractInterpreter
-    (CFG : ProcCfg.S)
-    (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
+module MakeAbstractInterpreter (TransferFunctions : TransferFunctions.HIL) : sig
   include module type of
-    MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig) (CFG)
-      (MakeTransferFunctions)
+    MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (DefaultConfig)
+      (TransferFunctions)
 end

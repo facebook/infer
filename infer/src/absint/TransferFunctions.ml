@@ -28,11 +28,3 @@ end
 module type HIL = sig
   include S with type instr := HilInstr.t
 end
-
-module type MakeSIL = functor (C : ProcCfg.S) -> sig
-  include SIL with module CFG = C
-end
-
-module type MakeHIL = functor (C : ProcCfg.S) -> sig
-  include HIL with module CFG = C
-end

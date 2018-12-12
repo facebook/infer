@@ -307,7 +307,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.Normal
-module Analyzer = LowerHil.MakeAbstractInterpreter (CFG) (TransferFunctions)
+module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 
 module Initial = struct
   let get_locals tenv pdesc =

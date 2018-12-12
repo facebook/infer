@@ -738,8 +738,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Analyzer =
     LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeRPO) (HilConfig)
-      (ProcCfg.Exceptional)
-      (TransferFunctions)
+      (TransferFunctions (ProcCfg.Exceptional))
 
   (* sanity checks for summaries. should only be used in developer mode *)
   let check_invariants access_tree =

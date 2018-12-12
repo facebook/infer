@@ -149,11 +149,10 @@ end
 
 module MakeMake
     (MakeAbstractInterpreter : AbstractInterpreter.Make)
-    (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t)
-    (T : TransferFunctions.MakeSIL) =
+    (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
 struct
   open StructuredSil
-  module I = MakeAbstractInterpreter (T (CFG))
+  module I = MakeAbstractInterpreter (T)
   module M = I.InvariantMap
 
   let structured_program_to_cfg program test_pname =
@@ -224,7 +223,7 @@ struct
           let node = create_node (Procdesc.Node.Stmt_node (Skip "Invariant")) [] in
           set_succs last_node [node] ~exn_handlers ;
           (* add the assertion to be checked after analysis converges *)
-          (node, M.add (CFG.Node.id node) (inv_str, inv_label) assert_map)
+          (node, M.add (T.CFG.Node.id node) (inv_str, inv_label) assert_map)
     and structured_instrs_to_node last_node assert_map exn_handlers instrs =
       List.fold
         ~f:(fun acc instr -> structured_instr_to_node acc exn_handlers instr)
@@ -278,10 +277,9 @@ struct
         OUnit2.assert_failure assert_fail_message
 end
 
-module Make (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
-struct
-  module AI_RPO = MakeMake (AbstractInterpreter.MakeRPO) (CFG) (T)
-  module AI_WTO = MakeMake (AbstractInterpreter.MakeWTO) (CFG) (T)
+module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) = struct
+  module AI_RPO = MakeMake (AbstractInterpreter.MakeRPO) (T)
+  module AI_WTO = MakeMake (AbstractInterpreter.MakeWTO) (T)
 
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 

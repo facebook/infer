@@ -60,8 +60,7 @@ end)
 
 module TestInterpreter =
   AnalyzerTester.Make
-    (ProcCfg.Normal)
-    (LowerHil.Make (MockTaintAnalysis.TransferFunctions) (LowerHil.DefaultConfig))
+    (LowerHil.Make (MockTaintAnalysis.TransferFunctions (ProcCfg.Normal)) (LowerHil.DefaultConfig))
 
 let tests =
   let open OUnit2 in
