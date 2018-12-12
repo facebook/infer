@@ -1412,10 +1412,31 @@ let is_cxx_copy_constructor an =
       false
 
 
-let is_cxx_method_overriding an =
+let is_cxx_method_overriding an qual_name_re =
+  let rec overrides_named (decl_refs : Clang_ast_t.decl_ref list) (qnre : ALVar.alexp) =
+    List.exists
+      ~f:(fun (decl_ref : Clang_ast_t.decl_ref) ->
+        match CAst_utils.get_decl decl_ref.dr_decl_pointer with
+        | None ->
+            false
+        | Some decl -> (
+          match decl with
+          | Clang_ast_t.CXXMethodDecl (_, ndi, _, _, mdi) ->
+              ALVar.compare_str_with_alexp
+                (String.concat ~sep:"::" (List.rev ndi.ni_qual_name))
+                qnre
+              || overrides_named mdi.xmdi_overriden_methods qnre
+          | _ ->
+              false ) )
+      decl_refs
+  in
   match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.CXXMethodDecl (_, _, _, _, mdi)) ->
-      not (List.is_empty mdi.xmdi_overriden_methods)
+  | Ctl_parser_types.Decl (Clang_ast_t.CXXMethodDecl (_, _, _, _, mdi)) -> (
+    match qual_name_re with
+    | None ->
+        not (List.is_empty mdi.xmdi_overriden_methods)
+    | Some qnre ->
+        overrides_named mdi.xmdi_overriden_methods qnre )
   | _ ->
       false
 

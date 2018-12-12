@@ -31,3 +31,9 @@ DEFINE-CHECKER FIND_CXX_METHOD_OVERRIDES = {
     SET report_when = is_cxx_method_overriding;
     SET message = "%decl_name% overrides";
 };
+
+DEFINE-CHECKER FIND_CXX_METHOD_OVERRIDES_MATCHING = {
+    SET report_when = WHEN is_cxx_method_overriding(REGEXP("oo::.*::SvIf::future"))
+        HOLDS-IN-NODE CXXMethodDecl;
+    SET message = "%decl_name% overriding matching method";
+};

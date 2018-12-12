@@ -487,10 +487,11 @@ val is_method_called_by_superclass : Ctl_parser_types.ast_node -> bool
 val is_cxx_copy_constructor : Ctl_parser_types.ast_node -> bool
 (** true if the current node is a C++ copy constructor *)
 
-val is_cxx_method_overriding : Ctl_parser_types.ast_node -> bool
+val is_cxx_method_overriding : Ctl_parser_types.ast_node -> ALVar.alexp option -> bool
 (**
- *  Checks if the current node is a CXXMethodDecl node and is overriding a
- *    method in a superclass.
+ *  True iff the current node is a CXXMethodDecl node and is overriding a
+ *    method whose fully-qualified name (with class and namespace) matches
+ *    the given regexp (if given, otherwise any overriding method satisfies).
  *)
 
 val is_init_expr_cxx11_constant : Ctl_parser_types.ast_node -> bool

@@ -1154,7 +1154,9 @@ let rec eval_Atomic pred_name_ args an lcxt =
   | "is_cxx_copy_constructor", [], an ->
       CPredicates.is_cxx_copy_constructor an
   | "is_cxx_method_overriding", [], an ->
-      CPredicates.is_cxx_method_overriding an
+      CPredicates.is_cxx_method_overriding an None
+  | "is_cxx_method_overriding", [qual_name_re], an ->
+      CPredicates.is_cxx_method_overriding an (Some qual_name_re)
   | "is_init_expr_cxx11_constant", [], an ->
       CPredicates.is_init_expr_cxx11_constant an
   | "cxx_construct_expr_has_no_parameters", [], an ->
