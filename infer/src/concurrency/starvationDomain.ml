@@ -15,31 +15,29 @@ module Lock = struct
   (* TODO (T37174859): change to [HilExp.t] *)
   type t = AccessPath.t
 
+  type var = Var.t
+
+  let compare_var = Var.compare_modulo_this
+
   (* compare type, base variable modulo this and access list *)
-  let compare (((base, typ), aclist) as lock) (((base', typ'), aclist') as lock') =
+  let compare lock lock' =
     if phys_equal lock lock' then 0
-    else
-      let res = Typ.compare typ typ' in
-      if not (Int.equal res 0) then res
-      else
-        let res = Var.compare_modulo_this base base' in
-        if not (Int.equal res 0) then res
-        else List.compare AccessPath.compare_access aclist aclist'
+    else [%compare: (var * Typ.t) * AccessPath.access list] lock lock'
 
 
-  let equal lock lock' = Int.equal 0 (compare lock lock')
+  let equal = [%compare.equal: t]
 
   let equal_modulo_base (((root, typ), aclist) as l) (((root', typ'), aclist') as l') =
-    if phys_equal l l' then true
-    else
-      match (root, root') with
-      | Var.LogicalVar _, Var.LogicalVar _ ->
-          (* only class objects are supposed to appear as idents *)
-          equal l l'
-      | Var.ProgramVar _, Var.ProgramVar _ ->
-          Typ.equal typ typ' && AccessPath.equal_access_list aclist aclist'
-      | _, _ ->
-          false
+    phys_equal l l'
+    ||
+    match (root, root') with
+    | Var.LogicalVar _, Var.LogicalVar _ ->
+        (* only class objects are supposed to appear as idents *)
+        equal l l'
+    | Var.ProgramVar _, Var.ProgramVar _ ->
+        [%compare.equal: Typ.t * AccessPath.access list] (typ, aclist) (typ', aclist')
+    | _, _ ->
+        false
 
 
   let pp = AccessPath.pp

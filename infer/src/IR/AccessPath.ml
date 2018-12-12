@@ -25,8 +25,6 @@ module Raw = struct
 
   let equal_access = [%compare.equal: access]
 
-  let equal_access_list = [%compare.equal: access list]
-
   let may_pp_typ fmt typ =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
 
