@@ -17,3 +17,9 @@
 
 @implementation NativeTemplateComponent
 @end
+
+@implementation RenderFooComponent
+@end
+
+@implementation RenderWithChildrenFooComponent
+@end

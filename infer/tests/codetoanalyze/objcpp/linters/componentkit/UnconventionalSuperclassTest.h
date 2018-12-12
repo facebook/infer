@@ -20,3 +20,9 @@
 
 @interface NativeTemplateComponent : NTNativeTemplateComponent // good
 @end
+
+@interface RenderFooComponent : CKRenderComponent // good
+@end
+
+@interface RenderWithChildrenFooComponent : CKRenderWithChildrenComponent // good
+@end
