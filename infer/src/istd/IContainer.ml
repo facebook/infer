@@ -72,3 +72,10 @@ let filter ~fold ~filter t ~init ~f =
 
 
 let map ~f:g fold t ~init ~f = fold t ~init ~f:(fun acc item -> f acc (g item))
+
+let fold_of_pervasives_fold ~fold collection ~init ~f =
+  fold (fun accum item -> f item accum) collection init
+
+
+let iter_result ~fold collection ~f =
+  Container.fold_result ~fold ~init:() ~f:(fun () item -> f item) collection

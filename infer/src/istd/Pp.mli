@@ -100,3 +100,11 @@ val pair :
   -> F.formatter
   -> 'a * 'b
   -> unit
+
+val triple :
+     fst:(F.formatter -> 'a -> unit)
+  -> snd:(F.formatter -> 'b -> unit)
+  -> trd:(F.formatter -> 'c -> unit)
+  -> F.formatter
+  -> 'a * 'b * 'c
+  -> unit

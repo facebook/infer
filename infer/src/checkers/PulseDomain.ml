@@ -52,11 +52,25 @@ module Attribute = struct
   (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
        efficient (only need to look at the first element in the set of attributes to know if an
        address is invalid) *)
-  type t = Invalid of Invalidation.t | StdVectorReserve [@@deriving compare]
+  type t =
+    (* DO NOT MOVE, see toplevel comment *)
+    | Invalid of Invalidation.t
+    | Closure of
+        Typ.Procname.t
+        * (AccessPath.base * HilExp.AccessExpression.t * AbstractAddressSet.t) list
+        * Location.t
+    | StdVectorReserve
+  [@@deriving compare]
 
   let pp f = function
     | Invalid invalidation ->
         Invalidation.pp f invalidation
+    | Closure (pname, captured, location) ->
+        F.fprintf f "%a[%a] (%a)" Typ.Procname.pp pname
+          (Pp.seq ~sep:","
+             (Pp.triple ~fst:AccessPath.pp_base ~snd:HilExp.AccessExpression.pp
+                ~trd:AbstractAddressSet.pp))
+          captured Location.pp location
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
 end
@@ -478,24 +492,51 @@ end
 
 type actor = {access_expr: HilExp.AccessExpression.t; location: Location.t} [@@deriving compare]
 
+type allocator =
+  | Unknown
+  | Closure of
+      { lambda: HilExp.AccessExpression.t  (** some way to refer to the closure *)
+      ; access_expr: HilExp.AccessExpression.t  (** the access expr that was captured *)
+      ; as_base: AccessPath.base  (** the variable it was captured as *)
+      ; location: Location.t }
+
+let pp_allocator f = function
+  | Unknown ->
+      ()
+  | Closure {lambda; access_expr; as_base} ->
+      F.fprintf f "`%a` captured by `%a` as `%a` " HilExp.AccessExpression.pp access_expr
+        HilExp.AccessExpression.pp lambda AccessPath.pp_base as_base
+
+
+let location_of_allocator = function Unknown -> None | Closure {location} -> Some location
+
 module Diagnostic = struct
   type t =
     | AccessToInvalidAddress of
-        { invalidated_by: Invalidation.t
+        { allocated_by: allocator
+        ; invalidated_by: Invalidation.t
         ; accessed_by: actor
         ; address: AbstractAddress.t }
 
   let get_location (AccessToInvalidAddress {accessed_by= {location}}) = location
 
-  let get_message (AccessToInvalidAddress {accessed_by; invalidated_by; address}) =
+  let get_message (AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by; address}) =
     let pp_debug_address f =
       if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
     in
-    F.asprintf "`%a` accesses address %a past its lifetime%t" HilExp.AccessExpression.pp
-      accessed_by.access_expr Invalidation.pp invalidated_by pp_debug_address
+    F.asprintf "`%a` accesses address %a%a past its lifetime%t" HilExp.AccessExpression.pp
+      accessed_by.access_expr pp_allocator allocated_by Invalidation.pp invalidated_by
+      pp_debug_address
 
 
-  let get_trace (AccessToInvalidAddress {accessed_by; invalidated_by}) =
+  let get_trace (AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by}) =
+    let allocated_by_trace =
+      match location_of_allocator allocated_by with
+      | None ->
+          []
+      | Some location ->
+          [Errlog.make_trace_element 0 location (F.asprintf "%ahere" pp_allocator allocated_by) []]
+    in
     let invalidated_by_trace =
       Invalidation.get_location invalidated_by
       |> Option.map ~f:(fun location ->
@@ -504,7 +545,7 @@ module Diagnostic = struct
                [] )
       |> Option.to_list
     in
-    invalidated_by_trace
+    allocated_by_trace @ invalidated_by_trace
     @ [ Errlog.make_trace_element 0 accessed_by.location
           (F.asprintf "accessed `%a` here" HilExp.AccessExpression.pp accessed_by.access_expr)
           [] ]
@@ -521,17 +562,19 @@ module Operations = struct
   open Result.Monad_infix
 
   (** Check that the address is not known to be invalid *)
-  let check_addr_access actor address astate =
+  let check_addr_access ?(allocated_by = Unknown) actor address astate =
     match Memory.get_invalidation address astate.heap with
     | Some invalidated_by ->
-        Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; address})
+        Error
+          (Diagnostic.AccessToInvalidAddress
+             {invalidated_by; accessed_by= actor; address; allocated_by})
     | None ->
         Ok astate
 
 
-  let check_addr_access_set actor addresses astate =
+  let check_addr_access_set ?allocated_by actor addresses astate =
     AbstractAddressSet.fold
-      (fun addr result -> result >>= check_addr_access actor addr)
+      (fun addr result -> result >>= check_addr_access ?allocated_by actor addr)
       addresses (Ok astate)
 
 
@@ -668,6 +711,60 @@ module Operations = struct
   let remove_vars vars astate =
     let stack = List.fold ~f:(fun var stack -> Stack.remove stack var) ~init:astate.stack vars in
     if phys_equal stack astate.stack then astate else {astate with stack}
+end
+
+module Closures = struct
+  open Result.Monad_infix
+
+  let check_captured_address location lambda address astate =
+    match Memory.find_opt address astate.heap with
+    | None ->
+        Ok astate
+    | Some (_, attributes) ->
+        IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
+          attributes ~f:(function
+          | Attribute.Closure (_, captured, lambda_location) ->
+              IContainer.iter_result ~fold:List.fold captured
+                ~f:(fun (base, access_expr, addresses) ->
+                  Operations.check_addr_access_set
+                    ~allocated_by:
+                      (Closure {lambda; access_expr; as_base= base; location= lambda_location})
+                    {access_expr= lambda; location} addresses astate
+                  >>| fun _ -> () )
+          | _ ->
+              Ok () )
+        >>| fun () -> astate
+
+
+  let check_captured_addresses location lambda addresses astate =
+    Container.fold_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:AbstractAddressSet.fold)
+      addresses ~init:astate ~f:(fun astate address ->
+        check_captured_address location lambda address astate )
+
+
+  let write location access_expr pname captured astate =
+    let closure_addr = AbstractAddress.mk_fresh () in
+    Operations.write location access_expr (AbstractAddressSet.singleton closure_addr) astate
+    >>| fun astate ->
+    { astate with
+      heap=
+        Memory.add_attributes closure_addr
+          (Attributes.singleton (Closure (pname, captured, location)))
+          astate.heap }
+
+
+  let record location access_expr pname captured astate =
+    List.fold_result captured ~init:(astate, [])
+      ~f:(fun ((astate, captured) as result) (captured_base, captured_exp) ->
+        match captured_exp with
+        | HilExp.AccessExpression (AddressOf access_expr) ->
+            Operations.read location access_expr astate
+            >>= fun (astate, addresses) ->
+            Ok (astate, (captured_base, access_expr, addresses) :: captured)
+        | _ ->
+            Ok result )
+    >>= fun (astate, captured_addresses) ->
+    write location access_expr pname captured_addresses astate
 end
 
 module StdVector = struct

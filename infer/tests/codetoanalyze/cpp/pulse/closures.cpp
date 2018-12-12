@@ -12,7 +12,7 @@ struct S {
   S() { f = 1; }
 };
 
-int FN_ref_capture_destroy_invoke_bad() {
+int ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     S s;
@@ -21,7 +21,7 @@ int FN_ref_capture_destroy_invoke_bad() {
   return f(); // s used here
 }
 
-int FN_implicit_ref_capture_destroy_invoke_bad() {
+int implicit_ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();
@@ -30,10 +30,12 @@ int FN_implicit_ref_capture_destroy_invoke_bad() {
   return f();
 }
 
+// need to understand copy constructor
 int FN_reassign_lambda_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();
+    // this is a copy constructor
     auto tmp = [&] { return s.f; };
     f = tmp;
   }

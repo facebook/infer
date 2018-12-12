@@ -35,6 +35,21 @@ end
 
 type 'a access_result = ('a, Diagnostic.t) result
 
+module Closures : sig
+  val check_captured_addresses :
+    Location.t -> HilExp.AccessExpression.t -> AbstractAddressSet.t -> t -> t access_result
+  (** assert the validity of the addresses captured by the lambda *)
+
+  val record :
+       Location.t
+    -> HilExp.AccessExpression.t
+    -> Typ.Procname.t
+    -> (AccessPath.base * HilExp.t) list
+    -> t
+    -> t access_result
+  (** record that the access expression points to a lambda with its captured addresses *)
+end
+
 module StdVector : sig
   val is_reserved : Location.t -> HilExp.AccessExpression.t -> t -> (t * bool) access_result
 

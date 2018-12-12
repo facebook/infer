@@ -57,6 +57,20 @@ module Cplusplus = struct
         Ok astate
 
 
+  let operator_call : model =
+   fun location ~ret:(ret_var, _) ~actuals astate ->
+    PulseDomain.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+    >>= fun astate ->
+    ( match actuals with
+    | AccessExpression lambda :: _ ->
+        PulseDomain.read location HilExp.AccessExpression.(dereference (dereference lambda)) astate
+        >>= fun (astate, address) ->
+        PulseDomain.Closures.check_captured_addresses location lambda address astate
+    | _ ->
+        Ok astate )
+    >>| PulseDomain.havoc_var ret_var
+
+
   let placement_new : model =
    fun location ~ret:(ret_var, _) ~actuals astate ->
     let read_all args astate =
@@ -70,7 +84,7 @@ module Cplusplus = struct
     | _ :: other_actuals ->
         read_all other_actuals astate >>| PulseDomain.havoc_var ret_var
     | _ ->
-        Ok astate
+        Ok (PulseDomain.havoc_var ret_var astate)
 end
 
 module StdVector = struct
@@ -146,7 +160,8 @@ module ProcNameDispatcher = struct
   let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
-      [ -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
+      [ -"std" &:: "function" &:: "operator()" &--> Cplusplus.operator_call
+      ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace
       ; -"std" &:: "vector" &:: "emplace_back" &--> StdVector.invalidate_references EmplaceBack

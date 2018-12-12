@@ -47,6 +47,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | AccessExpression rhs_access ->
         PulseDomain.read loc rhs_access astate
         >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
+    | Closure (pname, captured) ->
+        PulseDomain.Closures.record loc lhs_access pname captured astate
     | Cast (_, e) ->
         exec_assign lhs_access e loc astate
     | _ ->

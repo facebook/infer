@@ -47,3 +47,9 @@ val filter :
   fold:('t, 'a, 'accum) Container.fold -> filter:('a -> bool) -> ('t, 'a, 'accum) Container.fold
 
 val map : f:('a -> 'b) -> ('t, 'a, 'accum) Container.fold -> ('t, 'b, 'accum) Container.fold
+
+val fold_of_pervasives_fold :
+  fold:(('a -> 'accum -> 'accum) -> 't -> 'accum -> 'accum) -> ('t, 'a, 'accum) Container.fold
+
+val iter_result :
+  fold:('t, 'a, unit) Container.fold -> 't -> f:('a -> (unit, 'err) result) -> (unit, 'err) result
