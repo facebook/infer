@@ -17,10 +17,6 @@ include AbstractDomain.S
 
 val compare : t -> t -> int
 
-module AbstractAddressSet : sig
-  type t
-end
-
 val initial : t
 
 module Diagnostic : sig
@@ -39,7 +35,7 @@ type 'a access_result = ('a, Diagnostic.t) result
 
 module Closures : sig
   val check_captured_addresses :
-    Location.t -> HilExp.AccessExpression.t -> AbstractAddressSet.t -> t -> t access_result
+    Location.t -> HilExp.AccessExpression.t -> AbstractAddress.t -> t -> t access_result
   (** assert the validity of the addresses captured by the lambda *)
 
   val record :
@@ -58,7 +54,7 @@ module StdVector : sig
   val mark_reserved : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 end
 
-val read : Location.t -> HilExp.AccessExpression.t -> t -> (t * AbstractAddressSet.t) access_result
+val read : Location.t -> HilExp.AccessExpression.t -> t -> (t * AbstractAddress.t) access_result
 
 val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
 
@@ -66,9 +62,9 @@ val havoc_var : Var.t -> t -> t
 
 val havoc : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
-val write_var : Var.t -> AbstractAddressSet.t -> t -> t
+val write_var : Var.t -> AbstractAddress.t -> t -> t
 
-val write : Location.t -> HilExp.AccessExpression.t -> AbstractAddressSet.t -> t -> t access_result
+val write : Location.t -> HilExp.AccessExpression.t -> AbstractAddress.t -> t -> t access_result
 
 val invalidate :
   PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result

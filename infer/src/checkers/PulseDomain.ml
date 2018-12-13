@@ -15,6 +15,8 @@ module Invalidation = PulseInvalidation
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
+  val equal : t -> t -> bool
+
   val mk_fresh : unit -> t
 
   val pp : F.formatter -> t -> unit
@@ -22,6 +24,8 @@ module AbstractAddress : sig
   val init : unit -> unit
 end = struct
   type t = int [@@deriving compare]
+
+  let equal = [%compare.equal: t]
 
   let next_fresh = ref 1
 
@@ -35,17 +39,6 @@ end = struct
   let init () = next_fresh := 1
 end
 
-(** Set of abstract addresses in memory. *)
-module AbstractAddressSet : sig
-  include module type of AbstractDomain.FiniteSet (AbstractAddress)
-
-  val mk_fresh : unit -> t
-end = struct
-  include AbstractDomain.FiniteSet (AbstractAddress)
-
-  let mk_fresh () = singleton (AbstractAddress.mk_fresh ())
-end
-
 (* {3 Heap domain } *)
 
 module Attribute = struct
@@ -57,7 +50,7 @@ module Attribute = struct
     | Invalid of Invalidation.t
     | Closure of
         Typ.Procname.t
-        * (AccessPath.base * HilExp.AccessExpression.t * AbstractAddressSet.t) list
+        * (AccessPath.base * HilExp.AccessExpression.t * AbstractAddress.t) list
         * Location.t
     | StdVectorReserve
   [@@deriving compare]
@@ -69,7 +62,7 @@ module Attribute = struct
         F.fprintf f "%a[%a] (%a)" Typ.Procname.pp pname
           (Pp.seq ~sep:","
              (Pp.triple ~fst:AccessPath.pp_base ~snd:HilExp.AccessExpression.pp
-                ~trd:AbstractAddressSet.pp))
+                ~trd:AbstractAddress.pp))
           captured Location.pp location
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
@@ -79,11 +72,11 @@ module Attributes = AbstractDomain.FiniteSet (Attribute)
 
 module Memory : sig
   module Access :
-    PrettyPrintable.PrintableOrderedType with type t = AbstractAddressSet.t HilExp.Access.t
+    PrettyPrintable.PrintableOrderedType with type t = AbstractAddress.t HilExp.Access.t
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
-  type edges = AbstractAddressSet.t Edges.t
+  type edges = AbstractAddress.t Edges.t
 
   type cell = edges * Attributes.t
 
@@ -99,11 +92,11 @@ module Memory : sig
 
   val pp : F.formatter -> t -> unit
 
-  val add_edge : AbstractAddress.t -> Access.t -> AbstractAddressSet.t -> t -> t
+  val add_edge : AbstractAddress.t -> Access.t -> AbstractAddress.t -> t -> t
 
-  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AbstractAddressSet.t -> t -> t
+  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AbstractAddress.t -> t -> t
 
-  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AbstractAddressSet.t option
+  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AbstractAddress.t option
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
@@ -112,19 +105,19 @@ module Memory : sig
   val get_invalidation : AbstractAddress.t -> t -> Invalidation.t option
   (** None denotes a valid location *)
 
-  val std_vector_reserve : AbstractAddressSet.t -> t -> t
+  val std_vector_reserve : AbstractAddress.t -> t -> t
 
-  val is_std_vector_reserved : AbstractAddressSet.t -> t -> bool
+  val is_std_vector_reserved : AbstractAddress.t -> t -> bool
 end = struct
   module Access = struct
-    type t = AbstractAddressSet.t HilExp.Access.t [@@deriving compare]
+    type t = AbstractAddress.t HilExp.Access.t [@@deriving compare]
 
-    let pp = HilExp.Access.pp AbstractAddressSet.pp
+    let pp = HilExp.Access.pp AbstractAddress.pp
   end
 
   module Edges = PrettyPrintable.MakePPMap (Access)
 
-  type edges = AbstractAddressSet.t Edges.t [@@deriving compare]
+  type edges = AbstractAddress.t Edges.t [@@deriving compare]
 
   type cell = edges * Attributes.t [@@deriving compare]
 
@@ -133,7 +126,7 @@ end = struct
   type t = cell Graph.t [@@deriving compare]
 
   let pp =
-    Graph.pp ~pp_value:(Pp.pair ~fst:(Edges.pp ~pp_value:AbstractAddressSet.pp) ~snd:Attributes.pp)
+    Graph.pp ~pp_value:(Pp.pair ~fst:(Edges.pp ~pp_value:AbstractAddress.pp) ~snd:Attributes.pp)
 
 
   (* {3 Helper functions to traverse the two maps at once } *)
@@ -151,19 +144,15 @@ end = struct
 
   (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
       [*(&x) = &( *x ) = x]. *)
-  let add_edge_and_back_edge addr_src (access : Access.t) addrs_end memory =
-    let memory = add_edge addr_src access addrs_end memory in
+  let add_edge_and_back_edge addr_src (access : Access.t) addr_end memory =
+    let memory = add_edge addr_src access addr_end memory in
     match access with
     | ArrayAccess _ | FieldAccess _ ->
         memory
     | TakeAddress ->
-        AbstractAddressSet.fold
-          (fun addr_end -> add_edge addr_end Dereference (AbstractAddressSet.singleton addr_src))
-          addrs_end memory
+        add_edge addr_end Dereference addr_src memory
     | Dereference ->
-        AbstractAddressSet.fold
-          (fun addr_end -> add_edge addr_end TakeAddress (AbstractAddressSet.singleton addr_src))
-          addrs_end memory
+        add_edge addr_end TakeAddress addr_src memory
 
 
   let find_edge_opt addr access memory =
@@ -206,19 +195,12 @@ end = struct
     |> Option.bind ~f:(function Attribute.Invalid invalidation -> Some invalidation | _ -> None)
 
 
-  let std_vector_reserve addresses memory =
-    AbstractAddressSet.fold
-      (fun address -> add_attribute address Attribute.StdVectorReserve)
-      addresses memory
+  let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
 
-
-  let is_std_vector_reserved addresses memory =
-    AbstractAddressSet.exists
-      (fun address ->
-        Graph.find_opt address memory |> Option.map ~f:snd
-        |> Option.value_map ~default:false ~f:(fun attributes ->
-               Attributes.mem Attribute.StdVectorReserve attributes ) )
-      addresses
+  let is_std_vector_reserved address memory =
+    Graph.find_opt address memory |> Option.map ~f:snd
+    |> Option.value_map ~default:false ~f:(fun attributes ->
+           Attributes.mem Attribute.StdVectorReserve attributes )
 
 
   (* {3 Monomorphic {!PPMap} interface as needed } *)
@@ -239,9 +221,21 @@ end
     functor followed by normalization wrt the unification found between abstract locations so it's
     convenient to define stacks as elements of this domain. *)
 module Stack = struct
-  include AbstractDomain.Map (Var) (AbstractAddressSet)
+  include AbstractDomain.Map
+            (Var)
+            (struct
+              type t = AbstractAddress.t
 
-  let compare = compare AbstractAddressSet.compare
+              let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
+
+              let join l1 l2 = min l1 l2
+
+              let widen ~prev ~next ~num_iters:_ = join prev next
+
+              let pp = AbstractAddress.pp
+            end)
+
+  let compare = compare AbstractAddress.compare
 end
 
 (** the domain *)
@@ -267,11 +261,10 @@ module Domain : AbstractDomain.S with type t = astate = struct
              (Option.map ~f:fst cell, Option.value_map ~default:Attributes.empty ~f:snd cell)
            in
            Memory.Edges.for_all
-             (fun access_lhs lhs_addr_dst ->
+             (fun access_lhs addr_dst ->
                Option.bind edges_rhs_opt ~f:(fun edges_rhs ->
                    Memory.Edges.find_opt access_lhs edges_rhs )
-               |> Option.map ~f:(fun rhs_addr_dst ->
-                      AbstractAddressSet.( <= ) ~lhs:lhs_addr_dst ~rhs:rhs_addr_dst )
+               |> Option.map ~f:(AbstractAddress.equal addr_dst)
                |> Option.value ~default:false )
              edges_lhs
            && Attributes.( <= ) ~lhs:attrs_lhs ~rhs:attrs_rhs )
@@ -300,41 +293,27 @@ module Domain : AbstractDomain.S with type t = astate = struct
     (** just to get the correct type coercion *)
     let to_canonical_address subst addr = (AddressUF.find subst addr :> AbstractAddress.t)
 
-    let to_canonical_address_set subst addrs =
-      AbstractAddressSet.map (to_canonical_address subst) addrs
-
-
     type nonrec t = {subst: AddressUF.t; astate: t}
-
-    let max_size_of_abstract_address_set = 5
 
     (** adds [(src_addr, access, dst_addr)] to [union_heap] and record potential new equality that
        results from it in [subst] *)
     let union_one_edge subst src_addr access dst_addr union_heap =
       let src_addr = to_canonical_address subst src_addr in
-      let dst_addr = to_canonical_address_set subst dst_addr in
+      let dst_addr = to_canonical_address subst dst_addr in
       match (Memory.find_edge_opt src_addr access union_heap, (access : Memory.Access.t)) with
-      | Some dst_addr', _ when phys_equal dst_addr dst_addr' ->
+      | Some dst_addr', _ when AbstractAddress.equal dst_addr dst_addr' ->
           (* same edge *)
           (union_heap, `No_new_equality)
       | _, ArrayAccess _ ->
           (* do not trust array accesses for now, replace the destination of the edge by a fresh location *)
-          ( Memory.add_edge src_addr access (AbstractAddressSet.mk_fresh ()) union_heap
+          ( Memory.add_edge src_addr access (AbstractAddress.mk_fresh ()) union_heap
           , `No_new_equality )
       | None, _ ->
           (Memory.add_edge src_addr access dst_addr union_heap, `No_new_equality)
       | Some dst_addr', _ ->
-          let addr_join = AbstractAddressSet.join dst_addr dst_addr' in
-          if AbstractAddressSet.cardinal addr_join > max_size_of_abstract_address_set then (
-            let min_addr = AbstractAddressSet.min_elt addr_join in
-            AbstractAddressSet.iter
-              (fun addr -> ignore (AddressUF.union subst min_addr addr))
-              addr_join ;
-            ( Memory.add_edge src_addr access
-                (AbstractAddressSet.singleton (to_canonical_address subst min_addr))
-                union_heap
-            , `New_equality ) )
-          else (Memory.add_edge src_addr access addr_join union_heap, `No_new_equality)
+          (* new equality [dst_addr = dst_addr'] found *)
+          ignore (AddressUF.union subst dst_addr dst_addr') ;
+          (union_heap, `New_equality)
 
 
     module Addresses = Caml.Set.Make (AbstractAddress)
@@ -346,7 +325,7 @@ module Domain : AbstractDomain.S with type t = astate = struct
         let visit_edge access addr_dst (visited, union_heap) =
           union_one_edge subst addr access addr_dst union_heap
           |> fst
-          |> visit_address_set subst visited heap addr_dst
+          |> visit_address subst visited heap addr_dst
         in
         Memory.find_opt addr heap
         |> Option.fold ~init:(visited, union_heap) ~f:(fun (visited, union_heap) (edges, attrs) ->
@@ -354,19 +333,12 @@ module Domain : AbstractDomain.S with type t = astate = struct
                Memory.Edges.fold visit_edge edges (visited, union_heap) )
 
 
-    and visit_address_set subst visited heap addrs union_heap =
-      AbstractAddressSet.fold
-        (fun addr (visited, union_heap) -> visit_address subst visited heap addr union_heap)
-        addrs (visited, union_heap)
-
-
     let visit_stack subst heap stack union_heap =
       (* start graph exploration *)
       let visited = Addresses.empty in
       let _, union_heap =
         Stack.fold
-          (fun _var addr (visited, union_heap) ->
-            visit_address_set subst visited heap addr union_heap )
+          (fun _var addr (visited, union_heap) -> visit_address subst visited heap addr union_heap)
           stack (visited, union_heap)
       in
       union_heap
@@ -380,14 +352,9 @@ module Domain : AbstractDomain.S with type t = astate = struct
            (fun _var addr1_opt addr2_opt ->
              Option.both addr1_opt addr2_opt
              |> Option.iter ~f:(fun (addr1, addr2) ->
-                    let addr_join = AbstractAddressSet.join addr1 addr2 in
-                    if AbstractAddressSet.cardinal addr_join > max_size_of_abstract_address_set
-                    then
-                      let min_addr = AbstractAddressSet.min_elt addr_join in
-                      AbstractAddressSet.iter
-                        (fun addr -> ignore (AddressUF.union subst min_addr addr))
-                        addr_join
-                    else () ) ;
+                    (* stack1 says [_var = addr1] and stack2 says [_var = addr2]: unify the
+                       addresses since they are equal to the same variable *)
+                    ignore (AddressUF.union subst addr1 addr2) ) ;
              (* empty result map *)
              None )
            stack1 stack2)
@@ -430,7 +397,7 @@ module Domain : AbstractDomain.S with type t = astate = struct
                 AddressUnionSet.pp set )
         in
         L.d_printfln "Join unified addresses:@\n@[<v2>  %a@]" pp_union_find_classes state.subst ;
-        let stack = Stack.map (to_canonical_address_set state.subst) state.astate.stack in
+        let stack = Stack.map (to_canonical_address state.subst) state.astate.stack in
         {heap; stack} )
       else normalize {state with astate= {state.astate with heap}}
   end
@@ -577,12 +544,6 @@ module Operations = struct
         Ok astate
 
 
-  let check_addr_access_set ?allocated_by actor addresses astate =
-    AbstractAddressSet.fold
-      (fun addr result -> result >>= check_addr_access ?allocated_by actor addr)
-      addresses (Ok astate)
-
-
   (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
    and return [new_addr] if [overwrite_last] is [Some new_addr], or go until the end of the path if it
    is [None]. Create more addresses into the heap as needed to follow the [path]. Check that each
@@ -590,7 +551,7 @@ module Operations = struct
   let rec walk actor ~on_last addr path astate =
     match (path, on_last) with
     | [], `Access ->
-        Ok (astate, AbstractAddressSet.singleton addr)
+        Ok (astate, addr)
     | [], `Overwrite _ ->
         L.die InternalError "Cannot overwrite last address in empty path"
     | [a], `Overwrite new_addr ->
@@ -603,23 +564,12 @@ module Operations = struct
         >>= fun astate ->
         match Memory.find_edge_opt addr a astate.heap with
         | None ->
-            let addr' = AbstractAddressSet.mk_fresh () in
+            let addr' = AbstractAddress.mk_fresh () in
             let heap = Memory.add_edge_and_back_edge addr a addr' astate.heap in
             let astate = {astate with heap} in
-            walk_set actor ~on_last addr' path astate
+            walk actor ~on_last addr' path astate
         | Some addr' ->
-            walk_set actor ~on_last addr' path astate )
-
-
-  and walk_set actor ~on_last addrs path astate =
-    AbstractAddressSet.fold
-      (fun addr result ->
-        result
-        >>= fun (astate, addr1) ->
-        walk actor ~on_last addr path astate
-        >>= fun (astate, addr2) -> Ok (astate, AbstractAddressSet.join addr1 addr2) )
-      addrs
-      (Ok (astate, AbstractAddressSet.empty))
+            walk actor ~on_last addr' path astate )
 
 
   let write_var var addr astate =
@@ -634,7 +584,7 @@ module Operations = struct
         ~f_array_offset:(fun astate hil_exp_opt ->
           match hil_exp_opt with
           | None ->
-              (astate, AbstractAddressSet.mk_fresh ())
+              (astate, AbstractAddress.mk_fresh ())
           | Some hil_exp -> (
             match eval_hil_exp location hil_exp astate with
             | Ok result ->
@@ -662,12 +612,12 @@ module Operations = struct
           | Some addr ->
               (astate, addr)
           | None ->
-              let addr = AbstractAddressSet.mk_fresh () in
+              let addr = AbstractAddress.mk_fresh () in
               let stack = Stack.add access_var addr astate.stack in
               ({astate with stack}, addr)
         in
         let actor = {access_expr; location} in
-        walk_set actor ~on_last base_addr access_list astate
+        walk actor ~on_last base_addr access_list astate
 
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
@@ -681,7 +631,7 @@ module Operations = struct
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
     let actor = {access_expr; location} in
-    check_addr_access_set actor addr astate >>| fun astate -> (astate, addr)
+    check_addr_access actor addr astate >>| fun astate -> (astate, addr)
 
 
   and read_all location access_exprs astate =
@@ -695,7 +645,7 @@ module Operations = struct
         read location access_expr astate
     | _ ->
         read_all location (HilExp.get_access_exprs hil_exp) astate
-        >>| fun astate -> (astate, AbstractAddressSet.mk_fresh ())
+        >>| fun astate -> (astate, AbstractAddress.mk_fresh ())
 
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
@@ -712,10 +662,8 @@ module Operations = struct
     {astate with heap= Memory.invalidate address actor astate.heap}
 
 
-  let mark_invalid_set actor = AbstractAddressSet.fold (mark_invalid actor)
-
   let havoc_var var astate =
-    {astate with stack= Stack.add var (AbstractAddressSet.mk_fresh ()) astate.stack}
+    {astate with stack= Stack.add var (AbstractAddress.mk_fresh ()) astate.stack}
 
 
   let havoc location (access_expr : HilExp.AccessExpression.t) astate =
@@ -724,7 +672,7 @@ module Operations = struct
         havoc_var access_var astate |> Result.return
     | _ ->
         walk_access_expr
-          ~on_last:(`Overwrite (AbstractAddressSet.mk_fresh ()))
+          ~on_last:(`Overwrite (AbstractAddress.mk_fresh ()))
           astate access_expr location
         >>| fst
 
@@ -736,29 +684,26 @@ module Operations = struct
   let invalidate cause location access_expr astate =
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
-    check_addr_access_set {access_expr; location} addr astate >>| mark_invalid_set cause addr
+    check_addr_access {access_expr; location} addr astate >>| mark_invalid cause addr
 
 
   let invalidate_array_elements cause location access_expr astate =
     materialize_address astate access_expr location
-    >>= fun (astate, addrs) ->
-    check_addr_access_set {access_expr; location} addrs astate
+    >>= fun (astate, addr) ->
+    check_addr_access {access_expr; location} addr astate
     >>| fun astate ->
-    AbstractAddressSet.fold
-      (fun addr astate ->
-        match Memory.find_opt addr astate.heap with
-        | None ->
-            astate
-        | Some (edges, _) ->
-            Memory.Edges.fold
-              (fun access dest_addrs astate ->
-                match (access : Memory.Access.t) with
-                | ArrayAccess _ ->
-                    mark_invalid_set cause dest_addrs astate
-                | _ ->
-                    astate )
-              edges astate )
-      addrs astate
+    match Memory.find_opt addr astate.heap with
+    | None ->
+        astate
+    | Some (edges, _) ->
+        Memory.Edges.fold
+          (fun access dest_addr astate ->
+            match (access : Memory.Access.t) with
+            | ArrayAccess _ ->
+                mark_invalid cause dest_addr astate
+            | _ ->
+                astate )
+          edges astate
 
 
   let remove_vars vars astate =
@@ -769,7 +714,7 @@ end
 module Closures = struct
   open Result.Monad_infix
 
-  let check_captured_address location lambda address astate =
+  let check_captured_addresses location lambda address astate =
     match Memory.find_opt address astate.heap with
     | None ->
         Ok astate
@@ -778,26 +723,20 @@ module Closures = struct
           attributes ~f:(function
           | Attribute.Closure (_, captured, lambda_location) ->
               IContainer.iter_result ~fold:List.fold captured
-                ~f:(fun (base, access_expr, addresses) ->
-                  Operations.check_addr_access_set
+                ~f:(fun (base, access_expr, address) ->
+                  Operations.check_addr_access
                     ~allocated_by:
                       (Closure {lambda; access_expr; as_base= base; location= lambda_location})
-                    {access_expr= lambda; location} addresses astate
+                    {access_expr= lambda; location} address astate
                   >>| fun _ -> () )
           | _ ->
               Ok () )
         >>| fun () -> astate
 
 
-  let check_captured_addresses location lambda addresses astate =
-    Container.fold_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:AbstractAddressSet.fold)
-      addresses ~init:astate ~f:(fun astate address ->
-        check_captured_address location lambda address astate )
-
-
   let write location access_expr pname captured astate =
     let closure_addr = AbstractAddress.mk_fresh () in
-    Operations.write location access_expr (AbstractAddressSet.singleton closure_addr) astate
+    Operations.write location access_expr closure_addr astate
     >>| fun astate ->
     { astate with
       heap=
@@ -812,8 +751,8 @@ module Closures = struct
         match captured_exp with
         | HilExp.AccessExpression (AddressOf access_expr) ->
             Operations.read location access_expr astate
-            >>= fun (astate, addresses) ->
-            Ok (astate, (captured_base, access_expr, addresses) :: captured)
+            >>= fun (astate, address) ->
+            Ok (astate, (captured_base, access_expr, address) :: captured)
         | _ ->
             Ok result )
     >>= fun (astate, captured_addresses) ->
