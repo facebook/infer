@@ -214,7 +214,7 @@ end = struct
   let fold = Graph.fold
 end
 
-(** Stacks: map variables to values.
+(** Stacks: map addresses of variables to values.
 
     This is defined as an abstract domain but the domain operations are mostly meaningless on their
     own. It so happens that the join on abstract states uses the join of stacks provided by this
@@ -572,9 +572,19 @@ module Operations = struct
             walk actor ~on_last addr' path astate )
 
 
-  let write_var var addr astate =
-    let stack = Stack.add var addr astate.stack in
-    {astate with stack}
+  let write_var var new_addr astate =
+    let astate, var_address_of =
+      match Stack.find_opt var astate.stack with
+      | Some addr ->
+          (astate, addr)
+      | None ->
+          let addr = AbstractAddress.mk_fresh () in
+          let stack = Stack.add var addr astate.stack in
+          ({astate with stack}, addr)
+    in
+    (* Update heap with var_address_of -*-> new_addr *)
+    let heap = Memory.add_edge var_address_of HilExp.Access.Dereference new_addr astate.heap in
+    {astate with heap}
 
 
   let rec to_accesses location access_expr astate =
@@ -606,7 +616,7 @@ module Operations = struct
     match (on_last, access_list) with
     | `Overwrite new_addr, [] ->
         Ok (write_var access_var new_addr astate, new_addr)
-    | `Access, _ | `Overwrite _, _ :: _ ->
+    | `Access, _ | `Overwrite _, _ :: _ -> (
         let astate, base_addr =
           match Stack.find_opt access_var astate.stack with
           | Some addr ->
@@ -616,8 +626,12 @@ module Operations = struct
               let stack = Stack.add access_var addr astate.stack in
               ({astate with stack}, addr)
         in
-        let actor = {access_expr; location} in
-        walk actor ~on_last base_addr access_list astate
+        match access_list with
+        | [HilExp.Access.TakeAddress] ->
+            Ok (astate, base_addr)
+        | _ ->
+            let actor = {access_expr; location} in
+            walk actor ~on_last base_addr (HilExp.Access.Dereference :: access_list) astate )
 
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
@@ -662,19 +676,10 @@ module Operations = struct
     {astate with heap= Memory.invalidate address actor astate.heap}
 
 
-  let havoc_var var astate =
-    {astate with stack= Stack.add var (AbstractAddress.mk_fresh ()) astate.stack}
-
+  let havoc_var var astate = write_var var (AbstractAddress.mk_fresh ()) astate
 
   let havoc location (access_expr : HilExp.AccessExpression.t) astate =
-    match access_expr with
-    | Base (access_var, _) ->
-        havoc_var access_var astate |> Result.return
-    | _ ->
-        walk_access_expr
-          ~on_last:(`Overwrite (AbstractAddress.mk_fresh ()))
-          astate access_expr location
-        >>| fst
+    overwrite_address astate access_expr (AbstractAddress.mk_fresh ()) location >>| fst
 
 
   let write location access_expr addr astate =

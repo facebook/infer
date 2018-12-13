@@ -109,3 +109,21 @@ void FN_emplace_back_bad(std::vector<int>& vec) {
                        // (T37883260)
   std::cout << *elt << "\n";
 }
+
+void f(int&);
+
+void push_back_value_ok(std::vector<int>& vec) {
+  int x = vec[0];
+  vec.push_back(7);
+  f(x);
+}
+
+struct VectorA {
+  int x;
+
+  void FP_push_back_value_field_ok(std::vector<int>& vec) {
+    x = vec[0];
+    vec.push_back(7);
+    f(x);
+  }
+};
