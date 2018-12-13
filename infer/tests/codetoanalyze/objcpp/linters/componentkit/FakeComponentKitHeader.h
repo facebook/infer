@@ -58,3 +58,11 @@ class CKComponentScope {
   CKComponentScope(const CKComponentScope&) = delete;
   CKComponentScope& operator=(const CKComponentScope&) = delete;
 };
+
+// Mimic importing CKRenderComponent
+@interface CKRenderComponent : CKComponent
+@end
+
+// Mimic importing CKRenderWithChildrenComponent
+@interface CKRenderWithChildrenComponent : CKComponent
+@end
