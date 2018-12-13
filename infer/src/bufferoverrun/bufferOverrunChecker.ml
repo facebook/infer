@@ -638,28 +638,33 @@ let get_local_decls proc_desc =
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
  fun {proc_desc; tenv; integer_type_widths; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
-  let oenv = Dom.OndemandEnv.mk proc_desc tenv integer_type_widths in
-  let pdata = ProcData.make proc_desc tenv oenv in
+  let pdata =
+    let oenv = Dom.OndemandEnv.mk proc_desc tenv integer_type_widths in
+    ProcData.make proc_desc tenv oenv
+  in
   let cfg = CFG.from_pdesc proc_desc in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
   let inv_map = Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata in
-  let locals = get_local_decls proc_desc in
-  let exit_mem =
-    extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map
-    |> Option.map ~f:(Dom.Mem.forget_locs locals)
-  in
-  let cond_set =
-    Report.check_proc summary proc_desc tenv integer_type_widths cfg inv_map
-    |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
-  in
+  let exit_node = CFG.exit_node cfg in
+  let underlying_exit_node = CFG.Node.underlying_node exit_node in
+  let pp_name f = F.pp_print_string f "bufferoverrun check" in
+  NodePrinter.start_session ~pp_name underlying_exit_node ;
   let summary =
+    let locals = get_local_decls proc_desc in
+    let cond_set =
+      Report.check_proc summary proc_desc tenv integer_type_widths cfg inv_map
+      |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
+    in
+    let exit_mem = extract_post (CFG.Node.id exit_node) inv_map in
     match exit_mem with
     | Some exit_mem ->
-        let post = (Dom.Mem.unset_oenv exit_mem, cond_set) in
-        Payload.update_summary post summary
+        let exit_mem = exit_mem |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv in
+        let payload = (exit_mem, cond_set) in
+        Payload.update_summary payload summary
     | _ ->
         summary
   in
+  NodePrinter.finish_session underlying_exit_node ;
   if Config.hoisting_report_only_expensive then
     let pname = Procdesc.get_proc_name proc_desc in
     WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map)

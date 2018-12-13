@@ -343,12 +343,11 @@ let rec eval_sympath_partial params p mem =
   match p with
   | Symb.SymbolPath.Pvar x -> (
     try ParamBindings.find x params with Caml.Not_found ->
-      L.(debug BufferOverrun Verbose)
-        "Symbol %a is not found in parameters.@\n" (Pvar.pp Pp.text) x ;
+      L.d_printfln "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
   | Symb.SymbolPath.Callsite {cs} ->
-      L.(debug BufferOverrun Verbose)
-        "Symbol for %a is not expected to be in parameters.@\n" Typ.Procname.pp (CallSite.pname cs) ;
+      L.d_printfln "Symbol for %a is not expected to be in parameters." Typ.Procname.pp
+        (CallSite.pname cs) ;
       Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
   | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ ->
       let locs = eval_locpath params p mem in
@@ -369,8 +368,7 @@ and eval_locpath params p mem =
         PowLoc.append_field ~fn locs
   in
   if PowLoc.is_empty res then (
-    L.(debug BufferOverrun Verbose)
-      "Location value for %a is not found.@\n" Symb.SymbolPath.pp_partial p ;
+    L.d_printfln "Location value for %a is not found." Symb.SymbolPath.pp_partial p ;
     PowLoc.unknown )
   else res
 
