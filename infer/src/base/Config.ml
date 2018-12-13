@@ -1800,6 +1800,16 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
+and pulse_max_disjuncts =
+  CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:50
+    "Under-approximate after $(i,int) disjunctions in the domain"
+
+
+and pulse_widen_threshold =
+  CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:5
+    "Under-approximate after $(i,int) loop iterations"
+
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:InferCommand.[(Analyze, manual_quandary)]
@@ -2836,6 +2846,10 @@ and procs_csv = !procs_csv
 and project_root = !project_root
 
 and pulse = !pulse
+
+and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pulse_widen_threshold = !pulse_widen_threshold
 
 and purity = !purity
 

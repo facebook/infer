@@ -547,6 +547,10 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val pulse : bool
 
+val pulse_max_disjuncts : int
+
+val pulse_widen_threshold : int
+
 val purity : bool
 
 val quandary : bool

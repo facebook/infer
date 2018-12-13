@@ -1346,6 +1346,13 @@ INTERNAL OPTIONS
        --profiler-samples-reset
            Cancel the effect of --profiler-samples.
 
+       --pulse-max-disjuncts int
+           Under-approximate after int disjunctions in the domain (default:
+           50)
+
+       --pulse-widen-threshold int
+           Under-approximate after int loop iterations (default: 5)
+
        --reactive-capture
            Activates: Compile source files only when required by analyzer
            (clang only) (Conversely: --no-reactive-capture)

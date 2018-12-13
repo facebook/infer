@@ -141,9 +141,11 @@ module DisjunctiveTransferFunctions =
        (struct
          type domain_t = PulseDomain.t [@@deriving compare]
 
-         let join_policy = `JoinAfter 1
+         let join_policy =
+           match Config.pulse_max_disjuncts with 0 -> `NeverJoin | n -> `UnderApproximateAfter n
 
-         let widen_policy = `UnderApproximateAfterNumIterations 5
+
+         let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
        end)
 
 module DisjunctiveAnalyzer =
