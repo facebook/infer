@@ -404,7 +404,7 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
           Format.asprintf "Potential self deadlock. %a %a twice." pname_pp current_pname
             Lock.pp_human endpoint_lock
         in
-        let ltr = Order.make_trace ~header:"In method" current_pname elem in
+        let ltr = Order.make_trace ~header:"In method " current_pname elem in
         let loc = Order.get_loc elem in
         ReportMap.add_deadlock current_pname loc ltr error_message report_map
     | LockAcquire endpoint_lock ->

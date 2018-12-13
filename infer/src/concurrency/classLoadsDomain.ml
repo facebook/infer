@@ -6,7 +6,13 @@
  *)
 open! IStd
 module F = Format
-module ClassLoad = String
+
+module ClassLoad = struct
+  include String
+
+  let pp_human = pp
+end
+
 module Event = ExplicitTrace.MakeTraceElem (ClassLoad)
 include Event.FiniteSet
 

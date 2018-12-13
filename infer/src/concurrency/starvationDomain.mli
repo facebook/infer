@@ -11,14 +11,12 @@ module F = Format
 (** Abstraction of a path that represents a lock, special-casing equality and comparisons
     to work over type, base variable modulo this and access list *)
 module Lock : sig
-  include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
+  include ExplicitTrace.Element with type t = AccessPath.t
 
   val owner_class : t -> Typ.name option
   (** Class of the root variable of the path representing the lock *)
 
   val equal : t -> t -> bool
-
-  val pp_human : F.formatter -> t -> unit
 end
 
 (** Represents the existence of a program path from the current method to the eventual acquisition
@@ -36,8 +34,6 @@ module Event : sig
   include ExplicitTrace.TraceElem with type elem_t = event_t
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
-
-  val pp_human : F.formatter -> t -> unit
 end
 
 module EventDomain : ExplicitTrace.FiniteSet with type elt = Event.t

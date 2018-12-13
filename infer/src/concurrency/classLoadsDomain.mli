@@ -6,7 +6,8 @@
  *)
 open! IStd
 module F = Format
-module ClassLoad = String
+
+module ClassLoad : ExplicitTrace.Element with type t = string
 
 val get_java_class : Typ.Procname.t -> string option
 

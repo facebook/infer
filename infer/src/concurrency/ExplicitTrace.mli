@@ -15,6 +15,13 @@ module type FiniteSet = sig
   (** Push given callsite onto all traces in set. Cf [TraceElem.with_callsite] *)
 end
 
+module type Element = sig
+  include PrettyPrintable.PrintableOrderedType
+
+  val pp_human : Format.formatter -> t -> unit
+  (** Pretty printer used for trace construction; [pp] is used for debug output. *)
+end
+
 module type TraceElem = sig
   type elem_t
 
@@ -23,7 +30,8 @@ module type TraceElem = sig
       [loc] are equal.  This has consequences on the powerset domain. *)
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
-  include PrettyPrintable.PrintableOrderedType with type t := t
+  (** Both [pp] and [pp_human] simply call the same function on the trace element. *)
+  include Element with type t := t
 
   val make : elem_t -> Location.t -> t
 
@@ -41,5 +49,4 @@ module type TraceElem = sig
   module FiniteSet : FiniteSet with type elt = t
 end
 
-module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
-  TraceElem with type elem_t = Elem.t
+module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t

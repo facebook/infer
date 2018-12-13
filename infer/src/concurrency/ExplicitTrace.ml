@@ -14,12 +14,18 @@ module type FiniteSet = sig
   val with_callsite : t -> CallSite.t -> t
 end
 
+module type Element = sig
+  include PrettyPrintable.PrintableOrderedType
+
+  val pp_human : Format.formatter -> t -> unit
+end
+
 module type TraceElem = sig
   type elem_t
 
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
-  include PrettyPrintable.PrintableOrderedType with type t := t
+  include Element with type t := t
 
   val make : elem_t -> Location.t -> t
 
@@ -32,8 +38,7 @@ module type TraceElem = sig
   module FiniteSet : FiniteSet with type elt = t
 end
 
-module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
-  TraceElem with type elem_t = Elem.t = struct
+module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
   type elem_t = Elem.t
 
   module T = struct
@@ -41,6 +46,8 @@ module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
     [@@deriving compare]
 
     let pp fmt {elem} = Elem.pp fmt elem
+
+    let pp_human fmt {elem} = Elem.pp_human fmt elem
   end
 
   include T
@@ -52,15 +59,15 @@ module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
   let make_loc_trace ?(nesting = 0) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
-          let elem_descr =
+          let descr =
             F.asprintf "Method call: %a"
               (MF.wrap_monospaced Typ.Procname.pp)
               (CallSite.pname callsite)
           in
-          let elem = Errlog.make_trace_element ns (CallSite.loc callsite) elem_descr [] in
-          (elem :: tr, ns + 1) )
+          let call = Errlog.make_trace_element ns (CallSite.loc callsite) descr [] in
+          (call :: tr, ns + 1) )
     in
-    let endpoint_descr = F.asprintf "%a" Elem.pp e.elem in
+    let endpoint_descr = F.asprintf "%a" Elem.pp_human e.elem in
     let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
     List.rev (endpoint :: call_trace)
 
