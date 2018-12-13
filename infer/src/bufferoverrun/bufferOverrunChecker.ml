@@ -17,6 +17,7 @@ module L = Logging
 module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
+module TypModels = BufferOverrunTypModels
 
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunSummary.t
@@ -44,8 +45,8 @@ module Init = struct
           BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
             ?stride ~inst_num ~represents_multiple_values ~dimension mem
       | Typ.Tstruct typname -> (
-        match Models.TypName.dispatch tenv typname with
-        | Some {Models.declare_local} ->
+        match TypModels.dispatch tenv typname with
+        | Some {TypModels.declare_local} ->
             let model_env =
               Models.mk_model_env pname node_hash location tenv integer_type_widths
             in
