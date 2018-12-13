@@ -71,4 +71,7 @@ val write : Location.t -> HilExp.AccessExpression.t -> AbstractAddressSet.t -> t
 val invalidate :
   PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
+val invalidate_array_elements :
+  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+
 val remove_vars : Var.t list -> t -> t

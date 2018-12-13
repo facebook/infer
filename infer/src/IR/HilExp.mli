@@ -50,10 +50,11 @@ module AccessExpression : sig
   val dereference : access_expression -> access_expression
   (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
 
-  val to_accesses :
-       f_array_offset:(t option -> 'array_index)
-    -> access_expression
-    -> AccessPath.base * 'array_index Access.t list
+  val to_accesses_fold :
+       access_expression
+    -> init:'accum
+    -> f_array_offset:('accum -> t option -> 'accum * 'array_index)
+    -> 'accum * AccessPath.base * 'array_index Access.t list
 
   val to_access_path : access_expression -> AccessPath.t
 

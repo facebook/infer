@@ -97,16 +97,20 @@ module StdVector = struct
   let to_internal_array vector = HilExp.AccessExpression.field_offset vector internal_array
 
   let deref_internal_array vector =
-    HilExp.AccessExpression.(array_offset (dereference (to_internal_array vector)) Typ.void None)
+    HilExp.AccessExpression.(dereference (to_internal_array vector))
+
+
+  let element_of_internal_array vector index =
+    HilExp.AccessExpression.array_offset (deref_internal_array vector) Typ.void index
 
 
   let reallocate_internal_array vector vector_f location astate =
-    let array = to_internal_array vector in
-    (* all elements should be invalidated *)
-    let array_elements = deref_internal_array vector in
+    let array_address = to_internal_array vector in
+    let array = deref_internal_array vector in
     let invalidation = PulseInvalidation.StdVector (vector_f, vector, location) in
-    PulseDomain.invalidate invalidation location array_elements astate
-    >>= PulseDomain.havoc location array
+    PulseDomain.invalidate_array_elements invalidation location array astate
+    >>= PulseDomain.invalidate invalidation location array
+    >>= PulseDomain.havoc location array_address
 
 
   let invalidate_references invalidation : model =
@@ -121,8 +125,10 @@ module StdVector = struct
   let at : model =
    fun location ~ret ~actuals astate ->
     match actuals with
-    | [AccessExpression vector; _index] ->
-        PulseDomain.read location (deref_internal_array vector) astate
+    | [AccessExpression vector_access_expr; index_exp] ->
+        PulseDomain.read location
+          (element_of_internal_array vector_access_expr (Some index_exp))
+          astate
         >>= fun (astate, loc) ->
         PulseDomain.write location (HilExp.AccessExpression.base ret) loc astate
     | _ ->

@@ -78,7 +78,8 @@ end
 module Attributes = AbstractDomain.FiniteSet (Attribute)
 
 module Memory : sig
-  module Access : PrettyPrintable.PrintableOrderedType with type t = unit HilExp.Access.t
+  module Access :
+    PrettyPrintable.PrintableOrderedType with type t = AbstractAddressSet.t HilExp.Access.t
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
@@ -116,9 +117,9 @@ module Memory : sig
   val is_std_vector_reserved : AbstractAddressSet.t -> t -> bool
 end = struct
   module Access = struct
-    type t = unit HilExp.Access.t [@@deriving compare]
+    type t = AbstractAddressSet.t HilExp.Access.t [@@deriving compare]
 
-    let pp = HilExp.Access.pp (fun _ () -> ())
+    let pp = HilExp.Access.pp AbstractAddressSet.pp
   end
 
   module Edges = PrettyPrintable.MakePPMap (Access)
@@ -622,11 +623,28 @@ module Operations = struct
     {astate with stack}
 
 
+  let rec to_accesses location access_expr astate =
+    let exception Failed_fold of Diagnostic.t in
+    try
+      HilExp.AccessExpression.to_accesses_fold access_expr ~init:astate
+        ~f_array_offset:(fun astate hil_exp_opt ->
+          match hil_exp_opt with
+          | None ->
+              (astate, AbstractAddressSet.mk_fresh ())
+          | Some hil_exp -> (
+            match eval_hil_exp location hil_exp astate with
+            | Ok result ->
+                result
+            | Error diag ->
+                raise (Failed_fold diag) ) )
+      |> Result.return
+    with Failed_fold diag -> Error diag
+
+
   (** add addresses to the state to give a address to the destination of the given access path *)
-  let walk_access_expr ~on_last astate access_expr location =
-    let (access_var, _), access_list =
-      HilExp.AccessExpression.to_accesses ~f_array_offset:(fun _ -> ()) access_expr
-    in
+  and walk_access_expr ~on_last astate access_expr location =
+    to_accesses location access_expr astate
+    >>= fun (astate, (access_var, _), access_list) ->
     if Config.write_html then
       L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
         (Pp.seq ~sep:"," Memory.Access.pp)
@@ -653,7 +671,28 @@ module Operations = struct
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
-  let materialize_address astate access_expr = walk_access_expr ~on_last:`Access astate access_expr
+  and materialize_address astate access_expr = walk_access_expr ~on_last:`Access astate access_expr
+
+  and read location access_expr astate =
+    materialize_address astate access_expr location
+    >>= fun (astate, addr) ->
+    let actor = {access_expr; location} in
+    check_addr_access_set actor addr astate >>| fun astate -> (astate, addr)
+
+
+  and read_all location access_exprs astate =
+    List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
+        read location access_expr astate >>| fst )
+
+
+  and eval_hil_exp location (hil_exp : HilExp.t) astate =
+    match hil_exp with
+    | AccessExpression access_expr ->
+        read location access_expr astate
+    | _ ->
+        read_all location (HilExp.get_access_exprs hil_exp) astate
+        >>| fun astate -> (astate, AbstractAddressSet.mk_fresh ())
+
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
     abstract address representing what the expression points to, and replace that with the given
@@ -686,18 +725,6 @@ module Operations = struct
         >>| fst
 
 
-  let read location access_expr astate =
-    materialize_address astate access_expr location
-    >>= fun (astate, addr) ->
-    let actor = {access_expr; location} in
-    check_addr_access_set actor addr astate >>| fun astate -> (astate, addr)
-
-
-  let read_all location access_exprs astate =
-    List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
-        read location access_expr astate >>| fst )
-
-
   let write location access_expr addr astate =
     overwrite_address astate access_expr addr location >>| fun (astate, _) -> astate
 
@@ -706,6 +733,28 @@ module Operations = struct
     materialize_address astate access_expr location
     >>= fun (astate, addr) ->
     check_addr_access_set {access_expr; location} addr astate >>| mark_invalid_set cause addr
+
+
+  let invalidate_array_elements cause location access_expr astate =
+    materialize_address astate access_expr location
+    >>= fun (astate, addrs) ->
+    check_addr_access_set {access_expr; location} addrs astate
+    >>| fun astate ->
+    AbstractAddressSet.fold
+      (fun addr astate ->
+        match Memory.find_opt addr astate.heap with
+        | None ->
+            astate
+        | Some (edges, _) ->
+            Memory.Edges.fold
+              (fun access dest_addrs astate ->
+                match (access : Memory.Access.t) with
+                | ArrayAccess _ ->
+                    mark_invalid_set cause dest_addrs astate
+                | _ ->
+                    astate )
+              edges astate )
+      addrs astate
 
 
   let remove_vars vars astate =

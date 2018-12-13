@@ -207,20 +207,21 @@ module AccessExpression = struct
 
   let pp = pp_access_expr
 
-  let to_accesses ~f_array_offset ae =
-    let rec aux accesses = function
+  let to_accesses_fold access_expr ~init ~f_array_offset =
+    let rec aux accum accesses = function
       | Base base ->
-          (base, accesses)
-      | FieldOffset (ae, fld) ->
-          aux (Access.FieldAccess fld :: accesses) ae
-      | ArrayOffset (ae, typ, index) ->
-          aux (Access.ArrayAccess (typ, f_array_offset index) :: accesses) ae
-      | AddressOf ae ->
-          aux (Access.TakeAddress :: accesses) ae
-      | Dereference ae ->
-          aux (Access.Dereference :: accesses) ae
+          (accum, base, accesses)
+      | FieldOffset (access_expr, fld) ->
+          aux accum (Access.FieldAccess fld :: accesses) access_expr
+      | ArrayOffset (access_expr, typ, index) ->
+          let accum, index' = f_array_offset accum index in
+          aux accum (Access.ArrayAccess (typ, index') :: accesses) access_expr
+      | AddressOf access_expr ->
+          aux accum (Access.TakeAddress :: accesses) access_expr
+      | Dereference access_expr ->
+          aux accum (Access.Dereference :: accesses) access_expr
     in
-    aux [] ae
+    aux init [] access_expr
 
 
   (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
