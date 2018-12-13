@@ -343,6 +343,9 @@ module Val = struct
 
   let of_path ~may_last_field integer_type_widths location typ path =
     let is_java = Language.curr_language_is Java in
+    L.d_printfln "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
+      (if may_last_field then ", may_last_field" else "")
+      (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
     | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
         let l = Loc.of_path path in
@@ -395,11 +398,20 @@ module Val = struct
 
   let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
    fun ~default {typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
-    Option.value_map (Loc.get_path l) ~default ~f:(fun path ->
-        Option.value_map (typ_of_param_path path) ~default ~f:(fun typ ->
-            let may_last_field = may_last_field path in
-            let path = OndemandEnv.canonical_path typ_of_param_path path in
-            of_path ~may_last_field integer_type_widths entry_location typ path ) )
+    match Loc.get_path l with
+    | None ->
+        L.d_printfln "Val.on_demand for %a -> no path" Loc.pp l ;
+        default
+    | Some path -> (
+      match typ_of_param_path path with
+      | None ->
+          L.d_printfln "Val.on_demand for %a -> no type" Loc.pp l ;
+          default
+      | Some typ ->
+          L.d_printfln "Val.on_demand for %a" Loc.pp l ;
+          let may_last_field = may_last_field path in
+          let path = OndemandEnv.canonical_path typ_of_param_path path in
+          of_path ~may_last_field integer_type_widths entry_location typ path )
 
 
   module Itv = struct
