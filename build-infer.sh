@@ -132,39 +132,15 @@ install_opam_deps () {
     opam install --deps-only $locked infer "$INFER_ROOT"
 }
 
-# temporary
-# https://github.com/ocaml/opam-repository/issues/13040
-warn_javalib_sandbox () {
-    echo "*** Did opam just fail to install javalib? If so you need to disable sandboxing." >&2
-    echo "*** Delete the following lines in $(opam var root)/config:" >&2
-    echo >&2
-    echo '  wrap-build-commands:' >&2
-    echo '    ["%{hooks}%/sandbox.sh" "build"] {os = "linux" | os = "macos"}' >&2
-    echo '  wrap-install-commands:' >&2
-    echo '    ["%{hooks}%/sandbox.sh" "install"] {os = "linux" | os = "macos"}' >&2
-    echo '  wrap-remove-commands:' >&2
-    echo '    ["%{hooks}%/sandbox.sh" "remove"] {os = "linux" | os = "macos"}' >&2
-    echo >&2
-    echo "*** once you are done don't forget to enable sandboxing again with" >&2
-    echo >&2
-    echo "  opam init --reinit -ni" >&2
-    exit 1
-}
-
 echo "initializing opam... " >&2
 . "$INFER_ROOT"/scripts/opam_utils.sh
-# workaround bug in opam regarding symlinks
-# https://github.com/ocaml/opam/issues/3622
-OPAMROOT=${OPAMROOT:-"$HOME"/.opam}
-OPAMROOT=$(realpath "$OPAMROOT")
-export OPAMROOT
 if [ "$USER_OPAM_SWITCH" == "no" ]; then
     setup_opam
 fi
 eval $(SHELL=bash opam env)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
-opam_retry install_opam_deps || warn_javalib_sandbox
+opam_retry install_opam_deps
 
 if [ "$ONLY_SETUP_OPAM" == "yes" ]; then
   exit 0
