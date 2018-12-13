@@ -84,19 +84,19 @@ module BottomLifted (Domain : S) = struct
       | _, Bottom ->
           astate1
       | NonBottom a1, NonBottom a2 ->
-          NonBottom (Domain.join a1 a2)
+          PhysEqual.optim2 ~res:(NonBottom (Domain.join a1 a2)) astate1 astate2
 
 
-  let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
+  let widen ~prev:prev0 ~next:next0 ~num_iters =
+    if phys_equal prev0 next0 then prev0
     else
-      match (prev, next) with
+      match (prev0, next0) with
       | Bottom, _ ->
-          next
+          next0
       | _, Bottom ->
-          prev
+          prev0
       | NonBottom prev, NonBottom next ->
-          NonBottom (Domain.widen ~prev ~next ~num_iters)
+          PhysEqual.optim2 ~res:(NonBottom (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
 
   let pp fmt = function
@@ -132,17 +132,17 @@ module TopLifted (Domain : S) = struct
       | Top, _ | _, Top ->
           Top
       | NonTop a1, NonTop a2 ->
-          NonTop (Domain.join a1 a2)
+          PhysEqual.optim2 ~res:(NonTop (Domain.join a1 a2)) astate1 astate2
 
 
-  let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
+  let widen ~prev:prev0 ~next:next0 ~num_iters =
+    if phys_equal prev0 next0 then prev0
     else
-      match (prev, next) with
+      match (prev0, next0) with
       | Top, _ | _, Top ->
           Top
       | NonTop prev, NonTop next ->
-          NonTop (Domain.widen ~prev ~next ~num_iters)
+          PhysEqual.optim2 ~res:(NonTop (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
 
   let pp fmt = function
@@ -163,14 +163,20 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
-    else (Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2))
+    else
+      PhysEqual.optim2
+        ~res:(Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2))
+        astate1 astate2
 
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
-      ( Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
-      , Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
+      PhysEqual.optim2
+        ~res:
+          ( Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
+          , Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
+        prev next
 
 
   let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
