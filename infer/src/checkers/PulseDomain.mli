@@ -15,6 +15,8 @@ end
 
 include AbstractDomain.S
 
+val compare : t -> t -> int
+
 module AbstractAddressSet : sig
   type t
 end

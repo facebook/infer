@@ -87,7 +87,7 @@ module Memory : sig
 
   type cell = edges * Attributes.t
 
-  type t
+  type t [@@deriving compare]
 
   val empty : t
 
@@ -124,13 +124,13 @@ end = struct
 
   module Edges = PrettyPrintable.MakePPMap (Access)
 
-  type edges = AbstractAddressSet.t Edges.t
+  type edges = AbstractAddressSet.t Edges.t [@@deriving compare]
 
-  type cell = edges * Attributes.t
+  type cell = edges * Attributes.t [@@deriving compare]
 
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
-  type t = cell Graph.t
+  type t = cell Graph.t [@@deriving compare]
 
   let pp =
     Graph.pp ~pp_value:(Pp.pair ~fst:(Edges.pp ~pp_value:AbstractAddressSet.pp) ~snd:Attributes.pp)
@@ -238,10 +238,14 @@ end
     own. It so happens that the join on abstract states uses the join of stacks provided by this
     functor followed by normalization wrt the unification found between abstract locations so it's
     convenient to define stacks as elements of this domain. *)
-module Stack = AbstractDomain.Map (Var) (AbstractAddressSet)
+module Stack = struct
+  include AbstractDomain.Map (Var) (AbstractAddressSet)
+
+  let compare = compare AbstractAddressSet.compare
+end
 
 (** the domain *)
-type astate = {heap: Memory.t; stack: Stack.t}
+type astate = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
 
 let initial =
   { heap=
@@ -830,4 +834,7 @@ module StdVector = struct
 end
 
 include Domain
+
+let compare = compare_astate
+
 include Operations

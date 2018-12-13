@@ -24,7 +24,7 @@ let check_error summary = function
       raise_notrace AbstractDomain.Stop_analysis
 
 
-module TransferFunctions (CFG : ProcCfg.S) = struct
+module PulseTransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = PulseDomain
 
@@ -133,13 +133,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module HilConfig = LowerHil.DefaultConfig
-module Analyzer =
+
+module DisjunctiveTransferFunctions =
+  TransferFunctions.MakeHILDisjunctive
+    (PulseTransferFunctions
+       (ProcCfg.Exceptional))
+       (struct
+         type domain_t = PulseDomain.t [@@deriving compare]
+
+         let join_policy = `JoinAfter 1
+
+         let widen_policy = `UnderApproximateAfterNumIterations 5
+       end)
+
+module DisjunctiveAnalyzer =
   LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeWTO) (HilConfig)
-    (TransferFunctions (ProcCfg.Exceptional))
+    (DisjunctiveTransferFunctions)
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
   PulseDomain.AbstractAddress.init () ;
-  ( try ignore (Analyzer.compute_post proc_data ~initial:PulseDomain.initial)
+  ( try
+      ignore
+        (DisjunctiveAnalyzer.compute_post proc_data
+           ~initial:(DisjunctiveTransferFunctions.of_domain PulseDomain.initial))
     with AbstractDomain.Stop_analysis -> () ) ;
   summary
