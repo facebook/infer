@@ -7,7 +7,7 @@
     },
     {
       "procedure": "codetoanalyze.java.quandary.InterfaceSpec.source",
-      "kind": "PrivateData"
+      "kinds": ["PrivateData", "Other"]
     }
   ],
   "quandary-sinks": [

@@ -9,8 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
-let parse_clang_procedure procedure kind index =
-  try Some (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index)
+let parse_clang_procedure procedure kinds index =
+  try Some (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kinds, index)
   with QualifiedCppName.ParseError _ ->
     (* Java and Clang sources/sinks live in the same inferconfig entry. If we try to parse a Java
          procedure that happens to be an invalid Clang qualified name (e.g., MyClass.<init>),
@@ -49,21 +49,21 @@ module SourceKind = struct
 
   let external_sources =
     List.filter_map
-      ~f:(fun {QuandaryConfig.Source.procedure; kind; index} ->
-        parse_clang_procedure procedure kind index )
+      ~f:(fun {QuandaryConfig.Source.procedure; kinds; index} ->
+        parse_clang_procedure procedure kinds index )
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
 
   let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
 
-  (* return Some(source kind) if [procedure_name] is in the list of externally specified sources *)
+  (* return a list of source kinds if [procedure_name] is in the list of externally specified sources *)
   let get_external_source qualified_pname =
     let return = None in
-    List.filter_map external_sources ~f:(fun (qualifiers, kind, index) ->
+    List.concat_map external_sources ~f:(fun (qualifiers, kinds, index) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then
           let source_index = try Some (int_of_string index) with Failure _ -> return in
-          Some (of_string kind, source_index)
-        else None )
+          List.rev_map kinds ~f:(fun kind -> (of_string kind, source_index))
+        else [] )
 
 
   let get pname actuals tenv =
@@ -235,45 +235,50 @@ module SinkKind = struct
 
   let external_sinks =
     List.filter_map
-      ~f:(fun {QuandaryConfig.Sink.procedure; kind; index} ->
-        parse_clang_procedure procedure kind index )
+      ~f:(fun {QuandaryConfig.Sink.procedure; kinds; index} ->
+        parse_clang_procedure procedure kinds index )
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
 
   (* taint the nth parameter (0-indexed) *)
-  let taint_nth n kind actuals =
-    if n < List.length actuals then [(kind, IntSet.singleton n)] else []
+  let taint_nth n kinds actuals =
+    if n < List.length actuals then
+      let indexes = IntSet.singleton n in
+      List.rev_map kinds ~f:(fun kind -> (kind, indexes))
+    else []
 
 
   (* taint all parameters after the nth (exclusive) *)
-  let taint_after_nth n kind actuals =
+  let taint_after_nth n kinds actuals =
     match
       List.filter_mapi ~f:(fun actual_num _ -> Option.some_if (actual_num > n) actual_num) actuals
     with
     | [] ->
         []
     | to_taint ->
-        [(kind, IntSet.of_list to_taint)]
+        let indexes = IntSet.of_list to_taint in
+        List.rev_map kinds ~f:(fun kind -> (kind, indexes))
 
 
-  let taint_all kind actuals =
-    [(kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))]
+  let taint_all kinds actuals =
+    let indexes = IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals) in
+    List.rev_map kinds ~f:(fun kind -> (kind, indexes))
 
 
-  (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
+  (* return Some(sink kinds) if [procedure_name] is in the list of externally specified sinks *)
   let get_external_sink pname actuals =
     let qualified_pname = Typ.Procname.get_qualifiers pname in
     List.find_map
-      ~f:(fun (qualifiers, kind, index) ->
+      ~f:(fun (qualifiers, kinds, index) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then
-          let kind = of_string kind in
+          let kinds = List.rev_map ~f:of_string kinds in
           try
             let n = int_of_string index in
-            let taint = taint_nth n kind actuals in
+            let taint = taint_nth n kinds actuals in
             Option.some_if (not (List.is_empty taint)) taint
           with Failure _ ->
             (* couldn't parse the index, just taint everything *)
-            Some (taint_all kind actuals)
+            Some (taint_all kinds actuals)
         else None )
       external_sinks
     |> Option.value ~default:[]
@@ -301,24 +306,24 @@ module SinkKind = struct
       with
       | ( ["std"; ("basic_fstream" | "basic_ifstream" | "basic_ofstream")]
         , ("basic_fstream" | "basic_ifstream" | "basic_ofstream" | "open") ) ->
-          taint_nth 1 CreateFile actuals
+          taint_nth 1 [CreateFile] actuals
       | _, "operator[]" when Config.developer_mode && is_buffer_like pname ->
-          taint_nth 1 BufferAccess actuals
+          taint_nth 1 [BufferAccess] actuals
       | _ ->
           get_external_sink pname actuals )
     | Typ.Procname.C _
       when String.is_substring ~substring:"SetCommandLineOption" (Typ.Procname.to_string pname) ->
-        taint_nth 1 EnvironmentChange actuals
+        taint_nth 1 [EnvironmentChange] actuals
     | Typ.Procname.C _
       when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access ->
-        taint_all BufferAccess actuals
+        taint_all [BufferAccess] actuals
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length ->
         (* called when creating a stack-allocated array *)
-        taint_nth 1 StackAllocation actuals
+        taint_nth 1 [StackAllocation] actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "creat" | "fopen" | "freopen" | "open" ->
-          taint_nth 0 CreateFile actuals
+          taint_nth 0 [CreateFile] actuals
       | "curl_easy_setopt" -> (
           (* magic constant for setting request URL *)
           let controls_request = function
@@ -335,31 +340,31 @@ module SinkKind = struct
                 (* check if the data kind might be CURLOPT_URL *)
                 IntLit.to_int i
                 |> Option.value_map ~default:[] ~f:(fun n ->
-                       if controls_request n then taint_after_nth 1 URL actuals else [] )
+                       if controls_request n then taint_after_nth 1 [URL] actuals else [] )
             | _ ->
                 (* can't statically resolve data kind; taint it just in case *)
-                taint_after_nth 1 URL actuals )
+                taint_after_nth 1 [URL] actuals )
           | None ->
               [] )
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
-          taint_all ShellExec actuals
+          taint_all [ShellExec] actuals
       | "openat" ->
-          taint_nth 1 CreateFile actuals
+          taint_nth 1 [CreateFile] actuals
       | "popen" ->
-          taint_nth 0 ShellExec actuals
+          taint_nth 0 [ShellExec] actuals
       | "putenv" ->
-          taint_nth 0 EnvironmentChange actuals
+          taint_nth 0 [EnvironmentChange] actuals
       | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode ->
-          taint_all HeapAllocation actuals
+          taint_all [HeapAllocation] actuals
       | "rename" ->
-          taint_all CreateFile actuals
+          taint_all [CreateFile] actuals
       | "strcpy" when Config.developer_mode ->
           (* warn if source array is tainted *)
-          taint_nth 1 BufferAccess actuals
+          taint_nth 1 [BufferAccess] actuals
       | ("memcpy" | "memmove" | "memset" | "strncpy" | "wmemcpy" | "wmemmove")
         when Config.developer_mode ->
           (* warn if count argument is tainted *)
-          taint_nth 2 BufferAccess actuals
+          taint_nth 2 [BufferAccess] actuals
       | _ ->
           get_external_sink pname actuals )
     | Typ.Procname.Block _ ->

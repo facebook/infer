@@ -9,19 +9,28 @@ open! IStd
 
 (** utilities for importing JSON specifications of sources/sinks into Quandary *)
 
+let get_kinds json =
+  let open Yojson.Basic in
+  match (Util.member "kinds" json, Util.member "kind" json) with
+  | `Null, kind ->
+      [Util.to_string kind]
+  | kinds, kind ->
+      (Util.to_string_option kind |> Option.to_list) @ Util.convert_each Util.to_string kinds
+
+
 module Source = struct
-  type t = {procedure: string; kind: string; index: string}
+  type t = {procedure: string; kinds: string list; index: string}
 
   let of_json = function
     | `List sources ->
         let parse_source json =
           let open Yojson.Basic in
           let procedure = Util.member "procedure" json |> Util.to_string in
-          let kind = Util.member "kind" json |> Util.to_string in
+          let kinds = get_kinds json in
           let index =
             Util.member "index" json |> Util.to_string_option |> Option.value ~default:"return"
           in
-          {procedure; kind; index}
+          {procedure; kinds; index}
         in
         List.map ~f:parse_source sources
     | _ ->
@@ -29,18 +38,18 @@ module Source = struct
 end
 
 module Sink = struct
-  type t = {procedure: string; kind: string; index: string}
+  type t = {procedure: string; kinds: string list; index: string}
 
   let of_json = function
     | `List sinks ->
         let parse_sink json =
           let open Yojson.Basic in
           let procedure = Util.member "procedure" json |> Util.to_string in
-          let kind = Util.member "kind" json |> Util.to_string in
+          let kinds = get_kinds json in
           let index =
             Util.member "index" json |> Util.to_string_option |> Option.value ~default:"all"
           in
-          {procedure; kind; index}
+          {procedure; kinds; index}
         in
         List.map ~f:parse_sink sinks
     | _ ->

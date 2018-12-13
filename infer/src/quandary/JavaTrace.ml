@@ -42,7 +42,7 @@ module SourceKind = struct
 
   let external_sources =
     List.map
-      ~f:(fun {QuandaryConfig.Source.procedure; kind} -> (Str.regexp procedure, kind))
+      ~f:(fun {QuandaryConfig.Source.procedure; kinds} -> (Str.regexp procedure, kinds))
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
 
@@ -65,9 +65,10 @@ module SourceKind = struct
       (* check the list of externally specified sources *)
       let procedure = class_name ^ "." ^ method_name in
       let sources =
-        List.filter_map external_sources ~f:(fun (procedure_regex, kind) ->
-            if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
-            else None )
+        List.concat_map external_sources ~f:(fun (procedure_regex, kinds) ->
+            if Str.string_match procedure_regex procedure 0 then
+              List.rev_map kinds ~f:(fun kind -> (of_string kind, return))
+            else [] )
       in
       Option.some_if (not (List.is_empty sources)) sources
     in
@@ -314,7 +315,7 @@ module SinkKind = struct
 
   let external_sinks =
     List.map
-      ~f:(fun {QuandaryConfig.Sink.procedure; kind; index} -> (Str.regexp procedure, kind, index))
+      ~f:(fun {QuandaryConfig.Sink.procedure; kinds; index} -> (Str.regexp procedure, kinds, index))
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
 
@@ -323,7 +324,7 @@ module SinkKind = struct
     | Typ.Procname.Java java_pname ->
         (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter
            only if [taint_this] is true. *)
-        let taint_all ?(taint_this = false) kind =
+        let taint_all ?(taint_this = false) kinds =
           let actuals_to_taint, offset =
             if Typ.Procname.Java.is_static java_pname || taint_this then (actuals, 0)
             else (List.tl_exn actuals, 1)
@@ -331,42 +332,48 @@ module SinkKind = struct
           let indexes =
             IntSet.of_list (List.mapi ~f:(fun param_num _ -> param_num + offset) actuals_to_taint)
           in
-          Some [(kind, indexes)]
+          Some (List.rev_map kinds ~f:(fun kind -> (kind, indexes)))
         in
         (* taint the nth non-"this" parameter (0-indexed) *)
-        let taint_nth n kind =
+        let taint_nth n kinds =
           let first_index = if Typ.Procname.Java.is_static java_pname then n else n + 1 in
-          if first_index < List.length actuals then Some [(kind, IntSet.singleton first_index)]
+          if first_index < List.length actuals then
+            let first_index = IntSet.singleton first_index in
+            Some (List.rev_map kinds ~f:(fun kind -> (kind, first_index)))
           else None
         in
         let get_external_sink class_name method_name =
           (* check the list of externally specified sinks *)
           let procedure = class_name ^ "." ^ method_name in
-          List.find_map
-            ~f:(fun (procedure_regex, kind, index) ->
-              if Str.string_match procedure_regex procedure 0 then
-                let kind = of_string kind in
-                try
-                  let n = int_of_string index in
-                  taint_nth n kind
-                with Failure _ ->
-                  (* couldn't parse the index, just taint everything *)
-                  taint_all kind
-              else None )
-            external_sinks
+          let sinks =
+            List.concat_map external_sinks ~f:(fun (procedure_regex, kinds, index) ->
+                if Str.string_match procedure_regex procedure 0 then
+                  let kinds = List.rev_map ~f:of_string kinds in
+                  let taints =
+                    try
+                      let n = int_of_string index in
+                      taint_nth n kinds
+                    with Failure _ ->
+                      (* couldn't parse the index, just taint everything *)
+                      taint_all kinds
+                  in
+                  Option.value taints ~default:[]
+                else [] )
+          in
+          Option.some_if (not (List.is_empty sinks)) sinks
         in
         let method_name = Typ.Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
-              taint_nth 1 StartComponent
+              taint_nth 1 [StartComponent]
           | ( ( "android.app.Activity"
               | "android.content.Context"
               | "android.support.v4.app.Fragment" )
             , "startIntentSenderForResult" ) ->
-              taint_nth 2 StartComponent
+              taint_nth 2 [StartComponent]
           | "android.app.Activity", "startIntentSenderFromChild" ->
-              taint_nth 3 StartComponent
+              taint_nth 3 [StartComponent]
           | ( ( "android.app.Fragment"
               | "android.content.Context"
               | "android.support.v4.app.Fragment" )
@@ -386,9 +393,9 @@ module SinkKind = struct
               | "startNextMatchingActivity"
               | "startService"
               | "stopService" ) ) ->
-              taint_nth 0 StartComponent
+              taint_nth 0 [StartComponent]
           | "android.content.Context", "startIntentSender" ->
-              taint_nth 1 StartComponent
+              taint_nth 1 [StartComponent]
           | ( "android.content.Intent"
             , ( "parseUri"
               | "getIntent"
@@ -399,13 +406,13 @@ module SinkKind = struct
               | "setDataAndType"
               | "setDataAndTypeAndNormalize"
               | "setPackage" ) ) ->
-              taint_nth 0 CreateIntent
+              taint_nth 0 [CreateIntent]
           | "android.content.Intent", "setClassName" ->
-              taint_all CreateIntent
+              taint_all [CreateIntent]
           | "android.text.Html", "fromHtml" ->
-              taint_nth 0 HTML
+              taint_nth 0 [HTML]
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
-              taint_all Logging
+              taint_all [Logging]
           | ( "android.webkit.WebView"
             , ( "evaluateJavascript"
               | "loadData"
@@ -413,32 +420,32 @@ module SinkKind = struct
               | "loadUrl"
               | "postUrl"
               | "postWebMessage" ) ) ->
-              taint_all JavaScript
+              taint_all [JavaScript]
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
-              taint_nth 0 Other
+              taint_nth 0 [Other]
           | "java.io.File", "<init>"
           | "java.nio.file.FileSystem", "getPath"
           | "java.nio.file.Paths", "get" ->
-              taint_all CreateFile
+              taint_all [CreateFile]
           | "java.io.ObjectInputStream", "<init>" ->
-              taint_all Deserialization
+              taint_all [Deserialization]
           | "java.lang.Class", "forName" | "java.lang.ClassLoader", "loadClass" ->
-              taint_nth 0 ClassLoading
+              taint_nth 0 [ClassLoading]
           | "java.lang.ClassLoader", "defineClass" ->
-              taint_nth 1 ClassLoading
+              taint_nth 1 [ClassLoading]
           | "java.lang.ProcessBuilder", "<init>" ->
-              taint_all ShellExec
+              taint_all [ShellExec]
           | "java.lang.ProcessBuilder", "command" ->
-              taint_all ShellExec
+              taint_all [ShellExec]
           | "java.lang.Runtime", "exec" ->
-              taint_nth 0 ShellExec
+              taint_nth 0 [ShellExec]
           (* TODO: separate non-injection sinks for PreparedStatement's *)
           | "java.sql.Statement", ("addBatch" | "execute") ->
-              taint_nth 0 SQLInjection
+              taint_nth 0 [SQLInjection]
           | "java.sql.Statement", "executeQuery" ->
-              taint_nth 0 SQLRead
+              taint_nth 0 [SQLRead]
           | "java.sql.Statement", ("executeUpdate" | "executeLargeUpdate") ->
-              taint_nth 0 SQLWrite
+              taint_nth 0 [SQLWrite]
           | class_name, method_name ->
               get_external_sink class_name method_name
         in
