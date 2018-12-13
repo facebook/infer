@@ -302,34 +302,37 @@ module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
         lhs
 
 
-  let join astate1 astate2 =
+  let increasing_union ~f astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
-      M.merge
-        (fun _ v1_opt v2_opt ->
-          match (v1_opt, v2_opt) with
-          | Some v1, Some v2 ->
-              Some (ValueDomain.join v1 v2)
-          | Some v, _ | _, Some v ->
-              Some v
-          | None, None ->
-              None )
-        astate1 astate2
+      let equals1 = ref true in
+      let equals2 = ref true in
+      let res =
+        M.merge
+          (fun _ v1_opt v2_opt ->
+            match (v1_opt, v2_opt) with
+            | Some v1, Some v2 ->
+                let v = f v1 v2 in
+                if not (phys_equal v v1) then equals1 := false ;
+                if not (phys_equal v v2) then equals2 := false ;
+                Some v
+            | Some _, None ->
+                equals2 := false ;
+                v1_opt
+            | None, Some _ ->
+                equals1 := false ;
+                v2_opt
+            | None, None ->
+                None )
+          astate1 astate2
+      in
+      if !equals1 then astate1 else if !equals2 then astate2 else res
 
+
+  let join astate1 astate2 = increasing_union ~f:ValueDomain.join astate1 astate2
 
   let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
-    else
-      M.merge
-        (fun _ v1_opt v2_opt ->
-          match (v1_opt, v2_opt) with
-          | Some v1, Some v2 ->
-              Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
-          | Some v, _ | _, Some v ->
-              Some v
-          | None, None ->
-              None )
-        prev next
+    increasing_union prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
 
 
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
@@ -360,30 +363,37 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
       with Caml.Not_found -> false
 
 
-  let join astate1 astate2 =
+  let inter ~f astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
-      merge
-        (fun _ v1_opt v2_opt ->
-          match (v1_opt, v2_opt) with
-          | Some v1, Some v2 ->
-              Some (ValueDomain.join v1 v2)
-          | _ ->
-              None )
-        astate1 astate2
+      let equals1 = ref true in
+      let equals2 = ref true in
+      let res =
+        merge
+          (fun _ v1_opt v2_opt ->
+            match (v1_opt, v2_opt) with
+            | Some v1, Some v2 ->
+                let v = f v1 v2 in
+                if not (phys_equal v v1) then equals1 := false ;
+                if not (phys_equal v v2) then equals2 := false ;
+                Some v
+            | Some _, None ->
+                equals1 := false ;
+                None
+            | None, Some _ ->
+                equals2 := false ;
+                None
+            | None, None ->
+                None )
+          astate1 astate2
+      in
+      if !equals1 then astate1 else if !equals2 then astate2 else res
 
+
+  let join = inter ~f:ValueDomain.join
 
   let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
-    else
-      merge
-        (fun _ v1_opt v2_opt ->
-          match (v1_opt, v2_opt) with
-          | Some v1, Some v2 ->
-              Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
-          | _ ->
-              None )
-        prev next
+    inter prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
 end
 
 module BooleanAnd = struct
