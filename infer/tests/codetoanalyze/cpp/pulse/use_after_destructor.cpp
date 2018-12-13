@@ -135,6 +135,12 @@ S* destruct_pointer_contents_then_placement_new1_ok(S* s) {
   return s;
 }
 
+S* destruct_pointer_contents_then_placement_new2_ok(S* s) {
+  s->~S();
+  new (&(s->f)) S(1);
+  return s;
+}
+
 S* placement_new_aliasing1_bad() {
   S* s = new S(1);
   s->~S();

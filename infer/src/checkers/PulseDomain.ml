@@ -548,28 +548,38 @@ module Operations = struct
    and return [new_addr] if [overwrite_last] is [Some new_addr], or go until the end of the path if it
    is [None]. Create more addresses into the heap as needed to follow the [path]. Check that each
    address reached is valid. *)
-  let rec walk actor ~on_last addr path astate =
+  let rec walk ~dereference_to_ignore actor ~on_last addr path astate =
+    let check_addr_access_optional actor addr astate =
+      match dereference_to_ignore with
+      | Some 0 ->
+          Ok astate
+      | _ ->
+          check_addr_access actor addr astate
+    in
     match (path, on_last) with
     | [], `Access ->
         Ok (astate, addr)
     | [], `Overwrite _ ->
         L.die InternalError "Cannot overwrite last address in empty path"
     | [a], `Overwrite new_addr ->
-        check_addr_access actor addr astate
+        check_addr_access_optional actor addr astate
         >>| fun astate ->
         let heap = Memory.add_edge_and_back_edge addr a new_addr astate.heap in
         ({astate with heap}, new_addr)
     | a :: path, _ -> (
-        check_addr_access actor addr astate
+        check_addr_access_optional actor addr astate
         >>= fun astate ->
+        let dereference_to_ignore =
+          Option.map ~f:(fun index -> max 0 (index - 1)) dereference_to_ignore
+        in
         match Memory.find_edge_opt addr a astate.heap with
         | None ->
             let addr' = AbstractAddress.mk_fresh () in
             let heap = Memory.add_edge_and_back_edge addr a addr' astate.heap in
             let astate = {astate with heap} in
-            walk actor ~on_last addr' path astate
+            walk ~dereference_to_ignore actor ~on_last addr' path astate
         | Some addr' ->
-            walk actor ~on_last addr' path astate )
+            walk ~dereference_to_ignore actor ~on_last addr' path astate )
 
 
   let write_var var new_addr astate =
@@ -585,6 +595,21 @@ module Operations = struct
     (* Update heap with var_address_of -*-> new_addr *)
     let heap = Memory.add_edge var_address_of HilExp.Access.Dereference new_addr astate.heap in
     {astate with heap}
+
+
+  let ends_with_addressof = function HilExp.AccessExpression.AddressOf _ -> true | _ -> false
+
+  let last_dereference access_list =
+    let rec last_dereference_inner access_list index result =
+      match access_list with
+      | [] ->
+          result
+      | HilExp.Access.Dereference :: rest ->
+          last_dereference_inner rest (index + 1) (Some index)
+      | _ :: rest ->
+          last_dereference_inner rest (index + 1) result
+    in
+    last_dereference_inner access_list 0 None
 
 
   let rec to_accesses location access_expr astate =
@@ -609,6 +634,9 @@ module Operations = struct
   and walk_access_expr ~on_last astate access_expr location =
     to_accesses location access_expr astate
     >>= fun (astate, (access_var, _), access_list) ->
+    let dereference_to_ignore =
+      if ends_with_addressof access_expr then last_dereference access_list else None
+    in
     if Config.write_html then
       L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
         (Pp.seq ~sep:"," Memory.Access.pp)
@@ -631,7 +659,9 @@ module Operations = struct
             Ok (astate, base_addr)
         | _ ->
             let actor = {access_expr; location} in
-            walk actor ~on_last base_addr (HilExp.Access.Dereference :: access_list) astate )
+            walk ~dereference_to_ignore actor ~on_last base_addr
+              (HilExp.Access.Dereference :: access_list)
+              astate )
 
 
   (** Use the stack and heap to walk the access path represented by the given expression down to an
