@@ -219,6 +219,9 @@ val get_exit_node : t -> Node.t
 val get_formals : t -> (Mangled.t * Typ.t) list
 (** Return name and type of formal parameters *)
 
+val get_pvar_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters *)
+
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 

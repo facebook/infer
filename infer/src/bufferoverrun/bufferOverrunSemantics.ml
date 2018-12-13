@@ -393,7 +393,7 @@ let eval_sympath params sympath mem =
 
 let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =
   let params =
-    let formals = get_formals callee_pdesc in
+    let formals = Procdesc.get_pvar_formals callee_pdesc in
     let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
     ParamBindings.make formals actuals
   in
@@ -710,7 +710,7 @@ let get_subst_map :
     in
     List.rev_append new_rel_matching rel_l
   in
-  let formals = get_formals callee_pdesc in
+  let formals = Procdesc.get_pvar_formals callee_pdesc in
   let actuals =
     List.map ~f:(fun (a, _) -> (eval integer_type_widths a caller_mem, Some a)) params
   in

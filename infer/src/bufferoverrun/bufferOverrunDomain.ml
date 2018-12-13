@@ -22,13 +22,9 @@ type eval_sym_trace =
   ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
   ; eval_locpath: PowLoc.eval_locpath }
 
-let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
- fun pdesc ->
-  let proc_name = Procdesc.get_proc_name pdesc in
-  Procdesc.get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
-
-
 module OndemandEnv = struct
+  module FormalTyps = Caml.Map.Make (Pvar)
+
   type t =
     { typ_of_param_path: SPath.partial -> Typ.t option
     ; may_last_field: SPath.partial -> bool
@@ -36,10 +32,9 @@ module OndemandEnv = struct
     ; integer_type_widths: Typ.IntegerWidths.t }
 
   let mk pdesc =
-    let module FormalTyps = Caml.Map.Make (Pvar) in
     let formal_typs =
-      List.fold (get_formals pdesc) ~init:FormalTyps.empty ~f:(fun acc (formal, typ) ->
-          FormalTyps.add formal typ acc )
+      List.fold (Procdesc.get_pvar_formals pdesc) ~init:FormalTyps.empty
+        ~f:(fun acc (formal, typ) -> FormalTyps.add formal typ acc )
     in
     fun tenv integer_type_widths ->
       let rec typ_of_param_path = function

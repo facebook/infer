@@ -75,7 +75,7 @@ module TransferFunctions = struct
 
   let instantiate_mem_reachable (ret_id, _) callee_pdesc callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
-    let formals = Dom.get_formals callee_pdesc in
+    let formals = Procdesc.get_pvar_formals callee_pdesc in
     let copy_reachable_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
@@ -207,7 +207,7 @@ module TransferFunctions = struct
                 let pname = Procdesc.get_proc_name pdesc in
                 match Typ.Procname.get_method pname with
                 | "__inferbo_empty" when Loc.is_return loc_v -> (
-                  match Dom.get_formals pdesc with
+                  match Procdesc.get_pvar_formals pdesc with
                   | [(formal, _)] ->
                       let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
                       Dom.Mem.store_empty_alias formal_v loc_v mem

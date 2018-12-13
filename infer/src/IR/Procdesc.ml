@@ -448,8 +448,15 @@ let set_attributes pdesc attributes = pdesc.attributes <- attributes
 
 let get_exit_node pdesc = pdesc.exit_node
 
+let get_proc_name pdesc = pdesc.attributes.proc_name
+
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
+
+let get_pvar_formals pdesc =
+  let proc_name = get_proc_name pdesc in
+  get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
+
 
 let get_loc pdesc = pdesc.attributes.loc
 
@@ -467,8 +474,6 @@ let get_access pdesc = pdesc.attributes.access
 let get_nodes pdesc = pdesc.nodes
 
 let get_nodes_num pdesc = pdesc.nodes_num
-
-let get_proc_name pdesc = pdesc.attributes.proc_name
 
 (** Return the return type of the procedure *)
 let get_ret_type pdesc = pdesc.attributes.ret_type
