@@ -332,9 +332,7 @@ module Val = struct
 
   let set_array_stride : Z.t -> t -> t =
    fun new_stride v ->
-    let stride = ArrayBlk.strideof (get_array_blk v) in
-    if Itv.eq_const new_stride stride then v
-    else {v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
+    PhysEqual.optim1 v ~res:{v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
 
 
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
@@ -1005,10 +1003,6 @@ module Mem = struct
    fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
 
-  let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
-   fun f -> f_lift_default ~default:Bottom (fun m' -> NonBottom (f m'))
-
-
   let is_stack_loc : Loc.t -> t -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_stack_loc k)
 
@@ -1040,7 +1034,7 @@ module Mem = struct
 
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
-   fun id loc -> f_lift (MemReach.load_alias id loc)
+   fun id loc -> map ~f:(MemReach.load_alias id loc)
 
 
   let load_simple_alias : Ident.t -> Loc.t -> t -> t =
@@ -1048,51 +1042,51 @@ module Mem = struct
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
-   fun loc e -> f_lift (MemReach.store_simple_alias loc e)
+   fun loc e -> map ~f:(MemReach.store_simple_alias loc e)
 
 
   let store_empty_alias : Val.t -> Loc.t -> t -> t =
-   fun formal loc -> f_lift (MemReach.store_empty_alias formal loc)
+   fun formal loc -> map ~f:(MemReach.store_empty_alias formal loc)
 
 
-  let add_stack_loc : Loc.t -> t -> t = fun k -> f_lift (MemReach.add_stack_loc k)
+  let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)
 
-  let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_stack k v)
+  let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> map ~f:(MemReach.add_stack k v)
 
-  let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_heap k v)
+  let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> map ~f:(MemReach.add_heap k v)
 
   let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
    fun id ~callee_pname ~location ->
-    f_lift (MemReach.add_unknown_from id ~callee_pname:(Some callee_pname) ~location)
+    map ~f:(MemReach.add_unknown_from id ~callee_pname:(Some callee_pname) ~location)
 
 
   let add_unknown : Ident.t -> location:Location.t -> t -> t =
-   fun id ~location -> f_lift (MemReach.add_unknown_from id ~callee_pname:None ~location)
+   fun id ~location -> map ~f:(MemReach.add_unknown_from id ~callee_pname:None ~location)
 
 
-  let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.strong_update p v)
+  let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> map ~f:(MemReach.strong_update p v)
 
   let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
    fun formals locs ->
     f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from formals locs)
 
 
-  let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
+  let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> map ~f:(MemReach.update_mem ploc v)
 
   let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-   fun ~f ploc -> f_lift (MemReach.transform_mem ~f ploc)
+   fun ~f ploc -> map ~f:(MemReach.transform_mem ~f ploc)
 
 
-  let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
+  let remove_temps : Ident.t list -> t -> t = fun temps -> map ~f:(MemReach.remove_temps temps)
 
   let set_prune_pairs : PrunePairs.t -> t -> t =
-   fun prune_pairs -> f_lift (MemReach.set_prune_pairs prune_pairs)
+   fun prune_pairs -> map ~f:(MemReach.set_prune_pairs prune_pairs)
 
 
-  let apply_latest_prune : Exp.t -> t -> t = fun e -> f_lift (MemReach.apply_latest_prune e)
+  let apply_latest_prune : Exp.t -> t -> t = fun e -> map ~f:(MemReach.apply_latest_prune e)
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
-   fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
+   fun e1 e2 -> map ~f:(MemReach.update_latest_prune e1 e2)
 
 
   let get_relation : t -> Relation.t =
@@ -1100,7 +1094,7 @@ module Mem = struct
 
 
   let meet_constraints : Relation.Constraints.t -> t -> t =
-   fun constrs -> f_lift (MemReach.meet_constraints constrs)
+   fun constrs -> map ~f:(MemReach.meet_constraints constrs)
 
 
   let is_relation_unsat m = f_lift_default ~default:true MemReach.is_relation_unsat m
@@ -1110,18 +1104,18 @@ module Mem = struct
       -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
       -> t
       -> t =
-   fun locs symexp_opts -> f_lift (MemReach.store_relation locs symexp_opts)
+   fun locs symexp_opts -> map ~f:(MemReach.store_relation locs symexp_opts)
 
 
-  let forget_locs : PowLoc.t -> t -> t = fun locs -> f_lift (MemReach.forget_locs locs)
+  let forget_locs : PowLoc.t -> t -> t = fun locs -> map ~f:(MemReach.forget_locs locs)
 
-  let init_param_relation : Loc.t -> t -> t = fun loc -> f_lift (MemReach.init_param_relation loc)
+  let init_param_relation : Loc.t -> t -> t = fun loc -> map ~f:(MemReach.init_param_relation loc)
 
   let init_array_relation :
       Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t
       =
    fun allocsite ~offset ~size ~size_exp_opt ->
-    f_lift (MemReach.init_array_relation allocsite ~offset ~size ~size_exp_opt)
+    map ~f:(MemReach.init_array_relation allocsite ~offset ~size ~size_exp_opt)
 
 
   let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
@@ -1130,8 +1124,8 @@ module Mem = struct
     | Bottom ->
         caller
     | NonBottom callee ->
-        f_lift (fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
+        map ~f:(fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
 
 
-  let unset_oenv = f_lift MemReach.unset_oenv
+  let unset_oenv = map ~f:MemReach.unset_oenv
 end

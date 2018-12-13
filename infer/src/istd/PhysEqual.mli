@@ -24,4 +24,6 @@ open! IStd
     PhysEqual.optim2 ~res:(construct (f a b)) a0 b0
 *)
 
+val optim1 : res:'a -> 'a -> 'a
+
 val optim2 : res:'a -> 'a -> 'a -> 'a

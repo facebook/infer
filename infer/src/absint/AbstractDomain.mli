@@ -64,10 +64,13 @@ module type WithTop = sig
 end
 
 (** Lift a pre-domain to a domain *)
-module BottomLifted (Domain : S) : WithBottom with type t = Domain.t bottom_lifted
+module BottomLifted (Domain : S) : sig
+  include WithBottom with type t = Domain.t bottom_lifted
+
+  val map : f:(Domain.t -> Domain.t) -> t -> t
+end
 
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-
 include
   sig
     [@@@warning "-60"]

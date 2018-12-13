@@ -25,5 +25,7 @@ let shallow_compare x y =
   Int.equal sx sy && compare_fields ox oy (sx - 1)
 
 
+let optim1 ~res x = if shallow_compare res x then x else res
+
 let optim2 ~res x1 x2 =
   if shallow_compare res x1 then x1 else if shallow_compare res x2 then x2 else res

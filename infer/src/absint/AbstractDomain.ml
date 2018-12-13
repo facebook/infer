@@ -99,6 +99,15 @@ module BottomLifted (Domain : S) = struct
           PhysEqual.optim2 ~res:(NonBottom (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
 
+  let map ~f astate =
+    match astate with
+    | Bottom ->
+        astate
+    | NonBottom a ->
+        let a' = f a in
+        if phys_equal a' a then astate else NonBottom a'
+
+
   let pp fmt = function
     | Bottom ->
         F.pp_print_string fmt SpecialChars.up_tack
