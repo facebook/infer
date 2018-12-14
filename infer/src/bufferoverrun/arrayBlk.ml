@@ -11,102 +11,215 @@ open! IStd
 open AbsLoc
 open! AbstractDomain.Types
 module Bound = Bounds.Bound
+module F = Format
+module L = Logging
 
 module ArrInfo = struct
-  type t = {offset: Itv.t; size: Itv.t; stride: Itv.t} [@@deriving compare]
+  type t = C of {offset: Itv.t; size: Itv.t; stride: Itv.t} | Java of {length: Itv.t} | Top
+  [@@deriving compare]
 
-  let top : t = {offset= Itv.top; size= Itv.top; stride= Itv.top}
+  let top : t = Top
 
-  let make : offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
-   fun ~offset ~size ~stride -> {offset; size; stride}
+  let make_c : offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
+   fun ~offset ~size ~stride -> C {offset; size; stride}
 
+
+  let make_java : length:Itv.t -> t = fun ~length -> Java {length}
 
   let join : t -> t -> t =
    fun a1 a2 ->
     if phys_equal a1 a2 then a2
     else
-      { offset= Itv.join a1.offset a2.offset
-      ; size= Itv.join a1.size a2.size
-      ; stride= Itv.join a1.stride a2.stride }
+      match (a1, a2) with
+      | ( C {offset= offset1; size= size1; stride= stride1}
+        , C {offset= offset2; size= size2; stride= stride2} ) ->
+          C
+            { offset= Itv.join offset1 offset2
+            ; size= Itv.join size1 size2
+            ; stride= Itv.join stride1 stride2 }
+      | Java {length= length1}, Java {length= length2} ->
+          Java {length= Itv.join length1 length2}
+      | _ ->
+          Top
 
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
    fun ~prev ~next ~num_iters ->
     if phys_equal prev next then next
     else
-      { offset= Itv.widen ~prev:prev.offset ~next:next.offset ~num_iters
-      ; size= Itv.widen ~prev:prev.size ~next:next.size ~num_iters
-      ; stride= Itv.widen ~prev:prev.stride ~next:next.stride ~num_iters }
+      match (prev, next) with
+      | ( C {offset= offset1; size= size1; stride= stride1}
+        , C {offset= offset2; size= size2; stride= stride2} ) ->
+          C
+            { offset= Itv.widen ~prev:offset1 ~next:offset2 ~num_iters
+            ; size= Itv.widen ~prev:size1 ~next:size2 ~num_iters
+            ; stride= Itv.widen ~prev:stride1 ~next:stride2 ~num_iters }
+      | Java {length= length1}, Java {length= length2} ->
+          Java {length= Itv.widen ~prev:length1 ~next:length2 ~num_iters}
+      | _ ->
+          Top
 
 
   let ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
     if phys_equal lhs rhs then true
     else
-      Itv.le ~lhs:lhs.offset ~rhs:rhs.offset
-      && Itv.le ~lhs:lhs.size ~rhs:rhs.size
-      && Itv.le ~lhs:lhs.stride ~rhs:rhs.stride
+      match (lhs, rhs) with
+      | ( C {offset= offset1; size= size1; stride= stride1}
+        , C {offset= offset2; size= size2; stride= stride2} ) ->
+          Itv.le ~lhs:offset1 ~rhs:offset2 && Itv.le ~lhs:size1 ~rhs:size2
+          && Itv.le ~lhs:stride1 ~rhs:stride2
+      | Java {length= length1}, Java {length= length2} ->
+          Itv.le ~lhs:length1 ~rhs:length2
+      | _, Top ->
+          true
+      | _ ->
+          false
 
 
-  let plus_offset : t -> Itv.t -> t = fun arr i -> {arr with offset= Itv.plus arr.offset i}
+  let map_offset : f:(Itv.t -> Itv.t) -> t -> t =
+   fun ~f arr ->
+    match arr with
+    | C {offset; size; stride} ->
+        C {offset= f offset; size; stride}
+    | Java _ ->
+        L.(die InternalError) "Unexpected pointer arithmetics on Java array"
+    | Top ->
+        Top
 
-  let minus_offset : t -> Itv.t -> t = fun arr i -> {arr with offset= Itv.minus arr.offset i}
 
-  let diff : t -> t -> Itv.t = fun arr1 arr2 -> Itv.minus arr1.offset arr2.offset
+  let plus_offset : t -> Itv.t -> t = fun arr i -> map_offset arr ~f:(Itv.plus i)
+
+  let minus_offset : t -> Itv.t -> t =
+   fun arr i -> map_offset arr ~f:(fun offset -> Itv.minus offset i)
+
+
+  let diff : t -> t -> Itv.t =
+   fun arr1 arr2 ->
+    match (arr1, arr2) with
+    | C {offset= offset1}, C {offset= offset2} ->
+        Itv.minus offset1 offset2
+    | Java _, _ | _, Java _ ->
+        L.(die InternalError) "Unexpected pointer arithmetics on Java array"
+    | Top, _ | _, Top ->
+        Itv.top
+
 
   let subst : t -> Bound.eval_sym -> t =
    fun arr eval_sym ->
-    {arr with offset= Itv.subst arr.offset eval_sym; size= Itv.subst arr.size eval_sym}
+    match arr with
+    | C {offset; size; stride} ->
+        C {offset= Itv.subst offset eval_sym; size= Itv.subst size eval_sym; stride}
+    | Java {length} ->
+        Java {length= Itv.subst length eval_sym}
+    | Top ->
+        Top
 
 
-  let pp : Format.formatter -> t -> unit =
-   fun fmt arr -> Format.fprintf fmt "offset : %a, size : %a" Itv.pp arr.offset Itv.pp arr.size
+  let pp : F.formatter -> t -> unit =
+   fun f arr ->
+    match arr with
+    | C {offset; size} ->
+        F.fprintf f "offset : %a, size : %a" Itv.pp offset Itv.pp size
+    | Java {length} ->
+        F.fprintf f "length : %a" Itv.pp length
+    | Top ->
+        F.pp_print_string f SpecialChars.down_tack
 
 
   let get_symbols : t -> Itv.SymbolSet.t =
    fun arr ->
-    let s1 = Itv.get_symbols arr.offset in
-    let s2 = Itv.get_symbols arr.size in
-    let s3 = Itv.get_symbols arr.stride in
-    Itv.SymbolSet.union3 s1 s2 s3
+    match arr with
+    | C {offset; size; stride} ->
+        let s1 = Itv.get_symbols offset in
+        let s2 = Itv.get_symbols size in
+        let s3 = Itv.get_symbols stride in
+        Itv.SymbolSet.union3 s1 s2 s3
+    | Java {length} ->
+        Itv.get_symbols length
+    | Top ->
+        Itv.SymbolSet.empty
 
 
   let normalize : t -> t =
    fun arr ->
-    { offset= Itv.normalize arr.offset
-    ; size= Itv.normalize arr.size
-    ; stride= Itv.normalize arr.stride }
+    match arr with
+    | C {offset; size; stride} ->
+        C {offset= Itv.normalize offset; size= Itv.normalize size; stride= Itv.normalize stride}
+    | Java {length} ->
+        Java {length= Itv.normalize length}
+    | Top ->
+        Top
+
+
+  let prune_offset : f:(Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
+   fun ~f arr1 arr2 ->
+    match arr2 with
+    | C {offset= offset2} ->
+        map_offset arr1 ~f:(fun offset1 -> f offset1 offset2)
+    | Java _ | Top ->
+        arr1
 
 
   let prune_comp : Binop.t -> t -> t -> t =
-   fun c arr1 arr2 -> {arr1 with offset= Itv.prune_comp c arr1.offset arr2.offset}
+   fun c arr1 arr2 -> prune_offset arr1 arr2 ~f:(Itv.prune_comp c)
 
 
-  let prune_eq : t -> t -> t =
-   fun arr1 arr2 -> {arr1 with offset= Itv.prune_eq arr1.offset arr2.offset}
+  let prune_eq : t -> t -> t = fun arr1 arr2 -> prune_offset arr1 arr2 ~f:Itv.prune_eq
 
+  let prune_ne : t -> t -> t = fun arr1 arr2 -> prune_offset arr1 arr2 ~f:Itv.prune_ne
 
-  let prune_ne : t -> t -> t =
-   fun arr1 arr2 -> {arr1 with offset= Itv.prune_ne arr1.offset arr2.offset}
+  let set_length : Itv.t -> t -> t =
+   fun size arr ->
+    match arr with
+    | C {offset; stride} ->
+        C {offset; size; stride}
+    | Java _ ->
+        Java {length= size}
+    | Top ->
+        Top
 
-
-  let set_length : Itv.t -> t -> t = fun size arr -> {arr with size}
 
   (* Set new stride only when the previous stride is a constant interval. *)
   let set_stride : Z.t -> t -> t =
-   fun new_stride ({offset; size; stride} as arr) ->
-    Option.value_map (Itv.is_const stride) ~default:arr ~f:(fun stride ->
-        assert ((not Z.(equal stride zero)) && not Z.(equal new_stride zero)) ;
-        if Z.equal new_stride stride then arr
-        else
-          let set itv = Itv.div_const (Itv.mult_const itv stride) new_stride in
-          {offset= set offset; size= set size; stride= Itv.of_big_int new_stride} )
+   fun new_stride arr ->
+    match arr with
+    | C {offset; size; stride} ->
+        Option.value_map (Itv.is_const stride) ~default:arr ~f:(fun stride ->
+            assert ((not Z.(equal stride zero)) && not Z.(equal new_stride zero)) ;
+            if Z.equal new_stride stride then arr
+            else
+              let set itv = Itv.div_const (Itv.mult_const itv stride) new_stride in
+              C {offset= set offset; size= set size; stride= Itv.of_big_int new_stride} )
+    | Java _ ->
+        L.(die InternalError) "Unexpected cast on Java array"
+    | Top ->
+        Top
+
+
+  let offsetof = function C {offset} -> offset | Java _ -> Itv.zero | Top -> Itv.top
+
+  let sizeof = function C {size} -> size | Java {length} -> length | Top -> Itv.top
+
+  let byte_size = function
+    | C {size; stride} ->
+        Itv.mult size stride
+    | Java _ ->
+        L.(die InternalError) "Unexpected byte-size operation on Java array"
+    | Top ->
+        Itv.top
 
 
   let lift_cmp_itv cmp_itv arr1 arr2 =
-    if Itv.eq arr1.stride arr2.stride && Itv.eq arr1.size arr2.size then
-      cmp_itv arr1.offset arr2.offset
-    else Boolean.Top
+    match (arr1, arr2) with
+    | ( C {offset= offset1; size= size1; stride= stride1}
+      , C {offset= offset2; size= size2; stride= stride2} )
+      when Itv.eq stride1 stride2 && Itv.eq size1 size2 ->
+        cmp_itv offset1 offset2
+    | Java {length= length1}, Java {length= length2} when Itv.eq length1 length2 ->
+        cmp_itv Itv.zero Itv.zero
+    | _ ->
+        Boolean.Top
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -117,17 +230,23 @@ let unknown : t = add Allocsite.unknown ArrInfo.top bot
 
 let is_bot : t -> bool = is_empty
 
-let make : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
- fun a ~offset ~size ~stride -> singleton a (ArrInfo.make ~offset ~size ~stride)
+let make_c : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
+ fun a ~offset ~size ~stride -> singleton a (ArrInfo.make_c ~offset ~size ~stride)
 
 
-let offsetof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
+let make_java : Allocsite.t -> length:Itv.t -> t =
+ fun a ~length -> singleton a (ArrInfo.make_java ~length)
 
-let sizeof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
 
-let sizeof_byte : t -> Itv.t =
- fun a -> fold (fun _ arr -> Itv.join (Itv.mult arr.ArrInfo.size arr.ArrInfo.stride)) a Itv.bot
+let join_itv : f:(ArrInfo.t -> Itv.t) -> t -> Itv.t =
+ fun ~f a -> fold (fun _ arr -> Itv.join (f arr)) a Itv.bot
 
+
+let offsetof = join_itv ~f:ArrInfo.offsetof
+
+let sizeof = join_itv ~f:ArrInfo.sizeof
+
+let sizeof_byte = join_itv ~f:ArrInfo.byte_size
 
 let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 
@@ -177,7 +296,7 @@ let do_prune : (ArrInfo.t -> ArrInfo.t -> ArrInfo.t) -> t -> t -> t =
  fun arr_info_prune a1 a2 ->
   match is_singleton_or_more a2 with
   | IContainer.Singleton (k, v2) ->
-      if mem k a1 then add k (arr_info_prune (find k a1) v2) a1 else a1
+      update k (Option.map ~f:(fun v -> arr_info_prune v v2)) a1
   | _ ->
       a1
 

@@ -64,7 +64,6 @@ module Exec = struct
       -> Dom.Mem.t * int =
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num
        ~represents_multiple_values ~dimension mem ->
-    let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
     let allocsite =
@@ -72,14 +71,19 @@ module Exec = struct
       Allocsite.make pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values
     in
     let mem =
-      let arr =
+      let arr, offset_opt =
         let traces = Trace.(Set.singleton location ArrayDeclaration) in
-        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
-        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
+        match Typ.Procname.get_language pname with
+        | Language.Clang ->
+            let offset = Itv.zero in
+            (Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces, Some offset)
+        | Language.Java ->
+            (Dom.Val.of_java_array_alloc allocsite ~length:size ~traces, None)
       in
+      let arr = Dom.Val.sets_represents_multiple_values arr ~represents_multiple_values in
+      let mem = Dom.Mem.init_array_relation allocsite ~offset_opt ~size ~size_exp_opt:None mem in
       if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem else Dom.Mem.add_heap loc arr mem
     in
-    let mem = Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None mem in
     let loc = Loc.of_allocsite allocsite in
     let mem, _ =
       decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:true
@@ -118,7 +122,7 @@ module Exec = struct
     (mem, inst_num + 1)
 
 
-  let init_array_fields tenv integer_type_widths pname path ~node_hash typ locs ?dyn_length mem =
+  let init_c_array_fields tenv integer_type_widths pname path ~node_hash typ locs ?dyn_length mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
       let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in
       let field_loc = PowLoc.append_field locs ~fn:field_name in
@@ -140,10 +144,11 @@ module Exec = struct
             let offset, size = (Itv.zero, length) in
             let v =
               let traces = TraceSet.empty (* TODO: location of field declaration *) in
-              Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
+              Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
             in
             mem |> Dom.Mem.strong_update field_loc v
-            |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
+            |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size
+                 ~size_exp_opt:None
         | _ ->
             init_fields field_path field_typ field_loc dimension ?dyn_length mem
       in

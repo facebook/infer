@@ -8,11 +8,11 @@
 open! IStd
 
 type typ_model =
-  | Array of {element_typ: Typ.t; deref_kind: Symb.SymbolPath.deref_kind; length: IntLit.t}
+  | CArray of {element_typ: Typ.t; deref_kind: Symb.SymbolPath.deref_kind; length: IntLit.t}
   | JavaCollection
 
 let std_array element_typ length =
-  Array {element_typ; deref_kind= Symb.SymbolPath.Deref_ArrayIndex; length= IntLit.of_int64 length}
+  CArray {element_typ; deref_kind= Symb.SymbolPath.Deref_ArrayIndex; length= IntLit.of_int64 length}
 
 
 (* Java's Collections are represented by their size. We don't care about the elements.

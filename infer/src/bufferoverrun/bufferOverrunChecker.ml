@@ -47,7 +47,7 @@ module Init = struct
         match TypModels.dispatch tenv typname with
         | Some typ_model -> (
           match typ_model with
-          | Array {element_typ; length} ->
+          | CArray {element_typ; length} ->
               BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc element_typ
                 ~length:(Some length) ~inst_num ~represents_multiple_values ~dimension mem
           | JavaCollection ->

@@ -37,7 +37,7 @@ let mk pdesc =
                   Typ.void
               | Tstruct typename -> (
                 match BufferOverrunTypModels.dispatch tenv typename with
-                | Some (Array {element_typ}) ->
+                | Some (CArray {element_typ}) ->
                     element_typ
                 | Some _ ->
                     L.(die InternalError)

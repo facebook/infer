@@ -145,13 +145,21 @@ module Val = struct
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
-  let of_array_alloc :
+  let of_c_array_alloc :
       Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> traces:TraceSet.t -> t =
    fun allocsite ~stride ~offset ~size ~traces ->
     let stride = Option.value_map stride ~default:Itv.nat ~f:Itv.of_int in
     { bot with
-      arrayblk= ArrayBlk.make allocsite ~offset ~size ~stride
+      arrayblk= ArrayBlk.make_c allocsite ~offset ~size ~stride
     ; offset_sym= Relation.Sym.of_allocsite_offset allocsite
+    ; size_sym= Relation.Sym.of_allocsite_size allocsite
+    ; traces }
+
+
+  let of_java_array_alloc : Allocsite.t -> length:Itv.t -> traces:TraceSet.t -> t =
+   fun allocsite ~length ~traces ->
+    { bot with
+      arrayblk= ArrayBlk.make_java allocsite ~length
     ; size_sym= Relation.Sym.of_allocsite_size allocsite
     ; traces }
 
@@ -371,21 +379,21 @@ module Val = struct
             in
             let offset = Itv.of_offset_path path in
             let size = Itv.of_length_path path in
-            ArrayBlk.make allocsite ~stride ~offset ~size
+            ArrayBlk.make_c allocsite ~stride ~offset ~size
           in
           {bot with arrayblk; traces}
     | Tstruct typename -> (
       match BufferOverrunTypModels.dispatch tenv typename with
       | Some typ_model -> (
         match typ_model with
-        | Array {deref_kind; length} ->
+        | CArray {deref_kind; length} ->
             let deref_path = SPath.deref ~deref_kind path in
             let l = Loc.of_path deref_path in
             let traces = TraceSet.singleton location (Trace.Parameter l) in
             let allocsite = Allocsite.make_symbol deref_path in
             let offset = Itv.zero in
             let size = Itv.of_int_lit length in
-            of_array_alloc allocsite ~stride:None ~offset ~size ~traces
+            of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
         | JavaCollection ->
             let l = Loc.of_path path in
             let traces = TraceSet.singleton location (Trace.Parameter l) in
@@ -399,8 +407,6 @@ module Val = struct
         let l = Loc.of_path deref_path in
         let traces = TraceSet.singleton location (Trace.Parameter l) in
         let allocsite = Allocsite.make_symbol deref_path in
-        let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
-        let offset = Itv.zero in
         let size =
           match length with
           | None (* IncompleteArrayType, no-size flexible array *) ->
@@ -412,7 +418,11 @@ module Val = struct
           | Some length ->
               Itv.of_big_int (IntLit.to_big_int length)
         in
-        of_array_alloc allocsite ~stride ~offset ~size ~traces
+        if is_java then of_java_array_alloc allocsite ~length:size ~traces
+        else
+          let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
+          let offset = Itv.zero in
+          of_c_array_alloc allocsite ~stride ~offset ~size ~traces
 
 
   let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
@@ -1001,10 +1011,14 @@ module MemReach = struct
   let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
 
   let init_array_relation :
-      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t
-      =
-   fun allocsite ~offset ~size ~size_exp_opt ->
-    lift_relation (Relation.init_array allocsite ~offset ~size ~size_exp_opt)
+         Allocsite.t
+      -> offset_opt:Itv.t option
+      -> size:Itv.t
+      -> size_exp_opt:Relation.SymExp.t option
+      -> t
+      -> t =
+   fun allocsite ~offset_opt ~size ~size_exp_opt ->
+    lift_relation (Relation.init_array allocsite ~offset_opt ~size ~size_exp_opt)
 
 
   let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
@@ -1135,10 +1149,14 @@ module Mem = struct
 
 
   let init_array_relation :
-      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t
-      =
-   fun allocsite ~offset ~size ~size_exp_opt ->
-    map ~f:(MemReach.init_array_relation allocsite ~offset ~size ~size_exp_opt)
+         Allocsite.t
+      -> offset_opt:Itv.t option
+      -> size:Itv.t
+      -> size_exp_opt:Relation.SymExp.t option
+      -> t
+      -> t =
+   fun allocsite ~offset_opt ~size ~size_exp_opt ->
+    map ~f:(MemReach.init_array_relation allocsite ~offset_opt ~size ~size_exp_opt)
 
 
   let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =

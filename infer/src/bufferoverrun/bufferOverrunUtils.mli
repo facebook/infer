@@ -56,7 +56,7 @@ module Exec : sig
     -> Dom.Mem.t
     -> Dom.Mem.t * int
 
-  val init_array_fields :
+  val init_c_array_fields :
        Tenv.t
     -> Typ.IntegerWidths.t
     -> Typ.Procname.t

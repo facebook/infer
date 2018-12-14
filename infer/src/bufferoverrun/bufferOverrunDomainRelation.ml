@@ -101,7 +101,7 @@ module type S = sig
   val init_param : Loc.t -> t -> t
 
   val init_array :
-    Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t
+    Allocsite.t -> offset_opt:Itv.t option -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t
 
   val forget_locs : PowLoc.t -> t -> t
 
@@ -211,7 +211,7 @@ module NoRelation = struct
 
   let init_param = f2
 
-  let init_array _allocsite ~offset:_ ~size:_ ~size_exp_opt:_ = f1
+  let init_array _allocsite ~offset_opt:_ ~size:_ ~size_exp_opt:_ = f1
 
   let forget_locs = f2
 
@@ -1433,10 +1433,8 @@ module Make (Manager : Manager_S) = struct
       meet_constraints (Constraints.eq_of param_var var) x
 
 
-    let init_array allocsite ~offset ~size ~size_exp_opt x =
-      let offset_sym = Sym.of_allocsite_offset allocsite in
+    let init_array allocsite ~offset_opt ~size ~size_exp_opt x =
       let size_sym = Sym.of_allocsite_size allocsite in
-      let offset_constrs = Constraints.itv_of offset_sym offset in
       let size_constrs =
         match size_exp_opt with
         | None ->
@@ -1448,7 +1446,16 @@ module Make (Manager : Manager_S) = struct
           | Some constr ->
               constr )
       in
-      meet_constraints (Constraints.and_ offset_constrs size_constrs) x
+      let constraints =
+        match offset_opt with
+        | Some offset ->
+            let offset_sym = Sym.of_allocsite_offset allocsite in
+            let offset_constrs = Constraints.itv_of offset_sym offset in
+            Constraints.and_ offset_constrs size_constrs
+        | None ->
+            size_constrs
+      in
+      meet_constraints constraints x
 
 
     let subst_param_caller subst_map caller =
@@ -1556,9 +1563,14 @@ module Make (Manager : Manager_S) = struct
 
 
   let init_array :
-      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> t -> t =
-   fun allocsite ~offset ~size ~size_exp_opt ->
-    lift_default ~default:Bottom (PackedVal.init_array allocsite ~offset ~size ~size_exp_opt)
+         Allocsite.t
+      -> offset_opt:Itv.t option
+      -> size:Itv.t
+      -> size_exp_opt:SymExp.t option
+      -> t
+      -> t =
+   fun allocsite ~offset_opt ~size ~size_exp_opt ->
+    lift_default ~default:Bottom (PackedVal.init_array allocsite ~offset_opt ~size ~size_exp_opt)
 
 
   let forget_locs : PowLoc.t -> t -> t = fun locs -> lift (PackedVal.forget_locs locs)

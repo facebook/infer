@@ -83,11 +83,11 @@ let malloc size_exp =
       let size_exp = Option.value dyn_length ~default:length0 in
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
     in
-    let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces in
+    let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
     mem
     |> Dom.Mem.add_stack (Loc.of_id id) v
-    |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt
-    |> BoUtils.Exec.init_array_fields tenv integer_type_widths pname path ~node_hash typ
+    |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
+    |> BoUtils.Exec.init_c_array_fields tenv integer_type_widths pname path ~node_hash typ
          (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size size_exp in
   {exec; check}
@@ -232,7 +232,7 @@ let set_array_length array length_exp =
           Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path
             ~represents_multiple_values
         in
-        let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
+        let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
         Dom.Mem.add_stack (Loc.of_pvar array_pvar) v mem
     | _ ->
         L.(die InternalError) "Unexpected type of first argument for __set_array_length() "
