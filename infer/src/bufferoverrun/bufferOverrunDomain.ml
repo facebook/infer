@@ -386,10 +386,15 @@ module Val = struct
         let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
         let offset = Itv.zero in
         let size =
-          Option.value_map length ~default:Itv.top ~f:(fun length ->
-              if may_last_field && (IntLit.iszero length || IntLit.isone length) then
-                Itv.of_length_path path
-              else Itv.of_big_int (IntLit.to_big_int length) )
+          match length with
+          | None (* IncompleteArrayType, no-size flexible array *) ->
+              Itv.of_length_path path
+          | Some length
+            when may_last_field && (IntLit.iszero length || IntLit.isone length)
+                 (* 0/1-sized flexible array *) ->
+              Itv.of_length_path path
+          | Some length ->
+              Itv.of_big_int (IntLit.to_big_int length)
         in
         of_array_alloc allocsite ~stride ~offset ~size ~traces
 

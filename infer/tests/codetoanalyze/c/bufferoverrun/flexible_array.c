@@ -14,12 +14,12 @@ struct s {
 
 void access_to_incomplete_array_type(struct s* a, int i) { a->arr[i] = 0; }
 
-void call_access_to_incomplete_array_type_Good_FP() {
+void call_access_to_incomplete_array_type_Good() {
   struct s* x = malloc(sizeof(struct s) + sizeof(int));
   access_to_incomplete_array_type(x, 0);
 }
 
-void call_access_to_incomplete_array_type_Bad() {
+void call_access_to_incomplete_array_type_Bad_FN() {
   struct s* x = malloc(sizeof(struct s) + sizeof(int));
   access_to_incomplete_array_type(x, 1);
 }
