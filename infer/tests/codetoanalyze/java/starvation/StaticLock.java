@@ -26,7 +26,7 @@ class StaticLock {
     }
   }
 
-  synchronized void lockOtherClassAnotherWayNad() {
+  synchronized void lockOtherClassAnotherWayBad() {
     staticSynced();
   }
 }

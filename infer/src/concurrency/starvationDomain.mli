@@ -17,6 +17,8 @@ module Lock : sig
   (** Class of the root variable of the path representing the lock *)
 
   val equal : t -> t -> bool
+
+  val pp_locks : F.formatter -> t -> unit
 end
 
 (** Represents the existence of a program path from the current method to the eventual acquisition

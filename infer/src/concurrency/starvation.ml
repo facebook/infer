@@ -354,23 +354,6 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
   let _, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
-  let pp_acquire fmt (lock, loc, pname) =
-    F.fprintf fmt "%a (%a in %a)" Lock.pp_human lock Location.pp loc pname_pp pname
-  in
-  let pp_thread fmt
-      ( pname
-      , { Order.loc= loc1
-        ; trace= trace1
-        ; elem= {first= lock1; eventually= {elem= event; loc= loc2; trace= trace2}} } ) =
-    match event with
-    | LockAcquire lock2 ->
-        let pname1 = List.last trace1 |> Option.value_map ~default:pname ~f:CallSite.pname in
-        let pname2 = List.last trace2 |> Option.value_map ~default:pname1 ~f:CallSite.pname in
-        F.fprintf fmt "first %a and then %a" pp_acquire (lock1, loc1, pname1) pp_acquire
-          (lock2, loc2, pname2)
-    | _ ->
-        L.die InternalError "Trying to report a deadlock without two lock events."
-  in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
       not
@@ -380,12 +363,13 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
     else
       let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
       match (current_elem.Order.elem.eventually.elem, elem.Order.elem.eventually.elem) with
-      | LockAcquire _, LockAcquire _ ->
+      | LockAcquire lock1, LockAcquire lock2 ->
           let error_message =
             Format.asprintf
-              "Potential deadlock.@.Trace 1 (starts at %a) %a.@.Trace 2 (starts at %a), %a."
-              pname_pp current_pname pp_thread (current_pname, current_elem) pname_pp
-              endpoint_pname pp_thread (endpoint_pname, elem)
+              "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in \
+               reverse orders."
+              pname_pp current_pname pname_pp endpoint_pname Lock.pp_human lock1 Lock.pp_human
+              lock2
           in
           let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
           let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
@@ -401,8 +385,8 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
         report_map
     | LockAcquire endpoint_lock when Lock.equal endpoint_lock elem.Order.elem.first ->
         let error_message =
-          Format.asprintf "Potential self deadlock. %a %a twice." pname_pp current_pname
-            Lock.pp_human endpoint_lock
+          Format.asprintf "Potential self deadlock. %a%a twice." pname_pp current_pname
+            Lock.pp_locks endpoint_lock
         in
         let ltr = Order.make_trace ~header:"In method " current_pname elem in
         let loc = Order.get_loc elem in
@@ -432,9 +416,9 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     | MayBlock (block_descr, sev) when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
-            "Method %a runs on UI thread (because %a) and %a, which may be held by another thread \
+            "Method %a runs on UI thread (because %a) and%a, which may be held by another thread \
              which %s."
-            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_human lock
+            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_locks lock
             block_descr
         in
         let first_trace = Event.make_trace ~header:"[Trace 1] " current_pname event in

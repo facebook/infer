@@ -45,12 +45,13 @@ module Lock = struct
   let owner_class ((_, typ), _) = Typ.inner_name typ
 
   let pp_human fmt lock =
-    let owner =
-      owner_class lock
-      |> Option.value_map ~default:"" ~f:(fun typ ->
-             F.asprintf " in %a" (MF.wrap_monospaced Typ.Name.pp) typ )
+    let pp_owner fmt lock =
+      owner_class lock |> Option.iter ~f:(F.fprintf fmt " in %a" (MF.wrap_monospaced Typ.Name.pp))
     in
-    F.fprintf fmt "locks %a%s" (MF.wrap_monospaced AccessPath.pp) lock owner
+    F.fprintf fmt "%a%a" (MF.wrap_monospaced pp) lock pp_owner lock
+
+
+  let pp_locks fmt lock = F.fprintf fmt " locks %a" pp_human lock
 end
 
 module Event = struct
@@ -82,7 +83,7 @@ module Event = struct
     let pp_human fmt elem =
       match elem with
       | LockAcquire lock ->
-          Lock.pp_human fmt lock
+          Lock.pp_locks fmt lock
       | MayBlock (msg, _) ->
           F.pp_print_string fmt msg
       | StrictModeCall msg ->
@@ -127,7 +128,7 @@ module Order = struct
       F.fprintf fmt "{first= %a; eventually= %a}" Lock.pp first Event.pp eventually
 
 
-    let pp_human fmt {first} = Lock.pp_human fmt first
+    let pp_human fmt {first} = Lock.pp_locks fmt first
   end
 
   include ExplicitTrace.MakeTraceElem (OrderElement)
