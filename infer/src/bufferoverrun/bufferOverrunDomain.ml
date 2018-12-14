@@ -339,7 +339,7 @@ module Val = struct
 
   let is_mone x = Itv.is_mone (get_itv x)
 
-  let of_path ~may_last_field integer_type_widths location typ path =
+  let of_path tenv ~may_last_field integer_type_widths location typ path =
     let is_java = Language.curr_language_is Java in
     L.d_printfln "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
@@ -374,10 +374,26 @@ module Val = struct
             ArrayBlk.make allocsite ~stride ~offset ~size
           in
           {bot with arrayblk; traces}
-    | Tstruct _ ->
-        let l = Loc.of_path path in
-        let traces = TraceSet.singleton location (Trace.Parameter l) in
-        of_loc ~traces l
+    | Tstruct typename -> (
+      match BufferOverrunTypModels.dispatch tenv typename with
+      | Some typ_model -> (
+        match typ_model with
+        | Array {deref_kind; length} ->
+            let deref_path = SPath.deref ~deref_kind path in
+            let l = Loc.of_path deref_path in
+            let traces = TraceSet.singleton location (Trace.Parameter l) in
+            let allocsite = Allocsite.make_symbol deref_path in
+            let offset = Itv.zero in
+            let size = Itv.of_int_lit length in
+            of_array_alloc allocsite ~stride:None ~offset ~size ~traces
+        | JavaCollection ->
+            let l = Loc.of_path path in
+            let traces = TraceSet.singleton location (Trace.Parameter l) in
+            of_itv ~traces (Itv.of_normal_path ~unsigned:true path) )
+      | None ->
+          let l = Loc.of_path path in
+          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          of_loc ~traces l )
     | Tarray {length; stride} ->
         let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
         let l = Loc.of_path deref_path in
@@ -400,7 +416,7 @@ module Val = struct
 
 
   let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
-   fun ~default {typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
+   fun ~default {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
     match Loc.get_path l with
     | None ->
         L.d_printfln "Val.on_demand for %a -> no path" Loc.pp l ;
@@ -414,7 +430,7 @@ module Val = struct
           L.d_printfln "Val.on_demand for %a" Loc.pp l ;
           let may_last_field = may_last_field path in
           let path = OndemandEnv.canonical_path typ_of_param_path path in
-          of_path ~may_last_field integer_type_widths entry_location typ path )
+          of_path tenv ~may_last_field integer_type_widths entry_location typ path )
 
 
   module Itv = struct
@@ -1114,7 +1130,9 @@ module Mem = struct
 
   let forget_locs : PowLoc.t -> t -> t = fun locs -> map ~f:(MemReach.forget_locs locs)
 
-  let init_param_relation : Loc.t -> t -> t = fun loc -> map ~f:(MemReach.init_param_relation loc)
+  let[@warning "-32"] init_param_relation : Loc.t -> t -> t =
+   fun loc -> map ~f:(MemReach.init_param_relation loc)
+
 
   let init_array_relation :
       Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t

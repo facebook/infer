@@ -56,35 +56,6 @@ module Exec : sig
     -> Dom.Mem.t
     -> Dom.Mem.t * int
 
-  type decl_sym_val =
-       Typ.Procname.t
-    -> Itv.SymbolPath.partial
-    -> Tenv.t
-    -> Location.t
-    -> depth:int
-    -> Loc.t
-    -> Typ.t
-    -> Dom.Mem.t
-    -> Dom.Mem.t
-
-  val decl_sym_arr :
-       decl_sym_val:decl_sym_val
-    -> Symb.SymbolPath.deref_kind
-    -> Typ.Procname.t
-    -> Itv.SymbolPath.partial
-    -> Tenv.t
-    -> Location.t
-    -> depth:int
-    -> Loc.t
-    -> Typ.t
-    -> ?offset:Itv.t
-    -> ?size:Itv.t
-    -> ?stride:int
-    -> Dom.Mem.t
-    -> Dom.Mem.t
-
-  val decl_sym_collection : Itv.SymbolPath.partial -> Location.t -> Loc.t -> Dom.Mem.t -> Dom.Mem.t
-
   val init_array_fields :
        Tenv.t
     -> Typ.IntegerWidths.t

@@ -498,8 +498,6 @@ let of_big_int : Z.t -> t = fun n -> NonBottom (ItvPure.of_big_int n)
 
 let of_int_lit : IntLit.t -> t = fun n -> of_big_int (IntLit.to_big_int n)
 
-let of_int64 : Int64.t -> t = fun n -> of_big_int (Z.of_int64 n)
-
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
 let le : lhs:t -> rhs:t -> bool = ( <= )

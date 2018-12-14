@@ -118,63 +118,6 @@ module Exec = struct
     (mem, inst_num + 1)
 
 
-  type decl_sym_val =
-       Typ.Procname.t
-    -> Itv.SymbolPath.partial
-    -> Tenv.t
-    -> Location.t
-    -> depth:int
-    -> Loc.t
-    -> Typ.t
-    -> Dom.Mem.t
-    -> Dom.Mem.t
-
-  let decl_sym_arr :
-         decl_sym_val:decl_sym_val
-      -> Symb.SymbolPath.deref_kind
-      -> Typ.Procname.t
-      -> Itv.SymbolPath.partial
-      -> Tenv.t
-      -> Location.t
-      -> depth:int
-      -> Loc.t
-      -> Typ.t
-      -> ?offset:Itv.t
-      -> ?size:Itv.t
-      -> ?stride:int
-      -> Dom.Mem.t
-      -> Dom.Mem.t =
-   fun ~decl_sym_val deref_kind pname path tenv location ~depth loc typ ?offset ?size ?stride mem ->
-    let offset = IOption.value_default_f offset ~f:(fun () -> Itv.of_offset_path path) in
-    let size = IOption.value_default_f size ~f:(fun () -> Itv.of_length_path path) in
-    let deref_path = Itv.SymbolPath.deref ~deref_kind path in
-    let allocsite = Allocsite.make_symbol deref_path in
-    let mem =
-      let arr =
-        let traces = Trace.(Set.singleton location (Parameter loc)) in
-        let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size ~traces
-        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
-      in
-      mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
-      |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
-    in
-    let deref_loc = Loc.of_allocsite allocsite in
-    decl_sym_val pname deref_path tenv location ~depth deref_loc typ mem
-
-
-  let decl_sym_collection : Itv.SymbolPath.partial -> Location.t -> Loc.t -> Dom.Mem.t -> Dom.Mem.t
-      =
-   fun path location loc mem ->
-    let size =
-      let represents_multiple_values = Itv.SymbolPath.represents_multiple_values path in
-      let traces = Trace.(Set.singleton location (Parameter loc)) in
-      Itv.of_length_path path |> Dom.Val.of_itv ~traces
-      |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
-    in
-    Dom.Mem.add_heap loc size mem
-
-
   let init_array_fields tenv integer_type_widths pname path ~node_hash typ locs ?dyn_length mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
       let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in

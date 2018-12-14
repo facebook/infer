@@ -133,8 +133,6 @@ val of_big_int : Z.t -> t
 
 val of_int_lit : IntLit.t -> t
 
-val of_int64 : Int64.t -> t
-
 val is_const : t -> Z.t option
 
 val is_one : t -> bool

@@ -32,8 +32,7 @@ type extras = Dom.OndemandEnv.t
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 module Init = struct
-  let initial_state {ProcData.pdesc; tenv; extras= {Dom.OndemandEnv.integer_type_widths} as oenv}
-      start_node =
+  let initial_state {ProcData.pdesc; tenv; extras= oenv} start_node =
     let node_hash = CFG.Node.hash start_node in
     let location = CFG.Node.loc start_node in
     let pname = Procdesc.get_proc_name pdesc in
@@ -46,12 +45,14 @@ module Init = struct
             ?stride ~inst_num ~represents_multiple_values ~dimension mem
       | Typ.Tstruct typname -> (
         match TypModels.dispatch tenv typname with
-        | Some {TypModels.declare_local} ->
-            let model_env =
-              Models.mk_model_env pname node_hash location tenv integer_type_widths
-            in
-            declare_local ~decl_local model_env loc ~inst_num ~represents_multiple_values
-              ~dimension mem
+        | Some typ_model -> (
+          match typ_model with
+          | Array {element_typ; length} ->
+              BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc element_typ
+                ~length:(Some length) ~inst_num ~represents_multiple_values ~dimension mem
+          | JavaCollection ->
+              BoUtils.Exec.decl_local_collection pname ~node_hash location loc ~inst_num
+                ~represents_multiple_values ~dimension mem )
         | None ->
             (mem, inst_num) )
       | _ ->

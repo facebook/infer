@@ -11,7 +11,8 @@ module SPath = Symb.SymbolPath
 module FormalTyps = Caml.Map.Make (Pvar)
 
 type t =
-  { typ_of_param_path: SPath.partial -> Typ.t option
+  { tenv: Tenv.t
+  ; typ_of_param_path: SPath.partial -> Typ.t option
   ; may_last_field: SPath.partial -> bool
   ; entry_location: Location.t
   ; integer_type_widths: Typ.IntegerWidths.t }
@@ -34,6 +35,15 @@ let mk pdesc =
                   elt
               | Tvoid ->
                   Typ.void
+              | Tstruct typename -> (
+                match BufferOverrunTypModels.dispatch tenv typename with
+                | Some (Array {element_typ}) ->
+                    element_typ
+                | Some _ ->
+                    L.(die InternalError)
+                      "Deref of non-array modeled type `%a`" Typ.Name.pp typename
+                | None ->
+                    L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
               | _ ->
                   L.(die InternalError) "Untyped expression is given." )
       | SPath.Field (fn, x) ->
@@ -61,7 +71,7 @@ let mk pdesc =
                      true )
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
-    {typ_of_param_path; may_last_field; entry_location; integer_type_widths}
+    {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths}
 
 
 let canonical_path typ_of_param_path path =
