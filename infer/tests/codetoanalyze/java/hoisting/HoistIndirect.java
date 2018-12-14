@@ -8,12 +8,12 @@
 class HoistIndirect {
 
   public static int svar = 0;
+  public int x = 0;
   int[] array;
 
   class Test {
 
     int a = 0;
-
     int[] test_array;
 
     int foo(int x) {
@@ -48,9 +48,7 @@ class HoistIndirect {
     void variant_arg_dont_hoist(int size, Test t) {
       for (int i = 0; i < size; i++) {
         set_test(t); // t is invalidated
-        get_sum_test(
-            return_only(t),
-            size); // foo' and return_only's arguments are variant, hence don't hoist
+        get_sum_test(return_only(t), size); // return_only's argument is variant, hence don't hoist
       }
     }
 
@@ -70,8 +68,8 @@ class HoistIndirect {
       int d = 0;
       Test t = new Test();
       for (int i = 0; i < size; i++) {
-        set_test(t); // this (and t) is invalidated here
-        d = foo(3); // foo becomes variant due to implicit arg. this being invalidated above
+        set_test(t); // t is invalidated here
+        d = foo(3); // foo is still invariant so it is ok to hoist
       }
       return d;
     }
@@ -99,8 +97,8 @@ class HoistIndirect {
     return svar;
   }
 
-  // can't deal with static variables yet because they don't appear as parameters
-  int indirect_this_modification_dont_hoist_FP(int size) {
+  //
+  int indirect_this_modification_dont_hoist(int size) {
     int d = 0;
 
     for (int i = 0; i < size; i++) {
@@ -237,5 +235,27 @@ class HoistIndirect {
       alias(arr); // alias modifies arr
       get_ith(0, arr); // don't hoist
     }
+  }
+
+  int return_zero() {
+    return 0;
+  }
+
+  void set_x() {
+    x = 0;
+  }
+
+  // Since we don't keep track of what values are read in purity
+  // analysis, when we call set_x, we add implicit arg. "this" to
+  // modified arguments which prevents any other call in the loop to
+  // be hoisted
+  int indirect_this_modification_hoist_FN(int size) {
+    int d = 0;
+
+    for (int i = 0; i < size; i++) {
+      d = return_zero(); // OK to hoist
+      set_x();
+    }
+    return d;
   }
 }

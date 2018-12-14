@@ -38,7 +38,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
      it modifies *)
   let track_modified_params formals ae =
     let base_var, _ = HilExp.AccessExpression.get_base ae in
-    let modified_params = get_modified_params formals ~f:(Var.equal base_var) in
+    (* treat writes to global (static) variables separately since they
+       are not considered to be explicit parameters. *)
+    let modified_params =
+      if Var.is_global base_var then Domain.ModifiedParamIndices.singleton Domain.global
+      else get_modified_params formals ~f:(Var.equal base_var)
+    in
     Domain.impure modified_params
 
 
@@ -78,9 +83,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else modified_acc )
         callee_args
     in
-    (* find the respective parameter of the proc, matching the modified vars *)
-    get_modified_params formals ~f:(fun formal_var ->
-        ModifiedVarSet.mem formal_var vars_of_modified_args )
+    (* find the respective parameter of the caller, matching the modified vars *)
+    let caller_modified_params =
+      get_modified_params formals ~f:(fun formal_var ->
+          ModifiedVarSet.mem formal_var vars_of_modified_args )
+    in
+    (* if callee modified global, caller also indirectly does so*)
+    if Domain.contains_global callee_modified_params then
+      Domain.ModifiedParamIndices.add Domain.global caller_modified_params
+    else caller_modified_params
 
 
   (* if the callee is impure, find the parameters that have been modified by the callee *)

@@ -10,6 +10,10 @@ module ModifiedParamIndices = AbstractDomain.FiniteSet (Int)
 module Domain = AbstractDomain.BottomLifted (ModifiedParamIndices)
 include Domain
 
+let global = -1
+
+let contains_global modified_params = ModifiedParamIndices.mem global modified_params
+
 let pure = AbstractDomain.Types.Bottom
 
 let is_pure = Domain.is_empty

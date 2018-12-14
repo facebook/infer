@@ -154,10 +154,24 @@ let get_vars_to_invalidate node loop_head args modified_params invalidated_vars 
     args
 
 
+let all_modified loop_nodes =
+  LoopNodes.fold
+    (fun node acc ->
+      Procdesc.Node.get_instrs node
+      |> Instrs.fold ~init:acc ~f:(fun acc instr ->
+             match instr with
+             | Sil.Call ((id, _), _, _, _, _) ->
+                 InvalidatedVars.add (Var.of_id id) acc
+             | _ ->
+                 acc ) )
+    loop_nodes InvalidatedVars.empty
+
+
 (* If there is a call to an impure function in the loop, invalidate
    all its non-primitive arguments. Once invalidated, it should be
    never added again. *)
 let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
+  let all_modified = lazy (all_modified loop_nodes) in
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node
@@ -167,8 +181,15 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
                  let purity = get_purity tenv ~is_inv_by_default callee_pname args in
                  Option.value_map (PurityDomain.get_modified_params purity) ~default:acc
                    ~f:(fun modified_params ->
-                     get_vars_to_invalidate node loop_head args modified_params
-                       (InvalidatedVars.add (Var.of_id id) acc) )
+                     let acc' =
+                       get_vars_to_invalidate node loop_head args modified_params
+                         (InvalidatedVars.add (Var.of_id id) acc)
+                     in
+                     (* if one of the callees modifies a global static
+                        variable, invalidate all the function calls *)
+                     if PurityDomain.contains_global modified_params then
+                       InvalidatedVars.union acc' (force all_modified)
+                     else acc' )
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty
