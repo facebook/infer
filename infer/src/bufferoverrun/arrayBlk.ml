@@ -125,8 +125,6 @@ let offsetof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.off
 
 let sizeof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
 
-let strideof : t -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.stride) a Itv.bot
-
 let sizeof_byte : t -> Itv.t =
  fun a -> fold (fun _ arr -> Itv.join (Itv.mult arr.ArrInfo.size arr.ArrInfo.stride)) a Itv.bot
 

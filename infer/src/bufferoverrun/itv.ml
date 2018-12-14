@@ -147,8 +147,6 @@ module ItvPure = struct
         None
 
 
-  let eq_const : Z.t -> t -> bool = fun z (l, u) -> Bound.eq_const z l && Bound.eq_const z u
-
   let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
 
   let is_one : t -> bool = fun (l, u) -> Bound.eq l Bound.one && Bound.eq u Bound.one
@@ -562,8 +560,6 @@ let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 let is_one = bind1bool ItvPure.is_one
 
 let is_mone = bind1bool ItvPure.is_mone
-
-let eq_const : Z.t -> t -> bool = fun z -> bind1bool (ItvPure.eq_const z)
 
 let neg : t -> t = lift1 ItvPure.neg
 

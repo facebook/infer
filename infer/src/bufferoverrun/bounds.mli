@@ -83,8 +83,6 @@ module Bound : sig
 
   val is_const : t -> Z.t sexp_option
 
-  val eq_const : Z.t -> t -> bool
-
   val plus_l : t -> t -> t
 
   val plus_u : t -> t -> t

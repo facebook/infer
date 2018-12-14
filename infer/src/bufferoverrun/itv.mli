@@ -141,8 +141,6 @@ val is_one : t -> bool
 
 val is_mone : t -> bool
 
-val eq_const : Z.t -> t -> bool
-
 val lb : t -> Bound.t
 
 val ub : t -> Bound.t
