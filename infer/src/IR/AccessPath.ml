@@ -33,7 +33,7 @@ module Raw = struct
 
   let rec pp_access fmt = function
     | FieldAccess field_name ->
-        Typ.Fieldname.pp fmt field_name
+        F.pp_print_string fmt (Typ.Fieldname.to_flat_string field_name)
     | ArrayAccess (typ, []) ->
         F.pp_print_string fmt "[_]" ; may_pp_typ fmt typ
     | ArrayAccess (typ, index_aps) ->
