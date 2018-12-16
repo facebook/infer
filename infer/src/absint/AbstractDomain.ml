@@ -396,6 +396,44 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
     inter prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
 end
 
+module FiniteMultiMap
+    (Key : PrettyPrintable.PrintableOrderedType)
+    (Value : PrettyPrintable.PrintableOrderedType) =
+struct
+  module S = FiniteSet (Value)
+  module M = Map (Key) (S)
+
+  type t = M.t
+
+  let empty = M.empty
+
+  let is_empty = M.is_empty
+
+  let ( <= ) = M.( <= )
+
+  let join = M.join
+
+  let widen = M.widen
+
+  let pp = M.pp
+
+  let add k v m =
+    M.update k (function None -> Some (S.singleton v) | Some s -> Some (S.add v s)) m
+
+
+  let mem k m = M.mem k m
+
+  let remove k v m =
+    M.update k
+      (function
+        | None ->
+            None
+        | Some s ->
+            let s' = S.remove v s in
+            if S.is_empty s' then None else Some s')
+      m
+end
+
 module BooleanAnd = struct
   type t = bool
 

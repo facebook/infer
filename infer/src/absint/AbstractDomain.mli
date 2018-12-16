@@ -146,6 +146,18 @@ end
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
   InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
+module FiniteMultiMap
+    (Key : PrettyPrintable.PrintableOrderedType)
+    (Value : PrettyPrintable.PrintableOrderedType) : sig
+  include WithBottom
+
+  val add : Key.t -> Value.t -> t -> t
+
+  val mem : Key.t -> t -> bool
+
+  val remove : Key.t -> Value.t -> t -> t
+end
+
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
 include

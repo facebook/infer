@@ -25,8 +25,7 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
      and module Node.IdMap = TransferFunctions.CFG.Node.IdMap
      and module Node.IdSet = TransferFunctions.CFG.Node.IdSet
 
-  module Domain :
-      module type of AbstractDomain.Pair (TransferFunctions.Domain) (IdAccessPathMapDomain)
+  module Domain : module type of AbstractDomain.Pair (TransferFunctions.Domain) (Bindings)
 
   type extras = TransferFunctions.extras
 

@@ -293,6 +293,39 @@ module AccessExpression = struct
   let of_pvar pvar typ = address_of (base (base_of_pvar pvar typ))
 
   let of_id id typ = base (base_of_id id typ)
+
+  let rec fold_vars ae ~init ~f =
+    match ae with
+    | Base (var, _typ) ->
+        f init var
+    | FieldOffset (ae, _) | AddressOf ae | Dereference ae ->
+        fold_vars ae ~init ~f
+    | ArrayOffset (ae, _typ, exp_opt) ->
+        let init = fold_vars ae ~init ~f in
+        fold_vars_exp_opt exp_opt ~init ~f
+
+
+  and fold_vars_exp_opt exp_opt ~init ~f =
+    Option.fold exp_opt ~init ~f:(fun init ae -> fold_vars_exp ae ~init ~f)
+
+
+  and fold_vars_exp exp ~init ~f =
+    match exp with
+    | AccessExpression ae ->
+        fold_vars ae ~init ~f
+    | UnaryOperator (_, exp, _) | Exception exp | Cast (_, exp) ->
+        fold_vars_exp exp ~init ~f
+    | BinaryOperator (_, exp1, exp2) ->
+        let init = fold_vars_exp exp1 ~init ~f in
+        fold_vars_exp exp2 ~init ~f
+    | Closure (_, capt) ->
+        List.fold capt ~init ~f:(fun init ((var, _typ), exp) ->
+            let init = f init var in
+            fold_vars_exp exp ~init ~f )
+    | Constant _ ->
+        init
+    | Sizeof (_, exp_opt) ->
+        fold_vars_exp_opt exp_opt ~init ~f
 end
 
 let rec get_typ tenv = function

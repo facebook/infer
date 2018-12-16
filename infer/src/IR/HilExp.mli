@@ -80,6 +80,8 @@ module AccessExpression : sig
     | AddressOf of access_expression
     | Dereference of access_expression
   [@@deriving compare]
+
+  val fold_vars : (t, Var.t, 'accum) Container.fold
 end
 
 val pp : F.formatter -> t -> unit
