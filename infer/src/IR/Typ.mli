@@ -267,9 +267,6 @@ val d_list : t list -> unit
 val name : t -> Name.t option
 (** The name of a type *)
 
-val inner_name : t -> Name.t option
-(** Name of the type of a Tstruct pointed to by a Tptr *)
-
 val strip_ptr : t -> t
 (** turn a *T into a T. fails if [t] is not a pointer type *)
 

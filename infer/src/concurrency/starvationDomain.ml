@@ -42,7 +42,13 @@ module Lock = struct
 
   let pp = AccessPath.pp
 
-  let owner_class ((_, typ), _) = Typ.inner_name typ
+  let owner_class ((_, {Typ.desc}), _) =
+    match desc with
+    | Typ.Tstruct name | Typ.Tptr ({desc= Tstruct name}, _) ->
+        Some name
+    | _ ->
+        None
+
 
   let pp_human fmt lock =
     let pp_owner fmt lock =
