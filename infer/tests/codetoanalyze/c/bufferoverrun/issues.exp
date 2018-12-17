@@ -197,6 +197,7 @@ codetoanalyze/c/bufferoverrun/pointer_arith.c, pointer_arith_bad, 4, BUFFER_OVER
 codetoanalyze/c/bufferoverrun/prune_alias.c, FP_prune_alias_exp_Ok, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
 codetoanalyze/c/bufferoverrun/prune_alias.c, bad_if_alias, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
 codetoanalyze/c/bufferoverrun/prune_alias.c, bad_if_not_alias, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
+codetoanalyze/c/bufferoverrun/prune_alias.c, call_latest_prune_join_3_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Array declaration,Call,<Offset trace>,Parameter `n`,<Length trace>,Parameter `*a`,Array access: Offset: 3 Size: 2 by call to `latest_prune_join` ]
 codetoanalyze/c/bufferoverrun/prune_alias.c, call_prune_arrblk_ne_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Array declaration,Assignment,Call,<Length trace>,Parameter `*x`,Array access: Offset: 5 Size: 5 by call to `prune_arrblk_ne` ]
 codetoanalyze/c/bufferoverrun/prune_alias.c, loop_prune2_Good_FP, 8, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Parameter `length`,<Length trace>,Parameter `length`,Array declaration,Array access: Offset: [length - length + 1, length] Size: length]
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_and_Ok, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]

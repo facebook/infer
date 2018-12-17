@@ -727,6 +727,14 @@ module LatestPrune = struct
     | TrueBranch (x', ptrue), FalseBranch (y', pfalse)
       when Pvar.equal x' y' ->
         V (x', ptrue, pfalse)
+    | TrueBranch (x1, ptrue1), V (x2, ptrue2, pfalse)
+    | V (x2, ptrue2, pfalse), TrueBranch (x1, ptrue1)
+      when Pvar.equal x1 x2 ->
+        V (x1, PrunePairs.join ptrue1 ptrue2, pfalse)
+    | FalseBranch (x1, pfalse1), V (x2, ptrue, pfalse2)
+    | V (x2, ptrue, pfalse2), FalseBranch (x1, pfalse1)
+      when Pvar.equal x1 x2 ->
+        V (x1, ptrue, PrunePairs.join pfalse1 pfalse2)
     | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) when Pvar.equal x1 x2 ->
         V (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
     | _, _ ->

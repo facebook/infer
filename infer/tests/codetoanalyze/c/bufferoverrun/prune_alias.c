@@ -227,3 +227,40 @@ void call_bad_if_not_alias_Bad_AlreadyReported() {
   int x, y;
   bad_if_not_alias(x, y);
 }
+
+int unknown_function();
+
+void latest_prune_join(int* a, int n) {
+  int x;
+  if (unknown_function()) {
+    if (n < 4) {
+      x = 1;
+    } else {
+      x = 0;
+    }
+  } else {
+    if (n < 5) {
+      x = 1;
+    } else {
+      return;
+    }
+  }
+  if (x) {
+    a[n] = 0;
+  }
+}
+
+void call_latest_prune_join_1_Good() {
+  int a[5];
+  latest_prune_join(a, 3);
+}
+
+void call_latest_prune_join_2_Good() {
+  int a[5];
+  latest_prune_join(a, 10);
+}
+
+void call_latest_prune_join_3_Bad() {
+  int a[2];
+  latest_prune_join(a, 3);
+}
