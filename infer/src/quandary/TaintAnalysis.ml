@@ -640,64 +640,59 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         | _ ->
             Some ret_ap
       in
-      let analyze_call astate_acc callee_pname =
-        let call_site = CallSite.make callee_pname callee_loc in
-        let astate_with_sink =
-          if List.is_empty actuals then astate
-          else
-            let sinks =
-              TraceDomain.Sink.get call_site actuals call_flags proc_data.ProcData.tenv
-            in
-            List.fold sinks ~init:astate ~f:(fun astate sink ->
-                add_sink sink actuals astate proc_data call_site )
-        in
-        let astate_with_summary =
-          let sources = TraceDomain.Source.get call_site actuals proc_data.tenv in
-          match sources with
-          | _ :: _ ->
-              (* don't use a summary for a procedure that is a direct source *)
-              List.fold sources ~init:astate_with_sink
-                ~f:(fun astate {TraceDomain.Source.source; index} ->
-                  match index with
-                  | None ->
-                      Option.value_map dummy_ret_opt ~default:astate ~f:(fun ret_base ->
-                          add_return_source source ret_base astate )
-                  | Some index ->
-                      add_actual_source source index actuals astate_with_sink proc_data )
-          | [] -> (
-            match Payload.read proc_data.pdesc callee_pname with
-            | None ->
-                handle_unknown_call callee_pname astate_with_sink
-            | Some summary -> (
-                let ret_typ = snd ret_ap in
-                let access_tree = TaintSpecification.of_summary_access_tree summary in
-                match
-                  TaintSpecification.get_model callee_pname ret_typ actuals proc_data.tenv
-                    access_tree
-                with
-                | Some model ->
-                    handle_model callee_pname astate_with_sink model
-                | None ->
-                    apply_summary dummy_ret_opt actuals access_tree astate_with_sink proc_data
-                      call_site ) )
-        in
-        let astate_with_sanitizer =
-          match dummy_ret_opt with
-          | None ->
-              astate_with_summary
-          | Some ret_base -> (
-            match TraceDomain.Sanitizer.get callee_pname proc_data.tenv with
-            | Some sanitizer ->
-                let ret_ap = AccessPath.Abs.Exact (ret_base, []) in
-                let ret_trace = access_path_get_trace ret_ap astate_with_summary proc_data in
-                let ret_trace' = TraceDomain.add_sanitizer sanitizer ret_trace in
-                TaintDomain.add_trace ret_ap ret_trace' astate_with_summary
-            | None ->
-                astate_with_summary )
-        in
-        Domain.join astate_acc astate_with_sanitizer
+      let call_site = CallSite.make callee_pname callee_loc in
+      let astate_with_sink =
+        if List.is_empty actuals then astate
+        else
+          let sinks = TraceDomain.Sink.get call_site actuals call_flags proc_data.ProcData.tenv in
+          List.fold sinks ~init:astate ~f:(fun astate sink ->
+              add_sink sink actuals astate proc_data call_site )
       in
-      analyze_call Domain.empty callee_pname
+      let astate_with_summary =
+        let sources = TraceDomain.Source.get call_site actuals proc_data.tenv in
+        match sources with
+        | _ :: _ ->
+            (* don't use a summary for a procedure that is a direct source *)
+            List.fold sources ~init:astate_with_sink
+              ~f:(fun astate {TraceDomain.Source.source; index} ->
+                match index with
+                | None ->
+                    Option.value_map dummy_ret_opt ~default:astate ~f:(fun ret_base ->
+                        add_return_source source ret_base astate )
+                | Some index ->
+                    add_actual_source source index actuals astate_with_sink proc_data )
+        | [] -> (
+          match Payload.read proc_data.pdesc callee_pname with
+          | None ->
+              handle_unknown_call callee_pname astate_with_sink
+          | Some summary -> (
+              let ret_typ = snd ret_ap in
+              let access_tree = TaintSpecification.of_summary_access_tree summary in
+              match
+                TaintSpecification.get_model callee_pname ret_typ actuals proc_data.tenv
+                  access_tree
+              with
+              | Some model ->
+                  handle_model callee_pname astate_with_sink model
+              | None ->
+                  apply_summary dummy_ret_opt actuals access_tree astate_with_sink proc_data
+                    call_site ) )
+      in
+      let astate_with_sanitizer =
+        match dummy_ret_opt with
+        | None ->
+            astate_with_summary
+        | Some ret_base -> (
+          match TraceDomain.Sanitizer.get callee_pname proc_data.tenv with
+          | Some sanitizer ->
+              let ret_ap = AccessPath.Abs.Exact (ret_base, []) in
+              let ret_trace = access_path_get_trace ret_ap astate_with_summary proc_data in
+              let ret_trace' = TraceDomain.add_sanitizer sanitizer ret_trace in
+              TaintDomain.add_trace ret_ap ret_trace' astate_with_summary
+          | None ->
+              astate_with_summary )
+      in
+      astate_with_sanitizer
 
 
     let exec_instr (astate : Domain.t) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
