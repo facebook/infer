@@ -54,8 +54,6 @@ module SourceKind = struct
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
 
-  let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
-
   (* return a list of source kinds if [procedure_name] is in the list of externally specified sources *)
   let get_external_source qualified_pname =
     let return = None in
@@ -164,7 +162,7 @@ module SourceKind = struct
               (Typ.Procname.ObjC_Cpp.get_class_name cpp_pname)
               (Typ.Procname.get_method pname)
           in
-          if String.Set.mem endpoints qualified_pname then
+          if QuandaryConfig.is_endpoint qualified_pname then
             taint_all_but_this_and_return ~make_source:(fun name desc ->
                 UserControlledEndpoint (name, desc) )
           else if overrides_service_method pname tenv then

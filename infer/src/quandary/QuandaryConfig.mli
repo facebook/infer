@@ -27,9 +27,4 @@ module Sanitizer : sig
   val of_json : [> `List of Yojson.Basic.json list] -> t list
 end
 
-module Endpoint : sig
-  (** name of endpoint class *)
-  type t = string
-
-  val of_json : [> `List of Yojson.Basic.json list] -> t list
-end
+val is_endpoint : string -> bool

@@ -74,9 +74,7 @@ module Sanitizer = struct
         []
 end
 
-module Endpoint = struct
-  type t = string
-
+module Endpoints = struct
   let of_json = function
     | `List endpoints ->
         let parse_endpoint = Yojson.Basic.Util.to_string in
@@ -84,3 +82,7 @@ module Endpoint = struct
     | _ ->
         []
 end
+
+let is_endpoint =
+  let endpoints = lazy (String.Set.of_list (Endpoints.of_json Config.quandary_endpoints)) in
+  fun name -> String.Set.mem (Lazy.force endpoints) name
