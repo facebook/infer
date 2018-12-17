@@ -188,6 +188,30 @@ module Exec = struct
           mem )
     | _ ->
         mem
+
+
+  let get_max_char s = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c))
+
+  let decl_string pname ~node_hash integer_type_widths location locs s mem =
+    let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
+    let offset = Itv.zero in
+    let size = Itv.of_int (String.length s + 1) in
+    let traces = Trace.Set.singleton location Trace.ArrayDeclaration in
+    let char_itv = Itv.join Itv.zero (Itv.of_int (get_max_char s)) in
+    let decl loc mem =
+      let allocsite =
+        let deref_kind = Symb.SymbolPath.Deref_ArrayIndex in
+        let path = Loc.get_path loc in
+        let deref_path = Option.map ~f:(fun path -> Symb.SymbolPath.deref ~deref_kind path) path in
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
+          ~represents_multiple_values:true
+      in
+      let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
+      mem
+      |> Dom.Mem.update_mem (PowLoc.singleton loc) v
+      |> Dom.Mem.add_heap (Loc.of_allocsite allocsite) (Dom.Val.of_itv char_itv)
+    in
+    PowLoc.fold decl locs mem
 end
 
 module Check = struct

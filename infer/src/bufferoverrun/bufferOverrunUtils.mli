@@ -69,6 +69,16 @@ module Exec : sig
     -> Dom.Mem.t
 
   val set_dyn_length : Location.t -> Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.t -> Dom.Mem.t
+
+  val decl_string :
+       Typ.Procname.t
+    -> node_hash:int
+    -> Typ.IntegerWidths.t
+    -> Location.t
+    -> PowLoc.t
+    -> string
+    -> Dom.Mem.t
+    -> Dom.Mem.t
 end
 
 module Check : sig

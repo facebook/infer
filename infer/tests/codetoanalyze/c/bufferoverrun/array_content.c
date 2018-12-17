@@ -103,3 +103,23 @@ void weak_update_malloc2_Bad_FN() {
   x[0] = 0;
   a[x[1]] = 0;
 }
+
+void literal_string_Good() {
+  int a[1];
+  char* s = "hello";
+  for (int i = 0; i < 5; i++) {
+    if (s[i] > 'o') {
+      a[s[i]] = 0;
+    }
+  }
+}
+
+void literal_string_bad() {
+  int a[1];
+  char* s = "hello";
+  for (int i = 0; i < 5; i++) {
+    if (s[i] > 'n') {
+      a[s[i]] = 0;
+    }
+  }
+}

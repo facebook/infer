@@ -188,6 +188,11 @@ module TransferFunctions = struct
           Dom.Mem.add_unknown id ~location mem )
     | Load (id, exp, _, _) ->
         BoUtils.Exec.load_locs id (Sem.eval_locs exp mem) mem
+    | Store (exp1, _, Const (Const.Cstr s), location) ->
+        let pname = Procdesc.get_proc_name pdesc in
+        let node_hash = CFG.Node.hash node in
+        let locs = Sem.eval_locs exp1 mem in
+        BoUtils.Exec.decl_string pname ~node_hash integer_type_widths location locs s mem
     | Store (exp1, _, exp2, location) ->
         let locs = Sem.eval_locs exp1 mem in
         let v = Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location in

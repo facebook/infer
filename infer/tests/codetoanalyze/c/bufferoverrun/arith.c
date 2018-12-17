@@ -518,6 +518,11 @@ void call_scan_hex_Good_FP() {
   scan_hex_Good(cp);
 }
 
+void call_scan_hex2_Good_FP() {
+  char* cp = "0aA";
+  scan_hex_Good(cp);
+}
+
 int check_addition_overflow_Good(unsigned int x, unsigned int y) {
   if (((unsigned int)-1) - x < y) {
     return 1;
