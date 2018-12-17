@@ -89,6 +89,7 @@ module Check : sig
     -> relation:Relation.t
     -> is_plus:bool
     -> last_included:bool
+    -> latest_prune:Dom.LatestPrune.t
     -> Location.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t
@@ -128,6 +129,7 @@ module Check : sig
     -> Binop.t
     -> lhs:Dom.Val.t
     -> rhs:Dom.Val.t
+    -> latest_prune:Dom.LatestPrune.t
     -> Location.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t

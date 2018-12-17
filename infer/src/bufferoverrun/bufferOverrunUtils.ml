@@ -216,7 +216,7 @@ end
 
 module Check = struct
   let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces ~last_included
-      location cond_set =
+      ~latest_prune location cond_set =
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
         let offset =
@@ -229,12 +229,13 @@ module Check = struct
         in
         let arr_traces = Dom.Val.get_traces arr in
         PO.ConditionSet.add_array_access location ~size:length ~offset ~idx ~size_sym_exp
-          ~idx_sym_exp ~relation ~last_included ~idx_traces ~arr_traces cond_set
+          ~idx_sym_exp ~relation ~last_included ~idx_traces ~arr_traces ~latest_prune cond_set
     | _ ->
         cond_set
 
 
-  let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included location cond_set =
+  let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included ~latest_prune location
+      cond_set =
     let arr_blk = Dom.Val.get_array_blk arr in
     let size = ArrayBlk.sizeof arr_blk in
     let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
@@ -251,7 +252,7 @@ module Check = struct
       "@[<v 2>Add condition :@,array: %a@,  idx: %a + %a@,@]@." ArrayBlk.pp arr_blk Itv.pp
       (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
     check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces ~last_included
-      location cond_set
+      ~latest_prune location cond_set
 
 
   let collection_access integer_type_widths ~array_exp ~index_exp ~last_included mem location
@@ -262,8 +263,9 @@ module Check = struct
     let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
     let idx = Dom.Val.get_itv idx in
     let relation = Dom.Mem.get_relation mem in
+    let latest_prune = Dom.Mem.get_latest_prune mem in
     check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
-      ~last_included location cond_set
+      ~last_included ~latest_prune location cond_set
 
 
   let lindex integer_type_widths ~array_exp ~index_exp ~last_included mem location cond_set =
@@ -273,7 +275,9 @@ module Check = struct
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) index_exp
     in
     let relation = Dom.Mem.get_relation mem in
-    array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included location cond_set
+    let latest_prune = Dom.Mem.get_latest_prune mem in
+    array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included ~latest_prune
+      location cond_set
 
 
   let array_access_byte ~arr ~idx ~relation ~is_plus ~last_included location cond_set =
@@ -294,10 +298,12 @@ module Check = struct
     let idx = Sem.eval integer_type_widths byte_index_exp mem in
     let arr = Sem.eval_arr integer_type_widths array_exp mem in
     let relation = Dom.Mem.get_relation mem in
-    array_access_byte ~arr ~idx ~relation ~is_plus:true ~last_included location cond_set
+    let latest_prune = Dom.Mem.get_latest_prune mem in
+    array_access_byte ~arr ~idx ~relation ~is_plus:true ~last_included ~latest_prune location
+      cond_set
 
 
-  let binary_operation integer_type_widths bop ~lhs ~rhs location cond_set =
+  let binary_operation integer_type_widths bop ~lhs ~rhs ~latest_prune location cond_set =
     let lhs_itv = Dom.Val.get_itv lhs in
     let rhs_itv = Dom.Val.get_itv rhs in
     match (lhs_itv, rhs_itv) with
@@ -307,7 +313,7 @@ module Check = struct
           Itv.ItvPure.pp lhs_itv Itv.ItvPure.pp rhs_itv ;
         PO.ConditionSet.add_binary_operation integer_type_widths location bop ~lhs:lhs_itv
           ~rhs:rhs_itv ~lhs_traces:(Dom.Val.get_traces lhs) ~rhs_traces:(Dom.Val.get_traces rhs)
-          cond_set
+          ~latest_prune cond_set
     | _, _ ->
         cond_set
 end

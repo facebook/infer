@@ -110,7 +110,7 @@ void call_conditional_buffer_access3_1_Good() {
   conditional_buffer_access3(a, 2);
 }
 
-void call_conditional_buffer_access3_2_Good_FP() {
+void call_conditional_buffer_access3_2_Good() {
   int a[1];
   a[0] = E_SIZEONE;
   conditional_buffer_access3(a, 1);

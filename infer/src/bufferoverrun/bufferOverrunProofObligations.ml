@@ -672,9 +672,12 @@ end
 
 module ConditionWithTrace = struct
   type 'cond_trace t0 =
-    {cond: Condition.t; trace: 'cond_trace ConditionTrace.t0; reported: Reported.t option}
+    { cond: Condition.t
+    ; trace: 'cond_trace ConditionTrace.t0
+    ; reported: Reported.t option
+    ; latest_prune: Dom.LatestPrune.t }
 
-  let make cond trace = {cond; trace; reported= None}
+  let make cond trace latest_prune = {cond; trace; reported= None; latest_prune}
 
   let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
 
@@ -695,26 +698,29 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst {Dom.eval_sym; trace_of_sym} rel_map caller_relation callee_pname call_site cwt =
+  let subst ({Dom.eval_sym; trace_of_sym} as eval_sym_trace) rel_map caller_relation callee_pname
+      call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if Symb.SymbolSet.is_empty symbols then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
         pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
-    match Condition.subst eval_sym rel_map caller_relation cwt.cond with
-    | None ->
-        None
-    | Some cond ->
-        let traces_caller =
-          Symb.SymbolSet.fold
-            (fun symbol val_traces -> ValTrace.Set.join (trace_of_sym symbol) val_traces)
-            symbols ValTrace.Set.empty
-        in
-        let trace =
-          ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
-        in
-        Some {cond; trace; reported= cwt.reported}
+    Option.find_map (Dom.LatestPrune.subst cwt.latest_prune eval_sym_trace call_site)
+      ~f:(fun latest_prune ->
+        match Condition.subst eval_sym rel_map caller_relation cwt.cond with
+        | None ->
+            None
+        | Some cond ->
+            let traces_caller =
+              Symb.SymbolSet.fold
+                (fun symbol val_traces -> ValTrace.Set.join (trace_of_sym symbol) val_traces)
+                symbols ValTrace.Set.empty
+            in
+            let trace =
+              ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
+            in
+            Some {cond; trace; reported= cwt.reported; latest_prune} )
 
 
   let set_u5 {cond; trace} issue_type =
@@ -761,8 +767,7 @@ module ConditionWithTrace = struct
 
   let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
 
-  let for_summary {cond; trace; reported} =
-    {cond; trace= ConditionTrace.for_summary trace; reported}
+  let for_summary cwt = {cwt with trace= ConditionTrace.for_summary cwt.trace}
 end
 
 module ConditionSet = struct
@@ -832,35 +837,37 @@ module ConditionSet = struct
 
   let check_one cwt = (cwt, ConditionWithTrace.check cwt)
 
-  let add_opt location val_traces condset = function
+  let add_opt location val_traces latest_prune condset = function
     | None ->
         condset
     | Some cond ->
         let trace = ConditionTrace.make location val_traces in
-        let cwt = ConditionWithTrace.make cond trace in
+        let cwt = ConditionWithTrace.make cond trace latest_prune in
         join_one condset (check_one cwt)
 
 
   let add_array_access location ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
-      ~relation ~idx_traces ~arr_traces condset =
+      ~relation ~idx_traces ~arr_traces ~latest_prune condset =
     ArrayAccessCondition.make ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp
       ~relation
     |> Condition.make_array_access
     |> add_opt location
          (ValTrace.Issue.(binary location ArrayAccess) idx_traces arr_traces)
-         condset
+         latest_prune condset
 
 
-  let add_alloc_size location ~length val_traces condset =
+  let add_alloc_size location ~length val_traces latest_prune condset =
     AllocSizeCondition.make ~length |> Condition.make_alloc_size
-    |> add_opt location (ValTrace.Issue.alloc location val_traces) condset
+    |> add_opt location (ValTrace.Issue.alloc location val_traces) latest_prune condset
 
 
   let add_binary_operation integer_type_widths location bop ~lhs ~rhs ~lhs_traces ~rhs_traces
-      condset =
+      ~latest_prune condset =
     BinaryOperationCondition.make integer_type_widths bop ~lhs ~rhs
     |> Condition.make_binary_operation
-    |> add_opt location (ValTrace.Issue.(binary location Binop) lhs_traces rhs_traces) condset
+    |> add_opt location
+         (ValTrace.Issue.(binary location Binop) lhs_traces rhs_traces)
+         latest_prune condset
 
 
   let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site =

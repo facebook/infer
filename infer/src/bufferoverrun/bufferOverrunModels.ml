@@ -64,7 +64,8 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
       cond_set
   | NonBottom length ->
       let traces = Dom.Val.get_traces v_length in
-      PO.ConditionSet.add_alloc_size location ~length traces cond_set
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      PO.ConditionSet.add_alloc_size location ~length traces latest_prune cond_set
 
 
 let malloc size_exp =

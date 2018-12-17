@@ -359,8 +359,9 @@ module Report = struct
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) e2
     in
     let relation = Dom.Mem.get_relation mem in
+    let latest_prune = Dom.Mem.get_latest_prune mem in
     BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included:false
-      location cond_set
+      ~latest_prune location cond_set
 
 
   let check_binop :
@@ -414,8 +415,9 @@ module Report = struct
         let arr = Sem.eval integer_type_widths exp mem in
         let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
         let relation = Dom.Mem.get_relation mem in
+        let latest_prune = Dom.Mem.get_latest_prune mem in
         BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true
-          ~last_included:false location cond_set
+          ~last_included:false ~latest_prune location cond_set
     | Exp.BinOp (bop, e1, e2) ->
         check_binop integer_type_widths ~bop ~e1 ~e2 location mem cond_set
     | _ ->
@@ -427,8 +429,9 @@ module Report = struct
     | Binop.PlusA (Some _) | Binop.MinusA (Some _) | Binop.Mult (Some _) ->
         let lhs_v = Sem.eval integer_type_widths lhs mem in
         let rhs_v = Sem.eval integer_type_widths rhs mem in
-        BoUtils.Check.binary_operation integer_type_widths bop ~lhs:lhs_v ~rhs:rhs_v location
-          cond_set
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.binary_operation integer_type_widths bop ~lhs:lhs_v ~rhs:rhs_v ~latest_prune
+          location cond_set
     | _ ->
         cond_set
 

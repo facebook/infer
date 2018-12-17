@@ -46,11 +46,17 @@ module ConditionSet : sig
     -> relation:Relation.t
     -> idx_traces:BufferOverrunTrace.Set.t
     -> arr_traces:BufferOverrunTrace.Set.t
+    -> latest_prune:BufferOverrunDomain.LatestPrune.t
     -> checked_t
     -> checked_t
 
   val add_alloc_size :
-    Location.t -> length:ItvPure.t -> BufferOverrunTrace.Set.t -> checked_t -> checked_t
+       Location.t
+    -> length:ItvPure.t
+    -> BufferOverrunTrace.Set.t
+    -> BufferOverrunDomain.LatestPrune.t
+    -> checked_t
+    -> checked_t
 
   val add_binary_operation :
        Typ.IntegerWidths.t
@@ -60,6 +66,7 @@ module ConditionSet : sig
     -> rhs:ItvPure.t
     -> lhs_traces:BufferOverrunTrace.Set.t
     -> rhs_traces:BufferOverrunTrace.Set.t
+    -> latest_prune:BufferOverrunDomain.LatestPrune.t
     -> checked_t
     -> checked_t
 

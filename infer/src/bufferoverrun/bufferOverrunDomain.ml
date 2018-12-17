@@ -647,7 +647,23 @@ end
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
    in the latest pruning.  It uses [InvertedMap] because more pruning means smaller abstract
    states. *)
-module PrunePairs = AbstractDomain.InvertedMap (Loc) (Val)
+module PrunePairs = struct
+  include AbstractDomain.InvertedMap (Loc) (Val)
+
+  (* [subst] returns [None] if a pruned value is bottom, i.g., unreachable. *)
+  let subst x eval_sym_trace location =
+    let exception Unreachable in
+    let is_empty_val v =
+      Itv.is_empty (Val.get_itv v)
+      && PowLoc.is_empty (Val.get_pow_loc v)
+      && ArrayBlk.is_empty (Val.get_array_blk v)
+    in
+    let subst1 x =
+      let v = Val.subst x eval_sym_trace location in
+      if is_empty_val v then raise Unreachable else v
+    in
+    match map subst1 x with x -> Some x | exception Unreachable -> None
+end
 
 module LatestPrune = struct
   (* Latest p: The pruned pairs 'p' has pruning information (which
@@ -744,6 +760,21 @@ module LatestPrune = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let top = Top
+
+  let subst x eval_sym_trace location =
+    match x with
+    | Latest p ->
+        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> Latest p)
+    | TrueBranch (x, p) ->
+        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> TrueBranch (x, p))
+    | FalseBranch (x, p) ->
+        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> FalseBranch (x, p))
+    | V (x, ptrue, pfalse) ->
+        Option.map2 (PrunePairs.subst ptrue eval_sym_trace location)
+          (PrunePairs.subst pfalse eval_sym_trace location) ~f:(fun ptrue pfalse ->
+            V (x, ptrue, pfalse) )
+    | Top ->
+        Some x
 end
 
 module MemReach = struct
@@ -968,6 +999,8 @@ module MemReach = struct
         {m with latest_prune= LatestPrune.Top}
 
 
+  let get_latest_prune : t -> LatestPrune.t = fun {latest_prune} -> latest_prune
+
   let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
       if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
@@ -1130,6 +1163,10 @@ module Mem = struct
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
    fun e1 e2 -> map ~f:(MemReach.update_latest_prune e1 e2)
+
+
+  let get_latest_prune : t -> LatestPrune.t =
+    f_lift_default ~default:LatestPrune.Top MemReach.get_latest_prune
 
 
   let get_relation : t -> Relation.t =
