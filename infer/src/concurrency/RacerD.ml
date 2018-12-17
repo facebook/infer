@@ -273,14 +273,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | False ->
           (* precondition can't be satisfied *)
           acc
-      | Conjunction actual_indexes -> (
-        match List.nth actuals actual_index with
-        | Some actual ->
-            conjoin_ownership_precondition actual actual_indexes
-        | None ->
-            L.internal_error "Bad actual index %d for callee %a with %d actuals." actual_index
-              Typ.Procname.pp callee_pname (List.length actuals) ;
-            acc )
+      | Conjunction actual_indexes ->
+          List.nth actuals actual_index
+          (* optional args can result into missing actuals so simply ignore *)
+          |> Option.value_map ~default:acc ~f:(fun actual ->
+                 conjoin_ownership_precondition actual actual_indexes )
     in
     let update_callee_access (snapshot : AccessSnapshot.t) acc =
       let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
