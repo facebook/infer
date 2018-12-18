@@ -663,6 +663,9 @@ module PrunePairs = struct
       if is_empty_val v then raise Unreachable else v
     in
     match map subst1 x with x -> Some x | exception Unreachable -> None
+
+
+  let forget locs x = filter (fun l _ -> not (PowLoc.mem l locs)) x
 end
 
 module LatestPrune = struct
@@ -775,6 +778,22 @@ module LatestPrune = struct
             V (x, ptrue, pfalse) )
     | Top ->
         Some x
+
+
+  let forget locs =
+    let is_mem_locs x = PowLoc.mem (Loc.of_pvar x) locs in
+    function
+    | Latest p ->
+        Latest (PrunePairs.forget locs p)
+    | TrueBranch (x, p) ->
+        if is_mem_locs x then Top else TrueBranch (x, PrunePairs.forget locs p)
+    | FalseBranch (x, p) ->
+        if is_mem_locs x then Top else FalseBranch (x, PrunePairs.forget locs p)
+    | V (x, ptrue, pfalse) ->
+        if is_mem_locs x then Top
+        else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
+    | Top ->
+        Top
 end
 
 module MemReach = struct
@@ -988,15 +1007,15 @@ module MemReach = struct
         m
 
 
-  let update_latest_prune : Exp.t -> Exp.t -> t -> t =
-   fun e1 e2 m ->
+  let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
+   fun ~updated_locs e1 e2 m ->
     match (e1, e2, m.latest_prune) with
     | Lvar x, Const (Const.Cint i), LatestPrune.Latest p ->
         if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
         else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
-        else {m with latest_prune= LatestPrune.Top}
+        else {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
     | _, _, _ ->
-        {m with latest_prune= LatestPrune.Top}
+        {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
 
 
   let get_latest_prune : t -> LatestPrune.t = fun {latest_prune} -> latest_prune
@@ -1161,8 +1180,8 @@ module Mem = struct
 
   let apply_latest_prune : Exp.t -> t -> t = fun e -> map ~f:(MemReach.apply_latest_prune e)
 
-  let update_latest_prune : Exp.t -> Exp.t -> t -> t =
-   fun e1 e2 -> map ~f:(MemReach.update_latest_prune e1 e2)
+  let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
+   fun ~updated_locs e1 e2 -> map ~f:(MemReach.update_latest_prune ~updated_locs e1 e2)
 
 
   let get_latest_prune : t -> LatestPrune.t =

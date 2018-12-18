@@ -26,7 +26,7 @@ void conditional_buffer_access(int* ptr, unsigned int size) {
   }
 }
 
-void call_conditional_buffer_access_Good_FP() {
+void call_conditional_buffer_access_Good() {
   int a[1];
   conditional_buffer_access(a, 1);
 }
@@ -41,13 +41,9 @@ void conditional_buffer_access2(unsigned int n) {
   conditional_buffer_access(a, n);
 }
 
-void call_conditional_buffer_access2_1_Good_FP() {
-  conditional_buffer_access2(1);
-}
+void call_conditional_buffer_access2_1_Good() { conditional_buffer_access2(1); }
 
-void call_conditional_buffer_access2_2_Good_FP() {
-  conditional_buffer_access2(3);
-}
+void call_conditional_buffer_access2_2_Good() { conditional_buffer_access2(3); }
 
 void conditional_minus(int* ptr, unsigned int size) {
   int i = 0;

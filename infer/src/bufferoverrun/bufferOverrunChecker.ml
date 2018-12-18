@@ -226,7 +226,7 @@ module TransferFunctions = struct
                 mem
           else mem
         in
-        let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
+        let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
         mem
     | Prune (exp, _, _, _) ->
         Sem.Prune.prune integer_type_widths exp mem

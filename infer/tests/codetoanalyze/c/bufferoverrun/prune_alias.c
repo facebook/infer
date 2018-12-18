@@ -264,3 +264,19 @@ void call_latest_prune_join_3_Bad() {
   int a[2];
   latest_prune_join(a, 3);
 }
+
+void forget_locs_latest_prune(unsigned int n) {
+  int x;
+  int* a[5];
+  if (n < 5) {
+    x = 1;
+  } else {
+    x = 0;
+    x = 2;
+  }
+  if (x) {
+    a[n] = 0;
+  }
+}
+
+void call_forget_locs_latest_prune_Bad() { forget_locs_latest_prune(10); }
