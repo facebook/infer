@@ -1,1 +1,2 @@
 codetoanalyze/java/bufferoverrun/Array.java, codetoanalyze.java.bufferoverrun.Array.collection_add_zero_Bad():java.util.ArrayList, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset: 0 Size: 0]
+codetoanalyze/java/bufferoverrun/CompressedData.java, codetoanalyze.java.bufferoverrun.CompressedData.decompressData(codetoanalyze.java.bufferoverrun.CompressedData$D):int, 9, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([0, this.yy.ub - 1] × [-oo, +oo]):signed32]

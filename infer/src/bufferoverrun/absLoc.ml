@@ -126,7 +126,7 @@ module Loc = struct
     | Field (Allocsite (Allocsite.Known {path= Some (SP.Deref (SP.Deref_CPointer, p))}), f) ->
         F.fprintf fmt "%a->%s" (SP.pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string f)
     | Field (l, f) ->
-        F.fprintf fmt "%a.%a" (pp_paren ~paren:true) l Typ.Fieldname.pp f
+        F.fprintf fmt "%a.%s" (pp_paren ~paren:true) l (Typ.Fieldname.to_flat_string f)
 
 
   let pp = pp_paren ~paren:false
