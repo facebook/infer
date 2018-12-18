@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t = Typ.Procname.t * RacerDDomain.TraceElem.t * Location.t list
+type t = Location.t list
 
 val encode : t -> string
 

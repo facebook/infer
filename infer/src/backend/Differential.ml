@@ -45,7 +45,7 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
     ~f:(fun (reported_ends, nondup_issues) (issue : Jsonbug_t.jsonbug) ->
       match issue.access with
       | Some encoded ->
-          let _, _, end_locs = IssueAuxData.decode encoded in
+          let end_locs = IssueAuxData.decode encoded in
           if is_duplicate_report end_locs reported_ends then (reported_ends, nondup_issues)
           else (LocListSet.add reported_ends end_locs, {issue with access= None} :: nondup_issues)
       | None ->

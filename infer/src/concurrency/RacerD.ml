@@ -885,7 +885,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
       let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
       let error_message = F.sprintf "%s%s" description explanation in
       let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
-      let access = IssueAuxData.encode (pname, access, end_locs) in
+      let access = IssueAuxData.encode end_locs in
       log_issue pname ~loc ~ltr ~access issue_type error_message
   in
   let trace_of_pname = trace_of_pname access pdesc in
