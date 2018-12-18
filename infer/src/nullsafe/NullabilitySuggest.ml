@@ -204,7 +204,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
             | None ->
                 (Procdesc.get_loc proc_desc, None)
           in
-          Reporting.log_warning summary ~loc ?ltr IssueType.field_should_be_nullable message
+          Reporting.log_warning summary ~loc ?ltr IssueType.nullsafe_field_not_nullable message
       | _ ->
           ()
     in

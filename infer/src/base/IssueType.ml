@@ -254,7 +254,9 @@ let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUT
 
 let failure_exe = from_string "Failure_exe"
 
-let field_should_be_nullable = from_string "FIELD_SHOULD_BE_NULLABLE"
+let nullsafe_field_not_nullable =
+  from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
+
 
 let field_not_null_checked = from_string "IVAR_NOT_NULL_CHECKED"
 
