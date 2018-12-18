@@ -187,6 +187,8 @@ val infinite_execution_time_call : t
 
 val inherently_dangerous_function : t
 
+val insecure_intent_handling : t
+
 val integer_overflow_l1 : t
 
 val integer_overflow_l2 : t

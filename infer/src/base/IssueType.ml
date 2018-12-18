@@ -281,6 +281,8 @@ let infinite_execution_time_call = from_string ~enabled:false "INFINITE_EXECUTIO
 
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
+let insecure_intent_handling = from_string "INSECURE_INTENT_HANDLING"
+
 let integer_overflow_l1 = from_string "INTEGER_OVERFLOW_L1"
 
 let integer_overflow_l2 = from_string "INTEGER_OVERFLOW_L2"

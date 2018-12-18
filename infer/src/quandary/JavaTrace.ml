@@ -14,6 +14,7 @@ module SourceKind = struct
     | DrawableResource of Pvar.t  (** Drawable resource ID read from a global *)
     | Endpoint of (Mangled.t * Typ.desc)  (** source originating from formal of an endpoint *)
     | Intent  (** external Intent or a value read from one *)
+    | IntentForInsecureIntentHandling
     | IntentFromURI  (** Intent created from a URI *)
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
@@ -78,7 +79,9 @@ module SourceKind = struct
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", "getIntent" ->
-              Some [(Intent, return)]
+              Some [(Intent, return); (IntentForInsecureIntentHandling, return)]
+          | "android.support.v4.app.FragmentActivity", "getIntent" ->
+              Some [(IntentForInsecureIntentHandling, return)]
           | "android.content.Intent", "<init>"
             when actual_has_type 2 "android.net.Uri" actuals tenv ->
               (* taint the [this] parameter passed to the constructor *)
@@ -90,6 +93,8 @@ module SourceKind = struct
               | "setDataAndType"
               | "setDataAndTypeAndNormalize" ) ) ->
               Some [(IntentFromURI, return)]
+          | "android.content.Intent", "getData" ->
+              Some [(IntentForInsecureIntentHandling, return)]
           | "android.content.Intent", "getStringExtra" ->
               Some [(Intent, return)]
           | "android.content.SharedPreferences", "getString" ->
@@ -246,7 +251,7 @@ module SourceKind = struct
         F.pp_print_string fmt (Pvar.to_string pvar)
     | Endpoint (formal_name, _) ->
         F.fprintf fmt "Endpoint(%s)" (Mangled.to_string formal_name)
-    | Intent ->
+    | Intent | IntentForInsecureIntentHandling ->
         F.pp_print_string fmt "Intent"
     | IntentFromURI ->
         F.pp_print_string fmt "IntentFromURI"
@@ -277,6 +282,7 @@ module SinkKind = struct
     | SQLRead  (** escaped read to a SQL database *)
     | SQLWrite  (** escaped write to a SQL database *)
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
+    | StartComponentForInsecureIntentHandling
     | Other  (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
@@ -309,6 +315,8 @@ module SinkKind = struct
         SQLWrite
     | "StartComponent" ->
         StartComponent
+    | "StartComponentForInsecureIntentHandling" ->
+        StartComponentForInsecureIntentHandling
     | _ ->
         Other
 
@@ -377,6 +385,11 @@ module SinkKind = struct
           | ( ( "android.app.Fragment"
               | "android.content.Context"
               | "android.support.v4.app.Fragment" )
+            , "startActivity" ) ->
+              taint_nth 0 [StartComponent; StartComponentForInsecureIntentHandling]
+          | ( ( "android.app.Fragment"
+              | "android.content.Context"
+              | "android.support.v4.app.Fragment" )
             , ( "bindService"
               | "sendBroadcast"
               | "sendBroadcastAsUser"
@@ -387,7 +400,6 @@ module SinkKind = struct
               | "sendStickyOrderedBroadcast"
               | "sendStickyOrderedBroadcastAsUser"
               | "startActivities"
-              | "startActivity"
               | "startActivityForResult"
               | "startActivityIfNeeded"
               | "startNextMatchingActivity"
@@ -485,7 +497,7 @@ module SinkKind = struct
           "SQLRead"
       | SQLWrite ->
           "SQLWrite"
-      | StartComponent ->
+      | StartComponent | StartComponentForInsecureIntentHandling ->
           "StartComponent"
       | Other ->
           "Other" )
@@ -580,6 +592,8 @@ include Trace.Make (struct
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
+    | IntentForInsecureIntentHandling, StartComponentForInsecureIntentHandling ->
+        Some IssueType.insecure_intent_handling
     | IntentFromURI, StartComponent ->
         (* create an intent/start a component using a (possibly user-controlled) URI. may or may not
            be an issue; depends on where the URI comes from *)
@@ -593,11 +607,8 @@ include Trace.Make (struct
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
-    | DrawableResource _, _
-    | IntentFromURI, _
-    | PrivateData, _
-    | _, Logging
-    | _, OpenDrawableResource
-    | _, StartComponent ->
+    | (DrawableResource _ | IntentForInsecureIntentHandling | IntentFromURI | PrivateData), _
+    | _, (Logging | OpenDrawableResource | StartComponent | StartComponentForInsecureIntentHandling)
+      ->
         None
 end)
