@@ -231,8 +231,7 @@ struct A2 {
   const B* f;
 };
 
-// need interprocedural analysis to fix this
-void FP_destructor_order_empty_destructor_ok() {
+void destructor_order_empty_destructor_ok() {
   A2 a;
   B b;
   a.f = &b;
