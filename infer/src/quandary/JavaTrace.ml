@@ -606,7 +606,9 @@ include Trace.Make (struct
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
-    | IntentForInsecureIntentHandling _, StartComponentForInsecureIntentHandling ->
+    | IntentForInsecureIntentHandling {exposed= true}, StartComponentForInsecureIntentHandling ->
+        Some IssueType.exposed_insecure_intent_handling
+    | IntentForInsecureIntentHandling {exposed= false}, StartComponentForInsecureIntentHandling ->
         Some IssueType.insecure_intent_handling
     | IntentFromURI, StartComponent ->
         (* create an intent/start a component using a (possibly user-controlled) URI. may or may not

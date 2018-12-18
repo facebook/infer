@@ -252,6 +252,8 @@ let eradicate_value_not_present =
 
 let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUTION_TIME_CALL"
 
+let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HANDLING"
+
 let failure_exe = from_string "Failure_exe"
 
 let nullsafe_field_not_nullable =
