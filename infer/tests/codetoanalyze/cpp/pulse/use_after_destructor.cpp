@@ -247,7 +247,8 @@ std::unique_ptr<A>* allocate_in_branch_ok(bool b) {
     a3 = &a2;
   }
 
-  return a3;
+  // read a3
+  const B* read = (*a3)->f;
 }
 
 } // namespace use_after_destructor
