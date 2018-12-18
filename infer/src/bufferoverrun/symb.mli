@@ -34,6 +34,8 @@ module SymbolPath : sig
 
   val pp_partial_paren : paren:bool -> F.formatter -> partial -> unit
 
+  val pp_pointer : paren:bool -> F.formatter -> partial -> unit
+
   val of_pvar : Pvar.t -> partial
 
   val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial

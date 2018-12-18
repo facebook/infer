@@ -124,9 +124,11 @@ module Loc = struct
         Allocsite.pp_paren ~paren fmt a
     | Field (Allocsite (Allocsite.Symbol (SP.Deref (SP.Deref_CPointer, p))), f)
     | Field (Allocsite (Allocsite.Known {path= Some (SP.Deref (SP.Deref_CPointer, p))}), f) ->
-        F.fprintf fmt "%a->%s" (SP.pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string f)
+        BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true)
+          ~pp_lhs_alone:(SP.pp_pointer ~paren) ~sep:"->" fmt p f
     | Field (l, f) ->
-        F.fprintf fmt "%a.%s" (pp_paren ~paren:true) l (Typ.Fieldname.to_flat_string f)
+        BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~pp_lhs_alone:(pp_paren ~paren)
+          ~sep:"." fmt l f
 
 
   let pp = pp_paren ~paren:false

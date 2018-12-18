@@ -60,15 +60,21 @@ module SymbolPath = struct
     | Deref (Deref_ArrayIndex, p) ->
         F.fprintf fmt "%a[*]" (pp_partial_paren ~paren:true) p
     | Deref (Deref_CPointer, p) ->
-        if paren then F.fprintf fmt "(" ;
-        F.fprintf fmt "*%a" (pp_partial_paren ~paren:false) p ;
-        if paren then F.fprintf fmt ")"
+        pp_pointer ~paren fmt p
     | Field (fn, Deref (Deref_CPointer, p)) ->
-        F.fprintf fmt "%a->%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
+        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
+          ~pp_lhs_alone:(pp_pointer ~paren) ~sep:"->" fmt p fn
     | Field (fn, p) ->
-        F.fprintf fmt "%a.%s" (pp_partial_paren ~paren:true) p (Typ.Fieldname.to_flat_string fn)
+        BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
+          ~pp_lhs_alone:(pp_partial_paren ~paren) ~sep:"." fmt p fn
     | Callsite {cs} ->
         F.fprintf fmt "%s" (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname cs))
+
+
+  and pp_pointer ~paren fmt p =
+    if paren then F.fprintf fmt "(" ;
+    F.fprintf fmt "*%a" (pp_partial_paren ~paren:false) p ;
+    if paren then F.fprintf fmt ")"
 
 
   let pp_partial = pp_partial_paren ~paren:false
