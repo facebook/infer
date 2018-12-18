@@ -217,24 +217,32 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
         in
         let curr_cost_info, curr_cost = max_degree_polynomial current in
         let _, prev_cost = max_degree_polynomial previous in
-        let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
-        let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
-        if cmp > 0 then
-          (* introduced *)
-          let left' =
-            issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost |> concat_opt left
-          in
-          (left', both, right)
-        else if cmp < 0 then
-          (* fixed *)
-          let right' =
-            issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
-            |> concat_opt right
-          in
-          (left, both, right')
-        else
-          (* preexisting costs are not issues, since their values have not changed *)
+        if
+          Config.filtering
+          && (CostDomain.BasicCost.is_one curr_cost || CostDomain.BasicCost.is_one prev_cost)
+        then
+          (* transitions to/from zero costs are obvious, no need to flag them *)
           (left, both, right)
+        else
+          let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
+          let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
+          if cmp > 0 then
+            (* introduced *)
+            let left' =
+              issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
+              |> concat_opt left
+            in
+            (left', both, right)
+          else if cmp < 0 then
+            (* fixed *)
+            let right' =
+              issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+              |> concat_opt right
+            in
+            (left, both, right')
+          else
+            (* preexisting costs are not issues, since their values have not changed *)
+            (left, both, right)
     | `Left _ | `Right _ ->
         (* costs available only on one of the two reports are discarded, since no comparison can be made *)
         (left, both, right)

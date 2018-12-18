@@ -33,6 +33,8 @@ module NonNegativePolynomial : sig
 
   val is_zero : t -> bool
 
+  val is_one : t -> bool
+
   val of_non_negative_bound : Bounds.NonNegativeBound.t -> t
 
   val plus : t -> t -> t
