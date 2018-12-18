@@ -179,7 +179,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
       || is_unused_tmp_var pvar
       || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
       || Domain.mem (Var.of_pvar pvar) live_vars
-      || Procdesc.is_captured_var proc_desc pvar
+      || Procdesc.is_captured_pvar proc_desc pvar
       || is_scope_guard typ
       || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in

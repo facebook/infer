@@ -114,7 +114,16 @@ std::function<int()> FN_ref_capture_return_lambda_bad() {
             // stack address
 }
 
-int ref_capture_return_local_lambda_ok() {
+S& lambda_return_local_bad() {
+  S x;
+  auto f = [&x](void) -> S& {
+    S y;
+    return y;
+  };
+  return f();
+}
+
+int ref_capture_return_enclosing_local_lambda_ok() {
   S x;
   auto f = [&x](void) -> S& {
     // do not report this because there is a good chance that this function will
@@ -124,7 +133,7 @@ int ref_capture_return_local_lambda_ok() {
   return f().f;
 }
 
-S& fn_ref_capture_return_local_lambda_bad() {
+S& FN_ref_capture_return_enclosing_local_lambda_bad() {
   S x;
   auto f = [&x](void) -> S& {
     // no way to know if ok here

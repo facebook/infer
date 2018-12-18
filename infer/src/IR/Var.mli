@@ -31,9 +31,9 @@ val get_ident : t -> Ident.t option
 
 val get_pvar : t -> Pvar.t option
 
-val get_mangled : t -> Mangled.t option
-
 val is_global : t -> bool
+
+val is_local_to_procedure : Typ.Procname.t -> t -> bool
 
 val is_return : t -> bool
 

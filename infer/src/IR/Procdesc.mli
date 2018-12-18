@@ -288,8 +288,11 @@ val pp_local : Format.formatter -> ProcAttributes.var_data -> unit
 
 val is_specialized : t -> bool
 
-val is_captured_var : t -> Pvar.t -> bool
+val is_captured_pvar : t -> Pvar.t -> bool
 (** true if pvar is a captured variable of a cpp lambda or obcj block *)
+
+val is_captured_var : t -> Var.t -> bool
+(** true if var is a captured variable of a cpp lambda or obcj block *)
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 

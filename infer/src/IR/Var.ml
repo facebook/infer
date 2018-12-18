@@ -36,8 +36,6 @@ let get_ident = function ProgramVar _ -> None | LogicalVar id -> Some id
 
 let get_pvar = function ProgramVar pvar -> Some pvar | LogicalVar _ -> None
 
-let get_mangled = function ProgramVar pvar -> Some (Pvar.get_name pvar) | LogicalVar _ -> None
-
 let is_global = function ProgramVar pvar -> Pvar.is_global pvar | LogicalVar _ -> false
 
 let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -> false
@@ -47,6 +45,17 @@ let is_this = function ProgramVar pvar -> Pvar.is_this pvar | LogicalVar _ -> fa
 let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_footprint id
 
 let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
+
+let get_declaring_function = function
+  | LogicalVar _ ->
+      None
+  | ProgramVar pvar ->
+      Pvar.get_declaring_function pvar
+
+
+let is_local_to_procedure proc_name var =
+  get_declaring_function var |> Option.exists ~f:(Typ.Procname.equal proc_name)
+
 
 let get_all_vars_in_exp e =
   let acc = Exp.free_vars e |> Sequence.map ~f:of_id in

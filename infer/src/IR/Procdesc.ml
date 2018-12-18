@@ -710,7 +710,7 @@ let is_specialized pdesc =
 
 
 (* true if pvar is a captured variable of a cpp lambda or objc block *)
-let is_captured_var procdesc pvar =
+let is_captured_pvar procdesc pvar =
   let procname = get_proc_name procdesc in
   let pvar_name = Pvar.get_name pvar in
   let pvar_local_matches (var_data : ProcAttributes.var_data) =
@@ -733,6 +733,10 @@ let is_captured_var procdesc pvar =
     Typ.Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
   in
   is_captured_var_cpp_lambda || is_captured_var_objc_block
+
+
+let is_captured_var procdesc var =
+  Var.get_pvar var |> Option.exists ~f:(fun pvar -> is_captured_pvar procdesc pvar)
 
 
 let has_modify_in_block_attr procdesc pvar =

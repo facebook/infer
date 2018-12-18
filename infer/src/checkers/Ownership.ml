@@ -382,13 +382,14 @@ end
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Exceptional))
 
 let report_invalid_return post end_loc summary =
-  let locals =
-    Procdesc.get_locals summary.Summary.proc_desc |> List.map ~f:(fun {ProcAttributes.name} -> name)
-  in
+  let proc_name = Summary.get_proc_name summary in
   let is_local_to_procedure var =
-    Var.get_mangled var
-    |> Option.value_map ~default:false ~f:(fun mangled ->
-           List.mem ~equal:Mangled.equal locals mangled )
+    (* In case of lambdas, only report on variables local to the lambda that are not captured from
+         the enclosing procedure to avoid false positives in case the lambda is called within the
+         same procedure (which is frequent, at the cost of false negatives in case this lambda is
+         returned to the caller). *)
+    Var.is_local_to_procedure proc_name var
+    && not (Procdesc.is_captured_var summary.Summary.proc_desc var)
   in
   (* look for return values that are borrowed from (now-invalid) local variables *)
   let report_invalid_return base (capability : CapabilityDomain.t) =

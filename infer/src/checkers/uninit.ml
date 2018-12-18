@@ -69,7 +69,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match (HilExp.AccessExpression.get_typ access_expr tenv, base) with
     | Some typ, (Var.ProgramVar pv, _) ->
         (not (Pvar.is_frontend_tmp pv))
-        && (not (Procdesc.is_captured_var pdesc pv))
+        && (not (Procdesc.is_captured_pvar pdesc pv))
         && MaybeUninitVars.mem access_expr maybe_uninit_vars
         && should_report_on_type typ
     | _, _ ->
