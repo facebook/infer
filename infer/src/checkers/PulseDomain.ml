@@ -48,6 +48,7 @@ module Attribute = struct
   type t =
     (* DO NOT MOVE, see toplevel comment *)
     | Invalid of Invalidation.t
+    | AddressOfCppTemporary of Var.t
     | Closure of
         Typ.Procname.t
         * (AccessPath.base * HilExp.AccessExpression.t * AbstractAddress.t) list
@@ -58,6 +59,8 @@ module Attribute = struct
   let pp f = function
     | Invalid invalidation ->
         Invalidation.pp f invalidation
+    | AddressOfCppTemporary var ->
+        F.fprintf f "&%a" Var.pp var
     | Closure (pname, captured, location) ->
         F.fprintf f "%a[%a] (%a)" Typ.Procname.pp pname
           (Pp.seq ~sep:","
@@ -763,6 +766,18 @@ module Operations = struct
   let check_address_of_local_variable proc_desc address astate =
     let proc_location = Procdesc.get_loc proc_desc in
     let proc_name = Procdesc.get_proc_name proc_desc in
+    let check_address_of_cpp_temporary () =
+      Memory.find_opt address astate.heap
+      |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
+             Container.fold_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
+               attrs ~init:() ~f:(fun () attr ->
+                 match attr with
+                 | Attribute.AddressOfCppTemporary variable ->
+                     Error
+                       (Diagnostic.StackVariableAddressEscape {variable; location= proc_location})
+                 | _ ->
+                     Ok () ) )
+    in
     let check_address_of_stack_variable () =
       Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold)
         astate.stack ~init:() ~f:(fun () (variable, var_address) ->
@@ -774,12 +789,26 @@ module Operations = struct
           then Error (Diagnostic.StackVariableAddressEscape {variable; location= proc_location})
           else Ok () )
     in
-    check_address_of_stack_variable () >>| fun () -> astate
+    check_address_of_cpp_temporary () >>= check_address_of_stack_variable >>| fun () -> astate
+
+
+  let mark_address_of_cpp_temporary variable address heap =
+    Memory.add_attributes address (Attributes.singleton (AddressOfCppTemporary variable)) heap
 
 
   let remove_vars vars astate =
-    let stack = List.fold ~f:(fun var stack -> Stack.remove stack var) ~init:astate.stack vars in
-    if phys_equal stack astate.stack then astate else {astate with stack}
+    let heap =
+      List.fold vars ~init:astate.heap ~f:(fun heap var ->
+          match Stack.find_opt var astate.stack with
+          | Some address when Var.is_cpp_temporary var ->
+              (* TODO: it would be good to record the location of the temporary creation in the
+                 stack and save it here in the attribute for reporting *)
+              mark_address_of_cpp_temporary var address heap
+          | _ ->
+              heap )
+    in
+    let stack = List.fold ~f:(fun stack var -> Stack.remove var stack) ~init:astate.stack vars in
+    if phys_equal stack astate.stack && phys_equal heap astate.heap then astate else {stack; heap}
 end
 
 module Closures = struct

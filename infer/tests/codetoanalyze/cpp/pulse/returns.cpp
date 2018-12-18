@@ -19,12 +19,12 @@ struct S {
 
 const int& return_literal_stack_reference_bad() { return 1; }
 
-const int& FN_return_variable_stack_reference1_bad() {
+const int& return_variable_stack_reference1_bad() {
   const int& x = 2;
   return x;
 }
 
-const int& FN_return_variable_stack_reference2_bad() {
+const int& return_variable_stack_reference2_bad() {
   const int& x = 2;
   const int& y = x;
   return y;

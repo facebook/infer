@@ -6,6 +6,8 @@ codetoanalyze/cpp/pulse/join.cpp, invalidate_node_alias_bad, 12, USE_AFTER_DELET
 codetoanalyze/cpp/pulse/returns.cpp, returns::return_deleted_bad, 4, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete x` at line 112, column 3 here,accessed `x` here]
 codetoanalyze/cpp/pulse/returns.cpp, returns::return_literal_stack_reference_bad, 0, STACK_VARIABLE_ADDRESS_ESCAPE, no_bucket, ERROR, []
 codetoanalyze/cpp/pulse/returns.cpp, returns::return_stack_pointer_bad, 0, STACK_VARIABLE_ADDRESS_ESCAPE, no_bucket, ERROR, []
+codetoanalyze/cpp/pulse/returns.cpp, returns::return_variable_stack_reference1_bad, 0, STACK_VARIABLE_ADDRESS_ESCAPE, no_bucket, ERROR, []
+codetoanalyze/cpp/pulse/returns.cpp, returns::return_variable_stack_reference2_bad, 0, STACK_VARIABLE_ADDRESS_ESCAPE, no_bucket, ERROR, []
 codetoanalyze/cpp/pulse/use_after_delete.cpp, delete_in_branch_bad, 5, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 57, column 5 here,accessed `s` here]
 codetoanalyze/cpp/pulse/use_after_delete.cpp, delete_in_loop_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 82, column 5 here,accessed `s` here]
 codetoanalyze/cpp/pulse/use_after_delete.cpp, deref_deleted_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete s` at line 18, column 3 here,accessed `s` here]
