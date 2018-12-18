@@ -15,8 +15,8 @@ let report summary diagnostic =
 
 
 let check_error summary = function
-  | Ok astate ->
-      astate
+  | Ok ok ->
+      ok
   | Error diagnostic ->
       report summary diagnostic ;
       (* We can also continue the analysis by returning {!PulseDomain.initial} here but there might
@@ -41,22 +41,31 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let rec exec_assign lhs_access (rhs_exp : HilExp.t) loc astate =
+  let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
+      astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
     match rhs_exp with
-    | AccessExpression rhs_access ->
+    | AccessExpression rhs_access -> (
         PulseDomain.read loc rhs_access astate
-        >>= fun (astate, rhs_value) -> PulseDomain.write loc lhs_access rhs_value astate
+        >>= fun (astate, rhs_value) ->
+        PulseDomain.write loc lhs_access rhs_value astate
+        >>= fun astate ->
+        match lhs_access with
+        | Base (var, _) when Var.is_return var ->
+            PulseDomain.check_address_of_local_variable summary.Summary.proc_desc rhs_value astate
+        | _ ->
+            Ok astate )
     | Closure (pname, captured) ->
         PulseDomain.Closures.record loc lhs_access pname captured astate
     | Cast (_, e) ->
-        exec_assign lhs_access e loc astate
+        exec_assign summary lhs_access e loc astate
     | _ ->
         PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
         >>= PulseDomain.havoc loc lhs_access
 
 
-  let exec_call _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
+  let exec_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc
+      astate =
     let read_all args astate =
       PulseDomain.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
@@ -87,7 +96,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       | [AccessExpression lhs; (HilExp.AccessExpression (AddressOf (Base rhs_base)) as rhs_exp)]
         when Var.is_cpp_temporary (fst rhs_base) ->
           let lhs_deref = HilExp.AccessExpression.dereference lhs in
-          exec_assign lhs_deref rhs_exp call_loc astate
+          exec_assign summary lhs_deref rhs_exp call_loc astate
       (* copy assignment *)
       | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
           let lhs_deref = HilExp.AccessExpression.dereference lhs in
@@ -100,7 +109,8 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
         read_all actuals astate
 
 
-  let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc astate =
+  let dispatch_call summary ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc
+      astate =
     let model =
       match call with
       | Indirect _ ->
@@ -111,7 +121,8 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     in
     match model with
     | None ->
-        exec_call ret call actuals flags call_loc astate >>| PulseDomain.havoc_var (fst ret)
+        exec_call summary ret call actuals flags call_loc astate
+        >>| PulseDomain.havoc_var (fst ret)
     | Some model ->
         model call_loc ~ret ~actuals astate
 
@@ -120,11 +131,11 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        exec_assign lhs_access rhs_exp loc astate |> check_error summary
+        exec_assign summary lhs_access rhs_exp loc astate |> check_error summary
     | Assume (condition, _, _, loc) ->
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
-        dispatch_call ret call actuals flags loc astate |> check_error summary
+        dispatch_call summary ret call actuals flags loc astate |> check_error summary
     | ExitScope vars ->
         PulseDomain.remove_vars vars astate
 

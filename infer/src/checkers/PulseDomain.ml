@@ -489,42 +489,61 @@ module Diagnostic = struct
         ; invalidated_by: Invalidation.t
         ; accessed_by: actor
         ; address: AbstractAddress.t }
+    | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 
-  let get_location (AccessToInvalidAddress {accessed_by= {location}}) = location
-
-  let get_message (AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by; address}) =
-    let pp_debug_address f =
-      if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
-    in
-    F.asprintf "`%a` accesses address %a%a past its lifetime%t" HilExp.AccessExpression.pp
-      accessed_by.access_expr pp_allocator allocated_by Invalidation.pp invalidated_by
-      pp_debug_address
+  let get_location = function
+    | AccessToInvalidAddress {accessed_by= {location}} | StackVariableAddressEscape {location} ->
+        location
 
 
-  let get_trace (AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by}) =
-    let allocated_by_trace =
-      match location_of_allocator allocated_by with
-      | None ->
-          []
-      | Some location ->
-          [Errlog.make_trace_element 0 location (F.asprintf "%ahere" pp_allocator allocated_by) []]
-    in
-    let invalidated_by_trace =
-      Invalidation.get_location invalidated_by
-      |> Option.map ~f:(fun location ->
-             Errlog.make_trace_element 0 location
-               (F.asprintf "%a here" Invalidation.pp invalidated_by)
-               [] )
-      |> Option.to_list
-    in
-    allocated_by_trace @ invalidated_by_trace
-    @ [ Errlog.make_trace_element 0 accessed_by.location
-          (F.asprintf "accessed `%a` here" HilExp.AccessExpression.pp accessed_by.access_expr)
-          [] ]
+  let get_message = function
+    | AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by; address} ->
+        let pp_debug_address f =
+          if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
+        in
+        F.asprintf "`%a` accesses address %a%a past its lifetime%t" HilExp.AccessExpression.pp
+          accessed_by.access_expr pp_allocator allocated_by Invalidation.pp invalidated_by
+          pp_debug_address
+    | StackVariableAddressEscape {variable} ->
+        let pp_var f var =
+          if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
+          else F.fprintf f "stack variable `%a`" Var.pp var
+        in
+        F.asprintf "address of %a is returned by the function" pp_var variable
 
 
-  let get_issue_type (AccessToInvalidAddress {invalidated_by}) =
-    Invalidation.issue_type_of_cause invalidated_by
+  let get_trace = function
+    | AccessToInvalidAddress {allocated_by; accessed_by; invalidated_by} ->
+        let allocated_by_trace =
+          match location_of_allocator allocated_by with
+          | None ->
+              []
+          | Some location ->
+              [ Errlog.make_trace_element 0 location
+                  (F.asprintf "%ahere" pp_allocator allocated_by)
+                  [] ]
+        in
+        let invalidated_by_trace =
+          Invalidation.get_location invalidated_by
+          |> Option.map ~f:(fun location ->
+                 Errlog.make_trace_element 0 location
+                   (F.asprintf "%a here" Invalidation.pp invalidated_by)
+                   [] )
+          |> Option.to_list
+        in
+        allocated_by_trace @ invalidated_by_trace
+        @ [ Errlog.make_trace_element 0 accessed_by.location
+              (F.asprintf "accessed `%a` here" HilExp.AccessExpression.pp accessed_by.access_expr)
+              [] ]
+    | StackVariableAddressEscape _ ->
+        []
+
+
+  let get_issue_type = function
+    | AccessToInvalidAddress {invalidated_by} ->
+        Invalidation.issue_type_of_cause invalidated_by
+    | StackVariableAddressEscape _ ->
+        IssueType.stack_variable_address_escape
 end
 
 type 'a access_result = ('a, Diagnostic.t) result
@@ -739,6 +758,23 @@ module Operations = struct
             | _ ->
                 astate )
           edges astate
+
+
+  let check_address_of_local_variable proc_desc address astate =
+    let proc_location = Procdesc.get_loc proc_desc in
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let check_address_of_stack_variable () =
+      Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold)
+        astate.stack ~init:() ~f:(fun () (variable, var_address) ->
+          if
+            AbstractAddress.equal var_address address
+            && ( Var.is_cpp_temporary variable
+               || Var.is_local_to_procedure proc_name variable
+                  && not (Procdesc.is_captured_var proc_desc variable) )
+          then Error (Diagnostic.StackVariableAddressEscape {variable; location= proc_location})
+          else Ok () )
+    in
+    check_address_of_stack_variable () >>| fun () -> astate
 
 
   let remove_vars vars astate =

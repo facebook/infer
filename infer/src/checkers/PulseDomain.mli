@@ -73,3 +73,5 @@ val invalidate_array_elements :
   PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
 val remove_vars : Var.t list -> t -> t
+
+val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result

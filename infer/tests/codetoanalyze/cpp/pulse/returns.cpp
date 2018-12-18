@@ -17,7 +17,7 @@ struct S {
   ~S() {}
 };
 
-const int& FN_return_literal_stack_reference_bad() { return 1; }
+const int& return_literal_stack_reference_bad() { return 1; }
 
 const int& FN_return_variable_stack_reference1_bad() {
   const int& x = 2;
@@ -82,7 +82,7 @@ const char* return_field_addr_ternary_ok() {
   return t ? *t : "";
 }
 
-int* FN_return_stack_pointer_bad() {
+int* return_stack_pointer_bad() {
   int x = 3;
   return &x;
 }
