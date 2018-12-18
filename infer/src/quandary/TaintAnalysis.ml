@@ -478,7 +478,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       if Var.is_global var then
         let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
         let sources =
-          TraceDomain.Source.get dummy_call_site
+          let caller_pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
+          TraceDomain.Source.get ~caller_pname dummy_call_site
             [HilExp.AccessExpression access_expr]
             proc_data.tenv
         in
@@ -645,7 +646,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               add_sink sink actuals astate proc_data call_site )
       in
       let astate_with_direct_sources =
-        let sources = TraceDomain.Source.get call_site actuals proc_data.tenv in
+        let sources =
+          let caller_pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
+          TraceDomain.Source.get ~caller_pname call_site actuals proc_data.tenv
+        in
         List.fold sources ~init:astate_with_sink
           ~f:(fun astate {TraceDomain.Source.source; index} ->
             match index with

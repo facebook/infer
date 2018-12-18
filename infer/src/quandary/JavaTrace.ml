@@ -14,13 +14,27 @@ module SourceKind = struct
     | DrawableResource of Pvar.t  (** Drawable resource ID read from a global *)
     | Endpoint of (Mangled.t * Typ.desc)  (** source originating from formal of an endpoint *)
     | Intent  (** external Intent or a value read from one *)
-    | IntentForInsecureIntentHandling
+    | IntentForInsecureIntentHandling of {exposed: bool}
     | IntentFromURI  (** Intent created from a URI *)
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
     | UserControlledString  (** data read from a text box or the clipboard service *)
     | UserControlledURI  (** resource locator originating from the browser bar *)
   [@@deriving compare]
+
+  let is_exposed ~caller_pname =
+    match caller_pname with
+    | Typ.Procname.Java java_pname ->
+        let class_name = Typ.Procname.Java.get_class_name java_pname in
+        QuandaryConfig.is_endpoint class_name
+    | _ ->
+        false
+
+
+  let intent_for_insecure_intent_handling ~caller_pname =
+    let exposed = is_exposed ~caller_pname in
+    IntentForInsecureIntentHandling {exposed}
+
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -60,7 +74,7 @@ module SourceKind = struct
         false
 
 
-  let get pname actuals tenv =
+  let get ~caller_pname pname actuals tenv =
     let return = None in
     let get_external_source class_name method_name =
       (* check the list of externally specified sources *)
@@ -79,9 +93,9 @@ module SourceKind = struct
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", "getIntent" ->
-              Some [(Intent, return); (IntentForInsecureIntentHandling, return)]
+              Some [(Intent, return); (intent_for_insecure_intent_handling ~caller_pname, return)]
           | "android.support.v4.app.FragmentActivity", "getIntent" ->
-              Some [(IntentForInsecureIntentHandling, return)]
+              Some [(intent_for_insecure_intent_handling ~caller_pname, return)]
           | "android.content.Intent", "<init>"
             when actual_has_type 2 "android.net.Uri" actuals tenv ->
               (* taint the [this] parameter passed to the constructor *)
@@ -94,7 +108,7 @@ module SourceKind = struct
               | "setDataAndTypeAndNormalize" ) ) ->
               Some [(IntentFromURI, return)]
           | "android.content.Intent", "getData" ->
-              Some [(IntentForInsecureIntentHandling, return)]
+              Some [(intent_for_insecure_intent_handling ~caller_pname, return)]
           | "android.content.Intent", "getStringExtra" ->
               Some [(Intent, return)]
           | "android.content.SharedPreferences", "getString" ->
@@ -251,7 +265,7 @@ module SourceKind = struct
         F.pp_print_string fmt (Pvar.to_string pvar)
     | Endpoint (formal_name, _) ->
         F.fprintf fmt "Endpoint(%s)" (Mangled.to_string formal_name)
-    | Intent | IntentForInsecureIntentHandling ->
+    | Intent | IntentForInsecureIntentHandling _ ->
         F.pp_print_string fmt "Intent"
     | IntentFromURI ->
         F.pp_print_string fmt "IntentFromURI"
@@ -592,7 +606,7 @@ include Trace.Make (struct
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
-    | IntentForInsecureIntentHandling, StartComponentForInsecureIntentHandling ->
+    | IntentForInsecureIntentHandling _, StartComponentForInsecureIntentHandling ->
         Some IssueType.insecure_intent_handling
     | IntentFromURI, StartComponent ->
         (* create an intent/start a component using a (possibly user-controlled) URI. may or may not
@@ -607,7 +621,7 @@ include Trace.Make (struct
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
-    | (DrawableResource _ | IntentForInsecureIntentHandling | IntentFromURI | PrivateData), _
+    | (DrawableResource _ | IntentForInsecureIntentHandling _ | IntentFromURI | PrivateData), _
     | _, (Logging | OpenDrawableResource | StartComponent | StartComponentForInsecureIntentHandling)
       ->
         None
