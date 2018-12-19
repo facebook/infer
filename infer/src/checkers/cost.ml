@@ -603,7 +603,7 @@ type extras_TransferFunctionsWCET =
 
 let compute_errlog_extras cost =
   { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp cost)
-  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.to_int }
+  ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
 
 
 (* Calculate the final Worst Case Execution Time predicted for each node.

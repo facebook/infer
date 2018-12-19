@@ -67,6 +67,8 @@ module NonNegativeInt : sig
 
   val succ : t -> t
 
+  val log2_ceil_exn : t -> t
+
   val ( + ) : t -> t -> t
 
   val ( * ) : t -> t -> t

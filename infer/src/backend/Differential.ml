@@ -111,7 +111,7 @@ module CostsSummary = struct
       DegreeMap.bindings paired_counts.degrees
       |> List.map ~f:(fun (key, {current; previous}) ->
              `Assoc
-               [ ("degree", `Int (Polynomials.Degree.to_int key))
+               [ ("degree", `Int (Polynomials.Degree.encode_to_int key))
                ; ("current", `Int current)
                ; ("previous", `Int previous) ] )
     in

@@ -10,33 +10,115 @@ open! AbstractDomain.Types
 module Bound = Bounds.Bound
 open Ints
 
+module DegreeKind = struct
+  type t = Linear | Log [@@deriving compare]
+
+  let[@warning "-32"] _i_know_log_isn't_used_for_now = Log
+
+  let compute d i =
+    match d with
+    | Linear ->
+        i
+    | Log -> (
+      try NonNegativeInt.log2_ceil_exn i with Invalid_argument _ -> NonNegativeInt.zero )
+
+
+  let pp_hole pp f d x = match d with Linear -> pp f x | Log -> Format.fprintf f "log(%a)" pp x
+end
+
 module Degree = struct
-  type t = NonNegativeInt.t [@@deriving compare]
+  type t = {linear: NonNegativeInt.t; log: NonNegativeInt.t} [@@deriving compare]
 
-  let zero = NonNegativeInt.zero
+  let zero = {linear= NonNegativeInt.zero; log= NonNegativeInt.zero}
 
-  let succ = NonNegativeInt.succ
+  let succ (k : DegreeKind.t) d =
+    match k with
+    | Linear ->
+        {d with linear= NonNegativeInt.succ d.linear}
+    | Log ->
+        {d with log= NonNegativeInt.succ d.log}
 
-  let to_int = NonNegativeInt.to_int_exn
 
-  let is_zero = NonNegativeInt.is_zero
+  let encode_to_int d =
+    (*
+      Constructs an integer compatible with compare.
+      We assume that degrees won't go exceed 100 ;-)
+    *)
+    (NonNegativeInt.to_int_exn d.linear * 100) + NonNegativeInt.to_int_exn d.log
 
-  let pp = NonNegativeInt.pp
+
+  let is_zero d = NonNegativeInt.is_zero d.linear && NonNegativeInt.is_zero d.log
+
+  let pp f d =
+    NonNegativeInt.pp f d.linear ;
+    if not (NonNegativeInt.is_zero d.log) then
+      F.fprintf f " + %a%slog" NonNegativeInt.pp d.log SpecialChars.dot_operator
 end
 
 module type NonNegativeSymbol = sig
   type t [@@deriving compare]
 
+  val classify : t -> (Ints.NonNegativeInt.t, t) Bounds.valclass
+
   val int_lb : t -> NonNegativeInt.t
 
   val int_ub : t -> NonNegativeInt.t option
 
-  val subst : t -> t Symb.Symbol.eval -> (NonNegativeInt.t, t) Bounds.valclass
+  val subst : t -> Bound.eval_sym -> (NonNegativeInt.t, t) Bounds.valclass
 
   val pp : F.formatter -> t -> unit
 end
 
-module MakePolynomial (S : NonNegativeSymbol) = struct
+module type NonNegativeSymbolWithDegreeKind = sig
+  type t0
+
+  include NonNegativeSymbol
+
+  val make : DegreeKind.t -> t0 -> t
+
+  val degree_kind : t -> DegreeKind.t
+end
+
+module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
+  NonNegativeSymbolWithDegreeKind with type t0 = S.t = struct
+  type t0 = S.t [@@deriving compare]
+
+  type t = {degree_kind: DegreeKind.t; symbol: t0} [@@deriving compare]
+
+  let classify ({degree_kind; symbol} as self) =
+    match S.classify symbol with
+    | Constant c ->
+        Bounds.Constant (DegreeKind.compute degree_kind c)
+    | Symbolic _ ->
+        Bounds.Symbolic self
+    | ValTop ->
+        Bounds.ValTop
+
+
+  let make degree_kind symbol = {degree_kind; symbol}
+
+  let int_lb {degree_kind; symbol} = S.int_lb symbol |> DegreeKind.compute degree_kind
+
+  let int_ub {degree_kind; symbol} =
+    S.int_ub symbol |> Option.map ~f:(DegreeKind.compute degree_kind)
+
+
+  let subst {degree_kind; symbol} eval =
+    match S.subst symbol eval with
+    | Constant c ->
+        Bounds.Constant (DegreeKind.compute degree_kind c)
+    | Symbolic symbol ->
+        Bounds.Symbolic {degree_kind; symbol}
+    | ValTop ->
+        Bounds.ValTop
+
+
+  let pp f {degree_kind; symbol} = DegreeKind.pp_hole S.pp f degree_kind symbol
+
+  let degree_kind {degree_kind} = degree_kind
+end
+
+module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
   module M = struct
     include Caml.Map.Make (S)
 
@@ -269,7 +351,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     M.fold
       (fun t p acc ->
         let d, p' = degree_with_term p in
-        max acc (Degree.succ d, mult_symb p' t) )
+        max acc (Degree.succ (S.degree_kind t) d, mult_symb p' t) )
       terms (Degree.zero, one)
 
 
@@ -329,7 +411,8 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 end
 
 module NonNegativePolynomial = struct
-  module NonNegativeNonTopPolynomial = MakePolynomial (Bounds.NonNegativeBound)
+  module NonNegativeBoundWithDegreeKind = MakeSymbolWithDegreeKind (Bounds.NonNegativeBound)
+  module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBoundWithDegreeKind)
   include AbstractDomain.TopLifted (NonNegativeNonTopPolynomial)
 
   let zero = NonTop NonNegativeNonTopPolynomial.zero
@@ -339,7 +422,9 @@ module NonNegativePolynomial = struct
   let of_int_exn i = NonTop (NonNegativeNonTopPolynomial.of_int_exn i)
 
   let of_non_negative_bound b =
-    b |> Bounds.NonNegativeBound.classify |> NonNegativeNonTopPolynomial.of_valclass
+    b
+    |> NonNegativeBoundWithDegreeKind.make DegreeKind.Linear
+    |> NonNegativeBoundWithDegreeKind.classify |> NonNegativeNonTopPolynomial.of_valclass
 
 
   let is_symbolic = function Top -> false | NonTop p -> NonNegativeNonTopPolynomial.is_symbolic p

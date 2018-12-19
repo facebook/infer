@@ -11,7 +11,8 @@ module Bound = Bounds.Bound
 module Degree : sig
   type t [@@deriving compare]
 
-  val to_int : t -> int
+  val encode_to_int : t -> int
+  (** Encodes the complex type [t] to an integer that can be used for comparison. *)
 
   val is_zero : t -> bool
 

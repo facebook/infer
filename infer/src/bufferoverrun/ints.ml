@@ -77,6 +77,8 @@ module NonNegativeInt = struct
 
   let succ = Z.succ
 
+  let log2_ceil_exn i = Z.log2up i |> Z.of_int
+
   let ( + ) = Z.( + )
 
   let ( * ) = Z.( * )
