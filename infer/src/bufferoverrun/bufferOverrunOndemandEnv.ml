@@ -46,9 +46,13 @@ let mk pdesc =
                     L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
               | _ ->
                   L.(die InternalError) "Untyped expression is given." )
-      | SPath.Field (fn, x) ->
-          let lookup = Tenv.lookup tenv in
-          Option.map (typ_of_param_path x) ~f:(Typ.Struct.fld_typ ~lookup ~default:Typ.void fn)
+      | SPath.Field (fn, x) -> (
+        match BufferOverrunField.get_type fn with
+        | None ->
+            let lookup = Tenv.lookup tenv in
+            Option.map (typ_of_param_path x) ~f:(Typ.Struct.fld_typ ~lookup ~default:Typ.void fn)
+        | some_typ ->
+            some_typ )
       | SPath.Callsite {ret_typ} ->
           Some ret_typ
     in

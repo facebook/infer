@@ -360,9 +360,11 @@ module Val = struct
         of_itv ~traces (Itv.of_normal_path ~unsigned path)
     | Tptr (elt, _) ->
         if is_java then
-          let l = Loc.of_path path in
+          let deref_kind = SPath.Deref_JavaPointer in
+          let deref_path = SPath.deref ~deref_kind path in
+          let l = Loc.of_path deref_path in
           let traces = TraceSet.singleton location (Trace.Parameter l) in
-          {bot with itv= Itv.of_length_path path; powloc= PowLoc.singleton l; traces}
+          {bot with powloc= PowLoc.singleton l; traces}
         else
           let deref_kind = SPath.Deref_CPointer in
           let deref_path = SPath.deref ~deref_kind path in
@@ -384,21 +386,15 @@ module Val = struct
           {bot with arrayblk; traces}
     | Tstruct typename -> (
       match BufferOverrunTypModels.dispatch tenv typename with
-      | Some typ_model -> (
-        match typ_model with
-        | CArray {deref_kind; length} ->
-            let deref_path = SPath.deref ~deref_kind path in
-            let l = Loc.of_path deref_path in
-            let traces = TraceSet.singleton location (Trace.Parameter l) in
-            let allocsite = Allocsite.make_symbol deref_path in
-            let offset = Itv.zero in
-            let size = Itv.of_int_lit length in
-            of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
-        | JavaCollection ->
-            let l = Loc.of_path path in
-            let traces = TraceSet.singleton location (Trace.Parameter l) in
-            of_itv ~traces (Itv.of_normal_path ~unsigned:true path) )
-      | None ->
+      | Some (CArray {deref_kind; length}) ->
+          let deref_path = SPath.deref ~deref_kind path in
+          let l = Loc.of_path deref_path in
+          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let allocsite = Allocsite.make_symbol deref_path in
+          let offset = Itv.zero in
+          let size = Itv.of_int_lit length in
+          of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
+      | Some JavaCollection | None ->
           let l = Loc.of_path path in
           let traces = TraceSet.singleton location (Trace.Parameter l) in
           of_loc ~traces l )

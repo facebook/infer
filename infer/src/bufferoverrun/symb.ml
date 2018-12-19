@@ -16,7 +16,7 @@ module BoundEnd = struct
 end
 
 module SymbolPath = struct
-  type deref_kind = Deref_ArrayIndex | Deref_CPointer [@@deriving compare]
+  type deref_kind = Deref_ArrayIndex | Deref_CPointer | Deref_JavaPointer [@@deriving compare]
 
   type partial =
     | Pvar of Pvar.t
@@ -57,9 +57,11 @@ module SymbolPath = struct
   let rec pp_partial_paren ~paren fmt = function
     | Pvar pvar ->
         Pvar.pp_value fmt pvar
+    | Deref (Deref_JavaPointer, p) when Config.bo_debug < 3 ->
+        pp_partial_paren ~paren fmt p
     | Deref (Deref_ArrayIndex, p) ->
         F.fprintf fmt "%a[*]" (pp_partial_paren ~paren:true) p
-    | Deref (Deref_CPointer, p) ->
+    | Deref ((Deref_CPointer | Deref_JavaPointer), p) ->
         pp_pointer ~paren fmt p
     | Field (fn, Deref (Deref_CPointer, p)) ->
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
@@ -95,7 +97,8 @@ module SymbolPath = struct
     | Deref (Deref_ArrayIndex, _) ->
         true
     | Deref (Deref_CPointer, p)
-    (* unsound but avoids many FPs for non-array pointers *)
+    (* Deref_CPointer is unsound here but avoids many FPs for non-array pointers *)
+    | Deref (Deref_JavaPointer, p)
     | Field (_, p) ->
         represents_multiple_values p
 

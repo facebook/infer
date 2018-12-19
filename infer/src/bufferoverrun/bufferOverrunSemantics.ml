@@ -383,10 +383,7 @@ let eval_sympath params sympath mem =
       (ArrayBlk.offsetof (Val.get_array_blk v), Val.get_traces v)
   | Symb.SymbolPath.Length p ->
       let v = eval_sympath_partial params p mem in
-      let traces = Val.get_traces v in
-      let itv = ArrayBlk.sizeof (Val.get_array_blk v) in
-      let itv = if Language.curr_language_is Java then Itv.join itv (Val.get_itv v) else itv in
-      (itv, traces)
+      (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
 
 
 let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =

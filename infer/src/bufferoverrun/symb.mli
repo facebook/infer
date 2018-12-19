@@ -15,7 +15,7 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type deref_kind = Deref_ArrayIndex | Deref_CPointer [@@deriving compare]
+  type deref_kind = Deref_ArrayIndex | Deref_CPointer | Deref_JavaPointer [@@deriving compare]
 
   type partial = private
     | Pvar of Pvar.t

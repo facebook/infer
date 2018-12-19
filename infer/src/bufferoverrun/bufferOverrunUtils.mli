@@ -12,7 +12,7 @@ module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 
 module Exec : sig
-  val get_alist_size : Dom.Val.t -> Dom.Mem.t -> Dom.Val.t
+  val get_java_collection_length : Dom.Val.t -> Dom.Mem.t -> Dom.Val.t
 
   val load_locs : Ident.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
 

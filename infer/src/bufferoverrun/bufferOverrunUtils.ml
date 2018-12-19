@@ -17,9 +17,12 @@ module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
 module Exec = struct
-  let get_alist_size alist mem =
-    let size_powloc = Dom.Val.get_pow_loc alist in
-    Dom.Mem.find_set size_powloc mem
+  let get_java_collection_length alist mem =
+    let collection_locs = Dom.Val.get_pow_loc alist in
+    let length_locs =
+      PowLoc.append_field collection_locs ~fn:BufferOverrunField.java_collection_length
+    in
+    Dom.Mem.find_set length_locs mem
 
 
   let load_locs id locs mem =
@@ -110,14 +113,17 @@ module Exec = struct
     let alloc_loc = Loc.of_allocsite allocsite in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
     let mem =
-      let alist =
+      let collection =
         Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
         |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
       in
-      if Int.equal dimension 1 then Dom.Mem.add_stack loc alist mem
+      if Int.equal dimension 1 then Dom.Mem.add_stack loc collection mem
       else
-        let size = Dom.Val.of_itv ~traces Itv.zero in
-        Dom.Mem.add_heap loc alist mem |> Dom.Mem.add_heap alloc_loc size
+        let length = Dom.Val.of_itv ~traces Itv.zero in
+        let length_loc =
+          Loc.append_field alloc_loc ~fn:BufferOverrunField.java_collection_length
+        in
+        Dom.Mem.add_heap loc collection mem |> Dom.Mem.add_heap length_loc length
     in
     (mem, inst_num + 1)
 
@@ -260,7 +266,7 @@ module Check = struct
     let idx = Sem.eval integer_type_widths index_exp mem in
     let arr = Sem.eval integer_type_widths array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in
-    let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
+    let size = Exec.get_java_collection_length arr mem |> Dom.Val.get_itv in
     let idx = Dom.Val.get_itv idx in
     let relation = Dom.Mem.get_relation mem in
     let latest_prune = Dom.Mem.get_latest_prune mem in

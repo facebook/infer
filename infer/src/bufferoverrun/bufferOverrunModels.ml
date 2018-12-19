@@ -205,20 +205,24 @@ let infer_print e =
   {exec; check= no_check}
 
 
+(* Java only *)
 let get_array_length array_exp =
-  let exec {integer_type_widths} ~ret mem =
-    let arr = Sem.eval integer_type_widths array_exp mem in
-    let traces = Dom.Val.get_traces arr in
-    let length =
-      if Language.curr_language_is Java then arr |> Dom.Val.get_itv
-      else arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof
+  let exec _ ~ret mem =
+    let arr_locs = Sem.eval_locs array_exp mem in
+    let result =
+      if PowLoc.is_empty arr_locs then Dom.Val.Itv.top
+      else
+        let arr = Dom.Mem.find_set arr_locs mem in
+        let traces = Dom.Val.get_traces arr in
+        let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
+        Dom.Val.of_itv ~traces length
     in
-    let result = Dom.Val.of_itv ~traces length in
     model_by_value result ret mem
   in
   {exec; check= no_check}
 
 
+(* Clang only *)
 let set_array_length array length_exp =
   let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
     match array with
@@ -310,7 +314,7 @@ end
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
 module Collection = struct
-  let new_list _ =
+  let new_collection _ =
     let exec {pname; node_hash; location} ~ret:(id, _) mem =
       let loc = Loc.of_id id in
       let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
@@ -319,18 +323,22 @@ module Collection = struct
           ~represents_multiple_values:true
       in
       let alloc_loc = Loc.of_allocsite allocsite in
-      let init_size = Dom.Val.of_int 0 in
+      let init_length = Dom.Val.of_int 0 in
       let traces = Trace.(Set.singleton location ArrayDeclaration) in
       let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces in
-      mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap alloc_loc init_size
+      let length_loc = Loc.append_field alloc_loc ~fn:BufferOverrunField.java_collection_length in
+      mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap length_loc init_length
     in
     {exec; check= no_check}
 
 
-  let change_size_by ~size_f alist_id _ ~ret:_ mem =
-    let alist_v = Dom.Mem.find (Loc.of_id alist_id) mem in
-    let locs = Dom.Val.get_pow_loc alist_v in
-    Dom.Mem.transform_mem ~f:size_f locs mem
+  let change_size_by ~size_f collection_id _ ~ret:_ mem =
+    let collection_v = Dom.Mem.find (Loc.of_id collection_id) mem in
+    let collection_locs = Dom.Val.get_pow_loc collection_v in
+    let length_locs =
+      PowLoc.append_field collection_locs ~fn:BufferOverrunField.java_collection_length
+    in
+    Dom.Mem.transform_mem ~f:size_f length_locs mem
 
 
   let incr_size = Dom.Val.plus_a Dom.Val.Itv.one
@@ -340,7 +348,7 @@ module Collection = struct
   let add alist_id = {exec= change_size_by ~size_f:incr_size alist_id; check= no_check}
 
   let get_size integer_type_widths alist mem =
-    BoUtils.Exec.get_alist_size (Sem.eval integer_type_widths alist mem) mem
+    BoUtils.Exec.get_java_collection_length (Sem.eval integer_type_widths alist mem) mem
 
 
   let size array_exp =
@@ -438,7 +446,7 @@ module Call = struct
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc
       ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
-        $+...$--> Collection.new_list
+        $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
       ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
