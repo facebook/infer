@@ -99,6 +99,16 @@ public class ParameterNotNullable {
   void indirectSignatureLookupOk(SomeClass c) {
     c.acceptsNullableParameter(null);
   }
+
+  void doesNotAcceptNullableFirstParameter(Object object, boolean test) {}
+
+  void callWithNullableFirstParameter(boolean t1, boolean t2) {
+    doesNotAcceptNullableFirstParameter(null, t1 && t2);
+  }
+
+  void callWithConditionalAssignment(Object object, boolean test) {
+    doesNotAcceptNullableFirstParameter(test ? object : null, test);
+  }
 }
 
 interface SomeInterface {

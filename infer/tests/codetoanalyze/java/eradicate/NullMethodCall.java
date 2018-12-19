@@ -293,4 +293,19 @@ public class NullMethodCall {
   String callingSeverSideNullableGetter(ServerSideDeserializer deserializer) {
     return deserializer.nullableGetter().toString();
   }
+
+  interface AnotherI {
+    void withBooleanParameter(boolean test);
+
+    void withObjectParameter(Object object);
+  }
+
+  void withConjuction(@Nullable AnotherI i, boolean test1, boolean test2) {
+    i.withBooleanParameter(test1 && test2);
+  }
+
+  void withConditionalAssignemnt(
+      @Nullable AnotherI i, boolean test, Object object1, Object object2) {
+    i.withObjectParameter(test ? object1 : object2);
+  }
 }
