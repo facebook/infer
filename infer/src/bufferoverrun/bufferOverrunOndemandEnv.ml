@@ -75,9 +75,13 @@ let mk pdesc =
 
 
 let canonical_path typ_of_param_path path =
-  let module KnownFields = Caml.Map.Make (struct
-    type t = Typ.t option * Typ.Fieldname.t [@@deriving compare]
-  end) in
+  let module K = struct
+    type t =
+      | Default of {struct_typ: Typ.t option; fn: Typ.Fieldname.t}
+      | FldTypKnownPtr of {fld_typ: Typ.t}
+    [@@deriving compare]
+  end in
+  let module KnownFields = Caml.Map.Make (K) in
   let rec helper path =
     match path with
     | SPath.Pvar _ | SPath.Callsite _ ->
@@ -87,7 +91,16 @@ let canonical_path typ_of_param_path path =
         (Option.map ptr_opt ~f:(fun ptr -> SPath.deref ~deref_kind ptr), known_fields)
     | SPath.Field (fn, struct_path) -> (
         let struct_path_opt, known_fields = helper struct_path in
-        let key = (typ_of_param_path (Option.value ~default:struct_path struct_path_opt), fn) in
+        let key =
+          match typ_of_param_path path with
+          | Some fld_typ when Typ.is_pointer fld_typ ->
+              K.FldTypKnownPtr {fld_typ}
+          | _ ->
+              let struct_typ =
+                typ_of_param_path (Option.value ~default:struct_path struct_path_opt)
+              in
+              K.Default {struct_typ; fn}
+        in
         match KnownFields.find_opt key known_fields with
         | Some _ as canonicalized ->
             (canonicalized, known_fields)

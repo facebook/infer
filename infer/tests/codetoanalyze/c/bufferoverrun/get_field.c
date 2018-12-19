@@ -34,3 +34,34 @@ void call_get_field_Bad() {
   t x = {10};
   a[get_field_wrapper(&x)] = 0;
 }
+
+struct List {
+  struct List* next;
+  struct List* prev;
+  int v;
+};
+
+// [l->next->prev->v] is unsoundly canonicalized to [l->next->v].
+int get_v(struct List* l) { return l->next->prev->v; }
+
+int call_get_v_Good_FP() {
+  int a[10];
+  struct List* l = (struct List*)malloc(sizeof(struct List));
+  struct List* next = (struct List*)malloc(sizeof(struct List));
+  l->next = next;
+  next->prev = l;
+  l->v = 0;
+  next->v = 10;
+  a[get_v(l)] = 0;
+}
+
+int call_get_v_Bad_FN() {
+  int a[10];
+  struct List* l = (struct List*)malloc(sizeof(struct List));
+  struct List* next = (struct List*)malloc(sizeof(struct List));
+  l->next = next;
+  next->prev = l;
+  l->v = 10;
+  next->v = 0;
+  a[get_v(l)] = 0;
+}
