@@ -42,8 +42,8 @@ class Test {
     }
   }
 
-  // as soon as we allocate with new, function is marked impure.
-  int local_alloc_bad_FP(int x, int y) {
+  // no change to outside state, the local allocation is ok.
+  int local_alloc_ok(int x, int y) {
     ArrayList<Integer> list = new ArrayList<Integer>(x + y);
     for (Integer el : list) {
       call_pure_ok(el);
@@ -70,5 +70,23 @@ class Test {
     int tmp = array[i];
     array[i] = array[j];
     array[j] = tmp;
+  }
+
+  void alias_bad(int[] array, int i, int j) {
+    int[] a = array;
+    a[j] = i;
+  }
+
+  // Currently, we can't distinguish between returning new Objects or
+  // creating new Objects locally. Ideally, the latter should be fine
+  // as long as it doesn't leak to the result.
+  public ArrayList<Integer> emptyList_bad_FP() {
+    return new ArrayList<Integer>();
+  }
+
+  // All unknown calls that don't have any argument, will be marked as
+  // pure by default even though they may have side-effects!
+  static long systemNanoTime_bad_FP() {
+    return System.nanoTime();
   }
 }

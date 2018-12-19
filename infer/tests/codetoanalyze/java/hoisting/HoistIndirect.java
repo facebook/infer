@@ -230,7 +230,7 @@ class HoistIndirect {
     new_arr[0] = 4;
   }
 
-  void alias_dont_hoist_FP(int[] arr) {
+  void alias_dont_hoist(int[] arr) {
     for (int i = 0; i < 10; i++) {
       alias(arr); // alias modifies arr
       get_ith(0, arr); // don't hoist

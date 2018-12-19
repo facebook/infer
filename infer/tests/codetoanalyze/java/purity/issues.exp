@@ -1,3 +1,8 @@
 codetoanalyze/java/purity/Test.java, Test.call_pure_ok(int):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Test.call_pure_ok(int)]
+codetoanalyze/java/purity/Test.java, Test.emptyList_bad_FP():java.util.ArrayList, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function ArrayList Test.emptyList_bad_FP()]
+codetoanalyze/java/purity/Test.java, Test.local_alloc_ok(int,int):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int Test.local_alloc_ok(int,int)]
+codetoanalyze/java/purity/Test.java, Test.local_alloc_ok(int,int):int, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/java/purity/Test.java, Test.local_alloc_ok(int,int):int, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/java/purity/Test.java, Test.local_write_ok(int,int):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int Test.local_write_ok(int,int)]
 codetoanalyze/java/purity/Test.java, Test.parameter_field_access_ok(Test):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int Test.parameter_field_access_ok(Test)]
+codetoanalyze/java/purity/Test.java, Test.systemNanoTime_bad_FP():long, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function long Test.systemNanoTime_bad_FP()]
