@@ -173,8 +173,22 @@ module Val = struct
   let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool; sym= Relation.Sym.top}
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> ?f_trace:_ -> t -> t -> t =
-   fun f ?(f_trace = TraceSet.join) x y ->
-    {bot with itv= f x.itv y.itv; traces= f_trace x.traces y.traces}
+   fun f ?f_trace x y ->
+    let itv = f x.itv y.itv in
+    let traces =
+      match f_trace with
+      | Some f_trace ->
+          f_trace x.traces y.traces
+      | None -> (
+        match (Itv.eq itv x.itv, Itv.eq itv y.itv) with
+        | true, false ->
+            x.traces
+        | false, true ->
+            y.traces
+        | true, true | false, false ->
+            TraceSet.join x.traces y.traces )
+    in
+    {bot with itv; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =

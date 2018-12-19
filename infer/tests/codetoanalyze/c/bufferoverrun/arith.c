@@ -536,8 +536,6 @@ void shift_right_zero_Good(int x) {
   arr[0 >> x] = 1;
 }
 
-/* This also exhibits an overapproximation of traces, here [x] doesn't influence
- * the result */
 void shift_right_zero_Bad(int x) {
   int arr[1];
   arr[1 + (0 >> x)] = 1;
