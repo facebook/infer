@@ -35,6 +35,7 @@ codetoanalyze/c/bufferoverrun/arith.c, recover_integer_underflow_Bad, 3, INTEGER
 codetoanalyze/c/bufferoverrun/arith.c, recover_integer_underflow_Good_FP, 3, INTEGER_OVERFLOW_L2, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, 9] - 1):unsigned32]
 codetoanalyze/c/bufferoverrun/arith.c, scan_hex_Good, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/arith.c, scan_hex_Good, 8, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/c/bufferoverrun/arith.c, shift_right_zero_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Parameter `x`,<Length trace>,Array declaration,Array access: Offset: 1 Size: 1]
 codetoanalyze/c/bufferoverrun/arith.c, simple_overflow_Bad, 0, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [Binary operation: (85 × 4294967295):unsigned32]
 codetoanalyze/c/bufferoverrun/arith.c, two_safety_conditions2_Bad, 9, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Call,Assignment,Assignment,<RHS trace>,Assignment,Binary operation: ([0, +oo] + [0, 80]):unsigned32]
 codetoanalyze/c/bufferoverrun/arith.c, unused_integer_underflow2_Bad, 2, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: (0 - 1):unsigned32]

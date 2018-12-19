@@ -263,15 +263,17 @@ module ItvPure = struct
   (* x >> [-1,-1] does nothing. *)
   let shiftrt : t -> t -> t =
    fun x y ->
-    match is_const y with
-    | Some n when Z.(leq n zero) ->
-        x
-    | Some n when Z.(n >= of_int 64) ->
-        zero
-    | Some n -> (
-      match Z.to_int n with n -> div_const x Z.(one lsl n) | exception Z.Overflow -> top )
-    | None ->
-        top
+    if is_zero x then x
+    else
+      match is_const y with
+      | Some n when Z.(leq n zero) ->
+          x
+      | Some n when Z.(n >= of_int 64) ->
+          zero
+      | Some n -> (
+        match Z.to_int n with n -> div_const x Z.(one lsl n) | exception Z.Overflow -> top )
+      | None ->
+          top
 
 
   let band_sem : t -> t -> t =
