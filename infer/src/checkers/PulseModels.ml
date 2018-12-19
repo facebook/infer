@@ -63,7 +63,7 @@ module Cplusplus = struct
     >>= fun astate ->
     ( match actuals with
     | AccessExpression lambda :: _ ->
-        PulseDomain.read location HilExp.AccessExpression.(dereference (dereference lambda)) astate
+        PulseDomain.read location HilExp.AccessExpression.(dereference lambda) astate
         >>= fun (astate, address) ->
         PulseDomain.Closures.check_captured_addresses location lambda address astate
     | _ ->
