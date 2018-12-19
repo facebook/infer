@@ -1412,6 +1412,14 @@ let is_cxx_copy_constructor an =
       false
 
 
+let has_cxx_full_name an qual_name_re =
+  match Ctl_parser_types.ast_node_cxx_full_name an with
+  | "" ->
+      false
+  | full_name ->
+      ALVar.compare_str_with_alexp full_name qual_name_re
+
+
 let is_cxx_method_overriding an qual_name_re =
   let rec overrides_named (decl_refs : Clang_ast_t.decl_ref list) (qnre : ALVar.alexp) =
     List.exists

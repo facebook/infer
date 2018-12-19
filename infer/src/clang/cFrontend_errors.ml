@@ -127,6 +127,8 @@ let evaluate_place_holder context ph an =
       MF.monospaced_to_string (Ctl_parser_types.stmt_node_child_type an)
   | "%name%" ->
       MF.monospaced_to_string (Ctl_parser_types.ast_node_name an)
+  | "%cxx_full_name%" ->
+      MF.monospaced_to_string (Ctl_parser_types.ast_node_cxx_full_name an)
   | _ ->
       L.die InternalError "helper function %s is unknown" ph
 

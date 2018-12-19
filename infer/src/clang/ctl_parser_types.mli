@@ -15,6 +15,8 @@ val ast_node_equal : ast_node -> ast_node -> bool
 
 val ast_node_name : ast_node -> string
 
+val ast_node_cxx_full_name : ast_node -> string
+
 val ast_node_type : ast_node -> string
 
 val ast_node_kind : ast_node -> string
