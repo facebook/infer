@@ -129,7 +129,7 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=--locked
     fi
-    opam install --deps-only $locked infer "$INFER_ROOT"
+    opam install --deps-only infer "$INFER_ROOT" $locked
 }
 
 echo "initializing opam... " >&2
