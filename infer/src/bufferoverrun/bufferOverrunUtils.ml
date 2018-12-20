@@ -17,14 +17,6 @@ module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
 module Exec = struct
-  let get_java_collection_length alist mem =
-    let collection_locs = Dom.Val.get_pow_loc alist in
-    let length_locs =
-      PowLoc.append_field collection_locs ~fn:BufferOverrunField.java_collection_length
-    in
-    Dom.Mem.find_set length_locs mem
-
-
   let load_locs id locs mem =
     let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
@@ -91,39 +83,6 @@ module Exec = struct
     let mem, _ =
       decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:true
         ~dimension:(dimension + 1) mem
-    in
-    (mem, inst_num + 1)
-
-
-  let decl_local_collection :
-         Typ.Procname.t
-      -> node_hash:int
-      -> Location.t
-      -> Loc.t
-      -> inst_num:int
-      -> represents_multiple_values:bool
-      -> dimension:int
-      -> Dom.Mem.t
-      -> Dom.Mem.t * int =
-   fun pname ~node_hash location loc ~inst_num ~represents_multiple_values ~dimension mem ->
-    let path = Loc.get_path loc in
-    let allocsite =
-      Allocsite.make pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values:true
-    in
-    let alloc_loc = Loc.of_allocsite allocsite in
-    let traces = Trace.(Set.singleton location ArrayDeclaration) in
-    let mem =
-      let collection =
-        Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces
-        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
-      in
-      if Int.equal dimension 1 then Dom.Mem.add_stack loc collection mem
-      else
-        let length = Dom.Val.of_itv ~traces Itv.zero in
-        let length_loc =
-          Loc.append_field alloc_loc ~fn:BufferOverrunField.java_collection_length
-        in
-        Dom.Mem.add_heap loc collection mem |> Dom.Mem.add_heap length_loc length
     in
     (mem, inst_num + 1)
 
@@ -259,19 +218,6 @@ module Check = struct
       (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
     check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces ~last_included
       ~latest_prune location cond_set
-
-
-  let collection_access integer_type_widths ~array_exp ~index_exp ~last_included mem location
-      cond_set =
-    let idx = Sem.eval integer_type_widths index_exp mem in
-    let arr = Sem.eval integer_type_widths array_exp mem in
-    let idx_traces = Dom.Val.get_traces idx in
-    let size = Exec.get_java_collection_length arr mem |> Dom.Val.get_itv in
-    let idx = Dom.Val.get_itv idx in
-    let relation = Dom.Mem.get_relation mem in
-    let latest_prune = Dom.Mem.get_latest_prune mem in
-    check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
-      ~last_included ~latest_prune location cond_set
 
 
   let lindex integer_type_widths ~array_exp ~index_exp ~last_included mem location cond_set =

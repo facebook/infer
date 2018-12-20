@@ -352,6 +352,13 @@ module Val = struct
     ; traces= Trace.(Set.add_elem location ArrayDeclaration) length.traces }
 
 
+  let transform_array_length : Location.t -> f:(Itv.t -> Itv.t) -> t -> t =
+   fun location ~f v ->
+    { v with
+      arrayblk= ArrayBlk.transform_length ~f v.arrayblk
+    ; traces= Trace.(Set.add_elem location Through) v.traces }
+
+
   let set_array_stride : Z.t -> t -> t =
    fun new_stride v ->
     PhysEqual.optim1 v ~res:{v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
@@ -408,7 +415,14 @@ module Val = struct
           let offset = Itv.zero in
           let size = Itv.of_int_lit length in
           of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
-      | Some JavaCollection | None ->
+      | Some JavaCollection ->
+          let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
+          let l = Loc.of_path deref_path in
+          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let allocsite = Allocsite.make_symbol deref_path in
+          let length = Itv.of_length_path path in
+          of_java_array_alloc allocsite ~length ~traces
+      | None ->
           let l = Loc.of_path path in
           let traces = TraceSet.singleton location (Trace.Parameter l) in
           of_loc ~traces l )
@@ -457,8 +471,6 @@ module Val = struct
     let m1_255 = of_itv Itv.m1_255
 
     let nat = of_itv Itv.nat
-
-    let one = of_itv Itv.one
 
     let pos = of_itv Itv.pos
 

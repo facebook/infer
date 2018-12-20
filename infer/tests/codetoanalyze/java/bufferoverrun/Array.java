@@ -15,14 +15,9 @@ class Array {
     a.add(0, 100);
   }
 
-  ArrayList collection_add_zero_Bad() {
+  ArrayList collection_remove_from_empty_Bad() {
     ArrayList b = new ArrayList<>();
     b.remove(0);
     return b;
-  }
-
-  void collection_add_zero2_Good() {
-    ArrayList b = collection_add_zero_Bad();
-    b.add(0, 100);
   }
 }

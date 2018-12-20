@@ -21,9 +21,9 @@ public class CollectionTest {
     for (MyCollection<Integer> list : mSubscribers) {}
   }
 
-  // Expected |mSubscribers| * |list| but we get T
+  // Expected |mSubscribers| * |list| but we get |mSubscribers|
   // because we are not tracking elements of collections
-  void iterate_over_mycollection_quad_FP(
+  void iterate_over_mycollection_quad_FN(
       ConcurrentLinkedQueue<MyCollection<Integer>> mSubscribers) {
     for (MyCollection<Integer> list : mSubscribers) {
       iterate_over_mycollection(list);

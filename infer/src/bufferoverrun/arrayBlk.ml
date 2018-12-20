@@ -180,6 +180,17 @@ module ArrInfo = struct
         Top
 
 
+  let transform_length : f:(Itv.t -> Itv.t) -> t -> t =
+   fun ~f arr ->
+    match arr with
+    | C {offset; size; stride} ->
+        C {offset; size= f size; stride}
+    | Java {length} ->
+        Java {length= f length}
+    | Top ->
+        Top
+
+
   (* Set new stride only when the previous stride is a constant interval. *)
   let set_stride : Z.t -> t -> t =
    fun new_stride arr ->
@@ -320,3 +331,7 @@ let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =
           (Allocsite.eq as1 as2))
   | _ ->
       Boolean.Top
+
+
+let transform_length : f:(Itv.t -> Itv.t) -> t -> t =
+ fun ~f a -> map (ArrInfo.transform_length ~f) a

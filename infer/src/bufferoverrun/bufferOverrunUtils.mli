@@ -12,8 +12,6 @@ module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 
 module Exec : sig
-  val get_java_collection_length : Dom.Val.t -> Dom.Mem.t -> Dom.Val.t
-
   val load_locs : Ident.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
 
   val load_val : Ident.t -> Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
@@ -39,17 +37,6 @@ module Exec : sig
     -> Typ.t
     -> length:IntLit.t option
     -> ?stride:int
-    -> inst_num:int
-    -> represents_multiple_values:bool
-    -> dimension:int
-    -> Dom.Mem.t
-    -> Dom.Mem.t * int
-
-  val decl_local_collection :
-       Typ.Procname.t
-    -> node_hash:int
-    -> Location.t
-    -> Loc.t
     -> inst_num:int
     -> represents_multiple_values:bool
     -> dimension:int
@@ -108,16 +95,6 @@ module Check : sig
        Typ.IntegerWidths.t
     -> array_exp:Exp.t
     -> byte_index_exp:Exp.t
-    -> last_included:bool
-    -> Dom.Mem.t
-    -> Location.t
-    -> PO.ConditionSet.checked_t
-    -> PO.ConditionSet.checked_t
-
-  val collection_access :
-       Typ.IntegerWidths.t
-    -> array_exp:Exp.t
-    -> index_exp:Exp.t
     -> last_included:bool
     -> Dom.Mem.t
     -> Location.t

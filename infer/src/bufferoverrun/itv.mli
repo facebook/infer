@@ -147,6 +147,10 @@ val get_bound : t -> Symb.BoundEnd.t -> Bound.t bottom_lifted
 
 val is_false : t -> bool
 
+val decr : t -> t
+
+val incr : t -> t
+
 val neg : t -> t
 
 val normalize : t -> t

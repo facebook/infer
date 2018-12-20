@@ -45,15 +45,10 @@ module Init = struct
             ?stride ~inst_num ~represents_multiple_values ~dimension mem
       | Typ.Tstruct typname -> (
         match TypModels.dispatch tenv typname with
-        | Some typ_model -> (
-          match typ_model with
-          | CArray {element_typ; length} ->
-              BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc element_typ
-                ~length:(Some length) ~inst_num ~represents_multiple_values ~dimension mem
-          | JavaCollection ->
-              BoUtils.Exec.decl_local_collection pname ~node_hash location loc ~inst_num
-                ~represents_multiple_values ~dimension mem )
-        | None ->
+        | Some (CArray {element_typ; length}) ->
+            BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc element_typ
+              ~length:(Some length) ~inst_num ~represents_multiple_values ~dimension mem
+        | Some JavaCollection | None ->
             (mem, inst_num) )
       | _ ->
           (mem, inst_num)

@@ -205,18 +205,19 @@ let infer_print e =
   {exec; check= no_check}
 
 
+let eval_array_locs_length arr_locs mem =
+  if PowLoc.is_empty arr_locs then Dom.Val.Itv.top
+  else
+    let arr = Dom.Mem.find_set arr_locs mem in
+    let traces = Dom.Val.get_traces arr in
+    let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
+    Dom.Val.of_itv ~traces length
+
+
 (* Java only *)
 let get_array_length array_exp =
   let exec _ ~ret mem =
-    let arr_locs = Sem.eval_locs array_exp mem in
-    let result =
-      if PowLoc.is_empty arr_locs then Dom.Val.Itv.top
-      else
-        let arr = Dom.Mem.find_set arr_locs mem in
-        let traces = Dom.Val.get_traces arr in
-        let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
-        Dom.Val.of_itv ~traces length
-    in
+    let result = eval_array_locs_length (Sem.eval_locs array_exp mem) mem in
     model_by_value result ret mem
   in
   {exec; check= no_check}
@@ -309,123 +310,133 @@ module StdArray = struct
     {exec; check= no_check}
 end
 
-(* Java's Collections are represented by their size. We don't care about the elements.
+(* Java's Collections are represented like arrays. But we don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
 module Collection = struct
   let new_collection _ =
     let exec {pname; node_hash; location} ~ret:(id, _) mem =
-      let loc = Loc.of_id id in
-      let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
-      let allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path
-          ~represents_multiple_values:true
-      in
-      let alloc_loc = Loc.of_allocsite allocsite in
-      let init_length = Dom.Val.of_int 0 in
+      let represents_multiple_values = true in
       let traces = Trace.(Set.singleton location ArrayDeclaration) in
-      let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) ~traces in
-      let length_loc = Loc.append_field alloc_loc ~fn:BufferOverrunField.java_collection_length in
-      mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap length_loc init_length
+      let coll_allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values
+      in
+      let internal_array =
+        let allocsite =
+          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+            ~represents_multiple_values
+        in
+        Dom.Val.of_java_array_alloc allocsite ~length:Itv.zero ~traces
+      in
+      let coll_loc = Loc.of_allocsite coll_allocsite in
+      let internal_array_loc =
+        Loc.append_field coll_loc ~fn:BufferOverrunField.java_collection_internal_array
+      in
+      mem
+      |> Dom.Mem.add_heap internal_array_loc internal_array
+      |> Dom.Mem.add_stack (Loc.of_id id)
+           (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
     in
     {exec; check= no_check}
 
 
-  let change_size_by ~size_f collection_id _ ~ret:_ mem =
-    let collection_v = Dom.Mem.find (Loc.of_id collection_id) mem in
-    let collection_locs = Dom.Val.get_pow_loc collection_v in
-    let length_locs =
-      PowLoc.append_field collection_locs ~fn:BufferOverrunField.java_collection_length
-    in
-    Dom.Mem.transform_mem ~f:size_f length_locs mem
+  let eval_collection_internal_array_locs coll_exp mem =
+    Sem.eval_locs coll_exp mem
+    |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
 
 
-  let incr_size = Dom.Val.plus_a Dom.Val.Itv.one
-
-  let decr_size size = Dom.Val.minus_a size Dom.Val.Itv.one
-
-  let add alist_id = {exec= change_size_by ~size_f:incr_size alist_id; check= no_check}
-
-  let get_size integer_type_widths alist mem =
-    BoUtils.Exec.get_java_collection_length (Sem.eval integer_type_widths alist mem) mem
+  let get_collection_internal_array_locs coll_id mem =
+    let coll = Dom.Mem.find (Loc.of_id coll_id) mem in
+    Dom.Val.get_pow_loc coll
+    |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
 
 
-  let size array_exp =
-    let exec {integer_type_widths} ~ret mem =
-      let size = get_size integer_type_widths array_exp mem in
-      model_by_value size ret mem
+  let eval_collection_length coll_exp mem =
+    let arr_locs = eval_collection_internal_array_locs coll_exp mem in
+    eval_array_locs_length arr_locs mem
+
+
+  let change_size_by ~size_f coll_id {location} ~ret:_ mem =
+    Dom.Mem.transform_mem
+      ~f:(Dom.Val.transform_array_length location ~f:size_f)
+      (get_collection_internal_array_locs coll_id mem)
+      mem
+
+
+  let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
+
+  let size coll_exp =
+    let exec _ ~ret mem =
+      let result = eval_collection_length coll_exp mem in
+      model_by_value result ret mem
     in
     {exec; check= no_check}
 
 
-  let iterator alist =
+  let iterator coll_exp =
     let exec {integer_type_widths} ~ret mem =
-      let itr = Sem.eval integer_type_widths alist mem in
+      let itr = Sem.eval integer_type_widths coll_exp mem in
       model_by_value itr ret mem
     in
     {exec; check= no_check}
 
 
   let hasNext iterator =
-    let exec {integer_type_widths} ~ret mem =
+    let exec _ ~ret mem =
       (* Set the size of the iterator to be [0, size-1], so that range
          will be size of the collection. *)
-      let collection_size =
-        get_size integer_type_widths iterator mem |> Dom.Val.get_iterator_itv
-      in
+      let collection_size = eval_collection_length iterator mem |> Dom.Val.get_iterator_itv in
       model_by_value collection_size ret mem
     in
     {exec; check= no_check}
 
 
-  let addAll alist_id alist_to_add =
-    let exec ({integer_type_widths} as model_env) ~ret mem =
-      let to_add_length = get_size integer_type_widths alist_to_add mem in
-      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id model_env ~ret mem
+  let addAll coll_id coll_to_add =
+    let exec model_env ~ret mem =
+      let to_add_length = eval_collection_length coll_to_add mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(Itv.plus to_add_length) coll_id model_env ~ret mem
     in
     {exec; check= no_check}
 
 
-  let add_at_index (alist_id : Ident.t) index_exp =
-    let check {location; integer_type_widths} mem cond_set =
-      let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp ~last_included:true
-        mem location cond_set
+  let check_index ~last_included coll_id index_exp {location; integer_type_widths} mem cond_set =
+    let arr =
+      let arr_locs = get_collection_internal_array_locs coll_id mem in
+      Dom.Mem.find_set arr_locs mem
     in
-    {exec= change_size_by ~size_f:incr_size alist_id; check}
-
-
-  let remove_at_index alist_id index_exp =
-    let check {location; integer_type_widths} mem cond_set =
-      let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~array_exp ~index_exp
-        ~last_included:false mem location cond_set
+    let idx = Sem.eval integer_type_widths index_exp mem in
+    let idx_sym_exp =
+      Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) index_exp
     in
-    {exec= change_size_by ~size_f:decr_size alist_id; check}
+    let relation = Dom.Mem.get_relation mem in
+    let latest_prune = Dom.Mem.get_latest_prune mem in
+    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true ~last_included
+      ~latest_prune location cond_set
 
 
-  let addAll_at_index alist_id index_exp alist_to_add =
-    let exec ({integer_type_widths} as model_env) ~ret mem =
-      let to_add_length = get_size integer_type_widths alist_to_add mem in
-      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id model_env ~ret mem
+  let add_at_index (coll_id : Ident.t) index_exp =
+    { exec= change_size_by ~size_f:Itv.incr coll_id
+    ; check= check_index ~last_included:true coll_id index_exp }
+
+
+  let remove_at_index coll_id index_exp =
+    { exec= change_size_by ~size_f:Itv.decr coll_id
+    ; check= check_index ~last_included:false coll_id index_exp }
+
+
+  let addAll_at_index coll_id index_exp coll_to_add =
+    let exec model_env ~ret mem =
+      let to_add_length = eval_collection_length coll_to_add mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(Itv.plus to_add_length) coll_id model_env ~ret mem
     in
-    let check {location; integer_type_widths} mem cond_set =
-      let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp ~last_included:true
-        mem location cond_set
-    in
-    {exec; check}
+    {exec; check= check_index ~last_included:true coll_id index_exp}
 
 
-  let get_or_set_at_index alist_id index_exp =
+  let get_or_set_at_index coll_id index_exp =
     let exec _model_env ~ret:_ mem = mem in
-    let check {location; integer_type_widths} mem cond_set =
-      let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access integer_type_widths ~index_exp ~array_exp
-        ~last_included:false mem location cond_set
-    in
-    {exec; check}
+    {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
 module Call = struct

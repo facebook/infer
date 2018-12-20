@@ -553,6 +553,10 @@ let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
 
+let incr = plus one
+
+let decr x = minus x one
+
 let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
 let is_const : t -> Z.t option = bind1zo ItvPure.is_const
