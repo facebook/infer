@@ -24,56 +24,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = ProcData.no_extras
 
-  (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
-       (b) volatile *)
-  let is_safe_access access prefix_path tenv =
-    match (access, AccessPath.get_typ prefix_path tenv) with
-    | ( AccessPath.FieldAccess fieldname
-      , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
-      match Tenv.lookup tenv typename with
-      | Some struct_typ ->
-          Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
-          || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
-          || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
-      | None ->
-          false )
-    | _ ->
-        false
-
-
-  let add_unannotated_call_access pname actuals (call_flags : CallFlags.t) loc tenv ~locks ~threads
-      attribute_map (proc_data : extras ProcData.t) =
-    let open RacerDModels in
-    let thread_safe_or_thread_confined annot =
-      Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
-    in
-    let is_receiver_safe = function
-      | HilExp.AccessExpression receiver_access_exp :: _ -> (
-          let receiver_access_path = HilExp.AccessExpression.to_access_path receiver_access_exp in
-          match AccessPath.truncate receiver_access_path with
-          | receiver_prefix, Some receiver_field ->
-              is_safe_access receiver_field receiver_prefix tenv
-          | _ ->
-              false )
-      | _ ->
-          false
-    in
-    if
-      call_flags.cf_interface && Typ.Procname.is_java pname
-      && (not (is_java_library pname || is_builder_function pname))
-      (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
-          thread-safe (would be unreasonable to ask everyone to annotate them) *)
-      && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
-      && (not (has_return_annot thread_safe_or_thread_confined pname))
-      && not (is_receiver_safe actuals)
-    then
-      let open Domain in
-      let access = TraceElem.make_unannotated_call_access pname loc in
-      let snapshot = AccessSnapshot.make access locks threads False proc_data.pdesc in
-      AccessDomain.add snapshot attribute_map
-    else attribute_map
-
-
   let add_access exp loc ~is_write_access accesses locks threads ownership
       (proc_data : extras ProcData.t) =
     let open Domain in
@@ -86,7 +36,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let access_acc' = AccessDomain.add pre access_acc in
             add_field_accesses prefix_path' access_acc' access_list
           in
-          if is_safe_access access prefix_path proc_data.tenv then
+          if RacerDModels.is_safe_access access prefix_path proc_data.tenv then
             add_field_accesses prefix_path' access_acc access_list
           else
             let is_write = if List.is_empty access_list then is_write_access else false in
@@ -112,41 +62,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~init:accesses (HilExp.get_access_exprs exp)
 
 
-  let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) tenv =
-    let open RacerDModels in
-    if is_threadsafe_collection callee_pname tenv then true
-    else
-      let is_annotated_synchronized base_typename container_field tenv =
-        match Tenv.lookup tenv base_typename with
-        | Some base_typ ->
-            Annotations.field_has_annot container_field base_typ
-              Annotations.ia_is_synchronized_collection
-        | None ->
-            false
-      in
-      match List.rev accesses with
-      | AccessPath.FieldAccess base_field :: AccessPath.FieldAccess container_field :: _
-        when Typ.Procname.is_java callee_pname ->
-          let base_typename =
-            Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class base_field)
-          in
-          is_annotated_synchronized base_typename container_field tenv
-      | [AccessPath.FieldAccess container_field] -> (
-        match base_typ.desc with
-        | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _) ->
-            is_annotated_synchronized base_typename container_field tenv
-        | _ ->
-            false )
-      | _ ->
-          false
-
-
   let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
       (astate : Domain.t) =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
-      if is_synchronized_container callee_pname receiver_ap tenv then AccessDomain.empty
+      if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then
+        AccessDomain.empty
       else
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
@@ -369,10 +291,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with accesses; ownership}
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let ret_access_path = (ret_base, []) in
-        let accesses_with_unannotated_calls =
-          add_unannotated_call_access callee_pname actuals call_flags loc tenv ~locks:astate.locks
-            ~threads:astate.threads astate.accesses proc_data
+        let astate =
+          if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
+            Domain.add_unannotated_call_access callee_pname loc pdesc astate
+          else astate
         in
+        let accesses_with_unannotated_calls = astate.accesses in
         let accesses =
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
             astate.ownership proc_data

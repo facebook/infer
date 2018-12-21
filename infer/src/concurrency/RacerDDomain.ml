@@ -598,3 +598,9 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
   F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map
+
+
+let add_unannotated_call_access pname loc pdesc (astate : t) =
+  let access = TraceElem.make_unannotated_call_access pname loc in
+  let snapshot = AccessSnapshot.make access astate.locks astate.threads False pdesc in
+  {astate with accesses= AccessDomain.add snapshot astate.accesses}

@@ -150,27 +150,6 @@ let should_skip =
       false
 
 
-(** return true if this function is library code from the JDK core libraries or Android *)
-let is_java_library = function
-  | Typ.Procname.Java java_pname -> (
-    match Typ.Procname.Java.get_package java_pname with
-    | Some package_name ->
-        String.is_prefix ~prefix:"java." package_name
-        || String.is_prefix ~prefix:"android." package_name
-        || String.is_prefix ~prefix:"com.google." package_name
-    | None ->
-        false )
-  | _ ->
-      false
-
-
-let is_builder_function = function
-  | Typ.Procname.Java java_pname ->
-      String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
-  | _ ->
-      false
-
-
 let has_return_annot predicate pn =
   Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes predicate
 
@@ -251,24 +230,6 @@ let acquires_ownership pname tenv =
   in
   is_allocation pname || is_owned_in_library pname
   || PatternMatch.override_exists is_owned_in_library tenv pname
-
-
-let is_threadsafe_collection pn tenv =
-  match pn with
-  | Typ.Procname.Java java_pname ->
-      let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
-      let aux tn _ =
-        match Typ.Name.name tn with
-        | "java.util.concurrent.ConcurrentMap"
-        | "java.util.concurrent.CopyOnWriteArrayList"
-        | "android.support.v4.util.Pools$SynchronizedPool" ->
-            true
-        | _ ->
-            false
-      in
-      PatternMatch.supertype_exists tenv aux typename
-  | _ ->
-      false
 
 
 (* return true if the given procname boxes a primitive type into a reference type *)
@@ -382,3 +343,104 @@ let is_thread_safe_method pname tenv =
 let is_marked_thread_safe pdesc tenv =
   let pname = Procdesc.get_proc_name pdesc in
   is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
+
+
+let is_safe_access access prefix_path tenv =
+  match (access, AccessPath.get_typ prefix_path tenv) with
+  | ( AccessPath.FieldAccess fieldname
+    , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
+    match Tenv.lookup tenv typename with
+    | Some struct_typ ->
+        Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
+        || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
+        || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
+    | None ->
+        false )
+  | _ ->
+      false
+
+
+let should_flag_interface_call tenv exp call_flags pname =
+  (* return true if this function is library code from the JDK core libraries or Android *)
+  let is_java_library = function
+    | Typ.Procname.Java java_pname -> (
+      match Typ.Procname.Java.get_package java_pname with
+      | Some package_name ->
+          String.is_prefix ~prefix:"java." package_name
+          || String.is_prefix ~prefix:"android." package_name
+          || String.is_prefix ~prefix:"com.google." package_name
+      | None ->
+          false )
+    | _ ->
+        false
+  in
+  let is_builder_function = function
+    | Typ.Procname.Java java_pname ->
+        String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
+    | _ ->
+        false
+  in
+  let thread_safe_or_thread_confined annot =
+    Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
+  in
+  call_flags.CallFlags.cf_interface && Typ.Procname.is_java pname
+  && (not (is_java_library pname || is_builder_function pname))
+  (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
+     thread-safe (would be unreasonable to ask everyone to annotate them) *)
+  && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
+  && (not (has_return_annot thread_safe_or_thread_confined pname))
+  &&
+  match exp with
+  | HilExp.AccessExpression receiver_access_exp :: _ -> (
+      HilExp.AccessExpression.to_access_path receiver_access_exp
+      |> AccessPath.truncate
+      |> function
+      | receiver_prefix, Some receiver_field ->
+          is_safe_access receiver_field receiver_prefix tenv |> not
+      | _ ->
+          true )
+  | _ ->
+      false
+
+
+let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) tenv =
+  let is_threadsafe_collection pn tenv =
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
+        let aux tn _ =
+          match Typ.Name.name tn with
+          | "java.util.concurrent.ConcurrentMap"
+          | "java.util.concurrent.CopyOnWriteArrayList"
+          | "android.support.v4.util.Pools$SynchronizedPool" ->
+              true
+          | _ ->
+              false
+        in
+        PatternMatch.supertype_exists tenv aux typename
+    | _ ->
+        false
+  in
+  if is_threadsafe_collection callee_pname tenv then true
+  else
+    let is_annotated_synchronized base_typename container_field tenv =
+      match Tenv.lookup tenv base_typename with
+      | Some base_typ ->
+          Annotations.field_has_annot container_field base_typ
+            Annotations.ia_is_synchronized_collection
+      | None ->
+          false
+    in
+    match List.rev accesses with
+    | AccessPath.FieldAccess base_field :: AccessPath.FieldAccess container_field :: _
+      when Typ.Procname.is_java callee_pname ->
+        let base_typename = Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class base_field) in
+        is_annotated_synchronized base_typename container_field tenv
+    | [AccessPath.FieldAccess container_field] -> (
+      match base_typ.desc with
+      | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _) ->
+          is_annotated_synchronized base_typename container_field tenv
+      | _ ->
+          false )
+    | _ ->
+        false

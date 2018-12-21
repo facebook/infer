@@ -43,8 +43,6 @@ module TraceElem : sig
   val make_container_access : AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
 
   val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> t
-
-  val make_unannotated_call_access : Typ.Procname.t -> Location.t -> t
 end
 
 module PathDomain :
@@ -225,3 +223,5 @@ val empty_summary : summary
 include AbstractDomain.WithBottom with type t := t
 
 val pp_summary : F.formatter -> summary -> unit
+
+val add_unannotated_call_access : Typ.Procname.t -> Location.t -> Procdesc.t -> t -> t
