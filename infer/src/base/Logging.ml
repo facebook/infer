@@ -446,7 +446,7 @@ let d_printf ?color fmt = F.kasprintf (d_str ?color) fmt
 
 let d_printfln ?color fmt = F.kasprintf (d_strln ?color) fmt
 
-let d_printfln_escaped fmt = F.kasprintf (fun s -> d_strln (Escape.escape_xml s)) fmt
+let d_printfln_escaped ?color fmt = F.kasprintf (fun s -> d_strln ?color (Escape.escape_xml s)) fmt
 
 (** dump an indentation *)
 let d_indent indent =

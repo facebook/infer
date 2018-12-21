@@ -190,6 +190,14 @@ let by_value =
   fun value -> {exec= exec ~value; check= no_check}
 
 
+let by_value_with_final_trace final_trace =
+  let exec ~value {location} ~ret mem =
+    let traces = Trace.(Set.singleton_final location final_trace) in
+    model_by_value {value with traces} ret mem
+  in
+  fun value -> {exec= exec ~value; check= no_check}
+
+
 let bottom =
   let exec _model_env ~ret:_ _mem = Bottom in
   {exec; check= no_check}
@@ -245,6 +253,10 @@ let set_array_length array length_exp =
   and check = check_alloc_size length_exp in
   {exec; check}
 
+
+let snprintf = by_value_with_final_trace Trace.snprintf Dom.Val.Itv.top
+
+let vsnprintf = by_value_with_final_trace Trace.vsnprintf Dom.Val.Itv.top
 
 module Split = struct
   let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
@@ -304,7 +316,7 @@ module StdArray = struct
 
   let no_model =
     let exec {pname} ~ret:_ mem =
-      L.d_printfln "No model for %a" Typ.Procname.pp pname ;
+      L.d_printfln_escaped "No model for %a" Typ.Procname.pp pname ;
       mem
     in
     {exec; check= no_check}
@@ -469,6 +481,8 @@ module Call = struct
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
+      ; -"snprintf" <>--> snprintf
+      ; -"vsnprintf" <>--> vsnprintf
       ; -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector

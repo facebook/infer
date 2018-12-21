@@ -651,13 +651,26 @@ module ConditionTrace = struct
 
   let has_unknown ct = ValTrace.Issue.has_unknown ct.val_traces
 
-  let check issue_type_u5 : _ t0 -> IssueType.t option =
-   fun ct -> if has_unknown ct then Some issue_type_u5 else None
+  let has_risky ct = ValTrace.Issue.has_risky ct.val_traces
+
+  let check ~issue_type_u5 ~issue_type_r2 : _ t0 -> IssueType.t option =
+   fun ct ->
+    if has_risky ct then Some issue_type_r2
+    else if has_unknown ct then Some issue_type_u5
+    else None
 
 
-  let check_buffer_overrun ct = check IssueType.buffer_overrun_u5 ct
+  let check_buffer_overrun ct =
+    let issue_type_u5 = IssueType.buffer_overrun_u5 in
+    let issue_type_r2 = IssueType.buffer_overrun_r2 in
+    check ~issue_type_u5 ~issue_type_r2 ct
 
-  let check_integer_overflow ct = check IssueType.integer_overflow_u5 ct
+
+  let check_integer_overflow ct =
+    let issue_type_u5 = IssueType.integer_overflow_u5 in
+    let issue_type_r2 = IssueType.integer_overflow_r2 in
+    check ~issue_type_u5 ~issue_type_r2 ct
+
 
   let for_summary : _ t0 -> summary_t = fun ct -> {ct with cond_trace= ()}
 end
@@ -813,19 +826,19 @@ module ConditionSet = struct
     let rec aux acc ~same = function
       | [] ->
           if Config.bo_debug >= 3 then
-            L.d_printfln "[InferboPO] Adding new condition %a@." pp_cond new_ ;
+            L.d_printfln_escaped "[InferboPO] Adding new condition %a@." pp_cond new_ ;
           if same then new_ :: condset else new_ :: acc
       | existing :: rest as existings -> (
         match try_merge ~existing ~new_ with
         | `DoNotAddAndStop ->
             if Config.bo_debug >= 3 then
-              L.d_printfln "[InferboPO] Not adding condition %a (because of existing %a)@." pp_cond
-                new_ pp_cond existing ;
+              L.d_printfln_escaped "[InferboPO] Not adding condition %a (because of existing %a)@."
+                pp_cond new_ pp_cond existing ;
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
             if Config.bo_debug >= 3 then
-              L.d_printfln "[InferboPO] Removing condition %a (because of new %a)@." pp_cond
-                existing pp_cond new_ ;
+              L.d_printfln_escaped "[InferboPO] Removing condition %a (because of new %a)@."
+                pp_cond existing pp_cond new_ ;
             aux acc ~same:false rest
         | `KeepExistingAndContinue ->
             aux (existing :: acc) ~same rest )

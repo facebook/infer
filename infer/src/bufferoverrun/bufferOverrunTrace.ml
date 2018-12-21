@@ -10,7 +10,10 @@ open AbsLoc
 module F = Format
 
 module BoTrace = struct
-  type final = UnknownFrom of Typ.Procname.t option [@@deriving compare]
+  type lib_fun = Snprintf | Vsnprintf [@@deriving compare]
+
+  type final = UnknownFrom of Typ.Procname.t option | RiskyLibCall of lib_fun
+  [@@deriving compare]
 
   type elem = ArrayDeclaration | Assign | Parameter of Loc.t | Through [@@deriving compare]
 
@@ -20,6 +23,10 @@ module BoTrace = struct
     | Elem of {location: Location.t; length: int; kind: elem; from: t}
     | Call of {location: Location.t; length: int; caller: t; callee: t}
   [@@deriving compare]
+
+  let snprintf = RiskyLibCall Snprintf
+
+  let vsnprintf = RiskyLibCall Vsnprintf
 
   let length = function Empty -> 0 | Final _ -> 1 | Elem {length} | Call {length} -> length
 
@@ -44,9 +51,18 @@ module BoTrace = struct
 
   let pp_location = Location.pp_file_pos
 
+  let pp_lib_fun f = function
+    | Snprintf ->
+        F.fprintf f "snprintf"
+    | Vsnprintf ->
+        F.fprintf f "vsnprintf"
+
+
   let pp_final f = function
     | UnknownFrom pname_opt ->
         F.fprintf f "UnknownFrom `%a`" pp_pname_opt pname_opt
+    | RiskyLibCall lib_fun ->
+        F.fprintf f "RiskyLibCall `%a`" pp_lib_fun lib_fun
 
 
   let pp_elem f = function
@@ -73,20 +89,26 @@ module BoTrace = struct
 
   and pp_arrow f = function Empty -> () | t -> F.fprintf f "%a -> " pp t
 
-  let rec has_unknown = function
+  let rec final_exists ~f = function
     | Empty ->
         false
-    | Final {kind= UnknownFrom _} ->
-        true
+    | Final {kind= final} ->
+        f final
     | Elem {from} ->
-        has_unknown from
+        final_exists ~f from
     | Call {caller; callee} ->
-        has_unknown caller || has_unknown callee
+        final_exists ~f caller || final_exists ~f callee
 
+
+  let has_unknown = final_exists ~f:(function UnknownFrom _ -> true | RiskyLibCall _ -> false)
+
+  let has_risky = final_exists ~f:(function UnknownFrom _ -> false | RiskyLibCall _ -> true)
 
   let final_err_desc = function
     | UnknownFrom pname_opt ->
         F.asprintf "Unknown value from: %a" pp_pname_opt pname_opt
+    | RiskyLibCall lib_fun ->
+        F.asprintf "Risky value from: %a" pp_lib_fun lib_fun
 
 
   let elem_err_desc = function
@@ -162,6 +184,8 @@ module Set = struct
 
   let has_unknown t = exists BoTrace.has_unknown t
 
+  let has_risky t = exists BoTrace.has_risky t
+
   let make_err_trace depth set tail =
     if is_empty set then tail else BoTrace.make_err_trace depth (choose_shortest set) tail
 
@@ -194,14 +218,18 @@ module Issue = struct
     Call {location; length= 1 + Set.length caller + length callee; caller; callee}
 
 
-  let rec has_unknown = function
+  let rec has_common ~f = function
     | Elem {from} ->
-        Set.has_unknown from
+        f from
     | Binary {left; right} ->
-        Set.has_unknown left || Set.has_unknown right
+        f left || f right
     | Call {caller; callee} ->
-        Set.has_unknown caller || has_unknown callee
+        f caller || has_common ~f callee
 
+
+  let has_unknown = has_common ~f:Set.has_unknown
+
+  let has_risky = has_common ~f:Set.has_risky
 
   let binary_labels = function ArrayAccess -> ("Offset", "Length") | Binop -> ("LHS", "RHS")
 

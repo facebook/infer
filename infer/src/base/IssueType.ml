@@ -112,6 +112,8 @@ let buffer_overrun_l4 = from_string ~enabled:false "BUFFER_OVERRUN_L4"
 
 let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
 
+let buffer_overrun_r2 = from_string "BUFFER_OVERRUN_R2"
+
 let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
 let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
@@ -290,6 +292,8 @@ let integer_overflow_l1 = from_string "INTEGER_OVERFLOW_L1"
 let integer_overflow_l2 = from_string "INTEGER_OVERFLOW_L2"
 
 let integer_overflow_l5 = from_string ~enabled:false "INTEGER_OVERFLOW_L5"
+
+let integer_overflow_r2 = from_string "INTEGER_OVERFLOW_R2"
 
 let integer_overflow_u5 = from_string ~enabled:false "INTEGER_OVERFLOW_U5"
 

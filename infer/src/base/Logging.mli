@@ -112,7 +112,7 @@ val d_printf : ?color:Pp.color -> ('a, F.formatter, unit) format -> 'a
 
 val d_printfln : ?color:Pp.color -> ('a, F.formatter, unit) format -> 'a
 
-val d_printfln_escaped : ('a, F.formatter, unit) format -> 'a
+val d_printfln_escaped : ?color:Pp.color -> ('a, F.formatter, unit) format -> 'a
 
 val d_error : string -> unit
 (** dump an error string *)

@@ -171,14 +171,15 @@ module TransferFunctions = struct
               let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
               Dom.Mem.add_stack (Loc.of_id id) v mem
           | None ->
-              L.d_printfln "/!\\ Initializer of global constant %a has no inferbo payload"
+              L.d_printfln_escaped "/!\\ Initializer of global constant %a has no inferbo payload"
                 (Pvar.pp Pp.text) pvar ;
               Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
         | None ->
-            L.d_printfln "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text) pvar ;
+            L.d_printfln_escaped "/!\\ Unknown initializer of global constant %a" (Pvar.pp Pp.text)
+              pvar ;
             Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
       | None ->
-          L.d_printfln "/!\\ Failed to get initializer name of global constant %a"
+          L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
     | Load (id, exp, _, _) ->
@@ -244,10 +245,11 @@ module TransferFunctions = struct
                   payload location
             | None ->
                 (* This may happen for procedures with a biabduction model. *)
-                L.d_printfln "/!\\ Call to %a has no inferbo payload" Typ.Procname.pp callee_pname ;
+                L.d_printfln_escaped "/!\\ Call to %a has no inferbo payload" Typ.Procname.pp
+                  callee_pname ;
                 Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
           | None ->
-              L.d_printfln "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
+              L.d_printfln_escaped "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
               if is_external callee_pname then (
                 L.(debug BufferOverrun Verbose)
                   "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
@@ -259,7 +261,7 @@ module TransferFunctions = struct
               else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        let () = L.d_printfln "/!\\ Call to non-const function %a" Exp.pp fun_exp in
+        L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
         Dom.Mem.add_unknown id ~location mem
     | ExitScope (dead_vars, _) ->
         Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem

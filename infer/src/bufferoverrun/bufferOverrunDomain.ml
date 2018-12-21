@@ -257,7 +257,7 @@ module Val = struct
   let warn_against_pruning_multiple_values : t -> t =
    fun x ->
     if x.represents_multiple_values && Config.write_html then
-      L.d_printfln ~color:Pp.Red "Pruned %a that represents multiple values" pp x ;
+      L.d_printfln_escaped ~color:Pp.Red "Pruned %a that represents multiple values" pp x ;
     x
 
 
@@ -370,7 +370,7 @@ module Val = struct
 
   let of_path tenv ~may_last_field integer_type_widths location typ path =
     let is_java = Language.curr_language_is Java in
-    L.d_printfln "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
+    L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
@@ -453,15 +453,15 @@ module Val = struct
    fun ~default {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
     match Loc.get_path l with
     | None ->
-        L.d_printfln "Val.on_demand for %a -> no path" Loc.pp l ;
+        L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
         default
     | Some path -> (
       match typ_of_param_path path with
       | None ->
-          L.d_printfln "Val.on_demand for %a -> no type" Loc.pp l ;
+          L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
           default
       | Some typ ->
-          L.d_printfln "Val.on_demand for %a" Loc.pp l ;
+          L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
           let may_last_field = may_last_field path in
           let path = OndemandEnv.canonical_path typ_of_param_path path in
           of_path tenv ~may_last_field integer_type_widths entry_location typ path )
@@ -993,9 +993,9 @@ module MemReach = struct
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
     if can_strong_update ploc then strong_update ploc v s
-    else
-      let () = L.d_printfln "Weak update for %a <- %a" PowLoc.pp ploc Val.pp v in
-      weak_update ploc v s
+    else (
+      L.d_printfln_escaped "Weak update for %a <- %a" PowLoc.pp ploc Val.pp v ;
+      weak_update ploc v s )
 
 
   let remove_temp : Ident.t -> t -> t =
