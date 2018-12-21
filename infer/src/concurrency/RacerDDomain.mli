@@ -22,11 +22,7 @@ module Access : sig
         (** Call to method of interface not annotated with @ThreadSafe *)
   [@@deriving compare]
 
-  include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val matches : caller:t -> callee:t -> bool
-  (** returns true if the caller access matches the callee access after accounting for mismatch
-      between the formals and actuals *)
+  include TraceElem.Kind with type t := t
 
   val get_access_path : t -> AccessPath.t option
 end
@@ -56,7 +52,7 @@ module PathDomain :
 
 (** Overapproximation of number of locks that are currently held *)
 module LocksDomain : sig
-  include AbstractDomain.WithBottom
+  type t
 
   val acquire_lock : t -> t
   (** record acquisition of a lock *)
@@ -82,8 +78,6 @@ module ThreadsDomain : sig
     | AnyThread
         (** Current thread can run in parallel with any thread, including itself (concretization:
             set of all TIDs ) *)
-
-  include AbstractDomain.WithBottom with type t := t
 
   val can_conflict : t -> t -> bool
   (** return true if two accesses with these thread values can run concurrently *)
@@ -136,8 +130,6 @@ end
     possibly-unowned access path *)
 module AccessDomain : AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
 
-(** Powerset domain on the formal indexes in OwnedIf with a distinguished bottom element (Owned)
-    and top element (Unowned) *)
 module OwnershipAbstractValue : sig
   type t = private
     | Owned  (** Owned value; bottom of the lattice *)
@@ -150,19 +142,18 @@ module OwnershipAbstractValue : sig
   val unowned : t
 
   val make_owned_if : int -> t
-
-  include AbstractDomain.S with type t := t
 end
 
 module OwnershipDomain : sig
-  include
-    AbstractDomain.MapS with type key = AccessPath.t with type value = OwnershipAbstractValue.t
+  type t
+
+  val empty : t
+
+  val add : AccessPath.t -> OwnershipAbstractValue.t -> t -> t
 
   val get_owned : AccessPath.t -> t -> OwnershipAbstractValue.t
 
   val is_owned : AccessPath.t -> t -> bool
-
-  val find : [`Use_get_owned_instead] [@@warning "-32"]
 
   val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
 
@@ -186,11 +177,16 @@ module Attribute : sig
   include PrettyPrintable.PrintableOrderedType with type t := t
 end
 
-module AttributeSetDomain : AbstractDomain.InvertedSetS with type elt = Attribute.t
+module AttributeSetDomain : sig
+  type t
+
+  val empty : t
+end
 
 module AttributeMapDomain : sig
-  include
-    AbstractDomain.InvertedMapS with type key = AccessPath.t with type value = AttributeSetDomain.t
+  type t
+
+  val find : AccessPath.t -> t -> AttributeSetDomain.t
 
   val add : AccessPath.t -> AttributeSetDomain.t -> t -> t
 

@@ -403,8 +403,6 @@ module OwnershipDomain = struct
         false
 
 
-  let find = `Use_get_owned_instead
-
   let rec ownership_of_expr expr ownership =
     let open HilExp in
     match expr with
