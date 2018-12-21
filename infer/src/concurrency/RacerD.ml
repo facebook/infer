@@ -91,9 +91,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else
             let is_write = if List.is_empty access_list then is_write_access else false in
             let access = TraceElem.make_field_access prefix_path' ~is_write loc in
-            (* use ownership value of base: if base is owned, treat suffixes as owned too *)
-            let base_path = (fst prefix_path, []) in
-            match OwnershipDomain.get_owned base_path ownership with
+            match OwnershipDomain.get_owned prefix_path ownership with
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
                 let pre =
                   AccessSnapshot.make access locks threads
