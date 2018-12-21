@@ -22,7 +22,7 @@ type t =
   | Assign of HilExp.AccessExpression.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
-  | ExitScope of Var.t list
+  | ExitScope of Var.t list * Location.t
 [@@deriving compare]
 
 let pp fmt = function
@@ -35,8 +35,8 @@ let pp fmt = function
       let pp_ret fmt = F.fprintf fmt "%a := " AccessPath.pp_base in
       let pp_actuals fmt = PrettyPrintable.pp_collection ~pp_item:HilExp.pp fmt in
       F.fprintf fmt "%a%a(%a) [%a]" pp_ret ret pp_call call pp_actuals actuals Location.pp loc
-  | ExitScope vars ->
-      F.fprintf fmt "exit scope [%a]" (Pp.seq ~sep:"; " Var.pp) vars
+  | ExitScope (vars, loc) ->
+      F.fprintf fmt "exit scope(%a) [%a]" (Pp.seq ~sep:"; " Var.pp) vars Location.pp loc
 
 
 type translation = Instr of t | Bind of Var.t * HilExp.AccessExpression.t | Ignore
@@ -121,8 +121,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       let hil_exp = exp_of_sil exp (Typ.mk (Tint IBool)) in
       let branch = if true_branch then `Then else `Else in
       Instr (Assume (hil_exp, branch, if_kind, loc))
-  | ExitScope (vars, _) ->
-      Instr (ExitScope vars)
+  | ExitScope (vars, loc) ->
+      Instr (ExitScope (vars, loc))
   | Abstract _ | Nullify _ ->
       (* these don't seem useful for most analyses. can translate them later if we want to *)
       Ignore

@@ -72,13 +72,13 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
         (None, bindings)
     | Bind (id, access_path) ->
         (None, Bindings.add id access_path bindings)
-    | Instr (ExitScope vars) ->
+    | Instr (ExitScope (vars, loc)) ->
         let bindings, vars =
           List.fold vars ~init:(bindings, []) ~f:(fun (bindings, vars) var ->
               let bindings, vars' = Bindings.exit_scope var bindings in
               (bindings, append_bindings vars vars') )
         in
-        let instr = if List.is_empty vars then None else Some (HilInstr.ExitScope vars) in
+        let instr = if List.is_empty vars then None else Some (HilInstr.ExitScope (vars, loc)) in
         (instr, bindings)
     | Instr instr ->
         (Some instr, bindings)

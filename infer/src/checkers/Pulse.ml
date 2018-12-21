@@ -136,7 +136,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
         dispatch_call summary ret call actuals flags loc astate |> check_error summary
-    | ExitScope vars ->
+    | ExitScope (vars, _) ->
         PulseDomain.remove_vars vars astate
 
 

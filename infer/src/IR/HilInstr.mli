@@ -18,7 +18,7 @@ type t =
       (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
   | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
       (** Var to hold the return, call expression, formals *)
-  | ExitScope of Var.t list
+  | ExitScope of Var.t list * Location.t
 [@@deriving compare]
 
 val pp : F.formatter -> t -> unit
