@@ -10,7 +10,6 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
-module L = Logging
 module Bound = Bounds.Bound
 open Ints
 module SymbolPath = Symb.SymbolPath
@@ -442,20 +441,6 @@ let compare : t -> t -> int =
 let bot : t = Bottom
 
 let top : t = NonBottom ItvPure.top
-
-let lb : t -> Bound.t = function
-  | NonBottom x ->
-      ItvPure.lb x
-  | Bottom ->
-      L.(die InternalError) "lower bound of bottom"
-
-
-let ub : t -> Bound.t = function
-  | NonBottom x ->
-      ItvPure.ub x
-  | Bottom ->
-      L.(die InternalError) "upper bound of bottom"
-
 
 let get_bound itv (be : Symb.BoundEnd.t) =
   match (itv, be) with

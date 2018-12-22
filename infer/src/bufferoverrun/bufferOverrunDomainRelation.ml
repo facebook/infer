@@ -853,27 +853,29 @@ module Make (Manager : Manager_S) = struct
 
 
     let itv_of sym itv =
-      if Itv.is_empty itv then empty
-      else
-        let lb, ub = (Itv.lb itv, Itv.ub itv) in
-        Option.value_map (SymExp.of_sym sym) ~default:empty ~f:(fun sym_exp ->
-            let tcons_lb =
-              Option.map (Itv.Bound.is_const lb) ~f:(fun lb ->
-                  let sym_minus_lb = SymExp.minus sym_exp (SymExp.of_big_int lb) in
-                  Tcons1.make sym_minus_lb Tcons1.SUPEQ )
-            in
-            let tcons_ub =
-              Option.map (Itv.Bound.is_const ub) ~f:(fun ub ->
-                  let ub_minus_sym = SymExp.minus (SymExp.of_big_int ub) sym_exp in
-                  Tcons1.make ub_minus_sym Tcons1.SUPEQ )
-            in
-            match (tcons_lb, tcons_ub) with
-            | Some tcons_lb, Some tcons_ub ->
-                doubleton tcons_lb tcons_ub
-            | Some tcons, None | None, Some tcons ->
-                singleton tcons
-            | None, None ->
-                empty )
+      match itv with
+      | Bottom ->
+          empty
+      | NonBottom itv_pure ->
+          let lb, ub = (Itv.ItvPure.lb itv_pure, Itv.ItvPure.ub itv_pure) in
+          Option.value_map (SymExp.of_sym sym) ~default:empty ~f:(fun sym_exp ->
+              let tcons_lb =
+                Option.map (Itv.Bound.is_const lb) ~f:(fun lb ->
+                    let sym_minus_lb = SymExp.minus sym_exp (SymExp.of_big_int lb) in
+                    Tcons1.make sym_minus_lb Tcons1.SUPEQ )
+              in
+              let tcons_ub =
+                Option.map (Itv.Bound.is_const ub) ~f:(fun ub ->
+                    let ub_minus_sym = SymExp.minus (SymExp.of_big_int ub) sym_exp in
+                    Tcons1.make ub_minus_sym Tcons1.SUPEQ )
+              in
+              match (tcons_lb, tcons_ub) with
+              | Some tcons_lb, Some tcons_ub ->
+                  doubleton tcons_lb tcons_ub
+              | Some tcons, None | None, Some tcons ->
+                  singleton tcons
+              | None, None ->
+                  empty )
 
 
     let of_raw_symexp re typ = singleton (Tcons1.make (SymExp.of_raw re) typ)

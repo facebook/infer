@@ -139,10 +139,6 @@ val is_one : t -> bool
 
 val is_mone : t -> bool
 
-val lb : t -> Bound.t
-
-val ub : t -> Bound.t
-
 val get_bound : t -> Symb.BoundEnd.t -> Bound.t bottom_lifted
 
 val is_false : t -> bool
