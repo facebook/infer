@@ -8,6 +8,10 @@
 open! IStd
 module Bound = Bounds.Bound
 
+module DegreeKind : sig
+  type t = Linear | Log
+end
+
 module Degree : sig
   type t [@@deriving compare]
 
@@ -36,7 +40,7 @@ module NonNegativePolynomial : sig
 
   val is_one : t -> bool
 
-  val of_non_negative_bound : Bounds.NonNegativeBound.t -> t
+  val of_non_negative_bound : ?degree_kind:DegreeKind.t -> Bounds.NonNegativeBound.t -> t
 
   val plus : t -> t -> t
 

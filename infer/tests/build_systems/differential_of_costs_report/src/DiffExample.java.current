@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import java.util.ArrayList;
+
 // This class has the following costs:
 // 1 bottom (zero), 2 constant, 1 linear, 1 top
 // constructor: constant
@@ -12,6 +14,8 @@
 // f2: bottom (zero)
 // f3: constant
 // f4: linear
+// f5: n log n
+// f6: n log n
 
 public class DiffExample {
 
@@ -40,5 +44,15 @@ public class DiffExample {
         for (int i = 0; i < k; i++) {
         }
         return 0;
+    }
+
+    // cost: n log n
+    private void f5(ArrayList<Integer> list) {
+      java.util.Collections.sort(list);
+    }
+
+    // cost: n log n
+    private void f6(ArrayList<Integer> list) {
+      f5(list);
     }
 }

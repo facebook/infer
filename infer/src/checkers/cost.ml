@@ -66,14 +66,18 @@ module TransferFunctionsNodesBasicCost = struct
       match instr with
       | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
           let callee_cost =
-            match Payload.read pdesc callee_pname with
-            | Some {post= callee_cost} ->
-                if BasicCost.is_symbolic callee_cost then
-                  instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                    ~callee_pname ~params ~callee_cost
-                else callee_cost
-            | None ->
-                cost_atomic_instruction
+            match CostModels.Call.dispatch () callee_pname params with
+            | Some model ->
+                model inferbo_mem
+            | None -> (
+              match Payload.read pdesc callee_pname with
+              | Some {post= callee_cost} ->
+                  if BasicCost.is_symbolic callee_cost then
+                    instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                      ~callee_pname ~params ~callee_cost
+                  else callee_cost
+              | None ->
+                  cost_atomic_instruction )
           in
           CostDomain.NodeInstructionToCostMap.add key callee_cost astate
       | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->

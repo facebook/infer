@@ -13,8 +13,6 @@ open Ints
 module DegreeKind = struct
   type t = Linear | Log [@@deriving compare]
 
-  let[@warning "-32"] _i_know_log_isn't_used_for_now = Log
-
   let compute d i =
     match d with
     | Linear ->
@@ -421,9 +419,9 @@ module NonNegativePolynomial = struct
 
   let of_int_exn i = NonTop (NonNegativeNonTopPolynomial.of_int_exn i)
 
-  let of_non_negative_bound b =
+  let of_non_negative_bound ?(degree_kind = DegreeKind.Linear) b =
     b
-    |> NonNegativeBoundWithDegreeKind.make DegreeKind.Linear
+    |> NonNegativeBoundWithDegreeKind.make degree_kind
     |> NonNegativeBoundWithDegreeKind.classify |> NonNegativeNonTopPolynomial.of_valclass
 
 

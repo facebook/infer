@@ -197,4 +197,12 @@ public class ArrayListTest {
     }
     return true;
   }
+
+  public static void sortArrayList(ArrayList<Integer> list) {
+    java.util.Collections.sort(list);
+  }
+
+  private static void call_sortArrayList(ArrayList<Integer> list) {
+    sortArrayList(list);
+  }
 }
