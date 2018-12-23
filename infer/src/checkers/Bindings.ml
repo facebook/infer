@@ -8,57 +8,96 @@
 open! IStd
 module F = Format
 module L = Logging
-module Dead = AbstractDomain.InvertedSet (Var)
-module Reverse = AbstractDomain.FiniteMultiMap (Var) (Var)
+
+module Reverse = struct
+  module Dead = AbstractDomain.BooleanAnd
+  module VarSet = AbstractDomain.FiniteSet (Var)
+  module DeadAndVarSet = AbstractDomain.Pair (Dead) (VarSet)
+  module M = AbstractDomain.Map (Var) (DeadAndVarSet)
+
+  (* invariant: sets are not empty *)
+  type t = M.t
+
+  let empty = M.empty
+
+  let add k v rm =
+    M.update k
+      (function
+        | None -> Some (false, VarSet.singleton v) | Some (_, s) -> Some (false, VarSet.add v s))
+      rm
+
+
+  let mem = M.mem
+
+  let deadify k rm =
+    M.update k
+      (function (None | Some (true, _)) as vo -> vo | Some (false, s) -> Some (true, s))
+      rm
+
+
+  let remove k v rm =
+    match M.find_opt k rm with
+    | None ->
+        (rm, false)
+    | Some (dead, s) ->
+        let s = VarSet.remove v s in
+        if VarSet.is_empty s then (M.remove k rm, dead) else (M.add k (dead, s) rm, false)
+
+
+  let pp = M.pp
+
+  let join = M.join
+
+  let widen = M.widen
+end
 
 type t =
   { resolve: IdAccessPathMapDomain.t
   ; reverse: Reverse.t
         (** there is a [x -> y] mapping in reverse for each variable [y] appearing in [resolve x] *)
-  ; dead: Dead.t }
+  }
 
-let empty = {resolve= IdAccessPathMapDomain.empty; reverse= Reverse.empty; dead= Dead.empty}
+let empty = {resolve= IdAccessPathMapDomain.empty; reverse= Reverse.empty}
 
-let add id ap {resolve; reverse; dead} =
+let add id ap {resolve; reverse} =
+  if (Config.debug_exceptions || Config.write_html) && Reverse.mem id reverse then
+    (if Config.debug_exceptions then L.(die InternalError) else L.d_printfln ?color:None)
+      "Variable %a appearing on both sides of bindings" Var.pp id ;
   let resolve = IdAccessPathMapDomain.add id ap resolve in
   let reverse =
     HilExp.AccessExpression.fold_vars ap ~init:reverse ~f:(fun acc var_in_ap ->
         Reverse.add var_in_ap id acc )
   in
-  let dead = Dead.remove id dead in
-  {resolve; reverse; dead}
+  {resolve; reverse}
 
 
 let exit_scope id bindings =
-  let {resolve; reverse; dead} = bindings in
-  match (Reverse.mem id reverse, IdAccessPathMapDomain.find_opt id resolve) with
-  | true, None ->
-      let dead = Dead.add id dead in
-      ({resolve; reverse; dead}, [])
-  | true, Some _ ->
-      L.(die InternalError) "Variable appearing on both sides of bindings"
-  | false, None ->
-      (bindings, [id])
-  | false, Some ap ->
+  let {resolve; reverse} = bindings in
+  match IdAccessPathMapDomain.find_opt id resolve with
+  | None ->
+      if Reverse.mem id reverse then
+        let reverse = Reverse.deadify id reverse in
+        ({resolve; reverse}, [])
+      else (bindings, [id])
+  | Some ap ->
       let resolve = IdAccessPathMapDomain.remove id resolve in
-      let reverse, vars, dead =
-        HilExp.AccessExpression.fold_vars ap ~init:(reverse, [], dead)
-          ~f:(fun (reverse, vars, dead) var_in_ap ->
-            let reverse = Reverse.remove var_in_ap id reverse in
-            if (not (Reverse.mem var_in_ap reverse)) && Dead.mem var_in_ap dead then
-              (reverse, var_in_ap :: vars, Dead.remove var_in_ap dead)
-            else (reverse, vars, dead) )
+      let reverse, vars =
+        HilExp.AccessExpression.fold_vars ap ~init:(reverse, [])
+          ~f:(fun (reverse, vars) var_in_ap ->
+            let reverse, dead = Reverse.remove var_in_ap id reverse in
+            let vars = if dead then var_in_ap :: vars else vars in
+            (reverse, vars) )
       in
-      ({resolve; reverse; dead}, vars)
+      ({resolve; reverse}, vars)
 
 
 let resolve {resolve} id = IdAccessPathMapDomain.find_opt id resolve
 
 let fold {resolve} ~init ~f = IdAccessPathMapDomain.fold f resolve init
 
-let pp f {resolve; reverse; dead} =
-  F.fprintf f "{@[<v1> resolve=@[<hv>%a@];@;reverse=@[<hv>%a@];@;dead=@[<hv>%a@];@]}"
-    IdAccessPathMapDomain.pp resolve Reverse.pp reverse Dead.pp dead
+let pp f {resolve; reverse} =
+  F.fprintf f "{@[<v1> resolve=@[<hv>%a@];@;reverse=@[<hv>%a@]@]}" IdAccessPathMapDomain.pp resolve
+    Reverse.pp reverse
 
 
 let ( <= ) ~lhs ~rhs = IdAccessPathMapDomain.( <= ) ~lhs:lhs.resolve ~rhs:rhs.resolve
@@ -66,18 +105,15 @@ let ( <= ) ~lhs ~rhs = IdAccessPathMapDomain.( <= ) ~lhs:lhs.resolve ~rhs:rhs.re
 let join bindings1 bindings2 =
   if phys_equal bindings1 bindings2 then bindings1
   else
-    let {resolve= resolve1; reverse= reverse1; dead= dead1} = bindings1 in
-    let {resolve= resolve2; reverse= reverse2; dead= dead2} = bindings2 in
-    { resolve= IdAccessPathMapDomain.join resolve1 resolve2
-    ; reverse= Reverse.join reverse1 reverse2
-    ; dead= Dead.join dead1 dead2 }
+    let {resolve= resolve1; reverse= reverse1} = bindings1 in
+    let {resolve= resolve2; reverse= reverse2} = bindings2 in
+    {resolve= IdAccessPathMapDomain.join resolve1 resolve2; reverse= Reverse.join reverse1 reverse2}
 
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next then prev
   else
-    let {resolve= resolve1; reverse= reverse1; dead= dead1} = prev in
-    let {resolve= resolve2; reverse= reverse2; dead= dead2} = next in
+    let {resolve= resolve1; reverse= reverse1} = prev in
+    let {resolve= resolve2; reverse= reverse2} = next in
     { resolve= IdAccessPathMapDomain.widen ~prev:resolve1 ~next:resolve2 ~num_iters
-    ; reverse= Reverse.widen ~prev:reverse1 ~next:reverse2 ~num_iters
-    ; dead= Dead.widen ~prev:dead1 ~next:dead2 ~num_iters }
+    ; reverse= Reverse.widen ~prev:reverse1 ~next:reverse2 ~num_iters }

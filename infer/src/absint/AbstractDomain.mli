@@ -146,28 +146,28 @@ end
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
   InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
-module FiniteMultiMap
-    (Key : PrettyPrintable.PrintableOrderedType)
-    (Value : PrettyPrintable.PrintableOrderedType) : sig
-  include WithBottom
-
-  val add : Key.t -> Value.t -> t -> t
-
-  val mem : Key.t -> t -> bool
-
-  val remove : Key.t -> Value.t -> t -> t
-end
-
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
 include
   sig
     [@@@warning "-60"]
 
-    (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
-    true in both conditional branches. *)
-    module BooleanAnd : S with type t = bool
+    module FiniteMultiMap
+        (Key : PrettyPrintable.PrintableOrderedType)
+        (Value : PrettyPrintable.PrintableOrderedType) : sig
+      include WithBottom
+
+      val add : Key.t -> Value.t -> t -> t [@@warning "-32"]
+
+      val mem : Key.t -> t -> bool [@@warning "-32"]
+
+      val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
+    end
 end
+
+(** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
+    true in both conditional branches. *)
+module BooleanAnd : S with type t = bool
 
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
