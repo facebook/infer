@@ -90,3 +90,54 @@ void call_function_ptr_bad1() {
     arr[10] = 1;
   }
 }
+
+void access_index_1(int* arr) { arr[1] = 0; }
+void access_index_4(int* arr) { arr[4] = 0; }
+
+void call_access_index_1_on_local_array_Good() {
+  int arr[4];
+  access_index_1(arr);
+}
+
+void call_access_index_4_on_local_array_Bad() {
+  int arr[4];
+  access_index_4(arr);
+}
+
+void call_access_index_1_on_malloced_array_Good() {
+  int* ptr = malloc(sizeof(int) * 4);
+  access_index_1(ptr);
+}
+
+void call_access_index_4_on_malloced_array_Bad() {
+  int* ptr = malloc(sizeof(int) * 4);
+  access_index_4(ptr);
+}
+
+struct S2 {
+  int arr[4];
+};
+
+void call_access_index_1_on_S2_Good(struct S2* s) { access_index_1(s->arr); }
+
+void FN_call_access_index_4_on_S2_Bad(struct S2* s) { access_index_4(s->arr); }
+
+struct S3 {
+  int* ptr;
+};
+
+void call_access_index_1_on_S3(struct S3* s) { access_index_1(s->ptr); }
+
+void call_access_index_4_on_S3(struct S3* s) { access_index_4(s->ptr); }
+
+void call_call_access_index_1_on_S3_Good() {
+  struct S3 s;
+  s.ptr = malloc(sizeof(int) * 4);
+  call_access_index_1_on_S3(&s);
+}
+
+void call_call_access_index_4_on_S3_Bad() {
+  struct S3 s;
+  s.ptr = malloc(sizeof(int) * 4);
+  call_access_index_4_on_S3(&s);
+}

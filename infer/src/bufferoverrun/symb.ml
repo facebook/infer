@@ -16,7 +16,9 @@ module BoundEnd = struct
 end
 
 module SymbolPath = struct
-  type deref_kind = Deref_ArrayIndex | Deref_CPointer | Deref_JavaPointer [@@deriving compare]
+  type deref_kind = Deref_ArrayIndex | Deref_CPointer | Deref_JavaPointer
+
+  let compare_deref_kind _ _ = 0
 
   type partial =
     | Pvar of Pvar.t
