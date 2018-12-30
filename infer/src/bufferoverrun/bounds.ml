@@ -261,8 +261,8 @@ module Bound = struct
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
 
-  let of_path path_of_partial bound_end ~unsigned partial =
-    let s = Symb.Symbol.make ~unsigned (path_of_partial partial) bound_end in
+  let of_path path_of_partial make_symbol ~unsigned partial =
+    let s = make_symbol ~unsigned (path_of_partial partial) in
     of_sym (SymLinear.singleton_one s)
 
 
@@ -826,22 +826,25 @@ module Bound = struct
           NonBottom (f x y)
     in
     fun ~subst_pos x eval_sym ->
-      let get s =
-        match eval_sym s with
+      let get s bound_position =
+        match eval_sym s bound_position with
         | NonBottom x when Symb.Symbol.is_unsigned s ->
             NonBottom (approx_max subst_pos x zero)
         | x ->
             x
       in
       let get_mult_const s coeff =
-        if NonZeroInt.is_one coeff then get s
-        else if NonZeroInt.is_minus_one coeff then get s |> lift1 neg
+        let bound_position =
+          if NonZeroInt.is_positive coeff then subst_pos else Symb.BoundEnd.neg subst_pos
+        in
+        if NonZeroInt.is_one coeff then get s bound_position
+        else if NonZeroInt.is_minus_one coeff then get s bound_position |> lift1 neg
         else
-          match eval_sym s with
+          match eval_sym s bound_position with
           | Bottom -> (
-            (* For unsigned symbols, we can over/under-approximate with zero depending on [subst_pos] and the sign of the coefficient. *)
-            match (Symb.Symbol.is_unsigned s, subst_pos, NonZeroInt.is_positive coeff) with
-            | true, Symb.BoundEnd.LowerBound, true | true, Symb.BoundEnd.UpperBound, false ->
+            (* For unsigned symbols, we can over/under-approximate with zero depending on [bound_position]. *)
+            match (Symb.Symbol.is_unsigned s, bound_position) with
+            | true, Symb.BoundEnd.LowerBound ->
                 NonBottom zero
             | _ ->
                 Bottom )
@@ -860,62 +863,65 @@ module Bound = struct
               ~init:(NonBottom (of_big_int c))
               ~f:(fun acc s coeff -> lift2 (plus subst_pos) acc (get_mult_const s coeff))
       | MinMax (c, sign, min_max, d, s) -> (
-        match get s with
-        | Bottom ->
-            Option.value_map (big_int_of_minmax subst_pos x) ~default:Bottom ~f:(fun i ->
-                NonBottom (of_big_int i) )
-        | NonBottom x' ->
-            let res =
-              match (sign, min_max, x') with
-              | Plus, Min, MInf | Minus, Max, PInf ->
-                  MInf
-              | Plus, Max, PInf | Minus, Min, MInf ->
-                  PInf
-              | sign, Min, PInf | sign, Max, MInf ->
-                  of_big_int (Sign.eval_big_int sign c d)
-              | _, _, Linear (c2, se) -> (
-                  if SymLinear.is_zero se then
-                    of_big_int (Sign.eval_big_int sign c (MinMax.eval_big_int min_max d c2))
-                  else if SymLinear.is_one_symbol se then
-                    mk_MinMax
-                      ( Sign.eval_big_int sign c c2
-                      , sign
-                      , min_max
-                      , Z.(d - c2)
-                      , SymLinear.get_one_symbol se )
-                  else if SymLinear.is_mone_symbol se then
-                    mk_MinMax
-                      ( Sign.eval_big_int sign c c2
-                      , Sign.neg sign
-                      , MinMax.neg min_max
-                      , Z.(c2 - d)
-                      , SymLinear.get_mone_symbol se )
-                  else
-                    match big_int_of_minmax subst_pos x with
-                    | Some i ->
-                        of_big_int i
-                    | None ->
-                        of_bound_end subst_pos )
-              | _, _, MinMax (c2, sign2, min_max2, d2, s2) -> (
-                match (min_max, sign2, min_max2) with
-                | Min, Plus, Min | Max, Plus, Max ->
-                    let c' = Sign.eval_big_int sign c c2 in
-                    let d' = MinMax.eval_big_int min_max Z.(d - c2) d2 in
-                    mk_MinMax (c', sign, min_max, d', s2)
-                | Min, Minus, Max | Max, Minus, Min ->
-                    let c' = Sign.eval_big_int sign c c2 in
-                    let d' = MinMax.eval_big_int min_max2 Z.(c2 - d) d2 in
-                    mk_MinMax (c', Sign.neg sign, min_max2, d', s2)
-                | _ ->
-                    let bound_end =
-                      match sign with Plus -> subst_pos | Minus -> Symb.BoundEnd.neg subst_pos
-                    in
-                    of_big_int
-                      (Sign.eval_big_int sign c
-                         (MinMax.eval_big_int min_max d
-                            (big_int_of_minmax bound_end x' |> Option.value ~default:d))) )
-            in
-            NonBottom res )
+          let bound_position =
+            match sign with Plus -> subst_pos | Minus -> Symb.BoundEnd.neg subst_pos
+          in
+          match get s bound_position with
+          | Bottom ->
+              Option.value_map (big_int_of_minmax subst_pos x) ~default:Bottom ~f:(fun i ->
+                  NonBottom (of_big_int i) )
+          | NonBottom x' ->
+              let res =
+                match (sign, min_max, x') with
+                | Plus, Min, MInf | Minus, Max, PInf ->
+                    MInf
+                | Plus, Max, PInf | Minus, Min, MInf ->
+                    PInf
+                | sign, Min, PInf | sign, Max, MInf ->
+                    of_big_int (Sign.eval_big_int sign c d)
+                | _, _, Linear (c2, se) -> (
+                    if SymLinear.is_zero se then
+                      of_big_int (Sign.eval_big_int sign c (MinMax.eval_big_int min_max d c2))
+                    else if SymLinear.is_one_symbol se then
+                      mk_MinMax
+                        ( Sign.eval_big_int sign c c2
+                        , sign
+                        , min_max
+                        , Z.(d - c2)
+                        , SymLinear.get_one_symbol se )
+                    else if SymLinear.is_mone_symbol se then
+                      mk_MinMax
+                        ( Sign.eval_big_int sign c c2
+                        , Sign.neg sign
+                        , MinMax.neg min_max
+                        , Z.(c2 - d)
+                        , SymLinear.get_mone_symbol se )
+                    else
+                      match big_int_of_minmax subst_pos x with
+                      | Some i ->
+                          of_big_int i
+                      | None ->
+                          of_bound_end subst_pos )
+                | _, _, MinMax (c2, sign2, min_max2, d2, s2) -> (
+                  match (min_max, sign2, min_max2) with
+                  | Min, Plus, Min | Max, Plus, Max ->
+                      let c' = Sign.eval_big_int sign c c2 in
+                      let d' = MinMax.eval_big_int min_max Z.(d - c2) d2 in
+                      mk_MinMax (c', sign, min_max, d', s2)
+                  | Min, Minus, Max | Max, Minus, Min ->
+                      let c' = Sign.eval_big_int sign c c2 in
+                      let d' = MinMax.eval_big_int min_max2 Z.(c2 - d) d2 in
+                      mk_MinMax (c', Sign.neg sign, min_max2, d', s2)
+                  | _ ->
+                      let bound_end =
+                        match sign with Plus -> subst_pos | Minus -> Symb.BoundEnd.neg subst_pos
+                      in
+                      of_big_int
+                        (Sign.eval_big_int sign c
+                           (MinMax.eval_big_int min_max d
+                              (big_int_of_minmax bound_end x' |> Option.value ~default:d))) )
+              in
+              NonBottom res )
 
 
   let subst_lb x eval_sym = subst ~subst_pos:Symb.BoundEnd.LowerBound x eval_sym

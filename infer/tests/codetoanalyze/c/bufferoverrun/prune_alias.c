@@ -98,45 +98,53 @@ void prune_alias_exp_Ok(int x) {
   }
 }
 
-void FP_prune_alias_exp_Ok(int x) {
+void prune_alias_exp2_CAF(int x) {
   int a[1];
 
-  if (x + 1 != 1 + x) {
+  if (x + 1 != 1 + x) { // Condition always false
+    a[1] = 0;
+  }
+}
+
+void FP_prune_alias_exp_Ok(int* x) {
+  int a[1];
+
+  if (*x + 1 != 1 + *x) {
     a[1] = 0;
   }
 }
 
 #include <stdlib.h>
 
-void prune_arrblk_ne(int* x) {
+void prune_arrblk_ne_CAT(int* x) {
   int* y = x + 10;
 
-  if (x != y) {
+  if (x != y) { // always true
     x[5] = 1;
   }
 }
 
 void call_prune_arrblk_ne_Ok() {
   int* x = (int*)malloc(sizeof(int) * 10);
-  prune_arrblk_ne(x);
+  prune_arrblk_ne_CAT(x);
 }
 
 void call_prune_arrblk_ne_Bad() {
   int* x = (int*)malloc(sizeof(int) * 5);
-  prune_arrblk_ne(x);
+  prune_arrblk_ne_CAT(x);
 }
 
-void prune_arrblk_eq(int* x) {
+void prune_arrblk_eq_CAF(int* x) {
   int* y = x + 10;
 
-  if (x == y) {
+  if (x == y) { // always false
     x[5] = 1; /* unreachable */
   }
 }
 
-void call_prune_arrblk_eq_Ok() {
+void FP_call_prune_arrblk_eq_Ok() {
   int* x = (int*)malloc(sizeof(int) * 5);
-  prune_arrblk_eq(x);
+  prune_arrblk_eq_CAF(x);
 }
 
 void prune_minmax1_Ok(unsigned int x, unsigned int y) {

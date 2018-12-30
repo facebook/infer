@@ -43,11 +43,17 @@ module Bound : sig
 
   val _255 : t
 
-  val of_normal_path : Symb.BoundEnd.t -> unsigned:bool -> Symb.SymbolPath.partial -> t
+  val of_normal_path :
+       (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
+    -> unsigned:bool
+    -> Symb.SymbolPath.partial
+    -> t
 
-  val of_offset_path : Symb.BoundEnd.t -> Symb.SymbolPath.partial -> t
+  val of_offset_path :
+    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
 
-  val of_length_path : Symb.BoundEnd.t -> Symb.SymbolPath.partial -> t
+  val of_length_path :
+    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
 
   val is_symbolic : t -> bool
 

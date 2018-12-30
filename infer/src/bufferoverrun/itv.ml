@@ -411,9 +411,13 @@ module ItvPure = struct
 
 
   let of_path bound_of_path path =
-    let lb = bound_of_path Symb.BoundEnd.LowerBound path in
-    let ub = bound_of_path Symb.BoundEnd.UpperBound path in
-    (lb, ub)
+    if Symb.SymbolPath.represents_multiple_values_sound path then
+      let lb = bound_of_path (Symb.Symbol.make_boundend Symb.BoundEnd.LowerBound) path in
+      let ub = bound_of_path (Symb.Symbol.make_boundend Symb.BoundEnd.UpperBound) path in
+      (lb, ub)
+    else
+      let b = bound_of_path Symb.Symbol.make_onevalue path in
+      (b, b)
 
 
   let of_normal_path ~unsigned = of_path (Bound.of_normal_path ~unsigned)

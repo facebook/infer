@@ -54,13 +54,15 @@ module SymbolPath : sig
 
   val represents_multiple_values : partial -> bool
 
+  val represents_multiple_values_sound : partial -> bool
+
   val represents_callsite_sound_partial : partial -> bool
 end
 
 module Symbol : sig
   type t
 
-  type 'res eval = t -> 'res AbstractDomain.Types.bottom_lifted
+  type 'res eval = t -> BoundEnd.t -> 'res AbstractDomain.Types.bottom_lifted
 
   val compare : t -> t -> int
 
@@ -74,9 +76,11 @@ module Symbol : sig
 
   val path : t -> SymbolPath.t
 
-  val bound_end : t -> BoundEnd.t
+  val assert_bound_end : t -> BoundEnd.t -> unit
 
-  val make : unsigned:bool -> SymbolPath.t -> BoundEnd.t -> t
+  val make_onevalue : unsigned:bool -> SymbolPath.t -> t
+
+  val make_boundend : BoundEnd.t -> unsigned:bool -> SymbolPath.t -> t
 end
 
 module SymbolSet : sig

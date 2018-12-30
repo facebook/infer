@@ -392,10 +392,11 @@ let mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem =
     let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
     ParamBindings.make formals actuals
   in
-  let eval_sym s =
+  let eval_sym s bound_end =
     let sympath = Symb.Symbol.path s in
     let itv, _ = eval_sympath params sympath caller_mem in
-    Itv.get_bound itv (Symb.Symbol.bound_end s)
+    Symb.Symbol.assert_bound_end s bound_end ;
+    Itv.get_bound itv bound_end
   in
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in

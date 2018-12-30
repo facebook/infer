@@ -10,6 +10,8 @@ module F = Format
 module BoundEnd = struct
   type t = LowerBound | UpperBound [@@deriving compare]
 
+  let equal = [%compare.equal: t]
+
   let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
 
   let to_string = function LowerBound -> "lb" | UpperBound -> "ub"
@@ -92,6 +94,8 @@ module SymbolPath = struct
         F.fprintf fmt "%a.length" pp_partial p
 
 
+  let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
+
   let rec represents_multiple_values = function
     (* TODO depending on the result, the call might represent multiple values *)
     | Callsite _ | Pvar _ ->
@@ -105,6 +109,17 @@ module SymbolPath = struct
         represents_multiple_values p
 
 
+  let rec represents_multiple_values_sound = function
+    | Callsite _ ->
+        true
+    | Pvar _ ->
+        false
+    | Deref ((Deref_ArrayIndex | Deref_CPointer), _) ->
+        true
+    | Deref (Deref_JavaPointer, p) | Field (_, p) ->
+        represents_multiple_values_sound p
+
+
   let rec represents_callsite_sound_partial = function
     | Callsite _ ->
         true
@@ -112,9 +127,6 @@ module SymbolPath = struct
         false
     | Deref (_, p) | Field (_, p) ->
         represents_callsite_sound_partial p
-
-
-  let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 end
 
 module Symbol = struct
@@ -122,38 +134,67 @@ module Symbol = struct
 
   let compare_extra_bool _ _ = 0
 
-  type t = {unsigned: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t} [@@deriving compare]
+  type t =
+    | OneValue of {unsigned: extra_bool; path: SymbolPath.t}
+    | BoundEnd of {unsigned: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
+  [@@deriving compare]
 
-  let compare x y =
-    let r = compare x y in
-    if Int.equal r 0 then assert (Bool.equal x.unsigned y.unsigned) ;
-    r
+  let compare s1 s2 =
+    match (s1, s2) with
+    | OneValue _, BoundEnd _ ->
+        -1
+    | BoundEnd _, OneValue _ ->
+        1
+    | OneValue {unsigned= unsigned1}, OneValue {unsigned= unsigned2}
+    | BoundEnd {unsigned= unsigned1}, BoundEnd {unsigned= unsigned2} ->
+        let r = compare s1 s2 in
+        if Int.equal r 0 then assert (Bool.equal unsigned1 unsigned2) ;
+        r
 
 
-  type 'res eval = t -> 'res AbstractDomain.Types.bottom_lifted
+  type 'res eval = t -> BoundEnd.t -> 'res AbstractDomain.Types.bottom_lifted
 
   let equal = [%compare.equal: t]
 
-  let paths_equal s1 s2 = SymbolPath.equal s1.path s2.path
+  let paths_equal s1 s2 =
+    match (s1, s2) with
+    | OneValue _, BoundEnd _ | BoundEnd _, OneValue _ ->
+        false
+    | OneValue {path= path1}, OneValue {path= path2}
+    | BoundEnd {path= path1}, BoundEnd {path= path2} ->
+        SymbolPath.equal path1 path2
 
-  let make : unsigned:bool -> SymbolPath.t -> BoundEnd.t -> t =
-   fun ~unsigned path bound_end -> {unsigned; path; bound_end}
+
+  let make_onevalue : unsigned:bool -> SymbolPath.t -> t =
+   fun ~unsigned path -> OneValue {unsigned; path}
+
+
+  let make_boundend : BoundEnd.t -> unsigned:bool -> SymbolPath.t -> t =
+   fun bound_end ~unsigned path -> BoundEnd {unsigned; path; bound_end}
 
 
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
-    SymbolPath.pp fmt s.path ;
-    if Config.developer_mode then Format.fprintf fmt ".%s" (BoundEnd.to_string s.bound_end) ;
-    if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if s.unsigned then 'u' else 's')
+    match s with
+    | OneValue {unsigned; path} | BoundEnd {unsigned; path} ->
+        SymbolPath.pp fmt path ;
+        ( if Config.developer_mode then
+          match s with
+          | BoundEnd {bound_end} ->
+              Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
+          | OneValue _ ->
+              () ) ;
+        if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if unsigned then 'u' else 's')
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
-  let is_unsigned {unsigned} = unsigned
+  let is_unsigned : t -> bool = function OneValue {unsigned} | BoundEnd {unsigned} -> unsigned
 
-  let path {path} = path
+  let path = function OneValue {path} | BoundEnd {path} -> path
 
-  let bound_end {bound_end} = bound_end
+  let assert_bound_end s be =
+    match s with OneValue _ -> () | BoundEnd {bound_end} -> assert (BoundEnd.equal be bound_end)
 end
 
 module SymbolSet = struct

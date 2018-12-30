@@ -97,19 +97,19 @@ void memcpy_good4() {
   memcpy(dst, src, sizeof(dst));
 }
 
-void memcpy_len(size_t len) {
+void memcpy_len_Good(size_t len) {
   char dst[len];
   char src[len];
   memcpy(dst, src, len);
 }
 
-void call_memcpy_len1_Good() { memcpy_len(40); }
+void call_memcpy_len1_Good() { memcpy_len_Good(40); }
 
 extern size_t unknown_uint();
 
-void call_memcpy_len2_Good_FP() {
+void call_memcpy_len2_Good() {
   size_t x = unknown();
-  memcpy_len(x);
+  memcpy_len_Good(x);
 }
 
 void memmove_bad1() {

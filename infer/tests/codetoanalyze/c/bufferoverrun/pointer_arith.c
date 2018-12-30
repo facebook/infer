@@ -36,17 +36,26 @@ void call_pointer_arith3_Bad() {
   pointer_arith3(p, 100);
 }
 
-/* It is better to raise an alarm here, rather than returning a safety
-   condition, since the buffer overrun occurs always without regard to
-   the input x.  Using symbols for variables, not only for bounds,
-   would help in this case. */
-void FN_pointer_arith4_Bad(int x) {
+void pointer_arith4_Bad(int x) {
   int len = 5;
   char p[5];
   (p + x)[10 - x] = 0;
 }
 
-void call_pointer_arith4_Bad() { FN_pointer_arith4_Bad(100); }
+/* It is better to raise an alarm here, rather than returning a safety
+   condition, since the buffer overrun occurs always without regard to
+   the input x.  Using symbols for variables, not only for bounds,
+   would help in this case. */
+void FN_pointer_arith4_Bad(int* x) {
+  int len = 5;
+  char p[5];
+  (p + *x)[10 - *x] = 0;
+}
+
+void call_pointer_arith4_Bad() {
+  int x = 100;
+  FN_pointer_arith4_Bad(&x);
+}
 
 #include <stdio.h>
 #include <stdlib.h>

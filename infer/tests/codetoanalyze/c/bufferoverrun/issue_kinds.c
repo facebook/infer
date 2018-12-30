@@ -38,9 +38,30 @@ void l1_symbolic_overrun_Bad(int i) {
   }
 }
 
+void l1_symbolic_overrun2_Bad(int n) {
+  int a[n];
+  a[n] = 0;
+}
+
 void l1_symbolic_underrun_Bad(int i) {
   int a[10];
   if (i < 0) {
+    a[i] = 0;
+  }
+}
+
+int less_than(int i, int n) { return i < n; }
+
+void l1_symbolic_widened_Bad(int n) {
+  int a[n];
+  for (int i = n; less_than(i, 2 * n); i++) {
+    a[i] = 0;
+  }
+}
+
+void l1_symbolic_widened_Good_FP(int n) {
+  int a[n];
+  for (int i = n; less_than(i, n); i++) {
     a[i] = 0;
   }
 }
@@ -65,9 +86,9 @@ void l2_concrete_no_underrun_Good_FP() {
   a[zero_or_ten(1) - 1] = 0;
 }
 
-void l2_symbolic_overrun_Bad(int n) {
-  int a[n];
-  a[n] = 0;
+void l2_symbolic_overrun_Bad(int* n) {
+  int a[*n];
+  a[*n] = 0;
 }
 
 void l2_symbolic_no_overrun_Good(int n) {
@@ -97,8 +118,6 @@ void l3_concrete_no_underrun_Good_FP() {
   a[zero_or_ten(1) - 1] = 0;
 }
 
-int less_than(int i, int n) { return i < n; }
-
 void l4_widened_overrun_Bad() {
   int a[10];
   for (int i = 0; less_than(i, 11); i++) {
@@ -120,25 +139,30 @@ void l5_external_Warn_Bad() {
   a[unknown_function()] = 0;
 }
 
-void s2_symbolic_widened_Bad(int n) {
-  int a[n];
-  for (int i = n; less_than(i, 2 * n); i++) {
+void s2_symbolic_widened_Bad(int* n) {
+  int a[*n];
+  for (int i = *n; less_than(i, 2 * *n); i++) {
     a[i] = 0;
   }
 }
 
-void s2_symbolic_widened_Good_FP(int n) {
-  int a[n];
-  for (int i = n; less_than(i, n); i++) {
+void s2_symbolic_widened_Good_FP(int* n) {
+  int a[*n];
+  for (int i = *n; less_than(i, *n); i++) {
     a[i] = 0;
   }
 }
 
 // Do not report as it was already reported in the callee with the same issue
 // type
-void call_s2_symbolic_widened_Silenced(int m) { s2_symbolic_widened_Bad(m); }
+void FP_call_s2_symbolic_widened_Silenced(int* m) {
+  s2_symbolic_widened_Bad(m);
+}
 
-void l1_call_to_s2_symbolic_widened_Bad() { s2_symbolic_widened_Bad(1); }
+void l1_call_to_s2_symbolic_widened_Bad() {
+  int x = 1;
+  s2_symbolic_widened_Bad(&x);
+}
 
 void may_underrun_symbolic_Nowarn_Good(int n) {
   int a[n];
