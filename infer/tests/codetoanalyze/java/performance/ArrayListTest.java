@@ -205,4 +205,20 @@ public class ArrayListTest {
   private static void call_sortArrayList(ArrayList<Integer> list) {
     sortArrayList(list);
   }
+
+  private ArrayList<String> list = new ArrayList<>();
+
+  // Since we know the maximum value of boolean [iterator.next().equals(s)] is 1, it is better to be
+  // excluded from the cost.
+  // Simplified version of real code https://fburl.com/traceview/tpc0grh2
+  public boolean remove_string_from_list(String s) {
+    Iterator<String> iterator = list.iterator();
+    while (iterator.hasNext()) {
+      if (iterator.next().equals(s)) {
+        iterator.remove();
+        return true;
+      }
+    }
+    return false;
+  }
 }

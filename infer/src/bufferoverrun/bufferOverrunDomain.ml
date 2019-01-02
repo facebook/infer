@@ -286,7 +286,15 @@ module Val = struct
    fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
 
 
-  let prune_eq : t -> t -> t = lift_prune2 Itv.prune_eq ArrayBlk.prune_eq
+  let is_null : t -> bool =
+   fun x -> Itv.is_false x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
+
+
+  let prune_eq : t -> t -> t =
+   fun x y ->
+    if is_null y then {x with itv= Itv.zero; powloc= PowLoc.bot; arrayblk= ArrayBlk.bot}
+    else lift_prune2 Itv.prune_eq ArrayBlk.prune_eq x y
+
 
   let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_ne
 

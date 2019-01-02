@@ -128,3 +128,39 @@ void call_prune_sub2_1_Good() { prune_sub2(5); }
 void call_prune_sub2_2_Bad() { prune_sub2(10); }
 
 void call_prune_sub2_3_Good() { prune_sub2(100); }
+
+void null_pruning1_Good(int* p) {
+  if (p == 0) {
+    if (p != 0) {
+      int a[5];
+      a[10] = 1;
+    }
+  }
+}
+
+void null_pruning1_Bad(int* p) {
+  if (p == 0) {
+    if (p == 0) {
+      int a[5];
+      a[10] = 1;
+    }
+  }
+}
+
+void null_pruning2_Good_FP(int* p) {
+  if (p != 0) {
+    if (p == 0) {
+      int a[5];
+      a[10] = 1;
+    }
+  }
+}
+
+void null_pruning2_Bad(int* p) {
+  if (p != 0) {
+    if (p != 0) {
+      int a[5];
+      a[10] = 1;
+    }
+  }
+}

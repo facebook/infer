@@ -20,4 +20,40 @@ class Array {
     b.remove(0);
     return b;
   }
+
+  void null_pruning1_Good() {
+    if (a == null) {
+      if (a != null) {
+        int[] arr = {1, 2, 3, 4, 5};
+        arr[10] = 1;
+      }
+    }
+  }
+
+  void null_pruning1_Bad() {
+    if (a == null) {
+      if (a == null) {
+        int[] arr = {1, 2, 3, 4, 5};
+        arr[10] = 1;
+      }
+    }
+  }
+
+  void null_pruning2_Good_FP() {
+    if (a != null) {
+      if (a == null) {
+        int[] arr = {1, 2, 3, 4, 5};
+        arr[10] = 1;
+      }
+    }
+  }
+
+  void null_pruning2_Bad() {
+    if (a != null) {
+      if (a != null) {
+        int[] arr = {1, 2, 3, 4, 5};
+        arr[10] = 1;
+      }
+    }
+  }
 }
