@@ -144,7 +144,7 @@ module TransferFunctions = struct
       Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
     in
     let eval_sym_trace =
-      Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem
+      Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem ~strict:false
     in
     let caller_mem =
       instantiate_mem_reachable ret callee_pdesc callee_pname ~callee_exit_mem eval_sym_trace

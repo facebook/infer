@@ -711,16 +711,17 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst ({Dom.eval_sym; trace_of_sym} as eval_sym_trace) rel_map caller_relation callee_pname
-      call_site cwt =
+  let subst eval_sym_trace rel_map caller_relation callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if Symb.SymbolSet.is_empty symbols then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
         pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
-    Option.find_map (Dom.LatestPrune.subst cwt.latest_prune eval_sym_trace call_site)
+    Option.find_map
+      (Dom.LatestPrune.subst cwt.latest_prune (eval_sym_trace ~strict:true) call_site)
       ~f:(fun latest_prune ->
+        let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~strict:false in
         match Condition.subst eval_sym rel_map caller_relation cwt.cond with
         | None ->
             None

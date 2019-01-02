@@ -51,7 +51,7 @@ void conditional_minus(int* ptr, unsigned int size) {
   }
 }
 
-void call_conditional_minus_1_Good_FP() { conditional_minus(NULL, 0); }
+void call_conditional_minus_1_Good() { conditional_minus(NULL, 0); }
 
 void call_conditional_minus_2_Good() {
   int a[3];
@@ -69,7 +69,7 @@ unsigned int conditional_minus2(int* ptr, unsigned int size) {
   }
 }
 
-void call_conditional_minus2_1_Good_FP() { conditional_minus2(NULL, 0); }
+void call_conditional_minus2_1_Good() { conditional_minus2(NULL, 0); }
 
 void call_conditional_minus2_2_Good() {
   int a[3];
