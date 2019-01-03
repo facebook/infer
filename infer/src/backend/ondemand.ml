@@ -87,7 +87,7 @@ let save_global_state () =
   (* use a new global counter for the callee *)
   { abs_val= !BiabductionConfig.abs_val
   ; abstraction_rules= Abs.get_current_rules ()
-  ; delayed_prints= L.get_delayed_prints ()
+  ; delayed_prints= L.get_and_reset_delayed_prints ()
   ; footprint_mode= !BiabductionConfig.footprint
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()

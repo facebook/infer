@@ -165,11 +165,10 @@ end
 
 (** Execute the delayed print actions *)
 let force_delayed_prints () =
-  F.fprintf !curr_html_formatter "@?" ;
+  F.pp_print_flush !curr_html_formatter () ;
   (* flush html stream *)
-  L.force_delayed_prints !curr_html_formatter (L.get_delayed_prints ()) ;
-  F.fprintf !curr_html_formatter "@?" ;
-  L.reset_delayed_prints ()
+  L.force_and_reset_delayed_prints !curr_html_formatter ;
+  F.pp_print_flush !curr_html_formatter ()
 
 
 (** Start a session, and create a new html file for the node if it does not exist yet *)

@@ -400,8 +400,13 @@ let force_delayed_print fmt = function
       else pp Pp.text fmt x
 
 
-let force_delayed_prints fmt rev_delayed_prints =
-  rev_delayed_prints |> List.rev |> List.iter ~f:(force_delayed_print fmt)
+(** reset the delayed print actions *)
+let reset_delayed_prints () = delayed_actions := []
+
+(** return the delayed print actions *)
+let get_and_reset_delayed_prints () =
+  let res = !delayed_actions in
+  reset_delayed_prints () ; res
 
 
 (** extend the current print log *)
@@ -415,11 +420,9 @@ let d_pp pp x = add_print_action (PT_generic (pp, x))
 
 let d_pp_with_pe ?color pp x = add_print_action (PT_generic_with_pe (color, pp, x))
 
-(** reset the delayed print actions *)
-let reset_delayed_prints () = delayed_actions := []
+let force_and_reset_delayed_prints fmt =
+  get_and_reset_delayed_prints () |> List.rev |> List.iter ~f:(force_delayed_print fmt)
 
-(** return the delayed print actions *)
-let get_delayed_prints () = !delayed_actions
 
 (** set the delayed print actions *)
 let set_delayed_prints new_delayed_actions = delayed_actions := new_delayed_actions

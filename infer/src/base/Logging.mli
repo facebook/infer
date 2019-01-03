@@ -88,10 +88,10 @@ val d_pp : (F.formatter -> 'a -> unit) -> 'a -> unit
 
 val d_pp_with_pe : ?color:Pp.color -> (Pp.env -> F.formatter -> 'a -> unit) -> 'a -> unit
 
-val force_delayed_prints : F.formatter -> delayed_prints -> unit
+val force_and_reset_delayed_prints : F.formatter -> unit
 
-val get_delayed_prints : unit -> delayed_prints
-(** return the delayed print actions *)
+val get_and_reset_delayed_prints : unit -> delayed_prints
+(** return the delayed print actions and reset them *)
 
 val set_delayed_prints : delayed_prints -> unit
 (** set the delayed print actions *)
