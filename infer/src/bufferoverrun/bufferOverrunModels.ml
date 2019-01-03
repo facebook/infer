@@ -352,6 +352,23 @@ module StdBasicString = struct
       Dom.Mem.update_mem tgt_locs v mem
     in
     {exec; check= no_check}
+
+
+  let empty e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval integer_type_widths e mem in
+      let traces = Dom.Val.get_traces v in
+      let size = ArrayBlk.sizeof (Dom.Val.get_array_blk v) in
+      let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
+      let mem = Dom.Mem.add_stack (Loc.of_id ret_id) empty mem in
+      match e with
+      | Exp.Var id ->
+          Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:mem ~f:(fun l ->
+              Dom.Mem.load_empty_alias ret_id l mem )
+      | _ ->
+          mem
+    in
+    {exec; check= no_check}
 end
 
 (* Java's Collections are represented like arrays. But we don't care about the elements.
@@ -532,6 +549,7 @@ module Call = struct
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $--> StdBasicString.constructor_from_char_ptr
+      ; -"std" &:: "basic_string" &:: "empty" $ capt_exp $--> StdBasicString.empty
       ; -"std" &:: "basic_string" &::.*--> no_model
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index

@@ -265,6 +265,11 @@ module Val = struct
    fun f x -> warn_against_pruning_multiple_values {x with itv= f x.itv}
 
 
+  let lift_prune_length1 : (Itv.t -> Itv.t) -> t -> t =
+   fun f x ->
+    warn_against_pruning_multiple_values {x with arrayblk= ArrayBlk.transform_length ~f x.arrayblk}
+
+
   let lift_prune2 :
       (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.t -> ArrayBlk.t -> ArrayBlk.t) -> t -> t -> t =
    fun f g x y ->
@@ -281,6 +286,10 @@ module Val = struct
   let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero
 
   let prune_ne_zero : t -> t = lift_prune1 Itv.prune_ne_zero
+
+  let prune_length_eq_zero : t -> t = lift_prune_length1 Itv.prune_eq_zero
+
+  let prune_length_ge_one : t -> t = lift_prune_length1 Itv.prune_ge_one
 
   let prune_comp : Binop.t -> t -> t -> t =
    fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
@@ -546,15 +555,22 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
-  type t = Simple of Loc.t | Empty of Loc.t [@@deriving compare]
+  type t = Simple of Loc.t | Empty of Loc.t | Nullity of Loc.t [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
-  let pp fmt = function Simple l -> Loc.pp fmt l | Empty l -> F.fprintf fmt "empty(%a)" Loc.pp l
+  let pp fmt = function
+    | Simple l ->
+        Loc.pp fmt l
+    | Empty l ->
+        F.fprintf fmt "empty(%a)" Loc.pp l
+    | Nullity l ->
+        F.fprintf fmt "nullity(%a)" Loc.pp l
 
-  let of_empty l = Empty l
 
-  let use l = function Simple l' | Empty l' -> Loc.equal l l'
+  let nullity l = Nullity l
+
+  let use l = function Simple l' | Empty l' | Nullity l' -> Loc.equal l l'
 
   let loc_map x ~f =
     match x with
@@ -562,6 +578,8 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Simple l)
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
+    | Nullity l ->
+        Option.map (f l) ~f:(fun l -> Nullity l)
 
 
   let ( <= ) ~lhs ~rhs = equal lhs rhs
@@ -574,20 +592,24 @@ module AliasTarget = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-(* Relations between values of logical variables(registers) and
-   program variables
+(* Relations between values of logical variables(registers) and program variables
 
-   "AliasTarget.Simple relation": Since Sil distinguishes logical and
-   program variables, we need a relation for pruning values of program
-   variables.  For example, a C statement "if(x){...}" is translated
-   to "%r=load(x); if(%r){...}" in Sil.  At the load statement, we
-   record the alias between the values of %r and x, then we can prune
-   not only the value of %r, but also that of x inside the if branch.
+   "AliasTarget.Simple relation": Since Sil distinguishes logical and program variables, we need a
+   relation for pruning values of program variables.  For example, a C statement "if(x){...}" is
+   translated to "%r=load(x); if(%r){...}" in Sil.  At the load statement, we record the alias
+   between the values of %r and x, then we can prune not only the value of %r, but also that of x
+   inside the if branch.
 
-   "AliasTarget.Empty relation": For pruning vector.size with
-   vector::empty() results, we adopt a specific relation between %r
-   and x, where %r=v.empty() and x=v.size.  So, if %r!=0, x is pruned
-   by x=0.  On the other hand, if %r==0, x is pruned by x>=1.  *)
+   "AliasTarget.Empty relation": For pruning vector.length with vector::empty() results, we adopt a
+   specific relation between %r and v, where %r=v.empty().  So, if %r!=0, v's array length
+   ([v.length]) is pruned by v.length=0.  On the other hand, if %r==0, v's array length is pruned by
+   v.length>=1.
+
+   "AliasTarget.Nullity relation": For pruning vector.length with vector::empty() results, we adopt
+   a specific relation between %r and i, where %r=v.empty() and i=v.length.  So, if %r!=0, i is
+   pruned by i=0.  On the other hand, if %r==0, i is pruned by i>=1.  This is similar to the
+   AliasTarget.Empty relation, but is used when there is a program variable [i] for the length of
+   the array. *)
 module AliasMap = struct
   include AbstractDomain.Map (Ident) (AliasTarget)
 
@@ -666,7 +688,7 @@ module Alias = struct
     let locs = Val.get_all_locs formal in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
-        {a with ret= AliasRet.v (AliasTarget.of_empty loc)}
+        {a with ret= AliasRet.v (AliasTarget.nullity loc)}
     | _ ->
         a
 
@@ -921,7 +943,7 @@ module MemReach = struct
     match Alias.find k m.alias with
     | Some (AliasTarget.Simple l) ->
         Some l
-    | Some (AliasTarget.Empty _) | None ->
+    | Some (AliasTarget.Empty _ | AliasTarget.Nullity _) | None ->
         None
 
 
@@ -1164,6 +1186,10 @@ module Mem = struct
 
   let load_simple_alias : Ident.t -> Loc.t -> t -> t =
    fun id loc -> load_alias id (AliasTarget.Simple loc)
+
+
+  let load_empty_alias : Ident.t -> Loc.t -> t -> t =
+   fun id loc -> load_alias id (AliasTarget.Empty loc)
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =

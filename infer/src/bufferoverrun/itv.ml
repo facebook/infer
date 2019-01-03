@@ -397,6 +397,8 @@ module ItvPure = struct
     if is_invalid (l, u) then NonBottom x else if Bound.eq l u then prune_diff x l else NonBottom x
 
 
+  let prune_ge_one : t -> t bottom_lifted = fun x -> prune_comp Binop.Ge x one
+
   let get_symbols : t -> SymbolSet.t =
    fun (l, u) -> SymbolSet.union (Bound.get_symbols l) (Bound.get_symbols u)
 
@@ -595,6 +597,8 @@ let min_sem : t -> t -> t = lift2 ItvPure.min_sem
 let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 
 let prune_ne_zero : t -> t = bind1 ItvPure.prune_ne_zero
+
+let prune_ge_one : t -> t = bind1 ItvPure.prune_ge_one
 
 let prune_comp : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_comp comp)
 

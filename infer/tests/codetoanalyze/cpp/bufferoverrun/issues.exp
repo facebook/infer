@@ -75,6 +75,8 @@ codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INFERBO_ALLOC_IS
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [<RHS trace>,Assignment,Binary operation: (4 × 18446744073709551615):unsigned64]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, normal_array_bo, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 42 Size: 42]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, std_array_bo_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 42 Size: 42]
+codetoanalyze/cpp/bufferoverrun/std_string.cpp, empty_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
+codetoanalyze/cpp/bufferoverrun/std_string.cpp, empty_Good, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, last_char1_Bad, 3, BUFFER_OVERRUN_R2, no_bucket, ERROR, [<Offset trace>,Risky value from: snprintf,Assignment,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 1024]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, last_char1_Bad, 3, INTEGER_OVERFLOW_R2, no_bucket, ERROR, [<LHS trace>,Risky value from: snprintf,Assignment,Binary operation: ([-oo, +oo] - 1):signed32]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, last_char2_Bad, 6, BUFFER_OVERRUN_R2, no_bucket, ERROR, [<Offset trace>,Risky value from: vsnprintf,Assignment,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 1024]

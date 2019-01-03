@@ -70,3 +70,19 @@ std::string to_string2_Good(const char* fmt, ...) {
   }
   return std::string(buf, n);
 }
+
+void empty_Good(std::string s) {
+  if (s.empty()) {
+    if (!s.empty()) {
+      int a[10];
+      a[10] = 0;
+    }
+  }
+}
+
+void empty_Bad(std::string s) {
+  if (s.empty()) {
+    int a[10];
+    a[10] = 0;
+  }
+}
