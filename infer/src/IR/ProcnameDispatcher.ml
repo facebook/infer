@@ -107,6 +107,8 @@ type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'empt
   ; path_extra: ('context, 'f_in, 'f_out, 'captured_types, 'emptyness) path_extra
   ; get_markers: 'markers_in -> 'markers_out }
 
+type typ_matcher = typ -> bool
+
 (* Combinators *)
 
 let empty : ('context, 'f, 'f, unit, 'markers, 'markers, empty) path_matcher =
@@ -772,6 +774,13 @@ module Call = struct
     {match_arg; marker_static_checker= no_marker_checker}
 
 
+  (** Matches the type matched by the given typ_matcher *)
+  let match_prim_typ : typ_matcher -> _ one_arg_matcher =
+   fun on_typ ->
+    let match_arg _context _capt arg = on_typ (FuncArg.typ arg) in
+    {match_arg; marker_static_checker= no_marker_checker}
+
+
   (* Function argument capture *)
 
   (** Do not capture this argument *)
@@ -854,6 +863,11 @@ module Call = struct
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
 
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
+
+  let capt_exp_of_prim_typ typ =
+    let on_typ typ' = Typ.equal typ typ' in
+    {one_arg_matcher= match_prim_typ on_typ; capture= capture_arg_exp}
+
 
   let typ1 : 'marker -> ('context, unit, _, 'f, 'f, _, _) one_arg =
    fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}

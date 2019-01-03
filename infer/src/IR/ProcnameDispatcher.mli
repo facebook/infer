@@ -245,6 +245,10 @@ module Call : sig
     -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression of the given type *)
 
+  val capt_exp_of_prim_typ :
+    Typ.t -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures one arg expression of the given primitive type *)
+
   val capt_var_exn : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg Var. Fails with an internal error if the expression is not a Var *)
 

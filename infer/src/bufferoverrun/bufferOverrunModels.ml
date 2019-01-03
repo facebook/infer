@@ -37,6 +37,14 @@ let no_exec _model_env ~ret:_ mem = mem
 
 let no_check _model_env _mem cond_set = cond_set
 
+let no_model =
+  let exec {pname} ~ret:_ mem =
+    L.d_printfln_escaped "No model for %a" Typ.Procname.pp pname ;
+    mem
+  in
+  {exec; check= no_check}
+
+
 (* It returns a tuple of:
      - type of array element
      - stride of the type
@@ -312,12 +320,36 @@ module StdArray = struct
         location cond_set
     in
     {exec; check}
+end
+
+module StdBasicString = struct
+  (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let constructor_from_char_ptr tgt src len =
+    let {exec= malloc_exec; check= malloc_check} = malloc len in
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      let mem = malloc_exec model_env ~ret mem in
+      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
+      let mem = Dom.Mem.update_mem (Sem.eval_locs tgt mem) v mem in
+      let contents =
+        let src_locs = Sem.eval_locs src mem in
+        Dom.Mem.find_set src_locs mem
+      in
+      Dom.Mem.update_mem (Dom.Val.get_all_locs v) contents mem
+    in
+    let check ({location; integer_type_widths} as model_env) mem cond_set =
+      let cond_set = malloc_check model_env mem cond_set in
+      BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
+        mem location cond_set
+    in
+    {exec; check}
 
 
-  let no_model =
-    let exec {pname} ~ret:_ mem =
-      L.d_printfln_escaped "No model for %a" Typ.Procname.pp pname ;
-      mem
+  (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let copy_constructor tgt src =
+    let exec _ ~ret:_ mem =
+      let tgt_locs = Sem.eval_locs tgt mem in
+      let v = Dom.Mem.find_set (Sem.eval_locs src mem) mem in
+      Dom.Mem.update_mem tgt_locs v mem
     in
     {exec; check= no_check}
 end
@@ -492,7 +524,15 @@ module Call = struct
       ; std_array0 >:: "array" &--> StdArray.constructor
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
-      ; -"std" &:: "array" &::.*--> StdArray.no_model
+      ; -"std" &:: "array" &::.*--> no_model
+      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
+        $+ capt_exp_of_typ (-"std" &:: "basic_string")
+        $--> StdBasicString.copy_constructor
+      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
+        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
+        $--> StdBasicString.constructor_from_char_ptr
+      ; -"std" &:: "basic_string" &::.*--> no_model
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
       ; +PatternMatch.implements_collection

@@ -31,7 +31,7 @@ char last_char2_Bad(const char* fmt, ...) {
   return buf[n - 1];
 }
 
-std::string to_string1_Bad_FN(char* s, int i) {
+std::string to_string1_Bad(char* s, int i) {
   char buf[1024];
   int n = snprintf(buf, sizeof(buf), "%s%d", s, i);
   return std::string(buf, n);
@@ -48,7 +48,7 @@ std::string to_string1_Good(char* s, int i) {
   return std::string(buf, n);
 }
 
-std::string to_string2_Bad_FN(const char* fmt, ...) {
+std::string to_string2_Bad(const char* fmt, ...) {
   char buf[1024];
   va_list args;
   va_start(args, fmt);
