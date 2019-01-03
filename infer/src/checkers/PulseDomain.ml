@@ -224,19 +224,39 @@ end
     functor followed by normalization wrt the unification found between abstract locations so it's
     convenient to define stacks as elements of this domain. *)
 module Stack = struct
-  include AbstractDomain.Map
-            (Var)
-            (struct
-              type t = AbstractAddress.t
+  module VarAddress = struct
+    include Var
 
-              let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
+    let pp f var =
+      let pp_ampersand f = function
+        | ProgramVar _ ->
+            F.pp_print_string f "&"
+        | LogicalVar _ ->
+            ()
+      in
+      F.fprintf f "%a%a" pp_ampersand var Var.pp var
+  end
 
-              let join l1 l2 = min l1 l2
+  module ValueDomain = struct
+    type t = AbstractAddress.t
 
-              let widen ~prev ~next ~num_iters:_ = join prev next
+    let ( <= ) ~lhs ~rhs = AbstractAddress.equal lhs rhs
 
-              let pp = AbstractAddress.pp
-            end)
+    let join l1 l2 = min l1 l2
+
+    let widen ~prev ~next ~num_iters:_ = join prev next
+
+    let pp = AbstractAddress.pp
+  end
+
+  include AbstractDomain.Map (VarAddress) (ValueDomain)
+
+  let pp fmt m =
+    let pp_item fmt (var_address, v) =
+      F.fprintf fmt "%a=%a" VarAddress.pp var_address ValueDomain.pp v
+    in
+    PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
+
 
   let compare = compare AbstractAddress.compare
 end
