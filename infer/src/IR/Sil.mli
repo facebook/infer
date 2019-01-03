@@ -249,11 +249,8 @@ val add_with_block_parameters_flag : instr -> instr
 
 (** {2 Pretty Printing} *)
 
-val color_pre_wrapper : Pp.env -> F.formatter -> 'a -> Pp.env * bool
-(** Begin change color if using diff printing, return updated printenv and change status *)
-
-val color_post_wrapper : bool -> F.formatter -> unit
-(** Close color annotation if changed *)
+val color_wrapper : Pp.env -> F.formatter -> 'a -> f:(Pp.env -> F.formatter -> 'a -> unit) -> unit
+(** Wraps a printing function with an updated printenv when using diff printing *)
 
 val pp_exp_printenv : ?print_types:bool -> Pp.env -> F.formatter -> Exp.t -> unit
 (** Pretty print an expression. *)

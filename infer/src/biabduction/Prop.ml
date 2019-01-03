@@ -110,21 +110,21 @@ let pp_texp_simple pe =
 
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
-let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
-  let pe, changed = Sil.color_pre_wrapper pe0 f hpred in
-  ( match hpred with
-  | Hpointsto (Exp.Lvar pvar, se, te) ->
-      let pe' =
-        match se with
-        | Eexp (Exp.Var _, _) when not (Pvar.is_global pvar) ->
-            {pe with obj_sub= None} (* dont use obj sub on the var defining it *)
-        | _ ->
-            pe
-      in
-      F.fprintf f "%a = %a:%a" Pvar.pp_value pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
-  | Hpointsto _ | Hlseg _ | Hdllseg _ ->
-      assert false (* should not happen *) ) ;
-  Sil.color_post_wrapper changed f
+let pp_hpred_stackvar =
+  Sil.color_wrapper ~f:(fun pe f (hpred : Sil.hpred) ->
+      match hpred with
+      | Hpointsto (Exp.Lvar pvar, se, te) ->
+          let pe' =
+            match se with
+            | Eexp (Exp.Var _, _) when not (Pvar.is_global pvar) ->
+                {pe with obj_sub= None} (* dont use obj sub on the var defining it *)
+            | _ ->
+                pe
+          in
+          F.fprintf f "%a = %a:%a" Pvar.pp_value pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
+      | Hpointsto _ | Hlseg _ | Hdllseg _ ->
+          assert false
+      (* should not happen *) )
 
 
 (** Pretty print a substitution. *)
@@ -136,11 +136,10 @@ let pp_sub pe f sub =
 (** Dump a substitution. *)
 let d_sub (sub : Sil.subst) = L.d_pp_with_pe pp_sub sub
 
-let pp_sub_entry pe0 f entry =
-  let pe, changed = Sil.color_pre_wrapper pe0 f entry in
-  let x, e = entry in
-  F.fprintf f "%a = %a" Ident.pp x (Sil.pp_exp_printenv pe) e ;
-  Sil.color_post_wrapper changed f
+let pp_sub_entry =
+  Sil.color_wrapper ~f:(fun pe f entry ->
+      let x, e = entry in
+      F.fprintf f "%a = %a" Ident.pp x (Sil.pp_exp_printenv pe) e )
 
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
