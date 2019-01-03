@@ -9,7 +9,7 @@ module F = Format
 open Result.Monad_infix
 
 let report summary diagnostic =
-  let open PulseDomain.Diagnostic in
+  let open PulseDiagnostic in
   Reporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
     (get_issue_type diagnostic) (get_message diagnostic)
 
@@ -47,29 +47,30 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     let crumb = PulseTrace.Assignment {lhs= lhs_access; location= loc} in
     match rhs_exp with
     | AccessExpression rhs_access -> (
-        PulseDomain.read loc rhs_access astate
+        PulseOperations.read loc rhs_access astate
         >>= fun (astate, (rhs_addr, rhs_trace)) ->
         let return_addr_trace = (rhs_addr, crumb :: rhs_trace) in
-        PulseDomain.write loc lhs_access return_addr_trace astate
+        PulseOperations.write loc lhs_access return_addr_trace astate
         >>= fun astate ->
         match lhs_access with
         | Base (var, _) when Var.is_return var ->
-            PulseDomain.check_address_of_local_variable summary.Summary.proc_desc rhs_addr astate
+            PulseOperations.check_address_of_local_variable summary.Summary.proc_desc rhs_addr
+              astate
         | _ ->
             Ok astate )
     | Closure (pname, captured) ->
-        PulseDomain.Closures.record loc lhs_access pname captured astate
+        PulseOperations.Closures.record loc lhs_access pname captured astate
     | Cast (_, e) ->
         exec_assign summary lhs_access e loc astate
     | _ ->
-        PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-        >>= PulseDomain.havoc [crumb] loc lhs_access
+        PulseOperations.read_all loc (HilExp.get_access_exprs rhs_exp) astate
+        >>= PulseOperations.havoc [crumb] loc lhs_access
 
 
   let exec_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc
       astate =
     let read_all args astate =
-      PulseDomain.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
+      PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
     let crumb = PulseTrace.Call {f= `HilCall call; actuals; location= call_loc} in
     match call with
@@ -80,7 +81,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
           Ok astate
       | [AccessExpression destroyed_access] ->
           let destroyed_object = HilExp.AccessExpression.dereference destroyed_access in
-          PulseDomain.invalidate
+          PulseOperations.invalidate
             (CppDestructor (callee_pname, destroyed_object, call_loc))
             call_loc destroyed_object astate
       | _ ->
@@ -89,7 +90,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       match actuals with
       | AccessExpression constructor_access :: rest ->
           let constructed_object = HilExp.AccessExpression.dereference constructor_access in
-          PulseDomain.havoc [crumb] call_loc constructed_object astate >>= read_all rest
+          PulseOperations.havoc [crumb] call_loc constructed_object astate >>= read_all rest
       | _ ->
           Ok astate )
     | Direct (Typ.Procname.ObjC_Cpp callee_pname)
@@ -104,8 +105,8 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
           let lhs_deref = HilExp.AccessExpression.dereference lhs in
           let rhs_deref = HilExp.AccessExpression.dereference rhs in
-          PulseDomain.havoc [crumb] call_loc lhs_deref astate
-          >>= fun astate -> PulseDomain.read call_loc rhs_deref astate >>| fst
+          PulseOperations.havoc [crumb] call_loc lhs_deref astate
+          >>= fun astate -> PulseOperations.read call_loc rhs_deref astate >>| fst
       | _ ->
           read_all actuals astate )
     | _ ->
@@ -125,7 +126,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     match model with
     | None ->
         exec_call summary ret call actuals flags call_loc astate
-        >>| PulseDomain.havoc_var
+        >>| PulseOperations.havoc_var
               [PulseTrace.Call {f= `HilCall call; actuals; location= call_loc}]
               (fst ret)
     | Some model ->
@@ -138,11 +139,12 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (lhs_access, rhs_exp, loc) ->
         exec_assign summary lhs_access rhs_exp loc astate |> check_error summary
     | Assume (condition, _, _, loc) ->
-        PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
+        PulseOperations.read_all loc (HilExp.get_access_exprs condition) astate
+        |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
         dispatch_call summary ret call actuals flags loc astate |> check_error summary
     | ExitScope (vars, _) ->
-        PulseDomain.remove_vars vars astate
+        PulseOperations.remove_vars vars astate
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"

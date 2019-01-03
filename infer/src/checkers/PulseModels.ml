@@ -13,7 +13,7 @@ type exec_fun =
   -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
   -> PulseDomain.t
-  -> PulseDomain.t PulseDomain.access_result
+  -> PulseDomain.t PulseOperations.access_result
 
 type model = exec_fun
 
@@ -26,7 +26,9 @@ module C = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
-        PulseDomain.invalidate (CFree (deleted_access, location)) location deleted_access astate
+        PulseOperations.invalidate
+          (CFree (deleted_access, location))
+          location deleted_access astate
     | _ ->
         Ok astate
 
@@ -35,8 +37,8 @@ module C = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression (AddressOf (Base (var, _)))] ->
-        PulseDomain.havoc_var [PulseTrace.VariableDeclaration location] var astate
-        |> PulseDomain.record_var_decl_location location var
+        PulseOperations.havoc_var [PulseTrace.VariableDeclaration location] var astate
+        |> PulseOperations.record_var_decl_location location var
         |> Result.return
     | _ ->
         L.die InternalError
@@ -48,11 +50,11 @@ end
 module Cplusplus = struct
   let delete : model =
    fun location ~ret:_ ~actuals astate ->
-    PulseDomain.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+    PulseOperations.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
     >>= fun astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
-        PulseDomain.invalidate
+        PulseOperations.invalidate
           (CppDelete (deleted_access, location))
           location deleted_access astate
     | _ ->
@@ -61,33 +63,36 @@ module Cplusplus = struct
 
   let operator_call : model =
    fun location ~ret:(ret_var, _) ~actuals astate ->
-    PulseDomain.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+    PulseOperations.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
     >>= fun astate ->
     ( match actuals with
     | AccessExpression lambda :: _ ->
-        PulseDomain.read location HilExp.AccessExpression.(dereference lambda) astate
+        PulseOperations.read location HilExp.AccessExpression.(dereference lambda) astate
         >>= fun (astate, address) ->
-        PulseDomain.Closures.check_captured_addresses location lambda (fst address) astate
+        PulseOperations.Closures.check_captured_addresses location lambda (fst address) astate
     | _ ->
         Ok astate )
-    >>| PulseDomain.havoc_var [PulseTrace.Call {f= `Model "<lambda>"; actuals; location}] ret_var
+    >>| PulseOperations.havoc_var
+          [PulseTrace.Call {f= `Model "<lambda>"; actuals; location}]
+          ret_var
 
 
   let placement_new : model =
    fun location ~ret:(ret_var, _) ~actuals astate ->
     let read_all args astate =
-      PulseDomain.read_all location (List.concat_map args ~f:HilExp.get_access_exprs) astate
+      PulseOperations.read_all location (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
     let crumb = PulseTrace.Call {f= `Model "<placement new>"; actuals; location} in
     match List.rev actuals with
     | HilExp.AccessExpression expr :: other_actuals ->
-        PulseDomain.read location expr astate
+        PulseOperations.read location expr astate
         >>= fun (astate, (address, trace)) ->
-        PulseDomain.write_var ret_var (address, crumb :: trace) astate |> read_all other_actuals
+        PulseOperations.write_var ret_var (address, crumb :: trace) astate
+        |> read_all other_actuals
     | _ :: other_actuals ->
-        read_all other_actuals astate >>| PulseDomain.havoc_var [crumb] ret_var
+        read_all other_actuals astate >>| PulseOperations.havoc_var [crumb] ret_var
     | _ ->
-        Ok (PulseDomain.havoc_var [crumb] ret_var astate)
+        Ok (PulseOperations.havoc_var [crumb] ret_var astate)
 end
 
 module StdVector = struct
@@ -111,9 +116,9 @@ module StdVector = struct
     let array_address = to_internal_array vector in
     let array = deref_internal_array vector in
     let invalidation = PulseInvalidation.StdVector (vector_f, vector, location) in
-    PulseDomain.invalidate_array_elements invalidation location array astate
-    >>= PulseDomain.invalidate invalidation location array
-    >>= PulseDomain.havoc trace location array_address
+    PulseOperations.invalidate_array_elements invalidation location array astate
+    >>= PulseOperations.invalidate invalidation location array
+    >>= PulseOperations.havoc trace location array_address
 
 
   let invalidate_references vector_f : model =
@@ -136,13 +141,16 @@ module StdVector = struct
     let crumb = PulseTrace.Call {f= `Model "std::vector::at"; actuals; location} in
     match actuals with
     | [AccessExpression vector_access_expr; index_exp] ->
-        PulseDomain.read location
+        PulseOperations.read location
           (element_of_internal_array vector_access_expr (Some index_exp))
           astate
         >>= fun (astate, (addr, trace)) ->
-        PulseDomain.write location (HilExp.AccessExpression.base ret) (addr, crumb :: trace) astate
+        PulseOperations.write location
+          (HilExp.AccessExpression.base ret)
+          (addr, crumb :: trace)
+          astate
     | _ ->
-        Ok (PulseDomain.havoc_var [crumb] (fst ret) astate)
+        Ok (PulseOperations.havoc_var [crumb] (fst ret) astate)
 
 
   let reserve : model =
@@ -151,7 +159,7 @@ module StdVector = struct
     | [AccessExpression vector; _value] ->
         let crumb = PulseTrace.Call {f= `Model "std::vector::reserve"; actuals; location} in
         reallocate_internal_array [crumb] vector Reserve location astate
-        >>= PulseDomain.StdVector.mark_reserved location vector
+        >>= PulseOperations.StdVector.mark_reserved location vector
     | _ ->
         Ok astate
 
@@ -161,7 +169,7 @@ module StdVector = struct
     match actuals with
     | [AccessExpression vector; _value] ->
         let crumb = PulseTrace.Call {f= `Model "std::vector::push_back"; actuals; location} in
-        PulseDomain.StdVector.is_reserved location vector astate
+        PulseOperations.StdVector.is_reserved location vector astate
         >>= fun (astate, is_reserved) ->
         if is_reserved then
           (* assume that any call to [push_back] is ok after one called [reserve] on the same vector

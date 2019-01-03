@@ -6,84 +6,80 @@
  *)
 
 open! IStd
+module F = Format
 
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
+  val equal : t -> t -> bool
+
   val init : unit -> unit
+
+  val pp : F.formatter -> t -> unit
+
+  val mk_fresh : unit -> t
 end
 
-include AbstractDomain.S
+module Stack : sig
+  include
+    AbstractDomain.MapS
+    with type key = Var.t
+     and type value = AbstractAddress.t * Location.t option
 
-val compare : t -> t -> int
+  (* need to shadow the declaration in [MapS] even though it is unused since [MapS.compare] has a
+     different type *)
+  val compare : t -> t -> int [@@warning "-32"]
+end
+
+module AddrTracePair : sig
+  type t = AbstractAddress.t * PulseTrace.t [@@deriving compare]
+end
+
+module Attribute : sig
+  type t =
+    | Invalid of PulseInvalidation.t
+    | AddressOfCppTemporary of Var.t * Location.t option
+    | Closure of Typ.Procname.t * AddrTracePair.t list
+    | StdVectorReserve
+  [@@deriving compare]
+end
+
+module Attributes : PrettyPrintable.PPSet with type elt = Attribute.t
+
+module Memory : sig
+  module Access :
+    PrettyPrintable.PrintableOrderedType with type t = AbstractAddress.t HilExp.Access.t
+
+  module Edges : PrettyPrintable.PPMap with type key = Access.t
+
+  type edges = AddrTracePair.t Edges.t
+
+  type cell = edges * Attributes.t
+
+  type t [@@deriving compare]
+
+  val find_opt : AbstractAddress.t -> t -> cell option
+
+  val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
+
+  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
+
+  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
+
+  val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
+
+  val invalidate : AbstractAddress.t -> PulseInvalidation.t -> t -> t
+
+  val get_invalidation : AbstractAddress.t -> t -> PulseInvalidation.t option
+  (** None denotes a valid location *)
+
+  val std_vector_reserve : AbstractAddress.t -> t -> t
+
+  val is_std_vector_reserved : AbstractAddress.t -> t -> bool
+end
+
+type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
 
 val initial : t
 
-module Diagnostic : sig
-  type t
-
-  val get_message : t -> string
-
-  val get_location : t -> Location.t
-
-  val get_issue_type : t -> IssueType.t
-
-  val get_trace : t -> Errlog.loc_trace
-end
-
-type 'a access_result = ('a, Diagnostic.t) result
-
-module Closures : sig
-  val check_captured_addresses :
-    Location.t -> HilExp.AccessExpression.t -> AbstractAddress.t -> t -> t access_result
-  (** assert the validity of the addresses captured by the lambda *)
-
-  val record :
-       Location.t
-    -> HilExp.AccessExpression.t
-    -> Typ.Procname.t
-    -> (AccessPath.base * HilExp.t) list
-    -> t
-    -> t access_result
-  (** record that the access expression points to a lambda with its captured addresses *)
-end
-
-module StdVector : sig
-  val is_reserved : Location.t -> HilExp.AccessExpression.t -> t -> (t * bool) access_result
-
-  val mark_reserved : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
-end
-
-val read :
-     Location.t
-  -> HilExp.AccessExpression.t
-  -> t
-  -> (t * (AbstractAddress.t * PulseTrace.t)) access_result
-
-val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
-
-val havoc_var : PulseTrace.t -> Var.t -> t -> t
-
-val havoc : PulseTrace.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
-
-val write_var : Var.t -> AbstractAddress.t * PulseTrace.t -> t -> t
-
-val write :
-     Location.t
-  -> HilExp.AccessExpression.t
-  -> AbstractAddress.t * PulseTrace.t
-  -> t
-  -> t access_result
-
-val invalidate :
-  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
-
-val invalidate_array_elements :
-  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
-
-val record_var_decl_location : Location.t -> Var.t -> t -> t
-
-val remove_vars : Var.t list -> t -> t
-
-(* TODO: better name and pass location to report where we returned *)
-val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result
+include AbstractDomain.S with type t := t
