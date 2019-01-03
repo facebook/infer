@@ -225,15 +225,14 @@ end)
 let color_wrapper pe ppf x ~f =
   if Config.print_using_diff && pe.Pp.kind <> Pp.TEXT then
     let color = pe.Pp.cmap_norm (Obj.repr x) in
-    if color <> pe.Pp.color then (
-      Io_infer.Html.pp_start_color ppf color ;
+    if color <> pe.Pp.color then
       let pe' =
         if Pp.equal_color color Pp.Red then
           (* All subexpressions red *)
           Pp.{pe with cmap_norm= colormap_red; color= Red}
         else Pp.{pe with color}
       in
-      f pe' ppf x ; Io_infer.Html.pp_end_color ppf () )
+      Io_infer.Html.with_color color (f pe') ppf x
     else f pe ppf x
   else f pe ppf x
 
@@ -774,9 +773,7 @@ let update_inst inst_old inst_new =
 (** describe an instrumentation with a string *)
 let pp_inst_if_trace pe f inst =
   if Config.trace_error then
-    if Pp.equal_print_kind pe.Pp.kind Pp.HTML then
-      F.fprintf f " %a%a%a" Io_infer.Html.pp_start_color Pp.Orange pp_inst inst
-        Io_infer.Html.pp_end_color ()
+    if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Io_infer.Html.with_color Orange pp_inst f inst
     else F.fprintf f "%s%a%s" (Binop.str pe Lt) pp_inst inst (Binop.str pe Gt)
 
 

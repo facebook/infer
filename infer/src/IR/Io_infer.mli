@@ -39,9 +39,6 @@ module Html : sig
   val pp_hline : Format.formatter -> unit -> unit
   (** Print a horizontal line *)
 
-  val pp_end_color : Format.formatter -> unit -> unit
-  (** Print end color *)
-
   val pp_node_link :
        DB.Results_dir.path
     -> Typ.Procname.t
@@ -71,8 +68,8 @@ module Html : sig
     -> unit
   (** Print an html link given node id and session *)
 
-  val pp_start_color : Format.formatter -> Pp.color -> unit
-  (** Print start color *)
+  val with_color : Pp.color -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
+  (** Print using color *)
 end
 
 (** Create and print xml trees *)

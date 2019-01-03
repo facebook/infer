@@ -98,11 +98,9 @@ h1 { font-size:14pt }
   (** Print a horizontal line *)
   let pp_hline fmt () = F.pp_print_string fmt "\n<hr width=\"100%\">\n"
 
-  (** Print start color *)
-  let pp_start_color fmt color = F.fprintf fmt "<span class='%s'>" (Pp.color_string color)
+  let with_color color pp f x =
+    F.fprintf f "<span class='%s'>%a</span>" (Pp.color_string color) pp x
 
-  (** Print end color *)
-  let pp_end_color fmt () = F.pp_print_string fmt "</span>"
 
   let pp_link ?(name = None) ?(pos = None) ~path fmt text =
     let link_str =

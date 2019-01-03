@@ -140,8 +140,8 @@ let to_string de = F.asprintf "%a" pp de
 let pp_vpath pe fmt vpath =
   let pp fmt = function Some de -> pp fmt de | None -> () in
   if Pp.equal_print_kind pe.Pp.kind Pp.HTML then
-    F.fprintf fmt " %a{vpath: %a}%a" Io_infer.Html.pp_start_color Pp.Orange pp vpath
-      Io_infer.Html.pp_end_color ()
+    let pp f vpath = F.fprintf f "{vpath: %a}" pp vpath in
+    Io_infer.Html.with_color Orange pp fmt vpath
   else pp fmt vpath
 
 
