@@ -167,7 +167,12 @@ struct
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =
         let prune_instr = Sil.Prune (cond_exp, dummy_loc, true_branch, if_kind) in
-        create_node (Procdesc.Node.Prune_node (true_branch, if_kind, "")) [prune_instr]
+        create_node
+          (Procdesc.Node.Prune_node
+             ( true_branch
+             , if_kind
+             , if true_branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch ))
+          [prune_instr]
       in
       let true_prune_node = mk_prune_node cond_exp if_kind true in
       let false_prune_node =

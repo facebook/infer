@@ -73,12 +73,23 @@ module Node = struct
     | UnaryOperator
   [@@deriving compare]
 
+  type prune_node_kind =
+    | PruneNodeKind_ExceptionHandler
+    | PruneNodeKind_FalseBranch
+    | PruneNodeKind_InBound
+    | PruneNodeKind_IsInstance
+    | PruneNodeKind_MethodBody
+    | PruneNodeKind_NotNull
+    | PruneNodeKind_TrueBranch
+  [@@deriving compare]
+
   type nodekind =
     | Start_node
     | Exit_node
     | Stmt_node of stmt_nodekind
     | Join_node
-    | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
+    | Prune_node of bool * Sil.if_kind * prune_node_kind
+        (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
   [@@deriving compare]
 
@@ -309,14 +320,31 @@ module Node = struct
 
   let d_instrs ~highlight (node : t) = L.d_pp_with_pe ~color:Green (pp_instrs ~highlight) node
 
+  let string_of_prune_node_kind = function
+    | PruneNodeKind_ExceptionHandler ->
+        "exception handler"
+    | PruneNodeKind_FalseBranch ->
+        "false Branch"
+    | PruneNodeKind_InBound ->
+        "In bound"
+    | PruneNodeKind_IsInstance ->
+        "Is instance"
+    | PruneNodeKind_MethodBody ->
+        "method_body"
+    | PruneNodeKind_NotNull ->
+        "Not null"
+    | PruneNodeKind_TrueBranch ->
+        "true Branch"
+
+
   (** Return a description of the cfg node *)
   let get_description pe node =
     let str_kind =
       match get_kind node with
       | Stmt_node _ ->
           "Instructions"
-      | Prune_node (_, _, descr) ->
-          "Conditional " ^ descr
+      | Prune_node (_, _, prune_node_kind) ->
+          "Conditional " ^ string_of_prune_node_kind prune_node_kind
       | Exit_node ->
           "Exit"
       | Skip_node _ ->

@@ -29,7 +29,10 @@ let source_range_of_stmt stmt =
 
 
 module Nodes = struct
-  let prune_kind b if_kind = Procdesc.Node.Prune_node (b, if_kind, string_of_bool b ^ " Branch")
+  let prune_kind b if_kind =
+    Procdesc.Node.Prune_node
+      (b, if_kind, if b then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch)
+
 
   let is_true_prune_node n =
     match Procdesc.Node.get_kind n with

@@ -24,7 +24,6 @@ let create_handler_table impl =
 
 let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handler_table =
   let catch_block_table = Hashtbl.create 1 in
-  let exn_message = "exception handler" in
   let procdesc = context.procdesc in
   let create_node loc node_kind instrs = Procdesc.create_node procdesc loc node_kind instrs in
   let ret_var = Procdesc.get_ret_var procdesc in
@@ -102,8 +101,12 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
             let instr_rethrow_exn =
               Sil.Store (Exp.Lvar ret_var, ret_type, Exp.Exn (Exp.Var id_exn_val), loc)
             in
-            let node_kind_true = Procdesc.Node.Prune_node (true, if_kind, exn_message) in
-            let node_kind_false = Procdesc.Node.Prune_node (false, if_kind, exn_message) in
+            let node_kind_true =
+              Procdesc.Node.Prune_node (true, if_kind, PruneNodeKind_ExceptionHandler)
+            in
+            let node_kind_false =
+              Procdesc.Node.Prune_node (false, if_kind, PruneNodeKind_ExceptionHandler)
+            in
             let node_true =
               let instrs_true = [instr_call_instanceof; instr_prune_true; instr_set_catch_var] in
               create_node loc node_kind_true instrs_true

@@ -919,8 +919,12 @@ let instruction (context : JContext.t) pc instr : translation =
         let sil_test_true = Exp.UnOp (Unop.LNot, sil_test_false, None) in
         let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, Sil.Ik_if) in
         let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, Sil.Ik_if) in
-        let node_kind_true = Procdesc.Node.Prune_node (true, Sil.Ik_if, "method_body") in
-        let node_kind_false = Procdesc.Node.Prune_node (false, Sil.Ik_if, "method_body") in
+        let node_kind_true =
+          Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody)
+        in
+        let node_kind_false =
+          Procdesc.Node.Prune_node (false, Sil.Ik_if, PruneNodeKind_MethodBody)
+        in
         let prune_node_true = create_node node_kind_true (instrs1 @ instrs2 @ [sil_instrs_true])
         and prune_node_false =
           create_node node_kind_false (instrs1 @ instrs2 @ [sil_instrs_false])
@@ -1054,7 +1058,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let not_null_node =
           let sil_not_null = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
           let sil_prune_not_null = Sil.Prune (sil_not_null, loc, true, Sil.Ik_if)
-          and not_null_kind = Procdesc.Node.Prune_node (true, Sil.Ik_if, "Not null") in
+          and not_null_kind = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_NotNull) in
           create_node not_null_kind (instrs @ [sil_prune_not_null])
         in
         let throw_npe_node =
@@ -1095,7 +1099,9 @@ let instruction (context : JContext.t) pc instr : translation =
           (instrs, sil_array_expr, sil_length_expr, sil_index_expr)
         in
         let in_bound_node =
-          let in_bound_node_kind = Procdesc.Node.Prune_node (true, Sil.Ik_if, "In bound") in
+          let in_bound_node_kind =
+            Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_InBound)
+          in
           let sil_assume_in_bound =
             let sil_in_bound =
               let sil_positive_index =
@@ -1159,7 +1165,9 @@ let instruction (context : JContext.t) pc instr : translation =
         let is_instance_node =
           let check_is_false = Exp.BinOp (Binop.Ne, res_ex, Exp.zero) in
           let asssume_instance_of = Sil.Prune (check_is_false, loc, true, Sil.Ik_if)
-          and instance_of_kind = Procdesc.Node.Prune_node (true, Sil.Ik_if, "Is instance") in
+          and instance_of_kind =
+            Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_IsInstance)
+          in
           create_node instance_of_kind (instrs @ [call; asssume_instance_of])
         and throw_cast_exception_node =
           let check_is_true = Exp.BinOp (Binop.Ne, res_ex, Exp.one) in

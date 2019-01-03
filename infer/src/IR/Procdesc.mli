@@ -69,13 +69,23 @@ module Node : sig
     | ThrowNPE
     | UnaryOperator
 
+  type prune_node_kind =
+    | PruneNodeKind_ExceptionHandler
+    | PruneNodeKind_FalseBranch
+    | PruneNodeKind_InBound
+    | PruneNodeKind_IsInstance
+    | PruneNodeKind_MethodBody
+    | PruneNodeKind_NotNull
+    | PruneNodeKind_TrueBranch
+
   (** kind of cfg node *)
   type nodekind =
     | Start_node
     | Exit_node
     | Stmt_node of stmt_nodekind
     | Join_node
-    | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
+    | Prune_node of bool * Sil.if_kind * prune_node_kind
+        (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
   [@@deriving compare]
 
