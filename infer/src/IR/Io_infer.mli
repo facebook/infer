@@ -14,8 +14,7 @@ module Html : sig
   val close : Unix.File_descr.t * Format.formatter -> unit
   (** Close an Html file *)
 
-  val create :
-    DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
+  val create : SourceFile.t -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
   (** Create a new html file *)
 
   val modified_during_analysis : SourceFile.t -> DB.Results_dir.path -> bool

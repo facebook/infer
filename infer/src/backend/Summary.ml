@@ -115,7 +115,7 @@ let pp_text fmt summary =
     (Payloads.pp Pp.text) summary.payloads
 
 
-let pp_html source color fmt summary =
+let pp_html source fmt summary =
   Io_infer.Html.pp_start_color fmt Black ;
   F.fprintf fmt "@\n%a" pp_no_stats_specs summary ;
   Io_infer.Html.pp_end_color fmt () ;
@@ -123,7 +123,7 @@ let pp_html source color fmt summary =
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
-  Payloads.pp (Pp.html color) fmt summary.payloads ;
+  Payloads.pp (Pp.html Black) fmt summary.payloads ;
   F.fprintf fmt "</LISTING>@\n"
 
 

@@ -112,8 +112,9 @@ module NodesHtml : sig
     -> Procdesc.Node.t list
     -> Procdesc.Node.t list
     -> Procdesc.Node.t list
+    -> Instrs.not_reversed_t
     -> SourceFile.t
-    -> bool
+    -> unit
 
   val finish_node : Typ.Procname.t -> int -> SourceFile.t -> unit
 end = struct
@@ -121,12 +122,13 @@ end = struct
 
   let pp_node_link_seq fmt node = pp_node_link_seq [".."] ~description:false fmt node
 
-  let start_node nodeid loc proc_name preds succs exns source =
+  let start_node nodeid loc proc_name preds succs exns instrs source =
     let node_fname = Io_infer.Html.node_filename proc_name nodeid in
-    let modified = Io_infer.Html.modified_during_analysis source ["nodes"; node_fname] in
+    let node_path = ["nodes"; node_fname] in
+    let modified = Io_infer.Html.modified_during_analysis source node_path in
     let needs_initialization, (fd, fmt) =
-      if modified then (false, Io_infer.Html.open_out source ["nodes"; node_fname])
-      else (true, Io_infer.Html.create (DB.Results_dir.Abs_source_dir source) ["nodes"; node_fname])
+      if modified then (false, Io_infer.Html.open_out source node_path)
+      else (true, Io_infer.Html.create source node_path)
     in
     curr_html_formatter := fmt ;
     Hashtbl.replace log_files (node_fname, source) fd ;
@@ -141,14 +143,14 @@ end = struct
         loc.Location.line ;
       F.fprintf fmt "<br>PREDS:@\n" ;
       pp_node_link_seq fmt preds ;
-      F.fprintf fmt "<br>SUCCS: @\n" ;
+      F.fprintf fmt "<br>SUCCS:@\n" ;
       pp_node_link_seq fmt succs ;
-      F.fprintf fmt "<br>EXN: @\n" ;
+      F.fprintf fmt "<br>EXN:@\n" ;
       pp_node_link_seq fmt exns ;
       F.fprintf fmt "<br>@\n" ;
-      F.pp_print_flush fmt () ;
-      true )
-    else false
+      F.fprintf fmt "<LISTING class='%s'>%a</LISTING>" (Pp.color_string Green)
+        (Instrs.pp (Pp.html Green))
+        instrs )
 
 
   let finish_node proc_name nodeid source =
@@ -170,24 +172,18 @@ let force_delayed_prints () =
   L.reset_delayed_prints ()
 
 
-(** Start a session, and create a new html fine for the node if it does not exist yet *)
+(** Start a session, and create a new html file for the node if it does not exist yet *)
 let start_session ~pp_name node (loc : Location.t) proc_name session source =
   let node_id = Procdesc.Node.get_id node in
-  if
-    NodesHtml.start_node
-      (node_id :> int)
-      loc proc_name (Procdesc.Node.get_preds node) (Procdesc.Node.get_succs node)
-      (Procdesc.Node.get_exn node) source
-  then
-    F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a" Io_infer.Html.pp_start_color
-      Pp.Green
-      (Instrs.pp (Pp.html Green))
-      (Procdesc.Node.get_instrs node) Io_infer.Html.pp_end_color () ;
+  NodesHtml.start_node
+    (node_id :> int)
+    loc proc_name (Procdesc.Node.get_preds node) (Procdesc.Node.get_succs node)
+    (Procdesc.Node.get_exn node) (Procdesc.Node.get_instrs node) source ;
   F.fprintf !curr_html_formatter "%a%a %t" Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
     ((node_id :> int), session, loc.Location.line)
     pp_name ;
-  F.fprintf !curr_html_formatter "<LISTING>%a" Io_infer.Html.pp_start_color Pp.Black
+  F.fprintf !curr_html_formatter "@\n<LISTING class='%s'>" (Pp.color_string Black)
 
 
 let node_start_session ~pp_name node session =
@@ -202,7 +198,7 @@ let node_start_session ~pp_name node session =
 let node_finish_session node =
   if not Config.only_cheap_debug then force_delayed_prints () else L.reset_delayed_prints () ;
   if Config.write_html then (
-    F.fprintf !curr_html_formatter "</LISTING>%a@?" Io_infer.Html.pp_end_color () ;
+    F.fprintf !curr_html_formatter "</LISTING>@?" ;
     let source = (Procdesc.Node.get_loc node).file in
     NodesHtml.finish_node
       (Procdesc.Node.get_proc_name node)
@@ -217,9 +213,7 @@ let write_proc_html pdesc =
     let source = (Procdesc.get_loc pdesc).file in
     let nodes = List.sort ~compare:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
     let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
-    let fd, fmt =
-      Io_infer.Html.create (DB.Results_dir.Abs_source_dir source) [Typ.Procname.to_filename pname]
-    in
+    let fd, fmt = Io_infer.Html.create source [Typ.Procname.to_filename pname] in
     F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
       (Io_infer.Html.pp_line_link source
          ~text:(Some (Escape.escape_xml (Typ.Procname.to_string pname)))
@@ -231,7 +225,7 @@ let write_proc_html pdesc =
         ()
     | Some summary ->
         F.pp_print_string fmt "<br />@\n" ;
-        Summary.pp_html source Black fmt summary ) ;
+        Summary.pp_html source fmt summary ) ;
     F.fprintf fmt "<hr />@\n<pre>@\n%a</pre>@\n" ProcAttributes.pp (Procdesc.get_attributes pdesc) ;
     Io_infer.Html.close (fd, fmt) )
 
@@ -288,9 +282,7 @@ let write_html_proc source table_nodes_at_linenum global_err_log proc_desc =
 (** Create filename.ext.html. *)
 let write_html_file linereader filename procs =
   let fname_encoding = DB.source_file_encoding filename in
-  let fd, fmt =
-    Io_infer.Html.create (DB.Results_dir.Abs_source_dir filename) [".."; fname_encoding]
-  in
+  let fd, fmt = Io_infer.Html.create filename [".."; fname_encoding] in
   let pp_prelude () =
     F.fprintf fmt "<center><h1>File %a </h1></center>@\n<table class=\"code\">@\n" SourceFile.pp
       filename

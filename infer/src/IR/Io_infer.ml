@@ -15,7 +15,7 @@ module F = Format
 (* =============== START of module Html =============== *)
 module Html = struct
   (** Create a new html file *)
-  let create pk path =
+  let create source path =
     let fname, dir_path =
       match List.rev path with
       | fname :: path_rev ->
@@ -23,7 +23,7 @@ module Html = struct
       | [] ->
           raise (Failure "Html.create")
     in
-    let fd = DB.Results_dir.create_file pk dir_path in
+    let fd = DB.Results_dir.(create_file (Abs_source_dir source)) dir_path in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in
     let s =
@@ -96,7 +96,7 @@ h1 { font-size:14pt }
 
 
   (** Print a horizontal line *)
-  let pp_hline fmt () = F.pp_print_string fmt "<hr width=\"100%\">\n"
+  let pp_hline fmt () = F.pp_print_string fmt "\n<hr width=\"100%\">\n"
 
   (** Print start color *)
   let pp_start_color fmt color = F.fprintf fmt "<span class='%s'>" (Pp.color_string color)

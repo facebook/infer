@@ -86,7 +86,7 @@ val reset : Procdesc.t -> t
 
 val load_from_file : DB.filename -> t option
 
-val pp_html : SourceFile.t -> Pp.color -> Format.formatter -> t -> unit
+val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 (** Print the summary in html format *)
 
 val pp_text : Format.formatter -> t -> unit
