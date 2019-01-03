@@ -54,17 +54,26 @@ module StdVector : sig
   val mark_reserved : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 end
 
-val read : Location.t -> HilExp.AccessExpression.t -> t -> (t * AbstractAddress.t) access_result
+val read :
+     Location.t
+  -> HilExp.AccessExpression.t
+  -> t
+  -> (t * (AbstractAddress.t * PulseTrace.t)) access_result
 
 val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
 
-val havoc_var : Var.t -> t -> t
+val havoc_var : PulseTrace.t -> Var.t -> t -> t
 
-val havoc : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+val havoc : PulseTrace.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
-val write_var : Var.t -> AbstractAddress.t -> t -> t
+val write_var : Var.t -> AbstractAddress.t * PulseTrace.t -> t -> t
 
-val write : Location.t -> HilExp.AccessExpression.t -> AbstractAddress.t -> t -> t access_result
+val write :
+     Location.t
+  -> HilExp.AccessExpression.t
+  -> AbstractAddress.t * PulseTrace.t
+  -> t
+  -> t access_result
 
 val invalidate :
   PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
@@ -72,6 +81,9 @@ val invalidate :
 val invalidate_array_elements :
   PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
+val record_var_decl_location : Location.t -> Var.t -> t -> t
+
 val remove_vars : Var.t list -> t -> t
 
+(* TODO: better name and pass location to report where we returned *)
 val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result

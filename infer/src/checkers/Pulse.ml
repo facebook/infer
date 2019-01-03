@@ -44,15 +44,17 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
   let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
       astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
+    let crumb = PulseTrace.Assignment {lhs= lhs_access; location= loc} in
     match rhs_exp with
     | AccessExpression rhs_access -> (
         PulseDomain.read loc rhs_access astate
-        >>= fun (astate, rhs_value) ->
-        PulseDomain.write loc lhs_access rhs_value astate
+        >>= fun (astate, (rhs_addr, rhs_trace)) ->
+        let return_addr_trace = (rhs_addr, crumb :: rhs_trace) in
+        PulseDomain.write loc lhs_access return_addr_trace astate
         >>= fun astate ->
         match lhs_access with
         | Base (var, _) when Var.is_return var ->
-            PulseDomain.check_address_of_local_variable summary.Summary.proc_desc rhs_value astate
+            PulseDomain.check_address_of_local_variable summary.Summary.proc_desc rhs_addr astate
         | _ ->
             Ok astate )
     | Closure (pname, captured) ->
@@ -61,7 +63,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
         exec_assign summary lhs_access e loc astate
     | _ ->
         PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-        >>= PulseDomain.havoc loc lhs_access
+        >>= PulseDomain.havoc [crumb] loc lhs_access
 
 
   let exec_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc
@@ -69,6 +71,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     let read_all args astate =
       PulseDomain.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
+    let crumb = PulseTrace.Call {f= `HilCall call; actuals; location= call_loc} in
     match call with
     | Direct callee_pname when is_destructor callee_pname -> (
       match actuals with
@@ -86,7 +89,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       match actuals with
       | AccessExpression constructor_access :: rest ->
           let constructed_object = HilExp.AccessExpression.dereference constructor_access in
-          PulseDomain.havoc call_loc constructed_object astate >>= read_all rest
+          PulseDomain.havoc [crumb] call_loc constructed_object astate >>= read_all rest
       | _ ->
           Ok astate )
     | Direct (Typ.Procname.ObjC_Cpp callee_pname)
@@ -101,7 +104,7 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
           let lhs_deref = HilExp.AccessExpression.dereference lhs in
           let rhs_deref = HilExp.AccessExpression.dereference rhs in
-          PulseDomain.havoc call_loc lhs_deref astate
+          PulseDomain.havoc [crumb] call_loc lhs_deref astate
           >>= fun astate -> PulseDomain.read call_loc rhs_deref astate >>| fst
       | _ ->
           read_all actuals astate )
@@ -122,7 +125,9 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
     match model with
     | None ->
         exec_call summary ret call actuals flags call_loc astate
-        >>| PulseDomain.havoc_var (fst ret)
+        >>| PulseDomain.havoc_var
+              [PulseTrace.Call {f= `HilCall call; actuals; location= call_loc}]
+              (fst ret)
     | Some model ->
         model call_loc ~ret ~actuals astate
 

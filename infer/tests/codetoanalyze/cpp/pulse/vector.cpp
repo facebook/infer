@@ -9,8 +9,9 @@
 
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
+  int* y = elt;
   vec.push_back(42);
-  std::cout << *elt << "\n";
+  std::cout << *y << "\n";
 }
 
 void deref_local_vector_element_after_push_back_bad() {

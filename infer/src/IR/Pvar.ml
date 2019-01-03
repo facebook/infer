@@ -108,7 +108,7 @@ let get_simplified_name pv =
   let s = Mangled.to_string pv.pv_name in
   match String.rsplit2 s ~on:'.' with
   | Some (s1, s2) -> (
-    match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> s4 ^ "." ^ s2 | _ -> s )
+    match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> Printf.sprintf "%s.%s" s4 s2 | _ -> s )
   | _ ->
       s
 

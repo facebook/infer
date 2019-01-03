@@ -171,5 +171,3 @@ let cli_args fmt args =
 
 
 let pair ~fst ~snd fmt (a, b) = F.fprintf fmt "(%a,@,%a)" fst a snd b
-
-let triple ~fst ~snd ~trd fmt (a, b, c) = F.fprintf fmt "(%a,@,%a@,%a)" fst a snd b trd c

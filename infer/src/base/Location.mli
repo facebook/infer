@@ -25,6 +25,9 @@ val dummy : t
 val pp : Format.formatter -> t -> unit
 (** Pretty print a location. *)
 
+val pp_line : Format.formatter -> t -> unit
+(** print just the line information *)
+
 val to_string : t -> string
 (** String representation of a location. *)
 

@@ -34,8 +34,10 @@ module C = struct
   let variable_initialization : model =
    fun location ~ret:_ ~actuals astate ->
     match actuals with
-    | [AccessExpression (AddressOf access_expr)] ->
-        PulseDomain.havoc location access_expr astate
+    | [AccessExpression (AddressOf (Base (var, _)))] ->
+        PulseDomain.havoc_var [PulseTrace.VariableDeclaration location] var astate
+        |> PulseDomain.record_var_decl_location location var
+        |> Result.return
     | _ ->
         L.die InternalError
           "The frontend is not supposed to produce __variable_initialization(e) where e is not of \
@@ -65,10 +67,10 @@ module Cplusplus = struct
     | AccessExpression lambda :: _ ->
         PulseDomain.read location HilExp.AccessExpression.(dereference lambda) astate
         >>= fun (astate, address) ->
-        PulseDomain.Closures.check_captured_addresses location lambda address astate
+        PulseDomain.Closures.check_captured_addresses location lambda (fst address) astate
     | _ ->
         Ok astate )
-    >>| PulseDomain.havoc_var ret_var
+    >>| PulseDomain.havoc_var [PulseTrace.Call {f= `Model "<lambda>"; actuals; location}] ret_var
 
 
   let placement_new : model =
@@ -76,15 +78,16 @@ module Cplusplus = struct
     let read_all args astate =
       PulseDomain.read_all location (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
+    let crumb = PulseTrace.Call {f= `Model "<placement new>"; actuals; location} in
     match List.rev actuals with
     | HilExp.AccessExpression expr :: other_actuals ->
         PulseDomain.read location expr astate
-        >>= fun (astate, address) ->
-        Ok (PulseDomain.write_var ret_var address astate) >>= read_all other_actuals
+        >>= fun (astate, (address, trace)) ->
+        PulseDomain.write_var ret_var (address, crumb :: trace) astate |> read_all other_actuals
     | _ :: other_actuals ->
-        read_all other_actuals astate >>| PulseDomain.havoc_var ret_var
+        read_all other_actuals astate >>| PulseDomain.havoc_var [crumb] ret_var
     | _ ->
-        Ok (PulseDomain.havoc_var ret_var astate)
+        Ok (PulseDomain.havoc_var [crumb] ret_var astate)
 end
 
 module StdVector = struct
@@ -104,42 +107,50 @@ module StdVector = struct
     HilExp.AccessExpression.array_offset (deref_internal_array vector) Typ.void index
 
 
-  let reallocate_internal_array vector vector_f location astate =
+  let reallocate_internal_array trace vector vector_f location astate =
     let array_address = to_internal_array vector in
     let array = deref_internal_array vector in
     let invalidation = PulseInvalidation.StdVector (vector_f, vector, location) in
     PulseDomain.invalidate_array_elements invalidation location array astate
     >>= PulseDomain.invalidate invalidation location array
-    >>= PulseDomain.havoc location array_address
+    >>= PulseDomain.havoc trace location array_address
 
 
-  let invalidate_references invalidation : model =
+  let invalidate_references vector_f : model =
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | AccessExpression vector :: _ ->
-        reallocate_internal_array vector invalidation location astate
+        let crumb =
+          PulseTrace.Call
+            { f= `Model (Format.asprintf "%a" PulseInvalidation.pp_std_vector_function vector_f)
+            ; actuals
+            ; location }
+        in
+        reallocate_internal_array [crumb] vector vector_f location astate
     | _ ->
         Ok astate
 
 
   let at : model =
    fun location ~ret ~actuals astate ->
+    let crumb = PulseTrace.Call {f= `Model "std::vector::at"; actuals; location} in
     match actuals with
     | [AccessExpression vector_access_expr; index_exp] ->
         PulseDomain.read location
           (element_of_internal_array vector_access_expr (Some index_exp))
           astate
-        >>= fun (astate, loc) ->
-        PulseDomain.write location (HilExp.AccessExpression.base ret) loc astate
+        >>= fun (astate, (addr, trace)) ->
+        PulseDomain.write location (HilExp.AccessExpression.base ret) (addr, crumb :: trace) astate
     | _ ->
-        Ok (PulseDomain.havoc_var (fst ret) astate)
+        Ok (PulseDomain.havoc_var [crumb] (fst ret) astate)
 
 
   let reserve : model =
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        reallocate_internal_array vector Reserve location astate
+        let crumb = PulseTrace.Call {f= `Model "std::vector::reserve"; actuals; location} in
+        reallocate_internal_array [crumb] vector Reserve location astate
         >>= PulseDomain.StdVector.mark_reserved location vector
     | _ ->
         Ok astate
@@ -149,6 +160,7 @@ module StdVector = struct
    fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
+        let crumb = PulseTrace.Call {f= `Model "std::vector::push_back"; actuals; location} in
         PulseDomain.StdVector.is_reserved location vector astate
         >>= fun (astate, is_reserved) ->
         if is_reserved then
@@ -157,7 +169,7 @@ module StdVector = struct
           Ok astate
         else
           (* simulate a re-allocation of the underlying array every time an element is added *)
-          reallocate_internal_array vector PushBack location astate
+          reallocate_internal_array [crumb] vector PushBack location astate
     | _ ->
         Ok astate
 end

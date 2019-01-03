@@ -17,6 +17,8 @@ type std_vector_function =
   | ShrinkToFit
 [@@deriving compare]
 
+val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
+
 type t =
   | CFree of HilExp.AccessExpression.t * Location.t
   | CppDelete of HilExp.AccessExpression.t * Location.t

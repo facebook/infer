@@ -20,9 +20,11 @@ let none file = {line= -1; col= -1; file}
 
 let dummy = none (SourceFile.invalid __FILE__)
 
+let pp_line f loc = F.fprintf f "line %d" loc.line
+
 (** Pretty print a location *)
 let pp f (loc : t) =
-  F.fprintf f "line %d" loc.line ;
+  pp_line f loc ;
   if loc.col <> -1 then F.fprintf f ", column %d" loc.col
 
 

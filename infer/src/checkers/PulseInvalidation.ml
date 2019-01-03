@@ -18,7 +18,7 @@ type std_vector_function =
   | ShrinkToFit
 [@@deriving compare]
 
-let std_vector_function_pp f = function
+let pp_std_vector_function f = function
   | Assign ->
       F.fprintf f "std::vector::assign"
   | Clear ->
@@ -71,15 +71,15 @@ let get_location = function
 let pp f = function
   | CFree (access_expr, location) ->
       F.fprintf f "invalidated by call to `free(%a)` at %a" HilExp.AccessExpression.pp access_expr
-        Location.pp location
+        Location.pp_line location
   | CppDelete (access_expr, location) ->
       F.fprintf f "invalidated by call to `delete %a` at %a" HilExp.AccessExpression.pp access_expr
-        Location.pp location
+        Location.pp_line location
   | CppDestructor (proc_name, access_expr, location) ->
       F.fprintf f "invalidated by destructor call `%a(%a)` at %a" Typ.Procname.pp proc_name
-        HilExp.AccessExpression.pp access_expr Location.pp location
+        HilExp.AccessExpression.pp access_expr Location.pp_line location
   | Nullptr ->
       F.fprintf f "null pointer"
   | StdVector (std_vector_f, access_expr, location) ->
-      F.fprintf f "potentially invalidated by call to `%a(%a, ..)` at %a" std_vector_function_pp
-        std_vector_f HilExp.AccessExpression.pp access_expr Location.pp location
+      F.fprintf f "potentially invalidated by call to `%a(%a, ..)` at %a" pp_std_vector_function
+        std_vector_f HilExp.AccessExpression.pp access_expr Location.pp_line location
