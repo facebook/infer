@@ -181,8 +181,8 @@ let start_session ~pp_name node (loc : Location.t) proc_name session source =
   then
     F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a" Io_infer.Html.pp_start_color
       Pp.Green
-      (Procdesc.Node.pp_instrs (Pp.html Green) ~instro:None ~sub_instrs:true)
-      node Io_infer.Html.pp_end_color () ;
+      (Instrs.pp (Pp.html Green))
+      (Procdesc.Node.get_instrs node) Io_infer.Html.pp_end_color () ;
   F.fprintf !curr_html_formatter "%a%a %t" Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
     ((node_id :> int), session, loc.Location.line)

@@ -296,47 +296,27 @@ module Node = struct
         F.pp_print_string fmt "UnaryOperator"
 
 
-  (** Print extended instructions for the node,
-      highlighting the given subinstruction if present *)
-  let pp_instrs pe0 ~sub_instrs ~instro fmt node =
-    if sub_instrs then
-      let pe =
-        match instro with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
-      in
-      let instrs = get_instrs node in
-      Instrs.pp pe fmt instrs
-    else
-      let () =
-        match get_kind node with
-        | Stmt_node s ->
-            F.fprintf fmt "statements (%a)" pp_stmt s
-        | Prune_node (_, _, descr) ->
-            F.fprintf fmt "assume %s" descr
-        | Exit_node ->
-            F.pp_print_string fmt "exit"
-        | Skip_node s ->
-            F.fprintf fmt "skip (%s)" s
-        | Start_node ->
-            F.pp_print_string fmt "start"
-        | Join_node ->
-            F.pp_print_string fmt "join"
-      in
-      F.fprintf fmt "  %a " Location.pp (get_loc node)
+  let pp_instrs ~highlight pe0 f node =
+    let pe =
+      match highlight with
+      | None ->
+          pe0
+      | Some instr ->
+          Pp.extend_colormap pe0 (Obj.repr instr) Red
+    in
+    Instrs.pp pe f (get_instrs node)
 
 
-  (** Dump extended instructions for the node *)
-  let d_instrs ~(sub_instrs : bool) (curr_instr : Sil.instr option) (node : t) =
-    L.d_pp_with_pe ~color:Pp.Green (pp_instrs ~sub_instrs ~instro:curr_instr) node
-
+  let d_instrs ~highlight (node : t) = L.d_pp_with_pe ~color:Green (pp_instrs ~highlight) node
 
   (** Return a description of the cfg node *)
   let get_description pe node =
-    let str =
+    let str_kind =
       match get_kind node with
       | Stmt_node _ ->
           "Instructions"
       | Prune_node (_, _, descr) ->
-          "Conditional" ^ " " ^ descr
+          "Conditional " ^ descr
       | Exit_node ->
           "Exit"
       | Skip_node _ ->
@@ -346,8 +326,7 @@ module Node = struct
       | Join_node ->
           "Join"
     in
-    let pp fmt = F.fprintf fmt "%s@.%a" str (pp_instrs pe ~instro:None ~sub_instrs:true) node in
-    F.asprintf "%t" pp
+    F.asprintf "%s@\n%a" str_kind (Instrs.pp pe) (get_instrs node)
 
 
   (** simple key for a node: just look at the instructions *)

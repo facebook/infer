@@ -421,7 +421,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     | None ->
         () ) ;
     L.d_strln "SIL INSTR:" ;
-    Procdesc.Node.d_instrs ~sub_instrs:true (State.get_instr ()) curr_node ;
+    Procdesc.Node.d_instrs ~highlight:(State.get_instr ()) curr_node ;
     L.d_ln () ;
     Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
     State.mark_instr_fail exn
@@ -447,7 +447,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     L.d_increase_indent () ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
     L.d_strln ".... Instructions: ...." ;
-    Procdesc.Node.d_instrs ~sub_instrs:true (State.get_instr ()) curr_node ;
+    Procdesc.Node.d_instrs ~highlight:(State.get_instr ()) curr_node ;
     L.d_ln () ;
     L.d_ln ()
   in

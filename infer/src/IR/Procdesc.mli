@@ -93,8 +93,8 @@ module Node : sig
   val append_instrs : t -> Sil.instr list -> unit
   (** Append the instructions to the list of instructions to execute *)
 
-  val d_instrs : sub_instrs:bool -> Sil.instr option -> t -> unit
-  (** Dump extended instructions for the node *)
+  val d_instrs : highlight:Sil.instr option -> t -> unit
+  (** Dump instructions for the node, highlighting the given subinstruction if present *)
 
   val dummy : Typ.Procname.t -> t
   (** Create a dummy node *)
@@ -153,11 +153,6 @@ module Node : sig
   (** Pretty print a node id *)
 
   val pp_stmt : Format.formatter -> stmt_nodekind -> unit
-
-  val pp_instrs :
-    Pp.env -> sub_instrs:bool -> instro:Sil.instr option -> Format.formatter -> t -> unit
-  (** Print extended instructions for the node,
-      highlighting the given subinstruction if present *)
 
   val compute_key : t -> NodeKey.t
 end
