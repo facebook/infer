@@ -346,110 +346,93 @@ let setup_log_file () =
            ============================================================"
 
 
-(** delayable print action *)
-type print_action =
-  | PTdecrease_indent : print_action
-  | PTincrease_indent : print_action
-  | PTstr : {s: string; color: Pp.color option; ln: bool} -> print_action
-  | PTwarning : string -> print_action
-  | PTerror : string -> print_action
-  | PTinfo : string -> print_action
-  | PT_generic : (Format.formatter -> 'a -> unit) * 'a -> print_action
-  | PT_generic_with_pe :
-      Pp.color option * (Pp.env -> Format.formatter -> 'a -> unit) * 'a
-      -> print_action
+type delayed_prints = Buffer.t * F.formatter
 
-type delayed_prints = print_action list
-
-let delayed_actions = ref []
-
-let pp_with_html_color color pp fmt x =
-  F.fprintf fmt "<span class='%s'>%a</span>" (Pp.color_string color) pp x
+let new_delayed_prints () =
+  let b = Buffer.create 16 in
+  let f = F.formatter_of_buffer b in
+  (b, f)
 
 
-let pp_maybe_with_color ?color pp fmt x =
-  match color with
-  | Some color when Config.write_html ->
-      pp_with_html_color color pp fmt x
-  | _ ->
-      pp fmt x
+let delayed_prints = ref (new_delayed_prints ())
 
+(** reset the delayed prints *)
+let reset_delayed_prints () = delayed_prints := new_delayed_prints ()
 
-(** Execute the delayed print actions *)
-let force_delayed_print fmt = function
-  | PTdecrease_indent ->
-      F.pp_close_box fmt ()
-  | PTincrease_indent ->
-      F.fprintf fmt "  @["
-  | PTstr {s; color; ln} ->
-      pp_maybe_with_color ?color F.pp_print_string fmt s ;
-      if ln then F.pp_force_newline fmt ()
-  | PTerror s ->
-      pp_maybe_with_color ~color:Pp.Red (fun fmt -> F.fprintf fmt "ERROR: %s") fmt s
-  | PTwarning s ->
-      pp_maybe_with_color ~color:Pp.Orange (fun fmt -> F.fprintf fmt "WARNING: %s") fmt s
-  | PTinfo s ->
-      pp_maybe_with_color ~color:Pp.Blue (fun fmt -> F.fprintf fmt "INFO: %s") fmt s
-  | PT_generic (pp, x) ->
-      pp fmt x
-  | PT_generic_with_pe (None, pp, x) ->
-      let pe_default = if Config.write_html then Pp.html Black else Pp.text in
-      pp pe_default fmt x
-  | PT_generic_with_pe (Some color, pp, x) ->
-      if Config.write_html then pp_with_html_color color (pp (Pp.html color)) fmt x
-      else pp Pp.text fmt x
-
-
-(** reset the delayed print actions *)
-let reset_delayed_prints () = delayed_actions := []
-
-(** return the delayed print actions *)
+(** return the delayed prints *)
 let get_and_reset_delayed_prints () =
-  let res = !delayed_actions in
+  let res = !delayed_prints in
   reset_delayed_prints () ; res
 
 
-(** extend the current print log *)
-let add_print_action pact =
-  if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.only_cheap_debug then
-    Option.iter !log_file ~f:(function file_fmt, _ -> force_delayed_print file_fmt pact)
+let force_and_reset_delayed_prints f =
+  let delayed_prints_buffer, delayed_prints_formatter = get_and_reset_delayed_prints () in
+  F.pp_print_flush delayed_prints_formatter () ;
+  F.pp_print_string f (Buffer.contents delayed_prints_buffer)
 
 
-let d_pp pp x = add_print_action (PT_generic (pp, x))
+(** set the delayed prints *)
+let set_delayed_prints new_delayed_prints = delayed_prints := new_delayed_prints
 
-let d_pp_with_pe ?color pp x = add_print_action (PT_generic_with_pe (color, pp, x))
+let get_f () =
+  if Config.write_html then Some (snd !delayed_prints)
+  else if not Config.only_cheap_debug then Option.map ~f:fst !log_file
+  else None
 
-let force_and_reset_delayed_prints fmt =
-  get_and_reset_delayed_prints () |> List.rev |> List.iter ~f:(force_delayed_print fmt)
+
+let d_kfprintf ?color k f fmt =
+  match color with
+  | Some color when Config.write_html ->
+      F.fprintf f "<span class='%s'>" (Pp.color_string color) ;
+      F.kfprintf (fun f -> F.pp_print_string f "</span>" ; k f) f fmt
+  | _ ->
+      F.kfprintf k f fmt
 
 
-(** set the delayed print actions *)
-let set_delayed_prints new_delayed_actions = delayed_actions := new_delayed_actions
+let d_iprintf fmt = Format.ikfprintf ignore Format.err_formatter fmt
+
+let d_kprintf ?color k fmt =
+  match get_f () with Some f -> d_kfprintf ?color k f fmt | None -> d_iprintf fmt
+
+
+let d_kasprintf k fmt =
+  match get_f () with Some f -> F.kasprintf (fun s -> k f s) fmt | None -> d_iprintf fmt
+
+
+let d_printf ?color fmt = d_kprintf ?color ignore fmt
+
+let k_force_newline f = F.pp_force_newline f ()
+
+let d_printfln ?color fmt = d_kprintf ?color k_force_newline fmt
+
+let d_pp pp x = d_printf "%a" pp x
+
+let d_pp_with_pe ?color pp x =
+  let pe = if Config.write_html then Pp.html (Option.value ~default:Pp.Black color) else Pp.text in
+  d_printf ?color "%a" (pp pe) x
+
 
 (** dump a string *)
-let d_str ?color (s : string) = add_print_action (PTstr {s; color; ln= false})
+let d_str ?color s = d_printf ?color "%s" s
 
 (** dump an error string *)
-let d_error (s : string) = add_print_action (PTerror s)
+let d_error s = d_printf ~color:Pp.Red "ERROR: %s" s
 
 (** dump a warning string *)
-let d_warning (s : string) = add_print_action (PTwarning s)
+let d_warning s = d_printf ~color:Pp.Orange "WARNING: %s" s
 
 (** dump an info string *)
-let d_info (s : string) = add_print_action (PTinfo s)
-
-(** dump a string plus newline *)
-let d_strln ?color (s : string) = add_print_action (PTstr {s; color; ln= true})
+let d_info s = d_printf ~color:Pp.Blue "INFO: %s" s
 
 (** dump a newline *)
-let d_ln () = d_strln ""
+let d_ln () = d_printf "@\n"
 
-let d_printf ?color fmt = F.kasprintf (d_str ?color) fmt
+(** dump a string plus newline *)
+let d_strln ?color s = d_kprintf ?color k_force_newline "%s" s
 
-let d_printfln ?color fmt = F.kasprintf (d_strln ?color) fmt
+let d_printfln_escaped ?color fmt =
+  d_kasprintf (fun f s -> d_kfprintf ?color k_force_newline f "%s" (Escape.escape_xml s)) fmt
 
-let d_printfln_escaped ?color fmt = F.kasprintf (fun s -> d_strln ?color (Escape.escape_xml s)) fmt
 
 (** dump an indentation *)
 let d_indent indent =
@@ -459,7 +442,7 @@ let d_indent indent =
 
 
 (** dump command to increase the indentation level *)
-let d_increase_indent () = add_print_action PTincrease_indent
+let d_increase_indent () = d_printf "  @["
 
 (** dump command to decrease the indentation level *)
-let d_decrease_indent () = add_print_action PTdecrease_indent
+let d_decrease_indent () = d_printf "@]"
