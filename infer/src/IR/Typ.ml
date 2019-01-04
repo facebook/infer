@@ -135,6 +135,8 @@ type fkind =
   | FLongDouble  (** [long double] *)
 [@@deriving compare]
 
+let equal_fkind = [%compare.equal: fkind]
+
 let fkind_to_string = function
   | FFloat ->
       "float"
@@ -208,6 +210,23 @@ module T = struct
   let equal_quals = [%compare.equal: type_quals]
 
   let equal = [%compare.equal: t]
+
+  let rec equal_ignore_quals t1 t2 = equal_desc_ignore_quals t1.desc t2.desc
+
+  and equal_desc_ignore_quals d1 d2 =
+    match (d1, d2) with
+    | Tint ikind1, Tint ikind2 ->
+        equal_ikind ikind1 ikind2
+    | Tfloat fkind1, Tfloat fkind2 ->
+        equal_fkind fkind1 fkind2
+    | Tvoid, Tvoid ->
+        true
+    | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
+        equal_ptr_kind ptr_kind1 ptr_kind2 && equal_ignore_quals t1 t2
+    | Tarray {elt= t1}, Tarray {elt= t2} ->
+        equal_ignore_quals t1 t2
+    | _, _ ->
+        false
 end
 
 include T

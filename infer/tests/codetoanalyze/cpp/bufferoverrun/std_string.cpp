@@ -86,3 +86,75 @@ void empty_Bad(std::string s) {
     a[10] = 0;
   }
 }
+
+void length_Good() {
+  std::string s("hello");
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length_Bad() {
+  std::string s("hellohello");
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length2_Good() {
+  const char* c = "hello";
+  std::string s(c);
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length2_Bad() {
+  const char* c = "hellohello";
+  std::string s(c);
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length3_Good() {
+  char* c = "hello";
+  std::string s(c);
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length3_Bad() {
+  char* c = "hellohello";
+  std::string s(c);
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void length4(char* c) {
+  std::string s(c);
+  int a[10];
+  a[s.length()] = 0;
+}
+
+void call_length4_1_Good() {
+  char* c = "hello";
+  length4(c);
+}
+
+void call_length4_1_Bad() {
+  char* c = "hellohello";
+  length4(c);
+}
+
+void call_length4_2_Good() { length4("hello"); }
+
+void call_length4_2_Bad_FN() { length4("hellohello"); }
+
+void size_Good() {
+  std::string s("hello");
+  int a[10];
+  a[s.size()] = 0;
+}
+
+void size_Bad() {
+  std::string s("hellohello");
+  int a[10];
+  a[s.size()] = 0;
+}

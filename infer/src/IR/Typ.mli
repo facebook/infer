@@ -250,6 +250,9 @@ val equal_desc : desc -> desc -> bool
 
 val equal_quals : type_quals -> type_quals -> bool
 
+val equal_ignore_quals : t -> t -> bool
+(** Equality for types, but ignoring quals in it. *)
+
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)
 

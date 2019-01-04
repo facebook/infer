@@ -344,6 +344,21 @@ module StdBasicString = struct
     {exec; check}
 
 
+  (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let constructor_from_char_ptr_without_len tgt src =
+    let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
+      match src with
+      | Exp.Const (Const.Cstr s) ->
+          let locs = Sem.eval_locs tgt mem in
+          BoUtils.Exec.decl_string pname ~node_hash integer_type_widths location locs s mem
+      | _ ->
+          let tgt_locs = Sem.eval_locs tgt mem in
+          let v = Sem.eval integer_type_widths src mem in
+          Dom.Mem.update_mem tgt_locs v mem
+    in
+    {exec; check= no_check}
+
+
   (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
   let copy_constructor tgt src =
     let exec _ ~ret:_ mem =
@@ -367,6 +382,15 @@ module StdBasicString = struct
               Dom.Mem.load_empty_alias ret_id l mem )
       | _ ->
           mem
+    in
+    {exec; check= no_check}
+
+
+  let length e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval_arr integer_type_widths e mem in
+      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
+      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
     in
     {exec; check= no_check}
 end
@@ -547,9 +571,14 @@ module Call = struct
         $--> StdBasicString.copy_constructor
       ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+        $--> StdBasicString.constructor_from_char_ptr_without_len
+      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
+        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $--> StdBasicString.constructor_from_char_ptr
       ; -"std" &:: "basic_string" &:: "empty" $ capt_exp $--> StdBasicString.empty
+      ; -"std" &:: "basic_string" &:: "length" $ capt_exp $--> StdBasicString.length
+      ; -"std" &:: "basic_string" &:: "size" $ capt_exp $--> StdBasicString.length
       ; -"std" &:: "basic_string" &::.*--> no_model
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index

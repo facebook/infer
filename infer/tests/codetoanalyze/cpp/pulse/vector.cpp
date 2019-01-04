@@ -97,17 +97,15 @@ void insert_bad(std::vector<int>& vec) {
   std::cout << *elt << "\n";
 }
 
-void FN_emplace_bad(std::vector<int>& vec) {
+void emplace_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
-  vec.emplace(vec.begin(),
-              7); // procname matcher does not match emplace (T37883260)
+  vec.emplace(vec.begin(), 7);
   std::cout << *elt << "\n";
 }
 
-void FN_emplace_back_bad(std::vector<int>& vec) {
+void emplace_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
-  vec.emplace_back(7); // procname matcher does not match emplace_back
-                       // (T37883260)
+  vec.emplace_back(7);
   std::cout << *elt << "\n";
 }
 
