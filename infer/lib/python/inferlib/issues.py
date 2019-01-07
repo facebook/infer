@@ -52,7 +52,6 @@ JSON_INDEX_TRACE_LINE = 'line_number'
 JSON_INDEX_TRACE_COLUMN = 'column_number'
 JSON_INDEX_TRACE_DESCRIPTION = 'description'
 JSON_INDEX_TRACEVIEW_ID = 'traceview_id'
-JSON_INDEX_VISIBILITY = 'visibility'
 
 
 ISSUE_TYPES_URL = 'http://fbinfer.com/docs/infer-issue-types.html#'
