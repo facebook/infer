@@ -51,7 +51,7 @@ let from_abs_path ?(warn_on_error = true) fname =
   let project_root_real = Utils.realpath ~warn_on_error Config.project_root in
   let models_dir_real = Config.models_src_dir in
   match
-    Utils.filename_to_relative ~backtrack:Config.relative_path_backtack ~root:project_root_real
+    Utils.filename_to_relative ~backtrack:Config.relative_path_backtrack ~root:project_root_real
       fname_real
   with
   | Some path ->

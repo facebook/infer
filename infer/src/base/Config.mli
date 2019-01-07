@@ -157,7 +157,7 @@ val property_attributes : string
 
 val racerd_issues_dir_name : string
 
-val relative_path_backtack : int
+val relative_path_backtrack : int
 
 val report : bool
 

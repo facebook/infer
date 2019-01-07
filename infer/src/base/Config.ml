@@ -1854,7 +1854,7 @@ and reactive_capture =
 
 and reanalyze = CLOpt.mk_bool ~long:"reanalyze" "Rerun the analysis"
 
-and relative_path_backtack =
+and relative_path_backtrack =
   CLOpt.mk_int ~long:"backtrack-level" ~default:0 ~meta:"int"
     "Maximum level of backtracking to convert an absolute path to path relative to the common \
      prefix between the project root and the path. For instance, with bactraking level 1, it will \
@@ -2875,7 +2875,7 @@ and reactive_capture = !reactive_capture
 
 and reanalyze = !reanalyze
 
-and relative_path_backtack = !relative_path_backtack
+and relative_path_backtrack = !relative_path_backtrack
 
 and report = !report
 
