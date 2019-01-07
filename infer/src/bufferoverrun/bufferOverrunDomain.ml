@@ -493,6 +493,8 @@ module Val = struct
 
     let top = of_itv Itv.top
 
+    let unknown_bool = of_itv Itv.unknown_bool
+
     let zero = of_itv Itv.zero
   end
 end

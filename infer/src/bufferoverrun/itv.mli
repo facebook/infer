@@ -123,6 +123,9 @@ val top : t
 val zero : t
 (** 0 *)
 
+val unknown_bool : t
+(** [0, 1] *)
+
 val get_iterator_itv : t -> t
 
 val of_bool : Boolean.t -> t

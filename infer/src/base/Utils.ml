@@ -95,12 +95,12 @@ let filename_to_absolute ~root fname =
 
 
 (** Convert an absolute filename to one relative to the given directory. *)
-let filename_to_relative ?(backtrack = 0) ~root fname =
+let filename_to_relative ?(force_full_backtrack = false) ?(backtrack = 0) ~root fname =
   let rec relativize_if_under origin target =
     match (origin, target) with
     | x :: xs, y :: ys when String.equal x y ->
         relativize_if_under xs ys
-    | _ :: _, _ when backtrack >= List.length origin ->
+    | _ :: _, _ when force_full_backtrack || backtrack >= List.length origin ->
         let parent_dir = List.init (List.length origin) ~f:(fun _ -> Filename.parent_dir_name) in
         Some (Filename.of_parts (parent_dir @ target))
     | [], [] ->

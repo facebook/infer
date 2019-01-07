@@ -235,6 +235,10 @@ module Call : sig
   val capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression *)
 
+  val any_arg_of_typ :
+    ('context, unit, _, unit, unit, unit) name_matcher -> ('context, unit, _, 'f, 'f, _, _) one_arg
+  (** Eats one arg of the given type *)
+
   val capt_arg_of_typ :
        ('context, unit, _, unit, unit, unit) name_matcher
     -> ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
@@ -244,6 +248,9 @@ module Call : sig
        ('context, unit, _, unit, unit, unit) name_matcher
     -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression of the given type *)
+
+  val any_arg_of_prim_typ : Typ.t -> ('context, unit, _, 'f, 'f, _, _) one_arg
+  (** Eats one arg of the given primitive type *)
 
   val capt_exp_of_prim_typ :
     Typ.t -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg

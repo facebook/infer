@@ -125,6 +125,10 @@ OPTIONS
            specified OCaml-style regex (to whitelist:
            --<analyzer>-whitelist-path-regex)
 
+       --report-force-relative-path
+           Activates: Force converting an absolute path to a relative path to
+           the root directory (Conversely: --no-report-force-relative-path)
+
        --report-hook script
            Specify a script to be executed after the analysis results are
            written. This script will be passed, --issues-json, --issues-txt,

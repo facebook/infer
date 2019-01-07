@@ -165,6 +165,8 @@ val report_condition_always_true_in_clang : bool
 
 val report_custom_error : bool
 
+val report_force_relative_path : bool
+
 val report_json : string
 
 val report_nullable_inconsistency : bool

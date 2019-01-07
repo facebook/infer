@@ -67,7 +67,7 @@ val to_abs_path : t -> string
 val to_rel_path : t -> string
 (** get the relative path of a source file *)
 
-val to_string : t -> string
+val to_string : ?force_relative:bool -> t -> string
 (** convert a source file to a string
     WARNING: result may not be valid file path, do not use this function to perform operations
              on filenames *)

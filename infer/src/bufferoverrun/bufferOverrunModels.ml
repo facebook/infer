@@ -530,6 +530,7 @@ module Call = struct
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
     let std_array2 = mk_std_array () in
+    let char_ptr = Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)) in
     make_dispatcher
       [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
@@ -569,16 +570,35 @@ module Call = struct
       ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
         $+ capt_exp_of_typ (-"std" &:: "basic_string")
         $--> StdBasicString.copy_constructor
-      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
-        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp $+ capt_exp_of_prim_typ char_ptr
         $--> StdBasicString.constructor_from_char_ptr_without_len
-      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
-        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp $+ capt_exp_of_prim_typ char_ptr
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $--> StdBasicString.constructor_from_char_ptr
       ; -"std" &:: "basic_string" &:: "empty" $ capt_exp $--> StdBasicString.empty
       ; -"std" &:: "basic_string" &:: "length" $ capt_exp $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "size" $ capt_exp $--> StdBasicString.length
+      ; -"std" &:: "basic_string" &:: "compare" &--> by_value Dom.Val.Itv.top
+      ; -"std" &:: "operator=="
+        $ any_arg_of_typ (-"std" &:: "basic_string")
+        $+ any_arg_of_typ (-"std" &:: "basic_string")
+        $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "operator=="
+        $ any_arg_of_typ (-"std" &:: "basic_string")
+        $+ any_arg_of_prim_typ char_ptr $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "operator==" $ any_arg_of_prim_typ char_ptr
+        $+ any_arg_of_typ (-"std" &:: "basic_string")
+        $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "operator!="
+        $ any_arg_of_typ (-"std" &:: "basic_string")
+        $+ any_arg_of_typ (-"std" &:: "basic_string")
+        $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "operator!="
+        $ any_arg_of_typ (-"std" &:: "basic_string")
+        $+ any_arg_of_prim_typ char_ptr $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "operator!=" $ any_arg_of_prim_typ char_ptr
+        $+ any_arg_of_typ (-"std" &:: "basic_string")
+        $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "basic_string" &::.*--> no_model
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index

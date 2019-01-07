@@ -1875,6 +1875,12 @@ and report_current =
 
 and report_custom_error = CLOpt.mk_bool ~long:"report-custom-error" ""
 
+and report_force_relative_path =
+  CLOpt.mk_bool ~long:"report-force-relative-path" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
+    "Force converting an absolute path to a relative path to the root directory"
+
+
 and report_formatter =
   CLOpt.mk_symbol ~long:"report-formatter"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2882,6 +2888,8 @@ and report = !report
 and report_current = !report_current
 
 and report_custom_error = !report_custom_error
+
+and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
 

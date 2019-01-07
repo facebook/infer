@@ -158,3 +158,43 @@ void size_Bad() {
   int a[10];
   a[s.size()] = 0;
 }
+
+void compare_Good_FP(std::string s) {
+  if (s.compare(0, s.size(), s) != 0) {
+    int a[10];
+    a[10] = 0;
+  }
+}
+
+void compare_Bad(std::string s) {
+  if (s.compare(0, s.size(), s) == 0) {
+    int a[10];
+    a[10] = 0;
+  }
+}
+
+void equal_Good_FP(std::string s) {
+  if (s != s) {
+    int a[10];
+    a[10] = 0;
+  }
+}
+
+void equal_Bad() {
+  std::string s1("hello");
+  std::string s2("hello");
+  if (s1 == s2) {
+    int a[10];
+    a[10] = 0;
+  }
+}
+
+constexpr char const_s[] = "const_s";
+
+void equal2_Good_FP() {
+  std::string s(const_s);
+  if (s != const_s) {
+    int a[10];
+    a[10] = 0;
+  }
+}

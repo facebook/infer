@@ -281,6 +281,10 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)
 
+       --report-force-relative-path
+           Activates: Force converting an absolute path to a relative path to
+           the root directory (Conversely: --no-report-force-relative-path)
+
        --report-hook script
            Specify a script to be executed after the analysis results are
            written. This script will be passed, --issues-json, --issues-txt,

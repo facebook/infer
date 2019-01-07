@@ -67,14 +67,20 @@ let from_abs_path ?(warn_on_error = true) fname =
         Absolute fname_real )
 
 
-let to_string fname =
-  match fname with
-  | Invalid origin ->
-      "DUMMY from " ^ origin
-  | RelativeInferModel path ->
-      "INFER_MODEL/" ^ path
-  | RelativeProjectRoot path | Absolute path ->
-      path
+let to_string =
+  let root = Utils.realpath Config.project_root in
+  fun ?(force_relative = false) fname ->
+    match fname with
+    | Invalid origin ->
+        "DUMMY from " ^ origin
+    | RelativeInferModel path ->
+        "INFER_MODEL/" ^ path
+    | RelativeProjectRoot path ->
+        path
+    | Absolute path ->
+        if force_relative then
+          Option.value_exn (Utils.filename_to_relative ~force_full_backtrack:true ~root path)
+        else path
 
 
 let pp fmt fname = Format.pp_print_string fmt (to_string fname)

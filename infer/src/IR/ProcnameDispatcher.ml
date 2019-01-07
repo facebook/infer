@@ -134,7 +134,7 @@ let name_cons :
   let {on_templated_name; get_markers} = m in
   let match_fuzzy_name =
     let fuzzy_name_regexp =
-      name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9_]+>\\)?$" |> Str.regexp
+      name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9_:<>]+>\\)?$" |> Str.regexp
     in
     fun s -> Str.string_match fuzzy_name_regexp s 0
   in
@@ -863,13 +863,23 @@ module Call = struct
     {one_arg_matcher= match_any_arg; capture= capture_arg_var_exn}
 
 
+  let any_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= no_capture}
+
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
 
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
 
-  let capt_exp_of_prim_typ typ =
+  let one_arg_matcher_of_prim_typ typ =
     let on_typ typ' = Typ.equal_ignore_quals typ typ' in
-    {one_arg_matcher= match_prim_typ on_typ; capture= capture_arg_exp}
+    match_prim_typ on_typ
+
+
+  let any_arg_of_prim_typ typ =
+    {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= no_capture}
+
+
+  let capt_exp_of_prim_typ typ =
+    {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= capture_arg_exp}
 
 
   let typ1 : 'marker -> ('context, unit, _, 'f, 'f, _, _) one_arg =

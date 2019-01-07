@@ -23,7 +23,8 @@ val read_file : string -> (string list, string) Result.t
 val filename_to_absolute : root:string -> string -> string
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 
-val filename_to_relative : ?backtrack:int -> root:string -> string -> string option
+val filename_to_relative :
+  ?force_full_backtrack:bool -> ?backtrack:int -> root:string -> string -> string option
 (** Convert an absolute filename to one relative to a root directory.  Returns [None] if filename is
     not under root. The backtrack level sets the maximum level of steps in the parent directories
     to search for a common prefix *)

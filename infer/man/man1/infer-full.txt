@@ -747,6 +747,11 @@ OPTIONS
        --report-current path
            report of the latest revision           See also infer-reportdiff(1).
 
+       --report-force-relative-path
+           Activates: Force converting an absolute path to a relative path to
+           the root directory (Conversely: --no-report-force-relative-path)       
+    See also infer-analyze(1) and infer-run(1).
+
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report (default:
            phabricator)           See also infer-report(1).

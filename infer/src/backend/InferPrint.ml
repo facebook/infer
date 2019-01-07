@@ -273,7 +273,9 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     then
       let severity = Exceptions.severity_string err_key.severity in
       let bug_type = err_key.err_name.IssueType.unique_id in
-      let file = SourceFile.to_string source_file in
+      let file =
+        SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
+      in
       let json_ml_loc =
         match err_data.loc_in_ml_source with
         | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc ->
