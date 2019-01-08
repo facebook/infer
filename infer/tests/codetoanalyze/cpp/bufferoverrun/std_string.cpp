@@ -71,6 +71,22 @@ std::string to_string2_Good(const char* fmt, ...) {
   return std::string(buf, n);
 }
 
+/* Inferbo's model ignores the encoding errors for less noise of
+   analysis results.  While [vsnprintf] returns a nagative number when
+   an encoding error, it is less likely to lead to a security
+   problem.  */
+std::string to_string3_Bad_FN(const char* fmt, ...) {
+  char buf[1024];
+  va_list args;
+  va_start(args, fmt);
+  int n = vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  if (n > sizeof(buf)) {
+    n = sizeof(buf);
+  }
+  return std::string(buf, n);
+}
+
 void empty_Good(std::string s) {
   if (s.empty()) {
     if (!s.empty()) {

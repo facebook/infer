@@ -262,9 +262,9 @@ let set_array_length array length_exp =
   {exec; check}
 
 
-let snprintf = by_value_with_final_trace Trace.snprintf Dom.Val.Itv.top
+let snprintf = by_value_with_final_trace Trace.snprintf Dom.Val.Itv.nat
 
-let vsnprintf = by_value_with_final_trace Trace.vsnprintf Dom.Val.Itv.top
+let vsnprintf = by_value_with_final_trace Trace.vsnprintf Dom.Val.Itv.nat
 
 module Split = struct
   let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
