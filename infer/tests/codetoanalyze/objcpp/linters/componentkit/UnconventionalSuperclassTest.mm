@@ -26,3 +26,6 @@
 
 @implementation RenderLayoutFooComponent
 @end
+
+@implementation RenderLayoutWithChildrenFooComponent
+@end
