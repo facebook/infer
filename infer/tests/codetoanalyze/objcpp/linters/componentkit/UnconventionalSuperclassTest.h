@@ -26,3 +26,6 @@
 
 @interface RenderWithChildrenFooComponent : CKRenderWithChildrenComponent // good
 @end
+
+@interface RenderLayoutFooComponent : CKRenderLayoutComponent // good
+@end

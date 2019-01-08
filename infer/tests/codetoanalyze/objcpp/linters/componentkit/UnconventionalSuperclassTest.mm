@@ -23,3 +23,6 @@
 
 @implementation RenderWithChildrenFooComponent
 @end
+
+@implementation RenderLayoutFooComponent
+@end

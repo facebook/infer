@@ -66,3 +66,7 @@ class CKComponentScope {
 // Mimic importing CKRenderWithChildrenComponent
 @interface CKRenderWithChildrenComponent : CKComponent
 @end
+
+// Mimic importing CKRenderLayoutComponent
+@interface CKRenderLayoutComponent : CKComponent
+@end
