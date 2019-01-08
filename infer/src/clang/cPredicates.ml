@@ -1412,12 +1412,12 @@ let is_cxx_copy_constructor an =
       false
 
 
-let has_cxx_full_name an qual_name_re =
-  match Ctl_parser_types.ast_node_cxx_full_name an with
+let has_cxx_fully_qualified_name an qual_name_re =
+  match Ctl_parser_types.ast_node_cxx_fully_qualified_name an with
   | "" ->
       false
-  | full_name ->
-      ALVar.compare_str_with_alexp full_name qual_name_re
+  | fully_qualified_name ->
+      ALVar.compare_str_with_alexp fully_qualified_name qual_name_re
 
 
 let is_cxx_method_overriding an qual_name_re =

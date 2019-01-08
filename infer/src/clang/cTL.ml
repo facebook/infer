@@ -973,8 +973,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.context_in_synchronized_block lcxt
   | "declaration_has_name", [decl_name], an ->
       CPredicates.declaration_has_name an decl_name
-  | "has_cxx_full_name", [qual_name_re], an ->
-      CPredicates.has_cxx_full_name an qual_name_re
+  | "has_cxx_fully_qualified_name", [qual_name_re], an ->
+      CPredicates.has_cxx_fully_qualified_name an qual_name_re
   | "declaration_ref_name", [decl_name], an ->
       CPredicates.declaration_ref_name an decl_name
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
