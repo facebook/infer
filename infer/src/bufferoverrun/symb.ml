@@ -127,6 +127,20 @@ module SymbolPath = struct
         false
     | Deref (_, p) | Field (_, p) ->
         represents_callsite_sound_partial p
+
+
+  let rec exists_str_partial ~f = function
+    | Pvar pvar ->
+        f (Pvar.to_string pvar)
+    | Deref (_, x) ->
+        exists_str_partial ~f x
+    | Field (fld, x) ->
+        f (Typ.Fieldname.to_string fld) || exists_str_partial ~f x
+    | Callsite _ ->
+        false
+
+
+  let exists_str ~f = function Normal p | Offset p | Length p -> exists_str_partial ~f p
 end
 
 module Symbol = struct
@@ -195,6 +209,9 @@ module Symbol = struct
 
   let assert_bound_end s be =
     match s with OneValue _ -> () | BoundEnd {bound_end} -> assert (BoundEnd.equal be bound_end)
+
+
+  let exists_str ~f = function OneValue {path} | BoundEnd {path} -> SymbolPath.exists_str ~f path
 end
 
 module SymbolSet = struct

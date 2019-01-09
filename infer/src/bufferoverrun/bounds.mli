@@ -116,6 +116,8 @@ module Bound : sig
   val simplify_bound_ends_from_paths : t -> t
 
   val is_same_symbol : t -> t -> Symb.SymbolPath.t option
+
+  val exists_str : f:(string -> bool) -> t -> bool
 end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop

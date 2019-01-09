@@ -105,6 +105,25 @@ module BoTrace = struct
 
   let has_risky = final_exists ~f:(function UnknownFrom _ -> false | RiskyLibCall _ -> true)
 
+  let exists_str ~f =
+    let rec helper = function
+      | Empty | Final _ ->
+          false
+      | Elem {kind= elem; from} ->
+          ( match elem with
+          | Assign locs ->
+              PowLoc.exists_str ~f locs
+          | Parameter l ->
+              Loc.exists_str ~f l
+          | _ ->
+              false )
+          || helper from
+      | Call {caller; callee} ->
+          helper caller || helper callee
+    in
+    helper
+
+
   let final_err_desc = function
     | UnknownFrom pname_opt ->
         F.asprintf "Unknown value from: %a" pp_pname_opt pname_opt
@@ -187,6 +206,8 @@ module Set = struct
 
   let has_risky t = exists BoTrace.has_risky t
 
+  let exists_str ~f t = exists (BoTrace.exists_str ~f) t
+
   let make_err_trace depth set tail =
     if is_empty set then tail else BoTrace.make_err_trace depth (choose_shortest set) tail
 
@@ -231,6 +252,8 @@ module Issue = struct
   let has_unknown = has_common ~f:Set.has_unknown
 
   let has_risky = has_common ~f:Set.has_risky
+
+  let exists_str ~f = has_common ~f:(Set.exists_str ~f)
 
   let binary_labels = function ArrayAccess -> ("Offset", "Length") | Binop -> ("LHS", "RHS")
 

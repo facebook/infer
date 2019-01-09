@@ -96,6 +96,8 @@ module ItvPure : sig
   val succ : t -> t
 
   val mult : t -> t -> t
+
+  val exists_str : f:(string -> bool) -> t -> bool
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)

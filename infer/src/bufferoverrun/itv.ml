@@ -50,6 +50,8 @@ module ItvPure = struct
 
   let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
 
+  let exists_str ~f (l, u) = Bound.exists_str ~f l || Bound.exists_str ~f u
+
   let ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs:(l1, u1) ~rhs:(l2, u2) -> Bound.le l2 l1 && Bound.le u1 u2
 

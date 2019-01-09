@@ -57,6 +57,8 @@ module SymbolPath : sig
   val represents_multiple_values_sound : partial -> bool
 
   val represents_callsite_sound_partial : partial -> bool
+
+  val exists_str_partial : f:(string -> bool) -> partial -> bool
 end
 
 module Symbol : sig
@@ -81,6 +83,8 @@ module Symbol : sig
   val make_onevalue : unsigned:bool -> SymbolPath.t -> t
 
   val make_boundend : BoundEnd.t -> unsigned:bool -> SymbolPath.t -> t
+
+  val exists_str : f:(string -> bool) -> t -> bool
 end
 
 module SymbolSet : sig

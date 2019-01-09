@@ -180,6 +180,9 @@ module SymLinear = struct
         Some (Symb.Symbol.path s1)
     | _ ->
         None
+
+
+  let exists_str ~f x = M.exists (fun k _ -> Symb.Symbol.exists_str ~f k) x
 end
 
 module Bound = struct
@@ -943,6 +946,15 @@ module Bound = struct
         SymLinear.is_same_symbol se1 se2
     | _ ->
         None
+
+
+  let exists_str ~f = function
+    | MInf | PInf ->
+        false
+    | Linear (_, s) ->
+        SymLinear.exists_str ~f s
+    | MinMax (_, _, _, _, s) ->
+        Symb.Symbol.exists_str ~f s
 end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop

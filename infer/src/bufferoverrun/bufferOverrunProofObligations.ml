@@ -74,6 +74,8 @@ module ConditionTrace = struct
 
   let has_risky ct = ValTrace.Issue.has_risky ct.val_traces
 
+  let exists_str ~f ct = ValTrace.Issue.exists_str ~f ct.val_traces
+
   let check ~issue_type_u5 ~issue_type_r2 : _ t0 -> IssueType.t option =
    fun ct ->
     if has_risky ct then Some issue_type_r2
@@ -515,8 +517,19 @@ module BinaryOperationCondition = struct
     (not cannot_underflow, not cannot_overflow)
 
 
-  let check ({binop; typ; integer_widths; lhs; rhs} as c) =
-    if is_mult_one binop lhs rhs then {report_issue_type= NotIssue; propagate= false}
+  let is_deliberate_integer_overflow =
+    let whitelist = ["lfsr"; "prng"; "rand"; "seed"] in
+    let f x =
+      List.exists whitelist ~f:(fun whitelist -> String.is_substring x ~substring:whitelist)
+    in
+    fun {typ; lhs; rhs} ct ->
+      Typ.ikind_is_unsigned typ
+      && (ConditionTrace.exists_str ~f ct || ItvPure.exists_str ~f lhs || ItvPure.exists_str ~f rhs)
+
+
+  let check ({binop; typ; integer_widths; lhs; rhs} as c) (trace : ConditionTrace.t) =
+    if is_mult_one binop lhs rhs || is_deliberate_integer_overflow c trace then
+      {report_issue_type= NotIssue; propagate= false}
     else
       let v =
         match binop with
@@ -658,13 +671,14 @@ module Condition = struct
         BinaryOperationCondition.pp_description ~markup fmt c
 
 
-  let check = function
+  let check cond trace =
+    match cond with
     | AllocSize c ->
         AllocSizeCondition.check c
     | ArrayAccess c ->
         ArrayAccessCondition.check c
     | BinaryOperation c ->
-        BinaryOperationCondition.check c
+        BinaryOperationCondition.check c trace
 
 
   let forget_locs locs x =
@@ -750,7 +764,7 @@ module ConditionWithTrace = struct
 
 
   let check cwt =
-    let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond in
+    let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond cwt.trace in
     match report_issue_type with
     | NotIssue | SymbolicIssue ->
         checked
