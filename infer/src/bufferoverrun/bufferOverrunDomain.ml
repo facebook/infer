@@ -357,8 +357,8 @@ module Val = struct
     |> normalize
 
 
-  let add_assign_trace_elem location x =
-    let traces = Trace.(Set.add_elem location Assign) x.traces in
+  let add_assign_trace_elem location locs x =
+    let traces = Trace.(Set.add_elem location (Assign locs)) x.traces in
     {x with traces}
 
 

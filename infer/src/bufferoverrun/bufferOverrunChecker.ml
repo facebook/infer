@@ -191,7 +191,9 @@ module TransferFunctions = struct
         BoUtils.Exec.decl_string pname ~node_hash integer_type_widths location locs s mem
     | Store (exp1, _, exp2, location) ->
         let locs = Sem.eval_locs exp1 mem in
-        let v = Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location in
+        let v =
+          Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
+        in
         let mem =
           let sym_exps =
             Dom.Relation.SymExp.of_exps

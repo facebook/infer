@@ -15,7 +15,8 @@ module BoTrace = struct
   type final = UnknownFrom of Typ.Procname.t option | RiskyLibCall of lib_fun
   [@@deriving compare]
 
-  type elem = ArrayDeclaration | Assign | Parameter of Loc.t | Through [@@deriving compare]
+  type elem = ArrayDeclaration | Assign of PowLoc.t | Parameter of Loc.t | Through
+  [@@deriving compare]
 
   type t =
     | Empty
@@ -68,8 +69,8 @@ module BoTrace = struct
   let pp_elem f = function
     | ArrayDeclaration ->
         F.pp_print_string f "ArrayDeclaration"
-    | Assign ->
-        F.pp_print_string f "Assign"
+    | Assign locs ->
+        F.fprintf f "Assign `%a`" PowLoc.pp locs
     | Parameter loc ->
         F.fprintf f "Parameter `%a`" Loc.pp loc
     | Through ->
@@ -114,7 +115,7 @@ module BoTrace = struct
   let elem_err_desc = function
     | ArrayDeclaration ->
         "Array declaration"
-    | Assign ->
+    | Assign _ ->
         "Assignment"
     | Parameter loc ->
         if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
