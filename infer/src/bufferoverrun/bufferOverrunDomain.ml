@@ -397,8 +397,10 @@ module Val = struct
         let unsigned = Typ.is_unsigned_int typ in
         of_itv ~traces (Itv.of_normal_path ~unsigned path)
     | Tptr (elt, _) ->
-        if is_java then
-          let deref_kind = SPath.Deref_JavaPointer in
+        if is_java || SPath.is_this path then
+          let deref_kind =
+            if is_java then SPath.Deref_JavaPointer else SPath.Deref_COneValuePointer
+          in
           let deref_path = SPath.deref ~deref_kind path in
           let l = Loc.of_path deref_path in
           let traces = TraceSet.singleton location (Trace.Parameter l) in

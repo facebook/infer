@@ -15,7 +15,12 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type deref_kind = Deref_ArrayIndex | Deref_CPointer | Deref_JavaPointer [@@deriving compare]
+  type deref_kind =
+    | Deref_ArrayIndex
+    | Deref_COneValuePointer
+    | Deref_CPointer
+    | Deref_JavaPointer
+  [@@deriving compare]
 
   type partial = private
     | Pvar of Pvar.t
@@ -40,8 +45,6 @@ module SymbolPath : sig
 
   val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial
 
-  val get_pvar : partial -> Pvar.t option
-
   val deref : deref_kind:deref_kind -> partial -> partial
 
   val field : partial -> Typ.Fieldname.t -> partial
@@ -51,6 +54,10 @@ module SymbolPath : sig
   val offset : partial -> t
 
   val length : partial -> t
+
+  val is_this : partial -> bool
+
+  val get_pvar : partial -> Pvar.t option
 
   val represents_multiple_values : partial -> bool
 

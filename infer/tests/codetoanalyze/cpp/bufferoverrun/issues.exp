@@ -99,6 +99,7 @@ codetoanalyze/cpp/bufferoverrun/std_string.cpp, to_string1_Good, 3, CONDITION_AL
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, to_string2_Bad, 6, BUFFER_OVERRUN_R2, no_bucket, ERROR, [<Offset trace>,Risky value from: vsnprintf,Assignment,<Length trace>,Array declaration,Array access: Offset added: [0, +oo] Size: 1024]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, to_string2_Good, 6, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/cpp/bufferoverrun/symb_arr.cpp, symb_arr_alloc_symb_arr_access_bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Parameter `this->h[*]`,Array access: Offset: 10 Size: 10]
+codetoanalyze/cpp/bufferoverrun/this.cpp, CThis_access_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Parameter `this->n`,<Length trace>,Parameter `this->n`,Array declaration,Array access: Offset: this->n + 1 Size: this->n + 1]
 codetoanalyze/cpp/bufferoverrun/trivial.cpp, trivial, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, assert_Bad, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Call,Assignment,Call,<LHS trace>,Parameter `this->infer_size`,Binary operation: ([0, +oo] + 1):unsigned64]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, assert_Bad, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,Call,Assignment,Call,Parameter `this->infer_size`,Call,<Offset trace>,Parameter `index`,<Length trace>,Parameter `this->infer_size`,Array declaration,Assignment,Array access: Offset: 6 Size: 5]

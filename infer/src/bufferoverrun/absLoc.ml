@@ -122,8 +122,15 @@ module Loc = struct
         else F.pp_print_string fmt s
     | Allocsite a ->
         Allocsite.pp_paren ~paren fmt a
-    | Field (Allocsite (Allocsite.Symbol (SP.Deref (SP.Deref_CPointer, p))), f)
-    | Field (Allocsite (Allocsite.Known {path= Some (SP.Deref (SP.Deref_CPointer, p))}), f) ->
+    | Field
+        ( Allocsite
+            (Allocsite.Symbol (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))
+        , f )
+    | Field
+        ( Allocsite
+            (Allocsite.Known
+              {path= Some (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))})
+        , f ) ->
         BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true)
           ~pp_lhs_alone:(SP.pp_pointer ~paren) ~sep:"->" fmt p f
     | Field (l, f) ->
