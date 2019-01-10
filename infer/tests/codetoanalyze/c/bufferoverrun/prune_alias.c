@@ -288,3 +288,57 @@ void forget_locs_latest_prune(unsigned int n) {
 }
 
 void call_forget_locs_latest_prune_Bad() { forget_locs_latest_prune(10); }
+
+void not_prune_multiple1_Bad() {
+  int a[5];
+  int m[2] = {0, 10};
+  if (m[0] < 5) {
+    a[m[1]] = 0;
+  }
+}
+
+void not_prune_multiple2(int* m) {
+  int a[5];
+  if (m[0] < 5) {
+    a[m[1]] = 0;
+  }
+}
+
+void call_not_prune_multiple2_Good() {
+  int m[2] = {0, 4};
+  not_prune_multiple2(m);
+}
+
+void call_not_prune_multiple2_Bad_FN() {
+  int m[2] = {0, 10};
+  not_prune_multiple2(m);
+}
+
+void not_prune_multiple3_Bad() {
+  int a[5];
+  int* m = (int*)malloc(sizeof(int) * 2);
+  m[0] = 0;
+  m[1] = 10;
+  if (*m < 5) {
+    m++;
+    a[*m] = 0;
+  }
+}
+
+void not_prune_multiple4(int* m) {
+  int a[5];
+  if (*m < 5) {
+    m++;
+    a[*m] = 0;
+  }
+}
+
+void call_not_prune_multiple4_Good() {
+  int m[2] = {0, 4};
+  not_prune_multiple4(m);
+}
+
+void call_not_prune_multiple4_Bad_FN() {
+  int m[2] = {0, 10};
+  not_prune_multiple4(m);
+}
