@@ -127,6 +127,17 @@ module ArrInfo = struct
         F.pp_print_string f SpecialChars.down_tack
 
 
+  let is_symbolic : t -> bool =
+   fun arr ->
+    match arr with
+    | C {offset; size; stride} ->
+        Itv.is_symbolic offset || Itv.is_symbolic size || Itv.is_symbolic stride
+    | Java {length} ->
+        Itv.is_symbolic length
+    | Top ->
+        false
+
+
   let get_symbols : t -> Itv.SymbolSet.t =
    fun arr ->
     match arr with
@@ -235,6 +246,8 @@ end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
 
+let compare = compare ArrInfo.compare
+
 let bot : t = empty
 
 let unknown : t = add Allocsite.unknown ArrInfo.top bot
@@ -295,6 +308,8 @@ let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> t =
   in
   fold subst1 a empty
 
+
+let is_symbolic : t -> bool = fun a -> exists (fun _ ai -> ArrInfo.is_symbolic ai) a
 
 let get_symbols : t -> Itv.SymbolSet.t =
  fun a ->

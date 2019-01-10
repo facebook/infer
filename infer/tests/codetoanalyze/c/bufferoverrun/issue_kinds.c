@@ -289,12 +289,24 @@ void call_two_safety_conditions_l1_and_l2_Bad() { two_safety_conditions(10); }
 
 /* issue1 and issue2 are deduplicated since the offset of issue2
    ([10,+oo]) subsumes that of issue1 ([10,10]). */
-void deduplicate_issues_Bad() {
+void deduplicate_issues_1_Bad() {
   int a[10];
   int x = 10;
   a[x] = 0; // issue1: [10,10] < [10,10]
   x = unknown_function();
   if (x >= 10) {
+    a[x] = 0; // issue2: [10,+oo] < [10,10]
+  }
+}
+
+/* issue1 and issue2 are not deduplicated since they have different
+   conditions to reach. */
+void deduplicate_issues_2_Bad(int y) {
+  int a[10];
+  int x = 10;
+  a[x] = 0; // issue1: [10,10] < [10,10]
+  x = unknown_function();
+  if (x >= 10 && y >= 0) {
     a[x] = 0; // issue2: [10,+oo] < [10,10]
   }
 }

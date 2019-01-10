@@ -156,6 +156,8 @@ val neg : t -> t
 
 val normalize : t -> t
 
+val is_symbolic : t -> bool
+
 val get_symbols : t -> SymbolSet.t
 
 val eq : t -> t -> bool

@@ -702,9 +702,11 @@ module ConditionWithTrace = struct
     { cond: Condition.t
     ; trace: 'cond_trace ConditionTrace.t0
     ; reported: Reported.t option
-    ; latest_prune: Dom.LatestPrune.t }
+    ; reachability: Dom.Reachability.t }
 
-  let make cond trace latest_prune = {cond; trace; reported= None; latest_prune}
+  let make cond trace latest_prune =
+    {cond; trace; reported= None; reachability= Dom.Reachability.make latest_prune}
+
 
   let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
 
@@ -717,12 +719,14 @@ module ConditionWithTrace = struct
   let have_similar_bounds {cond= cond1} {cond= cond2} = Condition.have_similar_bounds cond1 cond2
 
   let xcompare ~lhs ~rhs =
-    match Condition.xcompare ~lhs:lhs.cond ~rhs:rhs.cond with
-    | `Equal ->
-        if ConditionTrace.compare lhs.trace rhs.trace <= 0 then `LeftSubsumesRight
-        else `RightSubsumesLeft
-    | (`LeftSubsumesRight | `RightSubsumesLeft | `NotComparable) as cmp ->
-        cmp
+    if Dom.Reachability.equal lhs.reachability rhs.reachability then
+      match Condition.xcompare ~lhs:lhs.cond ~rhs:rhs.cond with
+      | `Equal ->
+          if ConditionTrace.compare lhs.trace rhs.trace <= 0 then `LeftSubsumesRight
+          else `RightSubsumesLeft
+      | (`LeftSubsumesRight | `RightSubsumesLeft | `NotComparable) as cmp ->
+          cmp
+    else `NotComparable
 
 
   let subst eval_sym_trace rel_map caller_relation callee_pname call_site cwt =
@@ -732,9 +736,8 @@ module ConditionWithTrace = struct
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
         pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
-    Option.find_map
-      (Dom.LatestPrune.subst cwt.latest_prune (eval_sym_trace ~strict:true) call_site)
-      ~f:(fun latest_prune ->
+    match Dom.Reachability.subst cwt.reachability (eval_sym_trace ~strict:true) call_site with
+    | `Reachable reachability -> (
         let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~strict:false in
         match Condition.subst eval_sym rel_map caller_relation cwt.cond with
         | None ->
@@ -748,7 +751,9 @@ module ConditionWithTrace = struct
             let trace =
               ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
             in
-            Some {cond; trace; reported= cwt.reported; latest_prune} )
+            Some {cond; trace; reported= cwt.reported; reachability} )
+    | `Unreachable ->
+        None
 
 
   let set_u5 {cond; trace} issue_type =

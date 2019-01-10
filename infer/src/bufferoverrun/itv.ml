@@ -612,6 +612,8 @@ let subst : t -> Bound.eval_sym -> t =
  fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
 
 
+let is_symbolic = bind1bool ItvPure.is_symbolic
+
 let get_symbols : t -> SymbolSet.t = function
   | Bottom ->
       SymbolSet.empty

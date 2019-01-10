@@ -706,21 +706,6 @@ end
 module PrunePairs = struct
   include AbstractDomain.InvertedMap (Loc) (Val)
 
-  (* [subst] returns [None] if a pruned value is bottom, i.g., unreachable. *)
-  let subst x eval_sym_trace location =
-    let exception Unreachable in
-    let is_empty_val v =
-      Itv.is_empty (Val.get_itv v)
-      && PowLoc.is_empty (Val.get_pow_loc v)
-      && ArrayBlk.is_empty (Val.get_array_blk v)
-    in
-    let subst1 x =
-      let v = Val.subst x eval_sym_trace location in
-      if is_empty_val v then raise Unreachable else v
-    in
-    match map subst1 x with x -> Some x | exception Unreachable -> None
-
-
   let forget locs x = filter (fun l _ -> not (PowLoc.mem l locs)) x
 end
 
@@ -820,22 +805,6 @@ module LatestPrune = struct
 
   let top = Top
 
-  let subst x eval_sym_trace location =
-    match x with
-    | Latest p ->
-        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> Latest p)
-    | TrueBranch (x, p) ->
-        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> TrueBranch (x, p))
-    | FalseBranch (x, p) ->
-        Option.map (PrunePairs.subst p eval_sym_trace location) ~f:(fun p -> FalseBranch (x, p))
-    | V (x, ptrue, pfalse) ->
-        Option.map2 (PrunePairs.subst ptrue eval_sym_trace location)
-          (PrunePairs.subst pfalse eval_sym_trace location) ~f:(fun ptrue pfalse ->
-            V (x, ptrue, pfalse) )
-    | Top ->
-        Some x
-
-
   let forget locs =
     let is_mem_locs x = PowLoc.mem (Loc.of_pvar x) locs in
     function
@@ -850,6 +819,52 @@ module LatestPrune = struct
         else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
     | Top ->
         Top
+end
+
+module Reachability = struct
+  module PrunedVal = struct
+    type t = Val.t
+
+    let compare x y =
+      let r = Itv.compare (Val.get_itv x) (Val.get_itv y) in
+      if r <> 0 then r else ArrayBlk.compare (Val.get_array_blk x) (Val.get_array_blk y)
+
+
+    let pp = Val.pp
+
+    let is_symbolic : t -> bool = fun x -> Itv.is_symbolic x.itv || ArrayBlk.is_symbolic x.arrayblk
+
+    let is_empty v = Itv.is_empty (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
+  end
+
+  module M = PrettyPrintable.MakePPSet (PrunedVal)
+
+  type t = M.t
+
+  let equal = M.equal
+
+  (* It keeps only symbolic pruned values, because non-symbolic ones are useless to see the
+     reachability. *)
+  let add v x = if PrunedVal.is_symbolic v then M.add v x else x
+
+  let make =
+    let of_prune_pairs p = PrunePairs.fold (fun _ v acc -> add v acc) p M.empty in
+    function
+    | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
+        of_prune_pairs p
+    | LatestPrune.V (_, ptrue, pfalse) ->
+        M.inter (of_prune_pairs ptrue) (of_prune_pairs pfalse)
+    | LatestPrune.Top ->
+        M.empty
+
+
+  let subst x eval_sym_trace location =
+    let exception Unreachable in
+    let subst1 x acc =
+      let v = Val.subst x eval_sym_trace location in
+      if PrunedVal.is_empty v then raise Unreachable else add v acc
+    in
+    match M.fold subst1 x M.empty with x -> `Reachable x | exception Unreachable -> `Unreachable
 end
 
 module MemReach = struct
