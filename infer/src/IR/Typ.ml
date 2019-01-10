@@ -1459,6 +1459,7 @@ module Struct = struct
     ; statics: fields  (** static fields *)
     ; supers: Name.t list  (** superclasses *)
     ; methods: Procname.t list  (** methods defined *)
+    ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
     ; annots: Annot.Item.t  (** annotations *) }
 
   type lookup = Name.t -> t option
@@ -1467,7 +1468,7 @@ module Struct = struct
     F.fprintf f "@\n\t\t%a %a %a" (pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
 
 
-  let pp pe name f {fields; supers; methods; annots} =
+  let pp pe name f {fields; supers; methods; exported_objc_methods; annots} =
     if Config.debug_mode then
       (* change false to true to print the details of struct *)
       F.fprintf f
@@ -1478,6 +1479,8 @@ module Struct = struct
          \t}@\n\
          \tmethods: {%a@\n\
          \t}@\n\
+         \texported_obj_methods: {%a@\n\
+         \t}@\n\
          \tannots: {%a@\n\
          \t}"
         Name.pp name
@@ -1486,17 +1489,28 @@ module Struct = struct
         (Pp.seq (fun f n -> F.fprintf f "@\n\t\t%a" Name.pp n))
         supers
         (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Procname.pp m))
-        methods Annot.Item.pp annots
+        methods
+        (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Procname.pp m))
+        exported_objc_methods Annot.Item.pp annots
     else Name.pp f name
 
 
-  let internal_mk_struct ?default ?fields ?statics ?methods ?supers ?annots () =
-    let default_ = {fields= []; statics= []; methods= []; supers= []; annots= Annot.Item.empty} in
-    let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
-        ?(methods = default.methods) ?(supers = default.supers) ?(annots = default.annots) () =
-      {fields; statics; methods; supers; annots}
+  let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
+      () =
+    let default_ =
+      { fields= []
+      ; statics= []
+      ; methods= []
+      ; exported_objc_methods= []
+      ; supers= []
+      ; annots= Annot.Item.empty }
     in
-    mk_struct_ ?default ?fields ?statics ?methods ?supers ?annots ()
+    let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
+        ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
+        ?(supers = default.supers) ?(annots = default.annots) () =
+      {fields; statics; methods; exported_objc_methods; supers; annots}
+    in
+    mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ()
 
 
   (** the element typ of the final extensible array in the given typ, if any *)

@@ -968,16 +968,17 @@ let should_report_on_proc procdesc tenv =
       || Procdesc.get_access procdesc <> PredSymb.Private
          && (not (Typ.Procname.Java.is_autogen_method java_pname))
          && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
-  | ObjC_Cpp objc_cpp_pname ->
-      ( match objc_cpp_pname.Typ.Procname.ObjC_Cpp.kind with
+  | ObjC_Cpp {kind; class_name} ->
+      ( match kind with
       | CPPMethod _ | CPPConstructor _ | CPPDestructor _ ->
           Procdesc.get_access procdesc <> PredSymb.Private
       | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
-          (* ObjC has no private methods, just a convention that they start with an underscore *)
-          not (String.is_prefix objc_cpp_pname.Typ.Procname.ObjC_Cpp.method_name ~prefix:"_") )
+          Tenv.lookup tenv class_name
+          |> Option.exists ~f:(fun {Typ.Struct.exported_objc_methods} ->
+                 List.mem ~equal:Typ.Procname.equal exported_objc_methods proc_name ) )
       &&
       let matcher = ConcurrencyModels.cpp_lock_types_matcher in
-      Option.exists (Tenv.lookup tenv objc_cpp_pname.class_name) ~f:(fun class_str ->
+      Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
           (* check if the class contains a lock member *)
           List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
               Option.exists (Typ.name ft) ~f:(fun name ->

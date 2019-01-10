@@ -1,1 +1,2 @@
-codetoanalyze/objcpp/racerd/Basic.mm, Basic_read, 22, LOCK_CONSISTENCY_VIOLATION, no_bucket, ERROR, [<Read trace>,access to `self.data_`,<Write trace>,call to Basic__private_write_no_top_level_report:,access to `self.data_`]
+codetoanalyze/objcpp/racerd/Basic.mm, Basic_read_bad, 21, LOCK_CONSISTENCY_VIOLATION, no_bucket, ERROR, [<Read trace>,access to `self._data`,<Write trace>,access to `self._data`]
+codetoanalyze/objcpp/racerd/Private.mm, Private_read_other_bad, 28, LOCK_CONSISTENCY_VIOLATION, no_bucket, ERROR, [<Read trace>,access to `self._other_data`,<Write trace>,access to `self._other_data`]

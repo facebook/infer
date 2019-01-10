@@ -5,25 +5,32 @@
  * LICENSE file in the root directory of this source tree.
  */
 #import <mutex>
-#import <Foundation/NSObject.h>
+#import "Private.h"
 
-@interface Basic : NSObject
-- (int)read_bad;
-- (void)write_bad:(int)data;
-@end
-
-@implementation Basic {
+@implementation Private {
   std::mutex _mutex;
   int _data;
+  int _other_data;
 }
 
-- (int)read_bad {
+// no report on _data
+- (int)_private_read_ok {
   return _data;
 }
 
-- (void)write_bad:(int)data {
+- (void)write_ok:(int)data {
   _mutex.lock();
   _data = data;
+  _mutex.unlock();
+}
+
+- (int)read_other_bad {
+  return _other_data;
+}
+
+- (void)write_other_bad:(int)other_data {
+  _mutex.lock();
+  _other_data = other_data;
   _mutex.unlock();
 }
 @end

@@ -665,6 +665,7 @@ module Struct : sig
     ; statics: fields  (** static fields *)
     ; supers: Name.t list  (** supers *)
     ; methods: Procname.t list  (** methods defined *)
+    ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
     ; annots: Annot.Item.t  (** annotations *) }
 
   type lookup = Name.t -> t option
@@ -679,6 +680,7 @@ module Struct : sig
     -> ?fields:fields
     -> ?statics:fields
     -> ?methods:Procname.t list
+    -> ?exported_objc_methods:Procname.t list
     -> ?supers:Name.t list
     -> ?annots:Annot.Item.t
     -> unit

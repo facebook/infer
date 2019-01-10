@@ -35,6 +35,7 @@ val mk_struct :
   -> ?fields:Typ.Struct.fields
   -> ?statics:Typ.Struct.fields
   -> ?methods:Typ.Procname.t list
+  -> ?exported_objc_methods:Typ.Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> Typ.Name.t
