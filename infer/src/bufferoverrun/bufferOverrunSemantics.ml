@@ -163,7 +163,7 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
           (* We treat "(unsigned int)-1" case specially, because programmers often exploit it to get
              the max number of the type. *)
           let ikind = Option.value_exn (Typ.get_ikind_opt t) in
-          Val.of_itv (Itv.max_of_ikind integer_type_widths ikind)
+          Val.of_itv ~traces:(Val.get_traces v) (Itv.max_of_ikind integer_type_widths ikind)
         else v
     | Exp.Lfield (e, fn, _) ->
         let v = eval integer_type_widths e mem in

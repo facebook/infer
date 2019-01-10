@@ -77,7 +77,7 @@ codetoanalyze/c/bufferoverrun/cast.c, cast_float_to_int_Bad_FN, 4, CONDITION_ALW
 codetoanalyze/c/bufferoverrun/cast.c, cast_float_to_int_Good, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned2_Bad_FN, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Bad, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
-codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Bad, 5, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 4294967295 Size: 10]
+codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Bad, 5, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 4294967295 Size: 10]
 codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Good, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_unsigned_to_signed_Bad_FN, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_unsigned_to_signed_Good, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
