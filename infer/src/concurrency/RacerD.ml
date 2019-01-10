@@ -167,23 +167,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Conjunction actual_indexes
       | HilExp.AccessExpression access_expr -> (
           let actual_access_path = HilExp.AccessExpression.to_access_path access_expr in
-          if OwnershipDomain.is_owned actual_access_path caller_astate.ownership then
-            (* the actual passed to the current callee is owned. drop all the conditional accesses
-               for that actual, since they're all safe *)
-            Conjunction actual_indexes
-          else
-            let base = fst actual_access_path in
-            match OwnershipDomain.get_owned (base, []) caller_astate.ownership with
-            | Owned ->
-                (* the actual passed to the current callee is owned. drop all the conditional
+          match OwnershipDomain.get_owned actual_access_path caller_astate.ownership with
+          | Owned ->
+              (* the actual passed to the current callee is owned. drop all the conditional
                    accesses for that actual, since they're all safe *)
-                Conjunction actual_indexes
-            | OwnedIf formal_indexes ->
-                (* access path conditionally owned if [formal_indexes] are owned *)
-                Conjunction (IntSet.union formal_indexes actual_indexes)
-            | Unowned ->
-                (* access path not rooted in a formal and not conditionally owned *)
-                False )
+              Conjunction actual_indexes
+          | OwnedIf formal_indexes ->
+              (* access path conditionally owned if [formal_indexes] are owned *)
+              Conjunction (IntSet.union formal_indexes actual_indexes)
+          | Unowned ->
+              (* access path not rooted in a formal and not conditionally owned *)
+              False )
       | _ ->
           (* couldn't find access path, don't know if it's owned. assume not *)
           False

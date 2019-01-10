@@ -395,14 +395,6 @@ module OwnershipDomain = struct
         keep_looking access_path astate
 
 
-  let is_owned access_path astate =
-    match get_owned access_path astate with
-    | OwnershipAbstractValue.Owned ->
-        true
-    | OwnershipAbstractValue.OwnedIf _ | Unowned ->
-        false
-
-
   let rec ownership_of_expr expr ownership =
     let open HilExp in
     match expr with

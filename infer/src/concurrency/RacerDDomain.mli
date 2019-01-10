@@ -151,8 +151,6 @@ module OwnershipDomain : sig
 
   val get_owned : AccessPath.t -> t -> OwnershipAbstractValue.t
 
-  val is_owned : AccessPath.t -> t -> bool
-
   val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
 
   val propagate_return : AccessPath.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
