@@ -291,14 +291,16 @@ module AccessSnapshot = struct
   let make_from_snapshot access {lock; thread; ownership_precondition} =
     (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
        such accesses *)
-    assert (not (OwnershipPrecondition.is_true ownership_precondition)) ;
-    {access; thread; lock; ownership_precondition}
+    Option.some_if
+      (not (OwnershipPrecondition.is_true ownership_precondition))
+      {access; thread; lock; ownership_precondition}
 
 
   let make access lock thread ownership_precondition pdesc =
-    assert (not (OwnershipPrecondition.is_true ownership_precondition)) ;
-    let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
-    {access; lock; thread; ownership_precondition}
+    if not (OwnershipPrecondition.is_true ownership_precondition) then
+      let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
+      Some {access; lock; thread; ownership_precondition}
+    else None
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
@@ -321,12 +323,16 @@ module AccessDomain = struct
       |> Option.value_map ~default:false ~f:(fun ((v, _), _) -> should_skip_var v)
     in
     if skip then astate else add s astate
+
+
+  let add_opt snapshot_opt astate =
+    Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
 end
 
 module OwnershipAbstractValue = struct
-  type t = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
+  type t = OwnedIf of IntSet.t | Unowned [@@deriving compare]
 
-  let owned = Owned
+  let owned = OwnedIf IntSet.empty
 
   let unowned = Unowned
 
@@ -340,12 +346,8 @@ module OwnershipAbstractValue = struct
         true (* Unowned is top *)
     | Unowned, _ ->
         false
-    | Owned, _ ->
-        true (* Owned is bottom *)
     | OwnedIf s1, OwnedIf s2 ->
         IntSet.subset s1 s2
-    | OwnedIf _, Owned ->
-        false
 
 
   let join astate1 astate2 =
@@ -354,8 +356,6 @@ module OwnershipAbstractValue = struct
       match (astate1, astate2) with
       | _, Unowned | Unowned, _ ->
           Unowned
-      | astate, Owned | Owned, astate ->
-          astate
       | OwnedIf s1, OwnedIf s2 ->
           OwnedIf (IntSet.union s1 s2)
 
@@ -366,11 +366,11 @@ module OwnershipAbstractValue = struct
     | Unowned ->
         F.pp_print_string fmt "Unowned"
     | OwnedIf s ->
-        F.fprintf fmt "OwnedIf%a"
-          (PrettyPrintable.pp_collection ~pp_item:Int.pp)
-          (IntSet.elements s)
-    | Owned ->
-        F.pp_print_string fmt "Owned"
+        if IntSet.is_empty s then F.pp_print_string fmt "Owned"
+        else
+          F.fprintf fmt "OwnedIf%a"
+            (PrettyPrintable.pp_collection ~pp_item:Int.pp)
+            (IntSet.elements s)
 end
 
 module OwnershipDomain = struct
@@ -387,7 +387,7 @@ module OwnershipDomain = struct
           OwnershipAbstractValue.Unowned
     in
     match find access_path astate with
-    | (OwnershipAbstractValue.Owned | OwnedIf _) as v ->
+    | OwnershipAbstractValue.OwnedIf _ as v ->
         v
     | OwnershipAbstractValue.Unowned ->
         keep_looking access_path astate
@@ -426,7 +426,7 @@ module OwnershipDomain = struct
     in
     let ret_ownership_wrt_actuals =
       match return_ownership with
-      | OwnershipAbstractValue.Owned | Unowned ->
+      | OwnershipAbstractValue.Unowned ->
           return_ownership
       | OwnershipAbstractValue.OwnedIf formal_indexes ->
           IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
@@ -595,4 +595,4 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
 let add_unannotated_call_access pname loc pdesc (astate : t) =
   let access = TraceElem.make_unannotated_call_access pname loc in
   let snapshot = AccessSnapshot.make access astate.locks astate.threads False pdesc in
-  {astate with accesses= AccessDomain.add snapshot astate.accesses}
+  {astate with accesses= AccessDomain.add_opt snapshot astate.accesses}

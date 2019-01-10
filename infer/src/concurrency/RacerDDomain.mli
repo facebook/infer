@@ -116,9 +116,9 @@ module AccessSnapshot : sig
     -> ThreadsDomain.t
     -> OwnershipPrecondition.t
     -> Procdesc.t
-    -> t
+    -> t option
 
-  val make_from_snapshot : PathDomain.Sink.t -> t -> t
+  val make_from_snapshot : PathDomain.Sink.t -> t -> t option
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
@@ -126,12 +126,17 @@ end
 
 (** map of access metadata |-> set of accesses. the map should hold all accesses to a
     possibly-unowned access path *)
-module AccessDomain : AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
+module AccessDomain : sig
+  include AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
+
+  val add_opt : elt option -> t -> t
+end
 
 module OwnershipAbstractValue : sig
   type t = private
-    | Owned  (** Owned value; bottom of the lattice *)
-    | OwnedIf of IntSet.t  (** Owned if the formals at the given indexes are owned in the caller *)
+    | OwnedIf of IntSet.t
+        (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned 
+        if the set of formals is empty = bottom of the lattice *)
     | Unowned  (** Unowned value; top of the lattice *)
   [@@deriving compare]
 

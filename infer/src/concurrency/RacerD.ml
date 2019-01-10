@@ -33,7 +33,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | access :: access_list -> (
           let prefix_path' = (fst prefix_path, snd prefix_path @ [access]) in
           let add_field_access pre =
-            let access_acc' = AccessDomain.add pre access_acc in
+            let access_acc' = AccessDomain.add_opt pre access_acc in
             add_field_accesses prefix_path' access_acc' access_list
           in
           if RacerDModels.is_safe_access access prefix_path proc_data.tenv then
@@ -49,17 +49,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     proc_data.pdesc
                 in
                 add_field_access pre
-            | OwnershipAbstractValue.Owned ->
-                add_field_accesses prefix_path' access_acc access_list
             | OwnershipAbstractValue.Unowned ->
                 let pre = AccessSnapshot.make access locks threads False proc_data.pdesc in
                 add_field_access pre )
     in
-    List.fold
-      ~f:(fun acc access_expr ->
+    List.fold (HilExp.get_access_exprs exp) ~init:accesses ~f:(fun acc access_expr ->
         let base, accesses = HilExp.AccessExpression.to_access_path access_expr in
         add_field_accesses (base, []) acc accesses )
-      ~init:accesses (HilExp.get_access_exprs exp)
 
 
   let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
@@ -78,7 +74,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (AccessSnapshot.OwnershipPrecondition.Conjunction (IntSet.singleton 0))
             caller_pdesc
         in
-        AccessDomain.singleton snapshot
+        AccessDomain.add_opt snapshot AccessDomain.empty
     in
     (* if a container c is owned in cpp, make c[i] owned for all i *)
     let return_ownership =
@@ -148,12 +144,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | None ->
             path
       in
-      let expand_precondition (snapshot : AccessSnapshot.t) =
-        let access' = TraceElem.map ~f:expand_path snapshot.access in
-        if phys_equal snapshot.access access' then snapshot
-        else AccessSnapshot.make_from_snapshot access' snapshot
+      let add snapshot acc =
+        let access' = TraceElem.map ~f:expand_path snapshot.AccessSnapshot.access in
+        let snapshot_opt' = AccessSnapshot.make_from_snapshot access' snapshot in
+        AccessDomain.add_opt snapshot_opt' acc
       in
-      AccessDomain.map expand_precondition accesses
+      AccessDomain.fold add accesses AccessDomain.empty
 
 
   let add_callee_accesses (caller_astate : Domain.t) callee_accesses locks threads actuals
@@ -168,10 +164,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | HilExp.AccessExpression access_expr -> (
           let actual_access_path = HilExp.AccessExpression.to_access_path access_expr in
           match OwnershipDomain.get_owned actual_access_path caller_astate.ownership with
-          | Owned ->
-              (* the actual passed to the current callee is owned. drop all the conditional
-                   accesses for that actual, since they're all safe *)
-              Conjunction actual_indexes
           | OwnedIf formal_indexes ->
               (* access path conditionally owned if [formal_indexes] are owned *)
               Conjunction (IntSet.union formal_indexes actual_indexes)
@@ -214,8 +206,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* discard accesses to owned memory *)
         acc
       else
-        let snapshot = AccessSnapshot.make access locks thread ownership_precondition pdesc in
-        AccessDomain.add snapshot acc
+        let snapshot_opt = AccessSnapshot.make access locks thread ownership_precondition pdesc in
+        AccessDomain.add_opt snapshot_opt acc
     in
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
