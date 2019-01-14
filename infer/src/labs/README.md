@@ -23,7 +23,9 @@ cp -av /infer/. /infer-host
 eval $(opam env)
 ```
 
-You can now edit the files *locally* in `$HOME/infer-docker` and build infer *inside Docker* in `/infer-host` using the shell prompt gotten in step 2. The quickest way is to run `make byte` from `/infer-host`.
+4. Outside Docker, you will likely need to change the permissions of `$HOME/infer-docker` to make the files editable by your user: `sudo chown $USER -R $HOME/infer-docker`.
+
+You can now edit the files *locally* in `$HOME/infer-docker` and build infer *inside Docker* in `/infer-host` using the shell prompt gotten in step 2. The quickest way is to run `make` from `/infer-host` once, then `make byte` for a quicker edit/compile cycle.
 
 ### (a') ...or, alternatively, build Infer locally from scratch
 
