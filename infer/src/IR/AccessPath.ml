@@ -190,20 +190,34 @@ module Raw = struct
 
   let append (base, old_accesses) new_accesses = (base, old_accesses @ new_accesses)
 
-  let rec is_prefix_path path1 path2 =
-    if phys_equal path1 path2 then true
+  let rec chop_prefix_path ~prefix:path1 path2 =
+    if phys_equal path1 path2 then Some []
     else
       match (path1, path2) with
-      | [], _ ->
-          true
+      | [], remaining ->
+          Some remaining
       | _, [] ->
-          false
-      | access1 :: p1, access2 :: p2 ->
-          equal_access access1 access2 && is_prefix_path p1 p2
+          None
+      | access1 :: prefix, access2 :: rest when equal_access access1 access2 ->
+          chop_prefix_path ~prefix rest
+      | _ ->
+          None
 
 
-  let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
-    if phys_equal ap1 ap2 then true else equal_base base1 base2 && is_prefix_path path1 path2
+  let chop_prefix ~prefix:((base1, path1) as ap1) ((base2, path2) as ap2) =
+    if phys_equal ap1 ap2 then Some []
+    else if equal_base base1 base2 then chop_prefix_path ~prefix:path1 path2
+    else None
+
+
+  let is_prefix ap1 ap2 = chop_prefix ~prefix:ap1 ap2 |> Option.is_some
+
+  let replace_prefix ~prefix access_path replace_with =
+    match chop_prefix ~prefix access_path with
+    | Some remaining_accesses ->
+        Some (append replace_with remaining_accesses)
+    | None ->
+        None
 end
 
 module Abs = struct

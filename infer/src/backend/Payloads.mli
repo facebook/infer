@@ -15,11 +15,11 @@ type t =
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
   ; crashcontext_frame: Stacktree_t.stacktree option
+  ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
   ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
-  ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.t option
   ; starvation: StarvationDomain.summary option
   ; typestate: TypeState.t option

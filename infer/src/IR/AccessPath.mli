@@ -59,6 +59,8 @@ val append : t -> access list -> t
 val is_prefix : t -> t -> bool
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 
+val replace_prefix : prefix:t -> t -> t -> t option [@@warning "-32"]
+
 val inner_class_normalize : t -> t
 (** transform an access path that starts on "this" of an inner class but which breaks out to
    access outer class fields to the outermost one.
@@ -79,6 +81,8 @@ val pp : Format.formatter -> t -> unit
 val pp_base : Format.formatter -> base -> unit
 
 val pp_access : Format.formatter -> access -> unit
+
+val pp_access_list : Format.formatter -> access list -> unit [@@warning "-32"]
 
 module Abs : sig
   type raw = t

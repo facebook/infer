@@ -6,18 +6,15 @@
  *)
 
 open! IStd
-module F = Format
 
-type t = unit
+include AbstractDomain.S
 
-let ( <= ) ~lhs:_ ~rhs:_ = assert false
+val initial : t
 
-let join _a _b = assert false
+val acquire_resource : t -> t
 
-let widen ~prev:_ ~next:_ ~num_iters:_ = assert false
+val release_resource : t -> t
 
-let pp fmt () = F.fprintf fmt "(nothing)"
-
-let initial = ()
+val has_leak : t -> bool
 
 type summary = t

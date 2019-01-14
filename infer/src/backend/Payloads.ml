@@ -15,11 +15,11 @@ type t =
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
   ; crashcontext_frame: Stacktree_t.stacktree option
+  ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
   ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
-  ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.t option
   ; starvation: StarvationDomain.summary option
   ; typestate: TypeState.t option
@@ -32,6 +32,7 @@ let pp pe fmt
     ; class_loads
     ; cost
     ; crashcontext_frame
+    ; lab_resource_leaks
     ; litho
     ; purity
     ; quandary
@@ -46,7 +47,7 @@ let pp pe fmt
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
     biabduction (pp_opt "TypeState" TypeState.pp) typestate
     (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
@@ -71,6 +72,8 @@ let pp pe fmt
     starvation
     (pp_opt "Purity" PurityDomain.pp_summary)
     purity
+    (pp_opt "Resource Leaks Lab" ResourceLeakDomain.pp)
+    lab_resource_leaks
 
 
 let empty =
@@ -84,7 +87,7 @@ let empty =
   ; purity= None
   ; quandary= None
   ; racerd= None
-  ; resources= None
+  ; lab_resource_leaks= None
   ; siof= None
   ; starvation= None
   ; typestate= None

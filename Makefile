@@ -117,7 +117,6 @@ DIRECT_TESTS += \
   java_hoisting \
   java_hoistingExpensive \
   java_infer \
-  java_lab \
   java_performance \
   java_purity \
   java_quandary \
