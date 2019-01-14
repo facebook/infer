@@ -63,3 +63,6 @@ ENV BUILD_MODE=default
 
 # prevent exiting by compulsively hitting Control-D
 ENV IGNOREEOF=9
+
+# should be moved earlier
+ENV INFER_OPAM_SWITCH=4.07.1
