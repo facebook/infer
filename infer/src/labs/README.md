@@ -12,7 +12,7 @@ Using Docker is the fastest way: you do not need to clone the Infer repository a
 
 1. Get Docker: https://www.docker.com/get-started
 
-2. Run the infer Docker image with `docker run -it infer/infer:infer-latest-java-dev -v $HOME/infer-docker:/infer-host /bin/bash`. This will give you a prompt *inside the Docker image*. Do not close that terminal for the duration of the lab.
+2. Run the infer Docker image with `docker run -it -v $HOME/infer-docker:/infer-host infer/infer:infer-latest-java-dev /bin/bash`. This will give you a prompt *inside the Docker image*. Do not close that terminal for the duration of the lab.
 
 3. Within Docker, copy the /infer directory to your mount point: `cp -av /infer/. /infer-host`
 
