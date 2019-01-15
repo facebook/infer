@@ -30,7 +30,7 @@ type jsonbug = {
   ?doc_url : string option;
   qualifier : string;
   severity : string;
-  visibility : string;
+  ?visibility : string option;
   line: int;
   column: int;
   procedure : string;

@@ -177,7 +177,7 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
       { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
       ; qualifier
       ; severity= Exceptions.severity_string severity
-      ; visibility= Exceptions.string_of_visibility Exceptions.Exn_user
+      ; visibility= Some (Exceptions.string_of_visibility Exceptions.Exn_user)
       ; line
       ; column
       ; procedure= cost_info.Jsonbug_t.procedure_id
