@@ -645,8 +645,6 @@ val stats_report : string option
 
 val subtype_multirange : bool
 
-val suggest_nullable : bool
-
 val symops_per_iteration : int option
 
 val test_determinator : bool

@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS)
-INFER_OPTIONS =  --debug-exceptions --no-default-checkers --suggest-nullable --nullsafe --project-root $(TESTS_DIR)
+INFER_OPTIONS =  --debug-exceptions --no-default-checkers --nullsafe --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.mm)

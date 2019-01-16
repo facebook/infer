@@ -70,7 +70,7 @@ let all_checkers =
     ; active= Config.printf_args
     ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }
   ; { name= "nullable suggestion"
-    ; active= Config.suggest_nullable
+    ; active= Config.nullsafe
     ; callbacks=
         [ (Procedure NullabilitySuggest.checker, Language.Java)
         ; (Procedure NullabilitySuggest.checker, Language.Clang) ] }

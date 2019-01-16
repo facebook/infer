@@ -609,7 +609,6 @@ and ( annotation_reachability
     , resource_leak
     , siof
     , starvation
-    , suggest_nullable
     , uninit ) =
   let mk_checker ?(default = false) ?(deprecated = []) ~long doc =
     let var =
@@ -650,7 +649,8 @@ and ( annotation_reachability
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and loop_hoisting = mk_checker ~long:"loop-hoisting" ~default:false "checker for loop-hoisting"
   and nullsafe =
-    mk_checker ~long:"nullsafe" ~deprecated:["-check-nullable"]
+    mk_checker ~long:"nullsafe"
+      ~deprecated:["-check-nullable"; "-suggest-nullable"]
       "[EXPERIMENTAL] Nullable type checker (incomplete: use --eradicate for now)"
   and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
@@ -672,8 +672,6 @@ and ( annotation_reachability
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
   and starvation = mk_checker ~long:"starvation" ~default:false "starvation analysis"
-  and suggest_nullable =
-    mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" ~default:true in
   let mk_only (var, long, doc, _) =
     let _ : bool ref =
@@ -736,7 +734,6 @@ and ( annotation_reachability
   , resource_leak
   , siof
   , starvation
-  , suggest_nullable
   , uninit )
 
 
@@ -2778,8 +2775,6 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 
 and nullable_annotation = !nullable_annotation
-
-and suggest_nullable = !suggest_nullable
 
 and no_translate_libs = not !headers
 

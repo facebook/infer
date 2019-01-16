@@ -869,14 +869,6 @@ OPTIONS
            Activates: Enable --starvation and disable all other checkers
            (Conversely: --no-starvation-only)           See also infer-analyze(1).
 
-       --suggest-nullable
-           Activates: Nullable annotation sugesstions analysis (Conversely:
-           --no-suggest-nullable)           See also infer-analyze(1).
-
-       --suggest-nullable-only
-           Activates: Enable --suggest-nullable and disable all other
-           checkers (Conversely: --no-suggest-nullable-only)           See also infer-analyze(1).
-
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe (default: [])           See also infer-analyze(1).

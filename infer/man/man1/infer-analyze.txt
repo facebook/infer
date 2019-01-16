@@ -314,14 +314,6 @@ OPTIONS
            Activates: Enable --starvation and disable all other checkers
            (Conversely: --no-starvation-only)
 
-       --suggest-nullable
-           Activates: Nullable annotation sugesstions analysis (Conversely:
-           --no-suggest-nullable)
-
-       --suggest-nullable-only
-           Activates: Enable --suggest-nullable and disable all other
-           checkers (Conversely: --no-suggest-nullable-only)
-
        --no-uninit
            Deactivates: checker for use of uninitialized values (Conversely:
            --uninit)
