@@ -12,6 +12,7 @@ import android.app.PendingIntent;
 import com.facebook.infer.annotation.Assertions;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -307,5 +308,13 @@ public class NullMethodCall {
   void withConditionalAssignemnt(
       @Nullable AnotherI i, boolean test, Object object1, Object object2) {
     i.withObjectParameter(test ? object1 : object2);
+  }
+
+  String assertGetOnMapOK(Map<Integer, Object> map, Integer key) {
+    return Assertions.assertGet(key, map).toString(); // No warning here
+  }
+
+  String assertGetOnListOK(List<Object> list, int index) {
+    return Assertions.assertGet(index, list).toString(); // No warning here
   }
 }

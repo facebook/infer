@@ -35,22 +35,14 @@ public class Assertions {
     return object;
   }
 
-  public static <T> T getAssumingNotNull(List<T> list, int index) {
-    return list.get(index);
+  public static <T> T assertGet(int index, List<T> list) {
+    assertCondition(0 <= index && index < list.size(), "Index not in bound");
+    return assertNotNull(list.get(index), "Null value");
   }
 
-  public static <T> T getAssertingNotNull(List<T> list, int index) {
-    assertCondition(0 <= index && index < list.size());
-    return assertNotNull(list.get(index));
-  }
-
-  public static <K, V> V getAssumingNotNull(Map<K, V> map, K key) {
-    return map.get(key);
-  }
-
-  public static <K, V> V getAssertingNotNull(Map<K, V> map, K key) {
-    assertCondition(map.containsKey(key));
-    return assertNotNull(map.get(key));
+  public static <K, V> V assertGet(K key, Map<K, V> map) {
+    assertCondition(map.containsKey(key), "Key not found");
+    return assertNotNull(map.get(key), "Null value");
   }
 
   public static void assumeCondition(boolean condition) {}
