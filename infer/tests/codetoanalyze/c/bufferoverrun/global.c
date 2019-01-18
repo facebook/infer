@@ -53,3 +53,5 @@ static void copyfilter_Good_FP(const char* s, const char* z, int b) {
     }
   }
 }
+
+static const char* global_string_array[] = {"a", "b", "c", "d", "e", "f"};

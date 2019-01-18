@@ -12,11 +12,14 @@ open AbsLoc
 open! AbstractDomain.Types
 open BufferOverrunDomain
 
-let eval_const : Const.t -> Val.t = function
+let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
+ fun integer_type_widths -> function
   | Const.Cint intlit ->
       Val.of_big_int (IntLit.to_big_int intlit)
   | Const.Cfloat f ->
       f |> int_of_float |> Val.of_int
+  | Const.Cstr s ->
+      Val.of_literal_string integer_type_widths s
   | _ ->
       Val.Itv.top
 
@@ -155,7 +158,7 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
     | Exp.BinOp (bop, e1, e2) ->
         eval_binop integer_type_widths bop e1 e2 mem
     | Exp.Const c ->
-        eval_const c
+        eval_const integer_type_widths c
     | Exp.Cast (t, e) ->
         let v = eval integer_type_widths e mem in
         let v = set_array_stride integer_type_widths t v in

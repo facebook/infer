@@ -23,8 +23,6 @@ type check_fun = model_env -> Dom.Mem.t -> PO.ConditionSet.checked_t -> PO.Condi
 
 type model = {exec: exec_fun; check: check_fun}
 
-let no_exec _model_env ~ret:_ mem = mem
-
 let no_check _model_env _mem cond_set = cond_set
 
 let no_model =
@@ -179,9 +177,19 @@ let inferbo_set_size e1 e2 =
   {exec; check}
 
 
-let model_by_value value (id, _) mem = Dom.Mem.add_stack (Loc.of_id id) value mem
+let variable_initialization (e, typ) =
+  let exec model_env ~ret:_ mem =
+    match e with
+    | Exp.Lvar x when Pvar.is_global x ->
+        let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar x, typ) in
+        mem
+    | _ ->
+        mem
+  in
+  {exec; check= no_check}
 
-let nop = {exec= no_exec; check= no_check}
+
+let model_by_value value (id, _) mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
 let by_value =
   let exec ~value _ ~ret mem = model_by_value value ret mem in
@@ -524,7 +532,7 @@ module Call = struct
     make_dispatcher
       [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
-      ; -"__variable_initialization" <>--> nop
+      ; -"__variable_initialization" <>$ capt_arg $!--> variable_initialization
       ; -"__exit" <>--> bottom
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255

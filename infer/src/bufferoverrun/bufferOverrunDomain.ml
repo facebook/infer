@@ -164,6 +164,20 @@ module Val = struct
     ; traces }
 
 
+  let of_literal_string : Typ.IntegerWidths.t -> string -> t =
+   fun integer_type_widths s ->
+    let allocsite = Allocsite.literal_string s in
+    let stride = Some (integer_type_widths.char_width / 8) in
+    let offset = Itv.zero in
+    let size = Itv.of_int (String.length s + 1) in
+    of_c_array_alloc allocsite ~stride ~offset ~size ~traces:TraceSet.empty
+
+
+  let deref_of_literal_string s =
+    let max_char = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c)) in
+    of_itv (Itv.set_lb_zero (Itv.of_int max_char))
+
+
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
@@ -470,20 +484,24 @@ module Val = struct
 
   let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
    fun ~default {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
-    match Loc.get_path l with
-    | None ->
-        L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
-        default
-    | Some path -> (
-      match typ_of_param_path path with
+    match Loc.is_literal_string l with
+    | Some s ->
+        deref_of_literal_string s
+    | None -> (
+      match Loc.get_path l with
       | None ->
-          L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+          L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
           default
-      | Some typ ->
-          L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
-          let may_last_field = may_last_field path in
-          let path = OndemandEnv.canonical_path typ_of_param_path path in
-          of_path tenv ~may_last_field integer_type_widths entry_location typ path )
+      | Some path -> (
+        match typ_of_param_path path with
+        | None ->
+            L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+            default
+        | Some typ ->
+            L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
+            let may_last_field = may_last_field path in
+            let path = OndemandEnv.canonical_path typ_of_param_path path in
+            of_path tenv ~may_last_field integer_type_widths entry_location typ path ) )
 
 
   module Itv = struct

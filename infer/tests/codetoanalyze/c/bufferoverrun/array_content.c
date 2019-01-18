@@ -123,3 +123,44 @@ void literal_string_bad() {
     }
   }
 }
+
+void literal_string2_Good() {
+  int a[1];
+  char s[] = "hello";
+  for (int i = 0; i < 5; i++) {
+    if (s[i] > 'o') {
+      a[s[i]] = 0;
+    }
+  }
+}
+
+void literal_string2_Bad_FN() {
+  int a[1];
+  char s[] = "hello";
+  for (int i = 0; i < 5; i++) {
+    if (s[i] > 'n') {
+      a[s[i]] = 0;
+    }
+  }
+}
+
+void literal_string_parameter(char* s) {
+  int a[112]; // 'o' is 111, 'p' is 112
+  a[s[0]] = 0;
+}
+
+void call_literal_string_parameter1_Good() {
+  char* s = "hello";
+  literal_string_parameter(s);
+}
+
+void call_literal_string_parameter1_Bad() {
+  char* s = "hellp";
+  literal_string_parameter(s);
+}
+
+void call_literal_string_parameter2_Good() {
+  literal_string_parameter("hello");
+}
+
+void call_literal_string_parameter2_Bad() { literal_string_parameter("hellp"); }

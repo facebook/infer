@@ -152,6 +152,8 @@ val decr : t -> t
 
 val incr : t -> t
 
+val set_lb_zero : t -> t
+
 val neg : t -> t
 
 val normalize : t -> t

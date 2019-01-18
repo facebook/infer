@@ -47,6 +47,8 @@ codetoanalyze/c/bufferoverrun/arith.c, unused_integer_underflow_Good_FP, 2, INTE
 codetoanalyze/c/bufferoverrun/arith.c, use_int64_max_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 15 Size: 10]
 codetoanalyze/c/bufferoverrun/arith.c, use_uint64_max_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 15 Size: 10]
 codetoanalyze/c/bufferoverrun/array_content.c, array_min_index_from_one_FP, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/c/bufferoverrun/array_content.c, call_literal_string_parameter1_Bad, 2, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Call,<Offset trace>,Parameter `*s`,<Length trace>,Array declaration,Array access: Offset: [0, 112] Size: 112 by call to `literal_string_parameter` ]
+codetoanalyze/c/bufferoverrun/array_content.c, call_literal_string_parameter2_Bad, 0, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Call,<Offset trace>,Parameter `*s`,<Length trace>,Array declaration,Array access: Offset: [0, 112] Size: 112 by call to `literal_string_parameter` ]
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_arr10_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_arr_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/array_content.c, check_sorted_ptr_good_FP, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]

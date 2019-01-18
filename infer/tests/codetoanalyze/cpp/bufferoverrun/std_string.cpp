@@ -161,7 +161,7 @@ void call_length4_1_Bad() {
 
 void call_length4_2_Good() { length4("hello"); }
 
-void call_length4_2_Bad_FN() { length4("hellohello"); }
+void call_length4_2_Bad() { length4("hellohello"); }
 
 void size_Good() {
   std::string s("hello");

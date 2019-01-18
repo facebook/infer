@@ -123,6 +123,8 @@ module ItvPure = struct
 
   let pos = (Bound.one, Bound.PInf)
 
+  let set_lb_zero (_, ub) = (Bound.zero, ub)
+
   let top = (Bound.MInf, Bound.PInf)
 
   let zero = of_bound Bound.zero
@@ -549,6 +551,8 @@ let minus : t -> t -> t = lift2 ItvPure.minus
 let incr = plus one
 
 let decr x = minus x one
+
+let set_lb_zero = lift1 ItvPure.set_lb_zero
 
 let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 

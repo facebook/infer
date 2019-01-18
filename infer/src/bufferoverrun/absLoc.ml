@@ -21,6 +21,7 @@ module Allocsite = struct
         ; dimension: int
         ; represents_multiple_values: bool
         ; path: Symb.SymbolPath.partial option }
+    | LiteralString of string
   [@@deriving compare]
 
   let eq as1 as2 =
@@ -35,7 +36,9 @@ module Allocsite = struct
         Boolean.False
     | Known {path= None}, Known {path= None} ->
         Boolean.of_bool ([%compare.equal: t] as1 as2)
-    | Known _, Symbol _ | Symbol _, Known _ ->
+    | LiteralString s1, LiteralString s2 ->
+        Boolean.of_bool (String.equal s1 s2)
+    | _, _ ->
         Boolean.False
 
 
@@ -50,11 +53,15 @@ module Allocsite = struct
         F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension ;
         Option.iter path ~f:(fun path ->
             F.fprintf fmt "(%a)" (Symb.SymbolPath.pp_partial_paren ~paren:false) path )
+    | LiteralString s ->
+        F.fprintf fmt "%S" s
 
 
   let pp = pp_paren ~paren:false
 
   let is_pretty = function Symbol _ | Known {path= Some _} -> true | _ -> false
+
+  let is_literal_string = function LiteralString s -> Some s | _ -> None
 
   let to_string x = F.asprintf "%a" pp x
 
@@ -80,12 +87,21 @@ module Allocsite = struct
 
   let unknown = Unknown
 
-  let get_path = function Unknown -> None | Symbol path -> Some path | Known {path} -> path
+  let literal_string s = LiteralString s
+
+  let get_path = function
+    | Unknown | LiteralString _ ->
+        None
+    | Symbol path ->
+        Some path
+    | Known {path} ->
+        path
+
 
   let get_param_path = function
     | Symbol path ->
         Option.some_if (not (Symb.SymbolPath.represents_callsite_sound_partial path)) path
-    | Unknown | Known _ ->
+    | Unknown | Known _ | LiteralString _ ->
         None
 
 
@@ -97,6 +113,8 @@ module Allocsite = struct
     | Known {path; represents_multiple_values} ->
         represents_multiple_values
         || Option.value_map path ~default:false ~f:Symb.SymbolPath.represents_multiple_values
+    | LiteralString _ ->
+        true
 end
 
 module Loc = struct
@@ -181,6 +199,8 @@ module Loc = struct
 
 
   let is_field_of ~loc ~field_loc = match field_loc with Field (l, _) -> equal loc l | _ -> false
+
+  let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
 
   let rec get_path = function
     | Var (LogicalVar _) ->
