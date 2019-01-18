@@ -15,8 +15,23 @@ module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
+module TypModels = BufferOverrunTypModels
+
+module ModelEnv = struct
+  type model_env =
+    { pname: Typ.Procname.t
+    ; node_hash: int
+    ; location: Location.t
+    ; tenv: Tenv.t
+    ; integer_type_widths: Typ.IntegerWidths.t }
+
+  let mk_model_env pname ~node_hash location tenv integer_type_widths =
+    {pname; node_hash; location; tenv; integer_type_widths}
+end
 
 module Exec = struct
+  open ModelEnv
+
   let load_locs id locs mem =
     let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
@@ -31,34 +46,26 @@ module Exec = struct
 
   let load_val id v mem = load_locs id (Dom.Val.get_all_locs v) mem
 
-  type decl_local =
-       Typ.Procname.t
-    -> node_hash:int
-    -> Location.t
-    -> Loc.t
-    -> Typ.t
-    -> inst_num:int
-    -> represents_multiple_values:bool
-    -> dimension:int
-    -> Dom.Mem.t
-    -> Dom.Mem.t * int
+  let rec decl_local_loc ({tenv} as model_env) loc typ ~inst_num ~represents_multiple_values
+      ~dimension mem =
+    match typ.Typ.desc with
+    | Typ.Tarray {elt= typ; length; stride} ->
+        let stride = Option.map ~f:IntLit.to_int_exn stride in
+        decl_local_array model_env loc typ ~length ?stride ~inst_num ~represents_multiple_values
+          ~dimension mem
+    | Typ.Tstruct typname -> (
+      match TypModels.dispatch tenv typname with
+      | Some (CArray {element_typ; length}) ->
+          decl_local_array model_env loc element_typ ~length:(Some length) ~inst_num
+            ~represents_multiple_values ~dimension mem
+      | Some JavaCollection | None ->
+          (mem, inst_num) )
+    | _ ->
+        (mem, inst_num)
 
-  let decl_local_array :
-         decl_local:decl_local
-      -> Typ.Procname.t
-      -> node_hash:int
-      -> Location.t
-      -> Loc.t
-      -> Typ.t
-      -> length:IntLit.t option
-      -> ?stride:int
-      -> inst_num:int
-      -> represents_multiple_values:bool
-      -> dimension:int
-      -> Dom.Mem.t
-      -> Dom.Mem.t * int =
-   fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num
-       ~represents_multiple_values ~dimension mem ->
+
+  and decl_local_array ({pname; node_hash; location} as model_env) loc typ ~length ?stride
+      ~inst_num ~represents_multiple_values ~dimension mem =
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
     let allocsite =
@@ -81,13 +88,18 @@ module Exec = struct
     in
     let loc = Loc.of_allocsite allocsite in
     let mem, _ =
-      decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:true
+      decl_local_loc model_env loc typ ~inst_num ~represents_multiple_values:true
         ~dimension:(dimension + 1) mem
     in
     (mem, inst_num + 1)
 
 
-  let init_c_array_fields tenv integer_type_widths pname path ~node_hash typ locs ?dyn_length mem =
+  let decl_local model_env (mem, inst_num) (loc, typ) =
+    decl_local_loc model_env loc typ ~inst_num ~represents_multiple_values:false ~dimension:1 mem
+
+
+  let init_c_array_fields {pname; node_hash; tenv; integer_type_widths} path typ locs ?dyn_length
+      mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
       let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in
       let field_loc = PowLoc.append_field locs ~fn:field_name in
@@ -133,7 +145,7 @@ module Exec = struct
     init_fields path typ locs 1 ?dyn_length mem
 
 
-  let rec set_dyn_length location tenv typ locs dyn_length mem =
+  let rec set_dyn_length ({location; tenv} as model_env) typ locs dyn_length mem =
     match typ.Typ.desc with
     | Tstruct typename -> (
       match Tenv.lookup tenv typename with
@@ -148,7 +160,7 @@ module Exec = struct
               in
               Dom.Mem.strong_update field_loc v mem
           | _ ->
-              set_dyn_length location tenv field_typ field_loc dyn_length mem )
+              set_dyn_length model_env field_typ field_loc dyn_length mem )
       | _ ->
           mem )
     | _ ->
@@ -157,7 +169,7 @@ module Exec = struct
 
   let get_max_char s = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c))
 
-  let decl_string pname ~node_hash integer_type_widths location locs s mem =
+  let decl_string {pname; node_hash; location; integer_type_widths} locs s mem =
     let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
     let offset = Itv.zero in
     let size = Itv.of_int (String.length s + 1) in

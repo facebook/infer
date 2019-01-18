@@ -17,7 +17,6 @@ module L = Logging
 module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
-module TypModels = BufferOverrunTypModels
 
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunSummary.t
@@ -33,31 +32,17 @@ module CFG = ProcCfg.NormalOneInstrPerNode
 
 module Init = struct
   let initial_state {ProcData.pdesc; tenv; extras= oenv} start_node =
-    let node_hash = CFG.Node.hash start_node in
-    let location = CFG.Node.loc start_node in
-    let pname = Procdesc.get_proc_name pdesc in
-    let rec decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values
-        ~dimension mem =
-      match typ.Typ.desc with
-      | Typ.Tarray {elt= typ; length; stride} ->
-          let stride = Option.map ~f:IntLit.to_int_exn stride in
-          BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
-            ?stride ~inst_num ~represents_multiple_values ~dimension mem
-      | Typ.Tstruct typname -> (
-        match TypModels.dispatch tenv typname with
-        | Some (CArray {element_typ; length}) ->
-            BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc element_typ
-              ~length:(Some length) ~inst_num ~represents_multiple_values ~dimension mem
-        | Some JavaCollection | None ->
-            (mem, inst_num) )
-      | _ ->
-          (mem, inst_num)
-    in
-    let try_decl_local (mem, inst_num) {ProcAttributes.name; typ} =
-      let pvar = Pvar.mk name pname in
-      let loc = Loc.of_pvar pvar in
-      decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:false
-        ~dimension:1 mem
+    let try_decl_local =
+      let pname = Procdesc.get_proc_name pdesc in
+      let model_env =
+        let node_hash = CFG.Node.hash start_node in
+        let location = CFG.Node.loc start_node in
+        let integer_type_widths = oenv.Dom.OndemandEnv.integer_type_widths in
+        BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+      in
+      fun (mem, inst_num) {ProcAttributes.name; typ} ->
+        let loc = Loc.of_pvar (Pvar.mk name pname) in
+        BoUtils.Exec.decl_local model_env (mem, inst_num) (loc, typ)
     in
     let mem = Dom.Mem.init oenv in
     let mem, _ = List.fold ~f:try_decl_local ~init:(mem, 1) (Procdesc.get_locals pdesc) in
@@ -185,10 +170,13 @@ module TransferFunctions = struct
     | Load (id, exp, _, _) ->
         BoUtils.Exec.load_locs id (Sem.eval_locs exp mem) mem
     | Store (exp1, _, Const (Const.Cstr s), location) ->
-        let pname = Procdesc.get_proc_name pdesc in
-        let node_hash = CFG.Node.hash node in
         let locs = Sem.eval_locs exp1 mem in
-        BoUtils.Exec.decl_string pname ~node_hash integer_type_widths location locs s mem
+        let model_env =
+          let pname = Procdesc.get_proc_name pdesc in
+          let node_hash = CFG.Node.hash node in
+          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+        in
+        BoUtils.Exec.decl_string model_env locs s mem
     | Store (exp1, _, exp2, location) ->
         let locs = Sem.eval_locs exp1 mem in
         let v =
@@ -232,9 +220,10 @@ module TransferFunctions = struct
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.exec} ->
-            let node_hash = CFG.Node.hash node in
             let model_env =
-              Models.mk_model_env callee_pname node_hash location tenv integer_type_widths
+              let node_hash = CFG.Node.hash node in
+              BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
+                integer_type_widths
             in
             exec model_env ~ret mem
         | None -> (
@@ -509,11 +498,12 @@ module Report = struct
         in
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.check} ->
-            let node_hash = CFG.Node.hash node in
-            let pname = Procdesc.get_proc_name pdesc in
-            check
-              (Models.mk_model_env pname node_hash location tenv integer_type_widths)
-              mem cond_set
+            let model_env =
+              let node_hash = CFG.Node.hash node in
+              let pname = Procdesc.get_proc_name pdesc in
+              BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+            in
+            check model_env mem cond_set
         | None -> (
           match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
           | Some callee_summary -> (

@@ -15,17 +15,7 @@ module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
 module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
-
-type model_env =
-  { pname: Typ.Procname.t
-  ; node_hash: int
-  ; location: Location.t
-  ; tenv: Tenv.t
-  ; integer_type_widths: Typ.IntegerWidths.t }
-
-let mk_model_env pname node_hash location tenv integer_type_widths =
-  {pname; node_hash; location; tenv; integer_type_widths}
-
+open BoUtils.ModelEnv
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 
@@ -77,7 +67,8 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
 
 
 let malloc size_exp =
-  let exec {pname; node_hash; location; tenv; integer_type_widths} ~ret:(id, _) mem =
+  let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem
+      =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
@@ -96,8 +87,7 @@ let malloc size_exp =
     mem
     |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
-    |> BoUtils.Exec.init_c_array_fields tenv integer_type_widths pname path ~node_hash typ
-         (Dom.Val.get_array_locs v) ?dyn_length
+    |> BoUtils.Exec.init_c_array_fields model_env path typ (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size size_exp in
   {exec; check}
 
@@ -128,7 +118,7 @@ let memset arr_exp size_exp =
 
 
 let realloc src_exp size_exp =
-  let exec {location; tenv; integer_type_widths} ~ret:(id, _) mem =
+  let exec ({location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
     let typ, _, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
@@ -138,7 +128,7 @@ let realloc src_exp size_exp =
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
         let dyn_length = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
-        BoUtils.Exec.set_dyn_length location tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
+        BoUtils.Exec.set_dyn_length model_env typ (Dom.Val.get_array_locs v) dyn_length mem )
   and check = check_alloc_size size_exp in
   {exec; check}
 
@@ -346,11 +336,11 @@ module StdBasicString = struct
 
   (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
   let constructor_from_char_ptr_without_len tgt src =
-    let exec {pname; node_hash; location; integer_type_widths} ~ret:_ mem =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
       match src with
       | Exp.Const (Const.Cstr s) ->
           let locs = Sem.eval_locs tgt mem in
-          BoUtils.Exec.decl_string pname ~node_hash integer_type_widths location locs s mem
+          BoUtils.Exec.decl_string model_env locs s mem
       | _ ->
           let tgt_locs = Sem.eval_locs tgt mem in
           let v = Sem.eval integer_type_widths src mem in
