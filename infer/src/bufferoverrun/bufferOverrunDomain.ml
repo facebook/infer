@@ -488,20 +488,24 @@ module Val = struct
     | Some s ->
         deref_of_literal_string s
     | None -> (
-      match Loc.get_path l with
-      | None ->
-          L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
-          default
-      | Some path -> (
-        match typ_of_param_path path with
+      match Loc.is_literal_string_strlen l with
+      | Some s ->
+          of_itv (Itv.of_int (String.length s))
+      | None -> (
+        match Loc.get_path l with
         | None ->
-            L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+            L.d_printfln_escaped "Val.on_demand for %a -> no path" Loc.pp l ;
             default
-        | Some typ ->
-            L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
-            let may_last_field = may_last_field path in
-            let path = OndemandEnv.canonical_path typ_of_param_path path in
-            of_path tenv ~may_last_field integer_type_widths entry_location typ path ) )
+        | Some path -> (
+          match typ_of_param_path path with
+          | None ->
+              L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+              default
+          | Some typ ->
+              L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
+              let may_last_field = may_last_field path in
+              let path = OndemandEnv.canonical_path typ_of_param_path path in
+              of_path tenv ~may_last_field integer_type_widths entry_location typ path ) ) )
 
 
   module Itv = struct
@@ -1174,6 +1178,22 @@ module MemReach = struct
    fun subst_map ~caller ~callee ->
     { caller with
       relation= Relation.instantiate subst_map ~caller:caller.relation ~callee:callee.relation }
+
+
+  (* unsound *)
+  let set_first_idx_of_null : Allocsite.t -> Val.t -> t -> t =
+   fun allocsite idx m -> update_mem (PowLoc.singleton (Loc.of_c_strlen allocsite)) idx m
+
+
+  (* unsound *)
+  let unset_first_idx_of_null : Allocsite.t -> Val.t -> t -> t =
+   fun allocsite idx m ->
+    let old_c_strlen = find_heap (Loc.of_c_strlen allocsite) m in
+    let idx_itv = Val.get_itv idx in
+    if Boolean.is_true (Itv.lt_sem idx_itv (Val.get_itv old_c_strlen)) then m
+    else
+      let new_c_strlen = Val.of_itv ~traces:(Val.get_traces idx) (Itv.incr idx_itv) in
+      set_first_idx_of_null allocsite new_c_strlen m
 end
 
 module Mem = struct
@@ -1326,4 +1346,16 @@ module Mem = struct
 
 
   let unset_oenv = map ~f:MemReach.unset_oenv
+
+  let set_first_idx_of_null allocsite idx = map ~f:(MemReach.set_first_idx_of_null allocsite idx)
+
+  let unset_first_idx_of_null allocsite idx =
+    map ~f:(MemReach.unset_first_idx_of_null allocsite idx)
+
+
+  let get_c_strlen locs m =
+    let get_c_strlen' loc acc =
+      match loc with Loc.Allocsite a -> Val.join acc (find (Loc.of_c_strlen a) m) | _ -> acc
+    in
+    PowLoc.fold get_c_strlen' locs Val.bot
 end

@@ -164,3 +164,51 @@ void call_literal_string_parameter2_Good() {
 }
 
 void call_literal_string_parameter2_Bad() { literal_string_parameter("hellp"); }
+
+void strlen_constant_Good() {
+  int a[10];
+  char* s = "hello";
+  a[strlen(s)] = 0;
+}
+
+void strlen_constant_Bad() {
+  int a[5];
+  char* s = "hello";
+  a[strlen(s)] = 0;
+}
+
+void strlen_malloc_Good() {
+  int a[10];
+  char* s = (char*)malloc(sizeof(char) * 6);
+  s[0] = 'h';
+  s[1] = 'e';
+  s[2] = 'l';
+  s[3] = 'l';
+  s[4] = 'o';
+  s[5] = '\0';
+  a[strlen(s)] = 0;
+}
+
+void strlen_malloc_Bad() {
+  int a[5];
+  char* s = (char*)malloc(sizeof(char) * 6);
+  s[0] = 'h';
+  s[1] = 'e';
+  s[2] = 'l';
+  s[3] = 'l';
+  s[4] = 'o';
+  s[5] = '\0';
+  a[strlen(s)] = 0;
+}
+
+void strlen_malloc_2_Good_FP() {
+  int a[5];
+  char* s = (char*)malloc(sizeof(char) * 6);
+  s[0] = 'h';
+  s[1] = 'e';
+  s[2] = '\0';
+  s[3] = 'l';
+  s[4] = 'o';
+  s[5] = '\0';
+  a[strlen(s)] = 0;
+}

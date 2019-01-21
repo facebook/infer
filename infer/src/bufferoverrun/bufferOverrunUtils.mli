@@ -42,6 +42,8 @@ module Exec : sig
   val set_dyn_length : ModelEnv.model_env -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.t -> Dom.Mem.t
 
   val decl_string : ModelEnv.model_env -> PowLoc.t -> string -> Dom.Mem.t -> Dom.Mem.t
+
+  val set_c_strlen : tgt:Dom.Val.t -> src:Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
 end
 
 module Check : sig

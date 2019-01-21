@@ -177,7 +177,7 @@ module TransferFunctions = struct
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
         in
         BoUtils.Exec.decl_string model_env locs s mem
-    | Store (exp1, _, exp2, location) ->
+    | Store (exp1, typ, exp2, location) ->
         let locs = Sem.eval_locs exp1 mem in
         let v =
           Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
@@ -193,6 +193,11 @@ module TransferFunctions = struct
           Dom.Mem.store_relation locs sym_exps mem
         in
         let mem = Dom.Mem.update_mem locs v mem in
+        let mem =
+          if Language.curr_language_is Clang && Typ.is_char typ then
+            BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem
+          else mem
+        in
         let mem =
           if not v.represents_multiple_values then
             match PowLoc.is_singleton_or_more locs with

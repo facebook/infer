@@ -162,6 +162,13 @@ module Loc = struct
 
   let is_var = function Var _ -> true | _ -> false
 
+  let is_c_strlen = function
+    | Field (_, fn) ->
+        Typ.Fieldname.equal fn BufferOverrunField.c_strlen
+    | _ ->
+        false
+
+
   let rec is_pretty = function
     | Var _ ->
         true
@@ -174,6 +181,8 @@ module Loc = struct
   let of_var v = Var v
 
   let of_allocsite a = Allocsite a
+
+  let of_c_strlen a = Field (of_allocsite a, BufferOverrunField.c_strlen)
 
   let of_pvar pvar = Var (Var.of_pvar pvar)
 
@@ -201,6 +210,13 @@ module Loc = struct
   let is_field_of ~loc ~field_loc = match field_loc with Field (l, _) -> equal loc l | _ -> false
 
   let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
+
+  let is_literal_string_strlen = function
+    | Field (l, fn) when Typ.Fieldname.equal BufferOverrunField.c_strlen fn ->
+        is_literal_string l
+    | _ ->
+        None
+
 
   let rec get_path = function
     | Var (LogicalVar _) ->
@@ -284,6 +300,6 @@ let can_strong_update : PowLoc.t -> bool =
   else
     match PowLoc.is_singleton_or_more ploc with
     | IContainer.Singleton loc ->
-        Loc.is_var loc
+        Loc.is_var loc || Loc.is_c_strlen loc
     | _ ->
         false

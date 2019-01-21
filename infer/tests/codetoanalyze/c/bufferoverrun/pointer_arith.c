@@ -60,11 +60,20 @@ void call_pointer_arith4_Bad() {
 #include <stdio.h>
 #include <stdlib.h>
 
-void FP_pointer_arith5_Ok() {
+void pointer_arith5_Ok() {
   char buf[1024];
   fgets(buf, 1024, stdin);
   size_t len = strlen(buf);
   if (len < sizeof(buf) - 3) {
     (buf + len)[sizeof(buf) - len - 1] = '\0';
+  }
+}
+
+void FN_pointer_arith5_Bad() {
+  char buf[1024];
+  fgets(buf, 1024, stdin);
+  size_t len = strlen(buf);
+  if (len < sizeof(buf) - 3) {
+    (buf + len)[sizeof(buf) - len] = '\0';
   }
 }

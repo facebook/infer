@@ -187,8 +187,21 @@ module Exec = struct
       mem
       |> Dom.Mem.update_mem (PowLoc.singleton loc) v
       |> Dom.Mem.add_heap (Loc.of_allocsite allocsite) (Dom.Val.of_itv char_itv)
+      |> Dom.Mem.set_first_idx_of_null allocsite
+           (Dom.Val.of_itv ~traces (Itv.of_int (String.length s)))
     in
     PowLoc.fold decl locs mem
+
+
+  let set_c_strlen ~tgt ~src mem =
+    let traces = TraceSet.join (Dom.Val.get_traces tgt) (Dom.Val.get_traces src) in
+    let src_itv = Dom.Val.get_itv src in
+    let set_c_strlen1 allocsite arrinfo acc =
+      let idx = Dom.Val.of_itv ~traces (ArrayBlk.ArrInfo.offsetof arrinfo) in
+      if Itv.( <= ) ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null allocsite idx acc
+      else Dom.Mem.unset_first_idx_of_null allocsite idx acc
+    in
+    ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem
 end
 
 module Check = struct

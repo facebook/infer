@@ -41,3 +41,5 @@ let mk, get_type =
 
 
 let java_collection_internal_array = mk "java.collection.$elements." Typ.(mk_array void)
+
+let c_strlen = mk "c.strlen" Typ.uint

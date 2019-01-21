@@ -136,6 +136,9 @@ val mk_array : ?default:t -> ?quals:type_quals -> ?length:IntLit.t -> ?stride:In
 val void : t
 (** void type *)
 
+val uint : t
+(** unsigned int type *)
+
 val void_star : t
 (** void* type *)
 
@@ -296,6 +299,8 @@ val is_struct : t -> bool
 val is_int : t -> bool
 
 val is_unsigned_int : t -> bool
+
+val is_char : t -> bool
 
 val has_block_prefix : string -> bool
 

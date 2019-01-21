@@ -260,6 +260,8 @@ let void = mk Tvoid
 
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
 
+let uint = mk (Tint IUInt)
+
 let get_ikind_opt {desc} = match desc with Tint ikind -> Some ikind | _ -> None
 
 (* TODO: size_t should be implementation-dependent. *)
@@ -568,6 +570,8 @@ let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true
 let is_int typ = match typ.desc with Tint _ -> true | _ -> false
 
 let is_unsigned_int typ = match typ.desc with Tint ikind -> ikind_is_unsigned ikind | _ -> false
+
+let is_char typ = match typ.desc with Tint ikind -> ikind_is_char ikind | _ -> false
 
 let has_block_prefix s =
   match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) s with
