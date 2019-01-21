@@ -17,7 +17,7 @@ include $(TESTS_DIR)/infer.make
 PROJECT_ROOT ?= $(TESTS_DIR)
 
 $(OBJECTS): $(SOURCES)
-	$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
+	$(QUIET)$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\

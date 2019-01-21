@@ -9,14 +9,16 @@ module F = Format
 
 module ClassLoad : ExplicitTrace.Element with type t = string
 
-val get_java_class : Typ.Procname.t -> string option
-
 module Event : ExplicitTrace.TraceElem with type elem_t = ClassLoad.t
 
-include AbstractDomain.FiniteSetS with type elt = Event.t
+include AbstractDomain.WithBottom
 
 type summary = t
 
 val pp_summary : F.formatter -> summary -> unit
 
+val add_load : Location.t -> t -> string -> t
+
 val integrate_summary : Typ.Procname.t -> Location.t -> t -> summary -> t
+
+val iter : (Event.t -> unit) -> t -> unit

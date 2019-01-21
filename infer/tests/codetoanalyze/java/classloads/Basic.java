@@ -6,19 +6,9 @@
  */
 
 class Basic {
-  void foo_report(Other o) {
-    o.bar();
-  }
-
-  void baz_no_report(Another a) {
-    a.baz();
+  public static void main(String args[]) {
+    new BasicObj();
   }
 }
 
-class Other {
-  void bar() {}
-}
-
-class Another {
-  void baz() {}
-}
+class BasicObj {}

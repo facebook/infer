@@ -42,6 +42,8 @@ duplicates.txt
 /infer/tests/build_systems/buck_flavors_deterministic/capture_hash-*.sha
 /infer/tests/build_systems/genrule/report.json
 /infer/tests/build_systems/java_test_determinator/*.test
+/infer/tests/codetoanalyze/java/classloads/*.loads
+/infer/tests/codetoanalyze/java/classloads/loads.exp
 /_release
 /infer-source
 
