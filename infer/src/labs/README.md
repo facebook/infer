@@ -14,13 +14,13 @@ Using Docker is the fastest way: you do not need to clone the Infer repository a
 
 2. Run the infer Docker image with `docker run -it -v $HOME/infer-docker:/infer-host infer/infer:infer-latest-java-dev /bin/bash`. This will give you a prompt *inside the Docker image*. Do not close that terminal for the duration of the lab.
 
-3. Within Docker, pull the latest version of infer, copy the /infer directory to your mount point, then set up the opam environment for OCaml:
+3. Within Docker, pull the latest version of infer, copy the /infer directory to your mount point, then fully build infer once:
 
 ```shell
 cd /infer
 git pull
 cp -av /infer/. /infer-host
-eval $(opam env)
+make -C /infer-host -j 4
 ```
 
 4. Outside Docker, you will likely need to change the permissions of `$HOME/infer-docker` to make the files editable by your user: `sudo chown $USER -R $HOME/infer-docker`.
@@ -37,10 +37,10 @@ See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/master/CONTRIBUTING
 
 ## (1) Warm up: running, testing, and debugging Infer
 
-(a) Change to the test directory (`cd infer/tests/codetoanalyze/java/lab`) and run infer:
+(a) Change to the test directory (`cd infer/tests/codetoanalyze/java/lab`) and run infer in its default configuration:
 
 ```
-infer --resource-leak-only -- javac Leaks.java
+infer -- javac Leaks.java
 ```
 
 Infer should report 7 resource leaks. These reports come from the separation logic based biabduction analysis.
@@ -83,7 +83,7 @@ Finally, look again at the HTML debug output of infer on [Leaks.java](https://gi
 
 ```OCaml
   let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
-  let message = F.asprintf "Leaked %d resource(s)" ResourceLeakDomain.pp leak_count in
+  let message = F.asprintf "Leaked %a resource(s)" ResourceLeakDomain.pp post in
   Reporting.log_error summary ~loc:last_loc IssueType.resource_leak message
 ```
 

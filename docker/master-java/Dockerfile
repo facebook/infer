@@ -54,9 +54,8 @@ RUN eval $(opam env) && \
     SKIP_SUBMODULES=true ./autogen.sh && \
     ./configure --disable-c-analyzers
 
-# Install Infer
-ENV INFER_HOME /infer/infer
-ENV PATH ${INFER_HOME}/bin:${PATH}
+# "Install" Infer. The tutorial assumes /infer-host is the working copy of infer so let's put it in the PATH too.
+ENV PATH /infer-host/infer/bin:/infer/bin:$PATH
 
 # build in non-optimized mode by default to speed up build times
 ENV BUILD_MODE=default
@@ -66,3 +65,10 @@ ENV IGNOREEOF=9
 
 # should be moved earlier
 ENV INFER_OPAM_SWITCH=4.07.1
+
+# export `opam env`
+ENV OPAM_SWITCH_PREFIX=/root/.opam/4.07.1
+ENV CAML_LD_LIBRARY_PATH=/root/.opam/4.07.1/lib/stublibs:/root/.opam/4.07.1/lib/ocaml/stublibs:/root/.opam/4.07.1/lib/ocaml
+ENV OCAML_TOPLEVEL_PATH=/root/.opam/4.07.1/lib/toplevel
+ENV MANPATH=$MANPATH:/root/.opam/4.07.1/man
+ENV PATH=/root/.opam/4.07.1/bin:$PATH
