@@ -60,7 +60,7 @@ void call_pointer_arith4_Bad() {
 #include <stdio.h>
 #include <stdlib.h>
 
-void pointer_arith5_Ok() {
+void FP_pointer_arith5_Ok() {
   char buf[1024];
   fgets(buf, 1024, stdin);
   size_t len = strlen(buf);
@@ -69,7 +69,7 @@ void pointer_arith5_Ok() {
   }
 }
 
-void FN_pointer_arith5_Bad() {
+void pointer_arith5_Bad() {
   char buf[1024];
   fgets(buf, 1024, stdin);
   size_t len = strlen(buf);

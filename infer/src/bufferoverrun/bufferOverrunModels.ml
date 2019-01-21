@@ -64,6 +64,30 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
       PO.ConditionSet.add_alloc_size location ~length traces latest_prune cond_set
 
 
+let fgets str_exp num_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let str_v = Sem.eval integer_type_widths str_exp mem in
+    let num_v = Sem.eval integer_type_widths num_exp mem in
+    let traces = Trace.Set.join (Dom.Val.get_traces str_v) (Dom.Val.get_traces num_v) in
+    let update_strlen1 allocsite arrinfo acc =
+      let strlen =
+        let offset = ArrayBlk.ArrInfo.offsetof arrinfo in
+        let num = Dom.Val.get_itv num_v in
+        Itv.plus offset (Itv.set_lb_zero (Itv.decr num))
+      in
+      Dom.Mem.set_first_idx_of_null allocsite (Dom.Val.of_itv ~traces strlen) acc
+    in
+    mem
+    |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
+    |> ArrayBlk.fold update_strlen1 (Dom.Val.get_array_blk str_v)
+    |> Dom.Mem.add_stack (Loc.of_id id) {str_v with itv= Itv.zero}
+  and check {location; integer_type_widths} mem cond_set =
+    BoUtils.Check.lindex_byte integer_type_widths ~array_exp:str_exp ~byte_index_exp:num_exp
+      ~last_included:true mem location cond_set
+  in
+  {exec; check}
+
+
 let malloc size_exp =
   let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem
       =
@@ -544,6 +568,7 @@ module Call = struct
       ; -"__exit" <>--> bottom
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
+      ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc

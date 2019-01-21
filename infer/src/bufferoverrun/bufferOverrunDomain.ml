@@ -509,6 +509,8 @@ module Val = struct
 
 
   module Itv = struct
+    let zero_255 = of_itv Itv.zero_255
+
     let m1_255 = of_itv Itv.m1_255
 
     let nat = of_itv Itv.nat

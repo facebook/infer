@@ -107,6 +107,9 @@ val compare : t -> t -> int
 val bot : t
 (** _|_ *)
 
+val zero_255 : t
+(** [0, 255] *)
+
 val m1_255 : t
 (** [-1, 255] *)
 

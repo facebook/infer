@@ -115,6 +115,8 @@ module ItvPure = struct
 
   let mone = of_bound Bound.mone
 
+  let zero_255 = (Bound.zero, Bound._255)
+
   let m1_255 = (Bound.minus_one, Bound._255)
 
   let nat = (Bound.zero, Bound.PInf)
@@ -463,6 +465,8 @@ let get_bound itv (be : Symb.BoundEnd.t) =
 
 
 let false_sem = NonBottom ItvPure.false_sem
+
+let zero_255 = NonBottom ItvPure.zero_255
 
 let m1_255 = NonBottom ItvPure.m1_255
 
