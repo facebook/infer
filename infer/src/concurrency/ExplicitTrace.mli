@@ -25,9 +25,7 @@ end
 module type TraceElem = sig
   type elem_t
 
-  (** An [elem] which occured at [loc], after the chain of steps (usually calls) in [trace].
-      The [compare] function ignores traces, meaning any two traces leading to the same [elem] and
-      [loc] are equal.  This has consequences on the powerset domain. *)
+  (** An [elem] which occured at [loc], after the chain of steps (usually calls) in [trace]. *)
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
   (** Both [pp] and [pp_human] simply call the same function on the trace element. *)
@@ -43,10 +41,12 @@ module type TraceElem = sig
   val with_callsite : t -> CallSite.t -> t
   (** Push given callsite onto trace, extending the call chain by one. *)
 
-  (** A powerset of traces, where there is at most one trace for each dinstinct pair of [elem] and
-      [loc].  The traces in the set have priority over those [add]ed.  [join] is non-deterministic
-      as to which representative is kept (due to the implementation of [Set.union]). *)
+  (** A powerset of traces. *)
   module FiniteSet : FiniteSet with type elt = t
 end
 
+(* The [compare] function produced ignores traces but *not* locations *)
 module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t
+
+(* The [compare] function produced ignores traces *and* locations -- it is just [Elem.compare] *)
+module MakeTraceElemModuloLocation (Elem : Element) : TraceElem with type elem_t = Elem.t

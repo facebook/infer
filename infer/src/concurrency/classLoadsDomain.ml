@@ -13,7 +13,7 @@ module ClassLoad = struct
   let pp_human = pp
 end
 
-module Event = ExplicitTrace.MakeTraceElem (ClassLoad)
+module Event = ExplicitTrace.MakeTraceElemModuloLocation (ClassLoad)
 include Event.FiniteSet
 
 let add ({Event.trace} as x) astate =

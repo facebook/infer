@@ -20,6 +20,14 @@ module type Element = sig
   val pp_human : Format.formatter -> t -> unit
 end
 
+type 'a comparator = 'a -> Location.t -> 'a -> Location.t -> int
+
+module type Comparator = sig
+  type elem_t
+
+  val comparator : elem_t comparator
+end
+
 module type TraceElem = sig
   type elem_t
 
@@ -38,12 +46,14 @@ module type TraceElem = sig
   module FiniteSet : FiniteSet with type elt = t
 end
 
-module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
+module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type elem_t = Elem.t) :
+  TraceElem with type elem_t = Elem.t = struct
   type elem_t = Elem.t
 
   module T = struct
-    type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
-    [@@deriving compare]
+    type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list}
+
+    let compare {elem; loc} {elem= elem'; loc= loc'} = Comp.comparator elem loc elem' loc'
 
     let pp fmt {elem} = Elem.pp fmt elem
 
@@ -79,4 +89,24 @@ module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t = st
 
     let with_callsite astate callsite = map (fun e -> with_callsite e callsite) astate
   end
+end
+
+module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
+  module Comp = struct
+    type elem_t = Elem.t
+
+    let comparator elem loc elem' loc' = [%compare: Elem.t * Location.t] (elem, loc) (elem', loc')
+  end
+
+  include MakeTraceElemWithComparator (Elem) (Comp)
+end
+
+module MakeTraceElemModuloLocation (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
+  module Comp = struct
+    type elem_t = Elem.t
+
+    let comparator elem _loc elem' _loc' = Elem.compare elem elem'
+  end
+
+  include MakeTraceElemWithComparator (Elem) (Comp)
 end

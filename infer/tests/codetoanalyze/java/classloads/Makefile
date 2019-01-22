@@ -52,9 +52,8 @@ infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 loads.exp: $(LOADS)
 	$(QUIET)for F in $(LOADS) ; do sed -e "s#^#$(TEST_REL_DIR)/$${F%.*}.java, #" $$F ; done | sort > loads.exp
 
-# FIXME change domain so that -u is not needed below
 loads.exp.test: issues.exp.test$(TEST_SUFFIX)
-	$(QUIET)cat $< | sed 's/^\([^,]*\),.*[,\[]\([^,]*\)\]$$/\1, \2/' | sort -u > $@
+	$(QUIET)cat $< | sed 's/^\([^,]*\),.*[,\[]\([^,]*\)\]$$/\1, \2/' | sort > $@
 
 .PHONY: test
 test: loads.exp loads.exp.test
