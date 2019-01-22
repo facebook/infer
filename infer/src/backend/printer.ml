@@ -310,20 +310,12 @@ let write_html_file linereader filename procs =
             match Procdesc.Node.get_kind n with
             | Procdesc.Node.Start_node ->
                 let proc_name = Procdesc.Node.get_proc_name n in
-                let num_specs =
-                  match Summary.get proc_name with
-                  | None ->
-                      0
-                  | Some summary ->
-                      List.length (Tabulation.get_specs_from_payload summary)
-                in
-                let label =
-                  F.sprintf "%s: %d specs"
-                    (Escape.escape_xml (Typ.Procname.to_string proc_name))
-                    num_specs
-                in
-                F.pp_print_char fmt ' ' ;
-                Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
+                let proc_name_escaped = Escape.escape_xml (Typ.Procname.to_string proc_name) in
+                if Summary.get proc_name |> Option.is_some then (
+                  F.pp_print_char fmt ' ' ;
+                  let label = F.asprintf "summary for %s" proc_name_escaped in
+                  Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label )
+                else F.fprintf fmt "no summary for %s" proc_name_escaped
             | _ ->
                 () )
           nodes_at_linenum
