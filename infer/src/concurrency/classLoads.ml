@@ -23,20 +23,55 @@ let get_java_class = function
       None
 
 
+let rec exp_fold_over_fields ~f (exp : Exp.t) acc =
+  match exp with
+  (* TODO Cast? Const literals for class objects? Arrays? *)
+  | Var _ | Const _ | Lvar _ | Sizeof _ | Closure _ ->
+      acc
+  | Cast (_, e) | UnOp (_, e, _) | Exn e | Lindex (e, _) ->
+      exp_fold_over_fields ~f e acc
+  | BinOp (_, e1, e2) ->
+      exp_fold_over_fields ~f e1 acc |> exp_fold_over_fields ~f e2
+  | Lfield (e, field, typ) ->
+      f field typ acc |> exp_fold_over_fields ~f e
+
+
+let class_of_type (typ : Typ.t) =
+  match typ with
+  | {desc= Tstruct name} | {desc= Tptr ({desc= Tstruct name}, _)} ->
+      Some name
+  | _ ->
+      None
+
+
+let add_field_loads_of_exp exp loc astate =
+  let f _field typ init =
+    class_of_type typ |> Option.map ~f:Typ.Name.name
+    |> Option.fold ~init ~f:(ClassLoadsDomain.add_load loc)
+  in
+  exp_fold_over_fields ~f exp astate
+
+
 let exec_instr pdesc astate _ (instr : Sil.instr) =
   match instr with
   | Call (_, Const (Cfun callee), _, loc, _) ->
       Payload.read pdesc callee
       |> Option.fold ~init:astate ~f:(ClassLoadsDomain.integrate_summary callee loc)
+  | Load (_, exp, _, loc) | Prune (exp, loc, _, _) ->
+      add_field_loads_of_exp exp loc astate
+  | Store (lexp, _, rexp, loc) ->
+      add_field_loads_of_exp lexp loc astate |> add_field_loads_of_exp rexp loc
   | _ ->
       astate
 
 
 let report_loads proc_desc summary astate =
   let report_load ({ClassLoadsDomain.Event.loc; elem} as event) =
-    let ltr = ClassLoadsDomain.Event.make_loc_trace event in
-    let msg = Format.asprintf "Class %s loaded" elem in
-    Reporting.log_warning summary ~loc ~ltr IssueType.class_load msg
+    if String.is_prefix ~prefix:"java." elem then ()
+    else
+      let ltr = ClassLoadsDomain.Event.make_loc_trace event in
+      let msg = Format.asprintf "Class %s loaded" elem in
+      Reporting.log_warning summary ~loc ~ltr IssueType.class_load msg
   in
   let pname = Procdesc.get_proc_name proc_desc in
   get_java_class pname

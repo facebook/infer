@@ -9,7 +9,10 @@ class Static {
   // this loads StaticA
   static StaticA s = new StaticA();
 
-  public static void main(String args[]) {}
+  public static void main(String args[]) {
+    // this loads StaticD
+    System.out.println(StaticD.static_data);
+  }
 }
 
 class StaticA {
@@ -23,3 +26,7 @@ class StaticB {
 }
 
 class StaticC {}
+
+class StaticD {
+  static int static_data = 5;
+}

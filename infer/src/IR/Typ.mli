@@ -615,11 +615,9 @@ module Fieldname : sig
   (** Equality for field names. *)
 
   (** Set for fieldnames *)
-
   module Set : Caml.Set.S with type elt = t
 
   (** Map for fieldnames *)
-
   module Map : Caml.Map.S with type key = t
 
   module Clang : sig
