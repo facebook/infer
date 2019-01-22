@@ -603,6 +603,8 @@ module Procname = struct
     type java_type = Name.Java.Split.t = {package: string option; type_name: string}
     [@@deriving compare]
 
+    let java_void = {package= None; type_name= "void"}
+
     (** Type of java procedure names. *)
     type t =
       { method_name: string
@@ -740,6 +742,14 @@ module Procname = struct
     let class_initializer_method_name = "<clinit>"
 
     let is_class_initializer {method_name} = String.equal method_name class_initializer_method_name
+
+    let get_class_initializer class_name =
+      { method_name= class_initializer_method_name
+      ; parameters= []
+      ; class_name
+      ; return_type= Some java_void
+      ; kind= Static }
+
 
     let is_anonymous_inner_class_constructor {class_name} =
       Name.Java.is_anonymous_inner_class_name class_name

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module L = Logging
+module F = Format
 
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
@@ -53,18 +55,21 @@ let class_initializer_of_method pdesc =
   | Java java_pname when Java.is_class_initializer java_pname ->
       None
   | Java java_pname ->
-      Some (Java Java.(replace_method_name class_initializer_method_name java_pname))
+      let class_name = Java.get_class_type_name java_pname in
+      Some (Java (Java.get_class_initializer class_name))
   | _ ->
       assert false
 
 
 let analyze_procedure {Callbacks.proc_desc; summary} =
   let proc_name = Procdesc.get_proc_name proc_desc in
+  L.debug Analysis Verbose "CL: ANALYZING %a@." Typ.Procname.pp proc_name ;
   let loc = Procdesc.get_loc proc_desc in
   (* add a load for the method's class *)
   let init =
-    get_java_class proc_name
-    |> Option.fold ~init:ClassLoadsDomain.empty ~f:(ClassLoadsDomain.add_load loc)
+    let class_opt = get_java_class proc_name in
+    L.debug Analysis Verbose "CL: CLASS = %a@." (Pp.option F.pp_print_string) class_opt ;
+    Option.fold class_opt ~init:ClassLoadsDomain.empty ~f:(ClassLoadsDomain.add_load loc)
   in
   (* add loads done by the static initialization of this method's class *)
   let after_class_init =
@@ -75,4 +80,6 @@ let analyze_procedure {Callbacks.proc_desc; summary} =
   in
   let post = Procdesc.fold_instrs proc_desc ~init:after_class_init ~f:(exec_instr proc_desc) in
   report_loads proc_desc summary post ;
-  Payload.update_summary post summary
+  let result = Payload.update_summary post summary in
+  L.debug Analysis Verbose "CL: FINISHED ANALYZING %a@." Typ.Procname.pp proc_name ;
+  result

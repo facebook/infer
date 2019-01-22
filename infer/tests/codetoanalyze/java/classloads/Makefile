@@ -15,7 +15,7 @@ SOURCES = $(wildcard *.java)
 LOADS = $(patsubst %.java,%.loads,$(SOURCES))
 OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
 CLASS_LOADS_OPT = $(patsubst %.java,--class-loads-roots %.main,$(SOURCES))
-INFER_OPTIONS = -j 1 --class-loads-only $(CLASS_LOADS_OPT) --debug-exceptions
+INFER_OPTIONS = --class-loads-only $(CLASS_LOADS_OPT) --debug-exceptions
 CLEAN_EXTRA = *.class *.loads loads.exp loads.exp.test
 
 include $(TESTS_DIR)/java.make

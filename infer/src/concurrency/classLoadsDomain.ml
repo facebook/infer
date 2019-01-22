@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 module ClassLoad = struct
   include String
@@ -28,11 +29,13 @@ let add ({Event.trace} as x) astate =
 let union xs ys = fold add xs ys
 
 let add_load loc astate clazz =
+  L.debug Analysis Verbose "CL: LOADING class %s@." clazz ;
   let new_event = Event.make clazz loc in
   add new_event astate
 
 
 let integrate_summary callee_pname loc astate callee_summary =
+  L.debug Analysis Verbose "CL: ADDING SUMMARY OF %a@." Typ.Procname.pp callee_pname ;
   let callsite = CallSite.make callee_pname loc in
   let summary = with_callsite callee_summary callsite in
   union astate summary
