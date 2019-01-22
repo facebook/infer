@@ -117,3 +117,15 @@ void call_conditional_buffer_access3_Bad() {
   a[0] = E_SIZETWO;
   conditional_buffer_access3(a, 1);
 }
+
+void conditional_inequality(int idx) {
+  int a[5];
+  if (idx == 5) {
+  } else {
+    a[idx] = 0;
+  }
+}
+
+void call_conditional_inequality_Good_FP() { conditional_inequality(5); }
+
+void call_conditional_inequality_Bad() { conditional_inequality(6); }
