@@ -39,6 +39,6 @@ DEFINE-CHECKER FIND_CXX_METHOD_OVERRIDES_MATCHING = {
 };
 
 DEFINE-CHECKER FIND_NODES_WITH_CXX_FULL_NAME = {
-    SET report_when = has_cxx_fully_qualified_name(REGEXP("::Foo::Bar::"));
+    SET report_when = has_cxx_fully_qualified_name(REGEXP("::Foo::.*"));
     SET message = "%cxx_fully_qualified_name% matches";
 };

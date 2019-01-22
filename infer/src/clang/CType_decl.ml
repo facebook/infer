@@ -457,6 +457,7 @@ and get_record_typename ?tenv decl =
   | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
       Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
   | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
+  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _
   | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
@@ -475,7 +476,7 @@ and get_record_typename ?tenv decl =
     | None ->
         assert false )
   | _ ->
-      assert false
+      Logging.die InternalError "Unhandled decl: %s." (Clang_ast_proj.get_decl_kind_string decl)
 
 
 (** fetches list of superclasses for C++ classes *)
