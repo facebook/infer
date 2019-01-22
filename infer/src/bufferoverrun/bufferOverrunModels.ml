@@ -120,7 +120,10 @@ let calloc size_exp stride_exp =
 
 
 let memcpy dest_exp src_exp size_exp =
-  let exec _ ~ret:_ mem = mem
+  let exec _ ~ret:_ mem =
+    let dest_loc = Sem.eval_locs dest_exp mem in
+    let v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
+    Dom.Mem.update_mem dest_loc v mem
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set

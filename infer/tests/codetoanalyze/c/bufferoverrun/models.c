@@ -251,3 +251,35 @@ void strncpy_good5_FP() {
   char dst[5];
   strncpy(dst, src, 10);
 }
+
+void memcpy_contents_Good() {
+  int src[3] = {5, 5, 5};
+  int dst[3];
+  memcpy(dst, src, sizeof(dst));
+  int a[6];
+  a[dst[0]] = 0;
+}
+
+void memcpy_contents_Bad() {
+  int src[3] = {5, 5, 5};
+  int dst[3];
+  memcpy(dst, src, sizeof(dst));
+  int a[5];
+  a[dst[0]] = 0;
+}
+
+void memcpy_integer_Good() {
+  int src = 5;
+  int dst;
+  memcpy(&dst, &src, sizeof(int));
+  int a[10];
+  a[dst] = 0;
+}
+
+void memcpy_integer_Bad() {
+  int src = 5;
+  int dst;
+  memcpy(&dst, &src, sizeof(int));
+  int a[5];
+  a[dst] = 0;
+}
