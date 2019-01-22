@@ -38,9 +38,6 @@ module type HIL = sig
 end
 
 module type DisjunctiveConfig = sig
-  (** the underlying domain *)
-  type domain_t [@@deriving compare]
-
   val join_policy :
     [ `JoinAfter of int
       (** when the set of disjuncts gets bigger than [n] the underlying domain's join is called to
@@ -54,14 +51,34 @@ module type DisjunctiveConfig = sig
   val widen_policy : [`UnderApproximateAfterNumIterations of int]
 end
 
+module type DisjReady = sig
+  module CFG : ProcCfg.S
+
+  module Domain : AbstractDomain.S
+
+  module DisjunctiveDomain : Caml.Set.S with type elt = Domain.t
+
+  type extras
+
+  type instr
+
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> DisjunctiveDomain.t
+
+  val pp_session_name : CFG.Node.t -> Format.formatter -> unit
+end
+
+module type HILDisjReady = sig
+  include DisjReady with type instr := HilInstr.t
+end
+
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a
    disjunction between these states. The transfer functions are executed on each state in the
    disjunct independently. The join on the disjunctive state is governed by the policy described in
    [DConfig]. *)
-module MakeHILDisjunctive
-    (TransferFunctions : HIL)
-    (DConfig : DisjunctiveConfig with type domain_t = TransferFunctions.Domain.t) : sig
-  include HIL with type extras = TransferFunctions.extras and module CFG = TransferFunctions.CFG
-
-  val of_domain : DConfig.domain_t -> Domain.t
+module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : DisjunctiveConfig) : sig
+  include
+    HIL
+    with type extras = TransferFunctions.extras
+     and module CFG = TransferFunctions.CFG
+     and type Domain.t = TransferFunctions.DisjunctiveDomain.t
 end

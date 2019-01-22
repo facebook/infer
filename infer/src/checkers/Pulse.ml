@@ -24,9 +24,10 @@ let check_error summary = function
       raise_notrace AbstractDomain.Stop_analysis
 
 
-module PulseTransferFunctions (CFG : ProcCfg.S) = struct
-  module CFG = CFG
+module PulseTransferFunctions = struct
+  module CFG = ProcCfg.Exceptional
   module Domain = PulseDomain
+  module DisjunctiveDomain = Caml.Set.Make (Domain)
 
   type extras = Summary.t
 
@@ -137,14 +138,16 @@ module PulseTransferFunctions (CFG : ProcCfg.S) = struct
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        exec_assign summary lhs_access rhs_exp loc astate |> check_error summary
+        exec_assign summary lhs_access rhs_exp loc astate
+        |> check_error summary |> DisjunctiveDomain.singleton
     | Assume (condition, _, _, loc) ->
         PulseOperations.read_all loc (HilExp.get_access_exprs condition) astate
-        |> check_error summary
+        |> check_error summary |> DisjunctiveDomain.singleton
     | Call (ret, call, actuals, flags, loc) ->
-        dispatch_call summary ret call actuals flags loc astate |> check_error summary
+        dispatch_call summary ret call actuals flags loc astate
+        |> check_error summary |> DisjunctiveDomain.singleton
     | ExitScope (vars, _) ->
-        PulseOperations.remove_vars vars astate
+        PulseOperations.remove_vars vars astate |> DisjunctiveDomain.singleton
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -154,17 +157,14 @@ module HilConfig = LowerHil.DefaultConfig
 
 module DisjunctiveTransferFunctions =
   TransferFunctions.MakeHILDisjunctive
-    (PulseTransferFunctions
-       (ProcCfg.Exceptional))
-       (struct
-         type domain_t = PulseDomain.t [@@deriving compare]
-
-         let join_policy =
-           match Config.pulse_max_disjuncts with 0 -> `NeverJoin | n -> `UnderApproximateAfter n
+    (PulseTransferFunctions)
+    (struct
+      let join_policy =
+        match Config.pulse_max_disjuncts with 0 -> `NeverJoin | n -> `UnderApproximateAfter n
 
 
-         let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
-       end)
+      let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
+    end)
 
 module DisjunctiveAnalyzer =
   LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeWTO) (HilConfig)
@@ -176,6 +176,6 @@ let checker {Callbacks.proc_desc; tenv; summary} =
   ( try
       ignore
         (DisjunctiveAnalyzer.compute_post proc_data
-           ~initial:(DisjunctiveTransferFunctions.of_domain PulseDomain.initial))
+           ~initial:(PulseTransferFunctions.DisjunctiveDomain.singleton PulseDomain.initial))
     with AbstractDomain.Stop_analysis -> () ) ;
   summary
