@@ -7,6 +7,12 @@
 open! IStd
 module L = Logging
 
+(* TODO 
+  - Casts 
+  - Const literals for class objects?  
+  - catch / throw with exception classes 
+  *)
+
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
 
@@ -38,21 +44,6 @@ let rec load_class proc_desc tenv loc astate class_name =
     |> List.fold ~init:astate2 ~f:(load_class proc_desc tenv loc)
 
 
-let rec exp_fold_over_fields ~f ~init (exp : Exp.t) =
-  match exp with
-  (* TODO Cast? Const literals for class objects? Arrays? *)
-  | Var _ | Const _ | Lvar _ | Sizeof _ | Closure _ ->
-      init
-  | Cast (_, e) | UnOp (_, e, _) | Exn e | Lindex (e, _) ->
-      exp_fold_over_fields ~f ~init e
-  | BinOp (_, e1, e2) ->
-      let init = exp_fold_over_fields ~f ~init e1 in
-      exp_fold_over_fields ~f ~init e2
-  | Lfield (e, field, typ) ->
-      let init = f init field typ in
-      exp_fold_over_fields ~f ~init e
-
-
 let class_of_type (typ : Typ.t) =
   match typ with
   | {desc= Tstruct name} | {desc= Tptr ({desc= Tstruct name}, _)} ->
@@ -61,22 +52,35 @@ let class_of_type (typ : Typ.t) =
       None
 
 
-let add_field_loads_of_exp proc_desc tenv exp loc init =
-  let f init _field typ =
-    class_of_type typ |> Option.fold ~init ~f:(load_class proc_desc tenv loc)
-  in
-  exp_fold_over_fields ~f ~init exp
+let add_type proc_desc tenv loc typ astate =
+  class_of_type typ |> Option.fold ~init:astate ~f:(load_class proc_desc tenv loc)
+
+
+let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) (typ : Typ.t) astate =
+  match exp with
+  | Lvar _ ->
+      add_type proc_desc tenv loc typ astate
+  | Sizeof {typ= {desc= Tarray {elt}}} ->
+      add_type proc_desc tenv loc elt astate
+  | Cast (_, e) | UnOp (_, e, _) | Exn e ->
+      add_loads_of_exp proc_desc tenv loc e typ astate
+  | BinOp (_, e1, e2) ->
+      add_loads_of_exp proc_desc tenv loc e1 typ astate
+      |> add_loads_of_exp proc_desc tenv loc e2 typ
+  | Lfield (e, _, typ') ->
+      add_loads_of_exp proc_desc tenv loc e typ' astate
+  | Var _ | Const _ | Closure _ | Sizeof _ | Lindex _ ->
+      astate
 
 
 let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
   match instr with
-  | Call (_, Const (Cfun callee), _, loc, _) ->
-      do_call pdesc callee loc astate
-  | Load (_, exp, _, loc) | Prune (exp, loc, _, _) ->
-      add_field_loads_of_exp pdesc tenv exp loc astate
-  | Store (lexp, _, rexp, loc) ->
-      add_field_loads_of_exp pdesc tenv lexp loc astate
-      |> add_field_loads_of_exp pdesc tenv rexp loc
+  | Call (_, Const (Cfun callee), args, loc, _) ->
+      List.fold args ~init:astate ~f:(fun acc (exp, typ) ->
+          add_loads_of_exp pdesc tenv loc exp typ acc )
+      |> do_call pdesc callee loc
+  | Load (_, exp, typ, loc) | Store (exp, typ, _, loc) ->
+      add_loads_of_exp pdesc tenv loc exp typ astate
   | _ ->
       astate
 
