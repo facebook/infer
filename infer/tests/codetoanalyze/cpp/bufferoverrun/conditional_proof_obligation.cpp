@@ -126,6 +126,79 @@ void conditional_inequality(int idx) {
   }
 }
 
-void call_conditional_inequality_Good_FP() { conditional_inequality(5); }
+void call_conditional_inequality_Good() { conditional_inequality(5); }
 
 void call_conditional_inequality_Bad() { conditional_inequality(6); }
+
+void conditional_inequality_join1(int idx) {
+  int a[5];
+  if (idx == 5) {
+  } else {
+    // pruning exp is "idx != 5"
+  L:
+    // joined pruning exp is "Unknown"
+    a[idx] = 0;
+  }
+
+  if (idx == 6) {
+    // pruning exp is "idx == 6"
+    goto L;
+  }
+}
+
+void call_conditional_inequality_join1_Good_FP() {
+  conditional_inequality_join1(5);
+}
+
+void call_conditional_inequality_join1_Bad() {
+  conditional_inequality_join1(6);
+}
+
+void conditional_inequality_join2(int idx) {
+  int a[5];
+  if (idx == 5) {
+  } else {
+    // pruning exp is "idx != 5"
+  L:
+    // joined pruning exp is "idx != [5, 6]"
+    a[idx] = 0;
+  }
+
+  if (idx != 6) {
+    // pruning exp is "idx != 6"
+    goto L;
+  }
+}
+
+void call_conditional_inequality_join2_1_Bad() {
+  conditional_inequality_join2(5);
+}
+
+void call_conditional_inequality_join2_2_Bad() {
+  conditional_inequality_join2(6);
+}
+
+void conditional_inequality_depth2(int i) {
+  int a[5];
+  if (i != 1) {
+    a[i] = 0;
+  }
+}
+
+void conditional_inequality_depth1(int i) {
+  if (i != 5) {
+    conditional_inequality_depth2(i);
+  }
+}
+
+void call_conditional_inequality_depth1_1_Good_FP() {
+  conditional_inequality_depth1(5);
+}
+
+void call_conditional_inequality_depth1_2_Good() {
+  conditional_inequality_depth1(1);
+}
+
+void call_conditional_inequality_depth1_3_Bad() {
+  conditional_inequality_depth1(6);
+}

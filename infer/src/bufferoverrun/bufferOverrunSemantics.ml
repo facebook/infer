@@ -446,8 +446,8 @@ let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_ty
 module Prune = struct
   type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
 
-  let update_mem_in_prune lv v {prune_pairs; mem} =
-    let prune_pairs = PrunePairs.add lv v prune_pairs in
+  let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown) {prune_pairs; mem} =
+    let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
     let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
     {prune_pairs; mem}
 
@@ -503,25 +503,31 @@ module Prune = struct
     | Exp.BinOp ((Binop.Ge as comp), Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find lv mem in
-          let v' = Val.prune_comp comp v (eval integer_type_widths e' mem) in
-          update_mem_in_prune lv v' astate
+          let lhs = Mem.find lv mem in
+          let rhs = eval integer_type_widths e' mem in
+          let v = Val.prune_comp comp lhs rhs in
+          let pruning_exp = PruningExp.make comp ~lhs ~rhs in
+          update_mem_in_prune lv v ~pruning_exp astate
       | None ->
           astate )
     | Exp.BinOp (Binop.Eq, Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find lv mem in
-          let v' = Val.prune_eq v (eval integer_type_widths e' mem) in
-          update_mem_in_prune lv v' astate
+          let lhs = Mem.find lv mem in
+          let rhs = eval integer_type_widths e' mem in
+          let v = Val.prune_eq lhs rhs in
+          let pruning_exp = PruningExp.make Binop.Eq ~lhs ~rhs in
+          update_mem_in_prune lv v ~pruning_exp astate
       | None ->
           astate )
     | Exp.BinOp (Binop.Ne, Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find lv mem in
-          let v' = Val.prune_ne v (eval integer_type_widths e' mem) in
-          update_mem_in_prune lv v' astate
+          let lhs = Mem.find lv mem in
+          let rhs = eval integer_type_widths e' mem in
+          let v = Val.prune_ne lhs rhs in
+          let pruning_exp = PruningExp.make Binop.Ne ~lhs ~rhs in
+          update_mem_in_prune lv v ~pruning_exp astate
       | None ->
           astate )
     | Exp.BinOp

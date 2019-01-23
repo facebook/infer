@@ -142,7 +142,7 @@ void prune_arrblk_eq_CAF(int* x) {
   }
 }
 
-void FP_call_prune_arrblk_eq_Ok() {
+void call_prune_arrblk_eq_Ok() {
   int* x = (int*)malloc(sizeof(int) * 5);
   prune_arrblk_eq_CAF(x);
 }

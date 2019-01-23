@@ -724,11 +724,145 @@ module Alias = struct
   let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove temp)
 end
 
+module CoreVal = struct
+  type t = Val.t
+
+  let compare x y =
+    let r = Itv.compare (Val.get_itv x) (Val.get_itv y) in
+    if r <> 0 then r else ArrayBlk.compare (Val.get_array_blk x) (Val.get_array_blk y)
+
+
+  let pp fmt x = F.fprintf fmt "(%a, %a)" Itv.pp (Val.get_itv x) ArrayBlk.pp (Val.get_array_blk x)
+
+  let is_symbolic v = Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
+
+  let is_empty v = Itv.is_empty (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
+end
+
+module PruningExp = struct
+  type t = Unknown | Binop of {bop: Binop.t; lhs: CoreVal.t; rhs: CoreVal.t} [@@deriving compare]
+
+  let ( <= ) ~lhs ~rhs =
+    match (lhs, rhs) with
+    | _, Unknown ->
+        true
+    | Unknown, _ ->
+        false
+    | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2} ->
+        Binop.equal bop1 bop2 && Val.( <= ) ~lhs:lhs1 ~rhs:lhs2 && Val.( <= ) ~lhs:rhs1 ~rhs:rhs2
+
+
+  let join x y =
+    match (x, y) with
+    | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2}
+      when Binop.equal bop1 bop2 ->
+        Binop {bop= bop1; lhs= Val.join lhs1 lhs2; rhs= Val.join rhs1 rhs2}
+    | _, _ ->
+        Unknown
+
+
+  let widen ~prev ~next ~num_iters =
+    match (prev, next) with
+    | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2}
+      when Binop.equal bop1 bop2 ->
+        Binop
+          { bop= bop1
+          ; lhs= Val.widen ~prev:lhs1 ~next:lhs2 ~num_iters
+          ; rhs= Val.widen ~prev:rhs1 ~next:rhs2 ~num_iters }
+    | _, _ ->
+        Unknown
+
+
+  let pp fmt x =
+    match x with
+    | Unknown ->
+        F.pp_print_string fmt "Unknown"
+    | Binop {bop; lhs; rhs} ->
+        F.fprintf fmt "(%a %s %a)" CoreVal.pp lhs (Binop.str Pp.text bop) CoreVal.pp rhs
+
+
+  let make bop ~lhs ~rhs = Binop {bop; lhs; rhs}
+
+  let is_unknown = function Unknown -> true | Binop _ -> false
+
+  let is_symbolic = function
+    | Unknown ->
+        false
+    | Binop {lhs; rhs} ->
+        CoreVal.is_symbolic lhs || CoreVal.is_symbolic rhs
+
+
+  let is_empty =
+    let le_false v = Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:Itv.zero in
+    function
+    | Unknown ->
+        false
+    | Binop {bop= Lt; lhs; rhs} ->
+        le_false (Val.lt_sem lhs rhs)
+    | Binop {bop= Gt; lhs; rhs} ->
+        le_false (Val.gt_sem lhs rhs)
+    | Binop {bop= Le; lhs; rhs} ->
+        le_false (Val.le_sem lhs rhs)
+    | Binop {bop= Ge; lhs; rhs} ->
+        le_false (Val.ge_sem lhs rhs)
+    | Binop {bop= Eq; lhs; rhs} ->
+        le_false (Val.eq_sem lhs rhs)
+    | Binop {bop= Ne; lhs; rhs} ->
+        le_false (Val.ne_sem lhs rhs)
+    | Binop _ ->
+        assert false
+
+
+  let subst x eval_sym_trace location =
+    match x with
+    | Unknown ->
+        Unknown
+    | Binop {bop; lhs; rhs} ->
+        Binop
+          { bop
+          ; lhs= Val.subst lhs eval_sym_trace location
+          ; rhs= Val.subst rhs eval_sym_trace location }
+end
+
+module PrunedVal = struct
+  type t = {v: CoreVal.t; pruning_exp: PruningExp.t} [@@deriving compare]
+
+  let ( <= ) ~lhs ~rhs =
+    Val.( <= ) ~lhs:lhs.v ~rhs:rhs.v && PruningExp.( <= ) ~lhs:lhs.pruning_exp ~rhs:rhs.pruning_exp
+
+
+  let join x y = {v= Val.join x.v y.v; pruning_exp= PruningExp.join x.pruning_exp y.pruning_exp}
+
+  let widen ~prev ~next ~num_iters =
+    { v= Val.widen ~prev:prev.v ~next:next.v ~num_iters
+    ; pruning_exp= PruningExp.widen ~prev:prev.pruning_exp ~next:next.pruning_exp ~num_iters }
+
+
+  let pp fmt x =
+    CoreVal.pp fmt x.v ;
+    if not (PruningExp.is_unknown x.pruning_exp) then
+      F.fprintf fmt " by %a" PruningExp.pp x.pruning_exp
+
+
+  let make v pruning_exp = {v; pruning_exp}
+
+  let get_val x = x.v
+
+  let subst {v; pruning_exp} eval_sym_trace location =
+    { v= Val.subst v eval_sym_trace location
+    ; pruning_exp= PruningExp.subst pruning_exp eval_sym_trace location }
+
+
+  let is_symbolic {v; pruning_exp} = CoreVal.is_symbolic v || PruningExp.is_symbolic pruning_exp
+
+  let is_empty {v; pruning_exp} = CoreVal.is_empty v || PruningExp.is_empty pruning_exp
+end
+
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
    in the latest pruning.  It uses [InvertedMap] because more pruning means smaller abstract
    states. *)
 module PrunePairs = struct
-  include AbstractDomain.InvertedMap (Loc) (Val)
+  include AbstractDomain.InvertedMap (Loc) (PrunedVal)
 
   let forget locs x = filter (fun l _ -> not (PowLoc.mem l locs)) x
 end
@@ -846,21 +980,6 @@ module LatestPrune = struct
 end
 
 module Reachability = struct
-  module PrunedVal = struct
-    type t = Val.t
-
-    let compare x y =
-      let r = Itv.compare (Val.get_itv x) (Val.get_itv y) in
-      if r <> 0 then r else ArrayBlk.compare (Val.get_array_blk x) (Val.get_array_blk y)
-
-
-    let pp = Val.pp
-
-    let is_symbolic : t -> bool = fun x -> Itv.is_symbolic x.itv || ArrayBlk.is_symbolic x.arrayblk
-
-    let is_empty v = Itv.is_empty (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
-  end
-
   module M = PrettyPrintable.MakePPSet (PrunedVal)
 
   type t = M.t
@@ -871,9 +990,9 @@ module Reachability = struct
      reachability. *)
   let add v x = if PrunedVal.is_symbolic v then M.add v x else x
 
-  let make =
+  let make latest_prune =
     let of_prune_pairs p = PrunePairs.fold (fun _ v acc -> add v acc) p M.empty in
-    function
+    match latest_prune with
     | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
         of_prune_pairs p
     | LatestPrune.V (_, ptrue, pfalse) ->
@@ -885,7 +1004,7 @@ module Reachability = struct
   let subst x eval_sym_trace location =
     let exception Unreachable in
     let subst1 x acc =
-      let v = Val.subst x eval_sym_trace location in
+      let v = PrunedVal.subst x eval_sym_trace location in
       if PrunedVal.is_empty v then raise Unreachable else add v acc
     in
     match M.fold subst1 x M.empty with x -> `Reachable x | exception Unreachable -> `Unreachable
@@ -1089,17 +1208,18 @@ module MemReach = struct
 
 
   let apply_latest_prune : Exp.t -> t -> t =
-   fun e m ->
-    match (m.latest_prune, e) with
-    | LatestPrune.V (x, prunes, _), Exp.Var r
-    | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
-      match find_simple_alias r m with
-      | Some (Loc.Var (Var.ProgramVar y)) when Pvar.equal x y ->
-          PrunePairs.fold (fun l v acc -> update_mem (PowLoc.singleton l) v acc) prunes m
+    let apply1 l v acc = update_mem (PowLoc.singleton l) (PrunedVal.get_val v) acc in
+    fun e m ->
+      match (m.latest_prune, e) with
+      | LatestPrune.V (x, prunes, _), Exp.Var r
+      | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
+        match find_simple_alias r m with
+        | Some (Loc.Var (Var.ProgramVar y)) when Pvar.equal x y ->
+            PrunePairs.fold apply1 prunes m
+        | _ ->
+            m )
       | _ ->
-          m )
-    | _ ->
-        m
+          m
 
 
   let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =

@@ -11,7 +11,7 @@ void array_access_Ok(int x, int y) {
   }
 }
 
-void FP_call_array_access_Ok() { array_access_Ok(0, 0); }
+void call_array_access_Ok() { array_access_Ok(0, 0); }
 
 void FP_array_access2_Ok(int x, int y) {
   int a[1];

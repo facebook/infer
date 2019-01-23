@@ -15,7 +15,7 @@ void minus_params_Ok(int x, int y) {
 
 void call1_minus_params_Ok() { minus_params_Ok(5, 2); }
 
-void FP_call2_minus_params_Ok() { minus_params_Ok(10, 2); }
+void call2_minus_params_Ok() { minus_params_Ok(10, 2); }
 
 void plus_params(int x, int y) {
   int a[5];
@@ -28,7 +28,7 @@ void call1_plus_params_Ok() { plus_params(1, 2); }
 
 void call2_plus_params_Bad() { plus_params(10, 2); }
 
-void FP_call3_plus_params_Ok() { plus_params(0, 0); }
+void call3_plus_params_Ok() { plus_params(0, 0); }
 
 void plus_params2(int x, int y) {
   int a[5];
@@ -41,7 +41,7 @@ void call1_plus_params2_Ok() { plus_params2(1, 2); }
 
 void call2_plus_params2_Bad() { plus_params2(10, 2); }
 
-void FP_call3_plus_params2_Ok() { plus_params2(0, 0); }
+void call3_plus_params2_Ok() { plus_params2(0, 0); }
 
 void loop(char* arr, int len) {
   while (len > 0) {
