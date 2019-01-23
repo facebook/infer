@@ -986,6 +986,8 @@ module Reachability = struct
 
   let equal = M.equal
 
+  let pp = M.pp
+
   (* It keeps only symbolic pruned values, because non-symbolic ones are useless to see the
      reachability. *)
   let add v x = if PrunedVal.is_symbolic v then M.add v x else x

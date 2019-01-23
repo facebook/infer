@@ -708,10 +708,16 @@ module ConditionWithTrace = struct
     {cond; trace; reported= None; reachability= Dom.Reachability.make latest_prune}
 
 
-  let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
+  let pp fmt {cond; trace; reachability} =
+    F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace ;
+    if Config.bo_debug >= 3 then
+      F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
 
-  let pp_summary fmt {cond; trace} =
-    F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp_summary trace
+
+  let pp_summary fmt {cond; trace; reachability} =
+    F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp_summary trace ;
+    if Config.bo_debug >= 3 then
+      F.fprintf fmt " reachable when %a" Dom.Reachability.pp reachability
 
 
   let have_same_bounds {cond= cond1} {cond= cond2} = Condition.equal cond1 cond2
