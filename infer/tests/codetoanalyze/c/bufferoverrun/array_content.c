@@ -135,7 +135,7 @@ void literal_string2_Good() {
   }
 }
 
-void literal_string2_Bad_FN() {
+void literal_string2_bad() {
   int a[1];
   char s[] = "hello";
   for (int i = 0; i < 5; i++) {

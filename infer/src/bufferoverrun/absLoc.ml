@@ -182,7 +182,7 @@ module Loc = struct
 
   let of_allocsite a = Allocsite a
 
-  let of_c_strlen a = Field (of_allocsite a, BufferOverrunField.c_strlen)
+  let of_c_strlen loc = Field (loc, BufferOverrunField.c_strlen)
 
   let of_pvar pvar = Var (Var.of_pvar pvar)
 

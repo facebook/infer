@@ -1183,19 +1183,19 @@ module MemReach = struct
 
 
   (* unsound *)
-  let set_first_idx_of_null : Allocsite.t -> Val.t -> t -> t =
-   fun allocsite idx m -> update_mem (PowLoc.singleton (Loc.of_c_strlen allocsite)) idx m
+  let set_first_idx_of_null : Loc.t -> Val.t -> t -> t =
+   fun loc idx m -> update_mem (PowLoc.singleton (Loc.of_c_strlen loc)) idx m
 
 
   (* unsound *)
-  let unset_first_idx_of_null : Allocsite.t -> Val.t -> t -> t =
-   fun allocsite idx m ->
-    let old_c_strlen = find_heap (Loc.of_c_strlen allocsite) m in
+  let unset_first_idx_of_null : Loc.t -> Val.t -> t -> t =
+   fun loc idx m ->
+    let old_c_strlen = find_heap (Loc.of_c_strlen loc) m in
     let idx_itv = Val.get_itv idx in
     if Boolean.is_true (Itv.lt_sem idx_itv (Val.get_itv old_c_strlen)) then m
     else
       let new_c_strlen = Val.of_itv ~traces:(Val.get_traces idx) (Itv.incr idx_itv) in
-      set_first_idx_of_null allocsite new_c_strlen m
+      set_first_idx_of_null loc new_c_strlen m
 end
 
 module Mem = struct
@@ -1349,15 +1349,13 @@ module Mem = struct
 
   let unset_oenv = map ~f:MemReach.unset_oenv
 
-  let set_first_idx_of_null allocsite idx = map ~f:(MemReach.set_first_idx_of_null allocsite idx)
+  let set_first_idx_of_null loc idx = map ~f:(MemReach.set_first_idx_of_null loc idx)
 
-  let unset_first_idx_of_null allocsite idx =
-    map ~f:(MemReach.unset_first_idx_of_null allocsite idx)
-
+  let unset_first_idx_of_null loc idx = map ~f:(MemReach.unset_first_idx_of_null loc idx)
 
   let get_c_strlen locs m =
     let get_c_strlen' loc acc =
-      match loc with Loc.Allocsite a -> Val.join acc (find (Loc.of_c_strlen a) m) | _ -> acc
+      match loc with Loc.Allocsite _ -> Val.join acc (find (Loc.of_c_strlen loc) m) | _ -> acc
     in
     PowLoc.fold get_c_strlen' locs Val.bot
 end

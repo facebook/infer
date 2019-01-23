@@ -176,7 +176,8 @@ module TransferFunctions = struct
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
         in
-        BoUtils.Exec.decl_string model_env locs s mem
+        let do_alloc = not (Sem.is_stack_exp exp1 mem) in
+        BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
     | Store (exp1, typ, exp2, location) ->
         let locs = Sem.eval_locs exp1 mem in
         let v =

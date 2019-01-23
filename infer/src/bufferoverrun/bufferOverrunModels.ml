@@ -75,7 +75,8 @@ let fgets str_exp num_exp =
         let num = Dom.Val.get_itv num_v in
         Itv.plus offset (Itv.set_lb_zero (Itv.decr num))
       in
-      Dom.Mem.set_first_idx_of_null allocsite (Dom.Val.of_itv ~traces strlen) acc
+      Dom.Mem.set_first_idx_of_null (Loc.of_allocsite allocsite) (Dom.Val.of_itv ~traces strlen)
+        acc
     in
     mem
     |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
@@ -383,7 +384,7 @@ module StdBasicString = struct
       match src with
       | Exp.Const (Const.Cstr s) ->
           let locs = Sem.eval_locs tgt mem in
-          BoUtils.Exec.decl_string model_env locs s mem
+          BoUtils.Exec.decl_string model_env ~do_alloc:true locs s mem
       | _ ->
           let tgt_locs = Sem.eval_locs tgt mem in
           let v = Sem.eval integer_type_widths src mem in

@@ -324,6 +324,19 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
       Val.bot
 
 
+let rec is_stack_exp : Exp.t -> Mem.t -> bool =
+ fun exp mem ->
+  match exp with
+  | Var _ ->
+      true
+  | Lvar pvar ->
+      Mem.is_stack_loc (Loc.of_pvar pvar) mem
+  | Cast (_, e) ->
+      is_stack_exp e mem
+  | _ ->
+      false
+
+
 module ParamBindings = struct
   include PrettyPrintable.MakePPMap (struct
     include Pvar

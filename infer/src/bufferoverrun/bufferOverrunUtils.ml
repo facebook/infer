@@ -169,25 +169,33 @@ module Exec = struct
 
   let get_max_char s = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c))
 
-  let decl_string {pname; node_hash; location; integer_type_widths} locs s mem =
+  let decl_string {pname; node_hash; location; integer_type_widths} ~do_alloc locs s mem =
     let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
     let offset = Itv.zero in
     let size = Itv.of_int (String.length s + 1) in
     let traces = Trace.Set.singleton location Trace.ArrayDeclaration in
     let char_itv = Itv.join Itv.zero (Itv.of_int (get_max_char s)) in
     let decl loc mem =
-      let allocsite =
-        let deref_kind = Symb.SymbolPath.Deref_ArrayIndex in
-        let path = Loc.get_path loc in
-        let deref_path = Option.map ~f:(fun path -> Symb.SymbolPath.deref ~deref_kind path) path in
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
-          ~represents_multiple_values:true
+      (* It doesn't allocate if the character pointer is in stack, because they are already
+         allocated at the entry of the function. *)
+      let deref_loc, mem =
+        if do_alloc then
+          let allocsite =
+            let deref_kind = Symb.SymbolPath.Deref_ArrayIndex in
+            let path = Loc.get_path loc in
+            let deref_path =
+              Option.map ~f:(fun path -> Symb.SymbolPath.deref ~deref_kind path) path
+            in
+            Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
+              ~represents_multiple_values:true
+          in
+          let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
+          (Loc.of_allocsite allocsite, Dom.Mem.update_mem (PowLoc.singleton loc) v mem)
+        else (loc, mem)
       in
-      let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
       mem
-      |> Dom.Mem.update_mem (PowLoc.singleton loc) v
-      |> Dom.Mem.add_heap (Loc.of_allocsite allocsite) (Dom.Val.of_itv char_itv)
-      |> Dom.Mem.set_first_idx_of_null allocsite
+      |> Dom.Mem.add_heap deref_loc (Dom.Val.of_itv char_itv)
+      |> Dom.Mem.set_first_idx_of_null deref_loc
            (Dom.Val.of_itv ~traces (Itv.of_int (String.length s)))
     in
     PowLoc.fold decl locs mem
@@ -197,9 +205,10 @@ module Exec = struct
     let traces = TraceSet.join (Dom.Val.get_traces tgt) (Dom.Val.get_traces src) in
     let src_itv = Dom.Val.get_itv src in
     let set_c_strlen1 allocsite arrinfo acc =
+      let loc = Loc.of_allocsite allocsite in
       let idx = Dom.Val.of_itv ~traces (ArrayBlk.ArrInfo.offsetof arrinfo) in
-      if Itv.( <= ) ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null allocsite idx acc
-      else Dom.Mem.unset_first_idx_of_null allocsite idx acc
+      if Itv.( <= ) ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null loc idx acc
+      else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
     ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem
 end
