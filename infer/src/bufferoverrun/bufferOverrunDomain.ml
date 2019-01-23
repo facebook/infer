@@ -387,7 +387,7 @@ module Val = struct
    fun location ~f v ->
     { v with
       arrayblk= ArrayBlk.transform_length ~f v.arrayblk
-    ; traces= Trace.(Set.add_elem location Through) v.traces }
+    ; traces= Trace.(Set.add_elem location (through ~risky_fun:None)) v.traces }
 
 
   let set_array_stride : Z.t -> t -> t =

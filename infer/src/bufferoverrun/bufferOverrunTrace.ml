@@ -12,10 +12,13 @@ module F = Format
 module BoTrace = struct
   type lib_fun = Snprintf | Vsnprintf [@@deriving compare]
 
-  type final = UnknownFrom of Typ.Procname.t option | RiskyLibCall of lib_fun
-  [@@deriving compare]
+  type final = UnknownFrom of Typ.Procname.t option [@@deriving compare]
 
-  type elem = ArrayDeclaration | Assign of PowLoc.t | Parameter of Loc.t | Through
+  type elem =
+    | ArrayDeclaration
+    | Assign of PowLoc.t
+    | Parameter of Loc.t
+    | Through of {risky_fun: lib_fun option}
   [@@deriving compare]
 
   type t =
@@ -25,9 +28,9 @@ module BoTrace = struct
     | Call of {location: Location.t; length: int; caller: t; callee: t}
   [@@deriving compare]
 
-  let snprintf = RiskyLibCall Snprintf
+  let snprintf = Snprintf
 
-  let vsnprintf = RiskyLibCall Vsnprintf
+  let vsnprintf = Vsnprintf
 
   let length = function Empty -> 0 | Final _ -> 1 | Elem {length} | Call {length} -> length
 
@@ -38,6 +41,8 @@ module BoTrace = struct
   let add_elem location kind from = Elem {location; length= length from + 1; from; kind}
 
   let singleton location kind = add_elem location kind Empty
+
+  let through ~risky_fun = Through {risky_fun}
 
   let call location ~caller ~callee =
     Call {location; length= 1 + length caller + length callee; caller; callee}
@@ -62,8 +67,6 @@ module BoTrace = struct
   let pp_final f = function
     | UnknownFrom pname_opt ->
         F.fprintf f "UnknownFrom `%a`" pp_pname_opt pname_opt
-    | RiskyLibCall lib_fun ->
-        F.fprintf f "RiskyLibCall `%a`" pp_lib_fun lib_fun
 
 
   let pp_elem f = function
@@ -73,8 +76,9 @@ module BoTrace = struct
         F.fprintf f "Assign `%a`" PowLoc.pp locs
     | Parameter loc ->
         F.fprintf f "Parameter `%a`" Loc.pp loc
-    | Through ->
-        F.pp_print_string f "Through"
+    | Through {risky_fun} ->
+        F.pp_print_string f "Through" ;
+        if Option.is_some risky_fun then F.pp_print_string f " RiskyLibCall"
 
 
   let rec pp f = function
@@ -101,9 +105,23 @@ module BoTrace = struct
         final_exists ~f caller || final_exists ~f callee
 
 
-  let has_unknown = final_exists ~f:(function UnknownFrom _ -> true | RiskyLibCall _ -> false)
+  let has_unknown = final_exists ~f:(function UnknownFrom _ -> true)
 
-  let has_risky = final_exists ~f:(function UnknownFrom _ -> false | RiskyLibCall _ -> true)
+  let elem_has_risky = function
+    | ArrayDeclaration | Assign _ | Parameter _ ->
+        false
+    | Through {risky_fun} ->
+        Option.is_some risky_fun
+
+
+  let rec has_risky = function
+    | Empty | Final _ ->
+        false
+    | Elem {kind; from} ->
+        elem_has_risky kind || has_risky from
+    | Call {caller; callee} ->
+        has_risky caller || has_risky callee
+
 
   let exists_str ~f =
     let rec helper = function
@@ -127,8 +145,6 @@ module BoTrace = struct
   let final_err_desc = function
     | UnknownFrom pname_opt ->
         F.asprintf "Unknown value from: %a" pp_pname_opt pname_opt
-    | RiskyLibCall lib_fun ->
-        F.asprintf "Risky value from: %a" pp_lib_fun lib_fun
 
 
   let elem_err_desc = function
@@ -138,8 +154,12 @@ module BoTrace = struct
         "Assignment"
     | Parameter loc ->
         if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
-    | Through ->
-        "Through"
+    | Through {risky_fun} -> (
+      match risky_fun with
+      | None ->
+          "Through"
+      | Some f ->
+          F.asprintf "Risky value from: %a" pp_lib_fun f )
 
 
   let rec make_err_trace depth t tail =

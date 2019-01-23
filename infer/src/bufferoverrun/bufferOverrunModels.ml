@@ -232,9 +232,11 @@ let by_value =
   fun value -> {exec= exec ~value; check= no_check}
 
 
-let by_value_with_final_trace final_trace =
+let by_risky_value_from lib_fun =
   let exec ~value {location} ~ret mem =
-    let traces = Trace.(Set.singleton_final location final_trace) in
+    let traces =
+      Trace.(Set.add_elem location (through ~risky_fun:(Some lib_fun))) (Dom.Val.get_traces value)
+    in
     model_by_value {value with traces} ret mem
   in
   fun value -> {exec= exec ~value; check= no_check}
@@ -296,9 +298,9 @@ let set_array_length array length_exp =
   {exec; check}
 
 
-let snprintf = by_value_with_final_trace Trace.snprintf Dom.Val.Itv.nat
+let snprintf = by_risky_value_from Trace.snprintf Dom.Val.Itv.nat
 
-let vsnprintf = by_value_with_final_trace Trace.vsnprintf Dom.Val.Itv.nat
+let vsnprintf = by_risky_value_from Trace.vsnprintf Dom.Val.Itv.nat
 
 module Split = struct
   let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
@@ -306,7 +308,7 @@ module Split = struct
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in
     let size_field = Typ.Fieldname.Clang.from_class_name vector_type_name "infer_size" in
     let vector_size_locs = Sem.eval_locs vector_exp mem |> PowLoc.append_field ~fn:size_field in
-    let f_trace _ traces = Trace.(Set.add_elem location Through) traces in
+    let f_trace _ traces = Trace.(Set.add_elem location (through ~risky_fun:None)) traces in
     Dom.Mem.transform_mem ~f:(Dom.Val.plus_a ~f_trace increment) vector_size_locs mem
 end
 
