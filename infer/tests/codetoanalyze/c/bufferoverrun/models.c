@@ -283,3 +283,53 @@ void memcpy_integer_Bad() {
   int a[5];
   a[dst] = 0;
 }
+
+void strncpy_contents_Good() {
+  char src[5] = "test";
+  char dst[10];
+  strncpy(dst, src, 5);
+  int a[5];
+  a[strlen(dst)] = 0;
+}
+
+void strncpy_contents_Bad() {
+  char src[5] = "test";
+  char dst[10];
+  strncpy(dst, src, 5);
+  int a[4];
+  a[strlen(dst)] = 0;
+}
+
+void strncpy_no_null_1_Bad_FN() {
+  char src[5] = "test";
+  src[4] = 'a';
+  char dst[10];
+  strncpy(dst, src, 5); // [dst] may not have null character.
+  int a[10];
+  a[strlen(dst)] = 0;
+}
+
+void strncpy_no_null_2_Bad() {
+  char src[5] = "test";
+  src[4] = 'a';
+  char dst[10];
+  strncpy(dst, src, 5); // [dst] may not have null character.
+  int a[5];
+  a[strlen(dst)] = 0;
+}
+
+void strncpy_no_null_3_Bad_FN() {
+  char src[15] = "test.test.test";
+  char dst[10];
+  strncpy(dst, src, 10); // [dst] does not have null character.
+  int a[20];
+  a[strlen(dst)] = 0;
+}
+
+void strncpy_no_null_4_Bad() {
+  char src[15] = "test.test.test";
+  char dst[10];
+  strncpy(dst, src, 10); // [dst] does not have null character.
+  int a[10];
+  a[strlen(dst)] = 0;
+}

@@ -151,6 +151,16 @@ let strlen arr_exp =
   {exec; check= no_check}
 
 
+let strncpy dest_exp src_exp size_exp =
+  let {exec= memcpy_exec; check= memcpy_check} = memcpy dest_exp src_exp size_exp in
+  let exec model_env ~ret mem =
+    let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem) in
+    let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_locs src_exp mem)) mem in
+    mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
+  in
+  {exec; check= memcpy_check}
+
+
 let realloc src_exp size_exp =
   let exec ({location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -591,7 +601,7 @@ module Call = struct
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
-      ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
+      ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
       ; -"vsnprintf" <>--> vsnprintf
       ; -"boost" &:: "split"

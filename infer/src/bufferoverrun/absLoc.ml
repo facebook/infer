@@ -290,6 +290,8 @@ module PowLoc = struct
 
 
   let exists_str ~f x = exists (fun l -> Loc.exists_str ~f l) x
+
+  let of_c_strlen x = map Loc.of_c_strlen x
 end
 
 let always_strong_update = false
