@@ -151,6 +151,30 @@ let strlen arr_exp =
   {exec; check= no_check}
 
 
+let strcpy dest_exp src_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let src_loc = Sem.eval_locs src_exp mem in
+    let dest_loc = Sem.eval_locs dest_exp mem in
+    mem
+    |> Dom.Mem.update_mem dest_loc (Dom.Mem.find_set src_loc mem)
+    |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) (Dom.Mem.get_c_strlen src_loc mem)
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+  and check {integer_type_widths; location} mem cond_set =
+    let access_last_char =
+      let idx = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+      let relation = Dom.Mem.get_relation mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      fun arr cond_set ->
+        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
+          ~last_included:false ~latest_prune location cond_set
+    in
+    cond_set
+    |> access_last_char (Sem.eval integer_type_widths dest_exp mem)
+    |> access_last_char (Sem.eval integer_type_widths src_exp mem)
+  in
+  {exec; check}
+
+
 let strncpy dest_exp src_exp size_exp =
   let {exec= memcpy_exec; check= memcpy_check} = memcpy dest_exp src_exp size_exp in
   let exec model_env ~ret mem =
@@ -629,6 +653,7 @@ module Call = struct
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
+      ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
       ; -"vsnprintf" <>--> vsnprintf

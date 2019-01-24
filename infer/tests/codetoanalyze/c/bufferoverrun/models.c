@@ -395,3 +395,60 @@ void strndup_3_Bad() {
     }
   }
 }
+
+void strcpy_Good() {
+  char src[5] = "test";
+  char dst[10];
+  strcpy(dst, src);
+}
+
+void strcpy_Bad() {
+  char src[5] = "test";
+  char dst[4];
+  strcpy(dst, src);
+}
+
+void strcpy_strlen_Good() {
+  char src[5] = "test";
+  char dst[10];
+  strcpy(dst, src);
+  int a[5];
+  a[strlen(dst)] = 0;
+}
+
+void strcpy_strlen_Bad() {
+  char src[5] = "test";
+  char dst[10];
+  strcpy(dst, src);
+  int a[4];
+  a[strlen(dst)] = 0;
+}
+
+void strcpy_contents_Good() {
+  char src[5] = "aaaa";
+  char dst[5];
+  strcpy(dst, src);
+  char c = dst[0];
+  if (c >= 'a') {
+    int a[5];
+    a[c - 'a' + 4] = 0;
+  }
+}
+
+void strcpy_contents_Bad() {
+  char src[5] = "aaaa";
+  char dst[5];
+  strcpy(dst, src);
+  char c = dst[0];
+  if (c >= 'a') {
+    int a[5];
+    a[c - 'a' + 5] = 0;
+  }
+}
+
+void strcpy_no_null_Bad() {
+  char src[5] = "test";
+  src[4] = 'a';
+  char dst[10];
+  strcpy(dst, src);
+}
