@@ -598,3 +598,23 @@ let stmt_node_child_type an =
       match stmts with [stmt] -> ast_node_type (Stmt stmt) | _ -> "" )
   | _ ->
       ""
+
+
+let get_source_range an =
+  match an with
+  | Stmt stmt ->
+      let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+      stmt_info.si_source_range
+  | Decl decl ->
+      let decl_info = Clang_ast_proj.get_decl_tuple decl in
+      decl_info.di_source_range
+
+
+let get_source_file an =
+  match get_source_range an with
+  | {sl_file= Some sf}, _ ->
+      sf
+  | _, {sl_file= Some sf} ->
+      sf
+  | _ ->
+      assert false

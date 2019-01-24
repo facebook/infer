@@ -129,6 +129,14 @@ let evaluate_place_holder context ph an =
       MF.monospaced_to_string (Ctl_parser_types.ast_node_name an)
   | "%cxx_fully_qualified_name%" ->
       MF.monospaced_to_string (Ctl_parser_types.ast_node_cxx_fully_qualified_name an)
+  | "%kind%" ->
+      MF.monospaced_to_string (Ctl_parser_types.ast_node_kind an)
+  | "%source_file%" ->
+      (* N.B.: This is the source_file in which the AST node occurs, which is not
+       *       necessarily the same as the translation unit's source file.
+       *)
+      MF.monospaced_to_string
+        (SourceFile.to_rel_path (SourceFile.create (Ctl_parser_types.get_source_file an)))
   | _ ->
       L.die InternalError "helper function %s is unknown" ph
 

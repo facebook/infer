@@ -1,5 +1,6 @@
 codetoanalyze/cpp/linters-for-test-only/test_constructor.cpp, f, 12, FIND_STATIC_LOCAL_VAR, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_constructor.cpp, g, 17, FIND_CXX_COPY_CONSTRUCTOR, no_bucket, WARNING, []
+codetoanalyze/cpp/linters-for-test-only/test_included.h, Bazoo_fibble, 11, FIND_CXX_METHODS_FROM_HEADER_FILE, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_bar, 16, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_foo, 14, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, Foo::Bar::SvIf_async_tm_poke, 36, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []

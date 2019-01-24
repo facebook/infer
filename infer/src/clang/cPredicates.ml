@@ -1456,3 +1456,8 @@ let is_init_expr_cxx11_constant an =
       vdi.vdi_is_init_expr_cxx11_constant
   | _ ->
       false
+
+
+let is_in_source_file an path_re =
+  let src_file = Ctl_parser_types.get_source_file an in
+  ALVar.compare_str_with_alexp (SourceFile.to_rel_path (SourceFile.create src_file)) path_re

@@ -42,3 +42,9 @@ DEFINE-CHECKER FIND_NODES_WITH_CXX_FULL_NAME = {
     SET report_when = has_cxx_fully_qualified_name(REGEXP("::Foo::.*"));
     SET message = "%cxx_fully_qualified_name% matches";
 };
+
+DEFINE-CHECKER FIND_CXX_METHODS_FROM_HEADER_FILE = {
+    SET report_when = WHEN is_in_source_file(REGEXP("/test_included.h$"))
+        HOLDS-IN-NODE CXXMethodDecl;
+    SET message = "found C++ method %name% in %source_file%";
+};
