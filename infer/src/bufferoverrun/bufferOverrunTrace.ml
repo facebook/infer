@@ -10,7 +10,7 @@ open AbsLoc
 module F = Format
 
 module BoTrace = struct
-  type lib_fun = Snprintf | Vsnprintf [@@deriving compare]
+  type lib_fun = Snprintf | Strndup | Vsnprintf [@@deriving compare]
 
   type final = UnknownFrom of Typ.Procname.t option [@@deriving compare]
 
@@ -29,6 +29,8 @@ module BoTrace = struct
   [@@deriving compare]
 
   let snprintf = Snprintf
+
+  let strndup = Strndup
 
   let vsnprintf = Vsnprintf
 
@@ -60,6 +62,8 @@ module BoTrace = struct
   let pp_lib_fun f = function
     | Snprintf ->
         F.fprintf f "snprintf"
+    | Strndup ->
+        F.fprintf f "strndup"
     | Vsnprintf ->
         F.fprintf f "vsnprintf"
 

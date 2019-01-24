@@ -333,3 +333,65 @@ void strncpy_no_null_4_Bad() {
   int a[10];
   a[strlen(dst)] = 0;
 }
+
+void strndup_1_Good() {
+  char s1[] = "Hello Infer!";
+  int len = strlen(s1);
+  char* s2 = strndup(s1, len);
+  for (int i = 0; i < len; i++) {
+    s2[i] = 'a';
+  }
+}
+
+void strndup_1_Bad() {
+  char s1[] = "Hello Infer!";
+  int len = 100;
+  char* s2 = strndup(s1, len);
+  for (int i = 0; i < len; i++) {
+    s2[i] = 'a';
+  }
+}
+
+void strndup_2_Good() {
+  char s1[] = "Hello Infer!";
+  int len = strlen(s1);
+  s1[5] = '\0';
+  char* s2 = strndup(s1, len);
+  for (int i = 0; i < strlen(s2); i++) {
+    s2[i] = 'a';
+  }
+}
+
+void strndup_2_Bad() {
+  char s1[] = "Hello Infer!";
+  int len = strlen(s1);
+  s1[5] = '\0';
+  char* s2 = strndup(s1, len);
+  for (int i = 0; i < len; i++) {
+    s2[i] = 'a';
+  }
+}
+
+void strndup_3_Good() {
+  int size = unknown();
+  if (size >= 10) {
+    char* s1 = (char*)malloc(sizeof(char) * size);
+    s1[5] = '\0';
+    char* s2 = strndup(s1, size - 1);
+    for (int i = 0; i < strlen(s2); i++) {
+      s2[i] = 'a';
+    }
+  }
+}
+
+void strndup_3_Bad() {
+  int size = unknown();
+  if (size >= 10) {
+    char* s1 = (char*)malloc(sizeof(char) * size);
+    s1[5] = '\0';
+    char* s2 = strndup(s1, size - 1);
+    for (int i = 0; i < size - 1; i++) {
+      s2[i] = 'a';
+    }
+  }
+}

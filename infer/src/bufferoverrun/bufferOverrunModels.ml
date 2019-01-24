@@ -204,6 +204,34 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
       {exec; check= no_check}
 
 
+let strndup src_exp length_exp =
+  let exec ({pname; node_hash; location; integer_type_widths} as model_env) ~ret:((id, _) as ret)
+      mem =
+    let v =
+      let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+      let length = Sem.eval integer_type_widths length_exp mem in
+      let size = Itv.incr (Itv.min_sem (Dom.Val.get_itv src_strlen) (Dom.Val.get_itv length)) in
+      let allocsite =
+        let represents_multiple_values = not (Itv.is_one size) in
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values
+      in
+      let traces =
+        Trace.Set.join (Dom.Val.get_traces src_strlen) (Dom.Val.get_traces length)
+        |> Trace.Set.add_elem location (Trace.through ~risky_fun:(Some Trace.strndup))
+        |> Trace.Set.add_elem location ArrayDeclaration
+      in
+      Dom.Val.of_c_array_alloc allocsite
+        ~stride:(Some (integer_type_widths.char_width / 8))
+        ~offset:Itv.zero ~size ~traces
+    in
+    mem
+    |> Dom.Mem.add_stack (Loc.of_id id) v
+    |> (strncpy (Exp.Var id) src_exp length_exp).exec model_env ~ret
+  in
+  {exec; check= no_check}
+
+
 let inferbo_min e1 e2 =
   let exec {integer_type_widths} ~ret:(id, _) mem =
     let i1 = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_itv in
@@ -604,6 +632,7 @@ module Call = struct
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
       ; -"vsnprintf" <>--> vsnprintf
+      ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector
