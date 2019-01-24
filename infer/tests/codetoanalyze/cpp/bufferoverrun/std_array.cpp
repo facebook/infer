@@ -39,3 +39,15 @@ void new_int3_Bad() {
   int32_t* dst;
   dst = new int32_t[len];
 }
+
+void std_array_contents_Good() {
+  std::array<int, 10> a;
+  a[0] = 5;
+  a[a[0]] = 0;
+}
+
+void std_array_contents_Bad_FN() {
+  std::array<int, 10> a;
+  a[0] = 10;
+  a[a[0]] = 0;
+}
