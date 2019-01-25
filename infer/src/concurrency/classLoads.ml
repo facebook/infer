@@ -13,8 +13,6 @@ module L = Logging
 *)
 
 (* TODO 
-  - Casts (checkcast)
-  - instanceof
   - Const literals for class objects? (ldc / ldc_w)
   - catch / throw with exception classes 
   - sync(class object)
@@ -64,19 +62,22 @@ let add_type proc_desc tenv loc typ astate =
   class_of_type typ |> Option.fold ~init:astate ~f:(load_class proc_desc tenv loc)
 
 
-let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) (typ : Typ.t) astate =
+let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
   match exp with
   | Sizeof {typ= {desc= Tarray {elt}}} ->
       (* anewarray *)
       add_type proc_desc tenv loc elt astate
+  | Sizeof {typ; subtype} when Subtype.is_cast subtype || Subtype.is_instof subtype ->
+      (* checkcast / instanceof *)
+      add_type proc_desc tenv loc typ astate
   | Cast (_, e) | UnOp (_, e, _) | Exn e ->
-      add_loads_of_exp proc_desc tenv loc e typ astate
+      (* NB Cast is only used for primitive types *)
+      add_loads_of_exp proc_desc tenv loc e astate
   | BinOp (_, e1, e2) ->
-      add_loads_of_exp proc_desc tenv loc e1 typ astate
-      |> add_loads_of_exp proc_desc tenv loc e2 typ
+      add_loads_of_exp proc_desc tenv loc e1 astate |> add_loads_of_exp proc_desc tenv loc e2
   | Lfield (e, _, typ') ->
       (* getfield / getstatic / putfield / putstatic *)
-      add_type proc_desc tenv loc typ' astate |> add_loads_of_exp proc_desc tenv loc e typ'
+      add_type proc_desc tenv loc typ' astate |> add_loads_of_exp proc_desc tenv loc e
   | Var _ | Const _ | Closure _ | Sizeof _ | Lindex _ | Lvar _ ->
       astate
 
@@ -85,11 +86,10 @@ let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
   match instr with
   | Call (_, Const (Cfun callee), args, loc, _) ->
       (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
-      List.fold args ~init:astate ~f:(fun acc (exp, typ) ->
-          add_loads_of_exp pdesc tenv loc exp typ acc )
+      List.fold args ~init:astate ~f:(fun acc (exp, _) -> add_loads_of_exp pdesc tenv loc exp acc)
       |> do_call pdesc callee loc
-  | Load (_, exp, typ, loc) | Store (exp, typ, _, loc) ->
-      add_loads_of_exp pdesc tenv loc exp typ astate
+  | Load (_, exp, _, loc) | Store (exp, _, _, loc) ->
+      add_loads_of_exp pdesc tenv loc exp astate
   | _ ->
       astate
 
