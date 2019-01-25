@@ -22,10 +22,10 @@ class StaticA {
 
 class StaticB {
   // no load here
-  static StaticC c = null;
+  static StaticCNoLoad c = null;
 }
 
-class StaticC {}
+class StaticCNoLoad {}
 
 class StaticD {
   static int static_data = 5;

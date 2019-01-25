@@ -7,11 +7,19 @@
 open! IStd
 module L = Logging
 
+(* Sources: Java Virtual Machine Specification 
+   - Chapter 5. Loading, Linking and Initializing
+   - Chapter 6. The Java Virtual Machine Instruction Set
+*)
+
 (* TODO 
-  - Casts 
-  - Const literals for class objects?  
+  - Casts (checkcast)
+  - instanceof
+  - Const literals for class objects? (ldc / ldc_w)
   - catch / throw with exception classes 
-  *)
+  - sync(class object)
+  - multidimensional arrays (multinewarray) ? 
+*)
 
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
@@ -58,9 +66,8 @@ let add_type proc_desc tenv loc typ astate =
 
 let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) (typ : Typ.t) astate =
   match exp with
-  | Lvar _ ->
-      add_type proc_desc tenv loc typ astate
   | Sizeof {typ= {desc= Tarray {elt}}} ->
+      (* anewarray *)
       add_type proc_desc tenv loc elt astate
   | Cast (_, e) | UnOp (_, e, _) | Exn e ->
       add_loads_of_exp proc_desc tenv loc e typ astate
@@ -68,14 +75,16 @@ let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) (typ : Typ.t) astate =
       add_loads_of_exp proc_desc tenv loc e1 typ astate
       |> add_loads_of_exp proc_desc tenv loc e2 typ
   | Lfield (e, _, typ') ->
-      add_loads_of_exp proc_desc tenv loc e typ' astate
-  | Var _ | Const _ | Closure _ | Sizeof _ | Lindex _ ->
+      (* getfield / getstatic / putfield / putstatic *)
+      add_type proc_desc tenv loc typ' astate |> add_loads_of_exp proc_desc tenv loc e typ'
+  | Var _ | Const _ | Closure _ | Sizeof _ | Lindex _ | Lvar _ ->
       astate
 
 
 let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
   match instr with
   | Call (_, Const (Cfun callee), args, loc, _) ->
+      (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
       List.fold args ~init:astate ~f:(fun acc (exp, typ) ->
           add_loads_of_exp pdesc tenv loc exp typ acc )
       |> do_call pdesc callee loc
