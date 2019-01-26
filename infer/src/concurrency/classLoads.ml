@@ -13,10 +13,9 @@ module L = Logging
 *)
 
 (* TODO 
-  - Const literals for class objects? (ldc / ldc_w)
   - catch / throw with exception classes 
-  - sync(class object)
   - multidimensional arrays (multinewarray) ? 
+  - prune
 *)
 
 module Payload = SummaryPayload.Make (struct
@@ -50,26 +49,27 @@ let rec load_class proc_desc tenv loc astate class_name =
     |> List.fold ~init:astate2 ~f:(load_class proc_desc tenv loc)
 
 
-let class_of_type (typ : Typ.t) =
+let load_type proc_desc tenv loc (typ : Typ.t) astate =
   match typ with
   | {desc= Tstruct name} | {desc= Tptr ({desc= Tstruct name}, _)} ->
-      Some name
+      load_class proc_desc tenv loc astate name
   | _ ->
-      None
-
-
-let add_type proc_desc tenv loc typ astate =
-  class_of_type typ |> Option.fold ~init:astate ~f:(load_class proc_desc tenv loc)
+      astate
 
 
 let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
   match exp with
+  | Const (Cclass class_ident) ->
+      (* [X.class] expressions *)
+      let class_str = Ident.name_to_string class_ident |> Mangled.from_string in
+      let class_name = Typ.JavaClass class_str in
+      load_class proc_desc tenv loc astate class_name
   | Sizeof {typ= {desc= Tarray {elt}}} ->
       (* anewarray *)
-      add_type proc_desc tenv loc elt astate
+      load_type proc_desc tenv loc elt astate
   | Sizeof {typ; subtype} when Subtype.is_cast subtype || Subtype.is_instof subtype ->
       (* checkcast / instanceof *)
-      add_type proc_desc tenv loc typ astate
+      load_type proc_desc tenv loc typ astate
   | Cast (_, e) | UnOp (_, e, _) | Exn e ->
       (* NB Cast is only used for primitive types *)
       add_loads_of_exp proc_desc tenv loc e astate
@@ -77,7 +77,7 @@ let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
       add_loads_of_exp proc_desc tenv loc e1 astate |> add_loads_of_exp proc_desc tenv loc e2
   | Lfield (e, _, typ') ->
       (* getfield / getstatic / putfield / putstatic *)
-      add_type proc_desc tenv loc typ' astate |> add_loads_of_exp proc_desc tenv loc e
+      load_type proc_desc tenv loc typ' astate |> add_loads_of_exp proc_desc tenv loc e
   | Var _ | Const _ | Closure _ | Sizeof _ | Lindex _ | Lvar _ ->
       astate
 
@@ -88,8 +88,10 @@ let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
       (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
       List.fold args ~init:astate ~f:(fun acc (exp, _) -> add_loads_of_exp pdesc tenv loc exp acc)
       |> do_call pdesc callee loc
-  | Load (_, exp, _, loc) | Store (exp, _, _, loc) ->
+  | Load (_, exp, _, loc) ->
       add_loads_of_exp pdesc tenv loc exp astate
+  | Store (e1, _, e2, loc) ->
+      add_loads_of_exp pdesc tenv loc e1 astate |> add_loads_of_exp pdesc tenv loc e2
   | _ ->
       astate
 
