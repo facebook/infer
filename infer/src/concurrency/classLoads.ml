@@ -14,8 +14,6 @@ module L = Logging
 
 (* TODO 
   - catch / throw with exception classes 
-  - multidimensional arrays (multinewarray) ? 
-  - prune
 *)
 
 module Payload = SummaryPayload.Make (struct
@@ -57,6 +55,14 @@ let load_type proc_desc tenv loc (typ : Typ.t) astate =
       astate
 
 
+let rec load_array proc_desc tenv loc (typ : Typ.t) astate =
+  match typ with
+  | {desc= Tarray {elt}} ->
+      load_array proc_desc tenv loc elt astate
+  | _ ->
+      load_type proc_desc tenv loc typ astate
+
+
 let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
   match exp with
   | Const (Cclass class_ident) ->
@@ -65,8 +71,8 @@ let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
       let class_name = Typ.JavaClass class_str in
       load_class proc_desc tenv loc astate class_name
   | Sizeof {typ= {desc= Tarray {elt}}} ->
-      (* anewarray *)
-      load_type proc_desc tenv loc elt astate
+      (* anewarray / multinewarray *)
+      load_array proc_desc tenv loc elt astate
   | Sizeof {typ; subtype} when Subtype.is_cast subtype || Subtype.is_instof subtype ->
       (* checkcast / instanceof *)
       load_type proc_desc tenv loc typ astate
@@ -88,7 +94,9 @@ let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
       (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
       List.fold args ~init:astate ~f:(fun acc (exp, _) -> add_loads_of_exp pdesc tenv loc exp acc)
       |> do_call pdesc callee loc
-  | Load (_, exp, _, loc) ->
+  | Load (_, exp, _, loc) | Prune (exp, loc, _, _) ->
+      (* NB the java frontend seems to always translate complex guards into a sequence of 
+         instructions plus a prune on logical vars only.  So the below is only for completeness. *)
       add_loads_of_exp pdesc tenv loc exp astate
   | Store (e1, _, e2, loc) ->
       add_loads_of_exp pdesc tenv loc e1 astate |> add_loads_of_exp pdesc tenv loc e2

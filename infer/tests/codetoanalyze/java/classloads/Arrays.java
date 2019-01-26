@@ -14,6 +14,8 @@ class Arrays {
     ArraysA[] arrayA = new ArraysA[10];
 
     System.out.println(ArraysF.foo()[0]);
+
+    ArraysG[][] arrayG = new ArraysG[10][10];
   }
 }
 
@@ -34,3 +36,5 @@ class ArraysF {
     return new ArraysE[10];
   }
 }
+
+class ArraysG {}
