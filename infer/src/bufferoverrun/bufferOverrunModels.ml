@@ -412,7 +412,9 @@ module StdArray = struct
     (* TODO? use size *)
     let exec {integer_type_widths} ~ret:(id, _) mem =
       L.d_printfln_escaped "Using model std::array<_, %Ld>::at" _size ;
-      BoUtils.Exec.load_val id (Sem.eval_lindex integer_type_widths array_exp index_exp mem) mem
+      Dom.Mem.add_stack (Loc.of_id id)
+        (Sem.eval_lindex integer_type_widths array_exp index_exp mem)
+        mem
     and check {location; integer_type_widths} mem cond_set =
       BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem
         location cond_set

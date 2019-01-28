@@ -44,8 +44,6 @@ module Exec = struct
     else mem
 
 
-  let load_val id v mem = load_locs id (Dom.Val.get_all_locs v) mem
-
   let rec decl_local_loc ({tenv} as model_env) loc typ ~inst_num ~represents_multiple_values
       ~dimension mem =
     match typ.Typ.desc with

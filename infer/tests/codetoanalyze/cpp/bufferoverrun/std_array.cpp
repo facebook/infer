@@ -46,7 +46,7 @@ void std_array_contents_Good() {
   a[a[0]] = 0;
 }
 
-void std_array_contents_Bad_FN() {
+void std_array_contents_Bad() {
   std::array<int, 10> a;
   a[0] = 10;
   a[a[0]] = 0;

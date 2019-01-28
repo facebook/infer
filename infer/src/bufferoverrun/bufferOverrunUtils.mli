@@ -26,8 +26,6 @@ end
 module Exec : sig
   val load_locs : Ident.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
 
-  val load_val : Ident.t -> Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
-
   val decl_local : ModelEnv.model_env -> Dom.Mem.t * int -> Loc.t * Typ.t -> Dom.Mem.t * int
 
   val init_c_array_fields :

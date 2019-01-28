@@ -84,6 +84,7 @@ codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INFERBO_ALLOC_IS
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, new_int3_Bad, 3, INTEGER_OVERFLOW_L1, no_bucket, ERROR, [<RHS trace>,Assignment,Binary operation: (4 × 18446744073709551615):unsigned64]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, normal_array_bo, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 42 Size: 42]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, std_array_bo_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 42 Size: 42]
+codetoanalyze/cpp/bufferoverrun/std_array.cpp, std_array_contents_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, call_length4_1_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Array declaration,Call,<Length trace>,Array declaration,Array access: Offset: 11 Size: 10 by call to `length4` ]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, call_length4_2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,<Length trace>,Array declaration,Array access: Offset: 11 Size: 10 by call to `length4` ]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, compare_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
