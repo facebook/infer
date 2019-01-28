@@ -286,7 +286,65 @@ end)
 let inv_map_cache = WeakInvMapHashTbl.create 100
 
 module Report = struct
+  module UnusedBranch = struct
+    type t = {node: CFG.Node.t; location: Location.t; condition: Exp.t; true_branch: bool}
+
+    let report tenv summary {node; location; condition; true_branch} =
+      let desc =
+        let err_desc =
+          let i = match condition with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
+          Errdesc.explain_condition_always_true_false tenv i condition
+            (CFG.Node.underlying_node node) location
+        in
+        F.asprintf "%a" Localise.pp_error_desc err_desc
+      in
+      let issue_type =
+        if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
+      in
+      let ltr = [Errlog.make_trace_element 0 location "Here" []] in
+      Reporting.log_warning summary ~loc:location ~ltr issue_type desc
+  end
+
+  module UnusedBranches = struct
+    type t = UnusedBranch.t list
+
+    let empty = []
+
+    let report tenv summary unused_branches =
+      List.iter unused_branches ~f:(UnusedBranch.report tenv summary)
+  end
+
+  module UnreachableStatement = struct
+    type t = {location: Location.t}
+
+    let report summary {location} =
+      let ltr = [Errlog.make_trace_element 0 location "Here" []] in
+      Reporting.log_error summary ~loc:location ~ltr IssueType.unreachable_code_after
+        "Unreachable code after statement"
+  end
+
+  module UnreachableStatements = struct
+    type t = UnreachableStatement.t list
+
+    let empty = []
+
+    let report summary unreachable_statements =
+      List.iter unreachable_statements ~f:(UnreachableStatement.report summary)
+  end
+
   module PO = BufferOverrunProofObligations
+
+  module Checks = struct
+    type t =
+      { cond_set: PO.ConditionSet.checked_t
+      ; unused_branches: UnusedBranches.t
+      ; unreachable_statements: UnreachableStatements.t }
+
+    let empty =
+      { cond_set= PO.ConditionSet.empty
+      ; unused_branches= UnusedBranches.empty
+      ; unreachable_statements= UnreachableStatements.empty }
+  end
 
   module ExitStatement = struct
     (* check that we are the last significant instruction
@@ -307,34 +365,22 @@ module Report = struct
           false
   end
 
-  let check_unreachable_code summary tenv (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs =
+  let add_unreachable_code (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs (checks : Checks.t) =
     match instr with
     | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
-        ()
-    | Sil.Prune (cond, location, true_branch, _) ->
-        let desc =
-          let err_desc =
-            let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
-            Errdesc.explain_condition_always_true_false tenv i cond (CFG.Node.underlying_node node)
-              location
-          in
-          F.asprintf "%a" Localise.pp_error_desc err_desc
-        in
-        let issue_type =
-          if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
-        in
-        let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-        Reporting.log_warning summary ~loc:location ~ltr issue_type desc
+        checks
+    | Sil.Prune (condition, location, true_branch, _) ->
+        let unused_branch = UnusedBranch.{node; location; condition; true_branch} in
+        {checks with unused_branches= unused_branch :: checks.unused_branches}
     (* special case for `exit` when we're at the end of a block / procedure *)
     | Sil.Call (_, Const (Cfun pname), _, _, _)
       when String.equal (Typ.Procname.get_method pname) "exit"
            && ExitStatement.is_end_of_block_or_procedure cfg node rem_instrs ->
-        ()
+        checks
     | _ ->
         let location = Sil.instr_get_loc instr in
-        let ltr = [Errlog.make_trace_element 0 location "Here" []] in
-        Reporting.log_error summary ~loc:location ~ltr IssueType.unreachable_code_after
-          "Unreachable code after statement"
+        let unreachable_statement = UnreachableStatement.{location} in
+        {checks with unreachable_statements= unreachable_statement :: checks.unreachable_statements}
 
 
   let check_binop_array_access :
@@ -540,73 +586,67 @@ module Report = struct
 
 
   let check_instrs :
-         Summary.t
-      -> Procdesc.t
+         Procdesc.t
       -> Tenv.t
       -> Typ.IntegerWidths.t
       -> CFG.t
       -> CFG.Node.t
       -> Instrs.not_reversed_t
       -> Dom.Mem.t AbstractInterpreter.State.t
-      -> PO.ConditionSet.checked_t
-      -> PO.ConditionSet.checked_t =
-   fun summary pdesc tenv integer_type_widths cfg node instrs state cond_set ->
+      -> Checks.t
+      -> Checks.t =
+   fun pdesc tenv integer_type_widths cfg node instrs state checks ->
     match state with
     | _ when Instrs.is_empty instrs ->
-        cond_set
+        checks
     | {AbstractInterpreter.State.pre= Bottom} ->
-        cond_set
+        checks
     | {AbstractInterpreter.State.pre= NonBottom _ as pre; post} ->
         if Instrs.nth_exists instrs 1 then
           L.(die InternalError) "Did not expect several instructions" ;
         let instr = Instrs.nth_exn instrs 0 in
-        let () =
+        let checks =
           match post with
           | Bottom ->
-              check_unreachable_code summary tenv cfg node instr Instrs.empty
+              add_unreachable_code cfg node instr Instrs.empty checks
           | NonBottom _ ->
-              ()
+              checks
         in
-        let cond_set = check_instr pdesc tenv integer_type_widths node instr pre cond_set in
+        let cond_set = check_instr pdesc tenv integer_type_widths node instr pre checks.cond_set in
         print_debug_info instr pre cond_set ;
-        cond_set
+        {checks with cond_set}
 
 
   let check_node :
-         Summary.t
-      -> Procdesc.t
+         Procdesc.t
       -> Tenv.t
       -> Typ.IntegerWidths.t
       -> CFG.t
       -> Analyzer.invariant_map
-      -> PO.ConditionSet.checked_t
+      -> Checks.t
       -> CFG.Node.t
-      -> PO.ConditionSet.checked_t =
-   fun summary pdesc tenv integer_type_widths cfg inv_map cond_set node ->
+      -> Checks.t =
+   fun pdesc tenv integer_type_widths cfg inv_map checks node ->
     match Analyzer.extract_state (CFG.Node.id node) inv_map with
     | Some state ->
         let instrs = CFG.instrs node in
-        check_instrs summary pdesc tenv integer_type_widths cfg node instrs state cond_set
+        check_instrs pdesc tenv integer_type_widths cfg node instrs state checks
     | _ ->
-        cond_set
+        checks
 
 
   let check_proc :
-         Summary.t
-      -> Procdesc.t
-      -> Tenv.t
-      -> Typ.IntegerWidths.t
-      -> CFG.t
-      -> Analyzer.invariant_map
-      -> PO.ConditionSet.checked_t =
-   fun summary pdesc tenv integer_type_widths cfg inv_map ->
+      Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> CFG.t -> Analyzer.invariant_map -> Checks.t =
+   fun pdesc tenv integer_type_widths cfg inv_map ->
     CFG.fold_nodes cfg
-      ~f:(check_node summary pdesc tenv integer_type_widths cfg inv_map)
-      ~init:PO.ConditionSet.empty
+      ~f:(check_node pdesc tenv integer_type_widths cfg inv_map)
+      ~init:Checks.empty
 
 
-  let report_errors : Summary.t -> PO.ConditionSet.checked_t -> PO.ConditionSet.t =
-   fun summary cond_set ->
+  let report_errors : Tenv.t -> Summary.t -> Checks.t -> PO.ConditionSet.t =
+   fun tenv summary {cond_set; unused_branches; unreachable_statements} ->
+    UnusedBranches.report tenv summary unused_branches ;
+    UnreachableStatements.report summary unreachable_statements ;
     let report cond trace issue_type =
       let location = PO.ConditionTrace.get_report_location trace in
       let description ~markup = PO.description ~markup cond trace in
@@ -656,8 +696,8 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   let summary =
     let locals = get_local_decls proc_desc in
     let cond_set =
-      Report.check_proc summary proc_desc tenv integer_type_widths cfg inv_map
-      |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
+      Report.check_proc proc_desc tenv integer_type_widths cfg inv_map
+      |> Report.report_errors tenv summary |> Report.forget_locs locals |> Report.for_summary
     in
     let exit_mem =
       extract_post (CFG.Node.id exit_node) inv_map
