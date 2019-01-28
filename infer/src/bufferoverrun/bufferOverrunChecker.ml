@@ -659,14 +659,12 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
       Report.check_proc summary proc_desc tenv integer_type_widths cfg inv_map
       |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
     in
-    let exit_mem = extract_post (CFG.Node.id exit_node) inv_map in
-    match exit_mem with
-    | Some exit_mem ->
-        let exit_mem = exit_mem |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv in
-        let payload = (exit_mem, cond_set) in
-        Payload.update_summary payload summary
-    | _ ->
-        summary
+    let exit_mem =
+      extract_post (CFG.Node.id exit_node) inv_map
+      |> Option.value ~default:Bottom |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv
+    in
+    let payload = (exit_mem, cond_set) in
+    Payload.update_summary payload summary
   in
   NodePrinter.finish_session underlying_exit_node ;
   if Config.hoisting_report_only_expensive then
