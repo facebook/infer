@@ -794,25 +794,34 @@ module ConditionWithTrace = struct
         {report_issue_type; propagate}
 
 
-  let report ~report ((cwt, checked) as default) =
+  let report_errors ~report (cwt, checked) =
     match checked.report_issue_type with
     | NotIssue | SymbolicIssue ->
-        default
+        ()
     | Issue issue_type ->
-        report cwt.cond cwt.trace issue_type ;
-        if checked.propagate then ({cwt with reported= Some (Reported.make issue_type)}, checked)
-        else default
+        report cwt.cond cwt.trace issue_type
 
 
-  let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
-
-  let for_summary cwt = {cwt with trace= ConditionTrace.for_summary cwt.trace}
+  let for_summary ~forget_locs = function
+    | _, {propagate= false} | _, {report_issue_type= NotIssue} ->
+        None
+    | {cond; trace; reported; reachability}, {report_issue_type} ->
+        let reported =
+          match report_issue_type with
+          | NotIssue ->
+              assert false
+          | SymbolicIssue ->
+              reported
+          | Issue issue_type ->
+              Some (Reported.make issue_type)
+        in
+        let cond = Condition.forget_locs forget_locs cond in
+        let trace = ConditionTrace.for_summary trace in
+        Some {cond; trace; reported; reachability}
 end
 
 module ConditionSet = struct
   type 'cond_trace t0 = 'cond_trace ConditionWithTrace.t0 list
-
-  type t = ConditionTrace.intra_cond_trace t0
 
   type checked_t = (ConditionTrace.intra_cond_trace ConditionWithTrace.t0 * checked_condition) list
 
@@ -923,10 +932,12 @@ module ConditionSet = struct
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let check_all ~report condset =
-    condset
-    |> List.map ~f:(ConditionWithTrace.report ~report)
-    |> List.filter_map ~f:(fun (cwt, {propagate}) -> Option.some_if propagate cwt)
+  let report_errors ~report condset =
+    List.iter condset ~f:(ConditionWithTrace.report_errors ~report)
+
+
+  let for_summary ~forget_locs condset =
+    List.filter_map condset ~f:(ConditionWithTrace.for_summary ~forget_locs)
 
 
   let pp_summary : F.formatter -> _ t0 -> unit =
@@ -946,14 +957,6 @@ module ConditionSet = struct
     F.fprintf fmt "Safety conditions:@;@[<hov 2>{ %a }@]"
       (IList.pp_print_list ~max:30 ~pp_sep pp_elem)
       condset
-
-
-  let forget_locs : AbsLoc.PowLoc.t -> 'a t0 -> 'a t0 =
-   fun locs x -> List.map x ~f:(ConditionWithTrace.forget_locs locs)
-
-
-  let for_summary : _ t0 -> summary_t =
-   fun condset -> List.map condset ~f:ConditionWithTrace.for_summary
 end
 
 let description ~markup cond trace =

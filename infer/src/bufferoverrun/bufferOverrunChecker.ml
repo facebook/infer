@@ -622,7 +622,7 @@ module Report = struct
       -> Tenv.t
       -> Typ.IntegerWidths.t
       -> CFG.t
-      -> Analyzer.invariant_map
+      -> invariant_map
       -> Checks.t
       -> CFG.Node.t
       -> Checks.t =
@@ -636,14 +636,14 @@ module Report = struct
 
 
   let check_proc :
-      Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> CFG.t -> Analyzer.invariant_map -> Checks.t =
+      Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> CFG.t -> invariant_map -> Checks.t =
    fun pdesc tenv integer_type_widths cfg inv_map ->
     CFG.fold_nodes cfg
       ~f:(check_node pdesc tenv integer_type_widths cfg inv_map)
       ~init:Checks.empty
 
 
-  let report_errors : Tenv.t -> Summary.t -> Checks.t -> PO.ConditionSet.t =
+  let report_errors : Tenv.t -> Summary.t -> Checks.t -> unit =
    fun tenv summary {cond_set; unused_branches; unreachable_statements} ->
     UnusedBranches.report tenv summary unused_branches ;
     UnreachableStatements.report summary unreachable_statements ;
@@ -657,12 +657,14 @@ module Report = struct
       in
       Reporting.log_error summary ~loc:location ~ltr:trace issue_type (description ~markup:true)
     in
-    PO.ConditionSet.check_all ~report cond_set
+    PO.ConditionSet.report_errors ~report cond_set
 
 
-  let forget_locs = PO.ConditionSet.forget_locs
-
-  let for_summary = PO.ConditionSet.for_summary
+  let for_summary ~forget_locs
+      Checks.({ cond_set
+              ; unused_branches= _ (* intra-procedural *)
+              ; unreachable_statements= _ (* intra-procedural *) }) =
+    PO.ConditionSet.for_summary ~forget_locs cond_set
 end
 
 let extract_pre = Analyzer.extract_pre
@@ -694,11 +696,10 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
   NodePrinter.start_session ~pp_name underlying_exit_node ;
   let summary =
+    let checks = Report.check_proc proc_desc tenv integer_type_widths cfg inv_map in
+    Report.report_errors tenv summary checks ;
     let locals = get_local_decls proc_desc in
-    let cond_set =
-      Report.check_proc proc_desc tenv integer_type_widths cfg inv_map
-      |> Report.report_errors tenv summary |> Report.forget_locs locals |> Report.for_summary
-    in
+    let cond_set = Report.for_summary ~forget_locs:locals checks in
     let exit_mem =
       extract_post (CFG.Node.id exit_node) inv_map
       |> Option.value ~default:Bottom |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv

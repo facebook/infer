@@ -23,8 +23,6 @@ module ConditionTrace : sig
 end
 
 module ConditionSet : sig
-  type t
-
   type checked_t
 
   type summary_t
@@ -81,12 +79,10 @@ module ConditionSet : sig
     -> Location.t
     -> checked_t
 
-  val check_all : report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> checked_t -> t
-  (** Check the conditions, call [report] on those that trigger an issue, returns those that needs to be propagated to callers. *)
+  val report_errors :
+    report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> checked_t -> unit
 
-  val for_summary : t -> summary_t
-
-  val forget_locs : AbsLoc.PowLoc.t -> t -> t
+  val for_summary : forget_locs:AbsLoc.PowLoc.t -> checked_t -> summary_t
 end
 
 val description : markup:bool -> Condition.t -> ConditionTrace.t -> string
