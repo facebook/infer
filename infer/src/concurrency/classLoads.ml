@@ -73,9 +73,6 @@ let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
   | Sizeof {typ= {desc= Tarray {elt}}} ->
       (* anewarray / multinewarray *)
       load_array proc_desc tenv loc elt astate
-  | Sizeof {typ; subtype} when Subtype.is_cast subtype || Subtype.is_instof subtype ->
-      (* checkcast / instanceof *)
-      load_type proc_desc tenv loc typ astate
   | Cast (_, e) | UnOp (_, e, _) | Exn e ->
       (* NB Cast is only used for primitive types *)
       add_loads_of_exp proc_desc tenv loc e astate
@@ -88,12 +85,21 @@ let rec add_loads_of_exp proc_desc tenv loc (exp : Exp.t) astate =
       astate
 
 
-let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
-  match instr with
-  | Call (_, Const (Cfun callee), args, loc, _) ->
+let exec_call pdesc tenv callee args loc astate =
+  match args with
+  | [_; (Exp.Sizeof {typ}, _)] when Typ.Procname.equal callee BuiltinDecl.__instanceof ->
+      (* this matches downcasts/instanceof and exception handlers *)
+      load_type pdesc tenv loc typ astate
+  | _ ->
       (* invokeinterface / invokespecial / invokestatic / invokevirtual / new *)
       List.fold args ~init:astate ~f:(fun acc (exp, _) -> add_loads_of_exp pdesc tenv loc exp acc)
       |> do_call pdesc callee loc
+
+
+let exec_instr pdesc tenv astate _ (instr : Sil.instr) =
+  match instr with
+  | Call (_, Const (Cfun callee), args, loc, _) ->
+      exec_call pdesc tenv callee args loc astate
   | Load (_, exp, _, loc) | Prune (exp, loc, _, _) ->
       (* NB the java frontend seems to always translate complex guards into a sequence of 
          instructions plus a prune on logical vars only.  So the below is only for completeness. *)
