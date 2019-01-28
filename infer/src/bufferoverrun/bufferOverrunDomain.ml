@@ -1013,13 +1013,17 @@ module Reachability = struct
 end
 
 module MemReach = struct
-  type t =
+  type 'has_oenv t0 =
     { stack_locs: StackLocs.t
     ; mem_pure: MemPure.t
     ; alias: Alias.t
     ; latest_prune: LatestPrune.t
     ; relation: Relation.t
-    ; oenv: OndemandEnv.t option }
+    ; oenv: ('has_oenv, OndemandEnv.t) GOption.t }
+
+  type no_oenv_t = GOption.none t0
+
+  type t = GOption.some t0
 
   let init : OndemandEnv.t -> t =
    fun oenv ->
@@ -1028,7 +1032,7 @@ module MemReach = struct
     ; alias= Alias.bot
     ; latest_prune= LatestPrune.top
     ; relation= Relation.empty
-    ; oenv= Some oenv }
+    ; oenv= GOption.GSome oenv }
 
 
   let ( <= ) ~lhs ~rhs =
@@ -1045,7 +1049,7 @@ module MemReach = struct
     if phys_equal prev next then prev
     else (
       assert (phys_equal prev.oenv next.oenv) ;
-      let oenv = Option.value_exn prev.oenv in
+      let oenv = GOption.value prev.oenv in
       { stack_locs= StackLocs.widen ~prev:prev.stack_locs ~next:next.stack_locs ~num_iters
       ; mem_pure= MemPure.widen oenv ~prev:prev.mem_pure ~next:next.mem_pure ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters
@@ -1057,7 +1061,7 @@ module MemReach = struct
   let join : t -> t -> t =
    fun x y ->
     assert (phys_equal x.oenv y.oenv) ;
-    let oenv = Option.value_exn x.oenv in
+    let oenv = GOption.value x.oenv in
     { stack_locs= StackLocs.join x.stack_locs y.stack_locs
     ; mem_pure= MemPure.join oenv x.mem_pure y.mem_pure
     ; alias= Alias.join x.alias y.alias
@@ -1066,7 +1070,7 @@ module MemReach = struct
     ; oenv= x.oenv }
 
 
-  let pp : F.formatter -> t -> unit =
+  let pp : F.formatter -> _ t0 -> unit =
    fun fmt x ->
     F.fprintf fmt "StackLocs:@;%a@;MemPure:@;%a@;Alias:@;%a@;%a" StackLocs.pp x.stack_locs
       MemPure.pp x.mem_pure Alias.pp x.alias LatestPrune.pp x.latest_prune ;
@@ -1074,35 +1078,35 @@ module MemReach = struct
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
 
-  let unset_oenv x = {x with oenv= None}
+  let unset_oenv : t -> no_oenv_t = function x -> {x with oenv= GOption.GNone}
 
-  let is_stack_loc : Loc.t -> t -> bool = fun l m -> StackLocs.mem l m.stack_locs
+  let is_stack_loc : Loc.t -> _ t0 -> bool = fun l m -> StackLocs.mem l m.stack_locs
 
-  let find_opt : Loc.t -> t -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
+  let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
-  let find_stack : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
+  let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
-  let find_heap_default : default:Val.t -> Loc.t -> t -> Val.t =
+  let find_heap_default : default:Val.t -> Loc.t -> _ t0 -> Val.t =
    fun ~default l m ->
     IOption.value_default_f (find_opt l m) ~f:(fun () ->
-        Option.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default oenv l) )
+        GOption.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default oenv l) )
 
 
-  let find_heap : Loc.t -> t -> Val.t = find_heap_default ~default:Val.Itv.top
+  let find_heap : Loc.t -> _ t0 -> Val.t = fun l m -> find_heap_default ~default:Val.Itv.top l m
 
-  let find : Loc.t -> t -> Val.t =
+  let find : Loc.t -> _ t0 -> Val.t =
    fun l m -> if is_stack_loc l m then find_stack l m else find_heap l m
 
 
-  let find_set : PowLoc.t -> t -> Val.t =
+  let find_set : PowLoc.t -> _ t0 -> Val.t =
    fun locs m ->
     let find_join loc acc = Val.join acc (find loc m) in
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
+  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find k m.alias
 
-  let find_simple_alias : Ident.t -> t -> Loc.t option =
+  let find_simple_alias : Ident.t -> _ t0 -> Loc.t option =
    fun k m ->
     match Alias.find k m.alias with
     | Some (AliasTarget.Simple l) ->
@@ -1111,7 +1115,7 @@ module MemReach = struct
         None
 
 
-  let find_ret_alias : t -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
+  let find_ret_alias : _ t0 -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
    fun id loc m -> {m with alias= Alias.load id loc m.alias}
@@ -1237,7 +1241,7 @@ module MemReach = struct
 
   let get_latest_prune : t -> LatestPrune.t = fun {latest_prune} -> latest_prune
 
-  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
+  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> _ t0 -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
       if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
       else if Loc.is_field_of ~loc:root ~field_loc:loc then PowLoc.add loc acc
@@ -1298,7 +1302,7 @@ module MemReach = struct
     lift_relation (Relation.init_array allocsite ~offset_opt ~size ~size_exp_opt)
 
 
-  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
+  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:no_oenv_t -> t =
    fun subst_map ~caller ~callee ->
     { caller with
       relation= Relation.instantiate subst_map ~caller:caller.relation ~callee:callee.relation }
@@ -1323,42 +1327,46 @@ end
 module Mem = struct
   include AbstractDomain.BottomLifted (MemReach)
 
+  type 'has_oenv t0 = 'has_oenv MemReach.t0 AbstractDomain.Types.bottom_lifted
+
+  type no_oenv_t = GOption.none t0
+
   let bot : t = Bottom
 
   let init : OndemandEnv.t -> t = fun oenv -> NonBottom (MemReach.init oenv)
 
-  let f_lift_default : default:'a -> (MemReach.t -> 'a) -> t -> 'a =
+  let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =
    fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
 
-  let is_stack_loc : Loc.t -> t -> bool =
+  let is_stack_loc : Loc.t -> _ t0 -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_stack_loc k)
 
 
-  let find : Loc.t -> t -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
+  let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
 
-  let find_stack : Loc.t -> t -> Val.t =
+  let find_stack : Loc.t -> _ t0 -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
 
 
-  let find_set : PowLoc.t -> t -> Val.t =
+  let find_set : PowLoc.t -> _ t0 -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_set k)
 
 
-  let find_opt : Loc.t -> t -> Val.t option =
+  let find_opt : Loc.t -> _ t0 -> Val.t option =
    fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
-  let find_alias : Ident.t -> t -> AliasTarget.t option =
+  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option =
    fun k -> f_lift_default ~default:None (MemReach.find_alias k)
 
 
-  let find_simple_alias : Ident.t -> t -> Loc.t option =
+  let find_simple_alias : Ident.t -> _ t0 -> Loc.t option =
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
-  let find_ret_alias : t -> AliasTarget.t option =
-    f_lift_default ~default:None MemReach.find_ret_alias
+  let find_ret_alias : _ t0 -> AliasTarget.t option =
+   fun m -> f_lift_default ~default:None MemReach.find_ret_alias m
 
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
@@ -1398,7 +1406,7 @@ module Mem = struct
 
   let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> map ~f:(MemReach.strong_update p v)
 
-  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> t -> PowLoc.t =
+  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> _ t0 -> PowLoc.t =
    fun formals locs ->
     f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from formals locs)
 
@@ -1460,7 +1468,7 @@ module Mem = struct
     map ~f:(MemReach.init_array_relation allocsite ~offset_opt ~size ~size_exp_opt)
 
 
-  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
+  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:no_oenv_t -> t =
    fun subst_map ~caller ~callee ->
     match callee with
     | Bottom ->
@@ -1469,7 +1477,7 @@ module Mem = struct
         map ~f:(fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
 
 
-  let unset_oenv = map ~f:MemReach.unset_oenv
+  let unset_oenv = function Bottom -> Bottom | NonBottom m -> NonBottom (MemReach.unset_oenv m)
 
   let set_first_idx_of_null loc idx = map ~f:(MemReach.set_first_idx_of_null loc idx)
 
@@ -1480,4 +1488,11 @@ module Mem = struct
       match loc with Loc.Allocsite _ -> Val.join acc (find (Loc.of_c_strlen loc) m) | _ -> acc
     in
     PowLoc.fold get_c_strlen' locs Val.bot
+
+
+  let pp f = function
+    | Bottom ->
+        F.pp_print_string f SpecialChars.down_tack
+    | NonBottom m ->
+        MemReach.pp f m
 end

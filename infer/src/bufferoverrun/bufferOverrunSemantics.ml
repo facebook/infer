@@ -640,7 +640,7 @@ let get_matching_pairs :
     -> Exp.t option
     -> Typ.t
     -> Mem.t
-    -> Mem.t
+    -> _ Mem.t0
     -> (Relation.Var.t * Relation.SymExp.t option) list =
  fun tenv integer_type_widths callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
   let get_offset_sym v = Val.get_offset_sym v in
@@ -732,7 +732,7 @@ let get_subst_map :
     -> Procdesc.t
     -> (Exp.t * 'a) list
     -> Mem.t
-    -> Mem.t
+    -> _ Mem.t0
     -> Relation.SubstMap.t =
  fun tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem ->
   let add_pair (formal, typ) (actual, actual_exp) rel_l =

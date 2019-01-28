@@ -10,9 +10,9 @@ module F = Format
 module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
 
-type t = Dom.Mem.t * PO.ConditionSet.summary_t
+type t = Dom.Mem.no_oenv_t * PO.ConditionSet.summary_t
 
-let get_output : t -> Dom.Mem.t = fst
+let get_output : t -> Dom.Mem.no_oenv_t = fst
 
 let get_cond_set : t -> PO.ConditionSet.summary_t = snd
 
