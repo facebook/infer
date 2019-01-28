@@ -1406,7 +1406,7 @@ and icfg_dotty_outfile =
 
 
 and ignore_trivial_traces =
-  CLOpt.mk_bool ~long:"ignore-trivial-traces" ~default:true
+  CLOpt.mk_bool ~long:"ignore-trivial-traces" ~default:false
     "Ignore traces whose length is at most 1"
 
 
