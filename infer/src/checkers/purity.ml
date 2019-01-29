@@ -182,10 +182,10 @@ let should_report pdesc =
       L.(die InternalError "Not supposed to run on non-Java code.")
 
 
-let checker ({Callbacks.tenv; summary; proc_desc} as callback_args) : Summary.t =
+let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.t =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let inferbo_invariant_map, _ =
-    BufferOverrunChecker.compute_invariant_map_and_check callback_args
+  let inferbo_invariant_map =
+    BufferOverrunChecker.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
   let formals =
     Procdesc.get_formals proc_desc

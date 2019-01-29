@@ -273,18 +273,6 @@ module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 type invariant_map = Analyzer.invariant_map
 
-(* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily
-   keeping invariant maps around) *)
-module WeakInvMapHashTbl = Caml.Weak.Make (struct
-  type t = Typ.Procname.t * invariant_map option
-
-  let equal (pname1, _) (pname2, _) = Typ.Procname.equal pname1 pname2
-
-  let hash (pname, _) = Hashtbl.hash pname
-end)
-
-let inv_map_cache = WeakInvMapHashTbl.create 100
-
 module Report = struct
   module UnusedBranch = struct
     type t = {node: CFG.Node.t; location: Location.t; condition: Exp.t; true_branch: bool}
@@ -667,11 +655,20 @@ module Report = struct
     PO.ConditionSet.for_summary ~forget_locs cond_set
 end
 
+type checks = Report.Checks.t
+
+type checks_summary = Report.PO.ConditionSet.summary_t
+
+type local_decls = PowLoc.t
+
+type memory_summary = BufferOverrunSummary.memory
+
 let extract_pre = Analyzer.extract_pre
 
 let extract_post = Analyzer.extract_post
 
-let get_local_decls proc_desc =
+let get_local_decls : Procdesc.t -> local_decls =
+ fun proc_desc ->
   let proc_name = Procdesc.get_proc_name proc_desc in
   let accum_local_decls acc {ProcAttributes.name} =
     let pvar = Pvar.mk name proc_name in
@@ -681,55 +678,75 @@ let get_local_decls proc_desc =
   Procdesc.get_locals proc_desc |> List.fold ~init:PowLoc.empty ~f:accum_local_decls
 
 
-let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
- fun {proc_desc; tenv; integer_type_widths; summary} ->
-  Preanal.do_preanalysis proc_desc tenv ;
-  let pdata =
-    let oenv = Dom.OndemandEnv.mk proc_desc tenv integer_type_widths in
-    ProcData.make proc_desc tenv oenv
+let cached_compute_invariant_map =
+  let compute_invariant_map : Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map =
+   fun pdesc tenv integer_type_widths ->
+    Preanal.do_preanalysis pdesc tenv ;
+    let cfg = CFG.from_pdesc pdesc in
+    let pdata =
+      let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
+      ProcData.make pdesc tenv oenv
+    in
+    let initial = Init.initial_state pdata (CFG.start_node cfg) in
+    Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
   in
-  let cfg = CFG.from_pdesc proc_desc in
-  let initial = Init.initial_state pdata (CFG.start_node cfg) in
-  let inv_map = Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata in
-  let exit_node = CFG.exit_node cfg in
-  let underlying_exit_node = CFG.Node.underlying_node exit_node in
+  (* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily keeps invariant maps around) *)
+  let module WeakInvMapHashTbl = Caml.Weak.Make (struct
+    type t = Typ.Procname.t * invariant_map option
+
+    let equal (pname1, _) (pname2, _) = Typ.Procname.equal pname1 pname2
+
+    let hash (pname, _) = Hashtbl.hash pname
+  end) in
+  let inv_map_cache = WeakInvMapHashTbl.create 100 in
+  fun pdesc tenv integer_type_widths ->
+    let pname = Procdesc.get_proc_name pdesc in
+    match WeakInvMapHashTbl.find_opt inv_map_cache (pname, None) with
+    | Some (_, Some inv_map) ->
+        inv_map
+    | Some (_, None) ->
+        (* this should never happen *)
+        assert false
+    | None ->
+        let inv_map = compute_invariant_map pdesc tenv integer_type_widths in
+        WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map) ;
+        inv_map
+
+
+let memory_summary : local_decls -> CFG.t -> invariant_map -> memory_summary =
+ fun locals cfg inv_map ->
+  let exit_node_id = CFG.exit_node cfg |> CFG.Node.id in
+  match extract_post exit_node_id inv_map with
+  | Some exit_mem ->
+      exit_mem |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv
+  | None ->
+      Bottom
+
+
+let compute_checks :
+    Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> CFG.t -> invariant_map -> checks =
+  Report.check_proc
+
+
+let checks_summary : local_decls -> checks -> checks_summary =
+ fun locals checks -> Report.for_summary ~forget_locs:locals checks
+
+
+let checker : Callbacks.proc_callback_args -> Summary.t =
+ fun {proc_desc; tenv; integer_type_widths; summary} ->
+  let inv_map = cached_compute_invariant_map proc_desc tenv integer_type_widths in
+  let underlying_exit_node = Procdesc.get_exit_node proc_desc in
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
   NodePrinter.start_session ~pp_name underlying_exit_node ;
   let summary =
-    let checks = Report.check_proc proc_desc tenv integer_type_widths cfg inv_map in
+    let cfg = CFG.from_pdesc proc_desc in
+    let checks = compute_checks proc_desc tenv integer_type_widths cfg inv_map in
     Report.report_errors tenv summary checks ;
     let locals = get_local_decls proc_desc in
-    let cond_set = Report.for_summary ~forget_locs:locals checks in
-    let exit_mem =
-      extract_post (CFG.Node.id exit_node) inv_map
-      |> Option.value ~default:Bottom |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv
-    in
+    let cond_set = checks_summary locals checks in
+    let exit_mem = memory_summary locals cfg inv_map in
     let payload = (exit_mem, cond_set) in
     Payload.update_summary payload summary
   in
   NodePrinter.finish_session underlying_exit_node ;
-  if Config.hoisting_report_only_expensive then
-    let pname = Procdesc.get_proc_name proc_desc in
-    WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map)
-  else () ;
-  (inv_map, summary)
-
-
-let lookup_inv_map_cache (callback_args : Callbacks.proc_callback_args) (pname : Typ.Procname.t) :
-    invariant_map =
-  (* Since we are using a weak Hashtbl, represented as a set of
-     (Procname) hashed values, we have to lookup with a dummy element
-     *)
-  match WeakInvMapHashTbl.find_opt inv_map_cache (pname, None) with
-  | Some (_, Some inv_map) ->
-      inv_map
-  | Some (_, None) ->
-      (* this should never happen *)
-      assert false
-  | None ->
-      (* if bufferoverrun has not been run yet, run it *)
-      compute_invariant_map_and_check callback_args |> fst
-
-
-let checker : Callbacks.proc_callback_args -> Summary.t =
- fun args -> compute_invariant_map_and_check args |> snd
+  summary

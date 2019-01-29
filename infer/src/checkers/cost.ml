@@ -738,9 +738,9 @@ let check_and_report_top_and_bottom cost proc_desc summary =
   else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
 
 
-let checker ({Callbacks.tenv; proc_desc; integer_type_widths} as callback_args) : Summary.t =
-  let inferbo_invariant_map, summary =
-    BufferOverrunChecker.compute_invariant_map_and_check callback_args
+let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
+  let inferbo_invariant_map =
+    BufferOverrunChecker.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   let proc_data = ProcData.make_default proc_desc tenv in
