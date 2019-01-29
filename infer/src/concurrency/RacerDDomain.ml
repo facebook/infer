@@ -178,7 +178,7 @@ module LocksDomain = struct
     not (is_empty astate)
 
 
-  let lookup_count lock astate = try find lock astate with Caml.Not_found -> LockCount.empty
+  let lookup_count lock astate = find_opt lock astate |> Option.value ~default:LockCount.bottom
 
   let acquire_lock astate =
     let count = lookup_count the_only_lock astate in
@@ -189,7 +189,7 @@ module LocksDomain = struct
     let count = lookup_count the_only_lock astate in
     try
       let count' = LockCount.decrement count in
-      if LockCount.is_empty count' then remove the_only_lock astate
+      if LockCount.is_bottom count' then remove the_only_lock astate
       else add the_only_lock count' astate
     with Caml.Not_found -> astate
 
@@ -198,13 +198,13 @@ module LocksDomain = struct
     let caller_count = lookup_count the_only_lock caller_astate in
     let callee_count = lookup_count the_only_lock callee_astate in
     let sum = LockCount.add caller_count callee_count in
-    if LockCount.is_empty sum then caller_astate else add the_only_lock sum caller_astate
+    if LockCount.is_bottom sum then caller_astate else add the_only_lock sum caller_astate
 end
 
 module ThreadsDomain = struct
   type t = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
 
-  let empty = NoThread
+  let bottom = NoThread
 
   (* NoThread < AnyThreadButSelf < Any *)
   let ( <= ) ~lhs ~rhs =
@@ -253,7 +253,7 @@ module ThreadsDomain = struct
     match join astate1 astate2 with AnyThread -> true | NoThread | AnyThreadButSelf -> false
 
 
-  let is_empty = function NoThread -> true | _ -> false
+  let is_bottom = function NoThread -> true | _ -> false
 
   let is_any_but_self = function AnyThreadButSelf -> true | _ -> false
 
@@ -516,8 +516,8 @@ type t =
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
 
-let empty =
-  let threads = ThreadsDomain.empty in
+let bottom =
+  let threads = ThreadsDomain.bottom in
   let locks = LocksDomain.empty in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
@@ -525,8 +525,8 @@ let empty =
   {threads; locks; accesses; ownership; attribute_map}
 
 
-let is_empty {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_empty threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
+let is_bottom {threads; locks; accesses; ownership; attribute_map} =
+  ThreadsDomain.is_bottom threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership
   && AttributeMapDomain.is_empty attribute_map
 
@@ -572,7 +572,7 @@ type summary =
   ; return_attributes: AttributeSetDomain.t }
 
 let empty_summary =
-  { threads= ThreadsDomain.empty
+  { threads= ThreadsDomain.bottom
   ; locks= LocksDomain.empty
   ; accesses= AccessDomain.empty
   ; return_ownership= OwnershipAbstractValue.unowned

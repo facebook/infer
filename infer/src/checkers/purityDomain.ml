@@ -16,7 +16,7 @@ let contains_global modified_params = ModifiedParamIndices.mem global modified_p
 
 let pure = AbstractDomain.Types.Bottom
 
-let is_pure = Domain.is_empty
+let is_pure = Domain.is_bottom
 
 let impure modified_args = AbstractDomain.Types.NonBottom modified_args
 

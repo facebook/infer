@@ -515,7 +515,7 @@ module Make (Manager : Manager_S) = struct
   module Sym = struct
     include AbstractDomain.Flat (Var)
 
-    let bot = empty
+    let bot = bottom
 
     let lift f x = v (f x)
 

@@ -59,7 +59,7 @@ end
 
 module OrderDomain : ExplicitTrace.FiniteSet with type elt = Order.t
 
-module LockState : AbstractDomain.WithBottom
+module LockState : AbstractDomain.WithTop
 
 module UIThreadExplanationDomain : sig
   include ExplicitTrace.TraceElem with type elem_t = string
@@ -71,7 +71,7 @@ module UIThreadDomain :
   AbstractDomain.WithBottom
   with type t = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
 
-module GuardToLockMap : AbstractDomain.WithBottom
+module GuardToLockMap : AbstractDomain.WithTop
 
 type t =
   { events: EventDomain.t

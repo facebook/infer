@@ -45,12 +45,10 @@ end
 module type WithBottom = sig
   include S
 
-  val empty : t
-  (** The bottom value of the domain.
-      Naming it empty instead of bottom helps to bind the empty
-      value for sets and maps to the natural definition for bottom *)
+  val bottom : t
+  (** The bottom value of the domain. *)
 
-  val is_empty : t -> bool
+  val is_bottom : t -> bool
   (** Return true if this is the bottom value *)
 end
 

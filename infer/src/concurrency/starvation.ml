@@ -146,7 +146,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     let proc_data = ProcData.make proc_desc tenv formals in
     let loc = Procdesc.get_loc proc_desc in
     let initial =
-      if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
+      if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.bottom
       else
         let lock =
           match pname with
@@ -157,7 +157,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           | _ ->
               FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
         in
-        StarvationDomain.acquire tenv StarvationDomain.empty loc (Option.to_list lock)
+        StarvationDomain.acquire tenv StarvationDomain.bottom loc (Option.to_list lock)
     in
     let initial =
       ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.proc_resolve_attributes tenv
@@ -399,7 +399,7 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
                  ~f:(fun acc (endpoint_pname, {order= endp_order; ui= endp_ui}) ->
-                   if UIThreadDomain.is_empty ui || UIThreadDomain.is_empty endp_ui then
+                   if UIThreadDomain.is_bottom ui || UIThreadDomain.is_bottom endp_ui then
                      OrderDomain.fold (report_endpoint_elem elem endpoint_pname) endp_order acc
                    else acc ) )
   in
@@ -471,7 +471,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
                fold_reportable_summaries env endpoint_class ~init:report_map
                  ~f:(fun acc (endpoint_pname, {order; ui}) ->
                    (* skip methods on ui thread, as they cannot run in parallel to us *)
-                   if UIThreadDomain.is_empty ui then
+                   if UIThreadDomain.is_bottom ui then
                      OrderDomain.fold
                        (report_remote_block ui_explain event endpoint_lock endpoint_pname)
                        order acc

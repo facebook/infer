@@ -247,17 +247,17 @@ type t =
   ; order: OrderDomain.t
   ; ui: UIThreadDomain.t }
 
-let empty =
+let bottom =
   { events= EventDomain.empty
   ; guard_map= GuardToLockMap.empty
   ; lock_state= LockState.empty
   ; order= OrderDomain.empty
-  ; ui= UIThreadDomain.empty }
+  ; ui= UIThreadDomain.bottom }
 
 
-let is_empty {events; guard_map; lock_state; order; ui} =
+let is_bottom {events; guard_map; lock_state; order; ui} =
   EventDomain.is_empty events && GuardToLockMap.is_empty guard_map && OrderDomain.is_empty order
-  && LockState.is_empty lock_state && UIThreadDomain.is_empty ui
+  && LockState.is_empty lock_state && UIThreadDomain.is_bottom ui
 
 
 let pp fmt {events; guard_map; lock_state; order; ui} =

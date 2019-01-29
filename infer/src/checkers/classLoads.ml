@@ -134,7 +134,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   (* load the method's class *)
   let init =
     Typ.Procname.get_class_type_name proc_name
-    |> Option.fold ~init:ClassLoadsDomain.empty ~f:(load_class proc_desc tenv loc)
+    |> Option.fold ~init:ClassLoadsDomain.bottom ~f:(load_class proc_desc tenv loc)
   in
   let post = Procdesc.fold_instrs proc_desc ~init ~f:(exec_instr proc_desc tenv) in
   report_loads proc_desc summary post ;

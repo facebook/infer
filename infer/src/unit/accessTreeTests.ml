@@ -229,7 +229,7 @@ let tests =
         |> Domain.BaseMap.singleton x_base
       in
       Domain.assert_trees_equal
-        (Domain.add_trace xF_star added_trace Domain.empty)
+        (Domain.add_trace xF_star added_trace Domain.bottom)
         xF_star_tree_added_trace ;
       (* add starred path when base present *)
       Domain.assert_trees_equal
@@ -421,7 +421,7 @@ let tests =
   in
   let depth_test =
     let depth_test_ _ =
-      assert_equal (Domain.depth Domain.empty) 0 ;
+      assert_equal (Domain.depth Domain.bottom) 0 ;
       assert_equal (Domain.depth x_base_tree) 1 ;
       assert_equal (Domain.depth x_y_base_tree) 1 ;
       assert_equal (Domain.depth xFG_tree) 3 ;
@@ -445,13 +445,13 @@ let tests =
       let x_tree = Max1.BaseMap.singleton x_base (Max1.make_normal_leaf x_trace) in
       let x_star_tree = Max1.BaseMap.singleton x_base (Max1.make_starred_leaf x_trace) in
       (* adding (x.f, "x") to a tree with max height 1 should yield  x |-> ("x", * ) *)
-      Max1.assert_trees_equal (Max1.add_trace xF x_trace Max1.empty) x_star_tree ;
+      Max1.assert_trees_equal (Max1.add_trace xF x_trace Max1.bottom) x_star_tree ;
       (* same, but with (x.f.g, "x") *)
-      Max1.assert_trees_equal (Max1.add_trace xFG x_trace Max1.empty) x_star_tree ;
+      Max1.assert_trees_equal (Max1.add_trace xFG x_trace Max1.bottom) x_star_tree ;
       (* adding node (f, "x") via access path x should also yield the same tree *)
-      Max1.assert_trees_equal (Max1.add_node x f_node Max1.empty) x_star_tree ;
+      Max1.assert_trees_equal (Max1.add_node x f_node Max1.bottom) x_star_tree ;
       (* adding (x, "x") shouldn't add stars *)
-      Max1.assert_trees_equal (Max1.add_trace x x_trace Max1.empty) x_tree ;
+      Max1.assert_trees_equal (Max1.add_trace x x_trace Max1.bottom) x_tree ;
       let module Max2 = MakeTree (struct
         let max_depth = 2
 
@@ -474,9 +474,9 @@ let tests =
       let xF_tree = Max2.BaseMap.singleton x_base f_node in
       let xF_star_tree = Max2.BaseMap.singleton x_base f_star_node in
       (* adding x.f to an empty tree should't add stars... *)
-      Max2.assert_trees_equal (Max2.add_trace xF x_trace Max2.empty) xF_tree ;
+      Max2.assert_trees_equal (Max2.add_trace xF x_trace Max2.bottom) xF_tree ;
       (* ... but adding x.f.g should *)
-      Max2.assert_trees_equal (Max2.add_trace xFG x_trace Max2.empty) xF_star_tree ;
+      Max2.assert_trees_equal (Max2.add_trace xFG x_trace Max2.bottom) xF_star_tree ;
       (* adding the node (f.g, "x") to a tree with x should produce the same result *)
       Max2.assert_trees_equal (Max2.add_node x fG_node x_tree) xF_star_tree
     in
@@ -505,7 +505,7 @@ let tests =
       let xG_tree = Max1.BaseMap.singleton x_base g_node in
       let x_star_tree = Max1.BaseMap.singleton x_base star_node in
       (* adding x.f to a tree containing just x should work *)
-      Max1.assert_trees_equal (Max1.add_trace xF y_trace Max1.empty) xF_tree ;
+      Max1.assert_trees_equal (Max1.add_trace xF y_trace Max1.bottom) xF_tree ;
       (* but adding x.g to a tree containing x.f should create a star *)
       Max1.assert_trees_equal (Max1.add_trace xG z_trace xF_tree) x_star_tree ;
       (* joining the x.f and x.g trees should also create a star *)

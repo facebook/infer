@@ -23,6 +23,7 @@ end
 module type S = sig
   include Spec
 
+  (** bottom = this trace has no source or sink data *)
   include AbstractDomain.WithBottom
 
   module Sources : sig
@@ -65,9 +66,6 @@ module type S = sig
     ; path_source: Source.t
     ; path_sink: Sink.t
     ; path_passthroughs: Passthroughs.t }
-
-  val empty : t
-  (** the empty trace *)
 
   val sources : t -> Sources.t
   (** get the sources of the trace. *)
@@ -123,9 +121,6 @@ module type S = sig
 
   val append : t -> t -> CallSite.t -> t
   (** append the trace for given call site to the current caller trace *)
-
-  val is_empty : t -> bool
-  (** return true if this trace has no source or sink data *)
 
   val pp : F.formatter -> t -> unit
 

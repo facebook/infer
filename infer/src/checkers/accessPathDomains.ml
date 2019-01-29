@@ -16,9 +16,9 @@ module Set = struct
 
   let pp = APSet.pp
 
-  let empty = APSet.empty
+  let bottom = APSet.empty
 
-  let is_empty = APSet.is_empty
+  let is_bottom = APSet.is_empty
 
   let normalize aps =
     APSet.filter

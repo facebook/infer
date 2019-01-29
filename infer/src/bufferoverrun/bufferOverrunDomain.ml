@@ -687,7 +687,7 @@ module Alias = struct
       AliasRet.pp x.ret
 
 
-  let bot : t = {map= AliasMap.empty; ret= AliasRet.empty}
+  let bot : t = {map= AliasMap.empty; ret= AliasRet.bottom}
 
   let lift_map : (AliasMap.t -> AliasMap.t) -> t -> t = fun f a -> {a with map= f a.map}
 
@@ -736,7 +736,7 @@ module CoreVal = struct
 
   let is_symbolic v = Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
 
-  let is_empty v = Itv.is_empty (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
+  let is_empty v = Itv.is_bottom (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
 end
 
 module PruningExp = struct
@@ -1143,7 +1143,9 @@ module MemReach = struct
   let add_heap : Loc.t -> Val.t -> t -> t =
    fun x v m ->
     let v =
-      let sym = if Itv.is_empty (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x in
+      let sym =
+        if Itv.is_bottom (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x
+      in
       let offset_sym, size_sym =
         if ArrayBlk.is_bot (Val.get_array_blk v) then (Relation.Sym.bot, Relation.Sym.bot)
         else (Relation.Sym.of_loc_offset x, Relation.Sym.of_loc_size x)

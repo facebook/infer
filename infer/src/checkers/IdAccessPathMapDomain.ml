@@ -11,6 +11,10 @@ module L = Logging
 
 include (IdMap : module type of IdMap with type 'a t := 'a IdMap.t)
 
+let bottom = empty
+
+let is_bottom = is_empty
+
 type t = HilExp.AccessExpression.t IdMap.t
 
 type value = HilExp.AccessExpression.t

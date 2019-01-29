@@ -113,7 +113,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_globals astate loc globals =
     if GlobalVarSet.is_empty globals then astate
     else
-      let trace = match fst astate with Bottom -> SiofTrace.empty | NonBottom t -> t in
+      let trace = match fst astate with Bottom -> SiofTrace.bottom | NonBottom t -> t in
       let is_dangerous =
         (* filter out variables that are known to be already initialized *)
         let initialized = snd astate in
@@ -134,7 +134,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         get_globals pdesc e |> add_globals astate call_loc )
 
 
-  let at_least_nonbottom = Domain.join (NonBottom SiofTrace.empty, Domain.VarNames.empty)
+  let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
   let exec_instr astate {ProcData.pdesc} _ (instr : Sil.instr) =
     match instr with
@@ -169,7 +169,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               then Some initialized_globals
               else None )
         in
-        Domain.join astate (NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
+        Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
       when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
       ->
@@ -228,7 +228,7 @@ let report_siof summary trace pdesc gname loc =
     | Some (NonBottom summary, _) ->
         summary
     | _ ->
-        SiofTrace.empty
+        SiofTrace.bottom
   in
   let report_one_path ((_, path) as trace) =
     let description =

@@ -89,7 +89,7 @@ let tests =
     (* flatten access tree into list of access paths with associated traces *)
     let trace_assocs =
       MockTaintAnalysis.TaintDomain.trace_fold
-        (fun acc ap t -> if not (MockTrace.is_empty t) then (ap, t) :: acc else acc)
+        (fun acc ap t -> if not (MockTrace.is_bottom t) then (ap, t) :: acc else acc)
         (fst astate) []
     in
     PrettyPrintable.pp_collection ~pp_item fmt (List.rev trace_assocs)
@@ -157,6 +157,6 @@ let tests =
       , [assign_to_non_source "ret_id"; call_sink "ret_id"; assert_empty] ) ]
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
          {formal_map= FormalMap.empty; summary= Summary.dummy}
-         ~initial:(MockTaintAnalysis.Domain.empty, Bindings.empty)
+         ~initial:(MockTaintAnalysis.Domain.bottom, Bindings.empty)
   in
   "taint_test_suite" >::: test_list

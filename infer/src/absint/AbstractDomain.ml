@@ -43,9 +43,9 @@ end
 module type WithBottom = sig
   include S
 
-  val empty : t
+  val bottom : t
 
-  val is_empty : t -> bool
+  val is_bottom : t -> bool
 end
 
 module type WithTop = sig
@@ -59,9 +59,9 @@ end
 module BottomLifted (Domain : S) = struct
   type t = Domain.t bottom_lifted
 
-  let empty = Bottom
+  let bottom = Bottom
 
-  let is_empty = function Bottom -> true | NonBottom _ -> false
+  let is_bottom = function Bottom -> true | NonBottom _ -> false
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -194,9 +194,9 @@ end
 module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
   type t = Bot | V of V.t | Top
 
-  let empty = Bot
+  let bottom = Bot
 
-  let is_empty = function Bot -> true | _ -> false
+  let is_bottom = function Bot -> true | _ -> false
 
   let top = Top
 
@@ -249,6 +249,10 @@ end
 module FiniteSetOfPPSet (S : PrettyPrintable.PPSet) = struct
   include S
 
+  let bottom = empty
+
+  let is_bottom = is_empty
+
   let ( <= ) ~lhs ~rhs = if phys_equal lhs rhs then true else subset lhs rhs
 
   let join astate1 astate2 = if phys_equal astate1 astate2 then astate1 else union astate1 astate2
@@ -291,6 +295,10 @@ module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   type t = ValueDomain.t M.t
 
   type value = ValueDomain.t
+
+  let bottom = empty
+
+  let is_bottom = is_empty
 
   (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
   let ( <= ) ~lhs ~rhs =
@@ -405,9 +413,9 @@ struct
 
   type t = M.t
 
-  let empty = M.empty
+  let bottom = M.empty
 
-  let is_empty = M.is_empty
+  let is_bottom = M.is_empty
 
   let ( <= ) = M.( <= )
 
@@ -449,9 +457,9 @@ end
 module BooleanOr = struct
   type t = bool
 
-  let empty = false
+  let bottom = false
 
-  let is_empty astate = not astate
+  let is_bottom astate = not astate
 
   let ( <= ) ~lhs ~rhs = (not lhs) || rhs
 
@@ -474,11 +482,11 @@ module CountDomain (MaxCount : MaxCount) = struct
     MaxCount.max
 
 
-  let empty = 0
+  let bottom = 0
 
   let is_top = Int.equal top
 
-  let is_empty = Int.equal empty
+  let is_bottom = Int.equal bottom
 
   let ( <= ) ~lhs ~rhs = lhs <= rhs
 
@@ -490,7 +498,7 @@ module CountDomain (MaxCount : MaxCount) = struct
 
   let increment astate = if is_top astate then top else astate + 1
 
-  let decrement astate = if is_empty astate then empty else astate - 1
+  let decrement astate = if is_bottom astate then bottom else astate - 1
 
   let pp = Int.pp
 end

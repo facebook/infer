@@ -58,7 +58,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | Some (trace, _) ->
           trace
       | None ->
-          TraceDomain.empty
+          TraceDomain.bottom
 
 
     let exp_get_node_ ~abstracted raw_access_path access_tree proc_data =
@@ -130,13 +130,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let get_summary pname =
         if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc) then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
-          TaintDomain.empty
+          TaintDomain.bottom
         else
           match Payload.read proc_data.pdesc pname with
           | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
-              TaintDomain.empty
+              TaintDomain.bottom
       in
       let get_caller_string caller_site =
         let caller_pname = CallSite.pname caller_site in
@@ -333,7 +333,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               match HilExp.ignore_cast exp with
               | HilExp.AccessExpression actual_ae_raw
                 when not
-                       (TraceDomain.Sources.Footprint.is_empty
+                       (TraceDomain.Sources.Footprint.is_bottom
                           (TraceDomain.sources actual_trace').footprint) ->
                   let actual_ap =
                     AccessPath.Abs.Abstracted
@@ -427,7 +427,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         in
         let trace = instantiate_and_report callee_trace caller_trace access_tree_acc in
         let pruned_trace =
-          if TraceDomain.Sources.Footprint.is_empty (TraceDomain.sources trace).footprint then
+          if TraceDomain.Sources.Footprint.is_bottom (TraceDomain.sources trace).footprint then
             (* empty footprint; nothing else can flow into these sinks. so don't track them *)
             TraceDomain.update_sinks trace TraceDomain.Sinks.empty
           else trace
@@ -552,14 +552,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                        ~f:should_taint_typ
                 then TraceDomain.Sources.Footprint.add_trace access_path true acc
                 else acc )
-              sources.footprint TraceDomain.Sources.Footprint.empty
+              sources.footprint TraceDomain.Sources.Footprint.bottom
           in
           let filtered_sources = {sources with footprint= filtered_footprint} in
           if TraceDomain.Sources.is_empty filtered_sources then access_tree
           else
             let trace' = TraceDomain.update_sources trace_with_propagation filtered_sources in
             let pruned_trace =
-              if TraceDomain.Sources.Footprint.is_empty filtered_footprint then
+              if TraceDomain.Sources.Footprint.is_bottom filtered_footprint then
                 (* empty footprint; nothing else can flow into these sinks. so don't track them *)
                 TraceDomain.update_sinks trace' TraceDomain.Sinks.empty
               else trace'
@@ -742,7 +742,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let passthroughs = passthroughs trace in
         let sinks = sinks trace in
         (* invariant 1: sinks with no footprint sources are dead and should be forgotten *)
-        if Sources.Footprint.is_empty footprint_sources && not (Sinks.is_empty sinks) then
+        if Sources.Footprint.is_bottom footprint_sources && not (Sinks.is_empty sinks) then
           Logging.die InternalError
             "Trace %a associated with %a tracks sinks even though no more sources can flow into \
              them"
@@ -807,7 +807,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
          directly with a formal. In Java this can't happen, so we only care if the formal flows to
          a sink *)
       ( if is_java then TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
-      else TraceDomain.is_empty trace )
+      else TraceDomain.is_bottom trace )
       &&
       match tree with
       | TaintDomain.Subtree subtree ->
@@ -827,7 +827,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             else
               let node' =
                 if TraceDomain.Sinks.is_empty (TraceDomain.sinks trace) then
-                  (TraceDomain.empty, subtree)
+                  (TraceDomain.bottom, subtree)
                 else node
               in
               AccessPath.BaseMap.add base node' acc
@@ -844,7 +844,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | None ->
                 (* base is a local var *)
                 acc )
-        access_tree' TaintDomain.empty
+        access_tree' TaintDomain.bottom
     in
     if Config.developer_mode then check_invariants with_footprint_vars ;
     TaintSpecification.to_summary_access_tree with_footprint_vars
@@ -864,7 +864,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
           | None ->
               acc )
-        ~init:TaintDomain.empty
+        ~init:TaintDomain.bottom
         (TraceDomain.Source.get_tainted_formals pdesc tenv)
     in
     let initial = make_initial proc_desc in

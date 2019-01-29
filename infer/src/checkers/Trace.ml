@@ -58,8 +58,6 @@ module type S = sig
     ; path_sink: Sink.t
     ; path_passthroughs: Passthroughs.t }
 
-  val empty : t
-
   val sources : t -> Sources.t
   (** get the sources of the trace. *)
 
@@ -112,9 +110,6 @@ module type S = sig
 
   val append : t -> t -> CallSite.t -> t
   (** append the trace for given call site to the current caller trace *)
-
-  val is_empty : t -> bool
-  (** return true if this trace has no source or sink data *)
 
   val pp : F.formatter -> t -> unit
 
@@ -199,20 +194,20 @@ module Make (Spec : Spec) = struct
           F.fprintf fmt " + Sanitizers(%a)" Sanitizers.pp sanitizers
       in
       if Known.is_empty known then
-        if Footprint.is_empty footprint then F.pp_print_string fmt "{}"
+        if Footprint.is_bottom footprint then F.pp_print_string fmt "{}"
         else F.fprintf fmt "Footprint(%a)%a" Footprint.pp footprint pp_sanitizers sanitizers
       else
         F.fprintf fmt "%a + Footprint(%a)%a" Known.pp known Footprint.pp footprint pp_sanitizers
           sanitizers
 
 
-    let empty = {known= Known.empty; footprint= Footprint.empty; sanitizers= Sanitizers.empty}
+    let empty = {known= Known.empty; footprint= Footprint.bottom; sanitizers= Sanitizers.empty}
 
     (* note: empty known/footprint implies empty sanitizers *)
-    let is_empty {known; footprint} = Known.is_empty known && Footprint.BaseMap.is_empty footprint
+    let is_empty {known; footprint} = Known.is_empty known && Footprint.is_bottom footprint
 
     let of_footprint access_path =
-      let footprint = Footprint.add_trace access_path true Footprint.empty in
+      let footprint = Footprint.add_trace access_path true Footprint.bottom in
       {empty with footprint}
 
 
@@ -276,7 +271,7 @@ module Make (Spec : Spec) = struct
 
   let passthroughs t = t.passthroughs
 
-  let is_empty t =
+  let is_bottom t =
     (* sources empty => sinks empty and passthroughs empty *)
     Sources.is_empty t.sources
 
@@ -497,7 +492,7 @@ module Make (Spec : Spec) = struct
 
   (** compute caller_trace + callee_trace *)
   let append caller_trace callee_trace callee_site =
-    if is_empty callee_trace then caller_trace
+    if is_bottom callee_trace then caller_trace
     else
       let sanitizers =
         Sources.Sanitizers.join callee_trace.sources.sanitizers caller_trace.sources.sanitizers
@@ -544,7 +539,7 @@ module Make (Spec : Spec) = struct
       {sources; sinks; passthroughs}
 
 
-  let empty =
+  let bottom =
     let sources = Sources.empty in
     let sinks = Sinks.empty in
     let passthroughs = Passthroughs.empty in

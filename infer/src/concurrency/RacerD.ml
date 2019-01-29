@@ -576,7 +576,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
             |> List.filter ~f:(fun (_, index) -> not (Int.equal 0 index))
             |> List.fold ~init ~f:add_conditional_owned_formal
         in
-        {RacerDDomain.empty with ownership; threads}
+        {RacerDDomain.bottom with ownership; threads}
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
@@ -584,7 +584,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           List.fold ~init:own_locals ~f:add_conditional_owned_formal
             (FormalMap.get_formals_indexes formal_map)
         in
-        {RacerDDomain.empty with ownership; threads}
+        {RacerDDomain.bottom with ownership; threads}
     in
     match Analyzer.compute_post proc_data ~initial with
     | Some {threads; locks; accesses; ownership; attribute_map} ->
@@ -730,9 +730,9 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
           if Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind snapshot.access) then
             PathDomain.add_sink snapshot.access acc
           else acc )
-        accesses PathDomain.empty
+        accesses PathDomain.bottom
   | _ ->
-      PathDomain.empty
+      PathDomain.bottom
 
 
 let make_trace ~report_kind original_path pdesc =

@@ -94,13 +94,13 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
   type t = node BaseMap.t
 
-  let empty = BaseMap.empty
+  let bottom = BaseMap.empty
 
-  let is_empty = BaseMap.is_empty
+  let is_bottom = BaseMap.is_empty
 
   let make_node trace subtree = (trace, Subtree subtree)
 
-  let empty_node = make_node TraceDomain.empty AccessMap.empty
+  let empty_node = make_node TraceDomain.bottom AccessMap.empty
 
   let is_empty_tree = function Star -> false | Subtree node_map -> AccessMap.is_empty node_map
 
@@ -108,9 +108,9 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
   let make_starred_leaf trace = (trace, Star)
 
-  let empty_normal_leaf = make_normal_leaf TraceDomain.empty
+  let empty_normal_leaf = make_normal_leaf TraceDomain.bottom
 
-  let empty_starred_leaf = make_starred_leaf TraceDomain.empty
+  let empty_starred_leaf = make_starred_leaf TraceDomain.bottom
 
   (* no need to make it tail-recursive, trees shouldn't be big enough to blow up the call stack *)
   let rec node_depth (_, tree) = 1 + tree_depth tree
@@ -420,7 +420,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
       | Star ->
           F.pp_print_char fmt '*'
     in
-    if not (TraceDomain.is_empty trace) then
+    if not (TraceDomain.is_bottom trace) then
       if not (is_empty_tree subtree) then
         F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree
       else TraceDomain.pp fmt trace

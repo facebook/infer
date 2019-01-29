@@ -50,7 +50,7 @@ module Make (TraceElem : TraceElem.S) = struct
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list
 
-  let empty =
+  let bottom =
     let dummy_source = () in
     of_source dummy_source
 
@@ -70,13 +70,13 @@ module Make (TraceElem : TraceElem.S) = struct
       ~f:(fun t_acc sink ->
         let callee_sink = Sink.with_callsite sink call_site in
         add_sink callee_sink t_acc )
-      ~init:empty
+      ~init:bottom
       (Sinks.elements (sinks t))
 
 
   let of_sink sink =
     let sinks = Sinks.add sink Sinks.empty in
-    update_sinks empty sinks
+    update_sinks bottom sinks
 
 
   let get_reportable_sink_path sink ~trace_of_pname =
