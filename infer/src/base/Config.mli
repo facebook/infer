@@ -415,7 +415,6 @@ val issues_fields :
   | `Issue_field_qualifier
   | `Issue_field_severity
   | `Issue_field_bucket
-  | `Issue_field_visibility
   | `Issue_field_line
   | `Issue_field_column
   | `Issue_field_procedure

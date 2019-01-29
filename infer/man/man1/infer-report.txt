@@ -114,7 +114,7 @@ OPTIONS
            section
 
        --issues-fields ,-separated sequence of { bug_type | bucket |
-       qualifier | severity | visibility | line | column | procedure |
+       qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note }
            Fields to emit with --issues-tests (default: file procedure

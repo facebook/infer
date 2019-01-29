@@ -283,7 +283,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         | _ ->
             None
       in
-      let visibility = Some (Exceptions.string_of_visibility err_data.visibility) in
       let qualifier =
         let base_qualifier = error_desc_to_plain_string err_key.err_desc in
         if IssueType.(equal resource_leak) err_key.err_name then
@@ -302,7 +301,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         { Jsonbug_j.bug_type
         ; qualifier
         ; severity
-        ; visibility
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name
@@ -397,8 +395,6 @@ let pp_custom_of_report fmt report fields =
           Format.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
       | `Issue_field_severity ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.severity
-      | `Issue_field_visibility ->
-          Format.fprintf fmt "%s%a" (comma_separator index) (Pp.option String.pp) issue.visibility
       | `Issue_field_line ->
           Format.fprintf fmt "%s%d" (comma_separator index) issue.line
       | `Issue_field_column ->

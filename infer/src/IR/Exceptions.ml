@@ -19,10 +19,6 @@ type visibility =
 
 let equal_visibility = [%compare.equal: visibility]
 
-let string_of_visibility vis =
-  match vis with Exn_user -> "user" | Exn_developer -> "developer" | Exn_system -> "system"
-
-
 (** class of error/warning *)
 type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
 

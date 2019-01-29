@@ -42,7 +42,6 @@ let issues_fields_symbols =
   ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)
   ; ("severity", `Issue_field_severity)
-  ; ("visibility", `Issue_field_visibility)
   ; ("line", `Issue_field_line)
   ; ("column", `Issue_field_column)
   ; ("procedure", `Issue_field_procedure)
