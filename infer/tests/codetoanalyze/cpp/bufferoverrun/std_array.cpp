@@ -68,8 +68,7 @@ void array_iter1_Bad() {
   a[a[0]] = 0;
 }
 
-// TODO: Inferbo should give a preciser widening threshold.
-void array_iter2_Good_FP() {
+void array_iter2_Good() {
   std::array<int, 11> a;
   for (auto it = a.begin(); it != a.end(); ++it) {
     *it = 10;

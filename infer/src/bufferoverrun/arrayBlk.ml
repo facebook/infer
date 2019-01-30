@@ -50,8 +50,14 @@ module ArrInfo = struct
       match (prev, next) with
       | ( C {offset= offset1; size= size1; stride= stride1}
         , C {offset= offset2; size= size2; stride= stride2} ) ->
+          let offset =
+            let thresholds =
+              if Itv.eq size1 size2 then Option.to_list (Itv.is_const size1) else []
+            in
+            Itv.widen_thresholds ~thresholds ~prev:offset1 ~next:offset2 ~num_iters
+          in
           C
-            { offset= Itv.widen ~prev:offset1 ~next:offset2 ~num_iters
+            { offset
             ; size= Itv.widen ~prev:size1 ~next:size2 ~num_iters
             ; stride= Itv.widen ~prev:stride1 ~next:stride2 ~num_iters }
       | Java {length= length1}, Java {length= length2} ->

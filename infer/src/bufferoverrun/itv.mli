@@ -102,6 +102,8 @@ end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)
 
+val widen_thresholds : thresholds:Z.t list -> prev:t -> next:t -> num_iters:int -> t
+
 val compare : t -> t -> int
 
 val bot : t
