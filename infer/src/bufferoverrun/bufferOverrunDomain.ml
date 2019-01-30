@@ -390,6 +390,13 @@ module Val = struct
     ; traces= Trace.(Set.add_elem location (through ~risky_fun:None)) v.traces }
 
 
+  let set_array_offset : Location.t -> Itv.t -> t -> t =
+   fun location offset v ->
+    { v with
+      arrayblk= ArrayBlk.set_offset offset v.arrayblk
+    ; traces= Trace.(Set.add_elem location (through ~risky_fun:None)) v.traces }
+
+
   let set_array_stride : Z.t -> t -> t =
    fun new_stride v ->
     PhysEqual.optim1 v ~res:{v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}

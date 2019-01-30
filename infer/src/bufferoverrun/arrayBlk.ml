@@ -219,6 +219,17 @@ module ArrInfo = struct
         Top
 
 
+  let set_offset : Itv.t -> t -> t =
+   fun offset arr ->
+    match arr with
+    | C {size; stride} ->
+        C {offset; size; stride}
+    | Java _ ->
+        L.(die InternalError) "Unexpected offset setting on Java array"
+    | Top ->
+        Top
+
+
   let offsetof = function C {offset} -> offset | Java _ -> Itv.zero | Top -> Itv.top
 
   let sizeof = function C {size} -> size | Java {length} -> length | Top -> Itv.top
@@ -336,6 +347,8 @@ let prune_ne : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
 let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length length) a
 
 let set_stride : Z.t -> t -> t = fun stride a -> map (ArrInfo.set_stride stride) a
+
+let set_offset : Itv.t -> t -> t = fun offset a -> map (ArrInfo.set_offset offset) a
 
 let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =
   match (is_singleton_or_more arr1, is_singleton_or_more arr2) with

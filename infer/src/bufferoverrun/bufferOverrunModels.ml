@@ -420,6 +420,38 @@ module StdArray = struct
         location cond_set
     in
     {exec; check}
+
+
+  let begin_ _size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
+
+
+  let end_ size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        let offset = Itv.of_int_lit (IntLit.of_int64 size) in
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
+
+
+  let back size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        let offset = Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)) in
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
 end
 
 module StdBasicString = struct
@@ -629,6 +661,7 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
+    let std_array1 = mk_std_array () in
     let std_array2 = mk_std_array () in
     let char_ptr = Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)) in
     make_dispatcher
@@ -667,6 +700,12 @@ module Call = struct
         $+ capt_arg_of_typ (-"std" &:: "vector")
         $+? capt_exp $--> Folly.Split.std_vector
       ; std_array0 >:: "array" &--> StdArray.constructor
+      ; std_array1 >:: "begin" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "cbegin" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "end" $ capt_arg $!--> StdArray.end_
+      ; std_array1 >:: "cend" $ capt_arg $!--> StdArray.end_
+      ; std_array1 >:: "front" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "back" $ capt_arg $!--> StdArray.back
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> no_model
