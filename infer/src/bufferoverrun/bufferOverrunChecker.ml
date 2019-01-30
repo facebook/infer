@@ -20,6 +20,16 @@ module Relation = BufferOverrunDomainRelation
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 
+module Payload = SummaryPayload.Make (struct
+  type t = BufferOverrunCheckerSummary.t
+
+  let update_payloads astate (payloads : Payloads.t) =
+    {payloads with buffer_overrun_checker= Some astate}
+
+
+  let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_checker
+end)
+
 module UnusedBranch = struct
   type t = {node: CFG.Node.t; location: Location.t; condition: Exp.t; true_branch: bool}
 
@@ -236,12 +246,11 @@ let instantiate_cond :
     -> Procdesc.t
     -> (Exp.t * Typ.t) list
     -> Dom.Mem.t
-    -> BufferOverrunAnalysis.Payload.t
+    -> BufferOverrunAnalysisSummary.t
+    -> BufferOverrunCheckerSummary.t
     -> Location.t
     -> PO.ConditionSet.checked_t =
- fun tenv integer_type_widths callee_pdesc params caller_mem summary location ->
-  let callee_exit_mem = BufferOverrunSummary.get_output summary in
-  let callee_cond = BufferOverrunSummary.get_cond_set summary in
+ fun tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem callee_cond location ->
   let rel_subst_map =
     Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
   in
@@ -288,13 +297,15 @@ let check_instr :
         match
           Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
           |> Option.bind ~f:(fun callee_summary ->
-                 BufferOverrunAnalysis.Payload.of_summary callee_summary
-                 |> Option.map ~f:(fun payload -> (payload, Summary.get_proc_desc callee_summary))
-             )
+                 let analysis_payload = BufferOverrunAnalysis.Payload.of_summary callee_summary in
+                 let checker_payload = Payload.of_summary callee_summary in
+                 Option.map2 analysis_payload checker_payload
+                   ~f:(fun analysis_payload checker_payload ->
+                     (analysis_payload, checker_payload, Summary.get_proc_desc callee_summary) ) )
         with
-        | Some (callee_payload, callee_pdesc) ->
-            instantiate_cond tenv integer_type_widths callee_pdesc params mem callee_payload
-              location
+        | Some (callee_mem, callee_condset, callee_pdesc) ->
+            instantiate_cond tenv integer_type_widths callee_pdesc params mem callee_mem
+              callee_condset location
             |> PO.ConditionSet.join cond_set
         | None ->
             (* unknown call / no inferbo payload *) cond_set ) )
@@ -418,9 +429,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
     report_errors tenv summary checks ;
     let locals = BufferOverrunAnalysis.get_local_decls proc_desc in
     let cond_set = checks_summary locals checks in
-    let exit_mem = BufferOverrunAnalysis.compute_summary locals cfg inv_map in
-    let payload = (exit_mem, cond_set) in
-    BufferOverrunAnalysis.Payload.update_summary payload summary
+    Payload.update_summary cond_set summary
   in
   NodePrinter.finish_session underlying_exit_node ;
   summary

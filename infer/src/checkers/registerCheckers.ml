@@ -43,8 +43,17 @@ let all_checkers =
     ; callbacks=
         [ (DynamicDispatch Interproc.analyze_procedure, Language.Clang)
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
-  ; { name= "buffer overrun"
-    ; active= Config.bufferoverrun || Config.cost || Config.purity || Config.quandaryBO
+  ; { name= "buffer overrun analysis"
+    ; active=
+        Config.bufferoverrun || Config.cost || Config.loop_hoisting || Config.purity
+        || Config.quandaryBO
+    ; callbacks=
+        [ (Procedure BufferOverrunAnalysis.do_analysis, Language.Clang)
+        ; (Procedure BufferOverrunAnalysis.do_analysis, Language.Java) ] }
+  ; { name= "buffer overrun checker"
+    ; active=
+        Config.bufferoverrun || Config.cost || Config.loop_hoisting || Config.purity
+        || Config.quandaryBO
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }

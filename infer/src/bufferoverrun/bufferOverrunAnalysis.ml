@@ -17,11 +17,13 @@ module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
 
 module Payload = SummaryPayload.Make (struct
-  type t = BufferOverrunSummary.t
+  type t = BufferOverrunAnalysisSummary.t
 
-  let update_payloads astate (payloads : Payloads.t) = {payloads with buffer_overrun= Some astate}
+  let update_payloads astate (payloads : Payloads.t) =
+    {payloads with buffer_overrun_analysis= Some astate}
 
-  let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun
+
+  let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_analysis
 end)
 
 type extras = {oenv: Dom.OndemandEnv.t}
@@ -118,7 +120,7 @@ module TransferFunctions = struct
       -> Typ.Procname.t
       -> (Exp.t * Typ.t) list
       -> Dom.Mem.t
-      -> BufferOverrunSummary.memory
+      -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
    fun tenv integer_type_widths ret callee_pdesc callee_pname params caller_mem callee_exit_mem
@@ -149,7 +151,6 @@ module TransferFunctions = struct
         match
           Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
           |> Option.bind ~f:Payload.of_summary
-          |> Option.map ~f:BufferOverrunSummary.get_output
         with
         | Some callee_mem ->
             let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
@@ -232,9 +233,8 @@ module TransferFunctions = struct
             Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
             |> Option.bind ~f:(fun callee_summary ->
                    Payload.of_summary callee_summary
-                   |> Option.map ~f:(fun payload ->
-                          ( BufferOverrunSummary.get_output payload
-                          , Summary.get_proc_desc callee_summary ) ) )
+                   |> Option.map ~f:(fun payload -> (payload, Summary.get_proc_desc callee_summary))
+               )
           with
           | Some (callee_exit_mem, callee_pdesc) ->
               instantiate_mem tenv integer_type_widths ret callee_pdesc callee_pname params mem
@@ -270,7 +270,7 @@ type invariant_map = Analyzer.invariant_map
 
 type local_decls = PowLoc.t
 
-type memory_summary = BufferOverrunSummary.memory
+type memory_summary = BufferOverrunAnalysisSummary.t
 
 let extract_pre = Analyzer.extract_pre
 
@@ -332,3 +332,12 @@ let compute_summary : local_decls -> CFG.t -> invariant_map -> memory_summary =
       exit_mem |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv
   | None ->
       Bottom
+
+
+let do_analysis : Callbacks.proc_callback_args -> Summary.t =
+ fun {proc_desc; tenv; integer_type_widths; summary} ->
+  let inv_map = cached_compute_invariant_map proc_desc tenv integer_type_widths in
+  let locals = get_local_decls proc_desc in
+  let cfg = CFG.from_pdesc proc_desc in
+  let payload = compute_summary locals cfg inv_map in
+  Payload.update_summary payload summary
