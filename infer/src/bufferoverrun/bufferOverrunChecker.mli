@@ -8,13 +8,3 @@
 open! IStd
 
 val checker : Callbacks.proc_callback_t
-
-module CFG = ProcCfg.NormalOneInstrPerNode
-
-type invariant_map
-
-val cached_compute_invariant_map : Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map
-
-val extract_pre : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t option
-
-val extract_post : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t option

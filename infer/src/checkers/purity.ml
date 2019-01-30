@@ -23,7 +23,7 @@ module Payload = SummaryPayload.Make (struct
 end)
 
 type purity_extras =
-  {inferbo_invariant_map: BufferOverrunChecker.invariant_map; formals: Var.t list}
+  {inferbo_invariant_map: BufferOverrunAnalysis.invariant_map; formals: Var.t list}
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
@@ -139,7 +139,7 @@ module TransferFunctions = struct
       CFG.Node.underlying_node node |> InstrCFG.last_of_underlying_node |> InstrCFG.Node.id
     in
     let inferbo_mem =
-      Option.value_exn (BufferOverrunChecker.extract_post node_id inferbo_invariant_map)
+      Option.value_exn (BufferOverrunAnalysis.extract_post node_id inferbo_invariant_map)
     in
     match instr with
     | Assign (ae, _, _) when is_heap_access ae ->
@@ -185,7 +185,7 @@ let should_report pdesc =
 let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.t =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let inferbo_invariant_map =
-    BufferOverrunChecker.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
   let formals =
     Procdesc.get_formals proc_desc

@@ -53,7 +53,7 @@ module TransferFunctionsNodesBasicCost = struct
   module Domain = NodesBasicCostDomain
 
   type extras =
-    { inferbo_invariant_map: BufferOverrunChecker.invariant_map
+    { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
     ; integer_type_widths: Typ.IntegerWidths.t }
 
   let cost_atomic_instruction = BasicCost.one
@@ -101,7 +101,7 @@ module TransferFunctionsNodesBasicCost = struct
   let exec_instr costmap ({ProcData.extras= {inferbo_invariant_map; integer_type_widths}} as pdata)
       node instr =
     let inferbo_mem =
-      Option.value_exn (BufferOverrunChecker.extract_pre (CFG.Node.id node) inferbo_invariant_map)
+      Option.value_exn (BufferOverrunAnalysis.extract_pre (CFG.Node.id node) inferbo_invariant_map)
     in
     let costmap = exec_instr_cost integer_type_widths inferbo_mem costmap pdata node instr in
     costmap
@@ -151,7 +151,7 @@ module BoundMap = struct
       | _ -> (
           let exit_state_opt =
             let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
-            BufferOverrunChecker.extract_post instr_node_id inferbo_invariant_map
+            BufferOverrunAnalysis.extract_post instr_node_id inferbo_invariant_map
           in
           match exit_state_opt with
           | Some entry_mem ->
@@ -740,7 +740,7 @@ let check_and_report_top_and_bottom cost proc_desc summary =
 
 let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
   let inferbo_invariant_map =
-    BufferOverrunChecker.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   let proc_data = ProcData.make_default proc_desc tenv in
