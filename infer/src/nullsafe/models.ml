@@ -64,9 +64,7 @@ let is_check_not_null proc_name =
 (** Parameter number for a procedure known to be a checkNotNull *)
 let get_check_not_null_parameter proc_name =
   let proc_id = Typ.Procname.to_unique_id proc_name in
-  try Hashtbl.find check_not_null_parameter_table proc_id with Caml.Not_found ->
-    (* Assume the check is on the first parameter unless modeled otherwise *)
-    1
+  Hashtbl.find_opt check_not_null_parameter_table proc_id
 
 
 (** Check if the procedure is one of the known Preconditions.checkState. *)
