@@ -7,7 +7,8 @@ TESTS_DIR = ../../..
 
 # see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --cost-only --debug-exceptions --project-root $(TESTS_DIR) --use-cost-threshold
+INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR) \
+                --use-cost-threshold
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)

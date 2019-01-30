@@ -51,9 +51,7 @@ let all_checkers =
         [ (Procedure BufferOverrunAnalysis.do_analysis, Language.Clang)
         ; (Procedure BufferOverrunAnalysis.do_analysis, Language.Java) ] }
   ; { name= "buffer overrun checker"
-    ; active=
-        Config.bufferoverrun || Config.cost || Config.loop_hoisting || Config.purity
-        || Config.quandaryBO
+    ; active= Config.bufferoverrun || Config.quandaryBO
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
