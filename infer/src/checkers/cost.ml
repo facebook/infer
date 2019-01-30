@@ -41,8 +41,9 @@ let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~para
         "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
         callee_cost Typ.Procname.pp callee_pname
   | Some callee_pdesc ->
+      let callee_formals = Procdesc.get_pvar_formals callee_pdesc in
       let eval_sym =
-        BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_pdesc params
+        BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params
           inferbo_caller_mem
       in
       BasicCost.subst callee_cost eval_sym

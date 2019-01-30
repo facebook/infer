@@ -55,9 +55,8 @@ module TransferFunctions = struct
 
   type nonrec extras = extras
 
-  let instantiate_mem_reachable (ret_id, _) callee_pdesc callee_pname ~callee_exit_mem
+  let instantiate_mem_reachable (ret_id, _) callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
-    let formals = Procdesc.get_pvar_formals callee_pdesc in
     let copy_reachable_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
@@ -65,7 +64,7 @@ module TransferFunctions = struct
             let v = Dom.Val.subst v eval_sym_trace location in
             PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
       in
-      let reachable_locs = Dom.Mem.get_reachable_locs_from formals locs callee_exit_mem in
+      let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in
       PowLoc.fold copy reachable_locs mem
     in
     let instantiate_ret_alias mem =
@@ -89,7 +88,7 @@ module TransferFunctions = struct
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val = Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem in
     let formal_locs =
-      List.fold formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
+      List.fold callee_formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
           let v = Dom.Mem.find (Loc.of_pvar formal) callee_exit_mem in
           PowLoc.join acc (Dom.Val.get_all_locs v) )
     in
@@ -116,23 +115,23 @@ module TransferFunctions = struct
          Tenv.t
       -> Typ.IntegerWidths.t
       -> Ident.t * Typ.t
-      -> Procdesc.t
+      -> (Pvar.t * Typ.t) list
       -> Typ.Procname.t
       -> (Exp.t * Typ.t) list
       -> Dom.Mem.t
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun tenv integer_type_widths ret callee_pdesc callee_pname params caller_mem callee_exit_mem
+   fun tenv integer_type_widths ret callee_formals callee_pname params caller_mem callee_exit_mem
        location ->
     let rel_subst_map =
-      Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
+      Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
     in
     let eval_sym_trace =
-      Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem ~strict:false
+      Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem ~strict:false
     in
     let caller_mem =
-      instantiate_mem_reachable ret callee_pdesc callee_pname ~callee_exit_mem eval_sym_trace
+      instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
         caller_mem location
       |> forget_ret_relation ret callee_pname
     in
@@ -233,11 +232,13 @@ module TransferFunctions = struct
             Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
             |> Option.bind ~f:(fun callee_summary ->
                    Payload.of_summary callee_summary
-                   |> Option.map ~f:(fun payload -> (payload, Summary.get_proc_desc callee_summary))
+                   |> Option.map ~f:(fun payload ->
+                          ( payload
+                          , Summary.get_proc_desc callee_summary |> Procdesc.get_pvar_formals ) )
                )
           with
-          | Some (callee_exit_mem, callee_pdesc) ->
-              instantiate_mem tenv integer_type_widths ret callee_pdesc callee_pname params mem
+          | Some (callee_exit_mem, callee_formals) ->
+              instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
                 callee_exit_mem location
           | None ->
               (* This may happen for procedures with a biabduction model too. *)

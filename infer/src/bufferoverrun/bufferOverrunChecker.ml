@@ -243,21 +243,24 @@ let rec check_expr_for_integer_overflow integer_type_widths exp location mem con
 let instantiate_cond :
        Tenv.t
     -> Typ.IntegerWidths.t
-    -> Procdesc.t
+    -> Typ.Procname.t
+    -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
     -> Dom.Mem.t
     -> BufferOverrunAnalysisSummary.t
     -> BufferOverrunCheckerSummary.t
     -> Location.t
     -> PO.ConditionSet.checked_t =
- fun tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem callee_cond location ->
+ fun tenv integer_type_widths callee_pname callee_formals params caller_mem callee_exit_mem
+     callee_cond location ->
   let rel_subst_map =
-    Sem.get_subst_map tenv integer_type_widths callee_pdesc params caller_mem callee_exit_mem
+    Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
   in
-  let pname = Procdesc.get_proc_name callee_pdesc in
   let caller_rel = Dom.Mem.get_relation caller_mem in
-  let eval_sym_trace = Sem.mk_eval_sym_trace integer_type_widths callee_pdesc params caller_mem in
-  PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel pname location
+  let eval_sym_trace =
+    Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
+  in
+  PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel callee_pname location
 
 
 let check_instr :
@@ -301,11 +304,13 @@ let check_instr :
                  let checker_payload = Payload.of_summary callee_summary in
                  Option.map2 analysis_payload checker_payload
                    ~f:(fun analysis_payload checker_payload ->
-                     (analysis_payload, checker_payload, Summary.get_proc_desc callee_summary) ) )
+                     ( analysis_payload
+                     , checker_payload
+                     , Summary.get_proc_desc callee_summary |> Procdesc.get_pvar_formals ) ) )
         with
-        | Some (callee_mem, callee_condset, callee_pdesc) ->
-            instantiate_cond tenv integer_type_widths callee_pdesc params mem callee_mem
-              callee_condset location
+        | Some (callee_mem, callee_condset, callee_formals) ->
+            instantiate_cond tenv integer_type_widths callee_pname callee_formals params mem
+              callee_mem callee_condset location
             |> PO.ConditionSet.join cond_set
         | None ->
             (* unknown call / no inferbo payload *) cond_set ) )
