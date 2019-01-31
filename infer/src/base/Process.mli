@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open Core (* exit_or_signal *)
 
 val create_process_and_wait : prog:string -> args:string list -> unit
 (** Given an command to be executed, creates a process to execute this command,

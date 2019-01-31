@@ -36,32 +36,15 @@ let create_process_and_wait ~prog ~args =
 
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
-  let open Core in (* fork *)
-  let pipe_in, pipe_out = Unix.pipe () in
-  match Unix.fork () with
-  | `In_the_child ->
-      (* redirect producer's stdout to pipe_out *)
-      Unix.dup2 ~src:pipe_out ~dst:Unix.stdout ;
-      (* close producer's copy of pipe ends *)
-      Unix.close pipe_out ;
-      Unix.close pipe_in ;
-      (* exec producer *)
-      never_returns (Unix.exec ~prog:producer_prog ~argv:producer_args ())
-  | `In_the_parent producer_pid -> (
-    match Unix.fork () with
-    | `In_the_child ->
-        (* redirect consumer's stdin to pipe_in *)
-        Unix.dup2 ~src:pipe_in ~dst:Unix.stdin ;
-        (* close consumer's copy of pipe ends *)
-        Unix.close pipe_out ;
-        Unix.close pipe_in ;
-        (* exec consumer *)
-        never_returns (Unix.exec ~prog:consumer_prog ~argv:consumer_args ())
-    | `In_the_parent consumer_pid ->
-        (* close parent's copy of pipe ends *)
-        Unix.close pipe_out ;
-        Unix.close pipe_in ;
-        (* wait for children *)
-        let producer_status = Unix.waitpid producer_pid in
-        let consumer_status = Unix.waitpid consumer_pid in
-        (producer_status, consumer_status) )
+  let open Unix in
+  let pipe_in, pipe_out = pipe () in
+  let producer_args = Array.of_list producer_args in
+  let consumer_args = Array.of_list consumer_args in
+  let producer_pid = caml_create_process producer_prog producer_args stdin pipe_out stderr in
+  let consumer_pid = caml_create_process consumer_prog consumer_args pipe_in stdout stderr in
+  (* wait for children *)
+  let producer_status = waitpid producer_pid in
+  let consumer_status = waitpid consumer_pid in
+  close pipe_out ;
+  close pipe_in ;
+  (producer_status, consumer_status)
