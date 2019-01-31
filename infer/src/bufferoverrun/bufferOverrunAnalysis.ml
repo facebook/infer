@@ -57,6 +57,10 @@ module TransferFunctions = struct
 
   let instantiate_mem_reachable (ret_id, _) callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
+    let formal_locs =
+      List.fold callee_formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
+          PowLoc.add (Loc.of_pvar formal) acc )
+    in
     let copy_reachable_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
@@ -65,7 +69,7 @@ module TransferFunctions = struct
             PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in
-      PowLoc.fold copy reachable_locs mem
+      PowLoc.fold copy (PowLoc.diff reachable_locs formal_locs) mem
     in
     let instantiate_ret_alias mem =
       let subst_loc l =
@@ -87,11 +91,6 @@ module TransferFunctions = struct
     in
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val = Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem in
-    let formal_locs =
-      List.fold callee_formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
-          let v = Dom.Mem.find (Loc.of_pvar formal) callee_exit_mem in
-          PowLoc.join acc (Dom.Val.get_all_locs v) )
-    in
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
     |> copy_reachable_locs_from (PowLoc.join formal_locs (Dom.Val.get_all_locs ret_val))
