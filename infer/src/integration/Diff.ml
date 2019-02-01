@@ -89,5 +89,5 @@ let diff driver_mode =
   ReportDiff.reportdiff ~current_report:(Some current_report)
     ~previous_report:(Some previous_report) ~current_costs:(Some current_costs)
     ~previous_costs:(Some previous_costs) ;
-  Driver.run_epilogue driver_mode ;
+  Driver.run_epilogue () ;
   ()

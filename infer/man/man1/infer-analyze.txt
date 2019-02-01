@@ -68,14 +68,6 @@ OPTIONS
            Activates: Enable --cost and disable all other checkers
            (Conversely: --no-cost-only)
 
-       --crashcontext
-           Activates: the crashcontext checker for Java stack trace context
-           reconstruction (Conversely: --no-crashcontext)
-
-       --crashcontext-only
-           Activates: Enable --crashcontext and disable all other checkers
-           (Conversely: --no-crashcontext-only)
-
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --no-filtering, --print-buckets, --print-types,
@@ -346,18 +338,6 @@ CLANG OPTIONS
        --unsafe-malloc
            Activates: Assume that malloc(3) never returns null. (Conversely:
            --no-unsafe-malloc)
-CRASHCONTEXT OPTIONS
-       --stacktrace file
-           File path containing a json-encoded Java crash stacktrace. Used to
-           guide the analysis (only with '-a crashcontext'). See
-           tests/codetoanalyze/java/crashcontext/*.json for examples of the
-           expected format.
-
-       --stacktraces-dir dir
-           Directory path containing multiple json-encoded Java crash
-           stacktraces. Used to guide the analysis (only with '-a
-           crashcontext'). See tests/codetoanalyze/java/crashcontext/*.json
-           for examples of the expected format.
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability

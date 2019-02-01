@@ -19,7 +19,7 @@ INFER_MAIN = infer
 
 #### Checkers declarations ####
 
-INFER_ATDGEN_STUB_BASES = atd/jsonbug atd/runstate atd/stacktree atd/java_method_decl atd/perf_profiler atd/java_profiler_samples
+INFER_ATDGEN_STUB_BASES = atd/jsonbug atd/runstate atd/java_method_decl atd/perf_profiler atd/java_profiler_samples
 INFER_ATDGEN_TYPES = j t
 INFER_ATDGEN_STUB_ATDS = $(INFER_ATDGEN_STUB_BASES:.atd)
 INFER_ATDGEN_SUFFIXES = $(foreach atd_t,$(INFER_ATDGEN_TYPES),_$(atd_t).ml _$(atd_t).mli)

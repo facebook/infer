@@ -112,7 +112,6 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_classloads \
-  java_crashcontext \
   java_eradicate \
   java_hoisting \
   java_hoistingExpensive \

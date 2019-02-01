@@ -298,8 +298,6 @@ val costs_current : string option
 
 val costs_previous : string option
 
-val crashcontext : bool
-
 val current_to_previous_script : string option
 
 val cxx : bool
@@ -629,10 +627,6 @@ val specs_library : string list
 val sqlite_lock_timeout : int
 
 val sqlite_vfs : string option
-
-val stacktrace : string option
-
-val stacktraces_dir : string option
 
 val starvation : bool
 

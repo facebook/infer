@@ -181,14 +181,6 @@ OPTIONS
            Costs report of the base revision to use for comparison       
     See also infer-reportdiff(1).
 
-       --crashcontext
-           Activates: the crashcontext checker for Java stack trace context
-           reconstruction (Conversely: --no-crashcontext)           See also infer-analyze(1).
-
-       --crashcontext-only
-           Activates: Enable --crashcontext and disable all other checkers
-           (Conversely: --no-crashcontext-only)           See also infer-analyze(1).
-
        --current-to-previous-script shell
            Specify a script to checkout a previous version of the project to
            compare against, assuming we are on the current version already.       
@@ -848,18 +840,6 @@ OPTIONS
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
            (default: five seconds times number of cores)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
-
-       --stacktrace file
-           File path containing a json-encoded Java crash stacktrace. Used to
-           guide the analysis (only with '-a crashcontext'). See
-           tests/codetoanalyze/java/crashcontext/*.json for examples of the
-           expected format.           See also infer-analyze(1).
-
-       --stacktraces-dir dir
-           Directory path containing multiple json-encoded Java crash
-           stacktraces. Used to guide the analysis (only with '-a
-           crashcontext'). See tests/codetoanalyze/java/crashcontext/*.json
-           for examples of the expected format.           See also infer-analyze(1).
 
        --starvation
            Activates: starvation analysis (Conversely: --no-starvation)       

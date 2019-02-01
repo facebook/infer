@@ -550,11 +550,9 @@ let run_prologue mode =
   ()
 
 
-let run_epilogue mode =
+let run_epilogue () =
   if CLOpt.is_originator then (
-    let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
     if Config.developer_mode then StatsAggregator.generate_files () ;
-    if Config.crashcontext then Crashcontext.crashcontext_epilogue ~in_buck_mode ;
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;

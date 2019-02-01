@@ -19,7 +19,7 @@ let run driver_mode =
   let changed_files = read_config_changed_files () in
   capture driver_mode ~changed_files ;
   analyze_and_report driver_mode ~changed_files ;
-  run_epilogue driver_mode
+  run_epilogue ()
 
 
 let setup () =

@@ -15,7 +15,6 @@ type t =
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
-  ; crashcontext_frame: Stacktree_t.stacktree option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
   ; purity: PurityDomain.summary option
@@ -33,7 +32,6 @@ let pp pe fmt
     ; buffer_overrun_checker
     ; class_loads
     ; cost
-    ; crashcontext_frame
     ; lab_resource_leaks
     ; litho
     ; purity
@@ -49,13 +47,11 @@ let pp pe fmt
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
     biabduction (pp_opt "TypeState" TypeState.pp) typestate
     (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
     class_loads
-    (pp_opt "CrashContext" Crashcontext.pp_stacktree)
-    crashcontext_frame
     (pp_opt "Quandary" QuandarySummary.pp)
     quandary
     (pp_opt "Siof" SiofDomain.Summary.pp)
@@ -83,16 +79,15 @@ let pp pe fmt
 let empty =
   { annot_map= None
   ; biabduction= None
-  ; class_loads= None
   ; buffer_overrun_analysis= None
   ; buffer_overrun_checker= None
-  ; crashcontext_frame= None
+  ; class_loads= None
   ; cost= None
+  ; lab_resource_leaks= None
   ; litho= None
   ; purity= None
   ; quandary= None
   ; racerd= None
-  ; lab_resource_leaks= None
   ; siof= None
   ; starvation= None
   ; typestate= None

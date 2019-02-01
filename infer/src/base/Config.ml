@@ -16,13 +16,11 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = Checkers | Crashcontext | Linters [@@deriving compare]
+type analyzer = Checkers | Linters [@@deriving compare]
 
 let equal_analyzer = [%compare.equal: analyzer]
 
-let string_to_analyzer =
-  [("checkers", Checkers); ("crashcontext", Crashcontext); ("linters", Linters)]
-
+let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
 
 let clang_frontend_action_symbols =
   [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
@@ -202,8 +200,6 @@ let manual_buffer_overrun = "BUFFER OVERRUN OPTIONS"
 let manual_clang = "CLANG OPTIONS"
 
 let manual_clang_linters = "CLANG LINTERS OPTIONS"
-
-let manual_crashcontext = "CRASHCONTEXT OPTIONS"
 
 let manual_generic = Cmdliner.Manpage.s_options
 
@@ -589,7 +585,6 @@ and ( annotation_reachability
     , bufferoverrun
     , class_loads
     , cost
-    , crashcontext
     , eradicate
     , fragment_retains_view
     , immutable_cast
@@ -630,9 +625,6 @@ and ( annotation_reachability
   and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
   and class_loads = mk_checker ~long:"class-loads" ~default:false "Java class loading analysis"
   and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
-  and crashcontext =
-    mk_checker ~long:"crashcontext"
-      "the crashcontext checker for Java stack trace context reconstruction"
   and eradicate =
     mk_checker ~long:"eradicate" "the eradicate @Nullable checker for Java annotations"
   and fragment_retains_view =
@@ -714,7 +706,6 @@ and ( annotation_reachability
   , bufferoverrun
   , class_loads
   , cost
-  , crashcontext
   , eradicate
   , fragment_retains_view
   , immutable_cast
@@ -2078,24 +2069,6 @@ and sqlite_vfs =
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
 
-and stacktrace =
-  CLOpt.mk_path_opt ~deprecated:["st"] ~long:"stacktrace"
-    ~in_help:InferCommand.[(Analyze, manual_crashcontext)]
-    ~meta:"file"
-    "File path containing a json-encoded Java crash stacktrace. Used to guide the analysis (only \
-     with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json for examples of \
-     the expected format."
-
-
-and stacktraces_dir =
-  CLOpt.mk_path_opt ~long:"stacktraces-dir"
-    ~in_help:InferCommand.[(Analyze, manual_crashcontext)]
-    ~meta:"dir"
-    "Directory path containing multiple json-encoded Java crash stacktraces. Used to guide the  \
-     analysis (only with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json \
-     for examples of the expected format."
-
-
 and stats_report =
   CLOpt.mk_path_opt ~long:"stats-report" ~meta:"file"
     "Write a report of the analysis results to a file"
@@ -2413,9 +2386,6 @@ let post_parsing_initialization command_opt =
   if !linters_developer_mode then linters := true ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( match !analyzer with
-  | Crashcontext ->
-      disable_all_checkers () ;
-      crashcontext := true
   | Linters ->
       disable_all_checkers () ;
       capture := false ;
@@ -2574,8 +2544,6 @@ and costs_current = !costs_current
 and costs_previous = !costs_previous
 
 and current_to_previous_script = !current_to_previous_script
-
-and crashcontext = !crashcontext
 
 and cxx = !cxx
 
@@ -2938,10 +2906,6 @@ and spec_abs_level = !spec_abs_level
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
-
-and stacktrace = !stacktrace
-
-and stacktraces_dir = !stacktraces_dir
 
 and starvation = !starvation
 

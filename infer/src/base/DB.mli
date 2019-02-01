@@ -77,10 +77,3 @@ val source_dir_from_source_file : SourceFile.t -> source_dir
 
 val is_source_file : string -> bool
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
-
-val fold_paths_matching :
-  dir:filename -> p:(filename -> bool) -> init:'a -> f:(filename -> 'a -> 'a) -> 'a
-(** Fold over all file paths recursively under [dir] which match [p]. *)
-
-val paths_matching : string -> (string -> bool) -> string list
-(** Return all file paths recursively under the given directory which match the given predicate *)

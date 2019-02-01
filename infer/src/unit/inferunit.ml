@@ -30,7 +30,6 @@ let () =
         ; AccessPathTests.tests
         ; AccessTreeTests.tests
         ; AddressTakenTests.tests
-        ; BoundedCallTreeTests.tests
         ; DifferentialFiltersTests.tests
         ; DifferentialTests.tests
         ; FileDiffTests.tests
@@ -41,7 +40,6 @@ let () =
         ; ProcCfgTests.tests
         ; SchedulerTests.tests
         ; SeverityTests.tests
-        ; StacktraceTests.tests
         ; TaintTests.tests
         ; TraceTests.tests
         ; WeakTopologicalOrderTests.tests ]
