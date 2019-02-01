@@ -72,7 +72,7 @@ module TransferFunctionsNodesBasicCost = struct
                 model inferbo_mem
             | None -> (
               match Payload.read pdesc callee_pname with
-              | Some {post= callee_cost} ->
+              | Some {post= {CostDomain.basic_operation_cost= callee_cost}} ->
                   if BasicCost.is_symbolic callee_cost then
                     instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
                       ~callee_pname ~params ~callee_cost
@@ -806,7 +806,7 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
         BasicCost.pp exit_cost ;
       check_and_report_top_and_bottom exit_cost proc_desc summary ;
-      Payload.update_summary {post= exit_cost} summary
+      Payload.update_summary {post= {CostDomain.basic_operation_cost= exit_cost}} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Failed to compute final cost for function %a" Typ.Procname.pp

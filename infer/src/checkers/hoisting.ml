@@ -90,7 +90,7 @@ let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths in
     (* only report if function call has expensive/symbolic cost *)
     match Ondemand.analyze_proc_name pname with
     | Some {Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost}}}
-      when CostDomain.BasicCost.is_symbolic cost ->
+      when CostDomain.BasicCost.is_symbolic cost.basic_operation_cost ->
         let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
         let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
         let inferbo_mem =
@@ -98,7 +98,7 @@ let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths in
         in
         (* get the cost of the function call *)
         Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-          ~callee_pname:pname ~params ~callee_cost:cost
+          ~callee_pname:pname ~params ~callee_cost:cost.basic_operation_cost
         |> CostDomain.BasicCost.is_symbolic
     | _ ->
         false

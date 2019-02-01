@@ -346,8 +346,10 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         let hum =
           if Config.developer_mode then
             Some
-              { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp post
-              ; hum_degree= Format.asprintf "%a" CostDomain.BasicCost.pp_degree post }
+              { Jsonbug_t.hum_polynomial=
+                  Format.asprintf "%a" CostDomain.BasicCost.pp post.basic_operation_cost
+              ; hum_degree=
+                  Format.asprintf "%a" CostDomain.BasicCost.pp_degree post.basic_operation_cost }
           else None
         in
         let cost_item =
@@ -355,7 +357,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_id= procedure_id_of_procname proc_name
-          ; polynomial= CostDomain.BasicCost.encode post
+          ; polynomial= CostDomain.BasicCost.encode post.basic_operation_cost
           ; hum }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
