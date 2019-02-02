@@ -177,19 +177,20 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
-             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) ->
+             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
                  let purity = get_purity tenv ~is_inv_by_default callee_pname args in
-                 Option.value_map (PurityDomain.get_modified_params purity) ~default:acc
-                   ~f:(fun modified_params ->
-                     let acc' =
-                       get_vars_to_invalidate node loop_head args modified_params
-                         (InvalidatedVars.add (Var.of_id id) acc)
-                     in
-                     (* if one of the callees modifies a global static
-                        variable, invalidate all the function calls *)
-                     if PurityDomain.contains_global modified_params then
-                       InvalidatedVars.union acc' (force all_modified)
-                     else acc' )
+                 PurityDomain.(
+                   match purity with
+                   | AbstractDomain.Types.Top ->
+                       (* modified global *)
+                       (* if one of the callees modifies a global static
+                          variable, invalidate all the function calls *)
+                       InvalidatedVars.union acc (force all_modified)
+                   | AbstractDomain.Types.NonTop modified_params ->
+                       if ModifiedParamIndices.is_empty modified_params then (*pure*) acc
+                       else
+                         get_vars_to_invalidate node loop_head args modified_params
+                           (InvalidatedVars.add (Var.of_id id) acc)) )
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty

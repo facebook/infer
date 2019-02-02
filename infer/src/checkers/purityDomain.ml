@@ -7,35 +7,29 @@
 open! IStd
 module F = Format
 module ModifiedParamIndices = AbstractDomain.FiniteSet (Int)
-module Domain = AbstractDomain.BottomLifted (ModifiedParamIndices)
+module Domain = AbstractDomain.TopLifted (ModifiedParamIndices)
 include Domain
 
-let global = -1
+let pure = AbstractDomain.Types.NonTop ModifiedParamIndices.empty
 
-let contains_global modified_params = ModifiedParamIndices.mem global modified_params
+let impure_global = AbstractDomain.Types.Top
 
-let pure = AbstractDomain.Types.Bottom
+let is_pure astate =
+  match astate with
+  | AbstractDomain.Types.Top ->
+      false
+  | AbstractDomain.Types.NonTop modified_params ->
+      ModifiedParamIndices.is_empty modified_params
 
-let is_pure = Domain.is_bottom
 
-let impure modified_args = AbstractDomain.Types.NonBottom modified_args
+let impure_params modified_params = AbstractDomain.Types.NonTop modified_params
 
-let with_purity is_pure modified_args =
-  if is_pure then AbstractDomain.Types.Bottom else impure modified_args
-
+let with_purity is_pure modified_params = if is_pure then pure else impure_params modified_params
 
 let all_params_modified args =
   List.foldi ~init:ModifiedParamIndices.empty
     ~f:(fun i acc _ -> ModifiedParamIndices.add i acc)
     args
-
-
-let get_modified_params astate =
-  match astate with
-  | AbstractDomain.Types.NonBottom modified_args ->
-      Some modified_args
-  | AbstractDomain.Types.Bottom ->
-      None
 
 
 type summary = Domain.t

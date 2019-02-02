@@ -59,14 +59,12 @@ module TransferFunctions = struct
     let base_var, _ = HilExp.AccessExpression.get_base ae in
     (* treat writes to global (static) variables separately since they
        are not considered to be explicit parameters. *)
-    let modified_params =
-      if Var.is_global base_var then Domain.ModifiedParamIndices.singleton Domain.global
-      else
-        get_modified_params formals ~f:(fun var ->
-            Var.equal var base_var || ModifiedVarSet.mem var (get_alias_set inferbo_mem base_var)
-        )
-    in
-    Domain.impure modified_params
+    if Var.is_global base_var then Domain.impure_global
+    else
+      let alias_set = lazy (get_alias_set inferbo_mem base_var) in
+      get_modified_params formals ~f:(fun var ->
+          Var.equal var base_var || ModifiedVarSet.mem var (Lazy.force alias_set) )
+      |> Domain.impure_params
 
 
   let rec is_heap_access ae =
@@ -115,21 +113,21 @@ module TransferFunctions = struct
       get_modified_params formals ~f:(fun formal_var ->
           ModifiedVarSet.mem formal_var vars_of_modified_args )
     in
-    (* if callee modified global, caller also indirectly does so*)
-    if Domain.contains_global callee_modified_params then
-      Domain.ModifiedParamIndices.add Domain.global caller_modified_params
-    else caller_modified_params
+    caller_modified_params
 
 
   (* if the callee is impure, find the parameters that have been modified by the callee *)
   let find_modified_if_impure inferbo_mem formals args callee_summary =
-    match Domain.get_modified_params callee_summary with
-    | Some callee_modified_params ->
-        debug "Callee modified params %a \n" Domain.ModifiedParamIndices.pp callee_modified_params ;
-        Domain.impure
-          (find_params_matching_modified_args inferbo_mem formals args callee_modified_params)
-    | None ->
-        Domain.pure
+    match callee_summary with
+    | AbstractDomain.Types.Top ->
+        Domain.impure_global
+    | AbstractDomain.Types.NonTop callee_modified_params ->
+        Domain.(
+          debug "Callee modified params %a \n" ModifiedParamIndices.pp callee_modified_params ;
+          if ModifiedParamIndices.is_empty callee_modified_params then pure
+          else
+            impure_params
+              (find_params_matching_modified_args inferbo_mem formals args callee_modified_params))
 
 
   let exec_instr (astate : Domain.t)
@@ -146,18 +144,21 @@ module TransferFunctions = struct
         track_modified_params inferbo_mem formals ae |> Domain.join astate
     | Call (_, Direct called_pname, args, _, _) ->
         let matching_modified =
-          find_params_matching_modified_args inferbo_mem formals args
-            (Domain.all_params_modified args)
+          lazy
+            (find_params_matching_modified_args inferbo_mem formals args
+               (Domain.all_params_modified args))
         in
         Domain.join astate
           ( match InvariantModels.Call.dispatch tenv called_pname [] with
           | Some inv ->
-              Domain.with_purity (InvariantModels.is_invariant inv) matching_modified
-          | None ->
-              Payload.read pdesc called_pname
-              |> Option.value_map ~default:(Domain.impure matching_modified) ~f:(fun summary ->
-                     debug "Reading from %a \n" Typ.Procname.pp called_pname ;
-                     find_modified_if_impure inferbo_mem formals args summary ) )
+              Domain.with_purity (InvariantModels.is_invariant inv) (Lazy.force matching_modified)
+          | None -> (
+            match Payload.read pdesc called_pname with
+            | Some summary ->
+                debug "Reading from %a \n" Typ.Procname.pp called_pname ;
+                find_modified_if_impure inferbo_mem formals args summary
+            | None ->
+                Domain.impure_params (Lazy.force matching_modified) ) )
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
@@ -200,16 +201,8 @@ let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.
   in
   match Analyzer.compute_post proc_data ~initial:PurityDomain.pure with
   | Some astate ->
-      let astate' =
-        PurityDomain.get_modified_params astate
-        |> Option.value_map ~default:astate ~f:(fun modified_params ->
-               debug "Modified parameter indices of %a: %a \n" Typ.Procname.pp proc_name
-                 PurityDomain.ModifiedParamIndices.pp modified_params ;
-               if PurityDomain.ModifiedParamIndices.is_empty modified_params then PurityDomain.pure
-               else astate )
-      in
-      if should_report proc_desc && PurityDomain.is_pure astate' then report_pure () ;
-      Payload.update_summary astate' summary
+      if should_report proc_desc && PurityDomain.is_pure astate then report_pure () ;
+      Payload.update_summary astate summary
   | None ->
       L.internal_error "Analyzer failed to compute purity information for %a@." Typ.Procname.pp
         proc_name ;
