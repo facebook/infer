@@ -276,6 +276,8 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Va
 let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
  fun exp mem ->
   match exp with
+  | Const (Cstr s) ->
+      PowLoc.singleton (Loc.of_allocsite (Allocsite.literal_string s))
   | Var id ->
       Mem.find_stack (Var.of_id id |> Loc.of_var) mem |> Val.get_all_locs
   | Lvar pvar ->
