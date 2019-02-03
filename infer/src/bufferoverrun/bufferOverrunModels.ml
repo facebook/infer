@@ -185,6 +185,49 @@ let strncpy dest_exp src_exp size_exp =
   {exec; check= memcpy_check}
 
 
+let strcat dest_exp src_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let src_loc = Sem.eval_locs src_exp mem in
+    let dest_loc = Sem.eval_locs dest_exp mem in
+    let new_contents =
+      let src_contents = Dom.Mem.find_set src_loc mem in
+      let dest_contents = Dom.Mem.find_set dest_loc mem in
+      Dom.Val.join dest_contents src_contents
+    in
+    let src_strlen = Dom.Mem.get_c_strlen src_loc mem in
+    let new_strlen =
+      let dest_strlen = Dom.Mem.get_c_strlen dest_loc mem in
+      Dom.Val.plus_a dest_strlen src_strlen
+    in
+    mem
+    |> Dom.Mem.update_mem dest_loc new_contents
+    |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) new_strlen
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+  and check {integer_type_widths; location} mem cond_set =
+    let access_last_char arr idx cond_set =
+      let relation = Dom.Mem.get_relation mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
+        ~last_included:false ~latest_prune location cond_set
+    in
+    let src_strlen =
+      let str_loc = Sem.eval_locs src_exp mem in
+      Dom.Mem.get_c_strlen str_loc mem
+    in
+    let new_strlen =
+      let dest_strlen =
+        let dest_loc = Sem.eval_locs dest_exp mem in
+        Dom.Mem.get_c_strlen dest_loc mem
+      in
+      Dom.Val.plus_a dest_strlen src_strlen
+    in
+    cond_set
+    |> access_last_char (Sem.eval integer_type_widths dest_exp mem) new_strlen
+    |> access_last_char (Sem.eval integer_type_widths src_exp mem) src_strlen
+  in
+  {exec; check}
+
+
 let realloc src_exp size_exp =
   let exec ({location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -688,6 +731,7 @@ module Call = struct
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
+      ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf

@@ -196,6 +196,8 @@ codetoanalyze/c/bufferoverrun/models.c, memmove_bad4, 4, BUFFER_OVERRUN_L1, no_b
 codetoanalyze/c/bufferoverrun/models.c, memset_bad1, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset added: 44 Size: 40]
 codetoanalyze/c/bufferoverrun/models.c, memset_bad2, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset added: 18446744073709551615 Size: 40]
 codetoanalyze/c/bufferoverrun/models.c, memset_bad3, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset added: 8 Size: 4]
+codetoanalyze/c/bufferoverrun/models.c, strcat_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 8 Size: 8]
+codetoanalyze/c/bufferoverrun/models.c, strcat_strlen_Bad, 5, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 8 Size: 8]
 codetoanalyze/c/bufferoverrun/models.c, strcpy_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Array declaration,<Length trace>,Array declaration,Array access: Offset: 4 Size: 4]
 codetoanalyze/c/bufferoverrun/models.c, strcpy_contents_Bad, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 5 Size: 5]
 codetoanalyze/c/bufferoverrun/models.c, strcpy_literal_string_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 4 Size: 4]
