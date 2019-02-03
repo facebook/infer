@@ -762,6 +762,10 @@ module ConditionWithTrace = struct
         None
 
 
+  let update_reachability latest_prune ({reachability} as cwt) =
+    {cwt with reachability= Dom.Reachability.add_latest_prune latest_prune reachability}
+
+
   let set_u5 {cond; trace} issue_type =
     if
       ( IssueType.equal issue_type IssueType.buffer_overrun_l3
@@ -918,7 +922,8 @@ module ConditionSet = struct
          latest_prune condset
 
 
-  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site =
+  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site
+      latest_prune =
     let subst_add_cwt condset cwt =
       match
         ConditionWithTrace.subst eval_sym_trace rel_subst_map caller_relation callee_pname
@@ -927,6 +932,7 @@ module ConditionSet = struct
       | None ->
           condset
       | Some cwt ->
+          let cwt = ConditionWithTrace.update_reachability latest_prune cwt in
           join_one condset (check_one cwt)
     in
     List.fold condset ~f:subst_add_cwt ~init:[]

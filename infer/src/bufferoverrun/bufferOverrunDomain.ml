@@ -741,7 +741,10 @@ module CoreVal = struct
 
   let pp fmt x = F.fprintf fmt "(%a, %a)" Itv.pp (Val.get_itv x) ArrayBlk.pp (Val.get_array_blk x)
 
-  let is_symbolic v = Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
+  let is_symbolic v =
+    let itv = Val.get_itv v in
+    if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
+
 
   let is_empty v = Itv.is_bottom (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
 end
@@ -999,7 +1002,7 @@ module Reachability = struct
      reachability. *)
   let add v x = if PrunedVal.is_symbolic v then M.add v x else x
 
-  let make latest_prune =
+  let of_latest_prune latest_prune =
     let of_prune_pairs p = PrunePairs.fold (fun _ v acc -> add v acc) p M.empty in
     match latest_prune with
     | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
@@ -1009,6 +1012,10 @@ module Reachability = struct
     | LatestPrune.Top ->
         M.empty
 
+
+  let make latest_prune = of_latest_prune latest_prune
+
+  let add_latest_prune latest_prune x = M.union x (of_latest_prune latest_prune)
 
   let subst x eval_sym_trace location =
     let exception Unreachable in

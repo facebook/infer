@@ -77,6 +77,7 @@ module ConditionSet : sig
     -> Relation.t
     -> Typ.Procname.t
     -> Location.t
+    -> BufferOverrunDomain.LatestPrune.t
     -> checked_t
 
   val report_errors :

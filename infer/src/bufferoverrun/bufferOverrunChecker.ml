@@ -260,7 +260,9 @@ let instantiate_cond :
   let eval_sym_trace =
     Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
   in
+  let latest_prune = Dom.Mem.get_latest_prune caller_mem in
   PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel callee_pname location
+    latest_prune
 
 
 let check_instr :
