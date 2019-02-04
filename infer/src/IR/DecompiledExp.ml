@@ -147,7 +147,7 @@ let pp_vpath pe fmt vpath =
 
 let rec has_tmp_var = function
   | Dpvar pvar | Dpvaraddr pvar ->
-      Pvar.is_frontend_tmp pvar
+      Pvar.is_frontend_tmp pvar || Pvar.is_clang_tmp pvar
   | Dderef dexp | Ddot (dexp, _) | Darrow (dexp, _) | Dunop (_, dexp) | Dsizeof (_, Some dexp, _)
     ->
       has_tmp_var dexp
