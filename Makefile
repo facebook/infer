@@ -302,11 +302,23 @@ opt:
 
 .PHONY: clang_setup
 clang_setup:
+#	if clang is already built then let the user know they might not need to rebuild clang
 	$(QUIET)export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh --only-check-install || \
-	$(FCP_DIR)/clang/setup.sh
+	$(FCP_DIR)/clang/setup.sh --only-check-install || { \
+	  if [ -x '$(FCP_DIR)'/clang/install/bin/clang ]; then \
+	    echo '$(TERM_INFO)*** Now building clang, this will take a while...$(TERM_RESET)' >&2; \
+	    echo '$(TERM_INFO)*** If you believe that facebook-clang-plugins/clang/install is up-to-date you can$(TERM_RESET)' >&2; \
+	    echo '$(TERM_INFO)*** interrupt the compilation (Control-C) and run this to prevent clang from being rebuilt:$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	    echo '$(TERM_INFO)      $(FCP_DIR)/clang/setup.sh --only-record-install$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	    echo '$(TERM_INFO)(TIP: you can also force a clang rebuild by removing $(FCP_DIR)/clang/installed.version)$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	  fi; \
+	  $(FCP_DIR)/clang/setup.sh; \
+	}
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup
