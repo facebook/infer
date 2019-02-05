@@ -331,6 +331,8 @@ AS_IF([test "$SED" != "xno"], [
 AC_SUBST([GNU_SED])
 
 AC_CHECK_TOOL([BREW], [brew], [no])
+AC_ARG_VAR([SDKROOT], [path to the OSX platform SDK used by clang])
+AC_SUBST([SDKROOT])
 
 AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
 
