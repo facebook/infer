@@ -27,6 +27,4 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	    --results-dir $(CURDIR)/$(@D) -- $(XCODEBUILD))
 
 clean:
-	cd $(APP_DIR) && \
-	$(XCODEBUILD) clean
-	$(REMOVE_DIR) infer-out issues.exp.test
+	$(REMOVE_DIR) infer-out issues.exp.test $(APP_DIR)/app_built $(APP_DIR)/build

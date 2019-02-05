@@ -6,7 +6,9 @@
 TESTS_DIR = ../..
 
 SOURCES = $(wildcard src/infer/*.java)
-OBJECTS = $(patsubst %.java,ant_out/%.class,$(SOURCES))
+OBJECTS = $(patsubst %,ant_out/codetoanalyze/java/infer/%,$(notdir $(patsubst %.java,%.class,$(SOURCES))))
+CLASS_FILES = $(notdir $(patsubst %.java,%.class,$(SOURCES)))
+OBJECTS = $(CLASS_FILES:%=ant_out/codetoanalyze/java/infer/%)
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/java.make
@@ -20,4 +22,4 @@ infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	  $(INFER_BIN) --project-root $(TESTS_DIR) -- $(ANT))
 
 clean:
-	$(ANT) clean
+	$(REMOVE_DIR) ant_out

@@ -651,7 +651,7 @@ endif
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean)
 
 .PHONY: clean
-clean: test_clean ocaml_clean
+clean: ocaml_clean test_clean
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins C++ build,\
 	$(MAKE) -C $(FCP_DIR) clean)
@@ -667,7 +667,7 @@ endif
 	$(QUIET)$(call silent_on_success,Removing *.o and *.o.sh,\
 	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete)
 	$(QUIET)$(call silent_on_success,Removing build logs,\
-	$(REMOVE_DIR) _build_logs $(MAN_DIR))
+	$(REMOVE_DIR) _build_logs)
 
 .PHONY: conf-clean
 conf-clean: clean
