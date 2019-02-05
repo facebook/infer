@@ -122,15 +122,20 @@ doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
 
-$(INFER_BIN_ALIASES): Makefile
-#	make sure the bin directory exists
-	$(QUIET)$(MKDIR_P) $(@D)
+$(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
+	$(REMOVE) $@
 	$(QUIET)cd $(@D) && $(LN_S) -f infer $(@F)
 	$(QUIET)touch $@
 
-$(INFER_BIN).exe: $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN_ALIASES)
+$(INFER_BIN).exe: $(INFER_BUILD_DIR)/$(INFER_MAIN).exe
+	$(QUIET)$(MKDIR_P) $(BIN_DIR)
+ifeq ($(WINDOWS_BUILD),yes)
+# http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
+	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
+endif
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN).exe
+	$(MAKE) $(INFER_BIN_ALIASES)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
@@ -144,9 +149,15 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	dune build $(INFER_CONFIG_TARGETS:.exe=.bc)
 	$(QUIET)touch $@
 
-$(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN_ALIASES)
+$(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc
+	$(QUIET)$(MKDIR_P) $(BIN_DIR)
+ifeq ($(WINDOWS_BUILD),yes)
+# http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
+	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
+endif
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN).bc
+	$(MAKE) $(INFER_BIN_ALIASES)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)

@@ -49,6 +49,18 @@ AS_IF([test "x$CLANG_INCLUDES" = "x"], [
   CLANG_INCLUDES="$CLANG_PREFIX/include"
 ])
 
+windows_build=no
+AC_MSG_CHECKING([for Windows build])
+# see https://stackoverflow.com/questions/714100/os-detecting-makefile
+# but we do this in the configure for homogeneity
+case "${OS}" in
+    Windows_NT*)
+        windows_build=yes
+        ;;
+esac
+WINDOWS_BUILD=$windows_build
+AC_MSG_RESULT([$WINDOWS_BUILD])
+AC_SUBST([WINDOWS_BUILD])
 
 AC_ARG_ENABLE(c-analyzers,
   AS_HELP_STRING([--disable-c-analyzers],
