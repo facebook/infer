@@ -48,3 +48,8 @@ DEFINE-CHECKER FIND_CXX_METHODS_FROM_HEADER_FILE = {
         HOLDS-IN-NODE CXXMethodDecl;
     SET message = "found C++ method %name% in %source_file%";
 };
+
+DEFINE-CHECKER FIND_LISTED_SYMBOLS = {
+    SET report_when = NOT is_decl() AND has_cxx_fully_qualified_name_in_custom_symbols("test");
+    SET message = "found usage of %cxx_fully_qualified_name%";
+};

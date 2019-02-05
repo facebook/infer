@@ -469,6 +469,25 @@ let exe_usage =
     (Option.value_map ~default:"" ~f:(( ^ ) " ") exe_command_name)
 
 
+let get_symbol_string json_obj =
+  match json_obj with
+  | `String sym_regexp_str ->
+      sym_regexp_str
+  | _ ->
+      L.(die UserError) "each --custom-symbols element should be list of symbol *strings*"
+
+
+let get_symbols_regexp json_obj =
+  let sym_regexp_strs =
+    match json_obj with
+    | `List json_objs ->
+        List.map ~f:get_symbol_string json_objs
+    | _ ->
+        L.(die UserError) "each --custom-symbols element should be a *list* of strings"
+  in
+  Str.regexp ("\\(" ^ String.concat ~sep:"\\|" sym_regexp_strs ^ "\\)")
+
+
 (** Command Line options *)
 
 (* HOWTO define a new command line and config file option.
@@ -966,6 +985,12 @@ and cxx =
   CLOpt.mk_bool ~long:"cxx" ~default:true
     ~in_help:InferCommand.[(Capture, manual_clang)]
     "Analyze C++ methods"
+
+
+and custom_symbols =
+  CLOpt.mk_json ~long:"custom-symbols"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify named lists of symbols available to rules"
 
 
 and ( bo_debug
@@ -2917,6 +2942,19 @@ and stats_report = !stats_report
 
 and subtype_multirange = !subtype_multirange
 
+and custom_symbols =
+  (* Convert symbol lists to regexps just once, here *)
+  match !custom_symbols with
+  | `Assoc sym_lists ->
+      List.Assoc.map ~f:get_symbols_regexp sym_lists
+  | `List [] ->
+      []
+  | _ ->
+      L.(die UserError)
+        "--custom-symbols must be dictionary of symbol lists not %s"
+        (Yojson.Basic.to_string !custom_symbols)
+
+
 and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
@@ -3015,3 +3053,11 @@ let java_package_is_external package =
   | _ ->
       List.exists external_java_packages ~f:(fun (prefix : string) ->
           String.is_prefix package ~prefix )
+
+
+let is_in_custom_symbols list_name symbol =
+  match List.Assoc.find ~equal:String.equal custom_symbols list_name with
+  | Some regexp ->
+      Str.string_match regexp symbol 0
+  | None ->
+      false

@@ -68,6 +68,9 @@ OPTIONS
            Activates: Enable --cost and disable all other checkers
            (Conversely: --no-cost-only)
 
+       --custom-symbols json
+           Specify named lists of symbols available to rules (default: [])
+
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --no-filtering, --print-buckets, --print-types,

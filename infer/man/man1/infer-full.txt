@@ -186,6 +186,10 @@ OPTIONS
            compare against, assuming we are on the current version already.       
     See also infer-diff(1).
 
+       --custom-symbols json
+           Specify named lists of symbols available to rules (default: [])       
+    See also infer-analyze(1).
+
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)       
     See also infer-capture(1).

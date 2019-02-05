@@ -702,4 +702,7 @@ val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
 val quandaryBO_filtered_issues : IssueType.t list
-(* List of issues that are enabled by QuandaryBO but should not be in the final report.json *)
+(** List of issues that are enabled by QuandaryBO but should not be in the final report.json *)
+
+val is_in_custom_symbols : string -> string -> bool
+(** Does named symbol match any prefix in the named custom symbol list? *)
