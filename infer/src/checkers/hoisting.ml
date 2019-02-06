@@ -75,7 +75,9 @@ let do_report summary Call.({pname; loc}) ~issue loop_head_loc =
   Reporting.log_error summary ~loc ~ltr issue message
 
 
-let model_satisfies ~f tenv pname = InvariantModels.Call.dispatch tenv pname [] |> Option.exists ~f
+let model_satisfies ~f tenv pname =
+  InvariantModels.ProcName.dispatch tenv pname |> Option.exists ~f
+
 
 let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths inferbo_invariant_map
     =

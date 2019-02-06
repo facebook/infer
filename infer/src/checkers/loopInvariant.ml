@@ -26,7 +26,7 @@ let is_defined_outside loop_nodes reaching_defs var =
 let get_purity tenv ~is_inv_by_default callee_pname args =
   (* Take into account purity behavior of modeled functions *)
   let all_params_modified = PurityDomain.all_params_modified args in
-  match Models.Call.dispatch tenv callee_pname args with
+  match Models.ProcName.dispatch tenv callee_pname with
   | Some inv ->
       PurityDomain.with_purity (InvariantModels.is_invariant inv) all_params_modified
   | None -> (

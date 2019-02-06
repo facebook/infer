@@ -34,9 +34,9 @@ let startsWith prefix _ s = String.is_prefix ~prefix s
 (* matches get*Value *)
 let getStarValue tenv s = startsWith "get" tenv s && endsWith "Value" tenv s
 
-module Call = struct
-  let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
-    let open ProcnameDispatcher.Call in
+module ProcName = struct
+  let dispatch : (Tenv.t, model) ProcnameDispatcher.ProcName.dispatcher =
+    let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ +invariant_builtins <>--> VariantForHoisting
       ; +(fun _ name -> BuiltinDecl.is_declared (Typ.Procname.from_string_c_fun name))

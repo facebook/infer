@@ -149,7 +149,7 @@ module TransferFunctions = struct
                (Domain.all_params_modified args))
         in
         Domain.join astate
-          ( match InvariantModels.Call.dispatch tenv called_pname [] with
+          ( match InvariantModels.ProcName.dispatch tenv called_pname with
           | Some inv ->
               Domain.with_purity (InvariantModels.is_invariant inv) (Lazy.force matching_modified)
           | None -> (
