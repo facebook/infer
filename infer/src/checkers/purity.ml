@@ -143,22 +143,22 @@ module TransferFunctions = struct
     | Assign (ae, _, _) when is_heap_access ae ->
         track_modified_params inferbo_mem formals ae |> Domain.join astate
     | Call (_, Direct called_pname, args, _, _) ->
-        let matching_modified =
-          lazy
-            (find_params_matching_modified_args inferbo_mem formals args
-               (Domain.all_params_modified args))
-        in
         Domain.join astate
           ( match InvariantModels.ProcName.dispatch tenv called_pname with
           | Some inv ->
-              Domain.with_purity (InvariantModels.is_invariant inv) (Lazy.force matching_modified)
+              if InvariantModels.is_invariant inv then Domain.pure
+              else
+                find_params_matching_modified_args inferbo_mem formals args
+                  (Domain.all_params_modified args)
+                |> Domain.impure_params
           | None -> (
             match Payload.read pdesc called_pname with
             | Some summary ->
                 debug "Reading from %a \n" Typ.Procname.pp called_pname ;
                 find_modified_if_impure inferbo_mem formals args summary
             | None ->
-                Domain.impure_params (Lazy.force matching_modified) ) )
+                if Typ.Procname.is_constructor called_pname then Domain.pure
+                else Domain.impure_global ) )
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr

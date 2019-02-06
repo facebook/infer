@@ -24,8 +24,6 @@ let is_pure astate =
 
 let impure_params modified_params = AbstractDomain.Types.NonTop modified_params
 
-let with_purity is_pure modified_params = if is_pure then pure else impure_params modified_params
-
 let all_params_modified args =
   List.foldi ~init:ModifiedParamIndices.empty
     ~f:(fun i acc _ -> ModifiedParamIndices.add i acc)

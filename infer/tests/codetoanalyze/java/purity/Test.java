@@ -84,9 +84,8 @@ class Test {
     return new ArrayList<Integer>();
   }
 
-  // All unknown calls that don't have any argument, will be marked as
-  // pure by default even though they may have side-effects!
-  static long systemNanoTime_bad_FP() {
+  // All unmodeled calls will be marked as modifying global state
+  static long systemNanoTime_bad() {
     return System.nanoTime();
   }
 }
