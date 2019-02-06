@@ -1,19 +1,9 @@
-sudo: required
 language: c
+sudo: required
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
+script: bash -ex .travis-opam.sh
+env:
+  - OCAML_VERSION=4.07 TESTS=false
 os:
-  - linux
-  - osx
-services: docker
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y aspcud; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install opam; fi
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam init --reinit --no-setup --disable-sandboxing; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 60 opam install --yes .; fi
-script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/local_install_tests.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/docker_tests.sh; fi
-  - git diff --exit-code
+- linux
+- osx
