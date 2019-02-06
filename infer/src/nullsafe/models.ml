@@ -68,10 +68,14 @@ let get_check_not_null_parameter proc_name =
 
 
 (** Check if the procedure is one of the known Preconditions.checkState. *)
-let is_check_state proc_name = table_has_procedure check_state_table proc_name
+let is_check_state proc_name =
+  table_has_procedure check_state_table proc_name || match_method_name proc_name "checkState"
+
 
 (** Check if the procedure is one of the known Preconditions.checkArgument. *)
-let is_check_argument proc_name = table_has_procedure check_argument_table proc_name
+let is_check_argument proc_name =
+  table_has_procedure check_argument_table proc_name || match_method_name proc_name "checkArgument"
+
 
 (** Check if the procedure does not return. *)
 let is_noreturn proc_name = table_has_procedure noreturn_table proc_name

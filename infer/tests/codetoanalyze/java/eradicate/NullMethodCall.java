@@ -287,6 +287,16 @@ public class NullMethodCall {
     return nullableField.toString();
   }
 
+  String customPreconditionsCheckStateOkay() {
+    MyPreconditions.checkState(nullableField != null);
+    return nullableField.toString();
+  }
+
+  String customPreconditionsCheckArgumentOkay(@Nullable Object arg) {
+    MyPreconditions.checkState(arg != null);
+    return arg.toString();
+  }
+
   void nullMethodCallWithAlarmManager(AlarmManager manager, @Nullable PendingIntent intent) {
     manager.cancel(intent);
   }
