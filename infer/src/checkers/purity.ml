@@ -172,8 +172,6 @@ end
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
 let should_report pdesc =
-  (not Config.loop_hoisting)
-  &&
   match Procdesc.get_proc_name pdesc with
   | Typ.Procname.Java java_pname as proc_name ->
       (not (Typ.Procname.is_constructor proc_name))
