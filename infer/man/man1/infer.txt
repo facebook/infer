@@ -816,6 +816,11 @@ OPTIONS
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)           See also infer-explore(1).
 
+       --source-files-cfg
+           Activates: Output a dotty file in infer-out/captured for each
+           source file in the output of --source-files (Conversely:
+           --no-source-files-cfg)           See also infer-explore(1).
+
        --source-files-filter filter
            With --source-files, only print source files matching the
            specified filter. The filter is a pattern that should match the

@@ -610,6 +610,8 @@ val skip_translation_headers : string list
 
 val source_files : bool
 
+val source_files_cfg : bool
+
 val source_files_filter : string option
 
 val source_files_type_environment : bool

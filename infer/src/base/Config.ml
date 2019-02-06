@@ -1996,6 +1996,15 @@ and source_files =
     "Print source files discovered by infer"
 
 
+and source_files_cfg =
+  CLOpt.mk_bool ~long:"source-files-cfg"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    (Printf.sprintf
+       "Output a dotty file in infer-out/%s for each source file in the output of \
+        $(b,--source-files)"
+       captured_dir_name)
+
+
 and source_files_filter =
   CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
     ~in_help:InferCommand.[(Explore, manual_generic)]
@@ -2913,6 +2922,8 @@ and skip_translation_headers = !skip_translation_headers
 and source_preview = !source_preview
 
 and source_files = !source_files
+
+and source_files_cfg = !source_files_cfg
 
 and source_files_filter = !source_files_filter
 

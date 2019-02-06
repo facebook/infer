@@ -45,7 +45,7 @@ module Results_dir : sig
   val specs_dir : filename
   (** directory of spec files *)
 
-  val init : SourceFile.t -> unit
+  val init : ?debug:bool -> SourceFile.t -> unit
   (** Initialize the results directory *)
 
   val clean_specs_dir : unit -> unit
