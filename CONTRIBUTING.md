@@ -6,15 +6,6 @@
 If you encounter a problem when using infer or if you have any questions, please open a
 [GitHub issue](https://github.com/facebook/infer/issues/).
 
-- [ ] Check first if your issue is addressed in the [FAQ](http://fbinfer.com/support.html#troubleshooting).
-- [ ] Check also if your issue has already been [reported](https://github.com/facebook/infer/issues/).
-- [ ] Include the version of infer you are using (`infer --version`).
-- [ ] Include the full list of the commands you are running.
-- [ ] Include the full output of infer in a paste, for instance a [gist](https://gist.github.com/).
-- [ ] If possible, give a minimal example to reproduce your problem (for instance, some code where
-    infer reports incorrectly, together with the way you run infer to reproduce the incorrect
-    report).
-
 ## Hacking on the Code
 
 We welcome contributions via [pull requests on GitHub](https://github.com/facebook/infer/pulls).
