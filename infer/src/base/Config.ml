@@ -1639,6 +1639,11 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
 
+and nullsafe_strict_containers =
+  CLOpt.mk_bool ~long:"nullsafe-strict-containers" ~default:false
+    "Warn when containers are used with nullable keys or values"
+
+
 and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint" "Skip the re-execution phase"
 
@@ -2776,6 +2781,8 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 
 and nullable_annotation = !nullable_annotation
+
+and nullsafe_strict_containers = !nullsafe_strict_containers
 
 and no_translate_libs = not !headers
 

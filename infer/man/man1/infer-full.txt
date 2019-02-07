@@ -1271,6 +1271,10 @@ INTERNAL OPTIONS
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
 
+       --nullsafe-strict-containers
+           Activates: Warn when containers are used with nullable keys or
+           values (Conversely: --no-nullsafe-strict-containers)
+
        --no-only-cheap-debug
            Deactivates: Disable expensive debugging output (Conversely:
            --only-cheap-debug)

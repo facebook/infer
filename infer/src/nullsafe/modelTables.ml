@@ -12,8 +12,6 @@ module Hashtbl = Caml.Hashtbl
  * This file is a big bunch of tables; they read better with really long lines.
  * @nolint
  *)
-(* in strict mode cannot insert null in containers *)
-let strict_containers = false
 
 (* in strict mode, give an error if a nullable is passed to checkNotNull *)
 let check_not_null_strict = false
@@ -45,16 +43,16 @@ let n3 = (o, [n; n; n])
 let on = (o, [o; n])
 
 (* container add *)
-let ca = if strict_containers then (o, [o]) else (o, [n])
+let ca = if Config.nullsafe_strict_containers then (o, [o]) else (o, [n])
 
 (* container get *)
-let cg = if strict_containers then (n, [o]) else (n, [n])
+let cg = if Config.nullsafe_strict_containers then (n, [o]) else (n, [n])
 
 (* container put *)
-let cp = (n, [o; o])
+let cp = if Config.nullsafe_strict_containers then (n, [o; o]) else (n, [n; n])
 
 (* container remove *)
-let cr = if strict_containers then (n, [o]) else (n, [n])
+let cr = if Config.nullsafe_strict_containers then (n, [o]) else (n, [n])
 
 (* nullable getter *)
 let ng = (n, [])

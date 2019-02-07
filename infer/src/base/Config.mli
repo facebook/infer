@@ -498,6 +498,8 @@ val no_translate_libs : bool
 
 val nullable_annotation : string option
 
+val nullsafe_strict_containers : bool
+
 val only_cheap_debug : bool
 
 val only_footprint : bool
