@@ -129,9 +129,9 @@ module Results_dir = struct
   let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
 
   (** initialize the results directory *)
-  let init source =
+  let init ?(debug = false) source =
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
-    if Config.html || Config.debug_mode || Config.frontend_tests then (
+    if debug || Config.html || Config.debug_mode || Config.frontend_tests then (
       Utils.create_dir (path_to_filename Abs_root [Config.captured_dir_name]) ;
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
 
@@ -166,21 +166,3 @@ end
 
 let is_source_file path =
   List.exists ~f:(fun ext -> Filename.check_suffix path ext) Config.source_file_extentions
-
-
-(** Fold over all file paths recursively under [dir] which match [p]. *)
-let fold_paths_matching ~dir ~p ~init ~f =
-  let rec paths path_list dir =
-    Array.fold
-      ~f:(fun acc file ->
-        let path = dir ^/ file in
-        if Sys.is_directory path = `Yes then paths acc path else if p path then f path acc else acc
-        )
-      ~init:path_list (Sys.readdir dir)
-  in
-  paths init dir
-
-
-(** Return all absolute paths recursively under root_dir, matching the given
-    matcher function p *)
-let paths_matching dir p = fold_paths_matching ~dir ~p ~init:[] ~f:(fun x xs -> x :: xs)

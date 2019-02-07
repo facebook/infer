@@ -19,7 +19,7 @@ let run driver_mode =
   let changed_files = read_config_changed_files () in
   capture driver_mode ~changed_files ;
   analyze_and_report driver_mode ~changed_files ;
-  run_epilogue driver_mode
+  run_epilogue ()
 
 
 let setup () =
@@ -154,13 +154,26 @@ let () =
               ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
           ()
     | Explore when Config.source_files ->
+        let filter = Lazy.force Filtering.source_files_filter in
         L.result "%a"
-          (SourceFiles.pp_all
-             ~filter:(Lazy.force Filtering.source_files_filter)
-             ~type_environment:Config.source_files_type_environment
+          (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
              ~procedure_names:Config.source_files_procedure_names
              ~freshly_captured:Config.source_files_freshly_captured)
-          ()
+          () ;
+        if Config.source_files_cfg then (
+          let source_files = SourceFiles.get_all ~filter () in
+          List.iter source_files ~f:(fun source_file ->
+              (* create directory in captured/ *)
+              DB.Results_dir.init ~debug:true source_file ;
+              (* collect the CFGs for all the procedures in [source_file] *)
+              let proc_names = SourceFiles.proc_names_of_source source_file in
+              let cfgs = Typ.Procname.Hash.create (List.length proc_names) in
+              List.iter proc_names ~f:(fun proc_name ->
+                  Procdesc.load proc_name
+                  |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
+              (* emit the dotty file in captured/... *)
+              Dotty.print_icfg_dotty source_file cfgs ) ;
+          L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_output )
     | Explore ->
         let if_some key opt args =
           match opt with None -> args | Some arg -> key :: string_of_int arg :: args

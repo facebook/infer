@@ -800,13 +800,15 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               EradicateChecks.check_call_parameters tenv find_canonical_duplicate curr_pdesc node
                 callee_attributes resolved_params loc instr_ref ;
             if Models.is_check_not_null callee_pname then
-              if Typ.Procname.Java.is_vararg callee_pname_java then
-                let last_parameter = List.length call_params in
-                do_preconditions_check_not_null last_parameter ~is_vararg:true typestate1
-              else
-                do_preconditions_check_not_null
-                  (Models.get_check_not_null_parameter callee_pname)
-                  ~is_vararg:false typestate1
+              match Models.get_check_not_null_parameter callee_pname with
+              | Some index ->
+                  do_preconditions_check_not_null index ~is_vararg:false typestate1
+              | None when Typ.Procname.Java.is_vararg callee_pname_java ->
+                  let last_parameter = List.length call_params in
+                  do_preconditions_check_not_null last_parameter ~is_vararg:true typestate1
+              | None ->
+                  (* assume the first parameter is checked for null *)
+                  do_preconditions_check_not_null 1 ~is_vararg:false typestate1
             else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname
             then do_preconditions_check_state typestate1
             else if Models.is_mapPut callee_pname then do_map_put typestate1

@@ -492,6 +492,11 @@ val has_cxx_fully_qualified_name : Ctl_parser_types.ast_node -> ALVar.alexp -> b
  *  matching the given regexp
  *)
 
+val has_cxx_fully_qualified_name_in_custom_symbols : Ctl_parser_types.ast_node -> string -> bool
+(** true iff node has C++ fully qualified name (w/class and namespace)
+ *  matching a prefix on the given named custom symbol list
+ *)
+
 val is_in_source_file : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (**
  * True iff the source file path of the given node matches the given regexp or string.

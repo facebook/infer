@@ -77,7 +77,11 @@ module Bound : sig
 
   val widen_l : t -> t -> t
 
+  val widen_l_thresholds : thresholds:Z.t list -> t -> t -> t
+
   val widen_u : t -> t -> t
+
+  val widen_u_thresholds : thresholds:Z.t list -> t -> t -> t
 
   val zero : t
 

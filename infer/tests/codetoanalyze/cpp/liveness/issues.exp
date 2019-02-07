@@ -8,6 +8,7 @@ codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_store_before_captu
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_struct_no_destructor_bad, 0, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_struct_rvalue_ref_bad, 0, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_then_live_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::decltype_read_ok_FP, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::easy_bad, 0, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::init_capture_no_call_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::init_capture_reassign_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]

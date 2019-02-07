@@ -301,6 +301,8 @@ module Val = struct
 
   let prune_ne_zero : t -> t = lift_prune1 Itv.prune_ne_zero
 
+  let prune_ge_one : t -> t = lift_prune1 Itv.prune_ge_one
+
   let prune_length_eq_zero : t -> t = lift_prune_length1 Itv.prune_eq_zero
 
   let prune_length_ge_one : t -> t = lift_prune_length1 Itv.prune_ge_one
@@ -387,6 +389,13 @@ module Val = struct
    fun location ~f v ->
     { v with
       arrayblk= ArrayBlk.transform_length ~f v.arrayblk
+    ; traces= Trace.(Set.add_elem location (through ~risky_fun:None)) v.traces }
+
+
+  let set_array_offset : Location.t -> Itv.t -> t -> t =
+   fun location offset v ->
+    { v with
+      arrayblk= ArrayBlk.set_offset offset v.arrayblk
     ; traces= Trace.(Set.add_elem location (through ~risky_fun:None)) v.traces }
 
 
@@ -583,7 +592,8 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
-  type t = Simple of Loc.t | Empty of Loc.t | Nullity of Loc.t [@@deriving compare]
+  type t = Simple of Loc.t | Empty of Loc.t | Fgets of Loc.t | Nullity of Loc.t
+  [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
@@ -592,13 +602,17 @@ module AliasTarget = struct
         Loc.pp fmt l
     | Empty l ->
         F.fprintf fmt "empty(%a)" Loc.pp l
+    | Fgets l ->
+        F.fprintf fmt "fgets(%a)" Loc.pp l
     | Nullity l ->
         F.fprintf fmt "nullity(%a)" Loc.pp l
 
 
+  let fgets l = Fgets l
+
   let nullity l = Nullity l
 
-  let use l = function Simple l' | Empty l' | Nullity l' -> Loc.equal l l'
+  let use l = function Simple l' | Empty l' | Fgets l' | Nullity l' -> Loc.equal l l'
 
   let loc_map x ~f =
     match x with
@@ -606,6 +620,8 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Simple l)
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
+    | Fgets l ->
+        Option.map (f l) ~f:(fun l -> Fgets l)
     | Nullity l ->
         Option.map (f l) ~f:(fun l -> Nullity l)
 
@@ -721,6 +737,16 @@ module Alias = struct
         a
 
 
+  let fgets : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs a ->
+    let a = PowLoc.fold (fun loc acc -> lift_map (AliasMap.store loc) acc) locs a in
+    match PowLoc.is_singleton_or_more locs with
+    | IContainer.Singleton loc ->
+        load id (AliasTarget.fgets loc) a
+    | _ ->
+        a
+
+
   let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove temp)
 end
 
@@ -734,7 +760,10 @@ module CoreVal = struct
 
   let pp fmt x = F.fprintf fmt "(%a, %a)" Itv.pp (Val.get_itv x) ArrayBlk.pp (Val.get_array_blk x)
 
-  let is_symbolic v = Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
+  let is_symbolic v =
+    let itv = Val.get_itv v in
+    if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
+
 
   let is_empty v = Itv.is_bottom (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
 end
@@ -992,7 +1021,7 @@ module Reachability = struct
      reachability. *)
   let add v x = if PrunedVal.is_symbolic v then M.add v x else x
 
-  let make latest_prune =
+  let of_latest_prune latest_prune =
     let of_prune_pairs p = PrunePairs.fold (fun _ v acc -> add v acc) p M.empty in
     match latest_prune with
     | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
@@ -1002,6 +1031,10 @@ module Reachability = struct
     | LatestPrune.Top ->
         M.empty
 
+
+  let make latest_prune = of_latest_prune latest_prune
+
+  let add_latest_prune latest_prune x = M.union x (of_latest_prune latest_prune)
 
   let subst x eval_sym_trace location =
     let exception Unreachable in
@@ -1111,7 +1144,7 @@ module MemReach = struct
     match Alias.find k m.alias with
     | Some (AliasTarget.Simple l) ->
         Some l
-    | Some (AliasTarget.Empty _ | AliasTarget.Nullity _) | None ->
+    | Some (AliasTarget.Empty _ | AliasTarget.Fgets _ | AliasTarget.Nullity _) | None ->
         None
 
 
@@ -1127,6 +1160,10 @@ module MemReach = struct
 
   let store_empty_alias : Val.t -> Loc.t -> t -> t =
    fun formal loc m -> {m with alias= Alias.store_empty formal loc m.alias}
+
+
+  let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs m -> {m with alias= Alias.fgets id locs m.alias}
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
@@ -1389,6 +1426,10 @@ module Mem = struct
 
   let store_empty_alias : Val.t -> Loc.t -> t -> t =
    fun formal loc -> map ~f:(MemReach.store_empty_alias formal loc)
+
+
+  let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs -> map ~f:(MemReach.fgets_alias id locs)
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)

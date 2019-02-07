@@ -23,12 +23,16 @@ let is_defined_outside loop_nodes reaching_defs var =
   |> Option.value ~default:true
 
 
+let is_not_modeled tenv callee_pname =
+  match Models.ProcName.dispatch tenv callee_pname with Some _ -> false | None -> true
+
+
 let get_purity tenv ~is_inv_by_default callee_pname args =
   (* Take into account purity behavior of modeled functions *)
-  let all_params_modified = PurityDomain.all_params_modified args in
-  match Models.Call.dispatch tenv callee_pname args with
+  match Models.ProcName.dispatch tenv callee_pname with
   | Some inv ->
-      PurityDomain.with_purity (InvariantModels.is_invariant inv) all_params_modified
+      PurityDomain.(
+        if InvariantModels.is_invariant inv then pure else impure_params (all_params_modified args))
   | None -> (
       debug "No model for %a \n" Typ.Procname.pp callee_pname ;
       (* If there is no model, invoke purity analysis to see if function is pure *)
@@ -36,7 +40,7 @@ let get_purity tenv ~is_inv_by_default callee_pname args =
       | Some {Summary.payloads= {Payloads.purity= Some purity_summary}} ->
           purity_summary
       | _ ->
-          PurityDomain.with_purity is_inv_by_default all_params_modified )
+          if is_inv_by_default then PurityDomain.pure else PurityDomain.impure_global )
 
 
 let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ
@@ -154,13 +158,14 @@ let get_vars_to_invalidate node loop_head args modified_params invalidated_vars 
     args
 
 
-let all_modified loop_nodes =
+let all_unmodeled_modified tenv loop_nodes =
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
-             | Sil.Call ((id, _), _, _, _, _) ->
+             | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _)
+               when is_not_modeled tenv callee_pname ->
                  InvalidatedVars.add (Var.of_id id) acc
              | _ ->
                  acc ) )
@@ -171,25 +176,27 @@ let all_modified loop_nodes =
    all its non-primitive arguments. Once invalidated, it should be
    never added again. *)
 let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
-  let all_modified = lazy (all_modified loop_nodes) in
+  let all_unmodeled_modified = lazy (all_unmodeled_modified tenv loop_nodes) in
   LoopNodes.fold
     (fun node acc ->
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
-             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) ->
+             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
                  let purity = get_purity tenv ~is_inv_by_default callee_pname args in
-                 Option.value_map (PurityDomain.get_modified_params purity) ~default:acc
-                   ~f:(fun modified_params ->
-                     let acc' =
-                       get_vars_to_invalidate node loop_head args modified_params
-                         (InvalidatedVars.add (Var.of_id id) acc)
-                     in
-                     (* if one of the callees modifies a global static
-                        variable, invalidate all the function calls *)
-                     if PurityDomain.contains_global modified_params then
-                       InvalidatedVars.union acc' (force all_modified)
-                     else acc' )
+                 PurityDomain.(
+                   match purity with
+                   | AbstractDomain.Types.Top ->
+                       (* modified global *)
+                       (* if one of the callees modifies a global static
+                          variable, invalidate all unmodeled function calls *)
+                       InvalidatedVars.union acc (force all_unmodeled_modified)
+                   | AbstractDomain.Types.NonTop modified_params ->
+                       if ModifiedParamIndices.is_empty modified_params then (*pure*)
+                         acc
+                       else
+                         get_vars_to_invalidate node loop_head args modified_params
+                           (InvalidatedVars.add (Var.of_id id) acc)) )
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty

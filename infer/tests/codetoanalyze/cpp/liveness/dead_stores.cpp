@@ -505,4 +505,15 @@ ChainedCalls chain_method_calls_ok() {
   return x.chained(5).chained(6);
 }
 
+struct A {
+  int f : 4;
+};
+
+int decltype_read_ok_FP(int x) {
+  A a; // reports here as frontend forgets the expression used in decltype below
+       // a solution would be to annotate with __unused__ (T26148700)
+  decltype(a.f) i;
+  return x + i;
+}
+
 } // namespace dead_stores

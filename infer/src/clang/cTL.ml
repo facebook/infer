@@ -975,6 +975,12 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.declaration_has_name an decl_name
   | "has_cxx_fully_qualified_name", [qual_name_re], an ->
       CPredicates.has_cxx_fully_qualified_name an qual_name_re
+  | "has_cxx_fully_qualified_name_in_custom_symbols", [list_name], an -> (
+    match list_name with
+    | ALVar.Const s ->
+        CPredicates.has_cxx_fully_qualified_name_in_custom_symbols an s
+    | _ ->
+        assert false )
   | "declaration_ref_name", [decl_name], an ->
       CPredicates.declaration_ref_name an decl_name
   | "decl_unavailable_in_supported_ios_sdk", [], an ->

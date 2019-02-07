@@ -1,1 +1,0 @@
-{"exception_type": "java.lang.NullPointerException", "stack_trace": ["at codetoanalyze.java.crashcontext.MinimalCrashExample.main(MinimalCrashExample.java:16)",""], "exception_message": "", "normvector_stack": ["codetoanalyze.java.crashcontext.MinimalCrashExample.main"]}

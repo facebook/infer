@@ -55,4 +55,12 @@ class UnknownCallsTest {
   private static void call_loop_over_charArray(StringBuilder out, String in) {
     loop_over_charArray(out, in);
   }
+
+  // hashCode is impure but we don't invalidate all other library
+  // calls such as size()
+  void unmodeled_impure_linear(ArrayList<Integer> list) {
+    for (int i = 0; i < list.size(); i++) {
+      list.get(i).hashCode();
+    }
+  }
 }

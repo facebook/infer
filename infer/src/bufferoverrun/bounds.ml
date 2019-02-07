@@ -641,8 +641,44 @@ module Bound = struct
 
   let zero : t = Linear (Z.zero, SymLinear.zero)
 
-  let widen_l : t -> t -> t =
-   fun x y ->
+  module Thresholds : sig
+    type bound = t
+
+    type t
+
+    val make_inc : Z.t list -> t
+
+    val make_dec : Z.t list -> t
+
+    val widen :
+      cond:(threshold:bound -> bound -> bool) -> default:bound -> bound -> bound -> t -> bound
+  end = struct
+    type bound = t
+
+    type t = bound list
+
+    let default_thresholds = [Z.zero]
+
+    let make ~compare thresholds =
+      List.dedup_and_sort ~compare (default_thresholds @ thresholds) |> List.map ~f:of_big_int
+
+
+    (* It makes a list of thresholds that will be applied with the increasing order. *)
+    let make_inc = make ~compare:Z.compare
+
+    (* It makes a list of thresholds that will be applied with the decreasing order. *)
+    let make_dec = make ~compare:(fun x y -> -Z.compare x y)
+
+    let rec widen ~cond ~default x y = function
+      | [] ->
+          default
+      | threshold :: thresholds ->
+          if cond ~threshold x && cond ~threshold y then threshold
+          else widen ~default ~cond x y thresholds
+  end
+
+  let widen_l_thresholds : thresholds:Z.t list -> t -> t -> t =
+   fun ~thresholds x y ->
     match (x, y) with
     | PInf, _ | _, PInf ->
         L.(die InternalError) "Lower bound cannot be +oo."
@@ -653,11 +689,16 @@ module Bound = struct
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
         y
     | _ ->
-        if le x y then x else if le zero x && le zero y then zero else MInf
+        if le x y then x
+        else
+          let cond ~threshold x = le threshold x in
+          Thresholds.widen ~cond ~default:MInf x y (Thresholds.make_dec thresholds)
 
 
-  let widen_u : t -> t -> t =
-   fun x y ->
+  let widen_l : t -> t -> t = fun x y -> widen_l_thresholds ~thresholds:[] x y
+
+  let widen_u_thresholds : thresholds:Z.t list -> t -> t -> t =
+   fun ~thresholds x y ->
     match (x, y) with
     | MInf, _ | _, MInf ->
         L.(die InternalError) "Upper bound cannot be -oo."
@@ -668,8 +709,13 @@ module Bound = struct
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
         y
     | _ ->
-        if le y x then x else if le x zero && le y zero then zero else PInf
+        if le y x then x
+        else
+          let cond ~threshold x = le x threshold in
+          Thresholds.widen ~cond ~default:PInf x y (Thresholds.make_inc thresholds)
 
+
+  let widen_u : t -> t -> t = fun x y -> widen_u_thresholds ~thresholds:[] x y
 
   let one : t = Linear (Z.one, SymLinear.zero)
 

@@ -1420,6 +1420,14 @@ let has_cxx_fully_qualified_name an qual_name_re =
       ALVar.compare_str_with_alexp fully_qualified_name qual_name_re
 
 
+let has_cxx_fully_qualified_name_in_custom_symbols an list_name =
+  match Ctl_parser_types.ast_node_cxx_fully_qualified_name an with
+  | "" ->
+      false
+  | fully_qualified_name ->
+      Config.is_in_custom_symbols list_name fully_qualified_name
+
+
 let is_cxx_method_overriding an qual_name_re =
   let rec overrides_named (decl_refs : Clang_ast_t.decl_ref list) (qnre : ALVar.alexp) =
     List.exists

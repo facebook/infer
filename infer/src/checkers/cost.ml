@@ -41,8 +41,9 @@ let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~para
         "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
         callee_cost Typ.Procname.pp callee_pname
   | Some callee_pdesc ->
+      let callee_formals = Procdesc.get_pvar_formals callee_pdesc in
       let eval_sym =
-        BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_pdesc params
+        BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params
           inferbo_caller_mem
       in
       BasicCost.subst callee_cost eval_sym
@@ -53,7 +54,7 @@ module TransferFunctionsNodesBasicCost = struct
   module Domain = NodesBasicCostDomain
 
   type extras =
-    { inferbo_invariant_map: BufferOverrunChecker.invariant_map
+    { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
     ; integer_type_widths: Typ.IntegerWidths.t }
 
   let cost_atomic_instruction = BasicCost.one
@@ -71,7 +72,7 @@ module TransferFunctionsNodesBasicCost = struct
                 model inferbo_mem
             | None -> (
               match Payload.read pdesc callee_pname with
-              | Some {post= callee_cost} ->
+              | Some {post= {CostDomain.basic_operation_cost= callee_cost}} ->
                   if BasicCost.is_symbolic callee_cost then
                     instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
                       ~callee_pname ~params ~callee_cost
@@ -101,7 +102,7 @@ module TransferFunctionsNodesBasicCost = struct
   let exec_instr costmap ({ProcData.extras= {inferbo_invariant_map; integer_type_widths}} as pdata)
       node instr =
     let inferbo_mem =
-      Option.value_exn (BufferOverrunChecker.extract_pre (CFG.Node.id node) inferbo_invariant_map)
+      Option.value_exn (BufferOverrunAnalysis.extract_pre (CFG.Node.id node) inferbo_invariant_map)
     in
     let costmap = exec_instr_cost integer_type_widths inferbo_mem costmap pdata node instr in
     costmap
@@ -151,7 +152,7 @@ module BoundMap = struct
       | _ -> (
           let exit_state_opt =
             let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
-            BufferOverrunChecker.extract_post instr_node_id inferbo_invariant_map
+            BufferOverrunAnalysis.extract_post instr_node_id inferbo_invariant_map
           in
           match exit_state_opt with
           | Some entry_mem ->
@@ -740,7 +741,7 @@ let check_and_report_top_and_bottom cost proc_desc summary =
 
 let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
   let inferbo_invariant_map =
-    BufferOverrunChecker.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   let proc_data = ProcData.make_default proc_desc tenv in
@@ -805,7 +806,7 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
         BasicCost.pp exit_cost ;
       check_and_report_top_and_bottom exit_cost proc_desc summary ;
-      Payload.update_summary {post= exit_cost} summary
+      Payload.update_summary {post= {CostDomain.basic_operation_cost= exit_cost}} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Failed to compute final cost for function %a" Typ.Procname.pp

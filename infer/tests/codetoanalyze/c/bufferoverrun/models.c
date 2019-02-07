@@ -408,6 +408,16 @@ void strcpy_Bad() {
   strcpy(dst, src);
 }
 
+void strcpy_literal_string_Good() {
+  char dst[10];
+  strcpy(dst, "test");
+}
+
+void strcpy_literal_string_Bad() {
+  char dst[4];
+  strcpy(dst, "test");
+}
+
 void strcpy_strlen_Good() {
   char src[5] = "test";
   char dst[10];
@@ -451,4 +461,32 @@ void strcpy_no_null_Bad() {
   src[4] = 'a';
   char dst[10];
   strcpy(dst, src);
+}
+
+void strcat_Good() {
+  char str[8];
+  strcpy(str, "abc");
+  strcat(str, "defg");
+}
+
+void strcat_Bad() {
+  char str[8];
+  strcpy(str, "abc");
+  strcat(str, "defgh");
+}
+
+void strcat_strlen_Good() {
+  char str[8];
+  strcpy(str, "abc");
+  strcat(str, "defg");
+  int a[8];
+  a[strlen(str)] = 0;
+}
+
+void strcat_strlen_Bad() {
+  char str[20];
+  strcpy(str, "abc");
+  strcat(str, "defgh");
+  int a[8];
+  a[strlen(str)] = 0;
 }

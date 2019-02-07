@@ -51,3 +51,89 @@ void std_array_contents_Bad() {
   a[0] = 10;
   a[a[0]] = 0;
 }
+
+void array_iter1_Good() {
+  std::array<int, 11> a;
+  for (auto it = a.begin(); it < a.end(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}
+
+void array_iter1_Bad() {
+  std::array<int, 5> a;
+  for (auto it = a.begin(); it < a.end(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}
+
+void array_iter2_Good() {
+  std::array<int, 11> a;
+  for (auto it = a.begin(); it != a.end(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}
+
+void array_iter2_Bad() {
+  std::array<int, 5> a;
+  for (auto it = a.begin(); it != a.end(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}
+
+void array_iter3_Good() {
+  std::array<int, 11> a = {10};
+  for (auto it = a.cbegin(); it < a.cend(); ++it) {
+    a[*it] = 10;
+  }
+}
+
+void array_iter3_Bad() {
+  std::array<int, 5> a = {10};
+  for (auto it = a.cbegin(); it < a.cend(); ++it) {
+    a[*it] = 10;
+  }
+}
+
+void array_iter_front_Good() {
+  std::array<int, 11> a;
+  a.front() = 10;
+  a[a[0]] = 0;
+}
+
+void array_iter_front_Bad() {
+  std::array<int, 5> a;
+  a.front() = 10;
+  a[a[0]] = 0;
+}
+
+void array_iter_back_Good() {
+  std::array<int, 11> a;
+  a.back() = 10;
+  a[a[0]] = 0;
+}
+
+void array_iter_back_Bad() {
+  std::array<int, 5> a;
+  a.back() = 10;
+  a[a[0]] = 0;
+}
+
+void array_rev_iter_Good_FP() {
+  std::array<int, 11> a;
+  for (auto it = a.rbegin(); it < a.rend(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}
+
+void array_rev_iter_Bad() {
+  std::array<int, 5> a;
+  for (auto it = a.rbegin(); it < a.rend(); ++it) {
+    *it = 10;
+  }
+  a[a[0]] = 0;
+}

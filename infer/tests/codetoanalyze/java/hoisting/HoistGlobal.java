@@ -4,12 +4,18 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import java.util.ArrayList;
+
 class HoistGlobal {
 
   public static int svar = 0;
 
   int read_global() {
     return svar;
+  }
+
+  int return_one() {
+    return 1;
   }
 
   class Foo {
@@ -20,6 +26,10 @@ class HoistGlobal {
     int read_global() {
       return svar;
     }
+
+    int return_zero() {
+      return 0;
+    }
   }
 
   int global_modification_dont_hoist(int size) {
@@ -29,6 +39,17 @@ class HoistGlobal {
       d += read_global(); // don't hoist since set() changes a global var in the loop
       f.set();
       f.read_global(); // don't hoist
+    }
+    return d;
+  }
+
+  int global_modification_hoist_FN(ArrayList<?> list) {
+    Foo f = new Foo();
+    int d = 0;
+    for (int i = 0; i < list.size(); i++) {
+      d += return_one(); // ok to hoist
+      f.set(); // don't invalidate size()
+      f.return_zero(); // ok to hoist since doesn't read global
     }
     return d;
   }

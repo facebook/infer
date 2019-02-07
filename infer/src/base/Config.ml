@@ -16,13 +16,11 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = Checkers | Crashcontext | Linters [@@deriving compare]
+type analyzer = Checkers | Linters [@@deriving compare]
 
 let equal_analyzer = [%compare.equal: analyzer]
 
-let string_to_analyzer =
-  [("checkers", Checkers); ("crashcontext", Crashcontext); ("linters", Linters)]
-
+let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
 
 let clang_frontend_action_symbols =
   [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
@@ -42,7 +40,6 @@ let issues_fields_symbols =
   ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)
   ; ("severity", `Issue_field_severity)
-  ; ("visibility", `Issue_field_visibility)
   ; ("line", `Issue_field_line)
   ; ("column", `Issue_field_column)
   ; ("procedure", `Issue_field_procedure)
@@ -203,8 +200,6 @@ let manual_buffer_overrun = "BUFFER OVERRUN OPTIONS"
 let manual_clang = "CLANG OPTIONS"
 
 let manual_clang_linters = "CLANG LINTERS OPTIONS"
-
-let manual_crashcontext = "CRASHCONTEXT OPTIONS"
 
 let manual_generic = Cmdliner.Manpage.s_options
 
@@ -474,6 +469,25 @@ let exe_usage =
     (Option.value_map ~default:"" ~f:(( ^ ) " ") exe_command_name)
 
 
+let get_symbol_string json_obj =
+  match json_obj with
+  | `String sym_regexp_str ->
+      sym_regexp_str
+  | _ ->
+      L.(die UserError) "each --custom-symbols element should be list of symbol *strings*"
+
+
+let get_symbols_regexp json_obj =
+  let sym_regexp_strs =
+    match json_obj with
+    | `List json_objs ->
+        List.map ~f:get_symbol_string json_objs
+    | _ ->
+        L.(die UserError) "each --custom-symbols element should be a *list* of strings"
+  in
+  Str.regexp ("\\(" ^ String.concat ~sep:"\\|" sym_regexp_strs ^ "\\)")
+
+
 (** Command Line options *)
 
 (* HOWTO define a new command line and config file option.
@@ -590,7 +604,6 @@ and ( annotation_reachability
     , bufferoverrun
     , class_loads
     , cost
-    , crashcontext
     , eradicate
     , fragment_retains_view
     , immutable_cast
@@ -631,9 +644,6 @@ and ( annotation_reachability
   and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
   and class_loads = mk_checker ~long:"class-loads" ~default:false "Java class loading analysis"
   and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
-  and crashcontext =
-    mk_checker ~long:"crashcontext"
-      "the crashcontext checker for Java stack trace context reconstruction"
   and eradicate =
     mk_checker ~long:"eradicate" "the eradicate @Nullable checker for Java annotations"
   and fragment_retains_view =
@@ -715,7 +725,6 @@ and ( annotation_reachability
   , bufferoverrun
   , class_loads
   , cost
-  , crashcontext
   , eradicate
   , fragment_retains_view
   , immutable_cast
@@ -976,6 +985,12 @@ and cxx =
   CLOpt.mk_bool ~long:"cxx" ~default:true
     ~in_help:InferCommand.[(Capture, manual_clang)]
     "Analyze C++ methods"
+
+
+and custom_symbols =
+  CLOpt.mk_json ~long:"custom-symbols"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify named lists of symbols available to rules"
 
 
 and ( bo_debug
@@ -1981,6 +1996,15 @@ and source_files =
     "Print source files discovered by infer"
 
 
+and source_files_cfg =
+  CLOpt.mk_bool ~long:"source-files-cfg"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    (Printf.sprintf
+       "Output a dotty file in infer-out/%s for each source file in the output of \
+        $(b,--source-files)"
+       captured_dir_name)
+
+
 and source_files_filter =
   CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
     ~in_help:InferCommand.[(Explore, manual_generic)]
@@ -2077,24 +2101,6 @@ and sqlite_vfs =
         None
   in
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
-
-
-and stacktrace =
-  CLOpt.mk_path_opt ~deprecated:["st"] ~long:"stacktrace"
-    ~in_help:InferCommand.[(Analyze, manual_crashcontext)]
-    ~meta:"file"
-    "File path containing a json-encoded Java crash stacktrace. Used to guide the analysis (only \
-     with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json for examples of \
-     the expected format."
-
-
-and stacktraces_dir =
-  CLOpt.mk_path_opt ~long:"stacktraces-dir"
-    ~in_help:InferCommand.[(Analyze, manual_crashcontext)]
-    ~meta:"dir"
-    "Directory path containing multiple json-encoded Java crash stacktraces. Used to guide the  \
-     analysis (only with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json \
-     for examples of the expected format."
 
 
 and stats_report =
@@ -2414,9 +2420,6 @@ let post_parsing_initialization command_opt =
   if !linters_developer_mode then linters := true ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( match !analyzer with
-  | Crashcontext ->
-      disable_all_checkers () ;
-      crashcontext := true
   | Linters ->
       disable_all_checkers () ;
       capture := false ;
@@ -2575,8 +2578,6 @@ and costs_current = !costs_current
 and costs_previous = !costs_previous
 
 and current_to_previous_script = !current_to_previous_script
-
-and crashcontext = !crashcontext
 
 and cxx = !cxx
 
@@ -2922,6 +2923,8 @@ and source_preview = !source_preview
 
 and source_files = !source_files
 
+and source_files_cfg = !source_files_cfg
+
 and source_files_filter = !source_files_filter
 
 and source_files_type_environment = !source_files_type_environment
@@ -2940,10 +2943,6 @@ and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
 
-and stacktrace = !stacktrace
-
-and stacktraces_dir = !stacktraces_dir
-
 and starvation = !starvation
 
 and starvation_skip_analysis = !starvation_skip_analysis
@@ -2953,6 +2952,19 @@ and starvation_strict_mode = !starvation_strict_mode
 and stats_report = !stats_report
 
 and subtype_multirange = !subtype_multirange
+
+and custom_symbols =
+  (* Convert symbol lists to regexps just once, here *)
+  match !custom_symbols with
+  | `Assoc sym_lists ->
+      List.Assoc.map ~f:get_symbols_regexp sym_lists
+  | `List [] ->
+      []
+  | _ ->
+      L.(die UserError)
+        "--custom-symbols must be dictionary of symbol lists not %s"
+        (Yojson.Basic.to_string !custom_symbols)
+
 
 and symops_per_iteration = !symops_per_iteration
 
@@ -3052,3 +3064,11 @@ let java_package_is_external package =
   | _ ->
       List.exists external_java_packages ~f:(fun (prefix : string) ->
           String.is_prefix package ~prefix )
+
+
+let is_in_custom_symbols list_name symbol =
+  match List.Assoc.find ~equal:String.equal custom_symbols list_name with
+  | Some regexp ->
+      Str.string_match regexp symbol 0
+  | None ->
+      false

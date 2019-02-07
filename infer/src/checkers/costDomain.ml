@@ -12,6 +12,9 @@ module BasicCost = Polynomials.NonNegativePolynomial
 (** Map (node,instr) -> basic cost  *)
 module NodeInstructionToCostMap = AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (BasicCost)
 
-type summary = {post: BasicCost.t}
+type cost_record = {basic_operation_cost: BasicCost.t}
 
-let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" BasicCost.pp post
+type summary = {post: cost_record}
+
+let pp_summary fmt {post} =
+  F.fprintf fmt "@\n Post: {basic_operatio_cost: %a} @\n" BasicCost.pp post.basic_operation_cost

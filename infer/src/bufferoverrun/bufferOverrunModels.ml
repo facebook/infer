@@ -82,6 +82,7 @@ let fgets str_exp num_exp =
     |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
     |> ArrayBlk.fold update_strlen1 (Dom.Val.get_array_blk str_v)
     |> Dom.Mem.add_stack (Loc.of_id id) {str_v with itv= Itv.zero}
+    |> Dom.Mem.fgets_alias id (Dom.Val.get_all_locs str_v)
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:str_exp ~byte_index_exp:num_exp
       ~last_included:true mem location cond_set
@@ -183,6 +184,49 @@ let strncpy dest_exp src_exp size_exp =
     mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
   in
   {exec; check= memcpy_check}
+
+
+let strcat dest_exp src_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let src_loc = Sem.eval_locs src_exp mem in
+    let dest_loc = Sem.eval_locs dest_exp mem in
+    let new_contents =
+      let src_contents = Dom.Mem.find_set src_loc mem in
+      let dest_contents = Dom.Mem.find_set dest_loc mem in
+      Dom.Val.join dest_contents src_contents
+    in
+    let src_strlen = Dom.Mem.get_c_strlen src_loc mem in
+    let new_strlen =
+      let dest_strlen = Dom.Mem.get_c_strlen dest_loc mem in
+      Dom.Val.plus_a dest_strlen src_strlen
+    in
+    mem
+    |> Dom.Mem.update_mem dest_loc new_contents
+    |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) new_strlen
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+  and check {integer_type_widths; location} mem cond_set =
+    let access_last_char arr idx cond_set =
+      let relation = Dom.Mem.get_relation mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
+        ~last_included:false ~latest_prune location cond_set
+    in
+    let src_strlen =
+      let str_loc = Sem.eval_locs src_exp mem in
+      Dom.Mem.get_c_strlen str_loc mem
+    in
+    let new_strlen =
+      let dest_strlen =
+        let dest_loc = Sem.eval_locs dest_exp mem in
+        Dom.Mem.get_c_strlen dest_loc mem
+      in
+      Dom.Val.plus_a dest_strlen src_strlen
+    in
+    cond_set
+    |> access_last_char (Sem.eval integer_type_widths dest_exp mem) new_strlen
+    |> access_last_char (Sem.eval integer_type_widths src_exp mem) src_strlen
+  in
+  {exec; check}
 
 
 let realloc src_exp size_exp =
@@ -420,6 +464,38 @@ module StdArray = struct
         location cond_set
     in
     {exec; check}
+
+
+  let begin_ _size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
+
+
+  let end_ size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        let offset = Itv.of_int_lit (IntLit.of_int64 size) in
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
+
+
+  let back size (array_exp, _) =
+    let exec {location; integer_type_widths} ~ret:(id, _) mem =
+      let v =
+        let offset = Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)) in
+        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+      in
+      Dom.Mem.add_stack (Loc.of_id id) v mem
+    in
+    {exec; check= no_check}
 end
 
 module StdBasicString = struct
@@ -629,6 +705,7 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
+    let std_array1 = mk_std_array () in
     let std_array2 = mk_std_array () in
     let char_ptr = Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)) in
     make_dispatcher
@@ -655,6 +732,7 @@ module Call = struct
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
+      ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
@@ -667,6 +745,12 @@ module Call = struct
         $+ capt_arg_of_typ (-"std" &:: "vector")
         $+? capt_exp $--> Folly.Split.std_vector
       ; std_array0 >:: "array" &--> StdArray.constructor
+      ; std_array1 >:: "begin" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "cbegin" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "end" $ capt_arg $!--> StdArray.end_
+      ; std_array1 >:: "cend" $ capt_arg $!--> StdArray.end_
+      ; std_array1 >:: "front" $ capt_arg $!--> StdArray.begin_
+      ; std_array1 >:: "back" $ capt_arg $!--> StdArray.back
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> no_model

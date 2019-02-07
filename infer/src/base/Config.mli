@@ -298,8 +298,6 @@ val costs_current : string option
 
 val costs_previous : string option
 
-val crashcontext : bool
-
 val current_to_previous_script : string option
 
 val cxx : bool
@@ -415,7 +413,6 @@ val issues_fields :
   | `Issue_field_qualifier
   | `Issue_field_severity
   | `Issue_field_bucket
-  | `Issue_field_visibility
   | `Issue_field_line
   | `Issue_field_column
   | `Issue_field_procedure
@@ -613,6 +610,8 @@ val skip_translation_headers : string list
 
 val source_files : bool
 
+val source_files_cfg : bool
+
 val source_files_filter : string option
 
 val source_files_type_environment : bool
@@ -630,10 +629,6 @@ val specs_library : string list
 val sqlite_lock_timeout : int
 
 val sqlite_vfs : string option
-
-val stacktrace : string option
-
-val stacktraces_dir : string option
 
 val starvation : bool
 
@@ -709,4 +704,7 @@ val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
 val quandaryBO_filtered_issues : IssueType.t list
-(* List of issues that are enabled by QuandaryBO but should not be in the final report.json *)
+(** List of issues that are enabled by QuandaryBO but should not be in the final report.json *)
+
+val is_in_custom_symbols : string -> string -> bool
+(** Does named symbol match any prefix in the named custom symbol list? *)

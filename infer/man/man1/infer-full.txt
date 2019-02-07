@@ -181,18 +181,14 @@ OPTIONS
            Costs report of the base revision to use for comparison       
     See also infer-reportdiff(1).
 
-       --crashcontext
-           Activates: the crashcontext checker for Java stack trace context
-           reconstruction (Conversely: --no-crashcontext)           See also infer-analyze(1).
-
-       --crashcontext-only
-           Activates: Enable --crashcontext and disable all other checkers
-           (Conversely: --no-crashcontext-only)           See also infer-analyze(1).
-
        --current-to-previous-script shell
            Specify a script to checkout a previous version of the project to
            compare against, assuming we are on the current version already.       
     See also infer-diff(1).
+
+       --custom-symbols json
+           Specify named lists of symbols available to rules (default: [])       
+    See also infer-analyze(1).
 
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)       
@@ -440,7 +436,7 @@ OPTIONS
            multiple times)           See also infer-capture(1).
 
        --issues-fields ,-separated sequence of { bug_type | bucket |
-       qualifier | severity | visibility | line | column | procedure |
+       qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note }
            Fields to emit with --issues-tests (default: file procedure
@@ -820,6 +816,11 @@ OPTIONS
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)           See also infer-explore(1).
 
+       --source-files-cfg
+           Activates: Output a dotty file in infer-out/captured for each
+           source file in the output of --source-files (Conversely:
+           --no-source-files-cfg)           See also infer-explore(1).
+
        --source-files-filter filter
            With --source-files, only print source files matching the
            specified filter. The filter is a pattern that should match the
@@ -848,18 +849,6 @@ OPTIONS
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
            (default: five seconds times number of cores)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
-
-       --stacktrace file
-           File path containing a json-encoded Java crash stacktrace. Used to
-           guide the analysis (only with '-a crashcontext'). See
-           tests/codetoanalyze/java/crashcontext/*.json for examples of the
-           expected format.           See also infer-analyze(1).
-
-       --stacktraces-dir dir
-           Directory path containing multiple json-encoded Java crash
-           stacktraces. Used to guide the analysis (only with '-a
-           crashcontext'). See tests/codetoanalyze/java/crashcontext/*.json
-           for examples of the expected format.           See also infer-analyze(1).
 
        --starvation
            Activates: starvation analysis (Conversely: --no-starvation)       
@@ -1446,12 +1435,6 @@ INTERNAL OPTIONS
 
        --sqlite-vfs-reset
            Cancel the effect of --sqlite-vfs.
-
-       --stacktrace-reset
-           Cancel the effect of --stacktrace.
-
-       --stacktraces-dir-reset
-           Cancel the effect of --stacktraces-dir.
 
        --starvation-skip-analysis json
            Specify combinations of class/method list that should be skipped

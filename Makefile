@@ -112,7 +112,6 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_classloads \
-  java_crashcontext \
   java_eradicate \
   java_hoisting \
   java_hoistingExpensive \
@@ -303,11 +302,23 @@ opt:
 
 .PHONY: clang_setup
 clang_setup:
+#	if clang is already built then let the user know they might not need to rebuild clang
 	$(QUIET)export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh --only-check-install || \
-	$(FCP_DIR)/clang/setup.sh
+	$(FCP_DIR)/clang/setup.sh --only-check-install || { \
+	  if [ -x '$(FCP_DIR)'/clang/install/bin/clang ]; then \
+	    echo '$(TERM_INFO)*** Now building clang, this will take a while...$(TERM_RESET)' >&2; \
+	    echo '$(TERM_INFO)*** If you believe that facebook-clang-plugins/clang/install is up-to-date you can$(TERM_RESET)' >&2; \
+	    echo '$(TERM_INFO)*** interrupt the compilation (Control-C) and run this to prevent clang from being rebuilt:$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	    echo '$(TERM_INFO)      $(FCP_DIR)/clang/setup.sh --only-record-install$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	    echo '$(TERM_INFO)(TIP: you can also force a clang rebuild by removing $(FCP_DIR)/clang/installed.version)$(TERM_RESET)' >&2; \
+	    echo >&2 ; \
+	  fi; \
+	  $(FCP_DIR)/clang/setup.sh; \
+	}
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup
@@ -652,7 +663,7 @@ endif
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean)
 
 .PHONY: clean
-clean: test_clean ocaml_clean
+clean: ocaml_clean test_clean
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins C++ build,\
 	$(MAKE) -C $(FCP_DIR) clean)
@@ -668,7 +679,7 @@ endif
 	$(QUIET)$(call silent_on_success,Removing *.o and *.o.sh,\
 	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete)
 	$(QUIET)$(call silent_on_success,Removing build logs,\
-	$(REMOVE_DIR) _build_logs $(MAN_DIR))
+	$(REMOVE_DIR) _build_logs)
 
 .PHONY: conf-clean
 conf-clean: clean

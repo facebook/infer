@@ -13,7 +13,8 @@ build: [
   ["./configure"
      "--disable-c-analyzers"
      "--prefix=%{prefix}%"]
-  [make "-j%{jobs}%"]
+  [make "-j" jobs]
+  [make "-j" jobs "config_tests"] {with-test}
 ]
 install: [
   [make "install"]
@@ -43,7 +44,9 @@ depends: [
   "ppx_deriving" {>="4.1"}
   "sawja" {>="1.5.4"}
   "sqlite3"
+  "utop" {with-test}
   "xmlm" {>="1.2.0"}
+  "yojson" {<"1.6.0"}
   "zarith" {>="1.7"}
 ]
 depexts: [

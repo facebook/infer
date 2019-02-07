@@ -41,7 +41,7 @@ val analyze_and_report :
   ?suppress_console_report:bool -> changed_files:SourceFile.Set.t option -> mode -> unit
 (** run the analysis for the given mode *)
 
-val run_epilogue : mode -> unit
+val run_epilogue : unit -> unit
 (** cleanup infer-out/ for Buck, generate stats, and generally post-process the results of a run *)
 
 val read_config_changed_files : unit -> SourceFile.Set.t option

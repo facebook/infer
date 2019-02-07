@@ -283,7 +283,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         | _ ->
             None
       in
-      let visibility = Some (Exceptions.string_of_visibility err_data.visibility) in
       let qualifier =
         let base_qualifier = error_desc_to_plain_string err_key.err_desc in
         if IssueType.(equal resource_leak) err_key.err_name then
@@ -302,7 +301,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         { Jsonbug_j.bug_type
         ; qualifier
         ; severity
-        ; visibility
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name
@@ -348,8 +346,10 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         let hum =
           if Config.developer_mode then
             Some
-              { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp post
-              ; hum_degree= Format.asprintf "%a" CostDomain.BasicCost.pp_degree post }
+              { Jsonbug_t.hum_polynomial=
+                  Format.asprintf "%a" CostDomain.BasicCost.pp post.basic_operation_cost
+              ; hum_degree=
+                  Format.asprintf "%a" CostDomain.BasicCost.pp_degree post.basic_operation_cost }
           else None
         in
         let cost_item =
@@ -357,7 +357,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_id= procedure_id_of_procname proc_name
-          ; polynomial= CostDomain.BasicCost.encode post
+          ; polynomial= CostDomain.BasicCost.encode post.basic_operation_cost
           ; hum }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
@@ -397,8 +397,6 @@ let pp_custom_of_report fmt report fields =
           Format.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
       | `Issue_field_severity ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.severity
-      | `Issue_field_visibility ->
-          Format.fprintf fmt "%s%a" (comma_separator index) (Pp.option String.pp) issue.visibility
       | `Issue_field_line ->
           Format.fprintf fmt "%s%d" (comma_separator index) issue.line
       | `Issue_field_column ->

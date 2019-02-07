@@ -191,7 +191,7 @@ void conditional_inequality_depth1(int i) {
   }
 }
 
-void call_conditional_inequality_depth1_1_Good_FP() {
+void call_conditional_inequality_depth1_1_Good() {
   conditional_inequality_depth1(5);
 }
 

@@ -94,6 +94,11 @@ module ItvPure = struct
    fun ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ -> (Bound.widen_l l1 l2, Bound.widen_u u1 u2)
 
 
+  let widen_thresholds : thresholds:Z.t list -> prev:t -> next:t -> num_iters:int -> t =
+   fun ~thresholds ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ ->
+    (Bound.widen_l_thresholds ~thresholds l1 l2, Bound.widen_u_thresholds ~thresholds u1 u2)
+
+
   let pp_mark : markup:bool -> F.formatter -> t -> unit =
    fun ~markup fmt (l, u) ->
     if Bound.equal l u then Bound.pp_mark ~markup fmt l
@@ -436,6 +441,20 @@ module ItvPure = struct
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
+
+let widen_thresholds ~thresholds ~prev:prev0 ~next:next0 ~num_iters =
+  if phys_equal prev0 next0 then prev0
+  else
+    match (prev0, next0) with
+    | Bottom, _ ->
+        next0
+    | _, Bottom ->
+        prev0
+    | NonBottom prev, NonBottom next ->
+        PhysEqual.optim2
+          ~res:(NonBottom (ItvPure.widen_thresholds ~thresholds ~prev ~next ~num_iters))
+          prev0 next0
+
 
 let compare : t -> t -> int =
  fun x y ->
