@@ -26,7 +26,10 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_analysis
 end)
 
-type extras = {oenv: Dom.OndemandEnv.t}
+type extras =
+  { get_proc_summary:
+      Typ.Procname.t -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list) option
+  ; oenv: Dom.OndemandEnv.t }
 
 module CFG = ProcCfg.NormalOneInstrPerNode
 
@@ -138,7 +141,7 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {pdesc; tenv; extras= {oenv= {integer_type_widths}}} node instr ->
+   fun mem {pdesc; tenv; extras= {get_proc_summary; oenv= {integer_type_widths}}} node instr ->
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
         mem
@@ -146,11 +149,8 @@ module TransferFunctions = struct
       -> (
       match Pvar.get_initializer_pname pvar with
       | Some callee_pname -> (
-        match
-          Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
-          |> Option.bind ~f:Payload.of_summary
-        with
-        | Some callee_mem ->
+        match get_proc_summary callee_pname with
+        | Some (callee_mem, _) ->
             let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
             Dom.Mem.add_stack (Loc.of_id id) v mem
         | None ->
@@ -227,15 +227,7 @@ module TransferFunctions = struct
             in
             exec model_env ~ret mem
         | None -> (
-          match
-            Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
-            |> Option.bind ~f:(fun callee_summary ->
-                   Payload.of_summary callee_summary
-                   |> Option.map ~f:(fun payload ->
-                          ( payload
-                          , Summary.get_proc_desc callee_summary |> Procdesc.get_pvar_formals ) )
-               )
-          with
+          match get_proc_summary callee_pname with
           | Some (callee_exit_mem, callee_formals) ->
               instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
                 callee_exit_mem location
@@ -296,7 +288,14 @@ let cached_compute_invariant_map =
     let cfg = CFG.from_pdesc pdesc in
     let pdata =
       let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
-      ProcData.make pdesc tenv {oenv}
+      let get_proc_summary callee_pname =
+        Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
+        |> Option.bind ~f:(fun summary ->
+               Payload.of_summary summary
+               |> Option.map ~f:(fun payload ->
+                      (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+      in
+      ProcData.make pdesc tenv {get_proc_summary; oenv}
     in
     let initial = Init.initial_state pdata (CFG.start_node cfg) in
     Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
