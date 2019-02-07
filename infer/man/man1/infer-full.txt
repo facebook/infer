@@ -1154,10 +1154,6 @@ INTERNAL OPTIONS
        --icfg-dotty-outfile-reset
            Cancel the effect of --icfg-dotty-outfile.
 
-       --ignore-trivial-traces
-           Activates: Ignore traces whose length is at most 1 (Conversely:
-           --no-ignore-trivial-traces)
-
        --invariant-by-default
            Activates: [Cost]Consider functions to be invariant by default
            (Conversely: --no-invariant-by-default)

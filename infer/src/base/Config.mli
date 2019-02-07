@@ -392,8 +392,6 @@ val hoisting_report_only_expensive : bool
 
 val icfg_dotty_outfile : string option
 
-val ignore_trivial_traces : bool
-
 val immutable_cast : bool
 
 val infer_is_clang : bool

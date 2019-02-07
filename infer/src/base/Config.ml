@@ -1420,11 +1420,6 @@ and icfg_dotty_outfile =
      other options that would generate icfg file otherwise"
 
 
-and ignore_trivial_traces =
-  CLOpt.mk_bool ~long:"ignore-trivial-traces" ~default:false
-    "Ignore traces whose length is at most 1"
-
-
 and iphoneos_target_sdk_version =
   CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
@@ -2689,15 +2684,12 @@ and hoisting_report_only_expensive = !hoisting_report_only_expensive
 
 and icfg_dotty_outfile = !icfg_dotty_outfile
 
-and ignore_trivial_traces = !ignore_trivial_traces
-
 and immutable_cast = !immutable_cast
 
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 
 and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
-
 
 and issues_fields = !issues_fields
 
