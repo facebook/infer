@@ -7,5 +7,8 @@ Findlib has been successfully loaded. Additional directives:
   Topfind.reset();;         to force that packages will be reloaded
   #thread;;                 to enable threads
 
+The files [...]/extLib.cma
+and [...]/infertop.bc
+disagree over interface Base64
 n$5
 false

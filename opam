@@ -23,7 +23,7 @@ depends: [
   "ANSITerminal" {>="0.7"}
   "apron"
   "atdgen" {>="2.0.0"}
-  "base64" {<"3.0.0"}
+  "base64" {>="3.0.0"}
   "cmdliner" {>="1.0.0"}
   "core"
   "conf-autoconf" {build}

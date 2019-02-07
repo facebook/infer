@@ -9,6 +9,6 @@ open! IStd
 
 type t = Location.t list
 
-let encode decoded = B64.encode (Marshal.to_string decoded [])
+let encode decoded = Base64.encode_exn (Marshal.to_string decoded [])
 
-let decode encoded = Marshal.from_string (B64.decode encoded) 0
+let decode encoded = Marshal.from_string (Base64.decode_exn encoded) 0

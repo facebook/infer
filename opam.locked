@@ -13,7 +13,8 @@ build: [
   ["./configure"
      "--disable-c-analyzers"
      "--prefix=%{prefix}%"]
-  [make "-j%{jobs}%"]
+  [make "-j" jobs]
+  [make "-j" jobs "config_tests"] {with-test}
 ]
 install: [
   [make "install"]
@@ -29,7 +30,7 @@ depends: [
   "base-bytes" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "base64" {= "2.3.0"}
+  "base64" {= "3.1.0"}
   "bin_prot" {= "v0.11.0"}
   "biniou" {= "1.2.0"}
   "camlidl" {= "1.05"}
