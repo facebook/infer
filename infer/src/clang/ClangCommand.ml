@@ -159,7 +159,7 @@ let clang_cc1_cmd_sanitizer cmd =
         else if String.equal option "-isystem" then
           match include_override_regex with
           | Some regexp when Str.string_match regexp arg 0 ->
-              fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.0" ^/ "include"
+              fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.1" ^/ "include"
           | _ ->
               arg
         else arg
