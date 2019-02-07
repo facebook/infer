@@ -82,6 +82,7 @@ let fgets str_exp num_exp =
     |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
     |> ArrayBlk.fold update_strlen1 (Dom.Val.get_array_blk str_v)
     |> Dom.Mem.add_stack (Loc.of_id id) {str_v with itv= Itv.zero}
+    |> Dom.Mem.fgets_alias id (Dom.Val.get_all_locs str_v)
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:str_exp ~byte_index_exp:num_exp
       ~last_included:true mem location cond_set

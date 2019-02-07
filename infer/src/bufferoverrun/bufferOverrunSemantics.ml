@@ -307,7 +307,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
     match Mem.find_alias id mem with
     | Some (AliasTarget.Simple loc) ->
         Mem.find loc mem
-    | Some (AliasTarget.Empty _ | AliasTarget.Nullity _) | None ->
+    | Some (AliasTarget.Empty _ | AliasTarget.Fgets _ | AliasTarget.Nullity _) | None ->
         Val.bot )
   | Exp.Lvar pvar ->
       Mem.find (Loc.of_pvar pvar) mem
@@ -466,6 +466,10 @@ module Prune = struct
           let v = Mem.find lv mem in
           let v' = Val.prune_length_eq_zero v in
           update_mem_in_prune lv v' astate
+      | Some (AliasTarget.Fgets lv) ->
+          let strlen_loc = Loc.of_c_strlen lv in
+          let v' = Val.prune_ge_one (Mem.find strlen_loc mem) in
+          update_mem_in_prune strlen_loc v' astate
       | Some (AliasTarget.Nullity lv) ->
           let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
@@ -487,7 +491,7 @@ module Prune = struct
           let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
           let v' = Val.modify_itv itv_v v in
           update_mem_in_prune lv v' astate
-      | None ->
+      | Some (AliasTarget.Fgets _) | None ->
           astate )
     | _ ->
         astate

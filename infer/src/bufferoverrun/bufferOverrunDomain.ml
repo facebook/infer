@@ -301,6 +301,8 @@ module Val = struct
 
   let prune_ne_zero : t -> t = lift_prune1 Itv.prune_ne_zero
 
+  let prune_ge_one : t -> t = lift_prune1 Itv.prune_ge_one
+
   let prune_length_eq_zero : t -> t = lift_prune_length1 Itv.prune_eq_zero
 
   let prune_length_ge_one : t -> t = lift_prune_length1 Itv.prune_ge_one
@@ -590,7 +592,8 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
-  type t = Simple of Loc.t | Empty of Loc.t | Nullity of Loc.t [@@deriving compare]
+  type t = Simple of Loc.t | Empty of Loc.t | Fgets of Loc.t | Nullity of Loc.t
+  [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
@@ -599,13 +602,17 @@ module AliasTarget = struct
         Loc.pp fmt l
     | Empty l ->
         F.fprintf fmt "empty(%a)" Loc.pp l
+    | Fgets l ->
+        F.fprintf fmt "fgets(%a)" Loc.pp l
     | Nullity l ->
         F.fprintf fmt "nullity(%a)" Loc.pp l
 
 
+  let fgets l = Fgets l
+
   let nullity l = Nullity l
 
-  let use l = function Simple l' | Empty l' | Nullity l' -> Loc.equal l l'
+  let use l = function Simple l' | Empty l' | Fgets l' | Nullity l' -> Loc.equal l l'
 
   let loc_map x ~f =
     match x with
@@ -613,6 +620,8 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Simple l)
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
+    | Fgets l ->
+        Option.map (f l) ~f:(fun l -> Fgets l)
     | Nullity l ->
         Option.map (f l) ~f:(fun l -> Nullity l)
 
@@ -724,6 +733,16 @@ module Alias = struct
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
         {a with ret= AliasRet.v (AliasTarget.nullity loc)}
+    | _ ->
+        a
+
+
+  let fgets : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs a ->
+    let a = PowLoc.fold (fun loc acc -> lift_map (AliasMap.store loc) acc) locs a in
+    match PowLoc.is_singleton_or_more locs with
+    | IContainer.Singleton loc ->
+        load id (AliasTarget.fgets loc) a
     | _ ->
         a
 
@@ -1125,7 +1144,7 @@ module MemReach = struct
     match Alias.find k m.alias with
     | Some (AliasTarget.Simple l) ->
         Some l
-    | Some (AliasTarget.Empty _ | AliasTarget.Nullity _) | None ->
+    | Some (AliasTarget.Empty _ | AliasTarget.Fgets _ | AliasTarget.Nullity _) | None ->
         None
 
 
@@ -1141,6 +1160,10 @@ module MemReach = struct
 
   let store_empty_alias : Val.t -> Loc.t -> t -> t =
    fun formal loc m -> {m with alias= Alias.store_empty formal loc m.alias}
+
+
+  let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs m -> {m with alias= Alias.fgets id locs m.alias}
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
@@ -1403,6 +1426,10 @@ module Mem = struct
 
   let store_empty_alias : Val.t -> Loc.t -> t -> t =
    fun formal loc -> map ~f:(MemReach.store_empty_alias formal loc)
+
+
+  let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
+   fun id locs -> map ~f:(MemReach.fgets_alias id locs)
 
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)

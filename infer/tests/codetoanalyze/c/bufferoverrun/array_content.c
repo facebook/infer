@@ -214,7 +214,7 @@ void strlen_malloc_2_Good_FP() {
   a[strlen(s)] = 0;
 }
 
-void fgets_null_check_Good_FP() {
+void fgets_null_check_Good() {
   char line[100];
   while (fgets(line, 100, stdin)) {
     line[strlen(line) - 1] = 0;
