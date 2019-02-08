@@ -1133,9 +1133,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info ~is_inherited_ctor =
     let context = trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let sil_loc =
-      CLocation.location_of_stmt_info context.translation_unit_context.source_file si
-    in
     let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
     let var_exp, class_type =
       match trans_state.var_exp_typ with
@@ -1156,33 +1153,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       mk_trans_result (var_exp, this_type) {empty_control with initd_exps= [var_exp]}
     in
     let tmp_res_trans = mk_trans_result (var_exp, class_type) empty_control in
-    (* When class type is translated as pointer (std::shared_ptr for example), there needs
-       to be extra Load instruction before returning the trans_result of constructorExpr.
-       There is no LValueToRvalue cast in the AST afterwards since clang doesn't know
-       that class type is translated as pointer type. It gets added here instead. *)
-    let extra_res_trans =
-      let do_extra_deref =
-        match class_type.desc with
-        | Typ.Tptr _ ->
-            (* do not inject the extra dereference for procedures generated to record the
-                      initialization code of globals *)
-            Procdesc.get_proc_name trans_state.context.procdesc
-            |> Typ.Procname.get_global_name_of_initializer |> Option.is_none
-        | _ ->
-            false
-      in
-      if do_extra_deref then
-        dereference_value_from_result si.Clang_ast_t.si_source_range sil_loc tmp_res_trans
-      else tmp_res_trans
-    in
     let res_trans_callee =
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si
-        (Typ.mk Tvoid) false (Some extra_res_trans) ~is_inherited_ctor
+        (Typ.mk Tvoid) false (Some tmp_res_trans) ~is_inherited_ctor
     in
-    {res_trans with return= extra_res_trans.return}
+    {res_trans with return= tmp_res_trans.return}
 
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr ~is_inner_destructor =

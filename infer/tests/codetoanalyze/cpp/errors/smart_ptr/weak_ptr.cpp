@@ -118,35 +118,35 @@ int safeGetFromWeakDerivedAssign_bad(int v) {
   return *s->f1;
 }
 
-int safeGetFromSharedBaseConstr_bad(int v) {
+int FN_safeGetFromSharedBaseConstr_bad(int v) {
   auto b = std::make_shared<Base>(&v);
   auto s = safeGet(fromSharedBaseConstr(b));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromSharedBaseAssign_bad(int v) {
+int FN_safeGetFromSharedBaseAssign_bad(int v) {
   auto b = std::make_shared<Base>(&v);
   auto s = safeGet(fromSharedBaseAssign(b));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromSharedDerivedConstr_bad(int v) {
+int FN_safeGetFromSharedDerivedConstr_bad(int v) {
   auto b = std::make_shared<Derived>(&v);
   auto s = safeGet(fromSharedDerivedConstr(b));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromSharedDerivedConstr2_bad(int v) {
+int FN_safeGetFromSharedDerivedConstr2_bad(int v) {
   auto b = std::make_shared<Derived>(&v);
   auto s = safeGet(fromSharedDerivedConstr2(b));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromSharedDerivedAssign_bad(int v) {
+int FN_safeGetFromSharedDerivedAssign_bad(int v) {
   auto b = std::make_shared<Derived>(&v);
   auto s = safeGet(fromSharedDerivedAssign(b));
   b->f1 = nullptr;
