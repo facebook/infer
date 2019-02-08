@@ -18,6 +18,7 @@ codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus1_bad, 2, DEAD
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus2_bad, 2, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus3_bad, 2, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::reassign_param_bad, 0, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::unused_tmp_bad, 0, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::use_then_dead_bad, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores_constexpr.cpp, capture_const_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/non_type_template_param.cpp, X<3>_isZeroBad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]

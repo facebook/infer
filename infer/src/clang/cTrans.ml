@@ -2220,7 +2220,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     |> mk_trans_result ret_exp_typ
 
 
-  and init_expr_trans trans_state var_exp_typ ?qual_type var_stmt_info init_expr_opt =
+  and init_expr_trans ?(is_var_unused = false) trans_state var_exp_typ ?qual_type var_stmt_info
+      init_expr_opt =
     match init_expr_opt with
     | None -> (
       match
@@ -2254,8 +2255,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let assign_trans_control_opt =
           if
-            (* variable might be initialized already - do nothing in that case*)
-            List.exists ~f:(Exp.equal var_exp) res_trans_ie.control.initd_exps
+            is_var_unused
+            || (* variable might be initialized already - do nothing in that case*)
+               List.exists ~f:(Exp.equal var_exp) res_trans_ie.control.initd_exps
           then None
           else
             let sil_e1', ie_typ = res_trans_ie.return in
@@ -2292,18 +2294,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let procname = Procdesc.get_proc_name procdesc in
-    let do_var_dec var_decl qual_type vdi next_node =
+    let do_var_dec ~is_var_unused var_decl qual_type vdi next_node =
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
       let trans_state' = {trans_state with succ_nodes= next_node} in
-      init_expr_trans trans_state' (Exp.Lvar pvar, typ) ~qual_type stmt_info
+      init_expr_trans ~is_var_unused trans_state' (Exp.Lvar pvar, typ) ~qual_type stmt_info
         vdi.Clang_ast_t.vdi_init_expr
+    in
+    let has_unused_attr attributes =
+      List.exists attributes ~f:(function Clang_ast_t.UnusedAttr _ -> true | _ -> false)
     in
     let rec aux : decl list -> trans_result option = function
       | [] ->
           None
-      | (VarDecl (_, _, qt, vdi) as var_decl) :: var_decls' ->
+      | (VarDecl ({di_attributes}, _, qt, vdi) as var_decl) :: var_decls' ->
           (* Var are defined when procdesc is created, here we only take care of initialization *)
           let res_trans_tl = aux var_decls' in
           let root_nodes_tl, instrs_tl, initd_exps_tl =
@@ -2313,7 +2318,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | Some {control= {root_nodes; instrs; initd_exps}} ->
                 (root_nodes, instrs, initd_exps)
           in
-          let res_trans_tmp = do_var_dec var_decl qt vdi root_nodes_tl in
+          let is_var_unused = has_unused_attr di_attributes in
+          let res_trans_tmp = do_var_dec ~is_var_unused var_decl qt vdi root_nodes_tl in
           (* keep the last return and leaf_nodes from the list *)
           let return, leaf_nodes =
             match res_trans_tl with

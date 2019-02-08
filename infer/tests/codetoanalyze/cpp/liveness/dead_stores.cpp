@@ -484,17 +484,16 @@ class Exceptions {
 
 void init_in_binop_bad(int x) { x = -x & ~int{0}; }
 
-void FN_unused_tmp_bad() {
-  // T32000971
-  int __tmp = 1;
-}
+void unused_tmp_bad() { int __tmp = 1; }
 
 #define UNUSED(a) __typeof__(&a) __attribute__((unused)) __tmp = &a;
 
-void unused_attribute_ok() {
+void unused_attribute_tmp_ok() {
   int x;
   UNUSED(x);
 }
+
+void unused_attribute_ok() { int __attribute__((unused)) x = 42; }
 
 struct ChainedCalls {
   ChainedCalls chained(int i);
