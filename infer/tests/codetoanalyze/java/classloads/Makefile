@@ -39,7 +39,7 @@ $(OBJECTS): $(SOURCES)
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
 	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
-	   
+
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --project-root $(PROJECT_ROOT) \
@@ -60,3 +60,6 @@ test: loads.exp loads.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/loads.exp,$(TEST_REL_DIR)/loads.exp.test)
 
+.PHONY: replace
+replace:
+	@:
