@@ -11,6 +11,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import com.facebook.infer.annotation.Assertions;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Verify;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -326,5 +327,10 @@ public class NullMethodCall {
 
   String assertGetOnListOK(List<Object> list, int index) {
     return Assertions.assertGet(index, list).toString(); // No warning here
+  }
+
+  String guavaVerifyNotNullOK(@Nullable Object object) {
+    Verify.verifyNotNull(object);
+    return object.toString();
   }
 }
