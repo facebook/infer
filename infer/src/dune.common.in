@@ -67,7 +67,6 @@ let common_libraries =
     ; "cmdliner"
     ; "core"
     ; "elina"
-    ; "extlib"
     ; "mtime.clock.os"
     ; "ocamlgraph"
     ; "oUnit"
