@@ -17,7 +17,10 @@ type t =
 
 (** bad for every clang invocation *)
 let clang_blacklisted_flags =
-  ["--expt-relaxed-constexpr"; "-fembed-bitcode-marker"; "-fno-canonical-system-headers"]
+  [ "--expt-relaxed-constexpr"
+  ; "-fembed-bitcode-marker"
+  ; "-fno-absolute-module-directory"
+  ; "-fno-canonical-system-headers" ]
 
 
 let fcp_dir =
