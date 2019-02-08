@@ -63,16 +63,17 @@ let read_package_declaration source_file =
   let remove_trailing_semicolon = Str.replace_first (Str.regexp ";") "" in
   let empty_package = "" in
   let rec loop () =
-    try
-      let line = remove_trailing_semicolon (In_channel.input_line_exn file_in) in
+    match remove_trailing_semicolon (In_channel.input_line_exn file_in) with
+    | exception End_of_file ->
+        In_channel.close file_in ; empty_package
+    | line -> (
       match Str.split (Str.regexp "[ \t]+") line with
       | [] ->
-          loop ()
+          (loop [@tailcall]) ()
       | [hd; package] when String.equal hd "package" ->
           package
       | _ ->
-          loop ()
-    with End_of_file -> In_channel.close file_in ; empty_package
+          (loop [@tailcall]) () )
   in
   loop ()
 
@@ -128,35 +129,36 @@ let load_from_verbose_output javac_verbose_out =
   in
   let classpath_re = Str.regexp "\\[search path for class files: \\(.*\\)\\]" in
   let rec loop paths roots sources classes =
-    try
-      let line = In_channel.input_line_exn file_in in
-      if Str.string_match class_filename_re line 0 then
-        let path =
-          try Str.matched_group 5 line with Caml.Not_found ->
-            (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
-            Config.javac_classes_out ^/ Str.matched_group 2 line
-        in
-        let cn, root_info = Javalib.extract_class_name_from_file path in
-        let root_dir =
-          if String.equal root_info "" then Filename.current_dir_name else root_info
-        in
-        loop paths (add_root_path root_dir roots) sources (JBasics.ClassSet.add cn classes)
-      else if Str.string_match source_filename_re line 0 then
-        let path = Str.matched_group 2 line in
-        loop paths roots (add_source_file path sources) classes
-      else if Str.string_match classpath_re line 0 then
-        let classpath = Str.matched_group 1 line in
-        let parsed_paths = String.split ~on:',' classpath in
-        loop parsed_paths roots sources classes
-      else (* skip this line *)
-        loop paths roots sources classes
-    with
-    | JBasics.Class_structure_error _ | Invalid_argument _ ->
-        loop paths roots sources classes
-    | End_of_file ->
+    match In_channel.input_line_exn file_in with
+    | exception End_of_file ->
         In_channel.close file_in ;
         let classpath = List.fold ~f:append_path ~init:"" (String.Set.elements roots @ paths) in
         (classpath, sources, classes)
+    | line ->
+        if Str.string_match class_filename_re line 0 then
+          let path =
+            try Str.matched_group 5 line with Caml.Not_found ->
+              (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
+              Config.javac_classes_out ^/ Str.matched_group 2 line
+          in
+          match Javalib.extract_class_name_from_file path with
+          | exception (JBasics.Class_structure_error _ | Invalid_argument _) ->
+              (loop [@tailcall]) paths roots sources classes
+          | cn, root_info ->
+              let root_dir =
+                if String.equal root_info "" then Filename.current_dir_name else root_info
+              in
+              (loop [@tailcall]) paths (add_root_path root_dir roots) sources
+                (JBasics.ClassSet.add cn classes)
+        else if Str.string_match source_filename_re line 0 then
+          let path = Str.matched_group 2 line in
+          (loop [@tailcall]) paths roots (add_source_file path sources) classes
+        else if Str.string_match classpath_re line 0 then
+          let classpath = Str.matched_group 1 line in
+          let parsed_paths = String.split ~on:',' classpath in
+          (loop [@tailcall]) parsed_paths roots sources classes
+        else (* skip this line *)
+          (loop [@tailcall]) paths roots sources classes
   in
   loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty
 
