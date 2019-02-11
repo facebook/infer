@@ -409,9 +409,6 @@ module FreshVarExp : sig
   val get_induced_pi : Tenv.t -> unit -> Prop.pi
 
   val final : unit -> unit
-  (*
-  val lookup : side -> Exp.t -> (Exp.t * Exp.t) option
-*)
 end = struct
   let t = ref []
 

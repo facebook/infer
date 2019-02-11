@@ -62,13 +62,6 @@ module StrexpMatch : sig
 
   val replace_index : Tenv.t -> bool -> t -> Exp.t -> Exp.t -> sigma
   (** Replace the index in the array at a given position with the new index *)
-  (*
-  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
-  val get_sigma_partition : t -> sigma * Sil.hpred
-
-  (** Replace the strexp and the unmatched part of the sigma by the givn inputs *)
-  val replace_strexp_sigma : bool -> t -> Sil.strexp -> sigma -> sigma
-*)
 end = struct
   (** syntactic offset *)
   type syn_offset = Field of Typ.Fieldname.t * Typ.t | Index of Exp.t

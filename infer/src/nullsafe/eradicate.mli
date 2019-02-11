@@ -17,7 +17,6 @@ val callback_check_return_type : TypeCheck.check_return_type -> Callbacks.proc_c
 module type CallBackT = sig
   val callback : TypeCheck.checks -> Callbacks.proc_callback_t
 end
-(* CallBackT *)
 
 (** Extension to the type checker. *)
 module type ExtensionT = sig

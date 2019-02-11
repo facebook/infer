@@ -15,13 +15,10 @@ let count_newlines (path : string) : int =
 
 
 type t =
-  | Invalid of string
-  (* ML function of origin *)
+  | Invalid of {ml_source_file: string}
   | Absolute of string
-  | RelativeProjectRoot of string
-  (* relative to project root *)
-  | RelativeInferModel of string
-  (* relative to infer models *)
+  | RelativeProjectRoot of string  (** relative to project root *)
+  | RelativeInferModel of string  (** relative to infer models *)
 [@@deriving compare]
 
 let equal = [%compare.equal: t]
@@ -71,8 +68,8 @@ let to_string =
   let root = Utils.realpath Config.project_root in
   fun ?(force_relative = false) fname ->
     match fname with
-    | Invalid origin ->
-        "DUMMY from " ^ origin
+    | Invalid {ml_source_file} ->
+        "DUMMY from " ^ ml_source_file
     | RelativeInferModel path ->
         "INFER_MODEL/" ^ path
     | RelativeProjectRoot path ->
@@ -87,8 +84,9 @@ let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 
 let to_abs_path fname =
   match fname with
-  | Invalid origin ->
-      L.(die InternalError) "cannot be called with Invalid source file originating in %s" origin
+  | Invalid {ml_source_file} ->
+      L.(die InternalError)
+        "cannot be called with Invalid source file originating in %s" ml_source_file
   | RelativeProjectRoot path ->
       Filename.concat Config.project_root path
   | RelativeInferModel path ->
@@ -106,14 +104,14 @@ let to_rel_path fname =
   match fname with RelativeProjectRoot path -> path | _ -> to_abs_path fname
 
 
-let invalid origin = Invalid origin
+let invalid ml_source_file = Invalid {ml_source_file}
 
 let is_invalid = function Invalid _ -> true | _ -> false
 
 let is_infer_model source_file =
   match source_file with
-  | Invalid origin ->
-      L.(die InternalError) "cannot be called with Invalid source file from %s" origin
+  | Invalid {ml_source_file} ->
+      L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
   | RelativeProjectRoot _ | Absolute _ ->
       false
   | RelativeInferModel _ ->
@@ -130,8 +128,8 @@ let is_cpp_model file =
 
 
 let is_under_project_root = function
-  | Invalid origin ->
-      L.(die InternalError) "cannot be called with Invalid source file from %s" origin
+  | Invalid {ml_source_file} ->
+      L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
   | RelativeProjectRoot _ ->
       true
   | Absolute _ | RelativeInferModel _ ->

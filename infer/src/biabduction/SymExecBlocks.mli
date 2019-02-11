@@ -12,7 +12,7 @@ val resolve_method_with_block_args_and_analyze :
   -> Typ.Procname.t
   -> (Exp.t * Typ.t) list
   -> (Summary.t * (Exp.t * Typ.t) list) option
-(* [resolve_method_with_block_args_and_analyze caller_pdesc pname args]
+(** [resolve_method_with_block_args_and_analyze caller_pdesc pname args]
   create a copy of the method pname if it is defined and it's called with
   the correct number of arguments, and some arguments are block closures.
   The copy is created by adding extra formals for each captured variable,

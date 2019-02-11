@@ -261,28 +261,6 @@ module Inequalities : sig
 
   val inconsistent : t -> bool
   (** Return [true] if a simple inconsistency is detected *)
-  (*
-  (** Extract inequalities and disequalities from [pi] *)
-  val from_pi : Sil.atom list -> t
-
-  (** Extract inequalities and disequalities from [sigma] *)
-  val from_sigma : Sil.hpred list -> t
-
-  (** Join two sets of inequalities *)
-  val join : t -> t -> t
-
-  (** Pretty print inequalities and disequalities *)
-  val pp : printenv -> Format.formatter -> t -> unit
-
-  (** Pretty print <= *)
-  val d_leqs : t -> unit
-
-  (** Pretty print < *)
-  val d_lts : t -> unit
-
-  (** Pretty print <> *)
-  val d_neqs : t -> unit
-*)
 end = struct
   type t =
     { mutable leqs: (Exp.t * Exp.t) list  (** le fasts [e1 <= e2] *)
@@ -429,6 +407,7 @@ end = struct
     saturate {leqs= !leqs; lts= !lts; neqs= !neqs}
 
 
+  (** Extract inequalities and disequalities from [sigma] *)
   let from_sigma tenv sigma =
     let lookup = Tenv.lookup tenv in
     let leqs = ref [] in
@@ -472,6 +451,7 @@ end = struct
     saturate {leqs= !leqs; lts= !lts; neqs= []}
 
 
+  (** Join two sets of inequalities *)
   let join ineq1 ineq2 =
     let leqs_new = ineq1.leqs @ ineq2.leqs in
     let lts_new = ineq1.lts @ ineq2.lts in

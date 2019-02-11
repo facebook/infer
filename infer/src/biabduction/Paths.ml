@@ -58,20 +58,12 @@ module Path : sig
 
   val start : Procdesc.Node.t -> t
   (** create a new path with given start node *)
-  (*
-  (** equality for paths *)
-  val equal : t -> t -> bool
-
-  val get_description : t -> string option
-*)
 end = struct
   type session = int [@@deriving compare]
 
   type stats =
-    { mutable max_length: int
-    ; (* length of the longest linear sequence *)
-      mutable linear_num: float
-    (* number of linear sequences described by the path *) }
+    { mutable max_length: int  (** length of the longest linear sequence *)
+    ; mutable linear_num: float  (** number of linear sequences described by the path *) }
 
   (* type aliases for components of t values that compare should ignore *)
   type stats_ = stats

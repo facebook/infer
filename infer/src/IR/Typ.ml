@@ -594,9 +594,8 @@ module Procname = struct
   module Java = struct
     type kind =
       | Non_Static
-      (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
-      | Static
-      (* in Java, procedures called with invokestatic *)
+          (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+      | Static  (** in Java, procedures called with invokestatic *)
     [@@deriving compare]
 
     (* TODO: use Mangled.t here *)
