@@ -57,7 +57,17 @@ module TransferFunctionsNodesBasicCost = struct
     { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
     ; integer_type_widths: Typ.IntegerWidths.t }
 
-  let cost_atomic_instruction = BasicCost.one
+  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_pname params =
+    let callee_cost = CostDomain.get_operation_cost callee_cost_record in
+    if BasicCost.is_symbolic callee_cost then
+      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname ~params
+        ~callee_cost
+    else callee_cost
+
+
+  let callee_AllocationCost cost_record = CostDomain.get_allocation_cost cost_record
+
+  let callee_IOCost cost_record = CostDomain.get_IO_cost cost_record
 
   let exec_instr_cost integer_type_widths inferbo_mem
       (astate : CostDomain.NodeInstructionToCostMap.t) {ProcData.pdesc} (node : CFG.Node.t) instr :
@@ -69,24 +79,29 @@ module TransferFunctionsNodesBasicCost = struct
           let callee_cost =
             match CostModels.Call.dispatch () callee_pname params with
             | Some model ->
-                model inferbo_mem
+                CostDomain.set_operation_cost (model inferbo_mem) CostDomain.zero_record
             | None -> (
               match Payload.read pdesc callee_pname with
-              | Some {post= {CostDomain.basic_operation_cost= callee_cost}} ->
-                  if BasicCost.is_symbolic callee_cost then
-                    instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                      ~callee_pname ~params ~callee_cost
-                  else callee_cost
+              | Some {post= callee_cost_record} ->
+                  let callee_operation_cost =
+                    callee_OperationCost callee_cost_record integer_type_widths inferbo_mem
+                      callee_pname params
+                  in
+                  let callee_allocation_cost = callee_AllocationCost callee_cost_record in
+                  let callee_IO_cost = callee_IOCost callee_cost_record in
+                  CostDomain.mk_cost_record ~operation_cost:callee_operation_cost
+                    ~allocation_cost:callee_allocation_cost ~io_cost:callee_IO_cost
               | None ->
-                  cost_atomic_instruction )
+                  CostDomain.unit_cost_atomic_operation )
           in
           CostDomain.NodeInstructionToCostMap.add key callee_cost astate
       | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
-          CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
+          CostDomain.NodeInstructionToCostMap.add key CostDomain.unit_cost_atomic_operation astate
       | Sil.ExitScope _ -> (
         match CFG.Node.kind node with
         | Procdesc.Node.Start_node ->
-            CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
+            CostDomain.NodeInstructionToCostMap.add key CostDomain.unit_cost_atomic_operation
+              astate
         | _ ->
             astate )
       | _ ->
@@ -611,13 +626,10 @@ let compute_errlog_extras cost =
   ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
 
 
-(* Calculate the final Worst Case Execution Time predicted for each node.
-   It uses the basic cost of the nodes (computed previously by AnalyzerNodesBasicCost)
-   and MinTrees which give an upperbound on the number of times a node can be executed
-*)
+(* Calculate the final Worst Case Execution Time predicted for each node. *)
 module TransferFunctionsWCET = struct
   module CFG = InstrCFG
-  module Domain = AbstractDomain.Pair (BasicCost) (ReportedOnNodes)
+  module Domain = AbstractDomain.Pair (CostDomain.VariantCostMap) (ReportedOnNodes)
 
   type extras = extras_TransferFunctionsWCET
 
@@ -668,9 +680,10 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost get_node_nb_exec m : BasicCost.t =
+  let map_operation_cost get_node_nb_exec m : BasicCost.t =
     CostDomain.NodeInstructionToCostMap.fold
-      (fun ((node_id, _) as instr_node_id) c acc ->
+      (fun ((node_id, _) as instr_node_id) c_record acc ->
+        let c = CostDomain.get_operation_cost c_record in
         let t = get_node_nb_exec node_id in
         let c_node = BasicCost.mult c t in
         let c_node' = BasicCost.plus acc c_node in
@@ -693,7 +706,7 @@ module TransferFunctionsWCET = struct
       | Some node_map ->
           L.(debug Analysis Medium)
             "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.Node.pp_id instr_node_id ;
-          map_cost get_node_nb_exec node_map
+          map_operation_cost get_node_nb_exec node_map
       | _ ->
           assert false
     in
@@ -715,7 +728,11 @@ module TransferFunctionsWCET = struct
           ReportedOnNodes.add nid reported_so_far )
         else reported_so_far
       in
-      (cost_node, reported_so_far)
+      let cost_map =
+        CostDomain.mk_cost_record ~operation_cost:cost_node ~allocation_cost:BasicCost.zero
+          ~io_cost:BasicCost.zero
+      in
+      (cost_map, reported_so_far)
     in
     astate'
 
@@ -725,7 +742,8 @@ end
 
 module AnalyzerWCET = AbstractInterpreter.MakeRPO (TransferFunctionsWCET)
 
-let check_and_report_top_and_bottom cost proc_desc summary =
+let check_and_report_top_and_bottom cost_record proc_desc summary =
+  let cost = CostDomain.get_operation_cost cost_record in
   let report issue suffix =
     let message =
       F.asprintf "The execution time of the function %a %s" Typ.Procname.pp
@@ -793,20 +811,20 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
     if Config.write_html then NodePrinter.finish_session start_node ;
     ConstraintSolver.get_node_nb_exec equalities
   in
-  let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
+  let initWCET = (CostDomain.zero_record, ReportedOnNodes.empty) in
   match
     AnalyzerWCET.compute_post ~initial:initWCET
       (ProcData.make proc_desc tenv
          {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
   with
-  | Some (exit_cost, _) ->
+  | Some (exit_cost_record, _) ->
       L.(debug Analysis Verbose)
         "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-        BasicCost.pp exit_cost ;
-      check_and_report_top_and_bottom exit_cost proc_desc summary ;
-      Payload.update_summary {post= {CostDomain.basic_operation_cost= exit_cost}} summary
+        CostDomain.VariantCostMap.pp exit_cost_record ;
+      check_and_report_top_and_bottom exit_cost_record proc_desc summary ;
+      Payload.update_summary {post= exit_cost_record} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Failed to compute final cost for function %a" Typ.Procname.pp

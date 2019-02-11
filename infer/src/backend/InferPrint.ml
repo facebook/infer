@@ -343,20 +343,19 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
     | Some {post} ->
+        let basic_operation_cost = CostDomain.get_operation_cost post in
         let hum =
           { Jsonbug_t.hum_polynomial=
-              Format.asprintf "%a" CostDomain.BasicCost.pp post.basic_operation_cost
-          ; hum_degree=
-              Format.asprintf "%a" CostDomain.BasicCost.pp_degree post.basic_operation_cost
-          ; big_o=
-              Format.asprintf "%a" CostDomain.BasicCost.pp_degree_hum post.basic_operation_cost }
+              Format.asprintf "%a" CostDomain.BasicCost.pp basic_operation_cost
+          ; hum_degree= Format.asprintf "%a" CostDomain.BasicCost.pp_degree basic_operation_cost
+          ; big_o= Format.asprintf "%a" CostDomain.BasicCost.pp_degree_hum basic_operation_cost }
         in
         let cost_item =
           let file = SourceFile.to_rel_path loc.Location.file in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_id= procedure_id_of_procname proc_name
-          ; polynomial= CostDomain.BasicCost.encode post.basic_operation_cost
+          ; polynomial= CostDomain.BasicCost.encode basic_operation_cost
           ; hum }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
