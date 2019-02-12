@@ -97,9 +97,14 @@ module type FiniteSetS = sig
   include WithBottom with type t := t
 end
 
-(** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
+include
+  sig
+    [@@@warning "-60"]
+
+    (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
-module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
+    module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : FiniteSetS with type elt = PPSet.elt
+end
 
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)

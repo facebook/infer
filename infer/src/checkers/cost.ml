@@ -614,10 +614,8 @@ module ConstraintSolver = struct
     Option.value_exn set |> ControlFlowCost.Set.cost
 end
 
-module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
-
-type extras_TransferFunctionsWCET =
-  { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
+type extras_WCET =
+  { basic_cost_map: NodesBasicCostDomain.t
   ; get_node_nb_exec: Node.id -> BasicCost.t
   ; summary: Summary.t }
 
@@ -626,27 +624,12 @@ let compute_errlog_extras cost =
   ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
 
 
-(* Calculate the final Worst Case Execution Time predicted for each node. *)
-module TransferFunctionsWCET = struct
-  module CFG = InstrCFG
-  module Domain = AbstractDomain.Pair (CostDomain.VariantCostMap) (ReportedOnNodes)
-
-  type extras = extras_TransferFunctionsWCET
-
-  let should_report_on_instr = function
-    | Sil.Call _ | Load _ | Prune _ | Store _ ->
-        true
-    | Sil.Abstract _ | Nullify _ | ExitScope _ ->
-        false
-
-
-  (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
-   Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
-  let should_report_cost cost =
-    Config.use_cost_threshold
-    && (not (BasicCost.is_top cost))
-    && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
-
+(*
+  Calculate the final Worst Case Execution Time predicted for each WTO component.
+  It is the dot product of basic_cost_map and get_node_nb_exec.
+*)
+module WCET = struct
+  type astate = {current_cost: BasicCost.t; report_on_threshold: bool}
 
   let do_report summary loc cost =
     let degree_str =
@@ -670,77 +653,62 @@ module TransferFunctionsWCET = struct
       IssueType.expensive_execution_time_call message
 
 
-  (* get a list of nodes and check if we have already reported for at
-     least one of them. In that case no need to report again. *)
-  let should_report_on_node preds reported_so_far =
-    List.for_all
-      ~f:(fun node ->
-        let nid = Procdesc.Node.get_id node in
-        not (ReportedOnNodes.mem nid reported_so_far) )
-      preds
+  (*
+  We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
+  Instead, we report Top cost only at the top level per function when `report_infinity` is set to true
+*)
+  let should_report_cost cost =
+    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
 
 
-  let map_operation_cost get_node_nb_exec m : BasicCost.t =
-    CostDomain.NodeInstructionToCostMap.fold
-      (fun ((node_id, _) as instr_node_id) c_record acc ->
-        let c = CostDomain.get_operation_cost c_record in
-        let t = get_node_nb_exec node_id in
-        let c_node = BasicCost.mult c t in
-        let c_node' = BasicCost.plus acc c_node in
-        L.(debug Analysis Medium)
-          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" InstrCFG.Node.pp_id
-          instr_node_id BasicCost.pp c BasicCost.pp t ;
-        L.(debug Analysis Medium)
-          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c_node=%a  cost = %a @\n" InstrCFG.Node.pp_id
-          instr_node_id BasicCost.pp c_node BasicCost.pp c_node' ;
-        c_node' )
-      m BasicCost.zero
-
-
-  let exec_instr ((_, reported_so_far) : Domain.t) {ProcData.extras} (node : CFG.Node.t) instr :
-      Domain.t =
-    let {basic_cost_map= invariant_map_cost; get_node_nb_exec; summary} = extras in
-    let cost_node =
-      let instr_node_id = CFG.Node.id node in
-      match AnalyzerNodesBasicCost.extract_post instr_node_id invariant_map_cost with
-      | Some node_map ->
-          L.(debug Analysis Medium)
-            "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.Node.pp_id instr_node_id ;
-          map_operation_cost get_node_nb_exec node_map
-      | _ ->
-          assert false
+  let exec_node {current_cost; report_on_threshold} {basic_cost_map; get_node_nb_exec; summary}
+      instr_node =
+    let node_cost =
+      match NodesBasicCostDomain.find_opt (InstrCFG.Node.id instr_node) basic_cost_map with
+      | None ->
+          BasicCost.zero
+      | Some instr_cost_record ->
+          let instr_cost = CostDomain.get_operation_cost instr_cost_record in
+          let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
+          let nb_exec = get_node_nb_exec node_id in
+          BasicCost.mult instr_cost nb_exec
     in
-    L.(debug Analysis Medium)
-      "@\n[>>>AnalyzerWCET] Instr: %a   Cost: %a@\n"
-      (Sil.pp_instr ~print_types:false Pp.text)
-      instr BasicCost.pp cost_node ;
-    let astate' =
-      let und_node = CFG.Node.underlying_node node in
-      let preds = Procdesc.Node.get_preds und_node in
-      let reported_so_far =
-        if
-          should_report_on_instr instr
-          && should_report_on_node (und_node :: preds) reported_so_far
-          && should_report_cost cost_node
-        then (
-          do_report summary (Sil.instr_get_loc instr) cost_node ;
-          let nid = Procdesc.Node.get_id und_node in
-          ReportedOnNodes.add nid reported_so_far )
-        else reported_so_far
-      in
-      let cost_map =
-        CostDomain.mk_cost_record ~operation_cost:cost_node ~allocation_cost:BasicCost.zero
-          ~io_cost:BasicCost.zero
-      in
-      (cost_map, reported_so_far)
+    let current_cost = BasicCost.plus current_cost node_cost in
+    let report_on_threshold =
+      if report_on_threshold && should_report_cost current_cost then (
+        do_report summary (InstrCFG.Node.loc instr_node) current_cost ;
+        false )
+      else report_on_threshold
     in
-    astate'
+    {current_cost; report_on_threshold}
 
 
-  let pp_session_name _node fmt = F.pp_print_string fmt "cost(wcet)"
+  let rec exec_partition astate extras
+      (partition : InstrCFG.Node.t WeakTopologicalOrder.Partition.t) =
+    match partition with
+    | Empty ->
+        astate
+    | Node {node; next} ->
+        let astate = exec_node astate extras node in
+        exec_partition astate extras next
+    | Component {head; rest; next} ->
+        let {current_cost; report_on_threshold} = astate in
+        let {current_cost} =
+          exec_partition {current_cost; report_on_threshold= false} extras rest
+        in
+        (* Execute head after the loop body to always report at loop head *)
+        let astate = exec_node {current_cost; report_on_threshold} extras head in
+        exec_partition astate extras next
+
+
+  let compute pdata =
+    let ProcData.({pdesc; extras}) = pdata in
+    let cfg = InstrCFG.from_pdesc pdesc in
+    let initial = {current_cost= BasicCost.zero; report_on_threshold= Config.use_cost_threshold} in
+    let {current_cost} = exec_partition initial extras (InstrCFG.wto cfg) in
+    CostDomain.mk_cost_record ~operation_cost:current_cost ~allocation_cost:BasicCost.zero
+      ~io_cost:BasicCost.zero
 end
-
-module AnalyzerWCET = AbstractInterpreter.MakeRPO (TransferFunctionsWCET)
 
 let check_and_report_top_and_bottom cost_record proc_desc summary =
   let cost = CostDomain.get_operation_cost cost_record in
@@ -761,63 +729,61 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in
-  let node_cfg = NodeCFG.from_pdesc proc_desc in
-  let proc_data = ProcData.make_default proc_desc tenv in
-  (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map =
-    ReachingDefs.Analyzer.exec_cfg node_cfg proc_data
-      ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
-  in
-  (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
-  let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
-  (* computes the control dependencies: node -> var set *)
-  let control_dep_invariant_map =
-    let proc_data = ProcData.make proc_desc tenv control_maps in
-    Control.ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.ControlDepSet.empty
-  in
-  let instr_cfg = InstrCFG.from_pdesc proc_desc in
-  let invariant_map_NodesBasicCost =
+  let basic_cost_map_opt =
     let proc_data =
       ProcData.make proc_desc tenv
         TransferFunctionsNodesBasicCost.{inferbo_invariant_map; integer_type_widths}
     in
     (*compute_WCET cfg invariant_map min_trees in *)
-    AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
+    AnalyzerNodesBasicCost.compute_post proc_data ~initial:NodesBasicCostDomain.empty
   in
-  (* compute loop invariant map for control var analysis *)
-  let loop_inv_map =
-    LoopInvariant.get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes
-  in
-  (* given the semantics computes the upper bound on the number of times a node could be executed *)
-  let bound_map =
-    BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
-      loop_inv_map
-  in
-  let get_node_nb_exec =
-    let debug =
-      if Config.write_html then
-        let f fmt = L.d_printfln fmt in
-        {ConstraintSolver.f}
-      else
-        let f fmt = L.(debug Analysis Verbose) fmt in
-        {ConstraintSolver.f}
-    in
-    let start_node = NodeCFG.start_node node_cfg in
-    ( if Config.write_html then
-      let pp_name fmt = F.pp_print_string fmt "cost(constraints)" in
-      NodePrinter.start_session ~pp_name start_node ) ;
-    let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
-    let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
-    if Config.write_html then NodePrinter.finish_session start_node ;
-    ConstraintSolver.get_node_nb_exec equalities
-  in
-  let initWCET = (CostDomain.zero_record, ReportedOnNodes.empty) in
-  match
-    AnalyzerWCET.compute_post ~initial:initWCET
-      (ProcData.make proc_desc tenv
-         {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
-  with
-  | Some (exit_cost_record, _) ->
+  match basic_cost_map_opt with
+  | Some basic_cost_map ->
+      let node_cfg = NodeCFG.from_pdesc proc_desc in
+      (* computes reaching defs: node -> (var -> node set) *)
+      let reaching_defs_invariant_map =
+        let proc_data = ProcData.make_default proc_desc tenv in
+        ReachingDefs.Analyzer.exec_cfg node_cfg proc_data
+          ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
+      in
+      (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
+      let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
+      (* computes the control dependencies: node -> var set *)
+      let control_dep_invariant_map =
+        let proc_data = ProcData.make proc_desc tenv control_maps in
+        Control.ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.ControlDepSet.empty
+      in
+      (* compute loop invariant map for control var analysis *)
+      let loop_inv_map =
+        LoopInvariant.get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes
+      in
+      (* given the semantics computes the upper bound on the number of times a node could be executed *)
+      let bound_map =
+        BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
+          loop_inv_map
+      in
+      let get_node_nb_exec =
+        let debug =
+          if Config.write_html then
+            let f fmt = L.d_printfln fmt in
+            {ConstraintSolver.f}
+          else
+            let f fmt = L.(debug Analysis Verbose) fmt in
+            {ConstraintSolver.f}
+        in
+        let start_node = NodeCFG.start_node node_cfg in
+        ( if Config.write_html then
+          let pp_name fmt = F.pp_print_string fmt "cost(constraints)" in
+          NodePrinter.start_session ~pp_name start_node ) ;
+        let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
+        let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
+        if Config.write_html then NodePrinter.finish_session start_node ;
+        ConstraintSolver.get_node_nb_exec equalities
+      in
+      let exit_cost_record =
+        let proc_data = ProcData.make proc_desc tenv {basic_cost_map; get_node_nb_exec; summary} in
+        WCET.compute proc_data
+      in
       L.(debug Analysis Verbose)
         "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
