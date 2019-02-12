@@ -8,7 +8,13 @@
 package codetoanalyze.java.eradicate;
 
 import android.annotation.SuppressLint;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 public class ParameterNotNullable {
@@ -108,6 +114,71 @@ public class ParameterNotNullable {
 
   void callWithConditionalAssignment(Object object, boolean test) {
     doesNotAcceptNullableFirstParameter(test ? object : null, test);
+  }
+
+  void testImmutableListOfnotNullArguments() {
+
+    Object notNull = new Object();
+
+    ImmutableList.of(null);
+    ImmutableList.of(null, null);
+    ImmutableList.of(notNull, notNull);
+    ImmutableList.of(notNull, null);
+  }
+
+  void testImmutableListCopyOfNotNullArguments() {
+
+    Iterable nullIterable = null;
+    Iterator nullIterator = null;
+    Collection nullCollection = null;
+
+    ImmutableList.copyOf(nullIterable);
+    ImmutableList.copyOf(nullIterator);
+    ImmutableList.copyOf(nullCollection);
+  }
+
+  void testImmutableListSortedCopyOfNotNullArguments() {
+    ImmutableList.sortedCopyOf(null, null);
+  }
+
+  void testImmutableSetOfnotNullArguments() {
+
+    Object notNull = new Object();
+
+    ImmutableSet.of(null);
+    ImmutableSet.of(null, null);
+    ImmutableSet.of(notNull, notNull);
+    ImmutableSet.of(notNull, null);
+    ImmutableSet.of(notNull, null, notNull, null, notNull);
+  }
+
+  void testImmutableSetCopyOfNotNullArguments() {
+
+    Iterable nullIterable = null;
+    Iterator nullIterator = null;
+    Collection nullCollection = null;
+
+    ImmutableSet.copyOf(nullIterable);
+    ImmutableSet.copyOf(nullIterator);
+    ImmutableSet.copyOf(nullCollection);
+  }
+
+  void testImmutableMapOfnotNullArguments() {
+
+    Object notNull = new Object();
+
+    ImmutableMap.of(null, null);
+    ImmutableMap.of(notNull, notNull);
+    ImmutableMap.of(notNull, null, notNull, null);
+  }
+
+  void testImmutableMapCopyOfNotNullArguments() {
+
+    Iterable nullIterable = null;
+    Map nullMap = null;
+
+    ImmutableMap.copyOf(nullIterable);
+    ImmutableMap.copyOf(nullMap);
   }
 }
 

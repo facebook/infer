@@ -21,14 +21,47 @@ let o = false
 
 and n = true
 
+(* create unannotated signature with n argument *)
+let unannotated n =
+  let rec loop l = function i when i <= 0 -> (o, l) | i -> loop (o :: l) (i - 1) in
+  loop [] n
+
+
 (* not annotated with one unannotated argument *)
-let o1 = (o, [o])
+let o1 = unannotated 1
 
 (* not annotated with two unannotated arguments *)
-let o2 = (o, [o; o])
+let o2 = unannotated 2
 
 (* not annotated with three unannotated arguments *)
-let o3 = (o, [o; o; o])
+let o3 = unannotated 3
+
+(* not annotated with four unannotated arguments *)
+let o4 = unannotated 4
+
+(* not annotated with five unannotated arguments *)
+let o5 = unannotated 5
+
+(* not annotated with six unannotated arguments *)
+let o6 = unannotated 6
+
+(* not annotated with seven unannotated arguments *)
+let o7 = unannotated 7
+
+(* not annotated with eight unannotated arguments *)
+let o8 = unannotated 8
+
+(* not annotated with nine unannotated arguments *)
+let o9 = unannotated 9
+
+(* not annotated with ten unannotated arguments *)
+let o10 = unannotated 10
+
+(* not annotated with eleven unannotated arguments *)
+let o11 = unannotated 11
+
+(* not annotated with twelve unannotated arguments *)
+let o12 = unannotated 12
 
 (* one argument nullable *)
 let n1 = (o, [n])
@@ -217,7 +250,106 @@ let annotated_list_nullable =
       , "com.google.common.collect.ImmutableList$Builder.addAll(java.lang.Iterable):com.google.common.collect.ImmutableList$Builder"
       )
     ; ( o1
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o2
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o3
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o4
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o5
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o6
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o7
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o8
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o9
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o10
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o11
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o12
+      , "com.google.common.collect.ImmutableList.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableList.copyOf(java.lang.Iterable):com.google.common.collect.ImmutableList"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableList.copyOf(java.util.Collection):com.google.common.collect.ImmutableList"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableList.copyOf(java.util.Iterator):com.google.common.collect.ImmutableList"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableList.copyOf(java.lang.Object):com.google.common.collect.ImmutableList"
+      )
+    ; ( o2
+      , "com.google.common.collect.ImmutableList.sortedCopyOf(java.util.Comparator,java.lang.Iterable):com.google.common.collect.ImmutableList"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableSet.of(java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o2
+      , "com.google.common.collect.ImmutableSet.of(java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o3
+      , "com.google.common.collect.ImmutableSet.of(java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o4
+      , "com.google.common.collect.ImmutableSet.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o5
+      , "com.google.common.collect.ImmutableSet.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableSet.copyOf(java.lang.Iterable):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableSet.copyOf(java.util.Collection):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableSet.copyOf(java.util.Iterator):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableSet.copyOf(java.lang.Object):com.google.common.collect.ImmutableSet"
+      )
+    ; ( o1
       , "com.google.common.collect.ImmutableSortedSet$Builder.add(java.lang.Object):com.google.common.collect.ImmutableSortedSet$Builder"
+      )
+    ; ( o2
+      , "com.google.common.collect.ImmutableMap.of(java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o4
+      , "com.google.common.collect.ImmutableMap.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o6
+      , "com.google.common.collect.ImmutableMap.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o8
+      , "com.google.common.collect.ImmutableMap.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o10
+      , "com.google.common.collect.ImmutableMap.of(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableMap.copyOf(java.util.Map):com.google.common.collect.ImmutableMap"
+      )
+    ; ( o1
+      , "com.google.common.collect.ImmutableMap.copyOf(java.lang.Iterable):com.google.common.collect.ImmutableMap"
       )
     ; ( on
       , "com.google.common.collect.Iterables.getFirst(java.lang.Iterable,java.lang.Object):java.lang.Object"
