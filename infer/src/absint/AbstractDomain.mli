@@ -127,11 +127,16 @@ module type MapS = sig
   include WithBottom with type t := t
 end
 
-(** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
+include
+  sig
+    [@@@warning "-60"]
+
+    (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else.
     Uses PPMap as the underlying map *)
-module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
-  MapS with type key = PPMap.key and type value = ValueDomain.t
+    module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) :
+      MapS with type key = PPMap.key and type value = ValueDomain.t
+end
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else *)

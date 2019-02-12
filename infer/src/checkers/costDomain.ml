@@ -51,10 +51,6 @@ type summary = {post: VariantCostMap.t}
 
 let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp post
 
-(** Map (node,instr) -> basic cost  *)
-module NodeInstructionToCostMap =
-  AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (VariantCostMap)
-
 let get_cost_kind kind cost_record =
   try VariantCostMap.find kind cost_record with _ ->
     Logging.(die InternalError)
