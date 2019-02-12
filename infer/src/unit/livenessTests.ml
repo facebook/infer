@@ -7,7 +7,7 @@
 
 open! IStd
 module TestInterpreter =
-  AnalyzerTester.Make (Liveness.TransferFunctions (ProcCfg.Backward (ProcCfg.Normal)))
+  AnalyzerTester.Make (Liveness.PreAnalysisTransferFunctions (ProcCfg.Backward (ProcCfg.Normal)))
 
 let tests =
   let open OUnit2 in

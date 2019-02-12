@@ -35,7 +35,8 @@ let add_abstraction_instructions pdesc =
 
 
 module BackwardCfg = ProcCfg.Backward (ProcCfg.Exceptional)
-module LivenessAnalysis = AbstractInterpreter.MakeRPO (Liveness.TransferFunctions (BackwardCfg))
+module LivenessAnalysis =
+  AbstractInterpreter.MakeRPO (Liveness.PreAnalysisTransferFunctions (BackwardCfg))
 module VarDomain = Liveness.Domain
 
 (** computes the non-nullified reaching definitions at the end of each node by building on the

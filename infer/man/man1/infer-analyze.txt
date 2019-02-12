@@ -332,6 +332,13 @@ CLANG OPTIONS
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores. (default: [])
 
+       --liveness-dangerous-classes json
+           Specify classes where the destructor should be ignored when
+           computing liveness. In other words, assignement to variables of
+           these types (or common wrappers around these types such as
+           $(u,unique_ptr<type>)) will count as dead stores when the
+           variables are not read explicitly by the program. (default: [])
+
        --ml-buckets ,-separated sequence of { all | cf | arc | narc | cpp |
        unknown_origin }
            Specify the memory leak buckets to be checked in C++:       

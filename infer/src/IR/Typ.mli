@@ -127,6 +127,8 @@ and template_spec_info =
       ; args: template_arg list }
 [@@deriving compare]
 
+val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit [@@warning "-32"]
+
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)
 
@@ -176,6 +178,8 @@ module Name : sig
   (** qualified name of the type, may return nonsense for Java classes *)
 
   val unqualified_name : t -> QualifiedCppName.t
+
+  val get_template_spec_info : t -> template_spec_info option
 
   module C : sig
     val from_string : string -> t

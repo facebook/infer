@@ -1489,6 +1489,15 @@ and join_cond =
 |}
 
 
+and liveness_dangerous_classes =
+  CLOpt.mk_json ~long:"liveness-dangerous-classes"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Specify classes where the destructor should be ignored when computing liveness. In other \
+     words, assignement to variables of these types (or common wrappers around these types such \
+     as $(u,unique_ptr<type>)) will count as dead stores when the variables are not read \
+     explicitly by the program."
+
+
 and log_events =
   CLOpt.mk_bool ~long:"log-events"
     ~in_help:InferCommand.[(Run, manual_generic)]
@@ -2691,6 +2700,7 @@ and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
+
 and issues_fields = !issues_fields
 
 and issues_tests = !issues_tests
@@ -2735,6 +2745,8 @@ and linters_validate_syntax_only = !linters_validate_syntax_only
 and litho = !litho
 
 and liveness = !liveness
+
+and liveness_dangerous_classes = !liveness_dangerous_classes
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average

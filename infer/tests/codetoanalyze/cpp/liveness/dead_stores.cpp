@@ -515,4 +515,29 @@ int decltype_read_ok_FP(int x) {
   return x + i;
 }
 
+// destructor blacklisted for liveness in .inferconfig
+struct BlacklistedStruct {
+  ~BlacklistedStruct(){};
+
+  BlacklistedStruct cloneAsValue() const { return BlacklistedStruct(); }
+
+  std::unique_ptr<BlacklistedStruct> clone() const {
+    return std::make_unique<BlacklistedStruct>(cloneAsValue());
+  }
+};
+
+void unused_blacklisted_constructed_bad() { auto x = BlacklistedStruct(); }
+
+void unused_blacklisted_clone_bad(BlacklistedStruct* something) {
+  auto x = something->clone();
+}
+
+void unused_blacklisted_unique_ptr_bad(BlacklistedStruct* something) {
+  auto x = std::make_unique<BlacklistedStruct>(*something);
+}
+
+void unused_unique_ptr_good(A* something) {
+  auto x = std::make_unique<A>(*something);
+}
+
 } // namespace dead_stores

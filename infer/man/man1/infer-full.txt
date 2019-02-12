@@ -516,6 +516,14 @@ OPTIONS
            Deactivates: the detection of dead stores and unused variables
            (Conversely: --liveness)           See also infer-analyze(1).
 
+       --liveness-dangerous-classes json
+           Specify classes where the destructor should be ignored when
+           computing liveness. In other words, assignement to variables of
+           these types (or common wrappers around these types such as
+           $(u,unique_ptr<type>)) will count as dead stores when the
+           variables are not read explicitly by the program. (default: [])       
+    See also infer-analyze(1).
+
        --liveness-only
            Activates: Enable --liveness and disable all other checkers
            (Conversely: --no-liveness-only)           See also infer-analyze(1).

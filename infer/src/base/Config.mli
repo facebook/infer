@@ -459,6 +459,8 @@ val litho : bool
 
 val liveness : bool
 
+val liveness_dangerous_classes : Yojson.Basic.json
+
 val log_events : bool
 
 val log_file : string

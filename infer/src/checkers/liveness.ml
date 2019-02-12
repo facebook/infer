@@ -7,18 +7,88 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
 module Domain = VarSet
 
-(* only kill pvars that are local; don't kill those that can escape *)
+(** only kill pvars that are local; don't kill those that can escape *)
 let is_always_in_scope pvar = Pvar.is_return pvar || Pvar.is_global pvar
 
-(* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
-   read, kill the variable when it is assigned *)
-module TransferFunctions (CFG : ProcCfg.S) = struct
+let json_error ~option_name ~expected ~actual =
+  L.die UserError "When parsing option %s: expected %s but got '%s'" option_name expected
+    (Yojson.Basic.Util.to_string actual)
+
+
+let string_list_of_json ~option_name ~init = function
+  | `List json ->
+      List.fold json
+        ~f:(fun acc json ->
+          match json with
+          | `String s ->
+              s :: acc
+          | _ ->
+              json_error ~option_name ~expected:"string" ~actual:json )
+        ~init
+  | json ->
+      json_error ~option_name ~expected:"list of strings" ~actual:json
+
+
+module type LivenessConfig = sig
+  val is_blacklisted_destructor : Typ.Procname.t -> bool
+end
+
+(** Use this config to get a reliable liveness pre-analysis that tells you which variables are live
+   at which program point *)
+module PreAnalysisMode : LivenessConfig = struct
+  (** do not do any funky stuff *)
+  let is_blacklisted_destructor _proc_name = false
+end
+
+(** Use this config to get a dead store checker that can take some liberties wrt a strict liveness
+   analysis *)
+module CheckerMode : LivenessConfig = struct
+  let blacklisted_destructor_matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names
+      (string_list_of_json ~option_name:"liveness-dangerous-classes" ~init:[]
+         Config.liveness_dangerous_classes)
+
+
+  (** hardcoded list of wrappers, mostly because they are impossible to specify as config options *)
+  let standard_wrappers_matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ["std::unique_ptr"; "std::shared_ptr"]
+
+
+  let is_blacklisted_class_name class_name =
+    Typ.Name.unqualified_name class_name
+    |> QualifiedCppName.Match.match_qualifiers blacklisted_destructor_matcher
+
+
+  let is_wrapper_of_blacklisted_class_name class_name =
+    Typ.Name.unqualified_name class_name
+    |> QualifiedCppName.Match.match_qualifiers standard_wrappers_matcher
+    &&
+    match Typ.Name.get_template_spec_info class_name with
+    | Some (Template {args= TType {desc= Tstruct name} :: _; _}) ->
+        is_blacklisted_class_name name
+    | _ ->
+        false
+
+
+  let is_blacklisted_destructor (callee_pname : Typ.Procname.t) =
+    match callee_pname with
+    | ObjC_Cpp cpp_pname when Typ.Procname.ObjC_Cpp.is_destructor cpp_pname ->
+        is_blacklisted_class_name cpp_pname.class_name
+        || is_wrapper_of_blacklisted_class_name cpp_pname.class_name
+    | _ ->
+        false
+end
+
+(** compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
+    read, kill the variable when it is assigned *)
+module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
@@ -68,6 +138,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         exp_add_live lhs_exp astate |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
+    | Sil.Call ((ret_id, _), Const (Cfun callee_pname), _, _, _)
+      when LConfig.is_blacklisted_destructor callee_pname ->
+        Logging.d_printfln_escaped "Blacklisted destructor %a, ignoring reads@\n" Typ.Procname.pp
+          callee_pname ;
+        Domain.remove (Var.of_id ret_id) astate
     | Sil.Call ((ret_id, _), call_exp, actuals, _, {CallFlags.cf_assign_last_arg}) ->
         let actuals_to_read, astate =
           if cf_assign_last_arg then
@@ -89,20 +164,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
+module CheckerAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CheckerMode) (CFG))
+module PreAnalysisTransferFunctions = TransferFunctions (PreAnalysisMode)
 
 (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
    are only read in their destructors, and this is expected/ok.
    (e.g., https://github.com/facebook/folly/blob/master/folly/ScopeGuard.h). *)
 let matcher_scope_guard =
-  let of_json init = function
-    | `List scope_guards ->
-        List.fold scope_guards ~f:(fun acc json -> Yojson.Basic.Util.to_string json :: acc) ~init
-    | _ ->
-        init
-  in
   let default_scope_guards = ["CKComponentKey"; "CKComponentScope"] in
-  of_json default_scope_guards Config.cxx_scope_guards
+  string_list_of_json ~option_name:"cxx-scope_guards" ~init:default_scope_guards
+    Config.cxx_scope_guards
   |> QualifiedCppName.Match.of_fuzzy_qual_names
 
 
@@ -143,7 +214,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   let proc_data = ProcData.make_default proc_desc tenv in
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map = Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty in
+  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_data ~initial:Domain.empty in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
@@ -218,7 +289,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     in
     let node_id = CFG.Node.id node in
     Instrs.iter (CFG.instrs node) ~f:(fun instr ->
-        match Analyzer.extract_pre node_id invariant_map with
+        match CheckerAnalyzer.extract_pre node_id invariant_map with
         | Some live_vars ->
             report_dead_store live_vars captured_by_ref_vars instr
         | None ->
