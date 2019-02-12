@@ -7,6 +7,8 @@
 
 package java.lang;
 
+import javax.annotation.Nullable;
+
 public final class Integer {
 
   public static int MAX_VALUE = 2147483647; // 2**31-1
@@ -22,7 +24,7 @@ public final class Integer {
     return new Integer(i);
   }
 
-  public boolean equals(Object anObject) {
+  public boolean equals(@Nullable Object anObject) {
     return anObject != null
         && anObject instanceof Integer
         && this.value == ((Integer) anObject).value;

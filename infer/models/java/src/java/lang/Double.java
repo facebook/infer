@@ -7,6 +7,8 @@
 
 package java.lang;
 
+import javax.annotation.Nullable;
+
 public final class Double {
 
   protected final double value;
@@ -19,7 +21,7 @@ public final class Double {
     return new Double(i);
   }
 
-  public boolean equals(Object anObject) {
+  public boolean equals(@Nullable Object anObject) {
     return anObject != null
         && anObject instanceof Double
         && this.value == ((Double) anObject).value;
