@@ -7,7 +7,7 @@
 
 #include <mutex>
 
-// the deadlock here is masked by the starvation-skip-analysis option in
+// the deadlocks here are masked by the starvation-skip-analysis option in
 // .inferconfig
 namespace skipped {
 class Skip {
@@ -24,6 +24,33 @@ class Skip {
   void private_deadlock() {
     std::lock_guard<std::mutex> l(mutex_);
     { std::lock_guard<std::mutex> l(mutex_); }
+  }
+};
+
+template <class T>
+class SkipTemplate {
+ private:
+  T* a_;
+  std::mutex mutex_;
+
+  void private_deadlock() {
+    std::lock_guard<std::mutex> l(mutex_);
+    { std::lock_guard<std::mutex> l(mutex_); }
+  }
+
+ public:
+  void skipped_ok() { private_deadlock(); }
+
+  void not_skipped_bad() { private_deadlock(); }
+};
+
+class UseTemplate {
+ public:
+  void foo() {
+    SkipTemplate<void> x;
+
+    x.skipped_ok();
+    x.not_skipped_bad();
   }
 };
 

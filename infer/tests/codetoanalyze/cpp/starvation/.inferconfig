@@ -1,4 +1,7 @@
 {
   "force-delete-results-dir": true,
-  "starvation-skip-analysis" : [ { "classname": "skipped::Skip", "methods": ["skipped_ok"] } ]
+  "starvation-skip-analysis" : [ 
+    { "classname": "skipped::Skip", "methods": ["skipped_ok"] },
+    { "classname": "skipped::SkipTemplate", "methods": ["skipped_ok"] } 
+  ]
 }

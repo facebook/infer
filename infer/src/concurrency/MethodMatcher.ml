@@ -8,6 +8,19 @@
 open! IStd
 module L = Logging
 
+let template_arg = Str.regexp "<[^<>]*>"
+
+let rec strip_template_args str =
+  if
+    (not (String.contains str '<'))
+    || String.equal str Typ.Procname.Java.constructor_method_name
+    || String.equal str Typ.Procname.Java.class_initializer_method_name
+  then str
+  else
+    let result = Str.global_replace template_arg "" str in
+    if String.equal result str then str else strip_template_args result
+
+
 (** [call_matches <named args> C methods] builds a method matcher for calls [C.foo] where
     [foo] is in [methods].  Named arguments change behaviour:
     - [search_superclasses=true] will match calls [S.foo] where [S] is a superclass of [C].
@@ -15,25 +28,30 @@ module L = Logging
     - [actuals_pred] is a predicate that runs on the expressions fed as arguments to the call, and
       which must return [true] for the matcher to return [true]. *)
 let call_matches ~search_superclasses ~method_prefix ~actuals_pred clazz methods =
+  let clazz = strip_template_args clazz in
+  let methods = List.map methods ~f:strip_template_args in
   let method_matcher =
     if method_prefix then fun current_method target_method ->
-      String.is_prefix current_method ~prefix:target_method
-    else fun current_method target_method -> String.equal current_method target_method
+      String.is_prefix ~prefix:target_method current_method
+    else fun current_method target_method -> String.equal target_method current_method
   in
   let class_matcher =
     if search_superclasses then
       let target = "class " ^ clazz in
-      let is_target tname _tstruct = Typ.Name.to_string tname |> String.equal target in
+      let is_target tname _tstruct =
+        Typ.Name.to_string tname |> strip_template_args |> String.equal target
+      in
       fun tenv pname ->
         Typ.Procname.get_class_type_name pname
         |> Option.exists ~f:(PatternMatch.supertype_exists tenv is_target)
     else fun _tenv pname ->
-      Typ.Procname.get_class_name pname |> Option.exists ~f:(String.equal clazz)
+      Typ.Procname.get_class_name pname |> Option.map ~f:strip_template_args
+      |> Option.exists ~f:(String.equal clazz)
   in
   (fun tenv pn actuals ->
     actuals_pred actuals
     &&
-    let mthd = Typ.Procname.get_method pn in
+    let mthd = Typ.Procname.get_method pn |> strip_template_args in
     List.exists methods ~f:(method_matcher mthd) && class_matcher tenv pn )
   |> Staged.stage
 
