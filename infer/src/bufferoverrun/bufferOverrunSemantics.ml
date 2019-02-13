@@ -270,7 +270,7 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Va
 
 
 (**
-  [eval_locs exp mem] is like [eval_locs exp mem |> Val.get_all_locs]
+  [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs]
   but takes some shortcuts to avoid computing useless and/or problematic intermediate values
 *)
 let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
@@ -293,7 +293,8 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
   | Lindex (((Lfield _ | Lindex _) as e), _) ->
       Mem.find_set (eval_locs e mem) mem |> Val.get_all_locs
   | Lindex (e, _) ->
-      eval_locs e mem
+      if Language.curr_language_is Java then Mem.find_set (eval_locs e mem) mem |> Val.get_all_locs
+      else eval_locs e mem
 
 
 (* It returns the array value of the input expression.  For example,
