@@ -516,8 +516,7 @@ end
 type extras_WCET =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
-  ; get_node_nb_exec: Node.id -> BasicCost.t
-  ; summary: Summary.t }
+  ; get_node_nb_exec: Node.id -> BasicCost.t }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
   match Ondemand.get_proc_desc callee_pname with
@@ -614,7 +613,9 @@ let compute_errlog_extras cost =
   It is the dot product of basic_cost_map and get_node_nb_exec.
 *)
 module WCET = struct
-  type astate = {current_cost: BasicCost.t; report_on_threshold: bool}
+  type report = DontCheck | PleaseCheck | ReportOn of {location: Location.t; cost: BasicCost.t}
+
+  type astate = {current_cost: BasicCost.t; report_on_threshold: report}
 
   let do_report summary loc cost =
     let degree_str =
@@ -647,7 +648,7 @@ module WCET = struct
 
 
   let exec_node {current_cost; report_on_threshold} pdata instr_node =
-    let {ProcData.extras= {get_node_nb_exec; summary}} = pdata in
+    let {ProcData.extras= {get_node_nb_exec}} = pdata in
     let node_cost =
       let instr_cost_record = InstrBasicCost.get_instr_node_cost_record pdata instr_node in
       let instr_cost = CostDomain.get_operation_cost instr_cost_record in
@@ -657,10 +658,11 @@ module WCET = struct
     in
     let current_cost = BasicCost.plus current_cost node_cost in
     let report_on_threshold =
-      if report_on_threshold && should_report_cost current_cost then (
-        do_report summary (InstrCFG.Node.loc instr_node) current_cost ;
-        false )
-      else report_on_threshold
+      match report_on_threshold with
+      | PleaseCheck when should_report_cost current_cost ->
+          ReportOn {location= InstrCFG.Node.loc instr_node; cost= current_cost}
+      | _ ->
+          report_on_threshold
     in
     {current_cost; report_on_threshold}
 
@@ -676,7 +678,7 @@ module WCET = struct
     | Component {head; rest; next} ->
         let {current_cost; report_on_threshold} = astate in
         let {current_cost} =
-          exec_partition {current_cost; report_on_threshold= false} pdata rest
+          exec_partition {current_cost; report_on_threshold= DontCheck} pdata rest
         in
         (* Execute head after the loop body to always report at loop head *)
         let astate = exec_node {current_cost; report_on_threshold} pdata head in
@@ -685,10 +687,12 @@ module WCET = struct
 
   let compute pdata =
     let cfg = InstrCFG.from_pdesc pdata.ProcData.pdesc in
-    let initial = {current_cost= BasicCost.zero; report_on_threshold= Config.use_cost_threshold} in
-    let {current_cost} = exec_partition initial pdata (InstrCFG.wto cfg) in
-    CostDomain.mk_cost_record ~operation_cost:current_cost ~allocation_cost:BasicCost.zero
-      ~io_cost:BasicCost.zero
+    let report_on_threshold = if Config.use_cost_threshold then PleaseCheck else DontCheck in
+    let initial = {current_cost= BasicCost.zero; report_on_threshold} in
+    let {current_cost; report_on_threshold} = exec_partition initial pdata (InstrCFG.wto cfg) in
+    ( CostDomain.mk_cost_record ~operation_cost:current_cost ~allocation_cost:BasicCost.zero
+        ~io_cost:BasicCost.zero
+    , report_on_threshold )
 end
 
 let check_and_report_top_and_bottom cost_record proc_desc summary =
@@ -751,10 +755,9 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
     if Config.write_html then NodePrinter.finish_session start_node ;
     ConstraintSolver.get_node_nb_exec equalities
   in
-  let exit_cost_record =
+  let exit_cost_record, report =
     let pdata =
-      ProcData.make proc_desc tenv
-        {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; summary}
+      ProcData.make proc_desc tenv {inferbo_invariant_map; integer_type_widths; get_node_nb_exec}
     in
     WCET.compute pdata
   in
@@ -763,5 +766,6 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
     (Procdesc.get_proc_name proc_desc)
     (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
     CostDomain.VariantCostMap.pp exit_cost_record ;
+  (match report with ReportOn {location; cost} -> WCET.do_report summary location cost | _ -> ()) ;
   check_and_report_top_and_bottom exit_cost_record proc_desc summary ;
   Payload.update_summary {post= exit_cost_record} summary
