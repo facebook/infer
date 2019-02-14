@@ -1,1 +1,1 @@
-codetoanalyze/objcpp/nullable/Examples.mm, stdStringBad, 1, NULLABLE_DEREFERENCE, no_bucket, ERROR, [dereferencing the return of UTF8String,assignment of the nullable value,definition of UTF8String]
+codetoanalyze/objcpp/nullable/Examples.mm, stdStringBad, 1, NULLSAFE_NULLABLE_DEREFERENCE, no_bucket, ERROR, [dereferencing the return of UTF8String,assignment of the nullable value,definition of UTF8String]

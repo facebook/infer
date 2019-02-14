@@ -329,7 +329,7 @@ let null_dereference = from_string "NULL_DEREFERENCE"
 
 let null_test_after_dereference = from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"
 
-let nullable_dereference = from_string "NULLABLE_DEREFERENCE"
+let nullable_dereference = from_string "NULLSAFE_NULLABLE_DEREFERENCE"
 
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
