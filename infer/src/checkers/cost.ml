@@ -518,19 +518,11 @@ type extras_WCET =
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t }
 
-let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
-  match Ondemand.get_proc_desc callee_pname with
-  | None ->
-      L.(die InternalError)
-        "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
-        callee_cost Typ.Procname.pp callee_pname
-  | Some callee_pdesc ->
-      let callee_formals = Procdesc.get_pvar_formals callee_pdesc in
-      let eval_sym =
-        BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params
-          inferbo_caller_mem
-      in
-      BasicCost.subst callee_cost eval_sym
+let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_formals ~params ~callee_cost =
+  let eval_sym =
+    BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params inferbo_caller_mem
+  in
+  BasicCost.subst callee_cost eval_sym
 
 
 module InstrBasicCost = struct
@@ -539,10 +531,11 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_pname params =
+  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_formals params
+      =
     let callee_cost = CostDomain.get_operation_cost callee_cost_record in
     if BasicCost.is_symbolic callee_cost then
-      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname ~params
+      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_formals ~params
         ~callee_cost
     else callee_cost
 
@@ -550,6 +543,14 @@ module InstrBasicCost = struct
   let callee_AllocationCost cost_record = CostDomain.get_allocation_cost cost_record
 
   let callee_IOCost cost_record = CostDomain.get_IO_cost cost_record
+
+  let get_callee_summary caller_pdesc callee_pname =
+    Ondemand.analyze_proc_name ~caller_pdesc callee_pname
+    |> Option.bind ~f:(fun summary ->
+           Payload.of_summary summary
+           |> Option.map ~f:(fun payload ->
+                  (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+
 
   let get_instr_cost_record pdata instr_node instr =
     match instr with
@@ -565,11 +566,11 @@ module InstrBasicCost = struct
           | Some model ->
               CostDomain.set_operation_cost (model inferbo_mem) CostDomain.zero_record
           | None -> (
-            match Payload.read pdesc callee_pname with
-            | Some {post= callee_cost_record} ->
+            match get_callee_summary pdesc callee_pname with
+            | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
                 let callee_operation_cost =
                   callee_OperationCost callee_cost_record integer_type_widths inferbo_mem
-                    callee_pname params
+                    callee_formals params
                 in
                 let callee_allocation_cost = callee_AllocationCost callee_cost_record in
                 let callee_IO_cost = callee_IOCost callee_cost_record in
