@@ -57,7 +57,7 @@ let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Typ.Pro
     (* Removing the line,column, and infer temporary variable (e.g., n$67) information from the
        error message as well as the index of the annonymmous class to make the hash invariant
        when moving the source code in the file *)
-    Str.global_replace (Str.regexp "\\(line \\|column \\|\\$\\)[0-9]+") "$_" qualifier
+    Str.global_replace (Str.regexp "\\(line \\|column \\|parameter \\|\\$\\)[0-9]+") "$_" qualifier
   in
   Utils.better_hash
     (severity, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
