@@ -650,6 +650,56 @@ else
 endif
 endif
 
+# install dynamic libraries
+# use this if you want to distribute infer binaries
+install-with-libs: install
+	test -d      '$(DESTDIR)$(libdir)'/infer/infer/libso || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/infer/libso
+ifneq ($(OPAM),no)
+	$(INSTALL_PROGRAM) -C $(GMP_LIB_PATH) '$(DESTDIR)$(libdir)'/infer/infer/libso/
+	$(INSTALL_PROGRAM) -C $(MPFR_LIB_PATH) '$(DESTDIR)$(libdir)'/infer/infer/libso/
+	set -x; \
+	OPAM_SHARE=$$($(OPAM) config var share); \
+	APRON_LIB_PATHS="$$OPAM_SHARE/apron/lib/libapron.so $$OPAM_SHARE/apron/lib/liboctMPQ.so"; \
+	ELINA_LIB_PATHS="$$OPAM_SHARE/elina/lib/libelinalinearize.so $$OPAM_SHARE/elina/lib/liboptpoly.so $$OPAM_SHARE/elina/lib/libpartitions.so"; \
+	$(INSTALL_PROGRAM) -C $$APRON_LIB_PATHS '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
+	$(INSTALL_PROGRAM) -C $$ELINA_LIB_PATHS '$(DESTDIR)$(libdir)'/infer/infer/libso/
+#	update rpath of executables
+ifneq ($(PATCHELF),no)
+#	this sort of assumes Linux
+	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.so; do \
+	  $(PATCHELF) --set-rpath '$$ORIGIN' "$$sofile"; \
+	done
+	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif
+else # patchelf not found
+ifneq ($(OTOOL),no)
+ifneq ($(INSTALL_NAME_TOOL),no)
+#	this sort of assumes osx
+	set -x; \
+	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.{so,dylib}; do \
+	  $(INSTALL_NAME_TOOL) -add_rpath "@executable_path" "$$sofile" 2> /dev/null || true; \
+	  scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso "$$sofile"; \
+	done
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer 2> /dev/null || true
+	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks 2> /dev/null || true
+	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif
+else # install_name_tool not found
+	echo "ERROR: need patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
+endif
+else # otool not found
+	echo "ERROR: need patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
+endif
+endif # patchelf
+else # opam not found
+	echo "ERROR: non-opam installations not supported" >&2; exit 1
+endif
+
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
 .PHONY: ocaml_clean
 ocaml_clean:

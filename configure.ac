@@ -116,7 +116,6 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 ])
 # end if($enable_c_analyzers)
 
-
 AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
 
@@ -183,6 +182,7 @@ Alternatively, you can checkout a binary release of infer:
   AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
 fi
 # end if($enable_c_analyzers)
+
 
 # OCaml dependencies
 AC_PROG_OCAML
@@ -347,26 +347,25 @@ AC_ARG_VAR([SDKROOT], [path to the OSX platform SDK used by clang])
 AC_SUBST([SDKROOT])
 
 AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
+AC_SUBST([PATCHELF])
+AC_CHECK_TOOL([INSTALL_NAME_TOOL], [install_name_tool], [no])
+AC_SUBST([INSTALL_NAME_TOOL])
+AC_CHECK_TOOL([OTOOL], [otool], [no])
+AC_SUBST([OTOOL])
 
-# warn about broken pkg-config version for brew users
-if test "$BREW" != "no"; then
-  if "$BREW" info pkg-config > /dev/null && \
-     test x"$(which pkg-config)" = x"/usr/local/bin/pkg-config"; then
-    AC_MSG_NOTICE([pkg-config seems to have been installed from Homebrew])
-    AC_MSG_CHECKING([for bad version of pkg-config brew package])
-    if readlink $(which pkg-config) | grep -q -e '/0.29.1_1/'; then
-      AC_MSG_RESULT([found 0.29.1_1])
-      AC_MSG_WARN([])
-      AC_MSG_WARN([This version of pkg-config is known to cause issues with compiling infer.])
-      AC_MSG_WARN([Consider running the following command to get a working version:])
-      AC_MSG_WARN([])
-      AC_MSG_WARN([  brew remove pkg-config && brew update && brew install pkg-config])
-      AC_MSG_WARN([])
-    else
-      AC_MSG_RESULT([no bad version found])
-    fi
-  fi
-fi
+# look for the location of various libraries, needed to create relocatable installations of infer
+
+AC_ARG_VAR([MPFR_LIB_PATH], [path to libmpfr.so or libmpfr.dylib])
+AC_MSG_CHECKING([where to find libmpfr])
+AS_IF([test "x$MPFR_LIB_PATH" = "x"], [MPFR_LIB_PATH=no])
+AC_MSG_RESULT([$MPFR_LIB_PATH])
+AC_SUBST([MPFR_LIB_PATH])
+
+AC_MSG_CHECKING([where to find libgmp])
+AC_ARG_VAR([GMP_LIB_PATH], [path to libgmp.so or libgmp.dylib])
+AS_IF([test "x$GMP_LIB_PATH" = "x"], [GMP_LIB_PATH=no])
+AC_MSG_RESULT([$GMP_LIB_PATH])
+AC_SUBST([GMP_LIB_PATH])
 
 AC_CHECK_INFER_MAN_LAST_MODIFIED()
 

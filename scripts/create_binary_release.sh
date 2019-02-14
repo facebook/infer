@@ -43,7 +43,7 @@ eval $(opam env)
 touch .release
 ./autogen.sh
 ./configure --prefix="/$RELEASE_NAME"
-make -j "$JOBS" install BUILD_MODE=opt DESTDIR="$ROOT_DIR" libdir_relative_to_bindir=../lib
+make -j "$JOBS" install-with-libs BUILD_MODE=opt DESTDIR="$ROOT_DIR" libdir_relative_to_bindir=../lib
 popd
 
 if [ "$DRYRUN" = "no" ]; then
