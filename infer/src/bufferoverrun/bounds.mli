@@ -127,13 +127,17 @@ end
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
 
 module NonNegativeBound : sig
-  type t = Bound.t [@@deriving compare]
+  type t [@@deriving compare]
+
+  val of_loop_bound : Location.t -> Bound.t -> t
+
+  val of_modeled_function : string -> Location.t -> Bound.t -> t
 
   val pp : Format.formatter -> t -> unit
 
-  val zero : t
+  val make_err_trace : t -> string * Errlog.loc_trace
 
-  val of_bound : t -> t
+  val zero : Location.t -> t
 
   val int_lb : t -> Ints.NonNegativeInt.t
 
@@ -141,5 +145,6 @@ module NonNegativeBound : sig
 
   val classify : t -> (Ints.NonNegativeInt.t, t) valclass
 
-  val subst : t -> Bound.eval_sym -> (Ints.NonNegativeInt.t, t) valclass
+  val subst :
+    Typ.Procname.t -> Location.t -> t -> Bound.eval_sym -> (Ints.NonNegativeInt.t, t) valclass
 end

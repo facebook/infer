@@ -173,7 +173,7 @@ val le : lhs:t -> rhs:t -> bool
 
 val lnot : t -> Boolean.t
 
-val range : t -> ItvRange.t
+val range : Location.t -> t -> ItvRange.t
 
 val div : t -> t -> t
 

@@ -1007,23 +1007,57 @@ type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
 module NonNegativeBound = struct
-  type t = Bound.t [@@deriving compare]
+  type trace =
+    | Loop of Location.t
+    | Call of {callee_pname: Typ.Procname.t; callee_trace: trace; location: Location.t}
+    | ModeledFunction of {pname: string; location: Location.t}
+  [@@deriving compare]
 
-  let pp = Bound.pp
+  type t = Bound.t * trace [@@deriving compare]
 
-  let zero = Bound.zero
+  let make_err_trace (b, t) =
+    let b = F.asprintf "{%a}" Bound.pp b in
+    let rec aux depth trace =
+      match trace with
+      | Loop loop_head_loc ->
+          let desc = F.asprintf "Loop at %a" Location.pp loop_head_loc in
+          [Errlog.make_trace_element depth loop_head_loc desc []]
+      | Call {callee_pname; location; callee_trace} ->
+          let desc = F.asprintf "call to %a" Typ.Procname.pp callee_pname in
+          Errlog.make_trace_element depth location desc [] :: aux (depth + 1) callee_trace
+      | ModeledFunction {pname; location} ->
+          let desc = F.asprintf "Modeled call to %s" pname in
+          [Errlog.make_trace_element depth location desc []]
+    in
+    (b, aux 0 t)
 
-  let of_bound b = if Bound.le b zero then zero else b
 
-  let int_lb b =
+  let pp fmt (bound, _) = Bound.pp fmt bound
+
+  let zero loop_head_loc = (Bound.zero, Loop loop_head_loc)
+
+  let check_le_zero b = if Bound.le b Bound.zero then Bound.zero else b
+
+  let of_bound ~trace b = (check_le_zero b, trace)
+
+  let of_loop_bound loop_head_loc = of_bound ~trace:(Loop loop_head_loc)
+
+  let of_modeled_function pname location b =
+    if Bound.lt b Bound.zero then (* we shouldn't have negative modeled bounds *)
+      assert false
+    else (b, ModeledFunction {pname; location})
+
+
+  let int_lb (b, _) =
     Bound.big_int_lb b
     |> Option.bind ~f:NonNegativeInt.of_big_int
     |> Option.value ~default:NonNegativeInt.zero
 
 
-  let int_ub b = Bound.big_int_ub b |> Option.map ~f:NonNegativeInt.of_big_int_exn
+  let int_ub (b, _) = Bound.big_int_ub b |> Option.map ~f:NonNegativeInt.of_big_int_exn
 
-  let classify = function
+  let classify (b, trace) =
+    match b with
     | Bound.PInf ->
         ValTop
     | Bound.MInf ->
@@ -1031,15 +1065,15 @@ module NonNegativeBound = struct
     | b -> (
       match Bound.is_const b with
       | None ->
-          Symbolic b
+          Symbolic (b, trace)
       | Some c ->
           Constant (NonNegativeInt.of_big_int_exn c) )
 
 
-  let subst b map =
+  let subst callee_pname location (b, callee_trace) map =
     match Bound.subst_ub b map with
     | Bottom ->
         Constant NonNegativeInt.zero
     | NonBottom b ->
-        of_bound b |> classify
+        of_bound b ~trace:(Call {callee_pname; location; callee_trace}) |> classify
 end

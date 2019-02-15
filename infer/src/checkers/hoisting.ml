@@ -93,16 +93,19 @@ let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths in
     match Ondemand.analyze_proc_name pname with
     | Some ({Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost_record}}} as summary)
       when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
-        let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
+        let last_node = InstrCFG.last_of_underlying_node node in
+        let instr_node_id = InstrCFG.Node.id last_node in
         let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
         let inferbo_mem =
           Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
         in
         let callee_formals = Summary.get_proc_desc summary |> Procdesc.get_pvar_formals in
+        let loc = InstrCFG.Node.loc last_node in
         (* get the cost of the function call *)
-        Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_formals
-          ~params
+        Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+          ~callee_pname:pname ~callee_formals ~params
           ~callee_cost:(CostDomain.get_operation_cost cost_record)
+          ~loc
         |> CostDomain.BasicCost.is_symbolic
     | _ ->
         false

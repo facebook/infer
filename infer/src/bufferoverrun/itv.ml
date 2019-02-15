@@ -18,13 +18,14 @@ module SymbolSet = Symb.SymbolSet
 module ItvRange = struct
   type t = Bounds.NonNegativeBound.t
 
-  let zero : t = Bounds.NonNegativeBound.zero
+  let zero loop_head : t = Bounds.NonNegativeBound.zero loop_head
 
-  let of_bounds : lb:Bound.t -> ub:Bound.t -> t =
-   fun ~lb ~ub ->
+  let of_bounds : loop_head_loc:Location.t -> lb:Bound.t -> ub:Bound.t -> t =
+   fun ~loop_head_loc ~lb ~ub ->
     Bound.plus_u ub Bound.one
     |> Bound.plus_u (Bound.neg lb)
-    |> Bound.simplify_bound_ends_from_paths |> Bounds.NonNegativeBound.of_bound
+    |> Bound.simplify_bound_ends_from_paths
+    |> Bounds.NonNegativeBound.of_loop_bound loop_head_loc
 
 
   let to_top_lifted_polynomial : t -> Polynomials.NonNegativePolynomial.t =
@@ -175,7 +176,9 @@ module ItvPure = struct
 
   let is_le_mone : t -> bool = fun (_, ub) -> Bound.le ub Bound.mone
 
-  let range : t -> ItvRange.t = fun (lb, ub) -> ItvRange.of_bounds ~lb ~ub
+  let range : Location.t -> t -> ItvRange.t =
+   fun loop_head_loc (lb, ub) -> ItvRange.of_bounds ~loop_head_loc ~lb ~ub
+
 
   let neg : t -> t =
    fun (l, u) ->
@@ -524,11 +527,11 @@ let le : lhs:t -> rhs:t -> bool = ( <= )
 
 let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
 
-let range : t -> ItvRange.t = function
+let range loop_head : t -> ItvRange.t = function
   | Bottom ->
-      ItvRange.zero
+      ItvRange.zero loop_head
   | NonBottom itv ->
-      ItvPure.range itv
+      ItvPure.range loop_head itv
 
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =

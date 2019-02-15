@@ -21,7 +21,6 @@ module L = Logging
    3. remove invariant vars in the loop from control vars
  *)
 
-module VarSet = AbstractDomain.FiniteSet (Var)
 module CFG = ProcCfg.Normal
 module LoopHead = Procdesc.Node
 
@@ -35,6 +34,10 @@ module CVar = struct
 end
 
 module ControlDepSet = AbstractDomain.FiniteSet (CVar)
+
+(** Map control var -> loop head location  *)
+module ControlMap = PrettyPrintable.MakePPMap (Var)
+
 module GuardNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module LoopHeads = Procdesc.NodeSet
 
@@ -164,16 +167,17 @@ let remove_invariant_vars control_vars loop_inv_map =
     (fun {cvar; loop_head} acc ->
       match LoopInvariant.LoopHeadToInvVars.find_opt loop_head loop_inv_map with
       | Some inv_vars ->
-          if LoopInvariant.InvariantVars.mem cvar inv_vars then acc else VarSet.add cvar acc
+          if LoopInvariant.InvariantVars.mem cvar inv_vars then acc
+          else ControlMap.add cvar (Procdesc.Node.get_loc loop_head) acc
       | _ ->
           (* Each cvar is always attached to a loop head *)
           assert false )
-    control_vars VarSet.empty
+    control_vars ControlMap.empty
 
 
 let compute_control_vars control_invariant_map loop_inv_map node =
   let node_id = CFG.Node.id node in
-  let deps = VarSet.empty in
+  let deps = ControlMap.empty in
   ControlDepAnalyzer.extract_post node_id control_invariant_map
   |> Option.map ~f:(fun control_deps ->
          (* loop_inv_map: loop head -> variables that are invariant in the loop *)

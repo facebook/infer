@@ -8,10 +8,10 @@
 open! IStd
 module BasicCost = CostDomain.BasicCost
 
-type model = BufferOverrunDomain.Mem.t -> BasicCost.t
+type model = Location.t -> BufferOverrunDomain.Mem.t -> BasicCost.t
 
 module Collections = struct
-  let eval_collection_length coll_exp inferbo_mem =
+  let eval_collection_length coll_exp loc inferbo_mem =
     let upper_bound =
       let itv =
         BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
@@ -19,7 +19,7 @@ module Collections = struct
       in
       match itv with Bottom -> Bounds.Bound.PInf | NonBottom itv_pure -> Itv.ItvPure.ub itv_pure
     in
-    Bounds.NonNegativeBound.of_bound upper_bound
+    Bounds.NonNegativeBound.of_modeled_function "List.length" loc upper_bound
 
 
   let n_log_n b =
@@ -28,8 +28,8 @@ module Collections = struct
     BasicCost.mult n log_n
 
 
-  let sort coll_exp inferbo_mem =
-    let length = eval_collection_length coll_exp inferbo_mem in
+  let sort coll_exp loc inferbo_mem =
+    let length = eval_collection_length coll_exp loc inferbo_mem in
     n_log_n length
 end
 

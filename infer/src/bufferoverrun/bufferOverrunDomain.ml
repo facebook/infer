@@ -17,6 +17,7 @@ module Relation = BufferOverrunDomainRelation
 module SPath = Symb.SymbolPath
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
+module LoopHeadLoc = Location
 
 type eval_sym_trace =
   { eval_sym: Bounds.Bound.eval_sym
@@ -547,14 +548,17 @@ module MemPure = struct
 
   let bot = empty
 
-  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.t =
+  let range :
+      filter_loc:(Loc.t -> LoopHeadLoc.t option) -> t -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc mem ->
     fold
       (fun loc v acc ->
-        if filter_loc loc then
-          v |> Val.get_itv |> Itv.range |> Itv.ItvRange.to_top_lifted_polynomial
-          |> Polynomials.NonNegativePolynomial.mult acc
-        else acc )
+        match filter_loc loc with
+        | Some loop_head_loc ->
+            v |> Val.get_itv |> Itv.range loop_head_loc |> Itv.ItvRange.to_top_lifted_polynomial
+            |> Polynomials.NonNegativePolynomial.mult acc
+        | None ->
+            acc )
       mem Polynomials.NonNegativePolynomial.one
 
 
@@ -1324,7 +1328,8 @@ module MemReach = struct
       add_from_locs m.mem_pure locs PowLoc.empty
 
 
-  let range : filter_loc:(Loc.t -> bool) -> t -> Polynomials.NonNegativePolynomial.t =
+  let range :
+      filter_loc:(Loc.t -> LoopHeadLoc.t option) -> t -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc {mem_pure} -> MemPure.range ~filter_loc mem_pure
 
 

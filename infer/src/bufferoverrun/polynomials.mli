@@ -48,7 +48,7 @@ module NonNegativePolynomial : sig
 
   val min_default_left : t -> t -> t
 
-  val subst : t -> Bound.eval_sym -> t
+  val subst : Typ.Procname.t -> Location.t -> t -> Bound.eval_sym -> t
 
   val degree : t -> Degree.t option
 
@@ -61,4 +61,6 @@ module NonNegativePolynomial : sig
   val encode : t -> string
 
   val decode : string -> t
+
+  val get_symbols : t -> Bounds.NonNegativeBound.t list
 end

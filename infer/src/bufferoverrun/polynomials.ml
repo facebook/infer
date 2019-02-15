@@ -62,7 +62,8 @@ module type NonNegativeSymbol = sig
 
   val int_ub : t -> NonNegativeInt.t option
 
-  val subst : t -> Bound.eval_sym -> (NonNegativeInt.t, t) Bounds.valclass
+  val subst :
+    Typ.Procname.t -> Location.t -> t -> Bound.eval_sym -> (NonNegativeInt.t, t) Bounds.valclass
 
   val pp : F.formatter -> t -> unit
 end
@@ -75,6 +76,8 @@ module type NonNegativeSymbolWithDegreeKind = sig
   val make : DegreeKind.t -> t0 -> t
 
   val degree_kind : t -> DegreeKind.t
+
+  val symbol : t -> t0
 end
 
 module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
@@ -101,8 +104,8 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
     S.int_ub symbol |> Option.map ~f:(DegreeKind.compute degree_kind)
 
 
-  let subst {degree_kind; symbol} eval =
-    match S.subst symbol eval with
+  let subst callee_pname loc {degree_kind; symbol} eval =
+    match S.subst callee_pname loc symbol eval with
     | Constant c ->
         Bounds.Constant (DegreeKind.compute degree_kind c)
     | Symbolic symbol ->
@@ -114,6 +117,8 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
   let pp f {degree_kind; symbol} = DegreeKind.pp_hole S.pp f degree_kind symbol
 
   let degree_kind {degree_kind} = degree_kind
+
+  let symbol {symbol} = symbol
 end
 
 module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
@@ -319,13 +324,13 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
    fun ~prev:_ ~next:_ ~num_iters:_ -> assert false
 
 
-  let subst =
+  let subst callee_pname loc =
     let exception ReturnTop in
     (* avoids top-lifting everything *)
     let rec subst {const; terms} eval_sym =
       M.fold
         (fun s p acc ->
-          match S.subst s eval_sym with
+          match S.subst callee_pname loc s eval_sym with
           | Constant c -> (
             match PositiveInt.of_big_int (c :> Z.t) with
             | None ->
@@ -406,6 +411,13 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
           terms const_not_zero
         : bool )
       |> ignore
+
+
+  let get_symbols p : S.t0 list =
+    let rec get_symbols_sub {terms} acc =
+      M.fold (fun s p acc -> get_symbols_sub p (S.symbol s :: acc)) terms acc
+    in
+    get_symbols_sub p []
 end
 
 module NonNegativePolynomial = struct
@@ -451,8 +463,12 @@ module NonNegativePolynomial = struct
 
   let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top
 
-  let subst p eval_sym =
-    match p with Top -> Top | NonTop p -> NonNegativeNonTopPolynomial.subst p eval_sym
+  let subst callee_pname loc p eval_sym =
+    match p with
+    | Top ->
+        Top
+    | NonTop p ->
+        NonNegativeNonTopPolynomial.subst callee_pname loc p eval_sym
 
 
   let degree p =
@@ -488,6 +504,10 @@ module NonNegativePolynomial = struct
     | NonTop p ->
         Format.fprintf fmt "O(%a)" NonNegativeNonTopPolynomial.pp
           (NonNegativeNonTopPolynomial.degree_term p)
+
+
+  let get_symbols p : Bounds.NonNegativeBound.t list =
+    match p with Top -> assert false | NonTop p -> NonNegativeNonTopPolynomial.get_symbols p
 
 
   let encode astate = Marshal.to_string astate [] |> Base64.encode_exn

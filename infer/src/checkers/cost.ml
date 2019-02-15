@@ -50,11 +50,11 @@ module BoundMap = struct
 
   let filter_loc vars_to_keep = function
     | AbsLoc.Loc.Var (Var.LogicalVar _) ->
-        false
-    | AbsLoc.Loc.Var var when Control.VarSet.mem var vars_to_keep ->
-        true
+        None
+    | AbsLoc.Loc.Var var ->
+        Control.ControlMap.find_opt var vars_to_keep
     | _ ->
-        false
+        None
 
 
   let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map loop_inv_map =
@@ -71,12 +71,13 @@ module BoundMap = struct
           match exit_state_opt with
           | Some entry_mem ->
               (* compute control vars, i.e. set of variables that affect the execution count *)
-              let control_vars =
+              let control_map =
                 Control.compute_control_vars control_invariant_map loop_inv_map node
               in
               L.(debug Analysis Medium)
                 "@\n>>> All dependencies for node = %a : %a  @\n\n" Procdesc.Node.pp node
-                Control.VarSet.pp control_vars ;
+                (Control.ControlMap.pp ~pp_value:Location.pp)
+                control_map ;
               (* bound = env(v1) *... * env(vn) *)
               let bound =
                 match entry_mem with
@@ -87,7 +88,7 @@ module BoundMap = struct
                        unreachable returning cost 0 \n" ;
                     BasicCost.zero
                 | NonBottom mem ->
-                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_vars) mem
+                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map) mem
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id BasicCost.pp
@@ -518,11 +519,12 @@ type extras_WCET =
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t }
 
-let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_formals ~params ~callee_cost =
+let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
+    ~callee_cost ~loc =
   let eval_sym =
     BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params inferbo_caller_mem
   in
-  BasicCost.subst callee_cost eval_sym
+  BasicCost.subst callee_pname loc callee_cost eval_sym
 
 
 module InstrBasicCost = struct
@@ -531,12 +533,12 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_formals params
-      =
+  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_pname
+      callee_formals params loc =
     let callee_cost = CostDomain.get_operation_cost callee_cost_record in
     if BasicCost.is_symbolic callee_cost then
-      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_formals ~params
-        ~callee_cost
+      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname
+        ~callee_formals ~params ~callee_cost ~loc
     else callee_cost
 
 
@@ -555,6 +557,7 @@ module InstrBasicCost = struct
   let get_instr_cost_record pdata instr_node instr =
     match instr with
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) -> (
+        let loc = InstrCFG.Node.loc instr_node in
         let ProcData.({pdesc; extras= {inferbo_invariant_map; integer_type_widths}}) = pdata in
         match
           BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
@@ -564,13 +567,13 @@ module InstrBasicCost = struct
         | Some inferbo_mem -> (
           match CostModels.Call.dispatch () callee_pname params with
           | Some model ->
-              CostDomain.set_operation_cost (model inferbo_mem) CostDomain.zero_record
+              CostDomain.set_operation_cost (model loc inferbo_mem) CostDomain.zero_record
           | None -> (
             match get_callee_summary pdesc callee_pname with
             | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
                 let callee_operation_cost =
                   callee_OperationCost callee_cost_record integer_type_widths inferbo_mem
-                    callee_formals params
+                    callee_pname callee_formals params loc
                 in
                 let callee_allocation_cost = callee_AllocationCost callee_cost_record in
                 let callee_IO_cost = callee_IOCost callee_cost_record in
@@ -626,18 +629,23 @@ module WCET = struct
       | None ->
           ""
     in
-    let ltr =
-      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
-      [Errlog.make_trace_element 0 loc cost_desc []]
-    in
     let message =
       F.asprintf
         "The execution time from the beginning of the function up to this program point is likely \
          above the acceptable threshold of %a (estimated cost %a%s)"
         BasicCost.pp expensive_threshold BasicCost.pp cost degree_str
     in
-    Reporting.log_error summary ~loc ~ltr ~extras:(compute_errlog_extras cost)
-      IssueType.expensive_execution_time_call message
+    let cost_trace =
+      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
+      Errlog.make_trace_element 0 loc cost_desc []
+    in
+    let full_trace =
+      BasicCost.get_symbols cost
+      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+      |> Errlog.concat_traces
+    in
+    Reporting.log_error summary ~loc ~ltr:(cost_trace :: full_trace)
+      ~extras:(compute_errlog_extras cost) IssueType.expensive_execution_time_call message
 
 
   (*
