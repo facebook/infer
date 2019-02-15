@@ -97,7 +97,9 @@ let malloc size_exp =
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
-    let path = Option.bind (Dom.Mem.find_simple_alias id mem) ~f:Loc.get_path in
+    let path =
+      match Dom.Mem.find_simple_alias id mem with Some (l, None) -> Loc.get_path l | _ -> None
+    in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
     let allocsite =
       let represents_multiple_values = not (Itv.is_one size) in
@@ -553,9 +555,12 @@ module StdBasicString = struct
       let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
       let mem = Dom.Mem.add_stack (Loc.of_id ret_id) empty mem in
       match e with
-      | Exp.Var id ->
-          Option.value_map (Dom.Mem.find_simple_alias id mem) ~default:mem ~f:(fun l ->
-              Dom.Mem.load_empty_alias ret_id l mem )
+      | Exp.Var id -> (
+        match Dom.Mem.find_simple_alias id mem with
+        | Some (l, None) ->
+            Dom.Mem.load_empty_alias ret_id l mem
+        | _ ->
+            mem )
       | _ ->
           mem
     in

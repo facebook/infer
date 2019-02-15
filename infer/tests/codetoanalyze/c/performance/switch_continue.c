@@ -26,7 +26,7 @@ int test_switch() {
   return 0;
 }
 
-int unroll_loop_FP(int n) {
+int unroll_loop(int n) {
   int ret = 0;
   int loop = n + 3 / 4;
   switch (n % 8) {

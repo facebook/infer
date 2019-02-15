@@ -91,6 +91,7 @@ codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Bad, 5, BUFFER_OVE
 codetoanalyze/c/bufferoverrun/cast.c, cast_signed_to_unsigned_Good, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_unsigned_to_signed_Bad_FN, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/cast.c, cast_unsigned_to_signed_Good, 4, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/c/bufferoverrun/do_while.c, do_while_2_Bad, 5, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Assignment,Array declaration,Array access: Offset: [0, 10] Size: 10]
 codetoanalyze/c/bufferoverrun/do_while.c, do_while_Bad, 2, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Array declaration,Assignment,Call,<Offset trace>,Assignment,<Length trace>,Parameter `*a`,Array access: Offset: [0, 10] Size: 10 by call to `do_while_sub` ]
 codetoanalyze/c/bufferoverrun/duplicates.c, one_alarm_is_enough, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Array declaration,Call,<Length trace>,Parameter `*arr`,Array access: Offset: 1 Size: 1 by call to `two_accesses` ]
 codetoanalyze/c/bufferoverrun/duplicates.c, tsa_one_alarm_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,<Offset trace>,Parameter `n`,<Length trace>,Array declaration,Array access: Offset: 3 Size: 1 by call to `two_symbolic_accesses` ]

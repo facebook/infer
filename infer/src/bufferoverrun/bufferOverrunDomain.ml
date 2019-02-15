@@ -141,6 +141,8 @@ module Val = struct
 
   let of_big_int n = of_itv (Itv.of_big_int n)
 
+  let of_int_lit n = of_itv (Itv.of_int_lit n)
+
   let of_loc ?(traces = TraceSet.empty) x = {bot with powloc= PowLoc.singleton x; traces}
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
@@ -592,7 +594,12 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
-  type t = Simple of Loc.t | Empty of Loc.t | Fgets of Loc.t | Nullity of Loc.t
+  type t =
+    | Simple of Loc.t
+    | SimplePlusA of Loc.t * IntLit.t
+    | Empty of Loc.t
+    | Fgets of Loc.t
+    | Nullity of Loc.t
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
@@ -600,6 +607,9 @@ module AliasTarget = struct
   let pp fmt = function
     | Simple l ->
         Loc.pp fmt l
+    | SimplePlusA (l, i) ->
+        if IntLit.isnegative i then F.fprintf fmt "%a-%a" Loc.pp l IntLit.pp (IntLit.neg i)
+        else F.fprintf fmt "%a+%a" Loc.pp l IntLit.pp i
     | Empty l ->
         F.fprintf fmt "empty(%a)" Loc.pp l
     | Fgets l ->
@@ -612,12 +622,17 @@ module AliasTarget = struct
 
   let nullity l = Nullity l
 
-  let use l = function Simple l' | Empty l' | Fgets l' | Nullity l' -> Loc.equal l l'
+  let use l = function
+    | Simple l' | SimplePlusA (l', _) | Empty l' | Fgets l' | Nullity l' ->
+        Loc.equal l l'
+
 
   let loc_map x ~f =
     match x with
     | Simple l ->
         Option.map (f l) ~f:(fun l -> Simple l)
+    | SimplePlusA (l, i) ->
+        Option.map (f l) ~f:(fun l -> SimplePlusA (l, i))
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
     | Fgets l ->
@@ -722,6 +737,11 @@ module Alias = struct
     | Exp.Var l when Loc.is_return loc ->
         let update_ret retl = {a with ret= AliasRet.v retl} in
         Option.value_map (find l a) ~default:a ~f:update_ret
+    | Exp.BinOp (Binop.PlusA _, Exp.Var id, Exp.Const (Const.Cint i))
+    | Exp.BinOp (Binop.PlusA _, Exp.Const (Const.Cint i), Exp.Var id) ->
+        lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, IntLit.neg i))) a
+    | Exp.BinOp (Binop.MinusA _, Exp.Var id, Exp.Const (Const.Cint i)) ->
+        lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, i))) a
     | _ ->
         a
 
@@ -1139,11 +1159,13 @@ module MemReach = struct
 
   let find_alias : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find k m.alias
 
-  let find_simple_alias : Ident.t -> _ t0 -> Loc.t option =
+  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k m ->
     match Alias.find k m.alias with
     | Some (AliasTarget.Simple l) ->
-        Some l
+        Some (l, None)
+    | Some (AliasTarget.SimplePlusA (l, i)) ->
+        Some (l, Some i)
     | Some (AliasTarget.Empty _ | AliasTarget.Fgets _ | AliasTarget.Nullity _) | None ->
         None
 
@@ -1259,7 +1281,7 @@ module MemReach = struct
       | LatestPrune.V (x, prunes, _), Exp.Var r
       | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
         match find_simple_alias r m with
-        | Some (Loc.Var (Var.ProgramVar y)) when Pvar.equal x y ->
+        | Some (Loc.Var (Var.ProgramVar y), None) when Pvar.equal x y ->
             PrunePairs.fold apply1 prunes m
         | _ ->
             m )
@@ -1400,7 +1422,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_alias k)
 
 
-  let find_simple_alias : Ident.t -> _ t0 -> Loc.t option =
+  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 

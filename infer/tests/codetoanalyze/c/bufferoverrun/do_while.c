@@ -26,3 +26,21 @@ void do_while_Bad() {
   char* a = malloc(10);
   do_while_sub(a, 11); /* BUG */
 }
+
+void do_while_2_Good() {
+  int count = 10;
+  int a[count];
+  int i = 0;
+  do {
+    a[i] = 0;
+  } while (++i < count);
+}
+
+void do_while_2_Bad() {
+  int count = 10;
+  int a[count];
+  int i = 0;
+  do {
+    a[i] = 0;
+  } while (i++ < count);
+}
