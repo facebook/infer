@@ -173,3 +173,13 @@ void call_greater_than_Good_FP() {
     idx = idx - 1;
   }
 }
+
+void null_pruning_symbols(unsigned int a, unsigned int b) {
+  unsigned int c = a + b;
+  if (c > 0) {
+    char result[c];
+    result[c - 1] = 0;
+  }
+}
+
+void call_null_pruning_symbols_Good_FP() { null_pruning_symbols(10, 20); }
