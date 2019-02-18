@@ -48,7 +48,6 @@ depends: [
   "conf-which" {= "1"}
   "conf-zlib" {= "1"}
   "configurator" {= "v0.11.0"}
-  "core" {= "v0.11.3"}
   "core_kernel" {= "v0.11.1"}
   "cppo" {= "1.6.5"}
   "cppo_ocamlbuild" {= "1.6.0"}

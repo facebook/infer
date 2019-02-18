@@ -25,7 +25,7 @@ depends: [
   "atdgen" {>="2.0.0"}
   "base64" {>="3.0.0"}
   "cmdliner" {>="1.0.0"}
-  "core"
+  "core_kernel"
   "conf-autoconf" {build}
   "conf-gmp" {build}
   "conf-mpfr" {build}
@@ -43,6 +43,7 @@ depends: [
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
   "sawja" {>="1.5.4"}
+  "spawn"
   "sqlite3"
   "utop" {with-test}
   "xmlm" {>="1.2.0"}

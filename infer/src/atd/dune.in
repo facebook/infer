@@ -17,7 +17,7 @@ Format.sprintf
  (public_name InferGenerated)
  (flags (%s))
  (ocamlopt_flags (%s))
- (libraries atdgen core)
+ (libraries atdgen core_kernel)
  (preprocess (pps ppx_compare))
 )
 

@@ -12,7 +12,7 @@ Format.sprintf
 (executable
  (name checkCopyright)
  (flags (%s))
- (libraries core str)
+ (libraries core_kernel str)
  (preprocess (pps ppx_compare))
 )
 |}
