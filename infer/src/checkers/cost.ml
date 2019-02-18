@@ -18,9 +18,24 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.cost
 end)
 
-(* We use this treshold to give error if the cost is above it.
+(* We use this threshold to give error if the cost is above it.
    Currently it's set randomly to 200. *)
-let expensive_threshold = BasicCost.of_int_exn 200
+module ReportConfig = struct
+  type t = {name: string; threshold: int option; top_and_bottom: bool}
+
+  let as_list =
+    [ ( CostDomain.OperationCost
+      , { name= "The execution time"
+        ; threshold= Option.some_if Config.use_cost_threshold 200
+        ; top_and_bottom= true } )
+    ; (CostDomain.AllocationCost, {name= "The allocations"; threshold= None; top_and_bottom= false})
+    ; (CostDomain.IOCost, {name= "The IOs"; threshold= None; top_and_bottom= false}) ]
+
+
+  let as_map =
+    List.fold as_list ~init:CostDomain.CostKindMap.empty ~f:(fun acc (k, v) ->
+        CostDomain.CostKindMap.add k v acc )
+end
 
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
@@ -514,7 +529,7 @@ module ConstraintSolver = struct
     Option.value_exn set |> ControlFlowCost.Set.cost
 end
 
-type extras_WCET =
+type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
   ; get_node_nb_exec: Node.id -> BasicCost.t }
@@ -533,19 +548,6 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let callee_OperationCost callee_cost_record integer_type_widths inferbo_mem callee_pname
-      callee_formals params loc =
-    let callee_cost = CostDomain.get_operation_cost callee_cost_record in
-    if BasicCost.is_symbolic callee_cost then
-      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname
-        ~callee_formals ~params ~callee_cost ~loc
-    else callee_cost
-
-
-  let callee_AllocationCost cost_record = CostDomain.get_allocation_cost cost_record
-
-  let callee_IOCost cost_record = CostDomain.get_IO_cost cost_record
-
   let get_callee_summary caller_pdesc callee_pname =
     Ondemand.analyze_proc_name ~caller_pdesc callee_pname
     |> Option.bind ~f:(fun summary ->
@@ -557,7 +559,6 @@ module InstrBasicCost = struct
   let get_instr_cost_record pdata instr_node instr =
     match instr with
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) -> (
-        let loc = InstrCFG.Node.loc instr_node in
         let ProcData.({pdesc; extras= {inferbo_invariant_map; integer_type_widths}}) = pdata in
         match
           BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
@@ -565,22 +566,20 @@ module InstrBasicCost = struct
         | None ->
             CostDomain.unit_cost_atomic_operation
         | Some inferbo_mem -> (
-          match CostModels.Call.dispatch () callee_pname params with
-          | Some model ->
-              CostDomain.set_operation_cost (model loc inferbo_mem) CostDomain.zero_record
-          | None -> (
-            match get_callee_summary pdesc callee_pname with
-            | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
-                let callee_operation_cost =
-                  callee_OperationCost callee_cost_record integer_type_widths inferbo_mem
-                    callee_pname callee_formals params loc
-                in
-                let callee_allocation_cost = callee_AllocationCost callee_cost_record in
-                let callee_IO_cost = callee_IOCost callee_cost_record in
-                CostDomain.mk_cost_record ~operation_cost:callee_operation_cost
-                  ~allocation_cost:callee_allocation_cost ~io_cost:callee_IO_cost
-            | None ->
-                CostDomain.unit_cost_atomic_operation ) ) )
+            let loc = InstrCFG.Node.loc instr_node in
+            match CostModels.Call.dispatch () callee_pname params with
+            | Some model ->
+                CostDomain.of_operation_cost (model loc inferbo_mem)
+            | None -> (
+              match get_callee_summary pdesc callee_pname with
+              | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
+                  CostDomain.map callee_cost_record ~f:(fun callee_cost ->
+                      if BasicCost.is_symbolic callee_cost then
+                        instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                          ~callee_pname ~callee_formals ~params ~callee_cost ~loc
+                      else callee_cost )
+              | None ->
+                  CostDomain.unit_cost_atomic_operation ) ) )
     | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
     | Sil.ExitScope _ -> (
@@ -612,68 +611,61 @@ let compute_errlog_extras cost =
   ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
 
 
+module ThresholdReports = struct
+  type threshold_or_report =
+    | Threshold of BasicCost.t
+    | ReportOn of {location: Location.t; cost: BasicCost.t}
+
+  type t = threshold_or_report CostDomain.CostKindMap.t
+
+  let none = CostDomain.CostKindMap.empty
+
+  let config =
+    List.fold ReportConfig.as_list ~init:none ~f:(fun acc -> function
+      | k, ReportConfig.({threshold= Some threshold}) ->
+          CostDomain.CostKindMap.add k (Threshold (BasicCost.of_int_exn threshold)) acc
+      | _ ->
+          acc )
+end
+
 (*
-  Calculate the final Worst Case Execution Time predicted for each WTO component.
+  Calculate the final Worst Case Cost predicted for each cost field and each WTO component.
   It is the dot product of basic_cost_map and get_node_nb_exec.
 *)
-module WCET = struct
-  type report = DontCheck | PleaseCheck | ReportOn of {location: Location.t; cost: BasicCost.t}
-
-  type astate = {current_cost: BasicCost.t; report_on_threshold: report}
-
-  let do_report summary loc cost =
-    let degree_str =
-      match BasicCost.degree cost with
-      | Some degree ->
-          Format.asprintf ", degree = %a" Polynomials.Degree.pp degree
-      | None ->
-          ""
-    in
-    let message =
-      F.asprintf
-        "The execution time from the beginning of the function up to this program point is likely \
-         above the acceptable threshold of %a (estimated cost %a%s)"
-        BasicCost.pp expensive_threshold BasicCost.pp cost degree_str
-    in
-    let cost_trace =
-      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
-      Errlog.make_trace_element 0 loc cost_desc []
-    in
-    let full_trace =
-      BasicCost.get_symbols cost
-      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
-      |> Errlog.concat_traces
-    in
-    Reporting.log_error summary ~loc ~ltr:(cost_trace :: full_trace)
-      ~extras:(compute_errlog_extras cost) IssueType.expensive_execution_time_call message
-
+module WorstCaseCost = struct
+  type astate = {costs: CostDomain.t; reports: ThresholdReports.t}
 
   (*
   We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
   Instead, we report Top cost only at the top level per function when `report_infinity` is set to true
 *)
-  let should_report_cost cost =
-    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
+  let should_report_cost cost ~threshold =
+    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:threshold)
 
 
-  let exec_node {current_cost; report_on_threshold} pdata instr_node =
+  let exec_node {costs; reports} pdata instr_node =
     let {ProcData.extras= {get_node_nb_exec}} = pdata in
     let node_cost =
       let instr_cost_record = InstrBasicCost.get_instr_node_cost_record pdata instr_node in
-      let instr_cost = CostDomain.get_operation_cost instr_cost_record in
       let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
       let nb_exec = get_node_nb_exec node_id in
-      BasicCost.mult instr_cost nb_exec
+      CostDomain.mult_by_scalar instr_cost_record nb_exec
     in
-    let current_cost = BasicCost.plus current_cost node_cost in
-    let report_on_threshold =
-      match report_on_threshold with
-      | PleaseCheck when should_report_cost current_cost ->
-          ReportOn {location= InstrCFG.Node.loc instr_node; cost= current_cost}
-      | _ ->
-          report_on_threshold
+    let costs = CostDomain.plus costs node_cost in
+    let reports =
+      CostDomain.CostKindMap.merge
+        (fun _kind threshold_or_report_opt cost_opt ->
+          match (threshold_or_report_opt, cost_opt) with
+          | None, _ ->
+              None
+          | Some (ThresholdReports.Threshold threshold), Some cost
+            when should_report_cost cost ~threshold ->
+              Some (ThresholdReports.ReportOn {location= InstrCFG.Node.loc instr_node; cost})
+          | _ ->
+              threshold_or_report_opt )
+        reports costs
     in
-    {current_cost; report_on_threshold}
+    {costs; reports}
 
 
   let rec exec_partition astate pdata
@@ -685,39 +677,73 @@ module WCET = struct
         let astate = exec_node astate pdata node in
         exec_partition astate pdata next
     | Component {head; rest; next} ->
-        let {current_cost; report_on_threshold} = astate in
-        let {current_cost} =
-          exec_partition {current_cost; report_on_threshold= DontCheck} pdata rest
-        in
+        let {costs; reports} = astate in
+        let {costs} = exec_partition {costs; reports= ThresholdReports.none} pdata rest in
         (* Execute head after the loop body to always report at loop head *)
-        let astate = exec_node {current_cost; report_on_threshold} pdata head in
+        let astate = exec_node {costs; reports} pdata head in
         exec_partition astate pdata next
 
 
   let compute pdata =
     let cfg = InstrCFG.from_pdesc pdata.ProcData.pdesc in
-    let report_on_threshold = if Config.use_cost_threshold then PleaseCheck else DontCheck in
-    let initial = {current_cost= BasicCost.zero; report_on_threshold} in
-    let {current_cost; report_on_threshold} = exec_partition initial pdata (InstrCFG.wto cfg) in
-    ( CostDomain.mk_cost_record ~operation_cost:current_cost ~allocation_cost:BasicCost.zero
-        ~io_cost:BasicCost.zero
-    , report_on_threshold )
+    let initial = {costs= CostDomain.zero_record; reports= ThresholdReports.config} in
+    exec_partition initial pdata (InstrCFG.wto cfg)
 end
 
-let check_and_report_top_and_bottom cost_record proc_desc summary =
-  let cost = CostDomain.get_operation_cost cost_record in
-  let report issue suffix =
-    let message =
-      F.asprintf "The execution time of the function %a %s" Typ.Procname.pp
-        (Procdesc.get_proc_name proc_desc)
-        suffix
+module Check = struct
+  let report_threshold summary ~name ~location ~cost ~threshold =
+    let degree_str =
+      match BasicCost.degree cost with
+      | Some degree ->
+          Format.asprintf ", degree = %a" Polynomials.Degree.pp degree
+      | None ->
+          ""
     in
-    let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
-    Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary issue message
-  in
-  if BasicCost.is_top cost then report IssueType.infinite_execution_time_call "cannot be computed"
-  else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
+    let message =
+      F.asprintf
+        "%s from the beginning of the function up to this program point is likely above the \
+         acceptable threshold of %d (estimated cost %a%s)"
+        name threshold BasicCost.pp cost degree_str
+    in
+    let cost_trace =
+      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
+      Errlog.make_trace_element 0 location cost_desc []
+    in
+    let full_trace =
+      BasicCost.get_symbols cost
+      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+      |> Errlog.concat_traces
+    in
+    Reporting.log_error summary ~loc:location ~ltr:(cost_trace :: full_trace)
+      ~extras:(compute_errlog_extras cost) IssueType.expensive_execution_time_call message
 
+
+  let report_top_and_bottom proc_desc summary ~name ~cost =
+    let report issue suffix =
+      let message =
+        F.asprintf "%s of the function %a %s" name Typ.Procname.pp
+          (Procdesc.get_proc_name proc_desc)
+          suffix
+      in
+      let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+      Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary issue message
+    in
+    if BasicCost.is_top cost then
+      report IssueType.infinite_execution_time_call "cannot be computed"
+    else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
+
+
+  let check_and_report WorstCaseCost.({costs; reports}) proc_desc summary =
+    CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
+      ~f:(fun _kind ReportConfig.({name; threshold}) -> function
+      | ThresholdReports.Threshold _ ->
+          ()
+      | ThresholdReports.ReportOn {location; cost} ->
+          report_threshold summary ~name ~location ~cost ~threshold:(Option.value_exn threshold) ) ;
+    CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
+      ~f:(fun _kind ReportConfig.({name; top_and_bottom}) cost ->
+        if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )
+end
 
 let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
   let inferbo_invariant_map =
@@ -764,17 +790,17 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
     if Config.write_html then NodePrinter.finish_session start_node ;
     ConstraintSolver.get_node_nb_exec equalities
   in
-  let exit_cost_record, report =
+  let astate =
     let pdata =
       ProcData.make proc_desc tenv {inferbo_invariant_map; integer_type_widths; get_node_nb_exec}
     in
-    WCET.compute pdata
+    WorstCaseCost.compute pdata
   in
+  let exit_cost_record = astate.WorstCaseCost.costs in
   L.(debug Analysis Verbose)
     "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
     (Procdesc.get_proc_name proc_desc)
     (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
     CostDomain.VariantCostMap.pp exit_cost_record ;
-  (match report with ReportOn {location; cost} -> WCET.do_report summary location cost | _ -> ()) ;
-  check_and_report_top_and_bottom exit_cost_record proc_desc summary ;
+  Check.check_and_report astate proc_desc summary ;
   Payload.update_summary {post= exit_cost_record} summary
