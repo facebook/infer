@@ -433,12 +433,6 @@ let execute___set_wont_leak_attribute builtin_args : Builtin.ret_typ =
   execute___set_attr PredSymb.Awont_leak builtin_args
 
 
-let execute_abort {Builtin.proc_name} : Builtin.ret_typ =
-  raise
-    (Exceptions.Precondition_not_found
-       (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__))
-
-
 let execute_exit {Builtin.prop_; path} : Builtin.ret_typ = SymExec.diverge prop_ path
 
 let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
@@ -948,7 +942,7 @@ let __unwrap_exception = Builtin.register BuiltinDecl.__unwrap_exception execute
 
 let __variable_initialization = Builtin.register BuiltinDecl.__variable_initialization execute_skip
 
-let abort = Builtin.register BuiltinDecl.abort execute_abort
+let abort = Builtin.register BuiltinDecl.abort execute_exit
 
 let exit = Builtin.register BuiltinDecl.exit execute_exit
 

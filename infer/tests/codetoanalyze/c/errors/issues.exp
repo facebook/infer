@@ -54,6 +54,7 @@ codetoanalyze/c/errors/null_dereference/angelism.c, struct_value_by_ref_callee_w
 codetoanalyze/c/errors/null_dereference/angelism.c, struct_value_by_ref_ptr_write, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/angelism.c, struct_value_from_pointer_skip_bad, 3, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/angelism.c, struct_value_skip_null_deref, 4, NULL_DEREFERENCE, B1
+codetoanalyze/c/errors/null_dereference/exit_example.c, exit_example_bad, 5, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/getc.c, crash_clearerr, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/getc.c, crash_feof, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/null_dereference/getc.c, crash_ferror, 4, NULL_DEREFERENCE, B1
