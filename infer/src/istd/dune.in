@@ -16,6 +16,7 @@ Format.sprintf
  (flags (%s -open Core_kernel))
  (ocamlopt_flags (%s))
  (libraries %s)
+ (c_names core_stubs)
  (preprocess (pps ppx_compare))
 )
 

@@ -87,9 +87,7 @@ end
 module Filename = struct
   include Filename
 
-  (* TODO: incorrect on Linux. In particular, this makes the test-suite fail horribly.
-     On windows, there are no symlinks so this is fine. *)
-  let realpath x = x
+  external realpath : string -> string = "unix_realpath"
 
   let split_extension p =
     let e = extension p in
