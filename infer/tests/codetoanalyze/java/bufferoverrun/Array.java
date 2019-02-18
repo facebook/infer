@@ -56,4 +56,16 @@ class Array {
       }
     }
   }
+
+  void negative_alloc_Bad() {
+    a = new ArrayList<>(-1);
+  }
+
+  void zero_alloc_Good_FP() {
+    a = new ArrayList<>(0);
+  }
+
+  void positive_alloc_Good() {
+    a = new ArrayList<>(10);
+  }
 }

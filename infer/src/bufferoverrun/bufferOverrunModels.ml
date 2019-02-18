@@ -653,8 +653,8 @@ module Collection = struct
     let exec {integer_type_widths} ~ret:_ mem =
       let itr = Sem.eval integer_type_widths rhs_exp mem in
       model_by_value itr lhs_id mem
-    in
-    {exec; check= no_check}
+    and check = check_alloc_size rhs_exp in
+    {exec; check}
 
 
   let hasNext iterator =
