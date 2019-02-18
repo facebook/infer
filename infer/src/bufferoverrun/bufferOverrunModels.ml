@@ -333,19 +333,19 @@ let variable_initialization (e, typ) =
   {exec; check= no_check}
 
 
-let model_by_value value (id, _) mem = Dom.Mem.add_stack (Loc.of_id id) value mem
+let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
 let by_value =
-  let exec ~value _ ~ret mem = model_by_value value ret mem in
+  let exec ~value _ ~ret:(ret_id, _) mem = model_by_value value ret_id mem in
   fun value -> {exec= exec ~value; check= no_check}
 
 
 let by_risky_value_from lib_fun =
-  let exec ~value {location} ~ret mem =
+  let exec ~value {location} ~ret:(ret_id, _) mem =
     let traces =
       Trace.(Set.add_elem location (through ~risky_fun:(Some lib_fun))) (Dom.Val.get_traces value)
     in
-    model_by_value {value with traces} ret mem
+    model_by_value {value with traces} ret_id mem
   in
   fun value -> {exec= exec ~value; check= no_check}
 
@@ -376,9 +376,9 @@ let eval_array_locs_length arr_locs mem =
 
 (* Java only *)
 let get_array_length array_exp =
-  let exec _ ~ret mem =
+  let exec _ ~ret:(ret_id, _) mem =
     let result = eval_array_locs_length (Sem.eval_locs array_exp mem) mem in
-    model_by_value result ret mem
+    model_by_value result ret_id mem
   in
   {exec; check= no_check}
 
@@ -634,27 +634,35 @@ module Collection = struct
   let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
 
   let size coll_exp =
-    let exec _ ~ret mem =
+    let exec _ ~ret:(ret_id, _) mem =
       let result = eval_collection_length coll_exp mem in
-      model_by_value result ret mem
+      model_by_value result ret_id mem
     in
     {exec; check= no_check}
 
 
   let iterator coll_exp =
-    let exec {integer_type_widths} ~ret mem =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
       let itr = Sem.eval integer_type_widths coll_exp mem in
-      model_by_value itr ret mem
+      model_by_value itr ret_id mem
+    in
+    {exec; check= no_check}
+
+
+  let init lhs_id rhs_exp =
+    let exec {integer_type_widths} ~ret:_ mem =
+      let itr = Sem.eval integer_type_widths rhs_exp mem in
+      model_by_value itr lhs_id mem
     in
     {exec; check= no_check}
 
 
   let hasNext iterator =
-    let exec _ ~ret mem =
+    let exec _ ~ret:(ret_id, _) mem =
       (* Set the size of the iterator to be [0, size-1], so that range
          will be size of the collection. *)
       let collection_size = eval_collection_length iterator mem |> Dom.Val.get_iterator_itv in
-      model_by_value collection_size ret mem
+      model_by_value collection_size ret_id mem
     in
     {exec; check= no_check}
 
@@ -792,6 +800,8 @@ module Call = struct
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "basic_string" &::.*--> no_model
+      ; +PatternMatch.implements_collection
+        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
       ; +PatternMatch.implements_collection

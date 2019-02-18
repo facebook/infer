@@ -221,4 +221,34 @@ public class ArrayListTest {
     }
     return false;
   }
+
+  void constructor_linear(ArrayList<String> list) {
+    ArrayList<String> slist = new ArrayList<>(list);
+    for (int i = 0; i < slist.size(); i++) {}
+  }
+
+  void constructor_modify(ArrayList<String> list) {
+    // copying the reference here, so any change made to slist will
+    // affect list
+    ArrayList<String> slist = new ArrayList<>(list);
+    slist.add("a");
+    slist.add("b");
+    slist.add("c");
+    slist.add("d");
+    for (int i = 0; i < list.size(); i++) {}
+  }
+
+  void constructor_add_all(ArrayList<String> list, ArrayList<String> l) {
+    ArrayList<String> slist = new ArrayList<>(list);
+    slist.addAll(l); // increments the size of both list and slist by
+    // l.length
+    for (int i = 0; i < list.size(); i++) {}
+  }
+
+  void constructor_add_all_sym(ArrayList<String> list, ArrayList<String> l) {
+    ArrayList<String> slist = new ArrayList<>(list);
+    list.addAll(l); // increments the size of both list and slist by
+    // l.length
+    for (int i = 0; i < slist.size(); i++) {}
+  }
 }
