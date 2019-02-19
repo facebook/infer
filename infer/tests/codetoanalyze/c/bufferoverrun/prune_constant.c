@@ -182,4 +182,18 @@ void null_pruning_symbols(unsigned int a, unsigned int b) {
   }
 }
 
-void call_null_pruning_symbols_Good_FP() { null_pruning_symbols(10, 20); }
+void call_null_pruning_symbols_1_Good() { null_pruning_symbols(10, 20); }
+
+void call_null_pruning_symbols_2_Good() { null_pruning_symbols(0, 0); }
+
+int unknown_function();
+
+void call_null_pruning_symbols_3_Good_FP() {
+  unsigned int c;
+  if (unknown_function()) {
+    c = 0;
+  } else {
+    c = 10;
+  }
+  null_pruning_symbols(c, 0);
+}

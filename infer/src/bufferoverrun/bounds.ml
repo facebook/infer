@@ -558,7 +558,7 @@ module Bound = struct
 
 
   let overapprox_min original_b1 b2 =
-    let rec overapprox_min b1 b2 =
+    let overapprox_min b1 b2 =
       exact_min b1 b2 ~otherwise:(fun b1 b2 ->
           match (b1, b2) with
           | ( MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1)
@@ -607,17 +607,9 @@ module Bound = struct
               let v = if Z.leq vmin vmeet && Z.leq vmeet vmax then vmeet else vmax in
               let d = Sign.eval_neg_if_minus sign1 Z.(v - c1) in
               mk_MinMax (c1, sign1, minmax1, d, s1)
-          | _ -> (
-            match big_int_ub b2 with
-            | Some v2 when not (is_const b2) ->
-                overapprox_min b1 (Linear (v2, SymLinear.zero))
-            | _ -> (
-              match big_int_ub b1 with
-              | Some v1 when not (is_const b1) ->
-                  overapprox_min (Linear (v1, SymLinear.zero)) b2
-              | _ ->
-                  (* When the result is not representable, our best effort is to return the first original argument. Any other deterministic heuristics would work too. *)
-                  original_b1 ) ) )
+          | _ ->
+              (* When the result is not representable, our best effort is to return the first original argument. Any other deterministic heuristics would work too. *)
+              original_b1 )
     in
     overapprox_min original_b1 b2
 
