@@ -50,6 +50,7 @@ module ConditionSet : sig
 
   val add_alloc_size :
        Location.t
+    -> can_be_zero:bool
     -> length:ItvPure.t
     -> BufferOverrunTrace.Set.t
     -> BufferOverrunDomain.LatestPrune.t

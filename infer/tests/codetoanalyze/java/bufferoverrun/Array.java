@@ -61,7 +61,7 @@ class Array {
     a = new ArrayList<>(-1);
   }
 
-  void zero_alloc_Good_FP() {
+  void zero_alloc_Good() {
     a = new ArrayList<>(0);
   }
 

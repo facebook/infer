@@ -103,55 +103,62 @@ type report_issue_type = NotIssue | Issue of IssueType.t | SymbolicIssue
 type checked_condition = {report_issue_type: report_issue_type; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = ItvPure.t [@@deriving compare]
+  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare]
 
-  let get_symbols = ItvPure.get_symbols
+  let get_symbols {length} = ItvPure.get_symbols length
 
-  let pp fmt length = F.fprintf fmt "alloc(%a)" ItvPure.pp length
+  let pp fmt {length} = F.fprintf fmt "alloc(%a)" ItvPure.pp length
 
-  let pp_description ~markup fmt length =
+  let pp_description ~markup fmt {length} =
     F.fprintf fmt "Length: %a" (ItvPure.pp_mark ~markup) length
 
 
-  let make ~length = if ItvPure.is_invalid length then None else Some length
+  let make ~can_be_zero ~length =
+    if ItvPure.is_invalid length then None else Some {length; can_be_zero}
 
-  let have_similar_bounds = ItvPure.have_similar_bounds
+
+  let have_similar_bounds x y =
+    ItvPure.have_similar_bounds x.length y.length && Bool.equal x.can_be_zero y.can_be_zero
+
 
   let xcompare ~lhs ~rhs =
-    match ItvPure.xcompare ~lhs ~rhs with
-    | `Equal ->
-        `Equal
-    | `NotComparable ->
-        `NotComparable
-    | `LeftSubsumesRight ->
-        `LeftSubsumesRight
-    | `RightSubsumesLeft ->
-        `RightSubsumesLeft
-    | (`LeftSmallerThanRight | `RightSmallerThanLeft) as cmp ->
-        let lpos = ItvPure.le_sem ItvPure.zero lhs in
-        let rpos = ItvPure.le_sem ItvPure.zero rhs in
-        if not (Boolean.equal lpos rpos) then `NotComparable
-        else if Boolean.is_true lpos then
-          match cmp with
-          | `LeftSmallerThanRight ->
-              `RightSubsumesLeft
-          | `RightSmallerThanLeft ->
-              `LeftSubsumesRight
-        else if Boolean.is_false lpos then
-          match cmp with
-          | `LeftSmallerThanRight ->
-              `LeftSubsumesRight
-          | `RightSmallerThanLeft ->
-              `RightSubsumesLeft
-        else `NotComparable
+    if Bool.equal lhs.can_be_zero rhs.can_be_zero then
+      match ItvPure.xcompare ~lhs:lhs.length ~rhs:rhs.length with
+      | `Equal ->
+          `Equal
+      | `NotComparable ->
+          `NotComparable
+      | `LeftSubsumesRight ->
+          `LeftSubsumesRight
+      | `RightSubsumesLeft ->
+          `RightSubsumesLeft
+      | (`LeftSmallerThanRight | `RightSmallerThanLeft) as cmp ->
+          let lpos = ItvPure.le_sem ItvPure.zero lhs.length in
+          let rpos = ItvPure.le_sem ItvPure.zero rhs.length in
+          if not (Boolean.equal lpos rpos) then `NotComparable
+          else if Boolean.is_true lpos then
+            match cmp with
+            | `LeftSmallerThanRight ->
+                `RightSubsumesLeft
+            | `RightSmallerThanLeft ->
+                `LeftSubsumesRight
+          else if Boolean.is_false lpos then
+            match cmp with
+            | `LeftSmallerThanRight ->
+                `LeftSubsumesRight
+            | `RightSmallerThanLeft ->
+                `RightSubsumesLeft
+          else `NotComparable
+    else `NotComparable
 
 
   let itv_big = ItvPure.of_int 1_000_000
 
-  let check length =
+  let check {length; can_be_zero} =
     match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
     | `Equal | `RightSubsumesLeft ->
-        {report_issue_type= Issue IssueType.inferbo_alloc_is_zero; propagate= false}
+        if can_be_zero then {report_issue_type= NotIssue; propagate= false}
+        else {report_issue_type= Issue IssueType.inferbo_alloc_is_zero; propagate= false}
     | `LeftSmallerThanRight ->
         {report_issue_type= Issue IssueType.inferbo_alloc_is_negative; propagate= false}
     | _ -> (
@@ -181,8 +188,12 @@ module AllocSizeCondition = struct
               else {report_issue_type= NotIssue; propagate} ) )
 
 
-  let subst eval_sym length =
-    match ItvPure.subst length eval_sym with NonBottom length -> Some length | Bottom -> None
+  let subst eval_sym {length; can_be_zero} =
+    match ItvPure.subst length eval_sym with
+    | NonBottom length ->
+        Some {length; can_be_zero}
+    | Bottom ->
+        None
 end
 
 module ArrayAccessCondition = struct
@@ -908,8 +919,9 @@ module ConditionSet = struct
          latest_prune condset
 
 
-  let add_alloc_size location ~length val_traces latest_prune condset =
-    AllocSizeCondition.make ~length |> Condition.make_alloc_size
+  let add_alloc_size location ~can_be_zero ~length val_traces latest_prune condset =
+    AllocSizeCondition.make ~can_be_zero ~length
+    |> Condition.make_alloc_size
     |> add_opt location (ValTrace.Issue.alloc location val_traces) latest_prune condset
 
 

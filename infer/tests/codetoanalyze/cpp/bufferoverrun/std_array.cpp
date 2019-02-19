@@ -137,3 +137,7 @@ void array_rev_iter_Bad() {
   }
   a[a[0]] = 0;
 }
+
+void malloc_zero_Bad() { int* a = (int*)malloc(sizeof(int) * 0); }
+
+void new_array_zero_Good() { int* a = new int[0]; }

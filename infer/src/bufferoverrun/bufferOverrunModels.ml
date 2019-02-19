@@ -52,7 +52,7 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
       (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None)
 
 
-let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
+let check_alloc_size ~can_be_zero size_exp {location; integer_type_widths} mem cond_set =
   let _, _, length0, _ = get_malloc_info size_exp in
   let v_length = Sem.eval integer_type_widths length0 mem in
   match Dom.Val.get_itv v_length with
@@ -61,7 +61,7 @@ let check_alloc_size size_exp {location; integer_type_widths} mem cond_set =
   | NonBottom length ->
       let traces = Dom.Val.get_traces v_length in
       let latest_prune = Dom.Mem.get_latest_prune mem in
-      PO.ConditionSet.add_alloc_size location ~length traces latest_prune cond_set
+      PO.ConditionSet.add_alloc_size location ~can_be_zero ~length traces latest_prune cond_set
 
 
 let fgets str_exp num_exp =
@@ -90,7 +90,7 @@ let fgets str_exp num_exp =
   {exec; check}
 
 
-let malloc size_exp =
+let malloc ~can_be_zero size_exp =
   let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem
       =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -114,7 +114,7 @@ let malloc size_exp =
     |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
     |> BoUtils.Exec.init_c_array_fields model_env path typ (Dom.Val.get_array_locs v) ?dyn_length
-  and check = check_alloc_size size_exp in
+  and check = check_alloc_size ~can_be_zero size_exp in
   {exec; check}
 
 
@@ -243,17 +243,17 @@ let realloc src_exp size_exp =
     Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
         let dyn_length = Dom.Val.get_itv (Sem.eval integer_type_widths dyn_length mem) in
         BoUtils.Exec.set_dyn_length model_env typ (Dom.Val.get_array_locs v) dyn_length mem )
-  and check = check_alloc_size size_exp in
+  and check = check_alloc_size ~can_be_zero:false size_exp in
   {exec; check}
 
 
 let placement_new size_exp (src_exp1, t1) src_arg2_opt =
   match (t1.Typ.desc, src_arg2_opt) with
   | Tint _, None | Tint _, Some (_, {Typ.desc= Tint _}) ->
-      malloc (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
+      malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
   | Tstruct (CppClass (name, _)), None
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
-      malloc size_exp
+      malloc ~can_be_zero:true size_exp
   | _, _ ->
       let exec {integer_type_widths} ~ret:(id, _) mem =
         let src_exp =
@@ -317,7 +317,7 @@ let inferbo_set_size e1 e2 =
     let locs = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_pow_loc in
     let length = Sem.eval integer_type_widths e2 mem in
     Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) locs mem
-  and check = check_alloc_size e2 in
+  and check = check_alloc_size ~can_be_zero:true e2 in
   {exec; check}
 
 
@@ -402,7 +402,7 @@ let set_array_length array length_exp =
         Dom.Mem.add_stack (Loc.of_pvar array_pvar) v mem
     | _ ->
         L.(die InternalError) "Unexpected type of first argument for __set_array_length() "
-  and check = check_alloc_size length_exp in
+  and check = check_alloc_size ~can_be_zero:false length_exp in
   {exec; check}
 
 
@@ -503,7 +503,7 @@ end
 module StdBasicString = struct
   (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
   let constructor_from_char_ptr tgt src len =
-    let {exec= malloc_exec; check= malloc_check} = malloc len in
+    let {exec= malloc_exec; check= malloc_check} = malloc ~can_be_zero:true len in
     let exec model_env ~ret:((ret_id, _) as ret) mem =
       let mem = malloc_exec model_env ~ret mem in
       let v = Dom.Mem.find (Loc.of_id ret_id) mem in
@@ -653,7 +653,7 @@ module Collection = struct
     let exec {integer_type_widths} ~ret:_ mem =
       let itr = Sem.eval integer_type_widths rhs_exp mem in
       model_by_value itr lhs_id mem
-    and check = check_alloc_size rhs_exp in
+    and check = check_alloc_size ~can_be_zero:true rhs_exp in
     {exec; check}
 
 
@@ -730,13 +730,13 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
       ; -"infer_print" <>$ capt_exp $!--> infer_print
-      ; -"malloc" <>$ capt_exp $+...$--> malloc
-      ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc
+      ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false
+      ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
         $+...$--> Collection.new_collection
-      ; -"__new" <>$ capt_exp $+...$--> malloc
-      ; -"__new_array" <>$ capt_exp $+...$--> malloc
+      ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
