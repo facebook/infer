@@ -129,8 +129,10 @@ def get_output_jars(buck_args, targets):
     else:
         targets_output = subprocess.check_output(
             ['buck', 'targets', '--show-output'] + targets)
-        targets_jars = [entry.split()[1] for entry in
-                        targets_output.decode().strip().split('\n')]
+        parsed_output = (
+            entry.split()
+            for entry in targets_output.decode().strip().split('\n'))
+        targets_jars = (p[1] for p in parsed_output if len(p) > 1)
     return filter(os.path.isfile, targets_jars)
 
 
