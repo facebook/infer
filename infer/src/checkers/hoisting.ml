@@ -79,36 +79,40 @@ let model_satisfies ~f tenv pname =
   InvariantModels.ProcName.dispatch tenv pname |> Option.exists ~f
 
 
-let get_issue_to_report tenv Call.({pname; node; params}) integer_type_widths inferbo_invariant_map
-    =
-  (* If a function is modeled as variant for hoisting (like
-     List.size or __cast ), we don't want to report it *)
-  let is_variant_for_hoisting =
-    model_satisfies ~f:InvariantModels.is_variant_for_hoisting tenv pname
-  in
+let is_call_expensive Call.({pname; node; params}) integer_type_widths inferbo_invariant_map =
+  (* only report if function call has expensive/symbolic cost *)
+  match Ondemand.analyze_proc_name pname with
+  | Some ({Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost_record}}} as summary)
+    when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
+      let last_node = InstrCFG.last_of_underlying_node node in
+      let instr_node_id = InstrCFG.Node.id last_node in
+      let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
+      let inferbo_mem =
+        Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
+      in
+      let callee_formals = Summary.get_proc_desc summary |> Procdesc.get_pvar_formals in
+      let loc = InstrCFG.Node.loc last_node in
+      (* get the cost of the function call *)
+      Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname
+        ~callee_formals ~params
+        ~callee_cost:(CostDomain.get_operation_cost cost_record)
+        ~loc
+      |> CostDomain.BasicCost.is_symbolic
+  | _ ->
+      false
+
+
+let get_issue_to_report tenv (Call.({pname}) as call) integer_type_widths inferbo_invariant_map =
   let report_invariant =
-    ((not is_variant_for_hoisting) && not Config.hoisting_report_only_expensive)
-    ||
-    (* only report if function call has expensive/symbolic cost *)
-    match Ondemand.analyze_proc_name pname with
-    | Some ({Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost_record}}} as summary)
-      when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
-        let last_node = InstrCFG.last_of_underlying_node node in
-        let instr_node_id = InstrCFG.Node.id last_node in
-        let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
-        let inferbo_mem =
-          Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
-        in
-        let callee_formals = Summary.get_proc_desc summary |> Procdesc.get_pvar_formals in
-        let loc = InstrCFG.Node.loc last_node in
-        (* get the cost of the function call *)
-        Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-          ~callee_pname:pname ~callee_formals ~params
-          ~callee_cost:(CostDomain.get_operation_cost cost_record)
-          ~loc
-        |> CostDomain.BasicCost.is_symbolic
-    | _ ->
-        false
+    if Config.hoisting_report_only_expensive then
+      is_call_expensive call integer_type_widths inferbo_invariant_map
+    else
+      (* If a function is modeled as variant for hoisting (like
+       List.size or __cast ), we don't want to report it *)
+      let is_variant_for_hoisting =
+        model_satisfies ~f:InvariantModels.is_variant_for_hoisting tenv pname
+      in
+      not is_variant_for_hoisting
   in
   if report_invariant then
     if model_satisfies ~f:InvariantModels.is_invariant tenv pname then

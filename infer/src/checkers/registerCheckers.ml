@@ -106,19 +106,15 @@ let all_checkers =
     ; active= Config.uninit
     ; callbacks= [(Procedure Uninit.checker, Language.Clang)] }
   ; { name= "cost analysis"
-    ; active= Config.cost
+    ; active= Config.cost || (Config.loop_hoisting && Config.hoisting_report_only_expensive)
     ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
     }
   ; { name= "loop hoisting"
     ; active= Config.loop_hoisting
     ; callbacks=
-        ( (Procedure Hoisting.checker, Language.Clang)
-          :: (Procedure Hoisting.checker, Language.Java)
-          ::
-          ( if Config.hoisting_report_only_expensive then
-            [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
-          else [] )
-        @ if Config.purity then [(Procedure Purity.checker, Language.Java)] else [] ) }
+        (Procedure Hoisting.checker, Language.Clang)
+        :: (Procedure Hoisting.checker, Language.Java)
+        :: (if Config.purity then [(Procedure Purity.checker, Language.Java)] else []) }
   ; { name= "Starvation analysis"
     ; active= Config.starvation
     ; callbacks=
