@@ -258,10 +258,6 @@ let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HAND
 
 let failure_exe = from_string "Failure_exe"
 
-let nullsafe_field_not_nullable =
-  from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
-
-
 let field_not_null_checked = from_string "IVAR_NOT_NULL_CHECKED"
 
 (* from AL default linters *)
@@ -329,7 +325,11 @@ let null_dereference = from_string "NULL_DEREFERENCE"
 
 let null_test_after_dereference = from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"
 
-let nullable_dereference = from_string "NULLSAFE_NULLABLE_DEREFERENCE"
+let nullsafe_field_not_nullable =
+  from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
+
+let nullsafe_nullable_dereference =
+  from_string "NULLSAFE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
 
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 

@@ -170,7 +170,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         dereference_site :: with_assignment_site
       in
-      Reporting.log_error summary ~loc ~ltr:trace IssueType.nullable_dereference message
+      Reporting.log_error summary ~loc ~ltr:trace IssueType.nullsafe_nullable_dereference message
 
 
   let add_nullable_ap ap call_sites (aps, pnames) = (NullableAP.add ap call_sites aps, pnames)

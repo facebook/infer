@@ -171,8 +171,6 @@ val exposed_insecure_intent_handling : t
 
 val failure_exe : t
 
-val nullsafe_field_not_nullable : t
-
 val field_not_null_checked : t
 
 val graphql_field_access : t
@@ -233,7 +231,9 @@ val null_dereference : t
 
 val null_test_after_dereference : t
 
-val nullable_dereference : t
+val nullsafe_field_not_nullable : t
+
+val nullsafe_nullable_dereference : t
 
 val parameter_not_null_checked : t
 
