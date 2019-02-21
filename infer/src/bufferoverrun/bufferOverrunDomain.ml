@@ -24,9 +24,16 @@ type eval_sym_trace =
   ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
   ; eval_locpath: PowLoc.eval_locpath }
 
+module ItvThresholds = AbstractDomain.FiniteSet (struct
+  include Z
+
+  let pp = pp_print
+end)
+
 module Val = struct
   type t =
     { itv: Itv.t
+    ; itv_thresholds: ItvThresholds.t
     ; sym: Relation.Sym.t
     ; powloc: PowLoc.t
     ; arrayblk: ArrayBlk.t
@@ -37,6 +44,7 @@ module Val = struct
 
   let bot : t =
     { itv= Itv.bot
+    ; itv_thresholds= ItvThresholds.empty
     ; sym= Relation.Sym.bot
     ; powloc= PowLoc.bot
     ; arrayblk= ArrayBlk.bot
@@ -47,6 +55,10 @@ module Val = struct
 
 
   let pp fmt x =
+    let itv_thresholds_pp fmt itv_thresholds =
+      if Config.bo_debug >= 3 && not (ItvThresholds.is_empty itv_thresholds) then
+        F.fprintf fmt " (thresholds:%a)" ItvThresholds.pp itv_thresholds
+    in
     let relation_sym_pp fmt sym =
       if Option.is_some Config.bo_relational_domain then F.fprintf fmt ", %a" Relation.Sym.pp sym
     in
@@ -54,9 +66,9 @@ module Val = struct
       if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
     let represents_multiple_values_str = if x.represents_multiple_values then "M" else "" in
-    F.fprintf fmt "%s(%a%a, %a, %a%a%a%a)" represents_multiple_values_str Itv.pp x.itv
-      relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym
-      relation_sym_pp x.size_sym trace_pp x.traces
+    F.fprintf fmt "%s(%a%a%a, %a, %a%a%a%a)" represents_multiple_values_str Itv.pp x.itv
+      itv_thresholds_pp x.itv_thresholds relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp
+      x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp x.traces
 
 
   let sets_represents_multiple_values : represents_multiple_values:bool -> t -> t =
@@ -67,6 +79,7 @@ module Val = struct
    fun ~callee_pname ~location ->
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
     { itv= Itv.top
+    ; itv_thresholds= ItvThresholds.empty
     ; sym= Relation.Sym.top
     ; powloc= PowLoc.unknown
     ; arrayblk= ArrayBlk.unknown
@@ -80,6 +93,7 @@ module Val = struct
     if phys_equal lhs rhs then true
     else
       Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv
+      && ItvThresholds.( <= ) ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
       && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
       && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
@@ -91,7 +105,12 @@ module Val = struct
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
-      { itv= Itv.widen ~prev:prev.itv ~next:next.itv ~num_iters
+      let itv_thresholds = ItvThresholds.join prev.itv_thresholds next.itv_thresholds in
+      { itv=
+          Itv.widen_thresholds
+            ~thresholds:(ItvThresholds.elements itv_thresholds)
+            ~prev:prev.itv ~next:next.itv ~num_iters
+      ; itv_thresholds
       ; sym= Relation.Sym.widen ~prev:prev.sym ~next:next.sym ~num_iters
       ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
@@ -107,6 +126,7 @@ module Val = struct
     if phys_equal x y then x
     else
       { itv= Itv.join x.itv y.itv
+      ; itv_thresholds= ItvThresholds.join x.itv_thresholds y.itv_thresholds
       ; sym= Relation.Sym.join x.sym y.sym
       ; powloc= PowLoc.join x.powloc y.powloc
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
@@ -192,6 +212,7 @@ module Val = struct
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> ?f_trace:_ -> t -> t -> t =
    fun f ?f_trace x y ->
     let itv = f x.itv y.itv in
+    let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
     let traces =
       match f_trace with
       | Some f_trace ->
@@ -205,7 +226,7 @@ module Val = struct
         | true, true | false, false ->
             TraceSet.join x.traces y.traces )
     in
-    {bot with itv; traces}
+    {bot with itv; itv_thresholds; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
@@ -291,13 +312,23 @@ module Val = struct
       (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.t -> ArrayBlk.t -> ArrayBlk.t) -> t -> t -> t =
    fun f g x y ->
     let itv = f x.itv y.itv in
+    let itv_thresholds =
+      Option.value_map (Itv.is_const y.itv) ~default:x.itv_thresholds ~f:(fun z ->
+          x.itv_thresholds
+          |> ItvThresholds.add Z.(z - one)
+          |> ItvThresholds.add z
+          |> ItvThresholds.add Z.(z + one) )
+    in
     let arrayblk = g x.arrayblk y.arrayblk in
-    if phys_equal itv x.itv && phys_equal arrayblk x.arrayblk then
-      (* x hasn't changed, don't join traces *)
+    if
+      phys_equal itv x.itv
+      && phys_equal itv_thresholds x.itv_thresholds
+      && phys_equal arrayblk x.arrayblk
+    then (* x hasn't changed, don't join traces *)
       x
     else
       warn_against_pruning_multiple_values
-        {x with itv; arrayblk; traces= TraceSet.join x.traces y.traces}
+        {x with itv; itv_thresholds; arrayblk; traces= TraceSet.join x.traces y.traces}
 
 
   let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero

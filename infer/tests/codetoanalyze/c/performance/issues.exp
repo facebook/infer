@@ -26,7 +26,7 @@ codetoanalyze/c/performance/cost_test.c, loop2_bad, 2, EXPENSIVE_EXECUTION_TIME_
 codetoanalyze/c/performance/cost_test.c, main_bad, 8, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 214, degree = 0]
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 2 + 6 ⋅ (-m + 20), degree = 1,{-m + 20},Loop at line 117, column 3]
 codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 235, degree = 0]
-codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([3, +oo] + 1):signed32]
+codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1307, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep1, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 609, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_no_dep1, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
