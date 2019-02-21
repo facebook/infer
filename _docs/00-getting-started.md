@@ -39,8 +39,8 @@ Alternatively, use our
 [Docker](https://docs.docker.com/engine/installation/) image:
 
 ```sh
-wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/Dockerfile
-wget -O run.sh https://raw.githubusercontent.com/facebook/infer/master/docker/run.sh
+wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/0.14.0/Dockerfile
+wget -O run.sh https://raw.githubusercontent.com/facebook/infer/master/docker/0.14.0/run.sh
 sh run.sh
 ```
 
