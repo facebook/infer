@@ -155,6 +155,9 @@ module List : sig
 
   val remove : 'a list -> 'a -> 'a list option
   val rev_init : int -> f:(int -> 'a) -> 'a list
+
+  val symmetric_diff :
+    compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
 end
 
 module Map : sig

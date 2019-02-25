@@ -22,6 +22,8 @@
 module Cls = struct
   type t = Exp.t list [@@deriving compare, sexp]
 
+  let equal = [%compare.equal: t]
+
   let pp fs cls =
     Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp)
       (List.sort ~compare:Exp.compare cls)
@@ -39,6 +41,8 @@ end
 (** set of exps representing "use lists" encoding super-expression relation *)
 module Use = struct
   type t = Exp.t list [@@deriving compare, sexp]
+
+  let equal = [%compare.equal: t]
 
   let pp fs use =
     Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp) use
@@ -86,6 +90,8 @@ type t =
     involving them, and in practice are expressions which have been passed
     to [merge] as opposed to having been constructed internally. *)
 
+let pp_eq fs (e, f) = Format.fprintf fs "@[%a = %a@]" Exp.pp e Exp.pp f
+
 let pp fs {sat; rep; lkp; cls; use; pnd} =
   let pp_alist pp_k pp_v fs alist =
     let pp_assoc fs (k, v) =
@@ -93,12 +99,9 @@ let pp fs {sat; rep; lkp; cls; use; pnd} =
     in
     Format.fprintf fs "[@[<hv>%a@]]" (List.pp ";@ " pp_assoc) alist
   in
-  let pp_pnd fs pend =
-    let pp_eq fs (e, f) =
-      Format.fprintf fs "@[%a = %a@]" Exp.pp e Exp.pp f
-    in
-    if not (List.is_empty pend) then
-      Format.fprintf fs ";@ pend= @[%a@];" (List.pp ";@ " pp_eq) pend
+  let pp_pnd fs pnd =
+    if not (List.is_empty pnd) then
+      Format.fprintf fs ";@ pnd= [@[<hv>%a@]];" (List.pp ";@ " pp_eq) pnd
   in
   Format.fprintf fs
     "@[{@[<hv>sat= %b;@ rep= %a;@ lkp= %a;@ cls= %a;@ use= %a%a@]}@]" sat
@@ -114,6 +117,60 @@ let pp_classes fs {cls} =
         Format.fprintf fs "@[%a@ = %a@]" Exp.pp key (List.pp "@ = " Exp.pp)
           (List.sort ~compare:Exp.compare es) )
     fs (Map.to_alist cls)
+
+let pp_diff fs (r, s) =
+  let pp_sdiff_map pp_elt_diff equal nam fs x y =
+    let sd = Sequence.to_list (Map.symmetric_diff ~data_equal:equal x y) in
+    if not (List.is_empty sd) then
+      Format.fprintf fs "%s= [@[<hv>%a@]];@ " nam
+        (List.pp ";@ " pp_elt_diff)
+        sd
+  in
+  let pp_sdiff_list pre pp_elt compare fs (c, d) =
+    let sd = List.symmetric_diff ~compare c d in
+    let pp_either fs = function
+      | Either.First v -> Format.fprintf fs "-- %a" pp_elt v
+      | Either.Second v -> Format.fprintf fs "++ %a" pp_elt v
+    in
+    if not (List.is_empty sd) then
+      Format.fprintf fs "%s[@[<hv>%a@]]" pre (List.pp ";@ " pp_either) sd
+  in
+  let pp_sdiff_exps fs (c, d) =
+    pp_sdiff_list "" Exp.pp Exp.compare fs (c, d)
+  in
+  let pp_sdiff_elt pp_val pp_sdiff_val fs = function
+    | k, `Left v ->
+        Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" Exp.pp k pp_val v
+    | k, `Right v ->
+        Format.fprintf fs "++ [@[%a@ @<2>↦ %a@]]" Exp.pp k pp_val v
+    | k, `Unequal vv ->
+        Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" Exp.pp k pp_sdiff_val vv
+  in
+  let pp_sdiff_exp_map =
+    let pp_sdiff_exp fs (u, v) =
+      Format.fprintf fs "-- %a ++ %a" Exp.pp u Exp.pp v
+    in
+    pp_sdiff_map (pp_sdiff_elt Exp.pp pp_sdiff_exp) Exp.equal
+  in
+  let pp_sat fs =
+    if not (Bool.equal r.sat s.sat) then
+      Format.fprintf fs "sat= @[-- %b@ ++ %b@];@ " r.sat s.sat
+  in
+  let pp_rep fs = pp_sdiff_exp_map "rep" fs r.rep s.rep in
+  let pp_lkp fs = pp_sdiff_exp_map "lkp" fs r.lkp s.lkp in
+  let pp_cls fs =
+    let pp_sdiff_cls = pp_sdiff_elt Cls.pp pp_sdiff_exps in
+    pp_sdiff_map pp_sdiff_cls Cls.equal "cls" fs r.cls s.cls
+  in
+  let pp_use fs =
+    let pp_sdiff_use = pp_sdiff_elt Use.pp pp_sdiff_exps in
+    pp_sdiff_map pp_sdiff_use Use.equal "use" fs r.use s.use
+  in
+  let pp_pnd fs =
+    pp_sdiff_list "pnd= " pp_eq [%compare: Exp.t * Exp.t] fs (r.pnd, s.pnd)
+  in
+  Format.fprintf fs "@[{@[<hv>%t%t%t%t%t%t@]}@]" pp_sat pp_rep pp_lkp pp_cls
+    pp_use pp_pnd
 
 let invariant r =
   Invariant.invariant [%here] r [%sexp_of: t]
@@ -206,7 +263,10 @@ exception Unsat
     Likewise [b]'s [use] exps are merged into [a]'s. Finally, [b]'s [use]
     exps are used to traverse one step up the expression dag, looking for
     new equations involving a super-expression of [b], whose rep changed. *)
-let add_directed_equation r ~exp:bj ~rep:ai =
+let add_directed_equation r0 ~exp:bj ~rep:ai =
+  [%Trace.call fun {pf} -> pf "@[%a@ %a@]@ %a" Exp.pp bj Exp.pp ai pp r0]
+  ;
+  let r = r0 in
   let a = base_of ai in
   (* b+j = a+i so b = a+i-j *)
   let b, ai_j = solve_for_base bj ai in
@@ -260,10 +320,14 @@ let add_directed_equation r ~exp:bj ~rep:ai =
   in
   let r = {r with use} in
   r |> check invariant
+  |>
+  [%Trace.retn fun {pf} r -> pf "%a" pp_diff (r0, r)]
 
 (** Close the relation with the pending equations. *)
 let rec propagate_ ?prefer r =
-  match r.pnd with
+  [%Trace.call fun {pf} -> pf "%a" pp r]
+  ;
+  ( match r.pnd with
   | [] -> r
   | (d, e) :: pnd ->
       let d' = norm r d in
@@ -297,14 +361,16 @@ let rec propagate_ ?prefer r =
               if len_d > len_e then add_directed_equation r ~exp:e' ~rep:d'
               else add_directed_equation r ~exp:d' ~rep:e'
       in
-      propagate_ ?prefer r
+      propagate_ ?prefer r )
+  |>
+  [%Trace.retn fun {pf} r' -> pf "%a" pp_diff (r, r')]
 
 let propagate ?prefer r =
   [%Trace.call fun {pf} -> pf "%a" pp r]
   ;
   (try propagate_ ?prefer r with Unsat -> false_)
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Trace.retn fun {pf} r' -> pf "%a" pp_diff (r, r')]
 
 let merge ?prefer r d e =
   if not r.sat then r
@@ -451,5 +517,5 @@ let%test_module _ =
     let%expect_test _ =
       printf pp {true_ with pnd= [(!0, !1)]} ;
       [%expect
-        {| {sat= true; rep= []; lkp= []; cls= []; use= []; pend= 0 = 1;} |}]
+        {| {sat= true; rep= []; lkp= []; cls= []; use= []; pnd= [0 = 1];} |}]
   end )

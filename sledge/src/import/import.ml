@@ -192,6 +192,19 @@ module List = struct
       let n = n - 1 in
       let xs = rev_init n ~f in
       f n :: xs
+
+  let symmetric_diff ~compare xs ys =
+    let rec symmetric_diff_ xxs yys =
+      match (xxs, yys) with
+      | x :: xs, y :: ys ->
+          let ord = compare x y in
+          if ord = 0 then symmetric_diff_ xs ys
+          else if ord < 0 then Either.First x :: symmetric_diff_ xs yys
+          else Either.Second y :: symmetric_diff_ xxs ys
+      | xs, [] -> map ~f:Either.first xs
+      | [], ys -> map ~f:Either.second ys
+    in
+    symmetric_diff_ (sort ~compare xs) (sort ~compare ys)
 end
 
 module Map = struct
