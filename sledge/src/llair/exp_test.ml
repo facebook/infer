@@ -7,7 +7,8 @@
 
 let%test_module _ =
   ( module struct
-    let pf = Format.printf "%t%a@." (fun _ -> Trace.flush ()) Exp.pp
+    let () = Trace.init ~margin:68 ~config:none ()
+    let pp = Format.printf "%t%a@." (fun _ -> Trace.flush ()) Exp.pp
     let char = Typ.integer ~bits:8
     let ( ! ) i = Exp.integer (Z.of_int i) char
     let ( + ) = Exp.add char
@@ -51,15 +52,15 @@ let%test_module _ =
            (Exp.integer Z.one Typ.bool))
 
     let%expect_test _ =
-      pf (!42 + !13) ;
+      pp (!42 + !13) ;
       [%expect {| 55 |}]
 
     let%expect_test _ =
-      pf (!(-128) && !127) ;
+      pp (!(-128) && !127) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf (!(-128) || !127) ;
+      pp (!(-128) || !127) ;
       [%expect {| -1 |}]
 
     let%test "monomial coefficient must be toplevel" =
@@ -73,27 +74,27 @@ let%test_module _ =
       | _ -> false
 
     let%expect_test _ =
-      pf (z + !42 + !13) ;
+      pp (z + !42 + !13) ;
       [%expect {| (%z_2 + 55) |}]
 
     let%expect_test _ =
-      pf (z + !42 + !(-42)) ;
+      pp (z + !42 + !(-42)) ;
       [%expect {| %z_2 |}]
 
     let%expect_test _ =
-      pf (z * y) ;
+      pp (z * y) ;
       [%expect {| (%y_1 × %z_2) |}]
 
     let%expect_test _ =
-      pf (y * z * y) ;
+      pp (y * z * y) ;
       [%expect {| (%y_1 × %y_1 × %z_2) |}]
 
     let%expect_test _ =
-      pf ((!2 * z * z) + (!3 * z) + !4) ;
+      pp ((!2 * z * z) + (!3 * z) + !4) ;
       [%expect {| ((2 × %z_2 × %z_2) + (3 × %z_2) + 4) |}]
 
     let%expect_test _ =
-      pf
+      pp
         ( !1 + (!2 * z) + (!3 * y)
         + (!4 * z * z)
         + (!5 * y * y)
@@ -108,154 +109,154 @@ let%test_module _ =
           + (4 × %z_2 × %z_2) + (3 × %y_1) + (2 × %z_2) + 1) |}]
 
     let%expect_test _ =
-      pf (!0 * z * y) ;
+      pp (!0 * z * y) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf (!1 * z * y) ;
+      pp (!1 * z * y) ;
       [%expect {| (%y_1 × %z_2) |}]
 
     let%expect_test _ =
-      pf (!7 * z * (!2 * y)) ;
+      pp (!7 * z * (!2 * y)) ;
       [%expect {| (14 × %y_1 × %z_2) |}]
 
     let%expect_test _ =
-      pf (!13 + (!42 * z)) ;
+      pp (!13 + (!42 * z)) ;
       [%expect {| ((42 × %z_2) + 13) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42) ;
+      pp ((!13 * z) + !42) ;
       [%expect {| ((13 × %z_2) + 42) |}]
 
     let%expect_test _ =
-      pf ((!2 * z) - !3 + ((!(-2) * z) + !3)) ;
+      pp ((!2 * z) - !3 + ((!(-2) * z) + !3)) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf ((!3 * y) + (!13 * z) + !42) ;
+      pp ((!3 * y) + (!13 * z) + !42) ;
       [%expect {| ((3 × %y_1) + (13 × %z_2) + 42) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 + (!3 * y)) ;
+      pp ((!13 * z) + !42 + (!3 * y)) ;
       [%expect {| ((3 × %y_1) + (13 × %z_2) + 42) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 + (!3 * y) + (!2 * z)) ;
+      pp ((!13 * z) + !42 + (!3 * y) + (!2 * z)) ;
       [%expect {| ((3 × %y_1) + (15 × %z_2) + 42) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 + (!3 * y) + (!(-13) * z)) ;
+      pp ((!13 * z) + !42 + (!3 * y) + (!(-13) * z)) ;
       [%expect {| ((3 × %y_1) + 42) |}]
 
     let%expect_test _ =
-      pf (z + !42 + ((!3 * y) + (!(-1) * z))) ;
+      pp (z + !42 + ((!3 * y) + (!(-1) * z))) ;
       [%expect {| ((3 × %y_1) + 42) |}]
 
     let%expect_test _ =
-      pf (!(-1) * (z + (!(-1) * y))) ;
+      pp (!(-1) * (z + (!(-1) * y))) ;
       [%expect {| (%y_1 + (-1 × %z_2)) |}]
 
     let%expect_test _ =
-      pf (((!3 * y) + !2) * (!4 + (!5 * z))) ;
+      pp (((!3 * y) + !2) * (!4 + (!5 * z))) ;
       [%expect
         {| ((15 × %y_1 × %z_2) + (12 × %y_1) + (10 × %z_2) + 8) |}]
 
     let%expect_test _ =
-      pf (((!2 * z) - !3 + ((!(-2) * z) + !3)) * (!4 + (!5 * z))) ;
+      pp (((!2 * z) - !3 + ((!(-2) * z) + !3)) * (!4 + (!5 * z))) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 - ((!3 * y) + (!13 * z))) ;
+      pp ((!13 * z) + !42 - ((!3 * y) + (!13 * z))) ;
       [%expect {| ((-3 × %y_1) + 42) |}]
 
     let%expect_test _ =
-      pf (z = y) ;
+      pp (z = y) ;
       [%expect {| (%z_2 = %y_1) |}]
 
     let%expect_test _ =
-      pf (z = z) ;
+      pp (z = z) ;
       [%expect {| -1 |}]
 
     let%expect_test _ =
-      pf (z != z) ;
+      pp (z != z) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf (!1 = !0) ;
+      pp (!1 = !0) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf (!3 * y = z = Exp.bool true) ;
+      pp (!3 * y = z = Exp.bool true) ;
       [%expect {| (%z_2 = (3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf (Exp.bool true = (!3 * y = z)) ;
+      pp (Exp.bool true = (!3 * y = z)) ;
       [%expect {| (%z_2 = (3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf (!3 * y = z = Exp.bool false) ;
+      pp (!3 * y = z = Exp.bool false) ;
       [%expect {| (%z_2 ≠ (3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf (Exp.bool false = (!3 * y = z)) ;
+      pp (Exp.bool false = (!3 * y = z)) ;
       [%expect {| (%z_2 ≠ (3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf (y - (!(-3) * y) + !4) ;
+      pp (y - (!(-3) * y) + !4) ;
       [%expect {| ((4 × %y_1) + 4) |}]
 
     let%expect_test _ =
-      pf ((!(-3) * y) + !4 - y) ;
+      pp ((!(-3) * y) + !4 - y) ;
       [%expect {| ((-4 × %y_1) + 4) |}]
 
     let%expect_test _ =
-      pf (y = (!(-3) * y) + !4) ;
+      pp (y = (!(-3) * y) + !4) ;
       [%expect {| (4 = (4 × %y_1)) |}]
 
     let%expect_test _ =
-      pf ((!(-3) * y) + !4 = y) ;
+      pp ((!(-3) * y) + !4 = y) ;
       [%expect {| (4 = (4 × %y_1)) |}]
 
     let%expect_test _ =
-      pf (Exp.sub Typ.bool (Exp.bool true) (z = !4)) ;
+      pp (Exp.sub Typ.bool (Exp.bool true) (z = !4)) ;
       [%expect {| ((4 = %z_2) + -1) |}]
 
     let%expect_test _ =
-      pf (Exp.add Typ.bool (Exp.bool true) (z = !4) = (z = !4)) ;
+      pp (Exp.add Typ.bool (Exp.bool true) (z = !4) = (z = !4)) ;
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 = (!3 * y) + (!13 * z)) ;
+      pp ((!13 * z) + !42 = (!3 * y) + (!13 * z)) ;
       [%expect {| (42 = (3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !(-42) = (!3 * y) + (!13 * z)) ;
+      pp ((!13 * z) + !(-42) = (!3 * y) + (!13 * z)) ;
       [%expect {| (42 = (-3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf ((!13 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
+      pp ((!13 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
       [%expect {| (42 = (-3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf ((!10 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
+      pp ((!10 * z) + !42 = (!(-3) * y) + (!13 * z)) ;
       [%expect {| (42 = ((-3 × %y_1) + (3 × %z_2))) |}]
 
     let%expect_test _ =
-      pf ~~((!13 * z) + !(-42) != (!3 * y) + (!13 * z)) ;
+      pp ~~((!13 * z) + !(-42) != (!3 * y) + (!13 * z)) ;
       [%expect {| (42 = (-3 × %y_1)) |}]
 
     let%expect_test _ =
-      pf ~~(y > !2 && z <= !3) ;
+      pp ~~(y > !2 && z <= !3) ;
       [%expect {| ((%z_2 > 3) || (%y_1 <= 2)) |}]
 
     let%expect_test _ =
-      pf ~~(y >= !2 || z < !3) ;
+      pp ~~(y >= !2 || z < !3) ;
       [%expect {| ((%z_2 >= 3) && (%y_1 < 2)) |}]
 
     let%expect_test _ =
-      pf Exp.(eq z null) ;
-      pf Exp.(eq null z) ;
-      pf Exp.(dq (eq null z) (bool false)) ;
+      pp Exp.(eq z null) ;
+      pp Exp.(eq null z) ;
+      pp Exp.(dq (eq null z) (bool false)) ;
       [%expect
         {|
         (null = %z_2)
