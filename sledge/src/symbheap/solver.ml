@@ -7,14 +7,27 @@
 
 (** Frame Inference Solver over Symbolic Heaps *)
 
+(** Excision judgment
+
+    ∀us. Common ❮ Minuend ⊢ ∃xs. Subtrahend ❯ ∃zs. Remainder
+
+    is valid iff
+
+    Common * Minuend ⊧ ∃xs. Common * Subtrahend * ∃zs. Remainder
+
+    is universally valid semantically.
+
+    Terminology analogous to arithmetic subtraction is used: "minuend" is a
+    formula from which another, the subtrahend, is to be subtracted; and
+    "subtrahend" is a formula to be subtracted from another, the minuend. *)
 type judgment =
   { us: Var.Set.t  (** (universal) vocabulary of entire judgment *)
   ; com: Sh.t  (** common star-conjunct of minuend and subtrahend *)
   ; min: Sh.t  (** minuend, cong strengthened by pure_approx (com * min) *)
   ; xs: Var.Set.t  (** existentials over subtrahend and remainder *)
-  ; sub: Sh.t  (** subtrahend, with cong strengthened by min.cong *)
+  ; sub: Sh.t  (** subtrahend, cong strengthened by min.cong *)
   ; zs: Var.Set.t  (** existentials over remainder *)
-  ; pgs: bool  (** flag indicating whether progress has been made *) }
+  ; pgs: bool  (** indicates whether a deduction rule has been applied *) }
 
 let pp_xs fs xs =
   if not (Set.is_empty xs) then
@@ -34,30 +47,40 @@ let fresh_var name vs zs ~wrt =
   let v = Exp.var v in
   (v, vs, zs, wrt)
 
-let excise_exp {min} (us, witnesses, xs, pure, pgs) exp =
-  let exp' = Congruence.normalize min.cong exp in
-  if Exp.is_true exp' then Some (us, witnesses, xs, pure, true)
-  else if Set.disjoint (Exp.fv exp') xs then None
-  else
-    match exp' with
-    | App {op= App {op= Eq; arg= Var _ as x}}
-      when Set.is_subset (Exp.fv x) ~of_:xs ->
-        let vs = Exp.fv x in
-        Some (Set.union us vs, exp' :: witnesses, Set.diff xs vs, pure, true)
-    | App {op= App {op= Eq}; arg= Var _ as x}
-      when Set.is_subset (Exp.fv x) ~of_:xs ->
-        let vs = Exp.fv x in
-        Some (Set.union us vs, exp' :: witnesses, Set.diff xs vs, pure, true)
-    | _ -> Some (us, witnesses, xs, exp' :: pure, pgs)
+type occurrences = Zero | One of Var.t | Many
 
-let excise_pure ({us; min; xs; sub; pgs} as goal) =
+let single_existential_occurrence xs exp =
+  let exception Multiple_existential_occurrences in
+  try
+    Exp.fold_vars exp ~init:Zero ~f:(fun seen var ->
+        if not (Set.mem xs var) then seen
+        else
+          match seen with
+          | Zero -> One var
+          | _ -> raise Multiple_existential_occurrences )
+  with Multiple_existential_occurrences -> Many
+
+let excise_exp ({us; min; xs} as goal) pure exp =
+  let exp' = Congruence.normalize min.cong exp in
+  if Exp.is_true exp' then Some ({goal with pgs= true}, pure)
+  else
+    match single_existential_occurrence xs exp' with
+    | Zero -> None
+    | One x ->
+        Some
+          ( { goal with
+              us= Set.add us x
+            ; min= Sh.and_ exp' min
+            ; xs= Set.remove xs x
+            ; pgs= true }
+          , pure )
+    | Many -> Some (goal, exp' :: pure)
+
+let excise_pure ({sub} as goal) =
   [%Trace.info "@[<2>excise_pure@ %a@]" pp goal] ;
-  List.fold_option sub.pure ~init:(us, [], xs, [], pgs)
-    ~f:(fun (us, witnesses, xs, pure, pgs) exp ->
-      excise_exp goal (us, witnesses, xs, pure, pgs) exp )
-  >>| fun (us, witnesses, xs, pure, pgs) ->
-  let min = List.fold_right witnesses ~init:min ~f:Sh.and_ in
-  {goal with us; min; xs; sub= Sh.with_pure pure sub; pgs}
+  List.fold_option sub.pure ~init:(goal, []) ~f:(fun (goal, pure) exp ->
+      excise_exp goal pure exp )
+  >>| fun (goal, pure) -> {goal with sub= Sh.with_pure pure sub}
 
 (*   [k; o)
  * ⊢ [l; n)
