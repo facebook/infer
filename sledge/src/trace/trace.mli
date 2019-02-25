@@ -23,7 +23,7 @@ type config =
 
 val none : config
 val all : config
-val parse : string -> config
+val parse : string -> (config, [> `Msg of string]) result
 
 val init : ?margin:int -> config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)

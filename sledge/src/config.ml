@@ -9,8 +9,9 @@
 
 let trace_conv =
   let parse s =
-    try Ok (Trace.parse s).trace_mods_funs with _ ->
-      Error (`Msg ("Invalid trace spec: " ^ s))
+    match Trace.parse s with
+    | Ok c -> Ok c.trace_mods_funs
+    | Error err -> Error err
   in
   let print fs c =
     let pf fmt = Format.fprintf fs fmt in
