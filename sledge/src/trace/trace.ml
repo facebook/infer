@@ -148,5 +148,13 @@ let report fmt =
   Format.fprintf fs "@\n@[<2>| " ;
   Format.kfprintf (fun fs -> Format.fprintf fs "@]" ; false) fs fmt
 
+let fail fmt =
+  Format.fprintf fs "@\n@[<2>| " ;
+  Format.kfprintf
+    (fun fs ->
+      Format.fprintf fs "@]@." ;
+      assert false )
+    fs fmt
+
 let%test_module _ =
   (module struct let () = init ~margin:70 ~config:!config () end)

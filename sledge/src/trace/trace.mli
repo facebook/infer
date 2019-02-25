@@ -54,3 +54,6 @@ val flush : unit -> unit
 
 val report : ('a, Formatter.t, unit, bool) format4 -> 'a
 (** Emit a message at the current indentation level, and return [false]. *)
+
+val fail : ('a, Formatter.t, unit, _) format4 -> 'a
+(** Emit a message at the current indentation level, and [assert false]. *)
