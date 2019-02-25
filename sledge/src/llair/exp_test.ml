@@ -194,11 +194,11 @@ let%test_module _ =
 
     let%expect_test _ =
       pf (!3 * y = z = Exp.bool false) ;
-      [%expect {| (%z_2 != (3 × %y_1)) |}]
+      [%expect {| (%z_2 ≠ (3 × %y_1)) |}]
 
     let%expect_test _ =
       pf (Exp.bool false = (!3 * y = z)) ;
-      [%expect {| (%z_2 != (3 × %y_1)) |}]
+      [%expect {| (%z_2 ≠ (3 × %y_1)) |}]
 
     let%expect_test _ =
       pf (y - (!(-3) * y) + !4) ;

@@ -162,13 +162,14 @@ module T = struct
       | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
       | Splat -> pf "^"
       | Memory -> pf "⟨_,_⟩"
+      | App {op= Memory; arg= siz} -> pf "@<1>⟨%a,_@<1>⟩" pp siz
       | App {op= App {op= Memory; arg= siz}; arg= bytes} ->
           pf "@<1>⟨%a,%a@<1>⟩" pp siz pp bytes
       | Concat -> pf "^"
       | Integer {data} -> pf "%a" Z.pp data
       | Float {data} -> pf "%s" data
       | Eq -> pf "="
-      | Dq -> pf "!="
+      | Dq -> pf "@<1>≠"
       | Gt -> pf ">"
       | Ge -> pf ">="
       | Lt -> pf "<"
@@ -203,14 +204,21 @@ module T = struct
       | Lshr -> pf "lshr"
       | Ashr -> pf "ashr"
       | Conditional -> pf "(_?_:_)"
+      | App {op= Conditional; arg= cnd} -> pf "(%a@ ? _:_)" pp cnd
+      | App {op= App {op= Conditional; arg= cnd}; arg= thn} ->
+          pf "(%a@ ? %a@ : _)" pp cnd pp thn
       | App
           {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
         ->
           pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
       | Select -> pf "_[_]"
+      | App {op= Select; arg= rcd} -> pf "%a[_]" pp rcd
       | App {op= App {op= Select; arg= rcd}; arg= idx} ->
           pf "%a[%a]" pp rcd pp idx
       | Update -> pf "[_|_→_]"
+      | App {op= Update; arg= rcd} -> pf "[%a@ @[| _→_@]]" pp rcd
+      | App {op= App {op= Update; arg= rcd}; arg= elt} ->
+          pf "[%a@ @[| _→ %a@]]" pp rcd pp elt
       | App {op= App {op= App {op= Update; arg= rcd}; arg= elt}; arg= idx}
         ->
           pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
@@ -805,9 +813,9 @@ let simp_or x y =
 
 let rec simp_not (typ : Typ.t) exp =
   match (exp, typ) with
-  (* ¬(x = y) ==> x != y *)
+  (* ¬(x = y) ==> x ≠ y *)
   | App {op= App {op= Eq; arg= x}; arg= y}, _ -> simp_dq x y
-  (* ¬(x != y) ==> x = y *)
+  (* ¬(x ≠ y) ==> x = y *)
   | App {op= App {op= Dq; arg= x}; arg= y}, _ -> simp_eq x y
   (* ¬(x > y) ==> x <= y *)
   | App {op= App {op= Gt; arg= x}; arg= y}, _ -> simp_le x y
@@ -825,9 +833,9 @@ let rec simp_not (typ : Typ.t) exp =
   | App {op= App {op= Ult; arg= x}; arg= y}, _ -> simp_uge x y
   (* ¬(x u<= y) ==> x u> y *)
   | App {op= App {op= Ule; arg= x}; arg= y}, _ -> simp_ugt x y
-  (* ¬(x != nan ∧ y != nan) ==> x = nan ∨ y = nan *)
+  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
   | App {op= App {op= Ord; arg= x}; arg= y}, _ -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x != nan ∧ y != nan *)
+  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
   | App {op= App {op= Uno; arg= x}; arg= y}, _ -> simp_ord x y
   (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
   | App {op= App {op= And; arg= x}; arg= y}, Integer {bits= 1} ->

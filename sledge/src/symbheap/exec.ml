@@ -261,7 +261,7 @@ let strlen_spec us reg ptr =
 (* execute a command with given spec from pre *)
 let exec_spec pre {xs; foot; post} =
   [%Trace.call fun {pf} ->
-    pf "@[%a@]@ @[<2>%a@,@[{%a}@;<0 -1>-{%a}@]@]" Sh.pp pre
+    pf "@[%a@]@ @[<2>%a@,@[{%a  }@;<1 -1>-- {%a  }@]@]" Sh.pp pre
       (Sh.pp_us ~pre:"@<2>∀ ")
       xs Sh.pp foot Sh.pp post ;
     assert (
