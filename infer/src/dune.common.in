@@ -29,7 +29,7 @@ let java = is_yes "@BUILD_JAVA_ANALYZERS@"
 
 let facebook = is_yes "@IS_FACEBOOK_TREE@"
 
-let extra_cflags = if "@EXTRA_CFLAGS" = "" then [] else ["@EXTRA_CFLAGS@"]
+let extra_cflags = if "@EXTRA_CFLAGS@" = "" then [] else ["@EXTRA_CFLAGS@"]
 
 let common_cflags =
   let fatal_warnings =
