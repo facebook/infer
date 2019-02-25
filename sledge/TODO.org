@@ -16,6 +16,7 @@ rather than nearest enclosing
 ** revise spec of strlen to account for non-max length strings
 ** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
 * llair
+** simplify "greater-than" exps to "less-than" in reverse order
 ** when Xor exps have types, simplify e xor e to 0
 ** normalize polynomial equations by dividing coefficients by their gcd
 ** treat Typ.ptr as an integer of some particular size (i.e. ptr = intptr)
@@ -221,7 +222,6 @@ us and xs, or just fv?
 since they (could) have the same domain
 ** optimize: can identity mappings in lkp be removed?
 * symbolic heap
-** NEXT normalize conditional exps to disjunction
 ** Congruence should handle equalities of equalities to integers
 currently handled by Sh.pure
 ** normalize exps in terms of reps
@@ -419,3 +419,5 @@ It seems possible that two edges will be distinct only due to differences betwee
 ** start-anywhere/bottom-up analysis
 ** non-dnf solver
 ** arithmetic constraints
+** overflow analysis
+- Currently expressions are shared between the IR for code and the analyzer's formulas. In order to strengthen the analyzer to detect overflow, it will likely be necessary to distinguish these, letting the analyzer normalize with polynomials, while keeping the same order of operations as the source for the IR. Plus another level of transformers for the IR expressions where their abstract values could be checked for being in range, etc.
