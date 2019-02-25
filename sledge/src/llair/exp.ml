@@ -116,6 +116,8 @@ module T0 = struct
   [@@deriving compare, hash, sexp]
 
   let equal = [%compare.equal: t]
+  let sorted e f = compare e f <= 0
+  let sort e f = if sorted e f then (e, f) else (f, e)
 end
 
 module T = struct
@@ -406,9 +408,12 @@ let invariant ?(partial = false) e =
    |Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
     | [x; y] -> (
-      match (typ_of x, typ_of y) with
-      | Some typ, Some typ' -> assert (Typ.castable typ typ')
-      | _ -> assert true )
+        ( match op with
+        | Eq | Dq | And | Or | Xor -> assert (sorted x y)
+        | _ -> () ) ;
+        match (typ_of x, typ_of y) with
+        | Some typ, Some typ' -> assert (Typ.castable typ typ')
+        | _ -> assert true )
     | _ -> assert_arity 2 )
   | Splat | Memory | Concat | Ord | Uno | Select -> assert_arity 2
   | Conditional | Update -> assert_arity 3
@@ -682,7 +687,7 @@ let rec simp_mul typ axs bys =
       | ax0I, Integer {data= i}, by0M, Integer {data= j} ->
           mul_mf (mul_mm ax0I by0M) (integer (Z.mul ~bits i j) typ)
       | ax0I, axJ, by0M, byN ->
-          if compare axJ byN < 0 then mul_mf (mul_mm ax0J by0M) byN
+          if compare axJ byN <= 0 then mul_mf (mul_mm ax0J by0M) byN
           else mul_mf (mul_mm ax0I by0N) axJ )
   in
   let rec mul_pm ax0J by =
@@ -783,10 +788,10 @@ let simp_and x y =
     when Z.is_false data ->
       f
   | _ ->
-      let c = compare x y in
+      let ord = compare x y in
       (* e && e ==> e *)
-      if c = 0 then x
-      else if c < 0 then App {op= App {op= And; arg= x}; arg= y}
+      if ord = 0 then x
+      else if ord < 0 then App {op= App {op= And; arg= x}; arg= y}
       else App {op= App {op= And; arg= y}; arg= x}
 
 let simp_or x y =
@@ -805,10 +810,10 @@ let simp_or x y =
     when Z.is_false data ->
       e
   | _ ->
-      let c = compare x y in
+      let ord = compare x y in
       (* e || e ==> e *)
-      if c = 0 then x
-      else if c < 0 then App {op= App {op= Or; arg= x}; arg= y}
+      if ord = 0 then x
+      else if ord < 0 then App {op= App {op= Or; arg= x}; arg= y}
       else App {op= App {op= Or; arg= y}; arg= x}
 
 let rec simp_not (typ : Typ.t) exp =
@@ -888,11 +893,11 @@ and simp_eq x y =
       else (* b = true ==> b *)
         b
   | x, y ->
-      let c = compare x y in
+      let ord = compare x y in
       (* e = e ==> true *)
-      if c = 0 then bool true
-      else if c < 0 then App {op= App {op= Eq; arg= y}; arg= x}
-      else App {op= App {op= Eq; arg= x}; arg= y}
+      if ord = 0 then bool true
+      else if ord < 0 then App {op= App {op= Eq; arg= x}; arg= y}
+      else App {op= App {op= Eq; arg= y}; arg= x}
 
 and simp_dq x y =
   match simp_eq x y with
@@ -911,8 +916,8 @@ let simp_xor x y =
     when Z.is_true data ->
       simp_not Typ.bool b
   | _ ->
-      let c = compare x y in
-      if c <= 0 then App {op= App {op= Xor; arg= x}; arg= y}
+      let ord = compare x y in
+      if ord <= 0 then App {op= App {op= Xor; arg= x}; arg= y}
       else App {op= App {op= Xor; arg= y}; arg= x}
 
 let simp_shl x y =

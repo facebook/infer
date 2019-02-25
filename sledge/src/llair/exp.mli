@@ -77,6 +77,8 @@ type exp = t
 include Comparator.S with type t := t
 
 val equal : t -> t -> bool
+val sort : t -> t -> t * t
+val sorted : t -> t -> bool
 val pp : t pp
 val invariant : ?partial:bool -> t -> unit
 
