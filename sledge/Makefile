@@ -39,7 +39,7 @@ watch: setup
 	dune build --watch _build/dev/src/sledge.exe _build/release/src/sledge.exe
 
 .PHONY: test
-test:
+test: setup
 	dune build @_build/dev/runtest --auto-promote
 
 BISECT_DIR=$(CURDIR)/_coverage/out
