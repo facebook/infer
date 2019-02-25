@@ -504,7 +504,7 @@ let excise_seg ({sub} as goal) msg ssg =
   (* k-l = 0 so k = l *)
   | 0 -> (
     match Congruence.difference sub.cong o n with
-    | None -> Some (excise_seg_same goal msg ssg)
+    | None -> Some {goal with sub= Sh.and_ (Exp.eq o n) goal.sub}
     | Some o_n -> (
       match[@warning "-p"] Z.sign o_n with
       (* o-n < 0      [k; o)
