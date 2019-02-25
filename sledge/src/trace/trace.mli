@@ -22,6 +22,7 @@ type config =
         (** Specify tracing of individual toplevel modules *) }
 
 val none : config
+val all : config
 
 val init : ?margin:int -> config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)

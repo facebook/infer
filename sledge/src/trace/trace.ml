@@ -20,6 +20,7 @@ type trace_mods_funs = trace_mod_funs Map.M(String).t
 type config = {trace_all: bool; trace_mods_funs: trace_mods_funs}
 
 let none = {trace_all= false; trace_mods_funs= Map.empty (module String)}
+let all = {none with trace_all= true}
 let config : config ref = ref none
 
 let init ?(margin = 300) ~config:c () =
