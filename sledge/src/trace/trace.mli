@@ -21,6 +21,8 @@ type config =
   ; trace_mods_funs: trace_mods_funs
         (** Specify tracing of individual toplevel modules *) }
 
+val none : config
+
 val init : ?margin:int -> config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)
 

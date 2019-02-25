@@ -84,7 +84,10 @@ type t =
         (** Dump $(i,input.bc) translated to LLAIR in human-readable form to
             $(i,output.llair), or $(b,-) for $(b,stdout). *)
   ; trace: Trace.trace_mods_funs
-         [@aka ["t"]] [@docv "spec"] [@conv trace_conv]
+         [@aka ["t"]]
+         [@docv "spec"]
+         [@conv trace_conv]
+         [@default Trace.none.trace_mods_funs]
         (** Enable debug tracing according to $(i,spec), which is a sequence
             of module and function names separated by $(b,+) or $(b,-). For
             example, $(b,Control-Control.exec_inst) enables all tracing in

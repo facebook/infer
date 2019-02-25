@@ -19,8 +19,8 @@ type trace_mod_funs =
 type trace_mods_funs = trace_mod_funs Map.M(String).t
 type config = {trace_all: bool; trace_mods_funs: trace_mods_funs}
 
-let config : config ref =
-  ref {trace_all= false; trace_mods_funs= Map.empty (module String)}
+let none = {trace_all= false; trace_mods_funs= Map.empty (module String)}
+let config : config ref = ref none
 
 let init ?(margin = 300) ~config:c () =
   Format.set_margin margin ;
