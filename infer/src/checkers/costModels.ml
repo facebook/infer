@@ -17,7 +17,7 @@ module Collections = struct
         BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
         |> BufferOverrunDomain.Val.get_itv
       in
-      match itv with Bottom -> Bounds.Bound.PInf | NonBottom itv_pure -> Itv.ItvPure.ub itv_pure
+      match itv with Bottom -> Bounds.Bound.pinf | NonBottom itv_pure -> Itv.ItvPure.ub itv_pure
     in
     Bounds.NonNegativeBound.of_modeled_function "List.length" loc upper_bound
 

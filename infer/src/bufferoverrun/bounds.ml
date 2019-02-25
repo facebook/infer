@@ -14,6 +14,25 @@ exception Not_One_Symbol
 
 open Ints
 
+type sign = Plus | Minus [@@deriving compare]
+
+module Sign = struct
+  type t = sign [@@deriving compare]
+
+  let neg = function Plus -> Minus | Minus -> Plus
+
+  let eval_big_int x i1 i2 = match x with Plus -> Z.(i1 + i2) | Minus -> Z.(i1 - i2)
+
+  let eval_neg_if_minus x i = match x with Plus -> i | Minus -> Z.neg i
+
+  let pp ~need_plus : F.formatter -> t -> unit =
+   fun fmt -> function
+    | Plus ->
+        if need_plus then F.pp_print_char fmt '+'
+    | Minus ->
+        F.pp_print_char fmt '-'
+end
+
 module SymLinear = struct
   module M = Symb.SymbolMap
 
@@ -132,13 +151,11 @@ module SymLinear = struct
 
 
   let is_one_symbol_of : Symb.Symbol.t -> t -> bool =
-   fun s x ->
-    Option.value_map (get_one_symbol_opt x) ~default:false ~f:(fun s' -> Symb.Symbol.equal s s')
+   fun s x -> Option.exists (get_one_symbol_opt x) ~f:(fun s' -> Symb.Symbol.equal s s')
 
 
   let is_mone_symbol_of : Symb.Symbol.t -> t -> bool =
-   fun s x ->
-    Option.value_map (get_mone_symbol_opt x) ~default:false ~f:(fun s' -> Symb.Symbol.equal s s')
+   fun s x -> Option.exists (get_mone_symbol_opt x) ~f:(fun s' -> Symb.Symbol.equal s s')
 
 
   let get_symbols : t -> Symb.SymbolSet.t =
@@ -186,25 +203,6 @@ module SymLinear = struct
 end
 
 module Bound = struct
-  type sign = Plus | Minus [@@deriving compare]
-
-  module Sign = struct
-    type t = sign [@@deriving compare]
-
-    let neg = function Plus -> Minus | Minus -> Plus
-
-    let eval_big_int x i1 i2 = match x with Plus -> Z.(i1 + i2) | Minus -> Z.(i1 - i2)
-
-    let eval_neg_if_minus x i = match x with Plus -> i | Minus -> Z.neg i
-
-    let pp ~need_plus : F.formatter -> t -> unit =
-     fun fmt -> function
-      | Plus ->
-          if need_plus then F.pp_print_char fmt '+'
-      | Minus ->
-          F.pp_print_char fmt '-'
-  end
-
   type min_max = Min | Max [@@deriving compare]
 
   module MinMax = struct
@@ -254,13 +252,33 @@ module Bound = struct
 
   let of_bound_end = function Symb.BoundEnd.LowerBound -> MInf | Symb.BoundEnd.UpperBound -> PInf
 
-  let of_int : int -> t = fun n -> Linear (Z.of_int n, SymLinear.empty)
-
   let of_big_int : Z.t -> t = fun n -> Linear (n, SymLinear.empty)
 
-  let minus_one = of_int (-1)
+  let of_int : int -> t = fun n -> of_big_int (Z.of_int n)
 
-  let _255 = of_int 255
+  let minf = MInf
+
+  let mone = of_big_int Z.minus_one
+
+  let z255 = of_int 255
+
+  let zero = of_big_int Z.zero
+
+  let one = of_big_int Z.one
+
+  let pinf = PInf
+
+  let is_some_const : Z.t -> t -> bool =
+   fun c x -> match x with Linear (c', y) -> Z.equal c c' && SymLinear.is_zero y | _ -> false
+
+
+  let is_zero : t -> bool = is_some_const Z.zero
+
+  let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
+
+  let is_minf = function MInf -> true | _ -> false
+
+  let is_pinf = function PInf -> true | _ -> false
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
 
@@ -631,8 +649,6 @@ module Bound = struct
         overapprox_max
 
 
-  let zero : t = Linear (Z.zero, SymLinear.zero)
-
   module Thresholds : sig
     type bound = t
 
@@ -708,16 +724,6 @@ module Bound = struct
 
 
   let widen_u : t -> t -> t = fun x y -> widen_u_thresholds ~thresholds:[] x y
-
-  let one : t = Linear (Z.one, SymLinear.zero)
-
-  let mone : t = Linear (Z.minus_one, SymLinear.zero)
-
-  let is_some_const : Z.t -> t -> bool =
-   fun c x -> match x with Linear (c', y) -> Z.equal c c' && SymLinear.is_zero y | _ -> false
-
-
-  let is_zero : t -> bool = is_some_const Z.zero
 
   let is_const : t -> Z.t option =
    fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
@@ -850,8 +856,6 @@ module Bound = struct
 
 
   let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
-
-  let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
 
   (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as possible according to [subst_pos]. *)
   let subst : subst_pos:Symb.BoundEnd.t -> t -> eval_sym -> t bottom_lifted =

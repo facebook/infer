@@ -8,24 +8,8 @@
 open! IStd
 module F = Format
 
-exception Not_One_Symbol
-
-module SymLinear : sig
-  module M = Symb.SymbolMap
-
-  type t = Ints.NonZeroInt.t M.t
-end
-
 module Bound : sig
-  type sign = Plus | Minus
-
-  type min_max = Min | Max
-
-  type t =
-    | MInf
-    | Linear of Z.t * SymLinear.t
-    | MinMax of Z.t * sign * min_max * Z.t * Symb.Symbol.t
-    | PInf
+  type t
 
   type eval_sym = t Symb.Symbol.eval
 
@@ -39,9 +23,17 @@ module Bound : sig
 
   val of_big_int : Z.t -> t
 
-  val minus_one : t
+  val minf : t
 
-  val _255 : t
+  val mone : t
+
+  val zero : t
+
+  val one : t
+
+  val z255 : t
+
+  val pinf : t
 
   val of_normal_path :
        (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
@@ -54,6 +46,14 @@ module Bound : sig
 
   val of_length_path :
     (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+
+  val is_zero : t -> bool
+
+  val is_not_infty : t -> bool
+
+  val is_minf : t -> bool
+
+  val is_pinf : t -> bool
 
   val is_symbolic : t -> bool
 
@@ -83,14 +83,6 @@ module Bound : sig
 
   val widen_u_thresholds : thresholds:Z.t list -> t -> t -> t
 
-  val zero : t
-
-  val one : t
-
-  val mone : t
-
-  val is_zero : t -> bool
-
   val is_const : t -> Z.t sexp_option
 
   val plus_l : t -> t -> t
@@ -110,8 +102,6 @@ module Bound : sig
   val get_symbols : t -> Symb.SymbolSet.t
 
   val are_similar : t -> t -> bool
-
-  val is_not_infty : t -> bool
 
   val subst_lb : t -> eval_sym -> t AbstractDomain.Types.bottom_lifted
 

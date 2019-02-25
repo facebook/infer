@@ -40,7 +40,7 @@ module ItvPure = struct
 
   let ub : t -> Bound.t = snd
 
-  let is_lb_infty : t -> bool = function MInf, _ -> true | _ -> false
+  let is_lb_infty : t -> bool = fun (l, _) -> Bound.is_minf l
 
   let is_finite : t -> bool =
    fun (l, u) ->
@@ -49,7 +49,7 @@ module ItvPure = struct
 
   let have_similar_bounds (l1, u1) (l2, u2) = Bound.are_similar l1 l2 && Bound.are_similar u1 u2
 
-  let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
+  let has_infty (l, u) = Bound.is_minf l || Bound.is_pinf u
 
   let exists_str ~f (l, u) = Bound.exists_str ~f l || Bound.exists_str ~f u
 
@@ -121,19 +121,19 @@ module ItvPure = struct
 
   let mone = of_bound Bound.mone
 
-  let zero_255 = (Bound.zero, Bound._255)
+  let zero_255 = (Bound.zero, Bound.z255)
 
-  let m1_255 = (Bound.minus_one, Bound._255)
+  let m1_255 = (Bound.mone, Bound.z255)
 
-  let nat = (Bound.zero, Bound.PInf)
+  let nat = (Bound.zero, Bound.pinf)
 
   let one = of_bound Bound.one
 
-  let pos = (Bound.one, Bound.PInf)
+  let pos = (Bound.one, Bound.pinf)
 
   let set_lb_zero (_, ub) = (Bound.zero, ub)
 
-  let top = (Bound.MInf, Bound.PInf)
+  let top = (Bound.minf, Bound.pinf)
 
   let zero = of_bound Bound.zero
 
@@ -145,9 +145,9 @@ module ItvPure = struct
 
   let unknown_bool = join false_sem true_sem
 
-  let is_top : t -> bool = function Bound.MInf, Bound.PInf -> true | _ -> false
+  let is_top : t -> bool = fun (l, u) -> Bound.is_minf l && Bound.is_pinf u
 
-  let is_nat : t -> bool = function l, Bound.PInf -> Bound.is_zero l | _ -> false
+  let is_nat : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_pinf u
 
   let is_const : t -> Z.t option =
    fun (l, u) ->
@@ -222,12 +222,12 @@ module ItvPure = struct
         if NonZeroInt.is_one n then itv
         else if NonZeroInt.is_minus_one n then neg itv
         else if NonZeroInt.is_positive n then
-          let l' = Option.value ~default:Bound.MInf (Bound.div_const_l l n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.div_const_u u n) in
+          let l' = Option.value ~default:Bound.minf (Bound.div_const_l l n) in
+          let u' = Option.value ~default:Bound.pinf (Bound.div_const_u u n) in
           (l', u')
         else
-          let l' = Option.value ~default:Bound.MInf (Bound.div_const_l u n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.div_const_u l n) in
+          let l' = Option.value ~default:Bound.minf (Bound.div_const_l u n) in
+          let u' = Option.value ~default:Bound.pinf (Bound.div_const_u l n) in
           (l', u')
 
 
@@ -296,7 +296,7 @@ module ItvPure = struct
         if Z.(equal x' y') then x else of_big_int Z.(x' land y')
     | _, _ ->
         if is_ge_zero x && is_ge_zero y then (Bound.zero, Bound.overapprox_min (ub x) (ub y))
-        else if is_le_zero x && is_le_zero y then (Bound.MInf, Bound.overapprox_min (ub x) (ub y))
+        else if is_le_zero x && is_le_zero y then (Bound.minf, Bound.overapprox_min (ub x) (ub y))
         else top
 
 
@@ -336,12 +336,7 @@ module ItvPure = struct
    fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_min u1 u2)
 
 
-  let is_invalid : t -> bool = function
-    | Bound.PInf, _ | _, Bound.MInf ->
-        true
-    | l, u ->
-        Bound.lt u l
-
+  let is_invalid : t -> bool = fun (l, u) -> Bound.is_pinf l || Bound.is_minf u || Bound.lt u l
 
   let normalize : t -> t bottom_lifted = fun x -> if is_invalid x then Bottom else NonBottom x
 
