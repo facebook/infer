@@ -664,7 +664,8 @@ let rec simp_mul typ axs bys =
     | x, Integer {data} when Z.equal Z.one data -> x
     | _, Integer {data} when Z.equal Z.zero data -> y
     | Integer {data}, _ when Z.equal Z.zero data -> x
-    | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+    | Integer {data= i; typ}, Integer {data= j} ->
+        let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
         integer (Z.mul ~bits i j) typ
     | _ -> App {op= App {op= Mul {typ}; arg= x}; arg= y}
   in
@@ -715,7 +716,8 @@ and simp_add typ axs bys =
     match (x, y) with
     | Integer {data}, y when Z.equal Z.zero data -> y
     | x, Integer {data} when Z.equal Z.zero data -> x
-    | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+    | Integer {data= i; typ}, Integer {data= j} ->
+        let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
         integer (Z.add ~bits i j) typ
     | _ -> App {op= App {op= Add {typ}; arg= x}; arg= y}
   in
@@ -758,7 +760,8 @@ let simp_negate typ x = simp_mul typ (integer Z.minus_one typ) x
 let simp_sub typ x y =
   match (x, y) with
   (* i - j *)
-  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.sub ~bits i j) typ
   (* x - y ==> x + (-1 * y) *)
   | _ -> simp_add typ x (simp_negate typ y)
@@ -775,7 +778,8 @@ let simp_cond cnd thn els =
 let simp_and x y =
   match (x, y) with
   (* i && j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.logand ~bits i j) typ
   (* e && true ==> e *)
   | Integer {data; typ= Integer {bits= 1}}, e
@@ -797,7 +801,8 @@ let simp_and x y =
 let simp_or x y =
   match (x, y) with
   (* i || j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.logor ~bits i j) typ
   (* e || true ==> true *)
   | (Integer {data; typ= Integer {bits= 1}} as t), _
@@ -883,7 +888,8 @@ and simp_eq x y =
           (x_y, integer Z.zero typ) )
     | _ -> (x, y)
   with
-  | Integer {data= i; typ= Integer {bits}}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       (* i = j *)
       bool (Z.eq ~bits i j)
   | b, Integer {data; typ= Integer {bits= 1}}
@@ -908,7 +914,8 @@ and simp_dq x y =
 let simp_xor x y =
   match (x, y) with
   (* i xor j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.logxor ~bits i j) typ
   (* true xor b ==> ¬b *)
   | Integer {data; typ= Integer {bits= 1}}, b
@@ -923,8 +930,8 @@ let simp_xor x y =
 let simp_shl x y =
   match (x, y) with
   (* i shl j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.fits_int j ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.fits_int j ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.shift_left ~bits i (Z.to_int j)) typ
   (* e shl 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
@@ -933,8 +940,8 @@ let simp_shl x y =
 let simp_lshr x y =
   match (x, y) with
   (* i lshr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.fits_int j ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.fits_int j ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.shift_right_trunc ~bits i (Z.to_int j)) typ
   (* e lshr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
@@ -943,8 +950,8 @@ let simp_lshr x y =
 let simp_ashr x y =
   match (x, y) with
   (* i ashr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.fits_int j ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.fits_int j ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.shift_right ~bits i (Z.to_int j)) typ
   (* e ashr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
@@ -953,7 +960,8 @@ let simp_ashr x y =
 let simp_div x y =
   match (x, y) with
   (* i / j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.div ~bits i j) typ
   (* e / 1 ==> e *)
   | Integer {data}, e when Z.equal Z.one data -> e
@@ -962,7 +970,8 @@ let simp_div x y =
 let simp_udiv x y =
   match (x, y) with
   (* i u/ j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.udiv ~bits i j) typ
   (* e u/ 1 ==> e *)
   | Integer {data}, e when Z.equal Z.one data -> e
@@ -971,7 +980,8 @@ let simp_udiv x y =
 let simp_rem x y =
   match (x, y) with
   (* i % j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.rem ~bits i j) typ
   (* e % 1 ==> 0 *)
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
@@ -980,7 +990,8 @@ let simp_rem x y =
 let simp_urem x y =
   match (x, y) with
   (* i u% j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} ->
+      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.urem ~bits i j) typ
   (* e u% 1 ==> 0 *)
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
