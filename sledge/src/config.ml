@@ -8,55 +8,9 @@
 (** Configuration options *)
 
 let trace_conv =
-  let default = Map.empty (module String) in
   let parse s =
-    try
-      let index_from s i =
-        Option.merge ~f:min
-          (String.index_from s i '+')
-          (String.index_from s i '-')
-      in
-      let rec split s rev_parts i =
-        match index_from s (i + 1) with
-        | Some j when j = i -> split s rev_parts j
-        | Some j ->
-            split s (String.sub s ~pos:i ~len:(j - i) :: rev_parts) j
-        | _ -> List.rev (String.subo s ~pos:i :: rev_parts)
-      in
-      let parts = split s [] 0 in
-      List.fold parts ~init:default ~f:(fun m part ->
-          let parse_part part =
-            let sign, rest =
-              match part.[0] with
-              | '-' -> (false, String.subo part ~pos:1)
-              | '+' -> (true, String.subo part ~pos:1)
-              | _ -> (true, part)
-            in
-            assert (not (String.is_empty rest)) ;
-            assert (Char.is_uppercase rest.[0]) ;
-            match String.lsplit2 rest ~on:'.' with
-            | Some (mod_name, fun_name) ->
-                assert (Char.is_lowercase fun_name.[0]) ;
-                (mod_name, Some fun_name, sign)
-            | None -> (rest, None, sign)
-          in
-          match parse_part part with
-          | mod_name, Some fun_name, enabled ->
-              let {trace_mod; trace_funs} =
-                match Map.find m mod_name with
-                | Some c -> c
-                | None -> {trace_mod= None; trace_funs= default}
-              in
-              Map.set m ~key:mod_name
-                ~data:
-                  { trace_mod
-                  ; trace_funs=
-                      Map.set trace_funs ~key:fun_name ~data:enabled }
-          | mod_name, None, enabled ->
-              Map.set m ~key:mod_name
-                ~data:{trace_mod= Some enabled; trace_funs= default} )
-      |> fun x -> Ok x
-    with _ -> Error (`Msg ("Invalid trace spec: " ^ s))
+    try Ok (Trace.parse s).trace_mods_funs with _ ->
+      Error (`Msg ("Invalid trace spec: " ^ s))
   in
   let print fs c =
     let pf fmt = Format.fprintf fs fmt in
