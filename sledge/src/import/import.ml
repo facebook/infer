@@ -265,6 +265,12 @@ module Set = struct
   let to_tree = Using_comparator.to_tree
 end
 
+module Mset = struct
+  include Mset
+
+  let pp sep pp_elt fs s = List.pp sep pp_elt fs (to_list s)
+end
+
 module Z = struct
   include Z
 

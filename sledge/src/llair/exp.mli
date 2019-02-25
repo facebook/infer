@@ -21,9 +21,14 @@
     treated as atomic since, as they are recursive, doing otherwise would
     require inductive reasoning. *)
 
-type t = private
+type comparator_witness
+
+type mset = (t, comparator_witness) Mset.t
+
+and t = private
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
+  | AppN of {op: t; args: mset}
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
@@ -72,9 +77,9 @@ type t = private
       (** Convert between specified types, possibly with loss of information *)
 [@@deriving compare, hash, sexp]
 
-type exp = t
+val comparator : (t, comparator_witness) Comparator.t
 
-include Comparator.S with type t := t
+type exp = t
 
 val equal : t -> t -> bool
 val sort : t -> t -> t * t
@@ -150,6 +155,7 @@ val ult : t -> t -> t
 val ule : t -> t -> t
 val ord : t -> t -> t
 val uno : t -> t -> t
+val neg : Typ.t -> t -> t
 val add : Typ.t -> t -> t -> t
 val sub : Typ.t -> t -> t -> t
 val mul : Typ.t -> t -> t -> t
@@ -182,16 +188,30 @@ val struct_rec :
 
 val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 
+(** Destruct *)
+
+val base_offset : t -> (t * Z.t * Typ.t) option
+(** Decompose an addition of a constant "offset" to a "base" exp. *)
+
+val base : t -> t
+(** Like [base_offset] but does not construct the "offset" exp. *)
+
+val offset : t -> (Z.t * Typ.t) option
+(** Like [base_offset] but does not construct the "base" exp. *)
+
 (** Access *)
 
+val iter : t -> f:(t -> unit) -> unit
 val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 val fold_exps : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fold : t -> init:'a -> f:('a -> t -> 'a) -> 'a
-val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
+val for_all : t -> f:(t -> bool) -> bool
+val exists : t -> f:(t -> bool) -> bool
+
+(** Transform *)
+
 val map : t -> f:(t -> t) -> t
-
-(** Update *)
-
+val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
 val rename : t -> Var.Subst.t -> t
 
 (** Query *)
@@ -199,4 +219,5 @@ val rename : t -> Var.Subst.t -> t
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
+val is_simple : t -> bool
 val is_constant : t -> bool

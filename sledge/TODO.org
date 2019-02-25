@@ -1,3 +1,5 @@
+* overall
+** rename accumulators from [z] to [s] for "state"
 * llvm
 * import
 ** consider adding set ops that operate on a set and the domain of a map
@@ -16,7 +18,16 @@ rather than nearest enclosing
 ** revise spec of strlen to account for non-max length strings
 ** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
 * llair
-** simplify "greater-than" exps to "less-than" in reverse order
+** divide Exp into two: one for code and one for formulas
+- Exp simplification does not preserve order of operations, which is wrong wrt overflow
+- code Exps don't need polynomial simplification
+- code Exps could be given strong types in order to check the frontend, while letting formula Exps have weaker types as dictated by the logic
+- treat formula exps as unbounded, clamp to bounded range when conferting to a code exp
+** check if simplification via simp_sub in simp_eq is still needed
+- it leads to violations of the subexp assertion on app1
+** replace Option.value_exn (Typ.prim_bit_size_of typ) with bits_of_int
+** simplify combinations of mul and div, e.g. x * (y / z) ==> (x * y) / z
+** ? simplify "greater-than" exps to "less-than" in reverse order
 ** when Xor exps have types, simplify e xor e to 0
 ** normalize polynomial equations by dividing coefficients by their gcd
 ** treat Typ.ptr as an integer of some particular size (i.e. ptr = intptr)
@@ -215,6 +226,14 @@ it is not obvious whether it will be simpler to use free variables instead of No
 ** llvm bugs?
 - Why aren't shufflevector instructions with zeroinitializer masks eliminated by the scalarizer pass?
 * congruence
+** should handle equality and disequality simplification
+- equalities of equalities to integers currently handled by Sh.pure
+- doing it in Exp leads to violations of the subexp assertion on app1
+** optimize: change Cls.t and Use.t from a list to an unbalanced tree data structure
+- only need empty, add, union, map, fold, fold_map to be fast, so no need for balancing
+- detecting duplicates probably not worth the time since if any occur, the only cost is adding a redundant equation to pnd which will be quickly processed
+** optimize: when called from extend, norm_extend calls norm unnecessarily
+** revise mli to two sections, one for a "relation" api (with merge, mem/check, etc) and one for a "formula" api (with and_, or_, etc.)
 ** ? assert exps in formulas are in the carrier
 us and xs, or just fv?
 ** strengthen invariant
@@ -222,8 +241,6 @@ us and xs, or just fv?
 since they (could) have the same domain
 ** optimize: can identity mappings in lkp be removed?
 * symbolic heap
-** Congruence should handle equalities of equalities to integers
-currently handled by Sh.pure
 ** normalize exps in terms of reps
 - add operation to normalize by rewriting in terms of reps
 - check for unsat

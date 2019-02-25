@@ -212,8 +212,15 @@ module Set : sig
   val to_tree : ('e, 'c) t -> ('e, 'c) tree
 end
 
+module Mset : sig
+  include module type of Mset
+
+  val pp : (unit, unit) fmt -> ('a * Z.t) pp -> ('a, _) t pp
+  (** Pretty-print a multiset. *)
+end
+
 module Z : sig
-  include module type of Z
+  include module type of struct include Z end
 
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t

@@ -167,7 +167,7 @@ val find_exn : 'a t -> f:('a -> bool) -> 'a
 val contains_dup : compare:('a -> 'a -> int) -> 'a t -> bool
 
 (* val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option *)
-(* val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a *)
+val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
 (* val random_element :
  *   ?random_state:Base.Random.State.t -> 'a t -> 'a option *)

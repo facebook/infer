@@ -24,6 +24,9 @@ type prefer = Exp.t -> over:Exp.t -> int
 val true_ : t
 (** The diagonal relation, which only equates each exp with itself. *)
 
+val extend : t -> Exp.t -> t
+(** Extend the carrier of the relation. *)
+
 val merge : ?prefer:prefer -> t -> Exp.t -> Exp.t -> t
 (** Merge the equivalence classes of exps together. If [prefer a ~over:b] is
     positive, then [b] will not be used as the representative of a class

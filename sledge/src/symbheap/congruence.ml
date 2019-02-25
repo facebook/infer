@@ -7,16 +7,65 @@
 
 (** Congruence closure with integer offsets *)
 
-(* For background, see:
+(** For background, see:
 
-   Robert Nieuwenhuis, Albert Oliveras: Fast congruence closure and
-   extensions. Inf. Comput. 205(4): 557-580 (2007)
+    Robert Nieuwenhuis, Albert Oliveras: Fast congruence closure and
+    extensions. Inf. Comput. 205(4): 557-580 (2007)
 
-   and, for a more detailed correctness proof of the case without integer
-   offsets, see section 5 of:
+    and, for a more detailed correctness proof of the case without integer
+    offsets, see section 5 of:
 
-   Aleksandar Nanevski, Viktor Vafeiadis, Josh Berdine: Structuring the
-   verification of heap-manipulating programs. POPL 2010: 261-274 *)
+    Aleksandar Nanevski, Viktor Vafeiadis, Josh Berdine: Structuring the
+    verification of heap-manipulating programs. POPL 2010: 261-274 *)
+
+(** Lazy flattening:
+
+    The congruence closure data structure is used to lazily flatten
+    expressions. Flattening expressions gives each compound expression (e.g.
+    an application) a "name", which is treated as an atomic symbol. In the
+    background papers, fresh symbols are introduced to name compound
+    expressions in a pre-processing pass, but here we do not a priori know
+    the carrier (set of all expressions equations might relate). Instead, we
+    use the expression itself as its "name" and use the representative map
+    to record this naming. That is, if [f(a+i)] is in the domain of the
+    representative map, then "f(a+i)" is the name of the compound expression
+    [f(a+i)]. If [f(a+i)] is not in the domain of the representative map,
+    then it is not yet in the "carrier" of the relation. Adding it to the
+    carrier, which logically amounts to adding the equation [f(a+i) =
+    "f(a+i)"], extends the representative map, as well as the lookup map and
+    use lists, after which [f(a+i)] can be used as if it was a simple symbol
+    name for the compound expression.
+
+    Note that merging a compound equation of the form [f(a+i)+j = b+k]
+    results in naming [f(a+i)] and then merging the simple equation
+    ["f(a+i)"+j = b+k] normalized to ["f(a+i)" = b+(k-j)]. In particular,
+    every equation is either of the form ["f(a+i)" = f(a+i)] or of the form
+    [a = b+i], but not of the form [f(a+i) = b+j].
+
+    By the same reasoning, the range of the lookup table does not need
+    offsets, as every exp in the range of the lookup table will be the name
+    of a compound exp.
+
+    A consequence of lazy flattening is that the equations stored in the
+    lookup table, use lists, and pending equation list in the background
+    papers are here all of the form [f(a+i) = "f(a+i)"], and hence are
+    represented by the application expression itself.
+
+    Sparse carrier:
+
+    For symbols, that is expressions that are not compound [App]lications,
+    there are no cooperative invariants between components of the data
+    structure that need to be established. So adding a symbol to the carrier
+    would amount to adding an identity association to the representatives
+    map. Since we need to use a map instead of an array anyhow, this can be
+    represented sparsely by omitting identity associations in the
+    representative map. Note that identity associations for compound
+    expressions are still needed to record which compound expressions have
+    been added to the carrier.
+
+    Notation:
+
+    - often use identifiers such as [a'] for the representative of [a] *)
 
 (** set of exps representing congruence classes *)
 module Cls = struct
@@ -33,8 +82,10 @@ module Cls = struct
   let remove_exn = List.remove_exn
   let union = List.rev_append
   let fold_map = List.fold_map
+  let iter = List.iter
   let is_empty = List.is_empty
   let length = List.length
+  let map = List.map_preserving_phys_equal
   let mem = List.mem ~equal:Exp.equal
 end
 
@@ -44,70 +95,71 @@ module Use = struct
 
   let equal = [%compare.equal: t]
 
-  let pp fs use =
-    Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp) use
+  let pp fs uses =
+    Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp) uses
 
   let empty = []
-  let singleton exp = [exp]
-  let add use exp = exp :: use
+  let singleton use = [use]
+  let add uses use = use :: uses
   let union = List.rev_append
   let fold = List.fold
+  let iter = List.iter
+  let exists = List.exists
   let is_empty = List.is_empty
+  let map = List.map_preserving_phys_equal
 end
 
 type 'a exp_map = 'a Map.M(Exp).t [@@deriving compare, sexp]
 
-let empty_map = Map.empty (module Exp)
-
+(** see also [invariant] *)
 type t =
-  { sat: bool  (** [false] if constraints are inconsistent *)
+  { sat: bool  (** [false] only if constraints are inconsistent *)
   ; rep: Exp.t exp_map
-        (** map [a] to [a'+k], indicating that [a=a'+k] holds, and that [a']
-            (without the offset [k]) is the 'rep(resentative)' of [a] *)
+        (** map [a] to [a'+k], indicating that [a = a'+k] holds, and that
+            [a'] (without the offset [k]) is the 'rep(resentative)' of [a] *)
   ; lkp: Exp.t exp_map
-        (** inverse of mapping rep over sub-expressions: map [f'(a'+i)] to
-            [f(a+j)+k], an (offsetted) app(lication expression) in the
-            relation which normalizes to one in the 'equivalence modulo
-            offset' class of [f'(a'+i)], indicating that [f'(a'+i) =
-            f(a+j)+k] holds, for some [k] where [rep f = f'] and [rep a =
-            a'+(i-j)] *)
+        (** map [f'(a'+i)] to [f(a+j)], indicating that [f'(a'+i) = f(a+j)]
+            holds, where [f(a+j)] is in the carrier *)
   ; cls: Cls.t exp_map
         (** inverse rep: map each rep [a'] to all the [a+k] in its class,
-            i.e., [cls a' = {a+k | rep a = a'+(-k)}] *)
+            i.e., [cls a' = {a+(-k) | rep a = a'+k}] *)
   ; use: Use.t exp_map
         (** super-expression relation for representatives: map each
-            representative [a'] of [a] to the application expressions in the
-            relation where [a] (possibly + an offset) appears as an
-            immediate sub-expression *)
+            representative [a'] of [a] to the compound expressions in the
+            carrier where [a] (possibly + an offset) appears as an immediate
+            sub-expression *)
   ; pnd: (Exp.t * Exp.t) list
-        (** equations to be added to the relation, to enable delaying adding
-            equations discovered while invariants are temporarily broken *)
-  }
+        (** equations of the form [a+i = b+j], where [a] and [b] are in the
+            carrier, to be added to the relation by merging the classes of
+            [a] and [b] *) }
 [@@deriving compare, sexp]
 
-(** The expressions in the range of [lkp] and [use], as well as those in
-    [pnd], are 'in the relation' in the sense that there is some constraint
-    involving them, and in practice are expressions which have been passed
-    to [merge] as opposed to having been constructed internally. *)
+(** Pretty-printing *)
 
 let pp_eq fs (e, f) = Format.fprintf fs "@[%a = %a@]" Exp.pp e Exp.pp f
 
 let pp fs {sat; rep; lkp; cls; use; pnd} =
   let pp_alist pp_k pp_v fs alist =
     let pp_assoc fs (k, v) =
-      Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_k k pp_v v
+      Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_k k pp_v (k, v)
     in
     Format.fprintf fs "[@[<hv>%a@]]" (List.pp ";@ " pp_assoc) alist
   in
-  let pp_pnd fs pnd =
-    if not (List.is_empty pnd) then
-      Format.fprintf fs ";@ pnd= [@[<hv>%a@]];" (List.pp ";@ " pp_eq) pnd
-  in
+  let pp_exp_v fs (k, v) = if not (Exp.equal k v) then Exp.pp fs v in
+  let pp_cls_v fs (_, v) = Cls.pp fs v in
+  let pp_use_v fs (_, v) = Use.pp fs v in
   Format.fprintf fs
     "@[{@[<hv>sat= %b;@ rep= %a;@ lkp= %a;@ cls= %a;@ use= %a%a@]}@]" sat
-    (pp_alist Exp.pp Exp.pp) (Map.to_alist rep) (pp_alist Exp.pp Exp.pp)
-    (Map.to_alist lkp) (pp_alist Exp.pp Cls.pp) (Map.to_alist cls)
-    (pp_alist Exp.pp Use.pp) (Map.to_alist use) pp_pnd pnd
+    (pp_alist Exp.pp pp_exp_v)
+    (Map.to_alist rep)
+    (pp_alist Exp.pp pp_exp_v)
+    (Map.to_alist lkp)
+    (pp_alist Exp.pp pp_cls_v)
+    (Map.to_alist cls)
+    (pp_alist Exp.pp pp_use_v)
+    (Map.to_alist use)
+    (List.pp ~pre:";@ pnd= [@[<hv>" ";@ " pp_eq ~suf:"@]];")
+    pnd
 
 let pp_classes fs {cls} =
   List.pp "@ @<2>∧ "
@@ -138,32 +190,41 @@ let pp_diff fs (r, s) =
   let pp_sdiff_exps fs (c, d) =
     pp_sdiff_list "" Exp.pp Exp.compare fs (c, d)
   in
-  let pp_sdiff_elt pp_val pp_sdiff_val fs = function
+  let pp_sdiff_uses fs (c, d) =
+    pp_sdiff_list "" Exp.pp Exp.compare fs (c, d)
+  in
+  let pp_sdiff_elt pp_key pp_val pp_sdiff_val fs = function
     | k, `Left v ->
-        Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" Exp.pp k pp_val v
+        Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
     | k, `Right v ->
-        Format.fprintf fs "++ [@[%a@ @<2>↦ %a@]]" Exp.pp k pp_val v
+        Format.fprintf fs "++ [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
     | k, `Unequal vv ->
-        Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" Exp.pp k pp_sdiff_val vv
+        Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_sdiff_val vv
   in
   let pp_sdiff_exp_map =
     let pp_sdiff_exp fs (u, v) =
       Format.fprintf fs "-- %a ++ %a" Exp.pp u Exp.pp v
     in
-    pp_sdiff_map (pp_sdiff_elt Exp.pp pp_sdiff_exp) Exp.equal
+    pp_sdiff_map (pp_sdiff_elt Exp.pp Exp.pp pp_sdiff_exp) Exp.equal
+  in
+  let pp_sdiff_app_map =
+    let pp_sdiff_app fs (u, v) =
+      Format.fprintf fs "-- %a ++ %a" Exp.pp u Exp.pp v
+    in
+    pp_sdiff_map (pp_sdiff_elt Exp.pp Exp.pp pp_sdiff_app) Exp.equal
   in
   let pp_sat fs =
     if not (Bool.equal r.sat s.sat) then
       Format.fprintf fs "sat= @[-- %b@ ++ %b@];@ " r.sat s.sat
   in
   let pp_rep fs = pp_sdiff_exp_map "rep" fs r.rep s.rep in
-  let pp_lkp fs = pp_sdiff_exp_map "lkp" fs r.lkp s.lkp in
+  let pp_lkp fs = pp_sdiff_app_map "lkp" fs r.lkp s.lkp in
   let pp_cls fs =
-    let pp_sdiff_cls = pp_sdiff_elt Cls.pp pp_sdiff_exps in
+    let pp_sdiff_cls = pp_sdiff_elt Exp.pp Cls.pp pp_sdiff_exps in
     pp_sdiff_map pp_sdiff_cls Cls.equal "cls" fs r.cls s.cls
   in
   let pp_use fs =
-    let pp_sdiff_use = pp_sdiff_elt Use.pp pp_sdiff_exps in
+    let pp_sdiff_use = pp_sdiff_elt Exp.pp Use.pp pp_sdiff_uses in
     pp_sdiff_map pp_sdiff_use Use.equal "use" fs r.use s.use
   in
   let pp_pnd fs =
@@ -172,45 +233,176 @@ let pp_diff fs (r, s) =
   Format.fprintf fs "@[{@[<hv>%t%t%t%t%t%t@]}@]" pp_sat pp_rep pp_lkp pp_cls
     pp_use pp_pnd
 
-let invariant r =
-  Invariant.invariant [%here] r [%sexp_of: t]
-  @@ fun () ->
-  Map.iteri r.rep ~f:(fun ~key:e ~data:e' -> assert (not (Exp.equal e e'))) ;
-  Map.iteri r.cls ~f:(fun ~key:e' ~data:cls -> assert (Cls.mem cls e')) ;
-  Map.iteri r.use ~f:(fun ~key:_ ~data:use -> assert (not (Use.is_empty use))
-  )
-
-(* Auxiliary functions for manipulating "base plus offset" expressions *)
-
-let map_sum e ~f =
-  match e with
-  | Exp.App {op= App {op= Add {typ}; arg= a}; arg= i} ->
-      let a' = f a in
-      if a' == a then e else Exp.add typ a' i
-  | a -> f a
-
-let fold_sum e ~init ~f =
-  match e with
-  | Exp.App {op= App {op= Add _; arg= a}; arg= Integer _} -> f init a
-  | a -> f init a
-
-let base_of = function
-  | Exp.App {op= App {op= Add _; arg= a}; arg= Integer _} -> a
-  | a -> a
+(** Auxiliary functions for manipulating "base plus offset" expressions *)
 
 (** solve a+i = b for a, yielding a = b-i *)
 let solve_for_base ai b =
-  match ai with
-  | Exp.App {op= App {op= Add {typ}; arg= a}; arg= i} -> (a, Exp.sub typ b i)
-  | _ -> (ai, b)
+  match Exp.base_offset ai with
+  | Some (a, i, typ) -> (a, Exp.sub typ b (Exp.integer i typ))
+  | None -> (ai, b)
 
-(** [norm r a+i] = [a'+k] where [r] implies [a+i=a'+k] and [a'] is a rep *)
-let norm r e =
-  map_sum e ~f:(fun a -> try Map.find_exn r.rep a with Caml.Not_found -> a)
+(** subtract offset from both sides of equation a+i = b, yielding b-i *)
+let subtract_offset ai b =
+  match Exp.offset ai with
+  | Some (i, typ) -> Exp.sub typ b (Exp.integer i typ)
+  | None -> b
 
-(* Core closure operations *)
+(** [map_base ~f a+i] is [f(a) + i] and [map_base ~f a] is [f(a)] *)
+let map_base ai ~f =
+  match Exp.base_offset ai with
+  | Some (a, i, typ) ->
+      let a' = f a in
+      if a' == a then ai else Exp.add typ a' (Exp.integer i typ)
+  | None -> f ai
+
+(** [norm_base r a] is [a'+k] where [r] implies [a = a'+k] and [a'] is a
+    rep, requires [a] to not have any offset and be in the carrier *)
+let norm_base r e =
+  assert (Option.is_none (Exp.offset e)) ;
+  try Map.find_exn r.rep e with Caml.Not_found ->
+    assert (Exp.is_simple e) ;
+    e
+
+(** [norm r a+i] is [a'+k] where [r] implies [a+i = a'+k] and [a'] is a rep,
+    requires [a] to be in the carrier *)
+let norm r e = map_base ~f:(norm_base r) e
+
+(** test membership in carrier, strictly in the sense that an exp with an
+    offset is not in the carrier even when its base is *)
+let in_car r e = Exp.is_simple e || Map.mem r.rep e
+
+(** test if an exp is a representative, requires exp to have no offset *)
+let is_rep r e = Exp.equal e (norm_base r e)
+
+let pre_invariant r =
+  Invariant.invariant [%here] r [%sexp_of: t]
+  @@ fun () ->
+  Map.iteri r.rep ~f:(fun ~key:a ~data:a'k ->
+      (* carrier is stored without offsets *)
+      assert (Option.is_none (Exp.offset a)) ;
+      (* carrier is closed under sub-expressions *)
+      Exp.iter a ~f:(fun bj ->
+          assert (
+            in_car r (Exp.base bj)
+            || Trace.report "@[subexp %a of %a not in carrier of@ %a@]"
+                 Exp.pp bj Exp.pp a pp r ) ) ;
+      let a', a_k = solve_for_base a'k a in
+      (* carrier is closed under rep *)
+      assert (in_car r a') ;
+      if Exp.is_simple a' then
+        (* rep is sparse for symbols *)
+        assert (
+          (not (Map.mem r.rep a'))
+          || Trace.report
+               "no symbol rep should be in rep domain: %a @<2>↦ %a@\n%a"
+               Exp.pp a Exp.pp a' pp r )
+      else
+        (* rep is idempotent for applications *)
+        assert (
+          is_rep r a'
+          || Trace.report
+               "every app rep should be its own rep: %a @<2>↦ %a" Exp.pp a
+               Exp.pp a' ) ;
+      match Map.find r.cls a' with
+      | None ->
+          (* every rep in dom of cls *)
+          assert (
+            Trace.report "rep not in dom of cls: %a@\n%a" Exp.pp a' pp r )
+      | Some a_cls ->
+          (* every exp is in class of its rep *)
+          assert (
+            (* rep a = a'+k so expect a-k in cls a' *)
+            Cls.mem a_cls a_k
+            || Trace.report "%a = %a by rep but %a not in cls@\n%a" Exp.pp a
+                 Exp.pp a'k Exp.pp a_k pp r ) ) ;
+  Map.iteri r.cls ~f:(fun ~key:a' ~data:a_cls ->
+      (* domain of cls are reps *)
+      assert (is_rep r a') ;
+      (* cls contained in inverse of rep *)
+      Cls.iter a_cls ~f:(fun ak ->
+          let a, a'_k = solve_for_base ak a' in
+          assert (
+            in_car r a
+            || Trace.report "%a in cls of %a but not in carrier" Exp.pp a
+                 Exp.pp a' ) ;
+          let a'' = norm_base r a in
+          assert (
+            (* a' = a+k in cls so expect rep a = a'-k *)
+            Exp.equal a'' a'_k
+            || Trace.report "%a = %a by cls but @<2>≠ %a by rep" Exp.pp a'
+                 Exp.pp ak Exp.pp a'' ) ) ) ;
+  Map.iteri r.use ~f:(fun ~key:a' ~data:a_use ->
+      assert (
+        (not (Use.is_empty a_use))
+        || Trace.report "empty use list should not have been added" ) ;
+      Use.iter a_use ~f:(fun u ->
+          (* uses are applications *)
+          assert (not (Exp.is_simple u)) ;
+          (* uses have no offsets *)
+          assert (Option.is_none (Exp.offset u)) ;
+          (* subexps of uses in carrier *)
+          Exp.iter u ~f:(fun bj -> assert (in_car r (Exp.base bj))) ;
+          (* every rep is a subexp-modulo-rep of each of its uses *)
+          assert (
+            Exp.exists u ~f:(fun bj -> Exp.equal a' (Exp.base (norm r bj)))
+            || Trace.report
+                 "rep %a has use %a, but is not the rep of any immediate \
+                  subexp of the use"
+                 Exp.pp a' Exp.pp u ) ;
+          (* every use has a corresponding entry in lkp... *)
+          let v =
+            try Map.find_exn r.lkp (Exp.map ~f:(norm r) u)
+            with Caml.Not_found ->
+              fail "no lkp entry for use %a of %a" Exp.pp u Exp.pp a'
+          in
+          (* ...which is (eventually) provably equal *)
+          if List.is_empty r.pnd then
+            assert (Exp.equal (norm_base r u) (norm_base r v)) ) ) ;
+  Map.iteri r.lkp ~f:(fun ~key:a ~data:c ->
+      (* subexps of domain of lkp in carrier *)
+      Exp.iter a ~f:(fun bj -> assert (in_car r (Exp.base bj))) ;
+      (* range of lkp are applications in carrier *)
+      assert (in_car r c) ;
+      (* there may be stale entries in lkp whose subexps are no longer reps,
+         which will therefore never be used, and hence are unconstrained *)
+      if Exp.equal a (Exp.map ~f:(norm r) a) then (
+        let c_' = Exp.map ~f:(norm r) c in
+        (* lkp contains equalities provable modulo normalizing sub-exps *)
+        assert (
+          Exp.equal a c_'
+          || Trace.report "%a sub-normalizes to %a @<2>≠ %a" Exp.pp c
+               Exp.pp c_' Exp.pp a ) ;
+        let c' = norm_base r c in
+        Exp.iter a ~f:(fun bj ->
+            (* every subexp of an app in domain of lkp has an associated use *)
+            let b' = Exp.base (norm r bj) in
+            let b_use =
+              try Map.find_exn r.use b' with Caml.Not_found ->
+                fail "no use list for subexp %a of lkp key %a" Exp.pp bj
+                  Exp.pp a
+            in
+            assert (
+              Use.exists b_use ~f:(fun u ->
+                  Exp.equal a (Exp.map ~f:(norm r) u)
+                  && Exp.equal c' (norm_base r u) )
+              || Trace.report
+                   "no corresponding use for subexp %a of lkp key %a" Exp.pp
+                   bj Exp.pp a ) ) ) ) ;
+  List.iter r.pnd ~f:(fun (ai, bj) ->
+      assert (in_car r (Exp.base ai)) ;
+      assert (in_car r (Exp.base bj)) )
+
+let invariant r =
+  Invariant.invariant [%here] r [%sexp_of: t]
+  @@ fun () ->
+  pre_invariant r ;
+  assert (List.is_empty r.pnd)
+
+(** Core closure operations *)
 
 type prefer = Exp.t -> over:Exp.t -> int
+
+let empty_map = Map.empty (module Exp)
 
 let true_ =
   { sat= true
@@ -219,42 +411,9 @@ let true_ =
   ; cls= empty_map
   ; use= empty_map
   ; pnd= [] }
+  |> check invariant
 
-let false_ = {true_ with sat= false}
-
-(** Add app exps (and sub-exps) to the relation. This populates the [lkp]
-    and [use] maps, treating an exp [e] of form [f(a)] as an equation
-    between the app [f(a)] and the 'symbol' [e]. This has the effect of
-    using [e] as a 'name' of the app [f(a)], rather than using an explicit
-    'flattening' transformation introducing new symbols for each
-    application. *)
-let rec extend r e =
-  fold_sum e ~init:r ~f:(fun r -> function
-    | App _ as fa ->
-        let r, fa' =
-          Exp.fold_map fa ~init:r ~f:(fun r b ->
-              let r, c = extend r b in
-              (r, norm r c) )
-        in
-        Map.find_or_add r.lkp fa'
-          ~if_found:(fun d ->
-            let r = {r with pnd= (e, d) :: r.pnd} in
-            (r, d) )
-          ~default:e
-          ~if_added:(fun lkp ->
-            let use =
-              Exp.fold fa' ~init:r.use ~f:(fun use b' ->
-                  if Exp.is_constant b' then use
-                  else
-                    Map.update use b' ~f:(function
-                      | Some b_use -> Use.add b_use fa
-                      | None -> Use.singleton fa ) )
-            in
-            let r = {r with lkp; use} in
-            (r, e) )
-    | _ -> (r, e) )
-
-exception Unsat
+let false_ = {true_ with sat= false} |> check invariant
 
 (** Add an equation [b+j] = [a+i] using [a] as the new rep. This removes [b]
     from the [cls] and [use] maps, as it is no longer a rep. The [rep] map
@@ -267,9 +426,12 @@ let add_directed_equation r0 ~exp:bj ~rep:ai =
   [%Trace.call fun {pf} -> pf "@[%a@ %a@]@ %a" Exp.pp bj Exp.pp ai pp r0]
   ;
   let r = r0 in
-  let a = base_of ai in
   (* b+j = a+i so b = a+i-j *)
-  let b, ai_j = solve_for_base bj ai in
+  let b, aij = solve_for_base bj ai in
+  assert ((not (in_car r b)) || is_rep r b) ;
+  (* compute a from aij in case ai is an int and j is a non-0 offset *)
+  let a = Exp.base aij in
+  assert ((not (in_car r a)) || is_rep r a) ;
   let b_cls, cls =
     try Map.find_and_remove_exn r.cls b with Caml.Not_found ->
       (Cls.singleton b, r.cls)
@@ -278,38 +440,40 @@ let add_directed_equation r0 ~exp:bj ~rep:ai =
     try Map.find_and_remove_exn r.use b with Caml.Not_found ->
       (Use.empty, r.use)
   in
-  let rep, a_cls_delta =
-    Cls.fold_map b_cls ~init:r.rep ~f:(fun rep ck ->
+  let r, a_cls_delta =
+    Cls.fold_map b_cls ~init:r ~f:(fun r ck ->
         (* c+k = b = a+i-j so c = a+i-j-k *)
-        let c, ai_j_k = solve_for_base ck ai_j in
-        if Exp.is_false (Exp.eq c ai_j_k) then raise Unsat ;
-        let rep = Map.set rep ~key:c ~data:ai_j_k in
-        (* a+i-j = c+k so a = c+k+j-i *)
-        let _, ckj_i = solve_for_base ai_j ck in
-        (rep, ckj_i) )
+        let c, aijk = solve_for_base ck aij in
+        let r =
+          if Exp.equal a c || Exp.is_false (Exp.eq c aijk) then false_
+          else if Exp.is_simple c && Exp.equal c aijk then r
+          else {r with rep= Map.set r.rep ~key:c ~data:aijk}
+        in
+        (* a+i-j-k = c so a = c-i+j+k *)
+        let cijk = subtract_offset aijk c in
+        (r, cijk) )
   in
-  let cls =
-    Map.update cls a ~f:(function
-      | Some a_cls -> Cls.union a_cls_delta a_cls
-      | None -> Cls.add a_cls_delta a )
-  in
-  let r = {r with rep; cls; use} in
   let r, a_use_delta =
     Use.fold b_use ~init:(r, Use.empty) ~f:(fun (r, a_use_delta) u ->
-        let u' = Exp.map ~f:(norm r) u in
-        Map.find_or_add r.lkp u'
+        let u_' = Exp.map ~f:(norm r) u in
+        Map.find_or_add r.lkp u_'
           ~if_found:(fun v ->
             let r = {r with pnd= (u, v) :: r.pnd} in
-            (* no need to add u to use a since u is an app already in r
-               (since u' found in r.lkp) that is equal to v, so will be in
-               use of u's subexps, and u = v is added to pnd so propagate
-               will combine them later *)
+            (* no need to add u to use a since u is already in r (since u_'
+               found in r.lkp) that is equal to v, so will be in use of u_'s
+               subexps, and u = v is added to pnd so propagate will combine
+               them later *)
             (r, a_use_delta) )
           ~default:u
           ~if_added:(fun lkp ->
             let r = {r with lkp} in
             let a_use_delta = Use.add a_use_delta u in
             (r, a_use_delta) ) )
+  in
+  let cls =
+    Map.update cls a ~f:(function
+      | Some a_cls -> Cls.union a_cls_delta a_cls
+      | None -> Cls.add a_cls_delta a )
   in
   let use =
     if Use.is_empty a_use_delta then use
@@ -318,105 +482,136 @@ let add_directed_equation r0 ~exp:bj ~rep:ai =
         | Some a_use -> Use.union a_use_delta a_use
         | None -> a_use_delta )
   in
-  let r = {r with use} in
-  r |> check invariant
+  let r = if not r.sat then false_ else {r with cls; use} in
+  r
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" pp_diff (r0, r)]
+  [%Trace.retn fun {pf} r ->
+    pf "%a" pp_diff (r0, r) ;
+    pre_invariant r]
+
+let prefer_rep ?prefer r e ~over:d =
+  [%Trace.call fun {pf} -> pf "@[%a@ %a@]@ %a" Exp.pp d Exp.pp e pp r]
+  ;
+  let prefer_e_over_d =
+    match (Exp.is_constant d, Exp.is_constant e) with
+    | true, false -> -1
+    | false, true -> 1
+    | _ -> (
+      match prefer with Some prefer -> prefer e ~over:d | None -> 0 )
+  in
+  ( match prefer_e_over_d with
+  | n when n < 0 -> false
+  | p when p > 0 -> true
+  | _ ->
+      let len_e =
+        try Cls.length (Map.find_exn r.cls e) with Caml.Not_found -> 1
+      in
+      let len_d =
+        try Cls.length (Map.find_exn r.cls d) with Caml.Not_found -> 1
+      in
+      len_e >= len_d )
+  |>
+  [%Trace.retn fun {pf} -> pf "%b"]
+
+let choose_preferred ?prefer r d e =
+  if prefer_rep ?prefer r e ~over:d then (d, e) else (e, d)
+
+let add_equation ?prefer r d e =
+  let d = norm r d in
+  let e = norm r e in
+  if (not r.sat) || Exp.equal d e then r
+  else (
+    [%Trace.call fun {pf} -> pf "@[%a@ %a@]@ %a" Exp.pp d Exp.pp e pp r]
+    ;
+    let exp, rep = choose_preferred ?prefer r d e in
+    add_directed_equation r ~exp ~rep
+    |>
+    [%Trace.retn fun {pf} r' -> pf "%a" pp_diff (r, r')] )
+
+(** normalize, and add base to carrier if needed *)
+let rec norm_extend r ek =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Exp.pp ek pp r]
+  ;
+  let e = Exp.base ek in
+  ( if Exp.is_simple e then (r, norm r ek)
+  else
+    Map.find_or_add r.rep e
+      ~if_found:(fun e' ->
+        match Exp.offset ek with
+        | Some (k, typ) -> (r, Exp.add typ e' (Exp.integer k typ))
+        | None -> (r, e') )
+      ~default:e
+      ~if_added:(fun rep ->
+        let cls = Map.set r.cls ~key:e ~data:(Cls.singleton e) in
+        let r = {r with rep; cls} in
+        let r, e_' = Exp.fold_map ~f:norm_extend ~init:r e in
+        Map.find_or_add r.lkp e_'
+          ~if_found:(fun d ->
+            let pnd = (e, d) :: r.pnd in
+            let d' = norm_base r d in
+            ({r with rep; pnd}, d') )
+          ~default:e
+          ~if_added:(fun lkp ->
+            let use =
+              Exp.fold e_' ~init:r.use ~f:(fun use b'j ->
+                  let b' = Exp.base b'j in
+                  Map.update use b' ~f:(function
+                    | Some b_use -> Use.add b_use e
+                    | None -> Use.singleton e ) )
+            in
+            ({r with lkp; use}, e) ) ) )
+  |>
+  [%Trace.retn fun {pf} (r', e') -> pf "%a@ %a" Exp.pp e' pp_diff (r, r')]
+
+let norm_extend r ek = norm_extend r ek |> check (fst >> pre_invariant)
+let extend r ek = fst (norm_extend r ek)
 
 (** Close the relation with the pending equations. *)
-let rec propagate_ ?prefer r =
+let rec propagate ?prefer r =
   [%Trace.call fun {pf} -> pf "%a" pp r]
   ;
   ( match r.pnd with
-  | [] -> r
   | (d, e) :: pnd ->
-      let d' = norm r d in
-      let e' = norm r e in
       let r = {r with pnd} in
-      let r =
-        if Exp.equal (base_of d') (base_of e') then
-          if Exp.equal d' e' then r else {r with sat= false; pnd= []}
-        else
-          let prefer_e_over_d =
-            match (Exp.is_constant d, Exp.is_constant e) with
-            | true, false -> -1
-            | false, true -> 1
-            | _ -> (
-              match prefer with
-              | Some prefer -> prefer e' ~over:d'
-              | None -> 0 )
-          in
-          match prefer_e_over_d with
-          | n when n < 0 -> add_directed_equation r ~exp:e' ~rep:d'
-          | p when p > 0 -> add_directed_equation r ~exp:d' ~rep:e'
-          | _ ->
-              let len_d =
-                try Cls.length (Map.find_exn r.cls d')
-                with Caml.Not_found -> 1
-              in
-              let len_e =
-                try Cls.length (Map.find_exn r.cls e')
-                with Caml.Not_found -> 1
-              in
-              if len_d > len_e then add_directed_equation r ~exp:e' ~rep:d'
-              else add_directed_equation r ~exp:d' ~rep:e'
-      in
-      propagate_ ?prefer r )
+      let r = add_equation ?prefer r d e in
+      propagate ?prefer r
+  | [] -> r )
   |>
-  [%Trace.retn fun {pf} r' -> pf "%a" pp_diff (r, r')]
-
-let propagate ?prefer r =
-  [%Trace.call fun {pf} -> pf "%a" pp r]
-  ;
-  (try propagate_ ?prefer r with Unsat -> false_)
-  |>
-  [%Trace.retn fun {pf} r' -> pf "%a" pp_diff (r, r')]
+  [%Trace.retn fun {pf} r' ->
+    pf "%a" pp_diff (r, r') ;
+    invariant r']
 
 let merge ?prefer r d e =
   if not r.sat then r
   else
-    let r, a = extend r d in
-    let r =
-      if Exp.equal d e then r
-      else
-        let r, b = extend r e in
-        let r = {r with pnd= (a, b) :: r.pnd} in
-        r
-    in
+    let r = extend r d in
+    let r = extend r e in
+    let r = add_equation ?prefer r d e in
     propagate ?prefer r
 
-let rec normalize_ r e =
-  [%Trace.call fun {pf} -> pf "%a" Exp.pp e]
+let rec normalize r ek =
+  [%Trace.call fun {pf} -> pf "%a@ %a" Exp.pp ek pp r]
   ;
-  map_sum e ~f:(function
-    | App _ as fa -> (
-        let fa' = Exp.map ~f:(normalize_ r) fa in
-        match Map.find_exn r.lkp fa' with
-        | exception _ -> fa'
-        | c -> norm r (Exp.map ~f:(norm r) c) )
-    | c ->
-        let c' = norm r c in
-        if c' == c then c else normalize_ r c' )
+  map_base ek ~f:(fun e ->
+      try Map.find_exn r.rep e with Caml.Not_found ->
+        Exp.map ~f:(normalize r) e )
   |>
   [%Trace.retn fun {pf} -> pf "%a" Exp.pp]
 
-let normalize r e =
-  [%Trace.call fun {pf} -> pf "%a" pp r]
-  ;
-  normalize_ r e
-  |>
-  [%Trace.retn fun {pf} -> pf "%a" Exp.pp]
-
-let mem_eq r e f = Exp.equal (normalize r e) (normalize r f)
+let mem_eq r d e = Exp.equal (normalize r d) (normalize r e)
 
 (** Exposed interface *)
 
+let extend r e = propagate (extend r e)
 let and_eq = merge
 
 let and_ ?prefer r s =
   if not r.sat then r
   else if not s.sat then s
   else
+    let s, r =
+      if Map.length s.rep <= Map.length r.rep then (s, r) else (r, s)
+    in
     Map.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> merge ?prefer r e e')
 
 let or_ ?prefer r s =
@@ -435,33 +630,36 @@ let or_ ?prefer r s =
 (* assumes that f is injective and for any set of exps E, f[E] is disjoint
    from E *)
 let map_exps ({sat= _; rep; lkp; cls; use; pnd} as r) ~f =
-  [%Trace.call fun {pf} -> pf "%a@." pp r]
+  [%Trace.call fun {pf} ->
+    pf "%a" pp r ;
+    assert (List.is_empty pnd)]
   ;
-  assert (List.is_empty pnd) ;
-  let map ~equal_data ~f_data m =
+  let map ~equal_key ~equal_data ~f_key ~f_data m =
     Map.fold m ~init:m ~f:(fun ~key ~data m ->
-        let key' = f key in
+        let key' = f_key key in
         let data' = f_data data in
-        if Exp.equal key' key then
+        if equal_key key' key then
           if equal_data data' data then m else Map.set m ~key ~data:data'
-        else
-          Map.remove m key
-          |> Map.add_exn ~key:key'
-               ~data:(if data' == data then data else data') )
+        else Map.remove m key |> Map.add_exn ~key:key' ~data:data' )
   in
-  let exp_map = map ~equal_data:Exp.equal ~f_data:f in
-  let exp_list_map =
-    map ~equal_data:[%compare.equal: Exp.t list]
-      ~f_data:(List.map_preserving_phys_equal ~f)
+  let rep' =
+    map rep ~equal_key:Exp.equal ~equal_data:Exp.equal ~f_key:f ~f_data:f
   in
-  let rep' = exp_map rep in
-  let lkp' = exp_map lkp in
-  let cls' = exp_list_map cls in
-  let use' = exp_list_map use in
+  let lkp' =
+    map lkp ~equal_key:Exp.equal ~equal_data:Exp.equal ~f_key:f ~f_data:f
+  in
+  let cls' =
+    map cls ~equal_key:Exp.equal ~equal_data:[%compare.equal: Exp.t list]
+      ~f_key:f ~f_data:(Cls.map ~f)
+  in
+  let use' =
+    map use ~equal_key:Exp.equal ~equal_data:[%compare.equal: Exp.t list]
+      ~f_key:f ~f_data:(Use.map ~f)
+  in
   ( if rep' == rep && lkp' == lkp && cls' == cls && use' == use then r
   else {r with rep= rep'; lkp= lkp'; cls= cls'; use= use'} )
   |>
-  [%Trace.retn fun {pf} -> pf "%a@." pp]
+  [%Trace.retn fun {pf} r -> pf "%a" pp r ; invariant r]
 
 let rename r sub = map_exps r ~f:(fun e -> Exp.rename e sub)
 
@@ -484,30 +682,25 @@ let classes {cls} = cls
 let entails r s =
   Map.for_alli s.rep ~f:(fun ~key:e ~data:e' -> mem_eq r e e')
 
-(* a - b = k if a = b+k *)
 let difference r a b =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Exp.pp a Exp.pp b pp r]
   ;
-  let r, a = extend r a in
-  let r, b = extend r b in
-  let r = propagate r in
-  let ci = normalize r a in
-  let dj = normalize r b in
-  (* a - b = (c+i) - (d+j) *)
-  ( match solve_for_base dj ci with
-  (* d = (c+i)-j = c+(i-j) & c = d *)
-  | d, App {op= App {op= Add _; arg= c}; arg= Integer {data= i_j}}
-    when Exp.equal d c ->
-      (* a - b = (c+i) - (d+j) = i-j *)
-      Some i_j
-  | Integer {data= j}, Integer {data= i} -> Some (Z.sub i j)
-  | d, ci_j when Exp.equal d ci_j -> Some Z.zero
+  let r, a = norm_extend r a in
+  let r, b = norm_extend r b in
+  ( match (a, b) with
+  | _ when Exp.equal a b -> Some Z.zero
+  | (AppN {op= Add {typ} | Mul {typ}} | Integer {typ}), _
+   |_, (AppN {op= Add {typ} | Mul {typ}} | Integer {typ}) -> (
+      let a_b = Exp.sub typ a b in
+      let r, a_b = norm_extend r a_b in
+      let r = propagate r in
+      match normalize r a_b with Integer {data} -> Some data | _ -> None )
   | _ -> None )
   |>
   [%Trace.retn fun {pf} ->
-    function
-    | Some d -> pf "%a" Z.pp_print d
-    | None -> pf "c+i: %a@ d+j: %a" Exp.pp ci Exp.pp dj]
+    function Some d -> pf "%a" Z.pp_print d | None -> ()]
+
+(** Tests *)
 
 let%test_module _ =
   ( module struct
