@@ -83,7 +83,7 @@ let%test_module _ =
           {sat= true;
            rep= [[%x_5 ↦ %y_6]];
            lkp= [];
-           cls= [[%y_6 ↦ {%y_6, %x_5}]];
+           cls= [[%y_6 ↦ {%x_5, %y_6}]];
            use= []} |}]
 
     let%expect_test _ = printf pp_classes r1 ; [%expect {| %y_6 = %x_5 |}]
@@ -101,13 +101,13 @@ let%test_module _ =
                  [%x_5 ↦ %y_6];
                  [%z_7 ↦ %y_6]];
            lkp= [[((i64)(i8) %y_6) ↦ ((i64)(i8) %x_5)]];
-           cls= [[%y_6 ↦ {((i64)(i8) %y_6), %z_7, ((i64)(i8) %x_5), %y_6, %x_5}]];
+           cls= [[%y_6 ↦ {((i64)(i8) %x_5), ((i64)(i8) %y_6), %x_5, %y_6, %z_7}]];
            use= [[%y_6 ↦ {((i64)(i8) %x_5)}]]} |}]
 
     let%expect_test _ =
       printf pp_classes r2 ;
       [%expect
-        {| %y_6 = ((i64)(i8) %y_6) = %z_7 = ((i64)(i8) %x_5) = %x_5 |}]
+        {| %y_6 = ((i64)(i8) %x_5) = ((i64)(i8) %y_6) = %x_5 = %z_7 |}]
 
     let%test _ = mem_eq x z r2
     let%test _ = mem_eq x y (or_ r1 r2)
@@ -153,8 +153,8 @@ let%test_module _ =
              [(xor %w_4) ↦ (xor %w_4)];
              [(xor %y_6) ↦ (xor %y_6)]];
        cls= [[%w_4
-              ↦ {(%w_4 xor %y_6), %t_1, %z_7, %u_2, %x_5, %v_3, %w_4,
-                 (%y_6 xor %z_7)}]];
+              ↦ {(%w_4 xor %y_6), (%y_6 xor %z_7), %t_1, %u_2, %v_3, %w_4,
+                 %x_5, %z_7}]];
        use= [[(xor %w_4) ↦ {(%w_4 xor %y_6)}];
              [(xor %y_6) ↦ {(%y_6 xor %z_7)}];
              [%w_4 ↦ {(xor %w_4)}];

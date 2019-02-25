@@ -23,7 +23,8 @@ module Cls = struct
   type t = Exp.t list [@@deriving compare, sexp]
 
   let pp fs cls =
-    Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp) cls
+    Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp)
+      (List.sort ~compare:Exp.compare cls)
 
   let singleton e = [e]
   let add cls exp = exp :: cls
@@ -111,7 +112,7 @@ let pp_classes fs {cls} =
       let es = Cls.remove_exn ~equal:Exp.equal data key in
       if not (Cls.is_empty es) then
         Format.fprintf fs "@[%a@ = %a@]" Exp.pp key (List.pp "@ = " Exp.pp)
-          es )
+          (List.sort ~compare:Exp.compare es) )
     fs (Map.to_alist cls)
 
 let invariant r =
