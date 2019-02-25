@@ -96,10 +96,6 @@ val compare_versions : string -> string -> int
     -1 if v1 is older than v2 and 0 if they are the same version.
     The versions are strings of the shape "n.m.t", the order is lexicographic. *)
 
-val write_file_with_locking : ?delete:bool -> f:(Out_channel.t -> unit) -> string -> unit
-(** Lock file passed as argument and write into it using [f]. If [delete] then the file is unlinked
-    once this is done. *)
-
 val rmtree : string -> unit
 (** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
 

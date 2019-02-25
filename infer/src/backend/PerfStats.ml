@@ -314,7 +314,7 @@ let report stats_kind file stats_type () =
       try
         Unix.mkdir_p (Filename.dirname file) ;
         (* the same report may be registered across different infer processes *)
-        Utils.write_file_with_locking file ~f:(fun stats_oc ->
+        Utils.with_intermediate_temp_file_out file ~f:(fun stats_oc ->
             Yojson.Basic.pretty_to_channel stats_oc json_stats )
       with exc ->
         L.internal_error "Info: failed to write stats to %s@\n%s@\n%s@\n%s@." file
