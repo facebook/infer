@@ -964,7 +964,7 @@ let simp_div x y =
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.div ~bits i j) typ
   (* e / 1 ==> e *)
-  | Integer {data}, e when Z.equal Z.one data -> e
+  | e, Integer {data} when Z.equal Z.one data -> e
   | _ -> App {op= App {op= Div; arg= x}; arg= y}
 
 let simp_udiv x y =
