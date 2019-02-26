@@ -144,6 +144,12 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
     else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
     else IssueType.performance_variation
   in
+  let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
+  let curr_cost_msg fmt () =
+    Format.fprintf fmt "Cost is %a (degree is %a)" CostDomain.BasicCost.pp curr_cost
+      (CostDomain.BasicCost.pp_degree ~only_bigO:false)
+      curr_degree_with_term
+  in
   if (not Config.filtering) || issue_type.IssueType.enabled then
     let qualifier =
       let pp_delta fmt delta =
@@ -153,24 +159,34 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
         | `Increased ->
             Format.fprintf fmt "increased"
       in
-      let pp_extra_msg fmt cost_polynomial =
-        if Config.developer_mode then
-          Format.fprintf fmt "Cost is %a (degree is %a)" CostDomain.BasicCost.pp cost_polynomial
-            CostDomain.BasicCost.pp_degree cost_polynomial
+      let pp_extra_msg fmt () =
+        if Config.developer_mode then curr_cost_msg fmt ()
         else Format.fprintf fmt "Please make sure this is an expected change."
       in
+      let prev_degree_with_term = CostDomain.BasicCost.get_degree_with_term prev_cost in
       Format.asprintf "Complexity of this function has %a from %a to %a. %a"
         (MarkupFormatter.wrap_bold pp_delta)
         delta
-        (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
-        prev_cost
-        (MarkupFormatter.wrap_monospaced CostDomain.BasicCost.pp_degree_hum)
-        curr_cost pp_extra_msg curr_cost
+        (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
+        prev_degree_with_term
+        (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
+        curr_degree_with_term pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
     let trace =
-      [Errlog.make_trace_element 0 {Location.line; col= column; file= source_file} "" []]
+      let curr_cost_trace =
+        [ Errlog.make_trace_element 0
+            {Location.line; col= column; file= source_file}
+            (Format.asprintf "Updated %a" curr_cost_msg ())
+            [] ]
+      in
+      Option.value_map ~default:curr_cost_trace
+        ~f:(fun (_, degree_term) ->
+          let symbol_list = Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term in
+          ("", curr_cost_trace) :: List.map symbol_list ~f:Bounds.NonNegativeBound.make_err_trace
+          |> Errlog.concat_traces )
+        curr_degree_with_term
     in
     let severity = Exceptions.Advice in
     Some

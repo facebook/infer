@@ -360,8 +360,6 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
   let degree p = fst (degree_with_term p)
 
-  let degree_term p = snd (degree_with_term p)
-
   let multiplication_sep = F.sprintf " %s " SpecialChars.multiplication_sign
 
   let pp : F.formatter -> t -> unit =
@@ -420,9 +418,10 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     get_symbols_sub p []
 end
 
+module NonNegativeBoundWithDegreeKind = MakeSymbolWithDegreeKind (Bounds.NonNegativeBound)
+module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBoundWithDegreeKind)
+
 module NonNegativePolynomial = struct
-  module NonNegativeBoundWithDegreeKind = MakeSymbolWithDegreeKind (Bounds.NonNegativeBound)
-  module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBoundWithDegreeKind)
   include AbstractDomain.TopLifted (NonNegativeNonTopPolynomial)
 
   let zero = NonTop NonNegativeNonTopPolynomial.zero
@@ -489,25 +488,23 @@ module NonNegativePolynomial = struct
           (NonNegativeNonTopPolynomial.degree p2)
 
 
-  let pp_degree fmt p =
-    match p with
+  let get_degree_with_term = function
     | Top ->
-        Format.pp_print_string fmt "Top"
+        None
     | NonTop p ->
-        Degree.pp fmt (NonNegativeNonTopPolynomial.degree p)
-
-
-  let pp_degree_hum fmt p =
-    match p with
-    | Top ->
-        Format.pp_print_string fmt "Top"
-    | NonTop p ->
-        Format.fprintf fmt "O(%a)" NonNegativeNonTopPolynomial.pp
-          (NonNegativeNonTopPolynomial.degree_term p)
+        Some (NonNegativeNonTopPolynomial.degree_with_term p)
 
 
   let get_symbols p : Bounds.NonNegativeBound.t list =
     match p with Top -> assert false | NonTop p -> NonNegativeNonTopPolynomial.get_symbols p
+
+
+  let pp_degree ~only_bigO fmt = function
+    | None ->
+        Format.pp_print_string fmt "Top"
+    | Some (degree, degree_term) ->
+        if only_bigO then Format.fprintf fmt "O(%a)" NonNegativeNonTopPolynomial.pp degree_term
+        else Degree.pp fmt degree
 
 
   let encode astate = Marshal.to_string astate [] |> Base64.encode_exn

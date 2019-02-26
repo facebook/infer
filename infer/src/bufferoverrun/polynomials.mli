@@ -23,6 +23,12 @@ module Degree : sig
   val pp : Format.formatter -> t -> unit
 end
 
+module NonNegativeNonTopPolynomial : sig
+  type t
+
+  val get_symbols : t -> Bounds.NonNegativeBound.t list
+end
+
 module NonNegativePolynomial : sig
   include AbstractDomain.WithTop
 
@@ -54,13 +60,14 @@ module NonNegativePolynomial : sig
 
   val compare_by_degree : t -> t -> int
 
-  val pp_degree : Format.formatter -> t -> unit
-
-  val pp_degree_hum : Format.formatter -> t -> unit
+  val pp_degree :
+    only_bigO:bool -> Format.formatter -> (Degree.t * NonNegativeNonTopPolynomial.t) option -> unit
 
   val encode : t -> string
 
   val decode : string -> t
 
   val get_symbols : t -> Bounds.NonNegativeBound.t list
+
+  val get_degree_with_term : t -> (Degree.t * NonNegativeNonTopPolynomial.t) option
 end

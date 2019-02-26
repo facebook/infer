@@ -344,11 +344,18 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
     match cost_opt with
     | Some {post} ->
         let basic_operation_cost = CostDomain.get_operation_cost post in
+        let degree_with_term = CostDomain.BasicCost.get_degree_with_term basic_operation_cost in
         let hum =
           { Jsonbug_t.hum_polynomial=
               Format.asprintf "%a" CostDomain.BasicCost.pp basic_operation_cost
-          ; hum_degree= Format.asprintf "%a" CostDomain.BasicCost.pp_degree basic_operation_cost
-          ; big_o= Format.asprintf "%a" CostDomain.BasicCost.pp_degree_hum basic_operation_cost }
+          ; hum_degree=
+              Format.asprintf "%a"
+                (CostDomain.BasicCost.pp_degree ~only_bigO:false)
+                degree_with_term
+          ; big_o=
+              Format.asprintf "%a"
+                (CostDomain.BasicCost.pp_degree ~only_bigO:true)
+                degree_with_term }
         in
         let cost_item =
           let file = SourceFile.to_rel_path loc.Location.file in
