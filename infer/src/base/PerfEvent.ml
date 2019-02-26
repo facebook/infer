@@ -152,7 +152,7 @@ let pp_event_type_field f event_type =
   JsonFragment.pp_assoc_field pp_event_type f "ph" event_type
 
 
-let pp_process_id_field f pid = JsonFragment.pp_assoc_field Pid.pp f "pid" pid
+let pp_process_id_field f pid = JsonFragment.pp_assoc_field Format.pp_print_int f "pid" pid
 
 let pp_name_field f name = JsonFragment.pp_assoc_field Json.pp f "name" (`String name)
 

@@ -27,7 +27,7 @@ let find_files ~path ~extension =
       | _ ->
           files
     in
-    Sys.fold_dir ~init ~f:(aux dir_path) dir_path
+    Array.fold (Sys.readdir dir_path) ~f:(aux dir_path) ~init
   in
   traverse_dir_aux [] path
 
@@ -90,7 +90,7 @@ let filename_to_absolute ~root fname =
     | _ ->
         entry :: rev_done
   in
-  let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in
+  let abs_fname = if not (Filename.is_relative fname) then fname else root ^/ fname in
   Filename.of_parts (List.rev (List.fold ~f:add_entry ~init:[] (Filename.parts abs_fname)))
 
 
@@ -274,7 +274,7 @@ let realpath ?(warn_on_error = true) path =
         IExn.reraise_after exn ~f:(fun () ->
             if warn_on_error then
               F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
-                (Unix.Error.message code) ;
+                (Unix.error_message code) ;
             (* cache failures as well *)
             Hashtbl.add realpath_cache path (Error exn) ) )
   | Ok path ->
@@ -287,9 +287,9 @@ let realpath ?(warn_on_error = true) path =
 let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
-  let restore_stderr src = Unix.dup2 ~src ~dst:Unix.stderr ; Unix.close src in
+  let restore_stderr src = Unix.dup2 src Unix.stderr ; Unix.close src in
   let orig_stderr = Unix.dup Unix.stderr in
-  Unix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr ;
+  Unix.dup2 (Lazy.force devnull) Unix.stderr ;
   let f () = f2 x1 x2 in
   let finally () = restore_stderr orig_stderr in
   protect ~f ~finally

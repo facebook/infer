@@ -14,7 +14,7 @@ let late_callback = ref (fun () -> ())
 let register callback_ref ~f ~description =
   let f_no_exn () =
     try f () with exn ->
-      F.eprintf "%a: Error while running epilogue \"%s\":@ %a.@ Powering through...@." Pid.pp
+      F.eprintf "%d: Error while running epilogue \"%s\":@ %a.@ Powering through...@."
         (Unix.getpid ()) description Exn.pp exn
   in
   let g = !callback_ref in
@@ -34,12 +34,10 @@ let run () = early () ; late ()
 (* Run the epilogues when we get SIGINT (Control-C). *)
 let () =
   let run_epilogues_on_signal s =
-    F.eprintf "*** %s: Caught %s, time to die@."
-      (Filename.basename Sys.executable_name)
-      (Signal.to_string s) ;
+    F.eprintf "*** %s: Caught signal %d, time to die@." (Filename.basename Sys.executable_name) s ;
     run ()
   in
-  Signal.Expert.handle Signal.int run_epilogues_on_signal
+  ignore (Sys.signal Signal.int (Sys.Signal_handle run_epilogues_on_signal))
 
 
 let reset () =

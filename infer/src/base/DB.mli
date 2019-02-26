@@ -51,7 +51,7 @@ module Results_dir : sig
   val clean_specs_dir : unit -> unit
   (** Clean up specs directory *)
 
-  val create_file : path_kind -> path -> Unix.File_descr.t
+  val create_file : path_kind -> path -> Unix.file_descr
   (** create a file at the given path, creating any missing directories *)
 end
 

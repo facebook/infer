@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
+type child_info = {pid: int; down_pipe: Out_channel.t}
 
 (** the state of the pool *)
 type 'a t =
@@ -18,7 +18,7 @@ type 'a t =
   ; slots: child_info Array.t
         (** array of child processes with their pids and channels we can use to send work down to
             each child *)
-  ; children_updates: Unix.File_descr.t
+  ; children_updates: Unix.file_descr
         (** all the children send updates up the same pipe to the pool *)
   ; task_bar: TaskBar.t
   ; mutable tasks: 'a list  (** work remaining to be done *)
@@ -84,9 +84,7 @@ let wait_for_updates pool buffer =
   let timeout = if TaskBar.is_interactive pool.task_bar then refresh_timeout else `Never in
   (* Use select(2) so that we can both wait on the pipe of children updates and wait for a
      timeout. The timeout is for giving a chance to the taskbar of refreshing from time to time. *)
-  let {Unix.Select_fds.read= read_fds} =
-    Unix.select ~read:[file_descr] ~write:[] ~except:[] ~timeout ()
-  in
+  let {Unix.read= read_fds} = Unix.select ~read:[file_descr] ~write:[] ~except:[] ~timeout () in
   match read_fds with
   | _ :: _ :: _ ->
       assert false
@@ -133,7 +131,7 @@ let has_dead_child pool =
   Unix.wait_nohang `Any
   |> Option.map ~f:(fun (dead_pid, status) ->
          ( Array.find_mapi_exn pool.slots ~f:(fun slot {pid} ->
-               if Pid.equal pid dead_pid then Some slot else None )
+               if Int.equal pid dead_pid then Some slot else None )
          , status ) )
 
 

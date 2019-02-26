@@ -125,9 +125,9 @@ let start () =
         Config.memcached_size_mb memcached_socket_relative memcached_log
     in
     let pid = in_results_dir ~f:(Unix.fork_exec ~prog:shell ~argv:[shell; "-c"; cmd]) in
-    (* Wait until socket is open -- NB this waits for 0.05s not 0.05ns *)
+    (* Wait until socket is open *)
     while not (socket_exists ()) do
-      Unix.nanosleep 0.05 |> ignore
+      Unix.sleepf 0.05 |> ignore
     done ;
     Epilogues.register ~description:"Shutdown Memcached daemon" ~f:(stop pid)
 

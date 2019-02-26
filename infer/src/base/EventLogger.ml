@@ -29,7 +29,7 @@ module IO = struct
 
   let prepare () =
     close () ;
-    let fname = events_dir ^/ (Unix.getpid () |> Pid.to_string) ^ log_file_extension in
+    let fname = events_dir ^/ (Unix.getpid () |> string_of_int) ^ log_file_extension in
     let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
     out_chan := Some oc
 
@@ -324,7 +324,7 @@ let string_of_event event =
 
 let sequence_ctr = ref 0
 
-let pid () = Pid.to_int (Unix.getpid ())
+let pid () = Unix.getpid ()
 
 let sysname =
   try

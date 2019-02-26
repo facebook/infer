@@ -40,8 +40,8 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
   let pipe_in, pipe_out = pipe () in
   let producer_args = Array.of_list producer_args in
   let consumer_args = Array.of_list consumer_args in
-  let producer_pid = caml_create_process producer_prog producer_args stdin pipe_out stderr in
-  let consumer_pid = caml_create_process consumer_prog consumer_args pipe_in stdout stderr in
+  let producer_pid = create_process producer_prog producer_args stdin pipe_out stderr in
+  let consumer_pid = create_process consumer_prog consumer_args pipe_in stdout stderr in
   (* wait for children *)
   let producer_status = waitpid producer_pid in
   let consumer_status = waitpid consumer_pid in

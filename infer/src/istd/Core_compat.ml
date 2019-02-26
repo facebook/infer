@@ -64,25 +64,9 @@ module Sys = struct
   let is_file = stat_check (fun stat -> stat.Unix.LargeFile.st_kind = Unix.S_REG)
 
   let is_file_exn = stat_check_exn (fun stat -> stat.Unix.LargeFile.st_kind = Unix.S_REG)
-
-  let fold_dir ~init ~f directory = Array.fold (readdir directory) ~f ~init
 end
 
 let ( ^/ ) = Filename.concat
-
-module Pid = struct
-  type t = int
-
-  let pp = Format.pp_print_int
-
-  let to_int (x : t) = x
-
-  let of_int (x : int) = x
-
-  let to_string (x : t) = string_of_int x
-
-  let equal = ( = )
-end
 
 module Filename = struct
   include Filename
@@ -120,9 +104,6 @@ module Filename = struct
   let temp_file ?perm ?in_dir prefix suffix =
     let name, ch = open_temp_file ?perm ?in_dir prefix suffix in
     Pervasives.close_out ch ; name
-
-
-  let is_absolute p = not (is_relative p)
 end
 
 module Signal = struct
@@ -147,52 +128,18 @@ module Signal = struct
     | `My_group | `Group _ ->
         (* TODO; does not seem to be used *)
         `No_such_process
-
-
-  (* TODO-minor *)
-  let to_string s = string_of_int s
-
-  module Expert = struct
-    let handle signal handler = ignore (Sys.signal signal (Sys.Signal_handle handler))
-  end
 end
 
 module Unix = struct
   include Unix
 
   (* Taken from Core *)
-  (* No need to include a counter here. It just doesn't make sense to think we are
-     going to be receiving a steady stream of interrupts.
-     Glibc's macro doesn't have a counter either.
-  *)
-  let rec retry_until_no_eintr f =
-    try f () with Unix.Unix_error (EINTR, _, _) -> retry_until_no_eintr f
-
-
-  (* modified from Core: no attempt is made to improve the text of the exception *)
-  let improve ?(restart = false) f _make_arg_sexps =
-    if restart then retry_until_no_eintr f else f ()
-
-
-  let mkdir ?(perm = 0o777) name = Unix.mkdir name perm
-
-  let openfile ?(perm = 0o644) ~mode filename = openfile filename mode perm
-
-  (* Prints out in octal, which is much more standard in Unix. *)
-  let sexp_of_file_perm fp = Sexp.Atom (Printf.sprintf "0o%03o" fp)
-
-  let is_rw_open_flag = function O_RDONLY | O_WRONLY | O_RDWR -> true | _ -> false
-
-  let with_close fd ~f = protect ~f:(fun () -> f fd) ~finally:(fun () -> close fd)
-
-  let with_file ?perm file ~mode ~f = with_close (openfile file ~mode ?perm) ~f
 
   type env =
     [ `Replace of (string * string) list
     | `Extend of (string * string) list
     | `Replace_raw of string list ]
 
-  (* Taken from Core *)
   let env_map env =
     let current () =
       List.map (Array.to_list (Unix.environment ())) ~f:(fun s -> String.lsplit2_exn s ~on:'=')
@@ -210,7 +157,6 @@ module Unix = struct
             match v with None -> Map.remove acc key | Some data -> Map.set acc ~key ~data )
 
 
-  (* Taken from Core *)
   let env_assignments env =
     match env with
     | `Replace_raw env ->
@@ -230,6 +176,10 @@ module Unix = struct
      the usage done by infer. *)
   let unsetenv key = putenv ~key ~data:""
 
+  let mkdir ?(perm = 0o777) name = Unix.mkdir name perm
+
+  let openfile ?(perm = 0o644) ~mode filename = openfile filename mode perm
+
   let rename ~src ~dst = rename src dst
 
   let symlink ~src ~dst = symlink src dst
@@ -237,10 +187,6 @@ module Unix = struct
   let utimes src ~access ~modif = utimes src access modif
 
   let read ~pos ~len fd ~buf = read fd buf pos len
-
-  module File_descr = struct
-    type t = Unix.file_descr
-  end
 
   let readdir_opt h = try Some (readdir h) with End_of_file -> None
 
@@ -269,14 +215,6 @@ module Unix = struct
     ()
 
 
-  (* Needed: the type from Core is too different *)
-  let caml_create_process = create_process
-
-  let create_process ~prog ~args =
-    let args = Array.of_list args in
-    create_process prog args stdin stdout stderr
-
-
   (* Not exported in Core *)
   exception Fork_returned_negative_result of int
 
@@ -288,9 +226,7 @@ module Unix = struct
 
 
   (* Own function *)
-  let fork_exec ~prog ~argv ?(use_path = true) ?env () =
-    (* create_process searches the path by default, so this should be ok *)
-    ignore use_path ;
+  let fork_exec ~prog ~argv ?env () =
     let args = Array.of_list argv in
     let env = match env with None -> Unix.environment () | Some env -> conv_env env in
     create_process_env prog args env stdin stdout stderr
@@ -310,7 +246,6 @@ module Unix = struct
   end
 
   module Exit_or_signal = struct
-    (* TODO: slightly problematic in theory as Signal.t is abstract in core *)
     type error = [Exit.error | `Signal of int] [@@deriving compare]
 
     type t = (unit, error) Result.t
@@ -319,7 +254,7 @@ module Unix = struct
       | (Ok () | Error #Exit.error) as e ->
           Exit.to_string_hum e
       | Error (`Signal s) ->
-          sprintf "died after receiving %s (signal number %d)" (Signal.to_string s) s
+          sprintf "died after receiving signal number %d" s
 
 
     let or_error = function
@@ -344,10 +279,10 @@ module Unix = struct
 
 
   (* Taken from Core *)
-  type wait_on = [`Any | `My_group | `Group of Pid.t | `Pid of Pid.t]
+  type wait_on = [`Any | `My_group | `Group of int | `Pid of int]
 
   (* Taken from Core.Unix.wait_gen *)
-  let wait_on_pid : wait_on -> Pid.t = function
+  let wait_on_pid : wait_on -> int = function
     | `Any ->
         -1
     | `Group pid ->
@@ -372,36 +307,22 @@ module Unix = struct
 
   let system s = wrap_status (system s)
 
-  let nanosleep = sleepf
-
-  module Error = struct
-    type t = Unix.error
-
-    let message = Unix.error_message
-  end
-
   let close_process_in ch = wrap_status (close_process_in ch)
 
-  let dup2 ~src ~dst = dup2 src dst
+  type select_fds =
+    {read: Unix.file_descr list; write: Unix.file_descr list; except: Unix.file_descr list}
 
-  module Select_fds = struct
-    type t = {read: File_descr.t list; write: File_descr.t list; except: File_descr.t list}
-  end
-
-  (* Taken from Core, except for the Sexp *)
-  let select ?restart ~read ~write ~except ~timeout () =
-    improve ?restart
-      (fun () ->
-        let timeout =
-          match timeout with
-          | `Never ->
-              -1.
-          | `Immediately ->
-              0.
-          | `After span ->
-              if Time_ns.Span.( < ) span Time_ns.Span.zero then 0. else Time_ns.Span.to_sec span
-        in
-        let read, write, except = Unix.select read write except timeout in
-        {Select_fds.read; write; except} )
-      (fun () -> [("read", ""); ("write", ""); ("except", ""); ("timeout", "")])
+  (* Slightly modified from Core *)
+  let select ~read ~write ~except ~timeout () =
+    let timeout =
+      match timeout with
+      | `Never ->
+          -1.
+      | `Immediately ->
+          0.
+      | `After span ->
+          if Time_ns.Span.( < ) span Time_ns.Span.zero then 0. else Time_ns.Span.to_sec span
+    in
+    let read, write, except = Unix.select read write except timeout in
+    {read; write; except}
 end
