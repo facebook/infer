@@ -112,9 +112,8 @@ let all_checkers =
   ; { name= "loop hoisting"
     ; active= Config.loop_hoisting
     ; callbacks=
-        (Procedure Hoisting.checker, Language.Clang)
-        :: (Procedure Hoisting.checker, Language.Java)
-        :: (if Config.purity then [(Procedure Purity.checker, Language.Java)] else []) }
+        [(Procedure Hoisting.checker, Language.Clang); (Procedure Hoisting.checker, Language.Java)]
+    }
   ; { name= "Starvation analysis"
     ; active= Config.starvation
     ; callbacks=
@@ -122,7 +121,9 @@ let all_checkers =
         ; (Cluster Starvation.reporting, Language.Java)
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
         ; (Cluster Starvation.reporting, Language.Clang) ] }
-  ; {name= "purity"; active= Config.purity; callbacks= [(Procedure Purity.checker, Language.Java)]}
+  ; { name= "purity"
+    ; active= Config.purity || Config.loop_hoisting
+    ; callbacks= [(Procedure Purity.checker, Language.Java)] }
   ; { name= "Class loading analysis"
     ; active= Config.class_loads
     ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] } ]
