@@ -222,11 +222,9 @@ let eradicate_inconsistent_subclass_return_annotation =
     ~hum:"Inconsistent Subclass Return Annotation"
 
 
-let eradicate_null_field_access =
-  from_string "ERADICATE_NULL_FIELD_ACCESS" ~hum:"Null Field Access"
+let eradicate_nullable_dereference =
+  from_string "ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
 
-
-let eradicate_null_method_call = from_string "ERADICATE_NULL_METHOD_CALL" ~hum:"Null Method Call"
 
 let eradicate_parameter_not_nullable =
   from_string "ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable"
@@ -328,8 +326,10 @@ let null_test_after_dereference = from_string ~enabled:false "NULL_TEST_AFTER_DE
 let nullsafe_field_not_nullable =
   from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
 
+
 let nullsafe_nullable_dereference =
   from_string "NULLSAFE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
+
 
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 

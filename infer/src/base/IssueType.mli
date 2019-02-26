@@ -149,9 +149,7 @@ val eradicate_inconsistent_subclass_parameter_annotation : t
 
 val eradicate_inconsistent_subclass_return_annotation : t
 
-val eradicate_null_field_access : t
-
-val eradicate_null_method_call : t
+val eradicate_nullable_dereference : t
 
 val eradicate_parameter_not_nullable : t
 
