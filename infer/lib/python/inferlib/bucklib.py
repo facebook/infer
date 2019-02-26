@@ -35,7 +35,7 @@ INFER_JSON_COSTS_REPORT = os.path.join(config.BUCK_INFER_OUT,
 
 INFER_SCRIPT_NAME = 'infer_wrapper.py'
 INFER_SCRIPT = """\
-#!/usr/bin/env {python_executable}
+#!/usr/bin/env python2.7
 import subprocess
 import sys
 
@@ -73,7 +73,6 @@ def prepare_build(args):
         logging.info('Creating %s' % infer_script_path)
         infer_script.write(
             utils.encode(INFER_SCRIPT.format(
-                python_executable=sys.executable,
                 infer_command=infer_command)))
 
     st = os.stat(infer_script_path)
