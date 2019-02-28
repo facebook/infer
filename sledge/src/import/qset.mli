@@ -103,5 +103,8 @@ val iter : ('a, _) t -> f:('a -> Q.t -> unit) -> unit
 val min_elt : ('a, _) t -> ('a * Q.t) option
 (** Minimum element. *)
 
+val min_elt_exn : ('a, _) t -> 'a * Q.t
+(** Minimum element. *)
+
 val to_list : ('a, _) t -> ('a * Q.t) list
 (** Convert to a list of elements in ascending order. *)

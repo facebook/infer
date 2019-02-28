@@ -221,3 +221,6 @@ val is_true : t -> bool
 val is_false : t -> bool
 val is_simple : t -> bool
 val is_constant : t -> bool
+val typ : t -> Typ.t option
+val classify : t -> [> `Atomic | `Interpreted | `Uninterpreted]
+val solve : t -> t -> (t * t) option

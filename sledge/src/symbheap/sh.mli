@@ -16,7 +16,7 @@ type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
-  ; cong: Congruence.t  (** congruence induced by rest of formula *)
+  ; cong: Equality.t  (** congruence induced by rest of formula *)
   ; pure: Exp.t list  (** conjunction of pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
@@ -56,7 +56,7 @@ val pure : Exp.t -> t
 val and_ : Exp.t -> t -> t
 (** Conjoin a boolean constraint to a formula. *)
 
-val and_cong : Congruence.t -> t -> t
+val and_cong : Equality.t -> t -> t
 (** Conjoin constraints of a congruence to a formula, extending to a common
     vocabulary, and avoiding capturing existentials. *)
 

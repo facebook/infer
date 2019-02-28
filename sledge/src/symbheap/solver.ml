@@ -61,7 +61,7 @@ let single_existential_occurrence xs exp =
   with Multiple_existential_occurrences -> Many
 
 let excise_exp ({us; min; xs} as goal) pure exp =
-  let exp' = Congruence.normalize min.cong exp in
+  let exp' = Equality.normalize min.cong exp in
   if Exp.is_true exp' then Some ({goal with pgs= true}, pure)
   else
     match single_existential_occurrence xs exp' with
@@ -496,19 +496,19 @@ let excise_seg ({sub} as goal) msg ssg =
   [%Trace.info "@[<2>excise_seg@ %a@  |-  %a@]" Sh.pp_seg msg Sh.pp_seg ssg] ;
   let {Sh.loc= k; siz= o} = msg in
   let {Sh.loc= l; siz= n} = ssg in
-  Congruence.difference sub.cong k l
+  Equality.difference sub.cong k l
   >>= fun k_l ->
   match[@warning "-p"] Z.sign k_l with
   (* k-l < 0 so k < l *)
   | -1 -> (
       let ko = Exp.add Typ.ptr k o in
       let ln = Exp.add Typ.ptr l n in
-      Congruence.difference sub.cong ko ln
+      Equality.difference sub.cong ko ln
       >>= fun ko_ln ->
       match[@warning "-p"] Z.sign ko_ln with
       (* k+o-(l+n) < 0 so k+o < l+n *)
       | -1 -> (
-          Congruence.difference sub.cong l ko
+          Equality.difference sub.cong l ko
           >>= fun l_ko ->
           match[@warning "-p"] Z.sign l_ko with
           (* l-(k+o) < 0     [k;   o)
@@ -526,7 +526,7 @@ let excise_seg ({sub} as goal) msg ssg =
       | 1 -> Some (excise_seg_sub_infix goal msg ssg (Z.neg k_l) ko_ln) )
   (* k-l = 0 so k = l *)
   | 0 -> (
-    match Congruence.difference sub.cong o n with
+    match Equality.difference sub.cong o n with
     | None -> Some {goal with sub= Sh.and_ (Exp.eq o n) goal.sub}
     | Some o_n -> (
       match[@warning "-p"] Z.sign o_n with
@@ -543,7 +543,7 @@ let excise_seg ({sub} as goal) msg ssg =
   | 1 -> (
       let ko = Exp.add Typ.ptr k o in
       let ln = Exp.add Typ.ptr l n in
-      Congruence.difference sub.cong ko ln
+      Equality.difference sub.cong ko ln
       >>= fun ko_ln ->
       match[@warning "-p"] Z.sign ko_ln with
       (* k+o-(l+n) < 0        [k; o)
@@ -554,7 +554,7 @@ let excise_seg ({sub} as goal) msg ssg =
       | 0 -> Some (excise_seg_min_suffix goal msg ssg k_l)
       (* k+o-(l+n) > 0 so k+o > l+n *)
       | 1 -> (
-          Congruence.difference sub.cong k ln
+          Equality.difference sub.cong k ln
           >>= fun k_ln ->
           match[@warning "-p"] Z.sign k_ln with
           (* k-(l+n) < 0        [k;  o)

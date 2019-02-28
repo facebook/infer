@@ -15,7 +15,7 @@ type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
 type starjunction =
   { us: Var.Set.t
   ; xs: Var.Set.t
-  ; cong: Congruence.t
+  ; cong: Equality.t
   ; pure: Exp.t list
   ; heap: seg list
   ; djns: disjunction list }
@@ -45,12 +45,12 @@ let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
   if not (Set.is_empty xs) then
     Format.fprintf fs "@<2>∃ @[%a@] .@ ∃ @[%a@] .@ " Var.Set.pp
       (Set.inter xs vs) Var.Set.pp (Set.diff xs vs) ;
-  let first = Map.is_empty (Congruence.classes cong) in
+  let first = Equality.is_true cong in
   if not first then Format.fprintf fs "  " ;
-  Congruence.pp_classes fs cong ;
+  Equality.pp_classes fs cong ;
   let pure_exps =
     List.filter_map pure ~f:(fun e ->
-        let e' = Congruence.normalize cong e in
+        let e' = Equality.normalize cong e in
         if Exp.is_true e' then None else Some e' )
   in
   List.pp
@@ -64,7 +64,7 @@ let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
       ~pre:(if first then "  " else "@ @<2>∧ ")
       "@ * " pp_seg fs
       (List.sort
-         (List.map ~f:(map_seg ~f:(Congruence.normalize cong)) heap)
+         (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
            let b_o = function
              | Exp.App {op= App {op= Add _; arg}; arg= Integer {data; _}} ->
@@ -100,7 +100,7 @@ let fold_vars_seg seg ~init ~f =
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
 let fold_exps fold_exps {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
-  Congruence.fold_exps ~init cong ~f
+  Equality.fold_exps ~init cong ~f
   |> fun init ->
   List.fold ~init pure ~f:(fun init -> Exp.fold_exps ~f ~init)
   |> fun init ->
@@ -137,13 +137,13 @@ let rec invariant q =
       Set.is_subset (fv q) ~of_:us
       || Trace.fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us)
     ) ;
-    Congruence.invariant cong ;
+    Equality.invariant cong ;
     ( match djns with
     | [[]] ->
-        assert (Congruence.is_true cong) ;
+        assert (Equality.is_true cong) ;
         assert (List.is_empty pure) ;
         assert (List.is_empty heap)
-    | _ -> assert (not (Congruence.is_false cong)) ) ;
+    | _ -> assert (not (Equality.is_false cong)) ) ;
     List.iter pure ~f:invariant_pure ;
     List.iter heap ~f:invariant_seg ;
     List.iter djns ~f:(fun djn ->
@@ -171,7 +171,7 @@ let rename_seg sub ({loc; bas; len; siz; arr} as h) =
 (** primitive application of a substitution, ignores us and xs, may violate
     invariant *)
 let rec apply_subst sub ({us= _; xs= _; cong; pure; heap; djns} as q) =
-  let cong = Congruence.rename cong sub in
+  let cong = Equality.rename cong sub in
   let pure =
     List.map_preserving_phys_equal pure ~f:(fun b -> Exp.rename b sub)
   in
@@ -251,7 +251,7 @@ let exists xs q =
 let emp =
   { us= Var.Set.empty
   ; xs= Var.Set.empty
-  ; cong= Congruence.true_
+  ; cong= Equality.true_
   ; pure= []
   ; heap= []
   ; djns= [] }
@@ -260,11 +260,11 @@ let emp =
 let false_ us = {emp with us; djns= [[]]} |> check invariant
 
 let and_cong cong q =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Congruence.pp cong pp q]
+  [%Trace.call fun {pf} -> pf "%a@ %a" Equality.pp cong pp q]
   ;
-  let q = extend_us (Congruence.fv cong) q in
-  let cong = Congruence.and_ q.cong cong in
-  (if Congruence.is_false cong then false_ q.us else {q with cong})
+  let q = extend_us (Equality.fv cong) q in
+  let cong = Equality.and_ q.cong cong in
+  (if Equality.is_false cong then false_ q.us else {q with cong})
   |>
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 
@@ -275,11 +275,11 @@ let star q1 q2 =
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
       false_ (Set.union q1.us q2.us)
   | {us= _; xs= _; cong; pure= []; heap= []; djns= []}, _
-    when Congruence.is_true cong ->
+    when Equality.is_true cong ->
       let us = Set.union q1.us q2.us in
       if us == q2.us then q2 else {q2 with us}
   | _, {us= _; xs= _; cong; pure= []; heap= []; djns= []}
-    when Congruence.is_true cong ->
+    when Equality.is_true cong ->
       let us = Set.union q1.us q2.us in
       if us == q1.us then q1 else {q1 with us}
   | _ ->
@@ -289,8 +289,8 @@ let star q1 q2 =
       let {us= us1; xs= xs1; cong= c1; pure= p1; heap= h1; djns= d1} = q1 in
       let {us= us2; xs= xs2; cong= c2; pure= p2; heap= h2; djns= d2} = q2 in
       assert (Set.equal us (Set.union us1 us2)) ;
-      let cong = Congruence.and_ c1 c2 in
-      if Congruence.is_false cong then false_ us
+      let cong = Equality.and_ c1 c2 in
+      if Equality.is_false cong then false_ us
       else
         { us
         ; xs= Set.union xs1 xs2
@@ -320,7 +320,7 @@ let or_ q1 q2 =
   | _ ->
       { us= Set.union q1.us q2.us
       ; xs= Var.Set.empty
-      ; cong= Congruence.true_
+      ; cong= Equality.true_
       ; pure= []
       ; heap= []
       ; djns= [[q1; q2]] } )
@@ -345,8 +345,8 @@ let rec pure (e : Exp.t) =
         (star (pure cnd) (pure thn))
         (star (pure (Exp.not_ Typ.bool cnd)) (pure els))
   | App {op= App {op= Eq; arg= e1}; arg= e2} ->
-      let cong = Congruence.(and_eq true_ e1 e2) in
-      if Congruence.is_false cong then false_ us
+      let cong = Equality.(and_eq e1 e2 true_) in
+      if Equality.is_false cong then false_ us
       else {emp with us; cong; pure= [e]}
   | _ -> {emp with us; pure= [e]} )
   |>
@@ -371,8 +371,7 @@ let is_emp = function
 let is_false = function
   | {djns= [[]]; _} -> true
   | {cong; pure; _} ->
-      List.exists pure ~f:(fun b ->
-          Exp.is_false (Congruence.normalize cong b) )
+      List.exists pure ~f:(fun b -> Exp.is_false (Equality.normalize cong b))
 
 let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   let heap = emp.heap in

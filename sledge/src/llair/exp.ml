@@ -362,6 +362,8 @@ let typ_of = function
       Some Typ.bool
   | _ -> None
 
+let typ = typ_of
+
 let type_check typ e =
   assert (Option.for_all ~f:(Typ.castable typ) (typ_of e))
 
@@ -1287,3 +1289,34 @@ let rec is_constant = function
   | Add {args} | Mul {args} ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | _ -> true
+
+let classify = function
+  | Add _ | Mul _ -> `Interpreted
+  | App _ -> `Uninterpreted
+  | _ -> `Atomic
+
+let solve e f =
+  [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
+  ;
+  ( match (typ e, typ f) with
+  | Some typ, _ | _, Some typ -> (
+    match sub typ e f with
+    | Add {args} ->
+        let c, q = Qset.min_elt_exn args in
+        let n = Sum.to_exp typ (Qset.remove args c) in
+        let d = rational (Q.neg q) typ in
+        let r = div n d in
+        Some (c, r)
+    | e_f ->
+        let z = integer Z.zero typ in
+        if is_constant e_f && not (equal e_f z) then None else Some (e_f, z)
+    )
+  | _ ->
+      let ord = compare e f in
+      if is_constant e && is_constant f && ord <> 0 then None
+      else if ord < 0 then Some (f, e)
+      else Some (e, f) )
+  |>
+  [%Trace.retn fun {pf} ->
+    function
+    | Some (e, f) -> pf "%a @<2>↦ %a" pp e pp f | None -> pf "false"]

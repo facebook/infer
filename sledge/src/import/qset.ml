@@ -83,6 +83,7 @@ let count_and_remove m x =
   if Q.equal !found Q.zero then None else Some (!found, m)
 
 let min_elt = Map.min_elt
+let min_elt_exn = Map.min_elt_exn
 let fold m ~f ~init = Map.fold m ~f:(fun ~key ~data s -> f key data s) ~init
 
 let map m ~f =
