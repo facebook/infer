@@ -618,6 +618,8 @@ let fold_exps e ~init ~f =
   in
   fix fold_exps_ (fun _ z -> z) e init
 
+let iter_exps e ~f = fold_exps e ~init:() ~f:(fun () e -> f e)
+
 let fold_vars e ~init ~f =
   fold_exps e ~init ~f:(fun z -> function
     | Var _ as v -> f z (v :> Var.t) | _ -> z )
@@ -1047,6 +1049,12 @@ let fold e ~init:s ~f =
 let for_all e ~f = fold ~f:(fun a so_far -> so_far && f a) ~init:true e
 let exists e ~f = fold ~f:(fun a found -> found || f a) ~init:false e
 
+let is_subexp ~sub ~sup =
+  With_return.with_return
+  @@ fun {return} ->
+  iter_exps sup ~f:(fun e -> if equal sub e then return true) ;
+  false
+
 let app1 ?(partial = false) op arg =
   ( match (op, arg) with
   | App {op= Eq; arg= x}, y -> simp_eq x y
@@ -1081,9 +1089,10 @@ let app1 ?(partial = false) op arg =
          | App {op= Eq | Dq} -> ()
          | _ ->
              iter e ~f:(function
+               | App {op= Eq | Dq} -> ()
                | App _ as a ->
                    assert (
-                     equal a op || equal a arg
+                     is_subexp ~sub:a ~sup:op || is_subexp ~sub:a ~sup:arg
                      || Trace.fail
                           "simplifying %a %a@ yields %a@ with new subexp %a"
                           pp op pp arg pp e pp a )
