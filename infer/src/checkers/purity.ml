@@ -162,8 +162,9 @@ module TransferFunctions = struct
                 if Typ.Procname.is_constructor called_pname then Domain.pure
                 else Domain.impure_global ) )
     | Call (_, Indirect _, _, _, _) ->
-        (* This should never happen in Java. Fail if it does. *)
-        L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
+        (* This should never happen in Java *)
+        debug "Unexpected indirect call %a" HilInstr.pp instr ;
+        AbstractDomain.Types.Top
     | _ ->
         astate
 
