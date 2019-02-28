@@ -131,8 +131,6 @@ val models_jar : string
 
 val models_src_dir : string
 
-val multicore_dir_name : string
-
 val nsnotification_center_checker_backend : bool
 
 val os_type : os_type

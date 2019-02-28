@@ -228,8 +228,6 @@ let max_widens = 10000
     1 = use the meet to generate new preconditions *)
 let meet_level = 1
 
-let multicore_dir_name = "multicore"
-
 let nsnotification_center_checker_backend = false
 
 let perf_stats_prefix = "perf_stats"

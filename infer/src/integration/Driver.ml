@@ -86,7 +86,6 @@ let clean_results_dir () =
         [ backend_stats_dir_name
         ; classnames_dir_name
         ; frontend_stats_dir_name
-        ; multicore_dir_name
         ; reporting_stats_dir_name ]
       in
       if flavors then common_list else captured_dir_name :: common_list
