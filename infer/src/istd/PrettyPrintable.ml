@@ -170,26 +170,15 @@ module type PPMonoMap = sig
   val pp_key : F.formatter -> key -> unit
 end
 
-module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) = struct
-  module M = Caml.Map.Make (Ord)
-
-  include (M : module type of M with type 'a t := 'a M.t)
+module PPMonoMapOfPPMap (M : PPMap) (Val : PrintableType) = struct
+  include (M : module type of M with type key = M.key and type 'a t := 'a M.t)
 
   type t = Val.t M.t
 
   type value = Val.t
 
-  let pp_key = Ord.pp
-
-  let pp fmt m =
-    let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Ord.pp k Val.pp v in
-    pp_collection ~pp_item fmt (bindings m)
-
-
-  let is_singleton_or_more m =
-    if is_empty m then IContainer.Empty
-    else
-      let ((kmi, _) as binding) = min_binding m in
-      let kma, _ = max_binding m in
-      if phys_equal kmi kma then IContainer.Singleton binding else IContainer.More
+  let pp = pp ~pp_value:Val.pp
 end
+
+module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) =
+  PPMonoMapOfPPMap (MakePPMap (Ord)) (Val)
