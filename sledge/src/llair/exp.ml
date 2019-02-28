@@ -693,7 +693,25 @@ let simp_ule x y =
 let simp_ord x y = App {op= App {op= Ord; arg= x}; arg= y}
 let simp_uno x y = App {op= App {op= Uno; arg= x}; arg= y}
 
-let simp_div x y =
+let sum_mul_const const sum =
+  assert (not (Q.equal Q.zero const)) ;
+  if Q.equal Q.one const then sum
+  else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
+
+let rec sum_to_exp typ sum =
+  match Qset.length sum with
+  | 0 -> integer Z.zero typ
+  | 1 -> (
+    match Qset.min_elt sum with
+    | Some (Integer _, q) -> rational q typ
+    | Some (arg, q) when Q.equal Q.one q -> arg
+    | _ -> Add {typ; args= sum} )
+  | _ -> Add {typ; args= sum}
+
+and rational Q.({num; den}) typ =
+  simp_div (integer num typ) (integer den typ)
+
+and simp_div x y =
   match (x, y) with
   (* i / j *)
   | Integer {data= i; typ}, Integer {data= j} ->
@@ -701,6 +719,9 @@ let simp_div x y =
       integer (Z.bdiv ~bits i j) typ
   (* e / 1 ==> e *)
   | e, Integer {data} when Z.equal Z.one data -> e
+  (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
+  | Add {typ; args}, Integer {data} ->
+      sum_to_exp typ (sum_mul_const Q.(inv (of_z data)) args)
   | _ -> App {op= App {op= Div; arg= x}; arg= y}
 
 let simp_udiv x y =
@@ -733,9 +754,6 @@ let simp_urem x y =
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
   | _ -> App {op= App {op= Urem; arg= x}; arg= y}
 
-let rational Q.({num; den}) typ =
-  simp_div (integer num typ) (integer den typ)
-
 (* Sums of polynomial terms represented by multisets. A sum ∑ᵢ cᵢ ×
    Xᵢ of monomials Xᵢ with coefficients cᵢ is represented by a
    multiset where the elements are Xᵢ with multiplicities cᵢ. A constant
@@ -757,20 +775,8 @@ module Sum = struct
   let map sum ~f =
     Qset.fold sum ~init:empty ~f:(fun e c sum -> add c (f e) sum)
 
-  let mul_const const sum =
-    assert (not (Q.equal Q.zero const)) ;
-    if Q.equal Q.one const then sum
-    else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
-
-  let to_exp typ sum =
-    match Qset.length sum with
-    | 0 -> integer Z.zero typ
-    | 1 -> (
-      match Qset.min_elt sum with
-      | Some (Integer _, q) -> rational q typ
-      | Some (arg, q) when Q.equal Q.one q -> arg
-      | _ -> Add {typ; args= sum} )
-    | _ -> Add {typ; args= sum}
+  let mul_const = sum_mul_const
+  let to_exp = sum_to_exp
 end
 
 let rec simp_add_ typ es poly =
