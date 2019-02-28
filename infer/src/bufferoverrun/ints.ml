@@ -83,8 +83,6 @@ module NonNegativeInt = struct
 
   let ( * ) = Z.( * )
 
-  let max = Z.max
-
   let pp = Z.pp_print
 end
 

@@ -298,15 +298,6 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     PartialOrder.join cmp_const cmp_terms
 
 
-  (* Possible optimization for later: x join x^2 = x^2 instead of x + x^2 *)
-  let rec join : t -> t -> t =
-   fun p1 p2 ->
-    if phys_equal p1 p2 then p1
-    else
-      { const= NonNegativeInt.max p1.const p2.const
-      ; terms= M.increasing_union ~f:join p1.terms p2.terms }
-
-
   (* assumes symbols are not comparable *)
   (* TODO: improve this for comparable symbols *)
   let min_default_left : t -> t -> t =
@@ -318,10 +309,6 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
         p2
     | `NotComparable ->
         if is_constant p1 then p1 else if is_constant p2 then p2 else p1
-
-
-  let widen : prev:t -> next:t -> num_iters:int -> t =
-   fun ~prev:_ ~next:_ ~num_iters:_ -> assert false
 
 
   let subst callee_pname loc =
@@ -422,7 +409,13 @@ module NonNegativeBoundWithDegreeKind = MakeSymbolWithDegreeKind (Bounds.NonNega
 module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBoundWithDegreeKind)
 
 module NonNegativePolynomial = struct
-  include AbstractDomain.TopLifted (NonNegativeNonTopPolynomial)
+  type t = NonNegativeNonTopPolynomial.t top_lifted
+
+  let top = Top
+
+  let ( <= ) = AbstractDomain.TopLiftedUtils.( <= ) ~le:NonNegativeNonTopPolynomial.( <= )
+
+  let pp = AbstractDomain.TopLiftedUtils.pp ~pp:NonNegativeNonTopPolynomial.pp
 
   let zero = NonTop NonNegativeNonTopPolynomial.zero
 
@@ -459,8 +452,6 @@ module NonNegativePolynomial = struct
     | NonTop p1, NonTop p2 ->
         NonTop (NonNegativeNonTopPolynomial.min_default_left p1 p2)
 
-
-  let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top
 
   let subst callee_pname loc p eval_sym =
     match p with

@@ -30,7 +30,11 @@ module NonNegativeNonTopPolynomial : sig
 end
 
 module NonNegativePolynomial : sig
-  include AbstractDomain.WithTop
+  include PrettyPrintable.PrintableType
+
+  val ( <= ) : lhs:t -> rhs:t -> bool
+
+  val top : t
 
   val zero : t
 

@@ -49,7 +49,7 @@ end
     {OperationCost, AllocationCost, IOCost} -> BasicCost.t
 *)
 module VariantCostMap = struct
-  include AbstractDomain.MapOfPPMap (CostKindMap) (BasicCost)
+  include PrettyPrintable.PPMonoMapOfPPMap (CostKindMap) (BasicCost)
 
   let[@warning "-32"] add _ = Logging.die InternalError "Don't call me"
 

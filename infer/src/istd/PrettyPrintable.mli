@@ -140,5 +140,8 @@ module MakePPSet (Ord : PrintableOrderedType) : PPSet with type elt = Ord.t
 
 module MakePPMap (Ord : PrintableOrderedType) : PPMap with type key = Ord.t
 
+module PPMonoMapOfPPMap (M : PPMap) (Val : PrintableType) :
+  PPMonoMap with type key = M.key and type value = Val.t and type t = Val.t M.t
+
 module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) :
   PPMonoMap with type key = Ord.t and type value = Val.t

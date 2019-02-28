@@ -73,8 +73,6 @@ module NonNegativeInt : sig
 
   val ( * ) : t -> t -> t
 
-  val max : t -> t -> t
-
   val pp : F.formatter -> t -> unit
 end
 
