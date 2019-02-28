@@ -346,26 +346,14 @@ AC_CHECK_TOOL([BREW], [brew], [no])
 AC_ARG_VAR([SDKROOT], [path to the OSX platform SDK used by clang])
 AC_SUBST([SDKROOT])
 
-AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
-AC_SUBST([PATCHELF])
 AC_CHECK_TOOL([INSTALL_NAME_TOOL], [install_name_tool], [no])
 AC_SUBST([INSTALL_NAME_TOOL])
+AC_CHECK_TOOL([LDD], [ldd], [no])
+AC_SUBST([LDD])
 AC_CHECK_TOOL([OTOOL], [otool], [no])
 AC_SUBST([OTOOL])
-
-# look for the location of various libraries, needed to create relocatable installations of infer
-
-AC_ARG_VAR([MPFR_LIB_PATH], [path to libmpfr.so or libmpfr.dylib])
-AC_MSG_CHECKING([where to find libmpfr])
-AS_IF([test "x$MPFR_LIB_PATH" = "x"], [MPFR_LIB_PATH=no])
-AC_MSG_RESULT([$MPFR_LIB_PATH])
-AC_SUBST([MPFR_LIB_PATH])
-
-AC_MSG_CHECKING([where to find libgmp])
-AC_ARG_VAR([GMP_LIB_PATH], [path to libgmp.so or libgmp.dylib])
-AS_IF([test "x$GMP_LIB_PATH" = "x"], [GMP_LIB_PATH=no])
-AC_MSG_RESULT([$GMP_LIB_PATH])
-AC_SUBST([GMP_LIB_PATH])
+AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
+AC_SUBST([PATCHELF])
 
 AC_CHECK_INFER_MAN_LAST_MODIFIED()
 
