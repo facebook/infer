@@ -689,8 +689,8 @@ let difference r a b =
   let r, b = norm_extend r b in
   ( match (a, b) with
   | _ when Exp.equal a b -> Some Z.zero
-  | (AppN {op= Add {typ} | Mul {typ}} | Integer {typ}), _
-   |_, (AppN {op= Add {typ} | Mul {typ}} | Integer {typ}) -> (
+  | (Add {typ} | Mul {typ} | Integer {typ}), _
+   |_, (Add {typ} | Mul {typ} | Integer {typ}) -> (
       let a_b = Exp.sub typ a b in
       let r, a_b = norm_extend r a_b in
       let r = propagate r in

@@ -65,7 +65,9 @@ module rec T : sig
 
   type t =
     | App of {op: t; arg: t}
-    | AppN of {op: t; args: mset}
+    (* nary: arithmetic, numeric and pointer *)
+    | Add of {args: mset; typ: Typ.t}
+    | Mul of {args: mset; typ: Typ.t}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
@@ -89,9 +91,6 @@ module rec T : sig
     | Ule
     | Ord
     | Uno
-    (* nary: arithmetic, numeric and pointer *)
-    | Add of {typ: Typ.t}
-    | Mul of {typ: Typ.t}
     (* binary: arithmetic, numeric and pointer *)
     | Div
     | Udiv
@@ -129,7 +128,8 @@ and T0 : sig
 
   type t =
     | App of {op: t; arg: t}
-    | AppN of {op: t; args: mset}
+    | Add of {args: mset; typ: Typ.t}
+    | Mul of {args: mset; typ: Typ.t}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
@@ -150,8 +150,6 @@ and T0 : sig
     | Ule
     | Ord
     | Uno
-    | Add of {typ: Typ.t}
-    | Mul of {typ: Typ.t}
     | Div
     | Udiv
     | Rem
@@ -174,7 +172,8 @@ end = struct
 
   type t =
     | App of {op: t; arg: t}
-    | AppN of {op: t; args: mset}
+    | Add of {args: mset; typ: Typ.t}
+    | Mul of {args: mset; typ: Typ.t}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
@@ -195,8 +194,6 @@ end = struct
     | Ule
     | Ord
     | Uno
-    | Add of {typ: Typ.t}
-    | Mul of {typ: Typ.t}
     | Div
     | Udiv
     | Rem
@@ -281,8 +278,7 @@ let rec pp fs exp =
     | Ule -> pf "u<="
     | Ord -> pf "ord"
     | Uno -> pf "uno"
-    | Add _ -> pf "+"
-    | AppN {op= Add _; args} ->
+    | Add {args} ->
         let pp_poly_term fs (monomial, coefficient) =
           match monomial with
           | Integer {data} when Z.is_one data -> Z.pp fs coefficient
@@ -291,8 +287,7 @@ let rec pp fs exp =
               Format.fprintf fs "%a @<1>× %a" Z.pp coefficient pp monomial
         in
         pf "(%a)" (Mset.pp "@ + " pp_poly_term) args
-    | Mul _ -> pf "@<1>×"
-    | AppN {op= Mul _; args} ->
+    | Mul {args} ->
         let pp_mono_term fs (factor, exponent) =
           if Z.is_one exponent then pp fs factor
           else Format.fprintf fs "%a^%a" pp factor Z.pp exponent
@@ -339,9 +334,6 @@ let rec pp fs exp =
       | Record, elts -> pf "{%a}" pp_record elts
       | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
-    | AppN {op; args} ->
-        let pp_elt fs (e, z) = Format.fprintf fs "%a %a" pp e Z.pp z in
-        pf "(%a@ %a)" pp op (Mset.pp "@ " pp_elt) args
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
   in
@@ -370,9 +362,7 @@ let pp_t = pp
 (** Invariant *)
 
 let typ_of = function
-  | AppN {op= Add {typ} | Mul {typ}}
-   |Integer {typ}
-   |App {op= Convert {dst= typ}} ->
+  | Add {typ} | Mul {typ} | Integer {typ} | App {op= Convert {dst= typ}} ->
       Some typ
   | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule}}
     ->
@@ -386,7 +376,7 @@ let type_check2 typ e f = type_check typ e ; type_check typ f
 
 (* an indeterminate (factor of a monomial) is any non-Add/Mul/Integer exp *)
 let rec assert_indeterminate = function
-  | App {op} | AppN {op} -> assert_indeterminate op
+  | App {op} -> assert_indeterminate op
   | Integer _ | Add _ | Mul _ -> assert false
   | _ -> assert true
 
@@ -396,7 +386,7 @@ let rec assert_indeterminate = function
  *)
 let assert_monomial add_typ mono =
   match mono with
-  | AppN {op= Mul {typ}; args} ->
+  | Mul {typ; args} ->
       assert (Typ.castable add_typ typ) ;
       assert (Option.exists ~f:(fun n -> 1 < n) (Typ.prim_bit_size_of typ)) ;
       Mset.iter args ~f:(fun factor exponent ->
@@ -411,7 +401,7 @@ let assert_poly_term add_typ mono coeff =
   assert (not (Z.is_zero coeff)) ;
   match mono with
   | Integer {data} -> assert (Z.is_one data)
-  | AppN {op= Mul _; args} ->
+  | Mul {args} ->
       if Z.is_one coeff then assert (Mset.length args > 1)
       else assert (Mset.length args > 0) ;
       assert_monomial add_typ mono |> Fn.id
@@ -424,7 +414,7 @@ let assert_poly_term add_typ mono coeff =
  *)
 let assert_polynomial poly =
   match poly with
-  | AppN {op= Add {typ}; args} ->
+  | Add {typ; args} ->
       ( match Mset.length args with
       | 0 -> assert false
       | 1 -> (
@@ -445,7 +435,7 @@ let invariant ?(partial = false) e =
     assert (nargs = arity || (partial && nargs < arity))
   in
   match op with
-  | App _ -> fail "uncurry cannot return App or AppN" ()
+  | App _ -> fail "uncurry cannot return App" ()
   | Integer {data; typ= (Integer _ | Pointer _) as typ} -> (
     match Typ.prim_bit_size_of typ with
     | None -> assert false
@@ -459,14 +449,8 @@ let invariant ?(partial = false) e =
       | [Integer {typ}] -> assert (Typ.equal src typ)
       | _ -> assert_arity 1 ) ;
       assert (Typ.convertible src dst)
-  | AppN {op= Add _} ->
-      assert_arity 0 ;
-      assert_polynomial e |> Fn.id
-  | AppN {op= Mul {typ}} ->
-      assert_arity 0 ;
-      assert_monomial typ e |> Fn.id
-  | Add _ | Mul _ -> assert (partial || fail "Add and Mul are not curried")
-  | AppN _ -> fail "Add and Mul are the only nary operators" ()
+  | Add _ -> assert_polynomial e |> Fn.id
+  | Mul {typ} -> assert_monomial typ e |> Fn.id
   | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Div | Udiv | Rem
    |Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
     match args with
@@ -631,9 +615,8 @@ let fold_exps e ~init ~f =
     let z =
       match e with
       | App {op; arg} -> fold_exps_ op (fold_exps_ arg z)
-      | AppN {op; args} ->
-          fold_exps_ op
-            (Mset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z))
+      | Add {args} | Mul {args} ->
+          Mset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z)
       | Struct_rec {elts} ->
           Vector.fold elts ~init:z ~f:(fun z elt -> fold_exps_ elt z)
       | _ -> z
@@ -788,8 +771,8 @@ module Sum = struct
       match Mset.min_elt sum with
       | Some (Integer _, z) -> integer z typ
       | Some (arg, z) when Z.is_one z -> arg
-      | _ -> AppN {op= Add {typ}; args= sum} )
-    | _ -> AppN {op= Add {typ}; args= sum}
+      | _ -> Add {typ; args= sum} )
+    | _ -> Add {typ; args= sum}
 end
 
 let rec simp_add_ typ es poly =
@@ -804,11 +787,10 @@ let rec simp_add_ typ es poly =
     | Integer {data= i}, Integer {data= j} ->
         integer (Z.badd ~bits:(bits_of_int exp) Z.(coeff * i) j) typ
     (* (c × ∑ᵢ cᵢ × Xᵢ) + s ==> (∑ᵢ (c × cᵢ) × Xᵢ) + s *)
-    | AppN {op= Add _; args}, _ ->
-        simp_add_ typ (Sum.mul_const coeff args) poly
+    | Add {args}, _ -> simp_add_ typ (Sum.mul_const coeff args) poly
     (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ
        cᵢ × Xᵢ *)
-    | _, AppN {op= Add _; args} -> Sum.to_exp typ (Sum.add coeff exp args)
+    | _, Add {args} -> Sum.to_exp typ (Sum.add coeff exp args)
     (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
     | _ -> Sum.to_exp typ (Sum.add coeff exp (Sum.singleton poly))
   in
@@ -830,11 +812,10 @@ end
 (* map over each monomial of a polynomial *)
 let poly_map_monos poly ~f =
   match poly with
-  | AppN {op= Add {typ}; args= sum} ->
+  | Add {typ; args= sum} ->
       Sum.to_exp typ
         (Sum.map sum ~f:(function
-          | AppN {op= Mul _ as mul; args= prod} ->
-              AppN {op= mul; args= f prod}
+          | Mul {typ; args= prod} -> Mul {typ; args= f prod}
           | _ -> violates invariant poly ))
   | _ -> fail "poly_map_monos" ()
 
@@ -849,31 +830,28 @@ let rec simp_mul2 typ e f =
   | _, Integer {data} when Z.is_zero data -> f
   (* c × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ c × cᵤ × ∏ⱼ
      yᵤⱼ *)
-  | Integer {data}, AppN {op= Add _; args}
-   |AppN {op= Add _; args}, Integer {data} ->
+  | Integer {data}, Add {args} | Add {args}, Integer {data} ->
       Sum.to_exp typ (Sum.mul_const data args)
   (* c₁ × x₁ ==> ∑ᵢ₌₁ cᵢ × xᵢ *)
   | Integer {data= c}, x | x, Integer {data= c} ->
       Sum.to_exp typ (Sum.singleton ~coeff:c x)
   (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==>
      ∏ⱼ₌₀ⁿ xⱼ *)
-  | AppN {op= Mul _ as mul; args= xs1}, AppN {op= Mul _; args= xs2} ->
-      AppN {op= mul; args= Prod.union xs1 xs2}
+  | Mul {typ; args= xs1}, Mul {args= xs2} ->
+      Mul {typ; args= Prod.union xs1 xs2}
   (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ ×
      ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
-  | AppN {op= Mul _; args= prod}, (AppN {op= Add _} as poly)
-   |(AppN {op= Add _} as poly), AppN {op= Mul _; args= prod} ->
+  | Mul {args= prod}, (Add _ as poly) | (Add _ as poly), Mul {args= prod} ->
       poly_map_monos ~f:(Prod.union prod) poly
   (* x₀ × (∏ᵢ₌₁ⁿ xᵢ) ==> ∏ᵢ₌₀ⁿ xᵢ *)
-  | AppN {op= Mul _ as mul; args= xs1}, x
-   |x, AppN {op= Mul _ as mul; args= xs1} ->
-      AppN {op= mul; args= Prod.add x xs1}
+  | Mul {typ; args= xs1}, x | x, Mul {typ; args= xs1} ->
+      Mul {typ; args= Prod.add x xs1}
   (* e × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ e × cᵤ × ∏ⱼ
      yᵤⱼ *)
-  | AppN {op= Add _; args}, e | e, AppN {op= Add _; args} ->
+  | Add {args}, e | e, Add {args} ->
       simp_add typ (Sum.map ~f:(fun m -> simp_mul2 typ e m) args)
   (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
-  | _ -> AppN {op= Mul {typ}; args= Prod.add e (Prod.singleton f)}
+  | _ -> Mul {args= Prod.add e (Prod.singleton f); typ}
 
 let simp_mul typ es =
   (* (bas ^ pwr) × exp *)
@@ -1060,9 +1038,7 @@ let simp_ashr x y =
 let iter e ~f =
   match e with
   | App {op; arg} -> f op ; f arg
-  | AppN {op; args} ->
-      f op ;
-      Mset.iter ~f:(fun arg _ -> f arg) args
+  | Add {args} | Mul {args} -> Mset.iter ~f:(fun arg _ -> f arg) args
   | _ -> ()
 
 let fold e ~init:s ~f =
@@ -1071,8 +1047,7 @@ let fold e ~init:s ~f =
       let s = f s op in
       let s = f s arg in
       s
-  | AppN {op; args} ->
-      let s = f s op in
+  | Add {args} | Mul {args} ->
       let s = Mset.fold ~f:(fun e _ s -> f s e) args ~init:s in
       s
   | _ -> s
@@ -1124,13 +1099,8 @@ let app1 ?(partial = false) op arg =
 
 let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
-
-let appN op args =
-  ( match op with
-  | Add {typ} -> simp_add typ args
-  | Mul {typ} -> simp_mul typ args
-  | _ -> AppN {op; args} )
-  |> check invariant
+let addN typ args = simp_add typ args |> check invariant
+let mulN typ args = simp_mul typ args |> check invariant
 
 let check1 op typ x =
   type_check typ x ;
@@ -1203,32 +1173,36 @@ let convert ?(signed = false) ~dst ~src exp =
 (** Transform *)
 
 let map e ~f =
+  let map_mset mk typ ~f args =
+    let args' = Mset.map ~f:(fun arg z -> (f arg, z)) args in
+    if args' == args then e else mk typ args'
+  in
   match e with
   | App {op; arg} ->
       let op' = f op in
       let arg' = f arg in
       if op' == op && arg' == arg then e else app1 ~partial:true op' arg'
-  | AppN {op; args} ->
-      let op' = f op in
-      let args' = Mset.map ~f:(fun arg z -> (f arg, z)) args in
-      if op' == op && args' == args then e else appN op' args'
+  | Add {args; typ} -> map_mset addN typ ~f args
+  | Mul {args; typ} -> map_mset mulN typ ~f args
   | _ -> e
 
 let fold_map e ~init:s ~f =
+  let fold_map_mset mk typ ~f ~init args =
+    let args', s =
+      Mset.fold_map args ~init ~f:(fun x z s ->
+          let s, x' = f s x in
+          (x', z, s) )
+    in
+    if args' == args then (s, e) else (s, mk typ args')
+  in
   match e with
   | App {op; arg} ->
       let s, op' = f s op in
       let s, arg' = f s arg in
       if op' == op && arg' == arg then (s, e)
       else (s, app1 ~partial:true op' arg')
-  | AppN {op; args} ->
-      let s, op' = f s op in
-      let args', s =
-        Mset.fold_map args ~init:s ~f:(fun x z s ->
-            let s, x' = f s x in
-            (x', z, s) )
-      in
-      if op' == op && args' == args then (s, e) else (s, appN op' args')
+  | Add {args; typ} -> fold_map_mset addN typ ~f args ~init:s
+  | Mul {args; typ} -> fold_map_mset mulN typ ~f args ~init:s
   | _ -> (s, e)
 
 let rename e sub =
@@ -1243,7 +1217,7 @@ let rename e sub =
 
 let offset e =
   ( match e with
-  | AppN {op= Add {typ}; args} ->
+  | Add {typ; args} ->
       let offset = Mset.count args (integer Z.one typ) in
       if Z.is_zero offset then None else Some (offset, typ)
   | _ -> None )
@@ -1253,21 +1227,21 @@ let offset e =
 
 let base e =
   ( match e with
-  | AppN {op= Add {typ} as op; args} -> (
+  | Add {typ; args} -> (
       let args = Mset.remove args (integer Z.one typ) in
       match Mset.length args with
       | 0 -> integer Z.zero typ
       | 1 -> (
         match Mset.min_elt args with
         | Some (arg, z) when Z.is_one z -> arg
-        | _ -> AppN {op; args} )
-      | _ -> AppN {op; args} )
+        | _ -> Add {typ; args} )
+      | _ -> Add {typ; args} )
   | _ -> e )
   |> check (invariant ~partial:true)
 
 let base_offset e =
   ( match e with
-  | AppN {op= Add {typ} as op; args} -> (
+  | Add {typ; args} -> (
     match Mset.count_and_remove args (integer Z.one typ) with
     | Some (offset, args) ->
         let base =
@@ -1276,8 +1250,8 @@ let base_offset e =
           | 1 -> (
             match Mset.min_elt args with
             | Some (arg, z) when Z.is_one z -> arg
-            | _ -> AppN {op; args} )
-          | _ -> AppN {op; args}
+            | _ -> Add {typ; args} )
+          | _ -> Add {typ; args}
         in
         Some (base, offset, typ)
     | None -> None )
@@ -1298,11 +1272,11 @@ let is_false = function
   | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
   | _ -> false
 
-let is_simple = function App _ | AppN _ -> false | _ -> true
+let is_simple = function App _ | Add _ | Mul _ -> false | _ -> true
 
 let rec is_constant = function
   | Var _ | Nondet _ -> false
   | App {op; arg} -> is_constant arg && is_constant op
-  | AppN {op; args} ->
-      Mset.for_all ~f:(fun arg _ -> is_constant arg) args && is_constant op
+  | Add {args} | Mul {args} ->
+      Mset.for_all ~f:(fun arg _ -> is_constant arg) args
   | _ -> true

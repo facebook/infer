@@ -28,7 +28,8 @@ type mset = (t, comparator_witness) Mset.t
 and t = private
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | AppN of {op: t; args: mset}
+  | Add of {args: mset; typ: Typ.t}  (** Addition *)
+  | Mul of {args: mset; typ: Typ.t}  (** Multiplication *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
@@ -54,8 +55,6 @@ and t = private
   | Ule  (** Unsigned less-than-or-equal test *)
   | Ord  (** Ordered test (neither arg is nan) *)
   | Uno  (** Unordered test (some arg is nan) *)
-  | Add of {typ: Typ.t}  (** Addition *)
-  | Mul of {typ: Typ.t}  (** Multiplication *)
   | Div  (** Division *)
   | Udiv  (** Unsigned division *)
   | Rem  (** Remainder of division *)
