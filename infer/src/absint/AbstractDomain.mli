@@ -61,20 +61,22 @@ module type WithTop = sig
   val is_top : t -> bool
 end
 
-(** Lift a pre-domain to a domain *)
+(** Create a domain with Bottom element from a pre-domain *)
 module BottomLifted (Domain : S) : sig
   include WithBottom with type t = Domain.t bottom_lifted
 
   val map : f:(Domain.t -> Domain.t) -> t -> t
 end
 
-(* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-include
-  sig
-    [@@@warning "-60"]
+module BottomLiftedUtils : sig
+  val pp : pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a bottom_lifted -> unit
+end
 
-    (** Create a domain with Top element from a pre-domain *)
-    module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
+(** Create a domain with Top element from a pre-domain *)
+module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
+
+module TopLiftedUtils : sig
+  val pp_top : Format.formatter -> unit
 end
 
 (** Cartesian product of two domains. *)

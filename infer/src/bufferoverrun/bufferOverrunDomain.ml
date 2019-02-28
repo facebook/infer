@@ -1591,9 +1591,5 @@ module Mem = struct
     PowLoc.fold get_c_strlen' locs Val.bot
 
 
-  let pp f = function
-    | Bottom ->
-        F.pp_print_string f SpecialChars.down_tack
-    | NonBottom m ->
-        MemReach.pp f m
+  let pp f m = AbstractDomain.BottomLiftedUtils.pp ~pp:MemReach.pp f m
 end

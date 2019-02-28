@@ -56,14 +56,8 @@ module type WithTop = sig
   val is_top : t -> bool
 end
 
-module BottomLifted (Domain : S) = struct
-  type t = Domain.t bottom_lifted
-
-  let bottom = Bottom
-
-  let is_bottom = function Bottom -> true | NonBottom _ -> false
-
-  let ( <= ) ~lhs ~rhs =
+module BottomLiftedUtils = struct
+  let ( <= ) ~le ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
@@ -72,8 +66,31 @@ module BottomLifted (Domain : S) = struct
       | _, Bottom ->
           false
       | NonBottom lhs, NonBottom rhs ->
-          Domain.( <= ) ~lhs ~rhs
+          le ~lhs ~rhs
 
+
+  let map ~f astate =
+    match astate with
+    | Bottom ->
+        astate
+    | NonBottom a ->
+        let a' = f a in
+        if phys_equal a' a then astate else NonBottom a'
+
+
+  let pp_bottom f = F.pp_print_string f SpecialChars.up_tack
+
+  let pp ~pp f = function Bottom -> pp_bottom f | NonBottom astate -> pp f astate
+end
+
+module BottomLifted (Domain : S) = struct
+  type t = Domain.t bottom_lifted
+
+  let bottom = Bottom
+
+  let is_bottom = function Bottom -> true | NonBottom _ -> false
+
+  let ( <= ) = BottomLiftedUtils.( <= ) ~le:Domain.( <= )
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
@@ -99,20 +116,27 @@ module BottomLifted (Domain : S) = struct
           PhysEqual.optim2 ~res:(NonBottom (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
 
-  let map ~f astate =
-    match astate with
-    | Bottom ->
-        astate
-    | NonBottom a ->
-        let a' = f a in
-        if phys_equal a' a then astate else NonBottom a'
+  let map = BottomLiftedUtils.map
+
+  let pp = BottomLiftedUtils.pp ~pp:Domain.pp
+end
+
+module TopLiftedUtils = struct
+  let ( <= ) ~le ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      match (lhs, rhs) with
+      | _, Top ->
+          true
+      | Top, _ ->
+          false
+      | NonTop lhs, NonTop rhs ->
+          le ~lhs ~rhs
 
 
-  let pp fmt = function
-    | Bottom ->
-        F.pp_print_string fmt SpecialChars.up_tack
-    | NonBottom astate ->
-        Domain.pp fmt astate
+  let pp_top f = F.pp_print_string f SpecialChars.down_tack
+
+  let pp ~pp f = function Top -> pp_top f | NonTop astate -> pp f astate
 end
 
 module TopLifted (Domain : S) = struct
@@ -122,17 +146,7 @@ module TopLifted (Domain : S) = struct
 
   let is_top = function Top -> true | _ -> false
 
-  let ( <= ) ~lhs ~rhs =
-    if phys_equal lhs rhs then true
-    else
-      match (lhs, rhs) with
-      | _, Top ->
-          true
-      | Top, _ ->
-          false
-      | NonTop lhs, NonTop rhs ->
-          Domain.( <= ) ~lhs ~rhs
-
+  let ( <= ) = TopLiftedUtils.( <= ) ~le:Domain.( <= )
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
@@ -154,11 +168,7 @@ module TopLifted (Domain : S) = struct
           PhysEqual.optim2 ~res:(NonTop (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
 
-  let pp fmt = function
-    | Top ->
-        F.pp_print_string fmt SpecialChars.down_tack
-    | NonTop astate ->
-        Domain.pp fmt astate
+  let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct
@@ -228,11 +238,11 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
 
   let pp f = function
     | Bot ->
-        F.pp_print_string f SpecialChars.up_tack
+        BottomLiftedUtils.pp_bottom f
     | V v ->
         V.pp f v
     | Top ->
-        F.pp_print_string f SpecialChars.down_tack
+        TopLiftedUtils.pp_top f
 
 
   let v x = V x

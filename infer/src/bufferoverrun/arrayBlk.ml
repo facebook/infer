@@ -130,7 +130,7 @@ module ArrInfo = struct
     | Java {length} ->
         F.fprintf f "length : %a" Itv.pp length
     | Top ->
-        F.pp_print_string f SpecialChars.down_tack
+        AbstractDomain.TopLiftedUtils.pp_top f
 
 
   let is_symbolic : t -> bool =
