@@ -529,10 +529,13 @@ module ConstraintSolver = struct
     Option.value_exn set |> ControlFlowCost.Set.cost
 end
 
+type callee_summary_and_formals = CostDomain.summary * (Pvar.t * Typ.t) list
+
 type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
   ; integer_type_widths: Typ.IntegerWidths.t
-  ; get_node_nb_exec: Node.id -> BasicCost.t }
+  ; get_node_nb_exec: Node.id -> BasicCost.t
+  ; get_callee_summary_and_formals: Typ.Procname.t -> callee_summary_and_formals option }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
@@ -548,18 +551,12 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let get_callee_summary caller_pdesc callee_pname =
-    Ondemand.analyze_proc_name ~caller_pdesc callee_pname
-    |> Option.bind ~f:(fun summary ->
-           Payload.of_summary summary
-           |> Option.map ~f:(fun payload ->
-                  (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
-
-
-  let get_instr_cost_record pdata instr_node instr =
+  let get_instr_cost_record extras instr_node instr =
     match instr with
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) -> (
-        let ProcData.({pdesc; extras= {inferbo_invariant_map; integer_type_widths}}) = pdata in
+        let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} =
+          extras
+        in
         match
           BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
         with
@@ -571,7 +568,7 @@ module InstrBasicCost = struct
             | Some model ->
                 CostDomain.of_operation_cost (model loc inferbo_mem)
             | None -> (
-              match get_callee_summary pdesc callee_pname with
+              match get_callee_summary_and_formals callee_pname with
               | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
                   CostDomain.map callee_cost_record ~f:(fun callee_cost ->
                       instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
@@ -590,7 +587,7 @@ module InstrBasicCost = struct
         CostDomain.zero_record
 
 
-  let get_instr_node_cost_record pdata instr_node =
+  let get_instr_node_cost_record extras instr_node =
     let instrs = InstrCFG.instrs instr_node in
     let instr =
       match IContainer.singleton_or_more instrs ~fold:Instrs.fold with
@@ -601,7 +598,7 @@ module InstrBasicCost = struct
       | More ->
           assert false
     in
-    get_instr_cost_record pdata instr_node instr
+    get_instr_cost_record extras instr_node instr
 end
 
 let compute_errlog_extras cost =
@@ -641,10 +638,10 @@ module WorstCaseCost = struct
     (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:threshold)
 
 
-  let exec_node {costs; reports} pdata instr_node =
-    let {ProcData.extras= {get_node_nb_exec}} = pdata in
+  let exec_node {costs; reports} extras instr_node =
+    let {get_node_nb_exec} = extras in
     let node_cost =
-      let instr_cost_record = InstrBasicCost.get_instr_node_cost_record pdata instr_node in
+      let instr_cost_record = InstrBasicCost.get_instr_node_cost_record extras instr_node in
       let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
       let nb_exec = get_node_nb_exec node_id in
       CostDomain.mult_by_scalar instr_cost_record nb_exec
@@ -666,26 +663,25 @@ module WorstCaseCost = struct
     {costs; reports}
 
 
-  let rec exec_partition astate pdata
+  let rec exec_partition astate extras
       (partition : InstrCFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
         astate
     | Node {node; next} ->
-        let astate = exec_node astate pdata node in
-        exec_partition astate pdata next
+        let astate = exec_node astate extras node in
+        exec_partition astate extras next
     | Component {head; rest; next} ->
         let {costs; reports} = astate in
-        let {costs} = exec_partition {costs; reports= ThresholdReports.none} pdata rest in
+        let {costs} = exec_partition {costs; reports= ThresholdReports.none} extras rest in
         (* Execute head after the loop body to always report at loop head *)
-        let astate = exec_node {costs; reports} pdata head in
-        exec_partition astate pdata next
+        let astate = exec_node {costs; reports} extras head in
+        exec_partition astate extras next
 
 
-  let compute pdata =
-    let cfg = InstrCFG.from_pdesc pdata.ProcData.pdesc in
+  let compute extras instr_cfg_wto =
     let initial = {costs= CostDomain.zero_record; reports= ThresholdReports.config} in
-    exec_partition initial pdata (InstrCFG.wto cfg)
+    exec_partition initial extras instr_cfg_wto
 end
 
 module Check = struct
@@ -743,6 +739,47 @@ module Check = struct
         if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )
 end
 
+type bound_map = BasicCost.t Node.IdMap.t
+
+type get_node_nb_exec = Node.id -> BasicCost.t
+
+let compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_invmap :
+    bound_map =
+  BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
+    loop_invmap
+
+
+let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
+  let debug =
+    if Config.write_html then
+      let f fmt = L.d_printfln fmt in
+      {ConstraintSolver.f}
+    else
+      let f fmt = L.(debug Analysis Verbose) fmt in
+      {ConstraintSolver.f}
+  in
+  let start_node = NodeCFG.start_node node_cfg in
+  ( if Config.write_html then
+    let pp_name fmt = F.pp_print_string fmt "cost(constraints)" in
+    NodePrinter.start_session ~pp_name start_node ) ;
+  let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
+  let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
+  if Config.write_html then NodePrinter.finish_session start_node ;
+  ConstraintSolver.get_node_nb_exec equalities
+
+
+let compute_worst_case_cost integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+    inferbo_invariant_map get_node_nb_exec =
+  let extras =
+    {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_callee_summary_and_formals}
+  in
+  WorstCaseCost.compute extras instr_cfg_wto
+
+
+let get_cost_summary astate = CostDomain.{post= astate.WorstCaseCost.costs}
+
+let report_errors proc_desc astate summary = Check.check_and_report astate proc_desc summary
+
 let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
@@ -771,38 +808,29 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
-    BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
-      loop_inv_map
+    compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_inv_map
   in
-  let get_node_nb_exec =
-    let debug =
-      if Config.write_html then
-        let f fmt = L.d_printfln fmt in
-        {ConstraintSolver.f}
-      else
-        let f fmt = L.(debug Analysis Verbose) fmt in
-        {ConstraintSolver.f}
-    in
-    let start_node = NodeCFG.start_node node_cfg in
-    ( if Config.write_html then
-      let pp_name fmt = F.pp_print_string fmt "cost(constraints)" in
-      NodePrinter.start_session ~pp_name start_node ) ;
-    let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
-    let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
-    if Config.write_html then NodePrinter.finish_session start_node ;
-    ConstraintSolver.get_node_nb_exec equalities
-  in
+  let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let pdata =
-      ProcData.make proc_desc tenv {inferbo_invariant_map; integer_type_widths; get_node_nb_exec}
+    let get_callee_summary_and_formals callee_pname =
+      Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+      |> Option.bind ~f:(fun summary ->
+             Payload.of_summary summary
+             |> Option.map ~f:(fun payload ->
+                    (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
     in
-    WorstCaseCost.compute pdata
+    let instr_cfg = InstrCFG.from_pdesc proc_desc in
+    let instr_cfg_wto = InstrCFG.wto instr_cfg in
+    compute_worst_case_cost integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+      inferbo_invariant_map get_node_nb_exec
   in
-  let exit_cost_record = astate.WorstCaseCost.costs in
-  L.(debug Analysis Verbose)
-    "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
-    (Procdesc.get_proc_name proc_desc)
-    (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-    CostDomain.VariantCostMap.pp exit_cost_record ;
-  Check.check_and_report astate proc_desc summary ;
-  Payload.update_summary {post= exit_cost_record} summary
+  let () =
+    let exit_cost_record = astate.WorstCaseCost.costs in
+    L.(debug Analysis Verbose)
+      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
+      (Procdesc.get_proc_name proc_desc)
+      (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
+      CostDomain.VariantCostMap.pp exit_cost_record
+  in
+  report_errors proc_desc astate summary ;
+  Payload.update_summary (get_cost_summary astate) summary
