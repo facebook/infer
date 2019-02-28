@@ -574,10 +574,8 @@ module InstrBasicCost = struct
               match get_callee_summary pdesc callee_pname with
               | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
                   CostDomain.map callee_cost_record ~f:(fun callee_cost ->
-                      if BasicCost.is_symbolic callee_cost then
-                        instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                          ~callee_pname ~callee_formals ~params ~callee_cost ~loc
-                      else callee_cost )
+                      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                        ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
               | None ->
                   CostDomain.unit_cost_atomic_operation ) ) )
     | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
