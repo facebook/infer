@@ -287,8 +287,6 @@ let offsetof = join_itv ~f:ArrInfo.offsetof
 
 let sizeof = join_itv ~f:ArrInfo.sizeof
 
-let sizeof_byte = join_itv ~f:ArrInfo.byte_size
-
 let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 
 let minus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.minus_offset a i) arr

@@ -212,44 +212,54 @@ module Exec = struct
 end
 
 module Check = struct
-  let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces ~last_included
-      ~latest_prune location cond_set =
+  let check_access ~size ~idx ~offset ~size_sym_exp ~idx_sym_exp ~relation ~arr_traces ~idx_traces
+      ~last_included ~latest_prune location cond_set =
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
-        let offset =
-          match ArrayBlk.offsetof (Dom.Val.get_array_blk arr) with
-          | Bottom ->
-              (* Java's collection has no offset. *)
-              Itv.ItvPure.zero
-          | NonBottom offset ->
-              offset
-        in
-        let arr_traces = Dom.Val.get_traces arr in
         PO.ConditionSet.add_array_access location ~size:length ~offset ~idx ~size_sym_exp
           ~idx_sym_exp ~relation ~last_included ~idx_traces ~arr_traces ~latest_prune cond_set
     | _ ->
         cond_set
 
 
+  let log_array_access allocsite size offset idx =
+    L.(debug BufferOverrun Verbose)
+      "@[<v 2>Add condition :@,array: %a@,  size: %a@,  idx: %a + %a@,@]@." Allocsite.pp allocsite
+      Itv.pp size Itv.ItvPure.pp offset Itv.pp idx
+
+
+  let offsetof arr_info =
+    match ArrayBlk.ArrInfo.offsetof arr_info with
+    | Bottom ->
+        (* Java's collection has no offset. *)
+        Itv.ItvPure.zero
+    | NonBottom offset ->
+        offset
+
+
   let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus ~last_included ~latest_prune location
       cond_set =
-    let arr_blk = Dom.Val.get_array_blk arr in
-    let size = ArrayBlk.sizeof arr_blk in
-    let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
-    let idx_itv = Dom.Val.get_itv idx in
     let idx_traces = Dom.Val.get_traces idx in
-    let idx = if is_plus then idx_itv else Itv.neg idx_itv in
+    let idx =
+      let idx_itv = Dom.Val.get_itv idx in
+      if is_plus then idx_itv else Itv.neg idx_itv
+    in
+    let arr_traces = Dom.Val.get_traces arr in
+    let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
     let idx_sym_exp =
       let offset_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_offset_sym arr) in
       Option.map2 offset_sym_exp idx_sym_exp ~f:(fun offset_sym_exp idx_sym_exp ->
           let op = if is_plus then Relation.SymExp.plus else Relation.SymExp.minus in
           op idx_sym_exp offset_sym_exp )
     in
-    L.(debug BufferOverrun Verbose)
-      "@[<v 2>Add condition :@,array: %a@,  idx: %a + %a@,@]@." ArrayBlk.pp arr_blk Itv.pp
-      (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
-    check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces ~last_included
-      ~latest_prune location cond_set
+    let array_access1 allocsite arr_info acc =
+      let size = ArrayBlk.ArrInfo.sizeof arr_info in
+      let offset = offsetof arr_info in
+      log_array_access allocsite size offset idx ;
+      check_access ~size ~idx ~offset ~size_sym_exp ~idx_sym_exp ~relation ~arr_traces ~idx_traces
+        ~last_included ~latest_prune location acc
+    in
+    ArrayBlk.fold array_access1 (Dom.Val.get_array_blk arr) cond_set
 
 
   let lindex integer_type_widths ~array_exp ~index_exp ~last_included mem location cond_set =
@@ -264,17 +274,22 @@ module Check = struct
       location cond_set
 
 
-  let array_access_byte ~arr ~idx ~relation ~is_plus ~last_included location cond_set =
-    let arr_blk = Dom.Val.get_array_blk arr in
-    let size = ArrayBlk.sizeof_byte arr_blk in
-    let idx_itv = Dom.Val.get_itv idx in
+  let array_access_byte ~arr ~idx ~relation ~is_plus ~last_included ~latest_prune location cond_set
+      =
     let idx_traces = Dom.Val.get_traces idx in
-    let idx = if is_plus then idx_itv else Itv.neg idx_itv in
-    L.(debug BufferOverrun Verbose)
-      "@[<v 2>Add condition :@,array: %a@,  idx: %a + %a@,@]@." ArrayBlk.pp arr_blk Itv.pp
-      (ArrayBlk.offsetof arr_blk) Itv.pp idx ;
-    check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
-      ~last_included location cond_set
+    let idx =
+      let idx_itv = Dom.Val.get_itv idx in
+      if is_plus then idx_itv else Itv.neg idx_itv
+    in
+    let arr_traces = Dom.Val.get_traces arr in
+    let array_access_byte1 allocsite arr_info acc =
+      let size = ArrayBlk.ArrInfo.byte_size arr_info in
+      let offset = offsetof arr_info in
+      log_array_access allocsite size offset idx ;
+      check_access ~size ~idx ~offset ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr_traces
+        ~idx_traces ~last_included ~latest_prune location acc
+    in
+    ArrayBlk.fold array_access_byte1 (Dom.Val.get_array_blk arr) cond_set
 
 
   let lindex_byte integer_type_widths ~array_exp ~byte_index_exp ~last_included mem location
