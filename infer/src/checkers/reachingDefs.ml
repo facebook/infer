@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module NodeCFG = ProcCfg.Normal
 
 (** The node in which the reaching definition x := e is defined.
 
@@ -16,7 +17,7 @@ module Defs = AbstractDomain.FiniteSet (Procdesc.Node)
 
 (* even though we only add singletons (defs), the set is needed for joins *)
 
-(** Map var -> its reaching definition **)
+(** Map var -> its reaching definition *)
 module ReachingDefsMap = AbstractDomain.Map (Var) (Defs)
 
 (* forward transfer function for reaching definitions *)
@@ -64,4 +65,14 @@ let init_reaching_defs_with_formals pdesc =
          ReachingDefsMap.add (Var.of_pvar pvar) start_node_defs acc )
 
 
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (ProcCfg.Normal))
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (NodeCFG))
+
+type invariant_map = Analyzer.invariant_map
+
+let compute_invariant_map pdesc tenv =
+  let proc_data = ProcData.make_default pdesc tenv in
+  let node_cfg = NodeCFG.from_pdesc pdesc in
+  Analyzer.exec_cfg node_cfg proc_data ~initial:(init_reaching_defs_with_formals pdesc)
+
+
+let extract_post = Analyzer.extract_post

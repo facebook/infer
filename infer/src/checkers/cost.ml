@@ -749,11 +749,7 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map =
-    let proc_data = ProcData.make_default proc_desc tenv in
-    ReachingDefs.Analyzer.exec_cfg node_cfg proc_data
-      ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
-  in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
   (* computes the control dependencies: node -> var set *)

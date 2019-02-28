@@ -214,7 +214,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
     then (inv_vars, false)
     else
       let loop_head_id = Procdesc.Node.get_id loop_head in
-      ReachingDefs.Analyzer.extract_post loop_head_id reaching_defs_invariant_map
+      ReachingDefs.extract_post loop_head_id reaching_defs_invariant_map
       |> Option.map ~f:(fun reaching_defs ->
              ReachingDefs.ReachingDefsMap.find_opt var reaching_defs
              |> Option.map ~f:(fun def_nodes ->

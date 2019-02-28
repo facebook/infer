@@ -123,12 +123,8 @@ let get_issue_to_report tenv (Call.({pname}) as call) integer_type_widths inferb
 
 let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summary.t =
   let cfg = InstrCFG.from_pdesc proc_desc in
-  let proc_data = ProcData.make_default proc_desc tenv in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map =
-    ReachingDefs.Analyzer.exec_cfg cfg proc_data
-      ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
-  in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
   let inferbo_invariant_map =
     lazy (BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths)
   in
