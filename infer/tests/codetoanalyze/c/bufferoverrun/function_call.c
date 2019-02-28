@@ -8,6 +8,7 @@
  */
 
 #include <stdlib.h>
+#include <stdarg.h>
 
 struct S {
   int field;
@@ -140,4 +141,22 @@ void call_call_access_index_4_on_S3_Bad() {
   struct S3 s;
   s.ptr = malloc(sizeof(int) * 4);
   call_access_index_4_on_S3(&s);
+}
+
+void va_arg_int(int* a, ...) {
+  va_list args;
+  va_start(args, a);
+  int i = va_arg(args, int);
+  a[i] = 0;
+  va_end(args);
+}
+
+void call_va_arg_int_Good_FP() {
+  int a[10];
+  va_arg_int(a, 5);
+}
+
+void call_va_arg_int_Bad() {
+  int a[10];
+  va_arg_int(a, 10);
 }

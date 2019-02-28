@@ -18,7 +18,7 @@ type t = Builtin.registered
 let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} :
     Builtin.ret_typ =
   match args with
-  | [_; _; (lexp3, typ3)] ->
+  | [(lexp3, typ3)] ->
       let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
       SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton instr') [(prop_, path)]
   | _ ->

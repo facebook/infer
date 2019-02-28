@@ -115,6 +115,8 @@ codetoanalyze/c/bufferoverrun/function_call.c, call_call_access_index_4_on_S3_Ba
 codetoanalyze/c/bufferoverrun/function_call.c, call_function_ptr_bad1, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/function_call.c, call_function_ptr_bad1, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/function_call.c, call_function_ptr_good, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/c/bufferoverrun/function_call.c, call_va_arg_int_Bad, 2, BUFFER_OVERRUN_U5, no_bucket, ERROR, [Array declaration,Call,<Offset trace>,Unknown value from: __builtin_va_arg,Assignment,<Length trace>,Parameter `*a`,Array access: Offset: [-oo, +oo] Size: 10 by call to `va_arg_int` ]
+codetoanalyze/c/bufferoverrun/function_call.c, call_va_arg_int_Good_FP, 2, BUFFER_OVERRUN_U5, no_bucket, ERROR, [Array declaration,Call,<Offset trace>,Unknown value from: __builtin_va_arg,Assignment,<Length trace>,Parameter `*a`,Array access: Offset: [-oo, +oo] Size: 10 by call to `va_arg_int` ]
 codetoanalyze/c/bufferoverrun/function_call.c, function_call, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Assignment,Call,<Offset trace>,Parameter `*arr`,Assignment,<Length trace>,Parameter `*arr`,Array access: Offset: 100 Size: 10 by call to `arr_access` ]
 codetoanalyze/c/bufferoverrun/get_field.c, call_get_field_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Call,Parameter `x->field`,Call,Parameter `x->field`,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/c/bufferoverrun/get_field.c, call_get_field_cond_Bad, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]

@@ -1072,6 +1072,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ~return:res_trans_call.return all_res_trans
 
 
+  and va_arg_trans trans_state si stmt expr_info =
+    let context = trans_state.context in
+    let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
+    let sil_loc =
+      CLocation.location_of_stmt_info context.translation_unit_context.source_file si
+    in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    let sil_fe = Exp.Const (Const.Cfun BuiltinDecl.__builtin_va_arg) in
+    let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+    let result_trans_param = exec_with_glvalue_as_reference instruction trans_state_param stmt in
+    let res_trans_call =
+      create_call_instr trans_state function_type sil_fe [result_trans_param.return] sil_loc
+        CallFlags.default ~is_objc_method:false ~is_inherited_ctor:false
+    in
+    let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
+    let all_res_trans = [result_trans_param; res_trans_call] in
+    PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name si
+      ~return:res_trans_call.return all_res_trans
+
+
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
       function_type is_cpp_call_virtual extra_res_trans ~is_inherited_ctor =
     let context = trans_state_pri.context in
@@ -3447,8 +3468,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         booleanValue_trans trans_state expr_info type_trait_info.Clang_ast_t.xtti_value
     | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
         booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
-    | OffsetOfExpr (_, _, expr_info) | VAArgExpr (_, _, expr_info) ->
+    | OffsetOfExpr (_, _, expr_info) | VAArgExpr (_, [], expr_info) ->
         undefined_expr trans_state expr_info
+    | VAArgExpr (stmt_info, stmt :: _, ei) ->
+        va_arg_trans trans_state stmt_info stmt ei
     | ArrayInitIndexExpr _ | ArrayInitLoopExpr _ ->
         no_op_trans trans_state.succ_nodes
     (* vector instructions for OpenCL etc. we basically ignore these for now; just translate the

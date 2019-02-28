@@ -40,7 +40,7 @@ digraph cfg {
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" [label="11:  DeclStmt \n   n$5=_fun___variable_initialization(&i:int) assign_last [line 13, column 3]\n  *&i:int=n$4 [line 13, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 13, column 3]\n " shape="box"]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" [label="11:  DeclStmt \n   n$5=_fun___variable_initialization(&i:int) assign_last [line 13, column 3]\n  n$4=_fun___builtin_va_arg(&valist:void*) [line 13, column 11]\n  *&i:int=n$4 [line 13, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 13, column 3]\n " shape="box"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" ;
