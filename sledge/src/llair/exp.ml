@@ -1039,17 +1039,13 @@ let iter e ~f =
 
 let fold e ~init:s ~f =
   match e with
-  | App {op; arg} ->
-      let s = f s op in
-      let s = f s arg in
-      s
+  | App {op; arg} -> f op (f arg s)
   | Add {args} | Mul {args} ->
-      let s = Qset.fold ~f:(fun e _ s -> f s e) args ~init:s in
-      s
+      Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | _ -> s
 
-let for_all e ~f = fold ~f:(fun so_far a -> so_far && f a) ~init:true e
-let exists e ~f = fold ~f:(fun found a -> found || f a) ~init:false e
+let for_all e ~f = fold ~f:(fun a so_far -> so_far && f a) ~init:true e
+let exists e ~f = fold ~f:(fun a found -> found || f a) ~init:false e
 
 let app1 ?(partial = false) op arg =
   ( match (op, arg) with

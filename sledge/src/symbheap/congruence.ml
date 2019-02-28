@@ -551,7 +551,7 @@ let rec norm_extend r ek =
           ~default:e
           ~if_added:(fun lkp ->
             let use =
-              Exp.fold e_' ~init:r.use ~f:(fun use b'j ->
+              Exp.fold e_' ~init:r.use ~f:(fun b'j use ->
                   let b' = Exp.base b'j in
                   Map.update use b' ~f:(function
                     | Some b_use -> Use.add b_use e

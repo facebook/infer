@@ -204,7 +204,7 @@ val offset : t -> (Q.t * Typ.t) option
 val iter : t -> f:(t -> unit) -> unit
 val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 val fold_exps : t -> init:'a -> f:('a -> t -> 'a) -> 'a
-val fold : t -> init:'a -> f:('a -> t -> 'a) -> 'a
+val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
 val for_all : t -> f:(t -> bool) -> bool
 val exists : t -> f:(t -> bool) -> bool
 
