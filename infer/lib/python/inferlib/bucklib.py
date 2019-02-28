@@ -24,9 +24,6 @@ import zipfile
 
 from inferlib import config, issues, utils
 
-DEFAULT_BUCK_OUT = os.path.join(utils.decode(os.getcwd()), 'buck-out')
-DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
-
 INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                  config.JSON_REPORT_FILENAME)
 
