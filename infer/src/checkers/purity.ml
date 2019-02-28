@@ -23,7 +23,9 @@ module Payload = SummaryPayload.Make (struct
 end)
 
 type purity_extras =
-  {inferbo_invariant_map: BufferOverrunAnalysis.invariant_map; formals: Var.t list}
+  { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
+  ; formals: Var.t list
+  ; get_callee_summary: Typ.Procname.t -> PurityDomain.summary option }
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
@@ -131,8 +133,8 @@ module TransferFunctions = struct
 
 
   let exec_instr (astate : Domain.t)
-      {ProcData.pdesc; tenv; ProcData.extras= {inferbo_invariant_map; formals}} (node : CFG.Node.t)
-      (instr : HilInstr.t) =
+      {tenv; ProcData.extras= {inferbo_invariant_map; formals; get_callee_summary}}
+      (node : CFG.Node.t) (instr : HilInstr.t) =
     let (node_id : InstrCFG.Node.id) =
       CFG.Node.underlying_node node |> InstrCFG.last_of_underlying_node |> InstrCFG.Node.id
     in
@@ -152,7 +154,7 @@ module TransferFunctions = struct
                   (Domain.all_params_modified args)
                 |> Domain.impure_params
           | None -> (
-            match Payload.read pdesc called_pname with
+            match get_callee_summary called_pname with
             | Some summary ->
                 debug "Reading from %a \n" Typ.Procname.pp called_pname ;
                 find_modified_if_impure inferbo_mem formals args summary
@@ -181,27 +183,37 @@ let should_report pdesc =
       L.(die InternalError "Not supposed to run on non-Java code.")
 
 
-let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.t =
+let report_errors pdesc astate summary =
+  let proc_name = Procdesc.get_proc_name pdesc in
+  match astate with
+  | Some astate ->
+      if should_report pdesc && PurityDomain.is_pure astate then
+        let loc = Procdesc.get_loc pdesc in
+        let exp_desc = F.asprintf "Side-effect free function %a" Typ.Procname.pp proc_name in
+        let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
+        Reporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
+  | None ->
+      L.internal_error "Analyzer failed to compute purity information for %a@." Typ.Procname.pp
+        proc_name
+
+
+let compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let inferbo_invariant_map =
-    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
-  in
   let formals =
     Procdesc.get_formals proc_desc
     |> List.map ~f:(fun (mname, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
-  let proc_data = ProcData.make proc_desc tenv {inferbo_invariant_map; formals} in
-  let report_pure () =
-    let loc = Procdesc.get_loc proc_desc in
-    let exp_desc = F.asprintf "Side-effect free function %a" Typ.Procname.pp proc_name in
-    let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-    Reporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
+  let proc_data =
+    ProcData.make proc_desc tenv {inferbo_invariant_map; formals; get_callee_summary}
   in
-  match Analyzer.compute_post proc_data ~initial:PurityDomain.pure with
-  | Some astate ->
-      if should_report proc_desc && PurityDomain.is_pure astate then report_pure () ;
-      Payload.update_summary astate summary
-  | None ->
-      L.internal_error "Analyzer failed to compute purity information for %a@." Typ.Procname.pp
-        proc_name ;
-      summary
+  Analyzer.compute_post proc_data ~initial:PurityDomain.pure
+
+
+let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.t =
+  let inferbo_invariant_map =
+    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+  in
+  let get_callee_summary = Payload.read proc_desc in
+  let astate = compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map in
+  report_errors proc_desc astate summary ;
+  match astate with Some astate -> Payload.update_summary astate summary | None -> summary
