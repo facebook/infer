@@ -50,14 +50,15 @@ let get_hoistable_calls inv_vars loop_nodes source_nodes idom =
     loop_nodes HoistCalls.empty
 
 
-let get_hoist_inv_map tenv reaching_defs_invariant_map loop_head_to_source_nodes idom =
+let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_head_to_source_nodes
+    idom =
   Procdesc.NodeMap.fold
     (fun loop_head source_nodes inv_map ->
       (* get all the nodes in the loop *)
       let loop_nodes = Loop_control.get_all_nodes_upwards_until loop_head source_nodes in
       let inv_vars_in_loop =
         LoopInvariant.get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
-          ~is_inv_by_default:Config.cost_invariant_by_default
+          ~is_inv_by_default:Config.cost_invariant_by_default ~get_callee_purity
       in
       let hoist_instrs = get_hoistable_calls inv_vars_in_loop loop_nodes source_nodes idom in
       LoopHeadToHoistInstrs.add loop_head hoist_instrs inv_map )
@@ -133,7 +134,15 @@ let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summar
   let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
   (* get a map,  loop head -> instrs that can be hoisted out of the loop *)
   let loop_head_to_inv_instrs =
-    get_hoist_inv_map tenv reaching_defs_invariant_map loop_head_to_source_nodes idom
+    let get_callee_purity callee_pname =
+      match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
+      | Some {Summary.payloads= {Payloads.purity}} ->
+          purity
+      | _ ->
+          None
+    in
+    get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_head_to_source_nodes
+      idom
   in
   (* report function calls to hoist (per loop) *)
   (* Note: we report the innermost loop for hoisting out. TODO: Future

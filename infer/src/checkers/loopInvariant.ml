@@ -11,6 +11,7 @@ module VarsInLoop = AbstractDomain.FiniteSet (Var)
 module InvalidatedVars = AbstractDomain.FiniteSet (Var)
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module Models = InvariantModels
+module VarSet = AbstractDomain.FiniteSet (Var)
 
 let debug fmt = L.(debug Analysis Medium) fmt
 
@@ -27,7 +28,7 @@ let is_not_modeled tenv callee_pname =
   match Models.ProcName.dispatch tenv callee_pname with Some _ -> false | None -> true
 
 
-let get_purity tenv ~is_inv_by_default callee_pname args =
+let get_purity tenv ~is_inv_by_default ~get_callee_purity callee_pname args =
   (* Take into account purity behavior of modeled functions *)
   match Models.ProcName.dispatch tenv callee_pname with
   | Some inv ->
@@ -36,8 +37,8 @@ let get_purity tenv ~is_inv_by_default callee_pname args =
   | None -> (
       debug "No model for %a \n" Typ.Procname.pp callee_pname ;
       (* If there is no model, invoke purity analysis to see if function is pure *)
-      match Ondemand.analyze_proc_name callee_pname with
-      | Some {Summary.payloads= {Payloads.purity= Some purity_summary}} ->
+      match get_callee_purity callee_pname with
+      | Some purity_summary ->
           purity_summary
       | _ ->
           if is_inv_by_default then PurityDomain.pure else PurityDomain.impure_global )
@@ -47,7 +48,7 @@ let is_non_primitive typ = Typ.is_pointer typ || Typ.is_struct typ
 
 (* check if the def of var is unique and invariant *)
 let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_default
-    is_exp_invariant =
+    ~get_callee_purity is_exp_invariant =
   let equals_var id = Var.equal var (Var.of_id id) in
   match LoopNodes.is_singleton_or_more loop_nodes with
   | IContainer.Singleton node ->
@@ -59,7 +60,8 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_def
              when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
                true
            | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
-               PurityDomain.is_pure (get_purity tenv ~is_inv_by_default callee_pname args)
+               PurityDomain.is_pure
+                 (get_purity tenv ~is_inv_by_default ~get_callee_purity callee_pname args)
                && (* check if all params are invariant *)
                   List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
            | _ ->
@@ -175,7 +177,7 @@ let all_unmodeled_modified tenv loop_nodes =
 (* If there is a call to an impure function in the loop, invalidate
    all its non-primitive arguments. Once invalidated, it should be
    never added again. *)
-let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
+let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default ~get_callee_purity loop_nodes =
   let all_unmodeled_modified = lazy (all_unmodeled_modified tenv loop_nodes) in
   LoopNodes.fold
     (fun node acc ->
@@ -183,7 +185,9 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
              match instr with
              | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
-                 let purity = get_purity tenv ~is_inv_by_default callee_pname args in
+                 let purity =
+                   get_purity tenv ~is_inv_by_default ~get_callee_purity callee_pname args
+                 in
                  PurityDomain.(
                    match purity with
                    | AbstractDomain.Types.Top ->
@@ -205,7 +209,8 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes =
 (* A variable is invariant if
      - its reaching definition is outside of the loop
      - o.w. its definition is constant or invariant itself *)
-let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loop_head loop_nodes =
+let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default ~get_callee_purity
+    loop_head loop_nodes =
   let process_var_once var inv_vars invalidated_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
@@ -224,6 +229,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
                     else if
                       (* its definition is unique and invariant *)
                       is_def_unique_and_satisfy tenv var def_nodes ~is_inv_by_default
+                        ~get_callee_purity
                         (is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs)
                     then (InvariantVars.add var inv_vars, true)
                     else (inv_vars, false) )
@@ -235,7 +241,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
   (* until there are no changes to inv_vars, keep repeatedly
      processing all the variables that occur in the loop nodes *)
   let invalidated_vars =
-    get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default loop_nodes
+    get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default ~get_callee_purity loop_nodes
   in
   let rec find_fixpoint inv_vars =
     let inv_vars', modified =
@@ -254,12 +260,15 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loo
 (** Map loop head ->  invariant vars in loop  *)
 module LoopHeadToInvVars = Procdesc.NodeMap
 
-let get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes =
+type invariant_map = VarSet.t LoopHeadToInvVars.t
+
+let get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map loop_head_to_loop_nodes
+    : invariant_map =
   LoopHeadToLoopNodes.fold
     (fun loop_head loop_nodes inv_map ->
       let inv_vars_in_loop =
         get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
-          ~is_inv_by_default:Config.cost_invariant_by_default
+          ~is_inv_by_default:Config.cost_invariant_by_default ~get_callee_purity
       in
       L.(debug Analysis Medium)
         "@\n>>> loop head: %a --> inv vars: %a @\n" Procdesc.Node.pp loop_head InvariantVars.pp

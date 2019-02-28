@@ -756,7 +756,15 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
   let control_dep_invariant_map = Control.compute_invariant_map proc_desc tenv control_maps in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
-    LoopInvariant.get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes
+    let get_callee_purity callee_pname =
+      match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
+      | Some {Summary.payloads= {Payloads.purity}} ->
+          purity
+      | _ ->
+          None
+    in
+    LoopInvariant.get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map
+      loop_head_to_loop_nodes
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
