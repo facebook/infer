@@ -1001,18 +1001,14 @@ end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
 
-(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
-module NonNegativeBound = struct
-  type trace =
+module BoundTrace = struct
+  type t =
     | Loop of Location.t
-    | Call of {callee_pname: Typ.Procname.t; callee_trace: trace; location: Location.t}
+    | Call of {callee_pname: Typ.Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
   [@@deriving compare]
 
-  type t = Bound.t * trace [@@deriving compare]
-
-  let make_err_trace (b, t) =
-    let b = F.asprintf "{%a}" Bound.pp b in
+  let make_err_trace =
     let rec aux depth trace =
       match trace with
       | Loop loop_head_loc ->
@@ -1025,23 +1021,32 @@ module NonNegativeBound = struct
           let desc = F.asprintf "Modeled call to %s" pname in
           [Errlog.make_trace_element depth location desc []]
     in
-    (b, aux 0 t)
+    fun trace -> aux 0 trace
+end
+
+(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
+module NonNegativeBound = struct
+  type t = Bound.t * BoundTrace.t [@@deriving compare]
+
+  let make_err_trace (b, t) =
+    let b = F.asprintf "{%a}" Bound.pp b in
+    (b, BoundTrace.make_err_trace t)
 
 
   let pp fmt (bound, _) = Bound.pp fmt bound
 
-  let zero loop_head_loc = (Bound.zero, Loop loop_head_loc)
+  let zero loop_head_loc = (Bound.zero, BoundTrace.Loop loop_head_loc)
 
   let check_le_zero b = if Bound.le b Bound.zero then Bound.zero else b
 
   let of_bound ~trace b = (check_le_zero b, trace)
 
-  let of_loop_bound loop_head_loc = of_bound ~trace:(Loop loop_head_loc)
+  let of_loop_bound loop_head_loc = of_bound ~trace:(BoundTrace.Loop loop_head_loc)
 
   let of_modeled_function pname location b =
     if Bound.lt b Bound.zero then (* we shouldn't have negative modeled bounds *)
       assert false
-    else (b, ModeledFunction {pname; location})
+    else (b, BoundTrace.ModeledFunction {pname; location})
 
 
   let int_lb (b, _) =
@@ -1071,5 +1076,5 @@ module NonNegativeBound = struct
     | Bottom ->
         Constant NonNegativeInt.zero
     | NonBottom b ->
-        of_bound b ~trace:(Call {callee_pname; location; callee_trace}) |> classify
+        of_bound b ~trace:(BoundTrace.Call {callee_pname; location; callee_trace}) |> classify
 end
