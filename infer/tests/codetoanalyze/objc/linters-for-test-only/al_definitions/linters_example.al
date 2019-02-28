@@ -809,3 +809,11 @@ DEFINE-CHECKER TEST_IS_RECEIVER_SUPER = {
   SET message = "This node is a method call to 'super'.";
 
 };
+
+DEFINE-CHECKER CONST_NAMING = {
+  SET report_when = WHEN
+        is_qual_type_const()
+    HOLDS-IN-NODE VarDecl;
+
+  SET message = "That's a const";
+};

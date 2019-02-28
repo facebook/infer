@@ -531,6 +531,8 @@ let is_qual_type_const an =
         ei.Clang_ast_t.ei_qual_type.qt_is_const
     | _ ->
         false )
+  | Ctl_parser_types.Decl (Clang_ast_t.VarDecl (_, _, qt, _)) ->
+      qt.qt_is_const
   | _ ->
       false
 
