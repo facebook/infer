@@ -80,18 +80,17 @@ let model_satisfies ~f tenv pname =
   InvariantModels.ProcName.dispatch tenv pname |> Option.exists ~f
 
 
-let is_call_expensive Call.({pname; node; params}) integer_type_widths inferbo_invariant_map =
+let is_call_expensive integer_type_widths get_callee_cost_summary_and_formals inferbo_invariant_map
+    Call.({pname; node; params}) =
   (* only report if function call has expensive/symbolic cost *)
-  match Ondemand.analyze_proc_name pname with
-  | Some ({Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost_record}}} as summary)
+  match get_callee_cost_summary_and_formals pname with
+  | Some (CostDomain.({post= cost_record}), callee_formals)
     when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
       let last_node = InstrCFG.last_of_underlying_node node in
       let instr_node_id = InstrCFG.Node.id last_node in
-      let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
       let inferbo_mem =
         Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
       in
-      let callee_formals = Summary.get_proc_desc summary |> Procdesc.get_pvar_formals in
       let loc = InstrCFG.Node.loc last_node in
       (* get the cost of the function call *)
       Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname
@@ -103,44 +102,25 @@ let is_call_expensive Call.({pname; node; params}) integer_type_widths inferbo_i
       false
 
 
-let get_issue_to_report tenv (Call.({pname}) as call) integer_type_widths inferbo_invariant_map =
-  let report_invariant =
-    if Config.hoisting_report_only_expensive then
-      is_call_expensive call integer_type_widths inferbo_invariant_map
-    else
-      (* If a function is modeled as variant for hoisting (like
-       List.size or __cast ), we don't want to report it *)
-      let is_variant_for_hoisting =
-        model_satisfies ~f:InvariantModels.is_variant_for_hoisting tenv pname
-      in
-      not is_variant_for_hoisting
-  in
-  if report_invariant then
+let is_call_variant_for_hoisting tenv call =
+  (* If a function is modeled as variant for hoisting (like List.size or __cast ), we don't want to report it *)
+  model_satisfies ~f:InvariantModels.is_variant_for_hoisting tenv call.Call.pname
+
+
+let get_issue_to_report tenv should_report_invariant (Call.({pname}) as call) =
+  if should_report_invariant call then
     if model_satisfies ~f:InvariantModels.is_invariant tenv pname then
       Some IssueType.loop_invariant_call
     else Some IssueType.invariant_call
   else None
 
 
-let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summary.t =
-  let cfg = InstrCFG.from_pdesc proc_desc in
-  (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
-  let inferbo_invariant_map =
-    lazy (BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths)
-  in
+let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
+    loop_head_to_source_nodes should_report_invariant summary =
   (* get dominators *)
   let idom = Dominators.get_idoms proc_desc in
-  let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
   (* get a map,  loop head -> instrs that can be hoisted out of the loop *)
   let loop_head_to_inv_instrs =
-    let get_callee_purity callee_pname =
-      match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
-      | Some {Summary.payloads= {Payloads.purity}} ->
-          purity
-      | _ ->
-          None
-    in
     get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_head_to_source_nodes
       idom
   in
@@ -152,8 +132,41 @@ let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summar
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
         (fun call ->
-          get_issue_to_report tenv call integer_type_widths inferbo_invariant_map
+          get_issue_to_report tenv should_report_invariant call
           |> Option.iter ~f:(fun issue -> do_report summary call ~issue loop_head_loc) )
         inv_instrs )
-    loop_head_to_inv_instrs ;
+    loop_head_to_inv_instrs
+
+
+let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summary.t =
+  let cfg = InstrCFG.from_pdesc proc_desc in
+  (* computes reaching defs: node -> (var -> node set) *)
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
+  let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
+  let should_report_invariant =
+    if Config.hoisting_report_only_expensive then
+      let inferbo_invariant_map =
+        BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+      in
+      let get_callee_cost_summary_and_formals callee_pname =
+        Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+        |> Option.bind ~f:(fun summary ->
+               summary.Summary.payloads.Payloads.cost
+               |> Option.map ~f:(fun cost_summary ->
+                      (cost_summary, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) )
+           )
+      in
+      is_call_expensive integer_type_widths get_callee_cost_summary_and_formals
+        inferbo_invariant_map
+    else fun call -> not (is_call_variant_for_hoisting tenv call)
+  in
+  let get_callee_purity callee_pname =
+    match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
+    | Some {Summary.payloads= {Payloads.purity}} ->
+        purity
+    | _ ->
+        None
+  in
+  report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
+    loop_head_to_source_nodes should_report_invariant summary ;
   summary
