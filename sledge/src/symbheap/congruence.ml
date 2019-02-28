@@ -284,8 +284,8 @@ let pre_invariant r =
       Exp.iter a ~f:(fun bj ->
           assert (
             in_car r (Exp.base bj)
-            || Trace.report "@[subexp %a of %a not in carrier of@ %a@]"
-                 Exp.pp bj Exp.pp a pp r ) ) ;
+            || Trace.fail "@[subexp %a of %a not in carrier of@ %a@]" Exp.pp
+                 bj Exp.pp a pp r ) ) ;
       let a', a_k = solve_for_base a'k a in
       (* carrier is closed under rep *)
       assert (in_car r a') ;
@@ -293,27 +293,25 @@ let pre_invariant r =
         (* rep is sparse for symbols *)
         assert (
           (not (Map.mem r.rep a'))
-          || Trace.report
+          || Trace.fail
                "no symbol rep should be in rep domain: %a @<2>↦ %a@\n%a"
                Exp.pp a Exp.pp a' pp r )
       else
         (* rep is idempotent for applications *)
         assert (
           is_rep r a'
-          || Trace.report
-               "every app rep should be its own rep: %a @<2>↦ %a" Exp.pp a
-               Exp.pp a' ) ;
+          || Trace.fail "every app rep should be its own rep: %a @<2>↦ %a"
+               Exp.pp a Exp.pp a' ) ;
       match Map.find r.cls a' with
       | None ->
           (* every rep in dom of cls *)
-          assert (
-            Trace.report "rep not in dom of cls: %a@\n%a" Exp.pp a' pp r )
+          assert (Trace.fail "rep not in dom of cls: %a@\n%a" Exp.pp a' pp r)
       | Some a_cls ->
           (* every exp is in class of its rep *)
           assert (
             (* rep a = a'+k so expect a-k in cls a' *)
             Cls.mem a_cls a_k
-            || Trace.report "%a = %a by rep but %a not in cls@\n%a" Exp.pp a
+            || Trace.fail "%a = %a by rep but %a not in cls@\n%a" Exp.pp a
                  Exp.pp a'k Exp.pp a_k pp r ) ) ;
   Map.iteri r.cls ~f:(fun ~key:a' ~data:a_cls ->
       (* domain of cls are reps *)
@@ -323,18 +321,18 @@ let pre_invariant r =
           let a, a'_k = solve_for_base ak a' in
           assert (
             in_car r a
-            || Trace.report "%a in cls of %a but not in carrier" Exp.pp a
+            || Trace.fail "%a in cls of %a but not in carrier" Exp.pp a
                  Exp.pp a' ) ;
           let a'' = norm_base r a in
           assert (
             (* a' = a+k in cls so expect rep a = a'-k *)
             Exp.equal a'' a'_k
-            || Trace.report "%a = %a by cls but @<2>≠ %a by rep" Exp.pp a'
+            || Trace.fail "%a = %a by cls but @<2>≠ %a by rep" Exp.pp a'
                  Exp.pp ak Exp.pp a'' ) ) ) ;
   Map.iteri r.use ~f:(fun ~key:a' ~data:a_use ->
       assert (
         (not (Use.is_empty a_use))
-        || Trace.report "empty use list should not have been added" ) ;
+        || Trace.fail "empty use list should not have been added" ) ;
       Use.iter a_use ~f:(fun u ->
           (* uses are applications *)
           assert (not (Exp.is_simple u)) ;
@@ -345,7 +343,7 @@ let pre_invariant r =
           (* every rep is a subexp-modulo-rep of each of its uses *)
           assert (
             Exp.exists u ~f:(fun bj -> Exp.equal a' (Exp.base (norm r bj)))
-            || Trace.report
+            || Trace.fail
                  "rep %a has use %a, but is not the rep of any immediate \
                   subexp of the use"
                  Exp.pp a' Exp.pp u ) ;
@@ -370,8 +368,8 @@ let pre_invariant r =
         (* lkp contains equalities provable modulo normalizing sub-exps *)
         assert (
           Exp.equal a c_'
-          || Trace.report "%a sub-normalizes to %a @<2>≠ %a" Exp.pp c
-               Exp.pp c_' Exp.pp a ) ;
+          || Trace.fail "%a sub-normalizes to %a @<2>≠ %a" Exp.pp c Exp.pp
+               c_' Exp.pp a ) ;
         let c' = norm_base r c in
         Exp.iter a ~f:(fun bj ->
             (* every subexp of an app in domain of lkp has an associated use *)
@@ -385,7 +383,7 @@ let pre_invariant r =
               Use.exists b_use ~f:(fun u ->
                   Exp.equal a (Exp.map ~f:(norm r) u)
                   && Exp.equal c' (norm_base r u) )
-              || Trace.report
+              || Trace.fail
                    "no corresponding use for subexp %a of lkp key %a" Exp.pp
                    bj Exp.pp a ) ) ) ) ;
   List.iter r.pnd ~f:(fun (ai, bj) ->

@@ -1088,8 +1088,8 @@ let app1 ?(partial = false) op arg =
                | App _ as a ->
                    assert (
                      equal a op || equal a arg
-                     || Trace.report
-                          "simplifying %a %a yields %a with new subexp %a"
+                     || Trace.fail
+                          "simplifying %a %a@ yields %a@ with new subexp %a"
                           pp op pp arg pp e pp a )
                | _ -> () ) )
 

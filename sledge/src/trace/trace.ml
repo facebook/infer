@@ -144,10 +144,6 @@ let retn mod_name fun_name k result =
   k {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
   result
 
-let report fmt =
-  Format.fprintf fs "@\n@[<2>| " ;
-  Format.kfprintf (fun fs -> Format.fprintf fs "@]" ; false) fs fmt
-
 let fail fmt =
   Format.fprintf fs "@\n@[<2>| " ;
   Format.kfprintf

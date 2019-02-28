@@ -131,11 +131,11 @@ let rec invariant q =
   try
     assert (
       Set.disjoint us xs
-      || Trace.report "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp
-           (Set.inter us xs) pp q ) ;
+      || Trace.fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp (Set.inter us xs)
+           pp q ) ;
     assert (
       Set.is_subset (fv q) ~of_:us
-      || Trace.report "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us)
+      || Trace.fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us)
     ) ;
     Congruence.invariant cong ;
     ( match djns with
@@ -241,7 +241,7 @@ let exists xs q =
   ;
   assert (
     Set.is_subset xs ~of_:q.us
-    || Trace.report "%a" Var.Set.pp (Set.diff xs q.us) ) ;
+    || Trace.fail "%a" Var.Set.pp (Set.diff xs q.us) ) ;
   {q with us= Set.diff q.us xs; xs= Set.union q.xs xs} |> check invariant
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]

@@ -266,10 +266,10 @@ let exec_spec pre {xs; foot; post} =
       xs Sh.pp foot Sh.pp post ;
     assert (
       let vs = Set.diff (Set.diff foot.Sh.us xs) pre.Sh.us in
-      Set.is_empty vs || Trace.report "unbound foot: {%a}" Var.Set.pp vs ) ;
+      Set.is_empty vs || Trace.fail "unbound foot: {%a}" Var.Set.pp vs ) ;
     assert (
       let vs = Set.diff (Set.diff post.Sh.us xs) pre.Sh.us in
-      Set.is_empty vs || Trace.report "unbound post: {%a}" Var.Set.pp vs )]
+      Set.is_empty vs || Trace.fail "unbound post: {%a}" Var.Set.pp vs )]
   ;
   let zs, pre = Sh.bind_exists pre ~wrt:xs in
   ( match Solver.infer_frame pre xs foot with

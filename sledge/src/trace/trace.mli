@@ -52,8 +52,5 @@ val retn : string -> string -> (pf -> 'b -> unit) -> 'b -> 'b
 val flush : unit -> unit
 (** Flush the internal buffers. *)
 
-val report : ('a, Formatter.t, unit, bool) format4 -> 'a
-(** Emit a message at the current indentation level, and return [false]. *)
-
 val fail : ('a, Formatter.t, unit, _) format4 -> 'a
 (** Emit a message at the current indentation level, and [assert false]. *)
