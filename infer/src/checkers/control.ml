@@ -161,6 +161,14 @@ end
 
 module ControlDepAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctionsControlDeps (CFG))
 
+type invariant_map = ControlDepAnalyzer.invariant_map
+
+let compute_invariant_map pdesc tenv control_maps : invariant_map =
+  let proc_data = ProcData.make pdesc tenv control_maps in
+  let node_cfg = CFG.from_pdesc pdesc in
+  ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:ControlDepSet.empty
+
+
 (* Filter CVs which are invariant in the loop where the CV originated from *)
 let remove_invariant_vars control_vars loop_inv_map =
   ControlDepSet.fold
