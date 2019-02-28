@@ -23,13 +23,13 @@
 
 type comparator_witness
 
-type mset = (t, comparator_witness) Mset.t
+type qset = (t, comparator_witness) Qset.t
 
 and t = private
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | Add of {args: mset; typ: Typ.t}  (** Addition *)
-  | Mul of {args: mset; typ: Typ.t}  (** Multiplication *)
+  | Add of {args: qset; typ: Typ.t}  (** Addition *)
+  | Mul of {args: qset; typ: Typ.t}  (** Multiplication *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
@@ -141,6 +141,7 @@ val memory : siz:t -> arr:t -> t
 val concat : t -> t -> t
 val bool : bool -> t
 val integer : Z.t -> Typ.t -> t
+val rational : Q.t -> Typ.t -> t
 val float : string -> t
 val eq : t -> t -> t
 val dq : t -> t -> t
@@ -189,13 +190,13 @@ val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 
 (** Destruct *)
 
-val base_offset : t -> (t * Z.t * Typ.t) option
+val base_offset : t -> (t * Q.t * Typ.t) option
 (** Decompose an addition of a constant "offset" to a "base" exp. *)
 
 val base : t -> t
 (** Like [base_offset] but does not construct the "offset" exp. *)
 
-val offset : t -> (Z.t * Typ.t) option
+val offset : t -> (Q.t * Typ.t) option
 (** Like [base_offset] but does not construct the "base" exp. *)
 
 (** Access *)

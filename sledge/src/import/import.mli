@@ -212,17 +212,31 @@ module Set : sig
   val to_tree : ('e, 'c) t -> ('e, 'c) tree
 end
 
-module Mset : sig
-  include module type of Mset
+module Qset : sig
+  include module type of Qset
 
-  val pp : (unit, unit) fmt -> ('a * Z.t) pp -> ('a, _) t pp
-  (** Pretty-print a multiset. *)
+  val pp : (unit, unit) fmt -> ('a * Q.t) pp -> ('a, _) t pp
+end
+
+module Q : sig
+  include module type of struct include Q end
+
+  val of_z : Z.t -> t
+  val compare : t -> t -> int
+  val hash : t -> int
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+  val pp : t pp
 end
 
 module Z : sig
   include module type of struct include Z end
 
+  val compare : t -> t -> int
+  val hash : t -> int
   val hash_fold_t : t Hash.folder
   val t_of_sexp : Sexp.t -> t
   val sexp_of_t : t -> Sexp.t
+  val pp : t pp
 end

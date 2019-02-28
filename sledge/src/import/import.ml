@@ -265,19 +265,36 @@ module Set = struct
   let to_tree = Using_comparator.to_tree
 end
 
-module Mset = struct
-  include Mset
+module Qset = struct
+  include Qset
 
   let pp sep pp_elt fs s = List.pp sep pp_elt fs (to_list s)
 end
 
-module Z = struct
-  include Z
+module Q = struct
+  let pp = Q.pp_print
+  let hash = Hashtbl.hash
+  let hash_fold_t s q = Int.hash_fold_t s (hash q)
+  let sexp_of_t q = Sexp.Atom (Q.to_string q)
 
-  let hash_fold_t s z = Int.hash_fold_t s (Z.hash z)
+  let t_of_sexp = function
+    | Sexp.Atom s -> Q.of_string s
+    | _ -> assert false
+
+  let of_z = Q.of_bigint
+
+  include Q
+end
+
+module Z = struct
+  let pp = Z.pp_print
+  let hash = [%hash: Z.t]
+  let hash_fold_t s z = Int.hash_fold_t s (hash z)
   let sexp_of_t z = Sexp.Atom (Z.to_string z)
 
   let t_of_sexp = function
     | Sexp.Atom s -> Z.of_string s
     | _ -> assert false
+
+  include Z
 end

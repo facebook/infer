@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Mset - Set with integer (positive, negative, or zero) multiplicity for
-    each element *)
+(** Qset - Set with (signed) rational multiplicity for each element *)
 
 open Base
 
-type ('elt, 'cmp) t = ('elt, Z.t, 'cmp) Map.t
+type ('elt, 'cmp) t = ('elt, Q.t, 'cmp) Map.t
 
 module M (Elt : sig
   type t
@@ -33,23 +32,23 @@ end
 module type Compare_m = sig end
 module type Hash_fold_m = Hasher.S
 
-let sexp_of_z z = Sexp.Atom (Z.to_string z)
-let z_of_sexp = function Sexp.Atom s -> Z.of_string s | _ -> assert false
-let hash_fold_z state z = Hash.fold_int state (Z.hash z)
+let sexp_of_q q = Sexp.Atom (Q.to_string q)
+let q_of_sexp = function Sexp.Atom s -> Q.of_string s | _ -> assert false
+let hash_fold_q state q = Hash.fold_int state (Hashtbl.hash q)
 
 let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
-  Map.sexp_of_m__t (module Elt) sexp_of_z t
+  Map.sexp_of_m__t (module Elt) sexp_of_q t
 
 let m__t_of_sexp (type elt cmp)
     (module Elt : M_of_sexp
       with type t = elt and type comparator_witness = cmp) sexp =
-  Map.m__t_of_sexp (module Elt) z_of_sexp sexp
+  Map.m__t_of_sexp (module Elt) q_of_sexp sexp
 
-let compare_m__t (module Elt : Compare_m) = Map.compare_direct Z.compare
+let compare_m__t (module Elt : Compare_m) = Map.compare_direct Q.compare
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt)
     state =
-  Map.hash_fold_m__t (module Elt) hash_fold_z state
+  Map.hash_fold_m__t (module Elt) hash_fold_q state
 
 let hash_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) =
   Hash.of_fold (hash_fold_m__t (module Elt))
@@ -58,22 +57,22 @@ type ('elt, 'cmp) comparator =
   (module Comparator.S with type t = 'elt and type comparator_witness = 'cmp)
 
 let empty cmp = Map.empty cmp
-let if_nz z = if Z.equal Z.zero z then None else Some z
+let if_nz q = if Q.equal Q.zero q then None else Some q
 
 let add m x i =
-  Map.change m x ~f:(function Some j -> if_nz Z.(i + j) | None -> if_nz i)
+  Map.change m x ~f:(function Some j -> if_nz Q.(i + j) | None -> if_nz i)
 
 let remove m x = Map.remove m x
 
 let union m n =
   Map.merge m n ~f:(fun ~key:_ -> function
-    | `Both (i, j) -> if_nz Z.(i + j) | `Left i | `Right i -> Some i )
+    | `Both (i, j) -> if_nz Q.(i + j) | `Left i | `Right i -> Some i )
 
 let length m = Map.length m
-let count m x = match Map.find m x with Some z -> z | None -> Z.zero
+let count m x = match Map.find m x with Some q -> q | None -> Q.zero
 
 let count_and_remove m x =
-  let found = ref Z.zero in
+  let found = ref Q.zero in
   let m =
     Map.change m x ~f:(function
       | None -> None
@@ -81,7 +80,7 @@ let count_and_remove m x =
           found := i ;
           None )
   in
-  if Z.equal !found Z.zero then None else Some (!found, m)
+  if Q.equal !found Q.zero then None else Some (!found, m)
 
 let min_elt = Map.min_elt
 let fold m ~f ~init = Map.fold m ~f:(fun ~key ~data s -> f key data s) ~init
@@ -90,14 +89,14 @@ let map m ~f =
   fold m ~init:m ~f:(fun x i m ->
       let x', i' = f x i in
       if phys_equal x' x then
-        if Z.equal i' i then m else Map.set m ~key:x ~data:i'
+        if Q.equal i' i then m else Map.set m ~key:x ~data:i'
       else add (Map.remove m x) x' i' )
 
 let fold_map m ~f ~init:s =
   fold m ~init:(m, s) ~f:(fun x i (m, s) ->
       let x', i', s = f x i s in
       if phys_equal x' x then
-        if Z.equal i' i then (m, s) else (Map.set m ~key:x ~data:i', s)
+        if Q.equal i' i then (m, s) else (Map.set m ~key:x ~data:i', s)
       else (add (Map.remove m x) x' i', s) )
 
 let for_all m ~f = Map.for_alli m ~f:(fun ~key ~data -> f key data)

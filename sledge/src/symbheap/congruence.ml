@@ -238,13 +238,13 @@ let pp_diff fs (r, s) =
 (** solve a+i = b for a, yielding a = b-i *)
 let solve_for_base ai b =
   match Exp.base_offset ai with
-  | Some (a, i, typ) -> (a, Exp.sub typ b (Exp.integer i typ))
+  | Some (a, i, typ) -> (a, Exp.sub typ b (Exp.rational i typ))
   | None -> (ai, b)
 
 (** subtract offset from both sides of equation a+i = b, yielding b-i *)
 let subtract_offset ai b =
   match Exp.offset ai with
-  | Some (i, typ) -> Exp.sub typ b (Exp.integer i typ)
+  | Some (i, typ) -> Exp.sub typ b (Exp.rational i typ)
   | None -> b
 
 (** [map_base ~f a+i] is [f(a) + i] and [map_base ~f a] is [f(a)] *)
@@ -252,7 +252,7 @@ let map_base ai ~f =
   match Exp.base_offset ai with
   | Some (a, i, typ) ->
       let a' = f a in
-      if a' == a then ai else Exp.add typ a' (Exp.integer i typ)
+      if a' == a then ai else Exp.add typ a' (Exp.rational i typ)
   | None -> f ai
 
 (** [norm_base r a] is [a'+k] where [r] implies [a = a'+k] and [a'] is a
@@ -538,7 +538,7 @@ let rec norm_extend r ek =
     Map.find_or_add r.rep e
       ~if_found:(fun e' ->
         match Exp.offset ek with
-        | Some (k, typ) -> (r, Exp.add typ e' (Exp.integer k typ))
+        | Some (k, typ) -> (r, Exp.add typ e' (Exp.rational k typ))
         | None -> (r, e') )
       ~default:e
       ~if_added:(fun rep ->

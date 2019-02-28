@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Mset - Set with integer (positive, negative, or zero) multiplicity for
-    each element *)
+(** Qset - Set with (signed) rational multiplicity for each element *)
 
 open Base
 
@@ -58,7 +57,7 @@ val hash_m__t :
 val empty : ('elt, 'cmp) comparator -> ('elt, 'cmp) t
 (** The empty multiset over the provided order. *)
 
-val add : ('a, 'c) t -> 'a -> Z.t -> ('a, 'c) t
+val add : ('a, 'c) t -> 'a -> Q.t -> ('a, 'c) t
 (** Add to multiplicity of single element. [O(log n)] *)
 
 val remove : ('a, 'c) t -> 'a -> ('a, 'c) t
@@ -70,39 +69,39 @@ val union : ('a, 'c) t -> ('a, 'c) t -> ('a, 'c) t
 val length : _ t -> int
 (** Number of elements with non-zero multiplicity. [O(1)]. *)
 
-val count : ('a, _) t -> 'a -> Z.t
+val count : ('a, _) t -> 'a -> Q.t
 (** Multiplicity of an element. [O(log n)]. *)
 
-val count_and_remove : ('a, 'c) t -> 'a -> (Z.t * ('a, 'c) t) option
+val count_and_remove : ('a, 'c) t -> 'a -> (Q.t * ('a, 'c) t) option
 (** Multiplicity of an element, and remove it. [O(log n)]. *)
 
-val map : ('a, 'c) t -> f:('a -> Z.t -> 'a * Z.t) -> ('a, 'c) t
+val map : ('a, 'c) t -> f:('a -> Q.t -> 'a * Q.t) -> ('a, 'c) t
 (** Map over the elements in ascending order. Preserves physical equality if
     [f] does. *)
 
-val map_counts : ('a, 'c) t -> f:('a -> Z.t -> Z.t) -> ('a, 'c) t
+val map_counts : ('a, 'c) t -> f:('a -> Q.t -> Q.t) -> ('a, 'c) t
 (** Map over the multiplicities of the elements in ascending order. *)
 
-val fold : ('a, _) t -> f:('a -> Z.t -> 's -> 's) -> init:'s -> 's
+val fold : ('a, _) t -> f:('a -> Q.t -> 's -> 's) -> init:'s -> 's
 (** Fold over the elements in ascending order. *)
 
 val fold_map :
      ('a, 'c) t
-  -> f:('a -> Z.t -> 's -> 'a * Z.t * 's)
+  -> f:('a -> Q.t -> 's -> 'a * Q.t * 's)
   -> init:'s
   -> ('a, 'c) t * 's
 (** Folding map over the elements in ascending order. Preserves physical
     equality if [f] does. *)
 
-val for_all : ('a, _) t -> f:('a -> Z.t -> bool) -> bool
+val for_all : ('a, _) t -> f:('a -> Q.t -> bool) -> bool
 (** Universal property test. [O(n)] but returns as soon as a violation is
     found, in ascending order. *)
 
-val iter : ('a, _) t -> f:('a -> Z.t -> unit) -> unit
+val iter : ('a, _) t -> f:('a -> Q.t -> unit) -> unit
 (** Iterate over the elements in ascending order. *)
 
-val min_elt : ('a, _) t -> ('a * Z.t) option
+val min_elt : ('a, _) t -> ('a * Q.t) option
 (** Minimum element. *)
 
-val to_list : ('a, _) t -> ('a * Z.t) list
+val to_list : ('a, _) t -> ('a * Q.t) list
 (** Convert to a list of elements in ascending order. *)
