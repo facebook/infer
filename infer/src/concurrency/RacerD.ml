@@ -89,24 +89,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.t) =
     let open RacerDModels in
-    let get_receiver_ap actuals =
+    match get_container_access callee_pname tenv with
+    | None ->
+        Payload.read caller_pdesc callee_pname
+    | Some container_access -> (
       match List.hd actuals with
       | Some (HilExp.AccessExpression receiver_expr) ->
-          HilExp.AccessExpression.to_access_path receiver_expr
+          let receiver_ap = HilExp.AccessExpression.to_access_path receiver_expr in
+          let is_write =
+            match container_access with ContainerWrite -> true | ContainerRead -> false
+          in
+          make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
+            astate
       | _ ->
-          L.(die InternalError)
-            "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
-            callee_pname
-    in
-    match (get_container_access callee_pname tenv, callee_pname) with
-    | Some ContainerWrite, _ ->
-        make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
-          caller_pdesc astate
-    | Some ContainerRead, _ ->
-        make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
-          tenv caller_pdesc astate
-    | None, _ ->
-        Payload.read caller_pdesc callee_pname
+          L.internal_error "Call to %a is marked as a container write, but has no receiver"
+            Typ.Procname.pp callee_pname ;
+          None )
 
 
   let add_reads exps loc accesses locks threads ownership proc_data =
