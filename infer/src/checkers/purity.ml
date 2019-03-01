@@ -7,7 +7,7 @@
 open! IStd
 module F = Format
 module L = Logging
-module ModifiedVarSet = Caml.Set.Make (Var)
+module ModifiedVarSet = PrettyPrintable.MakePPSet (Var)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 
 let debug fmt = L.(debug Analysis Verbose fmt)
@@ -79,6 +79,27 @@ module TransferFunctions = struct
         false
 
 
+  exception Modified_Global
+
+  (* find all the variables occurring in the given modified argument exp,
+     unless the variable is a global (which makes all other function
+     calls impure since they may read from that modified global var ) *)
+  let get_modified_vars_unless_global inferbo_mem modified_acc modified_arg_exp =
+    debug "Argument %a is modified.\n" HilExp.pp modified_arg_exp ;
+    let ae_list = HilExp.get_access_exprs modified_arg_exp in
+    List.fold ae_list ~init:modified_acc ~f:(fun modified_acc ae ->
+        let base_var, typ = HilExp.AccessExpression.get_base ae in
+        let alias_set = get_alias_set inferbo_mem base_var in
+        debug "Alias set for %a : %a \n\n\n" Var.pp base_var ModifiedVarSet.pp alias_set ;
+        if Var.is_global base_var || ModifiedVarSet.exists Var.is_global alias_set then
+          raise Modified_Global
+        else
+          let modified_acc' =
+            if Typ.is_pointer typ then ModifiedVarSet.add base_var modified_acc else modified_acc
+          in
+          ModifiedVarSet.union modified_acc' alias_set )
+
+
   (* given the modified parameters and the args of the callee, find
      parameter indices of the current procedure that match, i.e have
      been modified by the callee. Note that index counting starts from
@@ -94,28 +115,22 @@ module TransferFunctions = struct
      }
   *)
   let find_params_matching_modified_args inferbo_mem formals callee_args callee_modified_params =
-    let vars_of_modified_args =
-      List.foldi ~init:ModifiedVarSet.empty
-        ~f:(fun i modified_acc arg_exp ->
-          if Domain.ModifiedParamIndices.mem i callee_modified_params then (
-            debug "Argument %a is modified.\n" HilExp.pp arg_exp ;
-            HilExp.get_access_exprs arg_exp
-            |> List.fold ~init:modified_acc ~f:(fun modified_acc ae ->
-                   let base_var, typ = HilExp.AccessExpression.get_base ae in
-                   let modified_acc' =
-                     if Typ.is_pointer typ then ModifiedVarSet.add base_var modified_acc
-                     else modified_acc
-                   in
-                   get_alias_set inferbo_mem base_var |> ModifiedVarSet.union modified_acc' ) )
-          else modified_acc )
-        callee_args
-    in
-    (* find the respective parameter of the caller, matching the modified vars *)
-    let caller_modified_params =
-      get_modified_params formals ~f:(fun formal_var ->
-          ModifiedVarSet.mem formal_var vars_of_modified_args )
-    in
-    caller_modified_params
+    try
+      let vars_of_modified_args =
+        List.foldi ~init:ModifiedVarSet.empty
+          ~f:(fun i acc arg_exp ->
+            if Domain.ModifiedParamIndices.mem i callee_modified_params then
+              get_modified_vars_unless_global inferbo_mem acc arg_exp
+            else acc )
+          callee_args
+      in
+      (* find the respective parameter of the caller, matching the modified vars *)
+      let caller_modified_params =
+        get_modified_params formals ~f:(fun formal_var ->
+            ModifiedVarSet.mem formal_var vars_of_modified_args )
+      in
+      Domain.impure_params caller_modified_params
+    with Modified_Global -> Domain.impure_global
 
 
   (* if the callee is impure, find the parameters that have been modified by the callee *)
@@ -127,9 +142,7 @@ module TransferFunctions = struct
         Domain.(
           debug "Callee modified params %a \n" ModifiedParamIndices.pp callee_modified_params ;
           if ModifiedParamIndices.is_empty callee_modified_params then pure
-          else
-            impure_params
-              (find_params_matching_modified_args inferbo_mem formals args callee_modified_params))
+          else find_params_matching_modified_args inferbo_mem formals args callee_modified_params)
 
 
   let exec_instr (astate : Domain.t)
@@ -152,7 +165,6 @@ module TransferFunctions = struct
               else
                 find_params_matching_modified_args inferbo_mem formals args
                   (Domain.all_params_modified args)
-                |> Domain.impure_params
           | None -> (
             match get_callee_summary called_pname with
             | Some summary ->

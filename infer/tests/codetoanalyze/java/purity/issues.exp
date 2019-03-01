@@ -1,3 +1,4 @@
+codetoanalyze/java/purity/GlobalTest.java, GlobalTest.global_mod_via_argument_passing_bad_FP(int,GlobalTest$Foo):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void GlobalTest.global_mod_via_argument_passing_bad_FP(int,GlobalTest$Foo)]
 codetoanalyze/java/purity/Test.java, Test.call_pure_ok(int):void, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function void Test.call_pure_ok(int)]
 codetoanalyze/java/purity/Test.java, Test.emptyList_bad_FP():java.util.ArrayList, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function ArrayList Test.emptyList_bad_FP()]
 codetoanalyze/java/purity/Test.java, Test.local_alloc_ok(int,int):int, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function int Test.local_alloc_ok(int,int)]
