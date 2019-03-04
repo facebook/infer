@@ -265,10 +265,11 @@ let instantiate_cond :
     latest_prune
 
 
+type checks_summary = BufferOverrunCheckerSummary.t
+
 type get_proc_summary =
      Typ.Procname.t
-  -> (BufferOverrunAnalysisSummary.t * BufferOverrunCheckerSummary.t * (Pvar.t * Typ.t) list)
-     option
+  -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list * checks_summary) option
 
 let check_instr :
        get_proc_summary
@@ -306,7 +307,7 @@ let check_instr :
           check model_env mem cond_set
       | None -> (
         match get_proc_summary callee_pname with
-        | Some (callee_mem, callee_condset, callee_formals) ->
+        | Some (callee_mem, callee_formals, callee_condset) ->
             instantiate_cond tenv integer_type_widths callee_pname callee_formals params mem
               callee_mem callee_condset location
             |> PO.ConditionSet.join cond_set
@@ -398,10 +399,8 @@ let compute_checks :
     ~init:Checks.empty
 
 
-type checks_summary = PO.ConditionSet.summary_t
-
-let report_errors : Tenv.t -> Summary.t -> checks -> unit =
- fun tenv summary {cond_set; unused_branches; unreachable_statements} ->
+let report_errors : Tenv.t -> checks -> Summary.t -> unit =
+ fun tenv {cond_set; unused_branches; unreachable_statements} summary ->
   UnusedBranches.report tenv summary unused_branches ;
   UnreachableStatements.report summary unreachable_statements ;
   let report cond trace issue_type =
@@ -417,7 +416,7 @@ let report_errors : Tenv.t -> Summary.t -> checks -> unit =
   PO.ConditionSet.report_errors ~report cond_set
 
 
-let checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_summary =
+let get_checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_summary =
  fun locals
      Checks.({ cond_set
              ; unused_branches= _ (* intra-procedural *)
@@ -444,14 +443,14 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
                Option.map2 analysis_payload checker_payload
                  ~f:(fun analysis_payload checker_payload ->
                    ( analysis_payload
-                   , checker_payload
-                   , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals ) ) )
+                   , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals
+                   , checker_payload ) ) )
       in
       compute_checks get_proc_summary proc_desc tenv integer_type_widths cfg inv_map
     in
-    report_errors tenv summary checks ;
+    report_errors tenv checks summary ;
     let locals = BufferOverrunAnalysis.get_local_decls proc_desc in
-    let cond_set = checks_summary locals checks in
+    let cond_set = get_checks_summary locals checks in
     Payload.update_summary cond_set summary
   in
   NodePrinter.finish_session underlying_exit_node ;

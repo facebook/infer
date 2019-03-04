@@ -26,10 +26,11 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_analysis
 end)
 
-type extras =
-  { get_proc_summary:
-      Typ.Procname.t -> (BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list) option
-  ; oenv: Dom.OndemandEnv.t }
+type summary_and_formals = BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list
+
+type get_proc_summary_and_formals = Typ.Procname.t -> summary_and_formals option
+
+type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv: Dom.OndemandEnv.t}
 
 module CFG = ProcCfg.NormalOneInstrPerNode
 
@@ -141,7 +142,8 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {pdesc; tenv; extras= {get_proc_summary; oenv= {integer_type_widths}}} node instr ->
+   fun mem {pdesc; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}} node
+       instr ->
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
         mem
@@ -149,7 +151,7 @@ module TransferFunctions = struct
       -> (
       match Pvar.get_initializer_pname pvar with
       | Some callee_pname -> (
-        match get_proc_summary callee_pname with
+        match get_proc_summary_and_formals callee_pname with
         | Some (callee_mem, _) ->
             let v = Dom.Mem.find (Loc.of_pvar pvar) callee_mem in
             Dom.Mem.add_stack (Loc.of_id id) v mem
@@ -227,7 +229,7 @@ module TransferFunctions = struct
             in
             exec model_env ~ret mem
         | None -> (
-          match get_proc_summary callee_pname with
+          match get_proc_summary_and_formals callee_pname with
           | Some (callee_exit_mem, callee_formals) ->
               instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
                 callee_exit_mem location
@@ -281,25 +283,20 @@ let get_local_decls : Procdesc.t -> local_decls =
   Procdesc.get_locals proc_desc |> List.fold ~init:PowLoc.empty ~f:accum_local_decls
 
 
-let cached_compute_invariant_map =
-  let compute_invariant_map : Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map =
-   fun pdesc tenv integer_type_widths ->
-    Preanal.do_preanalysis pdesc tenv ;
-    let cfg = CFG.from_pdesc pdesc in
-    let pdata =
-      let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
-      let get_proc_summary callee_pname =
-        Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
-        |> Option.bind ~f:(fun summary ->
-               Payload.of_summary summary
-               |> Option.map ~f:(fun payload ->
-                      (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
-      in
-      ProcData.make pdesc tenv {get_proc_summary; oenv}
-    in
-    let initial = Init.initial_state pdata (CFG.start_node cfg) in
-    Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
+let compute_invariant_map :
+    Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
+ fun pdesc tenv integer_type_widths get_proc_summary_and_formals ->
+  Preanal.do_preanalysis pdesc tenv ;
+  let cfg = CFG.from_pdesc pdesc in
+  let pdata =
+    let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
+    ProcData.make pdesc tenv {get_proc_summary_and_formals; oenv}
   in
+  let initial = Init.initial_state pdata (CFG.start_node cfg) in
+  Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
+
+
+let cached_compute_invariant_map =
   (* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily keeps invariant maps around) *)
   let module WeakInvMapHashTbl = Caml.Weak.Make (struct
     type t = Typ.Procname.t * invariant_map option
@@ -318,7 +315,16 @@ let cached_compute_invariant_map =
         (* this should never happen *)
         assert false
     | None ->
-        let inv_map = compute_invariant_map pdesc tenv integer_type_widths in
+        let get_proc_summary_and_formals callee_pname =
+          Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
+          |> Option.bind ~f:(fun summary ->
+                 Payload.of_summary summary
+                 |> Option.map ~f:(fun payload ->
+                        (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
+        in
+        let inv_map =
+          compute_invariant_map pdesc tenv integer_type_widths get_proc_summary_and_formals
+        in
         WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map) ;
         inv_map
 
