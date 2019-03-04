@@ -190,7 +190,8 @@ module BoTrace = struct
 end
 
 module Set = struct
-  include AbstractDomain.FiniteSet (BoTrace)
+  (* currently, we keep only one trace for efficiency *)
+  include AbstractDomain.MinReprSet (BoTrace)
 
   let set_singleton = singleton
 
@@ -198,22 +199,11 @@ module Set = struct
 
   let singleton_final location kind = set_singleton (BoTrace.final location kind)
 
-  (* currently, we keep only one trace for efficiency *)
-  let join x y =
-    if is_empty x then y
-    else if is_empty y then x
-    else
-      let tx, ty = (min_elt x, min_elt y) in
-      if Int.( <= ) (BoTrace.length tx) (BoTrace.length ty) then x else y
-
-
-  let choose_shortest set = min_elt set
-
   let add_elem location elem t =
-    if is_empty t then singleton location elem else map (BoTrace.add_elem location elem) t
+    if is_bottom t then singleton location elem else map (BoTrace.add_elem location elem) t
 
 
-  let non_empty t = if is_empty t then set_singleton BoTrace.Empty else t
+  let non_empty t = if is_bottom t then set_singleton BoTrace.Empty else t
 
   let call location ~traces_caller ~traces_callee =
     let traces_caller = non_empty traces_caller in
@@ -223,7 +213,7 @@ module Set = struct
         fold
           (fun callee traces -> add (BoTrace.call location ~caller ~callee) traces)
           traces_callee traces )
-      traces_caller empty
+      traces_caller bottom
 
 
   let has_unknown t = exists BoTrace.has_unknown t
@@ -233,10 +223,10 @@ module Set = struct
   let exists_str ~f t = exists (BoTrace.exists_str ~f) t
 
   let make_err_trace depth set tail =
-    if is_empty set then tail else BoTrace.make_err_trace depth (choose_shortest set) tail
+    match min_elt set with None -> tail | Some trace -> BoTrace.make_err_trace depth trace tail
 
 
-  let length set = if is_empty set then 0 else BoTrace.length (choose_shortest set)
+  let length set = match min_elt set with None -> 0 | Some trace -> BoTrace.length trace
 end
 
 module Issue = struct

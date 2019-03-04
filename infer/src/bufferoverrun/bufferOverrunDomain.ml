@@ -50,7 +50,7 @@ module Val = struct
     ; arrayblk= ArrayBlk.bot
     ; offset_sym= Relation.Sym.bot
     ; size_sym= Relation.Sym.bot
-    ; traces= TraceSet.empty
+    ; traces= TraceSet.bottom
     ; represents_multiple_values= false }
 
 
@@ -156,7 +156,7 @@ module Val = struct
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
-  let of_itv ?(traces = TraceSet.empty) itv = {bot with itv; traces}
+  let of_itv ?(traces = TraceSet.bottom) itv = {bot with itv; traces}
 
   let of_int n = of_itv (Itv.of_int n)
 
@@ -164,7 +164,7 @@ module Val = struct
 
   let of_int_lit n = of_itv (Itv.of_int_lit n)
 
-  let of_loc ?(traces = TraceSet.empty) x = {bot with powloc= PowLoc.singleton x; traces}
+  let of_loc ?(traces = TraceSet.bottom) x = {bot with powloc= PowLoc.singleton x; traces}
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
@@ -193,7 +193,7 @@ module Val = struct
     let stride = Some (integer_type_widths.char_width / 8) in
     let offset = Itv.zero in
     let size = Itv.of_int (String.length s + 1) in
-    of_c_array_alloc allocsite ~stride ~offset ~size ~traces:TraceSet.empty
+    of_c_array_alloc allocsite ~stride ~offset ~size ~traces:TraceSet.bottom
 
 
   let deref_of_literal_string s =
@@ -395,7 +395,7 @@ module Val = struct
     let traces_caller =
       Itv.SymbolSet.fold
         (fun symbol traces -> TraceSet.join (trace_of_sym symbol) traces)
-        symbols TraceSet.empty
+        symbols TraceSet.bottom
     in
     let traces = TraceSet.call location ~traces_caller ~traces_callee:x.traces in
     { x with
@@ -438,7 +438,7 @@ module Val = struct
     PhysEqual.optim1 v ~res:{v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
 
 
-  let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.empty
+  let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.bottom
 
   let is_mone x = Itv.is_mone (get_itv x)
 

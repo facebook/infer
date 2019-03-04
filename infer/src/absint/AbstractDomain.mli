@@ -97,6 +97,28 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
   val get : t -> V.t option
 end
 
+(** Abstracts a set of [Element]s by keeping its smallest representative only.
+  The widening is terminating only if the order fulfills the descending chain condition. *)
+module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) : sig
+  type elt = Element.t
+
+  include Caml.Set.OrderedType
+
+  include WithBottom with type t := t
+
+  val singleton : elt -> t
+
+  val min_elt : t -> elt option
+
+  val add : elt -> t -> t
+
+  val map : (elt -> elt) -> t -> t
+
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val exists : (elt -> bool) -> t -> bool
+end
+
 module type FiniteSetS = sig
   include PrettyPrintable.PPSet
 

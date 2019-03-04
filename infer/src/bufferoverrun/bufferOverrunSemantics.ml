@@ -429,7 +429,7 @@ let mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem 
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
     let itv, traces = eval_sympath ~strict:false params sympath caller_mem in
-    if Itv.eq itv Itv.bot then TraceSet.empty else traces
+    if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
   let eval_locpath ~strict partial = eval_locpath ~strict params partial caller_mem in
   fun ~strict -> {eval_sym; trace_of_sym; eval_locpath= eval_locpath ~strict}

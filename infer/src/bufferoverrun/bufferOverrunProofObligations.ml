@@ -763,7 +763,7 @@ module ConditionWithTrace = struct
             let traces_caller =
               Symb.SymbolSet.fold
                 (fun symbol val_traces -> ValTrace.Set.join (trace_of_sym symbol) val_traces)
-                symbols ValTrace.Set.empty
+                symbols ValTrace.Set.bottom
             in
             let trace =
               ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace

@@ -250,6 +250,57 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
   let get = function V v -> Some v | Bot | Top -> None
 end
 
+module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) = struct
+  type elt = Element.t [@@deriving compare]
+
+  type t = elt option [@@deriving compare]
+
+  let bottom = None
+
+  let is_bottom = Option.is_none
+
+  let ( <= ) ~lhs ~rhs =
+    match (lhs, rhs) with
+    | None, _ ->
+        true
+    | Some _, None ->
+        false
+    | Some lhs, Some rhs ->
+        Int.(Element.compare rhs lhs <= 0)
+
+
+  let join x1 x2 =
+    match (x1, x2) with
+    | None, x | x, None ->
+        x
+    | Some e1, Some e2 ->
+        if Int.(Element.compare e1 e2 <= 0) then x1 else x2
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp f = function None -> () | Some x -> Element.pp f x
+
+  let singleton x = Some x
+
+  let min_elt x = x
+
+  let add e = function
+    | None ->
+        singleton e
+    | Some e' when Int.(Element.compare e e' < 0) ->
+        Some e
+    | x ->
+        x
+
+
+  let map f x = Option.map x ~f
+
+  let fold f x init = Option.fold x ~init ~f:(fun acc e -> f e acc)
+
+  let exists f x = Option.exists x ~f
+end
+
 module type FiniteSetS = sig
   include PrettyPrintable.PPSet
 
