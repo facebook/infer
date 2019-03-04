@@ -379,6 +379,7 @@ clang_plugin_test_replace: clang_setup
 		  CLANG_INCLUDES=$(CLANG_INCLUDES))
 
 .PHONY: ocaml_unit_test
+ocaml_unit_test: CAML_LD_LIBRARY_PATH:=$(BUILD_DIR)/install/test/lib/stublibs/:$(CAML_LD_LIBRARY_PATH)
 ocaml_unit_test: test_build
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\

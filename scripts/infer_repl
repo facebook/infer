@@ -17,7 +17,12 @@ INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}\
 #       file. In interactive mode $SCRIPT_DIR isn't needed
 
 set -x
-"$SCRIPT_DIR"/../infer/bin/infertop.bc \
+
+# dune exec is picky with the root directory, for unknown reasons
+# we need it to find dllInferStdlib_stubs.so, so move to this directory
+cd $SCRIPT_DIR/../infer/src
+
+dune exec infertop.bc -- \
   -init "$SCRIPT_DIR"/toplevel_init \
   $INCLUDE_FLAGS \
   -I "$SCRIPT_DIR" \

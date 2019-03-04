@@ -110,8 +110,14 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 #	let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
 
+.PHONY: dll_stubs
+
+# Creates the symlink to dllInferStdlib_stubs.so required to launch the bytecode executables of infer
+dll_stubs: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+	$(QUIET)dune build InferStdlib.install
+
 .PHONY: test
-test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) dll_stubs
 	$(QUIET)dune build \
 	  $(patsubst $(INFER_BUILD_DIR)/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
 	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
@@ -149,7 +155,7 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	dune build $(INFER_CONFIG_TARGETS:.exe=.bc)
 	$(QUIET)touch $@
 
-$(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc
+$(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc dll_stubs
 	$(QUIET)$(MKDIR_P) $(BIN_DIR)
 ifeq ($(WINDOWS_BUILD),yes)
 # http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
@@ -191,7 +197,7 @@ mod_dep.pdf: mod_dep.dot
 dsort:
 	$(QUIET)ocamldep.opt -sort $(inc_flags) $(ml_src_files)
 
-$(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) dll_stubs
 	dune build $@
 	$(QUIET)touch $@
 
@@ -300,7 +306,7 @@ clean:
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
 	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.bc,.exe} $(INFER_BIN_ALIASES) \
-	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
+	  $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(BIN_DIR)/llvm_sil
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_*
