@@ -12,6 +12,8 @@ module Types = struct
   type 'astate bottom_lifted = Bottom | NonBottom of 'astate
 
   type 'astate top_lifted = Top | NonTop of 'astate
+
+  type ('below, 'above) below_above = Below of 'below | Above of 'above
 end
 
 open! Types
@@ -248,6 +250,68 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
   let v x = V x
 
   let get = function V v -> Some v | Bot | Top -> None
+end
+
+module StackedUtils = struct
+  let compare x1 x2 ~cmp_below ~cmp_above =
+    if phys_equal x1 x2 then 0
+    else
+      match (x1, x2) with
+      | Below b1, Below b2 ->
+          cmp_below b1 b2
+      | Below _, Above _ ->
+          -1
+      | Above _, Below _ ->
+          1
+      | Above a1, Above a2 ->
+          cmp_above a1 a2
+
+
+  let ( <= ) ~le_below ~le_above ~lhs ~rhs =
+    phys_equal lhs rhs
+    ||
+    match (lhs, rhs) with
+    | Below lhs, Below rhs ->
+        le_below ~lhs ~rhs
+    | Below _, Above _ ->
+        true
+    | Above _, Below _ ->
+        false
+    | Above lhs, Above rhs ->
+        le_above ~lhs ~rhs
+
+
+  let combine ~dir x1 x2 ~f_below ~f_above =
+    match (x1, x2) with
+    | Below b1, Below b2 ->
+        Below (f_below b1 b2)
+    | (Below _ as below), (Above _ as above) | (Above _ as above), (Below _ as below) -> (
+      match dir with `Increasing -> above | `Decreasing -> below )
+    | Above a1, Above a2 ->
+        Above (f_above a1 a2)
+
+
+  let map x ~f_below ~f_above =
+    match x with Below b -> Below (f_below b) | Above a -> Above (f_above a)
+
+
+  let pp ~pp_below ~pp_above f = function Below b -> pp_below f b | Above a -> pp_above f a
+end
+
+module Stacked (Below : S) (Above : S) = struct
+  type t = (Below.t, Above.t) below_above
+
+  let ( <= ) = StackedUtils.( <= ) ~le_below:Below.( <= ) ~le_above:Above.( <= )
+
+  let join = StackedUtils.combine ~dir:`Increasing ~f_below:Below.join ~f_above:Above.join
+
+  let widen ~prev ~next ~num_iters =
+    StackedUtils.combine ~dir:`Increasing prev next
+      ~f_below:(fun prev next -> Below.widen ~prev ~next ~num_iters)
+      ~f_above:(fun prev next -> Above.widen ~prev ~next ~num_iters)
+
+
+  let pp = StackedUtils.pp ~pp_below:Below.pp ~pp_above:Above.pp
 end
 
 module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) = struct

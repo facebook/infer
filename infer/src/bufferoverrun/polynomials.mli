@@ -29,8 +29,17 @@ module NonNegativeNonTopPolynomial : sig
   val get_symbols : t -> Bounds.NonNegativeBound.t list
 end
 
+module TopTraces : sig
+  type t
+
+  val make_err_trace : t -> Errlog.loc_trace
+end
+
 module NonNegativePolynomial : sig
   include PrettyPrintable.PrintableType
+
+  type degree_with_term =
+    (Degree.t * NonNegativeNonTopPolynomial.t, TopTraces.t) AbstractDomain.Types.below_above
 
   val ( <= ) : lhs:t -> rhs:t -> bool
 
@@ -64,14 +73,14 @@ module NonNegativePolynomial : sig
 
   val compare_by_degree : t -> t -> int
 
-  val pp_degree :
-    only_bigO:bool -> Format.formatter -> (Degree.t * NonNegativeNonTopPolynomial.t) option -> unit
+  val pp_degree : only_bigO:bool -> Format.formatter -> degree_with_term -> unit
 
   val encode : t -> string
 
   val decode : string -> t
 
-  val get_symbols : t -> Bounds.NonNegativeBound.t list
+  val get_symbols :
+    t -> (Bounds.NonNegativeBound.t list, TopTraces.t) AbstractDomain.Types.below_above
 
-  val get_degree_with_term : t -> (Degree.t * NonNegativeNonTopPolynomial.t) option
+  val get_degree_with_term : t -> degree_with_term
 end

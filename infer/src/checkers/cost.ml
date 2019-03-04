@@ -685,6 +685,14 @@ module WorstCaseCost = struct
 end
 
 module Check = struct
+  let polynomial_traces cost =
+    match BasicCost.get_symbols cost with
+    | Below symbols ->
+        List.map symbols ~f:Bounds.NonNegativeBound.make_err_trace |> Errlog.concat_traces
+    | Above trace ->
+        Polynomials.TopTraces.make_err_trace trace
+
+
   let report_threshold summary ~name ~location ~cost ~threshold =
     let degree_str =
       match BasicCost.degree cost with
@@ -703,12 +711,8 @@ module Check = struct
       let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
       Errlog.make_trace_element 0 location cost_desc []
     in
-    let full_trace =
-      BasicCost.get_symbols cost
-      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
-      |> Errlog.concat_traces
-    in
-    Reporting.log_error summary ~loc:location ~ltr:(cost_trace :: full_trace)
+    Reporting.log_error summary ~loc:location
+      ~ltr:(cost_trace :: polynomial_traces cost)
       ~extras:(compute_errlog_extras cost) IssueType.expensive_execution_time_call message
 
 
@@ -720,7 +724,8 @@ module Check = struct
           suffix
       in
       let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
-      Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary issue message
+      Reporting.log_error ~loc ~ltr:(polynomial_traces cost) ~extras:(compute_errlog_extras cost)
+        summary issue message
     in
     if BasicCost.is_top cost then
       report IssueType.infinite_execution_time_call "cannot be computed"

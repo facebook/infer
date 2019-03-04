@@ -128,3 +128,21 @@ void call_while_upto20_10_good() { while_upto20_bad(10); }
 void call_while_upto20_unsigned_good(unsigned x) { while_upto20_bad(x); }
 
 void zero_cost_function() {}
+
+int always(int i) { return i % 2 == (i + 2) % 2; }
+
+void infinite_FN() {
+  int z;
+  for (int i = 0; always(i); i++) {
+    z += i;
+  }
+}
+
+void infinite() {
+  int z;
+  for (int i = 0; i % 2 == (i + 2) % 2; i++) {
+    z += i;
+  }
+}
+
+void call_infinite() { infinite(); }

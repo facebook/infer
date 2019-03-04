@@ -999,7 +999,7 @@ module Bound = struct
         Symb.Symbol.exists_str ~f s
 end
 
-type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
+type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
 
 module BoundTrace = struct
   type t =
@@ -1007,6 +1007,27 @@ module BoundTrace = struct
     | Call of {callee_pname: Typ.Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
   [@@deriving compare]
+
+  let rec length = function
+    | Loop _ | ModeledFunction _ ->
+        1
+    | Call {callee_trace} ->
+        1 + length callee_trace
+
+
+  let compare t1 t2 = [%compare: int * t] (length t1, t1) (length t2, t2)
+
+  let rec pp f = function
+    | Loop loc ->
+        F.fprintf f "Loop (%a)" Location.pp loc
+    | ModeledFunction {pname; location} ->
+        F.fprintf f "ModeledFunction `%s` (%a)" pname Location.pp location
+    | Call {callee_pname; callee_trace; location} ->
+        F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Typ.Procname.pp callee_pname Location.pp
+          location
+
+
+  let call ~callee_pname ~location callee_trace = Call {callee_pname; callee_trace; location}
 
   let make_err_trace =
     let rec aux depth trace =
@@ -1060,7 +1081,7 @@ module NonNegativeBound = struct
   let classify (b, trace) =
     match b with
     | Bound.PInf ->
-        ValTop
+        ValTop trace
     | Bound.MInf ->
         assert false
     | b -> (
@@ -1076,5 +1097,5 @@ module NonNegativeBound = struct
     | Bottom ->
         Constant NonNegativeInt.zero
     | NonBottom b ->
-        of_bound b ~trace:(BoundTrace.Call {callee_pname; location; callee_trace}) |> classify
+        of_bound b ~trace:(BoundTrace.call ~callee_pname ~location callee_trace) |> classify
 end

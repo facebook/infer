@@ -11,6 +11,8 @@ module Types : sig
   type 'astate bottom_lifted = Bottom | NonBottom of 'astate
 
   type 'astate top_lifted = Top | NonTop of 'astate
+
+  type ('below, 'above) below_above = Below of 'below | Above of 'above
 end
 
 open! Types
@@ -76,11 +78,7 @@ end
 module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 
 module TopLiftedUtils : sig
-  val ( <= ) : le:(lhs:'a -> rhs:'a -> bool) -> lhs:'a top_lifted -> rhs:'a top_lifted -> bool
-
   val pp_top : Format.formatter -> unit
-
-  val pp : pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a top_lifted -> unit
 end
 
 (** Cartesian product of two domains. *)
@@ -95,6 +93,48 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
   val v : V.t -> t
 
   val get : t -> V.t option
+end
+
+include
+  sig
+    [@@@warning "-60"]
+
+    (** Stacked abstract domain: tagged union of [Below] and [Above] domains where all elements of [Below] are strictly smaller than elements of [Above] *)
+    module Stacked (Below : S) (Above : S) : S with type t = (Below.t, Above.t) below_above
+end
+
+module StackedUtils : sig
+  val ( <= ) :
+       le_below:(lhs:'b -> rhs:'b -> bool)
+    -> le_above:(lhs:'a -> rhs:'a -> bool)
+    -> lhs:('b, 'a) below_above
+    -> rhs:('b, 'a) below_above
+    -> bool
+
+  val compare :
+       ('b, 'a) below_above
+    -> ('b, 'a) below_above
+    -> cmp_below:('b -> 'b -> int)
+    -> cmp_above:('a -> 'a -> int)
+    -> int
+
+  val pp :
+       pp_below:(Format.formatter -> 'b -> unit)
+    -> pp_above:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> ('b, 'a) below_above
+    -> unit
+
+  val combine :
+       dir:[`Increasing | `Decreasing]
+    -> ('b, 'a) below_above
+    -> ('b, 'a) below_above
+    -> f_below:('b -> 'b -> 'b)
+    -> f_above:('a -> 'a -> 'a)
+    -> ('b, 'a) below_above
+
+  val map :
+    ('b, 'a) below_above -> f_below:('b -> 'b2) -> f_above:('a -> 'a2) -> ('b2, 'a2) below_above
 end
 
 (** Abstracts a set of [Element]s by keeping its smallest representative only.

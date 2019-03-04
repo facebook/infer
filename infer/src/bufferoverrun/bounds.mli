@@ -114,7 +114,15 @@ module Bound : sig
   val exists_str : f:(string -> bool) -> t -> bool
 end
 
-type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
+module BoundTrace : sig
+  include PrettyPrintable.PrintableOrderedType
+
+  val call : callee_pname:Typ.Procname.t -> location:Location.t -> t -> t
+
+  val make_err_trace : t -> Errlog.loc_trace
+end
+
+type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
 
 module NonNegativeBound : sig
   type t [@@deriving compare]
@@ -133,8 +141,12 @@ module NonNegativeBound : sig
 
   val int_ub : t -> Ints.NonNegativeInt.t option
 
-  val classify : t -> (Ints.NonNegativeInt.t, t) valclass
+  val classify : t -> (Ints.NonNegativeInt.t, t, BoundTrace.t) valclass
 
   val subst :
-    Typ.Procname.t -> Location.t -> t -> Bound.eval_sym -> (Ints.NonNegativeInt.t, t) valclass
+       Typ.Procname.t
+    -> Location.t
+    -> t
+    -> Bound.eval_sym
+    -> (Ints.NonNegativeInt.t, t, BoundTrace.t) valclass
 end

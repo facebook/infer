@@ -175,18 +175,21 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
     let trace =
+      let polynomial_traces =
+        match curr_degree_with_term with
+        | Below (_, degree_term) ->
+            Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
+            |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+        | Above traces ->
+            [("", Polynomials.TopTraces.make_err_trace traces)]
+      in
       let curr_cost_trace =
         [ Errlog.make_trace_element 0
             {Location.line; col= column; file= source_file}
             (Format.asprintf "Updated %a" curr_cost_msg ())
             [] ]
       in
-      Option.value_map ~default:curr_cost_trace
-        ~f:(fun (_, degree_term) ->
-          let symbol_list = Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term in
-          ("", curr_cost_trace) :: List.map symbol_list ~f:Bounds.NonNegativeBound.make_err_trace
-          |> Errlog.concat_traces )
-        curr_degree_with_term
+      ("", curr_cost_trace) :: polynomial_traces |> Errlog.concat_traces
     in
     let severity = Exceptions.Advice in
     Some
