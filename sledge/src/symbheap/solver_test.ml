@@ -130,4 +130,26 @@ let%test_module _ =
           ∧ %a_2 = %a1_8
           ∧ 16 = %m_7
           ∧ emp |}]
+
+    let%expect_test _ =
+      check_frame
+        (Sh.star
+           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; arr= a})
+           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; arr= a2}))
+        [a3_; m_]
+        (Sh.seg {loc= l; bas= l; len= m; siz= m; arr= a3}) ;
+      [%expect
+        {|
+        ( infer_frame:
+            (%l_5 + 8) -[ %l_5, 16 )-> ⟨8,%a_2⟩
+          * %l_5 -[ %l_5, 16 )-> ⟨8,%a_1⟩
+          \- ∃ %a_3, %m_7 .
+              %l_5 -[)-> ⟨%m_7,%a_3⟩
+        ) infer_frame:
+          ∃  .
+          ∃ %a1_8 .
+            ⟨%m_7,%a_3⟩ = ⟨8,%a_1⟩^⟨8,%a1_8⟩
+          ∧ %a_2 = %a1_8
+          ∧ 16 = %m_7
+          ∧ emp |}]
   end )
