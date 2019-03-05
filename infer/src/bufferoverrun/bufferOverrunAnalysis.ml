@@ -163,8 +163,8 @@ module TransferFunctions = struct
           L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
-    | Load (id, exp, _, _) ->
-        BoUtils.Exec.load_locs id (Sem.eval_locs exp mem) mem
+    | Load (id, exp, typ, _) ->
+        BoUtils.Exec.load_locs id typ (Sem.eval_locs exp mem) mem
     | Store (exp1, _, Const (Const.Cstr s), location) ->
         let locs = Sem.eval_locs exp1 mem in
         let model_env =

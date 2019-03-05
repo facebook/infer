@@ -24,7 +24,7 @@ module ModelEnv : sig
 end
 
 module Exec : sig
-  val load_locs : Ident.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
+  val load_locs : Ident.t -> Typ.t -> PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
 
   val decl_local : ModelEnv.model_env -> Dom.Mem.t * int -> Loc.t * Typ.t -> Dom.Mem.t * int
 

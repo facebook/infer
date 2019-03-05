@@ -443,6 +443,10 @@ module Val = struct
   let is_mone x = Itv.is_mone (get_itv x)
 
   let of_path tenv ~may_last_field integer_type_widths location typ path =
+    let traces_of_loc l =
+      let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
+      TraceSet.singleton location trace
+    in
     let is_java = Language.curr_language_is Java in
     L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
@@ -450,7 +454,7 @@ module Val = struct
     match typ.Typ.desc with
     | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
         let l = Loc.of_path path in
-        let traces = TraceSet.singleton location (Trace.Parameter l) in
+        let traces = traces_of_loc l in
         let unsigned = Typ.is_unsigned_int typ in
         of_itv ~traces (Itv.of_normal_path ~unsigned path)
     | Tptr (elt, _) ->
@@ -460,13 +464,13 @@ module Val = struct
           in
           let deref_path = SPath.deref ~deref_kind path in
           let l = Loc.of_path deref_path in
-          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let traces = traces_of_loc l in
           {bot with powloc= PowLoc.singleton l; traces}
         else
           let deref_kind = SPath.Deref_CPointer in
           let deref_path = SPath.deref ~deref_kind path in
           let l = Loc.of_path deref_path in
-          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let traces = traces_of_loc l in
           let arrayblk =
             let allocsite = Allocsite.make_symbol deref_path in
             let stride =
@@ -486,7 +490,7 @@ module Val = struct
       | Some (CArray {deref_kind; length}) ->
           let deref_path = SPath.deref ~deref_kind path in
           let l = Loc.of_path deref_path in
-          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let traces = traces_of_loc l in
           let allocsite = Allocsite.make_symbol deref_path in
           let offset = Itv.zero in
           let size = Itv.of_int_lit length in
@@ -494,18 +498,18 @@ module Val = struct
       | Some JavaCollection ->
           let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
           let l = Loc.of_path deref_path in
-          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let traces = traces_of_loc l in
           let allocsite = Allocsite.make_symbol deref_path in
           let length = Itv.of_length_path path in
           of_java_array_alloc allocsite ~length ~traces
       | None ->
           let l = Loc.of_path path in
-          let traces = TraceSet.singleton location (Trace.Parameter l) in
+          let traces = traces_of_loc l in
           of_loc ~traces l )
     | Tarray {length; stride} ->
         let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
         let l = Loc.of_path deref_path in
-        let traces = TraceSet.singleton location (Trace.Parameter l) in
+        let traces = traces_of_loc l in
         let allocsite = Allocsite.make_symbol deref_path in
         let size =
           match length with
@@ -525,8 +529,14 @@ module Val = struct
           of_c_array_alloc allocsite ~stride ~offset ~size ~traces
 
 
-  let on_demand : default:t -> OndemandEnv.t -> Loc.t -> t =
-   fun ~default {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths} l ->
+  let on_demand : default:t -> ?typ:Typ.t -> OndemandEnv.t -> Loc.t -> t =
+   fun ~default ?typ {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths}
+       l ->
+    let do_on_demand path typ =
+      let may_last_field = may_last_field path in
+      let path = OndemandEnv.canonical_path typ_of_param_path path in
+      of_path tenv ~may_last_field integer_type_widths entry_location typ path
+    in
     match Loc.is_literal_string l with
     | Some s ->
         deref_of_literal_string s
@@ -541,14 +551,17 @@ module Val = struct
             default
         | Some path -> (
           match typ_of_param_path path with
-          | None ->
-              L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
-              default
+          | None -> (
+            match typ with
+            | Some typ when Loc.is_global l ->
+                L.d_printfln_escaped "Val.on_demand for %a -> global" Loc.pp l ;
+                do_on_demand path typ
+            | _ ->
+                L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
+                default )
           | Some typ ->
               L.d_printfln_escaped "Val.on_demand for %a" Loc.pp l ;
-              let may_last_field = may_last_field path in
-              let path = OndemandEnv.canonical_path typ_of_param_path path in
-              of_path tenv ~may_last_field integer_type_widths entry_location typ path ) ) )
+              do_on_demand path typ ) ) )
 
 
   module Itv = struct
@@ -1174,21 +1187,23 @@ module MemReach = struct
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
-  let find_heap_default : default:Val.t -> Loc.t -> _ t0 -> Val.t =
-   fun ~default l m ->
+  let find_heap_default : default:Val.t -> ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
+   fun ~default ?typ l m ->
     IOption.value_default_f (find_opt l m) ~f:(fun () ->
-        GOption.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default oenv l) )
+        GOption.value_map m.oenv ~default ~f:(fun oenv -> Val.on_demand ~default ?typ oenv l) )
 
 
-  let find_heap : Loc.t -> _ t0 -> Val.t = fun l m -> find_heap_default ~default:Val.Itv.top l m
-
-  let find : Loc.t -> _ t0 -> Val.t =
-   fun l m -> if is_stack_loc l m then find_stack l m else find_heap l m
+  let find_heap : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
+   fun ?typ l m -> find_heap_default ~default:Val.Itv.top ?typ l m
 
 
-  let find_set : PowLoc.t -> _ t0 -> Val.t =
-   fun locs m ->
-    let find_join loc acc = Val.join acc (find loc m) in
+  let find : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
+   fun ?typ l m -> if is_stack_loc l m then find_stack l m else find_heap ?typ l m
+
+
+  let find_set : ?typ:Typ.t -> PowLoc.t -> _ t0 -> Val.t =
+   fun ?typ locs m ->
+    let find_join loc acc = Val.join acc (find ?typ loc m) in
     PowLoc.fold find_join locs Val.bot
 
 
@@ -1267,7 +1282,7 @@ module MemReach = struct
     let transform_mem1 l m =
       let add, find =
         if is_stack_loc l m then (replace_stack, find_stack)
-        else (add_heap, find_heap_default ~default:Val.bot)
+        else (add_heap, find_heap_default ~default:Val.bot ?typ:None)
       in
       add l (f l (find l m)) m
     in
@@ -1446,8 +1461,8 @@ module Mem = struct
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
 
 
-  let find_set : PowLoc.t -> _ t0 -> Val.t =
-   fun k -> f_lift_default ~default:Val.bot (MemReach.find_set k)
+  let find_set : ?typ:Typ.t -> PowLoc.t -> _ t0 -> Val.t =
+   fun ?typ k -> f_lift_default ~default:Val.bot (MemReach.find_set ?typ k)
 
 
   let find_opt : Loc.t -> _ t0 -> Val.t option =

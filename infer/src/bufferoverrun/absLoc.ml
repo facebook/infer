@@ -218,6 +218,15 @@ module Loc = struct
         None
 
 
+  let rec is_global = function
+    | Var (Var.ProgramVar pvar) ->
+        Pvar.is_global pvar
+    | Var (Var.LogicalVar _) | Allocsite _ ->
+        false
+    | Field (loc, _) ->
+        is_global loc
+
+
   let rec get_path = function
     | Var (LogicalVar _) ->
         None

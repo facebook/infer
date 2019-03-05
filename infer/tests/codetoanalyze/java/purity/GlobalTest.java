@@ -35,7 +35,7 @@ class GlobalTest {
   }
 
   // aliased_foo is aliasing a global and then is modified by incr.
-  void global_mod_via_argument_passing_bad_FP(int size, Foo f) {
+  void global_mod_via_argument_passing_bad_aliased(int size, Foo f) {
     Foo aliased_foo = foo; // Inferbo can't recognize aliasing here
     // and assumes aliased_foo is in [-oo,+oo] not in foo
     for (int i = 0; i < size; i++) {

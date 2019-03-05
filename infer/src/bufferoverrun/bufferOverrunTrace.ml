@@ -17,6 +17,7 @@ module BoTrace = struct
   type elem =
     | ArrayDeclaration
     | Assign of PowLoc.t
+    | Global of Loc.t
     | Parameter of Loc.t
     | Through of {risky_fun: lib_fun option}
   [@@deriving compare]
@@ -78,6 +79,8 @@ module BoTrace = struct
         F.pp_print_string f "ArrayDeclaration"
     | Assign locs ->
         F.fprintf f "Assign `%a`" PowLoc.pp locs
+    | Global loc ->
+        F.fprintf f "Global `%a`" Loc.pp loc
     | Parameter loc ->
         F.fprintf f "Parameter `%a`" Loc.pp loc
     | Through {risky_fun} ->
@@ -112,7 +115,7 @@ module BoTrace = struct
   let has_unknown = final_exists ~f:(function UnknownFrom _ -> true)
 
   let elem_has_risky = function
-    | ArrayDeclaration | Assign _ | Parameter _ ->
+    | ArrayDeclaration | Assign _ | Global _ | Parameter _ ->
         false
     | Through {risky_fun} ->
         Option.is_some risky_fun
@@ -156,6 +159,8 @@ module BoTrace = struct
         "Array declaration"
     | Assign _ ->
         "Assignment"
+    | Global loc ->
+        if Loc.is_pretty loc then F.asprintf "Global `%a`" Loc.pp loc else ""
     | Parameter loc ->
         if Loc.is_pretty loc then F.asprintf "Parameter `%a`" Loc.pp loc else ""
     | Through {risky_fun} -> (
