@@ -118,7 +118,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       else if phys_equal result right then F.pp_print_string f "= RIGHT"
       else Domain.pp f result
     in
-    L.d_printfln_escaped "LEFT:   %a@.RIGHT:  %t@.RESULT: %t@." Domain.pp left pp_right pp_result ;
+    L.d_printfln_escaped "LEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." Domain.pp left pp_right pp_result ;
     NodePrinter.finish_session underlying_node
 
 
@@ -179,9 +179,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       if Instrs.is_empty instrs then
         (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
         compute_post pre Sil.skip_instr
-      else
-        Instrs.fold ~init:(Ok pre) instrs ~f:(fun astate_result instr ->
-            Result.bind astate_result ~f:(fun astate -> compute_post astate instr) )
+      else Container.fold_result ~fold:Instrs.fold ~init:pre instrs ~f:compute_post
     in
     if Config.write_html then NodePrinter.finish_session (Node.underlying_node node) ;
     match post with
@@ -299,7 +297,7 @@ struct
         inv_map
 
 
-  (* compute and return an invariant map for [cfg] *)
+  (** compute and return an invariant map for [cfg] *)
   let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing:_ ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map, _did_not_reach_fix_point =
