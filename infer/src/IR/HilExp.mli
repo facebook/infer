@@ -50,6 +50,10 @@ module AccessExpression : sig
   val dereference : access_expression -> access_expression
   (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
 
+  val address_of : access_expression -> access_expression option
+    [@@warning "-32"]
+  (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
+
   val to_accesses_fold :
        access_expression
     -> init:'accum

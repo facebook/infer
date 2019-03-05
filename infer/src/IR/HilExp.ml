@@ -65,7 +65,9 @@ module T : sig
 
     val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
-    val address_of : access_expression -> access_expression
+    val address_of : access_expression -> access_expression option
+
+    val address_of_base : AccessPath.base -> access_expression
 
     val dereference : access_expression -> access_expression
 
@@ -98,7 +100,14 @@ end = struct
 
     let array_offset t typ index = ArrayOffset (t, typ, index)
 
-    let address_of = function Dereference t -> t | t -> AddressOf t
+    let address_of = function
+      | Dereference _ | AddressOf _ ->
+          None
+      | (FieldOffset _ | ArrayOffset _ | Base _) as t ->
+          Some (AddressOf t)
+
+
+    let address_of_base base = AddressOf (Base base)
 
     let dereference = function AddressOf t -> t | t -> Dereference t
 
@@ -290,7 +299,7 @@ module AccessExpression = struct
 
   let base_of_pvar pvar typ = (Var.of_pvar pvar, typ)
 
-  let of_pvar pvar typ = address_of (base (base_of_pvar pvar typ))
+  let of_pvar pvar typ = address_of_base (base_of_pvar pvar typ)
 
   let of_id id typ = base (base_of_id id typ)
 
@@ -448,7 +457,7 @@ and access_expr_of_lhs_exp ~include_array_indexes ~f_resolve_id ~add_deref lhs_e
       let res =
         access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref:true lhs_exp typ
       in
-      match res with [lhs_ae] -> Some (AccessExpression.address_of lhs_ae) | _ -> None )
+      match res with [lhs_ae] -> AccessExpression.address_of lhs_ae | _ -> None )
   | Exp.Lindex _ when not add_deref -> (
       let res =
         let typ' =
@@ -461,7 +470,7 @@ and access_expr_of_lhs_exp ~include_array_indexes ~f_resolve_id ~add_deref lhs_e
         in
         access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref:true lhs_exp typ'
       in
-      match res with [lhs_ae] -> Some (AccessExpression.address_of lhs_ae) | _ -> None )
+      match res with [lhs_ae] -> AccessExpression.address_of lhs_ae | _ -> None )
   | _ -> (
       let res = access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref lhs_exp typ in
       match res with [lhs_ae] -> Some lhs_ae | _ -> None )
