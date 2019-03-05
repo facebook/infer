@@ -128,9 +128,9 @@ let elapsed_time fmt () = Mtime.Span.pp fmt (Mtime_clock.elapsed ())
 
 let option pp fmt = function
   | None ->
-      F.pp_print_string fmt "<None>"
+      F.pp_print_string fmt "[None]"
   | Some x ->
-      F.fprintf fmt "<Some %a>" pp x
+      F.fprintf fmt "[Some %a]" pp x
 
 
 let to_string ~f fmt x = F.pp_print_string fmt (f x)
