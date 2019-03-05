@@ -8,7 +8,7 @@
 (** Constraints representing equivalence relations over uninterpreted
     functions and linear rational arithmetic *)
 
-type t [@@deriving compare, sexp]
+type t [@@deriving compare, equal, sexp]
 
 val pp : t pp
 val pp_classes : t pp

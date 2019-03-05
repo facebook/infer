@@ -162,6 +162,13 @@ end
 module Map : sig
   include module type of Base.Map
 
+  val equal_m__t :
+       (module Compare_m)
+    -> ('v -> 'v -> bool)
+    -> ('k, 'v, 'c) t
+    -> ('k, 'v, 'c) t
+    -> bool
+
   val find_and_remove_exn : ('k, 'v, 'c) t -> 'k -> 'v * ('k, 'v, 'c) t
   val find_and_remove : ('k, 'v, 'c) t -> 'k -> ('v * ('k, 'v, 'c) t) option
 
@@ -199,6 +206,9 @@ module Set : sig
   include module type of Base.Set
 
   type ('e, 'c) tree
+
+  val equal_m__t :
+    (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
 
   val pp : 'e pp -> ('e, 'c) t pp
   val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool

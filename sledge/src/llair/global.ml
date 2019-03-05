@@ -8,9 +8,7 @@
 (** Global variables *)
 
 type t = {var: Var.t; init: Exp.t option; siz: int; typ: Typ.t; loc: Loc.t}
-[@@deriving compare, hash, sexp]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal, hash, sexp]
 
 let pp fs {var} =
   let name = Var.name var in

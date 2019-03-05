@@ -45,6 +45,7 @@ let m__t_of_sexp (type elt cmp)
   Map.m__t_of_sexp (module Elt) q_of_sexp sexp
 
 let compare_m__t (module Elt : Compare_m) = Map.compare_direct Q.compare
+let equal_m__t (module Elt : Compare_m) = Map.equal Q.equal
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt)
     state =

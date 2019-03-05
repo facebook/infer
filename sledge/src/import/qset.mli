@@ -45,6 +45,9 @@ val m__t_of_sexp :
 val compare_m__t :
   (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
 
+val equal_m__t :
+  (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
+
 val hash_fold_m__t :
      (module Hash_fold_m with type t = 'elt)
   -> Hash.state

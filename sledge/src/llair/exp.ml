@@ -54,7 +54,7 @@ module Z = struct
 end
 
 module rec T : sig
-  type qset = Qset.M(T).t [@@deriving compare, hash, sexp]
+  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
     | App of {op: t; arg: t}
@@ -105,7 +105,7 @@ module rec T : sig
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* unary: conversion *)
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 
   type comparator_witness
 
@@ -117,7 +117,7 @@ end
 
 (* auxiliary definition for safe recursive module initialization *)
 and T0 : sig
-  type qset = Qset.M(T).t [@@deriving compare, hash, sexp]
+  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
     | App of {op: t; arg: t}
@@ -159,9 +159,9 @@ and T0 : sig
     | Update
     | Struct_rec of {elts: t vector}
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 end = struct
-  type qset = Qset.M(T).t [@@deriving compare, hash, sexp]
+  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
     | App of {op: t; arg: t}
@@ -203,7 +203,7 @@ end = struct
     | Update
     | Struct_rec of {elts: t vector}
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 end
 
 (* suppress spurious "Warning 60: unused module T0." *)
@@ -212,7 +212,6 @@ type _t = T0.t
 include T
 
 let empty_qset = Qset.empty (module T)
-let equal = [%compare.equal: t]
 let sorted e f = compare e f <= 0
 let sort e f = if sorted e f then (e, f) else (f, e)
 
@@ -473,7 +472,6 @@ let bits_of_int exp =
 module Var = struct
   include T
 
-  let equal = equal
   let pp = pp
 
   type var = t
@@ -483,7 +481,7 @@ module Var = struct
       Set :
         module type of Set with type ('elt, 'cmp) t := ('elt, 'cmp) Set.t )
 
-    type t = Set.M(T).t [@@deriving compare, sexp]
+    type t = Set.M(T).t [@@deriving compare, equal, sexp]
 
     let pp vs = Set.pp pp_t vs
     let empty = Set.empty (module T)
@@ -535,7 +533,7 @@ module Var = struct
 
   (** Variable renaming substitutions *)
   module Subst = struct
-    type t = T.t Map.M(T).t [@@deriving compare, sexp]
+    type t = T.t Map.M(T).t [@@deriving compare, equal, sexp]
 
     let invariant s =
       Invariant.invariant [%here] s [%sexp_of: t]
@@ -571,7 +569,7 @@ module Var = struct
       | `Duplicate -> sub
       | `Ok sub ->
           Map.map_preserving_phys_equal sub ~f:(fun v ->
-              if equal v replace then with_ else v ) )
+              if T.equal v replace then with_ else v ) )
       |> check invariant
 
     let invert sub =

@@ -13,10 +13,10 @@
 
 open Base
 
-type +'a t [@@deriving compare, hash, sexp]
+type +'a t [@@deriving compare, equal, hash, sexp]
 
 module Infix : sig
-  type +'a vector = 'a t [@@deriving compare, hash, sexp]
+  type +'a vector = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
 (* val binary_search :
@@ -180,6 +180,5 @@ val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 (* val last : 'a t -> 'a *)
 
 val empty : 'a t
-(* val equal : 'a t -> 'a t -> equal:('a -> 'a -> bool) -> bool *)
 (* val to_sequence : 'a t -> 'a Sequence.t *)
 (* val to_sequence_mutable : 'a t -> 'a Sequence.t *)

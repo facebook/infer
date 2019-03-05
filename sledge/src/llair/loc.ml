@@ -8,7 +8,7 @@
 (** Source code debug locations *)
 
 type t = {dir: string; file: string; line: int; col: int}
-[@@deriving compare, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 let none = {dir= ""; file= ""; line= 0; col= 0}
 let is_none loc = compare loc none = 0

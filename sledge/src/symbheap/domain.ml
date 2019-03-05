@@ -24,7 +24,7 @@ let join = Sh.or_
 let assume q b = Exec.assume b q
 let exec_inst = Exec.inst
 
-type from_call = Var.Subst.t [@@deriving compare, sexp]
+type from_call = Var.Subst.t [@@deriving compare, equal, sexp]
 
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add

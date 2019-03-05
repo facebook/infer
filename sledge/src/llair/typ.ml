@@ -17,12 +17,10 @@ type t =
   | Struct of
       { name: string
       ; elts: t vector (* possibly cyclic, name unique *)
-             [@compare.ignore] [@sexp_drop_if fun _ -> true]
+             [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
       ; packed: bool }
   | Opaque of {name: string}
-[@@deriving compare, hash, sexp]
-
-let equal x y = compare x y = 0
+[@@deriving compare, equal, hash, sexp]
 
 let rec pp fs typ =
   let pf pp =

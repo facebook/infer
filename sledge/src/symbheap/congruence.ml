@@ -69,9 +69,7 @@
 
 (** set of exps representing congruence classes *)
 module Cls = struct
-  type t = Exp.t list [@@deriving compare, sexp]
-
-  let equal = [%compare.equal: t]
+  type t = Exp.t list [@@deriving compare, equal, sexp]
 
   let pp fs cls =
     Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp)
@@ -91,9 +89,7 @@ end
 
 (** set of exps representing "use lists" encoding super-expression relation *)
 module Use = struct
-  type t = Exp.t list [@@deriving compare, sexp]
-
-  let equal = [%compare.equal: t]
+  type t = Exp.t list [@@deriving compare, equal, sexp]
 
   let pp fs uses =
     Format.fprintf fs "@[<hov 1>{@[%a@]}@]" (List.pp ",@ " Exp.pp) uses
@@ -109,7 +105,7 @@ module Use = struct
   let map = List.map_preserving_phys_equal
 end
 
-type 'a exp_map = 'a Map.M(Exp).t [@@deriving compare, sexp]
+type 'a exp_map = 'a Map.M(Exp).t [@@deriving compare, equal, sexp]
 
 (** see also [invariant] *)
 type t =
@@ -132,7 +128,7 @@ type t =
         (** equations of the form [a+i = b+j], where [a] and [b] are in the
             carrier, to be added to the relation by merging the classes of
             [a] and [b] *) }
-[@@deriving compare, sexp]
+[@@deriving compare, equal, sexp]
 
 (** Pretty-printing *)
 

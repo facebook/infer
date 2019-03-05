@@ -24,9 +24,8 @@ type t = private
           types are represented by cyclic values. *)
   | Opaque of {name: string}
       (** Uniquely named aggregate type whose definition is hidden. *)
-[@@deriving compare, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
-val equal : t -> t -> bool
 val pp : t pp
 val pp_defn : t pp
 

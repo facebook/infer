@@ -74,13 +74,12 @@ and t = private
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
   | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
       (** Convert between specified types, possibly with loss of information *)
-[@@deriving compare, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 val comparator : (t, comparator_witness) Comparator.t
 
 type exp = t
 
-val equal : t -> t -> bool
 val sort : t -> t -> t * t
 val sorted : t -> t -> bool
 val pp : t pp
@@ -88,20 +87,20 @@ val invariant : ?partial:bool -> t -> unit
 
 (** Exp.Var is re-exported as Var *)
 module Var : sig
-  type t = private exp [@@deriving compare, hash, sexp]
+  type t = private exp [@@deriving compare, equal, hash, sexp]
   type var = t
 
   include Comparator.S with type t := t
 
   module Set : sig
-    type t = (var, comparator_witness) Set.t [@@deriving compare, sexp]
+    type t = (var, comparator_witness) Set.t
+    [@@deriving compare, equal, sexp]
 
     val pp : t pp
     val empty : t
     val of_vector : var vector -> t
   end
 
-  val equal : t -> t -> bool
   val pp : t pp
   val pp_demangled : t pp
 
@@ -114,7 +113,7 @@ module Var : sig
   val name : t -> string
 
   module Subst : sig
-    type t [@@deriving compare, sexp]
+    type t [@@deriving compare, equal, sexp]
 
     val pp : t pp
     val empty : t

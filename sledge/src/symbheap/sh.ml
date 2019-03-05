@@ -10,7 +10,7 @@
 [@@@warning "+9"]
 
 type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
-[@@deriving compare, sexp]
+[@@deriving compare, equal, sexp]
 
 type starjunction =
   { us: Var.Set.t
@@ -19,11 +19,11 @@ type starjunction =
   ; pure: Exp.t list
   ; heap: seg list
   ; djns: disjunction list }
-[@@deriving compare, sexp]
+[@@deriving compare, equal, sexp]
 
 and disjunction = starjunction list
 
-type t = starjunction [@@deriving compare, sexp]
+type t = starjunction [@@deriving compare, equal, sexp]
 
 let map_seg {loc; bas; len; siz; arr} ~f =
   {loc= f loc; bas= f bas; len= f len; siz= f siz; arr= f arr}

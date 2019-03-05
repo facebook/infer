@@ -7,11 +7,11 @@
 
 (** Equality over uninterpreted functions and linear rational arithmetic *)
 
-type 'a exp_map = 'a Map.M(Exp).t [@@deriving compare, sexp]
+type 'a exp_map = 'a Map.M(Exp).t [@@deriving compare, equal, sexp]
 
 let empty_map = Map.empty (module Exp)
 
-type subst = Exp.t exp_map [@@deriving compare, sexp]
+type subst = Exp.t exp_map [@@deriving compare, equal, sexp]
 
 (** see also [invariant] *)
 type t =
@@ -20,7 +20,7 @@ type t =
         (** functional set of oriented equations: map [a] to [a'],
             indicating that [a = a'] holds, and that [a'] is the
             'rep(resentative)' of [a] *) }
-[@@deriving compare, sexp]
+[@@deriving compare, equal, sexp]
 
 (** Pretty-printing *)
 

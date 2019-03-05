@@ -16,7 +16,7 @@ val join : t -> t -> t
 val assume : t -> Exp.t -> t option
 val exec_inst : t -> Llair.inst -> (t, t * Llair.inst) result
 
-type from_call [@@deriving compare, sexp]
+type from_call [@@deriving compare, equal, sexp]
 
 val call : t -> Exp.t list -> Var.t list -> Var.Set.t -> t * from_call
 val retn : Var.Set.t -> from_call -> t -> t

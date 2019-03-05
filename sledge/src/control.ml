@@ -16,7 +16,7 @@ type stack =
   | Return of Llair.Jump.t * Domain.from_call * stack
   | Throw of Llair.Jump.t * stack
   | Empty
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 module Work : sig
   type t
@@ -41,7 +41,7 @@ end = struct
   module Edge = struct
     module T = struct
       type t = {dst: Llair.Block.t; src: Llair.Block.t option; stk: stack}
-      [@@deriving compare, sexp_of]
+      [@@deriving compare, equal, sexp_of]
     end
 
     include T
@@ -67,7 +67,7 @@ end = struct
         | `Both (d1, d2) -> Some (Int.min d1 d2) )
   end
 
-  type priority = int * Edge.t [@@deriving compare]
+  type priority = int * Edge.t [@@deriving compare, equal]
   type priority_queue = priority Fheap.t
   type waiting_states = (Domain.t * Depths.t) list Map.M(Llair.Block).t
   type t = priority_queue * waiting_states

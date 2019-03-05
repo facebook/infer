@@ -9,9 +9,8 @@
 
 type t = private
   {var: Var.t; init: Exp.t option; siz: int; typ: Typ.t; loc: Loc.t}
-[@@deriving compare, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
-val equal : t -> t -> bool
 val pp : t pp
 val pp_defn : t pp
 

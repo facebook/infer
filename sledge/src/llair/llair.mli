@@ -143,7 +143,7 @@ module Inst : sig
 end
 
 module Jump : sig
-  type t = jump [@@deriving compare, sexp_of]
+  type t = jump [@@deriving compare, equal, sexp_of]
 
   val pp : jump pp
   val mk : string -> Exp.t list -> jump
@@ -182,7 +182,7 @@ module Term : sig
 end
 
 module Block : sig
-  type t = block [@@deriving compare, sexp_of]
+  type t = block [@@deriving compare, equal, sexp_of]
 
   include Comparator.S with type t := t
 

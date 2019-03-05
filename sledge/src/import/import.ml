@@ -209,6 +209,8 @@ end
 module Map = struct
   include Base.Map
 
+  let equal_m__t (module Elt : Compare_m) equal_v = equal equal_v
+
   let find_and_remove_exn m k =
     let found = ref None in
     let m =
@@ -256,6 +258,7 @@ module Set = struct
 
   type ('elt, 'cmp) tree = ('elt, 'cmp) Using_comparator.Tree.t
 
+  let equal_m__t (module Elt : Compare_m) = equal
   let pp pp_elt fs x = List.pp ",@ " pp_elt fs (to_list x)
   let disjoint x y = is_empty (inter x y)
   let diff_inter_diff x y = (diff x y, inter x y, diff y x)

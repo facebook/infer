@@ -25,7 +25,7 @@ type label = string [@@deriving sexp]
 
 type 'a control_transfer =
   {mutable dst: 'a; args: Exp.t list; mutable retreating: bool}
-[@@deriving compare, sexp_of]
+[@@deriving compare, equal, sexp_of]
 
 type jump = block control_transfer
 
@@ -79,6 +79,7 @@ and sexp_of_func f = [%sexp_of: func] f
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y = Int.compare x.sort_index y.sort_index
+let equal_block x y = Int.equal x.sort_index y.sort_index
 
 type t = {globals: Global.t vector; functions: func vector}
 [@@deriving sexp_of]
@@ -230,6 +231,7 @@ module Jump = struct
   type t = jump [@@deriving sexp_of]
 
   let compare = compare_control_transfer compare_block
+  let equal = equal_control_transfer equal_block
   let pp = pp_jump
 
   let invariant ?(accept_return = false) jmp =
@@ -311,7 +313,7 @@ end
 (** Basic-Blocks *)
 
 module Block = struct
-  module T = struct type t = block [@@deriving compare, sexp_of] end
+  module T = struct type t = block [@@deriving compare, equal, sexp_of] end
   include T
   include Comparator.Make (T)
 
