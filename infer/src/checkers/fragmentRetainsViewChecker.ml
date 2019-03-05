@@ -32,7 +32,7 @@ let format_method pname =
       Typ.Procname.to_string pname
 
 
-let report_error fragment_typ fld fld_typ summary pdesc =
+let report_warning fragment_typ fld fld_typ summary pdesc =
   let pname = Procdesc.get_proc_name pdesc in
   let description =
     Printf.sprintf
@@ -42,7 +42,7 @@ let report_error fragment_typ fld fld_typ summary pdesc =
       (format_typ fragment_typ) (format_field fld) (format_typ fld_typ) (format_method pname)
   in
   let loc = Procdesc.get_loc pdesc in
-  Reporting.log_error summary ~loc IssueType.checkers_fragment_retain_view description
+  Reporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
 
 
 let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary; tenv} =
@@ -76,7 +76,8 @@ let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary
               not
                 ( Annotations.ia_ends_with ia Annotations.auto_cleanup
                 || Typ.Fieldname.Set.mem fname fields_nullified )
-            then report_error (Typ.mk (Tstruct class_typename)) fname fld_typ summary proc_desc )
+            then report_warning (Typ.mk (Tstruct class_typename)) fname fld_typ summary proc_desc
+            )
           declared_view_fields
     | _ ->
         ()
