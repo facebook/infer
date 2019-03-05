@@ -97,6 +97,7 @@ module Var : sig
 
     val pp : t pp
     val empty : t
+    val of_list : var list -> t
     val of_vector : var vector -> t
   end
 

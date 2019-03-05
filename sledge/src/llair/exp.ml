@@ -491,6 +491,7 @@ module Var = struct
 
     let pp vs = Set.pp pp_t vs
     let empty = Set.empty (module T)
+    let of_list = Set.of_list (module T)
     let of_vector = Set.of_vector (module T)
   end
 
