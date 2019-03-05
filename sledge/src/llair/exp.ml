@@ -61,13 +61,14 @@ module rec T : sig
     (* nary: arithmetic, numeric and pointer *)
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
+    (* pointer and memory constants and operations *)
+    | Splat of {byt: t; siz: t}
+    | Memory of {siz: t; arr: t}
+    | Concat of {args: t vector}
+    (* nullary *)
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
-    (* pointer and memory constants and operations *)
-    | Splat
-    | Memory
-    | Concat
     (* numeric constants *)
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
@@ -123,12 +124,12 @@ and T0 : sig
     | App of {op: t; arg: t}
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
+    | Splat of {byt: t; siz: t}
+    | Memory of {siz: t; arr: t}
+    | Concat of {args: t vector}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
-    | Splat
-    | Memory
-    | Concat
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
     | Eq
@@ -167,12 +168,12 @@ end = struct
     | App of {op: t; arg: t}
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
+    | Splat of {byt: t; siz: t}
+    | Memory of {siz: t; arr: t}
+    | Concat of {args: t vector}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
-    | Splat
-    | Memory
-    | Concat
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
     | Eq
@@ -211,6 +212,7 @@ type _t = T0.t
 
 include T
 
+let empty_map = Map.empty (module T)
 let empty_qset = Qset.empty (module T)
 let sorted e f = compare e f <= 0
 let sort e f = if sorted e f then (e, f) else (f, e)
@@ -250,12 +252,9 @@ let rec pp fs exp =
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
-    | Splat -> pf "^"
-    | Memory -> pf "⟨_,_⟩"
-    | App {op= Memory; arg= siz} -> pf "@<1>⟨%a,_@<1>⟩" pp siz
-    | App {op= App {op= Memory; arg= siz}; arg= bytes} ->
-        pf "@<1>⟨%a,%a@<1>⟩" pp siz pp bytes
-    | Concat -> pf "^"
+    | Splat {byt; siz} -> pf "%a^%a" pp byt pp siz
+    | Memory {siz; arr} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
+    | Concat {args} -> pf "%a" (Vector.pp "@,^" pp) args
     | Integer {data} -> pf "%a" Z.pp data
     | Float {data} -> pf "%s" data
     | Eq -> pf "="
@@ -363,10 +362,10 @@ let typ_of = function
 
 let typ = typ_of
 
-let type_check typ e =
+let type_check e typ =
   assert (Option.for_all ~f:(Typ.castable typ) (typ_of e))
 
-let type_check2 typ e f = type_check typ e ; type_check typ f
+let type_check2 e f typ = type_check e typ ; type_check f typ
 
 (* an indeterminate (factor of a monomial) is any non-Add/Mul/Integer exp *)
 let rec assert_indeterminate = function
@@ -453,7 +452,16 @@ let invariant ?(partial = false) e =
       | Some typ, Some typ' -> assert (Typ.castable typ typ')
       | _ -> assert true )
     | _ -> assert_arity 2 )
-  | Splat | Memory | Concat | Ord | Uno | Select -> assert_arity 2
+  | Concat {args} -> assert (Vector.length args <> 1)
+  | Splat {byt; siz} -> (
+      assert (Option.exists ~f:(Typ.convertible Typ.byt) (typ_of byt)) ;
+      assert (Option.exists ~f:(Typ.convertible Typ.siz) (typ_of siz)) ;
+      match siz with
+      | Integer {data} -> assert (not (Z.equal Z.zero data))
+      | _ -> () )
+  | Memory {siz} ->
+      assert (Option.for_all ~f:(Typ.convertible Typ.siz) (typ_of siz))
+  | Ord | Uno | Select -> assert_arity 2
   | Conditional | Update -> assert_arity 3
   | Record -> assert (partial || not (List.is_empty args))
   | Struct_rec {elts} ->
@@ -552,7 +560,7 @@ module Var = struct
              Format.fprintf fs "@[[%a ↦ %a]@]" pp_t k pp_t v ))
         (Map.to_alist s)
 
-    let empty = Map.empty (module T)
+    let empty = empty_map
     let is_empty = Map.is_empty
 
     let freshen vs ~wrt =
@@ -607,11 +615,14 @@ let fold_exps e ~init ~f =
   let fold_exps_ fold_exps_ e z =
     let z =
       match e with
-      | App {op; arg} -> fold_exps_ op (fold_exps_ arg z)
+      | App {op= x; arg= y}
+       |Splat {byt= x; siz= y}
+       |Memory {siz= x; arr= y} ->
+          fold_exps_ y (fold_exps_ x z)
       | Add {args} | Mul {args} ->
           Qset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z)
-      | Struct_rec {elts} ->
-          Vector.fold elts ~init:z ~f:(fun z elt -> fold_exps_ elt z)
+      | Concat {args} | Struct_rec {elts= args} ->
+          Vector.fold args ~init:z ~f:(fun z elt -> fold_exps_ elt z)
       | _ -> z
     in
     f z e
@@ -1041,15 +1052,22 @@ let simp_ashr x y =
 
 let iter e ~f =
   match e with
-  | App {op; arg} -> f op ; f arg
+  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
+    ->
+      f x ; f y
   | Add {args} | Mul {args} -> Qset.iter ~f:(fun arg _ -> f arg) args
+  | Concat {args} | Struct_rec {elts= args} -> Vector.iter ~f args
   | _ -> ()
 
 let fold e ~init:s ~f =
   match e with
-  | App {op; arg} -> f op (f arg s)
+  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
+    ->
+      f y (f x s)
   | Add {args} | Mul {args} ->
       Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
+  | Concat {args} | Struct_rec {elts= args} ->
+      Vector.fold ~f:(fun s e -> f e s) args ~init:s
   | _ -> s
 
 let for_all e ~f = fold ~f:(fun a so_far -> so_far && f a) ~init:true e
@@ -1110,16 +1128,46 @@ let addN typ args = simp_add typ args |> check invariant
 let mulN typ args = simp_mul typ args |> check invariant
 
 let check1 op typ x =
-  type_check typ x ;
+  type_check x typ ;
   op typ x |> check invariant
 
 let check2 op typ x y =
-  type_check2 typ x y ;
+  type_check2 x y typ ;
   op typ x y |> check invariant
 
-let splat ~byt ~siz = app2 Splat byt siz
-let memory ~siz ~arr = app2 Memory siz arr
-let concat = app2 Concat
+let simp_memory siz arr = Memory {siz; arr}
+
+let memory ~siz ~arr =
+  type_check siz Typ.siz ;
+  simp_memory siz arr |> check invariant
+
+let simp_concat xs =
+  if Vector.length xs = 1 then Vector.get xs 0
+  else
+    let args =
+      if Vector.for_all xs ~f:(function Concat _ -> false | _ -> true)
+      then xs
+      else
+        Vector.concat
+          (Vector.fold_right xs ~init:[] ~f:(fun x s ->
+               match x with
+               | Concat {args} -> args :: s
+               | x -> Vector.of_array [|x|] :: s ))
+    in
+    Concat {args}
+
+let concat xs = simp_concat (Vector.of_array xs) |> check invariant
+
+let simp_splat byt siz =
+  match siz with
+  | Integer {data} when Z.equal Z.zero data -> concat [||]
+  | _ -> Splat {byt; siz}
+
+let splat ~byt ~siz =
+  type_check byt Typ.byt ;
+  type_check siz Typ.siz ;
+  simp_splat byt siz |> check invariant
+
 let eq = app2 Eq
 let dq = app2 Dq
 let gt = app2 Gt
@@ -1180,20 +1228,38 @@ let convert ?(signed = false) ~dst ~src exp =
 (** Transform *)
 
 let map e ~f =
+  let map_bin mk ~f x y =
+    let x' = f x in
+    let y' = f y in
+    if x' == x && y' == y then e else mk x' y'
+  in
+  let map_vector mk ~f args =
+    let args' = Vector.map_preserving_phys_equal ~f args in
+    if args' == args then e else mk args'
+  in
   let map_qset mk typ ~f args =
     let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
     if args' == args then e else mk typ args'
   in
   match e with
-  | App {op; arg} ->
-      let op' = f op in
-      let arg' = f arg in
-      if op' == op && arg' == arg then e else app1 ~partial:true op' arg'
+  | App {op; arg} -> map_bin (app1 ~partial:true) ~f op arg
   | Add {args; typ} -> map_qset addN typ ~f args
   | Mul {args; typ} -> map_qset mulN typ ~f args
+  | Splat {byt; siz} -> map_bin simp_splat ~f byt siz
+  | Memory {siz; arr} -> map_bin simp_memory ~f siz arr
+  | Concat {args} -> map_vector simp_concat ~f args
   | _ -> e
 
 let fold_map e ~init:s ~f =
+  let fold_map_bin mk ~f x y ~init:s =
+    let s, x' = f s x in
+    let s, y' = f s y in
+    if x' == x && y' == y then (s, e) else (s, mk x' y')
+  in
+  let fold_map_vector mk ~f ~init args =
+    let s, args' = Vector.fold_map args ~init ~f in
+    if args' == args then (s, e) else (s, mk args')
+  in
   let fold_map_qset mk typ ~f ~init args =
     let args', s =
       Qset.fold_map args ~init ~f:(fun x q s ->
@@ -1203,13 +1269,12 @@ let fold_map e ~init:s ~f =
     if args' == args then (s, e) else (s, mk typ args')
   in
   match e with
-  | App {op; arg} ->
-      let s, op' = f s op in
-      let s, arg' = f s arg in
-      if op' == op && arg' == arg then (s, e)
-      else (s, app1 ~partial:true op' arg')
+  | App {op; arg} -> fold_map_bin (app1 ~partial:true) ~f op arg ~init:s
   | Add {args; typ} -> fold_map_qset addN typ ~f args ~init:s
   | Mul {args; typ} -> fold_map_qset mulN typ ~f args ~init:s
+  | Splat {byt; siz} -> fold_map_bin simp_splat ~f byt siz ~init:s
+  | Memory {siz; arr} -> fold_map_bin simp_memory ~f siz arr ~init:s
+  | Concat {args} -> fold_map_vector simp_concat ~f args ~init:s
   | _ -> (s, e)
 
 let rename e sub =
@@ -1279,13 +1344,17 @@ let is_false = function
   | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
   | _ -> false
 
-let is_simple = function App _ | Add _ | Mul _ -> false | _ -> true
-
-let rec is_constant = function
+let rec is_constant e =
+  let is_constant_bin x y = is_constant x && is_constant y in
+  match e with
   | Var _ | Nondet _ -> false
-  | App {op; arg} -> is_constant arg && is_constant op
+  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
+    ->
+      is_constant_bin x y
   | Add {args} | Mul {args} ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
+  | Concat {args} | Struct_rec {elts= args} ->
+      Vector.for_all ~f:is_constant args
   | _ -> true
 
 let classify = function
@@ -1296,25 +1365,43 @@ let classify = function
 let solve e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
   ;
-  ( match (typ e, typ f) with
-  | Some typ, _ | _, Some typ -> (
-    match sub typ e f with
-    | Add {args} ->
-        let c, q = Qset.min_elt_exn args in
-        let n = Sum.to_exp typ (Qset.remove args c) in
-        let d = rational (Q.neg q) typ in
-        let r = div n d in
-        Some (c, r)
-    | e_f ->
-        let z = integer Z.zero typ in
-        if is_constant e_f && not (equal e_f z) then None else Some (e_f, z)
-    )
-  | _ ->
+  let rec solve_ e f s =
+    let solve_uninterp e f =
       let ord = compare e f in
       if is_constant e && is_constant f && ord <> 0 then None
-      else if ord < 0 then Some (f, e)
-      else Some (e, f) )
+      else
+        (* orient equation to choose preferred class representative *)
+        let key, data = if ord > 0 then (e, f) else (f, e) in
+        Some (Map.add_exn s ~key ~data)
+    in
+    match (e, f) with
+    | (Add {typ} | Mul {typ} | Integer {typ}), _
+     |_, (Add {typ} | Mul {typ} | Integer {typ}) -> (
+      match sub typ e f with
+      | Add {args} ->
+          let c, q = Qset.min_elt_exn args in
+          let n = Sum.to_exp typ (Qset.remove args c) in
+          let d = rational (Q.neg q) typ in
+          let r = div n d in
+          Some (Map.add_exn s ~key:c ~data:r)
+      | e_f ->
+          let z = integer Z.zero typ in
+          if is_constant e_f && not (equal e_f z) then None
+          else solve_uninterp e_f z )
+    | Concat {args= ms}, Concat {args= ns} -> (
+        let siz args =
+          Vector.fold_until args ~init:(integer Z.zero Typ.siz)
+            ~f:(fun sum -> function
+              | Memory {siz} -> Continue (add Typ.siz siz sum)
+              | _ -> Stop None )
+            ~finish:(fun _ -> None)
+        in
+        match (siz ms, siz ns) with
+        | Some p, Some q -> solve_uninterp e f >>= solve_ p q
+        | _ -> solve_uninterp e f )
+    | _ -> solve_uninterp e f
+  in
+  solve_ e f empty_map
   |>
   [%Trace.retn fun {pf} ->
-    function
-    | Some (e, f) -> pf "%a @<2>↦ %a" pp e pp f | None -> pf "false"]
+    function Some s -> pf "%a" Var.Subst.pp s | None -> pf "false"]

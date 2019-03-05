@@ -101,11 +101,12 @@ let struct_ =
 (** Constants *)
 
 let bool = integer ~bits:1
+let byt = integer ~bits:8
 let siz = integer ~bits:64
 
 (** [ptr] is semantically equivalent to [siz], but has a distinct
     representation because the element type is important for [Global]s *)
-let ptr = pointer ~elt:(integer ~bits:8)
+let ptr = pointer ~elt:byt
 
 (** Queries *)
 

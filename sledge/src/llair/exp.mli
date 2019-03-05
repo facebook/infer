@@ -30,15 +30,16 @@ and t = private
       (** Application of function symbol to argument, curried *)
   | Add of {args: qset; typ: Typ.t}  (** Addition *)
   | Mul of {args: qset; typ: Typ.t}  (** Multiplication *)
+  | Splat of {byt: t; siz: t}
+      (** Iterated concatenation of a single byte *)
+  | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
+  | Concat of {args: t vector}  (** Byte-array concatenation *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
-  | Splat  (** Iterated concatenation of a single byte *)
-  | Memory  (** Size-tagged byte-array *)
-  | Concat  (** Byte-array concatenation *)
   | Integer of {data: Z.t; typ: Typ.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)
@@ -137,7 +138,7 @@ val label : parent:string -> name:string -> t
 val null : t
 val splat : byt:t -> siz:t -> t
 val memory : siz:t -> arr:t -> t
-val concat : t -> t -> t
+val concat : t array -> t
 val bool : bool -> t
 val integer : Z.t -> Typ.t -> t
 val rational : Q.t -> Typ.t -> t
@@ -218,8 +219,7 @@ val rename : t -> Var.Subst.t -> t
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
-val is_simple : t -> bool
 val is_constant : t -> bool
 val typ : t -> Typ.t option
 val classify : t -> [> `Atomic | `Interpreted | `Uninterpreted]
-val solve : t -> t -> (t * t) option
+val solve : t -> t -> (t, t, comparator_witness) Map.t option

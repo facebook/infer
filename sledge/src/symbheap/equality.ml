@@ -142,14 +142,12 @@ let rec extend a r =
 
 let extend a r = extend a r |> check invariant
 
-let compose r a a' =
-  let s = Map.singleton (module Exp) a a' in
+let compose r s =
   let rep = Map.map ~f:(norm s) r.rep in
   let rep =
-    Map.update rep a ~f:(function
-      | None -> a'
-      | Some b when Exp.equal a' b -> b
-      | _ -> fail "domains intersect: %a" Exp.pp a () )
+    Map.merge_skewed rep s ~combine:(fun ~key v1 v2 ->
+        if Exp.equal v1 v2 then v1
+        else fail "domains intersect: %a" Exp.pp key () )
   in
   {r with rep} |> check invariant
 
@@ -157,7 +155,7 @@ let merge a b r =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Exp.pp a Exp.pp b pp r]
   ;
   ( match Exp.solve a b with
-  | Some (c, c') -> compose r c c'
+  | Some s -> compose r s
   | None -> {r with sat= false} )
   |>
   [%Trace.retn fun {pf} r' ->

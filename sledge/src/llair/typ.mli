@@ -34,6 +34,7 @@ include Invariant.S with type t := t
 (** Constructors *)
 
 val bool : t
+val byt : t
 val siz : t
 val ptr : t
 val function_ : return:t option -> args:t vector -> t

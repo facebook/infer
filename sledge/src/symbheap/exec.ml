@@ -165,8 +165,8 @@ let memmov_foot us dst src len =
   let siz_mid = Exp.sub Typ.siz len src_dst in
   let mem_mid = Exp.memory ~siz:siz_mid ~arr:arr_mid in
   let mem_src = Exp.memory ~siz:src_dst ~arr:arr_src in
-  let mem_mid_src = Exp.concat mem_mid mem_src in
-  let mem_dst_mid_src = Exp.concat mem_dst mem_mid_src in
+  let mem_mid_src = Exp.concat [|mem_mid; mem_src|] in
+  let mem_dst_mid_src = Exp.concat [|mem_dst; mem_mid_src|] in
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
   let arr_dst_mid_src, _, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
@@ -192,7 +192,7 @@ let memmov_dn_spec us dst src len =
   let xs, bas, siz, _, mem_mid, mem_src, foot =
     memmov_foot us dst src len
   in
-  let mem_mid_src_src = Exp.concat (Exp.concat mem_mid mem_src) mem_src in
+  let mem_mid_src_src = Exp.concat [|mem_mid; mem_src; mem_src|] in
   let siz_mid_src_src, us, xs = fresh_var "m" us xs in
   let arr_mid_src_src, _, xs = fresh_var "a" us xs in
   let eq_mem_mid_src_src =
@@ -218,7 +218,7 @@ let memmov_up_spec us dst src len =
   let xs, bas, siz, mem_src, mem_mid, _, foot =
     memmov_foot us src dst len
   in
-  let mem_src_src_mid = Exp.concat mem_src (Exp.concat mem_src mem_mid) in
+  let mem_src_src_mid = Exp.concat [|mem_src; mem_src; mem_mid|] in
   let siz_src_src_mid, us, xs = fresh_var "m" us xs in
   let arr_src_src_mid, _, xs = fresh_var "a" us xs in
   let eq_mem_src_src_mid =

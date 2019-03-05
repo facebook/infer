@@ -138,8 +138,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       (Exp.eq
          (Exp.memory ~siz:o ~arr:a)
          (Exp.concat
-            (Exp.memory ~siz:n ~arr:a0)
-            (Exp.memory ~siz:o_n ~arr:a1)))
+            [|Exp.memory ~siz:n ~arr:a0; Exp.memory ~siz:o_n ~arr:a1|]))
       (Sh.star
          (Sh.seg
             {loc= Exp.add Typ.ptr k n; bas= b; len= m; siz= o_n; arr= a1})
@@ -182,8 +181,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
          (Sh.and_
             (Exp.eq
                (Exp.concat
-                  (Exp.memory ~siz:o ~arr:a)
-                  (Exp.memory ~siz:n_o ~arr:a1'))
+                  [|Exp.memory ~siz:o ~arr:a; Exp.memory ~siz:n_o ~arr:a1'|])
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg
@@ -227,8 +225,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Exp.eq
          (Exp.memory ~siz:o ~arr:a)
          (Exp.concat
-            (Exp.memory ~siz:l_k ~arr:a0)
-            (Exp.memory ~siz:n ~arr:a1)))
+            [|Exp.memory ~siz:l_k ~arr:a0; Exp.memory ~siz:n ~arr:a1|]))
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.rem_seg msg min))
@@ -273,10 +270,9 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Exp.eq
          (Exp.memory ~siz:o ~arr:a)
          (Exp.concat
-            (Exp.memory ~siz:l_k ~arr:a0)
-            (Exp.concat
-               (Exp.memory ~siz:n ~arr:a1)
-               (Exp.memory ~siz:ko_ln ~arr:a2))))
+            [| Exp.memory ~siz:l_k ~arr:a0
+             ; Exp.memory ~siz:n ~arr:a1
+             ; Exp.memory ~siz:ko_ln ~arr:a2 |]))
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.star
@@ -325,8 +321,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (Exp.eq
          (Exp.memory ~siz:o ~arr:a)
          (Exp.concat
-            (Exp.memory ~siz:l_k ~arr:a0)
-            (Exp.memory ~siz:ko_l ~arr:a1)))
+            [|Exp.memory ~siz:l_k ~arr:a0; Exp.memory ~siz:ko_l ~arr:a1|]))
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; arr= a0})
          (Sh.rem_seg msg min))
@@ -337,8 +332,8 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
          (Sh.and_
             (Exp.eq
                (Exp.concat
-                  (Exp.memory ~siz:ko_l ~arr:a1)
-                  (Exp.memory ~siz:ln_ko ~arr:a2'))
+                  [| Exp.memory ~siz:ko_l ~arr:a1
+                   ; Exp.memory ~siz:ln_ko ~arr:a2' |])
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; arr= a2'})
@@ -377,8 +372,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
          (Sh.and_
             (Exp.eq
                (Exp.concat
-                  (Exp.memory ~siz:k_l ~arr:a0')
-                  (Exp.memory ~siz:o ~arr:a))
+                  [|Exp.memory ~siz:k_l ~arr:a0'; Exp.memory ~siz:o ~arr:a|])
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
@@ -421,10 +415,9 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
          (Sh.and_
             (Exp.eq
                (Exp.concat
-                  (Exp.memory ~siz:k_l ~arr:a0')
-                  (Exp.concat
-                     (Exp.memory ~siz:o ~arr:a)
-                     (Exp.memory ~siz:ln_ko ~arr:a2')))
+                  [| Exp.memory ~siz:k_l ~arr:a0'
+                   ; Exp.memory ~siz:o ~arr:a
+                   ; Exp.memory ~siz:ln_ko ~arr:a2' |])
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})
@@ -470,8 +463,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       (Exp.eq
          (Exp.memory ~siz:o ~arr:a)
          (Exp.concat
-            (Exp.memory ~siz:ln_k ~arr:a1)
-            (Exp.memory ~siz:ko_ln ~arr:a2)))
+            [|Exp.memory ~siz:ln_k ~arr:a1; Exp.memory ~siz:ko_ln ~arr:a2|]))
       (Sh.star
          (Sh.seg {loc= ln; bas= b; len= m; siz= ko_ln; arr= a2})
          (Sh.rem_seg msg min))
@@ -482,8 +474,8 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
          (Sh.and_
             (Exp.eq
                (Exp.concat
-                  (Exp.memory ~siz:k_l ~arr:a0')
-                  (Exp.memory ~siz:ln_k ~arr:a1))
+                  [| Exp.memory ~siz:k_l ~arr:a0'
+                   ; Exp.memory ~siz:ln_k ~arr:a1 |])
                (Exp.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; arr= a0'})

@@ -251,12 +251,14 @@ let map_base ai ~f =
       if a' == a then ai else Exp.add typ a' (Exp.rational i typ)
   | None -> f ai
 
+let is_simple = function Exp.App _ | Add _ | Mul _ -> false | _ -> true
+
 (** [norm_base r a] is [a'+k] where [r] implies [a = a'+k] and [a'] is a
     rep, requires [a] to not have any offset and be in the carrier *)
 let norm_base r e =
   assert (Option.is_none (Exp.offset e)) ;
   try Map.find_exn r.rep e with Caml.Not_found ->
-    assert (Exp.is_simple e) ;
+    assert (is_simple e) ;
     e
 
 (** [norm r a+i] is [a'+k] where [r] implies [a+i = a'+k] and [a'] is a rep,
@@ -265,7 +267,7 @@ let norm r e = map_base ~f:(norm_base r) e
 
 (** test membership in carrier, strictly in the sense that an exp with an
     offset is not in the carrier even when its base is *)
-let in_car r e = Exp.is_simple e || Map.mem r.rep e
+let in_car r e = is_simple e || Map.mem r.rep e
 
 (** test if an exp is a representative, requires exp to have no offset *)
 let is_rep r e = Exp.equal e (norm_base r e)
@@ -285,7 +287,7 @@ let pre_invariant r =
       let a', a_k = solve_for_base a'k a in
       (* carrier is closed under rep *)
       assert (in_car r a') ;
-      if Exp.is_simple a' then
+      if is_simple a' then
         (* rep is sparse for symbols *)
         assert (
           (not (Map.mem r.rep a'))
@@ -331,7 +333,7 @@ let pre_invariant r =
         || Trace.fail "empty use list should not have been added" ) ;
       Use.iter a_use ~f:(fun u ->
           (* uses are applications *)
-          assert (not (Exp.is_simple u)) ;
+          assert (not (is_simple u)) ;
           (* uses have no offsets *)
           assert (Option.is_none (Exp.offset u)) ;
           (* subexps of uses in carrier *)
@@ -440,7 +442,7 @@ let add_directed_equation r0 ~exp:bj ~rep:ai =
         let c, aijk = solve_for_base ck aij in
         let r =
           if Exp.equal a c || Exp.is_false (Exp.eq c aijk) then false_
-          else if Exp.is_simple c && Exp.equal c aijk then r
+          else if is_simple c && Exp.equal c aijk then r
           else {r with rep= Map.set r.rep ~key:c ~data:aijk}
         in
         (* a+i-j-k = c so a = c-i+j+k *)
@@ -527,7 +529,7 @@ let rec norm_extend r ek =
   [%Trace.call fun {pf} -> pf "%a@ %a" Exp.pp ek pp r]
   ;
   let e = Exp.base ek in
-  ( if Exp.is_simple e then (r, norm r ek)
+  ( if is_simple e then (r, norm r ek)
   else
     Map.find_or_add r.rep e
       ~if_found:(fun e' ->

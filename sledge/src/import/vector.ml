@@ -70,6 +70,11 @@ let map_preserving_phys_equal xs ~f =
 
 let mapi x ~f = v (Array.mapi (a x) ~f)
 let map2_exn x y ~f = v (Array.map2_exn (a x) (a y) ~f)
+
+let fold_map x ~init ~f =
+  let s, x = Array.fold_map (a x) ~init ~f in
+  (s, v x)
+
 let concat xs = v (Array.concat (al xs))
 let of_array = v
 let of_list x = v (Array.of_list x)
