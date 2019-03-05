@@ -39,10 +39,7 @@ end
 
 module type DisjunctiveConfig = sig
   val join_policy :
-    [ `JoinAfter of int
-      (** when the set of disjuncts gets bigger than [n] the underlying domain's join is called to
-       collapse them into one state *)
-    | `UnderApproximateAfter of int
+    [ `UnderApproximateAfter of int
       (** When the set of disjuncts gets bigger than [n] then just stop adding new states to it,
          drop any further states on the floor. This corresponds to an under-approximation/bounded
          approach. *)

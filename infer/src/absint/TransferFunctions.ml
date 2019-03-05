@@ -34,7 +34,7 @@ module type MakeHIL = functor (C : ProcCfg.S) -> sig
 end
 
 module type DisjunctiveConfig = sig
-  val join_policy : [`JoinAfter of int | `UnderApproximateAfter of int | `NeverJoin]
+  val join_policy : [`UnderApproximateAfter of int | `NeverJoin]
 
   val widen_policy : [`UnderApproximateAfterNumIterations of int]
 end
@@ -76,20 +76,6 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
             union
         | `UnderApproximateAfter n ->
             if Set.cardinal union <= n then union else lhs
-        | `JoinAfter n ->
-            if Set.cardinal union <= n then union
-            else
-              let joined =
-                Set.fold
-                  (fun dom joined ->
-                    match joined with
-                    | None ->
-                        Some dom
-                    | Some joined ->
-                        Some (TransferFunctions.Domain.join dom joined) )
-                  union None
-              in
-              Set.singleton (Option.value_exn joined)
 
 
     let widen ~prev ~next ~num_iters =
