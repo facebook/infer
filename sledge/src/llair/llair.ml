@@ -456,7 +456,7 @@ let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
     Array.iter functions ~f:(fun func ->
-        FuncQ.enqueue_exn roots func.name.var func ) ;
+        FuncQ.enqueue_back_exn roots func.name.var func ) ;
     Array.iter functions ~f:(fun func ->
         Func.fold_term func ~init:() ~f:(fun () -> function
           | Call {call= {dst}} -> (
@@ -494,7 +494,7 @@ let set_derived_metadata functions =
                 call.retreating <- true ) ;
             jump return ; Option.iter ~f:jump throw
         | Return _ | Throw _ | Unreachable -> () ) ;
-        BlockQ.enqueue_exn tips_to_roots src ()
+        BlockQ.enqueue_back_exn tips_to_roots src ()
     in
     FuncQ.iter roots ~f:(fun root ->
         visit Block_label.empty_set root root.entry ) ;

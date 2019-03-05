@@ -32,7 +32,6 @@ include (
 external ( == ) : 'a -> 'a -> bool = "%eq"
 
 include Stdio
-module Fheap = Core_kernel.Fheap
 module Hash_queue = Core_kernel.Hash_queue
 
 (** Tuple operations *)

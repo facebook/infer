@@ -16,7 +16,7 @@ Jbuild_plugin.V1.send
  (name import)
  (public_name llair.import)
  %s
- (libraries core_kernel zarith %s))
+ (libraries core_kernel core_kernel.fheap zarith %s))
 |}
      (flags `lib deps)
      (libraries deps)

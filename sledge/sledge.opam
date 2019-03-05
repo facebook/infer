@@ -8,6 +8,7 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
+  "base" {>= "v0.12.0"}
   "cmdliner"
   "core_kernel" {>= "v0.11.0"}
   "ctypes"
