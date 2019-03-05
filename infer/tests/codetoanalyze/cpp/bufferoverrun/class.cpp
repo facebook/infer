@@ -291,6 +291,18 @@ void use_global_Bad() {
   a[S::x] = 0;
 }
 
+const unsigned int S::x;
+
+void use_global_2_Good() {
+  int a[50];
+  a[S::x] = 0;
+}
+
+void use_global_2_Bad_FN() {
+  int a[30];
+  a[S::x] = 0;
+}
+
 class my_class6 {
   int* x;
 
