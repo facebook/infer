@@ -72,10 +72,7 @@ let register_perf_stats_report stats_type =
 (* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
    get rid of non-deterministic outputs.*)
 let clean_results_dir () =
-  if not Config.flavors then
-    (* we do not need to keep the capture data in Buck/Java mode *)
-    ResultsDatabase.reset_capture_tables () ;
-  ResultsDatabase.db_canonicalize () ;
+  if Config.flavors then ResultsDatabase.db_canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
@@ -94,10 +91,12 @@ let clean_results_dir () =
   in
   let should_delete_file =
     let files_to_delete =
-      [ Config.log_file
-      ; (* some versions of sqlite do not clean up after themselves *)
-        ResultsDatabase.database_filename ^ "-shm"
-      ; ResultsDatabase.database_filename ^ "-wal" ]
+      (* we do not need to keep the database in Buck/Java mode *)
+      (if Config.flavors then [] else [ResultsDatabase.database_filename])
+      @ [ Config.log_file
+        ; (* some versions of sqlite do not clean up after themselves *)
+          ResultsDatabase.database_filename ^ "-shm"
+        ; ResultsDatabase.database_filename ^ "-wal" ]
     in
     let suffixes_to_delete = [".txt"; ".csv"; ".json"] in
     fun name ->
