@@ -130,7 +130,9 @@ let checkers_expensive_overrides_unexpensive =
   from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
 
 
-let checkers_fragment_retain_view = from_string "CHECKERS_FRAGMENT_RETAINS_VIEW"
+let checkers_fragment_retain_view =
+  from_string "CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
+
 
 let checkers_immutable_cast = from_string "CHECKERS_IMMUTABLE_CAST"
 
