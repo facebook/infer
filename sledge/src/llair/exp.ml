@@ -214,8 +214,6 @@ include T
 
 let empty_map = Map.empty (module T)
 let empty_qset = Qset.empty (module T)
-let sorted e f = compare e f <= 0
-let sort e f = if sorted e f then (e, f) else (f, e)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
@@ -1070,9 +1068,6 @@ let fold e ~init:s ~f =
       Vector.fold ~f:(fun s e -> f e s) args ~init:s
   | _ -> s
 
-let for_all e ~f = fold ~f:(fun a so_far -> so_far && f a) ~init:true e
-let exists e ~f = fold ~f:(fun a found -> found || f a) ~init:false e
-
 let is_subexp ~sub ~sup =
   With_return.with_return
   @@ fun {return} ->
@@ -1250,33 +1245,6 @@ let map e ~f =
   | Concat {args} -> map_vector simp_concat ~f args
   | _ -> e
 
-let fold_map e ~init:s ~f =
-  let fold_map_bin mk ~f x y ~init:s =
-    let s, x' = f s x in
-    let s, y' = f s y in
-    if x' == x && y' == y then (s, e) else (s, mk x' y')
-  in
-  let fold_map_vector mk ~f ~init args =
-    let s, args' = Vector.fold_map args ~init ~f in
-    if args' == args then (s, e) else (s, mk args')
-  in
-  let fold_map_qset mk typ ~f ~init args =
-    let args', s =
-      Qset.fold_map args ~init ~f:(fun x q s ->
-          let s, x' = f s x in
-          (x', q, s) )
-    in
-    if args' == args then (s, e) else (s, mk typ args')
-  in
-  match e with
-  | App {op; arg} -> fold_map_bin (app1 ~partial:true) ~f op arg ~init:s
-  | Add {args; typ} -> fold_map_qset addN typ ~f args ~init:s
-  | Mul {args; typ} -> fold_map_qset mulN typ ~f args ~init:s
-  | Splat {byt; siz} -> fold_map_bin simp_splat ~f byt siz ~init:s
-  | Memory {siz; arr} -> fold_map_bin simp_memory ~f siz arr ~init:s
-  | Concat {args} -> fold_map_vector simp_concat ~f args ~init:s
-  | _ -> (s, e)
-
 let rename e sub =
   let rec rename_ e sub =
     match e with
@@ -1284,55 +1252,6 @@ let rename e sub =
     | _ -> map e ~f:(fun f -> rename_ f sub)
   in
   rename_ e sub |> check (invariant ~partial:true)
-
-(** Destruct *)
-
-let offset e =
-  ( match e with
-  | Add {typ; args} ->
-      let offset = Qset.count args (integer Z.one typ) in
-      if Q.equal Q.zero offset then None else Some (offset, typ)
-  | _ -> None )
-  |> check (function
-       | Some (k, _) -> assert (not (Q.equal Q.zero k))
-       | None -> () )
-
-let base e =
-  ( match e with
-  | Add {typ; args} -> (
-      let args = Qset.remove args (integer Z.one typ) in
-      match Qset.length args with
-      | 0 -> integer Z.zero typ
-      | 1 -> (
-        match Qset.min_elt args with
-        | Some (arg, q) when Q.equal Q.one q -> arg
-        | _ -> Add {typ; args} )
-      | _ -> Add {typ; args} )
-  | _ -> e )
-  |> check (invariant ~partial:true)
-
-let base_offset e =
-  ( match e with
-  | Add {typ; args} -> (
-    match Qset.count_and_remove args (integer Z.one typ) with
-    | Some (offset, args) ->
-        let base =
-          match Qset.length args with
-          | 0 -> integer Z.zero typ
-          | 1 -> (
-            match Qset.min_elt args with
-            | Some (arg, q) when Q.equal Q.one q -> arg
-            | _ -> Add {typ; args} )
-          | _ -> Add {typ; args}
-        in
-        Some (base, offset, typ)
-    | None -> None )
-  | _ -> None )
-  |> check (function
-       | Some (b, k, _) ->
-           invariant b ;
-           assert (not (Q.equal Q.zero k))
-       | None -> () )
 
 (** Query *)
 

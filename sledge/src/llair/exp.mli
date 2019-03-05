@@ -81,8 +81,6 @@ val comparator : (t, comparator_witness) Comparator.t
 
 type exp = t
 
-val sort : t -> t -> t * t
-val sorted : t -> t -> bool
 val pp : t pp
 val invariant : ?partial:bool -> t -> unit
 
@@ -188,30 +186,16 @@ val struct_rec :
 
 val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 
-(** Destruct *)
-
-val base_offset : t -> (t * Q.t * Typ.t) option
-(** Decompose an addition of a constant "offset" to a "base" exp. *)
-
-val base : t -> t
-(** Like [base_offset] but does not construct the "offset" exp. *)
-
-val offset : t -> (Q.t * Typ.t) option
-(** Like [base_offset] but does not construct the "base" exp. *)
-
 (** Access *)
 
 val iter : t -> f:(t -> unit) -> unit
 val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
 val fold_exps : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
-val for_all : t -> f:(t -> bool) -> bool
-val exists : t -> f:(t -> bool) -> bool
 
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
-val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
 val rename : t -> Var.Subst.t -> t
 
 (** Query *)
@@ -219,7 +203,6 @@ val rename : t -> Var.Subst.t -> t
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
-val is_constant : t -> bool
 val typ : t -> Typ.t option
 val classify : t -> [> `Atomic | `Interpreted | `Uninterpreted]
 val solve : t -> t -> (t, t, comparator_witness) Map.t option
