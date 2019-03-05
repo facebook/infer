@@ -1,5 +1,5 @@
 codetoanalyze/cpp/pulse/basics.cpp, multiple_invalidations_branch_bad, 6, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete ptr` at line 58 here,accessed `*(ptr)` here]
-codetoanalyze/cpp/pulse/basics.cpp, multiple_invalidations_loop_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete ptr` at line 68 here,accessed `ptr` here]
+codetoanalyze/cpp/pulse/basics.cpp, multiple_invalidations_loop_bad, 3, USE_AFTER_DELETE, no_bucket, ERROR, [invalidated by call to `delete ptr` at line 70 here,accessed `ptr` here]
 codetoanalyze/cpp/pulse/closures.cpp, implicit_ref_capture_destroy_invoke_bad, 6, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [returned from call to `S_S(&(s),&(0$?%__sil_tmpSIL_materialize_temp__n$12))`,`&(s)` captured as `s`,invalidated by destructor call `S_~S(s)` at line 29 here,accessed `&(f)` here]
 codetoanalyze/cpp/pulse/closures.cpp, ref_capture_destroy_invoke_bad, 6, USE_AFTER_DESTRUCTOR, no_bucket, ERROR, [returned from call to `S_S(&(s))`,`&(s)` captured as `s`,invalidated by destructor call `S_~S(s)` at line 20 here,accessed `&(f)` here]
 codetoanalyze/cpp/pulse/join.cpp, invalidate_node_alias_bad, 12, USE_AFTER_DELETE, no_bucket, ERROR, [assigned to `result`,invalidated by call to `delete result` at line 25 here,accessed `*(result)` here]

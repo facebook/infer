@@ -53,13 +53,11 @@ module type DisjReady = sig
 
   module Domain : AbstractDomain.S
 
-  module DisjunctiveDomain : Caml.Set.S with type elt = Domain.t
-
   type extras
 
   type instr
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> DisjunctiveDomain.t
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
@@ -73,9 +71,17 @@ end
    disjunct independently. The join on the disjunctive state is governed by the policy described in
    [DConfig]. *)
 module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : DisjunctiveConfig) : sig
+  module Disjuncts : sig
+    type t
+
+    val singleton : TransferFunctions.Domain.t -> t
+
+    val elements : t -> TransferFunctions.Domain.t list [@@warning "-32"]
+  end
+
   include
     HIL
     with type extras = TransferFunctions.extras
      and module CFG = TransferFunctions.CFG
-     and type Domain.t = TransferFunctions.DisjunctiveDomain.t
+     and type Domain.t = Disjuncts.t
 end

@@ -27,7 +27,6 @@ let check_error summary = function
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
   module Domain = PulseDomain
-  module DisjunctiveDomain = Caml.Set.Make (Domain)
 
   type extras = Summary.t
 
@@ -138,16 +137,22 @@ module PulseTransferFunctions = struct
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        exec_assign summary lhs_access rhs_exp loc astate
-        |> check_error summary |> DisjunctiveDomain.singleton
+        let post = exec_assign summary lhs_access rhs_exp loc astate |> check_error summary in
+        [post]
     | Assume (condition, _, _, loc) ->
-        PulseOperations.read_all loc (HilExp.get_access_exprs condition) astate
-        |> check_error summary |> DisjunctiveDomain.singleton
+        let post =
+          PulseOperations.read_all loc (HilExp.get_access_exprs condition) astate
+          |> check_error summary
+        in
+        [post]
     | Call (ret, call, actuals, flags, loc) ->
-        dispatch_call summary ret call actuals flags loc astate
-        |> check_error summary |> DisjunctiveDomain.singleton
+        let post =
+          dispatch_call summary ret call actuals flags loc astate |> check_error summary
+        in
+        [post]
     | ExitScope (vars, _) ->
-        PulseOperations.remove_vars vars astate |> DisjunctiveDomain.singleton
+        let post = PulseOperations.remove_vars vars astate in
+        [post]
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -176,6 +181,6 @@ let checker {Callbacks.proc_desc; tenv; summary} =
   ( try
       ignore
         (DisjunctiveAnalyzer.compute_post proc_data
-           ~initial:(PulseTransferFunctions.DisjunctiveDomain.singleton PulseDomain.initial))
+           ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseDomain.initial))
     with AbstractDomain.Stop_analysis -> () ) ;
   summary

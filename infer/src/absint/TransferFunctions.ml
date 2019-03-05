@@ -44,13 +44,11 @@ module type DisjReady = sig
 
   module Domain : AbstractDomain.S
 
-  module DisjunctiveDomain : Caml.Set.S with type elt = Domain.t
-
   type extras
 
   type instr
 
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> DisjunctiveDomain.t
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
@@ -64,41 +62,64 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
 
   type extras = TransferFunctions.extras
 
-  module Domain = struct
-    module Set = TransferFunctions.DisjunctiveDomain
+  module Disjuncts = struct
+    type disjunct = TransferFunctions.Domain.t
 
-    let join lhs rhs =
+    let pp_disjunct fmt astate = TransferFunctions.Domain.pp fmt astate
+
+    type t = disjunct list
+
+    let mk_disjunct astate = astate
+
+    let singleton astate = [mk_disjunct astate]
+
+    let elements disjuncts = disjuncts
+
+    let pp f disjuncts = PrettyPrintable.pp_collection ~pp_item:pp_disjunct f disjuncts
+  end
+
+  module Domain = struct
+    type t = Disjuncts.t
+
+    let join_normalize_into s_froms ~into:s_intos =
+      let s_from_not_in_intos =
+        List.rev_filter s_froms ~f:(fun s_from ->
+            List.exists s_intos ~f:(fun s_into -> phys_equal s_from s_into) |> not )
+      in
+      List.rev_append s_from_not_in_intos s_intos
+
+
+    let join : t -> t -> t =
+     fun lhs rhs ->
       if phys_equal lhs rhs then lhs
       else
-        let union = Set.union lhs rhs in
         match DConfig.join_policy with
         | `NeverJoin ->
-            union
+            rhs @ lhs
         | `UnderApproximateAfter n ->
-            if Set.cardinal union <= n then union else lhs
+            let lhs_length = List.length lhs in
+            if lhs_length >= n then lhs else join_normalize_into rhs ~into:lhs
+
+
+    let rec ( <= ) ~lhs ~rhs =
+      if phys_equal lhs rhs then (* also takes care of the case [lhs = rhs = []] *) true
+      else
+        (* quick check: [lhs <= rhs] if [rhs] is [something @ lhs] *)
+        match rhs with [] -> false | _ :: rhs' -> ( <= ) ~lhs ~rhs:rhs'
 
 
     let widen ~prev ~next ~num_iters =
-      if phys_equal prev next then prev
-      else
-        let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
-        if num_iters > max_iter then prev else join prev next
+      let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
+      if phys_equal prev next then prev else if num_iters > max_iter then prev else join prev next
 
 
-    let ( <= ) ~lhs ~rhs = if phys_equal lhs rhs then true else Set.subset lhs rhs
-
-    let pp f set =
-      PrettyPrintable.pp_collection ~pp_item:TransferFunctions.Domain.pp f (Set.elements set)
-
-
-    include Set
+    let pp = Disjuncts.pp
   end
 
-  let exec_instr disj_dom extras node instr =
-    Domain.fold
-      (fun dom result ->
-        TransferFunctions.exec_instr dom extras node instr |> Domain.Set.union result )
-      disj_dom Domain.Set.empty
+  let exec_instr pre_disjuncts extras node instr =
+    List.fold pre_disjuncts ~init:[] ~f:(fun post_disjuncts pre_disjunct ->
+        let disjuncts' = TransferFunctions.exec_instr pre_disjunct extras node instr in
+        Domain.join post_disjuncts (List.map disjuncts' ~f:Disjuncts.mk_disjunct) )
 
 
   let pp_session_name node f = TransferFunctions.pp_session_name node f
