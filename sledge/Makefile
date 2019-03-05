@@ -40,6 +40,10 @@ watch: setup
 
 .PHONY: test
 test: setup
+	dune build @_build/dev/runtest
+
+.PHONY: promote
+promote: setup
 	dune build @_build/dev/runtest --auto-promote
 
 BISECT_DIR=$(CURDIR)/_coverage/out
