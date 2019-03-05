@@ -88,6 +88,8 @@ module Memory : sig
 
   val empty : t
 
+  val filter : (AbstractAddress.t -> cell -> bool) -> t -> t
+
   val find_opt : AbstractAddress.t -> t -> cell option
 
   val for_all : (AbstractAddress.t -> cell -> bool) -> t -> bool
@@ -212,6 +214,8 @@ end = struct
   let find_opt = Graph.find_opt
 
   let for_all = Graph.for_all
+
+  let filter = Graph.filter
 end
 
 (** Stacks: map addresses of variables to values and initialisation location.
@@ -297,3 +301,62 @@ let widen ~prev:_ ~next:_ ~num_iters:_ =
 
 let pp fmt {heap; stack} =
   F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@]}" Memory.pp heap Stack.pp stack
+
+
+module GraphGC : sig
+  val minimize : t -> t
+  (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
+     from the stack variables, then removes all the unused addresses from the heap *)
+end = struct
+  module AddressSet = PrettyPrintable.MakePPSet (AbstractAddress)
+
+  let visit address visited =
+    if AddressSet.mem address visited then `AlreadyVisited
+    else
+      let visited = AddressSet.add address visited in
+      `NotAlreadyVisited visited
+
+
+  let rec visit_address astate address visited =
+    match visit address visited with
+    | `AlreadyVisited ->
+        visited
+    | `NotAlreadyVisited visited -> (
+      match Memory.find_opt address astate.heap with
+      | None ->
+          visited
+      | Some (edges, attrs) ->
+          visit_edges astate ~edges visited |> visit_attributes astate attrs )
+
+
+  and visit_edges ~edges astate visited =
+    Memory.Edges.fold
+      (fun _access (address, _trace) visited -> visit_address astate address visited)
+      edges visited
+
+
+  and visit_attributes astate attrs visited =
+    Attributes.fold
+      (fun attr visited ->
+        match attr with
+        | Attribute.Invalid _ | Attribute.AddressOfCppTemporary _ | Attribute.StdVectorReserve ->
+            visited
+        | Attribute.Closure (_, captured) ->
+            List.fold captured ~init:visited ~f:(fun visited (address, _) ->
+                visit_address astate address visited ) )
+      attrs visited
+
+
+  let visit_stack astate visited =
+    Stack.fold
+      (fun _var (address, _loc) visited -> visit_address astate address visited)
+      astate.stack visited
+
+
+  let minimize astate =
+    let visited = visit_stack astate AddressSet.empty in
+    let heap = Memory.filter (fun address _ -> AddressSet.mem address visited) astate.heap in
+    if phys_equal heap astate.heap then astate else {astate with heap}
+end
+
+include GraphGC

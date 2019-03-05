@@ -67,6 +67,15 @@ void FP_init_fill_then_push_back_loop_ok(std::vector<int>& vec_other) {
   std::cout << *elt << "\n";
 }
 
+void push_back_loop_bad(std::vector<int>& vec_other) {
+  std::vector<int> vec(2);
+  int* elt = &vec[1];
+  for (const auto& i : vec_other) {
+    vec.push_back(i);
+  }
+  std::cout << *elt << "\n";
+}
+
 void reserve_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   vec.reserve(vec.size() + 1);

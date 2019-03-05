@@ -83,3 +83,5 @@ type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
 val initial : t
 
 include AbstractDomain.S with type t := t
+
+val minimize : t -> t

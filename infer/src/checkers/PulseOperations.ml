@@ -278,8 +278,9 @@ let remove_vars vars astate =
         | _ ->
             heap )
   in
-  let stack = List.fold ~f:(fun stack var -> Stack.remove var stack) ~init:astate.stack vars in
-  if phys_equal stack astate.stack && phys_equal heap astate.heap then astate else {stack; heap}
+  let stack = Stack.filter (fun var _ -> not (List.mem ~equal:Var.equal vars var)) astate.stack in
+  if phys_equal stack astate.stack && phys_equal heap astate.heap then astate
+  else PulseDomain.minimize {stack; heap}
 
 
 let record_var_decl_location location var astate =
