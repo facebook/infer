@@ -8,6 +8,10 @@
 (** Configuration options *)
 
 let trace_conv =
+  let parse s =
+    Trace.parse s
+    |> Result.map_error ~f:(fun _ -> `Msg ("Invalid trace spec: " ^ s))
+  in
   let print fs {trace_all; trace_mods_funs} =
     let pf fmt = Format.fprintf fs fmt in
     if trace_all then pf "*"
@@ -22,7 +26,7 @@ let trace_conv =
               if fun_enabled then pf "+%s.%s" mod_name fun_name
               else pf "-%s.%s" mod_name fun_name ) )
   in
-  (Trace.parse, print)
+  (parse, print)
 
 type t =
   { compile_only: bool

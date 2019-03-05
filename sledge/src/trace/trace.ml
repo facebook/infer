@@ -75,7 +75,7 @@ let parse s =
                   ~data:{trace_mod= Some enabled; trace_funs= default} )
       in
       Ok {none with trace_mods_funs}
-  with Assert_failure _ -> Error (`Msg ("Invalid trace spec: " ^ s))
+  with Assert_failure _ as exn -> Error exn
 
 let init ?(margin = 300) ~config:c () =
   Format.set_margin margin ;
