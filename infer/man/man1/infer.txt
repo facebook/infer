@@ -54,13 +54,13 @@ OPTIONS
        supported options. The following is a list of all the supported
        options (see also --help-full for options reserved for internal use).
 
-       --no-annotation-reachability
-           Deactivates: the annotation reachability checker. Given a pair of
+       --annotation-reachability
+           Activates: the annotation reachability checker. Given a pair of
            source and sink annotation, e.g. @PerformanceCritical and
            @Expensive, this checker will warn whenever some method annotated
            with @PerformanceCritical calls, directly or indirectly, another
            method annotated with @Expensive (Conversely:
-           --annotation-reachability)           See also infer-analyze(1).
+           --no-annotation-reachability)           See also infer-analyze(1).
 
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
@@ -243,10 +243,10 @@ OPTIONS
            infer-reportdiff(1), and infer-run(1).
 
        --no-default-checkers
-           Deactivates: Default checkers: --annotation-reachability,
-           --biabduction, --fragment-retains-view, --immutable-cast,
-           --linters, --liveness, --ownership, --racerd, --siof, --uninit
-           (Conversely: --default-checkers)           See also infer-analyze(1).
+           Deactivates: Default checkers: --biabduction,
+           --fragment-retains-view, --linters, --liveness, --ownership,
+           --racerd, --siof, --uninit (Conversely: --default-checkers)       
+    See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -417,11 +417,11 @@ OPTIONS
            Activates: Generate html report. (Conversely: --no-html)       
     See also infer-explore(1).
 
-       --no-immutable-cast
-           Deactivates: the detection of object cast from immutable type to
+       --immutable-cast
+           Activates: the detection of object cast from immutable type to
            mutable type. For instance, it will detect cast from ImmutableList
            to List, ImmutableMap to Map, and ImmutableSet to Set.
-           (Conversely: --immutable-cast)           See also infer-analyze(1).
+           (Conversely: --no-immutable-cast)           See also infer-analyze(1).
 
        --immutable-cast-only
            Activates: Enable --immutable-cast and disable all other checkers

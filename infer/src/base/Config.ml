@@ -631,7 +631,7 @@ and ( annotation_reachability
     var
   in
   let annotation_reachability =
-    mk_checker ~default:true ~long:"annotation-reachability"
+    mk_checker ~default:false ~long:"annotation-reachability"
       "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
        @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated \
        with @PerformanceCritical calls, directly or indirectly, another method annotated with \
@@ -648,7 +648,7 @@ and ( annotation_reachability
     mk_checker ~long:"fragment-retains-view" ~default:true
       "detects when Android fragments are not explicitly nullified before becoming unreabable"
   and immutable_cast =
-    mk_checker ~long:"immutable-cast" ~default:true
+    mk_checker ~long:"immutable-cast" ~default:false
       "the detection of object cast from immutable type to mutable type. For instance, it will \
        detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
   and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"

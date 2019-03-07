@@ -13,13 +13,13 @@ DESCRIPTION
 
 
 OPTIONS
-       --no-annotation-reachability
-           Deactivates: the annotation reachability checker. Given a pair of
+       --annotation-reachability
+           Activates: the annotation reachability checker. Given a pair of
            source and sink annotation, e.g. @PerformanceCritical and
            @Expensive, this checker will warn whenever some method annotated
            with @PerformanceCritical calls, directly or indirectly, another
            method annotated with @Expensive (Conversely:
-           --annotation-reachability)
+           --no-annotation-reachability)
 
        --annotation-reachability-only
            Activates: Enable --annotation-reachability and disable all other
@@ -97,10 +97,9 @@ OPTIONS
            values. (default: 0)
 
        --no-default-checkers
-           Deactivates: Default checkers: --annotation-reachability,
-           --biabduction, --fragment-retains-view, --immutable-cast,
-           --linters, --liveness, --ownership, --racerd, --siof, --uninit
-           (Conversely: --default-checkers)
+           Deactivates: Default checkers: --biabduction,
+           --fragment-retains-view, --linters, --liveness, --ownership,
+           --racerd, --siof, --uninit (Conversely: --default-checkers)
 
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
@@ -131,11 +130,11 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-       --no-immutable-cast
-           Deactivates: the detection of object cast from immutable type to
+       --immutable-cast
+           Activates: the detection of object cast from immutable type to
            mutable type. For instance, it will detect cast from ImmutableList
            to List, ImmutableMap to Map, and ImmutableSet to Set.
-           (Conversely: --immutable-cast)
+           (Conversely: --no-immutable-cast)
 
        --immutable-cast-only
            Activates: Enable --immutable-cast and disable all other checkers
