@@ -1,4 +1,4 @@
---
+---
 docid: checkers-bug-types
 title: Checkers bug types
 layout: docs
