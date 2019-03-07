@@ -1,4 +1,4 @@
----
+--
 docid: checkers-bug-types
 title: Checkers bug types
 layout: docs
@@ -192,7 +192,7 @@ Action: Nullify the `View` in question in `onDestroyView`.
 
 ## Interface not thread-safe
 
-This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are needed, see the detailed explanation [here](http://fbinfer.com/docs/threadsafety.html#interface-not-thread-safe).
+This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are needed, see the detailed explanation [here](http://fbinfer.com/docs/racerd.html#interface-not-thread-safe).
 
 
 
@@ -228,7 +228,7 @@ The above may happen through a chain of calls. Above, `x` may also be a containe
 
 - Avoid the offending access (most often the read).  Of course, this may not be possible.
 - Use synchronization to protect the read, by using the same lock protecting the corresponding write.
-- (Objective C specific) If the method doing the read is not exported *and* the lock protecting the write is always held when the method doing the read is called, then consider making it private (by prefixing its name with an underscore).  This should silence the warning, since Infer looks for a pair of non-private methods.
+- Make the method doing the read access private.  This should silence the warning, since Infer looks for a pair of non-private methods. Objective-C: Infer considers a method as private if it's not exported in the header-file interface. 
 
 <a name="MEMORY_LEAK"></a>
 
@@ -689,7 +689,7 @@ For more technical definition and techniques to avoid/remediate, see the [FAQ](h
 
 ## Thread-safety violation
 
-This error indicates a possible race condition--see the thread-safety [docs](http://fbinfer.com/docs/threadsafety.html) for more details.
+This error indicates a possible race condition--see the thread-safety [docs](http://fbinfer.com/docs/racerd.html) for more details.
 
 
 
