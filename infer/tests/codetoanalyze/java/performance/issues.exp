@@ -1,3 +1,4 @@
+codetoanalyze/java/performance/A.java, B.error():void, 4, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 4, degree = 0]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.array_access_overrun_bad():void, 4, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Assignment,Array access: Offset: [2, 8] Size: 8]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.array_access_weird_ok(long[],int):void, 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 2 + 15 ⋅ length, degree = 1,{length},Loop at line 28]
 codetoanalyze/java/performance/ArrayCost.java, ArrayCost.ArrayCost(int[]):void, 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 6 + 5 ⋅ mag.length, degree = 1,{mag.length},Loop at line 15]

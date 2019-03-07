@@ -91,6 +91,9 @@ let plus cost_record1 cost_record2 =
 (* Map representing cost record {OperationCost:1; AllocationCost:0; IOCost:0} *)
 let unit_cost_atomic_operation = VariantCostMap.increment OperationCost zero_record
 
+(* Map representing cost record {OperationCost:0; AllocationCost:1; IOCost:0} *)
+let unit_cost_allocation = VariantCostMap.increment AllocationCost zero_record
+
 (* Map representing cost record {OperationCost:operation_cost; AllocationCost:0; IOCost:0} *)
 let of_operation_cost operation_cost =
   VariantCostMap.increase_by OperationCost operation_cost zero_record

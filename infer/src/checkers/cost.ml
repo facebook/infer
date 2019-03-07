@@ -28,7 +28,10 @@ module ReportConfig = struct
       , { name= "The execution time"
         ; threshold= Option.some_if Config.use_cost_threshold 200
         ; top_and_bottom= true } )
-    ; (CostDomain.AllocationCost, {name= "The allocations"; threshold= None; top_and_bottom= false})
+    ; ( CostDomain.AllocationCost
+      , { name= "The allocations"
+        ; threshold= Option.some_if Config.use_cost_threshold 3
+        ; top_and_bottom= false } )
     ; (CostDomain.IOCost, {name= "The IOs"; threshold= None; top_and_bottom= false}) ]
 
 
@@ -551,30 +554,41 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
+  let allocation_functions = [BuiltinDecl.__new]
+
+  let is_allocation_function callee_pname =
+    List.exists allocation_functions ~f:(fun f -> Typ.Procname.equal callee_pname f)
+
+
   let get_instr_cost_record extras instr_node instr =
     match instr with
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) -> (
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
         let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} =
           extras
         in
-        match
-          BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
-        with
-        | None ->
-            CostDomain.unit_cost_atomic_operation
-        | Some inferbo_mem -> (
-            let loc = InstrCFG.Node.loc instr_node in
-            match CostModels.Call.dispatch () callee_pname params with
-            | Some model ->
-                CostDomain.of_operation_cost (model loc inferbo_mem)
-            | None -> (
-              match get_callee_summary_and_formals callee_pname with
-              | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
-                  CostDomain.map callee_cost_record ~f:(fun callee_cost ->
-                      instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                        ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
-              | None ->
-                  CostDomain.unit_cost_atomic_operation ) ) )
+        let operation_cost =
+          match
+            BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
+          with
+          | None ->
+              CostDomain.unit_cost_atomic_operation
+          | Some inferbo_mem -> (
+              let loc = InstrCFG.Node.loc instr_node in
+              match CostModels.Call.dispatch () callee_pname params with
+              | Some model ->
+                  CostDomain.of_operation_cost (model loc inferbo_mem)
+              | None -> (
+                match get_callee_summary_and_formals callee_pname with
+                | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
+                    CostDomain.map callee_cost_record ~f:(fun callee_cost ->
+                        instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                          ~callee_pname ~callee_formals ~params ~callee_cost ~loc )
+                | None ->
+                    CostDomain.unit_cost_atomic_operation ) )
+        in
+        if is_allocation_function callee_pname then
+          CostDomain.plus CostDomain.unit_cost_allocation operation_cost
+        else operation_cost
     | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
     | Sil.ExitScope _ -> (
