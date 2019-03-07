@@ -5,7 +5,9 @@ layout: docs
 permalink: /docs/racerd.html
 ---
 
-RacerD finds data races in your Java code.
+RacerD finds data races in your Java code. This page gives a more in-depth explanation of how the analysis works, but may be less complete than the [Thread Safety Violation bug description page](/docs/checkers-bug-types.html#THREAD_SAFETY_VIOLATION).
+
+
 To run the analysis, you can use plain `infer` (to run RacerD along with other analyses that are run by default) or `infer --racerd-only` (to run only RacerD).
 
 For example, the command `infer --racerd-only -- javac File.java` will run RacerD on File.java.
