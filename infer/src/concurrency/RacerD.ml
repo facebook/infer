@@ -1133,20 +1133,19 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
 
 
 (* create a map from [abstraction of a memory loc] -> accesses that
-   may touch that memory loc. for now, our abstraction is an access
+   may touch that memory loc. the abstraction of a location is an access
    path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table file_env =
   let open RacerDDomain in
-  let aggregate_post acc ({threads; accesses}, tenv, procdesc) =
+  let aggregate_post tenv procdesc acc {threads; accesses} =
     AccessDomain.fold
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc} acc)
       accesses acc
   in
-  List.filter_map file_env ~f:(fun (tenv, proc_desc) ->
+  List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, proc_desc) ->
       Procdesc.get_proc_name proc_desc |> Payload.read proc_desc
-      |> Option.map ~f:(fun payload -> (payload, tenv, proc_desc)) )
-  |> List.fold ~init:ReportMap.empty ~f:aggregate_post
+      |> Option.fold ~init:acc ~f:(aggregate_post tenv proc_desc) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
