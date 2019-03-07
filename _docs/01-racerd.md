@@ -45,7 +45,7 @@ The class `Dinner` will generate the following report on the public method `make
 
 `There may be a Thread Safety Violation: makeDinner() indirectly writes to mTemperature outside of synchronization.`
 
-This warning can be fixed synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, marking `makeDinner` as `@VisibleForTesting`, or suppressing the warning by annotating the `Dinner` class or `makeDinner` method with `@ThreadSafe(enableChecks = false)`. See the `com.facebook.infer.annotation` [package](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation) for the full details on this and other annotations.
+This warning can be fixed by synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, marking `makeDinner` as `@VisibleForTesting`, or suppressing the warning by annotating the `Dinner` class or `makeDinner` method with `@ThreadSafe(enableChecks = false)`. 
 
 ### Read/Write Race
 
@@ -101,11 +101,11 @@ class C {
 
 The way to fix this warning is to add a `@ThreadSafe` annotation to the interface `I`, which will enforce the thread-safety of each of the implementations of `I`.
 
-You might wonder why it's necessary to annotate `I`--can't RacerD just look at all the implementations of `i` at the call site for `bar`? Although this is a fine idea idea in principle, but a bad idea in practice due to a (a) separate compilation and (b) our diff-based deployment model. In the example above, the compiler doesn't have to know about all implementations (or indeed, any implementations) of `I` at the time it compiles this code, so there's no guarantee that RacerD will know about or be able to check all implementations of `I`. That's (a). For (b), say that we check that all implementations of `I` are thread-safe at the time this code is written, but we don't add the annotation. If someone else comes along and adds a new implementation of `I` that is not thread-safe, RacerD will have no way of knowing that this will cause a potential bug in `foo`. But if `I` is annotated, RacerD will enforce that all new implementations of `I` are thread-safe, and `foo` will remain bug-free.
+You might wonder why it's necessary to annotate `I` -- can't RacerD just look at all the implementations of `i` at the call site for `bar`? Although this is a fine idea idea in principle, it's a bad idea in practice due to a (a) separate compilation and (b) our diff-based deployment model. In the example above, the compiler doesn't have to know about all implementations (or indeed, any implementations) of `I` at the time it compiles this code, so there's no guarantee that RacerD will know about or be able to check all implementations of `I`. That's (a). For (b), say that we check that all implementations of `I` are thread-safe at the time this code is written, but we don't add the annotation. If someone else comes along and adds a new implementation of `I` that is not thread-safe, RacerD will have no way of knowing that this will cause a potential bug in `foo`. But if `I` is annotated, RacerD will enforce that all new implementations of `I` are thread-safe, and `foo` will remain bug-free.
 
 ## Annotations to help RacerD understand your code
 
-Getting started with RacerD doesn't require any annotations at all--RacerD will look at your usage of locks and figure out what data is not guarded consistently. But increasing the coverage and signal-to-noise ratio may require adding `@ThreadSafe` annotations along with some of the other annotations described below. Most of annotations described below can be used via the Maven Central package available [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation).
+Getting started with RacerD doesn't require any annotations at all -- RacerD will look at your usage of locks and figure out what data is not guarded consistently. But increasing the coverage and signal-to-noise ratio may require adding `@ThreadSafe` annotations along with some of the other annotations described below. Most of annotations described below can be used via the Maven Central package available [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation).
 
 ### `@ThreadConfined`
 
@@ -148,7 +148,7 @@ private Boolean mShouldShowFeature;
 
 This code caches the result of an expensive network call that checks whether the current user should be shown an experimental feature. This code looks racy, and indeed it is: if two threads execute `shouldShowFeature()` at the same time, one may read `mShouldShowFeature` at the same time the other is writing it.
 
-However, this is actually a *benign* race that the programmer intentionally allows for performance reasons. The reason this code is safe is that the programmer knows that `askNetworkIfShouldShowFeature()` will always return the same value in the same run of the app. Adding synchronization would remove the race, but it acquiring/releasing locks and lock contention would potentially slow down every call to `shouldShowFeature()`. The benign race approach makes every call after the first fast without changing the safety of the code.
+However, this is actually a *benign* race that the programmer intentionally allows for performance reasons. The reason this code is safe is that the programmer knows that `askNetworkIfShouldShowFeature()` will always return the same value in the same run of the app. Adding synchronization would remove the race, but acquiring/releasing locks and lock contention would potentially slow down every call to `shouldShowFeature()`. The benign race approach makes every call after the first fast without changing the safety of the code.
 
 RacerD will report a race on this code by default, but adding the `@Functional annotation to askNetworkIfShouldShowFeature()` informs RacerD that the function is always expected to return the same value. This assumption allows RacerD to understand that this particular code is safe, though it will still (correctly) warn if `mShouldShowFeature` is read/written elsewhere.
 
