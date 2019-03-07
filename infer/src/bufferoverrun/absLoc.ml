@@ -63,6 +63,8 @@ module Allocsite = struct
 
   let is_literal_string = function LiteralString s -> Some s | _ -> None
 
+  let is_unknown = function Unknown -> true | Symbol _ | Known _ | LiteralString _ -> false
+
   let to_string x = F.asprintf "%a" pp x
 
   let make :
@@ -128,6 +130,15 @@ module Loc = struct
 
 
   let unknown = Allocsite Allocsite.unknown
+
+  let rec is_unknown = function
+    | Var _ ->
+        false
+    | Allocsite a ->
+        Allocsite.is_unknown a
+    | Field (x, _) ->
+        is_unknown x
+
 
   let rec pp_paren ~paren fmt =
     let module SP = Symb.SymbolPath in

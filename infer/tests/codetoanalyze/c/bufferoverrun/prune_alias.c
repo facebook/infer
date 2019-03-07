@@ -342,3 +342,26 @@ void call_not_prune_multiple4_Bad_FN() {
   int m[2] = {0, 10};
   not_prune_multiple4(m);
 }
+
+int* unknown1();
+int* unknown2();
+
+void unknown_alias_Good() {
+  int* x = unknown1();
+  int* y = unknown2();
+
+  if (*x < *y) {
+    int a[10]; // Here should be reachable.
+    a[5] = 0;
+  }
+}
+
+void unknown_alias_Bad() {
+  int* x = unknown1();
+  int* y = unknown2();
+
+  if (*x < *y) {
+    int a[10]; // Here should be reachable.
+    a[10] = 0;
+  }
+}

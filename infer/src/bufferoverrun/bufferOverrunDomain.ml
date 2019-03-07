@@ -697,6 +697,10 @@ module AliasTarget = struct
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let is_unknown = function
+    | Simple l | SimplePlusA (l, _) | Empty l | Fgets l | Nullity l ->
+        Loc.is_unknown l
 end
 
 (* Relations between values of logical variables(registers) and program variables
@@ -728,7 +732,9 @@ module AliasMap = struct
       F.pp_print_list ~pp_sep pp1 fmt (bindings x)
 
 
-  let load : Ident.t -> AliasTarget.t -> t -> t = add
+  let load : Ident.t -> AliasTarget.t -> t -> t =
+   fun id a x -> if not (AliasTarget.is_unknown a) then add id a x else x
+
 
   let store : Loc.t -> t -> t = fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
 
