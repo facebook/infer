@@ -82,6 +82,11 @@ let pp_diff fs (r, s) =
 (** test membership in carrier *)
 let in_car r e = Map.mem r.rep e
 
+let rec iter_max_solvables e ~f =
+  match Exp.classify e with
+  | `Interpreted -> Exp.iter ~f:(iter_max_solvables ~f) e
+  | _ -> f e
+
 let invariant r =
   Invariant.invariant [%here] r [%sexp_of: t]
   @@ fun () ->
@@ -89,7 +94,7 @@ let invariant r =
       (* no interpreted exps in carrier *)
       assert (Poly.(Exp.classify a <> `Interpreted)) ;
       (* carrier is closed under sub-expressions *)
-      Exp.iter a ~f:(fun b ->
+      iter_max_solvables a ~f:(fun b ->
           assert (
             in_car r b
             || Trace.fail "@[subexp %a of %a not in carrier of@ %a@]" Exp.pp
