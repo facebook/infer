@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module type S = sig
   module CFG : ProcCfg.S
@@ -63,20 +64,29 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
   type extras = TransferFunctions.extras
 
   module Disjuncts = struct
-    type disjunct = TransferFunctions.Domain.t
+    (* The disjunctive domain transformer should really be part of the Abstract Interpreter instead
+       of the Transfer Functions as the scheduler needs to know which disjuncts have already been
+       explored. But for now let's emulate that with a disgusting hack in the transfer functions
+       that try to skip disjuncts we have already explored, using the [visited] flag. *)
+    type disjunct = {visited: bool; astate: TransferFunctions.Domain.t}
 
-    let pp_disjunct fmt astate = TransferFunctions.Domain.pp fmt astate
+    let pp_disjunct fmt ({visited; astate}[@warning "+9"]) =
+      F.fprintf fmt "{@[<hv>visited= %b;@;astate= @[%a@]@]}" visited TransferFunctions.Domain.pp
+        astate
+
 
     type t = disjunct list
 
-    let mk_disjunct astate = astate
+    let mk_disjunct astate = {visited= false; astate}
 
     let singleton astate = [mk_disjunct astate]
 
-    let elements disjuncts = disjuncts
+    let elements disjuncts = List.map disjuncts ~f:(fun {astate} -> astate)
 
     let pp f disjuncts = PrettyPrintable.pp_collection ~pp_item:pp_disjunct f disjuncts
   end
+
+  type disjunct_t = Disjuncts.disjunct = {visited: bool; astate: TransferFunctions.Domain.t}
 
   module Domain = struct
     type t = Disjuncts.t
@@ -86,7 +96,7 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
       let s_from_not_in_intos =
         List.rev_filter s_froms ~f:(fun s_from ->
             List.exists s_intos ~f:(fun s_into ->
-                TransferFunctions.Domain.( <= ) ~rhs:s_from ~lhs:s_into )
+                TransferFunctions.Domain.( <= ) ~rhs:s_from.astate ~lhs:s_into.astate )
             |> not )
       in
       List.rev_append s_from_not_in_intos s_intos
@@ -108,6 +118,11 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
               join_normalize_into rhs ~into:lhs
 
 
+    let set_visited b disjuncts =
+      if List.for_all disjuncts ~f:(fun {visited} -> Bool.equal visited b) then disjuncts
+      else List.map disjuncts ~f:(fun disjunct -> {disjunct with visited= b})
+
+
     let rec ( <= ) ~lhs ~rhs =
       if phys_equal lhs rhs then (* also takes care of the case [lhs = rhs = []] *) true
       else
@@ -117,7 +132,11 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
 
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
-      if phys_equal prev next then prev else if num_iters > max_iter then prev else join prev next
+      if phys_equal prev next || num_iters > max_iter then set_visited false prev
+      else
+        let prev = set_visited true prev in
+        let post = join prev next in
+        if ( <= ) ~lhs:post ~rhs:prev then set_visited false post else post
 
 
     let pp = Disjuncts.pp
@@ -125,8 +144,14 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
 
   let exec_instr pre_disjuncts extras node instr =
     List.fold pre_disjuncts ~init:[] ~f:(fun post_disjuncts pre_disjunct ->
-        let disjuncts' = TransferFunctions.exec_instr pre_disjunct extras node instr in
-        Domain.join post_disjuncts (List.map disjuncts' ~f:Disjuncts.mk_disjunct) )
+        if pre_disjunct.visited then
+          (* SUBTLE: ignore pres that we know we have gone through already. This means that the
+             invariant map at that program point will be junk since they are going to miss some
+             states, but the overall result will still be ok because the loop heads are ok. *)
+          post_disjuncts
+        else
+          let disjuncts' = TransferFunctions.exec_instr pre_disjunct.astate extras node instr in
+          Domain.join post_disjuncts (List.map disjuncts' ~f:Disjuncts.mk_disjunct) )
 
 
   let pp_session_name node f = TransferFunctions.pp_session_name node f
