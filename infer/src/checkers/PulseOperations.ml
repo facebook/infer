@@ -298,17 +298,47 @@ let record_var_decl_location location var astate =
 module Closures = struct
   open Result.Monad_infix
 
+  let fake_capture_field_prefix = "__capture_"
+
+  let mk_fake_field ~id =
+    Typ.Fieldname.Clang.from_class_name
+      (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
+      (Printf.sprintf "%s%d" fake_capture_field_prefix id)
+
+
+  let is_captured_fake_access (access : _ HilExp.Access.t) =
+    match access with
+    | FieldAccess fieldname
+      when String.is_prefix ~prefix:fake_capture_field_prefix (Typ.Fieldname.to_string fieldname)
+      ->
+        true
+    | _ ->
+        false
+
+
+  let mk_capture_edges captured =
+    let fake_fields =
+      List.rev_mapi captured ~f:(fun id captured_addr_trace ->
+          (HilExp.Access.FieldAccess (mk_fake_field ~id), captured_addr_trace) )
+    in
+    Memory.Edges.of_seq (Caml.List.to_seq fake_fields)
+
+
   let check_captured_addresses location lambda addr astate =
     match Memory.find_opt addr astate.heap with
     | None ->
         Ok astate
-    | Some (_, attributes) ->
+    | Some (edges, attributes) ->
         IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
           attributes ~f:(function
-          | Attribute.Closure (_, captured) ->
-              IContainer.iter_result ~fold:List.fold captured ~f:(fun addr_trace ->
-                  check_addr_access {access_expr= lambda; location} addr_trace astate
-                  >>| fun _ -> () )
+          | Attribute.Closure _ ->
+              IContainer.iter_result
+                ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
+                ~f:(fun (access, addr_trace) ->
+                  if is_captured_fake_access access then
+                    check_addr_access {access_expr= lambda; location} addr_trace astate
+                    >>| fun _ -> ()
+                  else Ok () )
           | _ ->
               Ok () )
         >>| fun () -> astate
@@ -320,11 +350,13 @@ module Closures = struct
       (closure_addr, [PulseTrace.Assignment {lhs= access_expr; location}])
       astate
     >>| fun astate ->
-    { astate with
-      heap=
-        Memory.add_attributes closure_addr
-          (Attributes.singleton (Closure (pname, captured)))
-          astate.heap }
+    let fake_capture_edges = mk_capture_edges captured in
+    let heap =
+      Memory.set_cell closure_addr
+        (fake_capture_edges, Attributes.singleton (Closure pname))
+        astate.heap
+    in
+    {astate with heap}
 
 
   let record location access_expr pname captured astate =

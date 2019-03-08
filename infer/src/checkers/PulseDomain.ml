@@ -10,6 +10,33 @@ module Invalidation = PulseInvalidation
 
 (* {2 Abstract domain description } *)
 
+(** Purposefully declared before [AbstractAddress] to avoid attributes depending on
+    addresses. Otherwise they become a pain to handle when comparing memory states. *)
+module Attribute = struct
+  (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
+       efficient (only need to look at the first element in the set of attributes to know if an
+       address is invalid) *)
+  type t =
+    (* DO NOT MOVE, see toplevel comment *)
+    | Invalid of Invalidation.t
+    | AddressOfCppTemporary of Var.t * Location.t option
+    | Closure of Typ.Procname.t
+    | StdVectorReserve
+  [@@deriving compare]
+
+  let pp f = function
+    | Invalid invalidation ->
+        Invalidation.pp f invalidation
+    | AddressOfCppTemporary (var, location_opt) ->
+        F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
+    | Closure pname ->
+        F.fprintf f "%a" Typ.Procname.pp pname
+    | StdVectorReserve ->
+        F.pp_print_string f "std::vector::reserve()"
+end
+
+module Attributes = AbstractDomain.FiniteSet (Attribute)
+
 (** An abstract address in memory. *)
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
@@ -49,31 +76,6 @@ module AddrTracePair = struct
     else AbstractAddress.pp f (fst addr_trace)
 end
 
-module Attribute = struct
-  (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
-       efficient (only need to look at the first element in the set of attributes to know if an
-       address is invalid) *)
-  type t =
-    (* DO NOT MOVE, see toplevel comment *)
-    | Invalid of Invalidation.t
-    | AddressOfCppTemporary of Var.t * Location.t option
-    | Closure of Typ.Procname.t * AddrTracePair.t list
-    | StdVectorReserve
-  [@@deriving compare]
-
-  let pp f = function
-    | Invalid invalidation ->
-        Invalidation.pp f invalidation
-    | AddressOfCppTemporary (var, location_opt) ->
-        F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
-    | Closure (pname, captured) ->
-        F.fprintf f "%a[%a]" Typ.Procname.pp pname (Pp.seq ~sep:"," AddrTracePair.pp) captured
-    | StdVectorReserve ->
-        F.pp_print_string f "std::vector::reserve()"
-end
-
-module Attributes = AbstractDomain.FiniteSet (Attribute)
-
 module Memory : sig
   module Access :
     PrettyPrintable.PrintableOrderedType with type t = AbstractAddress.t HilExp.Access.t
@@ -93,6 +95,8 @@ module Memory : sig
   val find_opt : AbstractAddress.t -> t -> cell option
 
   val for_all : (AbstractAddress.t -> cell -> bool) -> t -> bool
+
+  val set_cell : AbstractAddress.t -> cell -> t -> t
 
   val pp : F.formatter -> t -> unit
 
@@ -215,6 +219,8 @@ end = struct
 
   let for_all = Graph.for_all
 
+  let set_cell = Graph.add
+
   let filter = Graph.filter
 end
 
@@ -325,26 +331,14 @@ end = struct
       match Memory.find_opt address astate.heap with
       | None ->
           visited
-      | Some (edges, attrs) ->
-          visit_edges astate ~edges visited |> visit_attributes astate attrs )
+      | Some (edges, _) ->
+          visit_edges astate ~edges visited )
 
 
   and visit_edges ~edges astate visited =
     Memory.Edges.fold
       (fun _access (address, _trace) visited -> visit_address astate address visited)
       edges visited
-
-
-  and visit_attributes astate attrs visited =
-    Attributes.fold
-      (fun attr visited ->
-        match attr with
-        | Attribute.Invalid _ | Attribute.AddressOfCppTemporary _ | Attribute.StdVectorReserve ->
-            visited
-        | Attribute.Closure (_, captured) ->
-            List.fold captured ~init:visited ~f:(fun visited (address, _) ->
-                visit_address astate address visited ) )
-      attrs visited
 
 
   let visit_stack astate visited =

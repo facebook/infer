@@ -8,6 +8,15 @@
 open! IStd
 module F = Format
 
+module Attribute : sig
+  type t =
+    | Invalid of PulseInvalidation.t
+    | AddressOfCppTemporary of Var.t * Location.t option
+    | Closure of Typ.Procname.t
+    | StdVectorReserve
+  [@@deriving compare]
+end
+
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
@@ -35,15 +44,6 @@ module AddrTracePair : sig
   type t = AbstractAddress.t * PulseTrace.t [@@deriving compare]
 end
 
-module Attribute : sig
-  type t =
-    | Invalid of PulseInvalidation.t
-    | AddressOfCppTemporary of Var.t * Location.t option
-    | Closure of Typ.Procname.t * AddrTracePair.t list
-    | StdVectorReserve
-  [@@deriving compare]
-end
-
 module Attributes : PrettyPrintable.PPSet with type elt = Attribute.t
 
 module Memory : sig
@@ -59,6 +59,8 @@ module Memory : sig
   type t [@@deriving compare]
 
   val find_opt : AbstractAddress.t -> t -> cell option
+
+  val set_cell : AbstractAddress.t -> cell -> t -> t
 
   val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
 
