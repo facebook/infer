@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <vector>
 
+void basic_loop_count_ok(int n) {
+  for (int i = 0; i < n; i++) {
+  }
+}
+
 struct foo {
   int* val;
 };

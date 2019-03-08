@@ -82,9 +82,12 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
     type t = Disjuncts.t
 
     let join_normalize_into s_froms ~into:s_intos =
+      (* ignore states in [s_froms] that are under-approximated in [s_intos] *)
       let s_from_not_in_intos =
         List.rev_filter s_froms ~f:(fun s_from ->
-            List.exists s_intos ~f:(fun s_into -> phys_equal s_from s_into) |> not )
+            List.exists s_intos ~f:(fun s_into ->
+                TransferFunctions.Domain.( <= ) ~rhs:s_from ~lhs:s_into )
+            |> not )
       in
       List.rev_append s_from_not_in_intos s_intos
 
@@ -98,7 +101,11 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
             rhs @ lhs
         | `UnderApproximateAfter n ->
             let lhs_length = List.length lhs in
-            if lhs_length >= n then lhs else join_normalize_into rhs ~into:lhs
+            if lhs_length >= n then lhs
+            else
+              (* do not add states from [rhs] (assumed to be the *new* states in the case of a loop)
+                 that are already implied by some state in the [lhs] *)
+              join_normalize_into rhs ~into:lhs
 
 
     let rec ( <= ) ~lhs ~rhs =
