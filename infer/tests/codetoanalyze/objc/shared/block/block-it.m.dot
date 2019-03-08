@@ -63,7 +63,7 @@ digraph cfg {
 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_2" [label="2: Exit MyBlock_array \n   NULLIFY(&a); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" [label="3:  Message Call: enumerateObjectsUsingBlock: \n   n$5=*&a:NSArray* [line 19, column 4]\n  n$6=_fun_NSArray_enumerateObjectsUsingBlock:(n$5:NSArray*,(_fun_objc_blockMyBlock_array_1):_fn_(*)) virtual block_params [line 19, column 3]\n  EXIT_SCOPE(n$5,n$6,a); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" [label="3:  Message Call: enumerateObjectsUsingBlock: \n   n$5=*&a:NSArray* [line 19, column 4]\n  n$6=_fun_NSArray_enumerateObjectsUsingBlock:(n$5:NSArray*,(_fun_objc_blockMyBlock_array_1):_fn_(*)) block_params virtual [line 19, column 3]\n  EXIT_SCOPE(n$5,n$6,a); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_2" ;
@@ -124,7 +124,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" [label="14:  Call n$22 \n   n$22=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$23=*&object:objc_object* [line 51, column 32]\n  n$24=*&idx:unsigned long [line 51, column 40]\n  n$25=*&stop:_Bool* [line 51, column 45]\n  n$26=n$22(n$23:objc_object*,n$24:unsigned long,n$25:_Bool*) [line 51, column 5]\n  EXIT_SCOPE(n$22,n$23,n$24,n$25,n$26,object); [line 51, column 5]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" [label="14:  Call n$22 \n   n$22=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$23=*&object:objc_object* [line 51, column 32]\n  n$24=*&idx:unsigned long [line 51, column 40]\n  n$25=*&stop:_Bool* [line 51, column 45]\n  n$26=n$22(n$23:objc_object*,n$24:unsigned long,n$25:_Bool*) objc_block [line 51, column 5]\n  EXIT_SCOPE(n$22,n$23,n$24,n$25,n$26,object); [line 51, column 5]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" ;

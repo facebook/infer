@@ -51,7 +51,7 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$6 \n   n$6=*&b:_fn_(*) [line 26, column 3]\n  n$7=n$6() [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n  EXIT_SCOPE(n$6,n$7,b); [line 26, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$6 \n   n$6=*&b:_fn_(*) [line 26, column 3]\n  n$7=n$6() objc_block [line 26, column 3]\n  NULLIFY(&b); [line 26, column 3]\n  EXIT_SCOPE(n$6,n$7,b); [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;

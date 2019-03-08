@@ -164,7 +164,7 @@ digraph cfg {
 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" [label="2: Exit MemoryLeakExample_blockCapturedVarLeak \n   NULLIFY(&x); [line 98, column 1]\n  NULLIFY(&blk); [line 98, column 1]\n " color=yellow style=filled]
 	
 
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" [label="3:  Return Stmt \n   n$60=*&blk:_fn_(*) [line 97, column 10]\n  n$61=n$60() [line 97, column 10]\n  *&return:int=n$61 [line 97, column 3]\n  EXIT_SCOPE(n$60,n$61,blk); [line 97, column 3]\n  APPLY_ABSTRACTION; [line 97, column 3]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" [label="3:  Return Stmt \n   n$60=*&blk:_fn_(*) [line 97, column 10]\n  n$61=n$60() objc_block [line 97, column 10]\n  *&return:int=n$61 [line 97, column 3]\n  EXIT_SCOPE(n$60,n$61,blk); [line 97, column 3]\n  APPLY_ABSTRACTION; [line 97, column 3]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" ;
@@ -187,7 +187,7 @@ digraph cfg {
 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" [label="2: Exit MemoryLeakExample_blockFreeNoLeak \n   NULLIFY(&x); [line 109, column 1]\n  NULLIFY(&blk); [line 109, column 1]\n " color=yellow style=filled]
 	
 
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" [label="3:  Return Stmt \n   n$69=*&blk:_fn_(*) [line 108, column 10]\n  n$70=n$69() [line 108, column 10]\n  *&return:int=n$70 [line 108, column 3]\n  EXIT_SCOPE(n$69,n$70,blk); [line 108, column 3]\n  APPLY_ABSTRACTION; [line 108, column 3]\n " shape="box"]
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" [label="3:  Return Stmt \n   n$69=*&blk:_fn_(*) [line 108, column 10]\n  n$70=n$69() objc_block [line 108, column 10]\n  *&return:int=n$70 [line 108, column 3]\n  EXIT_SCOPE(n$69,n$70,blk); [line 108, column 3]\n  APPLY_ABSTRACTION; [line 108, column 3]\n " shape="box"]
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" ;

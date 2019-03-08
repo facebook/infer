@@ -7,7 +7,7 @@ digraph cfg {
 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" [label="2: Exit NonnullAtrributeTest \n  " color=yellow style=filled]
 	
 
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" [label="3:  Call n$0 \n   n$0=*&callback:_fn_(*) [line 45, column 3]\n  n$1=n$0(null:NSError*,null:objc_object*) [line 45, column 3]\n  NULLIFY(&callback); [line 45, column 3]\n  EXIT_SCOPE(n$0,n$1,callback); [line 45, column 3]\n  APPLY_ABSTRACTION; [line 45, column 3]\n " shape="box"]
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" [label="3:  Call n$0 \n   n$0=*&callback:_fn_(*) [line 45, column 3]\n  n$1=n$0(null:NSError*,null:objc_object*) objc_block [line 45, column 3]\n  NULLIFY(&callback); [line 45, column 3]\n  EXIT_SCOPE(n$0,n$1,callback); [line 45, column 3]\n  APPLY_ABSTRACTION; [line 45, column 3]\n " shape="box"]
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;

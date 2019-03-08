@@ -205,7 +205,7 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_2" ;
-"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" [label="4:  Call n$14 \n   n$14=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$15=n$14() [line 48, column 3]\n  EXIT_SCOPE(n$14,n$15,dummy_block); [line 48, column 3]\n " shape="box"]
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" [label="4:  Call n$14 \n   n$14=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$15=n$14() objc_block [line 48, column 3]\n  EXIT_SCOPE(n$14,n$15,dummy_block); [line 48, column 3]\n " shape="box"]
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" ;

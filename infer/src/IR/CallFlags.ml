@@ -13,25 +13,34 @@ module F = Format
 
 (** Flags for a procedure call *)
 type t =
-  { cf_virtual: bool
+  { cf_assign_last_arg: bool
   ; cf_interface: bool
-  ; cf_assign_last_arg: bool
-  ; cf_noreturn: bool
   ; cf_is_objc_block: bool
+  ; cf_noreturn: bool
+  ; cf_virtual: bool
   ; cf_with_block_parameters: bool }
 [@@deriving compare]
 
-let pp f cf =
-  if cf.cf_virtual then F.pp_print_string f " virtual" ;
-  if cf.cf_assign_last_arg then F.pp_print_string f " assign_last" ;
-  if cf.cf_noreturn then F.pp_print_string f " noreturn" ;
-  if cf.cf_with_block_parameters then F.pp_print_string f " block_params"
+let pp f
+    ({ cf_assign_last_arg
+     ; cf_interface
+     ; cf_is_objc_block
+     ; cf_noreturn
+     ; cf_with_block_parameters
+     ; cf_virtual }[@warning "+9"]) =
+  if cf_assign_last_arg then F.pp_print_string f " assign_last" ;
+  if cf_interface then F.pp_print_string f " interface" ;
+  if cf_is_objc_block then F.pp_print_string f " objc_block" ;
+  if cf_noreturn then F.pp_print_string f " noreturn" ;
+  if cf_with_block_parameters then F.pp_print_string f " block_params" ;
+  if cf_virtual then F.pp_print_string f " virtual" ;
+  ()
 
 
 let default =
-  { cf_virtual= false
+  { cf_assign_last_arg= false
   ; cf_interface= false
-  ; cf_assign_last_arg= false
-  ; cf_noreturn= false
   ; cf_is_objc_block= false
-  ; cf_with_block_parameters= false }
+  ; cf_noreturn= false
+  ; cf_with_block_parameters= false
+  ; cf_virtual= false }

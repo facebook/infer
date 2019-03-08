@@ -52,7 +52,7 @@ digraph cfg {
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$11 \n   n$11=*&successBlock:_fn_(*) [line 34, column 3]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$13=n$11(n$12:NSString*) [line 34, column 3]\n  NULLIFY(&successBlock); [line 34, column 3]\n  EXIT_SCOPE(n$11,n$12,n$13,successBlock); [line 34, column 3]\n " shape="box"]
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$11 \n   n$11=*&successBlock:_fn_(*) [line 34, column 3]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$13=n$11(n$12:NSString*) objc_block [line 34, column 3]\n  NULLIFY(&successBlock); [line 34, column 3]\n  EXIT_SCOPE(n$11,n$12,n$13,successBlock); [line 34, column 3]\n " shape="box"]
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$14 \n   n$14=*&successBlock:_fn_(*) [line 39, column 3]\n  n$15=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$16=n$14(n$15:NSString*) [line 39, column 3]\n  NULLIFY(&successBlock); [line 39, column 3]\n  EXIT_SCOPE(n$14,n$15,n$16,successBlock); [line 39, column 3]\n " shape="box"]
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$14 \n   n$14=*&successBlock:_fn_(*) [line 39, column 3]\n  n$15=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$16=n$14(n$15:NSString*) objc_block [line 39, column 3]\n  NULLIFY(&successBlock); [line 39, column 3]\n  EXIT_SCOPE(n$14,n$15,n$16,successBlock); [line 39, column 3]\n " shape="box"]
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;

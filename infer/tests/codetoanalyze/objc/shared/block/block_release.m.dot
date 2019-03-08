@@ -55,7 +55,7 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) [line 27, column 3]\n  NULLIFY(&b); [line 27, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,b); [line 27, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n  NULLIFY(&b); [line 27, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,b); [line 27, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
