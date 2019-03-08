@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 open Result.Monad_infix
 
 let report summary diagnostic =
@@ -87,29 +88,32 @@ module PulseTransferFunctions = struct
       | _ ->
           Ok astate )
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
-      match actuals with
-      | AccessExpression constructor_access :: rest ->
-          let constructed_object = HilExp.AccessExpression.dereference constructor_access in
-          PulseOperations.havoc [crumb] call_loc constructed_object astate >>= read_all rest
-      | _ ->
-          Ok astate )
+        L.d_printfln "constructor call detected@." ;
+        match actuals with
+        | AccessExpression constructor_access :: rest ->
+            let constructed_object = HilExp.AccessExpression.dereference constructor_access in
+            PulseOperations.havoc [crumb] call_loc constructed_object astate >>= read_all rest
+        | _ ->
+            Ok astate )
     | Direct (Typ.Procname.ObjC_Cpp callee_pname)
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
-      match actuals with
-      (* We want to assign *lhs to *rhs when rhs is materialized temporary created in constructor *)
-      | [AccessExpression lhs; HilExp.AccessExpression (AddressOf (Base rhs_base as rhs_exp))]
-        when Var.is_cpp_temporary (fst rhs_base) ->
-          let lhs_deref = HilExp.AccessExpression.dereference lhs in
-          exec_assign summary lhs_deref (HilExp.AccessExpression rhs_exp) call_loc astate
-      (* copy assignment *)
-      | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
-          let lhs_deref = HilExp.AccessExpression.dereference lhs in
-          let rhs_deref = HilExp.AccessExpression.dereference rhs in
-          PulseOperations.havoc [crumb] call_loc lhs_deref astate
-          >>= fun astate -> PulseOperations.read call_loc rhs_deref astate >>| fst
-      | _ ->
-          read_all actuals astate )
+        L.d_printfln "operator= detected@." ;
+        match actuals with
+        (* We want to assign *lhs to *rhs when rhs is materialized temporary created in constructor *)
+        | [AccessExpression lhs; HilExp.AccessExpression (AddressOf (Base rhs_base as rhs_exp))]
+          when Var.is_cpp_temporary (fst rhs_base) ->
+            let lhs_deref = HilExp.AccessExpression.dereference lhs in
+            exec_assign summary lhs_deref (HilExp.AccessExpression rhs_exp) call_loc astate
+        (* copy assignment *)
+        | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
+            let lhs_deref = HilExp.AccessExpression.dereference lhs in
+            let rhs_deref = HilExp.AccessExpression.dereference rhs in
+            PulseOperations.havoc [crumb] call_loc lhs_deref astate
+            >>= fun astate -> PulseOperations.read call_loc rhs_deref astate >>| fst
+        | _ ->
+            read_all actuals astate )
     | _ ->
+        L.d_printfln "skipping unknown procedure@." ;
         read_all actuals astate
 
 
