@@ -70,9 +70,6 @@ module rec T : sig
     | Label of {parent: string; name: string}
     (* curried application *)
     | App of {op: t; arg: t}
-    (* numeric constants *)
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
     (* binary: comparison *)
     | Eq
     | Dq
@@ -107,7 +104,14 @@ module rec T : sig
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* unary: conversion *)
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    (* numeric constants *)
+    | Integer of {data: Z.t; typ: Typ.t}
+    | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
+
+  (* Note: solve (and invariant) requires Qset.min_elt to return a
+     non-coefficient, so Integer exps must compare higher than any valid
+     monomial *)
 
   type comparator_witness
 
@@ -131,8 +135,6 @@ and T0 : sig
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
     | Eq
     | Dq
     | Gt
@@ -161,6 +163,8 @@ and T0 : sig
     | Update
     | Struct_rec of {elts: t vector}
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    | Integer of {data: Z.t; typ: Typ.t}
+    | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
 end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
@@ -175,8 +179,6 @@ end = struct
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
     | Eq
     | Dq
     | Gt
@@ -205,6 +207,8 @@ end = struct
     | Update
     | Struct_rec of {elts: t vector}
     | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    | Integer of {data: Z.t; typ: Typ.t}
+    | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -407,14 +411,11 @@ let assert_poly_term add_typ mono coeff =
 let assert_polynomial poly =
   match poly with
   | Add {typ; args} ->
-      ( match Qset.length args with
-      | 0 -> assert false
-      | 1 -> (
-        match Qset.min_elt args with
-        | Some (Integer _, _) -> assert false
-        | Some (_, k) -> assert (not (Q.equal Q.one k))
-        | _ -> () )
-      | _ -> () ) ;
+      ( match Qset.min_elt args with
+      | None -> assert false
+      | Some (Integer _, _) -> assert false
+      | Some (_, k) -> assert (Qset.length args > 1 || not (Q.equal Q.one k))
+      ) ;
       Qset.iter args ~f:(fun m c -> assert_poly_term typ m c |> Fn.id)
   | _ -> assert false
 

@@ -40,10 +40,6 @@ and t = private
       (** Address of named code block within parent function *)
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | Integer of {data: Z.t; typ: Typ.t}
-      (** Integer constant, or if [typ] is a [Pointer], null pointer value
-          that never refers to an object *)
-  | Float of {data: string}  (** Floating-point constant *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)
   | Gt  (** Greater-than test *)
@@ -75,6 +71,10 @@ and t = private
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
   | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
       (** Convert between specified types, possibly with loss of information *)
+  | Integer of {data: Z.t; typ: Typ.t}
+      (** Integer constant, or if [typ] is a [Pointer], null pointer value
+          that never refers to an object *)
+  | Float of {data: string}  (** Floating-point constant *)
 [@@deriving compare, equal, hash, sexp]
 
 val comparator : (t, comparator_witness) Comparator.t
