@@ -366,7 +366,11 @@ let typ_of = function
 let typ = typ_of
 
 let type_check e typ =
-  assert (Option.for_all ~f:(Typ.castable typ) (typ_of e))
+  assert (
+    Option.for_all ~f:(Typ.castable typ) (typ_of e)
+    || fail "%a@ : %a not <:@ %a" pp e Typ.pp
+         (Option.value_exn (typ_of e))
+         Typ.pp typ )
 
 let type_check2 e f typ = type_check e typ ; type_check f typ
 

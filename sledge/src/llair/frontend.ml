@@ -532,7 +532,11 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
           [%Trace.call fun {pf} ->
             pf "%i %a" i pp_llvalue (Llvm.operand llv i)]
           ;
-          let idx = xlate_rand i in
+          let idx =
+            Exp.convert ~dst:Typ.siz
+              ~src:(xlate_type x (Llvm.type_of (Llvm.operand llv i)))
+              (xlate_rand i)
+          in
           ( if i = 1 then
             let base = xlate_rand 0 in
             let lltyp = Llvm.type_of (Llvm.operand llv 0) in
