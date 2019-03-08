@@ -1288,11 +1288,15 @@ let solve e f =
   let rec solve_ e f s =
     let solve_uninterp e f =
       let ord = compare e f in
-      if is_constant e && is_constant f && ord <> 0 then None
-      else
-        (* orient equation to choose preferred class representative *)
-        let key, data = if ord > 0 then (e, f) else (f, e) in
-        Some (Map.add_exn s ~key ~data)
+      match (is_constant e, is_constant f) with
+      | true, true when ord <> 0 -> None
+      (* orient equation to discretionarily prefer exp that is constant or
+         compares smaller as class representative *)
+      | true, false -> Some (Map.add_exn s ~key:f ~data:e)
+      | false, true -> Some (Map.add_exn s ~key:e ~data:f)
+      | _ ->
+          let key, data = if ord > 0 then (e, f) else (f, e) in
+          Some (Map.add_exn s ~key ~data)
     in
     match (e, f) with
     | (Add {typ} | Mul {typ} | Integer {typ}), _
@@ -1304,10 +1308,7 @@ let solve e f =
           let d = rational (Q.neg q) typ in
           let r = div n d in
           Some (Map.add_exn s ~key:c ~data:r)
-      | e_f ->
-          let z = integer Z.zero typ in
-          if is_constant e_f && not (equal e_f z) then None
-          else solve_uninterp e_f z )
+      | e_f -> solve_uninterp e_f (integer Z.zero typ) )
     | Concat {args= ms}, Concat {args= ns} -> (
         let siz args =
           Vector.fold_until args ~init:(integer Z.zero Typ.siz)
