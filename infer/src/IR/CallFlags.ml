@@ -18,7 +18,6 @@ type t =
   ; cf_assign_last_arg: bool
   ; cf_noreturn: bool
   ; cf_is_objc_block: bool
-  ; cf_targets: Typ.Procname.t list
   ; cf_with_block_parameters: bool }
 [@@deriving compare]
 
@@ -35,5 +34,4 @@ let default =
   ; cf_assign_last_arg= false
   ; cf_noreturn= false
   ; cf_is_objc_block= false
-  ; cf_with_block_parameters= false
-  ; cf_targets= [] }
+  ; cf_with_block_parameters= false }

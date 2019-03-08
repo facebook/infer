@@ -603,24 +603,13 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
   | _ when not (call_flags.CallFlags.cf_virtual || call_flags.CallFlags.cf_interface) ->
       (* if this is not a virtual or interface call, there's no need for resolution *)
       [callee_pname]
-  | (receiver_exp, actual_receiver_typ) :: _ -> (
+  | (receiver_exp, actual_receiver_typ) :: _ ->
       if !Language.curr_language <> Language.Java then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else
         let resolved_target = do_resolve callee_pname receiver_exp actual_receiver_typ in
-        match call_flags.CallFlags.cf_targets with
-        | target :: _
-          when call_flags.CallFlags.cf_interface
-               && receiver_types_equal callee_pname actual_receiver_typ
-               && Typ.Procname.equal resolved_target callee_pname ->
-            (* "production mode" of dynamic dispatch for Java: unsound, but faster. the handling
-                 is restricted to interfaces: if we can't resolve an interface call, we pick the
-                 first implementation of the interface and call it *)
-            [target]
-        | _ ->
-            (* default mode for Java virtual calls: resolution only *)
-            [resolved_target] )
+        [resolved_target]
   | _ ->
       L.(die InternalError) "A virtual call must have a receiver"
 
