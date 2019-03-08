@@ -102,7 +102,7 @@ module Memory : sig
 
   val empty : t
 
-  val filter : (AbstractAddress.t -> cell -> bool) -> t -> t
+  val filter : (AbstractAddress.t -> bool) -> t -> t
 
   val find_opt : AbstractAddress.t -> t -> cell option
 
@@ -142,23 +142,21 @@ end = struct
 
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
-  type t = cell Graph.t [@@deriving compare]
+  type t = edges Graph.t * Attributes.t Graph.t [@@deriving compare]
 
   let pp =
-    Graph.pp ~pp_value:(Pp.pair ~fst:(Edges.pp ~pp_value:AddrTracePair.pp) ~snd:Attributes.pp)
+    Pp.pair
+      ~fst:(Graph.pp ~pp_value:(Edges.pp ~pp_value:AddrTracePair.pp))
+      ~snd:(Graph.pp ~pp_value:Attributes.pp)
 
 
   (* {3 Helper functions to traverse the two maps at once } *)
 
   let add_edge addr_src access value memory =
-    let edges, attrs =
-      match Graph.find_opt addr_src memory with
-      | Some cell ->
-          cell
-      | None ->
-          (Edges.empty, Attributes.empty)
-    in
-    Graph.add addr_src (Edges.add access value edges, attrs) memory
+    let old_edges = Graph.find_opt addr_src (fst memory) |> Option.value ~default:Edges.empty in
+    let new_edges = Edges.add access value old_edges in
+    if phys_equal old_edges new_edges then memory
+    else (Graph.add addr_src new_edges (fst memory), snd memory)
 
 
   (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
@@ -176,29 +174,24 @@ end = struct
 
   let find_edge_opt addr access memory =
     let open Option.Monad_infix in
-    Graph.find_opt addr memory >>| fst >>= Edges.find_opt access
+    Graph.find_opt addr (fst memory) >>= Edges.find_opt access
 
 
+  (* TODO: maybe sets for attributes is overkill and a list would be better? *)
   let add_attributes addr attrs memory =
-    let edges, old_attrs =
-      match Graph.find_opt addr memory with
-      | Some edges_old_attrs ->
-          edges_old_attrs
-      | None ->
-          (Edges.empty, Attributes.empty)
-    in
-    if phys_equal old_attrs attrs then memory
-    else Graph.add addr (edges, Attributes.union attrs old_attrs) memory
+    if Attributes.is_empty attrs then memory
+    else
+      let old_attrs = Graph.find_opt addr (snd memory) |> Option.value ~default:Attributes.empty in
+      if phys_equal old_attrs attrs then memory
+      else
+        let new_attrs = Attributes.union attrs old_attrs in
+        if phys_equal new_attrs old_attrs then
+          (* unlikely as [union] makes no effort to preserve physical equality *) memory
+        else (fst memory, Graph.add addr new_attrs (snd memory))
 
 
   let add_attribute address attribute memory =
-    Graph.update address
-      (function
-        | Some (edges, old_attributes) ->
-            Some (edges, Attributes.add attribute old_attributes)
-        | None ->
-            Some (Edges.empty, Attributes.singleton attribute))
-      memory
+    add_attributes address (Attributes.singleton attribute) memory
 
 
   let invalidate address invalidation memory =
@@ -206,9 +199,7 @@ end = struct
 
 
   let check_valid address memory =
-    match
-      Graph.find_opt address memory |> Option.map ~f:snd |> Option.bind ~f:Attributes.get_invalid
-    with
+    match Graph.find_opt address (snd memory) |> Option.bind ~f:Attributes.get_invalid with
     | Some invalidation ->
         Error invalidation
     | None ->
@@ -218,20 +209,33 @@ end = struct
   let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
 
   let is_std_vector_reserved address memory =
-    Graph.find_opt address memory |> Option.map ~f:snd
+    Graph.find_opt address (snd memory)
     |> Option.value_map ~default:false ~f:(fun attributes ->
            Attributes.mem Attribute.StdVectorReserve attributes )
 
 
   (* {3 Monomorphic {!PPMap} interface as needed } *)
 
-  let empty = Graph.empty
+  let empty = (Graph.empty, Graph.empty)
 
-  let find_opt = Graph.find_opt
+  let find_opt addr memory =
+    match (Graph.find_opt addr (fst memory), Graph.find_opt addr (snd memory)) with
+    | None, None ->
+        None
+    | edges_opt, attrs_opt ->
+        let edges = Option.value edges_opt ~default:Edges.empty in
+        let attrs = Option.value attrs_opt ~default:Attributes.empty in
+        Some (edges, attrs)
 
-  let set_cell = Graph.add
 
-  let filter = Graph.filter
+  let set_cell addr (edges, attrs) memory =
+    (Graph.add addr edges (fst memory), Graph.add addr attrs (snd memory))
+
+
+  let filter f memory =
+    let heap = Graph.filter (fun address _ -> f address) (fst memory) in
+    let attrs = Graph.filter (fun address _ -> f address) (snd memory) in
+    if phys_equal heap (fst memory) && phys_equal attrs (snd memory) then memory else (heap, attrs)
 end
 
 (** Stacks: map addresses of variables to values and initialisation location.
@@ -493,7 +497,7 @@ end = struct
 
   let minimize astate =
     let visited = visit_stack astate AddressSet.empty in
-    let heap = Memory.filter (fun address _ -> AddressSet.mem address visited) astate.heap in
+    let heap = Memory.filter (fun address -> AddressSet.mem address visited) astate.heap in
     if phys_equal heap astate.heap then astate else {astate with heap}
 end
 
