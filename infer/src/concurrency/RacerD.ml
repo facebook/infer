@@ -942,7 +942,7 @@ end = struct
     M.fold f map a
 end
 
-let should_report_on_proc procdesc tenv =
+let should_report_on_proc {procdesc; tenv} =
   let proc_name = Procdesc.get_proc_name procdesc in
   match proc_name with
   | Java java_pname ->
@@ -1116,18 +1116,19 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
                  update_reported snapshot.access pname reported_acc )
   in
   let report_accesses_on_location (grouped_accesses : reported_access list) reported_acc =
-    (* reset the reported reads and writes for each memory location *)
-    let reported =
-      { reported_acc with
-        reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
-    in
-    let should_report {tenv; procdesc} =
-      List.exists grouped_accesses ~f:(fun ({threads} : reported_access) ->
-          ThreadsDomain.is_any threads )
-      && should_report_on_proc procdesc tenv
-    in
-    let reportable_accesses = List.filter ~f:should_report grouped_accesses in
-    List.fold reportable_accesses ~init:reported ~f:(report_unsafe_access reportable_accesses)
+    (* Don't report on location if all accesses are on non-concurrent contexts *)
+    if
+      List.for_all grouped_accesses ~f:(fun ({threads} : reported_access) ->
+          ThreadsDomain.is_any threads |> not )
+    then reported_acc
+    else
+      (* reset the reported reads and writes for each memory location *)
+      let init =
+        { reported_acc with
+          reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
+      in
+      let reportable_accesses = List.filter ~f:should_report_on_proc grouped_accesses in
+      List.fold reportable_accesses ~init ~f:(report_unsafe_access reportable_accesses)
   in
   ReportMap.fold report_accesses_on_location aggregated_access_map empty_reported |> ignore
 
