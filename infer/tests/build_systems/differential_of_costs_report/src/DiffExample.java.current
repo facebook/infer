@@ -16,6 +16,7 @@ import java.util.ArrayList;
 // f4: linear
 // f5: n log n
 // f6: n log n
+// f7: top by call to f1
 
 public class DiffExample {
 
@@ -54,5 +55,10 @@ public class DiffExample {
     // cost: n log n
     private void f6(ArrayList<Integer> list) {
       f5(list);
+    }
+
+    // cost: top by call to f1
+    private static void f7(int k) {
+        f1(k);
     }
 }

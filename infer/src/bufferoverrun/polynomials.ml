@@ -504,7 +504,8 @@ module NonNegativePolynomial = struct
 
 
   let compare_by_degree =
-    AbstractDomain.StackedUtils.compare ~cmp_above:TopTraces.compare ~cmp_below:(fun p1 p2 ->
+    let cmp_above _ _ = 0 (* All Top should be considered equal *) in
+    AbstractDomain.StackedUtils.compare ~cmp_above ~cmp_below:(fun p1 p2 ->
         Degree.compare
           (NonNegativeNonTopPolynomial.degree p1)
           (NonNegativeNonTopPolynomial.degree p2) )

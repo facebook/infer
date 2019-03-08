@@ -13,6 +13,7 @@
 // f4: constant
 // f5: linear
 // f6: quadratic
+// f7: top
 
 public class DiffExample {
     // cost: linear
@@ -43,5 +44,13 @@ public class DiffExample {
     // cost: quadratic
     private static void f6(int n) {
         f2(n);
+    }
+
+    // cost: top
+    private static void f7(int k) {
+        int i = 0;
+        while (i >=0) {
+            i++;
+        }
     }
 }
