@@ -72,8 +72,7 @@ module Memory : sig
 
   val invalidate : AbstractAddress.t -> PulseInvalidation.t -> t -> t
 
-  val get_invalidation : AbstractAddress.t -> t -> PulseInvalidation.t option
-  (** None denotes a valid location *)
+  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 

@@ -19,11 +19,11 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
 let check_addr_access actor (address, trace) astate =
-  match Memory.get_invalidation address astate.heap with
-  | Some invalidated_by ->
-      Error (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace})
-  | None ->
+  match Memory.check_valid address astate.heap with
+  | Ok () ->
       Ok astate
+  | Error invalidated_by ->
+      Error (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace})
 
 
 (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last

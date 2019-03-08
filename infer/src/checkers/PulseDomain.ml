@@ -36,7 +36,15 @@ module Attribute = struct
         F.pp_print_string f "std::vector::reserve()"
 end
 
-module Attributes = AbstractDomain.FiniteSet (Attribute)
+module Attributes = struct
+  include AbstractDomain.FiniteSet (Attribute)
+
+  let get_invalid attrs =
+    (* Since we often want to find out whether an address is invalid this case is optimised. Since
+       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
+       an address is invalid or not. *)
+    match min_elt_opt attrs with Some (Invalid invalidation) -> Some invalidation | _ -> None
+end
 
 (** An abstract address in memory. *)
 module AbstractAddress : sig
@@ -112,8 +120,7 @@ module Memory : sig
 
   val invalidate : AbstractAddress.t -> Invalidation.t -> t -> t
 
-  val get_invalidation : AbstractAddress.t -> t -> Invalidation.t option
-  (** None denotes a valid location *)
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
@@ -198,13 +205,14 @@ end = struct
     add_attribute address (Attribute.Invalid invalidation) memory
 
 
-  let get_invalidation address memory =
-    (* Since we often want to find out whether an address is invalid this case is optimised. Since
-       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
-       an address is invalid or not. *)
-    Graph.find_opt address memory |> Option.map ~f:snd
-    |> Option.bind ~f:Attributes.min_elt_opt
-    |> Option.bind ~f:(function Attribute.Invalid invalidation -> Some invalidation | _ -> None)
+  let check_valid address memory =
+    match
+      Graph.find_opt address memory |> Option.map ~f:snd |> Option.bind ~f:Attributes.get_invalid
+    with
+    | Some invalidation ->
+        Error invalidation
+    | None ->
+        Ok ()
 
 
   let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
