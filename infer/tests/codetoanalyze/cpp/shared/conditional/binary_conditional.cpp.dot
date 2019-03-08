@@ -7,7 +7,7 @@ digraph cfg {
 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_2" [label="2: Exit binary_conditional::binaryConditional \n   NULLIFY(&x); [line 23, column 1]\n  NULLIFY(&a); [line 23, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$6); [line 23, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 23, column 1]\n " color=yellow style=filled]
 	
 
-"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_3" [label="3:  Destruction \n   _=*&x:binary_conditional::X [line 23, column 1]\n  n$1=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) [line 23, column 1]\n  _=*&a:binary_conditional::X [line 23, column 1]\n  n$3=_fun_binary_conditional::X_~X(&a:binary_conditional::X*) [line 23, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,a,x); [line 23, column 1]\n  APPLY_ABSTRACTION; [line 23, column 1]\n " shape="box"]
+"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_3" [label="3:  Destruction \n   _=*&x:binary_conditional::X [line 23, column 1]\n  n$1=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) injected [line 23, column 1]\n  _=*&a:binary_conditional::X [line 23, column 1]\n  n$3=_fun_binary_conditional::X_~X(&a:binary_conditional::X*) injected [line 23, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,a,x); [line 23, column 1]\n  APPLY_ABSTRACTION; [line 23, column 1]\n " shape="box"]
 	
 
 	 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_3" -> "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_2" ;
@@ -55,7 +55,7 @@ digraph cfg {
 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_2" [label="2: Exit binary_conditional::conditional \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$7); [line 28, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$13); [line 28, column 1]\n  NULLIFY(&a); [line 28, column 1]\n  NULLIFY(&x); [line 28, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_3" [label="3:  Destruction \n   _=*&x:binary_conditional::X [line 28, column 1]\n  n$1=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) [line 28, column 1]\n  _=*&a:binary_conditional::X [line 28, column 1]\n  n$3=_fun_binary_conditional::X_~X(&a:binary_conditional::X*) [line 28, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,x,a); [line 28, column 1]\n  APPLY_ABSTRACTION; [line 28, column 1]\n " shape="box"]
+"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_3" [label="3:  Destruction \n   _=*&x:binary_conditional::X [line 28, column 1]\n  n$1=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) injected [line 28, column 1]\n  _=*&a:binary_conditional::X [line 28, column 1]\n  n$3=_fun_binary_conditional::X_~X(&a:binary_conditional::X*) injected [line 28, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,x,a); [line 28, column 1]\n  APPLY_ABSTRACTION; [line 28, column 1]\n " shape="box"]
 	
 
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_3" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_2" ;
@@ -99,7 +99,7 @@ digraph cfg {
 "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_2" [label="2: Exit binary_conditional::getX \n   NULLIFY(&x); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" [label="3:  Return Stmt \n   n$0=*&__return_param:binary_conditional::X* [line 16, column 3]\n  n$1=_fun_binary_conditional::X_X(n$0:binary_conditional::X*,&x:binary_conditional::X&) [line 16, column 10]\n  _=*&x:binary_conditional::X [line 16, column 10]\n  n$3=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) [line 16, column 10]\n  NULLIFY(&__return_param); [line 16, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 16, column 10]\n  APPLY_ABSTRACTION; [line 16, column 10]\n " shape="box"]
+"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" [label="3:  Return Stmt \n   n$0=*&__return_param:binary_conditional::X* [line 16, column 3]\n  n$1=_fun_binary_conditional::X_X(n$0:binary_conditional::X*,&x:binary_conditional::X&) [line 16, column 10]\n  _=*&x:binary_conditional::X [line 16, column 10]\n  n$3=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) injected [line 16, column 10]\n  NULLIFY(&__return_param); [line 16, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 16, column 10]\n  APPLY_ABSTRACTION; [line 16, column 10]\n " shape="box"]
 	
 
 	 "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" -> "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_2" ;

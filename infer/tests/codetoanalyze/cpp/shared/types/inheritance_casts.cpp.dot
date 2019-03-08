@@ -62,7 +62,7 @@ digraph cfg {
 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_2" [label="2: Exit inheritance_casts::getA \n   NULLIFY(&x); [line 22, column 1]\n " color=yellow style=filled]
 	
 
-"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::A* [line 21, column 3]\n  n$1=_fun_inheritance_casts::A_A(n$0:inheritance_casts::A*,&x:inheritance_casts::A&) [line 21, column 10]\n  _=*&x:inheritance_casts::A [line 21, column 10]\n  n$3=_fun_inheritance_casts::A_~A(&x:inheritance_casts::A*) [line 21, column 10]\n  NULLIFY(&__return_param); [line 21, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,__return_param,x); [line 21, column 10]\n  APPLY_ABSTRACTION; [line 21, column 10]\n " shape="box"]
+"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::A* [line 21, column 3]\n  n$1=_fun_inheritance_casts::A_A(n$0:inheritance_casts::A*,&x:inheritance_casts::A&) [line 21, column 10]\n  _=*&x:inheritance_casts::A [line 21, column 10]\n  n$3=_fun_inheritance_casts::A_~A(&x:inheritance_casts::A*) injected [line 21, column 10]\n  NULLIFY(&__return_param); [line 21, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,__return_param,x); [line 21, column 10]\n  APPLY_ABSTRACTION; [line 21, column 10]\n " shape="box"]
 	
 
 	 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_3" -> "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_2" ;
@@ -81,7 +81,7 @@ digraph cfg {
 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_2" [label="2: Exit inheritance_casts::getB \n   NULLIFY(&x); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::B* [line 16, column 3]\n  n$1=_fun_inheritance_casts::B_B(n$0:inheritance_casts::B*,&x:inheritance_casts::B&) [line 16, column 10]\n  _=*&x:inheritance_casts::B [line 16, column 10]\n  n$3=_fun_inheritance_casts::B_~B(&x:inheritance_casts::B*) [line 16, column 10]\n  NULLIFY(&__return_param); [line 16, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 16, column 10]\n  APPLY_ABSTRACTION; [line 16, column 10]\n " shape="box"]
+"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::B* [line 16, column 3]\n  n$1=_fun_inheritance_casts::B_B(n$0:inheritance_casts::B*,&x:inheritance_casts::B&) [line 16, column 10]\n  _=*&x:inheritance_casts::B [line 16, column 10]\n  n$3=_fun_inheritance_casts::B_~B(&x:inheritance_casts::B*) injected [line 16, column 10]\n  NULLIFY(&__return_param); [line 16, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 16, column 10]\n  APPLY_ABSTRACTION; [line 16, column 10]\n " shape="box"]
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_3" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_2" ;

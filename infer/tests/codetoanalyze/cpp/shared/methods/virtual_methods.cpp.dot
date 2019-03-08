@@ -22,7 +22,7 @@ digraph cfg {
 "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_2" [label="2: Exit poly_area \n   NULLIFY(&poly); [line 55, column 1]\n  NULLIFY(&ppoly3); [line 55, column 1]\n " color=yellow style=filled]
 	
 
-"poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:Polygon* [line 54, column 14]\n  _=*n$0:Polygon [line 54, column 14]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 54, column 14]\n  *&return:int=(1 / n$2) [line 54, column 3]\n  _=*&poly:Polygon [line 54, column 27]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) virtual [line 54, column 27]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,ppoly3,poly); [line 54, column 27]\n  APPLY_ABSTRACTION; [line 54, column 27]\n " shape="box"]
+"poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:Polygon* [line 54, column 14]\n  _=*n$0:Polygon [line 54, column 14]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 54, column 14]\n  *&return:int=(1 / n$2) [line 54, column 3]\n  _=*&poly:Polygon [line 54, column 27]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) injected virtual [line 54, column 27]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,ppoly3,poly); [line 54, column 27]\n  APPLY_ABSTRACTION; [line 54, column 27]\n " shape="box"]
 	
 
 	 "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_3" -> "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_2" ;
@@ -41,7 +41,7 @@ digraph cfg {
 "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_2" [label="2: Exit rect_area \n   NULLIFY(&rect); [line 41, column 1]\n  NULLIFY(&ppoly1); [line 41, column 1]\n " color=yellow style=filled]
 	
 
-"rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:Polygon* [line 40, column 15]\n  _=*n$0:Polygon [line 40, column 15]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 40, column 15]\n  *&return:int=(1 / (n$2 - 20)) [line 40, column 3]\n  _=*&rect:Rectangle [line 40, column 34]\n  n$4=_fun_Rectangle_~Rectangle(&rect:Rectangle*) virtual [line 40, column 34]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,ppoly1,rect); [line 40, column 34]\n  APPLY_ABSTRACTION; [line 40, column 34]\n " shape="box"]
+"rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:Polygon* [line 40, column 15]\n  _=*n$0:Polygon [line 40, column 15]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 40, column 15]\n  *&return:int=(1 / (n$2 - 20)) [line 40, column 3]\n  _=*&rect:Rectangle [line 40, column 34]\n  n$4=_fun_Rectangle_~Rectangle(&rect:Rectangle*) injected virtual [line 40, column 34]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,ppoly1,rect); [line 40, column 34]\n  APPLY_ABSTRACTION; [line 40, column 34]\n " shape="box"]
 	
 
 	 "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_3" -> "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_2" ;
@@ -64,7 +64,7 @@ digraph cfg {
 "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_2" [label="2: Exit tri_area \n   NULLIFY(&trgl); [line 49, column 1]\n  NULLIFY(&ppoly2); [line 49, column 1]\n  NULLIFY(&poly); [line 49, column 1]\n " color=yellow style=filled]
 	
 
-"tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 48, column 15]\n  _=*n$0:Polygon [line 48, column 15]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 48, column 15]\n  *&return:int=(1 / (n$2 - 10)) [line 48, column 3]\n  _=*&poly:Polygon [line 48, column 34]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) virtual [line 48, column 34]\n  _=*&trgl:Triangle [line 48, column 34]\n  n$6=_fun_Triangle_~Triangle(&trgl:Triangle*) virtual [line 48, column 34]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,poly,ppoly2,trgl); [line 48, column 34]\n  APPLY_ABSTRACTION; [line 48, column 34]\n " shape="box"]
+"tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 48, column 15]\n  _=*n$0:Polygon [line 48, column 15]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 48, column 15]\n  *&return:int=(1 / (n$2 - 10)) [line 48, column 3]\n  _=*&poly:Polygon [line 48, column 34]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) injected virtual [line 48, column 34]\n  _=*&trgl:Triangle [line 48, column 34]\n  n$6=_fun_Triangle_~Triangle(&trgl:Triangle*) injected virtual [line 48, column 34]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,poly,ppoly2,trgl); [line 48, column 34]\n  APPLY_ABSTRACTION; [line 48, column 34]\n " shape="box"]
 	
 
 	 "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_3" -> "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_2" ;
@@ -91,7 +91,7 @@ digraph cfg {
 "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_2" [label="2: Exit tri_not_virtual_area \n   NULLIFY(&ppoly2); [line 63, column 1]\n  NULLIFY(&trgl); [line 63, column 1]\n  NULLIFY(&poly); [line 63, column 1]\n " color=yellow style=filled]
 	
 
-"tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 62, column 14]\n  _=*n$0:Polygon [line 62, column 14]\n  n$2=_fun_Polygon_area(n$0:Polygon*) [line 62, column 14]\n  *&return:int=(1 / n$2) [line 62, column 3]\n  _=*&poly:Polygon [line 62, column 36]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) virtual [line 62, column 36]\n  _=*&trgl:Triangle [line 62, column 36]\n  n$6=_fun_Triangle_~Triangle(&trgl:Triangle*) virtual [line 62, column 36]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,poly,trgl,ppoly2); [line 62, column 36]\n  APPLY_ABSTRACTION; [line 62, column 36]\n " shape="box"]
+"tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 62, column 14]\n  _=*n$0:Polygon [line 62, column 14]\n  n$2=_fun_Polygon_area(n$0:Polygon*) [line 62, column 14]\n  *&return:int=(1 / n$2) [line 62, column 3]\n  _=*&poly:Polygon [line 62, column 36]\n  n$4=_fun_Polygon_~Polygon(&poly:Polygon*) injected virtual [line 62, column 36]\n  _=*&trgl:Triangle [line 62, column 36]\n  n$6=_fun_Triangle_~Triangle(&trgl:Triangle*) injected virtual [line 62, column 36]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,poly,trgl,ppoly2); [line 62, column 36]\n  APPLY_ABSTRACTION; [line 62, column 36]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_3" -> "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_2" ;
@@ -199,7 +199,7 @@ digraph cfg {
 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_2" [label="2: Exit Triangle___infer_inner_destructor_~Triangle \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Polygon___infer_inner_destructor_~Polygon(n$0:Triangle*) virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
+"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Polygon___infer_inner_destructor_~Polygon(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" -> "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_2" ;
@@ -210,7 +210,7 @@ digraph cfg {
 "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_2" [label="2: Exit Triangle_~Triangle \n  " color=yellow style=filled]
 	
 
-"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Triangle___infer_inner_destructor_~Triangle(n$0:Triangle*) virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
+"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Triangle___infer_inner_destructor_~Triangle(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
 	
 
 	 "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" -> "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_2" ;

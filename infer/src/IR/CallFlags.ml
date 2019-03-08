@@ -14,6 +14,7 @@ module F = Format
 (** Flags for a procedure call *)
 type t =
   { cf_assign_last_arg: bool
+  ; cf_injected_destructor: bool
   ; cf_interface: bool
   ; cf_is_objc_block: bool
   ; cf_noreturn: bool
@@ -23,12 +24,14 @@ type t =
 
 let pp f
     ({ cf_assign_last_arg
+     ; cf_injected_destructor
      ; cf_interface
      ; cf_is_objc_block
      ; cf_noreturn
      ; cf_with_block_parameters
      ; cf_virtual }[@warning "+9"]) =
   if cf_assign_last_arg then F.pp_print_string f " assign_last" ;
+  if cf_injected_destructor then F.pp_print_string f " injected" ;
   if cf_interface then F.pp_print_string f " interface" ;
   if cf_is_objc_block then F.pp_print_string f " objc_block" ;
   if cf_noreturn then F.pp_print_string f " noreturn" ;
@@ -39,6 +42,7 @@ let pp f
 
 let default =
   { cf_assign_last_arg= false
+  ; cf_injected_destructor= false
   ; cf_interface= false
   ; cf_is_objc_block= false
   ; cf_noreturn= false

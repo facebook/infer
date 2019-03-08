@@ -14,6 +14,8 @@ module F = Format
 (** Flags for a procedure call *)
 type t =
   { cf_assign_last_arg: bool
+  ; cf_injected_destructor: bool
+        (** true if this is an implicit C++ destructor call injected by the clang frontend *)
   ; cf_interface: bool
   ; cf_is_objc_block: bool
   ; cf_noreturn: bool

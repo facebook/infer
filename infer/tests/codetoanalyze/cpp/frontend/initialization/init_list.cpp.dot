@@ -41,7 +41,7 @@ digraph cfg {
 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" [label="2: Exit init_list::record_init \n   NULLIFY(&c); [line 42, column 1]\n  NULLIFY(&y1); [line 42, column 1]\n  NULLIFY(&x); [line 42, column 1]\n " color=yellow style=filled]
 	
 
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 42, column 1]\n  n$1=_fun_init_list::C_~C(&c:init_list::C*) [line 42, column 1]\n  _=*&x:init_list::X [line 42, column 1]\n  n$3=_fun_init_list::X_~X(&x:init_list::X*) [line 42, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,x,c); [line 42, column 1]\n  APPLY_ABSTRACTION; [line 42, column 1]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 42, column 1]\n  n$1=_fun_init_list::C_~C(&c:init_list::C*) injected [line 42, column 1]\n  _=*&x:init_list::X [line 42, column 1]\n  n$3=_fun_init_list::X_~X(&x:init_list::X*) injected [line 42, column 1]\n  EXIT_SCOPE(_,_,n$1,n$3,x,c); [line 42, column 1]\n  APPLY_ABSTRACTION; [line 42, column 1]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" ;
@@ -87,7 +87,7 @@ digraph cfg {
 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" [label="2: Exit init_list::zero_init_record \n   NULLIFY(&c); [line 34, column 1]\n " color=yellow style=filled]
 	
 
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 34, column 1]\n  n$1=_fun_init_list::C_~C(&c:init_list::C*) [line 34, column 1]\n  EXIT_SCOPE(_,n$1,c); [line 34, column 1]\n  APPLY_ABSTRACTION; [line 34, column 1]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 34, column 1]\n  n$1=_fun_init_list::C_~C(&c:init_list::C*) injected [line 34, column 1]\n  EXIT_SCOPE(_,n$1,c); [line 34, column 1]\n  APPLY_ABSTRACTION; [line 34, column 1]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" ;
