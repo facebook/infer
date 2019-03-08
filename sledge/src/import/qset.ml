@@ -88,18 +88,27 @@ let min_elt_exn = Map.min_elt_exn
 let fold m ~f ~init = Map.fold m ~f:(fun ~key ~data s -> f key data s) ~init
 
 let map m ~f =
-  fold m ~init:m ~f:(fun x i m ->
-      let x', i' = f x i in
-      if phys_equal x' x then
-        if Q.equal i' i then m else Map.set m ~key:x ~data:i'
-      else add (Map.remove m x) x' i' )
+  let m' = Map.empty (Map.comparator_s m) in
+  let m, m' =
+    fold m ~init:(m, m') ~f:(fun x i (m, m') ->
+        let x', i' = f x i in
+        if phys_equal x' x then
+          if Q.equal i' i then (m, m') else (Map.set m ~key:x ~data:i', m')
+        else (Map.remove m x, add m' x' i') )
+  in
+  fold m' ~init:m ~f:(fun x i m -> add m x i)
 
 let fold_map m ~f ~init:s =
-  fold m ~init:(m, s) ~f:(fun x i (m, s) ->
-      let x', i', s = f x i s in
-      if phys_equal x' x then
-        if Q.equal i' i then (m, s) else (Map.set m ~key:x ~data:i', s)
-      else (add (Map.remove m x) x' i', s) )
+  let m' = Map.empty (Map.comparator_s m) in
+  let m, m', s =
+    fold m ~init:(m, m', s) ~f:(fun x i (m, m', s) ->
+        let x', i', s = f x i s in
+        if phys_equal x' x then
+          if Q.equal i' i then (m, m', s)
+          else (Map.set m ~key:x ~data:i', m', s)
+        else (Map.remove m x, add m' x' i', s) )
+  in
+  (fold m' ~init:m ~f:(fun x i m -> add m x i), s)
 
 let for_all m ~f = Map.for_alli m ~f:(fun ~key ~data -> f key data)
 let map_counts m ~f = Map.mapi m ~f:(fun ~key ~data -> f key data)
