@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module AbstractAddress = PulseDomain.AbstractAddress
 
 type actor = {access_expr: HilExp.AccessExpression.t; location: Location.t} [@@deriving compare]
 
@@ -15,8 +14,7 @@ type t =
   | AccessToInvalidAddress of
       { invalidated_by: PulseInvalidation.t
       ; accessed_by: actor
-      ; trace: PulseTrace.t
-      ; address: AbstractAddress.t }
+      ; trace: PulseTrace.t }
   | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 
 let get_location = function
@@ -25,13 +23,10 @@ let get_location = function
 
 
 let get_message = function
-  | AccessToInvalidAddress {accessed_by; invalidated_by; address; trace} ->
-      let pp_debug_address f =
-        if Config.debug_mode then F.fprintf f " (debug: %a)" AbstractAddress.pp address
-      in
-      F.asprintf "`%a` accesses address %a%a past its lifetime%t" HilExp.AccessExpression.pp
+  | AccessToInvalidAddress {accessed_by; invalidated_by; trace} ->
+      F.asprintf "`%a` accesses address %a%a past its lifetime" HilExp.AccessExpression.pp
         accessed_by.access_expr PulseTrace.pp_interesting_events trace PulseInvalidation.pp
-        invalidated_by pp_debug_address
+        invalidated_by
   | StackVariableAddressEscape {variable} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"

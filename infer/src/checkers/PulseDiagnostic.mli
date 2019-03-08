@@ -13,8 +13,7 @@ type t =
   | AccessToInvalidAddress of
       { invalidated_by: PulseInvalidation.t
       ; accessed_by: actor
-      ; trace: PulseTrace.t
-      ; address: PulseDomain.AbstractAddress.t }
+      ; trace: PulseTrace.t }
   | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 
 val get_message : t -> string

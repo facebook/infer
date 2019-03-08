@@ -24,7 +24,7 @@ module AbstractAddress : sig
 
   val init : unit -> unit
 
-  val pp : F.formatter -> t -> unit
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
 
   val mk_fresh : unit -> t
 end

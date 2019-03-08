@@ -21,8 +21,7 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 let check_addr_access actor (address, trace) astate =
   match Memory.get_invalidation address astate.heap with
   | Some invalidated_by ->
-      Error
-        (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; address; trace})
+      Error (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace})
   | None ->
       Ok astate
 
