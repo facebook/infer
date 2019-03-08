@@ -54,8 +54,9 @@ and block =
 
 and cfg = block vector
 
-(* [entry] is not part of [cfg] since it is special in two ways: its params
-   are the func params, and it cannot be jumped to, only called. *)
+(* [entry] is not part of [cfg] since it is special in several ways: its
+   params are the func params, its locals are all the locals in it plus the
+   cfg, and it cannot be jumped to, only called. *)
 and func = {name: Global.t; entry: block; cfg: cfg}
 
 let rec sexp_of_jump ({dst; args; retreating} as jmp) =
@@ -415,8 +416,12 @@ module Func = struct
       | Return _ | Throw _ | Unreachable -> ()
     in
     resolve_parent_and_jumps entry ;
-    Vector.iter cfg ~f:resolve_parent_and_jumps ;
-    func |> check invariant
+    let locals =
+      Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
+          resolve_parent_and_jumps block ;
+          Set.union locals block.locals )
+    in
+    {func with entry= {entry with locals}} |> check invariant
 
   let mk_undefined ~name ~params =
     let entry =
