@@ -616,7 +616,7 @@ module InstrBasicCost = struct
 end
 
 let compute_errlog_extras cost =
-  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp cost)
+  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp_hum cost)
   ; cost_degree= BasicCost.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int }
 
 
@@ -719,10 +719,10 @@ module Check = struct
       F.asprintf
         "%s from the beginning of the function up to this program point is likely above the \
          acceptable threshold of %d (estimated cost %a%s)"
-        name threshold BasicCost.pp cost degree_str
+        name threshold BasicCost.pp_hum cost degree_str
     in
     let cost_trace =
-      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
+      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp_hum cost degree_str in
       Errlog.make_trace_element 0 location cost_desc []
     in
     Reporting.log_error summary ~loc:location

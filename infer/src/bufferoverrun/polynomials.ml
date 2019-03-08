@@ -70,7 +70,7 @@ module type NonNegativeSymbol = sig
     -> Bound.eval_sym
     -> (NonNegativeInt.t, t, TopTrace.t) Bounds.valclass
 
-  val pp : F.formatter -> t -> unit
+  val pp : hum:bool -> F.formatter -> t -> unit
 end
 
 module type NonNegativeSymbolWithDegreeKind = sig
@@ -119,7 +119,7 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
         Bounds.ValTop trace
 
 
-  let pp f {degree_kind; symbol} = DegreeKind.pp_hole S.pp f degree_kind symbol
+  let pp ~hum f {degree_kind; symbol} = DegreeKind.pp_hole (S.pp ~hum) f degree_kind symbol
 
   let degree_kind {degree_kind} = degree_kind
 
@@ -355,7 +355,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
   let multiplication_sep = F.sprintf " %s " SpecialChars.multiplication_sign
 
-  let pp : F.formatter -> t -> unit =
+  let pp : hum:bool -> F.formatter -> t -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
       if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
       else ((s, PositiveInt.one), last :: others)
@@ -371,33 +371,33 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       let s = F.asprintf "%a" pp x in
       if String.contains s ' ' then F.fprintf fmt "(%s)" s else F.pp_print_string fmt s
     in
-    let pp_symb fmt symb = pp_magic_parentheses S.pp fmt symb in
-    let pp_symb_exp fmt (symb, exp) = F.fprintf fmt "%a%a" pp_symb symb pp_exp exp in
-    let pp_symbs fmt (last, others) =
-      List.rev_append others [last] |> Pp.seq ~sep:multiplication_sep pp_symb_exp fmt
+    let pp_symb ~hum fmt symb = pp_magic_parentheses (S.pp ~hum) fmt symb in
+    let pp_symb_exp ~hum fmt (symb, exp) = F.fprintf fmt "%a%a" (pp_symb ~hum) symb pp_exp exp in
+    let pp_symbs ~hum fmt (last, others) =
+      List.rev_append others [last] |> Pp.seq ~sep:multiplication_sep (pp_symb_exp ~hum) fmt
     in
-    let rec pp_sub ~print_plus symbs fmt {const; terms} =
+    let rec pp_sub ~hum ~print_plus symbs fmt {const; terms} =
       let print_plus =
         if not (NonNegativeInt.is_zero const) then (
           if print_plus then F.pp_print_string fmt " + " ;
-          F.fprintf fmt "%a%a" pp_coeff const pp_symbs symbs ;
+          F.fprintf fmt "%a%a" pp_coeff const (pp_symbs ~hum) symbs ;
           true )
         else print_plus
       in
       ( M.fold
           (fun s p print_plus ->
-            pp_sub ~print_plus (add_symb s symbs) fmt p ;
+            pp_sub ~hum ~print_plus (add_symb s symbs) fmt p ;
             true )
           terms print_plus
         : bool )
       |> ignore
     in
-    fun fmt {const; terms} ->
+    fun ~hum fmt {const; terms} ->
       let const_not_zero = not (NonNegativeInt.is_zero const) in
       if const_not_zero || M.is_empty terms then NonNegativeInt.pp fmt const ;
       ( M.fold
           (fun s p print_plus ->
-            pp_sub ~print_plus ((s, PositiveInt.one), []) fmt p ;
+            pp_sub ~hum ~print_plus ((s, PositiveInt.one), []) fmt p ;
             true )
           terms const_not_zero
         : bool )
@@ -433,12 +433,17 @@ module NonNegativePolynomial = struct
       ~le_above:TopTraces.( <= )
 
 
-  let pp =
+  let pp ~hum =
     let pp_above f traces =
-      F.fprintf f "%t: %a" AbstractDomain.TopLiftedUtils.pp_top TopTraces.pp traces
+      AbstractDomain.TopLiftedUtils.pp_top f ;
+      if not hum then F.fprintf f ": %a" TopTraces.pp traces
     in
-    AbstractDomain.StackedUtils.pp ~pp_below:NonNegativeNonTopPolynomial.pp ~pp_above
+    AbstractDomain.StackedUtils.pp ~pp_below:(NonNegativeNonTopPolynomial.pp ~hum) ~pp_above
 
+
+  let pp_hum = pp ~hum:true
+
+  let pp = pp ~hum:false
 
   let top = Above TopTraces.bottom
 
@@ -518,7 +523,8 @@ module NonNegativePolynomial = struct
     | Above _ ->
         Format.pp_print_string fmt "Top"
     | Below (degree, degree_term) ->
-        if only_bigO then Format.fprintf fmt "O(%a)" NonNegativeNonTopPolynomial.pp degree_term
+        if only_bigO then
+          Format.fprintf fmt "O(%a)" (NonNegativeNonTopPolynomial.pp ~hum:true) degree_term
         else Degree.pp fmt degree
 
 

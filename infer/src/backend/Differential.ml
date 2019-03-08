@@ -146,7 +146,7 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
   in
   let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
   let curr_cost_msg fmt () =
-    Format.fprintf fmt "Cost is %a (degree is %a)" CostDomain.BasicCost.pp curr_cost
+    Format.fprintf fmt "Cost is %a (degree is %a)" CostDomain.BasicCost.pp_hum curr_cost
       (CostDomain.BasicCost.pp_degree ~only_bigO:false)
       curr_degree_with_term
   in

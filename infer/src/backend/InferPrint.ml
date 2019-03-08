@@ -347,7 +347,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         let degree_with_term = CostDomain.BasicCost.get_degree_with_term basic_operation_cost in
         let hum =
           { Jsonbug_t.hum_polynomial=
-              Format.asprintf "%a" CostDomain.BasicCost.pp basic_operation_cost
+              Format.asprintf "%a" CostDomain.BasicCost.pp_hum basic_operation_cost
           ; hum_degree=
               Format.asprintf "%a"
                 (CostDomain.BasicCost.pp_degree ~only_bigO:false)

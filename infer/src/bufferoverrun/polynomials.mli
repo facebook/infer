@@ -41,6 +41,8 @@ module NonNegativePolynomial : sig
   type degree_with_term =
     (Degree.t * NonNegativeNonTopPolynomial.t, TopTraces.t) AbstractDomain.Types.below_above
 
+  val pp_hum : Format.formatter -> t -> unit
+
   val ( <= ) : lhs:t -> rhs:t -> bool
 
   val top : t

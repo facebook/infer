@@ -131,7 +131,7 @@ module NonNegativeBound : sig
 
   val of_modeled_function : string -> Location.t -> Bound.t -> t
 
-  val pp : Format.formatter -> t -> unit
+  val pp : hum:bool -> Format.formatter -> t -> unit
 
   val make_err_trace : t -> string * Errlog.loc_trace
 

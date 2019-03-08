@@ -1063,7 +1063,10 @@ module NonNegativeBound = struct
     (b, BoundTrace.make_err_trace t)
 
 
-  let pp fmt (bound, _) = Bound.pp fmt bound
+  let pp ~hum fmt (bound, t) =
+    Bound.pp fmt bound ;
+    if not hum then F.fprintf fmt ": %a" BoundTrace.pp t
+
 
   let zero loop_head_loc = (Bound.zero, BoundTrace.Loop loop_head_loc)
 
