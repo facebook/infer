@@ -108,13 +108,13 @@ let%test_module _ =
       pp r2 ;
       [%expect
         {|
-          ((i64)(i8) %x_5) = %x_5 = %y_6 = %z_7
+          %x_5 = %y_6 = %z_7 = ((i64)(i8) %x_5)
 
           {sat= true;
-           rep= [[((i64)(i8) %x_5) ↦ ];
-                 [%x_5 ↦ ((i64)(i8) %x_5)];
-                 [%y_6 ↦ ((i64)(i8) %x_5)];
-                 [%z_7 ↦ ((i64)(i8) %x_5)];
+           rep= [[%x_5 ↦ ];
+                 [%y_6 ↦ %x_5];
+                 [%z_7 ↦ %x_5];
+                 [((i64)(i8) %x_5) ↦ %x_5];
                  [(i64)(i8) ↦ ]]} |}]
 
     let%test _ = entails_eq r2 x z
@@ -152,20 +152,20 @@ let%test_module _ =
       pp r3 ;
       [%expect
         {|
-      (%y_6 rem (%y_6 rem %z_7)) = (%y_6 rem %z_7) = %t_1 = %u_2 = %v_3
-      = %w_4 = %x_5 = %z_7
+      %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = (%y_6 rem %v_3)
+      = (%y_6 rem %z_7)
 
       {sat= true;
-       rep= [[(%y_6 rem (%y_6 rem %z_7)) ↦ ];
-             [(%y_6 rem %z_7) ↦ (%y_6 rem (%y_6 rem %z_7))];
-             [(rem %y_6) ↦ ];
-             [%t_1 ↦ (%y_6 rem (%y_6 rem %z_7))];
-             [%u_2 ↦ (%y_6 rem (%y_6 rem %z_7))];
-             [%v_3 ↦ (%y_6 rem (%y_6 rem %z_7))];
-             [%w_4 ↦ (%y_6 rem (%y_6 rem %z_7))];
-             [%x_5 ↦ (%y_6 rem (%y_6 rem %z_7))];
+       rep= [[%t_1 ↦ ];
+             [%u_2 ↦ %t_1];
+             [%v_3 ↦ %t_1];
+             [%w_4 ↦ %t_1];
+             [%x_5 ↦ %t_1];
              [%y_6 ↦ ];
-             [%z_7 ↦ (%y_6 rem (%y_6 rem %z_7))];
+             [%z_7 ↦ %t_1];
+             [(%y_6 rem %v_3) ↦ %t_1];
+             [(%y_6 rem %z_7) ↦ %t_1];
+             [(rem %y_6) ↦ ];
              [rem ↦ ]]} |}]
 
     let%test _ = entails_eq r3 t z

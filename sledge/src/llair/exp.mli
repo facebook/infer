@@ -26,8 +26,6 @@ type comparator_witness
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
-  | App of {op: t; arg: t}
-      (** Application of function symbol to argument, curried *)
   | Add of {args: qset; typ: Typ.t}  (** Addition *)
   | Mul of {args: qset; typ: Typ.t}  (** Multiplication *)
   | Splat of {byt: t; siz: t}
@@ -40,6 +38,8 @@ and t = private
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
+  | App of {op: t; arg: t}
+      (** Application of function symbol to argument, curried *)
   | Integer of {data: Z.t; typ: Typ.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)

@@ -57,7 +57,6 @@ module rec T : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | App of {op: t; arg: t}
     (* nary: arithmetic, numeric and pointer *)
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
@@ -69,6 +68,8 @@ module rec T : sig
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    (* curried application *)
+    | App of {op: t; arg: t}
     (* numeric constants *)
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
@@ -121,7 +122,6 @@ and T0 : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | App of {op: t; arg: t}
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
     | Splat of {byt: t; siz: t}
@@ -130,6 +130,7 @@ and T0 : sig
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | App of {op: t; arg: t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
     | Eq
@@ -165,7 +166,6 @@ end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | App of {op: t; arg: t}
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
     | Splat of {byt: t; siz: t}
@@ -174,6 +174,7 @@ end = struct
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | App of {op: t; arg: t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
     | Eq
