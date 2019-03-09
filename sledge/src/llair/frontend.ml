@@ -923,7 +923,7 @@ let xlate_instr :
           let len = xlate_value x (Llvm.operand instr 2) in
           continue (fun (insts, term) ->
               (Llair.Inst.memcpy ~dst ~src ~len ~loc :: insts, term, []) )
-      | "llvm" :: "memmov" :: _ ->
+      | "llvm" :: "memmove" :: _ ->
           let dst = xlate_value x (Llvm.operand instr 0) in
           let src = xlate_value x (Llvm.operand instr 1) in
           let len = xlate_value x (Llvm.operand instr 2) in
