@@ -288,19 +288,19 @@ module AccessSnapshot = struct
     ; ownership_precondition: OwnershipPrecondition.t }
   [@@deriving compare]
 
-  let make_from_snapshot access {lock; thread; ownership_precondition} =
-    (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
-       such accesses *)
-    Option.some_if
-      (not (OwnershipPrecondition.is_true ownership_precondition))
-      {access; thread; lock; ownership_precondition}
+  let make_if_not_owned access lock thread ownership_precondition =
+    if not (OwnershipPrecondition.is_true ownership_precondition) then
+      Some {access; lock; thread; ownership_precondition}
+    else None
 
 
   let make access lock thread ownership_precondition pdesc =
-    if not (OwnershipPrecondition.is_true ownership_precondition) then
-      let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
-      Some {access; lock; thread; ownership_precondition}
-    else None
+    let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
+    make_if_not_owned access lock thread ownership_precondition
+
+
+  let make_from_snapshot access {lock; thread; ownership_precondition} =
+    make_if_not_owned access lock thread ownership_precondition
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
@@ -319,8 +319,7 @@ module AccessDomain = struct
 
   let add ({AccessSnapshot.access= {kind}} as s) astate =
     let skip =
-      Access.get_access_path kind
-      |> Option.value_map ~default:false ~f:(fun ((v, _), _) -> should_skip_var v)
+      Access.get_access_path kind |> Option.exists ~f:(fun ((v, _), _) -> should_skip_var v)
     in
     if skip then astate else add s astate
 
@@ -418,11 +417,11 @@ module OwnershipDomain = struct
 
 
   let propagate_return ret_access_path return_ownership actuals ownership =
-    let get_ownership formal_index acc =
+    let get_ownership formal_index init =
       List.nth actuals formal_index
-      |> Option.map ~f:(fun expr -> ownership_of_expr expr ownership)
       (* simply skip formal if we cannot find its actual, as opposed to assuming non-ownership *)
-      |> Option.fold ~init:acc ~f:OwnershipAbstractValue.join
+      |> Option.fold ~init ~f:(fun acc expr ->
+             OwnershipAbstractValue.join acc (ownership_of_expr expr ownership) )
     in
     let ret_ownership_wrt_actuals =
       match return_ownership with
@@ -477,11 +476,13 @@ module AttributeMapDomain = struct
 
 
   let add_attribute access_path attribute t =
-    let attribute_set =
-      (try find access_path t with Caml.Not_found -> AttributeSetDomain.empty)
-      |> AttributeSetDomain.add attribute
-    in
-    add access_path attribute_set t
+    update access_path
+      (function
+        | Some attrs ->
+            Some (AttributeSetDomain.add attribute attrs)
+        | None ->
+            Some (AttributeSetDomain.singleton attribute))
+      t
 
 
   let rec attributes_of_expr attribute_map e =
