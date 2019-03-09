@@ -1011,6 +1011,8 @@ let xlate_instr :
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
       let lltyp = Llvm.type_of llfunc in
       let fname = Llvm.value_name llfunc in
+      let return_blk = Llvm.get_normal_dest instr in
+      let return_dst = label_of_block return_blk in
       let unwind_blk = Llvm.get_unwind_dest instr in
       let unwind_dst = label_of_block unwind_blk in
       let args =
@@ -1026,6 +1028,11 @@ let xlate_instr :
             xlate_value x (Llvm.operand instr i) )
       in
       match String.split fname ~on:'.' with
+      | _ when Option.is_some (xlate_intrinsic_exp fname) ->
+          let reg = xlate_name_opt x instr in
+          let arg = Option.to_list (Option.map ~f:Exp.var reg) in
+          let dst = Llair.Jump.mk return_dst arg in
+          terminal [] (Llair.Term.goto ~dst ~loc) []
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
       | ["__llair_throw"] ->
@@ -1036,9 +1043,8 @@ let xlate_instr :
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
-          let blk = Llvm.get_normal_dest instr in
-          let args = jump_args x instr blk in
-          let dst = Llair.Jump.mk (label_of_block blk) args in
+          let args = jump_args x instr return_blk in
+          let dst = Llair.Jump.mk return_dst args in
           terminal
             [Llair.Inst.alloc ~reg:(Option.value_exn reg) ~num ~len ~loc]
             (Llair.Term.goto ~dst ~loc)
@@ -1053,18 +1059,16 @@ let xlate_instr :
             | _ -> false
           in
           let return, blocks =
-            let blk = Llvm.get_normal_dest instr in
-            if not (need_return_trampoline instr blk) then
-              let dst = label_of_block blk in
-              let args = trampoline_args x instr blk in
-              (Llair.Jump.mk dst args, [])
+            if not (need_return_trampoline instr return_blk) then
+              let args = trampoline_args x instr return_blk in
+              (Llair.Jump.mk return_dst args, [])
             else
               let lbl = name ^ ".ret" in
               let block =
                 let params = [xlate_name instr] in
                 let cmnd = Vector.empty in
                 let term =
-                  let dst = Llair.Jump.mk (label_of_block blk) args in
+                  let dst = Llair.Jump.mk return_dst args in
                   Llair.Term.goto ~dst ~loc
                 in
                 Llair.Block.mk ~lbl ~params ~cmnd ~term
