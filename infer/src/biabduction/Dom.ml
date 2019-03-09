@@ -48,7 +48,7 @@ let sigma_get_start_lexps_sort sigma =
 
 (** {2 Utility functions for side} *)
 
-type side = Lhs | Rhs
+type side = Lhs | Rhs [@@deriving compare]
 
 let select side e1 e2 = match side with Lhs -> e1 | Rhs -> e2
 
@@ -523,6 +523,8 @@ module Rename : sig
 
   val to_subst_proj : side -> unit Ident.HashQueue.t -> Sil.subst
 
+  val get_unify_eqs : unit -> (Exp.t * Exp.t) list
+
   val to_subst_emb : side -> Sil.subst
   (*
   val get : Exp.t -> Exp.t -> Exp.t option
@@ -656,6 +658,47 @@ end = struct
     else Sil.subst_of_list sub_list_side
 
 
+  module SideExpPairHash = Hashtbl.Make (struct
+    type t = side * Exp.t [@@deriving compare]
+
+    let hash = Hashtbl.hash
+
+    let equal = [%compare.equal: t]
+  end)
+
+  (* Each triple (L,R,U) in !tbl gives rise to an edge (Lhs,L)--(Rhs,R)
+  labeled by U. For each connected component, return equalities that constrain
+  all its Us to be equal. *)
+  let get_unify_eqs () : (Exp.t * Exp.t) list =
+    let find_classes () =
+      let module UF = Union_find in
+      let uf = Memo.general UF.create in
+      let handle_triple (le, re, _) = UF.union (uf (Lhs, le)) (uf (Rhs, re)) in
+      List.iter ~f:handle_triple !tbl ;
+      let get x = UF.get (uf x) in
+      get
+    in
+    let pick_rep get =
+      let module H = SideExpPairHash in
+      let rep_cache = H.create (2 * List.length !tbl) in
+      let handle_triple (le, re, ue) =
+        H.replace rep_cache (get (Lhs, le)) ue ;
+        H.replace rep_cache (get (Rhs, re)) ue
+      in
+      List.iter ~f:handle_triple !tbl ;
+      let rep x =
+        try H.find rep_cache (get x) with Caml.Not_found ->
+          L.die L.InternalError "Dom.Rename.get_unify_eqs broken"
+      in
+      rep
+    in
+    let make_eqs rep =
+      let f (le, _, ue) = (ue, rep (Lhs, le)) in
+      List.rev_map ~f !tbl
+    in
+    () |> find_classes |> pick_rep |> make_eqs
+
+
   let to_subst_emb (side : side) =
     let renaming_restricted =
       let pick_id_case (e1, e2, _) =
@@ -669,18 +712,11 @@ end = struct
       in
       List.map ~f:project renaming_restricted
     in
-    let sub_list_sorted =
-      let compare (i, _) (i', _) = Ident.compare i i' in
-      List.sort ~compare sub_list
+    let uniq_sub_list =
+      let compare (i, _) (j, _) = Ident.compare i j in
+      List.dedup_and_sort ~compare sub_list
     in
-    let rec find_duplicates = function
-      | (i, _) :: ((i', _) :: _ as t) ->
-          Ident.equal i i' || find_duplicates t
-      | _ ->
-          false
-    in
-    if find_duplicates sub_list_sorted then ( L.d_strln "failure reason 12" ; raise Sil.JoinFail )
-    else Sil.subst_of_list sub_list_sorted
+    Sil.subst_of_list uniq_sub_list
 
 
   let get_others' f_lookup side e =
@@ -1791,14 +1827,16 @@ let pi_partial_meet tenv (p : Prop.normal Prop.t) (ep1 : 'a Prop.t) (ep2 : 'b Pr
   in
   let f1 p' atom = Prop.prop_atom_and tenv p' (handle_atom sub1 dom1 atom) in
   let f2 p' atom = Prop.prop_atom_and tenv p' (handle_atom sub2 dom2 atom) in
+  let f3 p' (a, b) = Prop.conjoin_eq tenv a b p' in
   let pi1 = ep1.Prop.pi in
   let pi2 = ep2.Prop.pi in
   let p_pi1 = List.fold ~f:f1 ~init:p pi1 in
   let p_pi2 = List.fold ~f:f2 ~init:p_pi1 pi2 in
-  if Prover.check_inconsistency_base tenv p_pi2 then (
+  let p_pi3 = List.fold ~f:f3 ~init:p_pi2 (Rename.get_unify_eqs ()) in
+  if Prover.check_inconsistency_base tenv p_pi3 then (
     L.d_strln "check_inconsistency_base failed" ;
     raise Sil.JoinFail )
-  else p_pi2
+  else p_pi3
 
 
 (** {2 Join and Meet for Prop} *)

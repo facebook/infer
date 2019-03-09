@@ -12,6 +12,7 @@ INFER_OPTIONS = --biabduction-only --ml-buckets cpp --debug-exceptions --project
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
+  $(wildcard biabduction/*.cpp) \
   $(wildcard c_tests/*.cpp) \
   include_header/header.h \
   include_header/include_templ.cpp \
