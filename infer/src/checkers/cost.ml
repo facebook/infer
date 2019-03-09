@@ -589,6 +589,11 @@ module InstrBasicCost = struct
         if is_allocation_function callee_pname then
           CostDomain.plus CostDomain.unit_cost_allocation operation_cost
         else operation_cost
+    | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
+        (* dummy deref inserted by frontend--don't count as a step. In
+           JDK 11, dummy deref disappears and causes cost differences
+           otherwise. *)
+        CostDomain.zero_record
     | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
     | Sil.ExitScope _ -> (
