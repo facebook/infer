@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* A simple implementation of the Itanium Base ABI for analysis purposes.
-   See http://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html */
-
 #include "abort_message.cpp"
 #include "cxa_exception.cpp"
 #include "cxa_exception_storage.cpp"

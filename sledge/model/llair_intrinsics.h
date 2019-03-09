@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdlib.h>
+
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 __attribute__((noreturn)) void __llair_throw(void* thrown_exception);
+
+#ifdef __cplusplus
 }
+#endif

@@ -38,19 +38,21 @@ Outs:=$(patsubst %.bc,%.bc.out,$(TestBCs)) $(patsubst %.ll,%.ll.out,$(TestLLs))
 
 default: test
 
-$(MODEL_DIR)/cxxabi.bc: $(MODEL_DIR)/cxxabi.cpp
-	@(cd $(MODEL_DIR) && clang $(CLANG_ARGS) -I../llvm/projects/libcxxabi/include -I../llvm/projects/libcxxabi/src -c -emit-llvm cxxabi.cpp)
+$(MODEL_DIR)/cxxabi.bc : $(MODEL_DIR)/cxxabi.cpp
+	@(cd $(dir $@) && clang $(CLANG_ARGS) -I../llvm/projects/libcxxabi/include -I../llvm/projects/libcxxabi/src -c -emit-llvm cxxabi.cpp)
 
 # compile c to llvm bitcode
 %.bc : %.c $(MODEL_DIR)/cxxabi.bc
 	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).c -o - | opt $(OPT_ARGS) -o $(notdir $*).bc)
 
+#  $(MODEL_DIR)/cxxabi.bc
 #	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).c -o - | llvm-link $(MODEL_DIR)/cxxabi.bc - | opt $(OPT_ARGS) -o $(notdir $*).bc)
 
 # compile c++ to llvm bitcode
-%.bc : %.cpp $(MODEL_DIR)/cxxabi.bc
+%.bc : %.cpp
 	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).cpp -o - | opt $(OPT_ARGS) -o $(notdir $*).bc)
 
+#  $(MODEL_DIR)/cxxabi.bc
 #	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).cpp -o - | llvm-link $(MODEL_DIR)/cxxabi.bc - | opt $(OPT_ARGS) -o $(notdir $*).bc)
 
 # disassemble bitcode to llvm assembly
