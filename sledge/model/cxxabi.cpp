@@ -8,6 +8,7 @@
 #include "abort_message.cpp"
 #include "cxa_exception.cpp"
 #include "cxa_exception_storage.cpp"
+#include "cxa_guard.cpp"
 #include "cxa_handlers.cpp"
 #include "llair_intrinsics.h"
 
