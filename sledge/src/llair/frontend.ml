@@ -938,7 +938,7 @@ let xlate_instr :
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
           continue (fun (insts, term) -> (insts, term, []))
       | ["llvm"; "dbg"; ("declare" | "value")]
-       |"llvm" :: "lifetime" :: ("start" | "end") :: _ ->
+       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
           continue (fun (insts, term) -> (insts, term, []))
       | ["llvm"; ("stacksave" | "stackrestore")] ->
           todo "stack allocation after function entry:@ %a" pp_llvalue instr
