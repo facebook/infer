@@ -362,6 +362,8 @@ let annotated_list_nullable =
     ; ((n, [o]), "java.lang.Class.getResource(java.lang.String):java.net.URL")
     ; (o1, "java.lang.Class.isAssignableFrom(java.lang.Class):boolean")
     ; (n1, "java.lang.Integer.equals(java.lang.Object):boolean")
+    ; (o1, "java.lang.Integer.parseInt(java.lang.String):int")
+    ; (o1, "java.lang.Long.parseLong(java.lang.String):long")
     ; (n2, "java.lang.RuntimeException.<init>(java.lang.String,java.lang.Throwable)")
     ; (n1, "java.lang.String.equals(java.lang.Object):boolean")
     ; (n1, "java.lang.StringBuilder.append(java.lang.String):java.lang.StringBuilder")

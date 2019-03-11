@@ -180,6 +180,12 @@ public class ParameterNotNullable {
     ImmutableMap.copyOf(nullIterable);
     ImmutableMap.copyOf(nullMap);
   }
+
+  void testParsingNullStringToNumber() {
+    String ns = null;
+    long l = Long.parseLong(ns);
+    int i = Integer.parseInt(ns);
+  }
 }
 
 interface SomeInterface {
