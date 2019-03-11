@@ -80,30 +80,39 @@ let rec ast_node_name an =
       ""
 
 
-let rec ast_node_cxx_fully_qualified_name an =
-  let fully_qualified_name qual_name = "::" ^ String.concat ~sep:"::" (List.rev qual_name) in
+let decl_cxx_fully_qualified_name (decl : Clang_ast_t.decl) =
+  match Clang_ast_proj.get_var_decl_tuple decl with
+  | Some (_, ndi, _, {vdi_is_global= false}) ->
+      ndi.ni_name
+  | _ -> (
+    match Clang_ast_proj.get_named_decl_tuple decl with
+    | Some (_, ndi) ->
+        "::" ^ String.concat ~sep:"::" (List.rev ndi.ni_qual_name)
+    | None ->
+        "" )
+
+
+let ast_node_cxx_fully_qualified_name an =
   let open Clang_ast_t in
   match an with
-  | Decl dec -> (
-    match Clang_ast_proj.get_var_decl_tuple dec with
-    | Some (_, ndi, _, {vdi_is_global= false}) ->
-        ndi.ni_name
-    | Some (_, ndi, _, _) ->
-        fully_qualified_name ndi.ni_qual_name
-    | None -> (
-      match Clang_ast_proj.get_named_decl_tuple dec with
-      | Some (_, ndi) ->
-          fully_qualified_name ndi.ni_qual_name
-      | None ->
-          "" ) )
+  | Decl decl ->
+      decl_cxx_fully_qualified_name decl
   | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) -> (
     match CAst_utils.get_decl dr.dr_decl_pointer with
     | Some decl ->
-        ast_node_cxx_fully_qualified_name (Decl decl)
+        decl_cxx_fully_qualified_name decl
     | None ->
         "" )
-  | _ ->
-      ""
+  | Stmt stmt -> (
+    match Clang_ast_proj.get_cxx_construct_expr_tuple stmt with
+    | Some (_, _, _, xcei) -> (
+      match CAst_utils.get_decl xcei.xcei_decl_ref.dr_decl_pointer with
+      | Some decl ->
+          decl_cxx_fully_qualified_name decl
+      | None ->
+          "" )
+    | None ->
+        "" )
 
 
 let ast_node_kind node =

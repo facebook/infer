@@ -12,6 +12,7 @@ namespace {
 int globalVarInAnonNs;
 
 struct Baz {
+  Baz(int x) : fld_(x) {}
   int fld_;
 };
 
@@ -21,13 +22,18 @@ namespace Foo {
 
 int globalVarInFoo;
 
-class Bar : public Baz {
+struct Bar : public Baz {
+  Bar(int x, int y) : Baz(x), barFld_(y) {}
+
   static int classVar;
+
   int f(const Baz& baz) {
   label:
     return baz.fld_ + fld_ + barFld_ + classVar + globalVarInTopNs +
            globalVarInAnonNs + globalVarInFoo;
   }
+
+  static int fooey(int x) { return Bar(x, x + 1).f(Baz(x)); }
 
  private:
   int barFld_;
