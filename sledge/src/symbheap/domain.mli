@@ -11,7 +11,6 @@ type t
 
 val pp : t pp
 val init : Global.t vector -> t
-val bottom : t
 val join : t -> t -> t
 val assume : t -> Exp.t -> t option
 val exec_inst : t -> Llair.inst -> (t, t * Llair.inst) result

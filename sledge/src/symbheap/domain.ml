@@ -19,7 +19,6 @@ let init globals =
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )
 
-let bottom = Sh.false_ Var.Set.empty
 let join = Sh.or_
 let assume q b = Exec.assume b q
 let exec_inst = Exec.inst
