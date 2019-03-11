@@ -248,7 +248,7 @@ let strlen_spec us reg ptr =
   let {Sh.loc= p; bas= b; len= m} = seg in
   let ret =
     Exp.sub Typ.siz
-      (Exp.add Typ.siz (Exp.sub Typ.siz b p) m)
+      (Exp.sub Typ.siz (Exp.add Typ.siz b m) p)
       (Exp.integer Z.one Typ.siz)
   in
   let post = Sh.and_ (Exp.eq (Exp.var reg) ret) foot in
@@ -300,7 +300,6 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
   | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
   | Free {ptr} -> exec_spec pre (free_spec us ptr)
   | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
-  | Strlen {reg; ptr} -> exec_spec pre (strlen_spec us reg ptr)
   | Nondet _ -> Ok pre
 
 let intrinsic :
@@ -316,4 +315,8 @@ let intrinsic :
       result Var.pp intrinsic (List.pp ",@ " Exp.pp) (List.rev actuals)
       Sh.pp pre] ;
   let us = pre.us in
-  match (result, Var.name intrinsic, actuals) with _ -> None
+  match (result, Var.name intrinsic, actuals) with
+  (* size_t strlen (const char* ptr) *)
+  | Some reg, "strlen", [ptr] ->
+      Some (exec_spec pre (strlen_spec us reg ptr))
+  | _ -> None

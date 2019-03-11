@@ -954,13 +954,6 @@ let xlate_instr :
       | ["__llair_throw"] ->
           let exc = xlate_value x (Llvm.operand instr 0) in
           terminal (pop loc) (Llair.Term.throw ~exc ~loc) []
-      | ["strlen"] ->
-          let ptr = xlate_value x (Llvm.operand instr 0) in
-          continue (fun (insts, term) ->
-              ( Llair.Inst.strlen ~reg:(Option.value_exn reg) ~ptr ~loc
-                :: insts
-              , term
-              , [] ) )
       | ["malloc"] ->
           let siz = xlate_value x (Llvm.operand instr 0) in
           continue (fun (insts, term) ->

@@ -50,9 +50,6 @@ type inst = private
   | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
       (** Maybe allocate a block of memory of size [siz] bytes and bind
           [reg] to the first address, otherwise bind [reg] to [null]. *)
-  | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
-      (** Bind [reg] to the length of the null-terminated string in memory
-          starting from [ptr]. *)
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
@@ -136,7 +133,6 @@ module Inst : sig
   val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val malloc : reg:Var.t -> siz:Exp.t -> loc:Loc.t -> inst
-  val strlen : reg:Var.t -> ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
   val loc : inst -> Loc.t
   val locals : inst -> Var.Set.t
