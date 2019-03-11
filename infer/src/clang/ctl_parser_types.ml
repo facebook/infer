@@ -85,20 +85,23 @@ let rec ast_node_cxx_fully_qualified_name an =
   let open Clang_ast_t in
   match an with
   | Decl dec -> (
-    match Clang_ast_proj.get_named_decl_tuple dec with
-    | Some (_, n) ->
-        fully_qualified_name n.Clang_ast_t.ni_qual_name
+    match Clang_ast_proj.get_var_decl_tuple dec with
+    | Some (_, ndi, _, {vdi_is_global= false}) ->
+        ndi.ni_name
+    | Some (_, ndi, _, _) ->
+        fully_qualified_name ndi.ni_qual_name
+    | None -> (
+      match Clang_ast_proj.get_named_decl_tuple dec with
+      | Some (_, ndi) ->
+          fully_qualified_name ndi.ni_qual_name
+      | None ->
+          "" ) )
+  | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) -> (
+    match CAst_utils.get_decl dr.dr_decl_pointer with
+    | Some decl ->
+        ast_node_cxx_fully_qualified_name (Decl decl)
     | None ->
         "" )
-  | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) ->
-      let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-      fully_qualified_name ndi.ni_qual_name
-  | Stmt (OpaqueValueExpr (_, _, _, {ovei_source_expr= Some stmt}))
-  | Stmt (ImplicitCastExpr (_, [stmt], _, _))
-  | Stmt (PseudoObjectExpr (_, stmt :: _, _))
-  | Stmt (ParenExpr (_, [stmt], _))
-  | Stmt (CallExpr (_, stmt :: _, _)) ->
-      ast_node_cxx_fully_qualified_name (Stmt stmt)
   | _ ->
       ""
 
