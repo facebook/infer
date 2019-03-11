@@ -117,9 +117,9 @@ end
 module BoundTrace : sig
   include PrettyPrintable.PrintableOrderedType
 
-  val call : callee_pname:Typ.Procname.t -> location:Location.t -> t -> t
+  val length : t -> int
 
-  val make_err_trace : t -> Errlog.loc_trace
+  val make_err_trace : depth:int -> t -> Errlog.loc_trace
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't

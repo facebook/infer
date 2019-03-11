@@ -77,4 +77,16 @@ public class Loops {
     }
     return true;
   }
+
+  static void linear(int x) {
+    for (int i = 0; i < x; i++) {}
+  }
+
+  static void unboundedSymbol() {
+    int infinite = 9;
+    for (int i = 0; i < 999; i++) {
+      infinite *= infinite;
+    }
+    linear(infinite);
+  }
 }

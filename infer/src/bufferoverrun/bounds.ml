@@ -1038,20 +1038,18 @@ module BoundTrace = struct
 
   let call ~callee_pname ~location callee_trace = Call {callee_pname; callee_trace; location}
 
-  let make_err_trace =
-    let rec aux depth trace =
-      match trace with
-      | Loop loop_head_loc ->
-          let desc = F.asprintf "Loop at %a" Location.pp loop_head_loc in
-          [Errlog.make_trace_element depth loop_head_loc desc []]
-      | Call {callee_pname; location; callee_trace} ->
-          let desc = F.asprintf "call to %a" Typ.Procname.pp callee_pname in
-          Errlog.make_trace_element depth location desc [] :: aux (depth + 1) callee_trace
-      | ModeledFunction {pname; location} ->
-          let desc = F.asprintf "Modeled call to %s" pname in
-          [Errlog.make_trace_element depth location desc []]
-    in
-    fun trace -> aux 0 trace
+  let rec make_err_trace ~depth trace =
+    match trace with
+    | Loop loop_head_loc ->
+        let desc = F.asprintf "Loop at %a" Location.pp loop_head_loc in
+        [Errlog.make_trace_element depth loop_head_loc desc []]
+    | Call {callee_pname; location; callee_trace} ->
+        let desc = F.asprintf "call to %a" Typ.Procname.pp callee_pname in
+        Errlog.make_trace_element depth location desc []
+        :: make_err_trace ~depth:(depth + 1) callee_trace
+    | ModeledFunction {pname; location} ->
+        let desc = F.asprintf "Modeled call to %s" pname in
+        [Errlog.make_trace_element depth location desc []]
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
@@ -1060,7 +1058,7 @@ module NonNegativeBound = struct
 
   let make_err_trace (b, t) =
     let b = F.asprintf "{%a}" Bound.pp b in
-    (b, BoundTrace.make_err_trace t)
+    (b, BoundTrace.make_err_trace ~depth:0 t)
 
 
   let pp ~hum fmt (bound, t) =
