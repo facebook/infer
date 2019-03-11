@@ -1080,6 +1080,18 @@ module LatestPrune = struct
         else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
     | Top ->
         Top
+
+
+  let replace ~from ~to_ x =
+    match x with
+    | TrueBranch (x, p) when Pvar.equal x from ->
+        TrueBranch (to_, p)
+    | FalseBranch (x, p) when Pvar.equal x from ->
+        FalseBranch (to_, p)
+    | V (x, ptrue, pfalse) when Pvar.equal x from ->
+        V (to_, ptrue, pfalse)
+    | _ ->
+        x
 end
 
 module Reachability = struct
@@ -1352,6 +1364,12 @@ module MemReach = struct
         if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
         else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
         else {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
+    | Lvar return, _, _ when Pvar.is_return return -> (
+      match Alias.find_ret m.alias with
+      | Some (Simple (Var (ProgramVar pvar))) ->
+          {m with latest_prune= LatestPrune.replace ~from:pvar ~to_:return m.latest_prune}
+      | _ ->
+          m )
     | _, _, _ ->
         {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
 
