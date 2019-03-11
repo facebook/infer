@@ -85,7 +85,8 @@ let clean_results_dir () =
         ; frontend_stats_dir_name
         ; reporting_stats_dir_name ]
       in
-      if flavors then common_list else captured_dir_name :: common_list
+      if flavors then common_list
+      else captured_dir_name :: racerd_issues_dir_name :: starvation_issues_dir_name :: common_list
     in
     List.mem ~equal:String.equal dirs_to_delete
   in
