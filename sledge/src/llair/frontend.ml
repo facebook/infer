@@ -917,6 +917,12 @@ let xlate_instr :
             (Llair.Inst.nondet ~reg ~msg ~loc :: insts, term, []) )
       in
       match String.split fname ~on:'.' with
+      | "llvm" :: "memset" :: _ ->
+          let dst = xlate_value x (Llvm.operand instr 0) in
+          let byt = xlate_value x (Llvm.operand instr 1) in
+          let len = xlate_value x (Llvm.operand instr 2) in
+          continue (fun (insts, term) ->
+              (Llair.Inst.memset ~dst ~byt ~len ~loc :: insts, term, []) )
       | "llvm" :: "memcpy" :: _ ->
           let dst = xlate_value x (Llvm.operand instr 0) in
           let src = xlate_value x (Llvm.operand instr 1) in
@@ -929,12 +935,6 @@ let xlate_instr :
           let len = xlate_value x (Llvm.operand instr 2) in
           continue (fun (insts, term) ->
               (Llair.Inst.memmov ~dst ~src ~len ~loc :: insts, term, []) )
-      | "llvm" :: "memset" :: _ ->
-          let dst = xlate_value x (Llvm.operand instr 0) in
-          let byt = xlate_value x (Llvm.operand instr 1) in
-          let len = xlate_value x (Llvm.operand instr 2) in
-          continue (fun (insts, term) ->
-              (Llair.Inst.memset ~dst ~byt ~len ~loc :: insts, term, []) )
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
           continue (fun (insts, term) -> (insts, term, []))
       | ["llvm"; "dbg"; ("declare" | "value")]

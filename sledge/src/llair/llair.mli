@@ -35,27 +35,27 @@ type inst = private
           [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
       (** Write [len]-byte value [exp] into memory at address [ptr]. *)
+  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
+      (** Store byte [byt] into [len] memory addresses starting from [dst]. *)
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
       (** Copy [len] bytes starting from address [src] to [dst], undefined
           if ranges overlap. *)
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
       (** Copy [len] bytes starting from address [src] to [dst]. *)
-  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Store byte [byt] into [len] memory addresses starting from [dst]. *)
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
+  | Free of {ptr: Exp.t; loc: Loc.t}
+      (** Deallocate the previously allocated block at address [ptr]. *)
   | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
       (** Maybe allocate a block of memory of size [siz] bytes and bind
           [reg] to the first address, otherwise bind [reg] to [null]. *)
-  | Free of {ptr: Exp.t; loc: Loc.t}
-      (** Deallocate the previously allocated block at address [ptr]. *)
-  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
-      (** Bind [reg] to an arbitrary value, representing non-deterministic
-          approximation of behavior described by [msg]. *)
   | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
       (** Bind [reg] to the length of the null-terminated string in memory
           starting from [ptr]. *)
+  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+      (** Bind [reg] to an arbitrary value, representing non-deterministic
+          approximation of behavior described by [msg]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst vector
@@ -130,14 +130,14 @@ module Inst : sig
   val pp : t pp
   val load : reg:Var.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val malloc : reg:Var.t -> siz:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
-  val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
+  val malloc : reg:Var.t -> siz:Exp.t -> loc:Loc.t -> inst
   val strlen : reg:Var.t -> ptr:Exp.t -> loc:Loc.t -> inst
+  val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
   val loc : inst -> Loc.t
   val locals : inst -> Var.Set.t
 end

@@ -33,42 +33,6 @@ let assume cnd pre =
   let post = Sh.and_ cnd pre in
   if Sh.is_false post then None else Some post
 
-(* { emp }
- *   alloc r [n × l]
- * { ∃α'. r-[r;n×l)->⟨n×l,α'⟩ }
- *)
-let alloc_spec us reg num len =
-  let loc = Exp.var reg in
-  let siz = Exp.mul Typ.siz num len in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
-  let post = Sh.seg seg in
-  let foot = Sh.extend_us xs Sh.emp in
-  {xs; foot; post}
-
-(* { emp }
- *   malloc r s
- * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
- *)
-let malloc_spec us reg siz =
-  let loc = Exp.var reg in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
-  let foot = Sh.extend_us xs Sh.emp in
-  let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
-  {xs; foot; post}
-
-(* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
- *   free p
- * { emp }
- *)
-let free_spec us ptr =
-  let len, us = Var.fresh "m" ~wrt:us in
-  let siz = Exp.var len in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len:siz ~siz us in
-  let xs = Set.add xs len in
-  let foot = Sh.or_ (null_eq ptr) (Sh.seg seg) in
-  let post = Sh.emp in
-  {xs; foot; post}
-
 (* { p-[b;m)->⟨l,α⟩ }
  *   load l r p
  * { r=α * p-[b;m)->⟨l,α⟩ }
@@ -242,6 +206,42 @@ let memmov_specs us dst src len =
   ; memmov_dn_spec us dst src len
   ; memmov_up_spec us dst src len ]
 
+(* { emp }
+ *   alloc r [n × l]
+ * { ∃α'. r-[r;n×l)->⟨n×l,α'⟩ }
+ *)
+let alloc_spec us reg num len =
+  let loc = Exp.var reg in
+  let siz = Exp.mul Typ.siz num len in
+  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
+  let post = Sh.seg seg in
+  let foot = Sh.extend_us xs Sh.emp in
+  {xs; foot; post}
+
+(* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
+ *   free p
+ * { emp }
+ *)
+let free_spec us ptr =
+  let len, us = Var.fresh "m" ~wrt:us in
+  let siz = Exp.var len in
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len:siz ~siz us in
+  let xs = Set.add xs len in
+  let foot = Sh.or_ (null_eq ptr) (Sh.seg seg) in
+  let post = Sh.emp in
+  {xs; foot; post}
+
+(* { emp }
+ *   malloc r s
+ * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
+ *)
+let malloc_spec us reg siz =
+  let loc = Exp.var reg in
+  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
+  let foot = Sh.extend_us xs Sh.emp in
+  let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
+  {xs; foot; post}
+
 (* { p-[b;m)->⟨l,α⟩ }
  *   r = strlen p
  * { r=b+m-p-1 * p-[b;m)->⟨l,α⟩ }
@@ -296,14 +296,14 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, _) result =
   assert (Set.disjoint (Sh.fv pre) (Llair.Inst.locals inst)) ;
   let us = pre.us in
   ( match inst with
-  | Nondet _ -> Ok pre
-  | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
-  | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
-  | Free {ptr} -> exec_spec pre (free_spec us ptr)
   | Load {reg; ptr; len} -> exec_spec pre (load_spec us reg ptr len)
   | Store {ptr; exp; len} -> exec_spec pre (store_spec us ptr exp len)
   | Memset {dst; byt; len} -> exec_spec pre (memset_spec us dst byt len)
   | Memcpy {dst; src; len} -> exec_specs pre (memcpy_specs us dst src len)
   | Memmov {dst; src; len} -> exec_specs pre (memmov_specs us dst src len)
-  | Strlen {reg; ptr} -> exec_spec pre (strlen_spec us reg ptr) )
+  | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
+  | Free {ptr} -> exec_spec pre (free_spec us ptr)
+  | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
+  | Strlen {reg; ptr} -> exec_spec pre (strlen_spec us reg ptr)
+  | Nondet _ -> Ok pre )
   |> Result.map_error ~f:(fun () -> (pre, inst))

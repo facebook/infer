@@ -10,14 +10,14 @@
 type inst =
   | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
-  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
-  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
   | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
+  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
 [@@deriving sexp]
 
 type cmnd = inst vector [@@deriving sexp]
@@ -94,26 +94,26 @@ let pp_inst fs inst =
   | Store {ptr; exp; len; loc} ->
       pf "@[<2>store %a@ %a@ %a;@]\t%a" Exp.pp len Exp.pp ptr Exp.pp exp
         Loc.pp loc
+  | Memset {dst; byt; len; loc} ->
+      pf "@[<2>memset %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp byt
+        Loc.pp loc
   | Memcpy {dst; src; len; loc} ->
       pf "@[<2>memcpy %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
         Loc.pp loc
   | Memmov {dst; src; len; loc} ->
       pf "@[<2>memmov %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
         Loc.pp loc
-  | Memset {dst; byt; len; loc} ->
-      pf "@[<2>memset %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp byt
-        Loc.pp loc
   | Alloc {reg; num; len; loc} ->
       pf "@[<2>alloc %a@ [%a x %a];@]\t%a" Var.pp reg Exp.pp num Exp.pp len
         Loc.pp loc
+  | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
   | Malloc {reg; siz; loc} ->
       pf "@[<2>malloc %a@ %a;@]\t%a" Var.pp reg Exp.pp siz Loc.pp loc
-  | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
+  | Strlen {reg; ptr; loc} ->
+      pf "@[<2>strlen %a@ %a;@]\t%a" Var.pp reg Exp.pp ptr Loc.pp loc
   | Nondet {reg; msg; loc} ->
       pf "@[<2>nondet %a\"%s\";@]\t%a" (Option.pp "%a " Var.pp) reg msg
         Loc.pp loc
-  | Strlen {reg; ptr; loc} ->
-      pf "@[<2>strlen %a@ %a;@]\t%a" Var.pp reg Exp.pp ptr Loc.pp loc
 
 let pp_args pp_arg fs args =
   Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
@@ -189,26 +189,26 @@ module Inst = struct
   let pp = pp_inst
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
   let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
+  let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
   let memcpy ~dst ~src ~len ~loc = Memcpy {dst; src; len; loc}
   let memmov ~dst ~src ~len ~loc = Memmov {dst; src; len; loc}
-  let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
-  let malloc ~reg ~siz ~loc = Malloc {reg; siz; loc}
   let free ~ptr ~loc = Free {ptr; loc}
-  let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
+  let malloc ~reg ~siz ~loc = Malloc {reg; siz; loc}
   let strlen ~reg ~ptr ~loc = Strlen {reg; ptr; loc}
+  let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
 
   let loc = function
     | Load {loc}
      |Store {loc}
+     |Memset {loc}
      |Memcpy {loc}
      |Memmov {loc}
-     |Memset {loc}
      |Alloc {loc}
-     |Malloc {loc}
      |Free {loc}
-     |Nondet {loc}
-     |Strlen {loc} ->
+     |Malloc {loc}
+     |Strlen {loc}
+     |Nondet {loc} ->
         loc
 
   let union_locals inst vs =
@@ -216,8 +216,8 @@ module Inst = struct
     | Load {reg}
      |Alloc {reg}
      |Malloc {reg}
-     |Nondet {reg= Some reg}
-     |Strlen {reg} ->
+     |Strlen {reg}
+     |Nondet {reg= Some reg} ->
         Set.add vs reg
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _ | Nondet {reg= None}
       ->
