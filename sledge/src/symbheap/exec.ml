@@ -27,6 +27,7 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
   {us; xs; seg= {loc; bas; len; siz; arr}}
 
 let null_eq ptr = Sh.pure (Exp.eq Exp.null ptr)
+let zero = Exp.integer Z.zero Typ.siz
 
 let assume cnd pre =
   let post = Sh.and_ cnd pre in
@@ -70,8 +71,7 @@ let memcpy_eq_spec us dst src len =
   let {xs; seg} = fresh_seg ~loc:dst ~len us in
   let dst_heap = Sh.seg seg in
   let foot =
-    Sh.and_ (Exp.eq dst src)
-      (Sh.and_ (Exp.eq len (Exp.integer Z.zero Typ.siz)) dst_heap)
+    Sh.and_ (Exp.eq dst src) (Sh.and_ (Exp.eq len zero) dst_heap)
   in
   let post = dst_heap in
   {xs; foot; post}
