@@ -16,11 +16,10 @@ let fresh_var nam us xs =
   let var, us = Var.fresh nam ~wrt:us in
   (Exp.var var, us, Set.add xs var)
 
-let fresh_seg ~loc ?bas ?len ?siz ?arr us =
+let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
   let freshen exp nam us xs =
     match exp with Some exp -> (exp, us, xs) | None -> fresh_var nam us xs
   in
-  let xs = Var.Set.empty in
   let bas, us, xs = freshen bas "b" us xs in
   let len, us, xs = freshen len "m" us xs in
   let siz, us, xs = freshen siz "n" us xs in
@@ -82,16 +81,15 @@ let memcpy_eq_spec us dst src len =
  * { d-[b;m)->⟨l,α'⟩ * s-[b';m')->⟨l,α'⟩ }
  *)
 let memcpy_dj_spec us dst src len =
-  let {us; xs= dst_xs; seg= dst_seg} = fresh_seg ~loc:dst ~siz:len us in
+  let {us; xs; seg= dst_seg} = fresh_seg ~loc:dst ~siz:len us in
   let dst_heap = Sh.seg dst_seg in
-  let {us; xs= src_xs; seg= src_seg} = fresh_seg ~loc:src ~siz:len us in
+  let {us; xs; seg= src_seg} = fresh_seg ~loc:src ~siz:len ~xs us in
   let src_heap = Sh.seg src_seg in
   let {seg= dst_seg'} =
     fresh_seg ~loc:dst ~bas:dst_seg.bas ~len:dst_seg.len ~siz:dst_seg.siz
       ~arr:src_seg.arr us
   in
   let dst_heap' = Sh.seg dst_seg' in
-  let xs = Set.union dst_xs src_xs in
   let foot = Sh.star dst_heap src_heap in
   let post = Sh.star dst_heap' src_heap in
   {xs; foot; post}
@@ -223,10 +221,8 @@ let alloc_spec us reg num len =
  * { emp }
  *)
 let free_spec us ptr =
-  let len, us = Var.fresh "m" ~wrt:us in
-  let siz = Exp.var len in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len:siz ~siz us in
-  let xs = Set.add xs len in
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.or_ (null_eq ptr) (Sh.seg seg) in
   let post = Sh.emp in
   {xs; foot; post}
