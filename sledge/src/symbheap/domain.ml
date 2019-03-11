@@ -22,6 +22,7 @@ let init globals =
 let join = Sh.or_
 let assume q b = Exec.assume b q
 let exec_inst = Exec.inst
+let exec_intrinsic = Exec.intrinsic
 
 type from_call = Var.Subst.t [@@deriving compare, equal, sexp]
 

@@ -285,13 +285,13 @@ let rec exec_specs pre = function
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
   | [] -> Ok (Sh.false_ pre.us)
 
-let inst : Sh.t -> Llair.inst -> (Sh.t, _) result =
+let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
  fun pre inst ->
   [%Trace.info
     "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
   assert (Set.disjoint (Sh.fv pre) (Llair.Inst.locals inst)) ;
   let us = pre.us in
-  ( match inst with
+  match inst with
   | Load {reg; ptr; len} -> exec_spec pre (load_spec us reg ptr len)
   | Store {ptr; exp; len} -> exec_spec pre (store_spec us ptr exp len)
   | Memset {dst; byt; len} -> exec_spec pre (memset_spec us dst byt len)
@@ -301,5 +301,19 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, _) result =
   | Free {ptr} -> exec_spec pre (free_spec us ptr)
   | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
   | Strlen {reg; ptr} -> exec_spec pre (strlen_spec us reg ptr)
-  | Nondet _ -> Ok pre )
-  |> Result.map_error ~f:(fun () -> (pre, inst))
+  | Nondet _ -> Ok pre
+
+let intrinsic :
+       Sh.t
+    -> Var.t option
+    -> Var.t
+    -> Exp.t list
+    -> (Sh.t, unit) result option =
+ fun pre result intrinsic actuals ->
+  [%Trace.info
+    "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
+      (Option.pp "%a := " Var.pp)
+      result Var.pp intrinsic (List.pp ",@ " Exp.pp) (List.rev actuals)
+      Sh.pp pre] ;
+  let us = pre.us in
+  match (result, Var.name intrinsic, actuals) with _ -> None

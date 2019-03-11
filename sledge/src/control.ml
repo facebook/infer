@@ -119,10 +119,13 @@ end
 let push_jump lcls stk =
   if Set.is_empty lcls then stk else Locals (lcls, stk)
 
-let exec_jump stk state block ({dst; args; retreating} : Llair.jump) =
-  let state, _ = Domain.call state args dst.params dst.locals in
+let exec_goto stk state block ({dst; retreating} : Llair.jump) =
   let stk = push_jump dst.locals stk in
   Work.add ~prev:block ~retreating stk state dst
+
+let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
+  let state, _ = Domain.call state args dst.params dst.locals in
+  exec_goto stk state block jmp
 
 let push_call locals ~return from_call ?throw stk =
   let push_return jmp from_call stk = Return (jmp, from_call, stk) in
@@ -217,23 +220,40 @@ let exec_term : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
     | [] -> exec_skip_func stk state block return
     | callees ->
         List.fold callees ~init:Work.skip ~f:(fun x callee ->
-            ( if Llair.Func.is_undefined callee then
-              exec_skip_func stk state block return
-            else
-              exec_call stk state block
-                {dst= callee.entry; args; retreating}
-                return throw )
+            ( match
+                Domain.exec_intrinsic state
+                  (List.hd return.dst.params)
+                  callee.name.var args
+              with
+            | Some (Error ()) ->
+                Report.invalid_access_term state block.term ;
+                Work.skip
+            | Some (Ok state) -> exec_goto stk state block return
+            | None when Llair.Func.is_undefined callee ->
+                exec_skip_func stk state block return
+            | None ->
+                exec_call stk state block
+                  {dst= callee.entry; args; retreating}
+                  return throw )
             |> Work.seq x ) )
   | Return {exp} -> exec_return stk state block exp
   | Throw {exc} -> exec_throw stk state block exc
   | Unreachable -> Work.skip
 
+let exec_inst :
+    Domain.t -> Llair.inst -> (Domain.t, Domain.t * Llair.inst) result =
+ fun state inst ->
+  Domain.exec_inst state inst
+  |> Result.map_error ~f:(fun () -> (state, inst))
+
 let exec_block : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
  fun pgm stk state block ->
   [%Trace.info "exec %a" Llair.Block.pp block] ;
-  match Vector.fold_result ~f:Domain.exec_inst ~init:state block.cmnd with
+  match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
   | Ok state -> exec_term pgm stk state block
-  | Error (q, i) -> Report.invalid_access i q ; Work.skip
+  | Error (state, inst) ->
+      Report.invalid_access_inst state inst ;
+      Work.skip
 
 let harness : Llair.t -> Work.t option =
  fun pgm ->

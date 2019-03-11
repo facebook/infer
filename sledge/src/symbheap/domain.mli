@@ -13,7 +13,10 @@ val pp : t pp
 val init : Global.t vector -> t
 val join : t -> t -> t
 val assume : t -> Exp.t -> t option
-val exec_inst : t -> Llair.inst -> (t, t * Llair.inst) result
+val exec_inst : t -> Llair.inst -> (t, unit) result
+
+val exec_intrinsic :
+  t -> Var.t option -> Var.t -> Exp.t list -> (t, unit) result option
 
 type from_call [@@deriving compare, equal, sexp]
 

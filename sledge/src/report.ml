@@ -24,14 +24,19 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
-let invalid_access inst state =
+let invalid_access state pp access loc =
   Format.printf
-    "@\n\
-     @[<v 2>%a Invalid memory access executing instruction@;<1 2>@[%a@]@]@."
-    Loc.pp (Llair.Inst.loc inst) Llair.Inst.pp inst ;
+    "@\n@[<v 2>%a Invalid memory access executing@;<1 2>@[%a@]@]@." Loc.pp
+    (loc access) pp access ;
   [%Trace.kprintf
     (fun _ -> assert false)
       "@\n\
-       @[<v 2>%a Invalid memory access executing instruction@;<1 2>@[%a@]@ \
-       from symbolic state@;<1 2>@[{ %a@ }@]@]@."
-      Loc.pp (Llair.Inst.loc inst) Llair.Inst.pp inst Domain.pp state]
+       @[<v 2>%a Invalid memory access executing@;<1 2>@[%a@]@ from \
+       symbolic state@;<1 2>@[{ %a@ }@]@]@."
+      Loc.pp (loc access) pp access Domain.pp state]
+
+let invalid_access_inst state inst =
+  invalid_access state Llair.Inst.pp inst Llair.Inst.loc
+
+let invalid_access_term state term =
+  invalid_access state Llair.Term.pp term Llair.Term.loc

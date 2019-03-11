@@ -8,4 +8,5 @@
 (** Issue reporting *)
 
 val unknown_call : Llair.term -> unit
-val invalid_access : Llair.inst -> Domain.t -> unit
+val invalid_access_inst : Domain.t -> Llair.inst -> unit
+val invalid_access_term : Domain.t -> Llair.term -> unit
