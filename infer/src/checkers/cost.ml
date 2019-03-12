@@ -554,7 +554,13 @@ module InstrBasicCost = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let allocation_functions = [BuiltinDecl.__new]
+  let allocation_functions =
+    [ BuiltinDecl.__new
+    ; BuiltinDecl.__new_array
+    ; BuiltinDecl.__objc_alloc_no_fail
+    ; BuiltinDecl.malloc
+    ; BuiltinDecl.malloc_no_fail ]
+
 
   let is_allocation_function callee_pname =
     List.exists allocation_functions ~f:(fun f -> Typ.Procname.equal callee_pname f)

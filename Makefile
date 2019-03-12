@@ -57,6 +57,7 @@ DIRECT_TESTS += \
   cpp_conflicts \
   cpp_errors \
   cpp_frontend \
+	cpp_linters \
   cpp_linters-for-test-only \
   cpp_liveness \
   cpp_nullable \
@@ -66,6 +67,7 @@ DIRECT_TESTS += \
   cpp_siof \
 	cpp_starvation \
   cpp_uninit \
+	
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck_blacklist buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
@@ -82,10 +84,24 @@ endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += objc_getters_setters objc_missing_fld objc_retain_cycles objc_retain_cycles_weak
 DIRECT_TESTS += \
-  objc_frontend objc_errors objc_linters objc_ioslints objcpp_errors objcpp_nullable objcpp_retain-cycles \
-  objc_linters-def-folder objc_nullable objc_liveness objcpp_liveness objc_uninit \
-  objcpp_frontend objcpp_linters cpp_linters  objc_linters-for-test-only objcpp_linters-for-test-only \
-	objcpp_racerd
+	objc_errors \
+	objc_frontend \
+	objc_ioslints \
+	objc_linters \
+	objc_linters-def-folder \
+	objc_linters-for-test-only \
+	objc_liveness \
+	objc_nullable \
+	objc_performance objc_uninit \
+	objcpp_errors \
+	objcpp_frontend \
+	objcpp_linters \
+	objcpp_linters-for-test-only \
+	objcpp_liveness \
+	objcpp_nullable \
+	objcpp_racerd \
+	objcpp_retain-cycles \
+
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
 endif
