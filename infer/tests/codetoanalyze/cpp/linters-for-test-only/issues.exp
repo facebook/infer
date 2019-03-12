@@ -11,6 +11,7 @@ codetoanalyze/cpp/linters-for-test-only/test_fully_qualified_names.cpp, Linters_
 codetoanalyze/cpp/linters-for-test-only/test_fully_qualified_names.cpp, Linters_dummy_method, 28, FIND_NODES_WITH_CXX_FULL_NAME, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_fully_qualified_names.cpp, Linters_dummy_method, 39, FIND_NODES_WITH_CXX_FULL_NAME, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_included.h, Bazoo_fibble, 11, FIND_CXX_METHODS_FROM_HEADER_FILE, no_bucket, WARNING, []
+codetoanalyze/cpp/linters-for-test-only/test_includer.cpp, Bazowey_frazzle, 11, FIND_REF_FROM_SRC_FILE, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_bar, 16, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, B_foo, 14, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []
 codetoanalyze/cpp/linters-for-test-only/test_overrides.cpp, Foo::Bar::SvIf_async_tm_poke, 36, FIND_CXX_METHOD_OVERRIDES, no_bucket, WARNING, []

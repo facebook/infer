@@ -84,4 +84,6 @@ val c_type_equal : Clang_ast_t.c_type -> abs_ctype -> bool
 
 val abs_ctype_to_string : abs_ctype -> string
 
-val get_source_file : ast_node -> Clang_ast_t.source_file
+val get_source_file : ast_node -> Clang_ast_t.source_file option
+
+val get_referenced_decl_source_file : ast_node -> Clang_ast_t.source_file option

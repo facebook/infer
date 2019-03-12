@@ -1468,6 +1468,16 @@ let is_init_expr_cxx11_constant an =
       false
 
 
+let source_file_matches src_file path_re =
+  Option.value_map
+    ~f:(fun sf ->
+      ALVar.compare_str_with_alexp (SourceFile.to_rel_path (SourceFile.create sf)) path_re )
+    ~default:false src_file
+
+
 let is_in_source_file an path_re =
-  let src_file = Ctl_parser_types.get_source_file an in
-  ALVar.compare_str_with_alexp (SourceFile.to_rel_path (SourceFile.create src_file)) path_re
+  source_file_matches (Ctl_parser_types.get_source_file an) path_re
+
+
+let is_referencing_decl_from_source_file an path_re =
+  source_file_matches (Ctl_parser_types.get_referenced_decl_source_file an) path_re

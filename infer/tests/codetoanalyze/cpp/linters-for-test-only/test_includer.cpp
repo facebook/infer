@@ -8,5 +8,5 @@
 #include "test_included.h"
 
 struct Bazowey {
-  void frazzle();
+  void frazzle() { Bazoo().fibble(); }
 };

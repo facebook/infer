@@ -84,12 +84,11 @@ let decl_cxx_fully_qualified_name (decl : Clang_ast_t.decl) =
   match Clang_ast_proj.get_var_decl_tuple decl with
   | Some (_, ndi, _, {vdi_is_global= false}) ->
       ndi.ni_name
-  | _ -> (
-    match Clang_ast_proj.get_named_decl_tuple decl with
-    | Some (_, ndi) ->
-        "::" ^ String.concat ~sep:"::" (List.rev ndi.ni_qual_name)
-    | None ->
-        "" )
+  | _ ->
+      Option.value_map
+        ~f:(fun (_, ndi) -> "::" ^ String.concat ~sep:"::" (List.rev ndi.Clang_ast_t.ni_qual_name))
+        ~default:""
+        (Clang_ast_proj.get_named_decl_tuple decl)
 
 
 let ast_node_cxx_fully_qualified_name an =
@@ -97,22 +96,16 @@ let ast_node_cxx_fully_qualified_name an =
   match an with
   | Decl decl ->
       decl_cxx_fully_qualified_name decl
-  | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) -> (
-    match CAst_utils.get_decl dr.dr_decl_pointer with
-    | Some decl ->
-        decl_cxx_fully_qualified_name decl
-    | None ->
-        "" )
-  | Stmt stmt -> (
-    match Clang_ast_proj.get_cxx_construct_expr_tuple stmt with
-    | Some (_, _, _, xcei) -> (
-      match CAst_utils.get_decl xcei.xcei_decl_ref.dr_decl_pointer with
-      | Some decl ->
-          decl_cxx_fully_qualified_name decl
-      | None ->
-          "" )
-    | None ->
-        "" )
+  | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) ->
+      Option.value_map ~f:decl_cxx_fully_qualified_name ~default:""
+        (CAst_utils.get_decl dr.dr_decl_pointer)
+  | Stmt stmt ->
+      Option.value_map
+        ~f:(fun (_, _, _, xcei) ->
+          Option.value_map ~f:decl_cxx_fully_qualified_name ~default:""
+            (CAst_utils.get_decl xcei.xcei_decl_ref.dr_decl_pointer) )
+        ~default:""
+        (Clang_ast_proj.get_cxx_construct_expr_tuple stmt)
 
 
 let ast_node_kind node =
@@ -622,11 +615,30 @@ let get_source_range an =
       decl_info.di_source_range
 
 
-let get_source_file an =
-  match get_source_range an with
-  | {sl_file= Some sf}, _ ->
-      sf
-  | _, {sl_file= Some sf} ->
-      sf
+let get_source_file_of_range (range : Clang_ast_t.source_range) =
+  match range with {sl_file= Some sf}, _ | _, {sl_file= Some sf} -> Some sf | _ -> None
+
+
+let get_source_file an = get_source_file_of_range (get_source_range an)
+
+let get_decl_source_file an =
+  let di = Clang_ast_proj.get_decl_tuple an in
+  Option.value_map ~f:(fun x -> Some x) ~default:None (get_source_file_of_range di.di_source_range)
+
+
+let get_decl_ref_source_file (dr : Clang_ast_t.decl_ref) =
+  Option.value_map ~f:get_decl_source_file ~default:None (CAst_utils.get_decl dr.dr_decl_pointer)
+
+
+let get_referenced_decl_source_file an =
+  let open Clang_ast_t in
+  match an with
+  | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) ->
+      get_decl_ref_source_file dr
+  | Stmt stmt ->
+      Option.value_map
+        ~f:(fun (_, _, _, xcei) -> get_decl_ref_source_file xcei.xcei_decl_ref)
+        ~default:None
+        (Clang_ast_proj.get_cxx_construct_expr_tuple stmt)
   | _ ->
-      assert false
+      None

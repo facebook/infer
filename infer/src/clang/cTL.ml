@@ -1171,6 +1171,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.cxx_construct_expr_has_no_parameters an
   | "is_in_source_file", [path_re], an ->
       CPredicates.is_in_source_file an path_re
+  | "is_referencing_decl_from_source_file", [path_re], an ->
+      CPredicates.is_referencing_decl_from_source_file an path_re
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 

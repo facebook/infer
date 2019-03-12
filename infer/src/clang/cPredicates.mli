@@ -502,6 +502,11 @@ val is_in_source_file : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
  * True iff the source file path of the given node matches the given regexp or string.
  *)
 
+val is_referencing_decl_from_source_file : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ * True iff the given node is a DeclRefExpr referencing a decl whose source file path matches the given regexp or string.
+ *)
+
 val is_cxx_method_overriding : Ctl_parser_types.ast_node -> ALVar.alexp option -> bool
 (**
  *  True iff the current node is a CXXMethodDecl node and is overriding a

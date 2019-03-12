@@ -53,3 +53,8 @@ DEFINE-CHECKER FIND_LISTED_SYMBOLS = {
     SET report_when = NOT is_decl() AND has_cxx_fully_qualified_name_in_custom_symbols("test");
     SET message = "found usage of %cxx_fully_qualified_name%";
 };
+
+DEFINE-CHECKER FIND_REF_FROM_SRC_FILE = {
+    SET report_when = is_referencing_decl_from_source_file(REGEXP("/test_included.h$"));
+    SET message = "found ref from %ref_source_file%";
+};
