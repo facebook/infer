@@ -54,6 +54,9 @@ val has_init_list_const_expr : Ctl_parser_types.ast_node -> bool
 val call_function : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_function an name' is true iff an is a call to a function whose name contains 'name' *)
 
+val call_qualified_function : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** 'call_function an name' is true iff an is a call to a function whose fully qualified name contains 'name' *)
+
 val is_strong_property : Ctl_parser_types.ast_node -> bool
 (** 'is_strong_property an' is true iff an denotes a objc property declaration with 'strong' attribute *)
 

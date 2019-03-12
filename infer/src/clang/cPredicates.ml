@@ -593,13 +593,16 @@ let has_init_list_const_expr an =
       false
 
 
-let decl_ref_name ?kind name st =
+let decl_ref_name qualified ?kind name st =
   match st with
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) -> (
     match drti.drti_decl_ref with
     | Some dr -> (
         let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-        let has_right_name = ALVar.compare_str_with_alexp ndi.ni_name name in
+        let qname =
+          if qualified then String.concat ~sep:"::" (List.rev ndi.ni_qual_name) else ndi.ni_name
+        in
+        let has_right_name = ALVar.compare_str_with_alexp qname name in
         match kind with
         | Some decl_kind ->
             has_right_name && PolyVariantEqual.( = ) dr.Clang_ast_t.dr_kind decl_kind
@@ -612,13 +615,21 @@ let decl_ref_name ?kind name st =
 
 
 let declaration_ref_name ?kind an name =
-  match an with Ctl_parser_types.Stmt st -> decl_ref_name ?kind name st | _ -> false
+  match an with Ctl_parser_types.Stmt st -> decl_ref_name false ?kind name st | _ -> false
 
 
 let call_function an name =
   match an with
   | Ctl_parser_types.Stmt st ->
-      CAst_utils.exists_eventually_st (decl_ref_name ~kind:`Function) name st
+      CAst_utils.exists_eventually_st (decl_ref_name false ~kind:`Function) name st
+  | _ ->
+      false
+
+
+let call_qualified_function an name =
+  match an with
+  | Ctl_parser_types.Stmt st ->
+      CAst_utils.exists_eventually_st (decl_ref_name true ~kind:`Function) name st
   | _ ->
       false
 
@@ -626,7 +637,7 @@ let call_function an name =
 let is_enum_constant an name =
   match an with
   | Ctl_parser_types.Stmt st ->
-      decl_ref_name ~kind:`EnumConstant name st
+      decl_ref_name false ~kind:`EnumConstant name st
   | _ ->
       false
 
@@ -984,7 +995,7 @@ let is_receiver_self an =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, fst_param :: _, _, _)) ->
       CAst_utils.exists_eventually_st
-        (decl_ref_name ~kind:`ImplicitParam)
+        (decl_ref_name false ~kind:`ImplicitParam)
         (ALVar.Const CFrontend_config.self) fst_param
   | _ ->
       false

@@ -961,6 +961,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.call_class_method an m
   | "call_function", [m], an ->
       CPredicates.call_function an m
+  | "call_qualified_function", [m], an ->
+      CPredicates.call_qualified_function an m
   | "call_instance_method", [m], an ->
       CPredicates.call_instance_method an m
   | "call_method", [m], an ->
