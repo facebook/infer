@@ -227,6 +227,17 @@ let free_spec us ptr =
   let post = Sh.emp in
   {xs; foot; post}
 
+(* { p-[p;m)->⟨m,α⟩ }
+ *   dallocx p
+ * { emp }
+ *)
+let dallocx_spec us ptr =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let foot = Sh.seg seg in
+  let post = Sh.emp in
+  {xs; foot; post}
+
 (* { emp }
  *   malloc r s
  * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
@@ -236,6 +247,189 @@ let malloc_spec us reg siz =
   let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
   let foot = Sh.extend_us xs Sh.emp in
   let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
+  {xs; foot; post}
+
+(* { s≠0 }
+ *   mallocx r s
+ * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
+ *)
+let mallocx_spec us reg siz =
+  let loc = Exp.var reg in
+  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
+  let foot = Sh.extend_us xs (Sh.pure Exp.(dq siz zero)) in
+  let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
+  {xs; foot; post}
+
+(* { emp }
+ *   calloc r [n × l]
+ * { r=0 ∨ r-[r;n×l)->⟨n×l,0^n×l⟩ }
+ *)
+let calloc_spec us reg num len =
+  let loc = Exp.var reg in
+  let byt = Exp.integer Z.zero Typ.byt in
+  let siz = Exp.mul Typ.siz num len in
+  let arr = Exp.splat ~byt ~siz in
+  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~arr us in
+  let foot = Sh.emp in
+  let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
+  {xs; foot; post}
+
+(* { emp }
+ *   posix_memalign r p s
+ * { r=ENOMEM ∨ ∃α'. r=0 * p-[p;s)->⟨s,α'⟩ }
+ *)
+let posix_memalign_spec us reg ptr siz =
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len:siz ~siz us in
+  let foot = Sh.extend_us xs Sh.emp in
+  let enomem = Exp.integer (Z.of_int 12) Typ.siz in
+  let post =
+    Sh.or_
+      (Sh.pure (Exp.eq (Exp.var reg) enomem))
+      (Sh.and_ (Exp.eq (Exp.var reg) zero) (Sh.seg seg))
+  in
+  {xs; foot; post}
+
+(* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
+ *   realloc r p s
+ * {   (r=0 * (p=0 ∨ p-[p;m)->⟨m,α⟩))
+ *   ∨ ∃α',α'' . r-[r;s)->⟨s,α'⟩
+ *     * (m≤s ? ⟨s,α'⟩=⟨m,α⟩^⟨s-m,α''⟩ : ⟨m,α⟩=⟨s,α'⟩^⟨m-s,α''⟩) }
+ *)
+let realloc_spec us reg ptr siz =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {us; xs; seg= pseg} =
+    fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us
+  in
+  let loc = Exp.var reg in
+  let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
+  let a0 = pseg.arr in
+  let a1 = rseg.arr in
+  let a2, _, xs = fresh_var "a" us xs in
+  let foot = Sh.extend_us xs (Sh.or_ (null_eq ptr) (Sh.seg pseg)) in
+  let post =
+    Sh.or_
+      (Sh.and_ Exp.(eq loc null) foot)
+      (Sh.and_
+         Exp.(
+           conditional ~cnd:(le len siz)
+             ~thn:
+               (eq (memory ~siz ~arr:a1)
+                  (concat
+                     [| memory ~siz:len ~arr:a0
+                      ; memory ~siz:(sub Typ.siz siz len) ~arr:a2 |]))
+             ~els:
+               (eq (memory ~siz:len ~arr:a0)
+                  (concat
+                     [| memory ~siz ~arr:a1
+                      ; memory ~siz:(sub Typ.siz len siz) ~arr:a2 |])))
+         (Sh.seg rseg))
+  in
+  {xs; foot; post}
+
+(* { s≠0 * p-[p;m)->⟨m,α⟩ }
+ *   rallocx r p s
+ * {   (r=0 * p-[p;m)->⟨m,α⟩)
+ *   ∨ ∃α',α'' . r-[r;s)->⟨s,α'⟩
+ *     * (m≤s ? ⟨s,α'⟩=⟨m,α⟩^⟨s-m,α''⟩ : ⟨m,α⟩=⟨s,α'⟩^⟨m-s,α''⟩) }
+ *)
+let rallocx_spec us reg ptr siz =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {us; xs; seg= pseg} =
+    fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us
+  in
+  let loc = Exp.var reg in
+  let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
+  let a0 = pseg.arr in
+  let a1 = rseg.arr in
+  let a2, _, xs = fresh_var "a" us xs in
+  let foot = Sh.extend_us xs (Sh.and_ Exp.(dq siz zero) (Sh.seg pseg)) in
+  let post =
+    Sh.or_
+      (Sh.and_ Exp.(eq loc null) foot)
+      (Sh.and_
+         Exp.(
+           conditional ~cnd:(le len siz)
+             ~thn:
+               (eq (memory ~siz ~arr:a1)
+                  (concat
+                     [| memory ~siz:len ~arr:a0
+                      ; memory ~siz:(sub Typ.siz siz len) ~arr:a2 |]))
+             ~els:
+               (eq (memory ~siz:len ~arr:a0)
+                  (concat
+                     [| memory ~siz ~arr:a1
+                      ; memory ~siz:(sub Typ.siz len siz) ~arr:a2 |])))
+         (Sh.seg rseg))
+  in
+  {xs; foot; post}
+
+(* { s≠0 * p-[p;m)->⟨m,α⟩ }
+ *   xallocx r p s e
+ * { ∃α',α'' . s≤r≤s+e * p-[p;r)->⟨r,α'⟩
+ *   * (m≤r ? ⟨r,α'⟩=⟨m,α⟩^⟨r-m,α''⟩ : ⟨m,α⟩=⟨r,α'⟩^⟨m-r,α''⟩) }
+ *)
+let xallocx_spec us reg ptr siz ext =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let reg = Exp.var reg in
+  let {us; xs; seg= seg'} =
+    fresh_seg ~loc:ptr ~bas:ptr ~len:reg ~siz:reg ~xs us
+  in
+  let a0 = seg.arr in
+  let a1 = seg'.arr in
+  let a2, _, xs = fresh_var "a" us xs in
+  let foot = Sh.extend_us xs (Sh.and_ Exp.(dq siz zero) (Sh.seg seg)) in
+  let post =
+    Sh.and_
+      Exp.(
+        and_
+          (conditional ~cnd:(le len siz)
+             ~thn:
+               (eq (memory ~siz ~arr:a1)
+                  (concat
+                     [| memory ~siz:len ~arr:a0
+                      ; memory ~siz:(sub Typ.siz siz len) ~arr:a2 |]))
+             ~els:
+               (eq (memory ~siz:len ~arr:a0)
+                  (concat
+                     [| memory ~siz ~arr:a1
+                      ; memory ~siz:(sub Typ.siz len siz) ~arr:a2 |])))
+          (and_ (le siz reg) (le reg (add Typ.siz siz ext))))
+      (Sh.seg seg')
+  in
+  {xs; foot; post}
+
+(* { p-[p;m)->⟨m,α⟩ }
+ *   sallocx r p
+ * { r=m * p-[p;m)->⟨m,α⟩ }
+ *)
+let sallocx_spec us reg ptr =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let foot = Sh.seg seg in
+  let post = Sh.and_ Exp.(eq (var reg) len) foot in
+  {xs; foot; post}
+
+(* { p-[p;m)->⟨m,α⟩ }
+ *   malloc_usable_size r p
+ * { m≤r * p-[p;m)->⟨m,α⟩ }
+ *)
+let malloc_usable_size_spec us reg ptr =
+  let len, us, xs = fresh_var "m" us Var.Set.empty in
+  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let foot = Sh.seg seg in
+  let post = Sh.and_ Exp.(le len (var reg)) foot in
+  {xs; foot; post}
+
+(* { s≠0 }
+ *   r = nallocx s
+ * { r=0 ∨ r=s }
+ *)
+let nallocx_spec _ reg siz =
+  let loc = Exp.var reg in
+  let xs = Var.Set.empty in
+  let foot = Sh.pure (Exp.dq siz zero) in
+  let post = Sh.or_ (null_eq loc) (Sh.pure (Exp.eq loc siz)) in
   {xs; foot; post}
 
 (* { p-[b;m)->⟨l,α⟩ }
@@ -299,8 +493,9 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
   | Memmov {dst; src; len} -> exec_specs pre (memmov_specs us dst src len)
   | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
   | Free {ptr} -> exec_spec pre (free_spec us ptr)
-  | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
   | Nondet _ -> Ok pre
+
+let skip : Sh.t -> (Sh.t, _) result option = fun pre -> Some (Ok pre)
 
 let intrinsic :
        Sh.t
@@ -316,6 +511,57 @@ let intrinsic :
       Sh.pp pre] ;
   let us = pre.us in
   match (result, Var.name intrinsic, actuals) with
+  (*
+   * cstdlib - memory management
+   *)
+  (* void* malloc(size_t size) *)
+  | Some reg, "malloc", [size]
+  (* void* aligned_alloc(size_t alignment, size_t size) *)
+   |Some reg, "aligned_alloc", [size; _] ->
+      Some (exec_spec pre (malloc_spec us reg size))
+  (* void* calloc(size_t number, size_t size) *)
+  | Some reg, "calloc", [size; number] ->
+      Some (exec_spec pre (calloc_spec us reg number size))
+  (* int posix_memalign(void** ptr, size_t alignment, size_t size) *)
+  | Some reg, "posix_memalign", [size; _; ptr] ->
+      Some (exec_spec pre (posix_memalign_spec us reg ptr size))
+  (* void* realloc(void* ptr, size_t size) *)
+  | Some reg, "realloc", [size; ptr] ->
+      Some (exec_spec pre (realloc_spec us reg ptr size))
+  (*
+   * jemalloc - non-standard API
+   *)
+  (* void* mallocx(size_t size, int flags) *)
+  | Some reg, "mallocx", [_; size] ->
+      Some (exec_spec pre (mallocx_spec us reg size))
+  (* void* rallocx(void* ptr, size_t size, int flags) *)
+  | Some reg, "rallocx", [_; size; ptr] ->
+      Some (exec_spec pre (rallocx_spec us reg ptr size))
+  (* size_t xallocx(void* ptr, size_t size, size_t extra, int flags) *)
+  | Some reg, "xallocx", [_; extra; size; ptr] ->
+      Some (exec_spec pre (xallocx_spec us reg ptr size extra))
+  (* size_t sallocx(void* ptr, int flags) *)
+  | Some reg, "sallocx", [_; ptr] ->
+      Some (exec_spec pre (sallocx_spec us reg ptr))
+  (* void dallocx(void* ptr, int flags) *)
+  | None, "dallocx", [_; ptr]
+  (* void sdallocx(void* ptr, size_t size, int flags) *)
+   |None, "sdallocx", [_; _; ptr] ->
+      Some (exec_spec pre (dallocx_spec us ptr))
+  (* size_t nallocx(size_t size, int flags) *)
+  | Some reg, "nallocx", [_; size] ->
+      Some (exec_spec pre (nallocx_spec us reg size))
+  (* size_t malloc_usable_size(void* ptr) *)
+  | Some reg, "malloc_usable_size", [ptr] ->
+      Some (exec_spec pre (malloc_usable_size_spec us reg ptr))
+  | _, "mallctl", _
+   |_, "mallctlnametomib", _
+   |_, "mallctlbymib", _
+   |_, "malloc_stats_print", _ ->
+      skip pre
+  (*
+   * cstring
+   *)
   (* size_t strlen (const char* ptr) *)
   | Some reg, "strlen", [ptr] ->
       Some (exec_spec pre (strlen_spec us reg ptr))

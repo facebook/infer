@@ -928,11 +928,6 @@ let xlate_instr :
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
           emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
-      | ["malloc"] ->
-          let reg = xlate_name instr in
-          let siz = xlate_value x (Llvm.operand instr 0) in
-          continue (fun (insts, term) ->
-              (Llair.Inst.malloc ~reg ~siz ~loc :: insts, term, []) )
       | ["_ZdlPv" (* operator delete(void* ptr) *)]
        |["free" (* void free(void* ptr) *)] ->
           let ptr = xlate_value x (Llvm.operand instr 0) in

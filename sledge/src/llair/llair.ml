@@ -15,7 +15,6 @@ type inst =
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
-  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
 [@@deriving sexp]
 
@@ -106,8 +105,6 @@ let pp_inst fs inst =
       pf "@[<2>alloc %a@ [%a x %a];@]\t%a" Var.pp reg Exp.pp num Exp.pp len
         Loc.pp loc
   | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
-  | Malloc {reg; siz; loc} ->
-      pf "@[<2>malloc %a@ %a;@]\t%a" Var.pp reg Exp.pp siz Loc.pp loc
   | Nondet {reg; msg; loc} ->
       pf "@[<2>nondet %a\"%s\";@]\t%a" (Option.pp "%a " Var.pp) reg msg
         Loc.pp loc
@@ -191,7 +188,6 @@ module Inst = struct
   let memmov ~dst ~src ~len ~loc = Memmov {dst; src; len; loc}
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
-  let malloc ~reg ~siz ~loc = Malloc {reg; siz; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
 
   let loc = function
@@ -202,14 +198,12 @@ module Inst = struct
      |Memmov {loc}
      |Alloc {loc}
      |Free {loc}
-     |Malloc {loc}
      |Nondet {loc} ->
         loc
 
   let union_locals inst vs =
     match inst with
-    | Load {reg} | Alloc {reg} | Malloc {reg} | Nondet {reg= Some reg} ->
-        Set.add vs reg
+    | Load {reg} | Alloc {reg} | Nondet {reg= Some reg} -> Set.add vs reg
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _ | Nondet {reg= None}
       ->
         vs

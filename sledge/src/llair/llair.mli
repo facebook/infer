@@ -47,9 +47,6 @@ type inst = private
           [len] bytes each and bind [reg] to the first address. *)
   | Free of {ptr: Exp.t; loc: Loc.t}
       (** Deallocate the previously allocated block at address [ptr]. *)
-  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
-      (** Maybe allocate a block of memory of size [siz] bytes and bind
-          [reg] to the first address, otherwise bind [reg] to [null]. *)
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
@@ -132,7 +129,6 @@ module Inst : sig
   val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
-  val malloc : reg:Var.t -> siz:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
   val loc : inst -> Loc.t
   val locals : inst -> Var.Set.t
