@@ -24,8 +24,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = ProcData.no_extras
 
-  let add_access exp loc ~is_write_access accesses locks threads ownership
-      (proc_data : extras ProcData.t) =
+  let add_access loc ~is_write_access locks threads ownership (proc_data : extras ProcData.t)
+      accesses exp =
     let open Domain in
     let rec add_field_accesses prefix_path access_acc = function
       | [] ->
@@ -99,11 +99,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             None )
 
 
-  let add_reads exps loc accesses locks threads ownership proc_data =
-    List.fold
-      ~f:(fun acc exp ->
-        add_access exp loc ~is_write_access:false acc locks threads ownership proc_data )
-      exps ~init:accesses
+  let add_reads exps loc ({accesses; locks; threads; ownership} as astate : Domain.t) proc_data =
+    let accesses' =
+      List.fold exps ~init:accesses
+        ~f:(add_access loc ~is_write_access:false locks threads ownership proc_data)
+    in
+    {astate with accesses= accesses'}
 
 
   let expand_actuals actuals accesses pdesc =
@@ -145,7 +146,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_callee_accesses (caller_astate : Domain.t) callee_accesses locks threads actuals
       callee_pname pdesc loc =
     let open Domain in
-    let conjoin_ownership_precondition actual_exp actual_indexes :
+    let conjoin_ownership_precondition actual_indexes actual_exp :
         AccessSnapshot.OwnershipPrecondition.t =
       match actual_exp with
       | HilExp.Constant _ ->
@@ -172,8 +173,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Conjunction actual_indexes ->
           List.nth actuals actual_index
           (* optional args can result into missing actuals so simply ignore *)
-          |> Option.value_map ~default:acc ~f:(fun actual ->
-                 conjoin_ownership_precondition actual actual_indexes )
+          |> Option.value_map ~default:acc ~f:(conjoin_ownership_precondition actual_indexes)
     in
     let update_callee_access (snapshot : AccessSnapshot.t) acc =
       let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
@@ -210,7 +210,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let is_abstract_getthis_like callee =
       Ondemand.get_proc_desc callee
-      |> Option.value_map ~default:false ~f:(fun callee_pdesc ->
+      |> Option.exists ~f:(fun callee_pdesc ->
              (Procdesc.get_attributes callee_pdesc).ProcAttributes.is_abstract
              &&
              match Procdesc.get_formals callee_pdesc with
@@ -250,7 +250,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let do_call ret_base callee_pname actuals call_flags loc ({ProcData.tenv; pdesc} as proc_data)
+  let do_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; pdesc}
       (astate : Domain.t) =
     let open Domain in
     let open RacerDModels in
@@ -261,12 +261,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.add_unannotated_call_access callee_pname loc pdesc astate
       else astate
     in
-    let accesses_with_unannotated_calls = astate.accesses in
-    let accesses =
-      add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
-        astate.ownership proc_data
-    in
-    let astate = {astate with accesses} in
     let astate =
       match get_thread callee_pname with
       | BackgroundThread ->
@@ -314,16 +308,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | GuardConstruct {acquire_now= false} ->
             astate
         | NoEffect -> (
-            let summary_opt = Payload.read pdesc callee_pname in
-            let callee_pdesc = Ondemand.get_proc_desc callee_pname in
-            match
-              Option.map summary_opt ~f:(fun summary ->
-                  let rebased_accesses =
-                    Option.value_map callee_pdesc ~default:summary.accesses
-                      ~f:(expand_actuals actuals summary.accesses)
-                  in
-                  {summary with accesses= rebased_accesses} )
-            with
+            let rebased_summary_opt =
+              Payload.read pdesc callee_pname
+              |> Option.map ~f:(fun summary ->
+                     let rebased_accesses =
+                       Ondemand.get_proc_desc callee_pname
+                       |> Option.fold ~init:summary.accesses ~f:(expand_actuals actuals)
+                     in
+                     {summary with accesses= rebased_accesses} )
+            in
+            match rebased_summary_opt with
             | Some {threads; locks; accesses; return_ownership; return_attributes} ->
                 let locks =
                   LocksDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
@@ -371,23 +365,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Call (ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
         let ret_access_path = (ret_base, []) in
-        let accesses =
-          add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
-            proc_data
-        in
+        let astate = add_reads actuals loc astate proc_data in
         let ownership =
           OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate.ownership
         in
-        {astate with accesses; ownership}
+        {astate with ownership}
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
+        let astate = add_reads actuals loc astate proc_data in
         do_container_access ret_base callee_pname actuals loc proc_data astate
         |> if_none_then ~f:(fun () ->
                do_call ret_base callee_pname actuals call_flags loc proc_data astate )
     | Assign (lhs_access_expr, rhs_exp, loc) ->
         let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
         let rhs_accesses =
-          add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
-            astate.ownership proc_data
+          add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership
+            proc_data astate.accesses rhs_exp
         in
         let rhs_access_paths =
           HilExp.AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
@@ -414,8 +406,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                report spurious read/write races *)
             rhs_accesses
           else
-            add_access (HilExp.AccessExpression lhs_access_expr) loc ~is_write_access:true
-              rhs_accesses astate.locks astate.threads astate.ownership proc_data
+            add_access loc ~is_write_access:true astate.locks astate.threads astate.ownership
+              proc_data rhs_accesses (HilExp.AccessExpression lhs_access_expr)
         in
         let ownership =
           OwnershipDomain.propagate_assignment lhs_access_path rhs_exp astate.ownership
@@ -470,8 +462,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               {acc with threads}
         in
         let accesses =
-          add_access assume_exp loc ~is_write_access:false astate.accesses astate.locks
-            astate.threads astate.ownership proc_data
+          add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership
+            proc_data astate.accesses assume_exp
         in
         let astate' =
           match HilExp.get_access_exprs assume_exp with
@@ -693,40 +685,6 @@ let pp_access fmt (t : RacerDDomain.TraceElem.t) =
   | InterfaceCall _ as access ->
       RacerDDomain.Access.pp fmt access
 
-
-(* let desc_of_sink sink =
-  let sink_pname = CallSite.pname (RacerDDomain.TraceElem.call_site sink) in
-  match RacerDDomain.TraceElem.kind sink with
-  | Read _ | Write _ ->
-      if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        F.asprintf "access to %a" pp_access sink
-      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerRead {path; pname} ->
-      if Typ.Procname.equal sink_pname pname then
-        F.asprintf "Read of %a" pp_container_access (path, pname)
-      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerWrite {path; pname} ->
-      if Typ.Procname.equal sink_pname pname then
-        F.asprintf "Write to %a" pp_container_access (path, pname)
-      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | InterfaceCall _ as access ->
-      if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        F.asprintf "%a" RacerDDomain.Access.pp access
-      else F.asprintf "call to %a" Typ.Procname.pp sink_pname *)
-
-(* let trace_of_pname orig_sink orig_pdesc callee_pname =
-  let open RacerDDomain in
-  let orig_access = TraceElem.kind orig_sink in
-  match Payload.read orig_pdesc callee_pname with
-  | Some {accesses} ->
-      AccessDomain.fold
-        (fun snapshot acc ->
-          if Access.matches ~caller:orig_access ~callee:(TraceElem.kind snapshot.access) then
-            PathDomain.add_sink snapshot.access acc
-          else acc )
-        accesses PathDomain.bottom
-  | _ ->
-      PathDomain.bottom *)
 
 let make_trace ~report_kind original_path =
   let open RacerDDomain in
