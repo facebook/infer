@@ -351,13 +351,6 @@ let sigma_gen_free_vars sigma = ISequence.gen_sequence_list sigma ~f:Sil.hpred_g
 
 let sigma_free_vars sigma = Sequence.Generator.run (sigma_gen_free_vars sigma)
 
-(** Find free variables in the footprint part of the prop *)
-let footprint_gen_free_vars {sigma_fp; pi_fp} =
-  Sequence.Generator.(sigma_gen_free_vars sigma_fp >>= fun () -> pi_gen_free_vars pi_fp)
-
-
-let footprint_free_vars prop = Sequence.Generator.run (footprint_gen_free_vars prop)
-
 let gen_free_vars {sigma; sigma_fp; sub; pi; pi_fp} =
   let open Sequence.Generator in
   sigma_gen_free_vars sigma
@@ -369,6 +362,16 @@ let gen_free_vars {sigma; sigma_fp; sub; pi; pi_fp} =
 
 
 let free_vars prop = Sequence.Generator.run (gen_free_vars prop)
+
+let seq_max_stamp predicate seq =
+  seq |> Sequence.filter ~f:predicate |> Sequence.map ~f:Ident.get_stamp
+  |> Sequence.max_elt ~compare:Int.compare
+  |> Option.value ~default:0
+
+
+let all_true _ = true
+
+let max_stamp ?(f = all_true) prop = seq_max_stamp f (free_vars prop)
 
 let exposed_gen_free_vars prop = gen_free_vars (unsafe_cast_to_normal prop)
 
@@ -2490,10 +2493,6 @@ let prop_iter_footprint_gen_free_vars {pit_sigma_fp; pit_pi_fp} =
   Sequence.Generator.(sigma_gen_free_vars pit_sigma_fp >>= fun () -> pi_gen_free_vars pit_pi_fp)
 
 
-let prop_iter_footprint_free_vars iter =
-  Sequence.Generator.run (prop_iter_footprint_gen_free_vars iter)
-
-
 (** Find fav of the iterator *)
 let prop_iter_gen_free_vars ({pit_sub; pit_pi; pit_newpi; pit_old; pit_new; pit_curr} as iter) =
   let open Sequence.Generator in
@@ -2511,6 +2510,8 @@ let prop_iter_gen_free_vars ({pit_sub; pit_pi; pit_newpi; pit_old; pit_new; pit_
 
 
 let prop_iter_free_vars iter = Sequence.Generator.run (prop_iter_gen_free_vars iter)
+
+let prop_iter_max_stamp ?(f = all_true) iter = seq_max_stamp f (prop_iter_free_vars iter)
 
 (** Extract the sigma part of the footprint *)
 let prop_iter_get_footprint_sigma iter = iter.pit_sigma_fp

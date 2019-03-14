@@ -82,6 +82,8 @@ val d_prop : 'a t -> unit
 
 val d_proplist_with_typ : 'a t list -> unit
 
+val max_stamp : ?f:(Ident.t -> bool) -> normal t -> int
+
 val pi_free_vars : pi -> Ident.t Sequence.t
 
 val sigma_free_vars : sigma -> Ident.t Sequence.t
@@ -89,8 +91,6 @@ val sigma_free_vars : sigma -> Ident.t Sequence.t
 val free_vars : normal t -> Ident.t Sequence.t
 
 val gen_free_vars : normal t -> (unit, Ident.t) Sequence.Generator.t
-
-val footprint_free_vars : normal t -> Ident.t Sequence.t
 
 val sorted_gen_free_vars : sorted t -> (unit, Ident.t) Sequence.Generator.t
 
@@ -295,11 +295,8 @@ val prop_iter_update_current : 'a prop_iter -> hpred -> 'a prop_iter
 val prop_iter_prev_then_insert : 'a prop_iter -> hpred -> 'a prop_iter
 (** Insert before the current element of the iterator. *)
 
-val prop_iter_footprint_free_vars : 'a prop_iter -> Ident.t Sequence.t
-(** Find fav of the footprint part of the iterator *)
-
-val prop_iter_free_vars : 'a prop_iter -> Ident.t Sequence.t
-(** Find fav of the iterator *)
+val prop_iter_max_stamp : ?f:(Ident.t -> bool) -> 'a prop_iter -> int
+(** Find the maximum stamp of a free variable of a certain kind. *)
 
 val prop_iter_get_footprint_sigma : 'a prop_iter -> hpred list
 (** Extract the sigma part of the footprint *)
