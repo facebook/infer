@@ -58,53 +58,45 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses (base, []) acc accesses )
 
 
-  let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
-      (astate : Domain.t) =
-    (* create a dummy write that represents mutating the contents of the container *)
+  let make_container_access ret_base callee_pname ~is_write receiver_ap callee_loc tenv
+      caller_pdesc (astate : Domain.t) =
     let open Domain in
-    let callee_accesses =
-      if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then
-        AccessDomain.empty
+    let callee_access =
+      if RacerDModels.is_synchronized_container callee_pname receiver_ap tenv then None
       else
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
-        let snapshot =
-          AccessSnapshot.make container_access astate.locks astate.threads
-            (AccessSnapshot.OwnershipPrecondition.Conjunction (IntSet.singleton 0))
-            caller_pdesc
-        in
-        AccessDomain.add_opt snapshot AccessDomain.empty
+        let ownership_pre = OwnershipDomain.get_precondition receiver_ap astate.ownership in
+        AccessSnapshot.make container_access astate.locks astate.threads ownership_pre caller_pdesc
     in
     (* if a container c is owned in cpp, make c[i] owned for all i *)
-    let return_ownership =
+    let ownership_value =
       match callee_pname with
       | Typ.Procname.ObjC_Cpp _ | C _ ->
           OwnershipAbstractValue.make_owned_if 0
       | _ ->
           OwnershipAbstractValue.unowned
     in
-    Some {empty_summary with accesses= callee_accesses; return_ownership}
+    let ownership = OwnershipDomain.add (ret_base, []) ownership_value astate.ownership in
+    let accesses = AccessDomain.add_opt callee_access astate.accesses in
+    Some {astate with accesses; ownership}
 
 
-  let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.t) =
+  let do_container_access ret_base callee_pname actuals loc {ProcData.tenv; pdesc} astate =
     let open RacerDModels in
-    match get_container_access callee_pname tenv with
-    | None ->
-        Payload.read caller_pdesc callee_pname
-    | Some container_access -> (
-      match List.hd actuals with
-      | Some (HilExp.AccessExpression receiver_expr) ->
-          let receiver_ap = HilExp.AccessExpression.to_access_path receiver_expr in
-          let is_write =
-            match container_access with ContainerWrite -> true | ContainerRead -> false
-          in
-          make_container_access callee_pname ~is_write receiver_ap callee_loc tenv caller_pdesc
-            astate
-      | _ ->
-          L.internal_error "Call to %a is marked as a container write, but has no receiver"
-            Typ.Procname.pp callee_pname ;
-          None )
+    Option.bind (get_container_access callee_pname tenv) ~f:(fun container_access ->
+        match List.hd actuals with
+        | Some (HilExp.AccessExpression receiver_expr) ->
+            let receiver_ap = HilExp.AccessExpression.to_access_path receiver_expr in
+            let is_write =
+              match container_access with ContainerWrite -> true | ContainerRead -> false
+            in
+            make_container_access ret_base callee_pname ~is_write receiver_ap loc tenv pdesc astate
+        | _ ->
+            L.internal_error "Call to %a is marked as a container write, but has no receiver"
+              Typ.Procname.pp callee_pname ;
+            None )
 
 
   let add_reads exps loc accesses locks threads ownership proc_data =
@@ -258,10 +250,124 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let exec_instr (astate : Domain.t) ({ProcData.tenv; pdesc} as proc_data) _ (instr : HilInstr.t) =
+  let do_call ret_base callee_pname actuals call_flags loc ({ProcData.tenv; pdesc} as proc_data)
+      (astate : Domain.t) =
     let open Domain in
     let open RacerDModels in
     let open ConcurrencyModels in
+    let ret_access_path = (ret_base, []) in
+    let astate =
+      if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
+        Domain.add_unannotated_call_access callee_pname loc pdesc astate
+      else astate
+    in
+    let accesses_with_unannotated_calls = astate.accesses in
+    let accesses =
+      add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
+        astate.ownership proc_data
+    in
+    let astate = {astate with accesses} in
+    let astate =
+      match get_thread callee_pname with
+      | BackgroundThread ->
+          {astate with threads= ThreadsDomain.AnyThread}
+      | MainThread ->
+          {astate with threads= ThreadsDomain.AnyThreadButSelf}
+      | MainThreadIfTrue ->
+          let attribute_map =
+            AttributeMapDomain.add_attribute ret_access_path (Choice Choice.OnMainThread)
+              astate.attribute_map
+          in
+          {astate with attribute_map}
+      | UnknownThread ->
+          astate
+    in
+    let astate_callee =
+      (* assuming that modeled procedures do not have useful summaries *)
+      if is_thread_utils_method "assertMainThread" callee_pname then
+        {astate with threads= ThreadsDomain.AnyThreadButSelf}
+      else
+        (* if we don't have any evidence about whether the current function can run in parallel
+               with other threads or not, start assuming that it can. why use a lock if the function
+               can't run in a multithreaded context? *)
+        let update_for_lock_use = function
+          | ThreadsDomain.AnyThreadButSelf ->
+              ThreadsDomain.AnyThreadButSelf
+          | _ ->
+              ThreadsDomain.AnyThread
+        in
+        match get_lock_effect callee_pname actuals with
+        | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
+            { astate with
+              locks= LocksDomain.acquire_lock astate.locks
+            ; threads= update_for_lock_use astate.threads }
+        | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
+            { astate with
+              locks= LocksDomain.release_lock astate.locks
+            ; threads= update_for_lock_use astate.threads }
+        | LockedIfTrue _ | GuardLockedIfTrue _ ->
+            let attribute_map =
+              AttributeMapDomain.add_attribute ret_access_path (Choice Choice.LockHeld)
+                astate.attribute_map
+            in
+            {astate with attribute_map; threads= update_for_lock_use astate.threads}
+        | GuardConstruct {acquire_now= false} ->
+            astate
+        | NoEffect -> (
+            let summary_opt = Payload.read pdesc callee_pname in
+            let callee_pdesc = Ondemand.get_proc_desc callee_pname in
+            match
+              Option.map summary_opt ~f:(fun summary ->
+                  let rebased_accesses =
+                    Option.value_map callee_pdesc ~default:summary.accesses
+                      ~f:(expand_actuals actuals summary.accesses)
+                  in
+                  {summary with accesses= rebased_accesses} )
+            with
+            | Some {threads; locks; accesses; return_ownership; return_attributes} ->
+                let locks =
+                  LocksDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
+                in
+                let accesses =
+                  add_callee_accesses astate accesses locks threads actuals callee_pname pdesc loc
+                in
+                let ownership =
+                  OwnershipDomain.propagate_return ret_access_path return_ownership actuals
+                    astate.ownership
+                in
+                let attribute_map =
+                  AttributeMapDomain.add ret_access_path return_attributes astate.attribute_map
+                in
+                let threads =
+                  ThreadsDomain.integrate_summary ~caller_astate:astate.threads
+                    ~callee_astate:threads
+                in
+                {locks; threads; accesses; ownership; attribute_map}
+            | None ->
+                call_without_summary callee_pname ret_access_path call_flags actuals astate )
+    in
+    let add_if_annotated predicate attribute attribute_map =
+      if PatternMatch.override_exists predicate tenv callee_pname then
+        AttributeMapDomain.add_attribute ret_access_path attribute attribute_map
+      else attribute_map
+    in
+    let attribute_map = add_if_annotated is_functional Functional astate_callee.attribute_map in
+    let ownership =
+      if
+        PatternMatch.override_exists
+          (has_return_annot Annotations.ia_is_returns_ownership)
+          tenv callee_pname
+      then OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate_callee.ownership
+      else astate_callee.ownership
+    in
+    {astate_callee with ownership; attribute_map}
+
+
+  let if_none_then = IOption.value_default_f
+
+  let exec_instr (astate : Domain.t) ({ProcData.tenv; pdesc} as proc_data) _ (instr : HilInstr.t) =
+    let open Domain in
+    let open RacerDModels in
     match instr with
     | Call (ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
         let ret_access_path = (ret_base, []) in
@@ -274,118 +380,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         {astate with accesses; ownership}
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
-        let ret_access_path = (ret_base, []) in
-        let astate =
-          if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
-            Domain.add_unannotated_call_access callee_pname loc pdesc astate
-          else astate
-        in
-        let accesses_with_unannotated_calls = astate.accesses in
-        let accesses =
-          add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
-            astate.ownership proc_data
-        in
-        let astate = {astate with accesses} in
-        let astate =
-          match get_thread callee_pname with
-          | BackgroundThread ->
-              {astate with threads= ThreadsDomain.AnyThread}
-          | MainThread ->
-              {astate with threads= ThreadsDomain.AnyThreadButSelf}
-          | MainThreadIfTrue ->
-              let attribute_map =
-                AttributeMapDomain.add_attribute ret_access_path (Choice Choice.OnMainThread)
-                  astate.attribute_map
-              in
-              {astate with attribute_map}
-          | UnknownThread ->
-              astate
-        in
-        let astate_callee =
-          (* assuming that modeled procedures do not have useful summaries *)
-          if is_thread_utils_method "assertMainThread" callee_pname then
-            {astate with threads= ThreadsDomain.AnyThreadButSelf}
-          else
-            (* if we don't have any evidence about whether the current function can run in parallel
-               with other threads or not, start assuming that it can. why use a lock if the function
-               can't run in a multithreaded context? *)
-            let update_for_lock_use = function
-              | ThreadsDomain.AnyThreadButSelf ->
-                  ThreadsDomain.AnyThreadButSelf
-              | _ ->
-                  ThreadsDomain.AnyThread
-            in
-            match get_lock_effect callee_pname actuals with
-            | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
-                { astate with
-                  locks= LocksDomain.acquire_lock astate.locks
-                ; threads= update_for_lock_use astate.threads }
-            | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
-                { astate with
-                  locks= LocksDomain.release_lock astate.locks
-                ; threads= update_for_lock_use astate.threads }
-            | LockedIfTrue _ | GuardLockedIfTrue _ ->
-                let attribute_map =
-                  AttributeMapDomain.add_attribute ret_access_path (Choice Choice.LockHeld)
-                    astate.attribute_map
-                in
-                {astate with attribute_map; threads= update_for_lock_use astate.threads}
-            | GuardConstruct {acquire_now= false} ->
-                astate
-            | NoEffect -> (
-                let summary_opt = get_summary pdesc callee_pname actuals loc tenv astate in
-                let callee_pdesc = Ondemand.get_proc_desc callee_pname in
-                match
-                  Option.map summary_opt ~f:(fun summary ->
-                      let rebased_accesses =
-                        Option.value_map callee_pdesc ~default:summary.accesses
-                          ~f:(expand_actuals actuals summary.accesses)
-                      in
-                      {summary with accesses= rebased_accesses} )
-                with
-                | Some {threads; locks; accesses; return_ownership; return_attributes} ->
-                    let locks =
-                      LocksDomain.integrate_summary ~caller_astate:astate.locks
-                        ~callee_astate:locks
-                    in
-                    let accesses =
-                      add_callee_accesses astate accesses locks threads actuals callee_pname pdesc
-                        loc
-                    in
-                    let ownership =
-                      OwnershipDomain.propagate_return ret_access_path return_ownership actuals
-                        astate.ownership
-                    in
-                    let attribute_map =
-                      AttributeMapDomain.add ret_access_path return_attributes astate.attribute_map
-                    in
-                    let threads =
-                      ThreadsDomain.integrate_summary ~caller_astate:astate.threads
-                        ~callee_astate:threads
-                    in
-                    {locks; threads; accesses; ownership; attribute_map}
-                | None ->
-                    call_without_summary callee_pname ret_access_path call_flags actuals astate )
-        in
-        let add_if_annotated predicate attribute attribute_map =
-          if PatternMatch.override_exists predicate tenv callee_pname then
-            AttributeMapDomain.add_attribute ret_access_path attribute attribute_map
-          else attribute_map
-        in
-        let attribute_map =
-          add_if_annotated is_functional Functional astate_callee.attribute_map
-        in
-        let ownership =
-          if
-            PatternMatch.override_exists
-              (has_return_annot Annotations.ia_is_returns_ownership)
-              tenv callee_pname
-          then
-            OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned
-              astate_callee.ownership
-          else astate_callee.ownership
-        in
-        {astate_callee with ownership; attribute_map}
+        do_container_access ret_base callee_pname actuals loc proc_data astate
+        |> if_none_then ~f:(fun () ->
+               do_call ret_base callee_pname actuals call_flags loc proc_data astate )
     | Assign (lhs_access_expr, rhs_exp, loc) ->
         let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
         let rhs_accesses =
@@ -687,8 +684,8 @@ let pp_container_access fmt (access_path, access_pname) =
     (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
 
 
-let pp_access fmt sink =
-  match RacerDDomain.PathDomain.Sink.kind sink with
+let pp_access fmt (t : RacerDDomain.TraceElem.t) =
+  match t.elem with
   | Read {path} | Write {path} ->
       (MF.wrap_monospaced AccessPath.pp) fmt path
   | ContainerRead {path; pname} | ContainerWrite {path; pname} ->
@@ -697,9 +694,9 @@ let pp_access fmt sink =
       RacerDDomain.Access.pp fmt access
 
 
-let desc_of_sink sink =
-  let sink_pname = CallSite.pname (RacerDDomain.PathDomain.Sink.call_site sink) in
-  match RacerDDomain.PathDomain.Sink.kind sink with
+(* let desc_of_sink sink =
+  let sink_pname = CallSite.pname (RacerDDomain.TraceElem.call_site sink) in
+  match RacerDDomain.TraceElem.kind sink with
   | Read _ | Write _ ->
       if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "access to %a" pp_access sink
@@ -715,41 +712,31 @@ let desc_of_sink sink =
   | InterfaceCall _ as access ->
       if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "%a" RacerDDomain.Access.pp access
-      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
+      else F.asprintf "call to %a" Typ.Procname.pp sink_pname *)
 
-
-let trace_of_pname orig_sink orig_pdesc callee_pname =
+(* let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open RacerDDomain in
-  let orig_access = PathDomain.Sink.kind orig_sink in
+  let orig_access = TraceElem.kind orig_sink in
   match Payload.read orig_pdesc callee_pname with
   | Some {accesses} ->
       AccessDomain.fold
         (fun snapshot acc ->
-          if Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind snapshot.access) then
+          if Access.matches ~caller:orig_access ~callee:(TraceElem.kind snapshot.access) then
             PathDomain.add_sink snapshot.access acc
           else acc )
         accesses PathDomain.bottom
   | _ ->
-      PathDomain.bottom
+      PathDomain.bottom *)
 
-
-let make_trace ~report_kind original_path pdesc =
+let make_trace ~report_kind original_path =
   let open RacerDDomain in
-  let loc_trace_of_path path = PathDomain.to_sink_loc_trace ~desc_of_sink path in
-  let make_trace_for_sink sink =
-    let trace_of_pname = trace_of_pname sink pdesc in
-    match PathDomain.get_reportable_sink_path sink ~trace_of_pname with
-    | Some path ->
-        loc_trace_of_path path
-    | None ->
-        []
-  in
+  let loc_trace_of_path path = TraceElem.make_loc_trace path in
   let original_trace = loc_trace_of_path original_path in
   let get_end_loc trace = Option.map (List.last trace) ~f:(function {Errlog.lt_loc} -> lt_loc) in
   let original_end = get_end_loc original_trace in
   let make_with_conflicts conflict_sink original_trace ~label1 ~label2 =
     (* create a trace for one of the conflicts and append it to the trace for the original sink *)
-    let conflict_trace = make_trace_for_sink conflict_sink in
+    let conflict_trace = loc_trace_of_path conflict_sink in
     let conflict_end = get_end_loc conflict_trace in
     ( Errlog.concat_traces [(label1, original_trace); (label2, conflict_trace)]
     , original_end
@@ -771,31 +758,23 @@ let log_issue current_pname ~loc ~ltr ~access issue_type error_message =
     error_message
 
 
-let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread =
+let report_thread_safety_violation tenv pdesc ~make_description ~report_kind
+    (access : RacerDDomain.TraceElem.t) thread =
   let open RacerDDomain in
   let pname = Procdesc.get_proc_name pdesc in
-  let report_one_path ((_, sinks) as path) =
-    let final_sink, _ = List.hd_exn sinks in
-    let initial_sink, _ = List.last_exn sinks in
-    let is_full_trace = TraceElem.is_direct final_sink in
-    (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
-       trace, it's probably going to be too confusing to be actionable. Skip it. *)
-    if (not Config.filtering) || (not (Typ.Procname.is_java pname)) || is_full_trace then
-      let final_sink_site = PathDomain.Sink.call_site final_sink in
-      let initial_sink_site = PathDomain.Sink.call_site initial_sink in
-      let loc = CallSite.loc initial_sink_site in
-      let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
-      (* what the potential bug is *)
-      let description = make_description pname final_sink_site initial_sink_site initial_sink in
-      (* why we are reporting it *)
-      let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
-      let error_message = F.sprintf "%s%s" description explanation in
-      let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
-      let access = IssueAuxData.encode end_locs in
-      log_issue pname ~loc ~ltr ~access issue_type error_message
-  in
-  let trace_of_pname = trace_of_pname access pdesc in
-  Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
+  let final_pname = List.last access.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
+  let final_sink_site = CallSite.make final_pname access.loc in
+  let initial_sink_site = CallSite.make pname (TraceElem.get_loc access) in
+  let loc = CallSite.loc initial_sink_site in
+  let ltr, original_end, conflict_end = make_trace ~report_kind access in
+  (* what the potential bug is *)
+  let description = make_description pname final_sink_site initial_sink_site access in
+  (* why we are reporting it *)
+  let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
+  let error_message = F.sprintf "%s%s" description explanation in
+  let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
+  let access = IssueAuxData.encode end_locs in
+  log_issue pname ~loc ~ltr ~access issue_type error_message
 
 
 let report_unannotated_interface_violation tenv pdesc access thread reported_pname =
@@ -930,7 +909,7 @@ end = struct
   let empty = M.empty
 
   let add (rep : reported_access) map =
-    let access = RacerDDomain.TraceElem.kind rep.snapshot.access in
+    let access = rep.snapshot.access.elem in
     if RacerDDomain.Access.get_access_path access |> should_filter_access then map
     else
       let k = Key.of_access access in
@@ -1004,10 +983,11 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
   let open RacerDModels in
   let is_duplicate_report access pname
       {reported_sites; reported_writes; reported_reads; reported_unannotated_calls} =
+    let call_site = CallSite.make pname (TraceElem.get_loc access) in
     if Config.filtering then
-      CallSite.Set.mem (TraceElem.call_site access) reported_sites
+      CallSite.Set.mem call_site reported_sites
       ||
-      match TraceElem.kind access with
+      match access.TraceElem.elem with
       | Access.Write _ | Access.ContainerWrite _ ->
           Typ.Procname.Set.mem pname reported_writes
       | Access.Read _ | Access.ContainerRead _ ->
@@ -1018,8 +998,9 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
   in
   let update_reported access pname reported =
     if Config.filtering then
-      let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
-      match TraceElem.kind access with
+      let call_site = CallSite.make pname (TraceElem.get_loc access) in
+      let reported_sites = CallSite.Set.add call_site reported.reported_sites in
+      match access.TraceElem.elem with
       | Access.Write _ | Access.ContainerWrite _ ->
           let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
           {reported with reported_writes; reported_sites}
@@ -1037,7 +1018,7 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     let pname = Procdesc.get_proc_name procdesc in
     if is_duplicate_report snapshot.access pname reported_acc then reported_acc
     else
-      match TraceElem.kind snapshot.access with
+      match snapshot.access.elem with
       | Access.InterfaceCall unannoted_call_pname
         when AccessSnapshot.is_unprotected snapshot
              && ThreadsDomain.is_any threads

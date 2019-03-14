@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module MF = MarkupFormatter
 
 (** Master function for deciding whether RacerD should completely ignore a variable as the root
     of an access path.  Currently fires on *static locals* and any variable which does not
@@ -21,26 +22,18 @@ let should_skip_var v =
 
 module Access = struct
   type t =
-    | Read of {path: AccessPath.t; original: AccessPath.t}
-    | Write of {path: AccessPath.t; original: AccessPath.t}
-    | ContainerRead of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
-    | ContainerWrite of {path: AccessPath.t; original: AccessPath.t; pname: Typ.Procname.t}
+    | Read of {path: AccessPath.t; original: AccessPath.t [@compare.ignore]}
+    | Write of {path: AccessPath.t; original: AccessPath.t [@compare.ignore]}
+    | ContainerRead of
+        { path: AccessPath.t
+        ; original: AccessPath.t [@compare.ignore]
+        ; pname: Typ.Procname.t }
+    | ContainerWrite of
+        { path: AccessPath.t
+        ; original: AccessPath.t [@compare.ignore]
+        ; pname: Typ.Procname.t }
     | InterfaceCall of Typ.Procname.t
   [@@deriving compare]
-
-  let matches ~caller ~callee =
-    match (caller, callee) with
-    | Read {original= ap1}, Read {original= ap2} | Write {original= ap1}, Write {original= ap2} ->
-        AccessPath.equal ap1 ap2
-    | ContainerRead {original= ap1; pname= pname1}, ContainerRead {original= ap2; pname= pname2}
-    | ContainerWrite {original= ap1; pname= pname1}, ContainerWrite {original= ap2; pname= pname2}
-      ->
-        Typ.Procname.equal pname1 pname2 && AccessPath.equal ap1 ap2
-    | InterfaceCall pname1, InterfaceCall pname2 ->
-        Typ.Procname.equal pname1 pname2
-    | _ ->
-        false
-
 
   let make_field_access path ~is_write =
     if is_write then Write {path; original= path} else Read {path; original= path}
@@ -101,64 +94,51 @@ module Access = struct
         F.fprintf fmt "Write to container %a via %a" AccessPath.pp path Typ.Procname.pp pname
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
+
+
+  (* FIXME: changed to make tests pass *)
+  let pp_human fmt = function
+    | Read {original} ->
+        F.fprintf fmt "access to `%a`" AccessPath.pp original
+    | Write {original} ->
+        F.fprintf fmt "access to `%a`" AccessPath.pp original
+    | ContainerRead {original; pname} ->
+        F.fprintf fmt "Read of container %a via call to %s"
+          (MF.wrap_monospaced AccessPath.pp)
+          original
+          (MF.monospaced_to_string (Typ.Procname.get_method pname))
+    | ContainerWrite {original; pname} ->
+        F.fprintf fmt "Write to container %a via call to %s"
+          (MF.wrap_monospaced AccessPath.pp)
+          original
+          (MF.monospaced_to_string (Typ.Procname.get_method pname))
+    | InterfaceCall pname ->
+        F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
+
+
+  let pp_call fmt cs = F.fprintf fmt "call to %a" Typ.Procname.pp (CallSite.pname cs)
 end
 
 module TraceElem = struct
-  module Kind = Access
+  (* FIXME evaluate modulo location functor *)
+  include ExplicitTrace.MakeTraceElem (Access)
 
-  type t = {site: CallSite.t; kind: Kind.t} [@@deriving compare]
+  let is_write {elem} = Access.is_write elem
 
-  let is_write {kind} = Access.is_write kind
+  let is_container_write {elem} = Access.is_container_write elem
 
-  let is_container_write {kind} = Access.is_container_write kind
-
-  let call_site {site} = site
-
-  let kind {kind} = kind
-
-  let make ?indexes:_ kind site = {kind; site}
-
-  let with_callsite t site = {t with site}
-
-  let pp fmt {site; kind} = F.fprintf fmt "%a at %a" Access.pp kind CallSite.pp site
-
-  let map ~f ({kind} as elem) =
-    let kind' = Access.map ~f kind in
-    if phys_equal kind kind' then elem else {elem with kind= kind'}
-
-
-  module Set = PrettyPrintable.MakePPSet (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let pp = pp
-  end)
-
-  let dummy_pname = Typ.Procname.empty_block
-
-  let make_dummy_site loc = CallSite.make dummy_pname loc
-
-  (* all trace elems are created with a dummy call site. any trace elem without a dummy call site
-     represents a call that leads to an access rather than a direct access *)
-  let is_direct {site} = Typ.Procname.equal (CallSite.pname site) dummy_pname
+  let map ~f trace_elem = map ~f:(Access.map ~f) trace_elem
 
   let make_container_access access_path pname ~is_write loc =
-    let site = make_dummy_site loc in
-    make (Access.make_container_access access_path pname ~is_write) site
+    make (Access.make_container_access access_path pname ~is_write) loc
 
 
   let make_field_access access_path ~is_write loc =
-    let site = make_dummy_site loc in
-    make (Access.make_field_access access_path ~is_write) site
+    make (Access.make_field_access access_path ~is_write) loc
 
 
-  let make_unannotated_call_access pname loc =
-    let site = make_dummy_site loc in
-    make (Access.InterfaceCall pname) site
+  let make_unannotated_call_access pname loc = make (Access.InterfaceCall pname) loc
 end
-
-module PathDomain = SinkTrace.Make (TraceElem)
 
 module LockCount = AbstractDomain.CountDomain (struct
   let max = 5
@@ -282,7 +262,7 @@ module AccessSnapshot = struct
   end
 
   type t =
-    { access: PathDomain.Sink.t
+    { access: TraceElem.t
     ; thread: ThreadsDomain.t
     ; lock: bool
     ; ownership_precondition: OwnershipPrecondition.t }
@@ -310,16 +290,17 @@ module AccessSnapshot = struct
 
 
   let pp fmt {access; thread; lock; ownership_precondition} =
-    F.fprintf fmt "Access: %a Thread: %a Lock: %b Pre: %a" TraceElem.pp access ThreadsDomain.pp
-      thread lock OwnershipPrecondition.pp ownership_precondition
+    F.fprintf fmt "Loc: %a Access: %a Thread: %a Lock: %b Pre: %a" Location.pp
+      (TraceElem.get_loc access) TraceElem.pp access ThreadsDomain.pp thread lock
+      OwnershipPrecondition.pp ownership_precondition
 end
 
 module AccessDomain = struct
   include AbstractDomain.FiniteSet (AccessSnapshot)
 
-  let add ({AccessSnapshot.access= {kind}} as s) astate =
+  let add ({AccessSnapshot.access= {elem}} as s) astate =
     let skip =
-      Access.get_access_path kind |> Option.exists ~f:(fun ((v, _), _) -> should_skip_var v)
+      Access.get_access_path elem |> Option.exists ~f:(fun ((v, _), _) -> should_skip_var v)
     in
     if skip then astate else add s astate
 
@@ -431,6 +412,16 @@ module OwnershipDomain = struct
           IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
     in
     add ret_access_path ret_ownership_wrt_actuals ownership
+
+
+  let get_precondition path t =
+    match get_owned path t with
+    | OwnedIf formal_indexes ->
+        (* access path conditionally owned if [formal_indexes] are owned *)
+        AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes
+    | Unowned ->
+        (* access path not rooted in a formal and not conditionally owned *)
+        AccessSnapshot.OwnershipPrecondition.False
 end
 
 module Choice = struct

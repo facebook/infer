@@ -22,13 +22,13 @@ module Access : sig
         (** Call to method of interface not annotated with @ThreadSafe *)
   [@@deriving compare]
 
-  include TraceElem.Kind with type t := t
+  include ExplicitTrace.Element with type t := t
 
   val get_access_path : t -> AccessPath.t option
 end
 
 module TraceElem : sig
-  include TraceElem.S with module Kind = Access
+  include ExplicitTrace.TraceElem with type elem_t = Access.t
 
   val is_write : t -> bool
 
@@ -36,17 +36,10 @@ module TraceElem : sig
 
   val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
 
-  val is_direct : t -> bool
-  (** return true if the given trace elem represents a direct access, not a call that eventually
-      leads to an access *)
-
   val make_container_access : AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
 
   val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> t
 end
-
-module PathDomain :
-  SinkTrace.S with module Source = Source.Dummy and module Sink = SinkTrace.MakeSink(TraceElem)
 
 (** Overapproximation of number of locks that are currently held *)
 module LocksDomain : sig
@@ -103,7 +96,7 @@ module AccessSnapshot : sig
   end
 
   type t = private
-    { access: PathDomain.Sink.t
+    { access: TraceElem.t
     ; thread: ThreadsDomain.t
     ; lock: bool
     ; ownership_precondition: OwnershipPrecondition.t }
@@ -111,14 +104,14 @@ module AccessSnapshot : sig
   include PrettyPrintable.PrintableOrderedType with type t := t
 
   val make :
-       PathDomain.Sink.t
+       TraceElem.t
     -> LocksDomain.t
     -> ThreadsDomain.t
     -> OwnershipPrecondition.t
     -> Procdesc.t
     -> t option
 
-  val make_from_snapshot : PathDomain.Sink.t -> t -> t option
+  val make_from_snapshot : TraceElem.t -> t -> t option
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
@@ -159,6 +152,8 @@ module OwnershipDomain : sig
   val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
 
   val propagate_return : AccessPath.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
+
+  val get_precondition : AccessPath.t -> t -> AccessSnapshot.OwnershipPrecondition.t
 end
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)

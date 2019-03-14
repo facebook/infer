@@ -7,6 +7,8 @@
 
 open! IStd
 
+val default_pp_call : Format.formatter -> CallSite.t -> unit
+
 (** A powerset domain of traces, with bottom = empty and join = union *)
 module type FiniteSet = sig
   include AbstractDomain.FiniteSetS
@@ -20,6 +22,8 @@ module type Element = sig
 
   val pp_human : Format.formatter -> t -> unit
   (** Pretty printer used for trace construction; [pp] is used for debug output. *)
+
+  val pp_call : Format.formatter -> CallSite.t -> unit
 end
 
 module type TraceElem = sig
@@ -32,6 +36,8 @@ module type TraceElem = sig
   include Element with type t := t
 
   val make : elem_t -> Location.t -> t
+
+  val map : f:(elem_t -> elem_t) -> t -> t
 
   val get_loc : t -> Location.t
   (** Starting location of the trace: this is either [loc] if [trace==[]], or the head of [trace]. *)

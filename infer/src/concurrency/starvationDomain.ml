@@ -57,6 +57,8 @@ module Lock = struct
     F.fprintf fmt "%a%a" (MF.wrap_monospaced pp) lock pp_owner lock
 
 
+  let pp_call = ExplicitTrace.default_pp_call
+
   let pp_locks fmt lock = F.fprintf fmt " locks %a" pp_human lock
 end
 
@@ -94,6 +96,9 @@ module Event = struct
           F.pp_print_string fmt msg
       | StrictModeCall msg ->
           F.pp_print_string fmt msg
+
+
+    let pp_call = ExplicitTrace.default_pp_call
   end
 
   include ExplicitTrace.MakeTraceElem (EventElement)
@@ -135,6 +140,8 @@ module Order = struct
 
 
     let pp_human fmt {first} = Lock.pp_locks fmt first
+
+    let pp_call = ExplicitTrace.default_pp_call
   end
 
   include ExplicitTrace.MakeTraceElem (OrderElement)
@@ -200,6 +207,8 @@ module UIThreadExplanationDomain = struct
     include String
 
     let pp_human = pp
+
+    let pp_call = ExplicitTrace.default_pp_call
   end
 
   include ExplicitTrace.MakeTraceElem (StringElement)

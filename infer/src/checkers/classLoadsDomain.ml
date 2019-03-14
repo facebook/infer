@@ -12,6 +12,8 @@ module ClassLoad = struct
   include String
 
   let pp_human = pp
+
+  let pp_call = ExplicitTrace.default_pp_call
 end
 
 module Event = ExplicitTrace.MakeTraceElemModuloLocation (ClassLoad)

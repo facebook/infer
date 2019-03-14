@@ -8,6 +8,10 @@ open! IStd
 module F = Format
 module MF = MarkupFormatter
 
+let default_pp_call fmt callsite =
+  F.fprintf fmt "Method call: %a" (MF.wrap_monospaced Typ.Procname.pp) (CallSite.pname callsite)
+
+
 module type FiniteSet = sig
   include AbstractDomain.FiniteSetS
 
@@ -18,6 +22,8 @@ module type Element = sig
   include PrettyPrintable.PrintableOrderedType
 
   val pp_human : Format.formatter -> t -> unit
+
+  val pp_call : Format.formatter -> CallSite.t -> unit
 end
 
 type 'a comparator = 'a -> Location.t -> 'a -> Location.t -> int
@@ -36,6 +42,8 @@ module type TraceElem = sig
   include Element with type t := t
 
   val make : elem_t -> Location.t -> t
+
+  val map : f:(elem_t -> elem_t) -> t -> t
 
   val get_loc : t -> Location.t
 
@@ -58,22 +66,25 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
     let pp fmt {elem} = Elem.pp fmt elem
 
     let pp_human fmt {elem} = Elem.pp_human fmt elem
+
+    let pp_call = Elem.pp_call
   end
 
   include T
 
   let make elem loc = {elem; loc; trace= []}
 
+  let map ~f (trace_elem : t) =
+    let elem' = f trace_elem.elem in
+    if phys_equal trace_elem.elem elem' then trace_elem else {trace_elem with elem= elem'}
+
+
   let get_loc {loc; trace} = match trace with [] -> loc | hd :: _ -> CallSite.loc hd
 
   let make_loc_trace ?(nesting = 0) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
-          let descr =
-            F.asprintf "Method call: %a"
-              (MF.wrap_monospaced Typ.Procname.pp)
-              (CallSite.pname callsite)
-          in
+          let descr = F.asprintf "%a" pp_call callsite in
           let call = Errlog.make_trace_element ns (CallSite.loc callsite) descr [] in
           (call :: tr, ns + 1) )
     in
