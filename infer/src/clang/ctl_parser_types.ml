@@ -96,6 +96,7 @@ let ast_node_cxx_fully_qualified_name an =
   match an with
   | Decl decl ->
       decl_cxx_fully_qualified_name decl
+  | Stmt (DeclRefExpr (_, _, _, {drti_found_decl_ref= Some dr}))
   | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) ->
       Option.value_map ~f:decl_cxx_fully_qualified_name ~default:""
         (CAst_utils.get_decl dr.dr_decl_pointer)
@@ -633,6 +634,7 @@ let get_decl_ref_source_file (dr : Clang_ast_t.decl_ref) =
 let get_referenced_decl_source_file an =
   let open Clang_ast_t in
   match an with
+  | Stmt (DeclRefExpr (_, _, _, {drti_found_decl_ref= Some dr}))
   | Stmt (DeclRefExpr (_, _, _, {drti_decl_ref= Some dr})) ->
       get_decl_ref_source_file dr
   | Stmt stmt ->

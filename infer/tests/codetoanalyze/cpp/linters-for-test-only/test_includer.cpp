@@ -10,3 +10,9 @@
 struct Bazowey {
   void frazzle() { Bazoo().fibble(); }
 };
+
+namespace Foo {
+using ::rabble;
+} // namespace Foo
+
+void zowie() { Foo::rabble(); }

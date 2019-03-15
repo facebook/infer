@@ -10,3 +10,5 @@
 struct Bazoo {
   void fibble();
 };
+
+void rabble();
