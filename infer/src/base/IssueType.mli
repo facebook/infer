@@ -165,6 +165,10 @@ val eradicate_value_not_present : t
 
 val expensive_execution_time_call : t
 
+val expensive_allocation_call : t
+
+val expensive_IO_call : t
+
 val exposed_insecure_intent_handling : t
 
 val failure_exe : t

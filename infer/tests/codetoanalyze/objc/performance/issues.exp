@@ -1,2 +1,2 @@
-codetoanalyze/objc/performance/araii.m, Araii_initWithBuffer, 4, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 4, degree = 0]
-codetoanalyze/objc/performance/araii.m, memory_leak_raii_main, 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 5, degree = 0]
+codetoanalyze/objc/performance/araii.m, Araii_initWithBuffer, 4, EXPENSIVE_ALLOCATION_CALL, no_bucket, ERROR, [with estimated cost 4, degree = 0]
+codetoanalyze/objc/performance/araii.m, memory_leak_raii_main, 1, EXPENSIVE_ALLOCATION_CALL, no_bucket, ERROR, [with estimated cost 5, degree = 0]

@@ -19,7 +19,7 @@ module Payload = SummaryPayload.Make (struct
 end)
 
 (* We use this threshold to give error if the cost is above it.
-   Currently it's set randomly to 200. *)
+   Currently it's set randomly to 200 for OperationCost and 3 for AllocationCost. *)
 module ReportConfig = struct
   type t = {name: string; threshold: int option; top_and_bottom: bool}
 
@@ -718,13 +718,22 @@ module Check = struct
         Polynomials.TopTraces.make_err_trace trace
 
 
-  let report_threshold summary ~name ~location ~cost ~threshold =
+  let report_threshold summary ~name ~location ~cost ~threshold ~kind =
     let degree_str =
       match BasicCost.degree cost with
       | Some degree ->
           Format.asprintf ", degree = %a" Polynomials.Degree.pp degree
       | None ->
           ""
+    in
+    let report_issue_type =
+      match kind with
+      | CostDomain.AllocationCost ->
+          IssueType.expensive_allocation_call
+      | CostDomain.OperationCost ->
+          IssueType.expensive_execution_time_call
+      | CostDomain.IOCost ->
+          IssueType.expensive_IO_call
     in
     let message =
       F.asprintf
@@ -738,7 +747,7 @@ module Check = struct
     in
     Reporting.log_error summary ~loc:location
       ~ltr:(cost_trace :: polynomial_traces cost)
-      ~extras:(compute_errlog_extras cost) IssueType.expensive_execution_time_call message
+      ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
   let report_top_and_bottom proc_desc summary ~name ~cost =
@@ -759,11 +768,12 @@ module Check = struct
 
   let check_and_report WorstCaseCost.({costs; reports}) proc_desc summary =
     CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
-      ~f:(fun _kind ReportConfig.({name; threshold}) -> function
+      ~f:(fun kind ReportConfig.({name; threshold}) -> function
       | ThresholdReports.Threshold _ ->
           ()
       | ThresholdReports.ReportOn {location; cost} ->
-          report_threshold summary ~name ~location ~cost ~threshold:(Option.value_exn threshold) ) ;
+          report_threshold summary ~name ~location ~cost ~threshold:(Option.value_exn threshold)
+            ~kind ) ;
     CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
       ~f:(fun _kind ReportConfig.({name; top_and_bottom}) cost ->
         if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )

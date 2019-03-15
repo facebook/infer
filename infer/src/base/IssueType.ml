@@ -252,7 +252,11 @@ let eradicate_value_not_present =
   from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
 
 
-let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUTION_TIME_CALL"
+let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUTION_CALL"
+
+let expensive_allocation_call = from_string ~enabled:false "EXPENSIVE_ALLOCATION_CALL"
+
+let expensive_IO_call = from_string ~enabled:false "EXPENSIVE_IO_TIME_CALL"
 
 let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HANDLING"
 
