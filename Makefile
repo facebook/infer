@@ -67,7 +67,7 @@ DIRECT_TESTS += \
   cpp_siof \
 	cpp_starvation \
   cpp_uninit \
-	
+
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck_blacklist buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
@@ -124,6 +124,9 @@ BUILD_SYSTEMS_TESTS += \
   resource_leak_exception_lines \
 	racerd_dedup
 
+#TODO T41549034: Jdk11 translates string append differently, causing
+#test failures in NullPointerExceptions:stringVarEqualsFalseNPE
+
 DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
@@ -142,6 +145,9 @@ DIRECT_TESTS += \
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
+
+
+
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck genrule buck_javac_jar
 # Introduce the dependency only if the two tests are going to be built in parallel, so that they do

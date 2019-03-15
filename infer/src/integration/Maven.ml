@@ -28,13 +28,15 @@ let infer_profile =
               <forceJavacCompilerUse>true</forceJavacCompilerUse>
               <fork>true</fork>
               <executable>%s</executable>
+              %s
             </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>|}
        infer_profile_name
-       (Config.bin_dir ^/ InferCommand.infer_exe_name))
+       (Config.bin_dir ^/ InferCommand.infer_exe_name)
+       (if Version.is_jdk11 then " <release>11</release>" else ""))
 
 
 let pom_worklist = ref [CLOpt.init_work_dir]

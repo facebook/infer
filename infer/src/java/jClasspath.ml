@@ -115,14 +115,16 @@ let load_from_verbose_output javac_verbose_out =
   let file_in = In_channel.create javac_verbose_out in
   let class_filename_re =
     Str.regexp
-      (Printf.sprintf
-         (* the unreadable regexp below captures 3 possible forms:
+      ( if Version.is_jdk11 then "\\[wrote \\(.*\\)\\]"
+      else
+        Printf.sprintf
+          (* the unreadable regexp below captures 3 possible forms:
             1. [wrote DirectoryFileObject[/path/to/classes_out:path/to/File.java]], leaves `path/to/File.java` in match group 2
             2. [wrote RegularFileObject[path/to/File.java]], leaves `path/to/File.java` in match group 5
             3. [wrote SimpleFileObject[path/to/File.java]], also leaves `path/to/File.java` in match group 5 *)
-         "\\[wrote \
-          \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\)\\]\\]"
-         Config.javac_classes_out)
+            "\\[wrote \
+             \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\)\\]\\]"
+            Config.javac_classes_out )
   in
   let source_filename_re =
     Str.regexp "\\[parsing started \\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\]\\]"
@@ -137,9 +139,11 @@ let load_from_verbose_output javac_verbose_out =
     | line ->
         if Str.string_match class_filename_re line 0 then
           let path =
-            try Str.matched_group 5 line with Caml.Not_found ->
-              (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
-              Config.javac_classes_out ^/ Str.matched_group 2 line
+            if Version.is_jdk11 then Str.matched_group 1 line
+            else
+              try Str.matched_group 5 line with Caml.Not_found ->
+                (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
+                Config.javac_classes_out ^/ Str.matched_group 2 line
           in
           match Javalib.extract_class_name_from_file path with
           | exception (JBasics.Class_structure_error _ | Invalid_argument _) ->

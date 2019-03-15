@@ -47,9 +47,15 @@ infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))
 
 %.loads: %.class
+ifeq ($(JDK11_ENABLED),yes)
+	$(QUIET)java -verbose:class $* | grep "\[info\]\[class,load\]" | cut -f2 -d' ' | grep -vE "^(java|sun|jdk|opened:)" > $@
+else
 	$(QUIET)java -verbose:class $* | grep "^\[Loaded" | cut -f2 -d' ' | grep -vE "^(java|sun)" > $@
+endif
+
 
 loads.exp: $(LOADS)
+
 	$(QUIET)for F in $(LOADS) ; do sed -e "s#^#$(TEST_REL_DIR)/$${F%.*}.java, #" $$F ; done | sort > loads.exp
 
 loads.exp.test: issues.exp.test$(TEST_SUFFIX)

@@ -255,7 +255,13 @@ _ACEOF
     rm -f conftest.java
     _USER_JAVA_HOME=$($JAVA -cp . conftest)
     if rm -f conftest.class; then
-       USER_JAVA_HOME=$_USER_JAVA_HOME/..
+       javac_version=`"$JAVAC" -version 2>&1 | head -n 1`
+       [JDK11_ENABLED=`echo "$javac_version" | grep -E -q '^javac\ (11|1[0-9])' && echo yes`]
+       if test "x$JDK11_ENABLED" = "xyes"; then
+          USER_JAVA_HOME=$_USER_JAVA_HOME
+          AC_SUBST([JDK11_ENABLED])
+       else USER_JAVA_HOME=$_USER_JAVA_HOME/..
+       fi
     else
       AC_MSG_ERROR([Could not run test program with $JAVA])
     fi
