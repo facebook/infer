@@ -1304,6 +1304,13 @@ let solve e f =
           let key, data = if ord > 0 then (e, f) else (f, e) in
           Some (Map.add_exn s ~key ~data)
     in
+    let concat_size args =
+      Vector.fold_until args ~init:(integer Z.zero Typ.siz)
+        ~f:(fun sum -> function
+          | Memory {siz} -> Continue (add Typ.siz siz sum) | _ -> Stop None
+          )
+        ~finish:(fun _ -> None)
+    in
     match (e, f) with
     | (Add {typ} | Mul {typ} | Integer {typ}), _
      |_, (Add {typ} | Mul {typ} | Integer {typ}) -> (
@@ -1316,16 +1323,14 @@ let solve e f =
           Some (Map.add_exn s ~key:c ~data:r)
       | e_f -> solve_uninterp e_f (integer Z.zero typ) )
     | Concat {args= ms}, Concat {args= ns} -> (
-        let siz args =
-          Vector.fold_until args ~init:(integer Z.zero Typ.siz)
-            ~f:(fun sum -> function
-              | Memory {siz} -> Continue (add Typ.siz siz sum)
-              | _ -> Stop None )
-            ~finish:(fun _ -> None)
-        in
-        match (siz ms, siz ns) with
-        | Some p, Some q -> solve_uninterp e f >>= solve_ p q
-        | _ -> solve_uninterp e f )
+      match (concat_size ms, concat_size ns) with
+      | Some p, Some q -> solve_uninterp e f >>= solve_ p q
+      | _ -> solve_uninterp e f )
+    | Memory {siz= m}, Concat {args= ns} | Concat {args= ns}, Memory {siz= m}
+    -> (
+      match concat_size ns with
+      | Some p -> solve_uninterp e f >>= solve_ p m
+      | _ -> solve_uninterp e f )
     | _ -> solve_uninterp e f
   in
   solve_ e f empty_map
