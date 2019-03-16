@@ -123,7 +123,8 @@ let all_checkers =
         ; (Cluster Starvation.reporting, Language.Clang) ] }
   ; { name= "purity"
     ; active= Config.purity || Config.loop_hoisting
-    ; callbacks= [(Procedure Purity.checker, Language.Java)] }
+    ; callbacks=
+        [(Procedure Purity.checker, Language.Java); (Procedure Purity.checker, Language.Clang)] }
   ; { name= "Class loading analysis"
     ; active= Config.class_loads
     ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] } ]

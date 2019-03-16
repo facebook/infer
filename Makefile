@@ -52,6 +52,7 @@ DIRECT_TESTS += \
   c_errors \
   c_frontend \
   c_performance \
+  c_purity \
   c_uninit \
   cpp_bufferoverrun \
   cpp_conflicts \

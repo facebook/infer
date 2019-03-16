@@ -36,7 +36,7 @@ module TransferFunctions = struct
   let get_alias_set inferbo_mem var =
     let default = ModifiedVarSet.empty in
     let alias_v = BufferOverrunDomain.Mem.find (AbsLoc.Loc.of_var var) inferbo_mem in
-    let pow_locs = BufferOverrunDomain.Val.get_pow_loc alias_v in
+    let pow_locs = BufferOverrunDomain.Val.get_all_locs alias_v in
     AbsLoc.PowLoc.fold
       (fun loc modified_acc ->
         AbsLoc.Loc.get_path loc
@@ -145,6 +145,8 @@ module TransferFunctions = struct
           else find_params_matching_modified_args inferbo_mem formals args callee_modified_params)
 
 
+  let modified_global ae = HilExp.AccessExpression.get_base ae |> fst |> Var.is_global
+
   let exec_instr (astate : Domain.t)
       {tenv; ProcData.extras= {inferbo_invariant_map; formals; get_callee_summary}}
       (node : CFG.Node.t) (instr : HilInstr.t) =
@@ -155,7 +157,8 @@ module TransferFunctions = struct
       Option.value_exn (BufferOverrunAnalysis.extract_post node_id inferbo_invariant_map)
     in
     match instr with
-    | Assign (ae, _, _) when is_heap_access ae ->
+    | Assign (ae, _, _)
+      when is_heap_access ae || (Language.curr_language_is Clang && modified_global ae) ->
         track_modified_params inferbo_mem formals ae |> Domain.join astate
     | Call (_, Direct called_pname, args, _, _) ->
         Domain.join astate
@@ -187,13 +190,16 @@ end
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 
 let should_report pdesc =
-  match Procdesc.get_proc_name pdesc with
-  | Typ.Procname.Java java_pname as proc_name ->
-      (not (Typ.Procname.is_constructor proc_name))
-      && (not (Typ.Procname.Java.is_class_initializer java_pname))
-      && not (Typ.Procname.Java.is_access_method java_pname)
+  let proc_name = Procdesc.get_proc_name pdesc in
+  (not (Typ.Procname.is_constructor proc_name))
+  &&
+  match proc_name with
+  | Typ.Procname.Java java_pname ->
+      not
+        ( Typ.Procname.Java.is_class_initializer java_pname
+        || Typ.Procname.Java.is_access_method java_pname )
   | _ ->
-      L.(die InternalError "Not supposed to run on non-Java code.")
+      true
 
 
 let report_errors pdesc astate summary =

@@ -1,0 +1,6 @@
+codetoanalyze/c/purity/array.c, call_impure_with_local_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function call_impure_with_local_ok]
+codetoanalyze/c/purity/array.c, fresh_arr_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function fresh_arr_ok]
+codetoanalyze/c/purity/global_test.c, local_write_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function local_write_ok]
+codetoanalyze/c/purity/struct.c, set_fresh_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function set_fresh_ok]
+codetoanalyze/c/purity/struct.c, set_fresh_primitive_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function set_fresh_primitive_ok]
+codetoanalyze/c/purity/struct.c, variable_init_ok, 0, PURE_FUNCTION, no_bucket, ERROR, [Side-effect free function variable_init_ok]
