@@ -265,6 +265,13 @@ module Set = struct
   let inter_diff x y = (inter x y, diff y x)
   let of_vector cmp x = of_array cmp (Vector.to_array x)
   let to_tree = Using_comparator.to_tree
+
+  let union x y =
+    let xy = union x y in
+    let xy_tree = to_tree xy in
+    if xy_tree == to_tree x then x
+    else if xy_tree == to_tree y then y
+    else xy
 end
 
 module Qset = struct
