@@ -70,3 +70,12 @@ void loop_use_global_vars(int x) {
     // do something
   }
 }
+
+void ptr_cmp(char* end, int size) {
+  char buf[2] = "hi";
+  for (int i = 0; i < size; i += 2) {
+    if (buf < end) { // pvar &buf occurs directly in prune node
+      return;
+    }
+  }
+}

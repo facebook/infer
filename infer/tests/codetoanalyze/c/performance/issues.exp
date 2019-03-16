@@ -63,6 +63,7 @@ codetoanalyze/c/performance/loops.c, if_in_loop, 5, INTEGER_OVERFLOW_L5, no_buck
 codetoanalyze/c/performance/loops.c, if_out_loop, 7, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 615, degree = 0]
 codetoanalyze/c/performance/loops.c, larger_state_FN, 3, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 1006, degree = 0]
 codetoanalyze/c/performance/loops.c, loop_use_global_vars, 1, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 3 + 4 ⋅ x + 2 ⋅ (1+max(0, x)), degree = 1,{1+max(0, x)},Loop at line 69, column 3,{x},Loop at line 69, column 3]
+codetoanalyze/c/performance/loops.c, ptr_cmp, 2, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 5 + 5 ⋅ size + 2 ⋅ (2+max(-1, size)), degree = 1,{2+max(-1, size)},Loop at line 76, column 3,{size},Loop at line 76, column 3]
 codetoanalyze/c/performance/purity.c, loop, 2, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 7006, degree = 0]
 codetoanalyze/c/performance/switch_continue.c, test_switch, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/performance/switch_continue.c, test_switch, 3, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 602, degree = 0]

@@ -100,6 +100,9 @@ let get_vars_in_loop loop_nodes =
                      Var.get_all_vars_in_exp arg_exp
                      |> Sequence.fold ~init:acc ~f:(fun acc var -> VarsInLoop.add var acc) )
                    args
+             | Sil.Prune (exp, _, _, _) ->
+                 Var.get_all_vars_in_exp exp
+                 |> Sequence.fold ~init:acc ~f:(fun acc var -> VarsInLoop.add var acc)
              | _ ->
                  acc )
            ~init:acc )

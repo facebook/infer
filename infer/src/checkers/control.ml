@@ -76,18 +76,13 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   let get_vars_in_exp exp prune_node loop_head =
-    let global_control_vars =
+    let program_control_vars =
       Exp.program_vars exp
-      |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun global_acc pvar ->
-             let cvar = Var.of_pvar pvar in
-             if Pvar.is_global pvar then ControlDepSet.add {cvar; loop_head} global_acc
-             else
-               Logging.die InternalError
-                 "We should never have non-global program variables in prune nodes: %a@." Var.pp
-                 cvar )
+      |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc pvar ->
+             ControlDepSet.add {cvar= Var.of_pvar pvar; loop_head} acc )
     in
     Exp.free_vars exp
-    |> Sequence.fold ~init:global_control_vars ~f:(fun acc id ->
+    |> Sequence.fold ~init:program_control_vars ~f:(fun acc id ->
            match
              Procdesc.Node.find_in_node_or_preds prune_node ~f:(find_vars_in_decl id loop_head)
            with
