@@ -314,8 +314,13 @@ let or_ q1 q2 =
   | _, {djns= [[]]; _} ->
       let us = Set.union q1.us q2.us in
       if us == q1.us then q1 else {q1 with us}
-  | ({djns= []; _} as q), ({pure= []; heap= []; djns= [djn]; _} as d)
-   |({pure= []; heap= []; djns= [djn]; _} as d), ({djns= []; _} as q) ->
+  | ( ({djns= []; _} as q)
+    , ({us= _; xs; cong= _; pure= []; heap= []; djns= [djn]} as d) )
+    when Set.is_empty xs ->
+      {d with us= Set.union q.us d.us; djns= [q :: djn]}
+  | ( ({us= _; xs; cong= _; pure= []; heap= []; djns= [djn]} as d)
+    , ({djns= []; _} as q) )
+    when Set.is_empty xs ->
       {d with us= Set.union q.us d.us; djns= [q :: djn]}
   | _ ->
       { us= Set.union q1.us q2.us
