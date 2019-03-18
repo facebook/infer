@@ -83,22 +83,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Some {astate with accesses; ownership}
 
 
-  let do_container_access ret_base callee_pname actuals loc {ProcData.tenv; pdesc} astate =
-    let open RacerDModels in
-    Option.bind (get_container_access callee_pname tenv) ~f:(fun container_access ->
-        match List.hd actuals with
-        | Some (HilExp.AccessExpression receiver_expr) ->
-            let receiver_ap = HilExp.AccessExpression.to_access_path receiver_expr in
-            let is_write =
-              match container_access with ContainerWrite -> true | ContainerRead -> false
-            in
-            make_container_access ret_base callee_pname ~is_write receiver_ap loc tenv pdesc astate
-        | _ ->
-            L.internal_error "Call to %a is marked as a container write, but has no receiver"
-              Typ.Procname.pp callee_pname ;
-            None )
-
-
   let add_reads exps loc ({accesses; locks; threads; ownership} as astate : Domain.t) proc_data =
     let accesses' =
       List.fold exps ~init:accesses
@@ -250,8 +234,36 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let do_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; pdesc}
-      (astate : Domain.t) =
+  let treat_call_acquiring_ownership ret_base procname actuals loc ({ProcData.tenv} as proc_data)
+      astate () =
+    let open Domain in
+    if RacerDModels.acquires_ownership procname tenv then
+      let astate = add_reads actuals loc astate proc_data in
+      let ownership =
+        OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
+      in
+      Some {astate with ownership}
+    else None
+
+
+  let treat_container_accesses ret_base callee_pname actuals loc {ProcData.tenv; pdesc} astate () =
+    let open RacerDModels in
+    Option.bind (get_container_access callee_pname tenv) ~f:(fun container_access ->
+        match List.hd actuals with
+        | Some (HilExp.AccessExpression receiver_expr) ->
+            let receiver_ap = HilExp.AccessExpression.to_access_path receiver_expr in
+            let is_write =
+              match container_access with ContainerWrite -> true | ContainerRead -> false
+            in
+            make_container_access ret_base callee_pname ~is_write receiver_ap loc tenv pdesc astate
+        | _ ->
+            L.internal_error "Call to %a is marked as a container write, but has no receiver"
+              Typ.Procname.pp callee_pname ;
+            None )
+
+
+  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; pdesc}
+      (astate : Domain.t) () =
     let open Domain in
     let open RacerDModels in
     let open ConcurrencyModels in
@@ -357,136 +369,138 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate_callee with ownership; attribute_map}
 
 
-  let if_none_then = IOption.value_default_f
-
-  let exec_instr (astate : Domain.t) ({ProcData.tenv; pdesc} as proc_data) _ (instr : HilInstr.t) =
+  let do_assignment lhs_access_expr rhs_exp loc ({ProcData.tenv} as proc_data) (astate : Domain.t)
+      =
     let open Domain in
-    let open RacerDModels in
-    match instr with
-    | Call (ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
-        let ret_access_path = (ret_base, []) in
-        let astate = add_reads actuals loc astate proc_data in
-        let ownership =
-          OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate.ownership
-        in
-        {astate with ownership}
-    | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
-        let astate = add_reads actuals loc astate proc_data in
-        do_container_access ret_base callee_pname actuals loc proc_data astate
-        |> if_none_then ~f:(fun () ->
-               do_call ret_base callee_pname actuals call_flags loc proc_data astate )
-    | Assign (lhs_access_expr, rhs_exp, loc) ->
-        let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
-        let rhs_accesses =
-          add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership
-            proc_data astate.accesses rhs_exp
-        in
-        let rhs_access_paths =
-          HilExp.AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
-        in
-        let is_functional =
-          (not (List.is_empty rhs_access_paths))
-          && List.for_all
-               ~f:(fun access_path ->
-                 AttributeMapDomain.has_attribute access_path Functional astate.attribute_map )
-               rhs_access_paths
-          &&
-          match AccessPath.get_typ lhs_access_path tenv with
-          | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble} ->
-              (* writes to longs and doubles are not guaranteed to be atomic in Java
+    let lhs_access_path = HilExp.AccessExpression.to_access_path lhs_access_expr in
+    let rhs_accesses =
+      add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership proc_data
+        astate.accesses rhs_exp
+    in
+    let rhs_access_paths =
+      HilExp.AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
+    in
+    let is_functional =
+      (not (List.is_empty rhs_access_paths))
+      && List.for_all rhs_access_paths ~f:(fun access_path ->
+             AttributeMapDomain.has_attribute access_path Functional astate.attribute_map )
+      &&
+      match AccessPath.get_typ lhs_access_path tenv with
+      | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble} ->
+          (* writes to longs and doubles are not guaranteed to be atomic in Java
                  (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
                  can be a race even if the RHS is functional *)
-              false
-          | _ ->
-              true
-        in
-        let accesses =
-          if is_functional then
-            (* we want to forget about writes to @Functional fields altogether, otherwise we'll
+          false
+      | _ ->
+          true
+    in
+    let accesses =
+      if is_functional then
+        (* we want to forget about writes to @Functional fields altogether, otherwise we'll
                report spurious read/write races *)
-            rhs_accesses
-          else
-            add_access loc ~is_write_access:true astate.locks astate.threads astate.ownership
-              proc_data rhs_accesses (HilExp.AccessExpression lhs_access_expr)
-        in
-        let ownership =
-          OwnershipDomain.propagate_assignment lhs_access_path rhs_exp astate.ownership
-        in
-        let attribute_map =
-          AttributeMapDomain.propagate_assignment lhs_access_path rhs_exp astate.attribute_map
-        in
-        {astate with accesses; ownership; attribute_map}
-    | Assume (assume_exp, _, _, loc) ->
-        let rec eval_binop op var e1 e2 =
-          match (eval_bexp var e1, eval_bexp var e2) with
-          | Some b1, Some b2 ->
-              Some (op b1 b2)
-          | _ ->
-              None
-        (* return Some bool_value if the given boolean expression evaluates to bool_value when
+        rhs_accesses
+      else
+        add_access loc ~is_write_access:true astate.locks astate.threads astate.ownership proc_data
+          rhs_accesses (HilExp.AccessExpression lhs_access_expr)
+    in
+    let ownership =
+      OwnershipDomain.propagate_assignment lhs_access_path rhs_exp astate.ownership
+    in
+    let attribute_map =
+      AttributeMapDomain.propagate_assignment lhs_access_path rhs_exp astate.attribute_map
+    in
+    {astate with accesses; ownership; attribute_map}
+
+
+  let rec eval_binop op var e1 e2 =
+    match (eval_bexp var e1, eval_bexp var e2) with
+    | Some b1, Some b2 ->
+        Some (op b1 b2)
+    | _ ->
+        None
+
+
+  (* return Some bool_value if the given boolean expression evaluates to bool_value when
            [var] is set to true. return None if it has free variables that stop us from
            evaluating it *)
-        and eval_bexp var = function
-          | HilExp.AccessExpression access_expr ->
-              if AccessPath.equal (HilExp.AccessExpression.to_access_path access_expr) var then
-                Some true
-              else None
-          | HilExp.Constant c ->
-              Some (not (Const.iszero_int_float c))
-          | HilExp.UnaryOperator (Unop.LNot, e, _) ->
-              let b_opt = eval_bexp var e in
-              Option.map ~f:not b_opt
-          | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
-              eval_binop ( && ) var e1 e2
-          | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
-              eval_binop ( || ) var e1 e2
-          | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
-              eval_binop Bool.equal var e1 e2
-          | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
-              eval_binop ( <> ) var e1 e2
-          | _ ->
-              (* non-boolean expression; can't evaluate it *)
-              None
-        in
-        let add_choice bool_value (acc : Domain.t) = function
-          | Choice.LockHeld ->
-              let locks =
-                if bool_value then LocksDomain.acquire_lock acc.locks
-                else LocksDomain.release_lock acc.locks
-              in
-              {acc with locks}
-          | Choice.OnMainThread ->
-              let threads =
-                if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
-              in
-              {acc with threads}
-        in
-        let accesses =
-          add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership
-            proc_data astate.accesses assume_exp
-        in
-        let astate' =
-          match HilExp.get_access_exprs assume_exp with
-          | [access_expr] -> (
-              let access_path = HilExp.AccessExpression.to_access_path access_expr in
-              let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
-              match eval_bexp access_path assume_exp with
-              | Some bool_value ->
-                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
-                     add the constraint that the the choice must be [bool_value] to the state *)
-                  List.fold ~f:(add_choice bool_value) ~init:astate choices
-              | None ->
-                  astate )
-          | _ ->
-              astate
-        in
-        {astate' with accesses}
-    | Call (_, Indirect _, _, _, _) -> (
-      match Procdesc.get_proc_name pdesc with
-      | Typ.Procname.Java _ ->
-          L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
+  and eval_bexp var = function
+    | HilExp.AccessExpression access_expr ->
+        if AccessPath.equal (HilExp.AccessExpression.to_access_path access_expr) var then Some true
+        else None
+    | HilExp.Constant c ->
+        Some (not (Const.iszero_int_float c))
+    | HilExp.UnaryOperator (Unop.LNot, e, _) ->
+        let b_opt = eval_bexp var e in
+        Option.map ~f:not b_opt
+    | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
+        eval_binop ( && ) var e1 e2
+    | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
+        eval_binop ( || ) var e1 e2
+    | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
+        eval_binop Bool.equal var e1 e2
+    | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
+        eval_binop ( <> ) var e1 e2
+    | _ ->
+        (* non-boolean expression; can't evaluate it *)
+        None
+
+
+  let do_assume assume_exp loc proc_data (astate : Domain.t) =
+    let open Domain in
+    let add_choice bool_value (acc : Domain.t) = function
+      | Choice.LockHeld ->
+          let locks =
+            if bool_value then LocksDomain.acquire_lock acc.locks
+            else LocksDomain.release_lock acc.locks
+          in
+          {acc with locks}
+      | Choice.OnMainThread ->
+          let threads =
+            if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
+          in
+          {acc with threads}
+    in
+    let accesses =
+      add_access loc ~is_write_access:false astate.locks astate.threads astate.ownership proc_data
+        astate.accesses assume_exp
+    in
+    let astate' =
+      match HilExp.get_access_exprs assume_exp with
+      | [access_expr] ->
+          let access_path = HilExp.AccessExpression.to_access_path access_expr in
+          eval_bexp access_path assume_exp
+          |> Option.fold ~init:astate ~f:(fun init bool_value ->
+                 let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
+                 (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+                     add the constraint that the choice must be [bool_value] to the state *)
+                 List.fold ~f:(add_choice bool_value) ~init choices )
       | _ ->
-          astate )
+          astate
+    in
+    {astate' with accesses}
+
+
+  let if_none_then = IOption.value_default_f
+
+  let if_none_do ~f x = match x with None -> f () | Some _ -> x
+
+  let exec_instr (astate : Domain.t) ({ProcData.pdesc} as proc_data) _ (instr : HilInstr.t) =
+    match instr with
+    | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
+        let astate = add_reads actuals loc astate proc_data in
+        treat_call_acquiring_ownership ret_base callee_pname actuals loc proc_data astate ()
+        |> if_none_do
+             ~f:(treat_container_accesses ret_base callee_pname actuals loc proc_data astate)
+        |> if_none_then
+             ~f:(do_proc_call ret_base callee_pname actuals call_flags loc proc_data astate)
+    | Call (_, Indirect _, _, _, _) ->
+        if Typ.Procname.is_java (Procdesc.get_proc_name pdesc) then
+          L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
+        else astate
+    | Assign (lhs_access_expr, rhs_exp, loc) ->
+        do_assignment lhs_access_expr rhs_exp loc proc_data astate
+    | Assume (assume_exp, _, _, loc) ->
+        do_assume assume_exp loc proc_data astate
     | ExitScope _ ->
         astate
 
