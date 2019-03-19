@@ -29,6 +29,10 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
 let null_eq ptr = Sh.pure (Exp.eq Exp.null ptr)
 let zero = Exp.integer Z.zero Typ.siz
 
+(*
+ * Instruction small axioms
+ *)
+
 let assume cnd pre =
   let post = Sh.and_ cnd pre in
   if Sh.is_false post then None else Some post
@@ -127,8 +131,7 @@ let memmov_foot us dst src len =
   let siz_mid = Exp.sub Typ.siz len src_dst in
   let mem_mid = Exp.memory ~siz:siz_mid ~arr:arr_mid in
   let mem_src = Exp.memory ~siz:src_dst ~arr:arr_src in
-  let mem_mid_src = Exp.concat [|mem_mid; mem_src|] in
-  let mem_dst_mid_src = Exp.concat [|mem_dst; mem_mid_src|] in
+  let mem_dst_mid_src = Exp.concat [|mem_dst; mem_mid; mem_src|] in
   let siz_dst_mid_src, us, xs = fresh_var "m" us xs in
   let arr_dst_mid_src, _, xs = fresh_var "a" us xs in
   let eq_mem_dst_mid_src =
@@ -216,6 +219,10 @@ let alloc_spec us reg num len =
   let foot = Sh.extend_us xs Sh.emp in
   {xs; foot; post}
 
+(*
+ * Memory management - see e.g. http://jemalloc.net/jemalloc.3.html
+ *)
+
 (* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
  *   free p
  * { emp }
@@ -274,18 +281,28 @@ let calloc_spec us reg num len =
   let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
   {xs; foot; post}
 
-(* { emp }
+let size_of_ptr = Option.value_exn (Exp.size_of Typ.ptr)
+
+(* { p-[_;_)->⟨W,_⟩ }
  *   posix_memalign r p s
- * { r=ENOMEM ∨ ∃α'. r=0 * p-[p;s)->⟨s,α'⟩ }
+ * {   r=ENOMEM * p-[_;_)->⟨W,_⟩
+ *   ∨ ∃α',q. r=0 * p-[_;_)->⟨W,q⟩ * q-[q;s)->⟨s,α'⟩ }
+ * where W = sizeof void*
  *)
 let posix_memalign_spec us reg ptr siz =
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len:siz ~siz us in
-  let foot = Sh.extend_us xs Sh.emp in
-  let enomem = Exp.integer (Z.of_int 12) Typ.siz in
+  let {xs; seg= pseg} = fresh_seg ~loc:ptr ~siz:size_of_ptr us in
+  let q, us, xs = fresh_var "q" us xs in
+  let pseg' = {pseg with arr= q} in
+  let {xs; seg= qseg} = fresh_seg ~loc:q ~bas:q ~len:siz ~siz ~xs us in
+  let foot = Sh.extend_us xs (Sh.seg pseg) in
+  let eok = Exp.integer (Z.of_int 0) Typ.int in
+  let enomem = Exp.integer (Z.of_int 12) Typ.int in
   let post =
     Sh.or_
-      (Sh.pure (Exp.eq (Exp.var reg) enomem))
-      (Sh.and_ (Exp.eq (Exp.var reg) zero) (Sh.seg seg))
+      (Sh.and_ (Exp.eq (Exp.var reg) enomem) (Sh.seg pseg))
+      (Sh.and_
+         (Exp.eq (Exp.var reg) eok)
+         (Sh.star (Sh.seg pseg') (Sh.seg qseg)))
   in
   {xs; foot; post}
 
@@ -432,6 +449,105 @@ let nallocx_spec _ reg siz =
   let post = Sh.or_ (null_eq loc) (Sh.pure (Exp.eq loc siz)) in
   {xs; foot; post}
 
+let size_of_int_mul n =
+  Exp.mul Typ.siz (Option.value_exn (Exp.size_of Typ.siz)) n
+
+(* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
+ *   mallctl r i w n
+ * { ∃α'. r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨_,m⟩ }
+ *)
+let mallctl_read_spec us r i w n =
+  let {us; xs; seg= iseg} = fresh_seg ~loc:i us in
+  let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:iseg.arr ~xs us in
+  let a, _, xs = fresh_var "a" us xs in
+  let foot =
+    Sh.extend_us xs
+      (Sh.and_
+         Exp.(eq w null)
+         (Sh.and_ Exp.(eq n zero) (Sh.star (Sh.seg iseg) (Sh.seg rseg))))
+  in
+  let rseg' = {rseg with arr= a} in
+  let post = Sh.star (Sh.seg rseg') (Sh.seg iseg) in
+  {xs; foot; post}
+
+(* { p-[_;_)->⟨W×l,_⟩ * r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
+ *   mallctlbymib p l r i w n
+ * { ∃α'. p-[_;_)->⟨W×l,_⟩ * r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨_,m⟩ }
+ * where W = sizeof int
+ *)
+let mallctlbymib_read_spec us p l r i w n =
+  let wl = size_of_int_mul l in
+  let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wl us in
+  let {us; xs; seg= iseg} = fresh_seg ~loc:i ~xs us in
+  let m = iseg.arr in
+  let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:m ~xs us in
+  let const = Sh.star (Sh.seg pseg) (Sh.seg iseg) in
+  let a, _, xs = fresh_var "a" us xs in
+  let foot =
+    Sh.extend_us xs
+      (Sh.and_
+         Exp.(eq w null)
+         (Sh.and_ Exp.(eq n zero) (Sh.star const (Sh.seg rseg))))
+  in
+  let rseg' = {rseg with arr= a} in
+  let post = Sh.star (Sh.seg rseg') const in
+  {xs; foot; post}
+
+(* { r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
+ *   mallctl r i w n
+ * { w-[_;_)->⟨n,_⟩ }
+ *)
+let mallctl_write_spec us r i w n =
+  let {xs; seg} = fresh_seg ~loc:w ~siz:n us in
+  let post = Sh.seg seg in
+  let foot = Sh.and_ Exp.(eq r null) (Sh.and_ Exp.(eq i zero) post) in
+  {xs; foot; post}
+
+(* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
+ *   mallctl r i w n
+ * { p-[_;_)->⟨W×l,_⟩ * w-[_;_)->⟨n,_⟩ }
+ * where W = sizeof int
+ *)
+let mallctlbymib_write_spec us p l r i w n =
+  let wl = size_of_int_mul l in
+  let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wl us in
+  let {xs; seg= wseg} = fresh_seg ~loc:w ~siz:n ~xs us in
+  let post = Sh.star (Sh.seg pseg) (Sh.seg wseg) in
+  let foot = Sh.and_ Exp.(eq r null) (Sh.and_ Exp.(eq i zero) post) in
+  {xs; foot; post}
+
+let mallctl_specs us r i w n =
+  [mallctl_read_spec us r i w n; mallctl_write_spec us r i w n]
+
+let mallctlbymib_specs us p j r i w n =
+  [ mallctlbymib_read_spec us p j r i w n
+  ; mallctlbymib_write_spec us p j r i w n ]
+
+(* { p-[_;_)->⟨W×n,α⟩ * o-[_;_)->⟨_,n⟩ }
+ *   mallctlnametomib p o
+ * { ∃α'.
+ *   p-[_;_)->⟨W×n,α'⟩ * o-[_;_)->⟨_,n⟩ }
+ * where W = sizeof int
+ *
+ * Note: post is too strong, more accurate would be:
+ * { ∃α',α²,α³,n'. ⟨W×n,α⟩=⟨W×n',α³⟩^⟨W×(n-n'),α²⟩ *
+ *   p-[_;_)->⟨W×n',α'⟩ * p+W×n'-[_;_)->⟨W×(n-n'),α²⟩ * o-[_;_)->⟨_,n'⟩ }
+ *)
+let mallctlnametomib_spec us p o =
+  let {us; xs; seg= oseg} = fresh_seg ~loc:o us in
+  let n = oseg.arr in
+  let wn = size_of_int_mul n in
+  let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wn ~xs us in
+  let a, _, xs = fresh_var "a" us xs in
+  let foot = Sh.extend_us xs (Sh.star (Sh.seg oseg) (Sh.seg pseg)) in
+  let pseg' = {pseg with arr= a} in
+  let post = Sh.star (Sh.seg pseg') (Sh.seg oseg) in
+  {xs; foot; post}
+
+(*
+ * cstring - see e.g. http://www.cplusplus.com/reference/cstring/
+ *)
+
 (* { p-[b;m)->⟨l,α⟩ }
  *   r = strlen p
  * { r=b+m-p-1 * p-[b;m)->⟨l,α⟩ }
@@ -447,6 +563,10 @@ let strlen_spec us reg ptr =
   in
   let post = Sh.and_ (Exp.eq (Exp.var reg) ret) foot in
   {xs; foot; post}
+
+(*
+ * Symbolic Execution
+ *)
 
 (* execute a command with given spec from pre *)
 let exec_spec pre {xs; foot; post} =
@@ -554,11 +674,20 @@ let intrinsic :
   (* size_t malloc_usable_size(void* ptr) *)
   | Some reg, "malloc_usable_size", [ptr] ->
       Some (exec_spec pre (malloc_usable_size_spec us reg ptr))
-  | _, "mallctl", _
-   |_, "mallctlnametomib", _
-   |_, "mallctlbymib", _
-   |_, "malloc_stats_print", _ ->
-      skip pre
+  (* int mallctl(const char* name, void* oldp, size_t* oldlenp, void* newp,
+     size_t newlen) *)
+  | Some _, "mallctl", [newlen; newp; oldlenp; oldp; _] ->
+      Some (exec_specs pre (mallctl_specs us oldp oldlenp newp newlen))
+  (* int mallctlnametomib(const char* name, size_t* mibp, size_t* miblenp) *)
+  | Some _, "mallctlnametomib", [miblenp; mibp; _] ->
+      Some (exec_spec pre (mallctlnametomib_spec us mibp miblenp))
+  (* int mallctlbymib(const size_t* mib, size_t miblen, void* oldp, size_t*
+     oldlenp, void* newp, size_t newlen); *)
+  | Some _, "mallctlbymib", [newlen; newp; oldlenp; oldp; miblen; mib] ->
+      Some
+        (exec_specs pre
+           (mallctlbymib_specs us mib miblen oldp oldlenp newp newlen))
+  | _, "malloc_stats_print", _ -> skip pre
   (*
    * cstring
    *)
