@@ -224,7 +224,7 @@ let difference r a b =
     | _ -> None )
   |>
   [%Trace.retn fun {pf} ->
-    function Some d -> pf "%a" Z.pp_print d | None -> ()]
+    function Some d -> pf "%a" Z.pp_print d | None -> pf ""]
 
 let and_ r s =
   if not r.sat then r

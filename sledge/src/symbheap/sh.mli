@@ -26,8 +26,10 @@ and disjunction = starjunction list
 type t = starjunction
 
 val pp_seg : seg pp
+val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
+val pp_djn : disjunction pp
 
 include Invariant.S with type t := t
 

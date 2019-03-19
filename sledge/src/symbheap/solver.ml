@@ -97,8 +97,8 @@ let excise_pure ({sub} as goal) =
  *)
 let excise_seg_same ({com; min; sub} as goal) msg ssg =
   [%Trace.info
-    "@[<hv 2>excise_seg_same@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg ssg pp
-      goal] ;
+    "@[<hv 2>excise_seg_same@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong) msg
+      (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.bas= b; len= m; arr= a} = msg in
   let {Sh.bas= b'; len= m'; arr= a'} = ssg in
   let com = Sh.star (Sh.seg msg) com in
@@ -125,8 +125,8 @@ let excise_seg_same ({com; min; sub} as goal) msg ssg =
 let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
     =
   [%Trace.info
-    "@[<hv 2>excise_seg_sub_prefix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg
-      ssg pp goal] ;
+    "@[<hv 2>excise_seg_sub_prefix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let o_n = Exp.integer o_n Typ.siz in
@@ -167,8 +167,8 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
 let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
     =
   [%Trace.info
-    "@[<hv 2>excise_seg_min_prefix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg
-      ssg pp goal] ;
+    "@[<hv 2>excise_seg_min_prefix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let n_o = Exp.integer n_o Typ.siz in
@@ -210,8 +210,8 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
 let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     =
   [%Trace.info
-    "@[<hv 2>excise_seg_sub_suffix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg
-      ssg pp goal] ;
+    "@[<hv 2>excise_seg_sub_suffix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let l_k = Exp.integer l_k Typ.siz in
@@ -253,8 +253,8 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_ln =
   [%Trace.info
-    "@[<hv 2>excise_seg_sub_infix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg ssg
-      pp goal] ;
+    "@[<hv 2>excise_seg_sub_infix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let l_k = Exp.integer l_k Typ.siz and ko_ln = Exp.integer ko_ln Typ.siz in
@@ -302,8 +302,8 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_l ln_ko =
   [%Trace.info
-    "@[<hv 2>excise_seg_min_skew@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg ssg
-      pp goal] ;
+    "@[<hv 2>excise_seg_min_skew@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let l_k = Exp.integer l_k Typ.siz in
@@ -358,8 +358,8 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     =
   [%Trace.info
-    "@[<hv 2>excise_seg_min_suffix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg
-      ssg pp goal] ;
+    "@[<hv 2>excise_seg_min_suffix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let k_l = Exp.integer k_l Typ.siz in
@@ -398,8 +398,8 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_ko =
   [%Trace.info
-    "@[<hv 2>excise_seg_min_infix@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg ssg
-      pp goal] ;
+    "@[<hv 2>excise_seg_min_infix@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let k_l = Exp.integer k_l Typ.siz in
@@ -444,8 +444,8 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_k ko_ln =
   [%Trace.info
-    "@[<hv 2>excise_seg_sub_skew@ %a@ %a@ %a@]" Sh.pp_seg msg Sh.pp_seg ssg
-      pp goal] ;
+    "@[<hv 2>excise_seg_sub_skew@ %a@ %a@ %a@]" (Sh.pp_seg_norm sub.cong)
+      msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
   let k_l = Exp.integer k_l Typ.siz in
@@ -485,7 +485,9 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 
 (* C ❮ k-[b;m)->⟨o,α⟩ * M ⊢ ∃xs. l-[b';m')->⟨n,α'⟩ * S ❯ R *)
 let excise_seg ({sub} as goal) msg ssg =
-  [%Trace.info "@[<2>excise_seg@ %a@  |-  %a@]" Sh.pp_seg msg Sh.pp_seg ssg] ;
+  [%Trace.info
+    "@[<2>excise_seg@ %a@  |-  %a@]" (Sh.pp_seg_norm sub.cong) msg
+      (Sh.pp_seg_norm sub.cong) ssg] ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
   Equality.difference sub.cong k l

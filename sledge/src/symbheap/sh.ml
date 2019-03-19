@@ -35,16 +35,22 @@ let pp_seg fs {loc; bas; len; siz; arr} =
         Format.fprintf fs " %a, %a " Exp.pp bas Exp.pp len )
     (bas, len) Exp.pp (Exp.memory ~siz ~arr)
 
+let pp_seg_norm cong fs seg =
+  pp_seg fs (map_seg seg ~f:(Equality.normalize cong))
+
 let pp_us ?(pre = ("" : _ fmt)) fs us =
   if not (Set.is_empty us) then
     [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
 
-let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
+let rec pp vs fs {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
   pp_us fs us ;
-  if not (Set.is_empty xs) then
-    Format.fprintf fs "@<2>∃ @[%a@] .@ ∃ @[%a@] .@ " Var.Set.pp
-      (Set.inter xs vs) Var.Set.pp (Set.diff xs vs) ;
+  let xs_i_vs, xs_d_vs = Set.inter_diff vs xs in
+  if not (Set.is_empty xs_i_vs) then (
+    Format.fprintf fs "@<2>∃ @[%a@] ." Var.Set.pp xs_i_vs ;
+    if not (Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;
+  if not (Set.is_empty xs_d_vs) then
+    Format.fprintf fs "@<2>∃ @[%a@] .@ " Var.Set.pp xs_d_vs ;
   let first = Equality.is_true cong in
   if not first then Format.fprintf fs "  " ;
   Equality.pp_classes fs cong ;
@@ -84,11 +90,12 @@ and pp_djn vs fs = function
   | djn ->
       Format.fprintf fs "@[<hv>( %a@ )@]"
         (List.pp "@ @<2>∨ " (fun fs sjn ->
-             Format.fprintf fs "@[<hv 1>(%a)@]" (pp_ vs)
+             Format.fprintf fs "@[<hv 1>(%a)@]" (pp vs)
                {sjn with us= Set.diff sjn.us vs} ))
         djn
 
-let pp = pp_ Var.Set.empty
+let pp = pp Var.Set.empty
+let pp_djn = pp_djn Var.Set.empty
 
 let fold_exps_seg {loc; bas; len; siz; arr} ~init ~f =
   let f b z = Exp.fold_exps b ~init:z ~f in
@@ -269,7 +276,7 @@ let and_cong cong q =
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 
 let star q1 q2 =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp q1 pp q2]
+  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
   ;
   ( match (q1, q2) with
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
@@ -305,7 +312,7 @@ let star q1 q2 =
     assert (Set.equal q.us (Set.union q1.us q2.us))]
 
 let or_ q1 q2 =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp q1 pp q2]
+  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
   ;
   ( match (q1, q2) with
   | {djns= [[]]; _}, _ ->
@@ -406,6 +413,8 @@ let fold_dnf ~conj ~disj sjn conjuncts disjuncts =
   add_disjunct [] sjn (conjuncts, disjuncts)
 
 let dnf q =
+  [%Trace.call fun {pf} -> pf "%a" pp q]
+  ;
   let conj sjn conjuncts =
     assert (List.is_empty sjn.djns) ;
     assert (List.is_empty conjuncts.djns) ;
@@ -416,3 +425,5 @@ let dnf q =
     conjuncts :: disjuncts
   in
   fold_dnf ~conj ~disj q emp []
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp_djn]

@@ -237,11 +237,11 @@ let%test_module _ =
 
     let%expect_test _ =
       pp ~~(y > !2 && z <= !3) ;
-      [%expect {| ((%y_1 <= 2) || (%z_2 > 3)) |}]
+      [%expect {| ((%y_1 ≤ 2) || (%z_2 > 3)) |}]
 
     let%expect_test _ =
       pp ~~(y >= !2 || z < !3) ;
-      [%expect {| ((%y_1 < 2) && (%z_2 >= 3)) |}]
+      [%expect {| ((%y_1 < 2) && (%z_2 ≥ 3)) |}]
 
     let%expect_test _ =
       pp Exp.(eq z null) ;
