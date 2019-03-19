@@ -1290,7 +1290,7 @@ let rec is_constant e =
   | _ -> true
 
 let classify = function
-  | Add _ | Mul _ -> `Interpreted
+  | Add _ | Mul _ | App {op= Eq | Dq | App {op= Eq | Dq}} -> `Interpreted
   | App _ -> `Uninterpreted
   | _ -> `Atomic
 
