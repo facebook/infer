@@ -112,9 +112,9 @@ val pure_approx : t -> t
 
 val fold_dnf :
      conj:(starjunction -> 'conjuncts -> 'conjuncts)
-  -> disj:('conjuncts -> 'disjuncts -> 'disjuncts)
+  -> disj:(Var.Set.t * 'conjuncts -> 'disjuncts -> 'disjuncts)
   -> t
-  -> 'conjuncts
+  -> Var.Set.t * 'conjuncts
   -> 'disjuncts
   -> 'disjuncts
 (** Enumerate the cubes and clauses of a disjunctive-normal form expansion. *)

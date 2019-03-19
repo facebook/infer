@@ -311,6 +311,11 @@ let star q1 q2 =
     invariant q ;
     assert (Set.equal q.us (Set.union q1.us q2.us))]
 
+let stars = function
+  | [] -> emp
+  | [q] -> q
+  | q :: qs -> List.fold ~f:star ~init:q qs
+
 let or_ q1 q2 =
   [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
   ;
@@ -394,36 +399,32 @@ let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   if heap == q.heap && djns == q.djns then q
   else {us; xs; cong; pure; heap; djns} |> check invariant
 
-let fold_disjunctions sjn ~init ~f = List.fold sjn.djns ~init ~f
-let fold_disjuncts djn ~init ~f = List.fold djn ~init ~f
-
-let fold_dnf ~conj ~disj sjn conjuncts disjuncts =
-  let rec add_disjunct pending_splits sjn (conjuncts, disjuncts) =
+let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
+  let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =
+    let ys, sjn = bind_exists sjn ~wrt:xs in
+    let xs = Set.union ys xs in
+    let djns = sjn.djns in
+    let sjn = {sjn with djns= []} in
     split_case
-      (fold_disjunctions sjn ~init:pending_splits
-         ~f:(fun pending_splits split -> split :: pending_splits ))
-      (conj {sjn with djns= []} conjuncts, disjuncts)
-  and split_case pending_splits (conjuncts, disjuncts) =
+      (List.rev_append djns pending_splits)
+      (xs, conj sjn conjuncts)
+      disjuncts
+  and split_case pending_splits (xs, conjuncts) disjuncts =
     match pending_splits with
     | split :: pending_splits ->
-        fold_disjuncts split ~init:disjuncts ~f:(fun disjuncts sjn ->
-            add_disjunct pending_splits sjn (conjuncts, disjuncts) )
-    | [] -> disj conjuncts disjuncts
+        List.fold split ~init:disjuncts ~f:(fun disjuncts sjn ->
+            add_disjunct pending_splits sjn (xs, conjuncts) disjuncts )
+    | [] -> disj (xs, conjuncts) disjuncts
   in
-  add_disjunct [] sjn (conjuncts, disjuncts)
+  add_disjunct [] sjn (xs, conjuncts) disjuncts
 
 let dnf q =
   [%Trace.call fun {pf} -> pf "%a" pp q]
   ;
-  let conj sjn conjuncts =
-    assert (List.is_empty sjn.djns) ;
-    assert (List.is_empty conjuncts.djns) ;
-    star conjuncts sjn
+  let conj sjn conjuncts = sjn :: conjuncts in
+  let disj (xs, conjuncts) disjuncts =
+    exists xs (stars conjuncts) :: disjuncts
   in
-  let disj conjuncts disjuncts =
-    assert (match conjuncts.djns with [] | [[]] -> true | _ -> false) ;
-    conjuncts :: disjuncts
-  in
-  fold_dnf ~conj ~disj q emp []
+  fold_dnf ~conj ~disj q (Var.Set.empty, []) []
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_djn]
