@@ -102,6 +102,7 @@ let struct_ =
 
 let bool = integer ~bits:1
 let byt = integer ~bits:8
+let int = integer ~bits:32
 let siz = integer ~bits:64
 
 (** [ptr] is semantically equivalent to [siz], but has a distinct
