@@ -905,7 +905,7 @@ let simp_cond cnd thn els =
   | _ ->
       App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
 
-let simp_and x y =
+let rec simp_and x y =
   match (x, y) with
   (* i && j *)
   | Integer {data= i; typ}, Integer {data= j} ->
@@ -921,11 +921,15 @@ let simp_and x y =
    |_, (Integer {data; typ= Integer {bits= 1}} as f)
     when Z.is_false data ->
       f
+  (* e && (c ? t : f) ==> (c ? e && t : e && f) *)
+  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
+   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+      simp_cond c (simp_and e t) (simp_and e f)
   (* e && e ==> e *)
   | _ when equal x y -> x
   | _ -> App {op= App {op= And; arg= x}; arg= y}
 
-let simp_or x y =
+let rec simp_or x y =
   match (x, y) with
   (* i || j *)
   | Integer {data= i; typ}, Integer {data= j} ->
@@ -941,6 +945,10 @@ let simp_or x y =
    |e, Integer {data; typ= Integer {bits= 1}}
     when Z.is_false data ->
       e
+  (* e || (c ? t : f) ==> (c ? e || t : e || f) *)
+  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
+   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+      simp_cond c (simp_or e t) (simp_or e f)
   (* e || e ==> e *)
   | _ when equal x y -> x
   | _ -> App {op= App {op= Or; arg= x}; arg= y}
@@ -1001,15 +1009,25 @@ and simp_eq x y =
         simp_not Typ.bool b
       else (* b = true ==> b *)
         b
+  (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
+  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
+   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+      simp_cond c (simp_eq e t) (simp_eq e f)
   (* e = e ==> true *)
   | x, y when equal x y -> bool true
   | x, y -> App {op= App {op= Eq; arg= x}; arg= y}
 
 and simp_dq x y =
-  match simp_eq x y with
-  | App {op= App {op= Eq; arg= x}; arg= y} ->
-      App {op= App {op= Dq; arg= x}; arg= y}
-  | b -> simp_not Typ.bool b
+  match (x, y) with
+  (* e ≠ (c ? t : f) ==> (c ? e ≠ t : e ≠ f) *)
+  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
+   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+      simp_cond c (simp_dq e t) (simp_dq e f)
+  | _ -> (
+    match simp_eq x y with
+    | App {op= App {op= Eq; arg= x}; arg= y} ->
+        App {op= App {op= Dq; arg= x}; arg= y}
+    | b -> simp_not Typ.bool b )
 
 let simp_xor x y =
   match (x, y) with
@@ -1114,16 +1132,20 @@ let app1 ?(partial = false) op arg =
          (* every App subexp of output appears in input *)
          match op with
          | App {op= Eq | Dq} -> ()
-         | _ ->
-             iter e ~f:(function
-               | App {op= Eq | Dq} -> ()
-               | App _ as a ->
-                   assert (
-                     is_subexp ~sub:a ~sup:op || is_subexp ~sub:a ~sup:arg
-                     || Trace.fail
-                          "simplifying %a %a@ yields %a@ with new subexp %a"
-                          pp op pp arg pp e pp a )
-               | _ -> () ) )
+         | _ -> (
+           match e with
+           | App {op= App {op= App {op= Conditional}}} -> ()
+           | _ ->
+               iter e ~f:(function
+                 | App {op= Eq | Dq} -> ()
+                 | App _ as a ->
+                     assert (
+                       is_subexp ~sub:a ~sup:op || is_subexp ~sub:a ~sup:arg
+                       || Trace.fail
+                            "simplifying %a %a@ yields %a@ with new subexp \
+                             %a"
+                            pp op pp arg pp e pp a )
+                 | _ -> () ) ) )
 
 let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
