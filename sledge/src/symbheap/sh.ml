@@ -370,7 +370,11 @@ let rec pure (e : Exp.t) =
   [%Trace.retn fun {pf} q -> pf "%a" pp q ; invariant q]
 
 let and_ e q = star (pure e) q
-let seg pt = {emp with us= fv_seg pt; heap= [pt]} |> check invariant
+
+let seg pt =
+  let us = fv_seg pt in
+  if Exp.equal Exp.null pt.loc then false_ us
+  else {emp with us; heap= [pt]} |> check invariant
 
 (** Update *)
 
@@ -387,8 +391,10 @@ let is_emp = function
 
 let is_false = function
   | {djns= [[]]; _} -> true
-  | {cong; pure; _} ->
+  | {cong; pure; heap; _} ->
       List.exists pure ~f:(fun b -> Exp.is_false (Equality.normalize cong b))
+      || List.exists heap ~f:(fun seg ->
+             Equality.entails_eq cong seg.loc Exp.null )
 
 let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   let heap = emp.heap in
