@@ -1227,6 +1227,11 @@ let struct_rec key =
 let convert ?(signed = false) ~dst ~src exp =
   app1 (Convert {signed; dst; src}) exp
 
+let size_of t =
+  Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
+      if n % 8 = 0 then Some (integer (Z.of_int (n / 8)) Typ.siz) else None
+  )
+
 (** Transform *)
 
 let map e ~f =

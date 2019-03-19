@@ -186,6 +186,7 @@ val struct_rec :
     stack overflow. *)
 
 val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
+val size_of : Typ.t -> t option
 
 (** Access *)
 
