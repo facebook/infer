@@ -177,6 +177,8 @@ val field_not_null_checked : t
 
 val graphql_field_access : t
 
+val guardedby_violation_racerd : t
+
 val inferbo_alloc_is_big : t
 
 val inferbo_alloc_is_negative : t

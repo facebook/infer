@@ -271,6 +271,8 @@ let _global_variable_initialized_with_function_or_method_call =
 
 let graphql_field_access = from_string "GRAPHQL_FIELD_ACCESS"
 
+let guardedby_violation_racerd = from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
+
 let inferbo_alloc_is_big = from_string "INFERBO_ALLOC_IS_BIG"
 
 let inferbo_alloc_is_negative = from_string "INFERBO_ALLOC_IS_NEGATIVE"
