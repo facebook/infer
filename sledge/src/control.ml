@@ -11,12 +11,98 @@
 
 let bound = 10
 
-type stack =
-  | Locals of Var.Set.t * stack
-  | Return of Llair.Jump.t * Domain.from_call * stack
-  | Throw of Llair.Jump.t * stack
-  | Empty
-[@@deriving compare, equal, sexp_of]
+module Stack : sig
+  type t [@@deriving compare, equal, sexp_of]
+
+  val print_abbrev : t pp
+  val empty : t
+  val push_jump : Var.Set.t -> t -> t
+
+  val push_call :
+       Var.Set.t
+    -> return:Llair.jump
+    -> Domain.from_call
+    -> ?throw:Llair.jump
+    -> t
+    -> t
+
+  val pop_return :
+       t
+    -> init:'a
+    -> f:(Var.Set.t -> Domain.from_call -> 'a -> 'b)
+    -> (t * 'b * Llair.jump) option
+
+  val pop_throw :
+       t
+    -> init:'a
+    -> f:(Var.Set.t -> Domain.from_call -> 'a -> 'a)
+    -> (t * 'a * Llair.jump) option
+end = struct
+  type t =
+    | Locals of Var.Set.t * t
+    | Return of Llair.Jump.t * Domain.from_call * t
+    | Throw of Llair.Jump.t * t
+    | Empty
+  [@@deriving compare, equal, sexp_of]
+
+  let rec print_abbrev fs = function
+    | Locals (_, s) ->
+        print_abbrev fs s ;
+        Format.pp_print_char fs 'L'
+    | Return (_, _, s) ->
+        print_abbrev fs s ;
+        Format.pp_print_char fs 'R'
+    | Throw (_, s) ->
+        print_abbrev fs s ;
+        Format.pp_print_char fs 'T'
+    | Empty -> ()
+
+  let invariant s =
+    Invariant.invariant [%here] s [%sexp_of: t]
+    @@ fun () ->
+    match s with
+    | Locals _ | Return _ | Throw (_, Return _) | Empty -> ()
+    | Throw _ -> fail "malformed stack: %a" print_abbrev s ()
+
+  let empty = Empty |> check invariant
+
+  let push_jump lcls stk =
+    (if Set.is_empty lcls then stk else Locals (lcls, stk))
+    |> check invariant
+
+  let push_return jmp from_call stk =
+    Return (jmp, from_call, stk) |> check invariant
+
+  let push_throw jmp stk =
+    (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
+    |> check invariant
+
+  let push_call locals ~return from_call ?throw stk =
+    push_jump locals (push_throw throw (push_return return from_call stk))
+
+  let pop_return stk ~init ~f =
+    let rec pop_return_ scope = function
+      | Locals (locals, stk) -> pop_return_ (Set.union locals scope) stk
+      | Throw (_, stk) -> pop_return_ scope stk
+      | Return (jmp, from_call, stk) ->
+          Some (stk, f scope from_call init, jmp)
+      | Empty -> None
+    in
+    pop_return_ Var.Set.empty stk
+
+  let pop_throw stk ~init ~f =
+    let rec pop_throw_ scope state = function
+      | Locals (locals, stk) ->
+          pop_throw_ (Set.union locals scope) state stk
+      | Return (_, from_call, stk) ->
+          pop_throw_ Var.Set.empty (f scope from_call state) stk
+      | Throw (jmp, Return (_, from_call, stk)) ->
+          Some (stk, f scope from_call state, jmp)
+      | Empty -> None
+      | Throw _ as stk -> violates invariant stk
+    in
+    pop_throw_ Var.Set.empty init stk
+end
 
 module Work : sig
   type t
@@ -31,16 +117,16 @@ module Work : sig
   val add :
        ?prev:Llair.block
     -> retreating:bool
-    -> stack
+    -> Stack.t
     -> Domain.t
     -> Llair.block
     -> x
 
-  val run : f:(stack -> Domain.t -> Llair.block -> x) -> t -> unit
+  val run : f:(Stack.t -> Domain.t -> Llair.block -> x) -> t -> unit
 end = struct
   module Edge = struct
     module T = struct
-      type t = {dst: Llair.Block.t; src: Llair.Block.t option; stk: stack}
+      type t = {dst: Llair.Block.t; src: Llair.Block.t option; stk: Stack.t}
       [@@deriving compare, equal, sexp_of]
     end
 
@@ -99,7 +185,7 @@ end = struct
       (pq, ws)
 
   let init state curr =
-    add ~retreating:false Empty state curr Depths.empty
+    add ~retreating:false Stack.empty state curr Depths.empty
       (Fheap.create ~cmp:compare_priority, empty_waiting_states)
 
   let rec run ~f (pq0, ws) =
@@ -116,58 +202,34 @@ end = struct
     | None -> [%Trace.info "queue empty"] ; ()
 end
 
-let push_jump lcls stk =
-  if Set.is_empty lcls then stk else Locals (lcls, stk)
-
 let exec_goto stk state block ({dst; retreating} : Llair.jump) =
-  let stk = push_jump dst.locals stk in
+  let stk = Stack.push_jump dst.locals stk in
   Work.add ~prev:block ~retreating stk state dst
 
 let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
   let state, _ = Domain.call state args dst.params dst.locals in
   exec_goto stk state block jmp
 
-let push_call locals ~return from_call ?throw stk =
-  let push_return jmp from_call stk = Return (jmp, from_call, stk) in
-  let push_throw jmp stk =
-    match jmp with Some jmp -> Throw (jmp, stk) | None -> stk
-  in
-  push_jump locals (push_return return from_call (push_throw throw stk))
-
 let exec_call stk state block ({dst; args; retreating} : Llair.jump) return
     throw =
   let state, from_call = Domain.call state args dst.params dst.locals in
-  let stk = push_call dst.locals ~return from_call ?throw stk in
+  let stk = Stack.push_call dst.locals ~return from_call ?throw stk in
   Work.add stk ~prev:block ~retreating state dst
 
-let pop_return stk ~init ~f =
-  let rec pop_return_ scope = function
-    | Locals (locals, stk) -> pop_return_ (Set.union locals scope) stk
-    | Return (jmp, from_call, stk) -> Some (stk, f scope from_call init, jmp)
-    | _ -> None
-  in
-  pop_return_ Var.Set.empty stk
-
 let exec_return stk state block exp =
-  match pop_return stk ~init:state ~f:Domain.retn with
+  match Stack.pop_return stk ~init:state ~f:Domain.retn with
   | Some (stk, state, ({args} as jmp)) ->
       exec_jump stk state block {jmp with args= Option.cons exp args}
   | None -> Work.skip
 
-let rec pop_throw stk ~init ~f =
-  match pop_return stk ~init ~f with
-  | Some (stk, state, _) -> pop_throw stk ~init:state ~f
-  | None -> (
-    match stk with Throw (jmp, stk) -> Some (stk, init, jmp) | _ -> None )
-
 let exec_throw stk state block exc =
-  match pop_throw stk ~init:state ~f:Domain.retn with
+  match Stack.pop_throw stk ~init:state ~f:Domain.retn with
   | Some (stk, state, ({args} as jmp)) ->
       exec_jump stk state block {jmp with args= exc :: args}
   | None -> Work.skip
 
 let exec_skip_func :
-    stack -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
+    Stack.t -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
  fun stk state block ({dst; args} as return) ->
   Report.unknown_call block.term ;
   let return =
@@ -181,7 +243,7 @@ let exec_skip_func :
   in
   exec_jump stk state block return
 
-let exec_term : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
+let exec_term : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
  fun pgm stk state block ->
   [%Trace.info "exec %a" Llair.Term.pp block.term] ;
   match block.term with
@@ -246,7 +308,7 @@ let exec_inst :
   Domain.exec_inst state inst
   |> Result.map_error ~f:(fun () -> (state, inst))
 
-let exec_block : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
+let exec_block : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
  fun pgm stk state block ->
   [%Trace.info "exec %a" Llair.Block.pp block] ;
   match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
