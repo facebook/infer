@@ -812,7 +812,8 @@ module Call = struct
         &:: "add" <>$ capt_var_exn $+ any_arg $--> Collection.add
       ; +PatternMatch.implements_collection
         &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $!--> Collection.add_at_index
-      ; +PatternMatch.implements_collection &:: "iterator" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_lang "Iterable"
+        &:: "iterator" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll

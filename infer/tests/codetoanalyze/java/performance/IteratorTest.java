@@ -13,4 +13,8 @@ public class IteratorTest {
       System.out.println(parts.next());
     }
   }
+
+  public void linearIterable(Iterable<?> elements) {
+    appendTo(elements.iterator());
+  }
 }
