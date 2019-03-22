@@ -20,68 +20,71 @@ end
 
 type container_access = ContainerRead | ContainerWrite
 
+let make_android_support_template suffix methods =
+  let open MethodMatcher in
+  [ {default with classname= "android.support.v4.util." ^ suffix; methods}
+  ; {default with classname= "androidx.core.util." ^ suffix; methods} ]
+
+
 let is_java_container_write =
   let open MethodMatcher in
   let array_methods =
     ["append"; "clear"; "delete"; "put"; "remove"; "removeAt"; "removeAtRange"; "setValueAt"]
   in
-  [ { default with
-      classname= "android.support.v4.util.Pools$SimplePool"; methods= ["acquire"; "release"] }
-  ; { default with
-      classname= "android.support.v4.util.SimpleArrayMap"
-    ; methods= ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"] }
-  ; {default with classname= "android.support.v4.util.SparseArrayCompat"; methods= array_methods}
-  ; {default with classname= "android.util.SparseArray"; methods= array_methods}
-  ; {default with classname= "java.util.List"; methods= ["add"; "addAll"; "clear"; "remove"; "set"]}
-  ; {default with classname= "java.util.Map"; methods= ["clear"; "put"; "putAll"; "remove"]} ]
+  make_android_support_template "Pools$SimplePool" ["acquire"; "release"]
+  @ make_android_support_template "SimpleArrayMap"
+      ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"]
+  @ make_android_support_template "SparseArrayCompat" array_methods
+  @ [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+    ; { default with
+        classname= "java.util.List"; methods= ["add"; "addAll"; "clear"; "remove"; "set"] }
+    ; {default with classname= "java.util.Map"; methods= ["clear"; "put"; "putAll"; "remove"]} ]
   |> of_records
 
 
 let is_java_container_read =
   let open MethodMatcher in
   let array_methods = ["clone"; "get"; "indexOfKey"; "indexOfValue"; "keyAt"; "size"; "valueAt"] in
-  [ { default with
-      classname= "android.support.v4.util.SimpleArrayMap"
-    ; methods=
-        [ "containsKey"
-        ; "containsValue"
-        ; "get"
-        ; "hashCode"
-        ; "indexOfKey"
-        ; "isEmpty"
-        ; "keyAt"
-        ; "size"
-        ; "valueAt" ] }
-  ; {default with classname= "android.support.v4.util.SparseArrayCompat"; methods= array_methods}
-  ; {default with classname= "android.util.SparseArray"; methods= array_methods}
-  ; { default with
-      classname= "java.util.List"
-    ; methods=
-        [ "contains"
-        ; "containsAll"
-        ; "equals"
-        ; "get"
-        ; "hashCode"
-        ; "indexOf"
-        ; "isEmpty"
-        ; "iterator"
-        ; "lastIndexOf"
-        ; "listIterator"
-        ; "size"
-        ; "toArray" ] }
-  ; { default with
-      classname= "java.util.Map"
-    ; methods=
-        [ "containsKey"
-        ; "containsValue"
-        ; "entrySet"
-        ; "equals"
-        ; "get"
-        ; "hashCode"
-        ; "isEmpty"
-        ; "keySet"
-        ; "size"
-        ; "values" ] } ]
+  make_android_support_template "SimpleArrayMap"
+    [ "containsKey"
+    ; "containsValue"
+    ; "get"
+    ; "hashCode"
+    ; "indexOfKey"
+    ; "isEmpty"
+    ; "keyAt"
+    ; "size"
+    ; "valueAt" ]
+  @ make_android_support_template "SparseArrayCompat" array_methods
+  @ [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+    ; { default with
+        classname= "java.util.List"
+      ; methods=
+          [ "contains"
+          ; "containsAll"
+          ; "equals"
+          ; "get"
+          ; "hashCode"
+          ; "indexOf"
+          ; "isEmpty"
+          ; "iterator"
+          ; "lastIndexOf"
+          ; "listIterator"
+          ; "size"
+          ; "toArray" ] }
+    ; { default with
+        classname= "java.util.Map"
+      ; methods=
+          [ "containsKey"
+          ; "containsValue"
+          ; "entrySet"
+          ; "equals"
+          ; "get"
+          ; "hashCode"
+          ; "isEmpty"
+          ; "keySet"
+          ; "size"
+          ; "values" ] } ]
   |> of_records
 
 
@@ -219,7 +222,10 @@ let acquires_ownership pname tenv =
           true
       | ( ( "android.support.v4.util.Pools$Pool"
           | "android.support.v4.util.Pools$SimplePool"
-          | "android.support.v4.util.Pools$SynchronizedPool" )
+          | "android.support.v4.util.Pools$SynchronizedPool"
+          | "androidx.core.util.Pools$Pool"
+          | "androidx.core.util.Pools$SimplePool"
+          | "androidx.core.util.Pools$SynchronizedPool" )
         , "acquire" ) ->
           (* a pool should own all of its objects *)
           true
@@ -412,7 +418,8 @@ let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) t
           match Typ.Name.name tn with
           | "java.util.concurrent.ConcurrentMap"
           | "java.util.concurrent.CopyOnWriteArrayList"
-          | "android.support.v4.util.Pools$SynchronizedPool" ->
+          | "android.support.v4.util.Pools$SynchronizedPool"
+          | "androidx.core.util.Pools$SynchronizedPool" ->
               true
           | _ ->
               false
