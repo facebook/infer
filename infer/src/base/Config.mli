@@ -654,6 +654,8 @@ val racerd : bool
 
 val threadsafe_aliases : Yojson.Basic.json
 
+val topl_properties : string list
+
 val trace_error : bool
 
 val trace_events : bool

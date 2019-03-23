@@ -1485,6 +1485,13 @@ INTERNAL OPTIONS
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
 
+       --topl-properties +path
+           [EXPERIMENTAL] Specify a file containing a temporal property
+           definition (e.g., jdk.topl).
+
+       --topl-properties-reset
+           Set --topl-properties to the empty list.
+
        --trace-error
            Activates: Detailed tracing information during error explanation
            (Conversely: --no-trace-error)

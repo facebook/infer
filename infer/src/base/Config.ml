@@ -2136,6 +2136,11 @@ and test_filtering =
     "List all the files Infer can report on (should be called from the root of the project)"
 
 
+and topl_properties =
+  CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
+    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
+
+
 and profiler_samples =
   CLOpt.mk_path_opt ~long:"profiler-samples"
     "File containing the profiler samples when Infer is run Test Determinator mode with \
@@ -2988,6 +2993,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and topl_properties = !topl_properties
 
 and trace_error = !trace_error
 

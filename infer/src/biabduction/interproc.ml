@@ -1257,6 +1257,7 @@ let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
 let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t =
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
+  if not (List.is_empty Config.topl_properties) then Topl.init () ;
   try analyze_procedure_aux summary exe_env tenv proc_desc with exn ->
     IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
     Reporting.log_error_using_state summary exn ;

@@ -141,6 +141,7 @@ DIRECT_TESTS += \
   java_quandary \
   java_racerd \
   java_starvation \
+  java_topl \
   java_tracing \
 
 ifneq ($(ANT),no)

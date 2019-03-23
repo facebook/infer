@@ -23,6 +23,7 @@ let source_dirs =
        ; "labs"
        ; "nullsafe"
        ; "quandary"
+       ; "topl"
        ; "unit" ] )
 
 
@@ -50,7 +51,9 @@ let infer_cflags =
 let stanzas =
   ( if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
   else [] )
-  @ [ Format.sprintf
+  @ [ "(ocamllex ToplLexer)"
+    ; "(menhir (flags --unused-token INDENT) (modules ToplParser))"
+    ; Format.sprintf
         {|
 (library
  (name InferModules)
