@@ -84,6 +84,8 @@ val ia_is_expensive : Annot.Item.t -> bool
 
 val ia_is_functional : Annot.Item.t -> bool
 
+val ia_is_guardedby : Annot.Item.t -> bool
+
 val ia_is_propagates_nullable : Annot.Item.t -> bool
 
 val ia_is_ignore_allocations : Annot.Item.t -> bool

@@ -251,3 +251,5 @@ let ia_is_mainthread ia = ia_ends_with ia mainthread
 let ia_is_thread_confined ia = ia_ends_with ia thread_confined
 
 let ia_is_worker_thread ia = ia_ends_with ia worker_thread
+
+let ia_is_guardedby ia = ia_ends_with ia guarded_by

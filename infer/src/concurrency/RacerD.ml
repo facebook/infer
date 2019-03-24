@@ -936,14 +936,25 @@ let should_report_on_proc tenv procdesc =
       false
 
 
-let should_report_guardedby_violation ({snapshot; tenv} : reported_access) =
+let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} : reported_access)
+    =
   (not snapshot.lock)
-  && RacerDDomain.Access.get_access_path snapshot.access.elem
-     |> Option.exists ~f:(fun path ->
-            AccessPath.get_field_and_annotation path tenv
-            |> Option.exists ~f:(fun (_, annotlist) ->
-                   List.exists annotlist ~f:(fun (annot, _) ->
-                       Annotations.annot_ends_with annot Annotations.guarded_by ) ) )
+  && Procdesc.get_proc_name procdesc |> Typ.Procname.is_java
+  &&
+  (* restrict check to access paths of length one *)
+  match RacerDDomain.Access.get_access_path snapshot.access.elem with
+  | Some ((_, base_type), [AccessPath.FieldAccess field_name]) -> (
+      Typ.Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) field_name base_type
+      |> Option.exists ~f:(fun (_, annotlist) -> Annotations.ia_is_guardedby annotlist)
+      &&
+      (* is the base class a subclass of the one containing the GuardedBy annotation? *)
+      match base_type.Typ.desc with
+      | Tstruct base_name | Tptr ({Typ.desc= Tstruct base_name}, _) ->
+          PatternMatch.is_subtype tenv base_name (Typ.Name.Java.from_string classname_str)
+      | _ ->
+          false )
+  | _ ->
+      false
 
 
 (** Report accesses that may race with each other.
@@ -974,7 +985,7 @@ let should_report_guardedby_violation ({snapshot; tenv} : reported_access) =
     currently not distinguishing different locks, and are treating "known to be confined to a
     thread" as if "known to be confined to UI thread".
 *)
-let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
+let report_unsafe_accesses classname (aggregated_access_map : ReportMap.t) =
   let open RacerDDomain in
   let open RacerDModels in
   let is_duplicate_report ({snapshot; procdesc} : reported_access)
@@ -1095,13 +1106,14 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     (* Don't report on location if all accesses are on non-concurrent contexts *)
     if
       List.for_all reportable_accesses ~f:(fun ({threads} : reported_access) ->
+          (* FIXME this should be any thread or no thread *)
           ThreadsDomain.is_any threads |> not )
     then init
     else List.fold reportable_accesses ~init ~f:(report_unsafe_access reportable_accesses)
   in
   let report_guardedby_violations_on_location grouped_accesses init =
     List.fold grouped_accesses ~init ~f:(fun acc r ->
-        if should_report_guardedby_violation r && not (is_duplicate_report r acc) then (
+        if should_report_guardedby_violation classname r && not (is_duplicate_report r acc) then (
           report_thread_safety_violation ~make_description:make_guardedby_violation_description
             ~report_kind:GuardedByViolation r ;
           update_reported r acc )
@@ -1151,5 +1163,6 @@ let aggregate_by_class file_env =
    safety *)
 let file_analysis {Callbacks.procedures; source_file} =
   aggregate_by_class procedures
-  |> String.Map.iter ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env)) ;
+  |> String.Map.iteri ~f:(fun ~key:classname ~data:class_env ->
+         report_unsafe_accesses classname (make_results_table class_env) ) ;
   IssueLog.store Config.racerd_issues_dir_name source_file

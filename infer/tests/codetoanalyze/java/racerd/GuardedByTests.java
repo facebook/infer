@@ -89,4 +89,23 @@ public class GuardedByTests {
   synchronized int syncReadOk() {
     return g;
   }
+
+  GuardedByOther o;
+
+  void accessThroughMemberObjectOk() {
+    o.accessBad();
+  }
+
+  void accessIndirectOk(GuardedByOther o) {
+    o.accessBad();
+  }
+}
+
+class GuardedByOther {
+  @GuardedBy("bla")
+  int x;
+
+  void accessBad() {
+    x = 0;
+  }
 }
