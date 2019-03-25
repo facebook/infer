@@ -363,81 +363,97 @@ module ParamBindings = struct
     add_binding formals actuals empty
 end
 
-let rec eval_sympath_partial ~strict params p mem =
+(* There are three modes of ondemand evaluations.
+
+   EvalNormal: Given a symbolic value of an unknown function [Symb.SymbolPath.Callsite], it returns
+   a symbolic interval value.
+
+   EvalPOCond: Given a symbolic value of an unknown function, it returns the top interval value.
+   This is used when substituting condition expressions of proof obligations.
+
+   EvalPOReachability: This is similar to [EvalPOCond], but it returns the bottom location, instead
+   of the unknown location, when a location to substitute is not found.  This is used when
+   substituting reachabilities of proof obligations. *)
+type eval_mode = EvalNormal | EvalPOCond | EvalPOReachability
+
+let rec eval_sympath_partial ~mode params p mem =
   match p with
   | Symb.SymbolPath.Pvar x -> (
     try ParamBindings.find x params with Caml.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
-  | Symb.SymbolPath.Callsite {cs} ->
-      L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Typ.Procname.pp
-        (CallSite.pname cs) ;
-      Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
+  | Symb.SymbolPath.Callsite {cs} -> (
+    match mode with
+    | EvalNormal ->
+        L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Typ.Procname.pp
+          (CallSite.pname cs) ;
+        Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
+    | EvalPOCond | EvalPOReachability ->
+        Val.Itv.top )
   | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ ->
-      let locs = eval_locpath ~strict params p mem in
+      let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 
 
-and eval_locpath ~strict params p mem =
+and eval_locpath ~mode params p mem =
   let res =
     match p with
     | Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _ ->
-        let v = eval_sympath_partial ~strict params p mem in
+        let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
     | Symb.SymbolPath.Deref (_, p) ->
-        let v = eval_sympath_partial ~strict params p mem in
+        let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
     | Symb.SymbolPath.Field (fn, p) ->
-        let locs = eval_locpath ~strict params p mem in
+        let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs
   in
-  if PowLoc.is_empty res && not strict then (
-    L.d_printfln_escaped "Location value for %a is not found." Symb.SymbolPath.pp_partial p ;
-    PowLoc.unknown )
+  if PowLoc.is_empty res then (
+    match mode with
+    | EvalPOReachability ->
+        res
+    | EvalNormal | EvalPOCond ->
+        L.d_printfln_escaped "Location value for %a is not found." Symb.SymbolPath.pp_partial p ;
+        PowLoc.unknown )
   else res
 
 
-let eval_sympath ~strict params sympath mem =
+let eval_sympath ~mode params sympath mem =
   match sympath with
   | Symb.SymbolPath.Normal p ->
-      let v = eval_sympath_partial ~strict params p mem in
+      let v = eval_sympath_partial ~mode params p mem in
       (Val.get_itv v, Val.get_traces v)
   | Symb.SymbolPath.Offset p ->
-      let v = eval_sympath_partial ~strict params p mem in
+      let v = eval_sympath_partial ~mode params p mem in
       (ArrayBlk.offsetof (Val.get_array_blk v), Val.get_traces v)
   | Symb.SymbolPath.Length p ->
-      let v = eval_sympath_partial ~strict params p mem in
+      let v = eval_sympath_partial ~mode params p mem in
       (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
 
 
-(* We have two modes (strict and non-strict) on evaluating location paths. When a location to
-   substitute is not found:
-   - non-strict mode (which is used by default): it returns the unknown location.
-   - strict mode (which is used only in the substitution of condition of proof obligation): it
-     returns the bottom location. *)
 let mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem =
   let params =
     let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
     ParamBindings.make callee_formals actuals
   in
-  let eval_sym s bound_end =
+  let eval_sym ~mode s bound_end =
     let sympath = Symb.Symbol.path s in
-    let itv, _ = eval_sympath ~strict:false params sympath caller_mem in
+    let itv, _ = eval_sympath ~mode params sympath caller_mem in
     Symb.Symbol.assert_bound_end s bound_end ;
     Itv.get_bound itv bound_end
   in
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
-    let itv, traces = eval_sympath ~strict:false params sympath caller_mem in
+    let itv, traces = eval_sympath ~mode:EvalNormal params sympath caller_mem in
     if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
-  let eval_locpath ~strict partial = eval_locpath ~strict params partial caller_mem in
-  fun ~strict -> {eval_sym; trace_of_sym; eval_locpath= eval_locpath ~strict}
+  let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
+  fun ~mode -> {eval_sym= eval_sym ~mode; trace_of_sym; eval_locpath= eval_locpath ~mode}
 
 
 let mk_eval_sym integer_type_widths callee_pdesc actual_exps caller_mem =
   let eval_sym_trace =
-    mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem ~strict:false
+    mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem ~mode:EvalNormal
   in
   eval_sym_trace.eval_sym
 

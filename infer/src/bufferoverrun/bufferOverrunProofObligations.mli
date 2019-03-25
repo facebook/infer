@@ -73,7 +73,7 @@ module ConditionSet : sig
 
   val subst :
        summary_t
-    -> (strict:bool -> BufferOverrunDomain.eval_sym_trace)
+    -> (mode:BufferOverrunSemantics.eval_mode -> BufferOverrunDomain.eval_sym_trace)
     -> Relation.SubstMap.t
     -> Relation.t
     -> Typ.Procname.t

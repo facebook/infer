@@ -14,6 +14,7 @@ module Dom = BufferOverrunDomain
 module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module Relation = BufferOverrunDomainRelation
+module Sem = BufferOverrunSemantics
 module ValTrace = BufferOverrunTrace
 
 module ConditionTrace = struct
@@ -753,9 +754,13 @@ module ConditionWithTrace = struct
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
         pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
-    match Dom.Reachability.subst cwt.reachability (eval_sym_trace ~strict:true) call_site with
+    match
+      Dom.Reachability.subst cwt.reachability
+        (eval_sym_trace ~mode:Sem.EvalPOReachability)
+        call_site
+    with
     | `Reachable reachability -> (
-        let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~strict:false in
+        let {Dom.eval_sym; trace_of_sym} = eval_sym_trace ~mode:Sem.EvalPOCond in
         match Condition.subst eval_sym rel_map caller_relation cwt.cond with
         | None ->
             None
