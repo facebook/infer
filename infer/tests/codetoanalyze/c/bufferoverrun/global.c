@@ -55,3 +55,13 @@ static void copyfilter_Good_FP(const char* s, const char* z, int b) {
 }
 
 static const char* global_string_array[] = {"a", "b", "c", "d", "e", "f"};
+
+#define ISSUE949_SIZE 50
+
+int issue949_arr[ISSUE949_SIZE];
+
+void issue949_bad_FN() {
+  for (int i = 0; i <= ISSUE949_SIZE; i++) {
+    issue949_arr[i] = 1;
+  }
+}
