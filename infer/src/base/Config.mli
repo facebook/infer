@@ -69,19 +69,9 @@ val classnames_dir_name : string
 
 val classpath : string option
 
-val class_loads : bool
-
-val class_loads_roots : String.Set.t
-
 val costs_report_json : string
 
 val cpp_extra_include_dir : string
-
-val driver_stats_dir_name : string
-
-val duplicates_filename : string
-
-val relative_cpp_models_dir : string
 
 val csl_analysis : bool
 
@@ -91,9 +81,13 @@ val default_in_zip_results_dir : string
 
 val dotty_output : string
 
-val events_dir_name : string
+val driver_stats_dir_name : string
+
+val duplicates_filename : string
 
 val etc_dir : string
+
+val events_dir_name : string
 
 val fail_on_issue_exit_code : int
 
@@ -155,6 +149,8 @@ val property_attributes : string
 
 val racerd_issues_dir_name : string
 
+val relative_cpp_models_dir : string
+
 val relative_path_backtrack : int
 
 val report : bool
@@ -179,9 +175,9 @@ val smt_output : bool
 
 val source_file_extentions : string list
 
-val sources : string list
-
 val sourcepath : string option
+
+val sources : string list
 
 val specs_dir_name : string
 
@@ -201,17 +197,15 @@ val use_cost_threshold : bool
 
 val weak : string
 
-val whitelisted_cpp_methods : string list
-
 val whitelisted_cpp_classes : string list
+
+val whitelisted_cpp_methods : string list
 
 val wrappers_dir : string
 
 (** {2 Configuration values specified by command-line options} *)
 
-val anon_args : string list
-
-val rest : string list
+type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
 
 val abs_struct : int
 
@@ -219,11 +213,11 @@ val abs_val : int
 
 val allow_leak : bool
 
-val analysis_path_regex_whitelist : string list
+val analysis_blacklist_files_containing : string list
 
 val analysis_path_regex_blacklist : string list
 
-val analysis_blacklist_files_containing : string list
+val analysis_path_regex_whitelist : string list
 
 val analysis_stops : bool
 
@@ -233,15 +227,17 @@ val annotation_reachability : bool
 
 val annotation_reachability_custom_pairs : Yojson.Basic.json
 
+val anon_args : string list
+
 val array_level : int
 
 val biabduction : bool
 
-val bootclasspath : string option
-
 val bo_debug : int
 
 val bo_relational_domain : [`Bo_relational_domain_oct | `Bo_relational_domain_poly] option
+
+val bootclasspath : string option
 
 val buck : bool
 
@@ -268,8 +264,6 @@ val captured_dir : string
 
 val changed_files_index : string option
 
-val nullsafe : bool
-
 val check_version : string option
 
 val clang_biniou_file : string option
@@ -281,6 +275,10 @@ val clang_frontend_action_string : string
 val clang_ignore_regex : string option
 
 val clang_include_to_override_regex : string option
+
+val class_loads : bool
+
+val class_loads_roots : String.Set.t
 
 val command : InferCommand.t
 
@@ -304,6 +302,8 @@ val cxx_infer_headers : bool
 
 val cxx_scope_guards : Yojson.Basic.json
 
+val debug_exceptions : bool
+
 val debug_level_analysis : int
 
 val debug_level_capture : int
@@ -311,8 +311,6 @@ val debug_level_capture : int
 val debug_level_linters : int
 
 val debug_level_test_determinator : int
-
-val debug_exceptions : bool
 
 val debug_mode : bool
 
@@ -336,6 +334,8 @@ val eradicate : bool
 
 val eradicate_condition_redundant : bool
 
+val eradicate_debug : bool
+
 val eradicate_field_not_mutable : bool
 
 val eradicate_field_over_annotated : bool
@@ -343,8 +343,6 @@ val eradicate_field_over_annotated : bool
 val eradicate_optional_present : bool
 
 val eradicate_return_over_annotated : bool
-
-val eradicate_debug : bool
 
 val eradicate_verbose : bool
 
@@ -366,15 +364,15 @@ val flavors : bool
 
 val force_delete_results_dir : bool
 
-val fragment_retains_view : bool
-
 val force_integration : build_system option
+
+val fragment_retains_view : bool
 
 val from_json_report : string option
 
-val frontend_tests : bool
-
 val frontend_stats : bool
+
+val frontend_tests : bool
 
 val function_pointer_specialization : bool
 
@@ -384,9 +382,9 @@ val generated_classes : string option
 
 val get_linter_doc_url : linter_id:string -> string option
 
-val html : bool
-
 val hoisting_report_only_expensive : bool
+
+val html : bool
 
 val icfg_dotty_outfile : string option
 
@@ -399,8 +397,6 @@ val infer_is_javac : bool
 val inferconfig_file : string option
 
 val iphoneos_target_sdk_version : string option
-
-type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
 
 val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
 
@@ -465,19 +461,17 @@ val log_file : string
 
 val log_skipped : bool
 
-val perf_profiler_data_file : string option
-
 val loop_hoisting : bool
 
 val max_nesting : int option
-
-val method_decls_info : string option
 
 val memcached : bool
 
 val memcached_size_mb : int
 
 val merge : bool
+
+val method_decls_info : string option
 
 val ml_buckets :
   [`MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown] list
@@ -496,6 +490,8 @@ val no_translate_libs : bool
 
 val nullable_annotation : string option
 
+val nullsafe : bool
+
 val nullsafe_strict_containers : bool
 
 val only_cheap_debug : bool
@@ -505,6 +501,8 @@ val only_footprint : bool
 val only_show : bool
 
 val ownership : bool
+
+val perf_profiler_data_file : string option
 
 val pmd_xml : bool
 
@@ -540,9 +538,11 @@ val procedures_source_file : bool
 
 val procs_csv : string option
 
-val project_root : string
+val profiler_samples : string option
 
 val progress_bar : [`MultiLine | `Plain | `Quiet]
+
+val project_root : string
 
 val pulse : bool
 
@@ -554,21 +554,25 @@ val purity : bool
 
 val quandary : bool
 
-val quandaryBO : bool
-
 val quandary_endpoints : Yojson.Basic.json
 
 val quandary_sanitizers : Yojson.Basic.json
 
+val quandary_sinks : Yojson.Basic.json
+
 val quandary_sources : Yojson.Basic.json
 
-val quandary_sinks : Yojson.Basic.json
+val quandaryBO : bool
 
 val quiet : bool
 
-val reactive_mode : bool
+val racerd : bool
+
+val racerd_guardedby : bool
 
 val reactive_capture : bool
+
+val reactive_mode : bool
 
 val reanalyze : bool
 
@@ -580,11 +584,11 @@ val report_hook : string option
 
 val report_previous : string option
 
-val tracing : bool
-
 val reports_include_ml_loc : bool
 
 val resource_leak : bool
+
+val rest : string list
 
 val results_dir : string
 
@@ -614,11 +618,11 @@ val source_files_cfg : bool
 
 val source_files_filter : string option
 
-val source_files_type_environment : bool
+val source_files_freshly_captured : bool
 
 val source_files_procedure_names : bool
 
-val source_files_freshly_captured : bool
+val source_files_type_environment : bool
 
 val source_preview : bool
 
@@ -646,11 +650,7 @@ val test_determinator : bool
 
 val test_filtering : bool
 
-val profiler_samples : string option
-
 val testing_mode : bool
-
-val racerd : bool
 
 val threadsafe_aliases : Yojson.Basic.json
 
@@ -660,11 +660,13 @@ val trace_error : bool
 
 val trace_events : bool
 
-val trace_ondemand : bool
-
 val trace_join : bool
 
+val trace_ondemand : bool
+
 val trace_rearrange : bool
+
+val tracing : bool
 
 val tv_commit : string option
 
@@ -691,7 +693,6 @@ val write_html_whitelist_regex : string list
 val xcode_developer_dir : string option
 
 val xcpretty : bool
-
 (** {2 Global variables with initial values specified by command-line options} *)
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
@@ -702,11 +703,11 @@ val print_usage_exit : unit -> 'a
 
 (** {2 Miscellanous} *)
 
+val is_in_custom_symbols : string -> string -> bool
+(** Does named symbol match any prefix in the named custom symbol list? *)
+
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
 
 val quandaryBO_filtered_issues : IssueType.t list
 (** List of issues that are enabled by QuandaryBO but should not be in the final report.json *)
-
-val is_in_custom_symbols : string -> string -> bool
-(** Does named symbol match any prefix in the named custom symbol list? *)

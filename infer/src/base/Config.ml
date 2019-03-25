@@ -1859,6 +1859,12 @@ and quiet =
     "Do not print specs on standard output (default: only print for the $(b,report) command)"
 
 
+and racerd_guardedby =
+  CLOpt.mk_bool ~long:"racerd-guardedby" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_racerd)]
+    "Check @GuardedBy annotations with RacerD"
+
+
 and reactive =
   CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive" ~short:'r'
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2884,6 +2890,8 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 
 and racerd = !racerd
+
+and racerd_guardedby = !racerd_guardedby
 
 and reactive_mode = !reactive || InferCommand.(equal Diff) command
 

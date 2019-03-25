@@ -727,6 +727,10 @@ OPTIONS
            Deactivates: the RacerD thread safety analysis (Conversely:
            --racerd)           See also infer-analyze(1).
 
+       --racerd-guardedby
+           Activates: Check @GuardedBy annotations with RacerD (Conversely:
+           --no-racerd-guardedby)           See also infer-analyze(1).
+
        --racerd-only
            Activates: Enable --racerd and disable all other checkers
            (Conversely: --no-racerd-only)           See also infer-analyze(1).

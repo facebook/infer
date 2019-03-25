@@ -372,6 +372,10 @@ QUANDARY CHECKER OPTIONS
        --quandary-sources json
            Specify custom sources for Quandary (default: [])
 RACERD CHECKER OPTIONS
+       --racerd-guardedby
+           Activates: Check @GuardedBy annotations with RacerD (Conversely:
+           --no-racerd-guardedby)
+
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe (default: [])

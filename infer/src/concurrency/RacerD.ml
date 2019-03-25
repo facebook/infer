@@ -1113,12 +1113,14 @@ let report_unsafe_accesses classname (aggregated_access_map : ReportMap.t) =
     else List.fold reportable_accesses ~init ~f:(report_unsafe_access reportable_accesses)
   in
   let report_guardedby_violations_on_location grouped_accesses init =
-    List.fold grouped_accesses ~init ~f:(fun acc r ->
-        if should_report_guardedby_violation classname r && not (is_duplicate_report r acc) then (
-          report_thread_safety_violation ~make_description:make_guardedby_violation_description
-            ~report_kind:GuardedByViolation r ;
-          update_reported r acc )
-        else acc )
+    if Config.racerd_guardedby then
+      List.fold grouped_accesses ~init ~f:(fun acc r ->
+          if should_report_guardedby_violation classname r && not (is_duplicate_report r acc) then (
+            report_thread_safety_violation ~make_description:make_guardedby_violation_description
+              ~report_kind:GuardedByViolation r ;
+            update_reported r acc )
+          else acc )
+    else init
   in
   let report grouped_accesses reported_acc =
     (* reset the reported reads and writes for each memory location *)
