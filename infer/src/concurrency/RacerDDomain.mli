@@ -31,6 +31,7 @@ module TraceElem : sig
   include ExplicitTrace.TraceElem with type elem_t = Access.t
 
   val is_write : t -> bool
+  (** is it a write OR a container write *)
 
   val is_container_write : t -> bool
 

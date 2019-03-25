@@ -15,58 +15,77 @@ public class GuardedByTests {
   private Object mlock = new Object();
 
   @GuardedBy("mLock")
-  private int f;
+  private int a;
 
   public GuardedByTests() {
     // don't warn on reads or writes of Guarded fields in constructor
-    f = 0;
-  }
-
-  public void unlockedWriteBad() {
-    f = 0;
+    a = 0;
   }
 
   public void lockedWriteOk() {
     synchronized (mlock) {
-      f = 0;
+      a = 0;
     }
   }
 
-  public int unlockedReadBad() {
-    return f;
+  @GuardedBy("mLock")
+  private int b;
+
+  public void unlockedWriteBad() {
+    b = 0;
+  }
+
+  @GuardedBy("mLock")
+  private int c;
+
+  public int unlockedReadOk() {
+    return c;
   }
 
   public int lockedReadOk() {
     synchronized (mlock) {
-      return f;
+      return c;
     }
   }
 
+  @GuardedBy("mLock")
+  private int d;
+
   private void privateUnlockedWriteOk() {
-    f = 0;
+    d = 0;
   }
 
-  private int privateUnlockedReadOk() {
-    return f;
-  }
 
   public void interprocUnlockedWriteBad() {
     privateUnlockedWriteOk();
   }
 
-  public int interprocUnlockedReadBad() {
+  @GuardedBy("mLock")
+  private int e;
+
+  private int privateUnlockedReadOk() {
+    return e;
+  }
+
+  public int interprocUnlockedReadOk() {
     return privateUnlockedReadOk();
   }
 
+  @GuardedBy("mLock")
+  private int f;
+
   // NB ThreadSafe annotation disables GuardedBy check too
   @ThreadSafe(enableChecks = false)
-  int suppressedRead() {
-    return f;
+  void suppressedWrite() {
+    f = 0;
   }
+
+  @GuardedBy("mLock")
+  private int h;
 
   @VisibleForTesting
   public void visibleForTestingOk() {
-    f = 0;
+    h = 0;
   }
 
   static Object slock = new Object();
@@ -80,14 +99,14 @@ public class GuardedByTests {
   }
 
   @GuardedBy("this")
-  int g;
+  int i;
 
   synchronized void syncWriteOk() {
-    g = 5;
+    i = 5;
   }
 
   synchronized int syncReadOk() {
-    return g;
+    return i;
   }
 
   GuardedByOther o;

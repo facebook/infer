@@ -939,6 +939,7 @@ let should_report_on_proc tenv procdesc =
 let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} : reported_access)
     =
   (not snapshot.lock)
+  && RacerDDomain.TraceElem.is_write snapshot.access
   && Procdesc.get_proc_name procdesc |> Typ.Procname.is_java
   &&
   (* restrict check to access paths of length one *)
