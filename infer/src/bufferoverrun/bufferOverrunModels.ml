@@ -335,6 +335,14 @@ let variable_initialization (e, typ) =
 
 let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
+let cast exp =
+  let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+    let itv = Sem.eval integer_type_widths exp mem in
+    model_by_value itv ret_id mem
+  in
+  {exec; check= no_check}
+
+
 let by_value =
   let exec ~value _ ~ret:(ret_id, _) mem = model_by_value value ret_id mem in
   fun value -> {exec= exec ~value; check= no_check}
@@ -727,6 +735,7 @@ module Call = struct
       ; -"__variable_initialization" <>$ capt_arg $!--> variable_initialization
       ; -"__exit" <>--> bottom
       ; -"exit" <>--> bottom
+      ; -"__cast" <>$ capt_exp $+...$--> cast
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
       ; -"infer_print" <>$ capt_exp $!--> infer_print
