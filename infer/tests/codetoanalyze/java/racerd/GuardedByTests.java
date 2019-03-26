@@ -128,3 +128,21 @@ class GuardedByOther {
     x = 0;
   }
 }
+
+class GuardedByUiThread {
+  @GuardedBy("UiThReAd")
+  int a;
+
+  @GuardedBy("ui-thread")
+  int b;
+
+  @GuardedBy("UI thread")
+  int c;
+
+  @GuardedBy("UI_THREAD")
+  int d;
+
+  void uithreadOk() {
+    a = b = c = d = 0;
+  }
+}

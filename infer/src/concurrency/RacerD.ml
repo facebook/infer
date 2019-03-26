@@ -938,6 +938,19 @@ let should_report_on_proc tenv procdesc =
 
 let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} : reported_access)
     =
+  let is_uitthread param =
+    match String.lowercase param with
+    | "ui thread" | "ui-thread" | "ui_thread" | "uithread" ->
+        true
+    | _ ->
+        false
+  in
+  let field_is_annotated_guardedby field_name (f, _, a) =
+    Typ.Fieldname.equal f field_name
+    && List.exists a ~f:(fun ((annot : Annot.t), _) ->
+           Annotations.annot_ends_with annot Annotations.guarded_by
+           && match annot.parameters with [param] -> not (is_uitthread param) | _ -> false )
+  in
   (not snapshot.lock)
   && RacerDDomain.TraceElem.is_write snapshot.access
   && Procdesc.get_proc_name procdesc |> Typ.Procname.is_java
@@ -945,15 +958,16 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} 
   (* restrict check to access paths of length one *)
   match RacerDDomain.Access.get_access_path snapshot.access.elem with
   | Some ((_, base_type), [AccessPath.FieldAccess field_name]) -> (
-      Typ.Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) field_name base_type
-      |> Option.exists ~f:(fun (_, annotlist) -> Annotations.ia_is_guardedby annotlist)
-      &&
-      (* is the base class a subclass of the one containing the GuardedBy annotation? *)
-      match base_type.Typ.desc with
-      | Tstruct base_name | Tptr ({Typ.desc= Tstruct base_name}, _) ->
-          PatternMatch.is_subtype tenv base_name (Typ.Name.Java.from_string classname_str)
-      | _ ->
-          false )
+    match base_type.desc with
+    | Tstruct base_name | Tptr ({desc= Tstruct base_name}, _) ->
+        (* is the base class a subclass of the one containing the GuardedBy annotation? *)
+        PatternMatch.is_subtype tenv base_name (Typ.Name.Java.from_string classname_str)
+        && Tenv.lookup tenv base_name
+           |> Option.exists ~f:(fun ({fields; statics} : Typ.Struct.t) ->
+                  let f fld = field_is_annotated_guardedby field_name fld in
+                  List.exists fields ~f || List.exists statics ~f )
+    | _ ->
+        false )
   | _ ->
       false
 
