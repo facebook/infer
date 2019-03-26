@@ -122,6 +122,7 @@ AC_ASSERT_PROG([python2.7], [$PYTHON27])
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
 
+AC_ARG_VAR([XCODE_BASE], [Install location of xcode])
 AS_IF(
   [test "x$XCODE_BASE" != "x"],
         [AC_CHECK_FILE($XCODE_BASE,[HAS_OBJC=yes],[HAS_OBJC=no])],
