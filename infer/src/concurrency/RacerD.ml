@@ -765,9 +765,10 @@ let report_unannotated_interface_violation reported_pname (reported_access : rep
       let class_name = Typ.Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
-          "Unprotected call to method %a of un-annotated interface %s. Consider annotating the \
+          "Unprotected call to method %a of un-annotated interface %a. Consider annotating the \
            class with %a, adding a lock, or using an interface that is known to be thread-safe."
-          Typ.Procname.pp reported_pname class_name MF.pp_monospaced "@ThreadSafe"
+          (MF.wrap_monospaced Typ.Procname.pp)
+          reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation ~make_description ~report_kind:UnannotatedInterface
         reported_access
