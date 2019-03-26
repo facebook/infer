@@ -744,6 +744,15 @@ and ( annotation_reachability
   , uninit )
 
 
+let _disable_all_checkers : bool ref =
+  CLOpt.mk_bool ~long:"disable-all-checkers" "turn off all the previously enabled checkers"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~default:false
+    ~f:(fun b ->
+      if b then disable_all_checkers () ;
+      b )
+
+
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]

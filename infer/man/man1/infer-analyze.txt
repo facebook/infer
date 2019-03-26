@@ -101,6 +101,10 @@ OPTIONS
            --fragment-retains-view, --linters, --liveness, --ownership,
            --racerd, --siof, --uninit (Conversely: --default-checkers)
 
+       --disable-all-checkers
+           Activates: turn off all the previously enabled checkers
+           (Conversely: --no-disable-all-checkers)
+
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
            (Conversely: --no-eradicate)
