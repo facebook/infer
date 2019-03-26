@@ -759,8 +759,7 @@ let report_thread_safety_violation ~make_description ~report_kind
   log_issue pname ~loc ~ltr ~access issue_type error_message
 
 
-let report_unannotated_interface_violation (reported_access : reported_access) =
-  let reported_pname = Procdesc.get_proc_name reported_access.procdesc in
+let report_unannotated_interface_violation reported_pname (reported_access : reported_access) =
   match reported_pname with
   | Typ.Procname.Java java_pname ->
       let class_name = Typ.Procname.Java.get_class_name java_pname in
@@ -1044,12 +1043,12 @@ let report_unsafe_accesses classname (aggregated_access_map : ReportMap.t) =
     if is_duplicate_report reported_access reported_acc then reported_acc
     else
       match snapshot.access.elem with
-      | Access.InterfaceCall _
+      | Access.InterfaceCall reported_pname
         when AccessSnapshot.is_unprotected snapshot
              && ThreadsDomain.is_any threads
              && is_marked_thread_safe procdesc tenv ->
           (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-          report_unannotated_interface_violation reported_access ;
+          report_unannotated_interface_violation reported_pname reported_access ;
           update_reported reported_access reported_acc
       | Access.InterfaceCall _ ->
           reported_acc
