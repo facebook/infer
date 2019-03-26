@@ -1,9 +1,26 @@
 language: c
 sudo: required
-install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
-script: bash -ex .travis-opam.sh
 env:
-  - OCAML_VERSION=4.07 TESTS=false
+  - OCAML_VERSION=4.07.1
+cache:
+  directories:
+    - ${HOME}/.opam
+    - facebook-clang-plugins
+before_install:
+  - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-linux
+  - chmod +x ${HOME}/opam
+  - export PATH=${HOME}:${PATH}
+  - export OPAMYES=1
+  - export OPAMJOBS=2
+  - opam init --compiler=${OCAML_VERSION} --disable-sandboxing
+  - eval $(opam env)
+  - export OPAMVERBOSE=1
+install:
+  - opam update --upgrade
+  - opam pin add --no-action infer .
+  - opam depext --update infer
+  - opam install --deps-only infer
+script:
+  - opam install infer
 os:
 - linux
-- osx
