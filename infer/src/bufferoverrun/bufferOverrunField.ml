@@ -42,4 +42,5 @@ let mk, get_type =
 
 let java_collection_internal_array = mk "java.collection.$elements." Typ.(mk_array void)
 
-let c_strlen = mk "c.strlen" Typ.uint
+let c_strlen () =
+  if Language.curr_language_is Java then mk "length" Typ.uint else mk "c.strlen" Typ.uint

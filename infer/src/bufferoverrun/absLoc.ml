@@ -175,7 +175,7 @@ module Loc = struct
 
   let is_c_strlen = function
     | Field (_, fn) ->
-        Typ.Fieldname.equal fn BufferOverrunField.c_strlen
+        Typ.Fieldname.equal fn (BufferOverrunField.c_strlen ())
     | _ ->
         false
 
@@ -193,7 +193,7 @@ module Loc = struct
 
   let of_allocsite a = Allocsite a
 
-  let of_c_strlen loc = Field (loc, BufferOverrunField.c_strlen)
+  let of_c_strlen loc = Field (loc, BufferOverrunField.c_strlen ())
 
   let of_pvar pvar = Var (Var.of_pvar pvar)
 
@@ -223,7 +223,7 @@ module Loc = struct
   let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
 
   let is_literal_string_strlen = function
-    | Field (l, fn) when Typ.Fieldname.equal BufferOverrunField.c_strlen fn ->
+    | Field (l, fn) when Typ.Fieldname.equal (BufferOverrunField.c_strlen ()) fn ->
         is_literal_string l
     | _ ->
         None

@@ -89,4 +89,21 @@ public class Loops {
     }
     linear(infinite);
   }
+
+  void string_length_linear(String s) {
+    for (int i = 0; i < s.length(); i++) {}
+  }
+
+  void string_concat_linear(String s, String p) {
+    p = p.concat(s);
+    for (int i = 0; i < p.length(); i++) {}
+  }
+
+  void zeropad_linear_FN(String s, String p) {
+    // control variable for the loop is the result of equals which is
+    // in [0,1]. It should be p instead.
+    while (s.equals(p)) {
+      p = p.concat("0");
+    }
+  }
 }

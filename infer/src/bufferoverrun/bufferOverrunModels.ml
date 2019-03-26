@@ -741,11 +741,14 @@ module Call = struct
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
+      ; +PatternMatch.implements_lang "String" &:: "length" <>$ capt_exp $!--> strlen
       ; -"strlen" <>$ capt_exp $!--> strlen
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
+      ; +PatternMatch.implements_lang "String"
+        &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
@@ -779,6 +782,16 @@ module Call = struct
       ; -"std" &:: "basic_string" &:: "length" $ capt_exp $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "size" $ capt_exp $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "compare" &--> by_value Dom.Val.Itv.top
+      ; +PatternMatch.implements_lang "String"
+        &:: "equals"
+        $ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $+ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $--> by_value Dom.Val.Itv.unknown_bool
+      ; +PatternMatch.implements_lang "String"
+        &:: "startsWith"
+        $ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $+ any_arg_of_typ (+PatternMatch.implements_lang "String")
+        $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "operator=="
         $ any_arg_of_typ (-"std" &:: "basic_string")
         $+ any_arg_of_typ (-"std" &:: "basic_string")
