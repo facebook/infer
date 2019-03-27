@@ -14,7 +14,7 @@ struct Simple {
 };
 
 void deref_deleted_bad() {
-  auto s = new Simple{1};
+  auto* s = new Simple{1};
   delete s;
   Simple tmp = *s;
 }
@@ -51,12 +51,12 @@ void double_delete_bad() {
   delete s;
 }
 
-Simple* delete_in_branch_bad(bool b) {
+void delete_in_branch_bad(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
   }
-  return s;
+  s->f = 7;
 }
 
 void delete_in_branch_ok(bool b) {
@@ -105,29 +105,29 @@ void use_in_loop_bad() {
   }
 }
 
-Simple* gated_delete_abort_ok(bool b) {
+void gated_delete_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
     std::abort();
   }
-  return s;
+  s->f = 7;
 }
 
-Simple* gated_exit_abort_ok(bool b) {
+void gated_exit_abort_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
     exit(1);
   }
-  return s;
+  s->f = 7;
 }
 
-Simple* gated_delete_throw_ok(bool b) {
+void gated_delete_throw_ok(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
     throw 5;
   }
-  return s;
+  s->f = 7;
 }

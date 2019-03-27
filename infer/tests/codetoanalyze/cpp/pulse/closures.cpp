@@ -10,6 +10,7 @@ struct S {
   int f;
 
   S() { f = 1; }
+  ~S() {}
 };
 
 int ref_capture_destroy_invoke_bad() {
@@ -96,11 +97,9 @@ std::function<int()> ref_capture_read_lambda_ok() {
       f; // reading (but not invoking) the lambda doesn't use its captured vars
 }
 
-// we'll miss this because we count invoking a lambda object as a use of its
-// captured vars, not the lambda object itself.
-void FN_delete_lambda_then_call_bad() {
-  auto lambda = [] { return 1; };
-  ~lambda();
+void delete_lambda_then_call_bad() {
+  std::function<int()> lambda = [] { return 1; };
+  lambda.~function();
   return lambda();
 }
 

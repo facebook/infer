@@ -38,12 +38,13 @@ int reinit_after_explicit_destructor_ok() {
   return *s.f;
 }
 
-int reinit_after_explicit_destructor2_ok() {
+int reinit_after_explicit_destructor2_bad() {
   S s(1);
   S s2(2);
   s.~S();
-  s = s2;
+  s = s2; // operator=
   return *s.f;
+  // [s2.f] is [s.f] so gets deleted twice
 }
 
 void placement_new_explicit_destructor_ok() {
