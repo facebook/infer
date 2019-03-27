@@ -283,9 +283,9 @@ let initial =
 
 (** comparison between two elements of the domain to determine the [<=] relation
 
-    Given two states [lhs] and [rhs], try to find a bijection [lhs_to_rhs]/[rhs_to_lhs] between the
-    addresses of [lhs] and [rhs] such that [lhs_to_rhs(lhs)] contains (is a supergraph of) [rhs].
-*)
+    Given two states [lhs] and [rhs], try to find a bijection [lhs_to_rhs] (with inverse
+    [rhs_to_lhs]) between the addresses of [lhs] and [rhs] such that [lhs_to_rhs(reachable(lhs)) =
+    reachable(rhs)] (where addresses are reachable if they are reachable from stack variables).  *)
 module GraphComparison = struct
   module AddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
 
@@ -339,101 +339,95 @@ module GraphComparison = struct
           `NotAlreadyVisited mapping' )
 
 
-  type supergraph_relation =
-    | NotASupergraph  (** no mapping was found that can make LHS bigger than RHS *)
-    | Supergraph of mapping  (** [mapping(lhs)] is a supergraph of [rhs] *)
+  type isograph_relation =
+    | NotIsomorphic  (** no mapping was found that can make LHS the same as the RHS *)
+    | IsomorphicUpTo of mapping  (** [mapping(lhs)] is isomorphic to [rhs] *)
 
-  (** can we extend [mapping] so that the subgraph of [lhs] rooted at [addr_lhs] is a supergraph of
-     the subgraph of [rhs] rooted at [addr_rhs]? *)
-  let rec supergraph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping =
+  (** can we extend [mapping] so that the subgraph of [lhs] rooted at [addr_lhs] is isomorphic to
+      the subgraph of [rhs] rooted at [addr_rhs]? *)
+  let rec isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping =
     L.d_printfln "%a<->%a@\n" AbstractAddress.pp addr_lhs AbstractAddress.pp addr_rhs ;
     match record_equal mapping ~addr_lhs ~addr_rhs with
     | `AlreadyVisited ->
-        Supergraph mapping
+        IsomorphicUpTo mapping
     | `AliasingRHS | `AliasingLHS ->
-        NotASupergraph
+        NotIsomorphic
     | `NotAlreadyVisited mapping -> (
-      match Memory.find_opt addr_rhs rhs.heap with
-      | None ->
-          (* nothing on the RHS: nothing more to check *)
-          Supergraph mapping
-      | Some (edges_rhs, attrs_rhs) -> (
-        match Memory.find_opt addr_lhs lhs.heap with
-        | None ->
-            (* [RHS] is not a subgraph of [LHS] unless [addr_rhs] has no attributes and no edges
-               (could happen because of [register_address] or because we don't care to delete empty
-               edges when removing edges) *)
-            if Memory.Edges.is_empty edges_rhs && Attributes.is_empty attrs_rhs then
-              Supergraph mapping
-            else NotASupergraph
-        | Some (edges_lhs, attrs_lhs) ->
+        let get_non_empty_cell = function
+          | None ->
+              None
+          | Some (edges, attrs) when Memory.Edges.is_empty edges && Attributes.is_empty attrs ->
+              (* this can happen because of [register_address] or because we don't care to delete empty
+               edges when removing edges *)
+              None
+          | Some _ as some_cell ->
+              some_cell
+        in
+        let lhs_cell_opt = Memory.find_opt addr_lhs lhs.heap |> get_non_empty_cell in
+        let rhs_cell_opt = Memory.find_opt addr_rhs rhs.heap |> get_non_empty_cell in
+        match (lhs_cell_opt, rhs_cell_opt) with
+        | None, None ->
+            IsomorphicUpTo mapping
+        | Some _, None | None, Some _ ->
+            NotIsomorphic
+        | Some (edges_rhs, attrs_rhs), Some (edges_lhs, attrs_lhs) ->
             (* continue the comparison recursively on all edges and attributes *)
-            if Attributes.subset attrs_rhs attrs_lhs then
+            if Attributes.equal attrs_rhs attrs_lhs then
               let bindings_lhs = Memory.Edges.bindings edges_lhs in
               let bindings_rhs = Memory.Edges.bindings edges_rhs in
-              supergraph_map_edges ~lhs ~edges_lhs:bindings_lhs ~rhs ~edges_rhs:bindings_rhs
-                mapping
-            else NotASupergraph ) )
+              isograph_map_edges ~lhs ~edges_lhs:bindings_lhs ~rhs ~edges_rhs:bindings_rhs mapping
+            else NotIsomorphic )
 
 
-  (** check that the supergraph relation can be extended for all edges *)
-  and supergraph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping =
+  (** check that the isograph relation can be extended for all edges *)
+  and isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping =
     match (edges_lhs, edges_rhs) with
-    | _, [] ->
-        (* more edges on the LHS => supergraph *)
-        Supergraph mapping
+    | [], [] ->
+        IsomorphicUpTo mapping
     | (a_lhs, (addr_lhs, _trace_lhs)) :: edges_lhs, (a_rhs, (addr_rhs, _trace_rhs)) :: edges_rhs
       when Memory.Access.equal a_lhs a_rhs -> (
-      (* check supergraph relation from the destination addresses *)
-      match supergraph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-      | Supergraph mapping ->
+      (* check isograph relation from the destination addresses *)
+      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
+      | IsomorphicUpTo mapping ->
           (* ok: continue with the other edges *)
-          supergraph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping
-      | NotASupergraph ->
-          NotASupergraph )
-    | (a_lhs, _) :: edges_lhs, (a_rhs, _) :: _ when Memory.Access.compare a_lhs a_rhs < 0 ->
-        (* [a_lhs] is not present on the RHS: that's ok: the LHS knows more than the RHS  *)
-        supergraph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping
-    | _, _ :: _ ->
-        (* [a_rhs] is not present on the LHS: that's not ok: the RHS knows more than the LHS *)
-        NotASupergraph
+          isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping
+      | NotIsomorphic ->
+          NotIsomorphic )
+    | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
+        NotIsomorphic
 
 
   (** check that the memory graph induced by the addresses in [lhs] reachable from the variables in
-     [stack_lhs] is a supergraph of the same graph in [rhs] starting from [stack_rhs], up to some
+     [stack_lhs] is a isograph of the same graph in [rhs] starting from [stack_rhs], up to some
      [mapping] *)
-  let rec supergraph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping =
+  let rec isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping =
     match (stack_lhs, stack_rhs) with
-    | _, [] ->
-        Supergraph mapping
+    | [], [] ->
+        IsomorphicUpTo mapping
     | ( (var_lhs, (addr_lhs, _trace_lhs)) :: stack_lhs
       , (var_rhs, (addr_rhs, _trace_rhs)) :: stack_rhs )
       when Var.equal var_lhs var_rhs -> (
-      match supergraph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-      | Supergraph mapping ->
-          supergraph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping
-      | NotASupergraph ->
-          NotASupergraph )
-    | (var_lhs, _) :: stack_lhs, (var_rhs, _) :: _ when Var.compare var_lhs var_rhs < 0 ->
-        (* [var_lhs] is not present on the RHS: that's ok: the LHS knows more than the RHS  *)
-        supergraph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping
-    | _, _ :: _ ->
-        NotASupergraph
+      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
+      | IsomorphicUpTo mapping ->
+          isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping
+      | NotIsomorphic ->
+          NotIsomorphic )
+    | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
+        NotIsomorphic
 
 
-  let supergraph_map ~lhs ~rhs mapping =
+  let isograph_map ~lhs ~rhs mapping =
     let stack_lhs = Stack.bindings lhs.stack in
     let stack_rhs = Stack.bindings rhs.stack in
-    supergraph_map_from_stack ~lhs ~rhs ~stack_lhs ~stack_rhs mapping
+    isograph_map_from_stack ~lhs ~rhs ~stack_lhs ~stack_rhs mapping
 
 
-  let is_supergraph ~lhs ~rhs mapping =
-    match supergraph_map ~lhs ~rhs mapping with Supergraph _ -> true | NotASupergraph -> false
+  let is_isograph ~lhs ~rhs mapping =
+    match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
 end
 
 let ( <= ) ~lhs ~rhs =
-  (* [lhs] implies [rhs] if it knows more facts than [rhs] *)
-  phys_equal lhs rhs || GraphComparison.is_supergraph ~lhs ~rhs GraphComparison.empty_mapping
+  phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
 
 
 let pp fmt {heap; stack} =
