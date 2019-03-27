@@ -253,7 +253,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           | None ->
               some_post
           | Some joined_post ->
-              let res = Domain.join joined_post post in
+              let res = Domain.join post joined_post in
               if Config.write_html then debug_absint_operation (`Join (joined_post, post, res)) ;
               Some res ) )
 
