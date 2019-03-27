@@ -298,7 +298,7 @@ void use_global_2_Good() {
   a[S::x] = 0;
 }
 
-void use_global_2_Bad_FN() {
+void use_global_2_Bad() {
   int a[30];
   a[S::x] = 0;
 }

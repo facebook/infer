@@ -75,7 +75,34 @@ let dummy_stmt_info () =
   {Clang_ast_t.si_pointer= get_fresh_pointer (); si_source_range= dummy_source_range ()}
 
 
-let get_decl decl_ptr = Int.Table.find ClangPointers.pointer_decl_table decl_ptr
+let named_decl_info_equal ndi1 ndi2 =
+  match
+    List.for_all2 ndi1.Clang_ast_t.ni_qual_name ndi2.Clang_ast_t.ni_qual_name ~f:String.equal
+  with
+  | List.Or_unequal_lengths.Ok b ->
+      b
+  | List.Or_unequal_lengths.Unequal_lengths ->
+      false
+
+
+let get_decl decl_ptr =
+  let decl = Int.Table.find ClangPointers.pointer_decl_table decl_ptr in
+  match decl with
+  | Some (VarDecl ({di_parent_pointer= Some parent_pointer}, ndi, _, _)) -> (
+    match Int.Table.find ClangPointers.pointer_decl_table parent_pointer with
+    | Some (CXXRecordDecl (_, _, _, decls, _, _, _, _)) -> (
+        let has_same_ndi = function
+          | Clang_ast_t.VarDecl (_, ndi', _, _) ->
+              named_decl_info_equal ndi ndi'
+          | _ ->
+              false
+        in
+        match List.find decls ~f:has_same_ndi with Some _ as decl' -> decl' | None -> decl )
+    | _ ->
+        decl )
+  | _ ->
+      decl
+
 
 let get_decl_opt decl_ptr_opt =
   match decl_ptr_opt with Some decl_ptr -> get_decl decl_ptr | None -> None
