@@ -98,17 +98,14 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
   (** extract the precondition of node [n] from [inv_map] *)
   let extract_pre node_id inv_map = extract_state node_id inv_map |> Option.map ~f:State.pre
 
-  let debug_absint_operation op node =
-    let pp_name fmt =
-      TransferFunctions.pp_session_name node fmt ;
+  let debug_absint_operation op =
+    let pp_op fmt op =
       match op with
       | `Join _ ->
-          F.pp_print_string fmt " JOIN"
+          F.pp_print_string fmt "JOIN"
       | `Widen (num_iters, _) ->
-          F.fprintf fmt " WIDEN(num_iters= %d)" num_iters
+          F.fprintf fmt "WIDEN(num_iters= %d)" num_iters
     in
-    let underlying_node = Node.underlying_node node in
-    NodePrinter.start_session ~pp_name underlying_node ;
     let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
     let pp_right f =
       if phys_equal right left then F.pp_print_string f "= LEFT" else Domain.pp f right
@@ -118,8 +115,8 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       else if phys_equal result right then F.pp_print_string f "= RIGHT"
       else Domain.pp f result
     in
-    L.d_printfln_escaped "LEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." Domain.pp left pp_right pp_result ;
-    NodePrinter.finish_session underlying_node
+    L.d_printfln_escaped "%a@\n@\nLEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." pp_op op Domain.pp left
+      pp_right pp_result
 
 
   (** reference to log errors only at the innermost recursive call *)
@@ -154,10 +151,6 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
   let exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map =
     let instrs = CFG.instrs node in
-    if Config.write_html then
-      NodePrinter.start_session
-        ~pp_name:(TransferFunctions.pp_session_name node)
-        (Node.underlying_node node) ;
     let post =
       if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
       let compute_post pre instr =
@@ -181,7 +174,6 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         compute_post pre Sil.skip_instr
       else Container.fold_result ~fold:Instrs.fold ~init:pre instrs ~f:compute_post
     in
-    if Config.write_html then NodePrinter.finish_session (Node.underlying_node node) ;
     match post with
     | Ok astate_post ->
         InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
@@ -203,36 +195,51 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       let inv_map' = exec_instrs ~pp_instr proc_data node node_id ~visit_count pre inv_map in
       (inv_map', DidNotReachFixPoint)
     in
-    if InvariantMap.mem node_id inv_map then
-      let old_state = InvariantMap.find node_id inv_map in
-      let new_pre =
-        if is_loop_head && not is_narrowing then (
-          let num_iters = (old_state.State.visit_count :> int) in
-          let prev = old_state.State.pre in
-          let next = astate_pre in
-          let res = Domain.widen ~prev ~next ~num_iters in
-          if Config.write_html then
-            debug_absint_operation (`Widen (num_iters, (prev, next, res))) node ;
-          res )
-        else astate_pre
-      in
-      if
-        if is_narrowing then
-          (old_state.State.visit_count :> int) > Config.max_narrows
-          || Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre
-        else Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre
-      then (inv_map, ReachedFixPoint)
-      else if is_narrowing && not (Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre) then (
-        L.(debug Analysis Verbose)
-          "Terminate narrowing because old and new states are not comparable at %a:%a@."
-          Typ.Procname.pp (Procdesc.get_proc_name pdesc) Node.pp_id node_id ;
-        (inv_map, ReachedFixPoint) )
+    let inv_map, converged =
+      if InvariantMap.mem node_id inv_map then
+        let old_state = InvariantMap.find node_id inv_map in
+        let new_pre =
+          if is_loop_head && not is_narrowing then (
+            let num_iters = (old_state.State.visit_count :> int) in
+            let prev = old_state.State.pre in
+            let next = astate_pre in
+            let res = Domain.widen ~prev ~next ~num_iters in
+            if Config.write_html then
+              debug_absint_operation (`Widen (num_iters, (prev, next, res))) ;
+            res )
+          else astate_pre
+        in
+        if
+          if is_narrowing then
+            (old_state.State.visit_count :> int) > Config.max_narrows
+            || Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre
+          else Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre
+        then (inv_map, ReachedFixPoint)
+        else if is_narrowing && not (Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre) then (
+          L.(debug Analysis Verbose)
+            "Terminate narrowing because old and new states are not comparable at %a:%a@."
+            Typ.Procname.pp (Procdesc.get_proc_name pdesc) Node.pp_id node_id ;
+          (inv_map, ReachedFixPoint) )
+        else
+          let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
+          update_inv_map new_pre ~visit_count:visit_count'
       else
-        let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
-        update_inv_map new_pre ~visit_count:visit_count'
-    else
-      (* first time visiting this node *)
-      update_inv_map astate_pre ~visit_count:VisitCount.first_time
+        (* first time visiting this node *)
+        update_inv_map astate_pre ~visit_count:VisitCount.first_time
+    in
+    ( match converged with
+    | ReachedFixPoint ->
+        L.d_printfln "Fixpoint reached.@."
+    | DidNotReachFixPoint ->
+        () ) ;
+    (inv_map, converged)
+
+
+  (* shadowed for HTML debug *)
+  let exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map =
+    NodePrinter.with_session ~pp_name:(TransferFunctions.pp_session_name node)
+      (Node.underlying_node node) ~f:(fun () ->
+        exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map )
 
 
   let compute_pre cfg node inv_map =
@@ -247,9 +254,15 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
               some_post
           | Some joined_post ->
               let res = Domain.join joined_post post in
-              if Config.write_html then
-                debug_absint_operation (`Join (joined_post, post, res)) node ;
+              if Config.write_html then debug_absint_operation (`Join (joined_post, post, res)) ;
               Some res ) )
+
+
+  (* shadowed for HTML debug *)
+  let compute_pre cfg node inv_map =
+    NodePrinter.with_session (Node.underlying_node node)
+      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map
+    )
 
 
   (** compute and return an invariant map for [pdesc] *)

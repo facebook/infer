@@ -14,3 +14,7 @@ val start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> uni
 
 val finish_session : Procdesc.Node.t -> unit
 (** To be called after analyzing a node *)
+
+val with_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a
+(** Wraps [f] between [start_session] and [finish_session]. Will swallow timeouts so do *not* use
+   from within biabduction *)
