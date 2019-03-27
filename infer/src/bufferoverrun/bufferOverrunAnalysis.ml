@@ -94,7 +94,13 @@ module TransferFunctions = struct
       Option.value_map ret_alias ~default:mem ~f:(fun l -> Dom.Mem.load_alias ret_id l mem)
     in
     let ret_var = Loc.of_var (Var.of_id ret_id) in
-    let ret_val = Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem in
+    let ret_val =
+      let val_of_return_var =
+        Dom.Mem.find_opt (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
+      in
+      IOption.value_default_f val_of_return_var ~f:(fun () ->
+          Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname)) )
+    in
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
     |> copy_reachable_locs_from (PowLoc.join formal_locs (Dom.Val.get_all_locs ret_val))

@@ -67,6 +67,9 @@ val name_spec : name
 val name_return : Mangled.t
 (** Name used for the return variable *)
 
+val name_return_param : Mangled.t
+(** Name used for the return param variable *)
+
 val string_to_name : string -> name
 (** Convert a string to a name. *)
 

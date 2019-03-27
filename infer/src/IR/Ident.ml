@@ -156,6 +156,9 @@ end
 (** Name used for the return variable *)
 let name_return = Mangled.from_string "return"
 
+(** Name used for the return param variable *)
+let name_return_param = Mangled.from_string "__return_param"
+
 (** Return the standard name for the given kind *)
 let standard_name kind =
   if equal_kind kind KNormal || equal_kind kind KNone then Name.Normal

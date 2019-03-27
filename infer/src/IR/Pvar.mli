@@ -39,6 +39,9 @@ val get_name : t -> Mangled.t
 val get_ret_pvar : Typ.Procname.t -> t
 (** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
 
+val get_ret_param_pvar : Typ.Procname.t -> t
+(** [get_ret_param_pvar proc_name] retuns the return_param pvar associated with the procedure name *)
+
 val get_simplified_name : t -> string
 (** Get a simplified version of the name component of a program variable. *)
 

@@ -213,6 +213,8 @@ let mk (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
 
 let get_ret_pvar pname = mk Ident.name_return pname
 
+let get_ret_param_pvar pname = mk Ident.name_return_param pname
+
 (** [mk_callee name proc_name] creates a program var
     for a callee function with the given function name *)
 let mk_callee (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
