@@ -22,6 +22,7 @@ let source_dirs =
        ; "integration"
        ; "labs"
        ; "nullsafe"
+       ; "pulse"
        ; "quandary"
        ; "topl"
        ; "unit" ] )
