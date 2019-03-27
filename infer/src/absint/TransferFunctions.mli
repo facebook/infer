@@ -51,7 +51,7 @@ end
 module type DisjReady = sig
   module CFG : ProcCfg.S
 
-  module Domain : AbstractDomain.S
+  module Domain : AbstractDomain.NoJoin
 
   type extras
 

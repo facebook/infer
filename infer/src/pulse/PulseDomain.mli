@@ -31,11 +31,11 @@ end
 
 module Stack : sig
   include
-    AbstractDomain.MapS
+    PrettyPrintable.MonoMap
     with type key = Var.t
      and type value = AbstractAddress.t * Location.t option
 
-  (* need to shadow the declaration in [MapS] even though it is unused since [MapS.compare] has a
+  (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
      different type *)
   val compare : t -> t -> int [@@warning "-32"]
 end
@@ -83,6 +83,6 @@ type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
 
 val initial : t
 
-include AbstractDomain.S with type t := t
+include AbstractDomain.NoJoin with type t := t
 
 val minimize : t -> t

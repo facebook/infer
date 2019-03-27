@@ -23,11 +23,15 @@ exception Stop_analysis
 
 (** Abstract domains and domain combinators *)
 
-module type S = sig
+module type NoJoin = sig
   include PrettyPrintable.PrintableType
 
   val ( <= ) : lhs:t -> rhs:t -> bool
-  (** the partial order induced by join *)
+  (** the implication relation: [lhs <= rhs] means [lhs |- rhs] *)
+end
+
+module type S = sig
+  include NoJoin
 
   val join : t -> t -> t
 

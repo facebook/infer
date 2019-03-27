@@ -20,10 +20,14 @@ open! Types
 
 exception Stop_analysis
 
-module type S = sig
+module type NoJoin = sig
   include PrettyPrintable.PrintableType
 
   val ( <= ) : lhs:t -> rhs:t -> bool
+end
+
+module type S = sig
+  include NoJoin
 
   val join : t -> t -> t
 

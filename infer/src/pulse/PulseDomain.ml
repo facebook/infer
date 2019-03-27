@@ -238,12 +238,7 @@ end = struct
     if phys_equal heap (fst memory) && phys_equal attrs (snd memory) then memory else (heap, attrs)
 end
 
-(** Stacks: map addresses of variables to values and initialisation location.
-
-    This is defined as an abstract domain but the domain operations are mostly meaningless on their
-    own. It so happens that the join on abstract states uses the join of stacks provided by this
-    functor followed by normalization wrt the unification found between abstract locations so it's
-    convenient to define stacks as elements of this domain. *)
+(** Stacks: map addresses of variables to values and initialisation location. *)
 module Stack = struct
   module VarAddress = struct
     include Var
@@ -258,28 +253,22 @@ module Stack = struct
       F.fprintf f "%a%a" pp_ampersand var Var.pp var
   end
 
-  module ValueDomain = struct
+  module VarValue = struct
     type t = AbstractAddress.t * Location.t option [@@deriving compare]
-
-    let join ((addr1, _) as v1) ((addr2, _) as v2) = if addr1 <= addr2 then v1 else v2
-
-    let ( <= ) ~lhs:(lhs_addr, _) ~rhs:(rhs_addr, _) = AbstractAddress.equal lhs_addr rhs_addr
-
-    let widen ~prev ~next ~num_iters:_ = join prev next
 
     let pp = Pp.pair ~fst:AbstractAddress.pp ~snd:(Pp.option Location.pp)
   end
 
-  include AbstractDomain.Map (VarAddress) (ValueDomain)
+  include PrettyPrintable.MakePPMonoMap (VarAddress) (VarValue)
 
   let pp fmt m =
     let pp_item fmt (var_address, v) =
-      F.fprintf fmt "%a=%a" VarAddress.pp var_address ValueDomain.pp v
+      F.fprintf fmt "%a=%a" VarAddress.pp var_address VarValue.pp v
     in
     PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
 
 
-  let compare = compare ValueDomain.compare
+  let compare = compare VarValue.compare
 end
 
 type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
@@ -442,15 +431,9 @@ module GraphComparison = struct
     match supergraph_map ~lhs ~rhs mapping with Supergraph _ -> true | NotASupergraph -> false
 end
 
-let join _ _ = (* not implemented: use disjunctive domain instead *) assert false
-
 let ( <= ) ~lhs ~rhs =
   (* [lhs] implies [rhs] if it knows more facts than [rhs] *)
   phys_equal lhs rhs || GraphComparison.is_supergraph ~lhs ~rhs GraphComparison.empty_mapping
-
-
-let widen ~prev:_ ~next:_ ~num_iters:_ =
-  (* not implemented: use disjunctive domain instead *) assert false
 
 
 let pp fmt {heap; stack} =
