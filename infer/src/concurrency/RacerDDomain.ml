@@ -120,8 +120,10 @@ module Access = struct
 end
 
 module TraceElem = struct
-  (* FIXME evaluate modulo location functor *)
-  include ExplicitTrace.MakeTraceElem (Access)
+  (** This choice means the comparator is insensitive to the location access. 
+      This preserves correctness only if the overlying comparator (AccessSnapshot) 
+      takes into account the characteristics of the access (eg lock status). *)
+  include ExplicitTrace.MakeTraceElemModuloLocation (Access)
 
   let is_write {elem} = Access.is_write elem
 
