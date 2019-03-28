@@ -971,8 +971,8 @@ module Normalize = struct
           else
             match (e1, e2) with
             | Const (Cint n), Const (Cint m) -> (
-              try Exp.int (IntLit.shift_left n m) with IntLit.OversizedShift ->
-                BinOp (Shiftlt, eval e1, eval e2) )
+              try Exp.int (IntLit.shift_left n m)
+              with IntLit.OversizedShift -> BinOp (Shiftlt, eval e1, eval e2) )
             | _, Const (Cint m) when IntLit.iszero m ->
                 eval e1
             | _, Const (Cint m) when IntLit.isone m ->
@@ -986,8 +986,8 @@ module Normalize = struct
           else
             match (e1, e2) with
             | Const (Cint n), Const (Cint m) -> (
-              try Exp.int (IntLit.shift_right n m) with IntLit.OversizedShift ->
-                BinOp (Shiftrt, eval e1, eval e2) )
+              try Exp.int (IntLit.shift_right n m)
+              with IntLit.OversizedShift -> BinOp (Shiftrt, eval e1, eval e2) )
             | _, Const (Cint m) when IntLit.iszero m ->
                 eval e1
             | Const (Cint m), _ when IntLit.iszero m ->
@@ -2411,7 +2411,10 @@ let prop_iter_next iter =
   | hpred' :: new' ->
       Some
         { iter with
-          pit_old= iter.pit_curr :: iter.pit_old; pit_curr= hpred'; pit_state= (); pit_new= new' }
+          pit_old= iter.pit_curr :: iter.pit_old
+        ; pit_curr= hpred'
+        ; pit_state= ()
+        ; pit_new= new' }
 
 
 (** Insert before the current element of the iterator. *)

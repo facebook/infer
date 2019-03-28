@@ -435,7 +435,7 @@ module ConstraintSolver = struct
 
 
     let union ~debug equalities e1 e2 =
-      let _ : bool = log_union ~debug equalities e1 e2 in
+      let (_ : bool) = log_union ~debug equalities e1 e2 in
       ()
 
 
@@ -642,7 +642,7 @@ module ThresholdReports = struct
 
   let config =
     List.fold ReportConfig.as_list ~init:none ~f:(fun acc -> function
-      | k, ReportConfig.({threshold= Some threshold}) ->
+      | k, ReportConfig.{threshold= Some threshold} ->
           CostDomain.CostKindMap.add k (Threshold (BasicCost.of_int_exn threshold)) acc
       | _ ->
           acc )
@@ -766,16 +766,16 @@ module Check = struct
     else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
 
 
-  let check_and_report WorstCaseCost.({costs; reports}) proc_desc summary =
+  let check_and_report WorstCaseCost.{costs; reports} proc_desc summary =
     CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
-      ~f:(fun kind ReportConfig.({name; threshold}) -> function
+      ~f:(fun kind ReportConfig.{name; threshold} -> function
       | ThresholdReports.Threshold _ ->
           ()
       | ThresholdReports.ReportOn {location; cost} ->
           report_threshold summary ~name ~location ~cost ~threshold:(Option.value_exn threshold)
             ~kind ) ;
     CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
-      ~f:(fun _kind ReportConfig.({name; top_and_bottom}) cost ->
+      ~f:(fun _kind ReportConfig.{name; top_and_bottom} cost ->
         if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )
 end
 

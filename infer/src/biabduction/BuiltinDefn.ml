@@ -221,7 +221,7 @@ let execute___get_type_of {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args} :
         let hpred_opt =
           List.find_map
             ~f:(function
-              | Sil.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None)
+              | Sil.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None )
             prop.Prop.sigma
         in
         match hpred_opt with

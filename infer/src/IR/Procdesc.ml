@@ -447,7 +447,7 @@ let compute_distance_to_exit_node pdesc =
 (** check or indicate if we have performed preanalysis on the CFG *)
 let did_preanalysis pdesc = pdesc.attributes.did_preanalysis
 
-let signal_did_preanalysis pdesc = (pdesc.attributes).did_preanalysis <- true
+let signal_did_preanalysis pdesc = pdesc.attributes.did_preanalysis <- true
 
 let get_attributes pdesc = pdesc.attributes
 
@@ -546,7 +546,7 @@ let set_start_node pdesc node = pdesc.start_node <- node
 
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals =
-  (pdesc.attributes).locals <- pdesc.attributes.locals @ new_locals
+  pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
 
 let set_succs_exn_only (node : Node.t) exn = node.exn <- exn
@@ -622,7 +622,7 @@ let get_wto pdesc =
       wto
   | None ->
       let wto = WTO.make pdesc in
-      let _ : int =
+      let (_ : int) =
         WeakTopologicalOrder.Partition.fold_nodes wto ~init:0 ~f:(fun idx node ->
             node.Node.wto_index <- idx ;
             idx + 1 )

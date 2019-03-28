@@ -59,20 +59,20 @@ and func = {name: Global.t; entry: block; cfg: cfg}
 
 let rec sexp_of_jump ({dst; args; retreating} as jmp) =
   if retreating then
-    [%sexp {dst= (dst.lbl : label); args : Exp.t list; retreating : bool}]
+    [%sexp {dst: label = dst.lbl; args: Exp.t list; retreating: bool}]
   else [%sexp_of: jump] jmp
 
 and sexp_of_term t = [%sexp_of: term] t
 
 and sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
   [%sexp
-    { lbl : label
-    ; params : Var.t list
-    ; locals : Var.Set.t
-    ; cmnd : cmnd
-    ; term : term
-    ; parent= (parent.name.var : Var.t)
-    ; sort_index : int }]
+    { lbl: label
+    ; params: Var.t list
+    ; locals: Var.Set.t
+    ; cmnd: cmnd
+    ; term: term
+    ; parent: Var.t = parent.name.var
+    ; sort_index: int }]
 
 and sexp_of_func f = [%sexp_of: func] f
 

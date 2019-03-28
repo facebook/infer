@@ -45,7 +45,8 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
 
 (** Look up a name in the global type environment. *)
 let lookup tenv name : Typ.Struct.t option =
-  try Some (TypenameHash.find tenv name) with Caml.Not_found -> (
+  try Some (TypenameHash.find tenv name)
+  with Caml.Not_found -> (
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
     match (name : Typ.Name.t) with
     | CStruct m -> (

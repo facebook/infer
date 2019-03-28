@@ -73,7 +73,8 @@ module FileContainsStringMatcher = struct
       let source_map = ref SourceFile.Map.empty in
       let regexp = Str.regexp (String.concat ~sep:"\\|" s_patterns) in
       fun source_file ->
-        try SourceFile.Map.find source_file !source_map with Caml.Not_found -> (
+        try SourceFile.Map.find source_file !source_map
+        with Caml.Not_found -> (
           try
             let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
             let pattern_found = file_contains regexp file_in in
@@ -102,9 +103,8 @@ module FileOrProcMatcher = struct
         List.fold
           ~f:(fun map pattern ->
             let previous =
-              try String.Map.find_exn map pattern.class_name with
-              | Not_found_s _ | Caml.Not_found ->
-                  []
+              try String.Map.find_exn map pattern.class_name
+              with Not_found_s _ | Caml.Not_found -> []
             in
             String.Map.set ~key:pattern.class_name ~data:(pattern :: previous) map )
           ~init:String.Map.empty m_patterns
@@ -118,9 +118,7 @@ module FileOrProcMatcher = struct
             ~f:(fun p ->
               match p.method_name with None -> true | Some m -> String.equal m method_name )
             class_patterns
-        with
-        | Not_found_s _ | Caml.Not_found ->
-            false
+        with Not_found_s _ | Caml.Not_found -> false
       in
       fun _ proc_name ->
         match proc_name with Typ.Procname.Java pname_java -> do_java pname_java | _ -> false

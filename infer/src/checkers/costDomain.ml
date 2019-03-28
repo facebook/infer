@@ -33,7 +33,7 @@ module CostKindMap = struct
   type no_value = |
 
   let iter2 map1 map2 ~f =
-    let _ : no_value t =
+    let (_ : no_value t) =
       merge
         (fun k v1_opt v2_opt ->
           (match (v1_opt, v2_opt) with Some v1, Some v2 -> f k v1 v2 | _ -> ()) ;
@@ -58,7 +58,7 @@ module VariantCostMap = struct
   let increase_by kind cost_to_add record =
     update kind
       (function
-        | None -> Some cost_to_add | Some existing -> Some (BasicCost.plus cost_to_add existing))
+        | None -> Some cost_to_add | Some existing -> Some (BasicCost.plus cost_to_add existing) )
       record
 
 

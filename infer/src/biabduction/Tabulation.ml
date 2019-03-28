@@ -117,8 +117,7 @@ let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic
 (***************)
 
 let get_specs_from_payload summary =
-  Option.map summary.Summary.payloads.biabduction ~f:(fun BiabductionSummary.({preposts}) ->
-      preposts )
+  Option.map summary.Summary.payloads.biabduction ~f:(fun BiabductionSummary.{preposts} -> preposts)
   |> BiabductionSummary.get_specs_from_preposts
 
 
@@ -650,7 +649,8 @@ let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Si
       | _ ->
           star sg1 sigma2' )
   in
-  try star sigma1 sigma2 with exn when SymOp.exn_not_failure exn ->
+  try star sigma1 sigma2
+  with exn when SymOp.exn_not_failure exn ->
     L.d_str "cannot star " ;
     Prop.d_sigma sigma1 ;
     L.d_str " and " ;
@@ -691,7 +691,8 @@ let sigma_star_typ (sigma1 : Sil.hpred list) (typings2 : (Exp.t * Exp.t) list) :
       | _ ->
           star sg1 typings2' )
   in
-  try star sigma1 typings2 with exn when SymOp.exn_not_failure exn ->
+  try star sigma1 typings2
+  with exn when SymOp.exn_not_failure exn ->
     L.d_str "cannot star " ;
     Prop.d_sigma sigma1 ;
     L.d_str " and " ;
@@ -1021,7 +1022,7 @@ let mk_posts tenv prop callee_pname posts =
           | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname ->
               Prover.check_disequal tenv prop exp Exp.zero
           | _ ->
-              false)
+              false )
         (Attribute.get_all prop)
     in
     if last_call_ret_non_null then
@@ -1031,7 +1032,7 @@ let mk_posts tenv prop callee_pname posts =
             | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
                 Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
             | _ ->
-                false)
+                false )
           prop.Prop.sigma
       in
       List.filter ~f:(fun (prop, _) -> not (returns_null prop)) posts
@@ -1115,7 +1116,8 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
   (* if the callee is a model, then we don't have a tenv for it *)
   if (not callee_attributes.ProcAttributes.is_model) && add_fields then
     let callee_tenv_opt =
-      try Some (Exe_env.get_tenv exe_env callee_pname) with _ ->
+      try Some (Exe_env.get_tenv exe_env callee_pname)
+      with _ ->
         let source_file = callee_attributes.ProcAttributes.loc.Location.file in
         Tenv.load source_file
     in
@@ -1378,7 +1380,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
                         let exn = get_check_exn tenv check callee_pname loc __POS__ in
                         raise exn
                     | _ ->
-                        false)
+                        false )
                   invalid_res
               then call_desc (Some Localise.Pnm_bounds)
               else call_desc None

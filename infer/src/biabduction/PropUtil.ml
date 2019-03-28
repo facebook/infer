@@ -105,7 +105,7 @@ let remove_abduced_retvars tenv p =
           | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) ->
               exp_contains lhs || exp_contains rhs
           | Sil.Apred (_, es) | Sil.Anpred (_, es) ->
-              List.exists ~f:exp_contains es)
+              List.exists ~f:exp_contains es )
         pi
     in
     (Sil.HpredSet.elements reach_hpreds, reach_pi)

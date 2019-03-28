@@ -499,8 +499,8 @@ module Stats = struct
 
 
   let process_loc loc stats =
-    try Hashtbl.find stats.files loc.Location.file with Caml.Not_found ->
-      Hashtbl.add stats.files loc.Location.file ()
+    try Hashtbl.find stats.files loc.Location.file
+    with Caml.Not_found -> Hashtbl.add stats.files loc.Location.file ()
 
 
   let loc_trace_to_string_list linereader indent_num ltr =

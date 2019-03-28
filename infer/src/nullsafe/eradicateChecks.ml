@@ -246,7 +246,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
                       let pvar =
                         Pvar.mk (Mangled.from_string (Typ.Fieldname.to_string fn)) pname
                       in
-                      filter_range_opt (TypeState.lookup_pvar pvar typestate))
+                      filter_range_opt (TypeState.lookup_pvar pvar typestate) )
                 list
             in
             let may_be_assigned_in_final_typestate =

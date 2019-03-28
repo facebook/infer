@@ -281,7 +281,8 @@ let mk ?(deprecated = []) ?(parse_mode = InferCommand) ?(in_help = []) ~long ?sh
   let variable = ref default in
   let closure = mk_setter variable in
   let setter str =
-    try closure str with exc ->
+    try closure str
+    with exc ->
       raise (Arg.Bad (F.sprintf "bad value %s for flag %s (%s)" str long (Exn.to_string exc)))
   in
   let spec = mk_spec setter in
@@ -1000,8 +1001,8 @@ let wrap_line indent_string wrap_length line0 =
     let word_length =
       let len = String.length word in
       if String.is_prefix ~prefix:"$(b," word || String.is_prefix ~prefix:"$(i," word then
-        len - 4 (* length of formatting tag prefix *)
-        - 1 (* APPROXIMATION: closing parenthesis that will come after the word, or maybe later *)
+        len - 4 (* length of formatting tag prefix *) - 1
+        (* APPROXIMATION: closing parenthesis that will come after the word, or maybe later *)
       else len
     in
     let new_length = line_length + String.length word_sep_str + word_length in
@@ -1045,8 +1046,7 @@ let show_manual ?internal_section format default_doc command_opt =
          blocks, so we do a bit of formatting by hand *)
       let indent_string = "    " in
       let width =
-        77 (* Cmdliner.Manpage width limit it seems *)
-        - 7
+        77 (* Cmdliner.Manpage width limit it seems *) - 7
         (* base indentation of documentation strings *)
       in
       `I (Format.asprintf "$(b,%s)%a%a" (dashdash long) pp_short short pp_meta meta, doc_first_line)

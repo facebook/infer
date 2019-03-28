@@ -14,7 +14,8 @@ module L = Logging
 module F = Format
 
 let decrease_indent_when_exception thunk =
-  try thunk () with exn when SymOp.exn_not_failure exn ->
+  try thunk ()
+  with exn when SymOp.exn_not_failure exn ->
     IExn.reraise_after exn ~f:(fun () -> L.d_decrease_indent ())
 
 
@@ -489,7 +490,7 @@ end = struct
         (* [e <= n' <= n |- e <= n] *)
         List.exists
           ~f:(function
-            | e', Exp.Const (Const.Cint n') -> Exp.equal e e' && IntLit.leq n' n | _, _ -> false)
+            | e', Exp.Const (Const.Cint n') -> Exp.equal e e' && IntLit.leq n' n | _, _ -> false )
           leqs
     | Exp.Const (Const.Cint n), e ->
         (* [ n-1 <= n' < e |- n <= e] *)
@@ -498,7 +499,7 @@ end = struct
             | Exp.Const (Const.Cint n'), e' ->
                 Exp.equal e e' && IntLit.leq (n -- IntLit.one) n'
             | _, _ ->
-                false)
+                false )
           lts
     | _ ->
         Exp.equal e1 e2
@@ -514,7 +515,7 @@ end = struct
         (* [n <= n' < e  |- n < e] *)
         List.exists
           ~f:(function
-            | Exp.Const (Const.Cint n'), e' -> Exp.equal e e' && IntLit.leq n n' | _, _ -> false)
+            | Exp.Const (Const.Cint n'), e' -> Exp.equal e e' && IntLit.leq n n' | _, _ -> false )
           lts
     | e, Exp.Const (Const.Cint n) ->
         (* [e <= n' <= n-1 |- e < n] *)
@@ -523,7 +524,7 @@ end = struct
             | e', Exp.Const (Const.Cint n') ->
                 Exp.equal e e' && IntLit.leq n' (n -- IntLit.one)
             | _, _ ->
-                false)
+                false )
           leqs
     | _ ->
         false
@@ -1459,8 +1460,8 @@ let array_len_imply tenv calc_missing subs len1 len2 indices2 =
   | _, Exp.BinOp (Binop.PlusA _, Exp.Var _, _)
   | _, Exp.BinOp (Binop.PlusA _, _, Exp.Var _)
   | Exp.BinOp (Binop.Mult _, _, _), _ -> (
-    try exp_imply tenv calc_missing subs len1 len2 with IMPL_EXC (s, subs', x) ->
-      raise (IMPL_EXC ("array len:" ^ s, subs', x)) )
+    try exp_imply tenv calc_missing subs len1 len2
+    with IMPL_EXC (s, subs', x) -> raise (IMPL_EXC ("array len:" ^ s, subs', x)) )
   | _ ->
       ProverState.add_bounds_check (ProverState.BClen_imply (len1, len2, indices2)) ;
       subs
@@ -2175,10 +2176,11 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
               let subs' = exp_list_imply tenv calc_missing subs (f2 :: elist2) (f2 :: elist2) in
               let prop1' = Prop.prop_iter_remove_curr_then_to_prop tenv iter1' in
               let hpred1 =
-                match Prop.prop_iter_current tenv iter1' with hpred1, b ->
-                  if b then ProverState.add_missing_pi (Sil.Aneq (e2_, f2_)) ;
-                  (* for PE |- NE *)
-                  hpred1
+                match Prop.prop_iter_current tenv iter1' with
+                | hpred1, b ->
+                    if b then ProverState.add_missing_pi (Sil.Aneq (e2_, f2_)) ;
+                    (* for PE |- NE *)
+                    hpred1
               in
               match hpred1 with
               | Sil.Hlseg _ ->

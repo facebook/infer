@@ -29,6 +29,7 @@ type transitions =
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
 [@@deriving compare]
+
 (* In formulas below prefix
    "E" means "exists a path"
    "A" means "for all path" *)

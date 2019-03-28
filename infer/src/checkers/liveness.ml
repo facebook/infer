@@ -111,7 +111,8 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
     in
     let actuals = List.map actuals ~f:(fun (e, _) -> Exp.ignore_cast e) in
     match Exp.ignore_cast call_exp with
-    | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname -> (
+    | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname
+      -> (
       (* first actual passed to a C++ constructor is actually written, not read *)
       match actuals with
       | Exp.Lvar pvar :: exps ->

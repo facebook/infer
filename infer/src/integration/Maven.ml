@@ -133,7 +133,8 @@ let add_infer_profile mvn_pom infer_pom =
     in
     protect ~f:with_ic ~finally:(fun () -> In_channel.close ic)
   in
-  try Utils.with_file_out infer_pom ~f:with_oc with Xmlm.Error ((line, col), error) ->
+  try Utils.with_file_out infer_pom ~f:with_oc
+  with Xmlm.Error ((line, col), error) ->
     L.die ExternalError "%s:%d:%d: ERROR: %s" mvn_pom line col (Xmlm.error_message error)
 
 

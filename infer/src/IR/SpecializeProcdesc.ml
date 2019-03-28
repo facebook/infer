@@ -23,7 +23,8 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
         []
     | node :: other_node ->
         let converted_node =
-          try Procdesc.NodeMap.find node !node_map with Caml.Not_found ->
+          try Procdesc.NodeMap.find node !node_map
+          with Caml.Not_found ->
             let new_node = convert_node node
             and successors = Procdesc.Node.get_succs node
             and exn_nodes = Procdesc.Node.get_exn node in
@@ -67,8 +68,8 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         , {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
         , loc ) ->
         let specialized_typname =
-          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions with Caml.Not_found ->
-            origin_typename
+          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions
+          with Caml.Not_found -> origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
         Some (Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc))

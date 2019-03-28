@@ -1408,7 +1408,8 @@ let hpred_compact_ sh hpred =
 
 
 let hpred_compact sh hpred =
-  try HpredInstHash.find sh.hpredh hpred with Caml.Not_found ->
+  try HpredInstHash.find sh.hpredh hpred
+  with Caml.Not_found ->
     let hpred' = hpred_compact_ sh hpred in
     HpredInstHash.add sh.hpredh hpred' hpred' ;
     hpred'

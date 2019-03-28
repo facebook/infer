@@ -596,8 +596,8 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         in
         let return_ownership = OwnershipDomain.get_owned return_var_ap ownership in
         let return_attributes =
-          try AttributeMapDomain.find return_var_ap attribute_map with Caml.Not_found ->
-            AttributeSetDomain.empty
+          try AttributeMapDomain.find return_var_ap attribute_map
+          with Caml.Not_found -> AttributeSetDomain.empty
         in
         let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Payload.update_summary post summary
@@ -1140,7 +1140,8 @@ let report_unsafe_accesses classname (aggregated_access_map : ReportMap.t) =
     (* reset the reported reads and writes for each memory location *)
     let reported_acc =
       { reported_acc with
-        reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
+        reported_writes= Typ.Procname.Set.empty
+      ; reported_reads= Typ.Procname.Set.empty }
     in
     report_guardedby_violations_on_location grouped_accesses reported_acc
     |> report_accesses_on_location grouped_accesses

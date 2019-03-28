@@ -76,14 +76,21 @@ type ( 'f_in
      , 'captured_types_out
      , 'markers_in
      , 'markers_out
-     , 'list_constraint ) template_arg =
+     , 'list_constraint )
+     template_arg =
   { eat_template_arg:
          'f_in * 'captured_types_in capt * Typ.template_arg list
       -> ('f_out * 'captured_types_out capt * Typ.template_arg list) option
   ; add_marker: 'markers_in -> 'markers_out }
 
-type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
-   =
+type ( 'context
+     , 'f_in
+     , 'f_out
+     , 'captured_types
+     , 'markers_in
+     , 'markers_out
+     , 'list_constraint )
+     templ_matcher =
   { on_objc_cpp:
          'context
       -> 'f_in

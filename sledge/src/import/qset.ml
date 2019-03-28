@@ -41,7 +41,8 @@ let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
 
 let m__t_of_sexp (type elt cmp)
     (module Elt : M_of_sexp
-      with type t = elt and type comparator_witness = cmp) sexp =
+      with type t = elt
+       and type comparator_witness = cmp) sexp =
   Map.m__t_of_sexp (module Elt) q_of_sexp sexp
 
 let compare_m__t (module Elt : Compare_m) = Map.compare_direct Q.compare

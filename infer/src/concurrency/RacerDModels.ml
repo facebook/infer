@@ -37,7 +37,8 @@ let is_java_container_write =
   @ make_android_support_template "SparseArrayCompat" array_methods
   @ [ {default with classname= "android.util.SparseArray"; methods= array_methods}
     ; { default with
-        classname= "java.util.List"; methods= ["add"; "addAll"; "clear"; "remove"; "set"] }
+        classname= "java.util.List"
+      ; methods= ["add"; "addAll"; "clear"; "remove"; "set"] }
     ; {default with classname= "java.util.Map"; methods= ["clear"; "put"; "putAll"; "remove"]} ]
   |> of_records
 

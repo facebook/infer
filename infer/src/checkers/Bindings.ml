@@ -23,7 +23,7 @@ module Reverse = struct
   let add k v rm =
     M.update k
       (function
-        | None -> Some (false, VarSet.singleton v) | Some (_, s) -> Some (false, VarSet.add v s))
+        | None -> Some (false, VarSet.singleton v) | Some (_, s) -> Some (false, VarSet.add v s) )
       rm
 
 

@@ -180,5 +180,6 @@ val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 (* val last : 'a t -> 'a *)
 
 val empty : 'a t
+
 (* val to_sequence : 'a t -> 'a Sequence.t *)
 (* val to_sequence_mutable : 'a t -> 'a Sequence.t *)

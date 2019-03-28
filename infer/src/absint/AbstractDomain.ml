@@ -567,7 +567,7 @@ struct
             None
         | Some s ->
             let s' = S.remove v s in
-            if S.is_empty s' then None else Some s')
+            if S.is_empty s' then None else Some s' )
       m
 end
 

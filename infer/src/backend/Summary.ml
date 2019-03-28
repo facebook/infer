@@ -190,8 +190,8 @@ let load_summary_to_spec_table =
 
 
 let get proc_name =
-  try Some (Typ.Procname.Hash.find cache proc_name) with Caml.Not_found ->
-    load_summary_to_spec_table proc_name
+  try Some (Typ.Procname.Hash.find cache proc_name)
+  with Caml.Not_found -> load_summary_to_spec_table proc_name
 
 
 (** Check if the procedure is from a library:

@@ -21,7 +21,7 @@ let is_singleton ~fold t = match singleton_or_more ~fold t with Singleton _ -> t
 
 let mem_nth ~fold t index =
   With_return.with_return (fun {return} ->
-      let _ : int =
+      let (_ : int) =
         fold t ~init:index ~f:(fun index _ -> if index <= 0 then return true else index - 1)
       in
       false )
@@ -50,7 +50,7 @@ let rev_filter_map_to_list ~fold t ~f =
 
 
 let iter_consecutive ~fold t ~f =
-  let _ : _ option =
+  let (_ : _ option) =
     fold t ~init:None ~f:(fun prev_opt curr ->
         (match prev_opt with Some prev -> f prev curr | None -> ()) ;
         Some curr )

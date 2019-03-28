@@ -95,8 +95,9 @@ let standard_matchers =
   let high_sev =
     [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
     ; { default with
-        classname= "java.lang.Object"; methods= ["wait"]; actuals_pred= empty_or_excessive_timeout
-      }
+        classname= "java.lang.Object"
+      ; methods= ["wait"]
+      ; actuals_pred= empty_or_excessive_timeout }
     ; { default with
         classname= "java.util.concurrent.CountDownLatch"
       ; methods= ["await"]
@@ -141,9 +142,12 @@ let strict_mode_matcher =
   let dont_search_superclasses = {default with search_superclasses= false} in
   let matcher_records =
     [ { dont_search_superclasses with
-        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= true }
+        classname= "dalvik.system.BlockGuard$Policy"
+      ; methods= ["on"]
+      ; method_prefix= true }
     ; { dont_search_superclasses with
-        classname= "java.lang.System"; methods= ["gc"; "runFinalization"] }
+        classname= "java.lang.System"
+      ; methods= ["gc"; "runFinalization"] }
     ; {dont_search_superclasses with classname= "java.lang.Runtime"; methods= ["gc"]}
     ; {dont_search_superclasses with classname= "java.net.Socket"; methods= ["connect"]}
       (* all public constructors of Socket with two or more arguments call connect *)

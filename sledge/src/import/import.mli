@@ -11,8 +11,7 @@ include module type of (
   Base :
     sig
       include
-        (module type of Base
-        (* extended below, remove *)
+        (module type of Base (* extended below, remove *)
         with module Invariant := Base.Invariant
          and module List := Base.List
          and module Map := Base.Map

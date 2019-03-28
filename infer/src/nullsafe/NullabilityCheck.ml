@@ -104,7 +104,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let pname = Procdesc.get_proc_name pdesc in
       let annotation = Localise.nullable_annotation_name pname in
       let call_site =
-        try CallSites.min_elt call_sites with Caml.Not_found ->
+        try CallSites.min_elt call_sites
+        with Caml.Not_found ->
           L.(die InternalError)
             "Expecting a least one element in the set of call sites when analyzing %a"
             Typ.Procname.pp pname
@@ -205,7 +206,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let rec longest_nullable_prefix ap ((nullable_aps, _) as astate) =
-    try Some (ap, NullableAP.find ap nullable_aps) with Caml.Not_found -> (
+    try Some (ap, NullableAP.find ap nullable_aps)
+    with Caml.Not_found -> (
       match ap with
       | _, [] ->
           None

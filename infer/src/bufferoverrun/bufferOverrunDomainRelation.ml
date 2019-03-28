@@ -798,7 +798,7 @@ module Make (Manager : Manager_S) = struct
               Texpr1.Unop (uop, re', typ, round) )
       | Texpr1.Binop (bop, re1, re2, typ, round) ->
           Option.map2 (symexp_raw_subst subst_map re1) (symexp_raw_subst subst_map re2)
-            ~f:(fun re1' re2' -> Texpr1.Binop (bop, re1', re2', typ, round) )
+            ~f:(fun re1' re2' -> Texpr1.Binop (bop, re1', re2', typ, round))
 
 
     let symexp_subst subst_map x =

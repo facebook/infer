@@ -108,19 +108,19 @@ let string_of_build_system build_system =
 
 
 let build_system_of_exe_name name =
-  try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name with
-  | Not_found_s _ | Caml.Not_found ->
-      L.(die UserError)
-        "Unsupported build command '%s'.@\n\
-         If this is an alias for another build system that infer supports, you can use@\n\
-         `--force-integration <command>` where <command> is one of the following supported build \
-         systems:@\n\
-         @[<v2>  %a@]"
-        name
-        (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
-        ( List.map ~f:fst build_system_exe_assoc
-        |> List.map ~f:string_of_build_system
-        |> List.dedup_and_sort ~compare:String.compare )
+  try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
+  with Not_found_s _ | Caml.Not_found ->
+    L.(die UserError)
+      "Unsupported build command '%s'.@\n\
+       If this is an alias for another build system that infer supports, you can use@\n\
+       `--force-integration <command>` where <command> is one of the following supported build \
+       systems:@\n\
+       @[<v2>  %a@]"
+      name
+      (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
+      ( List.map ~f:fst build_system_exe_assoc
+      |> List.map ~f:string_of_build_system
+      |> List.dedup_and_sort ~compare:String.compare )
 
 
 (** Constant configuration values *)
@@ -682,7 +682,7 @@ and ( annotation_reachability
   and starvation = mk_checker ~long:"starvation" ~default:false "starvation analysis"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" ~default:true in
   let mk_only (var, long, doc, _) =
-    let _ : bool ref =
+    let (_ : bool ref) =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
         ~in_help:InferCommand.[(Analyze, manual_generic)]
         ~f:(fun b ->
@@ -691,8 +691,7 @@ and ( annotation_reachability
           b )
         ( if String.equal doc "" then ""
         else Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long )
-        [] (* do all the work in ~f *)
-           []
+        [] (* do all the work in ~f *) []
       (* do all the work in ~f *)
     in
     ()
@@ -714,8 +713,7 @@ and ( annotation_reachability
             var := if b then default || !var else (not default) && !var )
           !all_checkers ;
         b )
-      [] (* do all the work in ~f *)
-         []
+      [] (* do all the work in ~f *) []
     (* do all the work in ~f *)
   in
   ( annotation_reachability
@@ -1099,7 +1097,7 @@ and ( bo_debug
       ; write_html
       ; write_dotty ]
       [filtering; only_cheap_debug]
-  and _ : int option ref =
+  and (_ : int option ref) =
     CLOpt.mk_int_opt ~long:"debug-level" ~in_help:all_generic_manuals ~meta:"level"
       ~f:(fun level -> set_debug_level level ; level)
       {|Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):
@@ -1196,7 +1194,7 @@ and differential_filter_set =
 
 and () =
   let mk b ?deprecated ~long ?default doc =
-    let _ : string list ref =
+    let (_ : string list ref) =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue = IssueType.from_string issue_id in
@@ -2074,7 +2072,7 @@ and specs_library =
     CLOpt.mk_path_list ~deprecated:["lib"] ~long:"specs-library" ~short:'L' ~meta:"dir|jar"
       "Search for .spec files in given directory or jar file"
   in
-  let _ : string ref =
+  let (_ : string ref) =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
        absolute *)
     let read_specs_dir_list_file fname =

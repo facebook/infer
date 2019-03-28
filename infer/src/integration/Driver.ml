@@ -286,7 +286,7 @@ let capture ~changed_files = function
               (* swallow infer.py argument parsing error *)
               Config.print_usage_exit ()
           | status ->
-              command_error_handling ~always_die:true ~prog:infer_py ~args status)
+              command_error_handling ~always_die:true ~prog:infer_py ~args status )
         () ;
       PerfStats.get_reporter PerfStats.TotalFrontend ()
   | XcodeXcpretty (prog, args) ->

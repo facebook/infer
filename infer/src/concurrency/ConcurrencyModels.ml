@@ -82,9 +82,11 @@ end = struct
       ; unlock= ["release"] }
     in
     [ { def with
-        classname= "apache::thrift::concurrency::Monitor"; trylock= "timedlock" :: def.trylock }
+        classname= "apache::thrift::concurrency::Monitor"
+      ; trylock= "timedlock" :: def.trylock }
     ; { def with
-        classname= "apache::thrift::concurrency::Mutex"; trylock= "timedlock" :: def.trylock }
+        classname= "apache::thrift::concurrency::Mutex"
+      ; trylock= "timedlock" :: def.trylock }
     ; {rwm with classname= "apache::thrift::concurrency::NoStarveReadWriteMutex"}
     ; {rwm with classname= "apache::thrift::concurrency::ReadWriteMutex"}
     ; {shd with classname= "boost::shared_mutex"}

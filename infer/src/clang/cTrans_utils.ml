@@ -90,7 +90,8 @@ end
 
 module GotoLabel = struct
   let find_goto_label context label sil_loc =
-    try Hashtbl.find context.CContext.label_map label with Caml.Not_found ->
+    try Hashtbl.find context.CContext.label_map label
+    with Caml.Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
       let new_node =
         Procdesc.create_node context.CContext.procdesc sil_loc (Procdesc.Node.Skip_node node_name)
@@ -104,7 +105,7 @@ type continuation =
   { break: Procdesc.Node.t list
   ; continue: Procdesc.Node.t list
   ; return_temp: bool
-  (* true if temps should not be removed in the node but returned to ancestors *) }
+        (* true if temps should not be removed in the node but returned to ancestors *) }
 
 let is_return_temp continuation =
   match continuation with Some cont -> cont.return_temp | _ -> false

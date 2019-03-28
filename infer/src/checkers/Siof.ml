@@ -138,7 +138,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr astate {ProcData.pdesc} _ (instr : Sil.instr) =
     match instr with
-    | Store (Lvar global, Typ.({desc= Tptr _}), Lvar _, loc)
+    | Store (Lvar global, Typ.{desc= Tptr _}, Lvar _, loc)
       when (Option.equal Typ.Procname.equal)
              (Pvar.get_initializer_pname global)
              (Some (Procdesc.get_proc_name pdesc)) ->

@@ -43,7 +43,8 @@ module LineReader = struct
 
 
   let file_data (hash : t) fname =
-    try Some (Hashtbl.find hash fname) with Caml.Not_found -> (
+    try Some (Hashtbl.find hash fname)
+    with Caml.Not_found -> (
       try
         let lines_arr = read_file (SourceFile.to_abs_path fname) in
         Hashtbl.add hash fname lines_arr ; Some lines_arr

@@ -117,8 +117,7 @@ module rec T : sig
 
   val comparator : (t, comparator_witness) Comparator.t
 end = struct
-  include T0
-  include Comparator.Make (T0)
+  include T0 include Comparator.Make (T0)
 end
 
 (* auxiliary definition for safe recursive module initialization *)
@@ -725,8 +724,7 @@ let rec sum_to_exp typ sum =
     | _ -> Add {typ; args= sum} )
   | _ -> Add {typ; args= sum}
 
-and rational Q.({num; den}) typ =
-  simp_div (integer num typ) (integer den typ)
+and rational Q.{num; den} typ = simp_div (integer num typ) (integer den typ)
 
 and simp_div x y =
   match (x, y) with
@@ -771,11 +769,10 @@ let simp_urem x y =
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
   | _ -> App {op= App {op= Urem; arg= x}; arg= y}
 
-(* Sums of polynomial terms represented by multisets. A sum ∑ᵢ cᵢ ×
-   Xᵢ of monomials Xᵢ with coefficients cᵢ is represented by a
-   multiset where the elements are Xᵢ with multiplicities cᵢ. A constant
-   is treated as the coefficient of the empty monomial, which is the unit of
-   multiplication 1. *)
+(* Sums of polynomial terms represented by multisets. A sum ∑ᵢ cᵢ × Xᵢ of
+   monomials Xᵢ with coefficients cᵢ is represented by a multiset where the
+   elements are Xᵢ with multiplicities cᵢ. A constant is treated as the
+   coefficient of the empty monomial, which is the unit of multiplication 1. *)
 module Sum = struct
   let empty = empty_qset
 
@@ -809,8 +806,7 @@ let rec simp_add_ typ es poly =
         rational Q.((coeff * of_z i) + of_z j) typ
     (* (c × ∑ᵢ cᵢ × Xᵢ) + s ==> (∑ᵢ (c × cᵢ) × Xᵢ) + s *)
     | Add {args}, _ -> simp_add_ typ (Sum.mul_const coeff args) poly
-    (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ
-       cᵢ × Xᵢ *)
+    (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ cᵢ × Xᵢ *)
     | _, Add {args} -> Sum.to_exp typ (Sum.add coeff exp args)
     (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
     | _ -> Sum.to_exp typ (Sum.add coeff exp (Sum.singleton poly))
@@ -820,9 +816,9 @@ let rec simp_add_ typ es poly =
 let simp_add typ es = simp_add_ typ es (integer Z.zero typ)
 let simp_add2 typ e f = simp_add_ typ (Sum.singleton e) f
 
-(* Products of indeterminants represented by multisets. A product ∏ᵢ
-   xᵢ^nᵢ of indeterminates xᵢ is represented by a multiset where the
-   elements are xᵢ and the multiplicities are the exponents nᵢ. *)
+(* Products of indeterminants represented by multisets. A product ∏ᵢ xᵢ^nᵢ
+   of indeterminates xᵢ is represented by a multiset where the elements are
+   xᵢ and the multiplicities are the exponents nᵢ. *)
 module Prod = struct
   let empty = empty_qset
   let add exp prod = Qset.add prod exp Q.one
@@ -849,26 +845,22 @@ let rec simp_mul2 typ e f =
   | Integer {data}, _ when Z.equal Z.zero data -> e
   (* e × 0 ==> 0 *)
   | _, Integer {data} when Z.equal Z.zero data -> f
-  (* c × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ c × cᵤ × ∏ⱼ
-     yᵤⱼ *)
+  (* c × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ c × cᵤ × ∏ⱼ yᵤⱼ *)
   | Integer {data}, Add {args} | Add {args}, Integer {data} ->
       Sum.to_exp typ (Sum.mul_const (Q.of_z data) args)
   (* c₁ × x₁ ==> ∑ᵢ₌₁ cᵢ × xᵢ *)
   | Integer {data= c}, x | x, Integer {data= c} ->
       Sum.to_exp typ (Sum.singleton ~coeff:(Q.of_z c) x)
-  (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==>
-     ∏ⱼ₌₀ⁿ xⱼ *)
+  (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==> ∏ⱼ₌₀ⁿ xⱼ *)
   | Mul {typ; args= xs1}, Mul {args= xs2} ->
       Mul {typ; args= Prod.union xs1 xs2}
-  (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ ×
-     ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
+  (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ × ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
   | Mul {args= prod}, (Add _ as poly) | (Add _ as poly), Mul {args= prod} ->
       poly_map_monos ~f:(Prod.union prod) poly
   (* x₀ × (∏ᵢ₌₁ⁿ xᵢ) ==> ∏ᵢ₌₀ⁿ xᵢ *)
   | Mul {typ; args= xs1}, x | x, Mul {typ; args= xs1} ->
       Mul {typ; args= Prod.add x xs1}
-  (* e × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ e × cᵤ × ∏ⱼ
-     yᵤⱼ *)
+  (* e × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ e × cᵤ × ∏ⱼ yᵤⱼ *)
   | Add {args}, e | e, Add {args} ->
       simp_add typ (Sum.map ~f:(fun m -> simp_mul2 typ e m) args)
   (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
@@ -1355,7 +1347,7 @@ let solve e f =
       | Some p, Some q -> solve_uninterp e f >>= solve_ p q
       | _ -> solve_uninterp e f )
     | Memory {siz= m}, Concat {args= ns} | Concat {args= ns}, Memory {siz= m}
-    -> (
+      -> (
       match concat_size ns with
       | Some p -> solve_uninterp e f >>= solve_ p m
       | _ -> solve_uninterp e f )

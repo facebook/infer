@@ -17,7 +17,7 @@ type t =
   | Struct of
       { name: string
       ; elts: t vector (* possibly cyclic, name unique *)
-             [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
+            [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
       ; packed: bool }
   | Opaque of {name: string}
 [@@deriving compare, equal, hash, sexp]

@@ -23,8 +23,8 @@ module Domain = struct
         astate
     | NonBottom _ ->
         let sink_map =
-          try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
-            AnnotReachabilityDomain.SinkMap.empty
+          try AnnotReachabilityDomain.find annot annot_map
+          with Caml.Not_found -> AnnotReachabilityDomain.SinkMap.empty
         in
         let sink_map' =
           if AnnotReachabilityDomain.SinkMap.mem sink sink_map then sink_map
@@ -117,8 +117,8 @@ let method_overrides_annot annot tenv pname = method_overrides (method_has_annot
 let lookup_annotation_calls ~caller_pdesc annot pname =
   match Ondemand.analyze_proc_name ~caller_pdesc pname with
   | Some {Summary.payloads= {Payloads.annot_map= Some annot_map}} -> (
-    try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
-      AnnotReachabilityDomain.SinkMap.empty )
+    try AnnotReachabilityDomain.find annot annot_map
+    with Caml.Not_found -> AnnotReachabilityDomain.SinkMap.empty )
   | _ ->
       AnnotReachabilityDomain.SinkMap.empty
 

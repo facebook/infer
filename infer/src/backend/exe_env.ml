@@ -41,7 +41,8 @@ type t =
   ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *) }
 
 let get_file_data exe_env pname =
-  try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Caml.Not_found ->
+  try Some (Typ.Procname.Hash.find exe_env.proc_map pname)
+  with Caml.Not_found ->
     let source_file_opt =
       match Attributes.load pname with
       | None ->

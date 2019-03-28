@@ -124,7 +124,8 @@ let killall pool ~slot status =
   Array.iter pool.slots ~f:(fun {pid} ->
       match Signal.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
   Array.iter pool.slots ~f:(fun {pid} ->
-      try Unix.wait (`Pid pid) |> ignore with Unix.Unix_error (ECHILD, _, _) ->
+      try Unix.wait (`Pid pid) |> ignore
+      with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
   L.die InternalError "Subprocess %d: %s" slot status
 
@@ -197,7 +198,8 @@ let rec child_loop ~slot send_to_parent receive_from_parent ~f =
   | GoHome ->
       ()
   | Do stuff ->
-      ( try f stuff with e ->
+      ( try f stuff
+        with e ->
           IExn.reraise_if e ~f:(fun () ->
               if Config.keep_going then (
                 L.internal_error "Error in subprocess %d: %a@." slot Exn.pp e ;

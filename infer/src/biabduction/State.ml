@@ -21,7 +21,7 @@ type failure_stats =
     mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
     mutable first_failure: (Location.t * Procdesc.Node.t * int * Errlog.loc_trace * exn) option
-  (* exception at the first failure *) }
+        (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
 
@@ -67,7 +67,8 @@ let reset_diverging_states_node () = !gs.diverging_states_node <- Paths.PathSet.
 let reset () = gs := initial ()
 
 let get_failure_stats node =
-  try NodeHash.find !gs.failure_map node with Caml.Not_found ->
+  try NodeHash.find !gs.failure_map node
+  with Caml.Not_found ->
     let fs = {instr_fail= 0; instr_ok= 0; node_fail= 0; node_ok= 0; first_failure= None} in
     NodeHash.add !gs.failure_map node fs ;
     fs

@@ -17,8 +17,8 @@
     instead of using ϕ-nodes. An analyzer will need good support for
     parameter passing anyhow, and ϕ-nodes make it hard to express program
     properties as predicates on states, since some execution history is
-    needed to evaluate ϕ instructions. An alternative view is that the
-    scope of variables [reg] assigned in instructions such as [Load] is the
+    needed to evaluate ϕ instructions. An alternative view is that the scope
+    of variables [reg] assigned in instructions such as [Load] is the
     successor block as well as all blocks the instruction dominates in the
     control-flow graph. This language is first-order, and a term structure
     for the code constituting the scope of variables is not needed, so SSA

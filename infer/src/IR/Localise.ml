@@ -105,9 +105,7 @@ let get_value_line_tag tags =
     let value = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.value) tags) in
     let line = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.line) tags) in
     Some [value; line]
-  with
-  | Not_found_s _ | Caml.Not_found ->
-      None
+  with Not_found_s _ | Caml.Not_found -> None
 
 
 (** extract from desc a value on which to apply polymorphic hash and equality *)
@@ -630,7 +628,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     match bucket_opt with Some bucket when Config.show_buckets -> bucket | _ -> ""
   in
   { no_desc with
-    descriptions= (bucket_str :: xxx_allocated_to) @ by_call_to @ is_not_rxxx_after; tags= !tags }
+    descriptions= (bucket_str :: xxx_allocated_to) @ by_call_to @ is_not_rxxx_after
+  ; tags= !tags }
 
 
 (** kind of precondition not met *)

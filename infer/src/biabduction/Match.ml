@@ -242,8 +242,9 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
   in
   let do_empty_hpats iter_cur _ =
     let sub_new, vars_leftover =
-      match Prop.prop_iter_current tenv iter_cur with _, (sub_new, vars_leftover) ->
-        (sub_new, vars_leftover)
+      match Prop.prop_iter_current tenv iter_cur with
+      | _, (sub_new, vars_leftover) ->
+          (sub_new, vars_leftover)
     in
     let sub_res = sub_extend_with_ren sub_new vars_leftover in
     let p_leftover = Prop.prop_iter_remove_curr_then_to_prop tenv iter_cur in
@@ -256,8 +257,9 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
   in
   let do_nonempty_hpats iter_cur _ =
     let sub_new, vars_leftover =
-      match Prop.prop_iter_current tenv iter_cur with _, (sub_new, vars_leftover) ->
-        (sub_new, vars_leftover)
+      match Prop.prop_iter_current tenv iter_cur with
+      | _, (sub_new, vars_leftover) ->
+          (sub_new, vars_leftover)
     in
     let hpat_next, hpats_rest =
       match hpats with [] -> assert false | hpat_next :: hpats_rest -> (hpat_next, hpats_rest)

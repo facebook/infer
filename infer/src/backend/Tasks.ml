@@ -47,7 +47,7 @@ module Runner = struct
       ProcessPool.create ~jobs ~f
         ~child_prelude:
           ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
-           fork_protect ~f:(fun () -> () ))
+           fork_protect ~f:(fun () -> ()))
     in
     ResultsDatabase.new_database_connection () ;
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;

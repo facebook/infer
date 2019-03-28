@@ -258,7 +258,7 @@ let get_bytecode cm =
             | JCode.OpInvoke (`Dynamic _, ms) ->
                 JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
             | opcode ->
-                opcode)
+                opcode )
           bytecode.JCode.c_code
       in
       {bytecode with JCode.c_code}
@@ -306,7 +306,12 @@ let create_callee_attributes tenv program cn ms procname =
       let translation_unit = SourceFile.invalid __FILE__ in
       Some
         { (ProcAttributes.default translation_unit procname) with
-          ProcAttributes.access; exceptions; method_annotation; formals; ret_type; is_abstract }
+          ProcAttributes.access
+        ; exceptions
+        ; method_annotation
+        ; formals
+        ; ret_type
+        ; is_abstract }
     with Caml.Not_found -> None
   in
   Option.bind ~f (JClasspath.lookup_node cn program)
@@ -738,8 +743,9 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
 let get_array_length context pc expr_list content_type =
   let get_expr_instr expr other_instrs =
     let instrs, sil_len_expr, _ = expression context pc expr in
-    match other_instrs with other_instrs, other_exprs ->
-      (instrs @ other_instrs, sil_len_expr :: other_exprs)
+    match other_instrs with
+    | other_instrs, other_exprs ->
+        (instrs @ other_instrs, sil_len_expr :: other_exprs)
   in
   let instrs, sil_len_exprs = List.fold_right ~f:get_expr_instr expr_list ~init:([], []) in
   let get_array_type_len sil_len_expr (content_type, _) =

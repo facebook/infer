@@ -80,7 +80,7 @@ let get tenv prop exp category =
       | Sil.Apred (att, _) | Anpred (att, _) ->
           PredSymb.equal_category (PredSymb.to_category att) category
       | _ ->
-          false)
+          false )
     atts
 
 
@@ -300,7 +300,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
             fresh_address_vars := (v, freshv) :: !fresh_address_vars ;
             (Exp.Lvar v, Exp.Var freshv)
         | _ ->
-            assert false)
+            assert false )
       sigma_stack
   in
   let pi1 = List.map ~f:(fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in

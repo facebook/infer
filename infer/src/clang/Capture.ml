@@ -115,7 +115,8 @@ let run_clang_frontend ast_source =
 
 
 let run_and_validate_clang_frontend ast_source =
-  try run_clang_frontend ast_source with exc ->
+  try run_clang_frontend ast_source
+  with exc ->
     IExn.reraise_if exc ~f:(fun () -> not Config.keep_going) ;
     L.internal_error "ERROR RUNNING CAPTURE: %a@\n%s@\n" Exn.pp exc (Printexc.get_backtrace ())
 

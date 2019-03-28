@@ -131,7 +131,8 @@ let path_set_create_worklist proc_cfg =
 
 let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t)
     (key : Procdesc.Node.id) : Paths.PathSet.t =
-  try Hashtbl.find htable key with Caml.Not_found ->
+  try Hashtbl.find htable key
+  with Caml.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
     Paths.PathSet.empty
 
@@ -605,8 +606,8 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
-        try Pmap.find pre map with Caml.Not_found ->
-          (Paths.PathSet.empty, BiabductionSummary.Visitedset.empty)
+        try Pmap.find pre map
+        with Caml.Not_found -> (Paths.PathSet.empty, BiabductionSummary.Visitedset.empty)
       in
       let new_posts =
         match post with
@@ -1258,7 +1259,8 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t 
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
   if not (List.is_empty Config.topl_properties) then Topl.init () ;
-  try analyze_procedure_aux summary exe_env tenv proc_desc with exn ->
+  try analyze_procedure_aux summary exe_env tenv proc_desc
+  with exn ->
     IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
     Reporting.log_error_using_state summary exn ;
     summary

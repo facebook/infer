@@ -579,7 +579,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let instrs = pre_trans_result.control.instrs @ deref_instrs in
     { pre_trans_result with
-      control= {pre_trans_result.control with instrs}; return= (exp, field_typ) }
+      control= {pre_trans_result.control with instrs}
+    ; return= (exp, field_typ) }
 
 
   type decl_ref_context = MemberOrIvar of trans_result | DeclRefExpr
@@ -1121,7 +1122,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let sil_method = Exp.Const (Const.Cfun callee_pname) in
         let call_flags =
           { CallFlags.default with
-            cf_virtual= is_cpp_call_virtual; cf_injected_destructor= is_injected_destructor }
+            cf_virtual= is_cpp_call_virtual
+          ; cf_injected_destructor= is_injected_destructor }
         in
         let res_trans_call =
           create_call_instr trans_state_pri function_type sil_method actual_params sil_loc
@@ -1466,7 +1468,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                       qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
                       ~is_inner_destructor:false
               | _ ->
-                  assert false)
+                  assert false )
             vars_to_destroy
         with Caml.Not_found ->
           L.(debug Capture Verbose) "@\n Variables that go out of scope are not found...@\n@." ;
@@ -1571,10 +1573,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (cond_trans ~if_kind:Sil.Ik_bexp ~negate_cond:false)
         in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
-        let _ : trans_result =
+        let (_ : trans_result) =
           do_branch true exp1 var_typ res_trans_cond.control.leaf_nodes join_node pvar
         in
-        let _ : trans_result =
+        let (_ : trans_result) =
           do_branch false exp2 var_typ res_trans_cond.control.leaf_nodes join_node pvar
         in
         let id = Ident.create_fresh Ident.knormal in
@@ -1789,7 +1791,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         do_branch false stmt2 res_trans_cond.control.leaf_nodes ;
         mk_trans_result (mk_fresh_void_exp_typ ())
           { empty_control with
-            root_nodes= res_trans_decl.control.root_nodes; leaf_nodes= [join_node] }
+            root_nodes= res_trans_decl.control.root_nodes
+          ; leaf_nodes= [join_node] }
     | _ ->
         assert false
 
@@ -3224,7 +3227,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
         instr pp_pointer instr ;
       let trans_result =
-        try instruction_aux trans_state instr with e ->
+        try instruction_aux trans_state instr
+        with e ->
           IExn.reraise_after e ~f:(fun () ->
               let should_log_error = not !logged_error in
               if should_log_error then (
@@ -3680,7 +3684,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       exec_trans_instrs_rev trans_state (List.rev trans_stmt_fun_list)
     in
     ( { rev_control with
-        instrs= List.rev rev_control.instrs; initd_exps= List.rev rev_control.initd_exps }
+        instrs= List.rev rev_control.instrs
+      ; initd_exps= List.rev rev_control.initd_exps }
     , List.rev rev_returns )
 
 

@@ -404,6 +404,6 @@ let () =
   let to_check = List.rev !to_check in
   let exit_code = ref 0 in
   List.iter to_check ~f:(fun file ->
-      try check_copyright file with CopyrightEvent event ->
-        if not !keep_going then exit_code := exit_code_of_event event ) ;
+      try check_copyright file
+      with CopyrightEvent event -> if not !keep_going then exit_code := exit_code_of_event event ) ;
   exit !exit_code

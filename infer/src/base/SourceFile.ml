@@ -139,11 +139,11 @@ let is_under_project_root = function
 let exists_cache = String.Table.create ~size:256 ()
 
 let path_exists abs_path =
-  try String.Table.find_exn exists_cache abs_path with
-  | Not_found_s _ | Caml.Not_found ->
-      let result = Sys.file_exists abs_path = `Yes in
-      String.Table.set exists_cache ~key:abs_path ~data:result ;
-      result
+  try String.Table.find_exn exists_cache abs_path
+  with Not_found_s _ | Caml.Not_found ->
+    let result = Sys.file_exists abs_path = `Yes in
+    String.Table.set exists_cache ~key:abs_path ~data:result ;
+    result
 
 
 let of_header ?(warn_on_error = true) header_file =

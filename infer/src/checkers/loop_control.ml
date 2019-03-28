@@ -134,7 +134,7 @@ let get_loop_head_to_source_nodes cfg =
 let get_control_maps loop_head_to_source_nodes_map =
   Procdesc.NodeMap.fold
     (fun loop_head source_list
-         (Control.({exit_map; loop_head_to_guard_nodes}), loop_head_to_loop_nodes) ->
+         (Control.{exit_map; loop_head_to_guard_nodes}, loop_head_to_loop_nodes) ->
       L.(debug Analysis Medium)
         "Back-edge source list : [%a] --> loop_head: %i \n" (Pp.comma_seq Procdesc.Node.pp)
         source_list (nid_int loop_head) ;
@@ -154,7 +154,7 @@ let get_control_maps loop_head_to_source_nodes_map =
                  | Some existing_loop_heads ->
                      Some (Control.LoopHeads.add loop_head existing_loop_heads)
                  | None ->
-                     Some (Control.LoopHeads.singleton loop_head))
+                     Some (Control.LoopHeads.singleton loop_head) )
                exit_map_acc ))
           exit_nodes
       in
@@ -164,7 +164,7 @@ let get_control_maps loop_head_to_source_nodes_map =
             | Some existing_guard_nodes ->
                 Some (Control.GuardNodes.union existing_guard_nodes guard_prune_nodes)
             | None ->
-                Some guard_prune_nodes)
+                Some guard_prune_nodes )
           loop_head_to_guard_nodes
       in
       let loop_head_to_loop_nodes' =
@@ -173,7 +173,7 @@ let get_control_maps loop_head_to_source_nodes_map =
             | Some existing_loop_nodes ->
                 Some (LoopInvariant.LoopNodes.union existing_loop_nodes loop_nodes)
             | None ->
-                Some loop_nodes)
+                Some loop_nodes )
           loop_head_to_loop_nodes
       in
       let open Control in

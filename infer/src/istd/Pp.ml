@@ -61,8 +61,10 @@ let text_break = {text with break_lines= true}
 (** Default html print environment *)
 let html color =
   { text with
-    kind= HTML; cmap_norm= colormap_from_color color; cmap_foot= colormap_from_color color; color
-  }
+    kind= HTML
+  ; cmap_norm= colormap_from_color color
+  ; cmap_foot= colormap_from_color color
+  ; color }
 
 
 (** Extend the normal colormap for the given object with the given color *)

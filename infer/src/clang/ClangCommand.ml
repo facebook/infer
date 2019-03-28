@@ -102,7 +102,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
         aux in_argfiles (false, res_rev, true) tl
     | at_argfile :: tl
       when String.is_prefix at_argfile ~prefix:"@" && not (String.Set.mem in_argfiles at_argfile)
-          -> (
+      -> (
         let in_argfiles' = String.Set.add in_argfiles at_argfile in
         let argfile = String.slice at_argfile 1 (String.length at_argfile) in
         match In_channel.read_lines argfile with
@@ -135,9 +135,10 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
         let arg' = replace_options_arg res_rev arg in
         aux in_argfiles (false, arg' :: res_rev, changed || not (phys_equal arg arg')) tl
   in
-  match aux String.Set.empty (false, [], false) args with _, res_rev, _ ->
-    (* return non-reversed list *)
-    List.rev_append res_rev post_args
+  match aux String.Set.empty (false, [], false) args with
+  | _, res_rev, _ ->
+      (* return non-reversed list *)
+      List.rev_append res_rev post_args
 
 
 (* Work around various path or library issues occurring when one tries to substitute Apple's version

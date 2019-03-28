@@ -12,7 +12,8 @@ open! IStd
 let errLogMap = ref Typ.Procname.Map.empty
 
 let get_errlog procname =
-  try Typ.Procname.Map.find procname !errLogMap with Caml.Not_found ->
+  try Typ.Procname.Map.find procname !errLogMap
+  with Caml.Not_found ->
     let errlog = Errlog.empty () in
     errLogMap := Typ.Procname.Map.add procname errlog !errLogMap ;
     errlog

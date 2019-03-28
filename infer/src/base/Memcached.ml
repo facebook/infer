@@ -152,7 +152,8 @@ module Make (V : Value) : Server with module Value = V = struct
   let set_ =
     let buffer = ref (Bytes.create 1024) in
     let rec try_to_buffer value =
-      try Marshal.to_buffer !buffer 0 (Bytes.length !buffer) value [] with Failure _ ->
+      try Marshal.to_buffer !buffer 0 (Bytes.length !buffer) value []
+      with Failure _ ->
         (* double buffer length *)
         buffer := Bytes.create (2 * Bytes.length !buffer) ;
         try_to_buffer value

@@ -200,7 +200,8 @@ let inline_argument_files buck_args =
         (* Arguments that start with @ could mean something different than an arguments file in buck. *)
       else
         let expanded_args =
-          try Utils.with_file_in file_name ~f:In_channel.input_lines with exn ->
+          try Utils.with_file_in file_name ~f:In_channel.input_lines
+          with exn ->
             Logging.die UserError "Could not read from file '%s': %a@." file_name Exn.pp exn
         in
         expanded_args

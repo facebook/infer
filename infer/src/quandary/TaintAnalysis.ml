@@ -240,8 +240,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let matching_sink, _ = List.find_exn ~f:snd matching_sinks in
             expand_sink matching_sink (Sink.indexes matching_sink)
               (matching_sink :: report_acc, seen_acc')
-          with
-          | Not_found_s _ | Caml.Not_found -> (
+          with Not_found_s _ | Caml.Not_found -> (
             (* didn't find a sink whose indexes match; this can happen when taint flows in via a
                global. pick any sink whose kind matches *)
             match matching_sinks with

@@ -474,7 +474,7 @@ module AttributeMapDomain = struct
         | Some attrs ->
             Some (AttributeSetDomain.add attribute attrs)
         | None ->
-            Some (AttributeSetDomain.singleton attribute))
+            Some (AttributeSetDomain.singleton attribute) )
       t
 
 
@@ -482,8 +482,8 @@ module AttributeMapDomain = struct
     let open HilExp in
     match e with
     | HilExp.AccessExpression access_expr -> (
-      try find (AccessExpression.to_access_path access_expr) attribute_map with Caml.Not_found ->
-        AttributeSetDomain.empty )
+      try find (AccessExpression.to_access_path access_expr) attribute_map
+      with Caml.Not_found -> AttributeSetDomain.empty )
     | Constant _ ->
         AttributeSetDomain.singleton Attribute.Functional
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->

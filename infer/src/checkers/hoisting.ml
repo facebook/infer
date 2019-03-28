@@ -65,7 +65,7 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
     loop_head_to_source_nodes LoopHeadToHoistInstrs.empty
 
 
-let do_report summary Call.({pname; loc}) ~issue loop_head_loc =
+let do_report summary Call.{pname; loc} ~issue loop_head_loc =
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Typ.Procname.pp pname Location.pp loc
   in
@@ -81,10 +81,10 @@ let model_satisfies ~f tenv pname =
 
 
 let is_call_expensive integer_type_widths get_callee_cost_summary_and_formals inferbo_invariant_map
-    Call.({pname; node; params}) =
+    Call.{pname; node; params} =
   (* only report if function call has expensive/symbolic cost *)
   match get_callee_cost_summary_and_formals pname with
-  | Some (CostDomain.({post= cost_record}), callee_formals)
+  | Some (CostDomain.{post= cost_record}, callee_formals)
     when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
       let last_node = InstrCFG.last_of_underlying_node node in
       let instr_node_id = InstrCFG.Node.id last_node in
@@ -107,7 +107,7 @@ let is_call_variant_for_hoisting tenv call =
   model_satisfies ~f:InvariantModels.is_variant_for_hoisting tenv call.Call.pname
 
 
-let get_issue_to_report tenv should_report_invariant (Call.({pname}) as call) =
+let get_issue_to_report tenv should_report_invariant (Call.{pname} as call) =
   if should_report_invariant call then
     if model_satisfies ~f:InvariantModels.is_invariant tenv pname then
       Some IssueType.loop_invariant_call
@@ -138,7 +138,7 @@ let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
     loop_head_to_inv_instrs
 
 
-let checker Callbacks.({tenv; summary; proc_desc; integer_type_widths}) : Summary.t =
+let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.t =
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in

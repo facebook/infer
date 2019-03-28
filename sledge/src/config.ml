@@ -29,22 +29,16 @@ let trace_conv =
   (parse, print)
 
 type t =
-  { compile_only: bool
-         [@aka ["c"]]
+  { compile_only: bool [@aka ["c"]]
         (** Do not analyze: terminate after translating input LLVM to LLAIR. *)
-  ; input: string
-         [@pos 0] [@docv "input.bc"]
+  ; input: string [@pos 0] [@docv "input.bc"]
         (** LLVM bitcode file to analyze, in either binary $(b,.bc) or
             textual $(b,.ll) form. *)
-  ; output: string option
-         [@aka ["o"]] [@docv "output.llair"]
+  ; output: string option [@aka ["o"]] [@docv "output.llair"]
         (** Dump $(i,input.bc) translated to LLAIR in human-readable form to
             $(i,output.llair), or $(b,-) for $(b,stdout). *)
   ; trace: Trace.config
-         [@aka ["t"]]
-         [@docv "spec"]
-         [@conv trace_conv]
-         [@default Trace.none]
+        [@aka ["t"]] [@docv "spec"] [@conv trace_conv] [@default Trace.none]
         (** Enable debug tracing according to $(i,spec), which is a sequence
             of module and function names separated by $(b,+) or $(b,-). For
             example, $(b,Control-Control.exec_inst) enables all tracing in

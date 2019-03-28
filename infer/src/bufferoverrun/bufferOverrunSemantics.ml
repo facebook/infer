@@ -136,7 +136,7 @@ let rec must_alias_cmp : Exp.t -> Mem.t -> bool =
 
 let set_array_stride integer_type_widths typ v =
   match typ with
-  | Typ.({desc= Tptr ({desc= Tint ikind}, Pk_pointer)}) ->
+  | Typ.{desc= Tptr ({desc= Tint ikind}, Pk_pointer)} ->
       let width = Typ.width_of_ikind integer_type_widths ikind in
       Val.set_array_stride (Z.of_int (width / 8)) v
   | _ ->
@@ -379,7 +379,8 @@ type eval_mode = EvalNormal | EvalPOCond | EvalPOReachability
 let rec eval_sympath_partial ~mode params p mem =
   match p with
   | Symb.SymbolPath.Pvar x -> (
-    try ParamBindings.find x params with Caml.Not_found ->
+    try ParamBindings.find x params
+    with Caml.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
   | Symb.SymbolPath.Callsite {cs} -> (

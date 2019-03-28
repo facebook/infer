@@ -101,8 +101,8 @@ type err_data =
   ; linters_def_file: string option
   ; doc_url: string option
   ; access: string option
-  ; extras: Jsonbug_t.extra option
-  (* NOTE: Please consider adding new fields as part of extras *) }
+  ; extras: Jsonbug_t.extra option (* NOTE: Please consider adding new fields as part of extras *)
+  }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 

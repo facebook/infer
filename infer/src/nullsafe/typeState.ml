@@ -72,11 +72,13 @@ let map_join m1 m2 =
           if only_keep_intersection then tjoined := M.add exp2 range1 !tjoined
       | Some range' ->
           tjoined := M.add exp2 range' !tjoined
-    with Caml.Not_found -> if not only_keep_intersection then tjoined := M.add exp2 range2 !tjoined
+    with Caml.Not_found ->
+      if not only_keep_intersection then tjoined := M.add exp2 range2 !tjoined
   in
   let missing_rhs exp1 range1 =
     (* handle elements missing in the rhs *)
-    try ignore (M.find exp1 m2) with Caml.Not_found ->
+    try ignore (M.find exp1 m2)
+    with Caml.Not_found ->
       let t1, ta1, locs1 = range1 in
       let range1' =
         let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in

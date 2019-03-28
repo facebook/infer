@@ -321,7 +321,8 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
     let base, accesses = AccessPath.Abs.extract ap in
     let is_exact = AccessPath.Abs.is_exact ap in
     let base_node =
-      try BaseMap.find base tree with Caml.Not_found ->
+      try BaseMap.find base tree
+      with Caml.Not_found ->
         (* note: we interpret max_depth <= 0 as max_depth = 1 *)
         if Config.max_depth > 1 then empty_normal_leaf else empty_starred_leaf
     in

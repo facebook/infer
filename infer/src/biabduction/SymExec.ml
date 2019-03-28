@@ -1484,8 +1484,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
       let eprop = Prop.expose prop_ in
       match
         List.partition_tf
-          ~f:(function
-            | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar' | _ -> false)
+          ~f:(function Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar' | _ -> false)
           eprop.Prop.sigma
       with
       | [Sil.Hpointsto (e, se, typ)], sigma' ->
@@ -1525,7 +1524,8 @@ and instrs ?(mask_errors = false) exe_env tenv pdesc instrs ppl =
     L.d_str "Executing Generated Instruction " ;
     Sil.d_instr instr ;
     L.d_ln () ;
-    try sym_exec exe_env tenv pdesc instr p path with exn ->
+    try sym_exec exe_env tenv pdesc instr p path
+    with exn ->
       IExn.reraise_if exn ~f:(fun () -> (not mask_errors) || not (SymOp.exn_not_failure exn)) ;
       let error = Exceptions.recognize_exception exn in
       let loc =
@@ -1587,7 +1587,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
             | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
                 Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
             | hpred ->
-                hpred)
+                hpred )
           prop'.Prop.sigma
       in
       Prop.normalize tenv (Prop.set prop' ~sigma:filtered_sigma)
@@ -1596,8 +1596,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
       let prop' =
         let filtered_sigma =
           List.filter
-            ~f:(function
-              | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual -> false | _ -> true)
+            ~f:(function Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual -> false | _ -> true)
             prop.Prop.sigma
         in
         Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma)

@@ -136,7 +136,7 @@ module SourceKind = struct
                 in
                 res
             | _ ->
-                false)
+                false )
           tenv pname
       in
       (* taint all formals except for [this] *)

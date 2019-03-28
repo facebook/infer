@@ -36,7 +36,8 @@ let try_finally ~f ~finally =
           | finally_exn
           when (* do not swallow Analysis_failure_exe thrown from finally *)
                match finally_exn with Analysis_failure_exe _ -> false | _ -> true
-          -> () )
+          ->
+            () )
 
 
 let pp_failure_kind fmt = function

@@ -27,8 +27,8 @@ let exec db ~log ~stmt =
       PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
   let rc = Sqlite3.exec db stmt in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-  try check_result_code ~fatal:true db ~log rc with Error err ->
-    error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
+  try check_result_code ~fatal:true db ~log rc
+  with Error err -> error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 
 let finalize db ~log stmt =

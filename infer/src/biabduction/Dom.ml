@@ -526,6 +526,7 @@ module Rename : sig
   val get_unify_eqs : unit -> (Exp.t * Exp.t) list
 
   val to_subst_emb : side -> Sil.subst
+
   (*
   val get : Exp.t -> Exp.t -> Exp.t option
   val pp : printenv -> Format.formatter -> (Exp.t * Exp.t * Exp.t) list -> unit
@@ -687,8 +688,8 @@ end = struct
       in
       List.iter ~f:handle_triple !tbl ;
       let rep x =
-        try H.find rep_cache (get x) with Caml.Not_found ->
-          L.die L.InternalError "Dom.Rename.get_unify_eqs broken"
+        try H.find rep_cache (get x)
+        with Caml.Not_found -> L.die L.InternalError "Dom.Rename.get_unify_eqs broken"
       in
       rep
     in

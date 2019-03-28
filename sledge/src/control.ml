@@ -302,7 +302,7 @@ let exec_term : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
           ( match
               Domain.assume state
                 (Vector.fold tbl ~init:(Exp.bool true)
-                   ~f:(fun b (case, _) -> Exp.and_ (Exp.dq key case) b ))
+                   ~f:(fun b (case, _) -> Exp.and_ (Exp.dq key case) b))
             with
           | Some state -> exec_jump stk state block els
           | None -> Work.skip )

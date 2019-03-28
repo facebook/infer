@@ -26,9 +26,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr astate _ _ = function
     | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
         astate
-    | Sil.Load (lhs_id, Exp.Lvar rhs_pvar, Typ.({desc= Tptr ({desc= Tfun _}, _)}), _) ->
+    | Sil.Load (lhs_id, Exp.Lvar rhs_pvar, Typ.{desc= Tptr ({desc= Tfun _}, _)}, _) ->
         let fun_ptr =
-          try Domain.find (Pvar.to_string rhs_pvar) astate with Caml.Not_found -> ProcnameSet.empty
+          try Domain.find (Pvar.to_string rhs_pvar) astate
+          with Caml.Not_found -> ProcnameSet.empty
         in
         Domain.add (Ident.to_string lhs_id) fun_ptr astate
     | Sil.Store (Lvar lhs_pvar, _, Exp.Const (Const.Cfun pn), _) ->

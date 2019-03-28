@@ -15,13 +15,14 @@ let properties = ref []
 let parse topl_file =
   let f ch =
     let lexbuf = Lexing.from_channel ch in
-    try ToplParser.properties (ToplLexer.token ()) lexbuf with ToplParser.Error ->
-      let Lexing.({pos_lnum; pos_bol; pos_cnum; _}) = Lexing.lexeme_start_p lexbuf in
+    try ToplParser.properties (ToplLexer.token ()) lexbuf
+    with ToplParser.Error ->
+      let Lexing.{pos_lnum; pos_bol; pos_cnum; _} = Lexing.lexeme_start_p lexbuf in
       let col = pos_cnum - pos_bol + 1 in
       L.(die UserError) "@[%s:%d:%d: topl parse error@]@\n@?" topl_file pos_lnum col
   in
-  try In_channel.with_file topl_file ~f with Sys_error msg ->
-    L.(die UserError) "@[topl:%s: %s@]@\n@?" topl_file msg
+  try In_channel.with_file topl_file ~f
+  with Sys_error msg -> L.(die UserError) "@[topl:%s: %s@]@\n@?" topl_file msg
 
 
 let init () =

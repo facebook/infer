@@ -297,7 +297,9 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
     in
     let proc_attributes =
       { (ProcAttributes.default trans_unit_ctx.CFrontend_config.source_file proc_name) with
-        ProcAttributes.formals; clang_method_kind; ret_type }
+        ProcAttributes.formals
+      ; clang_method_kind
+      ; ret_type }
     in
     ignore (Cfg.create_proc_desc cfg proc_attributes)
 

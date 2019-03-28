@@ -238,8 +238,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
           let return_calls =
-            ( try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty
-            )
+            ( try Domain.find return_access_path astate
+              with Caml.Not_found -> Domain.CallSet.empty )
             |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_procname)
           in
           Domain.add return_access_path return_calls astate

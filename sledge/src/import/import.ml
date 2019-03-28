@@ -11,8 +11,7 @@ include (
   Base :
     sig
       include
-        (module type of Base
-        (* extended below, remove *)
+        (module type of Base (* extended below, remove *)
         with module Invariant := Base.Invariant
          and module List := Base.List
          and module Map := Base.Map
@@ -108,7 +107,8 @@ module Invariant = struct
   include Base.Invariant
 
   let invariant here t sexp_of_t f =
-    try f () with exn ->
+    try f ()
+    with exn ->
       let bt = Caml.Printexc.get_raw_backtrace () in
       let exn =
         Error.to_exn

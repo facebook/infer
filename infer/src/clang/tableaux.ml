@@ -47,8 +47,8 @@ let add_formula_to_valuation k s =
 
 
 let get_node_valuation k =
-  try NodesValuationHashtbl.find k !global_nodes_valuation with Caml.Not_found ->
-    CTLFormulaSet.empty
+  try NodesValuationHashtbl.find k !global_nodes_valuation
+  with Caml.Not_found -> CTLFormulaSet.empty
 
 
 let is_decl_allowed lcxt decl =
@@ -305,7 +305,8 @@ let report_issue an lcxt linter (*npo_condition*) =
 
 
 let check_linter_map linter_map_contex phi =
-  try ClosureHashtbl.find phi linter_map_contex with Caml.Not_found ->
+  try ClosureHashtbl.find phi linter_map_contex
+  with Caml.Not_found ->
     Logging.die InternalError "@\n ERROR: linter_map must have an entry for each formula"
 
 
@@ -329,7 +330,8 @@ let build_valuation parsed_linters an lcxt linter_map_context =
       build_transition_set npo_condition ; *)
     let normalized_condition = normalize linter.condition in
     let is_state_only, cl =
-      try ClosureHashtbl.find normalized_condition !closure_map with Caml.Not_found ->
+      try ClosureHashtbl.find normalized_condition !closure_map
+      with Caml.Not_found ->
         let cl' = formula_closure normalized_condition in
         let is_state_only = is_state_only_formula normalized_condition in
         (*print_closure cl' ; *)

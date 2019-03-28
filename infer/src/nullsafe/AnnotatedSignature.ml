@@ -25,7 +25,7 @@ let get proc_attributes : t =
   let method_annotation = proc_attributes.ProcAttributes.method_annotation in
   let formals = proc_attributes.ProcAttributes.formals in
   let ret_type = proc_attributes.ProcAttributes.ret_type in
-  let Annot.Method.({return; params}) = method_annotation in
+  let Annot.Method.{return; params} = method_annotation in
   let natl =
     let rec extract ial parl =
       match (ial, parl) with

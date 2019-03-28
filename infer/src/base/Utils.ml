@@ -163,7 +163,8 @@ let read_json_file path =
 
 let do_finally_swallow_timeout ~f ~finally =
   let res =
-    try f () with exc ->
+    try f ()
+    with exc ->
       IExn.reraise_after exc ~f:(fun () ->
           try finally () |> ignore with _ -> (* swallow in favor of the original exception *) () )
   in
@@ -252,7 +253,8 @@ let create_dir dir =
     if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
   with Unix.Unix_error _ -> (
-    try Unix.mkdir dir ~perm:0o700 with Unix.Unix_error _ ->
+    try Unix.mkdir dir ~perm:0o700
+    with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
         try Polymorphic_compare.( = ) (Unix.stat dir).Unix.st_kind Unix.S_DIR

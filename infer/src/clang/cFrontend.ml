@@ -14,7 +14,6 @@ include struct
   [@@@warning "-60"]
 
   module rec CTransImpl : CModule_type.CTranslation = CTrans.CTrans_funct (CFrontend_declImpl)
-  
   and CFrontend_declImpl : CModule_type.CFrontend = CFrontend_decl.CFrontend_decl_funct (CTransImpl)
 end
 

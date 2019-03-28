@@ -616,7 +616,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
                 | Sil.Hlseg (_, _, e1, _, _) ->
                     Exp.equal e e1
                 | Sil.Hdllseg (_, _, e_iF, _, _, e_iB, _) ->
-                    Exp.equal e e_iF || Exp.equal e e_iB)
+                    Exp.equal e e_iF || Exp.equal e e_iB )
               footprint_sigma
           in
           let atoms_sigma_list =
@@ -829,7 +829,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                     when Exp.equal lhs_exp matching_exp ->
                       get_fld_strexp_and_typ fld_typ (is_guarded_by_fld field_part) matching_flds
                   | _ ->
-                      None)
+                      None )
                 sigma
           | _ ->
               None )
@@ -954,7 +954,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                         false )
                   flds
             | _ ->
-                false)
+                false )
           prop.Prop.sigma
       in
       Procdesc.get_access pdesc <> PredSymb.Private
@@ -1502,9 +1502,8 @@ let attr_has_annot is_annotation tenv prop exp =
     | _ ->
         None
   in
-  try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp) with
-  | Not_found_s _ | Caml.Not_found ->
-      None
+  try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp)
+  with Not_found_s _ | Caml.Not_found -> None
 
 
 let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp (fld, strexp) =

@@ -59,8 +59,8 @@ let create_db () =
       (* Can't use WAL with custom VFS *)
       () ) ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db database_fullpath with Sys_error _ ->
-    (* lost the race, doesn't matter *) ()
+  try Sys.rename temp_db database_fullpath
+  with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 
 let new_db_callbacks = ref []
@@ -78,7 +78,8 @@ let register_statement =
     let stmt_ref = ref None in
     let new_statement db =
       let stmt =
-        try Sqlite3.prepare db stmt0 with Sqlite3.Error error ->
+        try Sqlite3.prepare db stmt0
+        with Sqlite3.Error error ->
           L.die InternalError "Could not prepare the following statement:@\n%s@\nReason: %s" stmt0
             error
       in

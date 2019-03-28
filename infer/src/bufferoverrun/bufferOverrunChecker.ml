@@ -418,9 +418,10 @@ let report_errors : Tenv.t -> checks -> Summary.t -> unit =
 
 let get_checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_summary =
  fun locals
-     Checks.({ cond_set
-             ; unused_branches= _ (* intra-procedural *)
-             ; unreachable_statements= _ (* intra-procedural *) }) ->
+     Checks.
+       { cond_set
+       ; unused_branches= _ (* intra-procedural *)
+       ; unreachable_statements= _ (* intra-procedural *) } ->
   PO.ConditionSet.for_summary ~forget_locs:locals cond_set
 
 

@@ -33,9 +33,17 @@ type ( 'f_in
      , 'captured_types_out
      , 'markers_in
      , 'markers_out
-     , 'list_constraint ) template_arg
+     , 'list_constraint )
+     template_arg
 
-type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
+type ( 'context
+     , 'f_in
+     , 'f_out
+     , 'captured_types
+     , 'markers_in
+     , 'markers_out
+     , 'list_constraint )
+     templ_matcher
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
   - [C/C++ function/method] --> [f]
