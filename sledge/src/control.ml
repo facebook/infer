@@ -12,14 +12,15 @@
 let bound = 10
 
 module Stack : sig
-  type t [@@deriving compare, equal, sexp_of]
+  type t
+  type as_inlined_location = t [@@deriving compare, sexp_of]
 
-  val print_abbrev : t pp
   val empty : t
   val push_jump : Var.Set.t -> t -> t
 
   val push_call :
        Var.Set.t
+    -> retreating:bool
     -> return:Llair.jump
     -> Domain.from_call
     -> ?throw:Llair.jump
@@ -40,18 +41,56 @@ module Stack : sig
 end = struct
   type t =
     | Locals of Var.Set.t * t
-    | Return of Llair.Jump.t * Domain.from_call * t
+    | Return of
+        { retreating: bool
+              (** return from a call not known to be nonrecursive *)
+        ; dst: Llair.Jump.t
+        ; from_call: Domain.from_call
+        ; stk: t }
     | Throw of Llair.Jump.t * t
     | Empty
-  [@@deriving compare, equal, sexp_of]
+  [@@deriving sexp_of]
+
+  type as_inlined_location = t [@@deriving sexp_of]
+
+  (* Treat a stack as a code location in a hypothetical expansion of the
+     program where all non-recursive functions have been completely inlined.
+     In particular, this means to compare stacks as if all Locals frames or
+     Return frames for recursive calls had been removed. Additionally, the
+     from_call info in Return frames is ignored. *)
+  let rec compare_as_inlined_location x y =
+    if x == y then 0
+    else
+      match (x, y) with
+      | Locals (_, x), y
+       |x, Locals (_, y)
+       |Return {retreating= true; stk= x}, y
+       |x, Return {retreating= true; stk= y} ->
+          compare_as_inlined_location x y
+      | Return {dst= j; stk= x}, Return {dst= k; stk= y} -> (
+        match Llair.Jump.compare j k with
+        | 0 -> compare_as_inlined_location x y
+        | n -> n )
+      | Return _, _ -> -1
+      | _, Return _ -> 1
+      | Throw (j, x), Throw (k, y) -> (
+        match Llair.Jump.compare j k with
+        | 0 -> compare_as_inlined_location x y
+        | n -> n )
+      | Throw _, _ -> -1
+      | _, Throw _ -> 1
+      | Empty, Empty -> 0
 
   let rec print_abbrev fs = function
     | Locals (_, s) ->
         print_abbrev fs s ;
         Format.pp_print_char fs 'L'
-    | Return (_, _, s) ->
+    | Return {retreating= false; stk= s} ->
         print_abbrev fs s ;
         Format.pp_print_char fs 'R'
+    | Return {retreating= true; stk= s} ->
+        print_abbrev fs s ;
+        Format.pp_print_string fs "R↑"
     | Throw (_, s) ->
         print_abbrev fs s ;
         Format.pp_print_char fs 'T'
@@ -70,22 +109,23 @@ end = struct
     (if Set.is_empty lcls then stk else Locals (lcls, stk))
     |> check invariant
 
-  let push_return jmp from_call stk =
-    Return (jmp, from_call, stk) |> check invariant
+  let push_return ~retreating dst from_call stk =
+    Return {retreating; dst; from_call; stk} |> check invariant
 
   let push_throw jmp stk =
     (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
     |> check invariant
 
-  let push_call locals ~return from_call ?throw stk =
-    push_jump locals (push_throw throw (push_return return from_call stk))
+  let push_call locals ~retreating ~return from_call ?throw stk =
+    push_jump locals
+      (push_throw throw (push_return ~retreating return from_call stk))
 
   let pop_return stk ~init ~f =
     let rec pop_return_ scope = function
       | Locals (locals, stk) -> pop_return_ (Set.union locals scope) stk
       | Throw (_, stk) -> pop_return_ scope stk
-      | Return (jmp, from_call, stk) ->
-          Some (stk, f scope from_call init, jmp)
+      | Return {dst; from_call; stk} ->
+          Some (stk, f scope from_call init, dst)
       | Empty -> None
     in
     pop_return_ Var.Set.empty stk
@@ -94,9 +134,9 @@ end = struct
     let rec pop_throw_ scope state = function
       | Locals (locals, stk) ->
           pop_throw_ (Set.union locals scope) state stk
-      | Return (_, from_call, stk) ->
+      | Return {from_call; stk} ->
           pop_throw_ Var.Set.empty (f scope from_call state) stk
-      | Throw (jmp, Return (_, from_call, stk)) ->
+      | Throw (jmp, Return {from_call; stk}) ->
           Some (stk, f scope from_call state, jmp)
       | Empty -> None
       | Throw _ as stk -> violates invariant stk
@@ -126,8 +166,11 @@ module Work : sig
 end = struct
   module Edge = struct
     module T = struct
-      type t = {dst: Llair.Block.t; src: Llair.Block.t option; stk: Stack.t}
-      [@@deriving compare, equal, sexp_of]
+      type t =
+        { dst: Llair.Block.t
+        ; src: Llair.Block.t option
+        ; stk: Stack.as_inlined_location }
+      [@@deriving compare, sexp_of]
     end
 
     include T
@@ -153,7 +196,7 @@ end = struct
         | `Both (d1, d2) -> Some (Int.min d1 d2) )
   end
 
-  type priority = int * Edge.t [@@deriving compare, equal]
+  type priority = int * Edge.t [@@deriving compare]
   type priority_queue = priority Fheap.t
   type waiting_states = (Domain.t * Depths.t) list Map.M(Llair.Block).t
   type t = priority_queue * waiting_states
@@ -213,7 +256,9 @@ let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
 let exec_call stk state block ({dst; args; retreating} : Llair.jump) return
     throw =
   let state, from_call = Domain.call state args dst.params dst.locals in
-  let stk = Stack.push_call dst.locals ~return from_call ?throw stk in
+  let stk =
+    Stack.push_call dst.locals ~retreating ~return from_call ?throw stk
+  in
   Work.add stk ~prev:block ~retreating state dst
 
 let exec_return stk state block exp =
