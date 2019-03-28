@@ -1342,7 +1342,7 @@ module MemReach = struct
    fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
 
 
-  let apply_latest_prune : Exp.t -> t -> t =
+  let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
     let apply1 l v acc = update_mem (PowLoc.singleton l) (PrunedVal.get_val v) acc in
     fun e m ->
       match (m.latest_prune, e) with
@@ -1350,11 +1350,11 @@ module MemReach = struct
       | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
         match find_simple_alias r m with
         | Some (Loc.Var (Var.ProgramVar y), None) when Pvar.equal x y ->
-            PrunePairs.fold apply1 prunes m
+            (PrunePairs.fold apply1 prunes m, prunes)
         | _ ->
-            m )
+            (m, PrunePairs.empty) )
       | _ ->
-          m
+          (m, PrunePairs.empty)
 
 
   let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
@@ -1563,14 +1563,21 @@ module Mem = struct
    fun prune_pairs -> map ~f:(MemReach.set_prune_pairs prune_pairs)
 
 
-  let apply_latest_prune : Exp.t -> t -> t = fun e -> map ~f:(MemReach.apply_latest_prune e)
+  let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
+   fun e -> function
+    | Bottom ->
+        (Bottom, PrunePairs.empty)
+    | NonBottom m ->
+        let m, prune_pairs = MemReach.apply_latest_prune e m in
+        (NonBottom m, prune_pairs)
+
 
   let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
    fun ~updated_locs e1 e2 -> map ~f:(MemReach.update_latest_prune ~updated_locs e1 e2)
 
 
   let get_latest_prune : t -> LatestPrune.t =
-    f_lift_default ~default:LatestPrune.Top MemReach.get_latest_prune
+   fun m -> f_lift_default ~default:LatestPrune.Top MemReach.get_latest_prune m
 
 
   let get_relation : t -> Relation.t =

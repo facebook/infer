@@ -165,7 +165,7 @@ void assert_Good() {
   v[4] = 1;
 }
 
-void assert_Good_FP(int x) {
+void assert_Good_2(int x) {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);

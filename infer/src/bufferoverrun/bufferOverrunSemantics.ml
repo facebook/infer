@@ -657,14 +657,12 @@ module Prune = struct
 
   let prune : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Mem.t =
    fun integer_type_widths e mem ->
-    let mem = Mem.apply_latest_prune e mem in
+    let mem, prune_pairs = Mem.apply_latest_prune e mem in
     let mem =
       let constrs = Relation.Constraints.of_exp e ~get_sym_f:(get_sym_f integer_type_widths mem) in
       Mem.meet_constraints constrs mem
     in
-    let {mem; prune_pairs} =
-      prune_helper integer_type_widths e {mem; prune_pairs= PrunePairs.empty}
-    in
+    let {mem; prune_pairs} = prune_helper integer_type_widths e {mem; prune_pairs} in
     Mem.set_prune_pairs prune_pairs mem
 end
 
