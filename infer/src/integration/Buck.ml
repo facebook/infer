@@ -214,6 +214,12 @@ type flavored_arguments = {command: string; rev_not_targets: string list; target
 let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
+  let buck_targets_blacklist_regexp =
+    if List.is_empty Config.buck_targets_blacklist then None
+    else
+      Some
+        (Str.regexp ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_blacklist ^ "\\)"))
+  in
   let rec parse_cmd_args parsed_args = function
     | [] ->
         parsed_args
@@ -246,6 +252,11 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
         let filter_kind = match filter_kind with `No -> false | `Yes | `Auto -> true in
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets ~filter_kind ~dep_depth
+  in
+  let targets =
+    Option.value_map ~default:targets
+      ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
+      buck_targets_blacklist_regexp
   in
   match targets with
   | [] ->

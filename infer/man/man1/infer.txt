@@ -116,6 +116,10 @@ OPTIONS
        --buck-out dir
            Specify the root directory of buck-out           See also infer-capture(1).
 
+       --buck-targets-blacklist +regex
+           Skip capture of buck targets matched by the specified regular
+           expression.           See also infer-capture(1) and infer-run(1).
+
        --bufferoverrun
            Activates: the buffer overrun analysis (Conversely:
            --no-bufferoverrun)           See also infer-analyze(1).

@@ -158,6 +158,10 @@ OPTIONS
 
        --  Stop argument processing, use remaining arguments as a build
            command
+BUCK COMPILATION DATABASE OPTIONS
+       --buck-targets-blacklist +regex
+           Skip capture of buck targets matched by the specified regular
+           expression.
 BUCK FLAVORS OPTIONS
        --buck-blacklist +regex
            Skip capture of files matched by the specified regular expression

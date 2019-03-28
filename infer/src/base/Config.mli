@@ -253,6 +253,8 @@ val buck_compilation_database : compilation_database_dependencies option
 
 val buck_out : string option
 
+val buck_targets_blacklist : string list
+
 val bufferoverrun : bool
 
 val capture : bool

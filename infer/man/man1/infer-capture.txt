@@ -109,6 +109,10 @@ BUCK COMPILATION DATABASE OPTIONS
        --buck-compilation-database-depth int
            Depth of dependencies used by the --buck-compilation-database deps
            option. By default, all recursive dependencies are captured.
+
+       --buck-targets-blacklist +regex
+           Skip capture of buck targets matched by the specified regular
+           expression.
 BUCK FLAVORS OPTIONS
        --append-buck-flavors +string
            Additional Buck flavors to append to targets discovered by the

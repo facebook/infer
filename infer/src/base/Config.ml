@@ -828,6 +828,13 @@ and buck_out =
     ~meta:"dir" "Specify the root directory of buck-out"
 
 
+and buck_targets_blacklist =
+  CLOpt.mk_string_list ~long:"buck-targets-blacklist"
+    ~in_help:
+      InferCommand.[(Run, manual_buck_compilation_db); (Capture, manual_buck_compilation_db)]
+    ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
+
+
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -2547,6 +2554,8 @@ and buck_compilation_database =
 
 
 and buck_out = !buck_out
+
+and buck_targets_blacklist = !buck_targets_blacklist
 
 and bufferoverrun = !bufferoverrun
 
