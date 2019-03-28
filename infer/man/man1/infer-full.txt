@@ -262,10 +262,6 @@ OPTIONS
            differential report is desired. Source files should be specified
            relative to project root or be absolute           See also infer-report(1).
 
-       --disable-all-checkers
-           Activates: turn off all the previously enabled checkers
-           (Conversely: --no-disable-all-checkers)           See also infer-analyze(1).
-
        --disable-issue-type +issue_type
            Do not show reports coming from this type of issue. Each checker
            can report a range of issue types. This option provides
