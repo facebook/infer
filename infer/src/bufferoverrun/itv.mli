@@ -234,3 +234,7 @@ val of_normal_path : unsigned:bool -> Symb.SymbolPath.partial -> t
 val of_offset_path : Symb.SymbolPath.partial -> t
 
 val of_length_path : Symb.SymbolPath.partial -> t
+
+val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
+
+val is_length_path_of : Symb.SymbolPath.partial -> t -> bool

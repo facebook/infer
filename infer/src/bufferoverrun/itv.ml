@@ -657,3 +657,7 @@ let of_normal_path ~unsigned path = NonBottom (ItvPure.of_normal_path ~unsigned 
 let of_offset_path path = NonBottom (ItvPure.of_offset_path path)
 
 let of_length_path path = NonBottom (ItvPure.of_length_path path)
+
+let is_offset_path_of path x = eq (of_offset_path path) x
+
+let is_length_path_of path x = eq (of_length_path path) x

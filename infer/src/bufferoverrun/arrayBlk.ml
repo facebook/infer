@@ -133,6 +133,17 @@ module ArrInfo = struct
         AbstractDomain.TopLiftedUtils.pp_top f
 
 
+  let is_pointer : Symb.SymbolPath.partial -> t -> bool =
+   fun path arr ->
+    match (path, arr) with
+    | Deref ((Deref_COneValuePointer | Deref_CPointer), path), C {offset; size} ->
+        Itv.is_offset_path_of path offset && Itv.is_length_path_of path size
+    | Deref (Deref_JavaPointer, path), Java {length} ->
+        Itv.is_length_path_of path length
+    | _, _ ->
+        false
+
+
   let is_symbolic : t -> bool =
    fun arr ->
     match arr with
@@ -309,19 +320,30 @@ let get_pow_loc : t -> PowLoc.t =
   fold pow_loc_of_allocsite array PowLoc.bot
 
 
-let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> t =
+let subst : t -> Bound.eval_sym -> PowLoc.eval_locpath -> PowLoc.t * t =
  fun a eval_sym eval_locpath ->
-  let subst1 l info acc =
+  let subst1 l info (powloc_acc, acc) =
     let info' = ArrInfo.subst info eval_sym in
     match Allocsite.get_param_path l with
     | None ->
-        add l info' acc
+        (powloc_acc, add l info' acc)
     | Some path ->
         let locs = eval_locpath path in
-        let add_allocsite l acc = match l with Loc.Allocsite a -> add a info' acc | _ -> acc in
-        PowLoc.fold add_allocsite locs acc
+        let add_allocsite l (powloc_acc, acc) =
+          match l with
+          | Loc.Allocsite a ->
+              (powloc_acc, add a info' acc)
+          | _ ->
+              if ArrInfo.is_pointer path info then (PowLoc.add l powloc_acc, acc)
+              else (
+                if Config.bo_debug >= 3 then
+                  L.d_printfln_escaped "Substitution of array block failed: %a -> %a" Loc.pp l
+                    ArrInfo.pp info ;
+                (powloc_acc, acc) )
+        in
+        PowLoc.fold add_allocsite locs (powloc_acc, acc)
   in
-  fold subst1 a empty
+  fold subst1 a (PowLoc.empty, empty)
 
 
 let is_symbolic : t -> bool = fun a -> exists (fun _ ai -> ArrInfo.is_symbolic ai) a

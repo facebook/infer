@@ -160,3 +160,23 @@ void call_va_arg_int_Bad() {
   int a[10];
   va_arg_int(a, 10);
 }
+
+struct S* id_S(struct S* r) {
+  return r;
+}
+
+void call_id_S_Good_FP(struct S p) {
+  int a[10];
+  struct S* q = id_S(&p);
+  if (q == 0) {
+    a[10] = 0; // should be unreachable
+  }
+}
+
+void call_id_S_Bad(struct S p) {
+  int a[10];
+  struct S* q = id_S(&p);
+  if (q != 0) {
+    a[10] = 0; // should be reachable
+  }
+}

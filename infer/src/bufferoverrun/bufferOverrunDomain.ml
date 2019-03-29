@@ -398,10 +398,12 @@ module Val = struct
         symbols TraceSet.bottom
     in
     let traces = TraceSet.call location ~traces_caller ~traces_callee:x.traces in
+    let powloc = PowLoc.subst x.powloc eval_locpath in
+    let powloc_from_arrayblk, arrayblk = ArrayBlk.subst x.arrayblk eval_sym eval_locpath in
     { x with
       itv= Itv.subst x.itv eval_sym
-    ; powloc= PowLoc.subst x.powloc eval_locpath
-    ; arrayblk= ArrayBlk.subst x.arrayblk eval_sym eval_locpath
+    ; powloc= PowLoc.join powloc powloc_from_arrayblk
+    ; arrayblk
     ; traces }
     (* normalize bottom *)
     |> normalize
