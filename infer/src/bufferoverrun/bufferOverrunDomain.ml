@@ -829,17 +829,26 @@ module CoreVal = struct
 
   let compare x y =
     let r = Itv.compare (Val.get_itv x) (Val.get_itv y) in
-    if r <> 0 then r else ArrayBlk.compare (Val.get_array_blk x) (Val.get_array_blk y)
+    if r <> 0 then r
+    else
+      let r = PowLoc.compare (Val.get_pow_loc x) (Val.get_pow_loc y) in
+      if r <> 0 then r else ArrayBlk.compare (Val.get_array_blk x) (Val.get_array_blk y)
 
 
-  let pp fmt x = F.fprintf fmt "(%a, %a)" Itv.pp (Val.get_itv x) ArrayBlk.pp (Val.get_array_blk x)
+  let pp fmt x =
+    F.fprintf fmt "(%a, %a, %a)" Itv.pp (Val.get_itv x) PowLoc.pp (Val.get_pow_loc x) ArrayBlk.pp
+      (Val.get_array_blk x)
+
 
   let is_symbolic v =
     let itv = Val.get_itv v in
     if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
 
 
-  let is_empty v = Itv.is_bottom (Val.get_itv v) && ArrayBlk.is_empty (Val.get_array_blk v)
+  let is_empty v =
+    Itv.is_bottom (Val.get_itv v)
+    && PowLoc.is_empty (Val.get_pow_loc v)
+    && ArrayBlk.is_empty (Val.get_array_blk v)
 end
 
 module PruningExp = struct
@@ -968,6 +977,8 @@ module PrunePairs = struct
   include AbstractDomain.InvertedMap (Loc) (PrunedVal)
 
   let forget locs x = filter (fun l _ -> not (PowLoc.mem l locs)) x
+
+  let is_reachable x = not (exists (fun _ v -> PrunedVal.is_empty v) x)
 end
 
 module LatestPrune = struct

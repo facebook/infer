@@ -664,7 +664,7 @@ module Prune = struct
       Mem.meet_constraints constrs mem
     in
     let {mem; prune_pairs} = prune_helper integer_type_widths e {mem; prune_pairs} in
-    Mem.set_prune_pairs prune_pairs mem
+    if PrunePairs.is_reachable prune_pairs then Mem.set_prune_pairs prune_pairs mem else Mem.bot
 end
 
 let get_matching_pairs :
