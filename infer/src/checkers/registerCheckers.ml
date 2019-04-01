@@ -32,7 +32,9 @@ let all_checkers =
      Currently, the checkers are run in the reverse order *)
   [ { name= "annotation reachability"
     ; active= Config.annotation_reachability
-    ; callbacks= [(Procedure AnnotationReachability.checker, Language.Java)] }
+    ; callbacks=
+        [ (Procedure AnnotationReachability.checker, Language.Java)
+        ; (Procedure AnnotationReachability.checker, Language.Clang) ] }
   ; { name= "nullable checks"
     ; active= Config.nullsafe
     ; callbacks=

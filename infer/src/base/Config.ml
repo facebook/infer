@@ -742,6 +742,27 @@ and ( annotation_reachability
   , uninit )
 
 
+and annotation_reachability_cxx =
+  CLOpt.mk_json ~long:"annotation-reachability-cxx"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    {|Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is a JSON object whose key is the issue name. "sources" and "sinks" can be specified either by symbol or path prefix.  "sinks" optionally can specify "overrides" (by symbol or path prefix) that block the reachability analysis when hit.  Example:
+  {
+    "ISOLATED_REACHING_CONNECT": {
+      "doc_url": "http:://optional/issue/doc/link.html",
+      "sources": {
+        "desc": "Code that should not call connect [optional]",
+        "paths": [ "isolated/" ]
+      },
+      "sinks": {
+        "symbols": [ "connect" ],
+        "overrides": { "symbols": [ "Trusted::" ] }
+      }
+    }
+  }
+This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function whose source path starts with "isolated/" that may reach the function named "connect", ignoring paths that go through a symbol starting with "Trusted::".
+|}
+
+
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -2516,6 +2537,8 @@ and analysis_suppress_errors = !analysis_suppress_errors
 and analysis_stops = !analysis_stops
 
 and annotation_reachability = !annotation_reachability
+
+and annotation_reachability_cxx = !annotation_reachability_cxx
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 

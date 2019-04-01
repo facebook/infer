@@ -348,3 +348,47 @@ let strip_balanced_once ~drop s =
     let first = String.unsafe_get s 0 in
     if Char.equal first (String.unsafe_get s (n - 1)) && drop first then String.slice s 1 (n - 1)
     else s
+
+
+let die_expected_yojson_type expected yojson_obj ~src ~example =
+  let eg = if String.equal example "" then "" else " (e.g. '" ^ example ^ "')" in
+  Die.die UserError "in %s expected json %s%s not %s" src expected eg
+    (Yojson.Basic.to_string yojson_obj)
+
+
+let assoc_of_yojson yojson_obj ~src =
+  match yojson_obj with
+  | `Assoc assoc ->
+      assoc
+  | `List [] ->
+      (* missing entries in config reported as empty list *)
+      []
+  | _ ->
+      die_expected_yojson_type "object" yojson_obj ~example:"{ \"foo\': \"bar\" }" ~src
+
+
+let string_of_yojson yojson_obj ~src =
+  match yojson_obj with
+  | `String str ->
+      str
+  | _ ->
+      die_expected_yojson_type "string" yojson_obj ~example:"\"foo\"" ~src
+
+
+let list_of_yojson yojson_obj ~src =
+  match yojson_obj with
+  | `List list ->
+      list
+  | _ ->
+      die_expected_yojson_type "list" yojson_obj ~example:"[ \"foo\', \"bar\" ]" ~src
+
+
+let string_list_of_yojson yojson_obj ~src =
+  List.map ~f:(string_of_yojson ~src) (list_of_yojson yojson_obj ~src)
+
+
+let yojson_lookup yojson_assoc elt_name ~src ~f ~default =
+  let src = src ^ " -> " ^ elt_name in
+  Option.value_map ~default
+    ~f:(fun res -> f res ~src)
+    (List.Assoc.find ~equal:String.equal yojson_assoc elt_name)

@@ -327,6 +327,31 @@ BUFFER OVERRUN OPTIONS
            Select a relational domain being used in the bufferoverrun checker
            (experimental)
 CLANG OPTIONS
+       --annotation-reachability-cxx json
+           Specify annotation reachability analyses to be performed on
+           C/C++/ObjC code. Each entry is a JSON object whose key is the
+           issue name. "sources" and "sinks" can be specified either by
+           symbol or path prefix. "sinks" optionally can specify "overrides"
+           (by symbol or path prefix) that block the reachability analysis
+           when hit. Example:             {
+               "ISOLATED_REACHING_CONNECT": {
+                 "doc_url": "http:://optional/issue/doc/link.html",
+                 "sources": {
+                   "desc": "Code that should not call connect [optional]",
+                   "paths": [ "isolated/" ]
+                 },
+                 "sinks": {
+                   "symbols": [ "connect" ],
+                   "overrides": { "symbols": [ "Trusted::" ] }
+                 }
+               }
+             }
+           This will cause us to create a new ISOLATED_REACHING_CONNECT
+           issue for every function whose source path starts with "isolated/"
+           that may reach the function named "connect", ignoring paths that
+           go through a symbol starting with "Trusted::".
+           (default: [])
+
        --cxx-scope-guards json
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores. (default: [])

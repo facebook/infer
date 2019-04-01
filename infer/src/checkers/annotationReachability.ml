@@ -9,6 +9,7 @@ open! IStd
 open! AbstractDomain.Types
 module F = Format
 module MF = MarkupFormatter
+module U = Utils
 
 let dummy_constructor_annot = "__infer_is_constructor"
 
@@ -258,6 +259,118 @@ module StandardAnnotationSpec = struct
     }
 end
 
+module CxxAnnotationSpecs = struct
+  let src_path_of pname =
+    match Ondemand.get_proc_desc pname with
+    | Some proc_desc ->
+        let loc = Procdesc.get_loc proc_desc in
+        SourceFile.to_string loc.file
+    | None ->
+        ""
+
+
+  (* Does <str_or_prefix> equal <str> or a delimited prefix of <prefix>? *)
+  let prefix_match ~delim str str_or_prefix =
+    String.equal str str_or_prefix
+    || (String.is_prefix ~prefix:str_or_prefix str && String.is_suffix ~suffix:delim str_or_prefix)
+
+
+  let symbol_match = prefix_match ~delim:"::"
+
+  let path_match = prefix_match ~delim:"/"
+
+  let option_name = "--annotation-reachability-cxx"
+
+  let spec_from_config spec_name spec_cfg =
+    let src = option_name ^ " -> " ^ spec_name in
+    let make_pname_pred entry ~src : Typ.Procname.t -> bool =
+      let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
+      let paths = U.yojson_lookup entry "paths" ~src ~f:U.string_list_of_yojson ~default:[] in
+      if not (List.is_empty symbols) then (
+        if not (List.is_empty paths) then
+          Logging.(die UserError) "Cannot specify both `paths` and `symbols` in %s" src ;
+        fun pname -> List.exists ~f:(symbol_match (Typ.Procname.to_string pname)) symbols )
+      else if not (List.is_empty paths) then fun pname ->
+        List.exists ~f:(path_match (src_path_of pname)) paths
+      else Logging.(die UserError) "Must specify either `paths` or `symbols` in %s" src
+    in
+    let sources = U.yojson_lookup spec_cfg "sources" ~src ~f:U.assoc_of_yojson ~default:[] in
+    let sources_src = src ^ " -> sources" in
+    let src_name = spec_name ^ "-source" in
+    let src_desc =
+      U.yojson_lookup sources "desc" ~src:sources_src ~f:U.string_of_yojson ~default:src_name
+    in
+    let src_pred = make_pname_pred sources ~src:sources_src in
+    let sinks = U.yojson_lookup spec_cfg "sinks" ~src ~f:U.assoc_of_yojson ~default:[] in
+    let sinks_src = src ^ " -> sinks" in
+    let snk_name = spec_name ^ "-sink" in
+    let snk_desc =
+      U.yojson_lookup sinks "desc" ~src:sinks_src ~f:U.string_of_yojson ~default:snk_name
+    in
+    let snk_pred = make_pname_pred sinks ~src:sinks_src in
+    let overrides =
+      U.yojson_lookup sinks "overrides" ~src:sinks_src ~f:U.assoc_of_yojson ~default:[]
+    in
+    let sanitizer_pred =
+      if List.is_empty overrides then fun _ -> false
+      else make_pname_pred overrides ~src:(sinks_src ^ " -> overrides")
+    in
+    let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
+      let src_pname = Summary.get_proc_name src_summary in
+      if String.equal snk_name dummy_constructor_annot then
+        report_allocation_stack src_name src_summary loc trace stack_str snk_pname call_loc
+      else
+        let final_trace = List.rev (update_trace call_loc trace) in
+        let snk_pname_str = Typ.Procname.to_string snk_pname in
+        let description =
+          Format.asprintf "%s %a calls %a %s" src_desc MF.pp_monospaced
+            (Typ.Procname.to_string src_pname)
+            MF.pp_monospaced (stack_str ^ snk_pname_str) snk_desc
+        in
+        let issue_type =
+          let doc_url =
+            Option.value_map ~default:""
+              ~f:(U.string_of_yojson ~src:(src ^ " -> doc_url"))
+              (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
+          in
+          let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
+          IssueType.from_string spec_name ~doc_url ~linters_def_file
+        in
+        Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
+    in
+    let snk_annot = annotation_of_str snk_name in
+    let report proc_data annot_map =
+      let proc_desc = proc_data.Callbacks.proc_desc in
+      let proc_name = Procdesc.get_proc_name proc_desc in
+      if src_pred proc_name then
+        let loc = Procdesc.get_loc proc_desc in
+        try
+          let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
+          report_call_stack proc_data.Callbacks.summary snk_pred
+            (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
+            report_cxx_annotation_stack (CallSite.make proc_name loc) sink_map
+        with Caml.Not_found -> ()
+    in
+    let open AnnotationSpec in
+    { source_predicate= (fun _ pname -> src_pred pname) (* not used! *)
+    ; sink_predicate= (fun _ pname -> snk_pred pname)
+    ; sanitizer_predicate= (fun _ pname -> sanitizer_pred pname)
+    ; sink_annotation= snk_annot
+    ; report }
+
+
+  let annotation_reachability_cxx =
+    U.assoc_of_yojson Config.annotation_reachability_cxx ~src:option_name
+
+
+  let from_config () : 'AnnotationSpec list =
+    List.map
+      ~f:(fun (spec_name, spec_cfg) ->
+        let src = option_name ^ " -> " ^ spec_name in
+        spec_from_config spec_name (U.assoc_of_yojson spec_cfg ~src) )
+      annotation_reachability_cxx
+end
+
 module NoAllocationAnnotationSpec = struct
   let no_allocation_annot = annotation_of_str Annotations.no_allocation
 
@@ -332,28 +445,45 @@ let parse_user_defined_specs = function
 
 
 let annot_specs =
-  let user_defined_specs =
-    let specs = parse_user_defined_specs Config.annotation_reachability_custom_pairs in
-    List.map specs ~f:(fun (src_annots, snk_annot) ->
-        StandardAnnotationSpec.from_annotations
-          (List.map ~f:annotation_of_str src_annots)
-          (annotation_of_str snk_annot) )
+  [ (Language.Clang, CxxAnnotationSpecs.from_config ())
+  ; ( Language.Java
+    , let user_defined_specs =
+        let specs = parse_user_defined_specs Config.annotation_reachability_custom_pairs in
+        List.map specs ~f:(fun (src_annots, snk_annot) ->
+            StandardAnnotationSpec.from_annotations
+              (List.map ~f:annotation_of_str src_annots)
+              (annotation_of_str snk_annot) )
+      in
+      ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
+      :: StandardAnnotationSpec.from_annotations
+           [ annotation_of_str Annotations.any_thread
+           ; annotation_of_str Annotations.for_non_ui_thread ]
+           (annotation_of_str Annotations.ui_thread)
+      :: StandardAnnotationSpec.from_annotations
+           [annotation_of_str Annotations.ui_thread; annotation_of_str Annotations.for_ui_thread]
+           (annotation_of_str Annotations.for_non_ui_thread)
+      :: user_defined_specs ) ]
+
+
+let get_annot_specs pname =
+  let language =
+    match pname with
+    | Typ.Procname.Java _ ->
+        Language.Java
+    | Typ.Procname.ObjC_Cpp _ | Typ.Procname.C _ | Typ.Procname.Block _ ->
+        Language.Clang
+    | _ ->
+        Logging.(die InternalError)
+          "Cannot find language for proc %s" (Typ.Procname.to_string pname)
   in
-  ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
-  :: StandardAnnotationSpec.from_annotations
-       [annotation_of_str Annotations.any_thread; annotation_of_str Annotations.for_non_ui_thread]
-       (annotation_of_str Annotations.ui_thread)
-  :: StandardAnnotationSpec.from_annotations
-       [annotation_of_str Annotations.ui_thread; annotation_of_str Annotations.for_ui_thread]
-       (annotation_of_str Annotations.for_non_ui_thread)
-  :: user_defined_specs
+  List.Assoc.find_exn ~equal:Language.equal annot_specs language
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = ProcData.no_extras
+  type extras = AnnotationSpec.t list
 
   (* This is specific to the @NoAllocation and @PerformanceCritical checker
      and the "unlikely" method is used to guard branches that are expected to run sufficiently
@@ -384,14 +514,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let check_call tenv callee_pname caller_pname call_site astate =
+  let check_call tenv callee_pname caller_pname call_site astate specs =
     List.fold ~init:astate
       ~f:(fun astate (spec : AnnotationSpec.t) ->
         if
           spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
         then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
         else astate )
-      annot_specs
+      specs
 
 
   let merge_callee_map call_site pdesc callee_pname astate =
@@ -409,13 +539,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           callee_call_map astate
 
 
-  let exec_instr astate {ProcData.pdesc; tenv} _ = function
+  let exec_instr astate {ProcData.pdesc; tenv; ProcData.extras} _ = function
     | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name pdesc in
         let call_site = CallSite.make callee_pname call_loc in
-        check_call tenv callee_pname caller_pname call_site astate
+        check_call tenv callee_pname caller_pname call_site astate extras
         |> merge_callee_map call_site pdesc callee_pname
     | Sil.Load (id, exp, _, _) when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_id id) astate
@@ -436,10 +566,11 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Except
 
 let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Summary.t =
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
-  let proc_data = ProcData.make_default proc_desc tenv in
+  let specs = get_annot_specs (Procdesc.get_proc_name proc_desc) in
+  let proc_data = ProcData.make proc_desc tenv specs in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _) ->
-      List.iter annot_specs ~f:(fun (spec : AnnotationSpec.t) -> spec.report callback annot_map) ;
+      List.iter specs ~f:(fun spec -> spec.AnnotationSpec.report callback annot_map) ;
       Payload.update_summary annot_map summary
   | None ->
       summary
