@@ -33,7 +33,7 @@ RUN apt-get update && \
 RUN cd /usr/local/bin && ln -s /usr/bin/python2.7 python
 
 # Install opam 2
-RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.2/opam-2.0.2-x86_64-linux > /usr/bin/opam && \
+RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-linux > /usr/bin/opam && \
     chmod +x /usr/bin/opam
 
 # Disable sandboxing
