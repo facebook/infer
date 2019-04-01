@@ -59,6 +59,19 @@ module TransferFunctions = struct
 
   type nonrec extras = extras
 
+  let instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location mem =
+    match
+      Dom.Mem.get_latest_prune callee_exit_mem
+      |> Dom.LatestPrune.subst ~ret_id eval_sym_trace location
+    with
+    | Ok latest_prune' ->
+        Dom.Mem.set_latest_prune latest_prune' mem
+    | Error `SubstBottom ->
+        Dom.Mem.bottom
+    | Error `SubstFail ->
+        mem
+
+
   let instantiate_mem_reachable (ret_id, _) callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
@@ -104,6 +117,7 @@ module TransferFunctions = struct
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
     |> copy_reachable_locs_from (PowLoc.join formal_locs (Dom.Val.get_all_locs ret_val))
+    |> instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location
 
 
   let forget_ret_relation ret callee_pname mem =

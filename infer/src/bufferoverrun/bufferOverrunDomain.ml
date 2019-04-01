@@ -980,6 +980,22 @@ module PrunePairs = struct
 
   let forget locs x = filter (fun l _ -> not (PowLoc.mem l locs)) x
 
+  let subst x ({eval_locpath} as eval_sym_trace) location =
+    let open Result.Monad_infix in
+    let subst1 l pruned_val acc =
+      acc
+      >>= fun acc ->
+      match PowLoc.is_singleton_or_more (PowLoc.subst_loc l eval_locpath) with
+      | Singleton loc ->
+          Ok (add loc (PrunedVal.subst pruned_val eval_sym_trace location) acc)
+      | Empty ->
+          Error `SubstBottom
+      | More ->
+          Error `SubstFail
+    in
+    fold subst1 x (Ok empty)
+
+
   let is_reachable x = not (exists (fun _ v -> PrunedVal.is_empty v) x)
 end
 
@@ -999,12 +1015,16 @@ module LatestPrune = struct
      respectively.  There is no other memory updates after the latest
      prunings.
 
+     VRet (x, ptrue, pfalse): Similar to V, but this is for return
+     values of functions.
+
      Top: No information about the latest pruning. *)
   type t =
     | Latest of PrunePairs.t
     | TrueBranch of Pvar.t * PrunePairs.t
     | FalseBranch of Pvar.t * PrunePairs.t
     | V of Pvar.t * PrunePairs.t * PrunePairs.t
+    | VRet of Ident.t * PrunePairs.t * PrunePairs.t
     | Top
 
   let pvar_pp = Pvar.pp Pp.text
@@ -1020,6 +1040,8 @@ module LatestPrune = struct
         F.fprintf fmt "LatestPrune: false(%a) %a" pvar_pp v PrunePairs.pp p
     | V (v, p1, p2) ->
         F.fprintf fmt "LatestPrune: v(%a) %a / %a" pvar_pp v PrunePairs.pp p1 PrunePairs.pp p2
+    | VRet (v, p1, p2) ->
+        F.fprintf fmt "LatestPrune: ret(%a) %a / %a" Ident.pp v PrunePairs.pp p1 PrunePairs.pp p2
 
 
   let ( <= ) ~lhs ~rhs =
@@ -1039,6 +1061,10 @@ module LatestPrune = struct
           Pvar.equal x1 x2 && PrunePairs.( <= ) ~lhs:p1 ~rhs:p2
       | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) ->
           Pvar.equal x1 x2
+          && PrunePairs.( <= ) ~lhs:ptrue1 ~rhs:ptrue2
+          && PrunePairs.( <= ) ~lhs:pfalse1 ~rhs:pfalse2
+      | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) ->
+          Ident.equal x1 x2
           && PrunePairs.( <= ) ~lhs:ptrue1 ~rhs:ptrue2
           && PrunePairs.( <= ) ~lhs:pfalse1 ~rhs:pfalse2
       | _, _ ->
@@ -1071,6 +1097,8 @@ module LatestPrune = struct
         V (x1, ptrue, PrunePairs.join pfalse1 pfalse2)
     | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) when Pvar.equal x1 x2 ->
         V (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
+    | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) when Ident.equal x1 x2 ->
+        VRet (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
     | _, _ ->
         Top
 
@@ -1091,6 +1119,8 @@ module LatestPrune = struct
     | V (x, ptrue, pfalse) ->
         if is_mem_locs x then Top
         else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
+    | VRet (x, ptrue, pfalse) ->
+        VRet (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
     | Top ->
         Top
 
@@ -1105,6 +1135,41 @@ module LatestPrune = struct
         V (to_, ptrue, pfalse)
     | _ ->
         x
+
+
+  let subst ~ret_id ({eval_locpath} as eval_sym_trace) location =
+    let open Result.Monad_infix in
+    let subst_pvar x =
+      match PowLoc.is_singleton_or_more (PowLoc.subst_loc (Loc.of_pvar x) eval_locpath) with
+      | Empty ->
+          Error `SubstBottom
+      | Singleton (Loc.Var (Var.ProgramVar x')) ->
+          Ok x'
+      | Singleton _ | More ->
+          Error `SubstFail
+    in
+    function
+    | Latest p ->
+        PrunePairs.subst p eval_sym_trace location >>| fun p' -> Latest p'
+    | TrueBranch (x, p) ->
+        subst_pvar x
+        >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> TrueBranch (x', p')
+    | FalseBranch (x, p) ->
+        subst_pvar x
+        >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> FalseBranch (x', p')
+    | V (x, ptrue, pfalse) when Pvar.is_return x ->
+        PrunePairs.subst ptrue eval_sym_trace location
+        >>= fun ptrue' ->
+        PrunePairs.subst pfalse eval_sym_trace location
+        >>| fun pfalse' -> VRet (ret_id, ptrue', pfalse')
+    | V (x, ptrue, pfalse) ->
+        subst_pvar x
+        >>= fun x' ->
+        PrunePairs.subst ptrue eval_sym_trace location
+        >>= fun ptrue' ->
+        PrunePairs.subst pfalse eval_sym_trace location >>| fun pfalse' -> V (x', ptrue', pfalse')
+    | VRet _ | Top ->
+        Ok Top
 end
 
 module Reachability = struct
@@ -1125,7 +1190,7 @@ module Reachability = struct
     match latest_prune with
     | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
         of_prune_pairs p
-    | LatestPrune.V (_, ptrue, pfalse) ->
+    | LatestPrune.V (_, ptrue, pfalse) | LatestPrune.VRet (_, ptrue, pfalse) ->
         M.inter (of_prune_pairs ptrue) (of_prune_pairs pfalse)
     | LatestPrune.Top ->
         M.empty
@@ -1366,6 +1431,10 @@ module MemReach = struct
             (PrunePairs.fold apply1 prunes m, prunes)
         | _ ->
             (m, PrunePairs.empty) )
+      | LatestPrune.VRet (x, prunes, _), Exp.Var r
+      | LatestPrune.VRet (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
+          if Ident.equal x r then (PrunePairs.fold apply1 prunes m, prunes)
+          else (m, PrunePairs.empty)
       | _ ->
           (m, PrunePairs.empty)
 
@@ -1387,7 +1456,9 @@ module MemReach = struct
         {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
 
 
-  let get_latest_prune : t -> LatestPrune.t = fun {latest_prune} -> latest_prune
+  let get_latest_prune : _ t0 -> LatestPrune.t = fun {latest_prune} -> latest_prune
+
+  let set_latest_prune : LatestPrune.t -> t -> t = fun latest_prune x -> {x with latest_prune}
 
   let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> _ t0 -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
@@ -1589,8 +1660,12 @@ module Mem = struct
    fun ~updated_locs e1 e2 -> map ~f:(MemReach.update_latest_prune ~updated_locs e1 e2)
 
 
-  let get_latest_prune : t -> LatestPrune.t =
+  let get_latest_prune : _ t0 -> LatestPrune.t =
    fun m -> f_lift_default ~default:LatestPrune.Top MemReach.get_latest_prune m
+
+
+  let set_latest_prune : LatestPrune.t -> t -> t =
+   fun latest_prune m -> map ~f:(MemReach.set_latest_prune latest_prune) m
 
 
   let get_relation : t -> Relation.t =

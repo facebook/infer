@@ -59,7 +59,7 @@ void l1_symbolic_widened_Bad(int n) {
   }
 }
 
-void l1_symbolic_widened_Good_FP(int n) {
+void l1_symbolic_widened_Good(int n) {
   int a[n];
   for (int i = n; less_than(i, n); i++) {
     a[i] = 0;

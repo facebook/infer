@@ -167,7 +167,7 @@ void null_pruning2_Bad(int* p) {
 
 int greater_than(unsigned int x, unsigned int y) { return (x > y); }
 
-void call_greater_than_Good_FP() {
+void call_greater_than_Good() {
   unsigned int idx = 0;
   if (greater_than(idx, 0)) {
     idx = idx - 1;
