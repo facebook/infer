@@ -1,8 +1,0 @@
-java_library(
-    name='module1',
-    srcs=['Class1.java'],
-    deps=[],
-    visibility=[
-        'PUBLIC'
-    ],
-)

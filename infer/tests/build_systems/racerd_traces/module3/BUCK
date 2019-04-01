@@ -1,7 +1,0 @@
-java_library(
-    name='module3',
-    srcs=['Class3.java'],
-    deps=[
-        '//infer/tests/build_systems/racerd_traces/module2:module2',
-    ]
-)
