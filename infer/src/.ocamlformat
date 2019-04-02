@@ -1,0 +1,4 @@
+profile = ocamlformat
+let-binding-spacing = sparse
+margin = 100
+version = 0.9
