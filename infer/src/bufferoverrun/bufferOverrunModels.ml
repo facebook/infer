@@ -33,6 +33,20 @@ let no_model =
   {exec; check= no_check}
 
 
+let at ?(size = Int64.zero) array_exp index_exp =
+  (* TODO? use size *)
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    L.d_printfln_escaped "Using model std::array<_, %Ld>::at" size ;
+    Dom.Mem.add_stack (Loc.of_id id)
+      (Sem.eval_lindex integer_type_widths array_exp index_exp mem)
+      mem
+  and check {location; integer_type_widths} mem cond_set =
+    BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem
+      location cond_set
+  in
+  {exec; check}
+
+
 (* It returns a tuple of:
      - type of array element
      - stride of the type
@@ -418,6 +432,37 @@ let snprintf = by_risky_value_from Trace.snprintf Dom.Val.Itv.nat
 
 let vsnprintf = by_risky_value_from Trace.vsnprintf Dom.Val.Itv.nat
 
+module CFArray = struct
+  (** Creates a new array from the given array by copying the first X
+     elements. *)
+  let create_array src_exp size_exp =
+    let {exec= malloc_exec; check= _} = malloc ~can_be_zero:true size_exp in
+    let exec model_env ~ret:((id, _) as ret) mem =
+      let mem = malloc_exec model_env ~ret mem in
+      let dest_loc = Loc.of_id id |> PowLoc.singleton in
+      let dest_arr_loc = Dom.Val.get_array_locs (Dom.Mem.find_set dest_loc mem) in
+      let src_arr_v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
+      Dom.Mem.update_mem dest_arr_loc src_arr_v mem
+    and check {location; integer_type_widths} mem cond_set =
+      BoUtils.Check.lindex integer_type_widths ~array_exp:src_exp ~index_exp:size_exp
+        ~last_included:true mem location cond_set
+    in
+    {exec; check}
+
+
+  (** Creates a new array with the values from the given array.*)
+  let create_copy_array src_exp =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
+      let dest_loc = Loc.of_id id |> PowLoc.singleton in
+      let v = Sem.eval integer_type_widths src_exp mem in
+      Dom.Mem.update_mem dest_loc v mem
+    in
+    {exec; check= no_check}
+
+
+  let at (array_exp, _) (index_exp, _) = at ?size:None array_exp index_exp
+end
+
 module Split = struct
   let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
     let increment = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
@@ -462,19 +507,7 @@ module StdArray = struct
     {exec; check= no_check}
 
 
-  let at _size (array_exp, _) (index_exp, _) =
-    (* TODO? use size *)
-    let exec {integer_type_widths} ~ret:(id, _) mem =
-      L.d_printfln_escaped "Using model std::array<_, %Ld>::at" _size ;
-      Dom.Mem.add_stack (Loc.of_id id)
-        (Sem.eval_lindex integer_type_widths array_exp index_exp mem)
-        mem
-    and check {location; integer_type_widths} mem cond_set =
-      BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem
-        location cond_set
-    in
-    {exec; check}
-
+  let at size (array_exp, _) (index_exp, _) = at ~size array_exp index_exp
 
   let begin_ _size (array_exp, _) =
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
@@ -734,6 +767,12 @@ module Call = struct
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
       ; -"__variable_initialization" <>$ capt_arg $!--> variable_initialization
       ; -"__exit" <>--> bottom
+      ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
+      ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> CFArray.create_copy_array
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> StdBasicString.length
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
+      ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> CFArray.at
       ; -"exit" <>--> bottom
       ; -"__cast" <>$ capt_exp $+...$--> cast
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
