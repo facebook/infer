@@ -169,6 +169,8 @@ val expensive_allocation_call : t
 
 val expensive_IO_call : t
 
+val expensive_execution_time_call_cold_start : t
+
 val exposed_insecure_intent_handling : t
 
 val failure_exe : t
@@ -242,6 +244,8 @@ val nullsafe_nullable_dereference : t
 val parameter_not_null_checked : t
 
 val performance_variation : t
+
+val performance_variation_critical_cold_start : t
 
 val pointer_size_mismatch : t
 

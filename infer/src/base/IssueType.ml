@@ -258,6 +258,10 @@ let expensive_allocation_call = from_string ~enabled:false "EXPENSIVE_ALLOCATION
 
 let expensive_IO_call = from_string ~enabled:false "EXPENSIVE_IO_TIME_CALL"
 
+let expensive_execution_time_call_cold_start =
+  from_string ~enabled:false "EXPENSIVE_EXECUTION_CALL_IN_COLD_START"
+
+
 let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HANDLING"
 
 let failure_exe = from_string "Failure_exe"
@@ -342,6 +346,8 @@ let nullsafe_nullable_dereference =
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
 let performance_variation = from_string "PERFORMANCE_VARIATION"
+
+let performance_variation_critical_cold_start = from_string "PERFORMANCE_VARIATION_COLD_START"
 
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 

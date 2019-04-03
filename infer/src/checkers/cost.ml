@@ -718,7 +718,7 @@ module Check = struct
         Polynomials.TopTraces.make_err_trace trace
 
 
-  let report_threshold summary ~name ~location ~cost ~threshold ~kind =
+  let report_threshold proc_desc summary ~name ~location ~cost ~threshold ~kind =
     let degree_str =
       match BasicCost.degree cost with
       | Some degree ->
@@ -731,7 +731,12 @@ module Check = struct
       | CostDomain.AllocationCost ->
           IssueType.expensive_allocation_call
       | CostDomain.OperationCost ->
-          IssueType.expensive_execution_time_call
+          L.(debug Analysis Medium)
+            "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp
+            (Procdesc.get_proc_name proc_desc) ;
+          if ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc) then
+            IssueType.expensive_execution_time_call_cold_start
+          else IssueType.expensive_execution_time_call
       | CostDomain.IOCost ->
           IssueType.expensive_IO_call
     in
@@ -772,8 +777,8 @@ module Check = struct
       | ThresholdReports.Threshold _ ->
           ()
       | ThresholdReports.ReportOn {location; cost} ->
-          report_threshold summary ~name ~location ~cost ~threshold:(Option.value_exn threshold)
-            ~kind ) ;
+          report_threshold proc_desc summary ~name ~location ~cost
+            ~threshold:(Option.value_exn threshold) ~kind ) ;
     CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
       ~f:(fun _kind ReportConfig.{name; top_and_bottom} cost ->
         if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )

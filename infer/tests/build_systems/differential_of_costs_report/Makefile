@@ -6,7 +6,7 @@
 # E2E test for differential of costs
 
 TESTS_DIR = ../..
-SOURCES = src/DiffExample.java.current src/DiffExample.java.previous
+SOURCES = src/DiffExample.java.current src/DiffExample.java.previous src/DiffExampleColdStart.java.current src/DiffExampleColdStart.java.previous
 CLEAN_EXTRA = src/Diff*.java *.class
 include $(TESTS_DIR)/differential.make
 INFERPRINT_ISSUES_FIELDS = \
@@ -16,10 +16,12 @@ $(CURRENT_REPORT) $(PREVIOUS_REPORT): $(JAVA_DEPS)
 
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java
+	$(QUIET)$(COPY) src/DiffExampleColdStart.java.current src/DiffExampleColdStart.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: current,\
 	$(INFER_BIN) --enable-issue-type INFINITE_EXECUTION_TIME_CALL --cost-only -o $(CURRENT_DIR) -- $(JAVAC) src/*.java)
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
+	$(QUIET)$(COPY) src/DiffExampleColdStart.java.previous src/DiffExampleColdStart.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: previous,\
-	$(INFER_BIN) --enable-issue-type INFINITE_EXECUTION_TIME_CALL --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)
+	$(INFER_BIN) --debug --enable-issue-type INFINITE_EXECUTION_TIME_CALL --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)

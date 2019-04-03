@@ -138,10 +138,29 @@ let to_map key_func report =
 
 let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
+  let class_name, method_name =
+    match String.split cost_info.Jsonbug_t.procedure_id ~on:'(' with
+    | [qualified_function; _] -> (
+      match String.split qualified_function ~on:'.' with
+      | [class_name; method_name] ->
+          (class_name, method_name)
+      | _ ->
+          ("", cost_info.Jsonbug_t.procedure_id) )
+    | _ ->
+        ("", cost_info.Jsonbug_t.procedure_id)
+  in
+  let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
+  Logging.internal_error
+    "@\n\
+     [DIFF ANALYSIS] class_name = '%s' method_name = '%s'    procedure_id = '%s'   Procname = \
+     '%a' @\n"
+    class_name method_name cost_info.Jsonbug_t.procedure_id Typ.Procname.pp procname ;
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_execution_time_call
     else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
+    else if ExternalPerfData.in_profiler_data_map procname then
+      IssueType.performance_variation_critical_cold_start
     else IssueType.performance_variation
   in
   let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
