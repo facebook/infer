@@ -12,6 +12,7 @@ SOURCES = \
   ../types/attributes.m \
   ../types/void_call.m \
   ../vardecl/initlist.m \
+  ../synchronizedStmt/sync.m \
   ../shared/block/BlockVar.m \
 	../shared/block/Blocks_as_parameters.m \
   ../shared/memory_leaks_benchmark/ArcExample.m \

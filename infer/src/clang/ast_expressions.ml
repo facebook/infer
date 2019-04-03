@@ -184,6 +184,23 @@ let make_next_object_exp stmt_info item items =
   (assignment, loop_cond)
 
 
+let make_function_call stmt_info fname params =
+  let expr_info = make_expr_info (builtin_to_qual_type `Void) `XValue `Ordinary in
+  let name_decl_info = {Clang_ast_t.ni_name= fname; ni_qual_name= [fname]} in
+  let decl_ref =
+    make_decl_ref `Function 0 name_decl_info false (Some (builtin_to_qual_type `Void))
+  in
+  let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
+  let decl_ref_expr = Clang_ast_t.DeclRefExpr (stmt_info, [], expr_info, decl_ref_expr_info) in
+  let implicit_cast_expr =
+    create_implicit_cast_expr stmt_info [decl_ref_expr]
+      (builtin_to_qual_type `Void)
+      `FunctionToPointerDecay
+  in
+  let stmts = implicit_cast_expr :: params in
+  Clang_ast_t.CallExpr (stmt_info, stmts, expr_info)
+
+
 (* We translate an expression with a conditional*)
 (* x <=> x?1:0 *)
 let trans_with_conditional stmt_info expr_info stmt_list =

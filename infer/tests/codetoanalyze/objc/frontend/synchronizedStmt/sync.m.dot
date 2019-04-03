@@ -1,0 +1,30 @@
+/* @generated */
+digraph cfg {
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_1" [label="1: Start A_myMethod:\nFormals:  self:A* anObj:objc_object*\nLocals:  x:int \n  " color=yellow style=filled]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_1" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" ;
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_2" [label="2: Exit A_myMethod: \n  " color=yellow style=filled]
+	
+
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_3" [label="3:  Call _fun___delete_locked_attribute \n   n$0=*&anObj:objc_object* [line 19, column 17]\n  n$1=_fun___delete_locked_attribute(n$0:objc_object*) [line 19, column 3]\n  NULLIFY(&anObj); [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1,anObj); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_3" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_2" ;
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_4" [label="4:  Call _fun_foo \n   n$2=*&x:int [line 26, column 9]\n  n$3=_fun_foo(n$2:int) [line 26, column 5]\n  NULLIFY(&x); [line 26, column 5]\n  EXIT_SCOPE(n$2,n$3,x); [line 26, column 5]\n " shape="box"]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_4" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_3" ;
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_5" [label="5:  UnaryOperator \n   n$4=*&x:int [line 25, column 5]\n  *&x:int=(n$4 + 1) [line 25, column 5]\n  EXIT_SCOPE(n$4); [line 25, column 5]\n " shape="box"]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_5" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_4" ;
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" [label="6:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) assign_last [line 24, column 5]\n  *&x:int=0 [line 24, column 5]\n  EXIT_SCOPE(n$5); [line 24, column 5]\n " shape="box"]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_5" ;
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" [label="7:  Call _fun___set_locked_attribute \n   n$6=*&anObj:objc_object* [line 19, column 17]\n  n$7=_fun___set_locked_attribute(n$6:objc_object*) [line 19, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 19, column 3]\n " shape="box"]
+	
+
+	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" ;
+}

@@ -26,6 +26,8 @@ val create_implicit_cast_expr : stmt_info -> stmt list -> qual_type -> cast_kind
 val make_obj_c_message_expr_info_class :
   string -> Typ.Name.t -> pointer option -> obj_c_message_expr_info
 
+val make_function_call : stmt_info -> string -> stmt list -> stmt
+
 val trans_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
 (** We translate an expression with a conditional
     x <=> x?1:0 *)
