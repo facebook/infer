@@ -439,3 +439,18 @@ class ExtendsClassOnUiThread extends AllMethodsOnUiThread {
     return super.bar();
   }
 }
+
+// All annotations that start with "On" are assumed to be on the main thread
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnXYZ {}
+
+@ThreadSafe
+class WeirdAnnotation {
+  int f;
+
+  @OnXYZ
+  void fooOk() {
+    f = 0;
+  }
+}

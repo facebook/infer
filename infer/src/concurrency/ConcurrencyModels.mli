@@ -47,7 +47,7 @@ val runs_on_ui_thread :
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> (Typ.name * Typ.name list) option
 
-val find_annotated_or_overriden_annotated_method :
+val find_method_or_override_annotated :
      attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
   -> (Annot.Item.t -> bool)
   -> Typ.Procname.t

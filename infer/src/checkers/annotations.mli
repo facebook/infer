@@ -41,11 +41,16 @@ val thread_confined : string
 
 val thread_safe : string
 
+val mainthread : string
+
 val ui_thread : string
 
 val visibleForTesting : string
 
 val generated_graphql : string
+
+val get_annot_ending : Annot.t -> string
+(** get the '.'-last component of an annotation *)
 
 val annot_ends_with : Annot.t -> string -> bool
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
@@ -92,18 +97,6 @@ val ia_is_inject : Annot.Item.t -> bool
 
 val ia_is_suppress_lint : Annot.Item.t -> bool
 
-val ia_is_on_event : Annot.Item.t -> bool
-
-val ia_is_on_bind : Annot.Item.t -> bool
-
-val ia_is_on_mount : Annot.Item.t -> bool
-
-val ia_is_on_unbind : Annot.Item.t -> bool
-
-val ia_is_on_unmount : Annot.Item.t -> bool
-
-val ia_is_mainthread : Annot.Item.t -> bool
-
 val ia_is_not_thread_safe : Annot.Item.t -> bool
 
 val ia_is_nonblocking : Annot.Item.t -> bool
@@ -117,8 +110,6 @@ val ia_is_thread_safe : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
 
 val ia_is_thrift_service : Annot.Item.t -> bool
-
-val ia_is_ui_thread : Annot.Item.t -> bool
 
 val ia_is_volatile : Annot.Item.t -> bool
 

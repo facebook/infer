@@ -342,8 +342,8 @@ let is_thread_safe_class pname tenv =
 
 
 let is_thread_safe_method pname tenv =
-  find_annotated_or_overriden_annotated_method ~attrs_of_pname:Summary.proc_resolve_attributes
-    is_thread_safe pname tenv
+  find_method_or_override_annotated ~attrs_of_pname:Summary.proc_resolve_attributes is_thread_safe
+    pname tenv
   |> Option.is_some
 
 

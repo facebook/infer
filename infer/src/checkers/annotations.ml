@@ -57,16 +57,6 @@ let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"
 
-let on_bind = "OnBind"
-
-let on_event = "OnEvent"
-
-let on_mount = "OnMount"
-
-let on_unbind = "OnUnbind"
-
-let on_unmount = "OnUnmount"
-
 let mainthread = "MainThread"
 
 let nonblocking = "NonBlocking"
@@ -121,15 +111,13 @@ let ma_has_annotation_with ({return; params} : Annot.Method.t) (predicate : Anno
   has_annot return || List.exists ~f:has_annot params
 
 
+let get_annot_ending ({class_name} : Annot.t) =
+  String.rsplit2 class_name ~on:'.' |> Option.value_map ~default:class_name ~f:snd
+
+
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
-let annot_ends_with annot ann_name =
-  match String.rsplit2 annot.Annot.class_name ~on:'.' with
-  | None ->
-      String.equal annot.Annot.class_name ann_name
-  | Some (_, annot_class_name) ->
-      String.equal annot_class_name ann_name
-
+let annot_ends_with annot ann_name = String.equal ann_name (get_annot_ending annot)
 
 let class_name_matches s ((annot : Annot.t), _) = String.equal s annot.class_name
 
@@ -233,20 +221,6 @@ let ia_is_ignore_allocations ia = ia_ends_with ia ignore_allocations
 let ia_is_inject ia = ia_ends_with ia inject
 
 let ia_is_suppress_lint ia = ia_ends_with ia suppress_lint
-
-let ia_is_on_event ia = ia_ends_with ia on_event
-
-let ia_is_on_bind ia = ia_ends_with ia on_bind
-
-let ia_is_on_mount ia = ia_ends_with ia on_mount
-
-let ia_is_on_unbind ia = ia_ends_with ia on_unbind
-
-let ia_is_on_unmount ia = ia_ends_with ia on_unmount
-
-let ia_is_ui_thread ia = ia_ends_with ia ui_thread
-
-let ia_is_mainthread ia = ia_ends_with ia mainthread
 
 let ia_is_thread_confined ia = ia_ends_with ia thread_confined
 

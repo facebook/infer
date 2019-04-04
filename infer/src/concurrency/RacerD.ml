@@ -480,18 +480,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate' with accesses}
 
 
-  let if_none_then = IOption.value_default_f
-
-  let if_none_do ~f x = match x with None -> f () | Some _ -> x
-
   let exec_instr (astate : Domain.t) ({ProcData.pdesc} as proc_data) _ (instr : HilInstr.t) =
     match instr with
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let astate = add_reads actuals loc astate proc_data in
         treat_call_acquiring_ownership ret_base callee_pname actuals loc proc_data astate ()
-        |> if_none_do
+        |> IOption.if_none_evalopt
              ~f:(treat_container_accesses ret_base callee_pname actuals loc proc_data astate)
-        |> if_none_then
+        |> IOption.if_none_eval
              ~f:(do_proc_call ret_base callee_pname actuals call_flags loc proc_data astate)
     | Call (_, Indirect _, _, _, _) ->
         if Typ.Procname.is_java (Procdesc.get_proc_name pdesc) then
