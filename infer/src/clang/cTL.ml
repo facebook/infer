@@ -1004,8 +1004,10 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_binop_with_kind an kind
   | "is_class", [cname], an ->
       CPredicates.is_class an cname
-  | "is_const_var", [], an ->
+  | "is_const_expr_var", [], an ->
       CPredicates.is_const_expr_var an
+  | "is_init_integral_constant_expr", [], an ->
+      CPredicates.is_init_integral_constant_expr an
   | "is_qual_type_const", [], an ->
       CPredicates.is_qual_type_const an
   | "has_init_list_const_expr", [], an ->

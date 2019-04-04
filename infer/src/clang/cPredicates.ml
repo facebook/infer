@@ -523,6 +523,14 @@ let is_const_expr_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
 
 
+let is_init_integral_constant_expr an =
+  match an with
+  | Ctl_parser_types.Decl d -> (
+    match d with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_init_ice | _ -> false )
+  | _ ->
+      false
+
+
 let is_qual_type_const an =
   match an with
   | Ctl_parser_types.Stmt s -> (

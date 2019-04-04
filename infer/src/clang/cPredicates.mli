@@ -45,6 +45,9 @@ val is_static_local_var : Ctl_parser_types.ast_node -> bool
 val is_const_expr_var : Ctl_parser_types.ast_node -> bool
 (** 'is_const_expr_var an' is true iff an is a 'const' variable declaration *)
 
+val is_init_integral_constant_expr : Ctl_parser_types.ast_node -> bool
+(** 'is_init_integra_constant_expr an' is true iff it is an initializer and an integral constant expression, or in C++11, whether the initializer is a constant expression. *)
+
 val is_qual_type_const : Ctl_parser_types.ast_node -> bool
 (** 'is_qual_type_const an' is true iff an is a qual_type 'const' expression *)
 
