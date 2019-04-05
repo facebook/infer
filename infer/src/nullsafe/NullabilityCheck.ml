@@ -60,7 +60,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let container_method_regex =
-    Str.regexp @@ "^\\(NS.*_\\(arrayByAddingObject\\|arrayWithObjects\\|"
+    Str.regexp @@ "^\\(NS.*::\\(arrayByAddingObject\\|arrayWithObjects\\|"
     ^ "dictionaryWithObjects\\|dictionaryWithObjectsAndKeys\\|initWithObjectsAndKeys\\|"
     ^ "addObject\\|insertObject\\|setObject\\|"
     ^ "stringWithUTF8String\\|stringWithString\\|initWithFormat\\|stringByAppendingString\\):\\|"

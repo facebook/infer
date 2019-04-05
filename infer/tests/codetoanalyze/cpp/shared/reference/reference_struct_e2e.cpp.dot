@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:X) assign_last [line 27, column 1]\n  n$0=_fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:X*) [line 27, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:X) assign_last [line 27, column 1]\n  n$0=_fun_X::X(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:X*) [line 27, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 27, column 3]\n  APPLY_ABSTRACTION; [line 27, column 3]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -35,7 +35,7 @@ digraph cfg {
 	
 
 	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_6" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_3" ;
-"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 48, column 12]\n  _=*n$2:X [line 48, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 48, column 12]\n  *&return:int=n$4 [line 48, column 5]\n  NULLIFY(&x); [line 48, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 48, column 5]\n  APPLY_ABSTRACTION; [line 48, column 5]\n " shape="box"]
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 48, column 12]\n  _=*n$2:X [line 48, column 12]\n  n$4=_fun_X::div(n$2:X*) [line 48, column 12]\n  *&return:int=n$4 [line 48, column 5]\n  NULLIFY(&x); [line 48, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 48, column 5]\n  APPLY_ABSTRACTION; [line 48, column 5]\n " shape="box"]
 	
 
 	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_2" ;
@@ -50,7 +50,7 @@ digraph cfg {
 "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_2" [label="2: Exit field_div0_ref \n  " color=yellow style=filled]
 	
 
-"field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 95, column 10]\n  _=*n$0:X [line 95, column 10]\n  n$2=_fun_X_div(n$0:X&) [line 95, column 10]\n  *&return:int=n$2 [line 95, column 3]\n  NULLIFY(&x); [line 95, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 95, column 3]\n  APPLY_ABSTRACTION; [line 95, column 3]\n " shape="box"]
+"field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 95, column 10]\n  _=*n$0:X [line 95, column 10]\n  n$2=_fun_X::div(n$0:X&) [line 95, column 10]\n  *&return:int=n$2 [line 95, column 3]\n  NULLIFY(&x); [line 95, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 95, column 3]\n  APPLY_ABSTRACTION; [line 95, column 3]\n " shape="box"]
 	
 
 	 "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_3" -> "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_2" ;
@@ -82,7 +82,7 @@ digraph cfg {
 	
 
 	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_6" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_3" ;
-"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 55, column 12]\n  _=*n$2:X [line 55, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 55, column 12]\n  *&return:int=n$4 [line 55, column 5]\n  NULLIFY(&x); [line 55, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 55, column 5]\n  APPLY_ABSTRACTION; [line 55, column 5]\n " shape="box"]
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 55, column 12]\n  _=*n$2:X [line 55, column 12]\n  n$4=_fun_X::div(n$2:X*) [line 55, column 12]\n  *&return:int=n$4 [line 55, column 5]\n  NULLIFY(&x); [line 55, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 55, column 5]\n  APPLY_ABSTRACTION; [line 55, column 5]\n " shape="box"]
 	
 
 	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_2" ;
@@ -97,7 +97,7 @@ digraph cfg {
 "field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_2" [label="2: Exit field_div1_ref \n  " color=yellow style=filled]
 	
 
-"field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 100, column 10]\n  _=*n$0:X [line 100, column 10]\n  n$2=_fun_X_div(n$0:X&) [line 100, column 10]\n  *&return:int=n$2 [line 100, column 3]\n  NULLIFY(&x); [line 100, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 100, column 3]\n  APPLY_ABSTRACTION; [line 100, column 3]\n " shape="box"]
+"field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 100, column 10]\n  _=*n$0:X [line 100, column 10]\n  n$2=_fun_X::div(n$0:X&) [line 100, column 10]\n  *&return:int=n$2 [line 100, column 3]\n  NULLIFY(&x); [line 100, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 100, column 3]\n  APPLY_ABSTRACTION; [line 100, column 3]\n " shape="box"]
 	
 
 	 "field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_3" -> "field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_2" ;
@@ -123,7 +123,7 @@ digraph cfg {
 "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_2" [label="2: Exit get_global_ptr_div0_field \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ptr() [line 74, column 3]\n  _=*n$1:X [line 74, column 3]\n  n$3=_fun_X_div(n$1:X*) [line 74, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 74, column 3]\n  APPLY_ABSTRACTION; [line 74, column 3]\n " shape="box"]
+"get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ptr() [line 74, column 3]\n  _=*n$1:X [line 74, column 3]\n  n$3=_fun_X::div(n$1:X*) [line 74, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 74, column 3]\n  APPLY_ABSTRACTION; [line 74, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_3" -> "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_2" ;
@@ -131,7 +131,7 @@ digraph cfg {
 	
 
 	 "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_4" -> "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_3" ;
-"get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_5" [label="5:  Call _fun_X_nonzero \n   n$5=_fun_get_global_ptr() [line 72, column 3]\n  _=*n$5:X [line 72, column 3]\n  n$7=_fun_X_nonzero(n$5:X*) [line 72, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 72, column 3]\n " shape="box"]
+"get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_5" [label="5:  Call _fun_X::nonzero \n   n$5=_fun_get_global_ptr() [line 72, column 3]\n  _=*n$5:X [line 72, column 3]\n  n$7=_fun_X::nonzero(n$5:X*) [line 72, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 72, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_5" -> "get_global_ptr_div0_field#8708891951617234281.85a5d13d32b9177abaa3c8c98323c45e_4" ;
@@ -142,11 +142,11 @@ digraph cfg {
 "get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_2" [label="2: Exit get_global_ptr_div0_method \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ptr() [line 62, column 3]\n  _=*n$1:X [line 62, column 3]\n  n$3=_fun_X_div(n$1:X*) [line 62, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 62, column 3]\n  APPLY_ABSTRACTION; [line 62, column 3]\n " shape="box"]
+"get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ptr() [line 62, column 3]\n  _=*n$1:X [line 62, column 3]\n  n$3=_fun_X::div(n$1:X*) [line 62, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 62, column 3]\n  APPLY_ABSTRACTION; [line 62, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_3" -> "get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_2" ;
-"get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_4" [label="4:  Call _fun_X_zero \n   n$4=_fun_get_global_ptr() [line 61, column 3]\n  _=*n$4:X [line 61, column 3]\n  n$6=_fun_X_zero(n$4:X*) [line 61, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 61, column 3]\n " shape="box"]
+"get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_4" [label="4:  Call _fun_X::zero \n   n$4=_fun_get_global_ptr() [line 61, column 3]\n  _=*n$4:X [line 61, column 3]\n  n$6=_fun_X::zero(n$4:X*) [line 61, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 61, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_4" -> "get_global_ptr_div0_method#6868600075123047675.d796dd8227b55f7d5d2ba2c1a06183dd_3" ;
@@ -161,7 +161,7 @@ digraph cfg {
 "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_2" [label="2: Exit get_global_ptr_div1_field \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ptr() [line 80, column 3]\n  _=*n$1:X [line 80, column 3]\n  n$3=_fun_X_div(n$1:X*) [line 80, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 80, column 3]\n  APPLY_ABSTRACTION; [line 80, column 3]\n " shape="box"]
+"get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ptr() [line 80, column 3]\n  _=*n$1:X [line 80, column 3]\n  n$3=_fun_X::div(n$1:X*) [line 80, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 80, column 3]\n  APPLY_ABSTRACTION; [line 80, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_3" -> "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_2" ;
@@ -169,7 +169,7 @@ digraph cfg {
 	
 
 	 "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_4" -> "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_3" ;
-"get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_5" [label="5:  Call _fun_X_zero \n   n$5=_fun_get_global_ptr() [line 78, column 3]\n  _=*n$5:X [line 78, column 3]\n  n$7=_fun_X_zero(n$5:X*) [line 78, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 78, column 3]\n " shape="box"]
+"get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_5" [label="5:  Call _fun_X::zero \n   n$5=_fun_get_global_ptr() [line 78, column 3]\n  _=*n$5:X [line 78, column 3]\n  n$7=_fun_X::zero(n$5:X*) [line 78, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 78, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_5" -> "get_global_ptr_div1_field#6744083307199058304.94ebaff789d09fecbd24e3f8bfd75e70_4" ;
@@ -180,11 +180,11 @@ digraph cfg {
 "get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_2" [label="2: Exit get_global_ptr_div1_method \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ptr() [line 68, column 3]\n  _=*n$1:X [line 68, column 3]\n  n$3=_fun_X_div(n$1:X*) [line 68, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 68, column 3]\n  APPLY_ABSTRACTION; [line 68, column 3]\n " shape="box"]
+"get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ptr() [line 68, column 3]\n  _=*n$1:X [line 68, column 3]\n  n$3=_fun_X::div(n$1:X*) [line 68, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 68, column 3]\n  APPLY_ABSTRACTION; [line 68, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_3" -> "get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_2" ;
-"get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_4" [label="4:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ptr() [line 67, column 3]\n  _=*n$4:X [line 67, column 3]\n  n$6=_fun_X_nonzero(n$4:X*) [line 67, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 67, column 3]\n " shape="box"]
+"get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_4" [label="4:  Call _fun_X::nonzero \n   n$4=_fun_get_global_ptr() [line 67, column 3]\n  _=*n$4:X [line 67, column 3]\n  n$6=_fun_X::nonzero(n$4:X*) [line 67, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 67, column 3]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_4" -> "get_global_ptr_div1_method#13320237176965265316.b7b17bcc9c036a753453d67e3683d764_3" ;
@@ -210,7 +210,7 @@ digraph cfg {
 "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_2" [label="2: Exit get_global_ref_div0_field \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ref() [line 118, column 3]\n  _=*n$1:X [line 118, column 3]\n  n$3=_fun_X_div(n$1:X&) [line 118, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 118, column 3]\n  APPLY_ABSTRACTION; [line 118, column 3]\n " shape="box"]
+"get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ref() [line 118, column 3]\n  _=*n$1:X [line 118, column 3]\n  n$3=_fun_X::div(n$1:X&) [line 118, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 118, column 3]\n  APPLY_ABSTRACTION; [line 118, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_3" -> "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_2" ;
@@ -218,7 +218,7 @@ digraph cfg {
 	
 
 	 "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_4" -> "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_3" ;
-"get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_5" [label="5:  Call _fun_X_nonzero \n   n$5=_fun_get_global_ref() [line 116, column 3]\n  _=*n$5:X [line 116, column 3]\n  n$7=_fun_X_nonzero(n$5:X&) [line 116, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 116, column 3]\n " shape="box"]
+"get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_5" [label="5:  Call _fun_X::nonzero \n   n$5=_fun_get_global_ref() [line 116, column 3]\n  _=*n$5:X [line 116, column 3]\n  n$7=_fun_X::nonzero(n$5:X&) [line 116, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 116, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_5" -> "get_global_ref_div0_field#9894336115642083138.99dfafa929e6446e06064af81022e228_4" ;
@@ -229,11 +229,11 @@ digraph cfg {
 "get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_2" [label="2: Exit get_global_ref_div0_method \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ref() [line 106, column 3]\n  _=*n$1:X [line 106, column 3]\n  n$3=_fun_X_div(n$1:X&) [line 106, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 106, column 3]\n  APPLY_ABSTRACTION; [line 106, column 3]\n " shape="box"]
+"get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ref() [line 106, column 3]\n  _=*n$1:X [line 106, column 3]\n  n$3=_fun_X::div(n$1:X&) [line 106, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 106, column 3]\n  APPLY_ABSTRACTION; [line 106, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_3" -> "get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_2" ;
-"get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_4" [label="4:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 105, column 3]\n  _=*n$4:X [line 105, column 3]\n  n$6=_fun_X_zero(n$4:X&) [line 105, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 105, column 3]\n " shape="box"]
+"get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_4" [label="4:  Call _fun_X::zero \n   n$4=_fun_get_global_ref() [line 105, column 3]\n  _=*n$4:X [line 105, column 3]\n  n$6=_fun_X::zero(n$4:X&) [line 105, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 105, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_4" -> "get_global_ref_div0_method#4500024601676141702.703eacc20d3ff2ec6f40a78b62656e3a_3" ;
@@ -248,7 +248,7 @@ digraph cfg {
 "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_2" [label="2: Exit get_global_ref_div1_field \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ref() [line 124, column 3]\n  _=*n$1:X [line 124, column 3]\n  n$3=_fun_X_div(n$1:X&) [line 124, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 124, column 3]\n  APPLY_ABSTRACTION; [line 124, column 3]\n " shape="box"]
+"get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ref() [line 124, column 3]\n  _=*n$1:X [line 124, column 3]\n  n$3=_fun_X::div(n$1:X&) [line 124, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 124, column 3]\n  APPLY_ABSTRACTION; [line 124, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_3" -> "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_2" ;
@@ -256,7 +256,7 @@ digraph cfg {
 	
 
 	 "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_4" -> "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_3" ;
-"get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_5" [label="5:  Call _fun_X_zero \n   n$5=_fun_get_global_ref() [line 122, column 3]\n  _=*n$5:X [line 122, column 3]\n  n$7=_fun_X_zero(n$5:X&) [line 122, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 122, column 3]\n " shape="box"]
+"get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_5" [label="5:  Call _fun_X::zero \n   n$5=_fun_get_global_ref() [line 122, column 3]\n  _=*n$5:X [line 122, column 3]\n  n$7=_fun_X::zero(n$5:X&) [line 122, column 3]\n  EXIT_SCOPE(_,n$5,n$7); [line 122, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_5" -> "get_global_ref_div1_field#9400638526174087075.f2be9db8a45f6acda1c8ab83ffea2ce8_4" ;
@@ -267,11 +267,11 @@ digraph cfg {
 "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_2" [label="2: Exit get_global_ref_div1_method \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_3" [label="3:  Call _fun_X_div \n   n$1=_fun_get_global_ref() [line 112, column 3]\n  _=*n$1:X [line 112, column 3]\n  n$3=_fun_X_div(n$1:X&) [line 112, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 112, column 3]\n  APPLY_ABSTRACTION; [line 112, column 3]\n " shape="box"]
+"get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_3" [label="3:  Call _fun_X::div \n   n$1=_fun_get_global_ref() [line 112, column 3]\n  _=*n$1:X [line 112, column 3]\n  n$3=_fun_X::div(n$1:X&) [line 112, column 3]\n  EXIT_SCOPE(_,n$1,n$3); [line 112, column 3]\n  APPLY_ABSTRACTION; [line 112, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_3" -> "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_2" ;
-"get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_4" [label="4:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ref() [line 111, column 3]\n  _=*n$4:X [line 111, column 3]\n  n$6=_fun_X_nonzero(n$4:X&) [line 111, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 111, column 3]\n " shape="box"]
+"get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_4" [label="4:  Call _fun_X::nonzero \n   n$4=_fun_get_global_ref() [line 111, column 3]\n  _=*n$4:X [line 111, column 3]\n  n$6=_fun_X::nonzero(n$4:X&) [line 111, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 111, column 3]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_4" -> "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_3" ;
@@ -303,7 +303,7 @@ digraph cfg {
 	
 
 	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_6" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_3" ;
-"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 34, column 12]\n  _=*n$2:X [line 34, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 34, column 12]\n  *&return:int=n$4 [line 34, column 5]\n  NULLIFY(&x); [line 34, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 34, column 5]\n  APPLY_ABSTRACTION; [line 34, column 5]\n " shape="box"]
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 34, column 12]\n  _=*n$2:X [line 34, column 12]\n  n$4=_fun_X::div(n$2:X*) [line 34, column 12]\n  *&return:int=n$4 [line 34, column 5]\n  NULLIFY(&x); [line 34, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 34, column 5]\n  APPLY_ABSTRACTION; [line 34, column 5]\n " shape="box"]
 	
 
 	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_2" ;
@@ -318,7 +318,7 @@ digraph cfg {
 "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_2" [label="2: Exit method_div0_ref \n  " color=yellow style=filled]
 	
 
-"method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 85, column 10]\n  _=*n$0:X [line 85, column 10]\n  n$2=_fun_X_div(n$0:X&) [line 85, column 10]\n  *&return:int=n$2 [line 85, column 3]\n  NULLIFY(&x); [line 85, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 85, column 3]\n  APPLY_ABSTRACTION; [line 85, column 3]\n " shape="box"]
+"method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 85, column 10]\n  _=*n$0:X [line 85, column 10]\n  n$2=_fun_X::div(n$0:X&) [line 85, column 10]\n  *&return:int=n$2 [line 85, column 3]\n  NULLIFY(&x); [line 85, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 85, column 3]\n  APPLY_ABSTRACTION; [line 85, column 3]\n " shape="box"]
 	
 
 	 "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_3" -> "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_2" ;
@@ -350,7 +350,7 @@ digraph cfg {
 	
 
 	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_6" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_3" ;
-"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 41, column 12]\n  _=*n$2:X [line 41, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 41, column 12]\n  *&return:int=n$4 [line 41, column 5]\n  NULLIFY(&x); [line 41, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 41, column 5]\n  APPLY_ABSTRACTION; [line 41, column 5]\n " shape="box"]
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 41, column 12]\n  _=*n$2:X [line 41, column 12]\n  n$4=_fun_X::div(n$2:X*) [line 41, column 12]\n  *&return:int=n$4 [line 41, column 5]\n  NULLIFY(&x); [line 41, column 5]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 41, column 5]\n  APPLY_ABSTRACTION; [line 41, column 5]\n " shape="box"]
 	
 
 	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_2" ;
@@ -365,7 +365,7 @@ digraph cfg {
 "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_2" [label="2: Exit method_div1_ref \n  " color=yellow style=filled]
 	
 
-"method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 90, column 10]\n  _=*n$0:X [line 90, column 10]\n  n$2=_fun_X_div(n$0:X&) [line 90, column 10]\n  *&return:int=n$2 [line 90, column 3]\n  NULLIFY(&x); [line 90, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 90, column 3]\n  APPLY_ABSTRACTION; [line 90, column 3]\n " shape="box"]
+"method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 90, column 10]\n  _=*n$0:X [line 90, column 10]\n  n$2=_fun_X::div(n$0:X&) [line 90, column 10]\n  *&return:int=n$2 [line 90, column 3]\n  NULLIFY(&x); [line 90, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 90, column 3]\n  APPLY_ABSTRACTION; [line 90, column 3]\n " shape="box"]
 	
 
 	 "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_3" -> "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_2" ;
@@ -380,7 +380,7 @@ digraph cfg {
 "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_2" [label="2: Exit nonzero_ptr \n  " color=yellow style=filled]
 	
 
-"nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" [label="3:  Call _fun_X_nonzero \n   n$1=*&x:X* [line 17, column 26]\n  _=*n$1:X [line 17, column 26]\n  n$3=_fun_X_nonzero(n$1:X*) [line 17, column 26]\n  NULLIFY(&x); [line 17, column 26]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 17, column 26]\n  APPLY_ABSTRACTION; [line 17, column 26]\n " shape="box"]
+"nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" [label="3:  Call _fun_X::nonzero \n   n$1=*&x:X* [line 17, column 26]\n  _=*n$1:X [line 17, column 26]\n  n$3=_fun_X::nonzero(n$1:X*) [line 17, column 26]\n  NULLIFY(&x); [line 17, column 26]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 17, column 26]\n  APPLY_ABSTRACTION; [line 17, column 26]\n " shape="box"]
 	
 
 	 "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" -> "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_2" ;
@@ -391,7 +391,7 @@ digraph cfg {
 "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_2" [label="2: Exit nonzero_ref \n  " color=yellow style=filled]
 	
 
-"nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_3" [label="3:  Call _fun_X_nonzero \n   n$1=*&x:X& [line 23, column 26]\n  _=*n$1:X [line 23, column 26]\n  n$3=_fun_X_nonzero(n$1:X&) [line 23, column 26]\n  NULLIFY(&x); [line 23, column 26]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 23, column 26]\n  APPLY_ABSTRACTION; [line 23, column 26]\n " shape="box"]
+"nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_3" [label="3:  Call _fun_X::nonzero \n   n$1=*&x:X& [line 23, column 26]\n  _=*n$1:X [line 23, column 26]\n  n$3=_fun_X::nonzero(n$1:X&) [line 23, column 26]\n  NULLIFY(&x); [line 23, column 26]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 23, column 26]\n  APPLY_ABSTRACTION; [line 23, column 26]\n " shape="box"]
 	
 
 	 "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_3" -> "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_2" ;
@@ -424,7 +424,7 @@ digraph cfg {
 "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_2" [label="2: Exit zero_ptr \n  " color=yellow style=filled]
 	
 
-"zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" [label="3:  Call _fun_X_zero \n   n$1=*&x:X* [line 15, column 23]\n  _=*n$1:X [line 15, column 23]\n  n$3=_fun_X_zero(n$1:X*) [line 15, column 23]\n  NULLIFY(&x); [line 15, column 23]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 15, column 23]\n  APPLY_ABSTRACTION; [line 15, column 23]\n " shape="box"]
+"zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" [label="3:  Call _fun_X::zero \n   n$1=*&x:X* [line 15, column 23]\n  _=*n$1:X [line 15, column 23]\n  n$3=_fun_X::zero(n$1:X*) [line 15, column 23]\n  NULLIFY(&x); [line 15, column 23]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 15, column 23]\n  APPLY_ABSTRACTION; [line 15, column 23]\n " shape="box"]
 	
 
 	 "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" -> "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_2" ;
@@ -435,48 +435,48 @@ digraph cfg {
 "zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_2" [label="2: Exit zero_ref \n  " color=yellow style=filled]
 	
 
-"zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_3" [label="3:  Call _fun_X_zero \n   n$1=*&x:X& [line 21, column 23]\n  _=*n$1:X [line 21, column 23]\n  n$3=_fun_X_zero(n$1:X&) [line 21, column 23]\n  NULLIFY(&x); [line 21, column 23]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 21, column 23]\n  APPLY_ABSTRACTION; [line 21, column 23]\n " shape="box"]
+"zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_3" [label="3:  Call _fun_X::zero \n   n$1=*&x:X& [line 21, column 23]\n  _=*n$1:X [line 21, column 23]\n  n$3=_fun_X::zero(n$1:X&) [line 21, column 23]\n  NULLIFY(&x); [line 21, column 23]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 21, column 23]\n  APPLY_ABSTRACTION; [line 21, column 23]\n " shape="box"]
 	
 
 	 "zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_3" -> "zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_2" ;
-"nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_1" [label="1: Start X_nonzero\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_1" [label="1: Start X::nonzero\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_1" -> "nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_3" ;
-"nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_2" [label="2: Exit X_nonzero \n  " color=yellow style=filled]
+"nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_2" [label="2: Exit X::nonzero \n  " color=yellow style=filled]
 	
 
 "nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:X* [line 10, column 20]\n  *n$1.f:int=1 [line 10, column 20]\n  NULLIFY(&this); [line 10, column 20]\n  EXIT_SCOPE(n$1,this); [line 10, column 20]\n  APPLY_ABSTRACTION; [line 10, column 20]\n " shape="box"]
 	
 
 	 "nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_3" -> "nonzero#X#(11619218627491700674).1d7c44c6589f4c816f501055b35038bc_2" ;
-"zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_1" [label="1: Start X_zero\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_1" [label="1: Start X::zero\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_1" -> "zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_3" ;
-"zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_2" [label="2: Exit X_zero \n  " color=yellow style=filled]
+"zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_2" [label="2: Exit X::zero \n  " color=yellow style=filled]
 	
 
 "zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:X* [line 11, column 17]\n  *n$1.f:int=0 [line 11, column 17]\n  NULLIFY(&this); [line 11, column 17]\n  EXIT_SCOPE(n$1,this); [line 11, column 17]\n  APPLY_ABSTRACTION; [line 11, column 17]\n " shape="box"]
 	
 
 	 "zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_3" -> "zero#X#(16299302305861440992).e13842f7b98f126e5d2188644c16a995_2" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X::div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X_div \n  " color=yellow style=filled]
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X::div \n  " color=yellow style=filled]
 	
 
 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 12, column 26]\n  n$1=*n$0.f:int [line 12, column 26]\n  *&return:int=(1 / n$1) [line 12, column 15]\n  NULLIFY(&this); [line 12, column 15]\n  EXIT_SCOPE(n$0,n$1,this); [line 12, column 15]\n  APPLY_ABSTRACTION; [line 12, column 15]\n " shape="box"]
 	
 
 	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X::X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" -> "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
 }

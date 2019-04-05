@@ -7,23 +7,23 @@ digraph cfg {
 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_2" [label="2: Exit noskip \n   NULLIFY(&i); [line 36, column 1]\n " color=yellow style=filled]
 	
 
-"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_3" [label="3:  Call _fun_List<item>_add_byref \n   n$1=*&l:List<item>& [line 35, column 3]\n  _=*n$1:List<item> [line 35, column 3]\n  n$3=_fun_List<item>_add_byref(n$1:List<item>&,&i:item&) [line 35, column 3]\n  NULLIFY(&l); [line 35, column 3]\n  EXIT_SCOPE(_,n$1,n$3,i,l); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_3" [label="3:  Call _fun_List<item>::add_byref \n   n$1=*&l:List<item>& [line 35, column 3]\n  _=*n$1:List<item> [line 35, column 3]\n  n$3=_fun_List<item>::add_byref(n$1:List<item>&,&i:item&) [line 35, column 3]\n  NULLIFY(&l); [line 35, column 3]\n  EXIT_SCOPE(_,n$1,n$3,i,l); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_3" -> "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_2" ;
-"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" [label="4:  Call _fun_List<item>_add \n   n$4=*&l:List<item>& [line 34, column 3]\n  _=*n$4:List<item> [line 34, column 3]\n  n$6=_fun_List<item>_add(n$4:List<item>&,&i:item*) [line 34, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 34, column 3]\n " shape="box"]
+"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" [label="4:  Call _fun_List<item>::add \n   n$4=*&l:List<item>& [line 34, column 3]\n  _=*n$4:List<item> [line 34, column 3]\n  n$6=_fun_List<item>::add(n$4:List<item>&,&i:item*) [line 34, column 3]\n  EXIT_SCOPE(_,n$4,n$6); [line 34, column 3]\n " shape="box"]
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" -> "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_3" ;
-"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&i:item) assign_last [line 33, column 3]\n  n$7=_fun_item_item(&i:item*) [line 33, column 8]\n  EXIT_SCOPE(n$7,n$8); [line 33, column 8]\n " shape="box"]
+"noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&i:item) assign_last [line 33, column 3]\n  n$7=_fun_item::item(&i:item*) [line 33, column 8]\n  EXIT_SCOPE(n$7,n$8); [line 33, column 8]\n " shape="box"]
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_5" -> "noskip#6149941428299352091.c0e56085ae3c9567084b0f9e4211cfc0_4" ;
-"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" [label="1: Start List<item>_List\nFormals:  this:List<item>* next_ptr:void\nLocals:  \n  " color=yellow style=filled]
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" [label="1: Start List<item>::List\nFormals:  this:List<item>* next_ptr:void\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" ;
-"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_2" [label="2: Exit List<item>_List \n  " color=yellow style=filled]
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_2" [label="2: Exit List<item>::List \n  " color=yellow style=filled]
 	
 
 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" [label="3:  Constructor Init \n   n$2=*&this:List<item>* [line 14, column 42]\n  n$3=*&next_ptr:void [line 14, column 51]\n  *n$2.next_ptr:void=n$3 [line 14, column 42]\n  NULLIFY(&next_ptr); [line 14, column 42]\n  NULLIFY(&this); [line 14, column 42]\n  EXIT_SCOPE(n$2,n$3,next_ptr,this); [line 14, column 42]\n  APPLY_ABSTRACTION; [line 14, column 42]\n " shape="box"]
@@ -34,11 +34,11 @@ digraph cfg {
 	
 
 	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" ;
-"item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_1" [label="1: Start item_item\nFormals:  this:item*\nLocals:  \n  " color=yellow style=filled]
+"item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_1" [label="1: Start item::item\nFormals:  this:item*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_1" -> "item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_2" ;
-"item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_2" [label="2: Exit item_item \n  " color=yellow style=filled]
+"item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_2" [label="2: Exit item::item \n  " color=yellow style=filled]
 	
 
 }

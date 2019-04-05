@@ -7,7 +7,7 @@ digraph cfg {
 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" [label="2: Exit struct_forward_declare::X_Y_div0 \n   NULLIFY(&x); [line 53, column 1]\n " color=yellow style=filled]
 	
 
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 52, column 14]\n  n$1=_fun_struct_forward_declare::X_getF(&x:struct_forward_declare::X&) [line 52, column 14]\n  *&return:int=(1 / n$1) [line 52, column 3]\n  EXIT_SCOPE(_,n$1,x); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 52, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 52, column 14]\n  *&return:int=(1 / n$1) [line 52, column 3]\n  EXIT_SCOPE(_,n$1,x); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   n$8=_fun___variable_initialization(&x:struct_forward_declare::X) assign_last [line 46, column 3]\n  n$7=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 46, column 5]\n  EXIT_SCOPE(n$7,n$8); [line 46, column 5]\n " shape="box"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   n$8=_fun___variable_initialization(&x:struct_forward_declare::X) assign_last [line 46, column 3]\n  n$7=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 46, column 5]\n  EXIT_SCOPE(n$7,n$8); [line 46, column 5]\n " shape="box"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" ;
@@ -47,7 +47,7 @@ digraph cfg {
 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_2" [label="2: Exit struct_forward_declare::X_div0 \n   NULLIFY(&x); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 37, column 14]\n  n$1=_fun_struct_forward_declare::X_getF(&x:struct_forward_declare::X&) [line 37, column 14]\n  *&return:int=(1 / n$1) [line 37, column 3]\n  EXIT_SCOPE(_,n$1,x); [line 37, column 3]\n  APPLY_ABSTRACTION; [line 37, column 3]\n " shape="box"]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 37, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 37, column 14]\n  *&return:int=(1 / n$1) [line 37, column 3]\n  EXIT_SCOPE(_,n$1,x); [line 37, column 3]\n  APPLY_ABSTRACTION; [line 37, column 3]\n " shape="box"]
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_2" ;
@@ -55,7 +55,7 @@ digraph cfg {
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&x:struct_forward_declare::X) assign_last [line 35, column 3]\n  n$3=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 35, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 35, column 5]\n " shape="box"]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&x:struct_forward_declare::X) assign_last [line 35, column 3]\n  n$3=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 35, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 35, column 5]\n " shape="box"]
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
@@ -66,7 +66,7 @@ digraph cfg {
 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" [label="2: Exit struct_forward_declare::X_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X_getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n  NULLIFY(&x); [line 42, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X::getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n  NULLIFY(&x); [line 42, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 42, column 3]\n  APPLY_ABSTRACTION; [line 42, column 3]\n " shape="box"]
 	
 
 	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" ;
@@ -81,7 +81,7 @@ digraph cfg {
 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_2" [label="2: Exit struct_forward_declare::Z_div0 \n   NULLIFY(&z); [line 59, column 1]\n " color=yellow style=filled]
 	
 
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" [label="3:  Return Stmt \n   _=*&z:struct_forward_declare::Z [line 58, column 14]\n  n$1=_fun_struct_forward_declare::Z_getF(&z:struct_forward_declare::Z&) [line 58, column 14]\n  *&return:int=(1 / n$1) [line 58, column 3]\n  EXIT_SCOPE(_,n$1,z); [line 58, column 3]\n  APPLY_ABSTRACTION; [line 58, column 3]\n " shape="box"]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" [label="3:  Return Stmt \n   _=*&z:struct_forward_declare::Z [line 58, column 14]\n  n$1=_fun_struct_forward_declare::Z::getF(&z:struct_forward_declare::Z&) [line 58, column 14]\n  *&return:int=(1 / n$1) [line 58, column 3]\n  EXIT_SCOPE(_,n$1,z); [line 58, column 3]\n  APPLY_ABSTRACTION; [line 58, column 3]\n " shape="box"]
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_2" ;
@@ -89,7 +89,7 @@ digraph cfg {
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&z:struct_forward_declare::Z) assign_last [line 56, column 3]\n  n$3=_fun_struct_forward_declare::Z_Z(&z:struct_forward_declare::Z*) [line 56, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 56, column 5]\n " shape="box"]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   n$4=_fun___variable_initialization(&z:struct_forward_declare::Z) assign_last [line 56, column 3]\n  n$3=_fun_struct_forward_declare::Z::Z(&z:struct_forward_declare::Z*) [line 56, column 5]\n  EXIT_SCOPE(n$3,n$4); [line 56, column 5]\n " shape="box"]
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
@@ -100,7 +100,7 @@ digraph cfg {
 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" [label="2: Exit struct_forward_declare::Z_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z_getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n  *&return:int=(1 / n$2) [line 66, column 3]\n  NULLIFY(&z); [line 66, column 3]\n  EXIT_SCOPE(_,n$0,n$2,z); [line 66, column 3]\n  APPLY_ABSTRACTION; [line 66, column 3]\n " shape="box"]
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z::getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n  *&return:int=(1 / n$2) [line 66, column 3]\n  NULLIFY(&z); [line 66, column 3]\n  EXIT_SCOPE(_,n$0,n$2,z); [line 66, column 3]\n  APPLY_ABSTRACTION; [line 66, column 3]\n " shape="box"]
 	
 
 	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" ;
@@ -119,40 +119,40 @@ digraph cfg {
 	
 
 	 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" -> "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_2" ;
-"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
+"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" [label="1: Start struct_forward_declare::X::getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" ;
-"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" [label="2: Exit struct_forward_declare::X_getF \n  " color=yellow style=filled]
+"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" [label="2: Exit struct_forward_declare::X::getF \n  " color=yellow style=filled]
 	
 
 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::X* [line 19, column 23]\n  n$1=*n$0.f:int [line 19, column 23]\n  *&return:int=n$1 [line 19, column 16]\n  NULLIFY(&this); [line 19, column 16]\n  EXIT_SCOPE(n$0,n$1,this); [line 19, column 16]\n  APPLY_ABSTRACTION; [line 19, column 16]\n " shape="box"]
 	
 
 	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" ;
-"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" [label="1: Start struct_forward_declare::X_X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
+"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" [label="1: Start struct_forward_declare::X::X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" -> "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_2" ;
-"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_2" [label="2: Exit struct_forward_declare::X_X \n  " color=yellow style=filled]
+"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_2" [label="2: Exit struct_forward_declare::X::X \n  " color=yellow style=filled]
 	
 
-"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" [label="1: Start struct_forward_declare::Z_getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
+"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" [label="1: Start struct_forward_declare::Z::getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" ;
-"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" [label="2: Exit struct_forward_declare::Z_getF \n  " color=yellow style=filled]
+"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" [label="2: Exit struct_forward_declare::Z::getF \n  " color=yellow style=filled]
 	
 
 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::Z* [line 28, column 23]\n  n$1=*n$0.f:int [line 28, column 23]\n  *&return:int=n$1 [line 28, column 16]\n  NULLIFY(&this); [line 28, column 16]\n  EXIT_SCOPE(n$0,n$1,this); [line 28, column 16]\n  APPLY_ABSTRACTION; [line 28, column 16]\n " shape="box"]
 	
 
 	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" ;
-"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" [label="1: Start struct_forward_declare::Z_Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
+"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" [label="1: Start struct_forward_declare::Z::Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" -> "Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_2" ;
-"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_2" [label="2: Exit struct_forward_declare::Z_Z \n  " color=yellow style=filled]
+"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_2" [label="2: Exit struct_forward_declare::Z::Z \n  " color=yellow style=filled]
 	
 
 }

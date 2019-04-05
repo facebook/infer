@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ) assign_last [line 11, column 1]\n  n$0=_fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n  EXIT_SCOPE(n$0,n$1); [line 11, column 9]\n  APPLY_ABSTRACTION; [line 11, column 9]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ) assign_last [line 11, column 1]\n  n$0=_fun_X::X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n  EXIT_SCOPE(n$0,n$1); [line 11, column 9]\n  APPLY_ABSTRACTION; [line 11, column 9]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n  NULLIFY(&__return_param); [line 13, column 19]\n  EXIT_SCOPE(n$0,n$1,__return_param); [line 13, column 19]\n  APPLY_ABSTRACTION; [line 13, column 19]\n " shape="box"]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n  NULLIFY(&__return_param); [line 13, column 19]\n  EXIT_SCOPE(n$0,n$1,__return_param); [line 13, column 19]\n  APPLY_ABSTRACTION; [line 13, column 19]\n " shape="box"]
 	
 
 	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
@@ -48,18 +48,18 @@ digraph cfg {
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;
-"X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_1" [label="1: Start X_X\nFormals:  this:X* __param_0:X const &\nLocals:  \n  " color=yellow style=filled]
+"X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_1" [label="1: Start X::X\nFormals:  this:X* __param_0:X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_1" -> "X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_2" ;
-"X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+"X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X::X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" -> "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
 }

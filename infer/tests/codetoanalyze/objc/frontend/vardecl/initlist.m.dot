@@ -29,7 +29,7 @@ digraph cfg {
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n   NULLIFY(&c1); [line 24, column 1]\n  NULLIFY(&c2); [line 24, column 1]\n " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&a:C*[3*8]) assign_last [line 23, column 3]\n  n$0=*&c1:C* [line 23, column 15]\n  n$1=_fun_NSObject_init(n$0:C*) virtual [line 23, column 14]\n  *&a[0]:C*=n$1 [line 23, column 13]\n  n$2=*&c1:C* [line 23, column 25]\n  *&a[1]:C*=n$2 [line 23, column 13]\n  n$3=*&c2:C* [line 23, column 29]\n  *&a[2]:C*=n$3 [line 23, column 13]\n  NULLIFY(&a); [line 23, column 13]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,c2,a,c1); [line 23, column 13]\n  APPLY_ABSTRACTION; [line 23, column 13]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$4=_fun___variable_initialization(&a:C*[3*8]) assign_last [line 23, column 3]\n  n$0=*&c1:C* [line 23, column 15]\n  n$1=_fun_NSObject::init(n$0:C*) virtual [line 23, column 14]\n  *&a[0]:C*=n$1 [line 23, column 13]\n  n$2=*&c1:C* [line 23, column 25]\n  *&a[1]:C*=n$2 [line 23, column 13]\n  n$3=*&c2:C* [line 23, column 29]\n  *&a[2]:C*=n$3 [line 23, column 13]\n  NULLIFY(&a); [line 23, column 13]\n  EXIT_SCOPE(n$0,n$1,n$2,n$3,n$4,c2,a,c1); [line 23, column 13]\n  APPLY_ABSTRACTION; [line 23, column 13]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;

@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" [label="1: Start A_foo\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" [label="1: Start A::foo\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" -> "foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_2" ;
-"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_2" [label="2: Exit A_foo \n  " color=yellow style=filled]
+"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_2" [label="2: Exit A::foo \n  " color=yellow style=filled]
 	
 
 }

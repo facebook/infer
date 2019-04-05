@@ -7,7 +7,7 @@ digraph cfg {
 "f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_2" [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-"f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_3" [label="3:  Call _fun_Person_~Person \n   n$1=*&p:Person* [line 13, column 21]\n  _=*n$1:Person [line 13, column 21]\n  n$3=_fun_Person_~Person(n$1:Person*) [line 13, column 21]\n  NULLIFY(&p); [line 13, column 21]\n  EXIT_SCOPE(_,n$1,n$3,p); [line 13, column 21]\n  APPLY_ABSTRACTION; [line 13, column 21]\n " shape="box"]
+"f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_3" [label="3:  Call _fun_Person::~Person \n   n$1=*&p:Person* [line 13, column 21]\n  _=*n$1:Person [line 13, column 21]\n  n$3=_fun_Person::~Person(n$1:Person*) [line 13, column 21]\n  NULLIFY(&p); [line 13, column 21]\n  EXIT_SCOPE(_,n$1,n$3,p); [line 13, column 21]\n  APPLY_ABSTRACTION; [line 13, column 21]\n " shape="box"]
 	
 
 	 "f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_3" -> "f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_2" ;

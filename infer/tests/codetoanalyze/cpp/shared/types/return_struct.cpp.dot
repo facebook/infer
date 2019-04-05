@@ -7,7 +7,7 @@ digraph cfg {
 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_2" [label="2: Exit return_struct::get \n   NULLIFY(&x); [line 23, column 1]\n " color=yellow style=filled]
 	
 
-"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n  n$1=_fun_return_struct::X_X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n  _=*&x:return_struct::X [line 22, column 10]\n  n$3=_fun_return_struct::X_~X(&x:return_struct::X*) injected [line 22, column 10]\n  NULLIFY(&__return_param); [line 22, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 22, column 10]\n  APPLY_ABSTRACTION; [line 22, column 10]\n " shape="box"]
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n  n$1=_fun_return_struct::X::X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n  _=*&x:return_struct::X [line 22, column 10]\n  n$3=_fun_return_struct::X::~X(&x:return_struct::X*) injected [line 22, column 10]\n  NULLIFY(&__return_param); [line 22, column 10]\n  EXIT_SCOPE(_,n$0,n$1,n$3,x,__return_param); [line 22, column 10]\n  APPLY_ABSTRACTION; [line 22, column 10]\n " shape="box"]
 	
 
 	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_2" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" ;
-"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&x:return_struct::X) assign_last [line 20, column 3]\n  n$6=_fun_return_struct::X_X(&x:return_struct::X*) [line 20, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 20, column 5]\n " shape="box"]
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&x:return_struct::X) assign_last [line 20, column 3]\n  n$6=_fun_return_struct::X::X(&x:return_struct::X*) [line 20, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 20, column 5]\n " shape="box"]
 	
 
 	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" ;
@@ -26,11 +26,11 @@ digraph cfg {
 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_2" [label="2: Exit return_struct::get_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 28, column 1]\n  NULLIFY(&x); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 27, column 14]\n  *&return:int=(1 / n$0) [line 27, column 3]\n  _=*&x:return_struct::X [line 27, column 16]\n  n$2=_fun_return_struct::X_~X(&x:return_struct::X*) injected [line 27, column 16]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 27, column 16]\n  APPLY_ABSTRACTION; [line 27, column 16]\n " shape="box"]
+"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 27, column 14]\n  *&return:int=(1 / n$0) [line 27, column 3]\n  _=*&x:return_struct::X [line 27, column 16]\n  n$2=_fun_return_struct::X::~X(&x:return_struct::X*) injected [line 27, column 16]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 27, column 16]\n  APPLY_ABSTRACTION; [line 27, column 16]\n " shape="box"]
 	
 
 	 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_3" -> "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_2" ;
-"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:return_struct::X) assign_last [line 26, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const ) assign_last [line 26, column 9]\n  n$6=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X*) assign_last [line 26, column 9]\n  n$8=_fun_return_struct::X_X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const &) [line 26, column 9]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 26, column 9]\n " shape="box"]
+"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:return_struct::X) assign_last [line 26, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const ) assign_last [line 26, column 9]\n  n$6=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X*) assign_last [line 26, column 9]\n  n$8=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const &) [line 26, column 9]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 26, column 9]\n " shape="box"]
 	
 
 	 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_4" -> "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_3" ;
@@ -41,11 +41,11 @@ digraph cfg {
 "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_2" [label="2: Exit return_struct::get_div1 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 40, column 1]\n  NULLIFY(&x); [line 40, column 1]\n " color=yellow style=filled]
 	
 
-"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&x:return_struct::X [line 39, column 16]\n  n$2=_fun_return_struct::X_~X(&x:return_struct::X*) injected [line 39, column 16]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 39, column 16]\n  APPLY_ABSTRACTION; [line 39, column 16]\n " shape="box"]
+"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&x:return_struct::X [line 39, column 16]\n  n$2=_fun_return_struct::X::~X(&x:return_struct::X*) injected [line 39, column 16]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 39, column 16]\n  APPLY_ABSTRACTION; [line 39, column 16]\n " shape="box"]
 	
 
 	 "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_3" -> "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_2" ;
-"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:return_struct::X) assign_last [line 38, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const ) assign_last [line 38, column 9]\n  n$6=_fun_return_struct::get(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X*) assign_last [line 38, column 9]\n  n$8=_fun_return_struct::X_X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const &) [line 38, column 9]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 38, column 9]\n " shape="box"]
+"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_4" [label="4:  DeclStmt \n   n$9=_fun___variable_initialization(&x:return_struct::X) assign_last [line 38, column 3]\n  n$7=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const ) assign_last [line 38, column 9]\n  n$6=_fun_return_struct::get(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X*) assign_last [line 38, column 9]\n  n$8=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const &) [line 38, column 9]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 38, column 9]\n " shape="box"]
 	
 
 	 "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_4" -> "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_3" ;
@@ -60,7 +60,7 @@ digraph cfg {
 	
 
 	 "get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_3" -> "get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_2" ;
-"get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_4" [label="4:  Call _fun_return_struct::X_skip \n   n$9=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X) assign_last [line 31, column 3]\n  n$8=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X*) assign_last [line 31, column 3]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X [line 31, column 3]\n  n$11=_fun_return_struct::X_skip(&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X&) [line 31, column 3]\n  EXIT_SCOPE(_,n$8,n$9,n$11,0$?%__sil_tmpSIL_materialize_temp__n$6); [line 31, column 3]\n " shape="box"]
+"get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_4" [label="4:  Call _fun_return_struct::X::skip \n   n$9=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X) assign_last [line 31, column 3]\n  n$8=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X*) assign_last [line 31, column 3]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X [line 31, column 3]\n  n$11=_fun_return_struct::X::skip(&0$?%__sil_tmpSIL_materialize_temp__n$6:return_struct::X&) [line 31, column 3]\n  EXIT_SCOPE(_,n$8,n$9,n$11,0$?%__sil_tmpSIL_materialize_temp__n$6); [line 31, column 3]\n " shape="box"]
 	
 
 	 "get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_4" -> "get_field_div0#return_struct#5765383981880135147.23dc82d8c29aaec22d9b9a68808820c3_3" ;
@@ -82,7 +82,7 @@ digraph cfg {
 "get_method_div0#return_struct#1033779568239724265.1e897486d64ba4a977e56cdd041d6ba7_2" [label="2: Exit return_struct::get_method_div0 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 46]\n " color=yellow style=filled]
 	
 
-"get_method_div0#return_struct#1033779568239724265.1e897486d64ba4a977e56cdd041d6ba7_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X) assign_last [line 35, column 32]\n  n$2=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X*) assign_last [line 35, column 32]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X [line 35, column 32]\n  n$5=_fun_return_struct::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X&) [line 35, column 32]\n  *&return:int=n$5 [line 35, column 25]\n  EXIT_SCOPE(_,n$2,n$3,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 25]\n  APPLY_ABSTRACTION; [line 35, column 25]\n " shape="box"]
+"get_method_div0#return_struct#1033779568239724265.1e897486d64ba4a977e56cdd041d6ba7_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X) assign_last [line 35, column 32]\n  n$2=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X*) assign_last [line 35, column 32]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X [line 35, column 32]\n  n$5=_fun_return_struct::X::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X&) [line 35, column 32]\n  *&return:int=n$5 [line 35, column 25]\n  EXIT_SCOPE(_,n$2,n$3,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 25]\n  APPLY_ABSTRACTION; [line 35, column 25]\n " shape="box"]
 	
 
 	 "get_method_div0#return_struct#1033779568239724265.1e897486d64ba4a977e56cdd041d6ba7_3" -> "get_method_div0#return_struct#1033779568239724265.1e897486d64ba4a977e56cdd041d6ba7_2" ;
@@ -93,37 +93,37 @@ digraph cfg {
 "get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_2" [label="2: Exit return_struct::get_method_div1 \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 44, column 46]\n " color=yellow style=filled]
 	
 
-"get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X) assign_last [line 44, column 32]\n  n$2=_fun_return_struct::get(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X*) assign_last [line 44, column 32]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X [line 44, column 32]\n  n$5=_fun_return_struct::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X&) [line 44, column 32]\n  *&return:int=n$5 [line 44, column 25]\n  EXIT_SCOPE(_,n$2,n$3,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 44, column 25]\n  APPLY_ABSTRACTION; [line 44, column 25]\n " shape="box"]
+"get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_3" [label="3:  Return Stmt \n   n$3=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X) assign_last [line 44, column 32]\n  n$2=_fun_return_struct::get(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X*) assign_last [line 44, column 32]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X [line 44, column 32]\n  n$5=_fun_return_struct::X::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X&) [line 44, column 32]\n  *&return:int=n$5 [line 44, column 25]\n  EXIT_SCOPE(_,n$2,n$3,n$5,0$?%__sil_tmpSIL_materialize_temp__n$0); [line 44, column 25]\n  APPLY_ABSTRACTION; [line 44, column 25]\n " shape="box"]
 	
 
 	 "get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_3" -> "get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_2" ;
-"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" [label="1: Start return_struct::X_div\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
+"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" [label="1: Start return_struct::X::div\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" ;
-"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" [label="2: Exit return_struct::X_div \n  " color=yellow style=filled]
+"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" [label="2: Exit return_struct::X::div \n  " color=yellow style=filled]
 	
 
 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" [label="3:  Return Stmt \n   n$0=*&this:return_struct::X* [line 15, column 26]\n  n$1=*n$0.f:int [line 15, column 26]\n  *&return:int=(1 / n$1) [line 15, column 15]\n  NULLIFY(&this); [line 15, column 15]\n  EXIT_SCOPE(n$0,n$1,this); [line 15, column 15]\n  APPLY_ABSTRACTION; [line 15, column 15]\n " shape="box"]
 	
 
 	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" ;
-"X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_1" [label="1: Start return_struct::X_X\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
+"X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_1" -> "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_3" ;
-"X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_2" [label="2: Exit return_struct::X_X \n  " color=yellow style=filled]
+"X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
 	
 
 "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:return_struct::X* [line 14, column 9]\n  *n$1.f:int=1 [line 14, column 9]\n  NULLIFY(&this); [line 14, column 9]\n  EXIT_SCOPE(n$1,this); [line 14, column 9]\n  APPLY_ABSTRACTION; [line 14, column 9]\n " shape="box"]
 	
 
 	 "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_3" -> "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_2" ;
-"X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_1" [label="1: Start return_struct::X_X\nFormals:  this:return_struct::X* x:return_struct::X const &\nLocals:  \n  " color=yellow style=filled]
+"X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X* x:return_struct::X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_1" -> "X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_3" ;
-"X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_2" [label="2: Exit return_struct::X_X \n  " color=yellow style=filled]
+"X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
 	
 
 "X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:return_struct::X* [line 13, column 19]\n  n$2=*&x:return_struct::X const & [line 13, column 23]\n  n$3=*n$2.f:int [line 13, column 23]\n  *n$1.f:int=n$3 [line 13, column 19]\n  NULLIFY(&x); [line 13, column 19]\n  NULLIFY(&this); [line 13, column 19]\n  EXIT_SCOPE(n$1,n$2,n$3,x,this); [line 13, column 19]\n  APPLY_ABSTRACTION; [line 13, column 19]\n " shape="box"]

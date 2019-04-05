@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla::fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" [label="2: Exit Bla_fooMethod \n  " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" [label="2: Exit Bla::fooMethod \n  " color=yellow style=filled]
 	
 
 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" [label="3: + \n  " ]
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n  NULLIFY(&self); [line 23, column 7]\n  EXIT_SCOPE(n$0,self); [line 23, column 7]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject::conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n  NULLIFY(&self); [line 23, column 7]\n  EXIT_SCOPE(n$0,self); [line 23, column 7]\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;

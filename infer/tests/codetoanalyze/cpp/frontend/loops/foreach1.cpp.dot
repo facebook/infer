@@ -47,19 +47,19 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$10=_fun___variable_initialization(&__end1:iterator) assign_last [line 35, column 18]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator) assign_last [line 35, column 18]\n  n$4=*&__range1:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec_end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) assign_last [line 35, column 18]\n  n$9=_fun_iterator_iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n  EXIT_SCOPE(_,n$4,n$7,n$8,n$9,n$10,0$?%__sil_tmpSIL_materialize_temp__n$3,__range1); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$10=_fun___variable_initialization(&__end1:iterator) assign_last [line 35, column 18]\n  n$8=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator) assign_last [line 35, column 18]\n  n$4=*&__range1:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec::end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) assign_last [line 35, column 18]\n  n$9=_fun_iterator::iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n  EXIT_SCOPE(_,n$4,n$7,n$8,n$9,n$10,0$?%__sil_tmpSIL_materialize_temp__n$3,__range1); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$18=_fun___variable_initialization(&__begin1:iterator) assign_last [line 35, column 18]\n  n$16=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator) assign_last [line 35, column 18]\n  n$12=*&__range1:vec& [line 35, column 18]\n  _=*n$12:vec [line 35, column 18]\n  n$15=_fun_vec_begin(n$12:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator*) assign_last [line 35, column 18]\n  n$17=_fun_iterator_iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator&) [line 35, column 18]\n  EXIT_SCOPE(_,n$12,n$15,n$16,n$17,n$18,0$?%__sil_tmpSIL_materialize_temp__n$11); [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$18=_fun___variable_initialization(&__begin1:iterator) assign_last [line 35, column 18]\n  n$16=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator) assign_last [line 35, column 18]\n  n$12=*&__range1:vec& [line 35, column 18]\n  _=*n$12:vec [line 35, column 18]\n  n$15=_fun_vec::begin(n$12:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator*) assign_last [line 35, column 18]\n  n$17=_fun_iterator::iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator&) [line 35, column 18]\n  EXIT_SCOPE(_,n$12,n$15,n$16,n$17,n$18,0$?%__sil_tmpSIL_materialize_temp__n$11); [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator_operator++ \n   n$22=_fun_iterator_operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$21:iterator*) assign_last [line 35, column 18]\n  EXIT_SCOPE(n$22,0$?%__sil_tmp__temp_return_n$21); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator::operator++ \n   n$22=_fun_iterator::operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$21:iterator*) assign_last [line 35, column 18]\n  EXIT_SCOPE(n$22,0$?%__sil_tmp__temp_return_n$21); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$24=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$23:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$26=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$25:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$27=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$23:iterator,&0$?%__sil_tmp__temp_construct_n$25:iterator) [line 35, column 18]\n  EXIT_SCOPE(n$24,n$26); [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$24=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$23:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$26=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$25:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$27=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$23:iterator,&0$?%__sil_tmp__temp_construct_n$25:iterator) [line 35, column 18]\n  EXIT_SCOPE(n$24,n$26); [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" ;
@@ -76,7 +76,7 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$35=_fun___variable_initialization(&value:int) assign_last [line 35, column 8]\n  n$34=_fun_iterator_operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$34 [line 35, column 8]\n  EXIT_SCOPE(n$34,n$35); [line 35, column 8]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$35=_fun___variable_initialization(&value:int) assign_last [line 35, column 8]\n  n$34=_fun_iterator::operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$34 [line 35, column 8]\n  EXIT_SCOPE(n$34,n$35); [line 35, column 8]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" ;
@@ -84,18 +84,18 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" [label="13:  DeclStmt \n   n$39=_fun___variable_initialization(&vector:vec) assign_last [line 34, column 3]\n  n$38=_fun_vec_vec(&vector:vec*,10:int) [line 34, column 7]\n  EXIT_SCOPE(n$38,n$39); [line 34, column 7]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" [label="13:  DeclStmt \n   n$39=_fun___variable_initialization(&vector:vec) assign_last [line 34, column 3]\n  n$38=_fun_vec::vec(&vector:vec*,10:int) [line 34, column 7]\n  EXIT_SCOPE(n$38,n$39); [line 34, column 7]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" ;
-"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_1" [label="1: Start iterator_operator++\nFormals:  this:iterator* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
+"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_1" [label="1: Start iterator::operator++\nFormals:  this:iterator* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_1" -> "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_4" ;
-"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_2" [label="2: Exit iterator_operator++ \n  " color=yellow style=filled]
+"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_2" [label="2: Exit iterator::operator++ \n  " color=yellow style=filled]
 	
 
-"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 13, column 5]\n  n$1=*&this:iterator* [line 13, column 13]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1:iterator&) [line 13, column 12]\n  NULLIFY(&__return_param); [line 13, column 12]\n  NULLIFY(&this); [line 13, column 12]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 13, column 12]\n  APPLY_ABSTRACTION; [line 13, column 12]\n " shape="box"]
+"operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 13, column 5]\n  n$1=*&this:iterator* [line 13, column 13]\n  n$2=_fun_iterator::iterator(n$0:iterator*,n$1:iterator&) [line 13, column 12]\n  NULLIFY(&__return_param); [line 13, column 12]\n  NULLIFY(&this); [line 13, column 12]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 13, column 12]\n  APPLY_ABSTRACTION; [line 13, column 12]\n " shape="box"]
 	
 
 	 "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_3" -> "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_2" ;
@@ -103,73 +103,73 @@ digraph cfg {
 	
 
 	 "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_4" -> "operator++#iterator(class iterator)#(14034081864165661659).574423d3d3249b4f53477fb1be150024_3" ;
-"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" [label="1: Start iterator_operator*\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
+"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" [label="1: Start iterator::operator*\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" ;
-"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" [label="2: Exit iterator_operator* \n  " color=yellow style=filled]
+"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" [label="2: Exit iterator::operator* \n  " color=yellow style=filled]
 	
 
 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" [label="3:  Return Stmt \n   n$0=*&this:iterator* [line 16, column 12]\n  n$1=*n$0.val:int [line 16, column 12]\n  *&return:int=n$1 [line 16, column 5]\n  NULLIFY(&this); [line 16, column 5]\n  EXIT_SCOPE(n$0,n$1,this); [line 16, column 5]\n  APPLY_ABSTRACTION; [line 16, column 5]\n " shape="box"]
 	
 
 	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" ;
-"iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_1" [label="1: Start iterator_iterator\nFormals:  this:iterator* __param_0:iterator const &\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator const &\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_1" -> "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_3" ;
-"iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_2" [label="2: Exit iterator_iterator \n  " color=yellow style=filled]
+"iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
 "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_3" [label="3:  Constructor Init \n   n$2=*&this:iterator* [line 9, column 8]\n  n$3=*&__param_0:iterator const & [line 9, column 8]\n  n$4=*n$3.val:int [line 9, column 8]\n  *n$2.val:int=n$4 [line 9, column 8]\n  NULLIFY(&this); [line 9, column 8]\n  NULLIFY(&__param_0); [line 9, column 8]\n  EXIT_SCOPE(n$2,n$3,n$4,this,__param_0); [line 9, column 8]\n  APPLY_ABSTRACTION; [line 9, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_3" -> "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_2" ;
-"iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_1" [label="1: Start iterator_iterator\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_1" [label="1: Start iterator::iterator\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_1" -> "iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_2" ;
-"iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_2" [label="2: Exit iterator_iterator \n  " color=yellow style=filled]
+"iterator#iterator#{17107199916075329459}.2fc51ac860d26e778b9b34e5032f02d5_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_1" [label="1: Start iterator_iterator\nFormals:  this:iterator* __param_0:iterator&\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_1" -> "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_3" ;
-"iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_2" [label="2: Exit iterator_iterator \n  " color=yellow style=filled]
+"iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
 "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_3" [label="3:  Constructor Init \n   n$2=*&this:iterator* [line 9, column 8]\n  n$3=*&__param_0:iterator& [line 9, column 8]\n  n$4=*n$3.val:int [line 9, column 8]\n  *n$2.val:int=n$4 [line 9, column 8]\n  NULLIFY(&this); [line 9, column 8]\n  NULLIFY(&__param_0); [line 9, column 8]\n  EXIT_SCOPE(n$2,n$3,n$4,this,__param_0); [line 9, column 8]\n  APPLY_ABSTRACTION; [line 9, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_3" -> "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_2" ;
-"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_1" [label="1: Start vec_end\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
+"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_1" [label="1: Start vec::end\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_1" -> "end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_3" ;
-"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_2" [label="2: Exit vec_end \n  " color=yellow style=filled]
+"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_2" [label="2: Exit vec::end \n  " color=yellow style=filled]
 	
 
-"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 27, column 20]\n  n$1=*&this:vec* [line 27, column 27]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.end_:iterator&) [line 27, column 27]\n  NULLIFY(&__return_param); [line 27, column 27]\n  NULLIFY(&this); [line 27, column 27]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 27, column 27]\n  APPLY_ABSTRACTION; [line 27, column 27]\n " shape="box"]
+"end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 27, column 20]\n  n$1=*&this:vec* [line 27, column 27]\n  n$2=_fun_iterator::iterator(n$0:iterator*,n$1.end_:iterator&) [line 27, column 27]\n  NULLIFY(&__return_param); [line 27, column 27]\n  NULLIFY(&this); [line 27, column 27]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 27, column 27]\n  APPLY_ABSTRACTION; [line 27, column 27]\n " shape="box"]
 	
 
 	 "end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_3" -> "end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_2" ;
-"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_1" [label="1: Start vec_begin\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
+"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_1" [label="1: Start vec::begin\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_1" -> "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_3" ;
-"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_2" [label="2: Exit vec_begin \n  " color=yellow style=filled]
+"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_2" [label="2: Exit vec::begin \n  " color=yellow style=filled]
 	
 
-"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 26, column 22]\n  n$1=*&this:vec* [line 26, column 29]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.begin_:iterator&) [line 26, column 29]\n  NULLIFY(&__return_param); [line 26, column 29]\n  NULLIFY(&this); [line 26, column 29]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 26, column 29]\n  APPLY_ABSTRACTION; [line 26, column 29]\n " shape="box"]
+"begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 26, column 22]\n  n$1=*&this:vec* [line 26, column 29]\n  n$2=_fun_iterator::iterator(n$0:iterator*,n$1.begin_:iterator&) [line 26, column 29]\n  NULLIFY(&__return_param); [line 26, column 29]\n  NULLIFY(&this); [line 26, column 29]\n  EXIT_SCOPE(n$0,n$1,n$2,__return_param,this); [line 26, column 29]\n  APPLY_ABSTRACTION; [line 26, column 29]\n " shape="box"]
 	
 
 	 "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_3" -> "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_2" ;
-"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_1" [label="1: Start vec_vec\nFormals:  this:vec* size:int\nLocals:  \n  " color=yellow style=filled]
+"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_1" [label="1: Start vec::vec\nFormals:  this:vec* size:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_1" -> "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_6" ;
-"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_2" [label="2: Exit vec_vec \n  " color=yellow style=filled]
+"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_2" [label="2: Exit vec::vec \n  " color=yellow style=filled]
 	
 
 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:vec* [line 24, column 5]\n  n$2=*&size:int [line 24, column 16]\n  *n$1.end_.val:int=n$2 [line 24, column 5]\n  NULLIFY(&size); [line 24, column 5]\n  NULLIFY(&this); [line 24, column 5]\n  EXIT_SCOPE(n$1,n$2,size,this); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
@@ -180,11 +180,11 @@ digraph cfg {
 	
 
 	 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_4" -> "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_3" ;
-"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_5" [label="5:  Constructor Init \n   n$4=*&this:vec* [line 22, column 3]\n  n$5=_fun_iterator_iterator(n$4.end_:iterator*) [line 22, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 22, column 3]\n " shape="box"]
+"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_5" [label="5:  Constructor Init \n   n$4=*&this:vec* [line 22, column 3]\n  n$5=_fun_iterator::iterator(n$4.end_:iterator*) [line 22, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 22, column 3]\n " shape="box"]
 	
 
 	 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_5" -> "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_4" ;
-"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_6" [label="6:  Constructor Init \n   n$6=*&this:vec* [line 22, column 3]\n  n$7=_fun_iterator_iterator(n$6.begin_:iterator*) [line 22, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 22, column 3]\n " shape="box"]
+"vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_6" [label="6:  Constructor Init \n   n$6=*&this:vec* [line 22, column 3]\n  n$7=_fun_iterator::iterator(n$6.begin_:iterator*) [line 22, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 22, column 3]\n " shape="box"]
 	
 
 	 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_6" -> "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_5" ;

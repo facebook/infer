@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" [label="1: Start Available_expr_test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n  " color=yellow style=filled]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" [label="1: Start Available_expr::test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n  " color=yellow style=filled]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" [label="2: Exit Available_expr_test_no_bug \n   NULLIFY(&p); [line 21, column 1]\n " color=yellow style=filled]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" [label="2: Exit Available_expr::test_no_bug \n   NULLIFY(&p); [line 21, column 1]\n " color=yellow style=filled]
 	
 
 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n  APPLY_ABSTRACTION; [line 20, column 3]\n " shape="box"]

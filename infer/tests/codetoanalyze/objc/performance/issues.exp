@@ -1,4 +1,4 @@
-codetoanalyze/objc/performance/araii.m, Araii_initWithBuffer, 4, EXPENSIVE_ALLOCATION_CALL, no_bucket, ERROR, [with estimated cost 4, degree = 0]
+codetoanalyze/objc/performance/araii.m, Araii::initWithBuffer, 4, EXPENSIVE_ALLOCATION_CALL, no_bucket, ERROR, [with estimated cost 4, degree = 0]
 codetoanalyze/objc/performance/araii.m, memory_leak_raii_main, 1, EXPENSIVE_ALLOCATION_CALL, no_bucket, ERROR, [with estimated cost 5, degree = 0]
 codetoanalyze/objc/performance/cf.m, array_count_linear, 2, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 7 + 3 ⋅ arr.length + 2 ⋅ (arr.length + 1), degree = 1,{arr.length + 1},Loop at line 18, column 3,{arr.length},Loop at line 18, column 3]
 codetoanalyze/objc/performance/cf.m, cf_array_create_copy_linear, 6, EXPENSIVE_EXECUTION_CALL, no_bucket, ERROR, [with estimated cost 1012, degree = 0]

@@ -1,214 +1,214 @@
 /* @generated */
 digraph cfg {
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_1" [label="1: Start objc_blockDispatchEx_dispatch_after_example_3\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_1" [label="1: Start objc_blockDispatchEx::dispatch_after_example_3\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_1" -> "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" ;
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_2" [label="2: Exit objc_blockDispatchEx_dispatch_after_example_3 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_1" -> "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_4" ;
+"objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_2" [label="2: Exit objc_blockDispatchEx::dispatch_after_example_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$20=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx* [line 50, column 20]\n  *n$20.x:int=10 [line 50, column 20]\n  EXIT_SCOPE(n$20); [line 50, column 20]\n  APPLY_ABSTRACTION; [line 50, column 20]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_3" [label="3:  BinaryOperatorStmt: Assign \n   n$20=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_after_example.a:DispatchEx* [line 50, column 20]\n  *n$20.x:int=10 [line 50, column 20]\n  EXIT_SCOPE(n$20); [line 50, column 20]\n  APPLY_ABSTRACTION; [line 50, column 20]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" -> "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_2" ;
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" [label="4:  BinaryOperatorStmt: Assign \n   n$21=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 49, column 25]\n  n$22=_fun_DispatchEx_init(n$21:DispatchEx*) virtual [line 49, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx*=n$22 [line 49, column 20]\n  EXIT_SCOPE(n$21,n$22); [line 49, column 20]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_3" -> "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_2" ;
+"objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_4" [label="4:  BinaryOperatorStmt: Assign \n   n$21=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 49, column 25]\n  n$22=_fun_DispatchEx::init(n$21:DispatchEx*) virtual [line 49, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_after_example.a:DispatchEx*=n$22 [line 49, column 20]\n  EXIT_SCOPE(n$21,n$22); [line 49, column 20]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" -> "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" ;
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_1" [label="1: Start objc_blockDispatchEx_dispatch_async_example_2\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_4" -> "objc_blockDispatchEx::dispatch_after_example_3.6e9398bb753d10e1e5234dfa24ad1e09_3" ;
+"objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_1" [label="1: Start objc_blockDispatchEx::dispatch_async_example_2\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_1" -> "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" ;
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_2" [label="2: Exit objc_blockDispatchEx_dispatch_async_example_2 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_1" -> "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_4" ;
+"objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_2" [label="2: Exit objc_blockDispatchEx::dispatch_async_example_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$11=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx* [line 39, column 20]\n  *n$11.x:int=10 [line 39, column 20]\n  EXIT_SCOPE(n$11); [line 39, column 20]\n  APPLY_ABSTRACTION; [line 39, column 20]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$11=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_async_example.a:DispatchEx* [line 39, column 20]\n  *n$11.x:int=10 [line 39, column 20]\n  EXIT_SCOPE(n$11); [line 39, column 20]\n  APPLY_ABSTRACTION; [line 39, column 20]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" -> "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_2" ;
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" [label="4:  BinaryOperatorStmt: Assign \n   n$12=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 38, column 25]\n  n$13=_fun_DispatchEx_init(n$12:DispatchEx*) virtual [line 38, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx*=n$13 [line 38, column 20]\n  EXIT_SCOPE(n$12,n$13); [line 38, column 20]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_3" -> "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_2" ;
+"objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_4" [label="4:  BinaryOperatorStmt: Assign \n   n$12=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 38, column 25]\n  n$13=_fun_DispatchEx::init(n$12:DispatchEx*) virtual [line 38, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_async_example.a:DispatchEx*=n$13 [line 38, column 20]\n  EXIT_SCOPE(n$12,n$13); [line 38, column 20]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" -> "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" ;
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_1" [label="1: Start objc_blockDispatchEx_dispatch_barrier_example_6\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_4" -> "objc_blockDispatchEx::dispatch_async_example_2.fa5a3367063c1299f87ec871fed2d30b_3" ;
+"objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_1" [label="1: Start objc_blockDispatchEx::dispatch_barrier_example_6\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_1" -> "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" ;
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_2" [label="2: Exit objc_blockDispatchEx_dispatch_barrier_example_6 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_1" -> "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_4" ;
+"objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_2" [label="2: Exit objc_blockDispatchEx::dispatch_barrier_example_6 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" [label="3:  BinaryOperatorStmt: Assign \n   n$44=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx* [line 77, column 5]\n  *n$44.x:int=10 [line 77, column 5]\n  EXIT_SCOPE(n$44); [line 77, column 5]\n  APPLY_ABSTRACTION; [line 77, column 5]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_3" [label="3:  BinaryOperatorStmt: Assign \n   n$44=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_barrier_example.a:DispatchEx* [line 77, column 5]\n  *n$44.x:int=10 [line 77, column 5]\n  EXIT_SCOPE(n$44); [line 77, column 5]\n  APPLY_ABSTRACTION; [line 77, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" -> "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_2" ;
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" [label="4:  BinaryOperatorStmt: Assign \n   n$45=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 76, column 10]\n  n$46=_fun_DispatchEx_init(n$45:DispatchEx*) virtual [line 76, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx*=n$46 [line 76, column 5]\n  EXIT_SCOPE(n$45,n$46); [line 76, column 5]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_3" -> "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_2" ;
+"objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$45=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 76, column 10]\n  n$46=_fun_DispatchEx::init(n$45:DispatchEx*) virtual [line 76, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_barrier_example.a:DispatchEx*=n$46 [line 76, column 5]\n  EXIT_SCOPE(n$45,n$46); [line 76, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" -> "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" ;
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_1" [label="1: Start objc_blockDispatchEx_dispatch_group_example_4\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_4" -> "objc_blockDispatchEx::dispatch_barrier_example_6.ba3ac5911ae9e3a82bd6b67ca544b8b7_3" ;
+"objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_1" [label="1: Start objc_blockDispatchEx::dispatch_group_example_4\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_1" -> "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" ;
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_2" [label="2: Exit objc_blockDispatchEx_dispatch_group_example_4 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_1" -> "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_4" ;
+"objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_2" [label="2: Exit objc_blockDispatchEx::dispatch_group_example_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" [label="3:  BinaryOperatorStmt: Assign \n   n$28=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx* [line 59, column 5]\n  *n$28.x:int=10 [line 59, column 5]\n  EXIT_SCOPE(n$28); [line 59, column 5]\n  APPLY_ABSTRACTION; [line 59, column 5]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_3" [label="3:  BinaryOperatorStmt: Assign \n   n$28=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_example.a:DispatchEx* [line 59, column 5]\n  *n$28.x:int=10 [line 59, column 5]\n  EXIT_SCOPE(n$28); [line 59, column 5]\n  APPLY_ABSTRACTION; [line 59, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" -> "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_2" ;
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" [label="4:  BinaryOperatorStmt: Assign \n   n$29=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 58, column 10]\n  n$30=_fun_DispatchEx_init(n$29:DispatchEx*) virtual [line 58, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx*=n$30 [line 58, column 5]\n  EXIT_SCOPE(n$29,n$30); [line 58, column 5]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_3" -> "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_2" ;
+"objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_4" [label="4:  BinaryOperatorStmt: Assign \n   n$29=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 58, column 10]\n  n$30=_fun_DispatchEx::init(n$29:DispatchEx*) virtual [line 58, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_example.a:DispatchEx*=n$30 [line 58, column 5]\n  EXIT_SCOPE(n$29,n$30); [line 58, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" -> "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" ;
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_1" [label="1: Start objc_blockDispatchEx_dispatch_group_notify_example_5\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_4" -> "objc_blockDispatchEx::dispatch_group_example_4.c2800d28963d2b21480cccdc47d7f3ac_3" ;
+"objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_1" [label="1: Start objc_blockDispatchEx::dispatch_group_notify_example_5\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_1" -> "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" ;
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_2" [label="2: Exit objc_blockDispatchEx_dispatch_group_notify_example_5 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_1" -> "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_4" ;
+"objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_2" [label="2: Exit objc_blockDispatchEx::dispatch_group_notify_example_5 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$36=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx* [line 68, column 5]\n  *n$36.x:int=10 [line 68, column 5]\n  EXIT_SCOPE(n$36); [line 68, column 5]\n  APPLY_ABSTRACTION; [line 68, column 5]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$36=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_notify_example.a:DispatchEx* [line 68, column 5]\n  *n$36.x:int=10 [line 68, column 5]\n  EXIT_SCOPE(n$36); [line 68, column 5]\n  APPLY_ABSTRACTION; [line 68, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" -> "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_2" ;
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" [label="4:  BinaryOperatorStmt: Assign \n   n$37=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 67, column 10]\n  n$38=_fun_DispatchEx_init(n$37:DispatchEx*) virtual [line 67, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx*=n$38 [line 67, column 5]\n  EXIT_SCOPE(n$37,n$38); [line 67, column 5]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_3" -> "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_2" ;
+"objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_4" [label="4:  BinaryOperatorStmt: Assign \n   n$37=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 67, column 10]\n  n$38=_fun_DispatchEx::init(n$37:DispatchEx*) virtual [line 67, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_notify_example.a:DispatchEx*=n$38 [line 67, column 5]\n  EXIT_SCOPE(n$37,n$38); [line 67, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" -> "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" ;
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_1" [label="1: Start objc_blockDispatchEx_dispatch_once_example_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_4" -> "objc_blockDispatchEx::dispatch_group_notify_example_5.a0aee72ff872d034fa63a16b19a6f65d_3" ;
+"objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_1" [label="1: Start objc_blockDispatchEx::dispatch_once_example_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_1" -> "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" ;
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_2" [label="2: Exit objc_blockDispatchEx_dispatch_once_example_1 \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_1" -> "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_4" ;
+"objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_2" [label="2: Exit objc_blockDispatchEx::dispatch_once_example_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx* [line 29, column 5]\n  *n$3.x:int=10 [line 29, column 5]\n  EXIT_SCOPE(n$3); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
+"objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.a:DispatchEx* [line 29, column 5]\n  *n$3.x:int=10 [line 29, column 5]\n  EXIT_SCOPE(n$3); [line 29, column 5]\n  APPLY_ABSTRACTION; [line 29, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" -> "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_2" ;
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 28, column 10]\n  n$5=_fun_DispatchEx_init(n$4:DispatchEx*) virtual [line 28, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx*=n$5 [line 28, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 28, column 5]\n " shape="box"]
+	 "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_3" -> "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_2" ;
+"objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 28, column 10]\n  n$5=_fun_DispatchEx::init(n$4:DispatchEx*) virtual [line 28, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.a:DispatchEx*=n$5 [line 28, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 28, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" -> "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_1" [label="1: Start DispatchEx_dispatch_after_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_4" -> "objc_blockDispatchEx::dispatch_once_example_1.da175f9cefd6334957e7f8d6d6b39790_3" ;
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_1" [label="1: Start DispatchEx::dispatch_after_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_1" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" [label="2: Exit DispatchEx_dispatch_after_example \n  " color=yellow style=filled]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" [label="2: Exit DispatchEx::dispatch_after_example \n  " color=yellow style=filled]
 	
 
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" [label="3:  Return Stmt \n   n$16=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx* [line 52, column 10]\n  n$17=*n$16.x:int [line 52, column 10]\n  *&return:int=n$17 [line 52, column 3]\n  EXIT_SCOPE(n$16,n$17); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" [label="3:  Return Stmt \n   n$16=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_after_example.a:DispatchEx* [line 52, column 10]\n  n$17=*n$16.x:int [line 52, column 10]\n  *&return:int=n$17 [line 52, column 3]\n  EXIT_SCOPE(n$16,n$17); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$18=_fun_dispatch_time(0:unsigned long long,((unsigned long long)2 * 1000000000):long long) [line 46, column 18]\n  n$19=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$23=_fun_dispatch_after(n$18:unsigned long long,n$19:NSObject*,(_fun_objc_blockDispatchEx_dispatch_after_example_3):_fn_(*)) block_params [line 46, column 3]\n  EXIT_SCOPE(n$18,n$19,n$23); [line 46, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$18=_fun_dispatch_time(0:unsigned long long,((unsigned long long)2 * 1000000000):long long) [line 46, column 18]\n  n$19=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$23=_fun_dispatch_after(n$18:unsigned long long,n$19:NSObject*,(_fun_objc_blockDispatchEx::dispatch_after_example_3):_fn_(*)) block_params [line 46, column 3]\n  EXIT_SCOPE(n$18,n$19,n$23); [line 46, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" [label="5:  DeclStmt \n   n$24=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx*) assign_last [line 45, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx*=null [line 45, column 3]\n  EXIT_SCOPE(n$24); [line 45, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" [label="5:  DeclStmt \n   n$24=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_after_example.a:DispatchEx*) assign_last [line 45, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_after_example.a:DispatchEx*=null [line 45, column 3]\n  EXIT_SCOPE(n$24); [line 45, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_1" [label="1: Start DispatchEx_dispatch_async_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_1" [label="1: Start DispatchEx::dispatch_async_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_1" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" [label="2: Exit DispatchEx_dispatch_async_example \n  " color=yellow style=filled]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" [label="2: Exit DispatchEx::dispatch_async_example \n  " color=yellow style=filled]
 	
 
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" [label="3:  Return Stmt \n   n$8=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx* [line 41, column 10]\n  n$9=*n$8.x:int [line 41, column 10]\n  *&return:int=n$9 [line 41, column 3]\n  EXIT_SCOPE(n$8,n$9); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" [label="3:  Return Stmt \n   n$8=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_async_example.a:DispatchEx* [line 41, column 10]\n  n$9=*n$8.x:int [line 41, column 10]\n  *&return:int=n$9 [line 41, column 3]\n  EXIT_SCOPE(n$8,n$9); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$10=_fun_dispatch_get_global_queue(0:long,(unsigned long)0:unsigned long) [line 36, column 18]\n  n$14=_fun_dispatch_async(n$10:NSObject*,(_fun_objc_blockDispatchEx_dispatch_async_example_2):_fn_(*)) block_params [line 36, column 3]\n  EXIT_SCOPE(n$10,n$14); [line 36, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$10=_fun_dispatch_get_global_queue(0:long,(unsigned long)0:unsigned long) [line 36, column 18]\n  n$14=_fun_dispatch_async(n$10:NSObject*,(_fun_objc_blockDispatchEx::dispatch_async_example_2):_fn_(*)) block_params [line 36, column 3]\n  EXIT_SCOPE(n$10,n$14); [line 36, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" [label="5:  DeclStmt \n   n$15=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx*) assign_last [line 35, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx*=null [line 35, column 3]\n  EXIT_SCOPE(n$15); [line 35, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" [label="5:  DeclStmt \n   n$15=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_async_example.a:DispatchEx*) assign_last [line 35, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_async_example.a:DispatchEx*=null [line 35, column 3]\n  EXIT_SCOPE(n$15); [line 35, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_1" [label="1: Start DispatchEx_dispatch_barrier_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_1" [label="1: Start DispatchEx::dispatch_barrier_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_1" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" [label="2: Exit DispatchEx_dispatch_barrier_example \n  " color=yellow style=filled]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" [label="2: Exit DispatchEx::dispatch_barrier_example \n  " color=yellow style=filled]
 	
 
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" [label="3:  Return Stmt \n   n$41=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx* [line 79, column 10]\n  n$42=*n$41.x:int [line 79, column 10]\n  *&return:int=n$42 [line 79, column 3]\n  EXIT_SCOPE(n$41,n$42); [line 79, column 3]\n  APPLY_ABSTRACTION; [line 79, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" [label="3:  Return Stmt \n   n$41=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_barrier_example.a:DispatchEx* [line 79, column 10]\n  n$42=*n$41.x:int [line 79, column 10]\n  *&return:int=n$42 [line 79, column 3]\n  EXIT_SCOPE(n$41,n$42); [line 79, column 3]\n  APPLY_ABSTRACTION; [line 79, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" [label="4:  Call _fun_dispatch_barrier_async \n   n$43=_fun_dispatch_get_main_queue() [line 75, column 26]\n  n$47=_fun_dispatch_barrier_async(n$43:NSObject*,(_fun_objc_blockDispatchEx_dispatch_barrier_example_6):_fn_(*)) block_params [line 75, column 3]\n  EXIT_SCOPE(n$43,n$47); [line 75, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" [label="4:  Call _fun_dispatch_barrier_async \n   n$43=_fun_dispatch_get_main_queue() [line 75, column 26]\n  n$47=_fun_dispatch_barrier_async(n$43:NSObject*,(_fun_objc_blockDispatchEx::dispatch_barrier_example_6):_fn_(*)) block_params [line 75, column 3]\n  EXIT_SCOPE(n$43,n$47); [line 75, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" [label="5:  DeclStmt \n   n$48=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx*) assign_last [line 74, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx*=null [line 74, column 3]\n  EXIT_SCOPE(n$48); [line 74, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" [label="5:  DeclStmt \n   n$48=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_barrier_example.a:DispatchEx*) assign_last [line 74, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_barrier_example.a:DispatchEx*=null [line 74, column 3]\n  EXIT_SCOPE(n$48); [line 74, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_1" [label="1: Start DispatchEx_dispatch_group_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_1" [label="1: Start DispatchEx::dispatch_group_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_1" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" [label="2: Exit DispatchEx_dispatch_group_example \n  " color=yellow style=filled]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" [label="2: Exit DispatchEx::dispatch_group_example \n  " color=yellow style=filled]
 	
 
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" [label="3:  Return Stmt \n   n$25=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx* [line 61, column 10]\n  n$26=*n$25.x:int [line 61, column 10]\n  *&return:int=n$26 [line 61, column 3]\n  EXIT_SCOPE(n$25,n$26); [line 61, column 3]\n  APPLY_ABSTRACTION; [line 61, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" [label="3:  Return Stmt \n   n$25=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_example.a:DispatchEx* [line 61, column 10]\n  n$26=*n$25.x:int [line 61, column 10]\n  *&return:int=n$26 [line 61, column 3]\n  EXIT_SCOPE(n$25,n$26); [line 61, column 3]\n  APPLY_ABSTRACTION; [line 61, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" [label="4:  Call _fun_dispatch_group_async \n   n$27=_fun_dispatch_get_main_queue() [line 57, column 30]\n  n$31=_fun_dispatch_group_async(null:NSObject*,n$27:NSObject*,(_fun_objc_blockDispatchEx_dispatch_group_example_4):_fn_(*)) block_params [line 57, column 3]\n  EXIT_SCOPE(n$27,n$31); [line 57, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" [label="4:  Call _fun_dispatch_group_async \n   n$27=_fun_dispatch_get_main_queue() [line 57, column 30]\n  n$31=_fun_dispatch_group_async(null:NSObject*,n$27:NSObject*,(_fun_objc_blockDispatchEx::dispatch_group_example_4):_fn_(*)) block_params [line 57, column 3]\n  EXIT_SCOPE(n$27,n$31); [line 57, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" [label="5:  DeclStmt \n   n$32=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx*) assign_last [line 56, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx*=null [line 56, column 3]\n  EXIT_SCOPE(n$32); [line 56, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" [label="5:  DeclStmt \n   n$32=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_example.a:DispatchEx*) assign_last [line 56, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_example.a:DispatchEx*=null [line 56, column 3]\n  EXIT_SCOPE(n$32); [line 56, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_1" [label="1: Start DispatchEx_dispatch_group_notify_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_1" [label="1: Start DispatchEx::dispatch_group_notify_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_1" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" [label="2: Exit DispatchEx_dispatch_group_notify_example \n  " color=yellow style=filled]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" [label="2: Exit DispatchEx::dispatch_group_notify_example \n  " color=yellow style=filled]
 	
 
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" [label="3:  Return Stmt \n   n$33=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx* [line 70, column 10]\n  n$34=*n$33.x:int [line 70, column 10]\n  *&return:int=n$34 [line 70, column 3]\n  EXIT_SCOPE(n$33,n$34); [line 70, column 3]\n  APPLY_ABSTRACTION; [line 70, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" [label="3:  Return Stmt \n   n$33=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_notify_example.a:DispatchEx* [line 70, column 10]\n  n$34=*n$33.x:int [line 70, column 10]\n  *&return:int=n$34 [line 70, column 3]\n  EXIT_SCOPE(n$33,n$34); [line 70, column 3]\n  APPLY_ABSTRACTION; [line 70, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" [label="4:  Call _fun_dispatch_group_async \n   n$35=_fun_dispatch_get_main_queue() [line 66, column 30]\n  n$39=_fun_dispatch_group_async(null:NSObject*,n$35:NSObject*,(_fun_objc_blockDispatchEx_dispatch_group_notify_example_5):_fn_(*)) block_params [line 66, column 3]\n  EXIT_SCOPE(n$35,n$39); [line 66, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" [label="4:  Call _fun_dispatch_group_async \n   n$35=_fun_dispatch_get_main_queue() [line 66, column 30]\n  n$39=_fun_dispatch_group_async(null:NSObject*,n$35:NSObject*,(_fun_objc_blockDispatchEx::dispatch_group_notify_example_5):_fn_(*)) block_params [line 66, column 3]\n  EXIT_SCOPE(n$35,n$39); [line 66, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" [label="5:  DeclStmt \n   n$40=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx*) assign_last [line 65, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx*=null [line 65, column 3]\n  EXIT_SCOPE(n$40); [line 65, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" [label="5:  DeclStmt \n   n$40=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_notify_example.a:DispatchEx*) assign_last [line 65, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_group_notify_example.a:DispatchEx*=null [line 65, column 3]\n  EXIT_SCOPE(n$40); [line 65, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_1" [label="1: Start DispatchEx_dispatch_once_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_1" [label="1: Start DispatchEx::dispatch_once_example\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_1" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_2" [label="2: Exit DispatchEx_dispatch_once_example \n  " color=yellow style=filled]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_2" [label="2: Exit DispatchEx::dispatch_once_example \n  " color=yellow style=filled]
 	
 
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx* [line 31, column 10]\n  n$2=*n$1.x:int [line 31, column 10]\n  *&return:int=n$2 [line 31, column 3]\n  EXIT_SCOPE(n$1,n$2); [line 31, column 3]\n  APPLY_ABSTRACTION; [line 31, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.a:DispatchEx* [line 31, column 10]\n  n$2=*n$1.x:int [line 31, column 10]\n  *&return:int=n$2 [line 31, column 3]\n  EXIT_SCOPE(n$1,n$2); [line 31, column 3]\n  APPLY_ABSTRACTION; [line 31, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_2" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" [label="4:  Call _fun__dispatch_once \n   n$6=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.onceToken:long*,(_fun_objc_blockDispatchEx_dispatch_once_example_1):_fn_(*)) block_params [line 27, column 3]\n  EXIT_SCOPE(n$6); [line 27, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" [label="4:  Call _fun__dispatch_once \n   n$6=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.onceToken:long*,(_fun_objc_blockDispatchEx::dispatch_once_example_1):_fn_(*)) block_params [line 27, column 3]\n  EXIT_SCOPE(n$6); [line 27, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx*) assign_last [line 23, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx*=null [line 23, column 3]\n  EXIT_SCOPE(n$7); [line 23, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.a:DispatchEx*) assign_last [line 23, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx::dispatch_once_example.a:DispatchEx*=null [line 23, column 3]\n  EXIT_SCOPE(n$7); [line 23, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" ;
-"init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_1" [label="1: Start DispatchEx_init\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
+"init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_1" [label="1: Start DispatchEx::init\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_1" -> "init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_3" ;
-"init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_2" [label="2: Exit DispatchEx_init \n  " color=yellow style=filled]
+"init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_2" [label="2: Exit DispatchEx::init \n  " color=yellow style=filled]
 	
 
 "init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_3" [label="3:  Return Stmt \n   n$0=*&self:DispatchEx* [line 19, column 10]\n  *&return:objc_object*=n$0 [line 19, column 3]\n  NULLIFY(&self); [line 19, column 3]\n  EXIT_SCOPE(n$0,self); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]

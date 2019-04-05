@@ -38,16 +38,16 @@ digraph cfg {
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_2" ;
-"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" [label="8:  DeclStmt \n   n$9=_fun___variable_initialization(&seed:int) assign_last [line 14, column 3]\n  n$6=*&t:int const & [line 14, column 27]\n  n$7=*n$6:int [line 14, column 27]\n  n$8=_fun_MyHasher_hash(n$7:int) [line 14, column 14]\n  *&seed:int=n$8 [line 14, column 3]\n  NULLIFY(&t); [line 14, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,t); [line 14, column 3]\n " shape="box"]
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" [label="8:  DeclStmt \n   n$9=_fun___variable_initialization(&seed:int) assign_last [line 14, column 3]\n  n$6=*&t:int const & [line 14, column 27]\n  n$7=*n$6:int [line 14, column 27]\n  n$8=_fun_MyHasher::hash(n$7:int) [line 14, column 14]\n  *&seed:int=n$8 [line 14, column 3]\n  NULLIFY(&t); [line 14, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9,t); [line 14, column 3]\n " shape="box"]
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" ;
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" ;
-"hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_1" [label="1: Start MyHasher_hash\nFormals:  t:int\nLocals:  \n  " color=yellow style=filled]
+"hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_1" [label="1: Start MyHasher::hash\nFormals:  t:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_1" -> "hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_3" ;
-"hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_2" [label="2: Exit MyHasher_hash \n  " color=yellow style=filled]
+"hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_2" [label="2: Exit MyHasher::hash \n  " color=yellow style=filled]
 	
 
 "hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_3" [label="3:  Return Stmt \n   *&return:int=1 [line 9, column 28]\n  APPLY_ABSTRACTION; [line 9, column 28]\n " shape="box"]

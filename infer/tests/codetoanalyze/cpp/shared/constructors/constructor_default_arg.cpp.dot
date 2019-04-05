@@ -7,34 +7,34 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&x3); [line 22, column 1]\n  NULLIFY(&x1); [line 22, column 1]\n  NULLIFY(&x2); [line 22, column 1]\n " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&x3:X) assign_last [line 21, column 3]\n  n$1=_fun_X_X(&x3:X*,0:int,1:int) [line 21, column 5]\n  EXIT_SCOPE(n$1,n$2,x3); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&x3:X) assign_last [line 21, column 3]\n  n$1=_fun_X::X(&x3:X*,0:int,1:int) [line 21, column 5]\n  EXIT_SCOPE(n$1,n$2,x3); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:X) assign_last [line 20, column 3]\n  n$3=_fun_X_X(&x2:X*,1:int,0:int) [line 20, column 5]\n  EXIT_SCOPE(n$3,n$4,x2); [line 20, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:X) assign_last [line 20, column 3]\n  n$3=_fun_X::X(&x2:X*,1:int,0:int) [line 20, column 5]\n  EXIT_SCOPE(n$3,n$4,x2); [line 20, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:X) assign_last [line 19, column 3]\n  n$5=_fun_X_X(&x1:X*,0:int,0:int) [line 19, column 5]\n  EXIT_SCOPE(n$5,n$6,x1); [line 19, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:X) assign_last [line 19, column 3]\n  n$5=_fun_X::X(&x1:X*,0:int,0:int) [line 19, column 5]\n  EXIT_SCOPE(n$5,n$6,x1); [line 19, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X::div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X_div \n  " color=yellow style=filled]
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X::div \n  " color=yellow style=filled]
 	
 
 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 13, column 26]\n  n$1=*n$0.f:int [line 13, column 26]\n  *&return:int=(1 / n$1) [line 13, column 15]\n  NULLIFY(&this); [line 13, column 15]\n  EXIT_SCOPE(n$0,n$1,this); [line 13, column 15]\n  APPLY_ABSTRACTION; [line 13, column 15]\n " shape="box"]
 	
 
 	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
-"X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_1" [label="1: Start X_X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
+"X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_1" -> "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_3" ;
-"X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+"X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
 "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:X* [line 16, column 22]\n  n$2=*&a:int [line 16, column 26]\n  n$3=*&b:int [line 16, column 30]\n  *n$1.f:int=(n$2 + n$3) [line 16, column 22]\n  NULLIFY(&a); [line 16, column 22]\n  NULLIFY(&b); [line 16, column 22]\n  NULLIFY(&this); [line 16, column 22]\n  EXIT_SCOPE(n$1,n$2,n$3,a,b,this); [line 16, column 22]\n  APPLY_ABSTRACTION; [line 16, column 22]\n " shape="box"]

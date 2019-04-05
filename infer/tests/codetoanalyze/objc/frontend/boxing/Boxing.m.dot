@@ -1,77 +1,77 @@
 /* @generated */
 digraph cfg {
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing_getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing::getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
 	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing_getBool \n   NULLIFY(&n); [line 37, column 1]\n " color=yellow style=filled]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing::getBool \n   NULLIFY(&n); [line 37, column 1]\n " color=yellow style=filled]
 	
 
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$18=_fun_NSNumber_numberWithBool:(1:_Bool) [line 36, column 10]\n  *&return:NSNumber*=n$18 [line 36, column 3]\n  EXIT_SCOPE(n$18); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$18=_fun_NSNumber::numberWithBool:(1:_Bool) [line 36, column 10]\n  *&return:NSNumber*=n$18 [line 36, column 3]\n  EXIT_SCOPE(n$18); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
 	
 
 	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$20=_fun___variable_initialization(&n:NSNumber*) assign_last [line 35, column 3]\n  n$19=_fun_NSNumber_numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$19 [line 35, column 3]\n  EXIT_SCOPE(n$19,n$20,n); [line 35, column 3]\n " shape="box"]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$20=_fun___variable_initialization(&n:NSNumber*) assign_last [line 35, column 3]\n  n$19=_fun_NSNumber::numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$19 [line 35, column 3]\n  EXIT_SCOPE(n$19,n$20,n); [line 35, column 3]\n " shape="box"]
 	
 
 	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing_getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing::getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
 	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing_getDouble \n   NULLIFY(&n); [line 32, column 1]\n " color=yellow style=filled]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing::getDouble \n   NULLIFY(&n); [line 32, column 1]\n " color=yellow style=filled]
 	
 
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$15=_fun_NSNumber_numberWithDouble:(1.5:double) [line 31, column 10]\n  *&return:NSNumber*=n$15 [line 31, column 3]\n  EXIT_SCOPE(n$15); [line 31, column 3]\n  APPLY_ABSTRACTION; [line 31, column 3]\n " shape="box"]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$15=_fun_NSNumber::numberWithDouble:(1.5:double) [line 31, column 10]\n  *&return:NSNumber*=n$15 [line 31, column 3]\n  EXIT_SCOPE(n$15); [line 31, column 3]\n  APPLY_ABSTRACTION; [line 31, column 3]\n " shape="box"]
 	
 
 	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$17=_fun___variable_initialization(&n:NSNumber*) assign_last [line 30, column 3]\n  n$16=_fun_NSNumber_numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$16 [line 30, column 3]\n  EXIT_SCOPE(n$16,n$17,n); [line 30, column 3]\n " shape="box"]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$17=_fun___variable_initialization(&n:NSNumber*) assign_last [line 30, column 3]\n  n$16=_fun_NSNumber::numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$16 [line 30, column 3]\n  EXIT_SCOPE(n$16,n$17,n); [line 30, column 3]\n " shape="box"]
 	
 
 	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing_getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing::getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
 	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing_getFloat \n   NULLIFY(&n); [line 27, column 1]\n " color=yellow style=filled]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing::getFloat \n   NULLIFY(&n); [line 27, column 1]\n " color=yellow style=filled]
 	
 
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber_numberWithFloat:(1.5:float) [line 26, column 10]\n  *&return:NSNumber*=n$12 [line 26, column 3]\n  EXIT_SCOPE(n$12); [line 26, column 3]\n  APPLY_ABSTRACTION; [line 26, column 3]\n " shape="box"]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber::numberWithFloat:(1.5:float) [line 26, column 10]\n  *&return:NSNumber*=n$12 [line 26, column 3]\n  EXIT_SCOPE(n$12); [line 26, column 3]\n  APPLY_ABSTRACTION; [line 26, column 3]\n " shape="box"]
 	
 
 	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&n:NSNumber*) assign_last [line 25, column 3]\n  n$13=_fun_NSNumber_numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$13 [line 25, column 3]\n  EXIT_SCOPE(n$13,n$14,n); [line 25, column 3]\n " shape="box"]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$14=_fun___variable_initialization(&n:NSNumber*) assign_last [line 25, column 3]\n  n$13=_fun_NSNumber::numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$13 [line 25, column 3]\n  EXIT_SCOPE(n$13,n$14,n); [line 25, column 3]\n " shape="box"]
 	
 
 	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing_getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing::getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
 	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing_getInt \n   NULLIFY(&n); [line 22, column 1]\n " color=yellow style=filled]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing::getInt \n   NULLIFY(&n); [line 22, column 1]\n " color=yellow style=filled]
 	
 
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$9=_fun_NSNumber_numberWithInt:(5:int) [line 21, column 10]\n  *&return:NSNumber*=n$9 [line 21, column 3]\n  EXIT_SCOPE(n$9); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$9=_fun_NSNumber::numberWithInt:(5:int) [line 21, column 10]\n  *&return:NSNumber*=n$9 [line 21, column 3]\n  EXIT_SCOPE(n$9); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
 	
 
 	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&n:NSNumber*) assign_last [line 20, column 3]\n  n$10=_fun_NSNumber_numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$10 [line 20, column 3]\n  EXIT_SCOPE(n$10,n$11,n); [line 20, column 3]\n " shape="box"]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&n:NSNumber*) assign_last [line 20, column 3]\n  n$10=_fun_NSNumber::numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$10 [line 20, column 3]\n  EXIT_SCOPE(n$10,n$11,n); [line 20, column 3]\n " shape="box"]
 	
 
 	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing_getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n  " color=yellow style=filled]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing::getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n  " color=yellow style=filled]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" [label="2: Exit Boxing_getIntExp \n   NULLIFY(&n); [line 17, column 1]\n " color=yellow style=filled]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" [label="2: Exit Boxing::getIntExp \n   NULLIFY(&n); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 12]\n  n$1=*&y:int [line 16, column 16]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int) [line 16, column 10]\n  *&return:NSNumber*=n$2 [line 16, column 3]\n  NULLIFY(&x); [line 16, column 3]\n  NULLIFY(&y); [line 16, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,x,y); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 12]\n  n$1=*&y:int [line 16, column 16]\n  n$2=_fun_NSNumber::numberWithInt:((n$0 + n$1):int) [line 16, column 10]\n  *&return:NSNumber*=n$2 [line 16, column 3]\n  NULLIFY(&x); [line 16, column 3]\n  NULLIFY(&y); [line 16, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,x,y); [line 16, column 3]\n  APPLY_ABSTRACTION; [line 16, column 3]\n " shape="box"]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&n:NSNumber*) assign_last [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,n$6,n); [line 15, column 3]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&n:NSNumber*) assign_last [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber::numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,n$6,n); [line 15, column 3]\n " shape="box"]
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" ;
@@ -83,18 +83,18 @@ digraph cfg {
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" [label="1: Start Boxing_getS\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" [label="1: Start Boxing::getS\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" [label="2: Exit Boxing_getS \n   NULLIFY(&s); [line 43, column 1]\n " color=yellow style=filled]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" [label="2: Exit Boxing::getS \n   NULLIFY(&s); [line 43, column 1]\n " color=yellow style=filled]
 	
 
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$22=_fun_NSString_stringWithUTF8String:((char const *)\"hello world\":char const *) [line 41, column 10]\n  *&return:NSString*=n$22 [line 41, column 3]\n  EXIT_SCOPE(n$22); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$22=_fun_NSString::stringWithUTF8String:((char const *)\"hello world\":char const *) [line 41, column 10]\n  *&return:NSString*=n$22 [line 41, column 3]\n  EXIT_SCOPE(n$22); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   n$25=_fun___variable_initialization(&s:NSString*) assign_last [line 40, column 3]\n  n$23=_fun_strdup((char const *)\"hello world\":char const *) [line 40, column 19]\n  n$24=_fun_NSString_stringWithUTF8String:((char const *)n$23:char const *) [line 40, column 17]\n  *&s:NSString*=n$24 [line 40, column 3]\n  EXIT_SCOPE(n$23,n$24,n$25,s); [line 40, column 3]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   n$25=_fun___variable_initialization(&s:NSString*) assign_last [line 40, column 3]\n  n$23=_fun_strdup((char const *)\"hello world\":char const *) [line 40, column 19]\n  n$24=_fun_NSString::stringWithUTF8String:((char const *)n$23:char const *) [line 40, column 17]\n  *&s:NSString*=n$24 [line 40, column 3]\n  EXIT_SCOPE(n$23,n$24,n$25,s); [line 40, column 3]\n " shape="box"]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;

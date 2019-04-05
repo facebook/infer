@@ -7,74 +7,74 @@ digraph cfg {
 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_2" [label="2: Exit npe_property_nullable \n   NULLIFY(&child); [line 57, column 1]\n  NULLIFY(&person); [line 57, column 1]\n " color=yellow style=filled]
 	
 
-"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_3" [label="3:  Return Stmt \n   n$1=*&child:Person* [line 56, column 21]\n  n$0=_fun_NSString_stringWithUTF8String:(\"key\":char* const ) [line 56, column 12]\n  n$2=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(n$1:objc_object*,n$0:objc_object*,null:objc_object*) [line 56, column 10]\n  *&return:NSDictionary*=n$2 [line 56, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,child); [line 56, column 3]\n  APPLY_ABSTRACTION; [line 56, column 3]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_3" [label="3:  Return Stmt \n   n$1=*&child:Person* [line 56, column 21]\n  n$0=_fun_NSString::stringWithUTF8String:(\"key\":char* const ) [line 56, column 12]\n  n$2=_fun_NSDictionary::dictionaryWithObjects:forKeys:count:(n$1:objc_object*,n$0:objc_object*,null:objc_object*) [line 56, column 10]\n  *&return:NSDictionary*=n$2 [line 56, column 3]\n  EXIT_SCOPE(n$0,n$1,n$2,child); [line 56, column 3]\n  APPLY_ABSTRACTION; [line 56, column 3]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_3" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_2" ;
-"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&child:Person*) assign_last [line 55, column 3]\n  n$3=*&person:Person* [line 55, column 19]\n  n$4=_fun_Person_child(n$3:Person*) [line 55, column 26]\n  *&child:Person*=n$4 [line 55, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,person); [line 55, column 3]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&child:Person*) assign_last [line 55, column 3]\n  n$3=*&person:Person* [line 55, column 19]\n  n$4=_fun_Person::child(n$3:Person*) [line 55, column 26]\n  *&child:Person*=n$4 [line 55, column 3]\n  EXIT_SCOPE(n$3,n$4,n$5,person); [line 55, column 3]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_3" ;
-"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&person:Person*) assign_last [line 54, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Person):unsigned long) [line 54, column 20]\n  n$7=_fun_NSObject_init(n$6:Person*) virtual [line 54, column 20]\n  *&person:Person*=n$7 [line 54, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8); [line 54, column 3]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&person:Person*) assign_last [line 54, column 3]\n  n$6=_fun___objc_alloc_no_fail(sizeof(t=Person):unsigned long) [line 54, column 20]\n  n$7=_fun_NSObject::init(n$6:Person*) virtual [line 54, column 20]\n  *&person:Person*=n$7 [line 54, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8); [line 54, column 3]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" ;
-"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User_initWithName:\nFormals:  self:User* name:NSString*\nLocals: \nAnnotation: <_Nullable> User_initWithName:(<> <_Nullable>) \n  " color=yellow style=filled]
+"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User::initWithName:\nFormals:  self:User* name:NSString*\nLocals: \nAnnotation: <_Nullable> User::initWithName:(<> <_Nullable>) \n  " color=yellow style=filled]
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" ;
-"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_2" [label="2: Exit User_initWithName: \n  " color=yellow style=filled]
+"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_2" [label="2: Exit User::initWithName: \n  " color=yellow style=filled]
 	
 
 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" [label="3:  Return Stmt \n   n$0=*&self:User* [line 30, column 10]\n  *&return:objc_object*=n$0 [line 30, column 3]\n  NULLIFY(&self); [line 30, column 3]\n  EXIT_SCOPE(n$0,self); [line 30, column 3]\n  APPLY_ABSTRACTION; [line 30, column 3]\n " shape="box"]
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_2" ;
-"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" [label="1: Start User_otherUserName\nFormals:  self:User*\nLocals:  ou:User* \n  " color=yellow style=filled]
+"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" [label="1: Start User::otherUserName\nFormals:  self:User*\nLocals:  ou:User* \n  " color=yellow style=filled]
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" ;
-"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_2" [label="2: Exit User_otherUserName \n   NULLIFY(&ou); [line 51, column 1]\n " color=yellow style=filled]
+"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_2" [label="2: Exit User::otherUserName \n   NULLIFY(&ou); [line 51, column 1]\n " color=yellow style=filled]
 	
 
 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_3" [label="3:  Return Stmt \n   n$4=*&ou:User* [line 50, column 10]\n  n$5=*n$4._name:NSString* [line 50, column 10]\n  *&return:NSString*=n$5 [line 50, column 3]\n  EXIT_SCOPE(n$4,n$5,ou); [line 50, column 3]\n  APPLY_ABSTRACTION; [line 50, column 3]\n " shape="box"]
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_3" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_2" ;
-"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" [label="4:  DeclStmt \n   n$8=_fun___variable_initialization(&ou:User*) assign_last [line 49, column 3]\n  n$6=*&self:User* [line 49, column 15]\n  n$7=_fun_User_otherUser(n$6:User*) virtual [line 49, column 14]\n  *&ou:User*=n$7 [line 49, column 3]\n  NULLIFY(&self); [line 49, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,self); [line 49, column 3]\n " shape="box"]
+"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" [label="4:  DeclStmt \n   n$8=_fun___variable_initialization(&ou:User*) assign_last [line 49, column 3]\n  n$6=*&self:User* [line 49, column 15]\n  n$7=_fun_User::otherUser(n$6:User*) virtual [line 49, column 14]\n  *&ou:User*=n$7 [line 49, column 3]\n  NULLIFY(&self); [line 49, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,self); [line 49, column 3]\n " shape="box"]
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_3" ;
-"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User_tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User_tellMeSomething(<>) \n  " color=yellow style=filled]
+"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User::tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User::tellMeSomething(<>) \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" -> "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" ;
-"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_2" [label="2: Exit User_tellMeSomething \n  " color=yellow style=filled]
+"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_2" [label="2: Exit User::tellMeSomething \n  " color=yellow style=filled]
 	
 
-"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" [label="3:  Return Stmt \n   n$1=_fun_NSString_stringWithUTF8String:(\"Hi\":char* const ) [line 34, column 10]\n  *&return:NSString*=n$1 [line 34, column 3]\n  EXIT_SCOPE(n$1); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
+"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" [label="3:  Return Stmt \n   n$1=_fun_NSString::stringWithUTF8String:(\"Hi\":char* const ) [line 34, column 10]\n  *&return:NSString*=n$1 [line 34, column 3]\n  EXIT_SCOPE(n$1); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
 	
 
 	 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" -> "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_2" ;
-"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" [label="1: Start User_tellMeSomething:and:and:and:\nFormals:  self:User* s1:NSString* s2:NSString* s3:NSString* s4:NSString*\nLocals: \nAnnotation: <> User_tellMeSomething:and:and:and:(<> <> <> <_Nullable> <>) \n  " color=yellow style=filled]
+"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" [label="1: Start User::tellMeSomething:and:and:and:\nFormals:  self:User* s1:NSString* s2:NSString* s3:NSString* s4:NSString*\nLocals: \nAnnotation: <> User::tellMeSomething:and:and:and:(<> <> <> <_Nullable> <>) \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" -> "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" ;
-"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_2" [label="2: Exit User_tellMeSomething:and:and:and: \n  " color=yellow style=filled]
+"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_2" [label="2: Exit User::tellMeSomething:and:and:and: \n  " color=yellow style=filled]
 	
 
-"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" [label="3:  Return Stmt \n   n$3=_fun_NSString_stringWithUTF8String:(\"Hi\":char* const ) [line 45, column 10]\n  *&return:NSString*=n$3 [line 45, column 3]\n  EXIT_SCOPE(n$3); [line 45, column 3]\n  APPLY_ABSTRACTION; [line 45, column 3]\n " shape="box"]
+"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" [label="3:  Return Stmt \n   n$3=_fun_NSString::stringWithUTF8String:(\"Hi\":char* const ) [line 45, column 10]\n  *&return:NSString*=n$3 [line 45, column 3]\n  EXIT_SCOPE(n$3); [line 45, column 3]\n  APPLY_ABSTRACTION; [line 45, column 3]\n " shape="box"]
 	
 
 	 "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" -> "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_2" ;
-"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" [label="1: Start User_tellMeSomethingNotNullable\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
+"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" [label="1: Start User::tellMeSomethingNotNullable\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" -> "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_3" ;
-"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_2" [label="2: Exit User_tellMeSomethingNotNullable \n  " color=yellow style=filled]
+"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_2" [label="2: Exit User::tellMeSomethingNotNullable \n  " color=yellow style=filled]
 	
 
-"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_3" [label="3:  Return Stmt \n   n$2=_fun_NSString_stringWithUTF8String:(\"Hi\":char* const ) [line 38, column 10]\n  *&return:NSString*=n$2 [line 38, column 3]\n  EXIT_SCOPE(n$2); [line 38, column 3]\n  APPLY_ABSTRACTION; [line 38, column 3]\n " shape="box"]
+"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_3" [label="3:  Return Stmt \n   n$2=_fun_NSString::stringWithUTF8String:(\"Hi\":char* const ) [line 38, column 10]\n  *&return:NSString*=n$2 [line 38, column 3]\n  EXIT_SCOPE(n$2); [line 38, column 3]\n  APPLY_ABSTRACTION; [line 38, column 3]\n " shape="box"]
 	
 
 	 "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_3" -> "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_2" ;

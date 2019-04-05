@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_1" [label="1: Start A_addTarget:\nFormals:  self:A* target:A*\nLocals:  \n  " color=yellow style=filled]
+"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_1" [label="1: Start A::addTarget:\nFormals:  self:A* target:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_1" -> "addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_3" ;
-"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_2" [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
+"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_2" [label="2: Exit A::addTarget: \n  " color=yellow style=filled]
 	
 
-"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_3" [label="3:  Return Stmt \n   n$0=*&target:A* [line 17, column 10]\n  n$1=_fun_A_x(n$0:A*) [line 17, column 17]\n  *&return:int=n$1 [line 17, column 3]\n  NULLIFY(&target); [line 17, column 3]\n  EXIT_SCOPE(n$0,n$1,target); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_3" [label="3:  Return Stmt \n   n$0=*&target:A* [line 17, column 10]\n  n$1=_fun_A::x(n$0:A*) [line 17, column 17]\n  *&return:int=n$1 [line 17, column 3]\n  NULLIFY(&target); [line 17, column 3]\n  EXIT_SCOPE(n$0,n$1,target); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
 	
 
 	 "addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_3" -> "addTarget:#A(class A)#instance.ca26ddd02ac11fb266531b38b6edef27_2" ;

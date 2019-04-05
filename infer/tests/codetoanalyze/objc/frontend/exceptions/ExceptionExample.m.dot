@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample_test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample::test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" ;
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" [label="2: Exit ExceptionExample_test \n   NULLIFY(&s); [line 23, column 1]\n " color=yellow style=filled]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" [label="2: Exit ExceptionExample::test \n   NULLIFY(&s); [line 23, column 1]\n " color=yellow style=filled]
 	
 
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 21, column 6]\n  n$1=_fun_NSObject_description(n$0:ExceptionExample*) [line 21, column 5]\n  NULLIFY(&self); [line 21, column 5]\n  EXIT_SCOPE(n$0,n$1,self); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 21, column 6]\n  n$1=_fun_NSObject::description(n$0:ExceptionExample*) [line 21, column 5]\n  NULLIFY(&self); [line 21, column 5]\n  EXIT_SCOPE(n$0,n$1,self); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;
@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" [label="1: Start ExceptionExample_test1\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" [label="1: Start ExceptionExample::test1\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_2" [label="2: Exit ExceptionExample_test1 \n   NULLIFY(&s); [line 34, column 1]\n " color=yellow style=filled]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_2" [label="2: Exit ExceptionExample::test1 \n   NULLIFY(&s); [line 34, column 1]\n " color=yellow style=filled]
 	
 
 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" [label="3: + \n  " ]
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$7=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 29, column 27]\n  n$6=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 31, column 24]\n  n$8=_fun_NSException_exceptionWithName:reason:userInfo:(n$7:NSString*,n$6:NSString*,null:NSDictionary*) [line 28, column 12]\n  n$9=_fun___infer_objc_cpp_throw(n$8:NSException*) [line 28, column 5]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9); [line 28, column 5]\n  APPLY_ABSTRACTION; [line 28, column 5]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$7=_fun_NSString::stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 29, column 27]\n  n$6=_fun_NSString::stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 31, column 24]\n  n$8=_fun_NSException::exceptionWithName:reason:userInfo:(n$7:NSString*,n$6:NSString*,null:NSDictionary*) [line 28, column 12]\n  n$9=_fun___infer_objc_cpp_throw(n$8:NSException*) [line 28, column 5]\n  EXIT_SCOPE(n$6,n$7,n$8,n$9); [line 28, column 5]\n  APPLY_ABSTRACTION; [line 28, column 5]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;

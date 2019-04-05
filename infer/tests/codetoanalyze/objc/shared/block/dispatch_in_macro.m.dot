@@ -26,7 +26,7 @@ digraph cfg {
 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" [label="2: Exit objc_blockDispatchInMacroTest_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject_init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n  EXIT_SCOPE(n$1,n$2); [line 21, column 10]\n  APPLY_ABSTRACTION; [line 21, column 10]\n " shape="box"]
+"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject::init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n  EXIT_SCOPE(n$1,n$2); [line 21, column 10]\n  APPLY_ABSTRACTION; [line 21, column 10]\n " shape="box"]
 	
 
 	 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" -> "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" ;

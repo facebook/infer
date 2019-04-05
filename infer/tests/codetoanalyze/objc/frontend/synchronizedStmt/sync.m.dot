@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_1" [label="1: Start A_myMethod:\nFormals:  self:A* anObj:objc_object*\nLocals:  x:int \n  " color=yellow style=filled]
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_1" [label="1: Start A::myMethod:\nFormals:  self:A* anObj:objc_object*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
 	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_1" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" ;
-"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_2" [label="2: Exit A_myMethod: \n  " color=yellow style=filled]
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_2" [label="2: Exit A::myMethod: \n  " color=yellow style=filled]
 	
 
 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_3" [label="3:  Call _fun___delete_locked_attribute \n   n$0=*&anObj:objc_object* [line 19, column 17]\n  n$1=_fun___delete_locked_attribute(n$0:objc_object*) [line 19, column 3]\n  NULLIFY(&anObj); [line 19, column 3]\n  EXIT_SCOPE(n$0,n$1,anObj); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]

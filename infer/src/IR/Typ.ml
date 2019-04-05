@@ -897,10 +897,10 @@ module Procname = struct
       | Simple ->
           osig.method_name
       | Non_verbose ->
-          Name.name osig.class_name ^ "_" ^ osig.method_name
+          Name.name osig.class_name ^ "::" ^ osig.method_name
       | Verbose ->
           let m_str = kind_to_verbose_string osig.kind in
-          Name.name osig.class_name ^ "_" ^ osig.method_name
+          Name.name osig.class_name ^ "::" ^ osig.method_name
           ^ Parameter.parameters_to_string osig.parameters
           ^ m_str
 

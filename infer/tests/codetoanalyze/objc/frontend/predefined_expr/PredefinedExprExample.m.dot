@@ -1,35 +1,35 @@
 /* @generated */
 digraph cfg {
-"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" [label="1: Start A_testFunct\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" [label="1: Start A::testFunct\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" ;
-"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" [label="2: Exit A_testFunct \n  " color=yellow style=filled]
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" [label="2: Exit A::testFunct \n  " color=yellow style=filled]
 	
 
-"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString_stringWithUTF8String:(\"%s\":char* const ) [line 25, column 9]\n  n$5=_fun_NSLog(n$4:objc_object*,\"\":char const *) [line 25, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString::stringWithUTF8String:(\"%s\":char* const ) [line 25, column 9]\n  n$5=_fun_NSLog(n$4:objc_object*,\"\":char const *) [line 25, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" ;
-"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" [label="1: Start A_testFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" [label="1: Start A::testFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" ;
-"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" [label="2: Exit A_testFunction \n  " color=yellow style=filled]
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" [label="2: Exit A::testFunction \n  " color=yellow style=filled]
 	
 
-"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"%s\":char* const ) [line 21, column 9]\n  n$3=_fun_NSLog(n$2:objc_object*,\"\":char const *) [line 21, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString::stringWithUTF8String:(\"%s\":char* const ) [line 21, column 9]\n  n$3=_fun_NSLog(n$2:objc_object*,\"\":char const *) [line 21, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 21, column 3]\n  APPLY_ABSTRACTION; [line 21, column 3]\n " shape="box"]
 	
 
 	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" ;
-"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" [label="1: Start A_testPrettyFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" [label="1: Start A::testPrettyFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" -> "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" ;
-"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_2" [label="2: Exit A_testPrettyFunction \n  " color=yellow style=filled]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_2" [label="2: Exit A::testPrettyFunction \n  " color=yellow style=filled]
 	
 
-"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%s\":char* const ) [line 17, column 9]\n  n$1=_fun_NSLog(n$0:objc_object*,\"\":char const *) [line 17, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString::stringWithUTF8String:(\"%s\":char* const ) [line 17, column 9]\n  n$1=_fun_NSLog(n$0:objc_object*,\"\":char const *) [line 17, column 3]\n  EXIT_SCOPE(n$0,n$1); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
 	
 
 	 "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" -> "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_2" ;

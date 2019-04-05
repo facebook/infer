@@ -1,10 +1,10 @@
 /* @generated */
 digraph cfg {
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" [label="1: Start NpeMallocC_test\nFormals:  self:NpeMallocC*\nLocals:  person:Person* \n  " color=yellow style=filled]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" [label="1: Start NpeMallocC::test\nFormals:  self:NpeMallocC*\nLocals:  person:Person* \n  " color=yellow style=filled]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" ;
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" [label="2: Exit NpeMallocC_test \n   NULLIFY(&person); [line 26, column 1]\n " color=yellow style=filled]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" [label="2: Exit NpeMallocC::test \n   NULLIFY(&person); [line 26, column 1]\n " color=yellow style=filled]
 	
 
 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" [label="3:  Return Stmt \n   n$0=*&person:Person* [line 25, column 10]\n  *&return:Person*=n$0 [line 25, column 3]\n  EXIT_SCOPE(n$0,person); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
