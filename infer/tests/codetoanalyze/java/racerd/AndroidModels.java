@@ -12,9 +12,14 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.IBinder;
+import android.os.IInterface;
 import android.util.DisplayMetrics;
 import android.view.View;
 import javax.annotation.concurrent.ThreadSafe;
+
+// aidl generated classes implementing this interface are automatically threadsafe
+interface AidlInterface extends IInterface {}
 
 class MyActivity extends Activity {}
 
@@ -66,5 +71,9 @@ public class AndroidModels {
   public void findViewByIdOk2(MyActivity activity) {
     MyView view = (MyView) activity.findViewById(-1);
     view.mField = true; // ok;
+  }
+
+  public IBinder safeByDefaultInterfaceCallOk(AidlInterface i) {
+    return i.asBinder();
   }
 }

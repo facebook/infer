@@ -367,45 +367,48 @@ let is_safe_access access prefix_path tenv =
       false
 
 
-let should_flag_interface_call tenv exp call_flags pname =
-  (* return true if this function is library code from the JDK core libraries or Android *)
-  let is_java_library = function
-    | Typ.Procname.Java java_pname -> (
-      match Typ.Procname.Java.get_package java_pname with
-      | Some package_name ->
-          String.is_prefix ~prefix:"java." package_name
-          || String.is_prefix ~prefix:"android." package_name
-          || String.is_prefix ~prefix:"com.google." package_name
-      | None ->
-          false )
-    | _ ->
-        false
-  in
-  let is_builder_function = function
-    | Typ.Procname.Java java_pname ->
-        String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
-    | _ ->
-        false
-  in
+let should_flag_interface_call tenv exps call_flags pname =
   let thread_safe_or_thread_confined annot =
     Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
   in
-  call_flags.CallFlags.cf_interface && Typ.Procname.is_java pname
-  && (not (is_java_library pname || is_builder_function pname))
-  (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
-     thread-safe (would be unreasonable to ask everyone to annotate them) *)
-  && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
-  && (not (has_return_annot thread_safe_or_thread_confined pname))
-  &&
-  match exp with
-  | HilExp.AccessExpression receiver_access_exp :: _ -> (
-      HilExp.AccessExpression.to_access_path receiver_access_exp
-      |> AccessPath.truncate
-      |> function
-      | receiver_prefix, Some receiver_field ->
-          is_safe_access receiver_field receiver_prefix tenv |> not
-      | _ ->
-          true )
+  (* is this function in library code from the JDK core libraries or Android? *)
+  let is_java_library java_pname =
+    Typ.Procname.Java.get_package java_pname
+    |> Option.exists ~f:(fun package_name ->
+           String.is_prefix ~prefix:"java." package_name
+           || String.is_prefix ~prefix:"android." package_name
+           || String.is_prefix ~prefix:"com.google." package_name )
+  in
+  let is_builder_function java_pname =
+    String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
+  in
+  let receiver_is_not_safe exps tenv =
+    List.hd exps
+    |> Option.bind ~f:(fun exp -> HilExp.get_access_exprs exp |> List.hd)
+    |> Option.map ~f:HilExp.AccessExpression.to_access_path
+    |> Option.map ~f:AccessPath.truncate
+    |> Option.exists ~f:(function
+         | receiver_prefix, Some receiver_field ->
+             not (is_safe_access receiver_field receiver_prefix tenv)
+         | _ ->
+             true )
+  in
+  let implements_threadsafe_interface java_pname tenv =
+    (* generated classes implementing this interface are always threadsafe *)
+    Typ.Procname.Java.get_class_type_name java_pname
+    |> fun tname -> PatternMatch.is_subtype_of_str tenv tname "android.os.IInterface"
+  in
+  match pname with
+  | Typ.Procname.Java java_pname ->
+      call_flags.CallFlags.cf_interface
+      && (not (is_java_library java_pname))
+      && (not (is_builder_function java_pname))
+      (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
+      thread-safe (would be unreasonable to ask everyone to annotate them) *)
+      && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
+      && (not (has_return_annot thread_safe_or_thread_confined pname))
+      && receiver_is_not_safe exps tenv
+      && not (implements_threadsafe_interface java_pname tenv)
   | _ ->
       false
 

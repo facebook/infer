@@ -1,4 +1,4 @@
-codetoanalyze/java/racerd/AndroidModels.java, codetoanalyze.java.checkers.AndroidModels.someResourceMethodsNotFunctionalBad():void, 58, THREAD_SAFETY_VIOLATION, no_bucket, ERROR, [access to `this.mField`]
+codetoanalyze/java/racerd/AndroidModels.java, codetoanalyze.java.checkers.AndroidModels.someResourceMethodsNotFunctionalBad():void, 63, THREAD_SAFETY_VIOLATION, no_bucket, ERROR, [access to `this.mField`]
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotations.FP_functionalAcrossBoxingLongOk():int, 342, THREAD_SAFETY_VIOLATION, no_bucket, ERROR, [access to `this.mBoxedLong2`]
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotations.FP_functionalAcrossUnboxingOk():boolean, 312, THREAD_SAFETY_VIOLATION, no_bucket, ERROR, [access to `this.mBool2`]
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotations.conditional2_bad(boolean):void, 180, THREAD_SAFETY_VIOLATION, no_bucket, ERROR, [access to `this.ii`]
