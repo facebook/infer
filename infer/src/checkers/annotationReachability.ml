@@ -169,7 +169,8 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
     Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
 
 
-let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
+let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map
+    ~string_of_pname ~call_str =
   let lookup_location pname =
     Option.value_map ~f:Procdesc.get_loc ~default:Location.dummy (Ondemand.get_proc_desc pname)
   in
@@ -180,7 +181,14 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
       let callee_def_loc = lookup_location callee_pname in
       let next_calls = lookup_next_calls callee_pname in
       let callee_pname_str = string_of_pname callee_pname in
-      let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
+      let new_stack_str =
+        if
+          String.equal stack_str (Printf.sprintf "%s%s " callee_pname_str call_str)
+          || String.is_suffix stack_str ~suffix:(Printf.sprintf " %s%s " callee_pname_str call_str)
+          (* avoid repeat entries, e.g. from cleansed inner destructors *)
+        then stack_str
+        else Printf.sprintf "%s%s%s " stack_str callee_pname_str call_str
+      in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_callees, updated_callees =
         AnnotReachabilityDomain.SinkMap.fold
@@ -213,7 +221,7 @@ let report_src_snk_path {Callbacks.proc_desc; tenv; summary} sink_map snk_annot 
   let loc = Procdesc.get_loc proc_desc in
   if method_overrides_annot src_annot tenv proc_name then
     let f_report = report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
-    report_call_stack summary (method_has_annot snk_annot tenv)
+    report_call_stack summary (method_has_annot snk_annot tenv) ~string_of_pname ~call_str:" ->"
       (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 
@@ -281,6 +289,16 @@ module CxxAnnotationSpecs = struct
 
   let option_name = "--annotation-reachability-cxx"
 
+  let cxx_string_of_pname pname =
+    let chop_prefix s =
+      String.chop_prefix s ~prefix:Config.clang_inner_destructor_prefix |> Option.value ~default:s
+    in
+    let pname_str = Typ.Procname.to_string pname in
+    let i = Option.value (String.rindex pname_str ':') ~default:(-1) + 1 in
+    let slen = String.length pname_str in
+    String.sub pname_str ~pos:0 ~len:i ^ chop_prefix (String.sub pname_str ~pos:i ~len:(slen - i))
+
+
   let spec_from_config spec_name spec_cfg =
     let src = option_name ^ " -> " ^ spec_name in
     let make_pname_pred entry ~src : Typ.Procname.t -> bool =
@@ -300,7 +318,15 @@ module CxxAnnotationSpecs = struct
     let src_desc =
       U.yojson_lookup sources "desc" ~src:sources_src ~f:U.string_of_yojson ~default:src_name
     in
-    let src_pred = make_pname_pred sources ~src:sources_src in
+    let src_pred pname =
+      make_pname_pred sources ~src:sources_src pname
+      &&
+      match pname with
+      | Typ.Procname.ObjC_Cpp cname ->
+          not (Typ.Procname.ObjC_Cpp.is_inner_destructor cname)
+      | _ ->
+          true
+    in
     let sinks = U.yojson_lookup spec_cfg "sinks" ~src ~f:U.assoc_of_yojson ~default:[] in
     let sinks_src = src ^ " -> sinks" in
     let snk_name = spec_name ^ "-sink" in
@@ -317,26 +343,23 @@ module CxxAnnotationSpecs = struct
     in
     let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
       let src_pname = Summary.get_proc_name src_summary in
-      if String.equal snk_name dummy_constructor_annot then
-        report_allocation_stack src_name src_summary loc trace stack_str snk_pname call_loc
-      else
-        let final_trace = List.rev (update_trace call_loc trace) in
-        let snk_pname_str = Typ.Procname.to_string snk_pname in
-        let description =
-          Format.asprintf "%s %a calls %a %s" src_desc MF.pp_monospaced
-            (Typ.Procname.to_string src_pname)
-            MF.pp_monospaced (stack_str ^ snk_pname_str) snk_desc
+      let final_trace = List.rev (update_trace call_loc trace) in
+      let snk_pname_str = Typ.Procname.to_string snk_pname in
+      let description =
+        Format.asprintf "%s %a calls\n\t%a\n%s" src_desc MF.pp_monospaced
+          (Typ.Procname.to_string src_pname)
+          MF.pp_monospaced (stack_str ^ snk_pname_str) snk_desc
+      in
+      let issue_type =
+        let doc_url =
+          Option.value_map ~default:""
+            ~f:(U.string_of_yojson ~src:(src ^ " -> doc_url"))
+            (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
         in
-        let issue_type =
-          let doc_url =
-            Option.value_map ~default:""
-              ~f:(U.string_of_yojson ~src:(src ^ " -> doc_url"))
-              (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
-          in
-          let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
-          IssueType.from_string spec_name ~doc_url ~linters_def_file
-        in
-        Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
+        let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
+        IssueType.from_string spec_name ~doc_url ~linters_def_file
+      in
+      Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
     in
     let snk_annot = annotation_of_str snk_name in
     let report proc_data annot_map =
@@ -347,6 +370,7 @@ module CxxAnnotationSpecs = struct
         try
           let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
           report_call_stack proc_data.Callbacks.summary snk_pred
+            ~string_of_pname:cxx_string_of_pname ~call_str:" ->\n\t"
             (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
             report_cxx_annotation_stack (CallSite.make proc_name loc) sink_map
         with Caml.Not_found -> ()

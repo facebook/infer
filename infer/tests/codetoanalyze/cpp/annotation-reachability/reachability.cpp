@@ -38,6 +38,10 @@ void safe() {
   Ok::bar();
 }
 
+struct Destructive {
+  ~Destructive() { imminent_death(); }
+};
+
 } // namespace CheckFrom
 
 void wild() {
