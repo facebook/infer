@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 # see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-INFER_OPTIONS = --annotation-reachability-only --debug-exceptions --project-root $(TESTS_DIR) --annotation-reachability-cxx '{ "TEST_ANNOT_REACH": { "sources": { "symbols": [ "CheckFrom::" ] }, "sinks": { "symbols": [ "Danger::", "death" ] } } }'
+INFER_OPTIONS = --annotation-reachability-only --debug-exceptions --project-root $(TESTS_DIR) --annotation-reachability-cxx '{ "TEST_ANNOT_REACH": { "sources": { "symbols": [ "CheckFrom::" ] }, "sinks": { "overrides": { "symbols": [ "Approved::"] },"symbols": [ "Danger::", "death" ] } } }'
 INFERPRINT_OPTIONS = --issues-tests
 
 

@@ -19,6 +19,10 @@ void foo();
 void bar();
 } // namespace Ok
 
+namespace Approved {
+void baz() { death(); }
+} // namespace Approved
+
 namespace CheckFrom {
 
 void death_via() { death(); }
@@ -36,6 +40,7 @@ void safe() {
   good();
   Ok::foo();
   Ok::bar();
+  Approved::baz();
 }
 
 struct Destructive {
