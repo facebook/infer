@@ -304,13 +304,17 @@ module CxxAnnotationSpecs = struct
     let make_pname_pred entry ~src : Typ.Procname.t -> bool =
       let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
       let paths = U.yojson_lookup entry "paths" ~src ~f:U.string_list_of_yojson ~default:[] in
-      if not (List.is_empty symbols) then (
-        if not (List.is_empty paths) then
-          Logging.(die UserError) "Cannot specify both `paths` and `symbols` in %s" src ;
-        fun pname -> List.exists ~f:(symbol_match (Typ.Procname.to_string pname)) symbols )
-      else if not (List.is_empty paths) then fun pname ->
-        List.exists ~f:(path_match (src_path_of pname)) paths
-      else Logging.(die UserError) "Must specify either `paths` or `symbols` in %s" src
+      let sym_pred pname = List.exists ~f:(symbol_match (Typ.Procname.to_string pname)) symbols in
+      let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
+      match (symbols, paths) with
+      | [], [] ->
+          Logging.(die UserError) "Must specify either `paths` or `symbols` in %s" src
+      | _, [] ->
+          sym_pred
+      | [], _ ->
+          path_pred
+      | _, _ ->
+          fun pname -> sym_pred pname || path_pred pname
     in
     let sources = U.yojson_lookup spec_cfg "sources" ~src ~f:U.assoc_of_yojson ~default:[] in
     let sources_src = src ^ " -> sources" in
