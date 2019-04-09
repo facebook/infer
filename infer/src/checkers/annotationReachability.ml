@@ -183,11 +183,11 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
       let callee_pname_str = string_of_pname callee_pname in
       let new_stack_str =
         if
-          String.equal stack_str (Printf.sprintf "%s%s " callee_pname_str call_str)
-          || String.is_suffix stack_str ~suffix:(Printf.sprintf " %s%s " callee_pname_str call_str)
+          String.equal stack_str (Printf.sprintf "%s%s" callee_pname_str call_str)
+          || String.is_suffix stack_str ~suffix:(Printf.sprintf " %s%s" callee_pname_str call_str)
           (* avoid repeat entries, e.g. from cleansed inner destructors *)
         then stack_str
-        else Printf.sprintf "%s%s%s " stack_str callee_pname_str call_str
+        else Printf.sprintf "%s%s%s" stack_str callee_pname_str call_str
       in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_callees, updated_callees =
@@ -221,7 +221,7 @@ let report_src_snk_path {Callbacks.proc_desc; tenv; summary} sink_map snk_annot 
   let loc = Procdesc.get_loc proc_desc in
   if method_overrides_annot src_annot tenv proc_name then
     let f_report = report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
-    report_call_stack summary (method_has_annot snk_annot tenv) ~string_of_pname ~call_str:" ->"
+    report_call_stack summary (method_has_annot snk_annot tenv) ~string_of_pname ~call_str:" -> "
       (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 
@@ -345,14 +345,15 @@ module CxxAnnotationSpecs = struct
       if List.is_empty overrides then fun _ -> false
       else make_pname_pred overrides ~src:(sinks_src ^ " -> overrides")
     in
+    let call_str = " ->\n    " in
     let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
       let src_pname = Summary.get_proc_name src_summary in
       let final_trace = List.rev (update_trace call_loc trace) in
       let snk_pname_str = Typ.Procname.to_string snk_pname in
+      let src_pname_str = Typ.Procname.to_string src_pname in
       let description =
-        Format.asprintf "%s %a calls\n\t%a\n%s" src_desc MF.pp_monospaced
-          (Typ.Procname.to_string src_pname)
-          MF.pp_monospaced (stack_str ^ snk_pname_str) snk_desc
+        Format.asprintf "%s can reach %s:\n    %s%s%s%s" src_desc snk_desc src_pname_str call_str
+          stack_str snk_pname_str
       in
       let issue_type =
         let doc_url =
@@ -374,7 +375,7 @@ module CxxAnnotationSpecs = struct
         try
           let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
           report_call_stack proc_data.Callbacks.summary snk_pred
-            ~string_of_pname:cxx_string_of_pname ~call_str:" ->\n\t"
+            ~string_of_pname:cxx_string_of_pname ~call_str
             (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
             report_cxx_annotation_stack (CallSite.make proc_name loc) sink_map
         with Caml.Not_found -> ()
