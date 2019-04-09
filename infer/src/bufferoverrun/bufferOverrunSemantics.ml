@@ -376,6 +376,15 @@ end
    substituting reachabilities of proof obligations. *)
 type eval_mode = EvalNormal | EvalPOCond | EvalPOReachability
 
+let eval_sympath_modeled_partial ~mode p =
+  match (mode, p) with
+  | EvalNormal, Symb.SymbolPath.Callsite _ ->
+      Itv.of_modeled_path p |> Val.of_itv
+  | _, _ ->
+      (* We only have modeled modeled function calls created in costModels. *)
+      assert false
+
+
 let rec eval_sympath_partial ~mode params p mem =
   match p with
   | Symb.SymbolPath.Pvar x -> (
@@ -421,6 +430,9 @@ and eval_locpath ~mode params p mem =
 
 let eval_sympath ~mode params sympath mem =
   match sympath with
+  | Symb.SymbolPath.Modeled p ->
+      let v = eval_sympath_modeled_partial ~mode p in
+      (Val.get_itv v, Val.get_traces v)
   | Symb.SymbolPath.Normal p ->
       let v = eval_sympath_partial ~mode params p mem in
       (Val.get_itv v, Val.get_traces v)

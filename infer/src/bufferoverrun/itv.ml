@@ -436,6 +436,8 @@ module ItvPure = struct
   let of_offset_path = of_path Bound.of_offset_path
 
   let of_length_path = of_path Bound.of_length_path
+
+  let of_modeled_path = of_path Bound.of_modeled_path
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -657,6 +659,8 @@ let of_normal_path ~unsigned path = NonBottom (ItvPure.of_normal_path ~unsigned 
 let of_offset_path path = NonBottom (ItvPure.of_offset_path path)
 
 let of_length_path path = NonBottom (ItvPure.of_length_path path)
+
+let of_modeled_path path = NonBottom (ItvPure.of_modeled_path path)
 
 let is_offset_path_of path x = eq (of_offset_path path) x
 

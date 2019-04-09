@@ -566,9 +566,9 @@ module InstrBasicCost = struct
     List.exists allocation_functions ~f:(fun f -> Typ.Procname.equal callee_pname f)
 
 
-  let get_instr_cost_record extras instr_node instr =
+  let get_instr_cost_record tenv extras instr_node instr =
     match instr with
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
+    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
         let {inferbo_invariant_map; integer_type_widths; get_callee_summary_and_formals} =
           extras
         in
@@ -580,9 +580,14 @@ module InstrBasicCost = struct
               CostDomain.unit_cost_atomic_operation
           | Some inferbo_mem -> (
               let loc = InstrCFG.Node.loc instr_node in
-              match CostModels.Call.dispatch () callee_pname params with
+              match CostModels.Call.dispatch tenv callee_pname params with
               | Some model ->
-                  CostDomain.of_operation_cost (model loc inferbo_mem)
+                  let node_hash = InstrCFG.Node.hash instr_node in
+                  let model_env =
+                    BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash loc tenv
+                      integer_type_widths
+                  in
+                  CostDomain.of_operation_cost (model model_env ~ret inferbo_mem)
               | None -> (
                 match get_callee_summary_and_formals callee_pname with
                 | Some ({CostDomain.post= callee_cost_record}, callee_formals) ->
@@ -612,7 +617,7 @@ module InstrBasicCost = struct
         CostDomain.zero_record
 
 
-  let get_instr_node_cost_record extras instr_node =
+  let get_instr_node_cost_record tenv extras instr_node =
     let instrs = InstrCFG.instrs instr_node in
     let instr =
       match IContainer.singleton_or_more instrs ~fold:Instrs.fold with
@@ -623,7 +628,7 @@ module InstrBasicCost = struct
       | More ->
           assert false
     in
-    get_instr_cost_record extras instr_node instr
+    get_instr_cost_record tenv extras instr_node instr
 end
 
 let compute_errlog_extras cost =
@@ -663,10 +668,10 @@ module WorstCaseCost = struct
     (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:threshold)
 
 
-  let exec_node {costs; reports} extras instr_node =
+  let exec_node tenv {costs; reports} extras instr_node =
     let {get_node_nb_exec} = extras in
     let node_cost =
-      let instr_cost_record = InstrBasicCost.get_instr_node_cost_record extras instr_node in
+      let instr_cost_record = InstrBasicCost.get_instr_node_cost_record tenv extras instr_node in
       let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
       let nb_exec = get_node_nb_exec node_id in
       CostDomain.mult_by_scalar instr_cost_record nb_exec
@@ -688,25 +693,25 @@ module WorstCaseCost = struct
     {costs; reports}
 
 
-  let rec exec_partition astate extras
+  let rec exec_partition tenv astate extras
       (partition : InstrCFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
         astate
     | Node {node; next} ->
-        let astate = exec_node astate extras node in
-        exec_partition astate extras next
+        let astate = exec_node tenv astate extras node in
+        exec_partition tenv astate extras next
     | Component {head; rest; next} ->
         let {costs; reports} = astate in
-        let {costs} = exec_partition {costs; reports= ThresholdReports.none} extras rest in
+        let {costs} = exec_partition tenv {costs; reports= ThresholdReports.none} extras rest in
         (* Execute head after the loop body to always report at loop head *)
-        let astate = exec_node {costs; reports} extras head in
-        exec_partition astate extras next
+        let astate = exec_node tenv {costs; reports} extras head in
+        exec_partition tenv astate extras next
 
 
-  let compute extras instr_cfg_wto =
+  let compute tenv extras instr_cfg_wto =
     let initial = {costs= CostDomain.zero_record; reports= ThresholdReports.config} in
-    exec_partition initial extras instr_cfg_wto
+    exec_partition tenv initial extras instr_cfg_wto
 end
 
 module Check = struct
@@ -813,12 +818,12 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
   ConstraintSolver.get_node_nb_exec equalities
 
 
-let compute_worst_case_cost integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+let compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
     inferbo_invariant_map get_node_nb_exec =
   let extras =
     {inferbo_invariant_map; integer_type_widths; get_node_nb_exec; get_callee_summary_and_formals}
   in
-  WorstCaseCost.compute extras instr_cfg_wto
+  WorstCaseCost.compute tenv extras instr_cfg_wto
 
 
 let get_cost_summary astate = CostDomain.{post= astate.WorstCaseCost.costs}
@@ -866,7 +871,7 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let instr_cfg_wto = InstrCFG.wto instr_cfg in
-    compute_worst_case_cost integer_type_widths get_callee_summary_and_formals instr_cfg_wto
+    compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_formals instr_cfg_wto
       inferbo_invariant_map get_node_nb_exec
   in
   let () =

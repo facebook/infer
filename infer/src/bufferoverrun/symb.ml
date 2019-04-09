@@ -33,7 +33,8 @@ module SymbolPath = struct
     | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
   [@@deriving compare]
 
-  type t = Normal of partial | Offset of partial | Length of partial [@@deriving compare]
+  type t = Normal of partial | Offset of partial | Length of partial | Modeled of partial
+  [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
@@ -52,6 +53,8 @@ module SymbolPath = struct
   let offset p = Offset p
 
   let length p = Length p
+
+  let modeled p = Modeled p
 
   let is_this = function Pvar pvar -> Pvar.is_this pvar || Pvar.is_self pvar | _ -> false
 
@@ -92,6 +95,8 @@ module SymbolPath = struct
   let pp_partial = pp_partial_paren ~paren:false
 
   let pp fmt = function
+    | Modeled p ->
+        F.fprintf fmt "%a.modeled" pp_partial p
     | Normal p ->
         pp_partial fmt p
     | Offset p ->
@@ -146,7 +151,9 @@ module SymbolPath = struct
         false
 
 
-  let exists_str ~f = function Normal p | Offset p | Length p -> exists_str_partial ~f p
+  let exists_str ~f = function
+    | Modeled p | Normal p | Offset p | Length p ->
+        exists_str_partial ~f p
 end
 
 module Symbol = struct

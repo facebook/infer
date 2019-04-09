@@ -297,6 +297,8 @@ module Bound = struct
 
   let of_length_path = of_path Symb.SymbolPath.length ~unsigned:true
 
+  let of_modeled_path = of_path Symb.SymbolPath.modeled ~unsigned:true
+
   let is_symbolic : t -> bool = function
     | MInf | PInf ->
         false

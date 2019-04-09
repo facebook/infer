@@ -47,6 +47,9 @@ module Bound : sig
   val of_length_path :
     (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
 
+  val of_modeled_path :
+    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+
   val is_zero : t -> bool
 
   val is_not_infty : t -> bool

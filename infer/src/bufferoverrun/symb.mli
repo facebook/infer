@@ -29,7 +29,7 @@ module SymbolPath : sig
     | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
   [@@deriving compare]
 
-  type t = private Normal of partial | Offset of partial | Length of partial
+  type t = private Normal of partial | Offset of partial | Length of partial | Modeled of partial
 
   val equal_partial : partial -> partial -> bool
 
@@ -54,6 +54,8 @@ module SymbolPath : sig
   val offset : partial -> t
 
   val length : partial -> t
+
+  val modeled : partial -> t
 
   val is_this : partial -> bool
 

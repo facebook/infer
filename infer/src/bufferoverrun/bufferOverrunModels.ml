@@ -160,9 +160,11 @@ let memset arr_exp size_exp =
   {exec; check}
 
 
+let eval_string_len arr_exp mem = Dom.Mem.get_c_strlen (Sem.eval_locs arr_exp mem) mem
+
 let strlen arr_exp =
   let exec _ ~ret:(id, _) mem =
-    let v = Dom.Mem.get_c_strlen (Sem.eval_locs arr_exp mem) mem in
+    let v = eval_string_len arr_exp mem in
     Dom.Mem.add_stack (Loc.of_id id) v mem
   in
   {exec; check= no_check}
