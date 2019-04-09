@@ -48,32 +48,32 @@ let pp pe fmt
         ()
   in
   F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
+    annot_map
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
-    biabduction (pp_opt "TypeState" TypeState.pp) typestate
-    (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
-    class_loads
-    (pp_opt "Quandary" QuandarySummary.pp)
-    quandary
-    (pp_opt "Siof" SiofDomain.Summary.pp)
-    siof
-    (pp_opt "RacerD" RacerDDomain.pp_summary)
-    racerd (pp_opt "Litho" LithoDomain.pp) litho
+    biabduction
     (pp_opt "BufferOverrunAnalysis" BufferOverrunAnalysisSummary.pp)
     buffer_overrun_analysis
     (pp_opt "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
     buffer_overrun_checker
-    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
-    annot_map
-    (pp_opt "Uninitialised" UninitDomain.Summary.pp)
-    uninit
+    (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
+    class_loads
     (pp_opt "Cost" CostDomain.pp_summary)
-    cost
-    (pp_opt "Starvation" StarvationDomain.pp_summary)
-    starvation
+    cost (pp_opt "Litho" LithoDomain.pp) litho
     (pp_opt "Purity" PurityDomain.pp_summary)
     purity
+    (pp_opt "Quandary" QuandarySummary.pp)
+    quandary
+    (pp_opt "RacerD" RacerDDomain.pp_summary)
+    racerd
     (pp_opt "Resource Leaks Lab" ResourceLeakDomain.pp)
     lab_resource_leaks
+    (pp_opt "Siof" SiofDomain.Summary.pp)
+    siof
+    (pp_opt "Starvation" StarvationDomain.pp_summary)
+    starvation (pp_opt "TypeState" TypeState.pp) typestate
+    (pp_opt "Uninitialised" UninitDomain.Summary.pp)
+    uninit
 
 
 let empty =
