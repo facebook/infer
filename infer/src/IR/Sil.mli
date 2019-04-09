@@ -29,6 +29,7 @@ type instr_metadata =
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
+  | Skip  (** no-op *)
 [@@deriving compare]
 
 (** An instruction. *)

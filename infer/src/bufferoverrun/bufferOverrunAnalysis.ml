@@ -272,7 +272,7 @@ module TransferFunctions = struct
         Dom.Mem.add_unknown id ~location mem
     | Metadata (ExitScope (dead_vars, _)) ->
         Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
-    | Metadata (Abstract _ | Nullify _) ->
+    | Metadata (Abstract _ | Nullify _ | Skip) ->
         mem
 
 

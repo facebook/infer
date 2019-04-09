@@ -1509,6 +1509,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
   | Sil.Metadata (ExitScope (dead_vars, _)) ->
       let dead_ids = List.filter_map dead_vars ~f:Var.get_ident in
       ret_old_path [Prop.exist_quantify tenv dead_ids prop_]
+  | Sil.Metadata Skip ->
+      ret_old_path [prop_]
 
 
 and diverge prop path =

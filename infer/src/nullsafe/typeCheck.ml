@@ -423,7 +423,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               TypeState.remove_id id astate
           | Var.ProgramVar _ ->
               astate )
-  | Sil.Metadata (Abstract _ | Nullify _) ->
+  | Sil.Metadata (Abstract _ | Nullify _ | Skip) ->
       typestate
   | Sil.Load (id, e, typ, loc) ->
       typecheck_expr_for_errors typestate e loc ;

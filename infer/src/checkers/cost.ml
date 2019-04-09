@@ -602,13 +602,13 @@ module InstrBasicCost = struct
         CostDomain.zero_record
     | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
-    | Sil.Metadata (ExitScope _) -> (
+    | Sil.Metadata Skip -> (
       match InstrCFG.Node.kind instr_node with
       | Procdesc.Node.Start_node ->
           CostDomain.unit_cost_atomic_operation
       | _ ->
           CostDomain.zero_record )
-    | Sil.Metadata (Abstract _ | Nullify _) ->
+    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _) ->
         CostDomain.zero_record
 
 

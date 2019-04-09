@@ -31,6 +31,7 @@ type instr_metadata =
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
+  | Skip  (** no-op *)
 [@@deriving compare]
 
 (** An instruction. *)
@@ -68,7 +69,7 @@ type instr =
 
 let equal_instr = [%compare.equal: instr]
 
-let skip_instr = Metadata (ExitScope ([], Location.dummy))
+let skip_instr = Metadata Skip
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
@@ -342,6 +343,8 @@ let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp 
 let location_of_instr_metadata = function
   | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) ->
       loc
+  | Skip ->
+      Location.dummy
 
 
 (** Get the location of the instruction *)
@@ -359,6 +362,8 @@ let exps_of_instr_metadata = function
       List.map ~f:Var.to_exp vars
   | Nullify (pvar, _) ->
       [Exp.Lvar pvar]
+  | Skip ->
+      []
 
 
 (** get the expressions occurring in the instruction *)
@@ -400,6 +405,8 @@ let pp_instr_metadata pe f = function
       F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
   | Nullify (pvar, loc) ->
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
+  | Skip ->
+      F.pp_print_string f "SKIP"
 
 
 let pp_instr ~print_types pe0 f instr =
@@ -1304,7 +1311,7 @@ let instr_sub_ids ~sub_id_binders f instr =
       in
       let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
       if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
-  | Metadata (Abstract _ | Nullify _) ->
+  | Metadata (Abstract _ | Nullify _ | Skip) ->
       instr
 
 

@@ -157,7 +157,7 @@ module PulseTransferFunctions = struct
     | Metadata (ExitScope (vars, _)) ->
         let post = PulseOperations.remove_vars vars astate in
         [post]
-    | Metadata (Abstract _ | Nullify _) ->
+    | Metadata (Abstract _ | Nullify _ | Skip) ->
         [astate]
 
 
