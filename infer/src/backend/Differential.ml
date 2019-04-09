@@ -150,11 +150,6 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
         ("", cost_info.Jsonbug_t.procedure_id)
   in
   let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
-  Logging.internal_error
-    "@\n\
-     [DIFF ANALYSIS] class_name = '%s' method_name = '%s'    procedure_id = '%s'   Procname = \
-     '%a' @\n"
-    class_name method_name cost_info.Jsonbug_t.procedure_id Typ.Procname.pp procname ;
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_execution_time_call
