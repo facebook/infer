@@ -74,25 +74,34 @@ let main ~changed_files =
   register_active_checkers () ;
   if Config.reanalyze then Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
   else DB.Results_dir.clean_specs_dir () ;
-  let all_source_files =
-    SourceFiles.get_all ~filter:(Lazy.force Filtering.source_files_filter) ()
+  let n_all_source_files = ref 0 in
+  let n_source_files_to_analyze = ref 0 in
+  let filter sourcefile =
+    let result =
+      (Lazy.force Filtering.source_files_filter) sourcefile
+      && source_file_should_be_analyzed ~changed_files sourcefile
+    in
+    incr n_all_source_files ;
+    if result then incr n_source_files_to_analyze ;
+    result
   in
-  let source_files_to_analyze =
-    List.filter ~f:(source_file_should_be_analyzed ~changed_files) all_source_files
-  in
-  let n_source_files = List.length source_files_to_analyze in
-  L.progress "Found %d%s source file%s to analyze in %s@." n_source_files
+  let source_files_to_analyze = SourceFiles.get_all ~filter () in
+  L.progress "Found %d%s source file%s to analyze in %s@." !n_source_files_to_analyze
     ( if Config.reactive_mode || Option.is_some changed_files then
-      " (out of " ^ string_of_int (List.length all_source_files) ^ ")"
+      " (out of " ^ string_of_int !n_all_source_files ^ ")"
     else "" )
-    (if Int.equal n_source_files 1 then "" else "s")
+    (if Int.equal !n_source_files_to_analyze 1 then "" else "s")
     Config.results_dir ;
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
-  if Int.equal Config.jobs 1 then (
+  ( if Int.equal Config.jobs 1 then (
     Tasks.run_sequentially ~f:analyze_source_file source_files_to_analyze ;
     L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )
-  else (
+  else
+    let source_files_to_analyze =
+      List.permute source_files_to_analyze
+        ~random_state:(Random.State.make (Array.create ~len:1 0))
+    in
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     (* Prepare tasks one cluster at a time while executing in parallel *)
     let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_source_file in
