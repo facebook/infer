@@ -29,7 +29,7 @@ let add_abstraction_instructions pdesc =
   in
   let do_node node =
     let loc = Node.get_last_loc node in
-    if node_requires_abstraction node then Node.append_instrs node [Sil.Abstract loc]
+    if node_requires_abstraction node then Node.append_instrs node [Sil.Metadata (Abstract loc)]
   in
   Procdesc.iter_nodes do_node pdesc
 
@@ -107,9 +107,9 @@ module NullifyTransferFunctions = struct
           (active_defs, to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
-      | Sil.Store _ | Prune _ | ExitScope _ | Abstract _ ->
+      | Sil.Store _ | Prune _ | Metadata (Abstract _ | ExitScope _) ->
           astate
-      | Sil.Nullify _ ->
+      | Sil.Metadata (Nullify _) ->
           L.(die InternalError)
             "Should not add nullify instructions before running nullify analysis!"
     in
@@ -141,7 +141,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let is_local pvar = not (Pvar.is_return pvar || Pvar.is_global pvar) in
   let prepend_node_nullify_instructions loc pvars instrs =
     List.fold pvars ~init:instrs ~f:(fun instrs pvar ->
-        if is_local pvar then Sil.Nullify (pvar, loc) :: instrs else instrs )
+        if is_local pvar then Sil.Metadata (Nullify (pvar, loc)) :: instrs else instrs )
   in
   let node_deadvars_instruction loc vars =
     let local_vars =
@@ -151,7 +151,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
         | Var.LogicalVar _ ->
             true )
     in
-    if List.is_empty local_vars then None else Some (Sil.ExitScope (local_vars, loc))
+    if List.is_empty local_vars then None else Some (Sil.Metadata (ExitScope (local_vars, loc)))
   in
   Container.iter nullify_proc_cfg ~fold:ProcCfg.Exceptional.fold_nodes ~f:(fun node ->
       match NullifyAnalysis.extract_post (ProcCfg.Exceptional.Node.id node) nullify_inv_map with

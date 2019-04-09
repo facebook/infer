@@ -92,13 +92,13 @@ let get_node () = !gs.last_node
 let get_loc_exn () =
   match !gs.last_instr with
   | Some instr ->
-      Sil.instr_get_loc instr
+      Sil.location_of_instr instr
   | None ->
       get_node_exn () |> Procdesc.Node.get_loc
 
 
 let get_loc () =
-  match !gs.last_instr with Some instr -> Some (Sil.instr_get_loc instr) | None -> None
+  match !gs.last_instr with Some instr -> Some (Sil.location_of_instr instr) | None -> None
 
 
 (** normalize the list of instructions by renaming let-bound ids *)

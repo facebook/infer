@@ -113,7 +113,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         Some call_instr
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         Some (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind))
-    | Sil.Nullify _ | Abstract _ | ExitScope _ ->
+    | Sil.Metadata _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         None
   in
@@ -206,7 +206,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
             (Var.of_id id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
         |> List.unzip3
       in
-      let remove_temps_instr = Sil.ExitScope (dead_vars, loc) in
+      let remove_temps_instr = Sil.Metadata (ExitScope (dead_vars, loc)) in
       (block_name, id_exp_typs, load_instrs, remove_temps_instr)
     in
     let convert_generic_call return_ids exp origin_args loc call_flags =
@@ -261,7 +261,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
         convert_generic_call return_ids origin_call_exp origin_args loc call_flags
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind) :: instrs, id_map)
-    | Sil.Nullify _ | Abstract _ | Sil.ExitScope _ ->
+    | Sil.Metadata _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         (instrs, id_map)
   in

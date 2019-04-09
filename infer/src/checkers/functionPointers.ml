@@ -35,7 +35,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Store (Lvar lhs_pvar, _, Exp.Const (Const.Cfun pn), _) ->
         (* strong update *)
         Domain.add (Pvar.to_string lhs_pvar) (ProcnameSet.singleton pn) astate
-    | Sil.Abstract _ | Call _ | Load _ | Nullify _ | Prune _ | ExitScope _ | Store _ ->
+    | Sil.Load _ | Store _ | Call _ | Prune _ | Metadata _ ->
         astate
 
 

@@ -68,17 +68,17 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
       HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr
     in
     match hil_translation with
-    | Ignore ->
-        (None, bindings)
     | Bind (id, access_path) ->
         (None, Bindings.add id access_path bindings)
-    | Instr (ExitScope (vars, loc)) ->
+    | Instr (Metadata (ExitScope (vars, loc))) ->
         let bindings, vars =
           List.fold vars ~init:(bindings, []) ~f:(fun (bindings, vars) var ->
               let bindings, vars' = Bindings.exit_scope var bindings in
               (bindings, append_bindings vars vars') )
         in
-        let instr = if List.is_empty vars then None else Some (HilInstr.ExitScope (vars, loc)) in
+        let instr =
+          if List.is_empty vars then None else Some (HilInstr.Metadata (ExitScope (vars, loc)))
+        in
         (instr, bindings)
     | Instr instr ->
         (Some instr, bindings)

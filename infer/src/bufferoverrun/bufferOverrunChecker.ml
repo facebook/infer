@@ -120,7 +120,7 @@ let add_unreachable_code (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs (che
          && ExitStatement.is_end_of_block_or_procedure cfg node rem_instrs ->
       checks
   | _ ->
-      let location = Sil.instr_get_loc instr in
+      let location = Sil.location_of_instr instr in
       let unreachable_statement = UnreachableStatement.{location} in
       {checks with unreachable_statements= unreachable_statement :: checks.unreachable_statements}
 

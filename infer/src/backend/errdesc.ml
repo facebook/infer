@@ -499,7 +499,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | None ->
         if verbose then L.d_strln "explain_leak: no current instruction" ;
         value_str_from_pvars_vpath [] vpath
-    | Some (Sil.Nullify (pvar, _)) when check_pvar pvar -> (
+    | Some (Sil.Metadata (Nullify (pvar, _))) when check_pvar pvar -> (
         if verbose then (
           L.d_str "explain_leak: current instruction is Nullify for pvar " ;
           Pvar.d pvar ;
@@ -509,10 +509,10 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
             Some (DExp.to_string de)
         | _ ->
             None )
-    | Some (Sil.Abstract _) ->
+    | Some (Sil.Metadata (Abstract _)) ->
         if verbose then L.d_strln "explain_leak: current instruction is Abstract" ;
         let get_nullify = function
-          | Sil.Nullify (pvar, _) when check_pvar pvar ->
+          | Sil.Metadata (Nullify (pvar, _)) when check_pvar pvar ->
               if verbose then (
                 L.d_str "explain_leak: found nullify before Abstract for pvar " ;
                 Pvar.d pvar ;

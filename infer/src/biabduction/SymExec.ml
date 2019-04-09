@@ -1480,7 +1480,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
             ; proc_name= callee_pname
             ; loc
             ; exe_env } )
-  | Sil.Nullify (pvar, _) -> (
+  | Sil.Metadata (Nullify (pvar, _)) -> (
       let eprop = Prop.expose prop_ in
       match
         List.partition_tf
@@ -1500,13 +1500,13 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
           L.internal_error "Pvar %a appears on the LHS of >1 heap predicate!@." (Pvar.pp Pp.text)
             pvar ;
           assert false )
-  | Sil.Abstract _ ->
+  | Sil.Metadata (Abstract _) ->
       if Prover.check_inconsistency tenv prop_ then ret_old_path []
       else
         ret_old_path
           [ Abs.remove_redundant_array_elements current_pname tenv
               (Abs.abstract current_pname tenv prop_) ]
-  | Sil.ExitScope (dead_vars, _) ->
+  | Sil.Metadata (ExitScope (dead_vars, _)) ->
       let dead_ids = List.filter_map dead_vars ~f:Var.get_ident in
       ret_old_path [Prop.exist_quantify tenv dead_ids prop_]
 
@@ -1940,7 +1940,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
       | _ ->
           () ) ;
       let node_has_abstraction node =
-        let instr_is_abstraction = function Sil.Abstract _ -> true | _ -> false in
+        let instr_is_abstraction = function Sil.Metadata (Abstract _) -> true | _ -> false in
         Instrs.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
       in
       let curr_node = State.get_node_exn () in

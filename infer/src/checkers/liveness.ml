@@ -157,7 +157,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         Domain.remove (Var.of_id ret_id) astate
         |> exp_add_live call_exp
         |> add_live_actuals actuals_to_read call_exp
-    | Sil.ExitScope _ | Abstract _ | Nullify _ ->
+    | Sil.Metadata _ ->
         astate
 
 
@@ -185,7 +185,7 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let exec_instr astate _ _ instr =
-    List.fold (Sil.instr_get_exps instr)
+    List.fold (Sil.exps_of_instr instr)
       ~f:(fun acc exp ->
         Exp.fold_captured exp
           ~f:(fun acc exp ->

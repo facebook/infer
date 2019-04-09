@@ -270,9 +270,9 @@ module TransferFunctions = struct
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
         Dom.Mem.add_unknown id ~location mem
-    | ExitScope (dead_vars, _) ->
+    | Metadata (ExitScope (dead_vars, _)) ->
         Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
-    | Abstract _ | Nullify _ ->
+    | Metadata (Abstract _ | Nullify _) ->
         mem
 
 

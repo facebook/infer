@@ -17,12 +17,12 @@ let tests =
     Cfg.create_proc_desc cfg
       (ProcAttributes.default (SourceFile.invalid __FILE__) Typ.Procname.empty_block)
   in
-  let dummy_instr1 = Sil.ExitScope ([], Location.dummy) in
-  let dummy_instr2 = Sil.Abstract Location.dummy in
+  let dummy_instr1 = Sil.skip_instr in
+  let dummy_instr2 = Sil.Metadata (Abstract Location.dummy) in
   let dummy_instr3 =
-    Sil.ExitScope ([Var.of_id (Ident.create_fresh Ident.knormal)], Location.dummy)
+    Sil.Metadata (ExitScope ([Var.of_id (Ident.create_fresh Ident.knormal)], Location.dummy))
   in
-  let dummy_instr4 = Sil.ExitScope ([], Location.dummy) in
+  let dummy_instr4 = Sil.skip_instr in
   let instrs1 = [dummy_instr1; dummy_instr2] in
   let instrs2 = [dummy_instr3] in
   let instrs3 = [dummy_instr4] in

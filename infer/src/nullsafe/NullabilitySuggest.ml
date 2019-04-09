@@ -112,7 +112,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         else astate
-    | ExitScope _ ->
+    | Metadata _ ->
         astate
 
 

@@ -187,7 +187,7 @@ module Node = struct
 
   (** Get the source location of the last instruction in the node *)
   let get_last_loc n =
-    n |> get_instrs |> Instrs.last |> Option.value_map ~f:Sil.instr_get_loc ~default:n.loc
+    n |> get_instrs |> Instrs.last |> Option.value_map ~f:Sil.location_of_instr ~default:n.loc
 
 
   let find_in_node_or_preds =
@@ -360,26 +360,17 @@ module Node = struct
   (** simple key for a node: just look at the instructions *)
   let simple_key node =
     let add_instr instr =
-      if Sil.instr_is_auxiliary instr then None
-      else
-        let instr_key =
-          match instr with
-          | Sil.Load _ ->
-              1
-          | Sil.Store _ ->
-              2
-          | Sil.Prune _ ->
-              3
-          | Sil.Call _ ->
-              4
-          | Sil.Nullify _ ->
-              5
-          | Sil.Abstract _ ->
-              6
-          | Sil.ExitScope _ ->
-              7
-        in
-        Some instr_key
+      match instr with
+      | Sil.Load _ ->
+          Some 1
+      | Sil.Store _ ->
+          Some 2
+      | Sil.Prune _ ->
+          Some 3
+      | Sil.Call _ ->
+          Some 4
+      | Sil.Metadata _ ->
+          None
     in
     get_instrs node
     |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr

@@ -88,7 +88,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.value_map ~default:astate ~f:(Domain.integrate_summary tenv astate callee loc)
     in
     match instr with
-    | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | ExitScope _ ->
+    | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
         astate
     | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
         astate

@@ -373,7 +373,7 @@ let do_after_node node = Printer.node_finish_session node
 (** Return the list of normal ids occurring in the instructions *)
 let instrs_get_normal_vars instrs =
   let do_instr res instr =
-    Sil.instr_get_exps instr
+    Sil.exps_of_instr instr
     |> List.fold_left ~init:res ~f:(fun res e ->
            Exp.free_vars e
            |> Sequence.filter ~f:Ident.is_normal
@@ -559,7 +559,7 @@ let compute_visited vset =
     let lines =
       node_loc.Location.line
       :: IContainer.rev_map_to_list ~fold:Instrs.fold
-           ~f:(fun instr -> (Sil.instr_get_loc instr).Location.line)
+           ~f:(fun instr -> (Sil.location_of_instr instr).Location.line)
            (ProcCfg.Exceptional.instrs n)
     in
     List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~compare:Int.compare lines)

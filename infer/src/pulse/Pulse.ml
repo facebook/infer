@@ -154,9 +154,11 @@ module PulseTransferFunctions = struct
           dispatch_call summary ret call actuals flags loc astate |> check_error summary
         in
         [post]
-    | ExitScope (vars, _) ->
+    | Metadata (ExitScope (vars, _)) ->
         let post = PulseOperations.remove_vars vars astate in
         [post]
+    | Metadata (Abstract _ | Nullify _) ->
+        [astate]
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"

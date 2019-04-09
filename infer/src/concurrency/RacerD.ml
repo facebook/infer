@@ -497,7 +497,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         do_assignment lhs_access_expr rhs_exp loc proc_data astate
     | Assume (assume_exp, _, _, loc) ->
         do_assume assume_exp loc proc_data astate
-    | ExitScope _ ->
+    | Metadata _ ->
         astate
 
 

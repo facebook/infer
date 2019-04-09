@@ -24,6 +24,13 @@ type if_kind =
   | Ik_switch
 [@@deriving compare]
 
+type instr_metadata =
+  | Abstract of Location.t
+      (** a good place to apply abstraction, mostly used in the biabduction analysis *)
+  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
+  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
+[@@deriving compare]
+
 (** An instruction. *)
 type instr =
   (* Note for frontend writers:
@@ -45,9 +52,9 @@ type instr =
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
       (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
           [ret_id = e_fun(arg_ts);] *)
-  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
-  | Abstract of Location.t  (** apply abstraction *)
-  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
+  | Metadata of instr_metadata
+      (** hints about the program that are not strictly needed to understand its semantics, for
+          instance information about its original syntactic structure *)
 [@@deriving compare]
 
 val equal_instr : instr -> instr -> bool
@@ -275,14 +282,16 @@ val pp_offset : Pp.env -> F.formatter -> offset -> unit
 val d_offset_list : offset list -> unit
 (** Dump a list of offsets *)
 
-val instr_get_loc : instr -> Location.t
+val location_of_instr : instr -> Location.t
 (** Get the location of the instruction *)
 
-val instr_get_exps : instr -> Exp.t list
+val exps_of_instr : instr -> Exp.t list
 (** get the expressions occurring in the instruction *)
 
 val if_kind_to_string : if_kind -> string
 (** Pretty print an if_kind *)
+
+val pp_instr_metadata : Pp.env -> F.formatter -> instr_metadata -> unit
 
 val pp_instr : print_types:bool -> Pp.env -> F.formatter -> instr -> unit
 (** Pretty print an instruction. *)

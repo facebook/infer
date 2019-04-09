@@ -26,6 +26,13 @@ type if_kind =
   | Ik_switch
 [@@deriving compare]
 
+type instr_metadata =
+  | Abstract of Location.t
+      (** a good place to apply abstraction, mostly used in the biabduction analysis *)
+  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
+  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
+[@@deriving compare]
+
 (** An instruction. *)
 type instr =
   (* Note for frontend writers:
@@ -33,34 +40,41 @@ type instr =
      `Load` instruction may be eliminated by copy-propagation. *)
   | Load of Ident.t * Exp.t * Typ.t * Location.t
       (** Load a value from the heap into an identifier.
+
           [x = *lexp:typ] where
-            [lexp] is an expression denoting a heap address
-            [typ] is the root type of [lexp]. *)
+
+          - [lexp] is an expression denoting a heap address
+
+          - [typ] is the root type of [lexp]. *)
   | Store of Exp.t * Typ.t * Exp.t * Location.t
       (** Store the value of an expression into the heap.
+
           [*lexp1:typ = exp2] where
-            [lexp1] is an expression denoting a heap address
-            [typ] is the root type of [lexp1]
-            [exp2] is the expression whose value is store. *)
+
+          - [lexp1] is an expression denoting a heap address
+
+          - [typ] is the root type of [lexp1]
+
+          - [exp2] is the expression whose value is store. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
       (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
           [ret_id = e_fun(arg_ts);] *)
-  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
-  | Abstract of Location.t  (** apply abstraction *)
-  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
+  | Metadata of instr_metadata
+      (** hints about the program that are not strictly needed to understand its semantics, for
+          instance information about its original syntactic structure *)
 [@@deriving compare]
 
 let equal_instr = [%compare.equal: instr]
 
-let skip_instr = ExitScope ([], Location.dummy)
+let skip_instr = Metadata (ExitScope ([], Location.dummy))
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
   | Load _ | Store _ | Prune _ | Call _ ->
       false
-  | Nullify _ | Abstract _ | ExitScope _ ->
+  | Metadata _ ->
       true
 
 
@@ -325,20 +339,30 @@ let d_offset_list (offl : offset list) = L.d_pp_with_pe pp_offset_list offl
 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t
 
-(** Get the location of the instruction *)
-let instr_get_loc = function
-  | Load (_, _, _, loc)
-  | Store (_, _, _, loc)
-  | Prune (_, loc, _, _)
-  | Call (_, _, _, loc, _)
-  | Nullify (_, loc)
-  | Abstract loc
-  | ExitScope (_, loc) ->
+let location_of_instr_metadata = function
+  | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) ->
       loc
 
 
+(** Get the location of the instruction *)
+let location_of_instr = function
+  | Load (_, _, _, loc) | Store (_, _, _, loc) | Prune (_, loc, _, _) | Call (_, _, _, loc, _) ->
+      loc
+  | Metadata metadata ->
+      location_of_instr_metadata metadata
+
+
+let exps_of_instr_metadata = function
+  | Abstract _ ->
+      []
+  | ExitScope (vars, _) ->
+      List.map ~f:Var.to_exp vars
+  | Nullify (pvar, _) ->
+      [Exp.Lvar pvar]
+
+
 (** get the expressions occurring in the instruction *)
-let instr_get_exps = function
+let exps_of_instr = function
   | Load (id, e, _, _) ->
       [Exp.Var id; e]
   | Store (e1, _, e2, _) ->
@@ -347,12 +371,8 @@ let instr_get_exps = function
       [cond]
   | Call ((id, _), e, _, _, _) ->
       [e; Exp.Var id]
-  | Nullify (pvar, _) ->
-      [Exp.Lvar pvar]
-  | Abstract _ ->
-      []
-  | ExitScope (vars, _) ->
-      List.map ~f:Var.to_exp vars
+  | Metadata metadata ->
+      exps_of_instr_metadata metadata
 
 
 (** Convert an if_kind to string  *)
@@ -373,7 +393,15 @@ let if_kind_to_string = function
       "switch"
 
 
-(** Pretty print an instruction. *)
+let pp_instr_metadata pe f = function
+  | Abstract loc ->
+      F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
+  | ExitScope (vars, loc) ->
+      F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
+  | Nullify (pvar, loc) ->
+      F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
+
+
 let pp_instr ~print_types pe0 f instr =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
   color_wrapper pe0 f instr ~f:(fun pe f instr ->
@@ -392,12 +420,8 @@ let pp_instr ~print_types pe0 f instr =
           F.fprintf f "%a(%a)%a [%a]" (pp_exp_printenv ~print_types pe) e
             (Pp.comma_seq (pp_exp_typ pe))
             arg_ts CallFlags.pp cf Location.pp loc
-      | Nullify (pvar, loc) ->
-          F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
-      | Abstract loc ->
-          F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
-      | ExitScope (vars, loc) ->
-          F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc )
+      | Metadata metadata ->
+          pp_instr_metadata pe0 f metadata )
 
 
 let add_with_block_parameters_flag instr =
@@ -1269,7 +1293,7 @@ let instr_sub_ids ~sub_id_binders f instr =
   | Prune (exp, loc, true_branch, if_kind) ->
       let exp' = exp_sub_ids f exp in
       if phys_equal exp' exp then instr else Prune (exp', loc, true_branch, if_kind)
-  | ExitScope (vars, loc) ->
+  | Metadata (ExitScope (vars, loc)) ->
       let sub_var var =
         match var with
         | Var.ProgramVar _ ->
@@ -1279,8 +1303,8 @@ let instr_sub_ids ~sub_id_binders f instr =
             if phys_equal ident ident' then var else Var.of_id ident'
       in
       let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
-      if phys_equal vars vars' then instr else ExitScope (vars', loc)
-  | Nullify _ | Abstract _ ->
+      if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
+  | Metadata (Abstract _ | Nullify _) ->
       instr
 
 
