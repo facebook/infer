@@ -8,6 +8,13 @@
 open! IStd
 module L = Logging
 
+type t =
+  { proc_name: Typ.Procname.t
+  ; proc_location: Location.t
+  ; err_key: Errlog.err_key
+  ; err_data: Errlog.err_data }
+[@@deriving compare]
+
 (** Wrapper of an issue that compares all parts except the procname *)
 type err_data_ = Errlog.err_data
 
@@ -21,7 +28,7 @@ type proc_name_ = Typ.Procname.t
 (* ignore proc name *)
 let compare_proc_name_ _ _ = 0
 
-type t =
+type t_ignore_duplicates = t =
   {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
 [@@deriving compare]
 
@@ -30,7 +37,10 @@ type t =
      identical warning on the same line. Accomplish this by sorting without regard to procname, then
      de-duplicating. *)
 let sort_filter_issues issues =
-  let issues' = List.dedup_and_sort ~compare issues in
+  let issues' =
+    let compare = if Config.filtering then compare_t_ignore_duplicates else compare in
+    List.dedup_and_sort ~compare issues
+  in
   ( if Config.developer_mode then
     let num_pruned_issues = List.length issues - List.length issues' in
     if num_pruned_issues > 0 then

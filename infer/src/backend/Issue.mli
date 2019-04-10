@@ -7,11 +7,10 @@
 
 open! IStd
 
-type err_data_ = Errlog.err_data
-
-type proc_name_ = Typ.Procname.t
-
 type t =
-  {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
+  { proc_name: Typ.Procname.t
+  ; proc_location: Location.t
+  ; err_key: Errlog.err_key
+  ; err_data: Errlog.err_data }
 
 val sort_filter_issues : t list -> t list
