@@ -270,9 +270,17 @@ module TransferFunctions = struct
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
         Dom.Mem.add_unknown id ~location mem
+    | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
+        let model_env =
+          let pname = Procdesc.get_proc_name pdesc in
+          let node_hash = CFG.Node.hash node in
+          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+        in
+        let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
+        mem
     | Metadata (ExitScope (dead_vars, _)) ->
         Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
-    | Metadata (Abstract _ | Nullify _ | Skip) ->
+    | Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
         mem
 
 

@@ -54,7 +54,7 @@ digraph cfg {
 
 	 "label_case.83d07a314df100648248d9156212096b_13" -> "label_case.83d07a314df100648248d9156212096b_10" ;
 	 "label_case.83d07a314df100648248d9156212096b_13" -> "label_case.83d07a314df100648248d9156212096b_11" ;
-"label_case.83d07a314df100648248d9156212096b_14" [label="14:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) assign_last [line 25, column 3]\n  *&ret:int=0 [line 25, column 3]\n  EXIT_SCOPE(n$8); [line 25, column 3]\n " shape="box"]
+"label_case.83d07a314df100648248d9156212096b_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 25, column 3]\n  *&ret:int=0 [line 25, column 3]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df100648248d9156212096b_14" -> "label_case.83d07a314df100648248d9156212096b_4" ;
@@ -107,7 +107,7 @@ digraph cfg {
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_12" -> "label_default.f30729864b0243c0a794ef0254fe7d23_9" ;
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_12" -> "label_default.f30729864b0243c0a794ef0254fe7d23_10" ;
-"label_default.f30729864b0243c0a794ef0254fe7d23_13" [label="13:  DeclStmt \n   n$8=_fun___variable_initialization(&ret:int) assign_last [line 9, column 3]\n  *&ret:int=0 [line 9, column 3]\n  EXIT_SCOPE(n$8); [line 9, column 3]\n " shape="box"]
+"label_default.f30729864b0243c0a794ef0254fe7d23_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 9, column 3]\n  *&ret:int=0 [line 9, column 3]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0a794ef0254fe7d23_13" -> "label_default.f30729864b0243c0a794ef0254fe7d23_4" ;

@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_3" -> "field_set_correctly.b8d9a4294a85d24818c312a099420dce_2" ;
-"field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&e:Employee) assign_last [line 33, column 3]\n  *&e.ssn:int=12 [line 33, column 23]\n  *&e.salary:float=3000.5 [line 33, column 23]\n  *&e.doj.date:int=12 [line 33, column 37]\n  *&e.doj.month:int=12 [line 33, column 37]\n  *&e.doj.year:int=2010 [line 33, column 37]\n  EXIT_SCOPE(n$1); [line 33, column 37]\n " shape="box"]
+"field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(e:Employee); [line 33, column 3]\n  *&e.ssn:int=12 [line 33, column 23]\n  *&e.salary:float=3000.5 [line 33, column 23]\n  *&e.doj.date:int=12 [line 33, column 37]\n  *&e.doj.month:int=12 [line 33, column 37]\n  *&e.doj.year:int=2010 [line 33, column 37]\n " shape="box"]
 	
 
 	 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" -> "field_set_correctly.b8d9a4294a85d24818c312a099420dce_3" ;
@@ -48,7 +48,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$1=_fun___variable_initialization(&p:Point) assign_last [line 15, column 14]\n  *&p.x:int=1 [line 15, column 31]\n  n$0=_fun_foo() [line 15, column 35]\n  *&p.y:int=(n$0 + 3) [line 15, column 31]\n  NULLIFY(&p); [line 15, column 31]\n  EXIT_SCOPE(n$0,n$1,p); [line 15, column 31]\n  APPLY_ABSTRACTION; [line 15, column 31]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(p:Point); [line 15, column 14]\n  *&p.x:int=1 [line 15, column 31]\n  n$0=_fun_foo() [line 15, column 35]\n  *&p.y:int=(n$0 + 3) [line 15, column 31]\n  NULLIFY(&p); [line 15, column 31]\n  EXIT_SCOPE(n$0,p); [line 15, column 31]\n  APPLY_ABSTRACTION; [line 15, column 31]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;

@@ -39,7 +39,6 @@ module ProcName = struct
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ +invariant_builtins <>--> VariantForHoisting
-      ; -"__variable_initialization" <>--> Invariant
       ; +(fun _ name -> BuiltinDecl.is_declared (Typ.Procname.from_string_c_fun name))
         <>--> Variant
       ; +PatternMatch.implements_android "text.TextUtils" &:: "isEmpty" <>--> VariantForHoisting

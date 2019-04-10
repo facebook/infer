@@ -1,1 +1,1 @@
-src/some_different_bugs.c, test3, 5, MEMORY_LEAK, no_bucket, ERROR, [start of procedure test3(),Taking true branch,return from a call to test3]
+src/some_different_bugs.c, test3, 3, MEMORY_LEAK, no_bucket, ERROR, [start of procedure test3(),Taking true branch]

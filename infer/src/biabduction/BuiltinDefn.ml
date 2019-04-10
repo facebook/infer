@@ -940,8 +940,6 @@ let __throw = Builtin.register BuiltinDecl.__throw execute_skip
 
 let __unwrap_exception = Builtin.register BuiltinDecl.__unwrap_exception execute__unwrap_exception
 
-let __variable_initialization = Builtin.register BuiltinDecl.__variable_initialization execute_skip
-
 let abort = Builtin.register BuiltinDecl.abort execute_exit
 
 let exit = Builtin.register BuiltinDecl.exit execute_exit

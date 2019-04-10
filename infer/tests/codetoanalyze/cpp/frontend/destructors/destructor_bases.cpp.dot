@@ -125,7 +125,7 @@ digraph cfg {
 	
 
 	 "__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_4" -> "__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_3" ;
-"__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_5" [label="5:  DeclStmt \n   n$12=_fun___variable_initialization(&a:A) assign_last [line 31, column 10]\n  n$11=_fun_A::A(&a:A*) [line 31, column 12]\n  EXIT_SCOPE(n$11,n$12); [line 31, column 12]\n " shape="box"]
+"__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:A); [line 31, column 10]\n  n$11=_fun_A::A(&a:A*) [line 31, column 12]\n  EXIT_SCOPE(n$11); [line 31, column 12]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_5" -> "__infer_inner_destructor_~D#D#(5618221758133596168).bafb8a40b92952d90ec3736fc827de7f_4" ;

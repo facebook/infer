@@ -92,9 +92,6 @@ module type S = sig
 
   val __unwrap_exception : t
 
-  val __variable_initialization : t
-  (** produced by the clang frontend to denote that a variable is being initialized *)
-
   val abort : t
 
   val exit : t

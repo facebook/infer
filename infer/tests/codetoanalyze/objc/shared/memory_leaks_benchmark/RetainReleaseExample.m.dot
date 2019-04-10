@@ -4,10 +4,10 @@ digraph cfg {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" [label="2: Exit retain_release_test \n   NULLIFY(&a); [line 26, column 1]\n " color=yellow style=filled]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" [label="2: Exit retain_release_test \n  " color=yellow style=filled]
 	
 
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 25, column 4]\n  n$1=_fun_NSObject::release(n$0:RRA*) virtual [line 25, column 3]\n  EXIT_SCOPE(n$0,n$1,a); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 25, column 4]\n  n$1=_fun_NSObject::release(n$0:RRA*) virtual [line 25, column 3]\n  NULLIFY(&a); [line 25, column 3]\n  EXIT_SCOPE(n$0,n$1,a); [line 25, column 3]\n  APPLY_ABSTRACTION; [line 25, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&a:RRA*) assign_last [line 23, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA::init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n  EXIT_SCOPE(n$4,n$5,n$6); [line 23, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:RRA*); [line 23, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA::init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n  EXIT_SCOPE(n$4,n$5); [line 23, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;

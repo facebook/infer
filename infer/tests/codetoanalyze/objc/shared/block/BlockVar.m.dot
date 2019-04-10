@@ -7,7 +7,7 @@ digraph cfg {
 "objc_blockBlockVar::blockPostBad_2.dfe036ee6adc8f91e6e1d3ca5c8a9c9d_2" [label="2: Exit objc_blockBlockVar::blockPostBad_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar::blockPostBad_2.dfe036ee6adc8f91e6e1d3ca5c8a9c9d_3" [label="3:  Return Stmt \n   n$19=*&x:int* [line 32, column 12]\n  *&return:int*=n$19 [line 32, column 5]\n  NULLIFY(&x); [line 32, column 5]\n  EXIT_SCOPE(n$19,x); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="box"]
+"objc_blockBlockVar::blockPostBad_2.dfe036ee6adc8f91e6e1d3ca5c8a9c9d_3" [label="3:  Return Stmt \n   n$15=*&x:int* [line 32, column 12]\n  *&return:int*=n$15 [line 32, column 5]\n  NULLIFY(&x); [line 32, column 5]\n  EXIT_SCOPE(n$15,x); [line 32, column 5]\n  APPLY_ABSTRACTION; [line 32, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::blockPostBad_2.dfe036ee6adc8f91e6e1d3ca5c8a9c9d_3" -> "objc_blockBlockVar::blockPostBad_2.dfe036ee6adc8f91e6e1d3ca5c8a9c9d_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "objc_blockBlockVar::blockPostOk_3.903f9a5c68adca5e567b8d339d58501c_2" [label="2: Exit objc_blockBlockVar::blockPostOk_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar::blockPostOk_3.903f9a5c68adca5e567b8d339d58501c_3" [label="3:  Return Stmt \n   n$26=*&x:int* [line 41, column 12]\n  *&return:int*=n$26 [line 41, column 5]\n  NULLIFY(&x); [line 41, column 5]\n  EXIT_SCOPE(n$26,x); [line 41, column 5]\n  APPLY_ABSTRACTION; [line 41, column 5]\n " shape="box"]
+"objc_blockBlockVar::blockPostOk_3.903f9a5c68adca5e567b8d339d58501c_3" [label="3:  Return Stmt \n   n$20=*&x:int* [line 41, column 12]\n  *&return:int*=n$20 [line 41, column 5]\n  NULLIFY(&x); [line 41, column 5]\n  EXIT_SCOPE(n$20,x); [line 41, column 5]\n  APPLY_ABSTRACTION; [line 41, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::blockPostOk_3.903f9a5c68adca5e567b8d339d58501c_3" -> "objc_blockBlockVar::blockPostOk_3.903f9a5c68adca5e567b8d339d58501c_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "objc_blockBlockVar::capturedNoNullDeref_5.f4e4e582375f09fa84b315ddc9e9d2fb_2" [label="2: Exit objc_blockBlockVar::capturedNoNullDeref_5 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar::capturedNoNullDeref_5.f4e4e582375f09fa84b315ddc9e9d2fb_3" [label="3:  Return Stmt \n   n$40=*&x:int* [line 58, column 13]\n  n$41=*n$40:int [line 58, column 12]\n  *&return:int=n$41 [line 58, column 5]\n  NULLIFY(&x); [line 58, column 5]\n  EXIT_SCOPE(n$40,n$41,x); [line 58, column 5]\n  APPLY_ABSTRACTION; [line 58, column 5]\n " shape="box"]
+"objc_blockBlockVar::capturedNoNullDeref_5.f4e4e582375f09fa84b315ddc9e9d2fb_3" [label="3:  Return Stmt \n   n$29=*&x:int* [line 58, column 13]\n  n$30=*n$29:int [line 58, column 12]\n  *&return:int=n$30 [line 58, column 5]\n  NULLIFY(&x); [line 58, column 5]\n  EXIT_SCOPE(n$29,n$30,x); [line 58, column 5]\n  APPLY_ABSTRACTION; [line 58, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::capturedNoNullDeref_5.f4e4e582375f09fa84b315ddc9e9d2fb_3" -> "objc_blockBlockVar::capturedNoNullDeref_5.f4e4e582375f09fa84b315ddc9e9d2fb_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "objc_blockBlockVar::capturedNullDeref_4.bc226164a990fded32aae0d7f88b48d2_2" [label="2: Exit objc_blockBlockVar::capturedNullDeref_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar::capturedNullDeref_4.bc226164a990fded32aae0d7f88b48d2_3" [label="3:  Return Stmt \n   n$33=*&x:int* [line 49, column 13]\n  n$34=*n$33:int [line 49, column 12]\n  *&return:int=n$34 [line 49, column 5]\n  NULLIFY(&x); [line 49, column 5]\n  EXIT_SCOPE(n$33,n$34,x); [line 49, column 5]\n  APPLY_ABSTRACTION; [line 49, column 5]\n " shape="box"]
+"objc_blockBlockVar::capturedNullDeref_4.bc226164a990fded32aae0d7f88b48d2_3" [label="3:  Return Stmt \n   n$24=*&x:int* [line 49, column 13]\n  n$25=*n$24:int [line 49, column 12]\n  *&return:int=n$25 [line 49, column 5]\n  NULLIFY(&x); [line 49, column 5]\n  EXIT_SCOPE(n$24,n$25,x); [line 49, column 5]\n  APPLY_ABSTRACTION; [line 49, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::capturedNullDeref_4.bc226164a990fded32aae0d7f88b48d2_3" -> "objc_blockBlockVar::capturedNullDeref_4.bc226164a990fded32aae0d7f88b48d2_2" ;
@@ -51,11 +51,11 @@ digraph cfg {
 "objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_2" [label="2: Exit objc_blockBlockVar::navigateToURLInBackground_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_3" [label="3:  Return Stmt \n   n$9=*&a:int [line 19, column 12]\n  n$10=*&b:int [line 19, column 16]\n  n$11=*&res:int [line 19, column 20]\n  *&return:int=((n$9 + n$10) + n$11) [line 19, column 5]\n  NULLIFY(&a); [line 19, column 5]\n  NULLIFY(&b); [line 19, column 5]\n  NULLIFY(&res); [line 19, column 5]\n  EXIT_SCOPE(n$9,n$10,n$11,a,b,res); [line 19, column 5]\n  APPLY_ABSTRACTION; [line 19, column 5]\n " shape="box"]
+"objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_3" [label="3:  Return Stmt \n   n$7=*&a:int [line 19, column 12]\n  n$8=*&b:int [line 19, column 16]\n  n$9=*&res:int [line 19, column 20]\n  *&return:int=((n$7 + n$8) + n$9) [line 19, column 5]\n  NULLIFY(&a); [line 19, column 5]\n  NULLIFY(&b); [line 19, column 5]\n  NULLIFY(&res); [line 19, column 5]\n  EXIT_SCOPE(n$7,n$8,n$9,a,b,res); [line 19, column 5]\n  APPLY_ABSTRACTION; [line 19, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_3" -> "objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_2" ;
-"objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_4" [label="4:  DeclStmt \n   n$13=_fun___variable_initialization(&res:int) assign_last [line 18, column 5]\n  n$12=_fun_BlockVar::test() [line 18, column 15]\n  *&res:int=n$12 [line 18, column 5]\n  EXIT_SCOPE(n$12,n$13); [line 18, column 5]\n " shape="box"]
+"objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(res:int); [line 18, column 5]\n  n$10=_fun_BlockVar::test() [line 18, column 15]\n  *&res:int=n$10 [line 18, column 5]\n  EXIT_SCOPE(n$10); [line 18, column 5]\n " shape="box"]
 	
 
 	 "objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_4" -> "objc_blockBlockVar::navigateToURLInBackground_1.12cd351936bfe9a1f532e264d27049bb_3" ;
@@ -63,7 +63,7 @@ digraph cfg {
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_1" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" [label="2: Exit BlockVar::navigateToURLInBackground \n   NULLIFY(&p); [line 27, column 1]\n  NULLIFY(&addBlock); [line 27, column 1]\n " color=yellow style=filled]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" [label="2: Exit BlockVar::navigateToURLInBackground \n  " color=yellow style=filled]
 	
 
 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" [label="3: + \n  " ]
@@ -83,11 +83,11 @@ digraph cfg {
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n  EXIT_SCOPE(n$0,p); [line 23, column 7]\n " shape="invhouse"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n  NULLIFY(&p); [line 23, column 7]\n  EXIT_SCOPE(n$0,p); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 24, column 13]\n  n$2=*n$1:int [line 24, column 12]\n  *&return:int=n$2 [line 24, column 5]\n  EXIT_SCOPE(n$1,n$2,p); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 24, column 13]\n  n$2=*n$1:int [line 24, column 12]\n  *&return:int=n$2 [line 24, column 5]\n  NULLIFY(&p); [line 24, column 5]\n  EXIT_SCOPE(n$1,n$2,p); [line 24, column 5]\n  APPLY_ABSTRACTION; [line 24, column 5]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
@@ -95,15 +95,15 @@ digraph cfg {
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" [label="10:  DeclStmt \n   n$5=_fun___variable_initialization(&p:int*) assign_last [line 22, column 3]\n  *&p:int*=null [line 22, column 3]\n  EXIT_SCOPE(n$5); [line 22, column 3]\n " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 22, column 3]\n  *&p:int*=null [line 22, column 3]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" [label="11:  DeclStmt \n   n$8=_fun___variable_initialization(&x:int) assign_last [line 21, column 3]\n  n$6=*&addBlock:_fn_(*) [line 21, column 11]\n  n$7=n$6(1:int,2:int) objc_block [line 21, column 11]\n  *&x:int=n$7 [line 21, column 3]\n  EXIT_SCOPE(n$6,n$7,n$8,addBlock); [line 21, column 3]\n " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 21, column 3]\n  n$5=*&addBlock:_fn_(*) [line 21, column 11]\n  n$6=n$5(1:int,2:int) objc_block [line 21, column 11]\n  *&x:int=n$6 [line 21, column 3]\n  NULLIFY(&addBlock); [line 21, column 3]\n  EXIT_SCOPE(n$5,n$6,addBlock); [line 21, column 3]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   n$14=_fun___variable_initialization(&addBlock:_fn_(*)) assign_last [line 17, column 3]\n  *&addBlock:_fn_(*)=(_fun_objc_blockBlockVar::navigateToURLInBackground_1) [line 17, column 3]\n  EXIT_SCOPE(n$14); [line 17, column 3]\n " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(addBlock:_fn_(*)); [line 17, column 3]\n  *&addBlock:_fn_(*)=(_fun_objc_blockBlockVar::navigateToURLInBackground_1) [line 17, column 3]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" ;
@@ -122,18 +122,18 @@ digraph cfg {
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_1" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_5" ;
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_2" [label="2: Exit BlockVar::blockPostBad \n   NULLIFY(&x); [line 35, column 1]\n  NULLIFY(&my_block); [line 35, column 1]\n " color=yellow style=filled]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_2" [label="2: Exit BlockVar::blockPostBad \n  " color=yellow style=filled]
 	
 
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" [label="3:  Return Stmt \n   n$15=*&my_block:_fn_(*) [line 34, column 11]\n  n$16=n$15() objc_block [line 34, column 11]\n  n$17=*n$16:int [line 34, column 10]\n  *&return:int=n$17 [line 34, column 3]\n  EXIT_SCOPE(n$15,n$16,n$17,my_block); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" [label="3:  Return Stmt \n   n$11=*&my_block:_fn_(*) [line 34, column 11]\n  n$12=n$11() objc_block [line 34, column 11]\n  n$13=*n$12:int [line 34, column 10]\n  *&return:int=n$13 [line 34, column 3]\n  NULLIFY(&my_block); [line 34, column 3]\n  EXIT_SCOPE(n$11,n$12,n$13,my_block); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_2" ;
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   n$20=_fun___variable_initialization(&my_block:_fn_(*)) assign_last [line 31, column 3]\n  n$18=*&x:int* [line 31, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::blockPostBad_2,(n$18 &x:int*)) [line 31, column 3]\n  EXIT_SCOPE(n$18,n$20,x); [line 31, column 3]\n " shape="box"]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 31, column 3]\n  n$14=*&x:int* [line 31, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::blockPostBad_2,(n$14 &x:int*)) [line 31, column 3]\n  NULLIFY(&x); [line 31, column 3]\n  EXIT_SCOPE(n$14,x); [line 31, column 3]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" ;
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_5" [label="5:  DeclStmt \n   n$21=_fun___variable_initialization(&x:int*) assign_last [line 30, column 3]\n  *&x:int*=null [line 30, column 3]\n  EXIT_SCOPE(n$21); [line 30, column 3]\n " shape="box"]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int*); [line 30, column 3]\n  *&x:int*=null [line 30, column 3]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_5" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" ;
@@ -141,22 +141,22 @@ digraph cfg {
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_1" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_6" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_2" [label="2: Exit BlockVar::blockPostOk \n   NULLIFY(&x); [line 44, column 1]\n  NULLIFY(&my_block); [line 44, column 1]\n  NULLIFY(&i); [line 44, column 1]\n " color=yellow style=filled]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_2" [label="2: Exit BlockVar::blockPostOk \n   NULLIFY(&i); [line 44, column 1]\n " color=yellow style=filled]
 	
 
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" [label="3:  Return Stmt \n   n$22=*&my_block:_fn_(*) [line 43, column 11]\n  n$23=n$22() objc_block [line 43, column 11]\n  n$24=*n$23:int [line 43, column 10]\n  *&return:int=n$24 [line 43, column 3]\n  EXIT_SCOPE(n$22,n$23,n$24,my_block); [line 43, column 3]\n  APPLY_ABSTRACTION; [line 43, column 3]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" [label="3:  Return Stmt \n   n$16=*&my_block:_fn_(*) [line 43, column 11]\n  n$17=n$16() objc_block [line 43, column 11]\n  n$18=*n$17:int [line 43, column 10]\n  *&return:int=n$18 [line 43, column 3]\n  NULLIFY(&my_block); [line 43, column 3]\n  EXIT_SCOPE(n$16,n$17,n$18,my_block); [line 43, column 3]\n  APPLY_ABSTRACTION; [line 43, column 3]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_2" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   n$27=_fun___variable_initialization(&my_block:_fn_(*)) assign_last [line 40, column 3]\n  n$25=*&x:int* [line 40, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::blockPostOk_3,(n$25 &x:int*)) [line 40, column 3]\n  EXIT_SCOPE(n$25,n$27,x); [line 40, column 3]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 40, column 3]\n  n$19=*&x:int* [line 40, column 28]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::blockPostOk_3,(n$19 &x:int*)) [line 40, column 3]\n  NULLIFY(&x); [line 40, column 3]\n  EXIT_SCOPE(n$19,x); [line 40, column 3]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_5" [label="5:  DeclStmt \n   n$28=_fun___variable_initialization(&x:int*) assign_last [line 39, column 3]\n  *&x:int*=&i [line 39, column 3]\n  EXIT_SCOPE(n$28,i); [line 39, column 3]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int*); [line 39, column 3]\n  *&x:int*=&i [line 39, column 3]\n  EXIT_SCOPE(i); [line 39, column 3]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_5" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_6" [label="6:  DeclStmt \n   n$29=_fun___variable_initialization(&i:int) assign_last [line 38, column 3]\n  *&i:int=7 [line 38, column 3]\n  EXIT_SCOPE(n$29); [line 38, column 3]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 38, column 3]\n  *&i:int=7 [line 38, column 3]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_6" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_5" ;
@@ -164,26 +164,26 @@ digraph cfg {
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_1" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_7" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_2" [label="2: Exit BlockVar::capturedNoNullDeref \n   NULLIFY(&i); [line 62, column 1]\n  NULLIFY(&x); [line 62, column 1]\n  NULLIFY(&my_block); [line 62, column 1]\n " color=yellow style=filled]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_2" [label="2: Exit BlockVar::capturedNoNullDeref \n   NULLIFY(&i); [line 62, column 1]\n " color=yellow style=filled]
 	
 
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" [label="3:  Return Stmt \n   n$37=*&my_block:_fn_(*) [line 61, column 10]\n  n$38=n$37() objc_block [line 61, column 10]\n  *&return:int=n$38 [line 61, column 3]\n  EXIT_SCOPE(n$37,n$38,my_block); [line 61, column 3]\n  APPLY_ABSTRACTION; [line 61, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" [label="3:  Return Stmt \n   n$26=*&my_block:_fn_(*) [line 61, column 10]\n  n$27=n$26() objc_block [line 61, column 10]\n  *&return:int=n$27 [line 61, column 3]\n  NULLIFY(&my_block); [line 61, column 3]\n  EXIT_SCOPE(n$26,n$27,my_block); [line 61, column 3]\n  APPLY_ABSTRACTION; [line 61, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_2" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x:int*=null [line 60, column 3]\n  EXIT_SCOPE(x); [line 60, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x:int*=null [line 60, column 3]\n  NULLIFY(&x); [line 60, column 3]\n  EXIT_SCOPE(x); [line 60, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   n$42=_fun___variable_initialization(&my_block:_fn_(*)) assign_last [line 57, column 3]\n  n$39=*&x:int* [line 57, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::capturedNoNullDeref_5,(n$39 &x:int*)) [line 57, column 3]\n  EXIT_SCOPE(n$39,n$42,x); [line 57, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 57, column 3]\n  n$28=*&x:int* [line 57, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::capturedNoNullDeref_5,(n$28 &x:int*)) [line 57, column 3]\n  NULLIFY(&x); [line 57, column 3]\n  EXIT_SCOPE(n$28,x); [line 57, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_6" [label="6:  DeclStmt \n   n$43=_fun___variable_initialization(&x:int*) assign_last [line 56, column 3]\n  *&x:int*=&i [line 56, column 3]\n  EXIT_SCOPE(n$43,i); [line 56, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:int*); [line 56, column 3]\n  *&x:int*=&i [line 56, column 3]\n  EXIT_SCOPE(i); [line 56, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_6" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_7" [label="7:  DeclStmt \n   n$44=_fun___variable_initialization(&i:int) assign_last [line 55, column 3]\n  *&i:int=5 [line 55, column 3]\n  EXIT_SCOPE(n$44); [line 55, column 3]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 55, column 3]\n  *&i:int=5 [line 55, column 3]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_7" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_6" ;
@@ -191,18 +191,18 @@ digraph cfg {
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_1" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" [label="2: Exit BlockVar::capturedNullDeref \n   NULLIFY(&my_block); [line 52, column 1]\n  NULLIFY(&x); [line 52, column 1]\n " color=yellow style=filled]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" [label="2: Exit BlockVar::capturedNullDeref \n  " color=yellow style=filled]
 	
 
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" [label="3:  Return Stmt \n   n$30=*&my_block:_fn_(*) [line 51, column 10]\n  n$31=n$30() objc_block [line 51, column 10]\n  *&return:int=n$31 [line 51, column 3]\n  EXIT_SCOPE(n$30,n$31,my_block); [line 51, column 3]\n  APPLY_ABSTRACTION; [line 51, column 3]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" [label="3:  Return Stmt \n   n$21=*&my_block:_fn_(*) [line 51, column 10]\n  n$22=n$21() objc_block [line 51, column 10]\n  *&return:int=n$22 [line 51, column 3]\n  NULLIFY(&my_block); [line 51, column 3]\n  EXIT_SCOPE(n$21,n$22,my_block); [line 51, column 3]\n  APPLY_ABSTRACTION; [line 51, column 3]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   n$35=_fun___variable_initialization(&my_block:_fn_(*)) assign_last [line 48, column 3]\n  n$32=*&x:int* [line 48, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::capturedNullDeref_4,(n$32 &x:int*)) [line 48, column 3]\n  EXIT_SCOPE(n$32,n$35,x); [line 48, column 3]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(my_block:_fn_(*)); [line 48, column 3]\n  n$23=*&x:int* [line 48, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar::capturedNullDeref_4,(n$23 &x:int*)) [line 48, column 3]\n  NULLIFY(&x); [line 48, column 3]\n  EXIT_SCOPE(n$23,x); [line 48, column 3]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" [label="5:  DeclStmt \n   n$36=_fun___variable_initialization(&x:int*) assign_last [line 47, column 3]\n  *&x:int*=null [line 47, column 3]\n  EXIT_SCOPE(n$36); [line 47, column 3]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int*); [line 47, column 3]\n  *&x:int*=null [line 47, column 3]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" ;

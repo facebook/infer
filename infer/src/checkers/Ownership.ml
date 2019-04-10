@@ -329,9 +329,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           |> Domain.access_path_add_read
                (HilExp.AccessExpression.to_access_path lhs_access_exp)
                loc summary )
-    | Call (_, Direct callee_pname, _, _, _)
-      when Typ.Procname.equal callee_pname BuiltinDecl.__variable_initialization ->
-        astate
     | Call (_, Direct callee_pname, [AccessExpression (Base lhs_base)], _, loc)
       when Typ.Procname.equal callee_pname BuiltinDecl.__delete ->
         (* TODO: support delete[], free, and (in some cases) std::move *)

@@ -4,22 +4,22 @@ digraph cfg {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_1" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" [label="2: Exit CategoryProcdescMain \n   NULLIFY(&person); [line 16, column 1]\n  NULLIFY(&x); [line 16, column 1]\n " color=yellow style=filled]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" [label="2: Exit CategoryProcdescMain \n  " color=yellow style=filled]
 	
 
 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" [label="3:  Return Stmt \n   *&return:int=0 [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&x:int*) assign_last [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=(int*)n$0 [line 14, column 3]\n  EXIT_SCOPE(n$0,n$1,x); [line 14, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:int*); [line 14, column 3]\n  n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 14, column 12]\n  *&x:int*=(int*)n$0 [line 14, column 3]\n  NULLIFY(&x); [line 14, column 3]\n  EXIT_SCOPE(n$0,x); [line 14, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" [label="5:  Message Call: performDaysWork \n   n$2=*&person:EOCPerson* [line 13, column 4]\n  n$3=_fun_EOCPerson::performDaysWork(n$2:EOCPerson*) virtual [line 13, column 3]\n  EXIT_SCOPE(n$2,n$3,person); [line 13, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" [label="5:  Message Call: performDaysWork \n   n$1=*&person:EOCPerson* [line 13, column 4]\n  n$2=_fun_EOCPerson::performDaysWork(n$1:EOCPerson*) virtual [line 13, column 3]\n  NULLIFY(&person); [line 13, column 3]\n  EXIT_SCOPE(n$1,n$2,person); [line 13, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   n$6=_fun___variable_initialization(&person:EOCPerson*) assign_last [line 12, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$5=_fun_NSObject::init(n$4:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$5 [line 12, column 3]\n  EXIT_SCOPE(n$4,n$5,n$6); [line 12, column 3]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(person:EOCPerson*); [line 12, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 12, column 24]\n  n$4=_fun_NSObject::init(n$3:EOCPerson*) virtual [line 12, column 23]\n  *&person:EOCPerson*=n$4 [line 12, column 3]\n  EXIT_SCOPE(n$3,n$4); [line 12, column 3]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" ;

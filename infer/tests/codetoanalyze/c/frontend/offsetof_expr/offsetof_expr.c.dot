@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_2" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" [label="10:  DeclStmt \n   n$3=_fun___variable_initialization(&i:int) assign_last [line 17, column 3]\n  *&i:int=n$2 [line 17, column 3]\n  EXIT_SCOPE(n$2,n$3); [line 17, column 3]\n " shape="box"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 17, column 3]\n  *&i:int=n$2 [line 17, column 3]\n  EXIT_SCOPE(n$2); [line 17, column 3]\n " shape="box"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" ;

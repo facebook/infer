@@ -154,9 +154,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Store (_, _, exp, loc) (* except in the case above, consider all reads as dangerous *)
     | Prune (exp, loc, _, _) ->
         get_globals pdesc exp |> add_globals astate loc
-    | Call (_, Const (Cfun callee_pname), _, _, _)
-      when Typ.Procname.equal callee_pname BuiltinDecl.__variable_initialization ->
-        astate
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
         at_least_nonbottom astate
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->

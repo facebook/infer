@@ -32,6 +32,7 @@ type instr_metadata =
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
+  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
 [@@deriving compare]
 
 (** An instruction. *)
@@ -341,7 +342,7 @@ let d_offset_list (offl : offset list) = L.d_pp_with_pe pp_offset_list offl
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t
 
 let location_of_instr_metadata = function
-  | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) ->
+  | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) | VariableLifetimeBegins (_, _, loc) ->
       loc
   | Skip ->
       Location.dummy
@@ -364,6 +365,8 @@ let exps_of_instr_metadata = function
       [Exp.Lvar pvar]
   | Skip ->
       []
+  | VariableLifetimeBegins (pvar, _, _) ->
+      [Exp.Lvar pvar]
 
 
 (** get the expressions occurring in the instruction *)
@@ -407,6 +410,9 @@ let pp_instr_metadata pe f = function
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | Skip ->
       F.pp_print_string f "SKIP"
+  | VariableLifetimeBegins (pvar, typ, loc) ->
+      F.fprintf f "VARIABLE_DECLARED(%a:%a); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
+        Location.pp loc
 
 
 let pp_instr ~print_types pe0 f instr =
@@ -1311,7 +1317,7 @@ let instr_sub_ids ~sub_id_binders f instr =
       in
       let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
       if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
-  | Metadata (Abstract _ | Nullify _ | Skip) ->
+  | Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
       instr
 
 

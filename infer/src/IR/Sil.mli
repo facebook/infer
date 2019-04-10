@@ -30,6 +30,7 @@ type instr_metadata =
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
+  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
 [@@deriving compare]
 
 (** An instruction. *)

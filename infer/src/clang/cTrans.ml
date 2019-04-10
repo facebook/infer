@@ -2248,7 +2248,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           mk_trans_result var_exp_typ {empty_control with root_nodes= trans_state.succ_nodes} )
     | Some ie ->
         (* For init expr, translate how to compute it and assign to the var *)
-        let var_exp, _ = var_exp_typ in
+        let var_exp, var_typ = var_exp_typ in
         let context = trans_state.context in
         let sil_loc =
           CLocation.location_of_stmt_info context.translation_unit_context.source_file
@@ -2276,18 +2276,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let pre_init_opt =
           match var_exp with
-          | Exp.Lvar _ ->
-              let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__variable_initialization) in
-              let ret_id = Ident.create_fresh Ident.knormal in
+          | Exp.Lvar pvar ->
               Some
                 { empty_control with
-                  instrs=
-                    [ Sil.Call
-                        ( (ret_id, Typ.void)
-                        , sil_fun
-                        , [var_exp_typ]
-                        , sil_loc
-                        , {CallFlags.default with cf_assign_last_arg= true} ) ] }
+                  instrs= [Sil.Metadata (VariableLifetimeBegins (pvar, var_typ, sil_loc))] }
           | _ ->
               None
         in

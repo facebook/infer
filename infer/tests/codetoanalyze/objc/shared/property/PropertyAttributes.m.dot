@@ -4,14 +4,14 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
-"test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n   NULLIFY(&a); [line 45, column 1]\n " color=yellow style=filled]
+"test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
 "test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44, column 3]\n  APPLY_ABSTRACTION; [line 44, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject::release(n$0:PropertyA*) virtual [line 43, column 3]\n  EXIT_SCOPE(n$0,n$1,a); [line 43, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject::release(n$0:PropertyA*) virtual [line 43, column 3]\n  NULLIFY(&a); [line 43, column 3]\n  EXIT_SCOPE(n$0,n$1,a); [line 43, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$7=_fun___variable_initialization(&a:PropertyA*) assign_last [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA::init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n  EXIT_SCOPE(n$5,n$6,n$7); [line 41, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:PropertyA*); [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA::init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n  EXIT_SCOPE(n$5,n$6); [line 41, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
@@ -27,10 +27,10 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA::copy \n   NULLIFY(&other); [line 36, column 1]\n " color=yellow style=filled]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA::copy \n  " color=yellow style=filled]
 	
 
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n  *&return:PropertyA*=n$1 [line 35, column 3]\n  EXIT_SCOPE(n$1,other); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n  *&return:PropertyA*=n$1 [line 35, column 3]\n  NULLIFY(&other); [line 35, column 3]\n  EXIT_SCOPE(n$1,other); [line 35, column 3]\n  APPLY_ABSTRACTION; [line 35, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" ;
@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$16=_fun___variable_initialization(&other:PropertyA*) assign_last [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA::init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n  EXIT_SCOPE(n$14,n$15,n$16); [line 29, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(other:PropertyA*); [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA::init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n  EXIT_SCOPE(n$14,n$15); [line 29, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;

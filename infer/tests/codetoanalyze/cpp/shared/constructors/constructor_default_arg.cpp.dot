@@ -7,15 +7,15 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&x3); [line 22, column 1]\n  NULLIFY(&x1); [line 22, column 1]\n  NULLIFY(&x2); [line 22, column 1]\n " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&x3:X) assign_last [line 21, column 3]\n  n$1=_fun_X::X(&x3:X*,0:int,1:int) [line 21, column 5]\n  EXIT_SCOPE(n$1,n$2,x3); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x3:X); [line 21, column 3]\n  n$1=_fun_X::X(&x3:X*,0:int,1:int) [line 21, column 5]\n  EXIT_SCOPE(n$1,x3); [line 21, column 5]\n  APPLY_ABSTRACTION; [line 21, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x2:X) assign_last [line 20, column 3]\n  n$3=_fun_X::X(&x2:X*,1:int,0:int) [line 20, column 5]\n  EXIT_SCOPE(n$3,n$4,x2); [line 20, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x2:X); [line 20, column 3]\n  n$2=_fun_X::X(&x2:X*,1:int,0:int) [line 20, column 5]\n  EXIT_SCOPE(n$2,x2); [line 20, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$6=_fun___variable_initialization(&x1:X) assign_last [line 19, column 3]\n  n$5=_fun_X::X(&x1:X*,0:int,0:int) [line 19, column 5]\n  EXIT_SCOPE(n$5,n$6,x1); [line 19, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x1:X); [line 19, column 3]\n  n$3=_fun_X::X(&x1:X*,0:int,0:int) [line 19, column 5]\n  EXIT_SCOPE(n$3,x1); [line 19, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;

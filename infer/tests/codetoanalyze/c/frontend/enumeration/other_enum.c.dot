@@ -7,31 +7,31 @@ digraph cfg {
 "other_enum_main.572f04969b0ade4902dd1faf86fac461_2" [label="2: Exit other_enum_main \n  " color=yellow style=filled]
 	
 
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&foo_g:int) assign_last [line 17, column 3]\n  *&foo_g:int=(2 + 10) [line 17, column 3]\n  NULLIFY(&foo_g); [line 17, column 3]\n  EXIT_SCOPE(n$0,foo_g); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 17, column 3]\n  *&foo_g:int=(2 + 10) [line 17, column 3]\n  NULLIFY(&foo_g); [line 17, column 3]\n  EXIT_SCOPE(foo_g); [line 17, column 3]\n  APPLY_ABSTRACTION; [line 17, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_3" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_2" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&foo_f:int) assign_last [line 16, column 3]\n  *&foo_f:int=2 [line 16, column 3]\n  NULLIFY(&foo_f); [line 16, column 3]\n  EXIT_SCOPE(n$1,foo_f); [line 16, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(foo_f:int); [line 16, column 3]\n  *&foo_f:int=2 [line 16, column 3]\n  NULLIFY(&foo_f); [line 16, column 3]\n  EXIT_SCOPE(foo_f); [line 16, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_4" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_3" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&foo_e:int) assign_last [line 15, column 3]\n  *&foo_e:int=1 [line 15, column 3]\n  NULLIFY(&foo_e); [line 15, column 3]\n  EXIT_SCOPE(n$2,foo_e); [line 15, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(foo_e:int); [line 15, column 3]\n  *&foo_e:int=1 [line 15, column 3]\n  NULLIFY(&foo_e); [line 15, column 3]\n  EXIT_SCOPE(foo_e); [line 15, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_5" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_4" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_6" [label="6:  DeclStmt \n   n$3=_fun___variable_initialization(&foo_d:int) assign_last [line 14, column 3]\n  *&foo_d:int=11 [line 14, column 3]\n  NULLIFY(&foo_d); [line 14, column 3]\n  EXIT_SCOPE(n$3,foo_d); [line 14, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(foo_d:int); [line 14, column 3]\n  *&foo_d:int=11 [line 14, column 3]\n  NULLIFY(&foo_d); [line 14, column 3]\n  EXIT_SCOPE(foo_d); [line 14, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_6" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_5" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&foo_c:int) assign_last [line 13, column 3]\n  *&foo_c:int=10 [line 13, column 3]\n  NULLIFY(&foo_c); [line 13, column 3]\n  EXIT_SCOPE(n$4,foo_c); [line 13, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(foo_c:int); [line 13, column 3]\n  *&foo_c:int=10 [line 13, column 3]\n  NULLIFY(&foo_c); [line 13, column 3]\n  EXIT_SCOPE(foo_c); [line 13, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_7" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_6" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_8" [label="8:  DeclStmt \n   n$5=_fun___variable_initialization(&foo_b:int) assign_last [line 12, column 3]\n  *&foo_b:int=1 [line 12, column 3]\n  NULLIFY(&foo_b); [line 12, column 3]\n  EXIT_SCOPE(n$5,foo_b); [line 12, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(foo_b:int); [line 12, column 3]\n  *&foo_b:int=1 [line 12, column 3]\n  NULLIFY(&foo_b); [line 12, column 3]\n  EXIT_SCOPE(foo_b); [line 12, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_8" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_7" ;
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_9" [label="9:  DeclStmt \n   n$6=_fun___variable_initialization(&foo_a:int) assign_last [line 11, column 3]\n  *&foo_a:int=0 [line 11, column 3]\n  NULLIFY(&foo_a); [line 11, column 3]\n  EXIT_SCOPE(n$6,foo_a); [line 11, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 11, column 3]\n  *&foo_a:int=0 [line 11, column 3]\n  NULLIFY(&foo_a); [line 11, column 3]\n  EXIT_SCOPE(foo_a); [line 11, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_9" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_8" ;
@@ -71,11 +71,11 @@ digraph cfg {
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_9" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_10" [label="10:  DeclStmt \n   n$4=_fun___variable_initialization(&foo_a:int) assign_last [line 22, column 3]\n  *&foo_a:int=0 [line 22, column 3]\n  EXIT_SCOPE(n$4); [line 22, column 3]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 22, column 3]\n  *&foo_a:int=0 [line 22, column 3]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_10" -> "other_enum_test.100f3583adf0259001be6c944828c44a_5" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_11" [label="11:  DeclStmt \n   n$5=_fun___variable_initialization(&foo_g:int) assign_last [line 21, column 3]\n  *&foo_g:int=(2 + 10) [line 21, column 3]\n  EXIT_SCOPE(n$5); [line 21, column 3]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 21, column 3]\n  *&foo_g:int=(2 + 10) [line 21, column 3]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_11" -> "other_enum_test.100f3583adf0259001be6c944828c44a_10" ;

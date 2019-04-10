@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   n$2=_fun___variable_initialization(&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ) assign_last [line 8, column 1]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=n$1 [line 8, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  EXIT_SCOPE(n$1,n$2,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  APPLY_ABSTRACTION; [line 8, column 1]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ); [line 8, column 1]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=n$1 [line 8, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  EXIT_SCOPE(n$1,0$?%__sil_tmpSIL_temp_conditional___n$0); [line 8, column 1]\n  APPLY_ABSTRACTION; [line 8, column 1]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;

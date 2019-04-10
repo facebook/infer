@@ -44,12 +44,12 @@ digraph cfg {
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int) assign_last [line 41, column 7]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 41, column 15]\n  *&a:int=n$3 [line 41, column 7]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 41, column 7]\n  EXIT_SCOPE(n$3,n$4,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 41, column 7]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 41, column 7]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 41, column 15]\n  *&a:int=n$3 [line 41, column 7]\n  NULLIFY(&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 41, column 7]\n  EXIT_SCOPE(n$3,0$?%__sil_tmpSIL_temp_conditional___n$2); [line 41, column 7]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_5" ;
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_6" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$5=*&a:int [line 42, column 17]\n  *&return:int=(1 / (n$5 - 1)) [line 42, column 5]\n  NULLIFY(&a); [line 42, column 5]\n  EXIT_SCOPE(n$5,a); [line 42, column 5]\n  APPLY_ABSTRACTION; [line 42, column 5]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$4=*&a:int [line 42, column 17]\n  *&return:int=(1 / (n$4 - 1)) [line 42, column 5]\n  NULLIFY(&a); [line 42, column 5]\n  EXIT_SCOPE(n$4,a); [line 42, column 5]\n  APPLY_ABSTRACTION; [line 42, column 5]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" ;
@@ -76,12 +76,12 @@ digraph cfg {
 	
 
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_6" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_3" ;
-"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" [label="7:  DeclStmt \n   n$3=_fun___variable_initialization(&a:int) assign_last [line 35, column 7]\n  n$2=_fun_get1() [line 35, column 15]\n  *&a:int=n$2 [line 35, column 7]\n  EXIT_SCOPE(n$2,n$3); [line 35, column 7]\n " shape="box"]
+"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 35, column 7]\n  n$2=_fun_get1() [line 35, column 15]\n  *&a:int=n$2 [line 35, column 7]\n  EXIT_SCOPE(n$2); [line 35, column 7]\n " shape="box"]
 	
 
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_5" ;
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_6" ;
-"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" [label="8:  Return Stmt \n   n$4=*&a:int [line 36, column 17]\n  *&return:int=(1 / (n$4 - 1)) [line 36, column 5]\n  NULLIFY(&a); [line 36, column 5]\n  EXIT_SCOPE(n$4,a); [line 36, column 5]\n  APPLY_ABSTRACTION; [line 36, column 5]\n " shape="box"]
+"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" [label="8:  Return Stmt \n   n$3=*&a:int [line 36, column 17]\n  *&return:int=(1 / (n$3 - 1)) [line 36, column 5]\n  NULLIFY(&a); [line 36, column 5]\n  EXIT_SCOPE(n$3,a); [line 36, column 5]\n  APPLY_ABSTRACTION; [line 36, column 5]\n " shape="box"]
 	
 
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_2" ;
@@ -100,7 +100,7 @@ digraph cfg {
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_1" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_2" [label="2: Exit reference_init_div0 \n   NULLIFY(&r); [line 52, column 1]\n  NULLIFY(&a); [line 52, column 1]\n " color=yellow style=filled]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_2" [label="2: Exit reference_init_div0 \n   NULLIFY(&r); [line 52, column 1]\n " color=yellow style=filled]
 	
 
 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" [label="3:  Return Stmt \n   n$0=*&r:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n  EXIT_SCOPE(n$0,r); [line 51, column 3]\n  APPLY_ABSTRACTION; [line 51, column 3]\n " shape="box"]
@@ -115,20 +115,20 @@ digraph cfg {
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" [label="6: Prune (false branch, if) \n   n$2=*&a:int& [line 48, column 12]\n  n$3=*n$2:int [line 48, column 12]\n  PRUNE(!n$3, false); [line 48, column 12]\n  EXIT_SCOPE(n$2,n$3,a); [line 48, column 12]\n  APPLY_ABSTRACTION; [line 48, column 12]\n " shape="invhouse"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" [label="6: Prune (false branch, if) \n   n$2=*&a:int& [line 48, column 12]\n  n$3=*n$2:int [line 48, column 12]\n  PRUNE(!n$3, false); [line 48, column 12]\n  NULLIFY(&a); [line 48, column 12]\n  EXIT_SCOPE(n$2,n$3,a); [line 48, column 12]\n  APPLY_ABSTRACTION; [line 48, column 12]\n " shape="invhouse"]
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" [label="7:  DeclStmt \n   n$4=_fun___variable_initialization(&a:int&) assign_last [line 48, column 7]\n  *&a:int&=&r [line 48, column 7]\n  EXIT_SCOPE(n$4); [line 48, column 7]\n " shape="box"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int&); [line 48, column 7]\n  *&a:int&=&r [line 48, column 7]\n " shape="box"]
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" ;
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" [label="8:  BinaryOperatorStmt: Assign \n   n$6=*&a:int& [line 49, column 5]\n  *n$6:int=0 [line 49, column 5]\n  EXIT_SCOPE(n$6,a); [line 49, column 5]\n  APPLY_ABSTRACTION; [line 49, column 5]\n " shape="box"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" [label="8:  BinaryOperatorStmt: Assign \n   n$5=*&a:int& [line 49, column 5]\n  *n$5:int=0 [line 49, column 5]\n  NULLIFY(&a); [line 49, column 5]\n  EXIT_SCOPE(n$5,a); [line 49, column 5]\n  APPLY_ABSTRACTION; [line 49, column 5]\n " shape="box"]
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" [label="9:  DeclStmt \n   n$9=_fun___variable_initialization(&r:int) assign_last [line 47, column 3]\n  *&r:int=1 [line 47, column 3]\n  EXIT_SCOPE(n$9); [line 47, column 3]\n " shape="box"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(r:int); [line 47, column 3]\n  *&r:int=1 [line 47, column 3]\n " shape="box"]
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" ;
@@ -155,7 +155,7 @@ digraph cfg {
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_6" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_12" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_7" [label="7:  DeclStmt \n   n$2=_fun___variable_initialization(&a:int) assign_last [line 23, column 7]\n  *&a:int=0 [line 23, column 7]\n  EXIT_SCOPE(n$2); [line 23, column 7]\n " shape="box"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 23, column 7]\n  *&a:int=0 [line 23, column 7]\n " shape="box"]
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_7" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_5" ;
@@ -168,15 +168,15 @@ digraph cfg {
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_9" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_3" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_10" [label="10: Prune (true branch, if) \n   n$4=*&b:int [line 25, column 18]\n  PRUNE(n$4, true); [line 25, column 18]\n  NULLIFY(&b); [line 25, column 18]\n  NULLIFY(&a); [line 25, column 18]\n  EXIT_SCOPE(n$4,b,a); [line 25, column 18]\n " shape="invhouse"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_10" [label="10: Prune (true branch, if) \n   n$3=*&b:int [line 25, column 18]\n  PRUNE(n$3, true); [line 25, column 18]\n  NULLIFY(&b); [line 25, column 18]\n  NULLIFY(&a); [line 25, column 18]\n  EXIT_SCOPE(n$3,b,a); [line 25, column 18]\n " shape="invhouse"]
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_10" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_13" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_11" [label="11: Prune (false branch, if) \n   n$4=*&b:int [line 25, column 18]\n  PRUNE(!n$4, false); [line 25, column 18]\n  EXIT_SCOPE(n$4); [line 25, column 18]\n " shape="invhouse"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_11" [label="11: Prune (false branch, if) \n   n$3=*&b:int [line 25, column 18]\n  PRUNE(!n$3, false); [line 25, column 18]\n  EXIT_SCOPE(n$3); [line 25, column 18]\n " shape="invhouse"]
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_11" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_12" [label="12:  DeclStmt \n   n$5=_fun___variable_initialization(&b:int) assign_last [line 25, column 14]\n  *&b:int=0 [line 25, column 14]\n  EXIT_SCOPE(n$5); [line 25, column 14]\n " shape="box"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 25, column 14]\n  *&b:int=0 [line 25, column 14]\n " shape="box"]
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_12" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_10" ;
@@ -185,7 +185,7 @@ digraph cfg {
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_13" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_2" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" [label="14:  Return Stmt \n   n$7=*&a:int [line 28, column 17]\n  n$8=*&b:int [line 28, column 21]\n  *&return:int=(1 / (n$7 + n$8)) [line 28, column 5]\n  NULLIFY(&b); [line 28, column 5]\n  NULLIFY(&a); [line 28, column 5]\n  EXIT_SCOPE(n$7,n$8,b,a); [line 28, column 5]\n  APPLY_ABSTRACTION; [line 28, column 5]\n " shape="box"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" [label="14:  Return Stmt \n   n$5=*&a:int [line 28, column 17]\n  n$6=*&b:int [line 28, column 21]\n  *&return:int=(1 / (n$5 + n$6)) [line 28, column 5]\n  NULLIFY(&b); [line 28, column 5]\n  NULLIFY(&a); [line 28, column 5]\n  EXIT_SCOPE(n$5,n$6,b,a); [line 28, column 5]\n  APPLY_ABSTRACTION; [line 28, column 5]\n " shape="box"]
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_2" ;
@@ -212,16 +212,16 @@ digraph cfg {
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" ;
-"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" [label="7:  DeclStmt \n   n$2=_fun___variable_initialization(&a:int) assign_last [line 15, column 7]\n  *&a:int=0 [line 15, column 7]\n  EXIT_SCOPE(n$2); [line 15, column 7]\n " shape="box"]
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 15, column 7]\n  *&a:int=0 [line 15, column 7]\n " shape="box"]
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_5" ;
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" ;
-"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" [label="8:  Return Stmt \n   n$3=*&a:int [line 16, column 12]\n  *&return:int=n$3 [line 16, column 5]\n  NULLIFY(&a); [line 16, column 5]\n  EXIT_SCOPE(n$3,a); [line 16, column 5]\n  APPLY_ABSTRACTION; [line 16, column 5]\n " shape="box"]
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" [label="8:  Return Stmt \n   n$2=*&a:int [line 16, column 12]\n  *&return:int=n$2 [line 16, column 5]\n  NULLIFY(&a); [line 16, column 5]\n  EXIT_SCOPE(n$2,a); [line 16, column 5]\n  APPLY_ABSTRACTION; [line 16, column 5]\n " shape="box"]
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_2" ;
-"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" [label="9:  Return Stmt \n   n$5=*&a:int [line 18, column 16]\n  *&return:int=(1 / n$5) [line 18, column 5]\n  NULLIFY(&a); [line 18, column 5]\n  EXIT_SCOPE(n$5,a); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" [label="9:  Return Stmt \n   n$4=*&a:int [line 18, column 16]\n  *&return:int=(1 / n$4) [line 18, column 5]\n  NULLIFY(&a); [line 18, column 5]\n  EXIT_SCOPE(n$4,a); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_2" ;
@@ -248,12 +248,12 @@ digraph cfg {
 	
 
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_6" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_3" ;
-"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" [label="7:  DeclStmt \n   n$2=_fun___variable_initialization(&a:int) assign_last [line 9, column 7]\n  *&a:int=1 [line 9, column 7]\n  EXIT_SCOPE(n$2); [line 9, column 7]\n " shape="box"]
+"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 9, column 7]\n  *&a:int=1 [line 9, column 7]\n " shape="box"]
 	
 
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_5" ;
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_6" ;
-"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" [label="8:  Return Stmt \n   n$3=*&a:int [line 10, column 16]\n  *&return:int=(1 / n$3) [line 10, column 5]\n  NULLIFY(&a); [line 10, column 5]\n  EXIT_SCOPE(n$3,a); [line 10, column 5]\n  APPLY_ABSTRACTION; [line 10, column 5]\n " shape="box"]
+"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" [label="8:  Return Stmt \n   n$2=*&a:int [line 10, column 16]\n  *&return:int=(1 / n$2) [line 10, column 5]\n  NULLIFY(&a); [line 10, column 5]\n  EXIT_SCOPE(n$2,a); [line 10, column 5]\n  APPLY_ABSTRACTION; [line 10, column 5]\n " shape="box"]
 	
 
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_2" ;
@@ -261,7 +261,7 @@ digraph cfg {
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_1" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_7" ;
-"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" [label="2: Exit simple_init_null_deref \n   NULLIFY(&p); [line 60, column 1]\n " color=yellow style=filled]
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" [label="2: Exit simple_init_null_deref \n  " color=yellow style=filled]
 	
 
 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_3" [label="3: + \n  " ]
@@ -272,7 +272,7 @@ digraph cfg {
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_4" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;
-"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_5" [label="5: Prune (true branch, if) \n   n$1=*&p:int* [line 55, column 12]\n  PRUNE(n$1, true); [line 55, column 12]\n  EXIT_SCOPE(n$1,p); [line 55, column 12]\n " shape="invhouse"]
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_5" [label="5: Prune (true branch, if) \n   n$1=*&p:int* [line 55, column 12]\n  PRUNE(n$1, true); [line 55, column 12]\n  NULLIFY(&p); [line 55, column 12]\n  EXIT_SCOPE(n$1,p); [line 55, column 12]\n " shape="invhouse"]
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_5" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_8" ;
@@ -280,7 +280,7 @@ digraph cfg {
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_6" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" ;
-"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_7" [label="7:  DeclStmt \n   n$2=_fun___variable_initialization(&p:int*) assign_last [line 55, column 7]\n  *&p:int*=null [line 55, column 7]\n  EXIT_SCOPE(n$2); [line 55, column 7]\n " shape="box"]
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 55, column 7]\n  *&p:int*=null [line 55, column 7]\n " shape="box"]
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_7" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_5" ;
@@ -289,7 +289,7 @@ digraph cfg {
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_8" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;
-"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" [label="9:  Return Stmt \n   n$4=*&p:int* [line 58, column 13]\n  n$5=*n$4:int [line 58, column 12]\n  *&return:int=n$5 [line 58, column 5]\n  EXIT_SCOPE(n$4,n$5,p); [line 58, column 5]\n  APPLY_ABSTRACTION; [line 58, column 5]\n " shape="box"]
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" [label="9:  Return Stmt \n   n$3=*&p:int* [line 58, column 13]\n  n$4=*n$3:int [line 58, column 12]\n  *&return:int=n$4 [line 58, column 5]\n  NULLIFY(&p); [line 58, column 5]\n  EXIT_SCOPE(n$3,n$4,p); [line 58, column 5]\n  APPLY_ABSTRACTION; [line 58, column 5]\n " shape="box"]
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;

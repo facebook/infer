@@ -97,11 +97,11 @@ digraph cfg {
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_23" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_20" ;
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_23" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_21" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" [label="24:  DeclStmt \n   n$12=_fun___variable_initialization(&loop:int) assign_last [line 9, column 3]\n  n$11=*&n:int [line 9, column 14]\n  *&loop:int=(n$11 + (3 / 4)) [line 9, column 3]\n  EXIT_SCOPE(n$11,n$12); [line 9, column 3]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" [label="24:  DeclStmt \n   VARIABLE_DECLARED(loop:int); [line 9, column 3]\n  n$11=*&n:int [line 9, column 14]\n  *&loop:int=(n$11 + (3 / 4)) [line 9, column 3]\n  EXIT_SCOPE(n$11); [line 9, column 3]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_4" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_25" [label="25:  DeclStmt \n   n$13=_fun___variable_initialization(&ret:int) assign_last [line 8, column 3]\n  *&ret:int=0 [line 8, column 3]\n  EXIT_SCOPE(n$13); [line 8, column 3]\n " shape="box"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_25" [label="25:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 8, column 3]\n  *&ret:int=0 [line 8, column 3]\n " shape="box"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_25" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_24" ;

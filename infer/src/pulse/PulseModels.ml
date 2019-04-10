@@ -6,7 +6,6 @@
  *)
 open! IStd
 open Result.Monad_infix
-module L = Logging
 
 type exec_fun =
      Location.t
@@ -31,20 +30,6 @@ module C = struct
           location deleted_access astate
     | _ ->
         Ok astate
-
-
-  let variable_initialization : model =
-   fun location ~ret:_ ~actuals astate ->
-    match actuals with
-    | [AccessExpression (AddressOf (Base (var, _)))] ->
-        PulseOperations.havoc_var [PulseTrace.VariableDeclaration location] var astate
-        |> PulseOperations.record_var_decl_location location var
-        |> Result.return
-    | _ ->
-        L.die InternalError
-          "The frontend is not supposed to produce __variable_initialization(e) where e is not of \
-           the form `&exp`. Got [%a]."
-          (Pp.seq ~sep:", " HilExp.pp) actuals
 end
 
 module Cplusplus = struct
@@ -202,7 +187,6 @@ let builtins_dispatcher =
   let builtins =
     [ (BuiltinDecl.__delete, Cplusplus.delete)
     ; (BuiltinDecl.__placement_new, Cplusplus.placement_new)
-    ; (BuiltinDecl.__variable_initialization, C.variable_initialization)
     ; (BuiltinDecl.abort, Misc.early_exit)
     ; (BuiltinDecl.exit, Misc.early_exit)
     ; (BuiltinDecl.free, C.free)

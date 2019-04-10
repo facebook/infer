@@ -54,7 +54,7 @@ digraph cfg {
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" ;
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  DeclStmt \n   n$15=_fun___variable_initialization(&x:int) assign_last [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n  EXIT_SCOPE(n$15); [line 9, column 3]\n  APPLY_ABSTRACTION; [line 9, column 3]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n  APPLY_ABSTRACTION; [line 9, column 3]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;

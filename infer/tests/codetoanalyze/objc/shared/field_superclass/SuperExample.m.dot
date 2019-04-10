@@ -4,10 +4,10 @@ digraph cfg {
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" [label="2: Exit super_example_main \n   NULLIFY(&a); [line 42, column 1]\n " color=yellow style=filled]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" [label="2: Exit super_example_main \n  " color=yellow style=filled]
 	
 
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   n$2=_fun___variable_initialization(&a:objc_object*) assign_last [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject::init(n$0:ASuper*) virtual [line 40, column 21]\n  EXIT_SCOPE(n$0,n$1,n$2,a); [line 40, column 21]\n  APPLY_ABSTRACTION; [line 40, column 21]\n " shape="box"]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(a:objc_object*); [line 40, column 5]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 40, column 21]\n  n$1=_fun_NSObject::init(n$0:ASuper*) virtual [line 40, column 21]\n  NULLIFY(&a); [line 40, column 21]\n  EXIT_SCOPE(n$0,n$1,a); [line 40, column 21]\n  APPLY_ABSTRACTION; [line 40, column 21]\n " shape="box"]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;

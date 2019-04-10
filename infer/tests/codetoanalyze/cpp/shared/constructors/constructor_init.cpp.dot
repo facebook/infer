@@ -11,11 +11,11 @@ digraph cfg {
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) assign_last [line 48, column 3]\n  n$4=*&b.f:int [line 48, column 15]\n  *&v:int=(1 / n$4) [line 48, column 3]\n  NULLIFY(&v); [line 48, column 3]\n  EXIT_SCOPE(n$4,n$5,v); [line 48, column 3]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 48, column 3]\n  n$4=*&b.f:int [line 48, column 15]\n  *&v:int=(1 / n$4) [line 48, column 3]\n  NULLIFY(&v); [line 48, column 3]\n  EXIT_SCOPE(n$4,v); [line 48, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) assign_last [line 47, column 3]\n  n$6=_fun_B::B(&b:B*,-1:int,0:int) [line 47, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 47, column 5]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 47, column 3]\n  n$5=_fun_B::B(&b:B*,-1:int,0:int) [line 47, column 5]\n  EXIT_SCOPE(n$5); [line 47, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" ;
@@ -30,11 +30,11 @@ digraph cfg {
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&v:int) assign_last [line 42, column 3]\n  n$4=*&b.f2:int [line 42, column 15]\n  *&v:int=(1 / n$4) [line 42, column 3]\n  NULLIFY(&v); [line 42, column 3]\n  EXIT_SCOPE(n$4,n$5,v); [line 42, column 3]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 42, column 3]\n  n$4=*&b.f2:int [line 42, column 15]\n  *&v:int=(1 / n$4) [line 42, column 3]\n  NULLIFY(&v); [line 42, column 3]\n  EXIT_SCOPE(n$4,v); [line 42, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   n$7=_fun___variable_initialization(&b:B) assign_last [line 41, column 3]\n  n$6=_fun_B::B(&b:B*,-1:int,1:int) [line 41, column 5]\n  EXIT_SCOPE(n$6,n$7); [line 41, column 5]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 41, column 3]\n  n$5=_fun_B::B(&b:B*,-1:int,1:int) [line 41, column 5]\n  EXIT_SCOPE(n$5); [line 41, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" ;
@@ -49,7 +49,7 @@ digraph cfg {
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" ;
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) assign_last [line 26, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 26, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 26, column 5]\n " shape="box"]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 26, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 26, column 5]\n  EXIT_SCOPE(n$4); [line 26, column 5]\n " shape="box"]
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" ;
@@ -64,7 +64,7 @@ digraph cfg {
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" ;
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) assign_last [line 31, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 31, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 31, column 5]\n " shape="box"]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 31, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 31, column 5]\n  EXIT_SCOPE(n$4); [line 31, column 5]\n " shape="box"]
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" ;
@@ -79,19 +79,19 @@ digraph cfg {
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&v3:int) assign_last [line 56, column 3]\n  n$5=*&b.t.v:int [line 56, column 16]\n  *&v3:int=(1 / n$5) [line 56, column 3]\n  NULLIFY(&v3); [line 56, column 3]\n  EXIT_SCOPE(n$5,n$6,v3); [line 56, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v3:int); [line 56, column 3]\n  n$5=*&b.t.v:int [line 56, column 16]\n  *&v3:int=(1 / n$5) [line 56, column 3]\n  NULLIFY(&v3); [line 56, column 3]\n  EXIT_SCOPE(n$5,v3); [line 56, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   n$8=_fun___variable_initialization(&v2:int) assign_last [line 55, column 3]\n  n$7=*&b.f2:int [line 55, column 16]\n  *&v2:int=(1 / n$7) [line 55, column 3]\n  EXIT_SCOPE(n$7,n$8); [line 55, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v2:int); [line 55, column 3]\n  n$6=*&b.f2:int [line 55, column 16]\n  *&v2:int=(1 / n$6) [line 55, column 3]\n  EXIT_SCOPE(n$6); [line 55, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   n$10=_fun___variable_initialization(&v:int) assign_last [line 54, column 3]\n  n$9=*&b.f:int [line 54, column 15]\n  *&v:int=(1 / n$9) [line 54, column 3]\n  EXIT_SCOPE(n$9,n$10); [line 54, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 54, column 3]\n  n$7=*&b.f:int [line 54, column 15]\n  *&v:int=(1 / n$7) [line 54, column 3]\n  EXIT_SCOPE(n$7); [line 54, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   n$12=_fun___variable_initialization(&b:B) assign_last [line 53, column 3]\n  n$11=_fun_B::B(&b:B*,1:int) [line 53, column 5]\n  EXIT_SCOPE(n$11,n$12); [line 53, column 5]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 53, column 3]\n  n$8=_fun_B::B(&b:B*,1:int) [line 53, column 5]\n  EXIT_SCOPE(n$8); [line 53, column 5]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" ;
@@ -106,7 +106,7 @@ digraph cfg {
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   n$5=_fun___variable_initialization(&b:B) assign_last [line 36, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 36, column 5]\n  EXIT_SCOPE(n$4,n$5); [line 36, column 5]\n " shape="box"]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:B); [line 36, column 3]\n  n$4=_fun_B::B(&b:B*,0:int) [line 36, column 5]\n  EXIT_SCOPE(n$4); [line 36, column 5]\n " shape="box"]
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" ;

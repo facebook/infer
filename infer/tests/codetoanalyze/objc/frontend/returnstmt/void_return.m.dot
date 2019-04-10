@@ -53,11 +53,11 @@ digraph cfg {
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_2" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_14" [label="14:  DeclStmt \n   n$8=_fun___variable_initialization(&j:int) assign_last [line 18, column 3]\n  *&j:int=0 [line 18, column 3]\n  EXIT_SCOPE(n$8); [line 18, column 3]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(j:int); [line 18, column 3]\n  *&j:int=0 [line 18, column 3]\n " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_14" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_15" [label="15:  DeclStmt \n   n$9=_fun___variable_initialization(&i:int) assign_last [line 17, column 3]\n  *&i:int=0 [line 17, column 3]\n  EXIT_SCOPE(n$9); [line 17, column 3]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 17, column 3]\n  *&i:int=0 [line 17, column 3]\n " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_15" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_14" ;

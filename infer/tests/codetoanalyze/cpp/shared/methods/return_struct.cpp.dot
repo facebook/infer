@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   n$11=_fun___variable_initialization(&x:X) assign_last [line 20, column 3]\n  n$9=_fun___variable_initialization(&0$?%__sil_tmpSIL_materialize_temp__n$4:X) assign_last [line 20, column 9]\n  n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A::get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) assign_last [line 20, column 9]\n  n$10=_fun_X::X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n  NULLIFY(&a); [line 20, column 9]\n  EXIT_SCOPE(_,n$5,n$8,n$9,n$10,n$11,a,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 20, column 9]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 20, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:X); [line 20, column 9]\n  n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A::get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) assign_last [line 20, column 9]\n  n$9=_fun_X::X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n  NULLIFY(&a); [line 20, column 9]\n  EXIT_SCOPE(_,n$5,n$8,n$9,a,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 20, column 9]\n " shape="box"]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" ;
-"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" [label="4:  DeclStmt \n   n$6=_fun___variable_initialization(&x:X) assign_last [line 14, column 5]\n  n$5=_fun_X::X(&x:X*) [line 14, column 7]\n  EXIT_SCOPE(n$5,n$6); [line 14, column 7]\n " shape="box"]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 14, column 5]\n  n$5=_fun_X::X(&x:X*) [line 14, column 7]\n  EXIT_SCOPE(n$5); [line 14, column 7]\n " shape="box"]
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" ;

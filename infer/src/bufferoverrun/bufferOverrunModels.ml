@@ -337,18 +337,6 @@ let inferbo_set_size e1 e2 =
   {exec; check}
 
 
-let variable_initialization (e, typ) =
-  let exec model_env ~ret:_ mem =
-    match e with
-    | Exp.Lvar x when Pvar.is_global x ->
-        let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar x, typ) in
-        mem
-    | _ ->
-        mem
-  in
-  {exec; check= no_check}
-
-
 let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
 let cast exp =
@@ -767,7 +755,6 @@ module Call = struct
     make_dispatcher
       [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
-      ; -"__variable_initialization" <>$ capt_arg $!--> variable_initialization
       ; -"__exit" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> CFArray.create_copy_array

@@ -26,14 +26,14 @@ digraph cfg {
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" ;
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" [label="2: Exit npe_call \n   NULLIFY(&x); [line 16, column 1]\n " color=yellow style=filled]
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" [label="2: Exit npe_call \n  " color=yellow style=filled]
 	
 
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 15, column 10]\n  _=*n$0:X [line 15, column 10]\n  n$2=_fun_X::call(n$0:X*) [line 15, column 10]\n  *&return:int=n$2 [line 15, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 15, column 10]\n  _=*n$0:X [line 15, column 10]\n  n$2=_fun_X::call(n$0:X*) [line 15, column 10]\n  *&return:int=n$2 [line 15, column 3]\n  NULLIFY(&x); [line 15, column 3]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" ;
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  DeclStmt \n   n$4=_fun___variable_initialization(&x:X*) assign_last [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n  EXIT_SCOPE(n$4); [line 14, column 3]\n " shape="box"]
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X*); [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n " shape="box"]
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" ;

@@ -613,7 +613,7 @@ module InstrBasicCost = struct
           CostDomain.unit_cost_atomic_operation
       | _ ->
           CostDomain.zero_record )
-    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _) ->
+    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | VariableLifetimeBegins _) ->
         CostDomain.zero_record
 
 

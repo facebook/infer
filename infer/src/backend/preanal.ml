@@ -107,6 +107,8 @@ module NullifyTransferFunctions = struct
           (active_defs, to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
+      | Sil.Metadata (VariableLifetimeBegins (pvar, _, _)) ->
+          (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
       | Sil.Store _ | Prune _ | Metadata (Abstract _ | ExitScope _ | Skip) ->
           astate
       | Sil.Metadata (Nullify _) ->

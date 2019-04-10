@@ -7,15 +7,15 @@ digraph cfg {
 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" [label="2: Exit union_initialize_FIXME \n  " color=yellow style=filled]
 	
 
-"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" [label="3:  DeclStmt \n   n$0=_fun___variable_initialization(&set_f1_implicit:U) assign_last [line 15, column 3]\n  NULLIFY(&set_f1_implicit); [line 15, column 3]\n  EXIT_SCOPE(n$0,set_f1_implicit); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(set_f1_implicit:U); [line 15, column 3]\n  NULLIFY(&set_f1_implicit); [line 15, column 3]\n  EXIT_SCOPE(set_f1_implicit); [line 15, column 3]\n  APPLY_ABSTRACTION; [line 15, column 3]\n " shape="box"]
 	
 
 	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" ;
-"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" [label="4:  DeclStmt \n   n$1=_fun___variable_initialization(&set_f2:U) assign_last [line 14, column 3]\n  NULLIFY(&set_f2); [line 14, column 3]\n  EXIT_SCOPE(n$1,set_f2); [line 14, column 3]\n " shape="box"]
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(set_f2:U); [line 14, column 3]\n  NULLIFY(&set_f2); [line 14, column 3]\n  EXIT_SCOPE(set_f2); [line 14, column 3]\n " shape="box"]
 	
 
 	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_3" ;
-"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" [label="5:  DeclStmt \n   n$2=_fun___variable_initialization(&set_f1:U) assign_last [line 13, column 3]\n  NULLIFY(&set_f1); [line 13, column 3]\n  EXIT_SCOPE(n$2,set_f1); [line 13, column 3]\n " shape="box"]
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(set_f1:U); [line 13, column 3]\n  NULLIFY(&set_f1); [line 13, column 3]\n  EXIT_SCOPE(set_f1); [line 13, column 3]\n " shape="box"]
 	
 
 	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_5" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_4" ;

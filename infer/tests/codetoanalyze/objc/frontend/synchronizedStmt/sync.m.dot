@@ -19,11 +19,11 @@ digraph cfg {
 	
 
 	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_5" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_4" ;
-"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" [label="6:  DeclStmt \n   n$5=_fun___variable_initialization(&x:int) assign_last [line 24, column 5]\n  *&x:int=0 [line 24, column 5]\n  EXIT_SCOPE(n$5); [line 24, column 5]\n " shape="box"]
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 24, column 5]\n  *&x:int=0 [line 24, column 5]\n " shape="box"]
 	
 
 	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_5" ;
-"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" [label="7:  Call _fun___set_locked_attribute \n   n$6=*&anObj:objc_object* [line 19, column 17]\n  n$7=_fun___set_locked_attribute(n$6:objc_object*) [line 19, column 3]\n  EXIT_SCOPE(n$6,n$7); [line 19, column 3]\n " shape="box"]
+"myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" [label="7:  Call _fun___set_locked_attribute \n   n$5=*&anObj:objc_object* [line 19, column 17]\n  n$6=_fun___set_locked_attribute(n$5:objc_object*) [line 19, column 3]\n  EXIT_SCOPE(n$5,n$6); [line 19, column 3]\n " shape="box"]
 	
 
 	 "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_7" -> "myMethod:#A(struct objc_object)#instance.6280971b05d6b617955d8216a04fe405_6" ;
