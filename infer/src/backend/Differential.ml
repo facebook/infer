@@ -138,16 +138,13 @@ let to_map key_func report =
 
 let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
-  let class_name, method_name =
-    match String.split cost_info.Jsonbug_t.procedure_id ~on:'(' with
-    | [qualified_function; _] -> (
-      match String.split qualified_function ~on:'.' with
-      | [class_name; method_name] ->
-          (class_name, method_name)
-      | _ ->
-          ("", cost_info.Jsonbug_t.procedure_id) )
+  let method_name = cost_info.Jsonbug_t.procedure_name in
+  let class_name =
+    match Str.split (Str.regexp ("." ^ method_name)) cost_info.Jsonbug_t.procedure_id with
+    | [class_name; _] ->
+        class_name
     | _ ->
-        ("", cost_info.Jsonbug_t.procedure_id)
+        ""
   in
   let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
   let source_file = SourceFile.create ~warn_on_error:false file in
