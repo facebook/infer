@@ -78,7 +78,7 @@ type 'a action =
 
 let pp_action pp_immediate fmt = function
   | Immediate {imm; _} ->
-      F.fprintf fmt "`%a`" pp_immediate imm
+      F.fprintf fmt "%a" pp_immediate imm
   | ViaCall {proc_name; _} ->
       F.fprintf fmt "call to `%a`" Typ.Procname.pp proc_name
 

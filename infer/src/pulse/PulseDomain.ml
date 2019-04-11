@@ -14,17 +14,33 @@ module Invalidation = PulseInvalidation
 (** Purposefully declared before [AbstractAddress] to avoid attributes depending on
     addresses. Otherwise they become a pain to handle when comparing memory states. *)
 module Attribute = struct
-  (* OPTIM: [Invalid _] is first in the order to make queries about invalidation status more
-       efficient (only need to look at the first element in the set of attributes to know if an
-       address is invalid) *)
   type t =
-    (* DO NOT MOVE, see toplevel comment *)
     | Invalid of Invalidation.t PulseTrace.action
     | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
-  [@@deriving compare]
+  [@@deriving compare, variants]
+
+  let equal = [%compare.equal: t]
+
+  let to_rank = Variants.to_rank
+
+  let invalid_rank =
+    Variants.to_rank (Invalid (Immediate {imm= Invalidation.Nullptr; location= Location.dummy}))
+
+
+  let must_be_valid_rank =
+    Variants.to_rank
+      (MustBeValid
+         (Immediate
+            { imm=
+                HilExp.AccessExpression.base
+                  (AccessPath.base_of_pvar (Pvar.mk_global Mangled.self) Typ.void)
+            ; location= Location.dummy }))
+
+
+  let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let pp f = function
     | Invalid invalidation ->
@@ -37,26 +53,33 @@ module Attribute = struct
     | AddressOfCppTemporary (var, location_opt) ->
         F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
     | Closure pname ->
-        F.fprintf f "%a" Typ.Procname.pp pname
+        Typ.Procname.pp f pname
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
 end
 
 module Attributes = struct
-  include AbstractDomain.FiniteSet (Attribute)
+  module Set = PrettyPrintable.MakePPUniqRankSet (Attribute)
 
   let get_invalid attrs =
-    (* Since we often want to find out whether an address is invalid this case is optimised. Since
-       [Invalid _] attributes are the smallest we can simply look at the first element to decide if
-       an address is invalid or not. *)
-    match min_elt_opt attrs with Some (Invalid invalidation) -> Some invalidation | _ -> None
+    Set.find_rank attrs Attribute.invalid_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Invalid invalidation) = attr in
+           invalidation )
 
 
   let get_must_be_valid attrs =
-    find_first_opt (function MustBeValid _ -> true | _ -> false) attrs
+    Set.find_rank attrs Attribute.must_be_valid_rank
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.MustBeValid action) = attr in
            action )
+
+
+  let is_std_vector_reserved attrs =
+    Set.find_rank attrs Attribute.std_vector_reserve_rank |> Option.is_some
+
+
+  include Set
 end
 
 (** An abstract address in memory. *)
@@ -126,7 +149,7 @@ module Memory : sig
 
   type cell = edges * Attributes.t
 
-  type t [@@deriving compare]
+  type t
 
   val empty : t
 
@@ -174,11 +197,11 @@ end = struct
 
   type edges = AddrTracePair.t Edges.t [@@deriving compare]
 
-  type cell = edges * Attributes.t [@@deriving compare]
+  type cell = edges * Attributes.t
 
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
-  type t = edges Graph.t * Attributes.t Graph.t [@@deriving compare]
+  type t = edges Graph.t * Attributes.t Graph.t
 
   let pp =
     Pp.pair
@@ -218,17 +241,14 @@ end = struct
     Graph.find_opt addr (fst memory) >>= Edges.find_opt access
 
 
-  (* TODO: maybe sets for attributes is overkill and a list would be better? *)
   let add_attributes addr attrs memory =
     if Attributes.is_empty attrs then memory
     else
       let old_attrs = Graph.find_opt addr (snd memory) |> Option.value ~default:Attributes.empty in
-      if phys_equal old_attrs attrs then memory
+      if phys_equal old_attrs attrs || Attributes.is_subset attrs ~of_:old_attrs then memory
       else
-        let new_attrs = Attributes.union attrs old_attrs in
-        if phys_equal new_attrs old_attrs then
-          (* unlikely as [union] makes no effort to preserve physical equality *) memory
-        else (fst memory, Graph.add addr new_attrs (snd memory))
+        let new_attrs = Attributes.union_prefer_left attrs old_attrs in
+        (fst memory, Graph.add addr new_attrs (snd memory))
 
 
   let add_attribute address attribute memory =
@@ -240,6 +260,7 @@ end = struct
 
 
   let check_valid address memory =
+    L.d_printfln "Checking validity of %a" AbstractAddress.pp address ;
     match Graph.find_opt address (snd memory) |> Option.bind ~f:Attributes.get_invalid with
     | Some invalidation ->
         Error invalidation
@@ -252,7 +273,7 @@ end = struct
   let is_std_vector_reserved address memory =
     Graph.find_opt address (snd memory)
     |> Option.value_map ~default:false ~f:(fun attributes ->
-           Attributes.mem Attribute.StdVectorReserve attributes )
+           Attributes.is_std_vector_reserved attributes )
 
 
   (* {3 Monomorphic {!PPMap} interface as needed } *)
@@ -319,7 +340,7 @@ module Stack = struct
   let compare = compare VarValue.compare
 end
 
-type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
+type t = {heap: Memory.t; stack: Stack.t}
 
 let empty =
   { heap=

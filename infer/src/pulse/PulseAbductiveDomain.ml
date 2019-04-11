@@ -17,7 +17,7 @@ module BaseMemory = PulseDomain.Memory
 module type BaseDomain = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private PulseDomain.t [@@deriving compare]
+  type t = private PulseDomain.t
 
   val empty : t
 
@@ -54,7 +54,7 @@ end
 module InvertedDomain : BaseDomain = struct
   include BaseDomainCommon
 
-  type t = PulseDomain.t [@@deriving compare]
+  type t = PulseDomain.t
 
   let empty = PulseDomain.empty
 
@@ -68,7 +68,6 @@ end
 type t =
   { post: Domain.t  (** state at the current program point*)
   ; pre: InvertedDomain.t  (** inferred pre at the current program point *) }
-[@@deriving compare]
 
 let pp f {post; pre} = F.fprintf f "@[<v>%a@;[%a]@]" Domain.pp post InvertedDomain.pp pre
 
@@ -491,14 +490,16 @@ module PrePost = struct
       delete_edges_in_callee_pre_from_caller ~addr_callee ~cell_pre_opt ~addr_caller call_state
     in
     let new_attrs =
-      let attrs_post = Attributes.map (add_call_to_attr callee_proc_name call_loc) attrs_post in
+      let attrs_post =
+        Attributes.map ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc attr) attrs_post
+      in
       match
         PulseDomain.Memory.find_attrs_opt addr_caller (call_state.astate.post :> base_domain).heap
       with
       | None ->
           attrs_post
       | Some old_attrs_post ->
-          Attributes.union old_attrs_post attrs_post
+          Attributes.union_prefer_left old_attrs_post attrs_post
     in
     let subst, translated_post_edges =
       PulseDomain.Memory.Edges.fold_map ~init:call_state.subst edges_post

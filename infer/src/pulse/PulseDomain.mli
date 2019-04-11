@@ -19,7 +19,7 @@ module Attribute : sig
 end
 
 module Attributes : sig
-  include PrettyPrintable.PPSet with type elt = Attribute.t
+  include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
   val get_must_be_valid : t -> HilExp.AccessExpression.t PulseTrace.action option
 end
@@ -71,7 +71,7 @@ module Memory : sig
 
   type cell = edges * Attributes.t
 
-  type t [@@deriving compare]
+  type t
 
   val filter : (AbstractAddress.t -> bool) -> t -> t
 
@@ -104,7 +104,7 @@ module Memory : sig
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
 end
 
-type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
+type t = {heap: Memory.t; stack: Stack.t}
 
 val empty : t
 

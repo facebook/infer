@@ -213,8 +213,7 @@ let check_address_of_local_variable proc_desc address astate =
   let check_address_of_cpp_temporary () =
     Memory.find_opt address astate
     |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
-           IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
-             attrs ~f:(fun attr ->
+           IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
                match attr with
                | Attribute.AddressOfCppTemporary (variable, location_opt) ->
                    let location = Option.value ~default:proc_location location_opt in
@@ -307,8 +306,7 @@ module Closures = struct
     | None ->
         Ok astate
     | Some (edges, attributes) ->
-        IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
-          attributes ~f:(function
+        IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
           | Attribute.Closure _ ->
               IContainer.iter_result
                 ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges

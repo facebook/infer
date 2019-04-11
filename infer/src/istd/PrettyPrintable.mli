@@ -147,3 +147,44 @@ module PPMonoMapOfPPMap (M : PPMap) (Val : PrintableType) :
 
 module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) :
   PPMonoMap with type key = Ord.t and type value = Val.t
+
+module type PrintableRankedType = sig
+  include PrintableType
+
+  val equal : t -> t -> bool
+
+  val to_rank : t -> int
+end
+
+(** set where at most one element of a given rank can be present *)
+module type PPUniqRankSet = sig
+  type t
+
+  type elt
+
+  val add : t -> elt -> t
+
+  val empty : t
+
+  val equal : t -> t -> bool
+
+  val find_rank : t -> int -> elt option
+
+  val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
+
+  val is_empty : t -> bool
+
+  val is_subset : t -> of_:t -> bool
+
+  val map : t -> f:(elt -> elt) -> t
+
+  val singleton : elt -> t
+
+  val union_prefer_left : t -> t -> t
+  (** in case an element with the same rank is present both in [lhs] and [rhs], keep the one from
+     [lhs] in [union_prefer_left lhs rhs] *)
+
+  val pp : F.formatter -> t -> unit
+end
+
+module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t

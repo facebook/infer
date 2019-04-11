@@ -197,3 +197,81 @@ end
 
 module MakePPMonoMap (Ord : PrintableOrderedType) (Val : PrintableType) =
   PPMonoMapOfPPMap (MakePPMap (Ord)) (Val)
+
+module type PrintableRankedType = sig
+  include PrintableType
+
+  val equal : t -> t -> bool
+
+  val to_rank : t -> int
+end
+
+module type PPUniqRankSet = sig
+  type t
+
+  type elt
+
+  val add : t -> elt -> t
+
+  val empty : t
+
+  val equal : t -> t -> bool
+
+  val find_rank : t -> int -> elt option
+
+  val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
+
+  val is_empty : t -> bool
+
+  val is_subset : t -> of_:t -> bool
+
+  val map : t -> f:(elt -> elt) -> t
+
+  val singleton : elt -> t
+
+  val union_prefer_left : t -> t -> t
+
+  val pp : F.formatter -> t -> unit
+end
+
+module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t = struct
+  module Map = MakePPMonoMap (Int) (Val)
+
+  type t = Map.t
+
+  type elt = Val.t
+
+  let add map value = Map.add (Val.to_rank value) value map
+
+  let empty = Map.empty
+
+  let equal = Map.equal Val.equal
+
+  let find_rank m rank = Map.find_opt rank m
+
+  let fold map ~init ~f = Map.fold (fun _key value accum -> f accum value) map init
+
+  let is_empty = Map.is_empty
+
+  let is_subset m ~of_ =
+    Map.for_all
+      (fun rank value ->
+        match Map.find_opt rank of_ with None -> false | Some value' -> Val.equal value value' )
+      m
+
+
+  let map m ~f =
+    Map.mapi
+      (fun rank value ->
+        let value' = f value in
+        assert (Int.equal rank (Val.to_rank value')) ;
+        value' )
+      m
+
+
+  let pp = Map.pp
+
+  let singleton value = add Map.empty value
+
+  let union_prefer_left m1 m2 = Map.union (fun _rank value1 _value2 -> Some value1) m1 m2
+end
