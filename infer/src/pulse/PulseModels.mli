@@ -10,8 +10,8 @@ type exec_fun =
      Location.t
   -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
-  -> PulseDomain.t
-  -> PulseDomain.t PulseOperations.access_result
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t PulseOperations.access_result
 
 type model = exec_fun
 

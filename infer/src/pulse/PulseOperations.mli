@@ -6,8 +6,9 @@
  *)
 
 open! IStd
+module AbstractAddress = PulseDomain.AbstractAddress
 
-type t = PulseDomain.t = {heap: PulseDomain.Memory.t; stack: PulseDomain.Stack.t}
+type t = PulseAbductiveDomain.t
 
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
@@ -40,7 +41,7 @@ val read :
      Location.t
   -> HilExp.AccessExpression.t
   -> t
-  -> (t * (PulseDomain.AbstractAddress.t * PulseTrace.t)) access_result
+  -> (t * (AbstractAddress.t * PulseTrace.t)) access_result
 
 val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
 
@@ -48,12 +49,12 @@ val havoc_var : PulseTrace.t -> Var.t -> t -> t
 
 val havoc : PulseTrace.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
-val write_var : Var.t -> PulseDomain.AbstractAddress.t * PulseTrace.t -> t -> t
+val write_var : Var.t -> AbstractAddress.t * PulseTrace.t -> t -> t
 
 val write :
      Location.t
   -> HilExp.AccessExpression.t
-  -> PulseDomain.AbstractAddress.t * PulseTrace.t
+  -> AbstractAddress.t * PulseTrace.t
   -> t
   -> t access_result
 
@@ -68,5 +69,4 @@ val record_var_decl_location : Location.t -> Var.t -> t -> t
 val remove_vars : Var.t list -> t -> t
 
 (* TODO: better name and pass location to report where we returned *)
-val check_address_of_local_variable :
-  Procdesc.t -> PulseDomain.AbstractAddress.t -> t -> t access_result
+val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result

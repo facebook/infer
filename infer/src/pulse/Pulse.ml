@@ -8,6 +8,18 @@ open! IStd
 module F = Format
 module L = Logging
 open Result.Monad_infix
+module AbstractAddress = PulseDomain.AbstractAddress
+
+include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+  struct
+  [@@@warning "-60"]
+
+  (** Do not use {!PulseDomain} directly as it could result in bypassing abduction mechanisms in
+     {!PulseOperations} and {!PulseAbductiveDomain} that take care of propagating facts to the
+     precondition. *)
+  module PulseDomain = struct end
+  [@@deprecated "Use PulseAbductiveDomain or PulseOperations instead."]
+end
 
 let report summary diagnostic =
   let open PulseDiagnostic in
@@ -27,7 +39,7 @@ let check_error summary = function
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
-  module Domain = PulseDomain
+  module Domain = PulseAbductiveDomain
 
   type extras = Summary.t
 
@@ -137,8 +149,7 @@ module PulseTransferFunctions = struct
         model call_loc ~ret ~actuals astate
 
 
-  let exec_instr (astate : PulseDomain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t)
-      =
+  let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t) =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
         let post = exec_assign summary lhs_access rhs_exp loc astate |> check_error summary in
@@ -190,10 +201,10 @@ module DisjunctiveAnalyzer =
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
-  PulseDomain.AbstractAddress.init () ;
+  AbstractAddress.init () ;
   ( try
       ignore
         (DisjunctiveAnalyzer.compute_post proc_data
-           ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseDomain.initial))
+           ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseAbductiveDomain.empty))
     with AbstractDomain.Stop_analysis -> () ) ;
   summary

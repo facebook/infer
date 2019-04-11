@@ -9,21 +9,27 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
-module Memory = PulseDomain.Memory
-module Stack = PulseDomain.Stack
+module Memory = PulseAbductiveDomain.Memory
+module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix
 
-type t = PulseDomain.t = {heap: Memory.t; stack: Stack.t}
+include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+  struct
+  [@@@warning "-60"]
+
+  (** Do not use {!PulseDomain} directly, go through {!PulseAbductiveDomain} instead *)
+  module PulseDomain = struct end [@@deprecated "Use PulseAbductiveDomain instead."]
+end
+
+type t = PulseAbductiveDomain.t
 
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
 let check_addr_access actor (address, trace) astate =
-  match Memory.check_valid address astate.heap with
-  | Ok () ->
-      Ok astate
-  | Error invalidated_by ->
-      Error (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace})
+  Memory.check_valid actor address astate
+  |> Result.map_error ~f:(fun invalidated_by ->
+         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace} )
 
 
 (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
@@ -46,38 +52,22 @@ let rec walk ~dereference_to_ignore actor ~on_last addr_trace path astate =
   | [a], `Overwrite new_addr_trace ->
       check_addr_access_optional actor addr_trace astate
       >>| fun astate ->
-      let heap = Memory.add_edge_and_back_edge (fst addr_trace) a new_addr_trace astate.heap in
-      ({astate with heap}, new_addr_trace)
-  | a :: path, _ -> (
+      let astate = Memory.add_edge_and_back_edge (fst addr_trace) a new_addr_trace astate in
+      (astate, new_addr_trace)
+  | a :: path, _ ->
       check_addr_access_optional actor addr_trace astate
       >>= fun astate ->
       let dereference_to_ignore =
         Option.map ~f:(fun index -> max 0 (index - 1)) dereference_to_ignore
       in
-      let addr = fst addr_trace in
-      match Memory.find_edge_opt addr a astate.heap with
-      | None ->
-          let addr_trace' = (AbstractAddress.mk_fresh (), []) in
-          let heap = Memory.add_edge_and_back_edge addr a addr_trace' astate.heap in
-          let astate = {astate with heap} in
-          walk ~dereference_to_ignore actor ~on_last addr_trace' path astate
-      | Some addr_trace' ->
-          walk ~dereference_to_ignore actor ~on_last addr_trace' path astate )
+      let astate, addr_trace' = Memory.materialize_edge (fst addr_trace) a astate in
+      walk ~dereference_to_ignore actor ~on_last addr_trace' path astate
 
 
 let write_var var new_addr_trace astate =
-  let astate, var_address_of =
-    match Stack.find_opt var astate.stack with
-    | Some (addr, _) ->
-        (astate, addr)
-    | None ->
-        let addr = AbstractAddress.mk_fresh () in
-        let stack = Stack.add var (addr, None) astate.stack in
-        ({astate with stack}, addr)
-  in
+  let astate, (var_address_of, _) = Stack.materialize var astate in
   (* Update heap with var_address_of -*-> new_addr *)
-  let heap = Memory.add_edge var_address_of HilExp.Access.Dereference new_addr_trace astate.heap in
-  {astate with heap}
+  Memory.add_edge var_address_of HilExp.Access.Dereference new_addr_trace astate
 
 
 let ends_with_addressof = function HilExp.AccessExpression.AddressOf _ -> true | _ -> false
@@ -129,17 +119,12 @@ and walk_access_expr ~on_last astate access_expr location =
       Ok (write_var access_var new_addr_trace astate, new_addr_trace)
   | `Access, _ | `Overwrite _, _ :: _ -> (
       let astate, base_addr_trace =
-        match Stack.find_opt access_var astate.stack with
-        | Some (addr, init_loc_opt) ->
-            let trace =
-              Option.value_map init_loc_opt ~default:[] ~f:(fun init_loc ->
-                  [PulseTrace.VariableDeclaration init_loc] )
-            in
-            (astate, (addr, trace))
-        | None ->
-            let addr = AbstractAddress.mk_fresh () in
-            let stack = Stack.add access_var (addr, None) astate.stack in
-            ({astate with stack}, (addr, []))
+        let astate, (addr, init_loc_opt) = Stack.materialize access_var astate in
+        let trace =
+          Option.value_map init_loc_opt ~default:[] ~f:(fun init_loc ->
+              [PulseTrace.VariableDeclaration init_loc] )
+        in
+        (astate, (addr, trace))
       in
       match access_list with
       | [HilExp.Access.TakeAddress] ->
@@ -189,9 +174,7 @@ let overwrite_address astate access_expr new_addr_trace =
 
 
 (** Add the given address to the set of know invalid addresses. *)
-let mark_invalid actor address astate =
-  {astate with heap= Memory.invalidate address actor astate.heap}
-
+let mark_invalid actor address astate = Memory.invalidate address actor astate
 
 let havoc_var trace var astate = write_var var (AbstractAddress.mk_fresh (), trace) astate
 
@@ -215,7 +198,7 @@ let invalidate_array_elements cause location access_expr astate =
   >>= fun (astate, addr_trace) ->
   check_addr_access {access_expr; location} addr_trace astate
   >>| fun astate ->
-  match Memory.find_opt (fst addr_trace) astate.heap with
+  match Memory.find_opt (fst addr_trace) astate with
   | None ->
       astate
   | Some (edges, _) ->
@@ -233,10 +216,10 @@ let check_address_of_local_variable proc_desc address astate =
   let proc_location = Procdesc.get_loc proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let check_address_of_cpp_temporary () =
-    Memory.find_opt address astate.heap
+    Memory.find_opt address astate
     |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
-           Container.fold_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
-             attrs ~init:() ~f:(fun () attr ->
+           IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_fold ~fold:Attributes.fold)
+             attrs ~f:(fun attr ->
                match attr with
                | Attribute.AddressOfCppTemporary (variable, location_opt) ->
                    let location = Option.value ~default:proc_location location_opt in
@@ -245,57 +228,58 @@ let check_address_of_local_variable proc_desc address astate =
                    Ok () ) )
   in
   let check_address_of_stack_variable () =
-    Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold)
-      astate.stack ~init:() ~f:(fun () (variable, (var_address, init_location)) ->
+    IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold) astate
+      ~f:(fun (variable, (var_address, init_location)) ->
         if
           AbstractAddress.equal var_address address
           && ( Var.is_cpp_temporary variable
              || Var.is_local_to_procedure proc_name variable
                 && not (Procdesc.is_captured_var proc_desc variable) )
-        then
+        then (
           let location = Option.value ~default:proc_location init_location in
-          Error (PulseDiagnostic.StackVariableAddressEscape {variable; location})
+          L.d_printfln_escaped "Stack Variable &%a detected at address %a" Var.pp variable
+            AbstractAddress.pp address ;
+          Error (PulseDiagnostic.StackVariableAddressEscape {variable; location}) )
         else Ok () )
   in
   check_address_of_cpp_temporary () >>= check_address_of_stack_variable >>| fun () -> astate
 
 
-let mark_address_of_cpp_temporary location variable address heap =
+let mark_address_of_cpp_temporary location variable address astate =
   Memory.add_attributes address
     (Attributes.singleton (AddressOfCppTemporary (variable, location)))
-    heap
+    astate
 
 
 let remove_vars vars astate =
-  let heap =
-    List.fold vars ~init:astate.heap ~f:(fun heap var ->
-        match Stack.find_opt var astate.stack with
+  let astate =
+    List.fold vars ~init:astate ~f:(fun heap var ->
+        match Stack.find_opt var astate with
         | Some (address, location) when Var.is_cpp_temporary var ->
             (* TODO: it would be good to record the location of the temporary creation in the
                  stack and save it here in the attribute for reporting *)
-            mark_address_of_cpp_temporary location var address heap
+            mark_address_of_cpp_temporary location var address astate
         | _ ->
             heap )
   in
-  let stack = Stack.filter (fun var _ -> not (List.mem ~equal:Var.equal vars var)) astate.stack in
-  if phys_equal stack astate.stack && phys_equal heap astate.heap then astate
-  else PulseDomain.minimize {stack; heap}
+  let astate' = Stack.remove_vars vars astate in
+  if phys_equal astate' astate then astate else PulseAbductiveDomain.discard_unreachable astate'
 
 
 let record_var_decl_location location var astate =
   let addr =
-    match Stack.find_opt var astate.stack with
+    match Stack.find_opt var astate with
     | Some (addr, _) ->
         addr
     | None ->
         AbstractAddress.mk_fresh ()
   in
-  let stack = Stack.add var (addr, Some location) astate.stack in
-  {astate with stack}
+  Stack.add var (addr, Some location) astate
 
 
 module Closures = struct
   open Result.Monad_infix
+  module Memory = PulseAbductiveDomain.Memory
 
   let fake_capture_field_prefix = "__capture_"
 
@@ -324,7 +308,7 @@ module Closures = struct
 
 
   let check_captured_addresses location lambda addr astate =
-    match Memory.find_opt addr astate.heap with
+    match Memory.find_opt addr astate with
     | None ->
         Ok astate
     | Some (edges, attributes) ->
@@ -350,12 +334,7 @@ module Closures = struct
       astate
     >>| fun astate ->
     let fake_capture_edges = mk_capture_edges captured in
-    let heap =
-      Memory.set_cell closure_addr
-        (fake_capture_edges, Attributes.singleton (Closure pname))
-        astate.heap
-    in
-    {astate with heap}
+    Memory.set_cell closure_addr (fake_capture_edges, Attributes.singleton (Closure pname)) astate
 
 
   let record location access_expr pname captured astate =
@@ -377,13 +356,14 @@ end
 
 module StdVector = struct
   open Result.Monad_infix
+  module Memory = PulseAbductiveDomain.Memory
 
   let is_reserved location vector_access_expr astate =
     read location vector_access_expr astate
-    >>| fun (astate, (addr, _)) -> (astate, Memory.is_std_vector_reserved addr astate.heap)
+    >>| fun (astate, (addr, _)) -> (astate, Memory.is_std_vector_reserved addr astate)
 
 
   let mark_reserved location vector_access_expr astate =
     read location vector_access_expr astate
-    >>| fun (astate, (addr, _)) -> {astate with heap= Memory.std_vector_reserve addr astate.heap}
+    >>| fun (astate, (addr, _)) -> Memory.std_vector_reserve addr astate
 end

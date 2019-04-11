@@ -20,6 +20,7 @@ module Attribute = struct
   type t =
     (* DO NOT MOVE, see toplevel comment *)
     | Invalid of Invalidation.t
+    | MustBeValid of PulseDiagnostic.actor
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -28,6 +29,9 @@ module Attribute = struct
   let pp f = function
     | Invalid invalidation ->
         Invalidation.pp f invalidation
+    | MustBeValid actor ->
+        F.fprintf f "MustBeValid (read by %a @ %a)" HilExp.AccessExpression.pp actor.access_expr
+          Location.pp actor.location
     | AddressOfCppTemporary (var, location_opt) ->
         F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
     | Closure pname ->
@@ -86,6 +90,8 @@ end = struct
   let set_state counter = next_fresh := counter
 end
 
+module AbstractAddressSet = PrettyPrintable.MakePPSet (AbstractAddress)
+
 (* {3 Heap domain } *)
 
 module AddrTracePair = struct
@@ -120,7 +126,11 @@ module Memory : sig
 
   val set_cell : AbstractAddress.t -> cell -> t -> t
 
+  val mem_edges : AbstractAddress.t -> t -> bool
+
   val pp : F.formatter -> t -> unit
+
+  val register_address : AbstractAddress.t -> t -> t
 
   val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
 
@@ -160,6 +170,11 @@ end = struct
     Pp.pair
       ~fst:(Graph.pp ~pp_value:(Edges.pp ~pp_value:AddrTracePair.pp))
       ~snd:(Graph.pp ~pp_value:Attributes.pp)
+
+
+  let register_address addr memory =
+    if Graph.mem addr (fst memory) then memory
+    else (Graph.add addr Edges.empty (fst memory), snd memory)
 
 
   (* {3 Helper functions to traverse the two maps at once } *)
@@ -248,6 +263,9 @@ end = struct
     let heap = Graph.filter (fun address _ -> f address) (fst memory) in
     let attrs = Graph.filter (fun address _ -> f address) (snd memory) in
     if phys_equal heap (fst memory) && phys_equal attrs (snd memory) then memory else (heap, attrs)
+
+
+  let mem_edges addr memory = Graph.mem addr (fst memory)
 end
 
 (** Stacks: map addresses of variables to values and initialisation location. *)
@@ -285,7 +303,7 @@ end
 
 type t = {heap: Memory.t; stack: Stack.t} [@@deriving compare]
 
-let initial =
+let empty =
   { heap=
       Memory.empty
       (* TODO: we could record that 0 is an invalid address at this point but this makes the
@@ -447,16 +465,14 @@ let pp fmt {heap; stack} =
 
 
 module GraphGC : sig
-  val minimize : t -> t
+  val visit : t -> AbstractAddressSet.t
   (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
-     from the stack variables, then removes all the unused addresses from the heap *)
+     from the stack variables *)
 end = struct
-  module AddressSet = PrettyPrintable.MakePPSet (AbstractAddress)
-
   let visit address visited =
-    if AddressSet.mem address visited then `AlreadyVisited
+    if AbstractAddressSet.mem address visited then `AlreadyVisited
     else
-      let visited = AddressSet.add address visited in
+      let visited = AbstractAddressSet.add address visited in
       `NotAlreadyVisited visited
 
 
@@ -478,17 +494,11 @@ end = struct
       edges visited
 
 
-  let visit_stack astate visited =
+  let visit astate =
     Stack.fold
       (fun _var (address, _loc) visited -> visit_address astate address visited)
-      astate.stack visited
-
-
-  let minimize astate =
-    let visited = visit_stack astate AddressSet.empty in
-    let heap = Memory.filter (fun address -> AddressSet.mem address visited) astate.heap in
-    if phys_equal heap astate.heap then astate else {astate with heap}
+      astate.stack AbstractAddressSet.empty
 end
 
-include GraphGC
 include GraphComparison
+include GraphGC

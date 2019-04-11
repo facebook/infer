@@ -11,13 +11,13 @@ type exec_fun =
      Location.t
   -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
-  -> PulseDomain.t
-  -> PulseDomain.t PulseOperations.access_result
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t PulseOperations.access_result
 
 type model = exec_fun
 
 module Misc = struct
-  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok PulseDomain.initial
+  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok PulseAbductiveDomain.empty
 end
 
 module C = struct
