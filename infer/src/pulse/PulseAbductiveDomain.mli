@@ -16,7 +16,7 @@ module Attributes = PulseDomain.Attributes
 
 include AbstractDomain.NoJoin
 
-val empty : t
+val mk_initial : Procdesc.t -> t
 
 (** stack operations like {!PulseDomain.Stack} but that also take care of propagating facts to the
     precondition *)

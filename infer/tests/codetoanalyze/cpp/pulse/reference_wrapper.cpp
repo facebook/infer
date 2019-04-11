@@ -27,7 +27,7 @@ ReferenceWrapperHeap getwrapperHeap() {
             // destructor of WrapsB
 }
 
-int FN_reference_wrapper_heap_bad() {
+int reference_wrapper_heap_bad() {
   ReferenceWrapperHeap rw = getwrapperHeap();
   return rw.b->f; // we want to report use after lifetime bug here
 }
@@ -42,7 +42,7 @@ ReferenceWrapperStack getwrapperStack() {
   return b;
 }
 
-int FN_reference_wrapper_stack_bad() {
+int reference_wrapper_stack_bad() {
   ReferenceWrapperStack rw = getwrapperStack();
   return rw.b->f; // we want to report use after lifetime bug here
 }

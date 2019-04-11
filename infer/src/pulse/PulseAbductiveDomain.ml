@@ -86,8 +86,9 @@ let ( <= ) ~lhs ~rhs =
 
 
 module Stack = struct
-  let is_abducible _var =
-    (* TODO: need to keep only formals + return variable + globals in the pre *) true
+  let is_abducible astate var =
+    (* HACK: formals are pre-registered in the initial state *)
+    BaseStack.mem var (astate.pre :> base_domain).stack || Var.is_global var
 
 
   (** [astate] with [astate.post.stack = f astate.post.stack] *)
@@ -104,7 +105,9 @@ module Stack = struct
         let addr_loc_opt' = (AbstractAddress.mk_fresh (), None) in
         let post_stack = BaseStack.add var addr_loc_opt' (astate.post :> base_domain).stack in
         let pre =
-          if is_abducible var then
+          (* do not overwrite values of variables already in the pre *)
+          if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
+          then
             let foot_stack = BaseStack.add var addr_loc_opt' (astate.pre :> base_domain).stack in
             let foot_heap =
               BaseMemory.register_address (fst addr_loc_opt') (astate.pre :> base_domain).heap
@@ -120,8 +123,12 @@ module Stack = struct
 
 
   let remove_vars vars astate =
+    let vars_to_remove =
+      let is_in_pre var astate = BaseStack.mem var (astate.pre :> base_domain).stack in
+      List.filter vars ~f:(fun var -> not (is_in_pre var astate))
+    in
     map_post_stack astate ~f:(fun stack ->
-        BaseStack.filter (fun var _ -> not (List.mem ~equal:Var.equal vars var)) stack )
+        BaseStack.filter (fun var _ -> not (List.mem ~equal:Var.equal vars_to_remove var)) stack )
 
 
   let fold f astate accum = BaseStack.fold f (astate.post :> base_domain).stack accum
@@ -206,7 +213,31 @@ module Memory = struct
   module Edges = BaseMemory.Edges
 end
 
-let empty = {post= Domain.empty; pre= InvertedDomain.empty}
+let mk_initial proc_desc =
+  (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
+     correspond to formals *)
+  let formals =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let location = Some (Procdesc.get_loc proc_desc) in
+    Procdesc.get_formals proc_desc
+    |> List.map ~f:(fun (mangled, _) ->
+           let var = Var.of_pvar (Pvar.mk mangled proc_name) in
+           (var, (AbstractAddress.mk_fresh (), location)) )
+  in
+  let initial_stack =
+    List.fold formals ~init:(InvertedDomain.empty :> PulseDomain.t).stack
+      ~f:(fun stack (formal, addr_loc) -> BaseStack.add formal addr_loc stack)
+  in
+  let pre =
+    let initial_heap =
+      List.fold formals ~init:(InvertedDomain.empty :> base_domain).heap
+        ~f:(fun heap (_, (addr, _)) -> BaseMemory.register_address addr heap)
+    in
+    InvertedDomain.make initial_stack initial_heap
+  in
+  let post = Domain.update ~stack:initial_stack Domain.empty in
+  {pre; post}
+
 
 let discard_unreachable ({pre; post} as astate) =
   let pre_addresses = PulseDomain.visit (pre :> PulseDomain.t) in
@@ -542,9 +573,7 @@ module PrePost = struct
 
   let record_post_for_return callee_proc_name call_loc pre_post ~ret call_state =
     let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
-    match
-      PulseDomain.Stack.find_opt return_var (pre_post.pre :> PulseDomain.t).PulseDomain.stack
-    with
+    match PulseDomain.Stack.find_opt return_var (pre_post.post :> PulseDomain.t).stack with
     | Some (addr_return, _) ->
         record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:addr_return
           ~addr_caller:(fst ret) call_state

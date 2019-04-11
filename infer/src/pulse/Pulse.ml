@@ -245,10 +245,10 @@ module DisjunctiveAnalyzer =
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
   AbstractAddress.init () ;
-  match
-    DisjunctiveAnalyzer.compute_post proc_data
-      ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseAbductiveDomain.empty)
-  with
+  let initial =
+    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial proc_desc)
+  in
+  match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
       Payload.update_summary
         (PulseSummary.of_posts (DisjunctiveTransferFunctions.Disjuncts.elements posts))
