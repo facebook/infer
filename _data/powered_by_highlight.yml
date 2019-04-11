@@ -24,3 +24,6 @@
   - name: WhatsApp
     url: https://www.whatsapp.com
     img: static/images/whatsapp.svg
+  - name: FreeFEM
+    url: https://freefem.org
+    img: static/images/freefem.png
