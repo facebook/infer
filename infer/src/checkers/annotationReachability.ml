@@ -296,7 +296,9 @@ module CxxAnnotationSpecs = struct
     let pname_str = Typ.Procname.to_string pname in
     let i = Option.value (String.rindex pname_str ':') ~default:(-1) + 1 in
     let slen = String.length pname_str in
-    String.sub pname_str ~pos:0 ~len:i ^ chop_prefix (String.sub pname_str ~pos:i ~len:(slen - i))
+    String.sub pname_str ~pos:0 ~len:i
+    ^ chop_prefix (String.sub pname_str ~pos:i ~len:(slen - i))
+    ^ "()"
 
 
   let spec_from_config spec_name spec_cfg =
@@ -349,10 +351,10 @@ module CxxAnnotationSpecs = struct
     let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
       let src_pname = Summary.get_proc_name src_summary in
       let final_trace = List.rev (update_trace call_loc trace) in
-      let snk_pname_str = Typ.Procname.to_string snk_pname in
-      let src_pname_str = Typ.Procname.to_string src_pname in
+      let snk_pname_str = cxx_string_of_pname snk_pname in
+      let src_pname_str = cxx_string_of_pname src_pname in
       let description =
-        Format.asprintf "%s can reach %s:\n    %s%s%s%s" src_desc snk_desc src_pname_str call_str
+        Format.asprintf "%s can reach %s:\n    %s%s%s%s\n" src_desc snk_desc src_pname_str call_str
           stack_str snk_pname_str
       in
       let issue_type =
