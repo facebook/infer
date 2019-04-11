@@ -38,11 +38,11 @@ let pp_std_vector_function f = function
 
 
 type t =
-  | CFree of HilExp.AccessExpression.t * Location.t
-  | CppDelete of HilExp.AccessExpression.t * Location.t
-  | GoneOutOfScope of HilExp.AccessExpression.t * Location.t
+  | CFree of HilExp.AccessExpression.t
+  | CppDelete of HilExp.AccessExpression.t
+  | GoneOutOfScope of HilExp.AccessExpression.t
   | Nullptr
-  | StdVector of std_vector_function * HilExp.AccessExpression.t * Location.t
+  | StdVector of std_vector_function * HilExp.AccessExpression.t
 [@@deriving compare]
 
 let issue_type_of_cause = function
@@ -59,14 +59,14 @@ let issue_type_of_cause = function
 
 
 let pp f = function
-  | CFree (access_expr, _) ->
+  | CFree access_expr ->
       F.fprintf f "by call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
-  | CppDelete (access_expr, _) ->
+  | CppDelete access_expr ->
       F.fprintf f "by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
-  | GoneOutOfScope (access_expr, _) ->
+  | GoneOutOfScope access_expr ->
       F.fprintf f "`%a` gone out of scope" HilExp.AccessExpression.pp access_expr
   | Nullptr ->
       F.fprintf f "null pointer"
-  | StdVector (std_vector_f, access_expr, _) ->
+  | StdVector (std_vector_f, access_expr) ->
       F.fprintf f "potentially invalidated by call to `%a()` on `%a`" pp_std_vector_function
         std_vector_f HilExp.AccessExpression.pp access_expr

@@ -159,7 +159,7 @@ module PulseTransferFunctions = struct
     (* invalidate both [&x] and [x]: reading either is now forbidden *)
     let invalidate access_expr =
       PulseOperations.invalidate
-        (PulseTrace.Immediate {imm= GoneOutOfScope (access_expr, call_loc); location= call_loc})
+        (PulseTrace.Immediate {imm= GoneOutOfScope access_expr; location= call_loc})
         call_loc access_expr
     in
     invalidate (HilExp.AccessExpression.dereference out_of_scope_access_expr) astate

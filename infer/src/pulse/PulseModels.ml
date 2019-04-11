@@ -26,7 +26,7 @@ module C = struct
     match actuals with
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
-          (PulseTrace.Immediate {imm= PulseInvalidation.CFree (deleted_access, location); location})
+          (PulseTrace.Immediate {imm= PulseInvalidation.CFree deleted_access; location})
           location deleted_access astate
     | _ ->
         Ok astate
@@ -40,8 +40,7 @@ module Cplusplus = struct
     match actuals with
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
-          (PulseTrace.Immediate
-             {imm= PulseInvalidation.CppDelete (deleted_access, location); location})
+          (PulseTrace.Immediate {imm= PulseInvalidation.CppDelete deleted_access; location})
           location deleted_access astate
     | _ ->
         Ok astate
@@ -102,7 +101,7 @@ module StdVector = struct
     let array_address = to_internal_array vector in
     let array = deref_internal_array vector in
     let invalidation =
-      PulseTrace.Immediate {imm= PulseInvalidation.StdVector (vector_f, vector, location); location}
+      PulseTrace.Immediate {imm= PulseInvalidation.StdVector (vector_f, vector); location}
     in
     PulseOperations.invalidate_array_elements invalidation location array astate
     >>= PulseOperations.invalidate invalidation location array

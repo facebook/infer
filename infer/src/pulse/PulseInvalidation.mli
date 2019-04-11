@@ -20,11 +20,11 @@ type std_vector_function =
 val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
 
 type t =
-  | CFree of HilExp.AccessExpression.t * Location.t
-  | CppDelete of HilExp.AccessExpression.t * Location.t
-  | GoneOutOfScope of HilExp.AccessExpression.t * Location.t
+  | CFree of HilExp.AccessExpression.t
+  | CppDelete of HilExp.AccessExpression.t
+  | GoneOutOfScope of HilExp.AccessExpression.t
   | Nullptr
-  | StdVector of std_vector_function * HilExp.AccessExpression.t * Location.t
+  | StdVector of std_vector_function * HilExp.AccessExpression.t
 [@@deriving compare]
 
 val issue_type_of_cause : t -> IssueType.t
