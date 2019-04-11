@@ -583,6 +583,9 @@ being the name of the struct, [None] means the parameter is of some other type. 
   val pp : Format.formatter -> t -> unit
   (** Pretty print a proc name. *)
 
+  val describe : Format.formatter -> t -> unit
+  (** to use in user messages *)
+
   val replace_class : t -> Name.t -> t
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)

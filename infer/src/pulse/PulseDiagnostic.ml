@@ -15,9 +15,9 @@ type t =
       ; trace: PulseTrace.t }
   | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 
-let pp_access = PulseTrace.pp_action HilExp.AccessExpression.pp
+let describe_access = PulseTrace.pp_action HilExp.AccessExpression.pp
 
-let pp_invalidation = PulseTrace.pp_action PulseInvalidation.pp
+let describe_invalidation = PulseTrace.pp_action PulseInvalidation.describe
 
 let get_location = function
   | AccessToInvalidAddress {accessed_by} ->
@@ -27,9 +27,9 @@ let get_location = function
 
 
 let get_message = function
-  | AccessToInvalidAddress {accessed_by; invalidated_by; trace} ->
-      F.asprintf "%a accesses address %a%a past its lifetime" pp_access accessed_by
-        PulseTrace.pp_interesting_events trace pp_invalidation invalidated_by
+  | AccessToInvalidAddress {accessed_by; invalidated_by; _} ->
+      F.asprintf "%a accesses address invalidated by %a past its lifetime" describe_access
+        accessed_by describe_invalidation invalidated_by
   | StackVariableAddressEscape {variable} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
@@ -38,13 +38,33 @@ let get_message = function
       F.asprintf "address of %a is returned by the function" pp_var variable
 
 
+let add_errlog_header ~title location errlog =
+  let depth = 0 in
+  let tags = [] in
+  Errlog.make_trace_element depth location title tags :: errlog
+
+
 let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by; trace} ->
-      PulseTrace.make_errlog_trace ~depth:0 trace
-      @ PulseTrace.trace_of_action ~action_name:"invalidated" PulseInvalidation.pp invalidated_by
-      @ PulseTrace.trace_of_action ~action_name:"accessed"
-          (Pp.in_backticks HilExp.AccessExpression.pp)
-          accessed_by
+      let add_header_if_some ~title location_opt errlog =
+        match location_opt with
+        | None ->
+            errlog
+        | Some location ->
+            add_errlog_header ~title location errlog
+      in
+      add_errlog_header ~title:"start of end of lifetime trace"
+        (PulseTrace.location_of_action_start invalidated_by)
+      @@ PulseTrace.add_errlog_of_action ~nesting:1 ~action_name:"invalidated by"
+           PulseInvalidation.describe invalidated_by
+      @@ add_errlog_header ~title:"start of use after lifetime trace"
+           (PulseTrace.location_of_action_start accessed_by)
+      @@ PulseTrace.add_errlog_of_action ~nesting:1 ~action_name:"accessed"
+           (Pp.in_backticks HilExp.AccessExpression.pp)
+           accessed_by
+      @@ add_header_if_some ~title:"start of value trace" (PulseTrace.get_start_location trace)
+      @@ PulseTrace.add_errlog_of_trace ~nesting:1 trace
+      @@ []
   | StackVariableAddressEscape _ ->
       []
 

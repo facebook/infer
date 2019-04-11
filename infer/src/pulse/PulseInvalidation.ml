@@ -58,11 +58,11 @@ let issue_type_of_cause = function
       IssueType.vector_invalidation
 
 
-let pp f = function
+let describe f = function
   | CFree access_expr ->
-      F.fprintf f "by call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
+      F.fprintf f "call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
   | CppDelete access_expr ->
-      F.fprintf f "by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
+      F.fprintf f "`delete` on `%a`" HilExp.AccessExpression.pp access_expr
   | GoneOutOfScope access_expr ->
       F.fprintf f "`%a` gone out of scope" HilExp.AccessExpression.pp access_expr
   | Nullptr ->
@@ -70,3 +70,17 @@ let pp f = function
   | StdVector (std_vector_f, access_expr) ->
       F.fprintf f "potentially invalidated by call to `%a()` on `%a`" pp_std_vector_function
         std_vector_f HilExp.AccessExpression.pp access_expr
+
+
+let pp f invalidation =
+  match invalidation with
+  | CFree _ ->
+      F.fprintf f "CFree(%a)" describe invalidation
+  | CppDelete _ ->
+      F.fprintf f "CppDelete(%a)" describe invalidation
+  | GoneOutOfScope _ ->
+      describe f invalidation
+  | Nullptr ->
+      describe f invalidation
+  | StdVector _ ->
+      F.fprintf f "StdVector(%a)" describe invalidation

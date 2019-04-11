@@ -1276,6 +1276,8 @@ module Procname = struct
   (** Pretty print a proc name *)
   let pp f pn = F.pp_print_string f (to_string pn)
 
+  let describe f pn = F.pp_print_string f (hashable_name pn)
+
   (** hash function for procname *)
   let hash_pname = Hashtbl.hash
 

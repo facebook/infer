@@ -24,9 +24,10 @@ type t = breadcrumb list [@@deriving compare]
 
 val pp : F.formatter -> t -> unit
 
-val make_errlog_trace : depth:int -> t -> Errlog.loc_trace
+val add_errlog_of_trace :
+  nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 
-val pp_interesting_events : F.formatter -> t -> unit
+val get_start_location : t -> Location.t option
 
 type 'a action =
   | Immediate of {imm: 'a; location: Location.t}
@@ -35,9 +36,16 @@ type 'a action =
 
 val pp_action : (F.formatter -> 'a -> unit) -> F.formatter -> 'a action -> unit
 
+val location_of_action_start : 'a action -> Location.t
+
 val immediate_of_action : 'a action -> 'a
 
 val outer_location_of_action : 'a action -> Location.t
 
-val trace_of_action :
-  action_name:string -> (F.formatter -> 'a -> unit) -> 'a action -> Errlog.loc_trace_elem sexp_list
+val add_errlog_of_action :
+     nesting:int
+  -> action_name:string
+  -> (F.formatter -> 'a -> unit)
+  -> 'a action
+  -> Errlog.loc_trace_elem sexp_list
+  -> Errlog.loc_trace_elem sexp_list

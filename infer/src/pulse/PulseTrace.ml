@@ -48,28 +48,22 @@ let pp_breadcrumb fmt crumb =
     (location_of_breadcrumb crumb)
 
 
-let errlog_trace_elem_of_breadcrumb ~depth crumb =
+let errlog_trace_elem_of_breadcrumb ~nesting crumb =
   let location = location_of_breadcrumb crumb in
   let description = F.asprintf "%a" pp_breadcrumb_no_location crumb in
   let tags = [] in
-  Errlog.make_trace_element depth location description tags
+  Errlog.make_trace_element nesting location description tags
 
 
 type t = breadcrumb list [@@deriving compare]
 
 let pp f trace = Pp.seq ~print_env:Pp.text_break pp_breadcrumb f trace
 
-let make_errlog_trace ~depth trace = List.rev_map ~f:(errlog_trace_elem_of_breadcrumb ~depth) trace
-
-let pp_last_event f = function
-  | [] ->
-      ()
-  | crumb :: _ ->
-      pp_breadcrumb f crumb ;
-      (* HACK: needed by the call site *) F.pp_print_string f " "
+let add_errlog_of_trace ~nesting trace errlog =
+  List.rev_map_append ~f:(errlog_trace_elem_of_breadcrumb ~nesting) trace errlog
 
 
-let pp_interesting_events f trace = pp_last_event f trace
+let get_start_location = function [] -> None | crumb :: _ -> Some (location_of_breadcrumb crumb)
 
 type 'a action =
   | Immediate of {imm: 'a; location: Location.t}
@@ -78,9 +72,14 @@ type 'a action =
 
 let pp_action pp_immediate fmt = function
   | Immediate {imm; _} ->
-      F.fprintf fmt "%a" pp_immediate imm
+      pp_immediate fmt imm
   | ViaCall {proc_name; _} ->
-      F.fprintf fmt "call to `%a`" Typ.Procname.pp proc_name
+      F.fprintf fmt "call to `%a`" Typ.Procname.describe proc_name
+
+
+let location_of_action_start = function
+  | Immediate {location; _} | ViaCall {location; _} ->
+      location
 
 
 let rec immediate_of_action = function
@@ -90,24 +89,26 @@ let rec immediate_of_action = function
       immediate_of_action action
 
 
-let trace_of_action ~action_name pp_immediate action =
-  let rec aux ~nesting rev_trace action =
+let add_errlog_of_action ~nesting ~action_name pp_immediate action errlog =
+  let rec aux ~nesting rev_errlog action =
     match action with
     | Immediate {imm; location} ->
-        Errlog.make_trace_element nesting location
-          (F.asprintf "%s %a here" action_name pp_immediate imm)
-          []
-        :: rev_trace
-        |> List.rev
+        let rev_errlog =
+          Errlog.make_trace_element nesting location
+            (F.asprintf "%s %a here" action_name pp_immediate imm)
+            []
+          :: rev_errlog
+        in
+        List.rev_append rev_errlog errlog
     | ViaCall {action; proc_name; location} ->
         aux ~nesting:(nesting + 1)
           ( Errlog.make_trace_element nesting location
-              (F.asprintf "%s during call to `%a` here" action_name Typ.Procname.pp proc_name)
+              (F.asprintf "%s during call to `%a` here" action_name Typ.Procname.describe proc_name)
               []
-          :: rev_trace )
+          :: rev_errlog )
           action
   in
-  aux ~nesting:0 [] action
+  aux ~nesting [] action
 
 
 let outer_location_of_action = function Immediate {location} | ViaCall {location} -> location

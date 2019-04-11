@@ -38,6 +38,13 @@ void delete_then_read_bad(struct X& x) {
   wraps_read(x);
 }
 
+void delete_aliased_then_read_bad(struct X& x) {
+  struct X* y = &x;
+  struct X& z = x;
+  delete y;
+  wraps_read(z);
+}
+
 void delete_then_write_bad(struct X& x) {
   wraps_delete(&x);
   wraps_read(x);

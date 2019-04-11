@@ -29,4 +29,6 @@ type t =
 
 val issue_type_of_cause : t -> IssueType.t
 
+val describe : Format.formatter -> t -> unit
+
 val pp : Format.formatter -> t -> unit
