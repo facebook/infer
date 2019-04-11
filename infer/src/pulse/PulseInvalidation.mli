@@ -22,7 +22,7 @@ val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
 type t =
   | CFree of HilExp.AccessExpression.t * Location.t
   | CppDelete of HilExp.AccessExpression.t * Location.t
-  | CppDestructor of Typ.Procname.t * HilExp.AccessExpression.t * Location.t
+  | GoneOutOfScope of HilExp.AccessExpression.t * Location.t
   | Nullptr
   | StdVector of std_vector_function * HilExp.AccessExpression.t * Location.t
 [@@deriving compare]

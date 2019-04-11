@@ -128,7 +128,7 @@ int ref_capture_return_local_lambda_ok() {
   return f().f;
 }
 
-S& ref_capture_return_local_lambda_bad() {
+S& FN_ref_capture_return_local_lambda_bad() {
   S x;
   auto f = [&x](void) -> S& {
     // no way to know if ok here

@@ -51,17 +51,6 @@ module PulseTransferFunctions = struct
 
   type extras = Summary.t
 
-  let is_destructor = function
-    | Typ.Procname.ObjC_Cpp clang_pname ->
-        Typ.Procname.ObjC_Cpp.is_destructor clang_pname
-        && not
-             (* Our frontend generates synthetic inner destructors to model invocation of base class
-           destructors correctly; see D5834555/D7189239 *)
-             (Typ.Procname.ObjC_Cpp.is_inner_destructor clang_pname)
-    | _ ->
-        false
-
-
   let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
       astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
@@ -150,27 +139,31 @@ module PulseTransferFunctions = struct
 
 
   (** has an object just gone out of scope? *)
-  let get_destructed_object (call : HilInstr.call) (actuals : HilExp.t list) (flags : CallFlags.t)
-      =
+  let get_out_of_scope_object (call : HilInstr.call) (actuals : HilExp.t list)
+      (flags : CallFlags.t) =
     (* injected destructors are precisely inserted where an object goes out of scope *)
     if flags.cf_injected_destructor then
       match (call, actuals) with
-      | Direct callee_pname, [AccessExpression destroyed_access] when is_destructor callee_pname ->
-          Some (callee_pname, destroyed_access)
+      | ( Direct (Typ.Procname.ObjC_Cpp pname)
+        , [AccessExpression (*AddressOf (Base _) as *) destroyed_access] )
+        when not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
+          (* ignore inner destructors, only trigger out of scope on the final destructor call *)
+          Some destroyed_access
       | _ ->
           None
     else None
 
 
-  (** [destroyed_access_expr] has just gone out of scope and in now invalid *)
-  let destruct_object callee_pname call_loc destroyed_access_expr astate =
-    let destroyed_object = HilExp.AccessExpression.dereference destroyed_access_expr in
-    (* TODO: need an [OutOfScope] invalidation reason instead of [CppDestructor]? *)
-    PulseOperations.invalidate
-      (PulseTrace.Immediate
-         { imm= PulseInvalidation.CppDestructor (callee_pname, destroyed_object, call_loc)
-         ; location= call_loc })
-      call_loc destroyed_object astate
+  (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
+  let exec_object_out_of_scope call_loc out_of_scope_access_expr astate =
+    (* invalidate both [&x] and [x]: reading either is now forbidden *)
+    let invalidate access_expr =
+      PulseOperations.invalidate
+        (PulseTrace.Immediate {imm= GoneOutOfScope (access_expr, call_loc); location= call_loc})
+        call_loc access_expr
+    in
+    invalidate (HilExp.AccessExpression.dereference out_of_scope_access_expr) astate
+    >>= invalidate out_of_scope_access_expr
 
 
   let dispatch_call summary ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc
@@ -191,13 +184,12 @@ module PulseTransferFunctions = struct
         PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
         let posts = interprocedural_call summary ret call actuals flags call_loc astate in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-        match get_destructed_object call actuals flags with
-        | Some (destructor_pname, access_expr) ->
+        match get_out_of_scope_object call actuals flags with
+        | Some access_expr ->
             L.d_printfln "%a is going out of scope" HilExp.AccessExpression.pp access_expr ;
             posts
             >>= fun posts ->
-            List.map posts ~f:(fun astate ->
-                destruct_object destructor_pname call_loc access_expr astate )
+            List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc access_expr astate)
             |> Result.all
         | None ->
             posts )

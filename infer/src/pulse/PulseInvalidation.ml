@@ -40,7 +40,7 @@ let pp_std_vector_function f = function
 type t =
   | CFree of HilExp.AccessExpression.t * Location.t
   | CppDelete of HilExp.AccessExpression.t * Location.t
-  | CppDestructor of Typ.Procname.t * HilExp.AccessExpression.t * Location.t
+  | GoneOutOfScope of HilExp.AccessExpression.t * Location.t
   | Nullptr
   | StdVector of std_vector_function * HilExp.AccessExpression.t * Location.t
 [@@deriving compare]
@@ -50,8 +50,8 @@ let issue_type_of_cause = function
       IssueType.use_after_free
   | CppDelete _ ->
       IssueType.use_after_delete
-  | CppDestructor _ ->
-      IssueType.use_after_destructor
+  | GoneOutOfScope _ ->
+      IssueType.use_after_lifetime
   | Nullptr ->
       IssueType.null_dereference
   | StdVector _ ->
@@ -63,9 +63,8 @@ let pp f = function
       F.fprintf f "by call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
   | CppDelete (access_expr, _) ->
       F.fprintf f "by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
-  | CppDestructor (proc_name, access_expr, _) ->
-      F.fprintf f "by destructor call `%a()` on `%a`" Typ.Procname.pp proc_name
-        HilExp.AccessExpression.pp access_expr
+  | GoneOutOfScope (access_expr, _) ->
+      F.fprintf f "`%a` gone out of scope" HilExp.AccessExpression.pp access_expr
   | Nullptr ->
       F.fprintf f "null pointer"
   | StdVector (std_vector_f, access_expr, _) ->
