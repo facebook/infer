@@ -11,7 +11,7 @@ type exec_fun =
   -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
   -> PulseAbductiveDomain.t
-  -> PulseAbductiveDomain.t PulseOperations.access_result
+  -> PulseAbductiveDomain.t list PulseOperations.access_result
 
 type model = exec_fun
 

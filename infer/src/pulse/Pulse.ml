@@ -178,7 +178,7 @@ module PulseTransferFunctions = struct
     in
     match model with
     | Some model ->
-        model call_loc ~ret ~actuals astate >>| fun post -> [post]
+        model call_loc ~ret ~actuals astate
     | None -> (
         (* do interprocedural call then destroy objects going out of scope *)
         PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;

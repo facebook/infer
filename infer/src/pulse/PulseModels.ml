@@ -12,12 +12,12 @@ type exec_fun =
   -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
   -> PulseAbductiveDomain.t
-  -> PulseAbductiveDomain.t PulseOperations.access_result
+  -> PulseAbductiveDomain.t list PulseOperations.access_result
 
 type model = exec_fun
 
 module Misc = struct
-  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok PulseAbductiveDomain.empty
+  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok []
 end
 
 module C = struct
@@ -28,8 +28,9 @@ module C = struct
         PulseOperations.invalidate
           (PulseTrace.Immediate {imm= PulseInvalidation.CFree deleted_access; location})
           location deleted_access astate
+        >>| List.return
     | _ ->
-        Ok astate
+        Ok [astate]
 end
 
 module Cplusplus = struct
@@ -42,8 +43,9 @@ module Cplusplus = struct
         PulseOperations.invalidate
           (PulseTrace.Immediate {imm= PulseInvalidation.CppDelete deleted_access; location})
           location deleted_access astate
+        >>| List.return
     | _ ->
-        Ok astate
+        Ok [astate]
 
 
   let operator_call : model =
@@ -57,9 +59,10 @@ module Cplusplus = struct
         PulseOperations.Closures.check_captured_addresses location lambda (fst address) astate
     | _ ->
         Ok astate )
-    >>| PulseOperations.havoc_var
-          [PulseTrace.Call {f= `Model "<lambda>"; actuals; location}]
-          ret_var
+    >>| fun astate ->
+    [ PulseOperations.havoc_var
+        [PulseTrace.Call {f= `Model "<lambda>"; actuals; location}]
+        ret_var astate ]
 
 
   let placement_new : model =
@@ -73,11 +76,11 @@ module Cplusplus = struct
         PulseOperations.read location expr astate
         >>= fun (astate, (address, trace)) ->
         PulseOperations.write_var ret_var (address, crumb :: trace) astate
-        |> read_all other_actuals
+        |> read_all other_actuals >>| List.return
     | _ :: other_actuals ->
-        read_all other_actuals astate >>| PulseOperations.havoc_var [crumb] ret_var
+        read_all other_actuals astate >>| PulseOperations.havoc_var [crumb] ret_var >>| List.return
     | [] ->
-        Ok (PulseOperations.havoc_var [crumb] ret_var astate)
+        Ok [PulseOperations.havoc_var [crumb] ret_var astate]
 end
 
 module StdVector = struct
@@ -118,9 +121,9 @@ module StdVector = struct
             ; actuals
             ; location }
         in
-        reallocate_internal_array [crumb] vector vector_f location astate
+        reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
     | _ ->
-        Ok astate
+        Ok [astate]
 
 
   let at : model =
@@ -136,8 +139,9 @@ module StdVector = struct
           (HilExp.AccessExpression.base ret)
           (addr, crumb :: trace)
           astate
+        >>| List.return
     | _ ->
-        Ok (PulseOperations.havoc_var [crumb] (fst ret) astate)
+        Ok [PulseOperations.havoc_var [crumb] (fst ret) astate]
 
 
   let reserve : model =
@@ -147,8 +151,9 @@ module StdVector = struct
         let crumb = PulseTrace.Call {f= `Model "std::vector::reserve"; actuals; location} in
         reallocate_internal_array [crumb] vector Reserve location astate
         >>= PulseOperations.StdVector.mark_reserved location vector
+        >>| List.return
     | _ ->
-        Ok astate
+        Ok [astate]
 
 
   let push_back : model =
@@ -161,12 +166,12 @@ module StdVector = struct
         if is_reserved then
           (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
              (a perfect analysis would also make sure we don't exceed the reserved size) *)
-          Ok astate
+          Ok [astate]
         else
           (* simulate a re-allocation of the underlying array every time an element is added *)
-          reallocate_internal_array [crumb] vector PushBack location astate
+          reallocate_internal_array [crumb] vector PushBack location astate >>| List.return
     | _ ->
-        Ok astate
+        Ok [astate]
 end
 
 module ProcNameDispatcher = struct
