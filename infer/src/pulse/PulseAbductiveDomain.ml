@@ -456,7 +456,7 @@ module PrePost = struct
 
   let rec record_post_for_address callee_proc_name call_loc ({pre; post} as pre_post) ~addr_callee
       ~addr_caller call_state =
-    L.d_printfln "%a<->%a@\n" AbstractAddress.pp addr_callee AbstractAddress.pp addr_caller ;
+    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp addr_caller ;
     match visit call_state ~addr_callee ~addr_caller with
     | `AlreadyVisited, call_state ->
         call_state

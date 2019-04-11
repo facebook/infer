@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 module type S = sig
   module CFG : ProcCfg.S
@@ -156,7 +157,7 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
   end
 
   let exec_instr pre_disjuncts extras node instr =
-    List.fold pre_disjuncts ~init:[] ~f:(fun post_disjuncts pre_disjunct ->
+    List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
         if pre_disjunct.visited then
           (* SUBTLE/WORST HACK EVER: ignore pres that we know we have gone through already. This
              means that the invariant map at that program point will be junk since they are going to
@@ -165,9 +166,16 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
 
              This should really be implemented in {!AbstractInterpreter}. *)
           post_disjuncts
-        else
-          let disjuncts' = TransferFunctions.exec_instr pre_disjunct.astate extras node instr in
-          Domain.join post_disjuncts (List.map disjuncts' ~f:Disjuncts.mk_disjunct) )
+        else (
+          L.d_printfln "@[<v2>Executing from disjunct #%d@;" i ;
+          let disjuncts' =
+            TransferFunctions.exec_instr pre_disjunct.astate extras node instr
+            |> List.map ~f:Disjuncts.mk_disjunct
+          in
+          ( if Config.write_html then
+            let n = List.length disjuncts' in
+            L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
+          Domain.join post_disjuncts disjuncts' ) )
 
 
   let pp_session_name node f = TransferFunctions.pp_session_name node f
