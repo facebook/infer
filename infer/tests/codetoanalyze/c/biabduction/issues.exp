@@ -1,4 +1,5 @@
 codetoanalyze/c/biabduction/abduce.c, FN_set_ptr_param_array_get_null_bad, 3, PRECONDITION_NOT_MET, no_bucket, WARNING, [start of procedure FN_set_ptr_param_array_get_null_bad()]
+codetoanalyze/c/biabduction/arrays.c, DecodeCurrentValue, 5, Assert_failure, no_bucket, ERROR, [start of procedure DecodeCurrentValue(),start of procedure GetVarint64Ptr(),Loop condition is true. Entering loop body,Loop condition is true. Entering loop body,Taking true branch,return from a call to GetVarint64Ptr,Loop condition is false. Leaving loop,start of procedure GetVarint64Ptr(),Loop condition is true. Entering loop body,Loop condition is false. Leaving loop,return from a call to GetVarint64Ptr]
 codetoanalyze/c/biabduction/example.c, bar, 2, DIVIDE_BY_ZERO, no_bucket, ERROR, [start of procedure bar()]
 codetoanalyze/c/biabduction/example.c, foo, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure foo()]
 codetoanalyze/c/biabduction/example.c, global_addr_alias_bad, 3, NULL_DEREFERENCE, B1, ERROR, [start of procedure global_addr_alias_bad(),Taking true branch]

@@ -665,7 +665,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
         let vset = vset_add_pathset vset pathset_diverging in
         compute_visited vset
       in
-      (do_join_post pname tenv pathset, visited)
+      (pathset, visited)
     with Exceptions.Leak _ ->
       L.d_strln "Leak in post collection" ;
       assert false
