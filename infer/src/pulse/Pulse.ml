@@ -145,8 +145,8 @@ module PulseTransferFunctions = struct
     if flags.cf_injected_destructor then
       match (call, actuals) with
       | ( Direct (Typ.Procname.ObjC_Cpp pname)
-        , [AccessExpression (*AddressOf (Base _) as *) destroyed_access] )
-        when not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
+        , [AccessExpression (AddressOf (Base (ProgramVar pvar, _)) as destroyed_access)] )
+        when Pvar.is_local pvar && not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
           Some destroyed_access
       | _ ->

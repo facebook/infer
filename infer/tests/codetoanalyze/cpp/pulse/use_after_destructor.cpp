@@ -259,4 +259,31 @@ bool variable_init_ternary_ok(bool b) {
   std::string newPath = b ? "" : mk_string();
 }
 
+void move_data(POD* from, POD* to);
+
+struct Moveable {
+  Moveable() = default;
+  Moveable(const Moveable&) = delete; // not copyable
+
+  // move constructor
+  Moveable(Moveable&& that) noexcept { move_data(&that.data, &data); }
+
+  Moveable& operator=(Moveable&& that) noexcept {
+    this->~Moveable();
+    ::new (this) Moveable(std::move(that));
+    return *this;
+  }
+
+  ~Moveable() {}
+
+  Moveable& operator=(const Moveable&) = delete;
+
+  POD data;
+};
+
+void move_moveable_ok(Moveable& src) {
+  Moveable x;
+  x = std::move(src);
+}
+
 } // namespace use_after_destructor
