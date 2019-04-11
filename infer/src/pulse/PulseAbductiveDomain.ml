@@ -266,10 +266,19 @@ module PrePost = struct
 
   type t = domain_t
 
-  let of_post astate = discard_unreachable astate
+  let filter_for_summary astate =
+    let post_stack =
+      BaseStack.filter
+        (fun var _ -> Var.is_return var || Stack.is_abducible astate var)
+        (astate.post :> PulseDomain.t).stack
+    in
+    {astate with post= Domain.update ~stack:post_stack astate.post}
 
-  (* machinery to apply a pre/post pair corresponding to a function's summary in a function call to
-     the current state *)
+
+  let of_post astate = filter_for_summary astate |> discard_unreachable
+
+  (* {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call
+     to the current state} *)
 
   module AddressSet = PulseDomain.AbstractAddressSet
   module AddressMap = PulseDomain.AbstractAddressMap
@@ -305,6 +314,19 @@ module PrePost = struct
       rev_subst AddressSet.pp visited
 
 
+  let fold_globals_of_stack stack call_state ~f =
+    Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:BaseStack.fold)
+      stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
+        if Var.is_global var then
+          let call_state, (addr_caller, _) =
+            let astate, var_value = Stack.materialize var call_state.astate in
+            if phys_equal astate call_state.astate then (call_state, var_value)
+            else ({call_state with astate}, var_value)
+          in
+          f ~stack_value ~addr_caller call_state
+        else Ok call_state )
+
+
   let visit call_state ~addr_callee ~addr_caller =
     ( match AddressMap.find_opt addr_caller call_state.rev_subst with
     | Some addr_callee' when not (AbstractAddress.equal addr_callee addr_callee') ->
@@ -328,7 +350,7 @@ module PrePost = struct
     F.fprintf f "POST:@\n  @[%a@]@\n" PulseDomain.pp (post :> PulseDomain.t)
 
 
-  (* reading the pre from the current state *)
+  (* {3 reading the pre from the current state} *)
 
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
@@ -404,34 +426,51 @@ module PrePost = struct
              edges_pre edges_post
 
 
-  let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
+  let materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
+      call_state =
     (* For each [(formal, actual)] pair, resolve them to addresses in their respective states then
        call [materialize_pre_from] on them.  Give up if calling the function introduces aliasing.
        *)
     match
-      PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
-      let r =
-        IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal actual ->
-            materialize_pre_from_actual callee_proc_name call_location
-              ~pre:(pre_post.pre :> PulseDomain.t)
-              ~formal ~actual call_state )
-      in
-      PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-      r
+      IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal actual ->
+          materialize_pre_from_actual callee_proc_name call_location
+            ~pre:(pre_post.pre :> PulseDomain.t)
+            ~formal ~actual call_state )
     with
-    | Ok result ->
-        Some result
     | Unequal_lengths ->
         L.d_printfln "ERROR: formals have length %d but actuals have length %d"
           (List.length formals) (List.length actuals) ;
         None
-    | exception Aliasing ->
-        (* can't make sense of the pre-condition in the current context: give up on that particular
-           pre/post pair *)
-        None
+    | Ok result ->
+        Some result
 
 
-  (* applying the post to the current state *)
+  let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
+    fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
+      ~f:(fun ~stack_value:(addr_pre, loc_opt) ~addr_caller call_state ->
+        let trace =
+          Option.map loc_opt ~f:(fun loc -> PulseTrace.VariableDeclaration loc) |> Option.to_list
+        in
+        materialize_pre_from_address callee_proc_name call_location
+          ~pre:(pre_post.pre :> PulseDomain.t)
+          ~addr_pre ~addr_caller trace call_state )
+
+
+  let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
+    PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
+    let r =
+      materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
+        call_state
+      |> Option.map
+           ~f:
+             (Result.bind ~f:(fun call_state ->
+                  materialize_pre_for_globals callee_proc_name call_location pre_post call_state ))
+    in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    r
+
+
+  (* {3 applying the post to the current state} *)
 
   let subst_find_or_new subst addr_callee =
     match AddressMap.find_opt addr_callee subst with
@@ -581,32 +620,51 @@ module PrePost = struct
         call_state
 
 
-  let apply_post callee_proc_name call_location pre_post ~formals ~ret ~actuals call_state =
-    (* reset [visited] *)
-    let call_state_pre = {call_state with visited= AddressSet.empty} in
+  let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
+      call_state =
     (* for each [(formal_i, actual_i)] pair, do [post_i = post union subst(graph reachable from
        formal_i in post)], deleting previous info when comparing pre and post shows a difference
        (TODO: record in the pre when a location is written to instead of just comparing values
        between pre and post since it's unreliable, eg replace value read in pre with same value in
        post but nuke other fields in the meantime? is that possible?).  *)
     match
-      PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
-      let r =
-        List.fold2 formals actuals ~init:call_state_pre ~f:(fun call_state formal actual ->
-            record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual
-              call_state )
-      in
-      PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-      r
+      List.fold2 formals actuals ~init:call_state ~f:(fun call_state formal actual ->
+          record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state
+      )
     with
-    | Ok call_state ->
-        record_post_for_return callee_proc_name call_location pre_post ~ret call_state
-        |> fun {astate} -> Some astate
-    | exception Aliasing ->
-        None
     | Unequal_lengths ->
         (* should have been checked before by [materialize_pre] *)
         assert false
+    | Ok call_state ->
+        Some call_state
+
+
+  let apply_post_for_globals callee_proc_name call_location pre_post call_state =
+    match
+      fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
+        ~f:(fun ~stack_value:(addr_callee, _) ~addr_caller call_state ->
+          Ok
+            (record_post_for_address callee_proc_name call_location pre_post ~addr_callee
+               ~addr_caller call_state) )
+    with
+    | Error _ ->
+        (* always return [Ok _] above *) assert false
+    | Ok call_state ->
+        call_state
+
+
+  let apply_post callee_proc_name call_location pre_post ~formals ~ret ~actuals call_state =
+    PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
+    let r =
+      apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
+        call_state
+      |> Option.map ~f:(fun call_state ->
+             apply_post_for_globals callee_proc_name call_location pre_post call_state
+             |> record_post_for_return callee_proc_name call_location pre_post ~ret
+             |> fun {astate; _} -> astate )
+    in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    r
 
 
   (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
@@ -633,6 +691,10 @@ module PrePost = struct
     match
       materialize_pre callee_proc_name call_location pre_post ~formals ~actuals empty_call_state
     with
+    | exception Aliasing ->
+        (* can't make sense of the pre-condition in the current context: give up on that particular
+           pre/post pair *)
+        Ok astate
     | None ->
         (* couldn't apply the pre for some technical reason (as in: not by the fault of the
            programmer as far as we know) *)
@@ -641,14 +703,18 @@ module PrePost = struct
         (* error: the function call requires to read some state known to be invalid *)
         error
     | Some (Ok call_state) -> (
-      (* apply the postcondition *)
-      match
-        apply_post callee_proc_name call_location pre_post ~formals ~ret ~actuals call_state
-      with
-      | None ->
-          (* same as when trying to apply the pre: give up for that pre/post pair and return the
+        (* reset [visited] *)
+        let call_state = {call_state with visited= AddressSet.empty} in
+        (* apply the postcondition *)
+        match
+          apply_post callee_proc_name call_location pre_post ~formals ~ret ~actuals call_state
+        with
+        | exception Aliasing ->
+            Ok astate
+        | None ->
+            (* same as when trying to apply the pre: give up for that pre/post pair and return the
              original state *)
-          Ok astate
-      | Some astate_post ->
-          Ok astate_post )
+            Ok astate
+        | Some astate_post ->
+            Ok astate_post )
 end

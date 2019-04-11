@@ -15,3 +15,12 @@ int double_free_simple_bad(int* x) {
   free(x);
   free(x);
 }
+
+int* global_pointer;
+
+void free_global_pointer_ok() { free(global_pointer); }
+
+void double_free_global_bad() {
+  free_global_pointer_ok();
+  free_global_pointer_ok();
+}
