@@ -323,7 +323,7 @@ module PrePost = struct
             if phys_equal astate call_state.astate then (call_state, var_value)
             else ({call_state with astate}, var_value)
           in
-          f ~stack_value ~addr_caller call_state
+          f var ~stack_value ~addr_caller call_state
         else Ok call_state )
 
 
@@ -355,8 +355,8 @@ module PrePost = struct
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
-  let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre ~addr_caller
-      trace call_state =
+  let rec materialize_pre_from_address callee_proc_name call_location access_expr ~pre ~addr_pre
+      ~addr_caller trace call_state =
     let mk_action action =
       PulseTrace.ViaCall {action; proc_name= callee_proc_name; location= call_location}
     in
@@ -373,7 +373,8 @@ module PrePost = struct
         match Memory.check_valid action addr_caller call_state.astate with
         | Error invalidated_by ->
             Error
-              (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= action; trace})
+              (PulseDiagnostic.AccessToInvalidAddress
+                 {access= access_expr; invalidated_by; accessed_by= action; trace})
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result
@@ -383,7 +384,13 @@ module PrePost = struct
                   Memory.materialize_edge addr_caller access call_state.astate
                 in
                 let call_state = {call_state with astate} in
-                materialize_pre_from_address callee_proc_name call_location ~pre
+                let access_expr =
+                  (* if the new access expression doesn't make sense then keep the old one; should
+                     be fine since this is used only for reporting *)
+                  HilExp.AccessExpression.add_access access access_expr
+                  |> Option.value ~default:access_expr
+                in
+                materialize_pre_from_address callee_proc_name call_location access_expr ~pre
                   ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest trace call_state ))
         |> function Some result -> result | None -> Ok call_state )
 
@@ -393,20 +400,20 @@ module PrePost = struct
       [call_state.astate] *)
   let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
     L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal (Pp.option AbstractAddress.pp)
-      (Option.map ~f:fst actual) ;
+      (Option.map ~f:fst3 actual) ;
     match actual with
     | None ->
         (* the expression representing the actual couldn't be evaluated down to an abstract address
            *)
         Ok call_state
-    | Some (addr_caller, trace) -> (
+    | Some (addr_caller, access_expr, trace) -> (
         (let open Option.Monad_infix in
         PulseDomain.Stack.find_opt formal pre.PulseDomain.stack
         >>= fun (addr_formal_pre, _) ->
         PulseDomain.Memory.find_edge_opt addr_formal_pre Dereference pre.PulseDomain.heap
         >>| fun (formal_pre, _) ->
-        materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
-          ~addr_caller trace call_state)
+        materialize_pre_from_address callee_proc_name call_location access_expr ~pre
+          ~addr_pre:formal_pre ~addr_caller trace call_state)
         |> function Some result -> result | None -> Ok call_state )
 
 
@@ -447,11 +454,12 @@ module PrePost = struct
 
   let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
     fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
-      ~f:(fun ~stack_value:(addr_pre, loc_opt) ~addr_caller call_state ->
+      ~f:(fun var ~stack_value:(addr_pre, loc_opt) ~addr_caller call_state ->
         let trace =
           Option.map loc_opt ~f:(fun loc -> PulseTrace.VariableDeclaration loc) |> Option.to_list
         in
-        materialize_pre_from_address callee_proc_name call_location
+        let access_expr = HilExp.AccessExpression.base (var, Typ.void) in
+        materialize_pre_from_address callee_proc_name call_location access_expr
           ~pre:(pre_post.pre :> PulseDomain.t)
           ~addr_pre ~addr_caller trace call_state )
 
@@ -589,11 +597,11 @@ module PrePost = struct
 
   let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual call_state =
     L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal
-      (Pp.option AbstractAddress.pp) (Option.map ~f:fst actual) ;
+      (Pp.option AbstractAddress.pp) (Option.map ~f:fst3 actual) ;
     match actual with
     | None ->
         call_state
-    | Some (addr_caller, _trace) -> (
+    | Some (addr_caller, _access_expr, _trace) -> (
         let open Option.Monad_infix in
         match
           PulseDomain.Stack.find_opt formal (pre_post.pre :> PulseDomain.t).PulseDomain.stack
@@ -642,7 +650,7 @@ module PrePost = struct
   let apply_post_for_globals callee_proc_name call_location pre_post call_state =
     match
       fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
-        ~f:(fun ~stack_value:(addr_callee, _) ~addr_caller call_state ->
+        ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_caller call_state ->
           Ok
             (record_post_for_address callee_proc_name call_location pre_post ~addr_callee
                ~addr_caller call_state) )

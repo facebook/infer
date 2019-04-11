@@ -88,6 +88,8 @@ module AccessExpression : sig
   [@@deriving compare]
 
   val fold_vars : (t, Var.t, 'accum) Container.fold
+
+  val add_access : _ Access.t -> t -> t option
 end
 
 val pp : F.formatter -> t -> unit

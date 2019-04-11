@@ -233,6 +233,18 @@ module AccessExpression = struct
     aux init [] access_expr
 
 
+  let add_access access access_expr =
+    match (access : _ Access.t) with
+    | FieldAccess fld ->
+        Some (field_offset access_expr fld)
+    | ArrayAccess (typ, _index) ->
+        Some (array_offset access_expr typ None)
+    | Dereference ->
+        Some (dereference access_expr)
+    | TakeAddress ->
+        address_of access_expr
+
+
   (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
   let rec to_access_path t =
     let rec to_access_path_ t =

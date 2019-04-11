@@ -40,7 +40,7 @@ let pp_std_vector_function f = function
 type t =
   | CFree of HilExp.AccessExpression.t
   | CppDelete of HilExp.AccessExpression.t
-  | GoneOutOfScope of HilExp.AccessExpression.t
+  | GoneOutOfScope of Pvar.t * Typ.t
   | Nullptr
   | StdVector of std_vector_function * HilExp.AccessExpression.t
 [@@deriving compare]
@@ -60,15 +60,21 @@ let issue_type_of_cause = function
 
 let describe f = function
   | CFree access_expr ->
-      F.fprintf f "call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
+      F.fprintf f "memory invalidated by call to `free()` on `%a`" HilExp.AccessExpression.pp
+        access_expr
   | CppDelete access_expr ->
-      F.fprintf f "`delete` on `%a`" HilExp.AccessExpression.pp access_expr
-  | GoneOutOfScope access_expr ->
-      F.fprintf f "`%a` gone out of scope" HilExp.AccessExpression.pp access_expr
+      F.fprintf f "memory invalidated by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
+  | GoneOutOfScope (pvar, typ) ->
+      let pp_var f pvar =
+        if Pvar.is_cpp_temporary pvar then
+          F.fprintf f "C++ temporary of type `%a`" (Typ.pp_full Pp.text) typ
+        else F.fprintf f "stack variable `%a`" Pvar.pp_value pvar
+      in
+      F.fprintf f "address of %a whose lifetime has ended" pp_var pvar
   | Nullptr ->
-      F.fprintf f "null pointer"
+      F.fprintf f "the null pointer"
   | StdVector (std_vector_f, access_expr) ->
-      F.fprintf f "potentially invalidated by call to `%a()` on `%a`" pp_std_vector_function
+      F.fprintf f "memory potentially invalidated by call to `%a()` on `%a`" pp_std_vector_function
         std_vector_f HilExp.AccessExpression.pp access_expr
 
 

@@ -76,8 +76,8 @@ val invalidate_array_elements :
 
 val remove_vars : Var.t list -> t -> t
 
-(* TODO: better name and pass location to report where we returned *)
-val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result
+val check_address_escape :
+  Location.t -> Procdesc.t -> AbstractAddress.t -> PulseTrace.t -> t -> t access_result
 
 module Interproc : sig
   val call :

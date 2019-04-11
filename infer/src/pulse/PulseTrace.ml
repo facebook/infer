@@ -9,6 +9,7 @@ module F = Format
 
 type breadcrumb =
   | VariableDeclaration of Location.t
+  | CppTemporaryCreated of Location.t
   | Assignment of {lhs: HilExp.AccessExpression.t; location: Location.t}
   | Capture of
       { captured_as: AccessPath.base
@@ -22,7 +23,9 @@ type breadcrumb =
 
 let pp_breadcrumb_no_location fmt = function
   | VariableDeclaration _ ->
-      F.fprintf fmt "variable declared"
+      F.pp_print_string fmt "variable declared"
+  | CppTemporaryCreated _ ->
+      F.pp_print_string fmt "C++ temporary created"
   | Capture {captured_as; captured; location= _} ->
       F.fprintf fmt "`%a` captured as `%a`" HilExp.AccessExpression.pp captured AccessPath.pp_base
         captured_as
@@ -39,7 +42,11 @@ let pp_breadcrumb_no_location fmt = function
 
 
 let location_of_breadcrumb = function
-  | VariableDeclaration location | Assignment {location} | Capture {location} | Call {location} ->
+  | VariableDeclaration location
+  | CppTemporaryCreated location
+  | Assignment {location}
+  | Capture {location}
+  | Call {location} ->
       location
 
 
@@ -77,11 +84,6 @@ let pp_action pp_immediate fmt = function
       F.fprintf fmt "call to `%a`" Typ.Procname.describe proc_name
 
 
-let location_of_action_start = function
-  | Immediate {location; _} | ViaCall {location; _} ->
-      location
-
-
 let rec immediate_of_action = function
   | Immediate {imm; _} ->
       imm
@@ -89,21 +91,19 @@ let rec immediate_of_action = function
       immediate_of_action action
 
 
-let add_errlog_of_action ~nesting ~action_name pp_immediate action errlog =
+let add_errlog_of_action ~nesting pp_immediate action errlog =
   let rec aux ~nesting rev_errlog action =
     match action with
     | Immediate {imm; location} ->
         let rev_errlog =
-          Errlog.make_trace_element nesting location
-            (F.asprintf "%s %a here" action_name pp_immediate imm)
-            []
+          Errlog.make_trace_element nesting location (F.asprintf "%a here" pp_immediate imm) []
           :: rev_errlog
         in
         List.rev_append rev_errlog errlog
     | ViaCall {action; proc_name; location} ->
         aux ~nesting:(nesting + 1)
           ( Errlog.make_trace_element nesting location
-              (F.asprintf "%s during call to `%a` here" action_name Typ.Procname.describe proc_name)
+              (F.asprintf "when calling `%a` here" Typ.Procname.describe proc_name)
               []
           :: rev_errlog )
           action

@@ -10,6 +10,7 @@ module F = Format
 
 type breadcrumb =
   | VariableDeclaration of Location.t
+  | CppTemporaryCreated of Location.t
   | Assignment of {lhs: HilExp.AccessExpression.t; location: Location.t}
   | Capture of
       { captured_as: AccessPath.base
@@ -36,15 +37,12 @@ type 'a action =
 
 val pp_action : (F.formatter -> 'a -> unit) -> F.formatter -> 'a action -> unit
 
-val location_of_action_start : 'a action -> Location.t
-
 val immediate_of_action : 'a action -> 'a
 
 val outer_location_of_action : 'a action -> Location.t
 
 val add_errlog_of_action :
      nesting:int
-  -> action_name:string
   -> (F.formatter -> 'a -> unit)
   -> 'a action
   -> Errlog.loc_trace_elem sexp_list

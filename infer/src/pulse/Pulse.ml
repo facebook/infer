@@ -64,7 +64,7 @@ module PulseTransferFunctions = struct
         >>= fun astate ->
         match lhs_access with
         | Base (var, _) when Var.is_return var ->
-            PulseOperations.check_address_of_local_variable summary.Summary.proc_desc rhs_addr
+            PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr rhs_trace
               astate
         | _ ->
             Ok astate )
@@ -145,25 +145,26 @@ module PulseTransferFunctions = struct
     if flags.cf_injected_destructor then
       match (call, actuals) with
       | ( Direct (Typ.Procname.ObjC_Cpp pname)
-        , [AccessExpression (AddressOf (Base (ProgramVar pvar, _)) as destroyed_access)] )
+        , [AccessExpression (AddressOf (Base (ProgramVar pvar, typ)))] )
         when Pvar.is_local pvar && not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
-          Some destroyed_access
+          Some (pvar, typ)
       | _ ->
           None
     else None
 
 
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
-  let exec_object_out_of_scope call_loc out_of_scope_access_expr astate =
+  let exec_object_out_of_scope call_loc (pvar, typ) astate =
     (* invalidate both [&x] and [x]: reading either is now forbidden *)
-    let invalidate access_expr =
+    let invalidate pvar typ access astate =
       PulseOperations.invalidate
-        (PulseTrace.Immediate {imm= GoneOutOfScope access_expr; location= call_loc})
-        call_loc access_expr
+        (PulseTrace.Immediate {imm= GoneOutOfScope (pvar, typ); location= call_loc})
+        call_loc access astate
     in
-    invalidate (HilExp.AccessExpression.dereference out_of_scope_access_expr) astate
-    >>= invalidate out_of_scope_access_expr
+    let out_of_scope_base = HilExp.AccessExpression.base (Var.of_pvar pvar, typ) in
+    invalidate pvar typ (HilExp.AccessExpression.dereference out_of_scope_base) astate
+    >>= invalidate pvar typ out_of_scope_base
 
 
   let dispatch_call summary ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc
@@ -185,11 +186,11 @@ module PulseTransferFunctions = struct
         let posts = interprocedural_call summary ret call actuals flags call_loc astate in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         match get_out_of_scope_object call actuals flags with
-        | Some access_expr ->
-            L.d_printfln "%a is going out of scope" HilExp.AccessExpression.pp access_expr ;
+        | Some pvar_typ ->
+            L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
             posts
             >>= fun posts ->
-            List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc access_expr astate)
+            List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc pvar_typ astate)
             |> Result.all
         | None ->
             posts )
