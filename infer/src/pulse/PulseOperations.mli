@@ -49,6 +49,8 @@ val havoc_var : PulseTrace.t -> Var.t -> t -> t
 
 val havoc : PulseTrace.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
+val realloc_var : Var.t -> Location.t -> t -> t
+
 val write_var : Var.t -> AbstractAddress.t * PulseTrace.t -> t -> t
 
 val write :
@@ -71,8 +73,6 @@ val invalidate_array_elements :
   -> HilExp.AccessExpression.t
   -> t
   -> t access_result
-
-val record_var_decl_location : Location.t -> Var.t -> t -> t
 
 val remove_vars : Var.t list -> t -> t
 

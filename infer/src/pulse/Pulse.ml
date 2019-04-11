@@ -216,10 +216,7 @@ module PulseTransferFunctions = struct
         [post]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
         let var = Var.of_pvar pvar in
-        let post =
-          PulseOperations.havoc_var [PulseTrace.VariableDeclaration location] var astate
-          |> PulseOperations.record_var_decl_location location var
-        in
+        let post = PulseOperations.realloc_var var location astate in
         [post]
     | Metadata (Abstract _ | Nullify _ | Skip) ->
         [astate]

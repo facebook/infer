@@ -171,6 +171,10 @@ let overwrite_address astate access_expr new_addr_trace =
 (** Add the given address to the set of know invalid addresses. *)
 let mark_invalid action address astate = Memory.invalidate address action astate
 
+let realloc_var var location astate =
+  Stack.add var (AbstractAddress.mk_fresh (), Some location) astate
+
+
 let havoc_var trace var astate = write_var var (AbstractAddress.mk_fresh (), trace) astate
 
 let havoc trace location (access_expr : HilExp.AccessExpression.t) astate =
@@ -258,17 +262,6 @@ let remove_vars vars astate =
   in
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then astate else PulseAbductiveDomain.discard_unreachable astate'
-
-
-let record_var_decl_location location var astate =
-  let addr =
-    match Stack.find_opt var astate with
-    | Some (addr, _) ->
-        addr
-    | None ->
-        AbstractAddress.mk_fresh ()
-  in
-  Stack.add var (addr, Some location) astate
 
 
 module Closures = struct

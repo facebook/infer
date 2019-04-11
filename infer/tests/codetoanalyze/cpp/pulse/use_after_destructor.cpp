@@ -251,4 +251,12 @@ std::unique_ptr<A>* allocate_in_branch_ok(bool b) {
   const B* read = (*a3)->f;
 }
 
+std::string mk_string();
+
+bool variable_init_ternary_ok(bool b) {
+  // this can cause issues because of the way the frontend treatment of ternary ?: interacts with
+  // the treatment of passing return values by reference as parameters
+  std::string newPath = b ? "" : mk_string();
+}
+
 } // namespace use_after_destructor
