@@ -135,7 +135,7 @@ int* destruct_pointer_contents_then_placement_new1_ok(S* s) {
   return s->f;
 }
 
-int* FP_destruct_pointer_contents_then_placement_new2_ok(S* s) {
+int* destruct_pointer_contents_then_placement_new2_ok(S* s) {
   s->~S();
   new (&(s->f)) S(1);
   return s->f;

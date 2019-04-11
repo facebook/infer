@@ -89,8 +89,6 @@ module Memory : sig
 
   val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
 
-  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
-
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t

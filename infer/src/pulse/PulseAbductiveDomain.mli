@@ -42,9 +42,6 @@ module Memory : sig
 
   val add_edge : AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
 
-  val add_edge_and_back_edge :
-    AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
-
   val check_valid :
        HilExp.AccessExpression.t PulseTrace.action
     -> AbstractAddress.t

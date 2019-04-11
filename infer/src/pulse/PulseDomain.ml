@@ -171,8 +171,6 @@ module Memory : sig
 
   val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
 
-  val add_edge_and_back_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
-
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
@@ -221,19 +219,6 @@ end = struct
     let new_edges = Edges.add access value old_edges in
     if phys_equal old_edges new_edges then memory
     else (Graph.add addr_src new_edges (fst memory), snd memory)
-
-
-  (** [Dereference] edges induce a [TakeAddress] back edge and vice-versa, because
-      [*(&x) = &( *x ) = x]. *)
-  let add_edge_and_back_edge addr_src (access : Access.t) addr_trace_dst memory =
-    let memory = add_edge addr_src access addr_trace_dst memory in
-    match access with
-    | ArrayAccess _ | FieldAccess _ ->
-        memory
-    | TakeAddress ->
-        add_edge (fst addr_trace_dst) Dereference (addr_src, []) memory
-    | Dereference ->
-        add_edge (fst addr_trace_dst) TakeAddress (addr_src, []) memory
 
 
   let find_edge_opt addr access memory =

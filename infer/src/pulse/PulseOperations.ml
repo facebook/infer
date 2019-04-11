@@ -52,7 +52,7 @@ let rec walk ~dereference_to_ignore action ~on_last addr_trace path astate =
   | [a], `Overwrite new_addr_trace ->
       check_addr_access_optional action addr_trace astate
       >>| fun astate ->
-      let astate = Memory.add_edge_and_back_edge (fst addr_trace) a new_addr_trace astate in
+      let astate = Memory.add_edge (fst addr_trace) a new_addr_trace astate in
       (astate, new_addr_trace)
   | a :: path, _ ->
       check_addr_access_optional action addr_trace astate

@@ -161,11 +161,6 @@ module Memory = struct
     map_post_heap astate ~f:(fun heap -> BaseMemory.add_edge addr access new_addr_trace heap)
 
 
-  let add_edge_and_back_edge addr access new_addr_trace astate =
-    map_post_heap astate ~f:(fun heap ->
-        BaseMemory.add_edge_and_back_edge addr access new_addr_trace heap )
-
-
   let materialize_edge addr access astate =
     match BaseMemory.find_edge_opt addr access (astate.post :> base_domain).heap with
     | Some addr_trace' ->
@@ -173,13 +168,11 @@ module Memory = struct
     | None ->
         let addr_trace' = (AbstractAddress.mk_fresh (), []) in
         let post_heap =
-          BaseMemory.add_edge_and_back_edge addr access addr_trace'
-            (astate.post :> base_domain).heap
+          BaseMemory.add_edge addr access addr_trace' (astate.post :> base_domain).heap
         in
         let foot_heap =
           if BaseMemory.mem_edges addr (astate.pre :> base_domain).heap then
-            BaseMemory.add_edge_and_back_edge addr access addr_trace'
-              (astate.pre :> base_domain).heap
+            BaseMemory.add_edge addr access addr_trace' (astate.pre :> base_domain).heap
             |> BaseMemory.register_address (fst addr_trace')
           else (astate.pre :> base_domain).heap
         in
