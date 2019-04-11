@@ -129,7 +129,7 @@ void push_back_value_ok(std::vector<int>& vec) {
 struct VectorA {
   int x;
 
-  void FP_push_back_value_field_ok(std::vector<int>& vec) {
+  void push_back_value_field_ok(std::vector<int>& vec) {
     x = vec[0];
     vec.push_back(7);
     f(x);

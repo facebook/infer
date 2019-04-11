@@ -75,9 +75,8 @@ int use_after_destructor_bad() {
   return ret;
 }
 
-// can't get this yet because we assume operator= copies resources correctly
-// (but this isn't true for S)
-void FN_use_after_scope1_bad() {
+// S::operator= doesn't copy resources correctly
+void use_after_scope1_bad() {
   S s(1);
   {
     S tmp(2);
@@ -130,41 +129,41 @@ void basic_placement_new_ok() {
   delete[] ptr;
 }
 
-S* destruct_pointer_contents_then_placement_new1_ok(S* s) {
+int* destruct_pointer_contents_then_placement_new1_ok(S* s) {
   s->~S();
   new (s) S(1);
-  return s;
+  return s->f;
 }
 
-S* destruct_pointer_contents_then_placement_new2_ok(S* s) {
+int* FP_destruct_pointer_contents_then_placement_new2_ok(S* s) {
   s->~S();
   new (&(s->f)) S(1);
-  return s;
+  return s->f;
 }
 
-S* placement_new_aliasing1_bad() {
+int* placement_new_aliasing1_bad() {
   S* s = new S(1);
   s->~S();
   auto alias = new (s) S(2);
   delete alias; // this deletes s too
-  return s; // bad, returning freed memory
+  return s->f; // bad, accessing freed memory
 }
 
-S* placement_new_aliasing2_bad() {
+int* placement_new_aliasing2_bad() {
   S* s = new S(1);
   s->~S();
   auto alias = new (s) S(2);
   delete s; // this deletes alias too
-  return alias; // bad, returning freed memory
+  return alias->f; // bad, accessing freed memory
 }
 
-S* placement_new_aliasing3_bad() {
+int* placement_new_aliasing3_bad() {
   S* s = new S(1);
   s->~S();
   S* alias = s;
   auto alias_placement = new (s) S(2);
   delete s; // this deletes alias too
-  return alias; // bad, returning freed memory
+  return alias->f; // bad, accessing freed memory
 }
 
 void placement_new_non_var_ok() {

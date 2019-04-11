@@ -19,7 +19,8 @@ void deref_deleted_bad() {
   Simple tmp = *s;
 }
 
-Simple* return_deleted_bad() {
+// could be ok depending on what the caller does
+Simple* return_deleted_ok() {
   auto s = new Simple{1};
   delete s;
   return s;

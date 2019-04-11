@@ -17,6 +17,7 @@ type t =
   ; cost: CostDomain.summary option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
+  ; pulse: PulseSummary.t option
   ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option

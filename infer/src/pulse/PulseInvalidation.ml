@@ -58,28 +58,16 @@ let issue_type_of_cause = function
       IssueType.vector_invalidation
 
 
-let get_location = function
-  | CFree (_, location)
-  | CppDelete (_, location)
-  | CppDestructor (_, _, location)
-  | StdVector (_, _, location) ->
-      Some location
-  | Nullptr ->
-      None
-
-
 let pp f = function
-  | CFree (access_expr, location) ->
-      F.fprintf f "invalidated by call to `free(%a)` at %a" HilExp.AccessExpression.pp access_expr
-        Location.pp_line location
-  | CppDelete (access_expr, location) ->
-      F.fprintf f "invalidated by call to `delete %a` at %a" HilExp.AccessExpression.pp access_expr
-        Location.pp_line location
-  | CppDestructor (proc_name, access_expr, location) ->
-      F.fprintf f "invalidated by destructor call `%a(%a)` at %a" Typ.Procname.pp proc_name
-        HilExp.AccessExpression.pp access_expr Location.pp_line location
+  | CFree (access_expr, _) ->
+      F.fprintf f "by call to `free()` on `%a`" HilExp.AccessExpression.pp access_expr
+  | CppDelete (access_expr, _) ->
+      F.fprintf f "by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
+  | CppDestructor (proc_name, access_expr, _) ->
+      F.fprintf f "by destructor call `%a()` on `%a`" Typ.Procname.pp proc_name
+        HilExp.AccessExpression.pp access_expr
   | Nullptr ->
       F.fprintf f "null pointer"
-  | StdVector (std_vector_f, access_expr, location) ->
-      F.fprintf f "potentially invalidated by call to `%a(%a, ..)` at %a" pp_std_vector_function
-        std_vector_f HilExp.AccessExpression.pp access_expr Location.pp_line location
+  | StdVector (std_vector_f, access_expr, _) ->
+      F.fprintf f "potentially invalidated by call to `%a()` on `%a`" pp_std_vector_function
+        std_vector_f HilExp.AccessExpression.pp access_expr

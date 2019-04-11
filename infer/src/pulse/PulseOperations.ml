@@ -26,23 +26,23 @@ type t = PulseAbductiveDomain.t
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
-let check_addr_access actor (address, trace) astate =
-  Memory.check_valid actor address astate
+let check_addr_access action (address, trace) astate =
+  Memory.check_valid action address astate
   |> Result.map_error ~f:(fun invalidated_by ->
-         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= actor; trace} )
+         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= action; trace} )
 
 
 (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
    and return [new_addr] if [overwrite_last] is [Some new_addr], or go until the end of the path if it
    is [None]. Create more addresses into the heap as needed to follow the [path]. Check that each
    address reached is valid. *)
-let rec walk ~dereference_to_ignore actor ~on_last addr_trace path astate =
-  let check_addr_access_optional actor addr_trace astate =
+let rec walk ~dereference_to_ignore action ~on_last addr_trace path astate =
+  let check_addr_access_optional action addr_trace astate =
     match dereference_to_ignore with
     | Some 0 ->
         Ok astate
     | _ ->
-        check_addr_access actor addr_trace astate
+        check_addr_access action addr_trace astate
   in
   match (path, on_last) with
   | [], `Access ->
@@ -50,18 +50,18 @@ let rec walk ~dereference_to_ignore actor ~on_last addr_trace path astate =
   | [], `Overwrite _ ->
       L.die InternalError "Cannot overwrite last address in empty path"
   | [a], `Overwrite new_addr_trace ->
-      check_addr_access_optional actor addr_trace astate
+      check_addr_access_optional action addr_trace astate
       >>| fun astate ->
       let astate = Memory.add_edge_and_back_edge (fst addr_trace) a new_addr_trace astate in
       (astate, new_addr_trace)
   | a :: path, _ ->
-      check_addr_access_optional actor addr_trace astate
+      check_addr_access_optional action addr_trace astate
       >>= fun astate ->
       let dereference_to_ignore =
         Option.map ~f:(fun index -> max 0 (index - 1)) dereference_to_ignore
       in
       let astate, addr_trace' = Memory.materialize_edge (fst addr_trace) a astate in
-      walk ~dereference_to_ignore actor ~on_last addr_trace' path astate
+      walk ~dereference_to_ignore action ~on_last addr_trace' path astate
 
 
 let write_var var new_addr_trace astate =
@@ -130,8 +130,8 @@ and walk_access_expr ~on_last astate access_expr location =
       | [HilExp.Access.TakeAddress] ->
           Ok (astate, base_addr_trace)
       | _ ->
-          let actor = {PulseDiagnostic.access_expr; location} in
-          walk ~dereference_to_ignore actor ~on_last base_addr_trace
+          let action = PulseTrace.Immediate {imm= access_expr; location} in
+          walk ~dereference_to_ignore action ~on_last base_addr_trace
             (HilExp.Access.Dereference :: access_list)
             astate )
 
@@ -143,12 +143,7 @@ and walk_access_expr ~on_last astate access_expr location =
     known to be invalid. *)
 and materialize_address astate access_expr = walk_access_expr ~on_last:`Access astate access_expr
 
-and read location access_expr astate =
-  materialize_address astate access_expr location
-  >>= fun (astate, addr_trace) ->
-  let actor = {PulseDiagnostic.access_expr; location} in
-  check_addr_access actor addr_trace astate >>| fun astate -> (astate, addr_trace)
-
+and read location access_expr astate = materialize_address astate access_expr location
 
 and read_all location access_exprs astate =
   List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
@@ -174,7 +169,7 @@ let overwrite_address astate access_expr new_addr_trace =
 
 
 (** Add the given address to the set of know invalid addresses. *)
-let mark_invalid actor address astate = Memory.invalidate address actor astate
+let mark_invalid action address astate = Memory.invalidate address action astate
 
 let havoc_var trace var astate = write_var var (AbstractAddress.mk_fresh (), trace) astate
 
@@ -189,14 +184,14 @@ let write location access_expr addr astate =
 let invalidate cause location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr_trace) ->
-  check_addr_access {access_expr; location} addr_trace astate
+  check_addr_access (Immediate {imm= access_expr; location}) addr_trace astate
   >>| mark_invalid cause (fst addr_trace)
 
 
 let invalidate_array_elements cause location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr_trace) ->
-  check_addr_access {access_expr; location} addr_trace astate
+  check_addr_access (Immediate {imm= access_expr; location}) addr_trace astate
   >>| fun astate ->
   match Memory.find_opt (fst addr_trace) astate with
   | None ->
@@ -319,7 +314,7 @@ module Closures = struct
                 ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
                 ~f:(fun (access, addr_trace) ->
                   if is_captured_fake_access access then
-                    check_addr_access {access_expr= lambda; location} addr_trace astate
+                    check_addr_access (Immediate {imm= lambda; location}) addr_trace astate
                     >>| fun _ -> ()
                   else Ok () )
           | _ ->
@@ -366,4 +361,29 @@ module StdVector = struct
   let mark_reserved location vector_access_expr astate =
     read location vector_access_expr astate
     >>| fun (astate, (addr, _)) -> Memory.std_vector_reserve addr astate
+end
+
+module Interproc = struct
+  open Result.Monad_infix
+
+  (* compute addresses for actuals and then call {!PulseAbductiveDomain.PrePost.apply} on each
+     pre/post pair in the summary. *)
+  let call callee_pname ~formals ~ret ~actuals _flags call_loc astate pre_posts =
+    L.d_printfln "PulseOperations.call" ;
+    List.fold_result actuals ~init:(astate, []) ~f:(fun (astate, rev_actual_addresses) actual ->
+        match actual with
+        | HilExp.AccessExpression access_expr ->
+            read call_loc access_expr astate
+            >>| fun (astate, (addr, trace)) -> (astate, Some (addr, trace) :: rev_actual_addresses)
+        | _ ->
+            Ok (astate, None :: rev_actual_addresses) )
+    >>= fun (astate, rev_actual_addresses) ->
+    let actuals = List.rev rev_actual_addresses in
+    read call_loc HilExp.AccessExpression.(address_of_base ret) astate
+    >>= fun (astate, ret) ->
+    List.fold_result pre_posts ~init:[] ~f:(fun posts pre_post ->
+        (* apply all pre/post specs *)
+        PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~ret ~actuals
+          astate
+        >>| fun post -> post :: posts )
 end

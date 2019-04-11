@@ -23,12 +23,12 @@ void wraps_delete_inner(struct X* x) { delete x; }
 
 void wraps_delete(struct X* x) { wraps_delete_inner(x); }
 
-void FP_delete_then_skip_ok(struct X& x) {
+void delete_then_skip_ok(struct X& x) {
   delete (&x);
   skip(x);
 }
 
-void FP_delete_then_skip_ptr_ok(struct X* x) {
+void delete_then_skip_ptr_ok(struct X* x) {
   delete x;
   skip_ptr(x);
 }
@@ -38,12 +38,12 @@ void delete_then_read_bad(struct X& x) {
   wraps_read(x);
 }
 
-void FN_delete_then_write_bad(struct X& x) {
+void delete_then_write_bad(struct X& x) {
   wraps_delete(&x);
   wraps_read(x);
 }
 
-void FN_delete_inner_then_write_bad(struct X& x) {
+void delete_inner_then_write_bad(struct X& x) {
   wraps_delete_inner(&x);
   wraps_read(x);
 }
@@ -75,7 +75,7 @@ void call_store(struct Y* y) {
 
 extern bool nondet_choice();
 
-struct Y* FP_may_return_invalid_ptr_ok() {
+struct Y* may_return_invalid_ptr_ok() {
   struct Y* y = new Y();
   if (nondet_choice()) {
     delete y;
@@ -83,7 +83,7 @@ struct Y* FP_may_return_invalid_ptr_ok() {
   return y;
 }
 
-void FN_feed_invalid_into_access_bad() {
-  struct Y* y = FP_may_return_invalid_ptr_ok();
+void feed_invalid_into_access_bad() {
+  struct Y* y = may_return_invalid_ptr_ok();
   call_store(y);
 }

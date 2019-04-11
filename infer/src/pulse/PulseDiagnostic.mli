@@ -7,12 +7,10 @@
 
 open! IStd
 
-type actor = {access_expr: HilExp.AccessExpression.t; location: Location.t} [@@deriving compare]
-
 type t =
   | AccessToInvalidAddress of
-      { invalidated_by: PulseInvalidation.t
-      ; accessed_by: actor
+      { invalidated_by: PulseInvalidation.t PulseTrace.action
+      ; accessed_by: HilExp.AccessExpression.t PulseTrace.action
       ; trace: PulseTrace.t }
   | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 

@@ -53,3 +53,10 @@ val pp_print_list :
   -> Format.formatter
   -> 'a list
   -> unit
+
+val fold2_result :
+     init:'acc
+  -> f:('acc -> 'a -> 'b -> ('acc, 'err) result)
+  -> 'a list
+  -> 'b list
+  -> ('acc, 'err) result Base.List.Or_unequal_lengths.t

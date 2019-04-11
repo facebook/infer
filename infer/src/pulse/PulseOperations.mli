@@ -59,10 +59,18 @@ val write :
   -> t access_result
 
 val invalidate :
-  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+     PulseInvalidation.t PulseTrace.action
+  -> Location.t
+  -> HilExp.AccessExpression.t
+  -> t
+  -> t access_result
 
 val invalidate_array_elements :
-  PulseInvalidation.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+     PulseInvalidation.t PulseTrace.action
+  -> Location.t
+  -> HilExp.AccessExpression.t
+  -> t
+  -> t access_result
 
 val record_var_decl_location : Location.t -> Var.t -> t -> t
 
@@ -70,3 +78,16 @@ val remove_vars : Var.t list -> t -> t
 
 (* TODO: better name and pass location to report where we returned *)
 val check_address_of_local_variable : Procdesc.t -> AbstractAddress.t -> t -> t access_result
+
+module Interproc : sig
+  val call :
+       Typ.Procname.t
+    -> formals:Var.t list
+    -> ret:AccessPath.base
+    -> actuals:HilExp.t list
+    -> CallFlags.t
+    -> Location.t
+    -> t
+    -> PulseSummary.t
+    -> PulseAbductiveDomain.t list access_result
+end

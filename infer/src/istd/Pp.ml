@@ -173,3 +173,5 @@ let cli_args fmt args =
 
 
 let pair ~fst ~snd fmt (a, b) = F.fprintf fmt "(%a,@,%a)" fst a snd b
+
+let in_backticks pp fmt x = F.fprintf fmt "`%a`" pp x

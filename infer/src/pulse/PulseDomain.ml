@@ -19,8 +19,8 @@ module Attribute = struct
        address is invalid) *)
   type t =
     (* DO NOT MOVE, see toplevel comment *)
-    | Invalid of Invalidation.t
-    | MustBeValid of PulseDiagnostic.actor
+    | Invalid of Invalidation.t PulseTrace.action
+    | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -28,10 +28,12 @@ module Attribute = struct
 
   let pp f = function
     | Invalid invalidation ->
-        Invalidation.pp f invalidation
-    | MustBeValid actor ->
-        F.fprintf f "MustBeValid (read by %a @ %a)" HilExp.AccessExpression.pp actor.access_expr
-          Location.pp actor.location
+        (PulseTrace.pp_action Invalidation.pp) f invalidation
+    | MustBeValid action ->
+        F.fprintf f "MustBeValid (read by %a @ %a)"
+          (PulseTrace.pp_action HilExp.AccessExpression.pp)
+          action Location.pp
+          (PulseTrace.outer_location_of_action action)
     | AddressOfCppTemporary (var, location_opt) ->
         F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
     | Closure pname ->
@@ -48,6 +50,13 @@ module Attributes = struct
        [Invalid _] attributes are the smallest we can simply look at the first element to decide if
        an address is invalid or not. *)
     match min_elt_opt attrs with Some (Invalid invalidation) -> Some invalidation | _ -> None
+
+
+  let get_must_be_valid attrs =
+    find_first_opt (function MustBeValid _ -> true | _ -> false) attrs
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.MustBeValid action) = attr in
+           action )
 end
 
 (** An abstract address in memory. *)
@@ -91,6 +100,7 @@ end = struct
 end
 
 module AbstractAddressSet = PrettyPrintable.MakePPSet (AbstractAddress)
+module AbstractAddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
 
 (* {3 Heap domain } *)
 
@@ -126,6 +136,10 @@ module Memory : sig
 
   val set_cell : AbstractAddress.t -> cell -> t -> t
 
+  val find_attrs_opt : AbstractAddress.t -> t -> Attributes.t option
+
+  val find_edges_opt : AbstractAddress.t -> t -> edges option
+
   val mem_edges : AbstractAddress.t -> t -> bool
 
   val pp : F.formatter -> t -> unit
@@ -140,9 +154,9 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate : AbstractAddress.t -> Invalidation.t -> t -> t
+  val invalidate : AbstractAddress.t -> Invalidation.t PulseTrace.action -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t) result
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.action) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
@@ -245,8 +259,12 @@ end = struct
 
   let empty = (Graph.empty, Graph.empty)
 
+  let find_edges_opt addr memory = Graph.find_opt addr (fst memory)
+
+  let find_attrs_opt addr memory = Graph.find_opt addr (snd memory)
+
   let find_opt addr memory =
-    match (Graph.find_opt addr (fst memory), Graph.find_opt addr (snd memory)) with
+    match (find_edges_opt addr memory, find_attrs_opt addr memory) with
     | None, None ->
         None
     | edges_opt, attrs_opt ->

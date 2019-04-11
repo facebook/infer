@@ -46,13 +46,16 @@ module Memory : sig
     AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
 
   val check_valid :
-    PulseDiagnostic.actor -> AbstractAddress.t -> t -> (t, PulseInvalidation.t) result
+       HilExp.AccessExpression.t PulseTrace.action
+    -> AbstractAddress.t
+    -> t
+    -> (t, PulseInvalidation.t PulseTrace.action) result
 
   val find_opt : AbstractAddress.t -> t -> PulseDomain.Memory.cell option
 
   val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> t -> t
 
-  val invalidate : AbstractAddress.t -> PulseInvalidation.t -> t -> t
+  val invalidate : AbstractAddress.t -> PulseInvalidation.t PulseTrace.action -> t -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
 
@@ -61,6 +64,26 @@ module Memory : sig
   val materialize_edge : AbstractAddress.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
 end
 
+module PrePost : sig
+  type domain_t = t
+
+  type t = private domain_t
+
+  val pp : Format.formatter -> t -> unit
+
+  val of_post : domain_t -> t
+
+  val apply :
+       Typ.Procname.t
+    -> Location.t
+    -> t
+    -> formals:Var.t list
+    -> ret:AbstractAddress.t * PulseTrace.t
+    -> actuals:(AbstractAddress.t * PulseTrace.t) option list
+    -> domain_t
+    -> (domain_t, PulseDiagnostic.t) result
+end
+
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
-   keep its size down *)
+    keep its size down *)

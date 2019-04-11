@@ -40,8 +40,6 @@ let is_global = function ProgramVar pvar -> Pvar.is_global pvar | LogicalVar _ -
 
 let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -> false
 
-let is_this = function ProgramVar pvar -> Pvar.is_this pvar | LogicalVar _ -> false
-
 let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_footprint id
 
 let is_none = function LogicalVar id -> Ident.is_none id | _ -> false

@@ -17,6 +17,7 @@ type t =
   ; cost: CostDomain.summary option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
+  ; pulse: PulseSummary.t option
   ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
@@ -34,6 +35,7 @@ let pp pe fmt
     ; cost
     ; lab_resource_leaks
     ; litho
+    ; pulse
     ; purity
     ; quandary
     ; racerd
@@ -47,7 +49,7 @@ let pp pe fmt
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
     annot_map
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
@@ -59,7 +61,7 @@ let pp pe fmt
     (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
     class_loads
     (pp_opt "Cost" CostDomain.pp_summary)
-    cost (pp_opt "Litho" LithoDomain.pp) litho
+    cost (pp_opt "Litho" LithoDomain.pp) litho (pp_opt "Pulse" PulseSummary.pp) pulse
     (pp_opt "Purity" PurityDomain.pp_summary)
     purity
     (pp_opt "Quandary" QuandarySummary.pp)
@@ -85,6 +87,7 @@ let empty =
   ; cost= None
   ; lab_resource_leaks= None
   ; litho= None
+  ; pulse= None
   ; purity= None
   ; quandary= None
   ; racerd= None

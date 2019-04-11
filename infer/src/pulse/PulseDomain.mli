@@ -10,15 +10,19 @@ module F = Format
 
 module Attribute : sig
   type t =
-    | Invalid of PulseInvalidation.t
-    | MustBeValid of PulseDiagnostic.actor
+    | Invalid of PulseInvalidation.t PulseTrace.action
+    | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
   [@@deriving compare]
 end
 
-module Attributes : PrettyPrintable.PPSet with type elt = Attribute.t
+module Attributes : sig
+  include PrettyPrintable.PPSet with type elt = Attribute.t
+
+  val get_must_be_valid : t -> HilExp.AccessExpression.t PulseTrace.action option
+end
 
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
@@ -39,6 +43,8 @@ module AbstractAddress : sig
 end
 
 module AbstractAddressSet : PrettyPrintable.PPSet with type elt = AbstractAddress.t
+
+module AbstractAddressMap : PrettyPrintable.PPMap with type key = AbstractAddress.t
 
 module Stack : sig
   include
@@ -73,6 +79,10 @@ module Memory : sig
 
   val set_cell : AbstractAddress.t -> cell -> t -> t
 
+  val find_attrs_opt : AbstractAddress.t -> t -> Attributes.t option
+
+  val find_edges_opt : AbstractAddress.t -> t -> edges option
+
   val mem_edges : AbstractAddress.t -> t -> bool
 
   val register_address : AbstractAddress.t -> t -> t
@@ -85,9 +95,9 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate : AbstractAddress.t -> PulseInvalidation.t -> t -> t
+  val invalidate : AbstractAddress.t -> PulseInvalidation.t PulseTrace.action -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t) result
+  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t PulseTrace.action) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 

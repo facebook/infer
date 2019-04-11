@@ -37,6 +37,14 @@ let check_error summary = function
       raise_notrace AbstractDomain.Stop_analysis
 
 
+module Payload = SummaryPayload.Make (struct
+  type t = PulseSummary.t
+
+  let update_payloads astate (payloads : Payloads.t) = {payloads with pulse= Some astate}
+
+  let of_payloads (payloads : Payloads.t) = payloads.pulse
+end)
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
   module Domain = PulseAbductiveDomain
@@ -80,25 +88,13 @@ module PulseTransferFunctions = struct
         >>= PulseOperations.havoc [crumb] loc lhs_access
 
 
-  let exec_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc
-      astate =
+  let exec_unknown_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
+      call_loc astate =
     let read_all args astate =
       PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
     let crumb = PulseTrace.Call {f= `HilCall call; actuals; location= call_loc} in
     match call with
-    | Direct callee_pname when is_destructor callee_pname -> (
-      match actuals with
-      | [AccessExpression (Base (destroyed_var, _))] when Var.is_this destroyed_var ->
-          (* do not invalidate [this] when it is destroyed by calls to [this->~Obj()] *)
-          Ok astate
-      | [AccessExpression destroyed_access] ->
-          let destroyed_object = HilExp.AccessExpression.dereference destroyed_access in
-          PulseOperations.invalidate
-            (CppDestructor (callee_pname, destroyed_object, call_loc))
-            call_loc destroyed_object astate
-      | _ ->
-          Ok astate )
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
         L.d_printfln "constructor call detected@." ;
         match actuals with
@@ -129,6 +125,54 @@ module PulseTransferFunctions = struct
         read_all actuals astate
 
 
+  let interprocedural_call caller_summary ret (call : HilInstr.call) (actuals : HilExp.t list)
+      flags call_loc astate =
+    let unknown_function () =
+      exec_unknown_call caller_summary ret call actuals flags call_loc astate >>| List.return
+    in
+    match call with
+    | Direct callee_pname -> (
+      match Payload.read_full caller_summary.Summary.proc_desc callee_pname with
+      | Some (callee_proc_desc, preposts) ->
+          let formals =
+            Procdesc.get_formals callee_proc_desc
+            |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
+          in
+          PulseOperations.Interproc.call callee_pname ~formals ~ret ~actuals flags call_loc astate
+            preposts
+      | None ->
+          (* no spec found for some reason (unknown function, ...) *)
+          L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
+          unknown_function () )
+    | Indirect access_expression ->
+        L.d_printfln "Indirect call %a@\n" HilExp.AccessExpression.pp access_expression ;
+        unknown_function ()
+
+
+  (** has an object just gone out of scope? *)
+  let get_destructed_object (call : HilInstr.call) (actuals : HilExp.t list) (flags : CallFlags.t)
+      =
+    (* injected destructors are precisely inserted where an object goes out of scope *)
+    if flags.cf_injected_destructor then
+      match (call, actuals) with
+      | Direct callee_pname, [AccessExpression destroyed_access] when is_destructor callee_pname ->
+          Some (callee_pname, destroyed_access)
+      | _ ->
+          None
+    else None
+
+
+  (** [destroyed_access_expr] has just gone out of scope and in now invalid *)
+  let destruct_object callee_pname call_loc destroyed_access_expr astate =
+    let destroyed_object = HilExp.AccessExpression.dereference destroyed_access_expr in
+    (* TODO: need an [OutOfScope] invalidation reason instead of [CppDestructor]? *)
+    PulseOperations.invalidate
+      (PulseTrace.Immediate
+         { imm= PulseInvalidation.CppDestructor (callee_pname, destroyed_object, call_loc)
+         ; location= call_loc })
+      call_loc destroyed_object astate
+
+
   let dispatch_call summary ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc
       astate =
     let model =
@@ -140,13 +184,23 @@ module PulseTransferFunctions = struct
           PulseModels.dispatch callee_pname flags
     in
     match model with
-    | None ->
-        exec_call summary ret call actuals flags call_loc astate
-        >>| PulseOperations.havoc_var
-              [PulseTrace.Call {f= `HilCall call; actuals; location= call_loc}]
-              (fst ret)
     | Some model ->
-        model call_loc ~ret ~actuals astate
+        model call_loc ~ret ~actuals astate >>| fun post -> [post]
+    | None -> (
+        (* do interprocedural call then destroy objects going out of scope *)
+        PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+        let posts = interprocedural_call summary ret call actuals flags call_loc astate in
+        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+        match get_destructed_object call actuals flags with
+        | Some (destructor_pname, access_expr) ->
+            L.d_printfln "%a is going out of scope" HilExp.AccessExpression.pp access_expr ;
+            posts
+            >>= fun posts ->
+            List.map posts ~f:(fun astate ->
+                destruct_object destructor_pname call_loc access_expr astate )
+            |> Result.all
+        | None ->
+            posts )
 
 
   let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t) =
@@ -161,10 +215,10 @@ module PulseTransferFunctions = struct
         in
         [post]
     | Call (ret, call, actuals, flags, loc) ->
-        let post =
+        let posts =
           dispatch_call summary ret call actuals flags loc astate |> check_error summary
         in
-        [post]
+        posts
     | Metadata (ExitScope (vars, _)) ->
         let post = PulseOperations.remove_vars vars astate in
         [post]
@@ -202,9 +256,15 @@ module DisjunctiveAnalyzer =
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
   AbstractAddress.init () ;
-  ( try
-      ignore
-        (DisjunctiveAnalyzer.compute_post proc_data
-           ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseAbductiveDomain.empty))
-    with AbstractDomain.Stop_analysis -> () ) ;
-  summary
+  match
+    DisjunctiveAnalyzer.compute_post proc_data
+      ~initial:(DisjunctiveTransferFunctions.Disjuncts.singleton PulseAbductiveDomain.empty)
+  with
+  | Some posts ->
+      Payload.update_summary
+        (PulseSummary.of_posts (DisjunctiveTransferFunctions.Disjuncts.elements posts))
+        summary
+  | None ->
+      summary
+  | exception AbstractDomain.Stop_analysis ->
+      summary

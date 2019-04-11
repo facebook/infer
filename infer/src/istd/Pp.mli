@@ -100,3 +100,5 @@ val pair :
   -> F.formatter
   -> 'a * 'b
   -> unit
+
+val in_backticks : (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit

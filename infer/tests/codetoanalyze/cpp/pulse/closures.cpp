@@ -31,7 +31,6 @@ int implicit_ref_capture_destroy_invoke_bad() {
   return f();
 }
 
-// need to understand copy constructor
 int FN_reassign_lambda_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
@@ -97,8 +96,12 @@ std::function<int()> ref_capture_read_lambda_ok() {
       f; // reading (but not invoking) the lambda doesn't use its captured vars
 }
 
-void delete_lambda_then_call_bad() {
+int FN_delete_lambda_then_call_bad() {
   std::function<int()> lambda = [] { return 1; };
+  // std::function<_>_~function() has no implementation so the call is
+  // skipped and we don't apply the logic for marking the object as
+  // destructed because it's an explicit call (as opposed to a call
+  // injected by the frontend)
   lambda.~function();
   return lambda();
 }
@@ -125,7 +128,7 @@ int ref_capture_return_local_lambda_ok() {
   return f().f;
 }
 
-S& FN_ref_capture_return_local_lambda_bad() {
+S& ref_capture_return_local_lambda_bad() {
   S x;
   auto f = [&x](void) -> S& {
     // no way to know if ok here

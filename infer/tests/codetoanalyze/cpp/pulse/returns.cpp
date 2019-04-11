@@ -106,7 +106,8 @@ S* return_static_local_inner_scope_ok(bool b) {
 
 int* return_formal_pointer_ok(int* formal) { return formal; }
 
-int* return_deleted_bad() {
+// this *could* be ok depending on what the caller does
+int* return_deleted_ok() {
   int* x = new int;
   *x = 2;
   delete x;

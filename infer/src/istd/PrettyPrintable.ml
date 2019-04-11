@@ -119,6 +119,8 @@ end
 module type PPMap = sig
   include Caml.Map.S
 
+  val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
+
   val is_singleton_or_more : 'a t -> (key * 'a) IContainer.singleton_or_more
 
   val pp_key : F.formatter -> key -> unit
@@ -146,6 +148,19 @@ end
 
 module MakePPMap (Ord : PrintableOrderedType) = struct
   include Caml.Map.Make (Ord)
+
+  let fold_map m ~init ~f =
+    let acc = ref init in
+    let new_map =
+      map
+        (fun value ->
+          let acc', res = f !acc value in
+          acc := acc' ;
+          res )
+        m
+    in
+    (!acc, new_map)
+
 
   let is_singleton_or_more m =
     if is_empty m then IContainer.Empty

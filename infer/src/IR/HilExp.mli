@@ -54,6 +54,8 @@ module AccessExpression : sig
     [@@warning "-32"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
 
+  val address_of_base : AccessPath.base -> access_expression
+
   val to_accesses_fold :
        access_expression
     -> init:'accum

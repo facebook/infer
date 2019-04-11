@@ -70,3 +70,44 @@ let pp_last_event f = function
 
 
 let pp_interesting_events f trace = pp_last_event f trace
+
+type 'a action =
+  | Immediate of {imm: 'a; location: Location.t}
+  | ViaCall of {action: 'a action; proc_name: Typ.Procname.t; location: Location.t}
+[@@deriving compare]
+
+let pp_action pp_immediate fmt = function
+  | Immediate {imm; _} ->
+      F.fprintf fmt "`%a`" pp_immediate imm
+  | ViaCall {proc_name; _} ->
+      F.fprintf fmt "call to `%a`" Typ.Procname.pp proc_name
+
+
+let rec immediate_of_action = function
+  | Immediate {imm; _} ->
+      imm
+  | ViaCall {action; _} ->
+      immediate_of_action action
+
+
+let trace_of_action ~action_name pp_immediate action =
+  let rec aux ~nesting rev_trace action =
+    match action with
+    | Immediate {imm; location} ->
+        Errlog.make_trace_element nesting location
+          (F.asprintf "%s %a here" action_name pp_immediate imm)
+          []
+        :: rev_trace
+        |> List.rev
+    | ViaCall {action; proc_name; location} ->
+        aux ~nesting:(nesting + 1)
+          ( Errlog.make_trace_element nesting location
+              (F.asprintf "%s during call to `%a` here" action_name Typ.Procname.pp proc_name)
+              []
+          :: rev_trace )
+          action
+  in
+  aux ~nesting:0 [] action
+
+
+let outer_location_of_action = function Immediate {location} | ViaCall {location} -> location

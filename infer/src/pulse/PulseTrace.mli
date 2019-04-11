@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 type breadcrumb =
   | VariableDeclaration of Location.t
@@ -21,8 +22,22 @@ type breadcrumb =
 
 type t = breadcrumb list [@@deriving compare]
 
-val pp : Format.formatter -> t -> unit
+val pp : F.formatter -> t -> unit
 
 val make_errlog_trace : depth:int -> t -> Errlog.loc_trace
 
-val pp_interesting_events : Format.formatter -> t -> unit
+val pp_interesting_events : F.formatter -> t -> unit
+
+type 'a action =
+  | Immediate of {imm: 'a; location: Location.t}
+  | ViaCall of {action: 'a action; proc_name: Typ.Procname.t; location: Location.t}
+[@@deriving compare]
+
+val pp_action : (F.formatter -> 'a -> unit) -> F.formatter -> 'a action -> unit
+
+val immediate_of_action : 'a action -> 'a
+
+val outer_location_of_action : 'a action -> Location.t
+
+val trace_of_action :
+  action_name:string -> (F.formatter -> 'a -> unit) -> 'a action -> Errlog.loc_trace_elem sexp_list

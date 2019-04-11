@@ -8,25 +8,28 @@
 open! IStd
 module F = Format
 
-type actor = {access_expr: HilExp.AccessExpression.t; location: Location.t} [@@deriving compare]
-
 type t =
   | AccessToInvalidAddress of
-      { invalidated_by: PulseInvalidation.t
-      ; accessed_by: actor
+      { invalidated_by: PulseInvalidation.t PulseTrace.action
+      ; accessed_by: HilExp.AccessExpression.t PulseTrace.action
       ; trace: PulseTrace.t }
   | StackVariableAddressEscape of {variable: Var.t; location: Location.t}
 
+let pp_access = PulseTrace.pp_action HilExp.AccessExpression.pp
+
+let pp_invalidation = PulseTrace.pp_action PulseInvalidation.pp
+
 let get_location = function
-  | AccessToInvalidAddress {accessed_by= {location}} | StackVariableAddressEscape {location} ->
+  | AccessToInvalidAddress {accessed_by} ->
+      PulseTrace.outer_location_of_action accessed_by
+  | StackVariableAddressEscape {location} ->
       location
 
 
 let get_message = function
   | AccessToInvalidAddress {accessed_by; invalidated_by; trace} ->
-      F.asprintf "`%a` accesses address %a%a past its lifetime" HilExp.AccessExpression.pp
-        accessed_by.access_expr PulseTrace.pp_interesting_events trace PulseInvalidation.pp
-        invalidated_by
+      F.asprintf "%a accesses address %a%a past its lifetime" pp_access accessed_by
+        PulseTrace.pp_interesting_events trace pp_invalidation invalidated_by
   | StackVariableAddressEscape {variable} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
@@ -37,25 +40,17 @@ let get_message = function
 
 let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by; trace} ->
-      let invalidated_by_trace =
-        PulseInvalidation.get_location invalidated_by
-        |> Option.map ~f:(fun location ->
-               Errlog.make_trace_element 0 location
-                 (F.asprintf "%a here" PulseInvalidation.pp invalidated_by)
-                 [] )
-        |> Option.to_list
-      in
       PulseTrace.make_errlog_trace ~depth:0 trace
-      @ invalidated_by_trace
-      @ [ Errlog.make_trace_element 0 accessed_by.location
-            (F.asprintf "accessed `%a` here" HilExp.AccessExpression.pp accessed_by.access_expr)
-            [] ]
+      @ PulseTrace.trace_of_action ~action_name:"invalidated" PulseInvalidation.pp invalidated_by
+      @ PulseTrace.trace_of_action ~action_name:"accessed"
+          (Pp.in_backticks HilExp.AccessExpression.pp)
+          accessed_by
   | StackVariableAddressEscape _ ->
       []
 
 
 let get_issue_type = function
   | AccessToInvalidAddress {invalidated_by} ->
-      PulseInvalidation.issue_type_of_cause invalidated_by
+      PulseTrace.immediate_of_action invalidated_by |> PulseInvalidation.issue_type_of_cause
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape

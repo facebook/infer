@@ -121,6 +121,8 @@ end
 module type PPMap = sig
   include Caml.Map.S
 
+  val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
+
   val is_singleton_or_more : 'a t -> (key * 'a) IContainer.singleton_or_more
 
   val pp_key : F.formatter -> key -> unit

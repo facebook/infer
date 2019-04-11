@@ -29,6 +29,4 @@ type t =
 
 val issue_type_of_cause : t -> IssueType.t
 
-val get_location : t -> Location.t option
-
 val pp : Format.formatter -> t -> unit

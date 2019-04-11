@@ -37,9 +37,6 @@ val is_local_to_procedure : Typ.Procname.t -> t -> bool
 
 val is_return : t -> bool
 
-val is_this : t -> bool
-(** return whether the var is the special "this" var *)
-
 val is_footprint : t -> bool
 
 val is_none : t -> bool
