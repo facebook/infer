@@ -57,6 +57,12 @@ module AbstractAddress : sig
   val pp : F.formatter -> t -> unit
 
   val init : unit -> unit
+
+  type state
+
+  val get_state : unit -> state
+
+  val set_state : state -> unit
 end = struct
   type t = int [@@deriving compare]
 
@@ -72,6 +78,12 @@ end = struct
   let pp = F.pp_print_int
 
   let init () = next_fresh := 1
+
+  type state = int
+
+  let get_state () = !next_fresh
+
+  let set_state counter = next_fresh := counter
 end
 
 (* {3 Heap domain } *)

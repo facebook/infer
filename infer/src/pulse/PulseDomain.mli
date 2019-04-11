@@ -27,6 +27,12 @@ module AbstractAddress : sig
   val pp : F.formatter -> t -> unit [@@warning "-32"]
 
   val mk_fresh : unit -> t
+
+  type state
+
+  val get_state : unit -> state
+
+  val set_state : state -> unit
 end
 
 module Stack : sig
