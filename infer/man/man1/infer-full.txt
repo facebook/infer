@@ -1381,10 +1381,10 @@ INTERNAL OPTIONS
 
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain (default:
-           50)
+           20)
 
        --pulse-widen-threshold int
-           Under-approximate after int loop iterations (default: 5)
+           Under-approximate after int loop iterations (default: 3)
 
        --reactive-capture
            Activates: Compile source files only when required by analyzer

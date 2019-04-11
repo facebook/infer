@@ -1846,12 +1846,12 @@ and project_root =
 
 
 and pulse_max_disjuncts =
-  CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:50
+  CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:20
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
 and pulse_widen_threshold =
-  CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:5
+  CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
 
 
