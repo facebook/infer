@@ -26,26 +26,29 @@ let mk pdesc =
     let rec typ_of_param_path = function
       | SPath.Pvar x ->
           FormalTyps.find_opt x formal_typs
-      | SPath.Deref (_, x) ->
-          Option.map (typ_of_param_path x) ~f:(fun typ ->
-              match typ.Typ.desc with
-              | Tptr (typ, _) ->
-                  typ
-              | Tarray {elt} ->
-                  elt
-              | Tvoid ->
-                  Typ.void
-              | Tstruct typename -> (
-                match BufferOverrunTypModels.dispatch tenv typename with
-                | Some (CArray {element_typ}) ->
-                    element_typ
-                | Some _ ->
-                    L.(die InternalError)
-                      "Deref of non-array modeled type `%a`" Typ.Name.pp typename
-                | None ->
-                    L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
-              | _ ->
-                  L.(die InternalError) "Untyped expression is given." )
+      | SPath.Deref (_, x) -> (
+        match typ_of_param_path x with
+        | None ->
+            None
+        | Some typ -> (
+          match typ.Typ.desc with
+          | Tptr (typ, _) ->
+              Some typ
+          | Tarray {elt} ->
+              Some elt
+          | Tvoid ->
+              Some Typ.void
+          | Tstruct typename -> (
+            match BufferOverrunTypModels.dispatch tenv typename with
+            | Some (CArray {element_typ}) ->
+                Some element_typ
+            | Some _ ->
+                L.internal_error "Deref of non-array modeled type `%a`" Typ.Name.pp typename ;
+                None
+            | None ->
+                L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
+          | _ ->
+              L.(die InternalError) "Untyped expression is given." ) )
       | SPath.Field (fn, x) -> (
         match BufferOverrunField.get_type fn with
         | None ->
