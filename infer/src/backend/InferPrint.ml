@@ -1068,6 +1068,9 @@ let register_perf_stats_report () =
 
 
 let main ~report_json =
+  if Config.test_determinator_clang then (
+    TestDeterminator.emit_tests_to_run () ;
+    TestDeterminator.emit_relevant_methods () ) ;
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
     let costs_report_format_kind =

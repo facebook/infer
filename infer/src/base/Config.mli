@@ -652,6 +652,8 @@ val symops_per_iteration : int option
 
 val test_determinator : bool
 
+val test_determinator_clang : bool
+
 val test_filtering : bool
 
 val testing_mode : bool

@@ -9,9 +9,11 @@ open! IStd
 
 val test_to_run_java : string option -> string option -> string option -> unit
 
-val _test_to_run_clang :
+val test_to_run_clang :
   SourceFile.t -> Procdesc.t Typ.Procname.Hash.t -> string option -> string option -> unit
 
 val emit_tests_to_run : unit -> unit
+
+val emit_relevant_methods : unit -> unit
 
 val _get_relevant_test_to_run : unit -> string list

@@ -2163,6 +2163,12 @@ and test_determinator =
      $(b,--test-profiler) flags, which speficy the relevant arguments."
 
 
+and test_determinator_clang =
+  CLOpt.mk_bool ~long:"test-determinator-clang" ~default:false
+    "Run infer in Test Determinator mode for clang. It is used together with the \
+     $(b,--modified-lines)."
+
+
 and test_filtering =
   CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
     "List all the files Infer can report on (should be called from the root of the project)"
@@ -3023,6 +3029,8 @@ and symops_per_iteration = !symops_per_iteration
 and keep_going = !keep_going
 
 and test_determinator = !test_determinator
+
+and test_determinator_clang = !test_determinator_clang
 
 and test_filtering = !test_filtering
 

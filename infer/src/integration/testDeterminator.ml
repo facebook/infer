@@ -100,8 +100,8 @@ module MethodRangeMap = struct
 end
 
 module DiffLines = struct
-  (* This is a map 
-        file name |--> {set of changed line } 
+  (* This is a map
+        file name |--> {set of changed line }
   *)
   let map : int list String.Map.t ref = ref String.Map.empty
 
@@ -136,8 +136,8 @@ module DiffLines = struct
 end
 
 let pp_profiler_sample_set fmt s =
-  F.fprintf fmt " (size = %i) " (JPS.ProfilerSample.cardinal s) ;
-  JPS.ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      >  %a " Typ.Procname.pp m) s
+  F.fprintf fmt " (set size = %i) " (JPS.ProfilerSample.cardinal s) ;
+  JPS.ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Typ.Procname.pp m) s
 
 
 module TestSample = struct
@@ -201,7 +201,7 @@ let compute_affected_methods_clang source_file changed_lines_map method_range_ma
       L.(debug TestDeterminator Medium) "found!@\n" ;
       let affected_methods = affected_methods method_range_map fname changed_lines in
       L.(debug TestDeterminator Medium)
-        "== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
+        "@\n@\n== Resulting Affected Methods ==%a@\n== End Affected Methods ==@\n\n"
         pp_profiler_sample_set affected_methods ;
       affected_methods
   | None ->
@@ -212,6 +212,9 @@ let compute_affected_methods_clang source_file changed_lines_map method_range_ma
 
 let relevant_tests = ref []
 
+(* Methods modified in a diff *)
+let relevant_methods = ref []
+
 let _get_relevant_test_to_run () = !relevant_tests
 
 let emit_tests_to_run () =
@@ -221,14 +224,28 @@ let emit_tests_to_run () =
   L.progress "Tests to run: [%a]@\n" (Pp.seq ~sep:", " F.pp_print_string) !relevant_tests
 
 
+let emit_relevant_methods () =
+  let methods = List.dedup_and_sort ~compare:String.compare !relevant_methods in
+  let json = `List (List.map ~f:(fun t -> `String t) methods) in
+  let outpath = Config.results_dir ^/ "diff_determinator.json" in
+  Yojson.Basic.to_file outpath json ;
+  L.progress "Methods modified in this Diff: [%a]@\n"
+    (Pp.seq ~sep:", " F.pp_print_string)
+    !relevant_methods
+
+
 let init_clang cfg changed_lines_file test_samples_file =
   DiffLines.init_changed_lines_map changed_lines_file ;
   DiffLines.print_changed_lines () ;
   MethodRangeMap.create_clang_method_range_map cfg ;
   L.(debug TestDeterminator Medium) "%a@\n" MethodRangeMap.pp_map () ;
-  TestSample.init_test_sample test_samples_file ;
-  L.(debug TestDeterminator Medium) "%a@\n" TestSample.pp_map () ;
-  initialized_test_determinator := true
+  match test_samples_file with
+  | Some _ ->
+      TestSample.init_test_sample test_samples_file
+  | _ ->
+      () ;
+      L.(debug TestDeterminator Medium) "%a@\n" TestSample.pp_map () ;
+      initialized_test_determinator := true
 
 
 let init_java changed_lines_file test_samples_file code_graph_file =
@@ -242,7 +259,7 @@ let init_java changed_lines_file test_samples_file code_graph_file =
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
-let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
+let test_to_run_clang source_file cfg changed_lines_file test_samples_file =
   L.(debug TestDeterminator Quiet)
     "****** Start Test Determinator for  %s *****@\n"
     (SourceFile.to_string source_file) ;
@@ -251,6 +268,10 @@ let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
     compute_affected_methods_clang source_file (DiffLines.changed_lines_map ())
       (MethodRangeMap.method_range_map ())
   in
+  let affected_methods_list =
+    JPS.ProfilerSample.fold (fun m acc -> Typ.Procname.to_string m :: acc) affected_methods []
+  in
+  relevant_methods := List.append affected_methods_list !relevant_methods ;
   let test_to_run =
     if JPS.ProfilerSample.is_empty affected_methods then []
     else

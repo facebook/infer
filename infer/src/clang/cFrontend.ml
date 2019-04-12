@@ -52,6 +52,8 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   let cfg = compute_icfg translation_unit_context tenv ast in
   L.(debug Capture Verbose)
     "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;
+  if Config.test_determinator_clang then
+    TestDeterminator.test_to_run_clang source_file cfg Config.modified_lines None ;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   NullabilityPreanalysis.analysis cfg tenv ;

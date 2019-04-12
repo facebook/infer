@@ -24,22 +24,23 @@ duplicates.txt
 *.ast.sh
 *.ast.bdump
 *.ast.biniou
+/infer/tests/build_systems/buck_flavors_deterministic/capture_hash-*.sha
 /infer/tests/build_systems/buck_flavors_diff/src/hello.c
-/infer/tests/build_systems/codetoanalyze/ndk-build/hello_app/libs/
-/infer/tests/build_systems/codetoanalyze/ndk-build/hello_app/obj/
-/infer/tests/build_systems/codetoanalyze/utf8_*n_pwd
-/infer/tests/build_systems/codetoanalyze/mvn/**/target/
-/infer/tests/build_systems/codetoanalyze/path with spaces/
 /infer/tests/build_systems/clang_compilation_db_escaped/compile_commands.json
 /infer/tests/build_systems/clang_compilation_db_relpath/compile_commands.json
+/infer/tests/build_systems/clang_test_determinator/*.test
 /infer/tests/build_systems/clang_with_MD_flag/hello.d
+/infer/tests/build_systems/codetoanalyze/mvn/**/target/
+/infer/tests/build_systems/codetoanalyze/ndk-build/hello_app/libs/
+/infer/tests/build_systems/codetoanalyze/ndk-build/hello_app/obj/
+/infer/tests/build_systems/codetoanalyze/path with spaces/
+/infer/tests/build_systems/codetoanalyze/utf8_*n_pwd
 /infer/tests/build_systems/codetoanalyze/xcodebuild/simple_app/app_built
 /infer/tests/build_systems/codetoanalyze/xcodebuild/simple_app/build/
-/infer/tests/build_systems/differential_*/**/*.class
-/infer/tests/build_systems/differential_*/**/Diff*.java
 /infer/tests/build_systems/diff/src
 /infer/tests/build_systems/diff_*/src
-/infer/tests/build_systems/buck_flavors_deterministic/capture_hash-*.sha
+/infer/tests/build_systems/differential_*/**/*.class
+/infer/tests/build_systems/differential_*/**/Diff*.java
 /infer/tests/build_systems/genrule/report.json
 /infer/tests/build_systems/java_test_determinator/*.test
 /infer/tests/codetoanalyze/java/classloads/*.loads

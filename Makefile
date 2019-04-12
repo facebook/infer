@@ -45,6 +45,7 @@ BUILD_SYSTEMS_TESTS += \
   run_hidden_linters \
   tracebugs \
   utf8_in_procname \
+	clang_test_determinator \
 
 DIRECT_TESTS += \
   c_biabduction \

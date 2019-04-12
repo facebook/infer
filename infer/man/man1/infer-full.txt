@@ -1514,6 +1514,11 @@ INTERNAL OPTIONS
            which speficy the relevant arguments. (Conversely:
            --no-test-determinator)
 
+       --test-determinator-clang
+           Activates: Run infer in Test Determinator mode for clang. It is
+           used together with the --modified-lines. (Conversely:
+           --no-test-determinator-clang)
+
        --test-filtering
            Activates: List all the files Infer can report on (should be
            called from the root of the project) (Conversely:
