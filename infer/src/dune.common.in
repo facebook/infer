@@ -32,8 +32,15 @@ let facebook = is_yes "@IS_FACEBOOK_TREE@"
 let extra_cflags = if "@EXTRA_CFLAGS@" = "" then [] else ["@EXTRA_CFLAGS@"]
 
 let common_cflags =
+  (*
+   * A known issue: At the moment of writing warning 14 (illegal backslash
+   * escape in string) does not manifest as an error, presumably due to
+   * peculiarities in communication between preprocessor and compiler.
+   * Still leave it for visibility and in hope that the issue will be
+   * fixed one day.
+   *)
   let fatal_warnings =
-    "+3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+32+33+34+35+37+38+39+50+52+57+60"
+    "+3+5+6+8+10+11+12+14+18+19+20+21+23+26+29+27+32+33+34+35+37+38+39+50+52+57+60"
   in
   let warnings = fatal_warnings ^ "-4-9-40-41-42-45-48" in
   let common_flags =
