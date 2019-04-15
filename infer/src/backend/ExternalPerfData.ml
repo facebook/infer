@@ -99,7 +99,7 @@ let in_profiler_data_map key =
         _read_file_perf_data fname ;
         read_file_flag := true ) ;
       if PerfProfilerDataMap.is_empty !global_perf_profiler_data then
-        L.(debug Analysis Medium) "@\n\n\[Perf Profiler Log] WARNING: EMPTY PERF PROFILER DATA@\n" ;
+        L.(debug Analysis Medium) "@\n\n[Perf Profiler Log] WARNING: EMPTY PERF PROFILER DATA@\n" ;
       PerfProfilerDataMap.mem key !global_perf_profiler_data
   | _ ->
       false
