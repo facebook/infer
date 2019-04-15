@@ -69,54 +69,63 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
     loop_head_to_source_nodes LoopHeadToHoistInstrs.empty
 
 
-let do_report summary Call.{pname; loc} ~issue loop_head_loc =
+let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop_head_loc =
+  let issue, cost_msg =
+    match extract_cost_if_expensive call with
+    | Some cost ->
+        ( IssueType.expensive_loop_invariant_call
+        , F.asprintf " and expensive (has complexity %a)"
+            (CostDomain.BasicCost.pp_degree ~only_bigO:true)
+            cost )
+    | None ->
+        (IssueType.invariant_call, "")
+  in
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Typ.Procname.pp pname Location.pp loc
   in
   let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
   let message =
-    F.asprintf "%s and can be moved out of the loop at %a." exp_desc Location.pp loop_head_loc
+    F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
+      loop_head_loc
   in
   Reporting.log_error summary ~loc ~ltr issue message
 
 
-let is_call_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
+let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
     inferbo_invariant_map (Call.{pname; node; ret; params} as call) =
   let last_node = InstrCFG.last_of_underlying_node node in
   let instr_node_id = InstrCFG.Node.id last_node in
   let inferbo_mem =
     Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
   in
-  (* only report if function call has expensive/symbolic cost *)
   match get_callee_cost_summary_and_formals call inferbo_mem with
   | Some (CostDomain.{post= cost_record}, callee_formals)
-    when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) -> (
+    when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
       let loc = InstrCFG.Node.loc last_node in
       let node_hash = InstrCFG.Node.hash last_node in
       let model_env =
         BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv integer_type_widths
       in
       (* get the cost of the function call *)
-      match CostModels.Call.dispatch tenv pname params with
-      | Some model ->
-          model model_env ~ret inferbo_mem |> CostDomain.BasicCost.is_symbolic
-      | None ->
-          Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-            ~callee_pname:pname ~callee_formals ~params
-            ~callee_cost:(CostDomain.get_operation_cost cost_record)
-            ~loc
-          |> CostDomain.BasicCost.is_symbolic )
+      let cost =
+        match CostModels.Call.dispatch tenv pname params with
+        | Some model ->
+            model model_env ~ret inferbo_mem
+        | None ->
+            Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+              ~callee_pname:pname ~callee_formals ~params
+              ~callee_cost:(CostDomain.get_operation_cost cost_record)
+              ~loc
+      in
+      Option.some_if
+        (CostDomain.BasicCost.is_symbolic cost)
+        (CostDomain.BasicCost.get_degree_with_term cost)
   | _ ->
-      false
-
-
-let get_issue_to_report should_report_expensive_invariant call =
-  if should_report_expensive_invariant call then Some IssueType.expensive_loop_invariant_call
-  else Some IssueType.invariant_call
+      None
 
 
 let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
-    loop_head_to_source_nodes should_report_expensive_invariant summary =
+    loop_head_to_source_nodes extract_cost_if_expensive summary =
   (* get dominators *)
   let idom = Dominators.get_idoms proc_desc in
   (* get a map,  loop head -> instrs that can be hoisted out of the loop *)
@@ -131,9 +140,7 @@ let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
     (fun loop_head inv_instrs ->
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
       HoistCalls.iter
-        (fun call ->
-          get_issue_to_report should_report_expensive_invariant call
-          |> Option.iter ~f:(fun issue -> do_report summary call ~issue loop_head_loc) )
+        (fun call -> do_report extract_cost_if_expensive summary call loop_head_loc)
         inv_instrs )
     loop_head_to_inv_instrs
 
@@ -143,7 +150,7 @@ let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
   let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
-  let should_report_expensive_invariant =
+  let extract_cost_if_expensive =
     if Config.hoisting_report_only_expensive then
       let inferbo_invariant_map =
         BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
@@ -171,9 +178,9 @@ let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.
           | None ->
               None )
       in
-      is_call_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
+      get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
         inferbo_invariant_map
-    else fun _ -> false
+    else fun _ -> None
   in
   let get_callee_purity callee_pname =
     match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
@@ -183,5 +190,5 @@ let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.
         None
   in
   report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
-    loop_head_to_source_nodes should_report_expensive_invariant summary ;
+    loop_head_to_source_nodes extract_cost_if_expensive summary ;
   summary
