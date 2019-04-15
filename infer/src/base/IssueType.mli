@@ -223,7 +223,7 @@ val lock_consistency_violation : t
 
 val logging_private_data : t
 
-val loop_invariant_call : t
+val expensive_loop_invariant_call : t
 
 val memory_leak : t
 

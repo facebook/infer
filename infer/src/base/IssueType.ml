@@ -319,7 +319,7 @@ let lock_consistency_violation = from_string "LOCK_CONSISTENCY_VIOLATION"
 
 let logging_private_data = from_string "LOGGING_PRIVATE_DATA"
 
-let loop_invariant_call = from_string "LOOP_INVARIANT_CALL"
+let expensive_loop_invariant_call = from_string "EXPENSIVE_LOOP_INVARIANT_CALL"
 
 let memory_leak = from_string "MEMORY_LEAK"
 
