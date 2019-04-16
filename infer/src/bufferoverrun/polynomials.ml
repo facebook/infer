@@ -585,6 +585,22 @@ module NonNegativePolynomial = struct
         else Degree.pp fmt degree
 
 
+  let degree_str p =
+    match degree p with
+    | Some degree ->
+        Format.asprintf ", degree = %a" Degree.pp degree
+    | None ->
+        ""
+
+
+  let polynomial_traces p =
+    match get_symbols p with
+    | Below symbols ->
+        List.map symbols ~f:Bounds.NonNegativeBound.make_err_trace |> Errlog.concat_traces
+    | Above trace ->
+        TopTraces.make_err_trace trace
+
+
   let encode astate = Marshal.to_string astate [] |> Base64.encode_exn
 
   let decode enc_str = Marshal.from_string (Base64.decode_exn enc_str) 0

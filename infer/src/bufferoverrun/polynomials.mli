@@ -19,8 +19,6 @@ module Degree : sig
   (** Encodes the complex type [t] to an integer that can be used for comparison. *)
 
   val is_zero : t -> bool
-
-  val pp : Format.formatter -> t -> unit
 end
 
 module NonNegativeNonTopPolynomial : sig
@@ -73,16 +71,17 @@ module NonNegativePolynomial : sig
 
   val degree : t -> Degree.t option
 
+  val degree_str : t -> string
+
   val compare_by_degree : t -> t -> int
 
   val pp_degree : only_bigO:bool -> Format.formatter -> degree_with_term -> unit
 
+  val polynomial_traces : t -> Errlog.loc_trace
+
   val encode : t -> string
 
   val decode : string -> t
-
-  val get_symbols :
-    t -> (Bounds.NonNegativeBound.t list, TopTraces.t) AbstractDomain.Types.below_above
 
   val get_degree_with_term : t -> degree_with_term
 end

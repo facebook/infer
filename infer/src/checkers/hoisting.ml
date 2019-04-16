@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
+module BasicCost = CostDomain.BasicCost
 
 module Call = struct
   type t =
@@ -70,20 +71,26 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
 
 
 let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop_head_loc =
-  let issue, cost_msg =
-    match extract_cost_if_expensive call with
-    | Some cost ->
-        ( IssueType.expensive_loop_invariant_call
-        , F.asprintf " and expensive (has complexity %a)"
-            (CostDomain.BasicCost.pp_degree ~only_bigO:true)
-            cost )
-    | None ->
-        (IssueType.invariant_call, "")
-  in
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Typ.Procname.pp pname Location.pp loc
   in
-  let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
+  let loop_inv_trace_elem = Errlog.make_trace_element 0 loc exp_desc [] in
+  let issue, cost_msg, ltr =
+    match extract_cost_if_expensive call with
+    | Some cost ->
+        let degree_str = BasicCost.degree_str cost in
+        let cost_trace_elem =
+          let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp_hum cost degree_str in
+          Errlog.make_trace_element 0 loc cost_desc []
+        in
+        ( IssueType.expensive_loop_invariant_call
+        , F.asprintf " and expensive (has complexity %a)"
+            (BasicCost.pp_degree ~only_bigO:true)
+            (BasicCost.get_degree_with_term cost)
+        , loop_inv_trace_elem :: cost_trace_elem :: BasicCost.polynomial_traces cost )
+    | None ->
+        (IssueType.invariant_call, "", [loop_inv_trace_elem])
+  in
   let message =
     F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
       loop_head_loc
@@ -117,9 +124,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
               ~callee_cost:(CostDomain.get_operation_cost cost_record)
               ~loc
       in
-      Option.some_if
-        (CostDomain.BasicCost.is_symbolic cost)
-        (CostDomain.BasicCost.get_degree_with_term cost)
+      Option.some_if (CostDomain.BasicCost.is_symbolic cost) cost
   | _ ->
       None
 

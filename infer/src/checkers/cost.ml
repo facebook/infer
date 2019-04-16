@@ -715,22 +715,7 @@ module WorstCaseCost = struct
 end
 
 module Check = struct
-  let polynomial_traces cost =
-    match BasicCost.get_symbols cost with
-    | Below symbols ->
-        List.map symbols ~f:Bounds.NonNegativeBound.make_err_trace |> Errlog.concat_traces
-    | Above trace ->
-        Polynomials.TopTraces.make_err_trace trace
-
-
   let report_threshold proc_desc summary ~name ~location ~cost ~threshold ~kind =
-    let degree_str =
-      match BasicCost.degree cost with
-      | Some degree ->
-          Format.asprintf ", degree = %a" Polynomials.Degree.pp degree
-      | None ->
-          ""
-    in
     let report_issue_type =
       match kind with
       | CostDomain.AllocationCost ->
@@ -745,18 +730,19 @@ module Check = struct
       | CostDomain.IOCost ->
           IssueType.expensive_IO_call
     in
+    let degree_str = BasicCost.degree_str cost in
     let message =
       F.asprintf
         "%s from the beginning of the function up to this program point is likely above the \
          acceptable threshold of %d (estimated cost %a%s)"
         name threshold BasicCost.pp_hum cost degree_str
     in
-    let cost_trace =
+    let cost_trace_elem =
       let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp_hum cost degree_str in
       Errlog.make_trace_element 0 location cost_desc []
     in
     Reporting.log_error summary ~loc:location
-      ~ltr:(cost_trace :: polynomial_traces cost)
+      ~ltr:(cost_trace_elem :: BasicCost.polynomial_traces cost)
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
@@ -768,8 +754,9 @@ module Check = struct
           suffix
       in
       let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
-      Reporting.log_error ~loc ~ltr:(polynomial_traces cost) ~extras:(compute_errlog_extras cost)
-        summary issue message
+      Reporting.log_error ~loc
+        ~ltr:(BasicCost.polynomial_traces cost)
+        ~extras:(compute_errlog_extras cost) summary issue message
     in
     if BasicCost.is_top cost then
       report IssueType.infinite_execution_time_call "cannot be computed"
