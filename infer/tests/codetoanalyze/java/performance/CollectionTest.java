@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import android.util.SparseArray;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -57,5 +58,15 @@ public class CollectionTest {
         iterate_over_mycollection(list1);
       }
     }
+  }
+
+  void sparse_array_linear(SparseArray<Integer> arr) {
+    for (int i = 0; i < arr.size(); i++) {}
+  }
+
+  void sparse_array_new_constant() {
+    SparseArray<Integer> new_arr = new SparseArray<Integer>();
+    new_arr.put(1, 1);
+    for (int i = 0; i < new_arr.size(); i++) {}
   }
 }

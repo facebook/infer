@@ -664,6 +664,13 @@ module Collection = struct
 
   let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
 
+  (** increase the size by [0, 1] because put replaces the value
+     rather than add a new one when the key is found in the map *)
+  let put coll_id =
+    let zero_one = Itv.set_lb_zero Itv.one in
+    {exec= change_size_by ~size_f:(Itv.plus zero_one) coll_id; check= no_check}
+
+
   let size coll_exp =
     let exec _ ~ret:(ret_id, _) mem =
       let result = eval_collection_length coll_exp mem in
@@ -770,6 +777,9 @@ module Call = struct
       ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"__new"
+        <>$ capt_exp_of_typ (+PatternMatch.implements_pseudo_collection)
+        $+...$--> Collection.new_collection
+      ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
         $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
@@ -860,6 +870,8 @@ module Call = struct
         &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
       ; +PatternMatch.implements_collection
         &:: "add" <>$ capt_var_exn $+ any_arg $--> Collection.add
+      ; +PatternMatch.implements_pseudo_collection
+        &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg $--> Collection.put
       ; +PatternMatch.implements_collection
         &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $!--> Collection.add_at_index
       ; +PatternMatch.implements_lang "Iterable"
@@ -869,5 +881,6 @@ module Call = struct
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
-      ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
+      ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
 end
