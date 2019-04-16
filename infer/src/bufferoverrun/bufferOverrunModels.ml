@@ -713,6 +713,18 @@ module Collection = struct
     {exec; check= no_check}
 
 
+  (** increase the size by [0, |collection_to_add|] because put replaces the value
+     rather than add a new one when the key is found in the map *)
+  let putAll coll_id coll_to_add =
+    let exec model_env ~ret mem =
+      let to_add_length =
+        eval_collection_length coll_to_add mem |> Dom.Val.get_itv |> Itv.set_lb_zero
+      in
+      change_size_by ~size_f:(Itv.plus to_add_length) coll_id model_env ~ret mem
+    in
+    {exec; check= no_check}
+
+
   let check_index ~last_included coll_id index_exp {location; integer_type_widths} mem cond_set =
     let arr =
       let arr_locs = get_collection_internal_array_locs coll_id mem in
@@ -781,6 +793,9 @@ module Call = struct
         $+...$--> Collection.new_collection
       ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $+...$--> Collection.new_collection
+      ; -"__new"
+        <>$ capt_exp_of_typ (+PatternMatch.implements_map)
         $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
@@ -876,11 +891,19 @@ module Call = struct
         &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $!--> Collection.add_at_index
       ; +PatternMatch.implements_lang "Iterable"
         &:: "iterator" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg
+        $--> Collection.put
+      ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
+        $--> Collection.putAll
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
       ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
-      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
+      ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.implements_map &:: "size" <>$ capt_exp $!--> Collection.size ]
 end

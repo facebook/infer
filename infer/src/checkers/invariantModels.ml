@@ -54,6 +54,7 @@ module ProcName = struct
       ; +PatternMatch.implements_iterator &:: "next" <>--> Variant
       ; +PatternMatch.implements_iterator &:: "remove" <>--> Variant
       ; +PatternMatch.implements_collection &:: "size" <>--> Invariant
+      ; +PatternMatch.implements_map &:: "size" <>--> Invariant
       ; +PatternMatch.implements_collection &:: "add" <>--> Variant
       ; +PatternMatch.implements_collection &:: "addAll" <>--> Variant
       ; +PatternMatch.implements_collection &:: "remove" <>--> Variant
