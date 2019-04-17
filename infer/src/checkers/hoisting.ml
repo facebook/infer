@@ -99,34 +99,33 @@ let do_report extract_cost_if_expensive summary (Call.{pname; loc} as call) loop
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-    inferbo_invariant_map (Call.{pname; node; ret; params} as call) =
+    inferbo_invariant_map Call.{pname; node; ret; params} =
   let last_node = InstrCFG.last_of_underlying_node node in
-  let instr_node_id = InstrCFG.Node.id last_node in
   let inferbo_mem =
+    let instr_node_id = InstrCFG.Node.id last_node in
     Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
   in
-  match get_callee_cost_summary_and_formals call inferbo_mem with
-  | Some (CostDomain.{post= cost_record}, callee_formals)
-    when CostDomain.BasicCost.is_symbolic (CostDomain.get_operation_cost cost_record) ->
-      let loc = InstrCFG.Node.loc last_node in
-      let node_hash = InstrCFG.Node.hash last_node in
-      let model_env =
-        BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv integer_type_widths
-      in
-      (* get the cost of the function call *)
-      let cost =
-        match CostModels.Call.dispatch tenv pname params with
-        | Some model ->
-            model model_env ~ret inferbo_mem
-        | None ->
-            Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-              ~callee_pname:pname ~callee_formals ~params
-              ~callee_cost:(CostDomain.get_operation_cost cost_record)
-              ~loc
-      in
-      Option.some_if (CostDomain.BasicCost.is_symbolic cost) cost
-  | _ ->
-      None
+  let loc = InstrCFG.Node.loc last_node in
+  let cost_opt =
+    match get_callee_cost_summary_and_formals pname with
+    | Some (CostDomain.{post= cost_record}, callee_formals) ->
+        let callee_cost = CostDomain.get_operation_cost cost_record in
+        if CostDomain.BasicCost.is_symbolic callee_cost then
+          Some
+            (Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+               ~callee_pname:pname ~callee_formals ~params ~callee_cost ~loc)
+        else None
+    | None ->
+        CostModels.Call.dispatch tenv pname params
+        |> Option.map ~f:(fun model ->
+               let model_env =
+                 let node_hash = InstrCFG.Node.hash last_node in
+                 BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
+                   integer_type_widths
+               in
+               model model_env ~ret inferbo_mem )
+  in
+  Option.filter cost_opt ~f:CostDomain.BasicCost.is_symbolic
 
 
 let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
@@ -160,28 +159,13 @@ let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.
       let inferbo_invariant_map =
         BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
       in
-      let get_callee_cost_summary_and_formals Call.{loc; pname; params; node; ret} inferbo_mem =
-        let callee_pname = pname in
-        match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
-        | Some summary ->
-            summary.Summary.payloads.Payloads.cost
-            |> Option.map ~f:(fun cost_summary ->
-                   (cost_summary, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) )
-        | None -> (
-          match CostModels.Call.dispatch tenv callee_pname params with
-          | Some model ->
-              let last_node = InstrCFG.last_of_underlying_node node in
-              let node_hash = InstrCFG.Node.hash last_node in
-              let model_env =
-                BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
-                  integer_type_widths
-              in
-              let callee_cost = CostDomain.of_operation_cost (model model_env ~ret inferbo_mem) in
-              Some
-                ( CostDomain.{post= callee_cost}
-                , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals )
-          | None ->
-              None )
+      let get_callee_cost_summary_and_formals callee_pname =
+        Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+        |> Option.bind ~f:(fun summary ->
+               summary.Summary.payloads.Payloads.cost
+               |> Option.map ~f:(fun cost_summary ->
+                      (cost_summary, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) )
+           )
       in
       get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
         inferbo_invariant_map
