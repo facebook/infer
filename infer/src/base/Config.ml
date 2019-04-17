@@ -1432,7 +1432,7 @@ and html =
 
 
 and hoisting_report_only_expensive =
-  CLOpt.mk_bool ~long:"hoisting-report-only-expensive" ~default:false
+  CLOpt.mk_bool ~long:"hoisting-report-only-expensive" ~default:true
     ~in_help:InferCommand.[(Report, manual_hoisting)]
     "[Hoisting] Report loop-invariant calls only when the function is expensive, i.e. at least \
      linear"

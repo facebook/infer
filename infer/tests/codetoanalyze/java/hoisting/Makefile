@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --loop-hoisting-only --purity  --debug-exceptions
+INFER_OPTIONS = --loop-hoisting-only --purity --no-hoisting-report-only-expensive  --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 
