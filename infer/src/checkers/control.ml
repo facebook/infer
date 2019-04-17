@@ -89,9 +89,10 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
            | Some deps ->
                ControlDepSet.union deps acc
            | None ->
-               L.internal_error "Failed to get the definition of the control variable %a" Ident.pp
-                 id ;
-               assert false )
+               L.internal_error
+                 "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp id
+                 Exp.pp exp ;
+               acc )
 
 
   (* extract vars from the prune instructions in the node *)
