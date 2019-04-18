@@ -1487,6 +1487,19 @@ let is_init_expr_cxx11_constant an =
       false
 
 
+let call_cxx_method an name =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Stmt (CXXMemberCallExpr (_, member :: _, _)) -> (
+    match member with
+    | MemberExpr (_, _, _, memberExprInfo) ->
+        ALVar.compare_str_with_alexp memberExprInfo.mei_name.ni_name name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let source_file_matches src_file path_re =
   Option.value_map
     ~f:(fun sf ->

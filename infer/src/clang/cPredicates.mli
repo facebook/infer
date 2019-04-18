@@ -20,6 +20,9 @@ val objc_block_is_capturing_values : Ctl_parser_types.ast_node -> bool
 val call_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_method an m an' is true iff node an is a call to an ObjC method with name containing string m *)
 
+val call_cxx_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** 'call_cxx_method an m an' is true iff node an is a call to a C++ method with name containing string m *)
+
 val call_class_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_class_method an mname' is true iff node an is a call to an ObjC
     class method with name containing mname *)

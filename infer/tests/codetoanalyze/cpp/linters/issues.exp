@@ -1,3 +1,7 @@
+codetoanalyze/cpp/linters/call_cxx_method.cpp, anonymous_namespace_call_cxx_method.cpp::Bar::fooBar, 13, CALL_CXX_METHOD, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/call_cxx_method.cpp, main, 19, CALL_CXX_METHOD, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/call_cxx_method.cpp, main, 21, CALL_CXX_METHOD, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/call_cxx_method.cpp, main, 22, CALL_CXX_METHOD, no_bucket, WARNING, []
 codetoanalyze/cpp/linters/call_function.cpp, main, 20, CALL_FUNCTION, no_bucket, WARNING, []
 codetoanalyze/cpp/linters/call_function.cpp, main, 22, CALL_FUNCTION, no_bucket, WARNING, []
 codetoanalyze/cpp/linters/call_function.cpp, main, 23, CALL_FUNCTION, no_bucket, WARNING, []
