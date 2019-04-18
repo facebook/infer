@@ -61,6 +61,8 @@ let escape_url s =
   let map = function
     | '!' ->
         Some "%21"
+    | '"' ->
+        Some "%22"
     | '#' ->
         Some "%23"
     | '$' ->
