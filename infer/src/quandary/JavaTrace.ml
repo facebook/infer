@@ -191,7 +191,10 @@ module SourceKind = struct
         let method_name = Typ.Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
-          | ( ("android.app.Activity" | "android.app.Fragment" | "android.support.v4.app.Fragment")
+          | ( ( "android.app.Activity"
+              | "android.app.Fragment"
+              | "android.support.v4.app.Fragment"
+              | "androidx.fragment.app.Fragment" )
             , ("onActivityResult" | "onNewIntent") ) ->
               Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
           | ( "android.app.Service"
@@ -391,19 +394,22 @@ module SinkKind = struct
               taint_nth 1 [StartComponent]
           | ( ( "android.app.Activity"
               | "android.content.Context"
-              | "android.support.v4.app.Fragment" )
+              | "android.support.v4.app.Fragment"
+              | "androidx.fragment.app.Fragment" )
             , "startIntentSenderForResult" ) ->
               taint_nth 2 [StartComponent]
           | "android.app.Activity", "startIntentSenderFromChild" ->
               taint_nth 3 [StartComponent]
           | ( ( "android.app.Fragment"
               | "android.content.Context"
-              | "android.support.v4.app.Fragment" )
+              | "android.support.v4.app.Fragment"
+              | "androidx.fragment.app.Fragment" )
             , "startActivity" ) ->
               taint_nth 0 [StartComponent; StartComponentForInsecureIntentHandling]
           | ( ( "android.app.Fragment"
               | "android.content.Context"
-              | "android.support.v4.app.Fragment" )
+              | "android.support.v4.app.Fragment"
+              | "androidx.fragment.app.Fragment" )
             , ( "bindService"
               | "sendBroadcast"
               | "sendBroadcastAsUser"

@@ -140,9 +140,9 @@ end = struct
     QualifiedCppName.Match.of_fuzzy_qual_names class_names
 
 
-  (** C++ guard classes used for scope-based lock management. 
-    NB we pretend all classes below implement the mutex interface even though only 
-    [shared_lock] and [unique_lock] do, for simplicity.  The comments summarise which 
+  (** C++ guard classes used for scope-based lock management.
+    NB we pretend all classes below implement the mutex interface even though only
+    [shared_lock] and [unique_lock] do, for simplicity.  The comments summarise which
     methods are implemented. *)
   let guards =
     (* TODO std::scoped_lock *)
@@ -346,6 +346,7 @@ let ui_matcher_records =
   (* search_superclasses is true by default in how [default] is treated *)
   [ {default with classname= "android.support.v4.app.Fragment"; methods= fragment_methods}
   ; {default with classname= "android.app.Fragment"; methods= fragment_methods}
+  ; {default with classname= "androidx.fragment.app.Fragment"; methods= fragment_methods}
   ; {default with classname= "android.content.ContentProvider"; methods= ["onCreate"]}
   ; {default with classname= "android.content.BroadcastReceiver"; methods= ["onReceive"]}
   ; { default with
@@ -375,8 +376,8 @@ let if_pred_evalopt ~pred ~f x =
   IOption.if_none_evalopt x ~f:(fun () -> if pred () then Some (f ()) else None)
 
 
-(* assume that methods annotated with @MainThread, @UiThread, 
-   and any string starting with "On" always run on the UI thread. 
+(* assume that methods annotated with @MainThread, @UiThread,
+   and any string starting with "On" always run on the UI thread.
    We do the latter because there are too many to precisely list. *)
 let is_uithread annots =
   let f (annot, _) =

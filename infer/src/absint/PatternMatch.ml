@@ -246,6 +246,7 @@ let initializer_classes =
     ; "android.app.Fragment"
     ; "android.app.Service"
     ; "android.support.v4.app.Fragment"
+    ; "androidx.fragment.app.Fragment"
     ; "junit.framework.TestCase" ]
 
 
