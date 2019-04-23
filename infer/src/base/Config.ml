@@ -1518,7 +1518,7 @@ and liveness_dangerous_classes =
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     "Specify classes where the destructor should be ignored when computing liveness. In other \
      words, assignement to variables of these types (or common wrappers around these types such \
-     as $(u,unique_ptr<type>)) will count as dead stores when the variables are not read \
+     as $(i,unique_ptr<type>)) will count as dead stores when the variables are not read \
      explicitly by the program."
 
 

@@ -552,9 +552,8 @@ OPTIONS
            Specify classes where the destructor should be ignored when
            computing liveness. In other words, assignement to variables of
            these types (or common wrappers around these types such as
-           $(u,unique_ptr<type>)) will count as dead stores when the
-           variables are not read explicitly by the program. (default: [])       
-    See also infer-analyze(1).
+           unique_ptr<type>) will count as dead stores when the variables are
+           not read explicitly by the program. (default: [])           See also infer-analyze(1).
 
        --liveness-only
            Activates: Enable --liveness and disable all other checkers
