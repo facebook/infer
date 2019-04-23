@@ -725,7 +725,7 @@ let make_trace ~report_kind original_path =
 
 
 let log_issue current_pname ~loc ~ltr ~access issue_type error_message =
-  Reporting.log_issue_external current_pname Exceptions.Error ~loc ~ltr ~access issue_type
+  Reporting.log_issue_external current_pname Exceptions.Warning ~loc ~ltr ~access issue_type
     error_message
 
 
