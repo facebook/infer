@@ -180,9 +180,11 @@ let deref_str_null_ proc_name_opt problem_str_ =
   {tags= Tags.create (); value_pre= Some (pointer_or_object ()); value_post= None; problem_str}
 
 
+let could_be_null_and_prefix = "could be null and "
+
 (** dereference strings for null dereference *)
 let deref_str_null proc_name_opt =
-  let problem_str = "could be null and is dereferenced" in
+  let problem_str = could_be_null_and_prefix ^ "is dereferenced" in
   deref_str_null_ proc_name_opt problem_str
 
 
@@ -412,7 +414,11 @@ let dereference_string proc_name deref_str value_str access_opt loc =
             ^ MF.monospaced_to_string weak_var_str
             ^ ", a weak pointer captured in the block, and is dereferenced without a null check"
       | None, None ->
-          deref_str.problem_str
+          (* hack to avoid dumb message "null could be null" *)
+          if String.equal value_str "null" then
+            String.chop_prefix deref_str.problem_str ~prefix:could_be_null_and_prefix
+            |> Option.value ~default:deref_str.problem_str
+          else deref_str.problem_str
     in
     [problem_str ^ " " ^ at_line tags loc]
   in
