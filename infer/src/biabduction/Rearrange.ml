@@ -1566,11 +1566,15 @@ let is_only_pt_by_fld_or_param_nonnull pdesc tenv prop deref_exp =
 let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   let pname = Procdesc.get_proc_name pdesc in
   let root = Exp.root_of_lexp lexp in
-  let nullable_var_opt = is_only_pt_by_fld_or_param_nullable pdesc tenv prop root in
-  let is_deref_of_nullable =
+  let nullable_var_opt =
     let is_definitely_non_null exp prop = Prover.check_disequal tenv prop exp Exp.zero in
-    Config.report_nullable_inconsistency && Option.is_some nullable_var_opt
-    && not (is_definitely_non_null root prop)
+    if Config.report_nullable_inconsistency then
+      match is_only_pt_by_fld_or_param_nullable pdesc tenv prop root with
+      | Some _ as nullable_var when not (is_definitely_non_null root prop) ->
+          nullable_var
+      | _ ->
+          None
+    else None
   in
   let relevant_attributes_getters = [Attribute.get_resource tenv; Attribute.get_undef tenv] in
   let get_relevant_attributes exp =
@@ -1597,21 +1601,18 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
         in
         get_relevant_attributes root_no_offset
   in
-  ( if Prover.check_zero tenv (Exp.root_of_lexp root) || is_deref_of_nullable then
+  ( if Prover.check_zero tenv (Exp.root_of_lexp root) || Option.is_some nullable_var_opt then
     let deref_str =
-      if is_deref_of_nullable then
-        match nullable_var_opt with
-        | Some str ->
-            if is_weak_captured_var pdesc str then
-              Localise.deref_str_weak_variable_in_block None str
-            else Localise.deref_str_nullable None str
-        | None ->
-            Localise.deref_str_nullable None ""
-      else Localise.deref_str_null None
+      match nullable_var_opt with
+      | Some str ->
+          if is_weak_captured_var pdesc str then Localise.deref_str_weak_variable_in_block None str
+          else Localise.deref_str_nullable None str
+      | None ->
+          Localise.deref_str_null None
     in
     let err_desc =
-      Errdesc.explain_dereference pname tenv ~use_buckets:true ~is_nullable:is_deref_of_nullable
-        deref_str prop loc
+      Errdesc.explain_dereference pname tenv ~use_buckets:true
+        ~is_nullable:(Option.is_some nullable_var_opt) deref_str prop loc
     in
     if Localise.is_parameter_not_null_checked_desc err_desc then
       raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))

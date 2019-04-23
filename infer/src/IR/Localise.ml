@@ -195,9 +195,7 @@ let access_str_empty proc_name_opt =
 let deref_str_nullable proc_name_opt nullable_obj_str =
   let tags = Tags.create () in
   Tags.update tags Tags.nullable_src nullable_obj_str ;
-  (* to be completed once we know if the deref'd expression is directly or transitively @Nullable*)
-  let problem_str = "" in
-  deref_str_null_ proc_name_opt problem_str
+  deref_str_null proc_name_opt
 
 
 (** dereference strings for null dereference due to weak captured variable in block *)
