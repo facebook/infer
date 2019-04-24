@@ -418,7 +418,7 @@ let get_checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_s
        { cond_set
        ; unused_branches= _ (* intra-procedural *)
        ; unreachable_statements= _ (* intra-procedural *) } ->
-  PO.ConditionSet.for_summary ~forget_locs:locals cond_set
+  PO.ConditionSet.for_summary ~relation_forget_locs:locals cond_set
 
 
 let checker : Callbacks.proc_callback_args -> Summary.t =

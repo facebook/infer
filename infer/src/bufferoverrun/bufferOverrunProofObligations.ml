@@ -414,7 +414,7 @@ module ArrayAccessCondition = struct
         None
 
 
-  let forget_locs : AbsLoc.PowLoc.t -> t -> t =
+  let relation_forget_locs : AbsLoc.PowLoc.t -> t -> t =
    fun locs c -> {c with relation= Relation.forget_locs locs c.relation}
 end
 
@@ -693,10 +693,10 @@ module Condition = struct
         BinaryOperationCondition.check c trace
 
 
-  let forget_locs locs x =
+  let relation_forget_locs locs x =
     match x with
     | ArrayAccess c ->
-        ArrayAccess (ArrayAccessCondition.forget_locs locs c)
+        ArrayAccess (ArrayAccessCondition.relation_forget_locs locs c)
     | AllocSize _ | BinaryOperation _ ->
         x
 end
@@ -822,7 +822,7 @@ module ConditionWithTrace = struct
         report cwt.cond cwt.trace issue_type
 
 
-  let for_summary ~forget_locs = function
+  let for_summary ~relation_forget_locs = function
     | _, {propagate= false} | _, {report_issue_type= NotIssue} ->
         None
     | {cond; trace; reported; reachability}, {report_issue_type} ->
@@ -835,7 +835,7 @@ module ConditionWithTrace = struct
           | Issue issue_type ->
               Some (Reported.make issue_type)
         in
-        let cond = Condition.forget_locs forget_locs cond in
+        let cond = Condition.relation_forget_locs relation_forget_locs cond in
         let trace = ConditionTrace.for_summary trace in
         Some {cond; trace; reported; reachability}
 end
@@ -959,8 +959,8 @@ module ConditionSet = struct
     List.iter condset ~f:(ConditionWithTrace.report_errors ~report)
 
 
-  let for_summary ~forget_locs condset =
-    List.filter_map condset ~f:(ConditionWithTrace.for_summary ~forget_locs)
+  let for_summary ~relation_forget_locs condset =
+    List.filter_map condset ~f:(ConditionWithTrace.for_summary ~relation_forget_locs)
 
 
   let pp_summary : F.formatter -> _ t0 -> unit =

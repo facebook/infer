@@ -119,7 +119,7 @@ module TransferFunctions = struct
   let forget_ret_relation ret callee_pname mem =
     let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
     let ret_var = Loc.of_var (Var.of_id (fst ret)) in
-    Dom.Mem.forget_locs (PowLoc.add ret_loc (PowLoc.singleton ret_var)) mem
+    Dom.Mem.relation_forget_locs (PowLoc.add ret_loc (PowLoc.singleton ret_var)) mem
 
 
   let is_external pname =
@@ -359,7 +359,7 @@ let compute_summary : local_decls -> CFG.t -> invariant_map -> memory_summary =
   let exit_node_id = CFG.exit_node cfg |> CFG.Node.id in
   match extract_post exit_node_id inv_map with
   | Some exit_mem ->
-      exit_mem |> Dom.Mem.forget_locs locals |> Dom.Mem.unset_oenv
+      exit_mem |> Dom.Mem.relation_forget_locs locals |> Dom.Mem.unset_oenv
   | None ->
       Bottom
 

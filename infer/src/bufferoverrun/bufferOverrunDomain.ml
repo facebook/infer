@@ -1507,7 +1507,9 @@ module MemReach = struct
    fun locs symexp_opts -> lift_relation (Relation.store_relation locs symexp_opts)
 
 
-  let forget_locs : PowLoc.t -> t -> t = fun locs -> lift_relation (Relation.forget_locs locs)
+  let relation_forget_locs : PowLoc.t -> t -> t =
+   fun locs -> lift_relation (Relation.forget_locs locs)
+
 
   let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
 
@@ -1686,7 +1688,9 @@ module Mem = struct
    fun locs symexp_opts -> map ~f:(MemReach.store_relation locs symexp_opts)
 
 
-  let forget_locs : PowLoc.t -> t -> t = fun locs -> map ~f:(MemReach.forget_locs locs)
+  let relation_forget_locs : PowLoc.t -> t -> t =
+   fun locs -> map ~f:(MemReach.relation_forget_locs locs)
+
 
   let[@warning "-32"] init_param_relation : Loc.t -> t -> t =
    fun loc -> map ~f:(MemReach.init_param_relation loc)

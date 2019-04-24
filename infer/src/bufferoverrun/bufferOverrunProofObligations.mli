@@ -84,7 +84,7 @@ module ConditionSet : sig
   val report_errors :
     report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> checked_t -> unit
 
-  val for_summary : forget_locs:AbsLoc.PowLoc.t -> checked_t -> summary_t
+  val for_summary : relation_forget_locs:AbsLoc.PowLoc.t -> checked_t -> summary_t
 end
 
 val description : markup:bool -> Condition.t -> ConditionTrace.t -> string
