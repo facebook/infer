@@ -169,7 +169,13 @@ let mark_all_stale () =
 
 
 let select_all_source_files_statement =
-  ResultsDatabase.register_statement "SELECT * FROM source_files"
+  ResultsDatabase.register_statement
+    {|
+  SELECT source_file
+  , type_environment
+  , procedure_names
+  , freshly_captured
+  FROM source_files |}
 
 
 let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
