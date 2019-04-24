@@ -17,9 +17,7 @@ let debug fmt = L.(debug Analysis Verbose fmt)
 module Payload = SummaryPayload.Make (struct
   type t = PurityDomain.summary
 
-  let update_payloads post (payloads : Payloads.t) = {payloads with purity= Some post}
-
-  let of_payloads (payloads : Payloads.t) = payloads.purity
+  let field = Payloads.Fields.purity
 end)
 
 type purity_extras =

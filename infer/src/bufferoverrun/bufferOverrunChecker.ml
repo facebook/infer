@@ -23,11 +23,7 @@ module Trace = BufferOverrunTrace
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunCheckerSummary.t
 
-  let update_payloads astate (payloads : Payloads.t) =
-    {payloads with buffer_overrun_checker= Some astate}
-
-
-  let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_checker
+  let field = Payloads.Fields.buffer_overrun_checker
 end)
 
 module UnusedBranch = struct

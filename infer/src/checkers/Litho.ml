@@ -12,9 +12,7 @@ module Domain = LithoDomain
 module Payload = SummaryPayload.Make (struct
   type t = Domain.t
 
-  let update_payloads astate (payloads : Payloads.t) = {payloads with litho= Some astate}
-
-  let of_payloads (payloads : Payloads.t) = payloads.litho
+  let field = Payloads.Fields.litho
 end)
 
 module LithoFramework = struct

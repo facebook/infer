@@ -13,9 +13,7 @@ module BasicCost = CostDomain.BasicCost
 module Payload = SummaryPayload.Make (struct
   type t = CostDomain.summary
 
-  let update_payloads sum (payloads : Payloads.t) = {payloads with cost= Some sum}
-
-  let of_payloads (payloads : Payloads.t) = payloads.cost
+  let field = Payloads.Fields.cost
 end)
 
 (* We use this threshold to give error if the cost is above it.

@@ -25,6 +25,7 @@ type t =
   ; starvation: StarvationDomain.summary option
   ; typestate: TypeState.t option
   ; uninit: UninitDomain.Summary.t option }
+[@@deriving fields]
 
 let pp pe fmt
     { annot_map

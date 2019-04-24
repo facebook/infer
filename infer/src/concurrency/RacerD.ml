@@ -13,9 +13,7 @@ module MF = MarkupFormatter
 module Payload = SummaryPayload.Make (struct
   type t = RacerDDomain.summary
 
-  let update_payloads post (payloads : Payloads.t) = {payloads with racerd= Some post}
-
-  let of_payloads (payloads : Payloads.t) = payloads.racerd
+  let field = Payloads.Fields.racerd
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct

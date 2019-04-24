@@ -63,7 +63,7 @@ let stanzas =
  (ocamlopt_flags (%s))
  (libraries %s)
  (modules :standard \ %s infertop)
- (preprocess (pps ppx_compare ppx_sexp_conv ppx_variants_conv -no-check))
+ (preprocess (pps ppx_compare ppx_fields_conv ppx_sexp_conv ppx_variants_conv -no-check))
 )
 
 (documentation
@@ -83,7 +83,7 @@ let stanzas =
  (ocamlopt_flags (%s))
  (libraries InferModules)
  (modules %s)
- (preprocess (pps ppx_compare ppx_sexp_conv ppx_variants_conv -no-check))
+ (preprocess (pps ppx_compare ppx_fields_conv ppx_sexp_conv ppx_variants_conv -no-check))
 )
 |}
         (String.concat " " infer_binaries)
@@ -97,7 +97,7 @@ let stanzas =
  (flags (%s))
  (libraries utop InferModules)
  (modules Infertop)
- (preprocess (pps ppx_compare ppx_sexp_conv ppx_variants_conv -no-check))
+ (preprocess (pps ppx_compare ppx_fields_conv ppx_sexp_conv ppx_variants_conv -no-check))
  (link_flags (-linkall -warn-error -31))
 )
 |}

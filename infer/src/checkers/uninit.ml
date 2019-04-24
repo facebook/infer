@@ -19,9 +19,7 @@ module RecordDomain = UninitDomain.Record (MaybeUninitVars) (AliasedVars) (D)
 module Payload = SummaryPayload.Make (struct
   type t = UninitDomain.Summary.t
 
-  let update_payloads sum (payloads : Payloads.t) = {payloads with uninit= Some sum}
-
-  let of_payloads (payloads : Payloads.t) = payloads.uninit
+  let field = Payloads.Fields.uninit
 end)
 
 module Models = struct

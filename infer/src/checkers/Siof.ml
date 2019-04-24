@@ -60,9 +60,7 @@ let is_modelled =
 module Payload = SummaryPayload.Make (struct
   type t = SiofDomain.Summary.t
 
-  let update_payloads astate (payloads : Payloads.t) = {payloads with siof= Some astate}
-
-  let of_payloads (payloads : Payloads.t) = payloads.siof
+  let field = Payloads.Fields.siof
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct

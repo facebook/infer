@@ -42,6 +42,7 @@ depends: [
   "ounit" {>="2.0.5"}
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
+  "ppx_fields_conv" {">=v0.11.0" & < "v0.12"}
   "sawja" {>="1.5.4"}
   "sqlite3"
   "utop" {with-test}

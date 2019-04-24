@@ -11,6 +11,7 @@
 #require "ctypes.stubs";;
 #require "ocamlgraph";;
 #require "ppx_compare";;
+#require "ppx_fields_conv";;
 #require "sawja";;
 #require "sqlite3";;
 #require "xmlm";;

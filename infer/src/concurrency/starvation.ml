@@ -33,9 +33,7 @@ let is_nonblocking tenv proc_desc =
 module Payload = SummaryPayload.Make (struct
   type t = StarvationDomain.summary
 
-  let update_payloads post (payloads : Payloads.t) = {payloads with starvation= Some post}
-
-  let of_payloads (payloads : Payloads.t) = payloads.starvation
+  let field = Payloads.Fields.starvation
 end)
 
 (* using an indentifier for a class object, create an access path representing that lock;

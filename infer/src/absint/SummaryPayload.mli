@@ -10,11 +10,7 @@ open! IStd
 module type Payload = sig
   type t
 
-  val update_payloads : t -> Payloads.t -> Payloads.t
-  (** Update the corresponding part of the payloads *)
-
-  val of_payloads : Payloads.t -> t option
-  (** Read the corresponding part of the payloads *)
+  val field : (Payloads.t, t option) Field.t
 end
 
 module type S = sig

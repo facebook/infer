@@ -40,9 +40,7 @@ let check_error summary = function
 module Payload = SummaryPayload.Make (struct
   type t = PulseSummary.t
 
-  let update_payloads astate (payloads : Payloads.t) = {payloads with pulse= Some astate}
-
-  let of_payloads (payloads : Payloads.t) = payloads.pulse
+  let field = Payloads.Fields.pulse
 end)
 
 module PulseTransferFunctions = struct

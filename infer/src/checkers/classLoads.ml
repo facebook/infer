@@ -19,9 +19,7 @@ module L = Logging
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
 
-  let update_payloads post (payloads : Payloads.t) = {payloads with class_loads= Some post}
-
-  let of_payloads (payloads : Payloads.t) = payloads.class_loads
+  let field = Payloads.Fields.class_loads
 end)
 
 let do_call pdesc callee loc init =

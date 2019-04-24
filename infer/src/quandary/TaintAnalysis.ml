@@ -17,11 +17,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module Payload = SummaryPayload.Make (struct
     type t = QuandarySummary.t
 
-    let update_payloads quandary_payload (payloads : Payloads.t) =
-      {payloads with quandary= Some quandary_payload}
-
-
-    let of_payloads (payloads : Payloads.t) = payloads.quandary
+    let field = Payloads.Fields.quandary
   end)
 
   module Domain = TaintDomain

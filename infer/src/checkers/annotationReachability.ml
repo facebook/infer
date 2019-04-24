@@ -62,9 +62,7 @@ end
 module Payload = SummaryPayload.Make (struct
   type t = AnnotReachabilityDomain.t
 
-  let update_payloads annot_map (payloads : Payloads.t) = {payloads with annot_map= Some annot_map}
-
-  let of_payloads (payloads : Payloads.t) = payloads.annot_map
+  let field = Payloads.Fields.annot_map
 end)
 
 let is_modeled_expensive tenv = function

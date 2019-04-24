@@ -19,11 +19,7 @@ module Sem = BufferOverrunSemantics
 module Payload = SummaryPayload.Make (struct
   type t = BufferOverrunAnalysisSummary.t
 
-  let update_payloads astate (payloads : Payloads.t) =
-    {payloads with buffer_overrun_analysis= Some astate}
-
-
-  let of_payloads (payloads : Payloads.t) = payloads.buffer_overrun_analysis
+  let field = Payloads.Fields.buffer_overrun_analysis
 end)
 
 type summary_and_formals = BufferOverrunAnalysisSummary.t * (Pvar.t * Typ.t) list

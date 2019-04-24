@@ -13,11 +13,7 @@ module L = Logging
 module Payload = SummaryPayload.Make (struct
   type t = ResourceLeakDomain.summary
 
-  let update_payloads resources_payload (payloads : Payloads.t) =
-    {payloads with lab_resource_leaks= Some resources_payload}
-
-
-  let of_payloads {Payloads.lab_resource_leaks} = lab_resource_leaks
+  let field = Payloads.Fields.lab_resource_leaks
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
