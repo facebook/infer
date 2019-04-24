@@ -145,53 +145,57 @@ let () =
           ~previous_costs:Config.costs_previous
     | Diff ->
         Diff.diff (Lazy.force Driver.mode_from_command_line)
-    | Explore when Config.procedures ->
-        L.result "%a"
-          Config.(
-            Procedures.pp_all
-              ~filter:(Lazy.force Filtering.procedures_filter)
-              ~proc_name:procedures_name ~attr_kind:procedures_definedness
-              ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
-          ()
-    | Explore when Config.source_files ->
-        let filter = Lazy.force Filtering.source_files_filter in
-        L.result "%a"
-          (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
-             ~procedure_names:Config.source_files_procedure_names
-             ~freshly_captured:Config.source_files_freshly_captured)
-          () ;
-        if Config.source_files_cfg then (
-          let source_files = SourceFiles.get_all ~filter () in
-          List.iter source_files ~f:(fun source_file ->
-              (* create directory in captured/ *)
-              DB.Results_dir.init ~debug:true source_file ;
-              (* collect the CFGs for all the procedures in [source_file] *)
-              let proc_names = SourceFiles.proc_names_of_source source_file in
-              let cfgs = Typ.Procname.Hash.create (List.length proc_names) in
-              List.iter proc_names ~f:(fun proc_name ->
-                  Procdesc.load proc_name
-                  |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
-              (* emit the dotty file in captured/... *)
-              Dotty.print_icfg_dotty source_file cfgs ) ;
-          L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_output )
-    | Explore ->
-        let if_some key opt args =
-          match opt with None -> args | Some arg -> key :: string_of_int arg :: args
-        in
-        let if_true key opt args = if not opt then args else key :: args in
-        let if_false key opt args = if opt then args else key :: args in
-        let args =
-          if_some "--max-level" Config.max_nesting
-          @@ if_true "--only-show" Config.only_show
-          @@ if_false "--no-source" Config.source_preview
-          @@ if_true "--html" Config.html
-          @@ if_some "--select" Config.select ["-o"; Config.results_dir]
-        in
-        let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
-        if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
-          L.external_error
-            "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-            (String.concat ~sep:" " args)
+    | Explore -> (
+      match (Config.procedures, Config.source_files) with
+      | true, false ->
+          L.result "%a"
+            Config.(
+              Procedures.pp_all
+                ~filter:(Lazy.force Filtering.procedures_filter)
+                ~proc_name:procedures_name ~attr_kind:procedures_definedness
+                ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
+            ()
+      | false, true ->
+          let filter = Lazy.force Filtering.source_files_filter in
+          L.result "%a"
+            (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
+               ~procedure_names:Config.source_files_procedure_names
+               ~freshly_captured:Config.source_files_freshly_captured)
+            () ;
+          if Config.source_files_cfg then (
+            let source_files = SourceFiles.get_all ~filter () in
+            List.iter source_files ~f:(fun source_file ->
+                (* create directory in captured/ *)
+                DB.Results_dir.init ~debug:true source_file ;
+                (* collect the CFGs for all the procedures in [source_file] *)
+                let proc_names = SourceFiles.proc_names_of_source source_file in
+                let cfgs = Typ.Procname.Hash.create (List.length proc_names) in
+                List.iter proc_names ~f:(fun proc_name ->
+                    Procdesc.load proc_name
+                    |> Option.iter ~f:(fun cfg -> Typ.Procname.Hash.add cfgs proc_name cfg) ) ;
+                (* emit the dotty file in captured/... *)
+                Dotty.print_icfg_dotty source_file cfgs ) ;
+            L.result "CFGs written in %s/*/%s@." Config.captured_dir Config.dotty_output )
+      | false, false ->
+          let if_some key opt args =
+            match opt with None -> args | Some arg -> key :: string_of_int arg :: args
+          in
+          let if_true key opt args = if not opt then args else key :: args in
+          let if_false key opt args = if opt then args else key :: args in
+          let args =
+            if_some "--max-level" Config.max_nesting
+            @@ if_true "--only-show" Config.only_show
+            @@ if_false "--no-source" Config.source_preview
+            @@ if_true "--html" Config.html
+            @@ if_some "--select" Config.select ["-o"; Config.results_dir]
+          in
+          let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
+          if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
+            L.external_error
+              "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
+              (String.concat ~sep:" " args)
+      | true, true ->
+          L.user_error "Options --procedures and --source-files cannot be used together.@\n" )
     | Events ->
         EventLogger.dump () ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)

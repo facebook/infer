@@ -201,6 +201,12 @@ let manual_clang = "CLANG OPTIONS"
 
 let manual_clang_linters = "CLANG LINTERS OPTIONS"
 
+let manual_explore_bugs = "EXPLORE BUGS"
+
+let manual_explore_procedures = "EXPLORE PROCEDURES"
+
+let manual_explore_source_files = "EXPLORE SOURCE FILES"
+
 let manual_generic = Cmdliner.Manpage.s_options
 
 let manual_hoisting = "HOISTING OPTIONS"
@@ -1427,7 +1433,7 @@ and help_format =
 
 and html =
   CLOpt.mk_bool ~long:"html"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
     "Generate html report."
 
 
@@ -1608,7 +1614,7 @@ and margin =
 
 and max_nesting =
   CLOpt.mk_int_opt ~long:"max-nesting"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
     "Level of nested procedure calls to show. Trace elements beyond the maximum nesting level are \
      skipped. If omitted, all levels are shown."
 
@@ -1678,7 +1684,7 @@ and only_footprint =
 
 and only_show =
   CLOpt.mk_bool ~long:"only-show"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
     "Show the list of reports and exit"
 
 
@@ -1763,19 +1769,19 @@ and print_using_diff =
 
 and procedures =
   CLOpt.mk_bool ~long:"procedures"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "Print functions and methods discovered by infer"
 
 
 and procedures_attributes =
   CLOpt.mk_bool ~long:"procedures-attributes"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
 and procedures_definedness =
   CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "Include procedures definedness in the output of $(b,--procedures), i.e. whether the \
      procedure definition was found, or only the procedure declaration, or the procedure is an \
      auto-generated Objective-C accessor"
@@ -1783,7 +1789,7 @@ and procedures_definedness =
 
 and procedures_filter =
   CLOpt.mk_string_opt ~long:"procedures-filter" ~meta:"filter"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "With $(b,--procedures), only print functions and methods (procedures) matching the specified \
      $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns \
      are interpreted as OCaml Str regular expressions. For instance, to keep only methods named \
@@ -1792,7 +1798,7 @@ and procedures_filter =
 
 and procedures_name =
   CLOpt.mk_bool ~long:"procedures-name"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "Include procedures names in the output of $(b,--procedures)"
 
 
@@ -1805,7 +1811,7 @@ and procedures_per_process =
 
 and procedures_source_file =
   CLOpt.mk_bool ~long:"procedures-source-file" ~default:true
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_procedures)]
     "Include the source file in which the procedure definition or declaration was found in the \
      output of $(b,--procedures)"
 
@@ -1987,7 +1993,7 @@ and seconds_per_iteration =
 
 and select =
   CLOpt.mk_int_opt ~long:"select" ~meta:"N"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
     "Select bug number $(i,N). If omitted, prompt for input."
 
 
@@ -2025,19 +2031,19 @@ and skip_translation_headers =
 
 and source_preview =
   CLOpt.mk_bool ~long:"source-preview" ~default:true
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
     "print code excerpts around trace elements"
 
 
 and source_files =
   CLOpt.mk_bool ~long:"source-files"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     "Print source files discovered by infer"
 
 
 and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     (Printf.sprintf
        "Output a dotty file in infer-out/%s for each source file in the output of \
         $(b,--source-files)"
@@ -2046,7 +2052,7 @@ and source_files_cfg =
 
 and source_files_filter =
   CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     "With $(b,--source-files), only print source files matching the specified $(i,filter). The \
      filter is a pattern that should match the file path. Patterns are interpreted as OCaml Str \
      regular expressions."
@@ -2054,19 +2060,19 @@ and source_files_filter =
 
 and source_files_type_environment =
   CLOpt.mk_bool ~long:"source-files-type-environment"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     "Print the type environment of each source file in the output of $(b,--source-files)"
 
 
 and source_files_procedure_names =
   CLOpt.mk_bool ~long:"source-files-procedure-names"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     "Print the names of procedure of each source file in the output of $(b,--source-files)"
 
 
 and source_files_freshly_captured =
   CLOpt.mk_bool ~long:"source-files-freshly-captured"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
+    ~in_help:InferCommand.[(Explore, manual_explore_source_files)]
     "Print whether the source file has been captured in the most recent capture phase in the \
      output of $(b,--source-files)."
 

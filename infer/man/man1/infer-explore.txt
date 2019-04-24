@@ -4,15 +4,19 @@ NAME
 SYNOPSIS
        infer explore [options]
        infer explore --procedures [options]
+       infer explore --source-files [options]
 
 
 DESCRIPTION
-       Show the list of bugs on the console and explore symbolic program
-       traces emitted by infer to explain a report. Can also generate an HTML
-       report from a JSON report.
-
        If --procedures is passed, print information about each procedure
        captured by infer.
+
+       If --source-files is passed, print information about captured source
+       files.
+
+       Otherwise, show the list of bugs on the console and explore symbolic
+       program traces emitted by infer to explain a report. Can also generate
+       an HTML report from a JSON report.
 
 
 
@@ -29,6 +33,10 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
+       --results-dir,-o dir
+           Write results and internal files in the specified directory
+           (default: ./infer-out)
+EXPLORE BUGS
        --html
            Activates: Generate html report. (Conversely: --no-html)
 
@@ -41,6 +49,13 @@ OPTIONS
            Activates: Show the list of reports and exit (Conversely:
            --no-only-show)
 
+       --select N
+           Select bug number N. If omitted, prompt for input.
+
+       --no-source-preview
+           Deactivates: print code excerpts around trace elements
+           (Conversely: --source-preview)
+EXPLORE PROCEDURES
        --procedures
            Activates: Print functions and methods discovered by infer
            (Conversely: --no-procedures)
@@ -71,14 +86,7 @@ OPTIONS
            Deactivates: Include the source file in which the procedure
            definition or declaration was found in the output of --procedures
            (Conversely: --procedures-source-file)
-
-       --results-dir,-o dir
-           Write results and internal files in the specified directory
-           (default: ./infer-out)
-
-       --select N
-           Select bug number N. If omitted, prompt for input.
-
+EXPLORE SOURCE FILES
        --source-files
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)
@@ -108,10 +116,6 @@ OPTIONS
            Activates: Print the type environment of each source file in the
            output of --source-files (Conversely:
            --no-source-files-type-environment)
-
-       --no-source-preview
-           Deactivates: print code excerpts around trace elements
-           (Conversely: --source-preview)
 
 
 ENVIRONMENT

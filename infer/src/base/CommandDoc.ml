@@ -126,14 +126,17 @@ let explore =
     ~short_description:"explore the error traces in infer reports"
     ~synopsis:
       {|$(b,infer) $(b,explore) $(i,[options])
-$(b,infer) $(b,explore) $(b,--procedures) $(i,[options])|}
+$(b,infer) $(b,explore) $(b,--procedures) $(i,[options])
+$(b,infer) $(b,explore) $(b,--source-files) $(i,[options])|}
     ~description:
       [ `P
-          "Show the list of bugs on the console and explore symbolic program traces emitted by \
-           infer to explain a report. Can also generate an HTML report from a JSON report."
-      ; `P
           "If $(b,--procedures) is passed, print information about each procedure captured by \
-           infer." ]
+           infer."
+      ; `P "If $(b,--source-files) is passed, print information about captured source files."
+      ; `P
+          "Otherwise, show the list of bugs on the console and explore symbolic program traces \
+           emitted by infer to explain a report. Can also generate an HTML report from a JSON \
+           report." ]
     ~see_also:InferCommand.[Report; Run]
 
 
