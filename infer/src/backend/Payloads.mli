@@ -7,6 +7,9 @@
 
 open! IStd
 
+(* ignore dead modules added by @@deriving fields *)
+[@@@warning "-60"]
+
 (** analysis results *)
 type t =
   { annot_map: AnnotReachabilityDomain.t option
