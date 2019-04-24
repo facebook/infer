@@ -26,15 +26,13 @@ include $(TESTS_DIR)/base.make
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) $(OBJECTS) $(CLEAN_EXTRA)
+	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) $(CLEAN_EXTRA)
 ifneq ($(INFER_OUT),.)
 	$(REMOVE_DIR) $(INFER_OUT)
 endif
 
 PROJECT_ROOT ?= $(TESTS_DIR)
 
-$(OBJECTS): $(SOURCES)
-	$(QUIET)$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
@@ -53,9 +51,10 @@ else
 	$(QUIET)java -verbose:class $* | grep "^\[Loaded" | cut -f2 -d' ' | grep -vE "^(java|sun)" > $@
 endif
 
+# infer compiles as well as analyses; dependency ensures class files are generated
+$(OBJECTS): issues.exp.test$(TEST_SUFFIX)
 
 loads.exp: $(LOADS)
-
 	$(QUIET)for F in $(LOADS) ; do sed -e "s#^#$(TEST_REL_DIR)/$${F%.*}.java, #" $$F ; done | sort > loads.exp
 
 loads.exp.test: issues.exp.test$(TEST_SUFFIX)
