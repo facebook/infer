@@ -261,6 +261,10 @@ val replace_instrs : t -> f:(Node.t -> Sil.instr -> Sil.instr) -> bool
 (** Map and replace the instructions to be executed.
     Returns true if at least one substitution occured. *)
 
+val replace_instrs_by : t -> f:(Node.t -> Sil.instr -> Sil.instr array) -> bool
+(** Like [replace_instrs], but slower, and each instruction may be replaced
+by 0, 1, or more instructions. *)
+
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
 

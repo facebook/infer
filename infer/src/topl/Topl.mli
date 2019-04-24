@@ -7,5 +7,15 @@
 
 open! IStd
 
-val init : unit -> unit
-(** Parse properties, mentioned by [Config.topl_properties]. Does this only once. *)
+val active : unit -> bool
+(** Returns whether the TOPL analysis is active. *)
+
+val get_proc_attr : Typ.Procname.t -> ProcAttributes.t option
+(** [get_proc_attr proc_name] returns the attributes of [get_proc_desc proc_name] *)
+
+val get_proc_desc : Typ.Procname.t -> Procdesc.t option
+(** Returns a synthesized Procdesc.t, when it corresponds to instrumentation for a TOPL property. *)
+
+val instrument : Tenv.t -> Procdesc.t -> unit
+(** Inserts calls to the TOPL automaton. Mutates the arguments: it is the caller's responsibility
+to instrument procedures at most once. *)

@@ -210,9 +210,10 @@ let node_finish_session node =
 let write_proc_html pdesc =
   if Config.write_html then (
     let pname = Procdesc.get_proc_name pdesc in
-    let source = (Procdesc.get_loc pdesc).file in
+    let loc = Procdesc.get_loc pdesc in
+    let source = loc.file in
     let nodes = List.sort ~compare:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
-    let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
+    let linenum = loc.Location.line in
     let fd, fmt = Io_infer.Html.create source [Typ.Procname.to_filename pname] in
     F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
       (Io_infer.Html.pp_line_link source

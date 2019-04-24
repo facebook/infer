@@ -982,6 +982,7 @@ module Procname = struct
     | Block of Block.t
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * Block.block_name list
+    | Topl_method of Java.t
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
@@ -1024,6 +1025,8 @@ module Procname = struct
     match t with
     | Java j ->
         Java {j with class_name= new_class}
+    | Topl_method j ->
+        Topl_method {j with class_name= new_class}
     | ObjC_Cpp osig ->
         ObjC_Cpp {osig with class_name= new_class}
     | WithBlockParameters (base, blocks) ->
@@ -1060,7 +1063,7 @@ module Procname = struct
         ObjC_Cpp {osig with method_name= new_method_name}
     | WithBlockParameters (base, blocks) ->
         WithBlockParameters (objc_cpp_replace_method_name base new_method_name, blocks)
-    | C _ | Block _ | Linters_dummy_method | Java _ ->
+    | C _ | Block _ | Linters_dummy_method | Java _ | Topl_method _ ->
         t
 
 
@@ -1074,7 +1077,7 @@ module Procname = struct
         QualifiedCppName.to_qual_string name
     | Block {name} ->
         name
-    | Java j ->
+    | Java j | Topl_method j ->
         j.method_name
     | Linters_dummy_method ->
         "Linters_dummy_method"
@@ -1096,6 +1099,8 @@ module Procname = struct
     | WithBlockParameters _ ->
         Language.Clang
     | Java _ ->
+        Language.Java
+    | Topl_method _ ->
         Language.Java
 
 
@@ -1141,7 +1146,7 @@ module Procname = struct
   (** Very verbose representation of an existing Procname.t *)
   let rec to_unique_id pn =
     match pn with
-    | Java j ->
+    | Java j | Topl_method j ->
         Java.to_string j Verbose
     | C osig ->
         C.to_string osig Verbose
@@ -1158,7 +1163,7 @@ module Procname = struct
   (** Convert a proc name to a string for the user to see *)
   let rec to_string p =
     match p with
-    | Java j ->
+    | Java j | Topl_method j ->
         Java.to_string j Non_verbose
     | C osig ->
         C.to_string osig Non_verbose
@@ -1175,7 +1180,7 @@ module Procname = struct
   (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
   let rec to_simplified_string ?(withclass = false) p =
     match p with
-    | Java j ->
+    | Java j | Topl_method j ->
         Java.to_string ~withclass j Simple
     | C osig ->
         C.to_string osig Simple
@@ -1213,7 +1218,7 @@ module Procname = struct
       List.map ~f:(fun par -> Parameter.ClangParameter par) clang_params
     in
     match procname with
-    | Java j ->
+    | Java j | Topl_method j ->
         List.map ~f:(fun par -> Parameter.JavaParameter par) (Java.get_parameters j)
     | C osig ->
         clang_param_to_param (C.get_parameters osig)
@@ -1253,6 +1258,8 @@ module Procname = struct
     match procname with
     | Java j ->
         Java (Java.replace_parameters (params_to_java_params new_parameters) j)
+    | Topl_method j ->
+        Topl_method (Java.replace_parameters (params_to_java_params new_parameters) j)
     | C osig ->
         C (C.replace_parameters (params_to_clang_params new_parameters) osig)
     | ObjC_Cpp osig ->

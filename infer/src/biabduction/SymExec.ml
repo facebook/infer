@@ -1274,7 +1274,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
             let skip_loop =
               match ik with
               | Sil.Ik_while | Sil.Ik_for ->
-                  not (IntLit.iszero i) (* skip wile(1) and for (;1;) *)
+                  not (IntLit.iszero i) (* skip while(1) and for (;1;) *)
               | Sil.Ik_dowhile ->
                   true (* skip do..while *)
               | Sil.Ik_land_lor ->
@@ -1333,7 +1333,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
                 let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
             ) )
-      | Java callee_pname_java ->
+      | Java callee_pname_java | Topl_method callee_pname_java ->
           let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
           let resolved_pnames =

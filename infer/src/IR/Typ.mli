@@ -503,6 +503,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | Block of Block.t
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * Block.block_name list
+    | Topl_method of Java.t
   [@@deriving compare]
 
   val block_name_of_procname : t -> Block.block_name
