@@ -98,7 +98,7 @@ module BoundMap = struct
               let bound =
                 match entry_mem with
                 | Bottom ->
-                    L.internal_error
+                    L.debug Analysis Medium
                       "@\n\
                        [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                        unreachable returning cost 0 \n" ;
