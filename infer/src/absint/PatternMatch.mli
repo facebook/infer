@@ -36,6 +36,9 @@ val implements_iterator : Tenv.t -> string -> bool
 val implements_collection : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Collection *)
 
+val implements_collections : Tenv.t -> string -> bool
+(** Check whether class implements a Java's Collections *)
+
 val implements_pseudo_collection : Tenv.t -> string -> bool
 (** Check whether class implements a pseudo Collection with support
    for get() and size() methods *)

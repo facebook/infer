@@ -664,6 +664,15 @@ module Collection = struct
 
   let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
 
+  let singleton_collection el_var =
+    let exec env ~ret:((id, _) as ret) mem =
+      let {exec= new_exec; check= _} = new_collection el_var in
+      let mem = new_exec env ~ret mem in
+      change_size_by ~size_f:Itv.incr id ~ret env mem
+    in
+    {exec; check= no_check}
+
+
   (** increase the size by [0, 1] because put replaces the value
      rather than add a new one when the key is found in the map *)
   let put coll_id =
@@ -877,6 +886,16 @@ module Call = struct
       ; -"std" &:: "basic_string" &::.*--> no_model
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
+        (* model sets as lists *)
+      ; +PatternMatch.implements_collections
+        &:: "singleton" <>$ capt_exp $--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections
+        &:: "emptySet" <>$ capt_exp $--> Collection.new_collection
+        (* model maps as lists *)
+      ; +PatternMatch.implements_collections
+        &:: "singletonMap" <>$ capt_exp $--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections
+        &:: "singletonList" <>$ capt_exp $--> Collection.singleton_collection
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
       ; +PatternMatch.implements_collection

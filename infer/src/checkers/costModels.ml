@@ -34,9 +34,14 @@ module Collections = struct
     n_log_n length
 
 
-  let linear coll_exp {location} ~ret:_ inferbo_mem =
-    eval_collection_length coll_exp location ~of_function:"List.contains" inferbo_mem
-    |> BasicCost.of_non_negative_bound
+  let of_length_bound ~degree_kind coll_exp ~of_function {location} ~ret:_ inferbo_mem =
+    eval_collection_length coll_exp location inferbo_mem ~of_function
+    |> BasicCost.of_non_negative_bound ~degree_kind
+
+
+  let linear = of_length_bound ~degree_kind:Polynomials.DegreeKind.Linear
+
+  let logarithmic = of_length_bound ~degree_kind:Polynomials.DegreeKind.Log
 end
 
 let provider_get {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
@@ -83,8 +88,24 @@ module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     make_dispatcher
-      [ -"java.util.Collections" &:: "sort" $ capt_exp $--> Collections.sort
-      ; +PatternMatch.implements_list &:: "contains" <>$ capt_exp $+...$--> Collections.linear
+      [ +PatternMatch.implements_collections &:: "sort" $ capt_exp $--> Collections.sort
+      ; +PatternMatch.implements_list &:: "contains" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"List.contains"
+      ; +PatternMatch.implements_collections
+        &:: "binarySearch" <>$ capt_exp
+        $+...$--> Collections.logarithmic ~of_function:"Collections.binarySearch"
+      ; +PatternMatch.implements_collections
+        &:: "copy" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"Collections.copy"
+      ; +PatternMatch.implements_collections
+        &:: "fill" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"Collections.fill"
+      ; +PatternMatch.implements_collections
+        &:: "reverse" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"Collections.reverse"
+      ; +PatternMatch.implements_collections
+        &:: "shuffle" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"Collections.shuffle"
       ; +PatternMatch.implements_lang "String"
         &:: "substring" <>$ capt_exp $+ capt_exp $--> String.substring
       ; +PatternMatch.implements_lang "String"
