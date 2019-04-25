@@ -182,8 +182,6 @@ let remove_first =
   fun list ~f -> aux list ~f []
 
 
-let pick_first_some lazies = List.find_map lazies ~f:Lazy.force
-
 let pp_print_list ~max ?(pp_sep = Format.pp_print_cut) pp_v ppf =
   let rec aux n = function
     | [] ->

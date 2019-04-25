@@ -85,7 +85,7 @@ let java_global_tenv =
 
 let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env proc_name =
   match proc_name with
-  | Typ.Procname.Java _ | Typ.Procname.Topl_method _ ->
+  | Typ.Procname.Java _ ->
       Lazy.force value_on_java
   | _ -> (
     match get_file_data exe_env proc_name with
