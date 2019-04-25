@@ -287,6 +287,8 @@ module CxxAnnotationSpecs = struct
 
   let option_name = "--annotation-reachability-cxx"
 
+  let src_option_name = "--annotation-reachability-cxx-sources"
+
   let cxx_string_of_pname pname =
     let chop_prefix s =
       String.chop_prefix s ~prefix:Config.clang_inner_destructor_prefix |> Option.value ~default:s
@@ -299,7 +301,7 @@ module CxxAnnotationSpecs = struct
     ^ "()"
 
 
-  let spec_from_config spec_name spec_cfg =
+  let spec_from_config spec_name spec_cfg source_overrides =
     let src = option_name ^ " -> " ^ spec_name in
     let make_pname_pred entry ~src : Typ.Procname.t -> bool =
       let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
@@ -316,8 +318,12 @@ module CxxAnnotationSpecs = struct
       | _, _ ->
           fun pname -> sym_pred pname || path_pred pname
     in
-    let sources = U.yojson_lookup spec_cfg "sources" ~src ~f:U.assoc_of_yojson ~default:[] in
-    let sources_src = src ^ " -> sources" in
+    let sources, sources_src =
+      if List.length source_overrides > 0 then (source_overrides, src_option_name)
+      else
+        ( U.yojson_lookup spec_cfg "sources" ~src ~f:U.assoc_of_yojson ~default:[]
+        , src ^ " -> sources" )
+    in
     let src_name = spec_name ^ "-source" in
     let src_desc =
       U.yojson_lookup sources "desc" ~src:sources_src ~f:U.string_of_yojson ~default:src_name
@@ -392,11 +398,16 @@ module CxxAnnotationSpecs = struct
     U.assoc_of_yojson Config.annotation_reachability_cxx ~src:option_name
 
 
+  let annotation_reachability_cxx_sources =
+    U.assoc_of_yojson Config.annotation_reachability_cxx_sources ~src:src_option_name
+
+
   let from_config () : 'AnnotationSpec list =
     List.map
       ~f:(fun (spec_name, spec_cfg) ->
         let src = option_name ^ " -> " ^ spec_name in
-        spec_from_config spec_name (U.assoc_of_yojson spec_cfg ~src) )
+        spec_from_config spec_name (U.assoc_of_yojson spec_cfg ~src)
+          annotation_reachability_cxx_sources )
       annotation_reachability_cxx
 end
 

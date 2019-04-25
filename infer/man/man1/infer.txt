@@ -96,6 +96,10 @@ OPTIONS
            (default: [])
            See also infer-analyze(1).
 
+       --annotation-reachability-cxx-sources json
+           Override sources in all cxx annotation reachability specs with the
+           given sources spec (default: [])           See also infer-analyze(1).
+
        --annotation-reachability-only
            Activates: Enable --annotation-reachability and disable all other
            checkers (Conversely: --no-annotation-reachability-only)       

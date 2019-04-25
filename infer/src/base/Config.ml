@@ -769,6 +769,12 @@ This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every fun
 |}
 
 
+and annotation_reachability_cxx_sources =
+  CLOpt.mk_json ~long:"annotation-reachability-cxx-sources"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    {|Override sources in all cxx annotation reachability specs with the given sources spec|}
+
+
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -2551,6 +2557,8 @@ and analysis_stops = !analysis_stops
 and annotation_reachability = !annotation_reachability
 
 and annotation_reachability_cxx = !annotation_reachability_cxx
+
+and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 

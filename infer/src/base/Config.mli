@@ -227,6 +227,8 @@ val annotation_reachability : bool
 
 val annotation_reachability_cxx : Yojson.Basic.json
 
+val annotation_reachability_cxx_sources : Yojson.Basic.json
+
 val annotation_reachability_custom_pairs : Yojson.Basic.json
 
 val anon_args : string list
