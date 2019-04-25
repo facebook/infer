@@ -1460,7 +1460,7 @@ module MemReach = struct
 
   let set_latest_prune : LatestPrune.t -> t -> t = fun latest_prune x -> {x with latest_prune}
 
-  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> _ t0 -> PowLoc.t =
+  let get_reachable_locs_from_aux : f:(Pvar.t -> bool) -> PowLoc.t -> _ t0 -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
       if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
       else if Loc.is_field_of ~loc:root ~field_loc:loc then PowLoc.add loc acc
@@ -1473,13 +1473,19 @@ module MemReach = struct
         let reachable_locs = MemPure.fold (add_reachable1 ~root:loc) heap PowLoc.empty in
         add_from_locs heap reachable_locs (PowLoc.add loc acc)
     in
-    let add_param_locs formals mem acc =
-      let add_loc loc _ acc = if Loc.has_param_path formals loc then PowLoc.add loc acc else acc in
+    let add_param_locs ~f mem acc =
+      let add_loc loc _ acc = if Loc.exists_pvar ~f loc then PowLoc.add loc acc else acc in
       MemPure.fold add_loc mem acc
     in
-    fun formals locs m ->
-      let locs = add_param_locs formals m.mem_pure locs in
+    fun ~f locs m ->
+      let locs = add_param_locs ~f m.mem_pure locs in
       add_from_locs m.mem_pure locs PowLoc.empty
+
+
+  let get_reachable_locs_from : (Pvar.t * Typ.t) list -> PowLoc.t -> _ t0 -> PowLoc.t =
+   fun formals locs m ->
+    let is_formal pvar = List.exists formals ~f:(fun (formal, _) -> Pvar.equal pvar formal) in
+    get_reachable_locs_from_aux ~f:is_formal locs m
 
 
   let range :
@@ -1509,6 +1515,23 @@ module MemReach = struct
 
   let relation_forget_locs : PowLoc.t -> t -> t =
    fun locs -> lift_relation (Relation.forget_locs locs)
+
+
+  let forget_unreachable_locs : formals:(Pvar.t * Typ.t) list -> t -> t =
+   fun ~formals m ->
+    let is_reachable =
+      let reachable_locs =
+        let f pvar =
+          Pvar.is_return pvar || Pvar.is_global pvar
+          || List.exists formals ~f:(fun (formal, _) -> Pvar.equal formal pvar)
+        in
+        get_reachable_locs_from_aux ~f PowLoc.empty m
+      in
+      fun l -> PowLoc.mem l reachable_locs
+    in
+    let stack_locs = StackLocs.filter is_reachable m.stack_locs in
+    let mem_pure = MemPure.filter (fun l _ -> is_reachable l) m.mem_pure in
+    {m with stack_locs; mem_pure}
 
 
   let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
@@ -1690,6 +1713,10 @@ module Mem = struct
 
   let relation_forget_locs : PowLoc.t -> t -> t =
    fun locs -> map ~f:(MemReach.relation_forget_locs locs)
+
+
+  let forget_unreachable_locs : formals:(Pvar.t * Typ.t) list -> t -> t =
+   fun ~formals -> map ~f:(MemReach.forget_unreachable_locs ~formals)
 
 
   let[@warning "-32"] init_param_relation : Loc.t -> t -> t =

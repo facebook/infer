@@ -140,6 +140,15 @@ module SymbolPath = struct
         represents_callsite_sound_partial p
 
 
+  let rec exists_pvar_partial ~f = function
+    | Pvar pvar ->
+        f pvar
+    | Deref (_, p) | Field (_, p) ->
+        exists_pvar_partial ~f p
+    | Callsite _ ->
+        false
+
+
   let rec exists_str_partial ~f = function
     | Pvar pvar ->
         f (Pvar.to_string pvar)

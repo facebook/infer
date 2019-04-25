@@ -67,6 +67,8 @@ module SymbolPath : sig
 
   val represents_callsite_sound_partial : partial -> bool
 
+  val exists_pvar_partial : f:(Pvar.t -> bool) -> partial -> bool
+
   val exists_str_partial : f:(string -> bool) -> partial -> bool
 end
 

@@ -117,6 +117,13 @@ module Allocsite = struct
         || Option.value_map path ~default:false ~f:Symb.SymbolPath.represents_multiple_values
     | LiteralString _ ->
         true
+
+
+  let exists_pvar ~f = function
+    | Unknown | LiteralString _ | Known {path= None} ->
+        false
+    | Symbol path | Known {path= Some path} ->
+        Symb.SymbolPath.exists_pvar_partial ~f path
 end
 
 module Loc = struct
@@ -258,12 +265,6 @@ module Loc = struct
         Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
 
 
-  let has_param_path formals x =
-    Option.value_map (get_path x) ~default:false ~f:(fun x ->
-        Option.value_map (Symb.SymbolPath.get_pvar x) ~default:false ~f:(fun x ->
-            List.exists formals ~f:(fun (formal, _) -> Pvar.equal x formal) ) )
-
-
   let rec represents_multiple_values = function
     | Var _ ->
         false
@@ -271,6 +272,17 @@ module Loc = struct
         Allocsite.represents_multiple_values allocsite
     | Field (l, _) ->
         represents_multiple_values l
+
+
+  let rec exists_pvar ~f = function
+    | Var (LogicalVar _) ->
+        false
+    | Var (ProgramVar pvar) ->
+        f pvar
+    | Allocsite allocsite ->
+        Allocsite.exists_pvar ~f allocsite
+    | Field (l, _) ->
+        exists_pvar ~f l
 
 
   let exists_str ~f l =
