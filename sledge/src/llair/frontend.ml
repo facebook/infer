@@ -258,12 +258,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       ;
       xlate_type_ llt
       |>
-      [%Trace.retn fun {pf} typ ->
-        assertf
-          (Bool.equal (Llvm.type_is_sized llt) (Typ.is_sized typ))
-          !"xlate_type did not preserve is_sized: %a to %a %{sexp:Typ.t}"
-          pp_lltype llt Typ.pp typ typ () ;
-        pf "%a" Typ.pp_defn typ] )
+      [%Trace.retn fun {pf} -> pf "%a" Typ.pp_defn] )
 
 and xlate_type_opt : x -> Llvm.lltype -> Typ.t option =
  fun x llt ->

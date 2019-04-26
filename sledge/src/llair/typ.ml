@@ -61,6 +61,8 @@ let is_sized = function
   | Function _ | Opaque _ -> false
   | Integer _ | Float _ | Pointer _ | Array _ | Tuple _ | Struct _ -> true
 
+let is_sized_or_opaque = function Opaque _ -> true | t -> is_sized t
+
 let invariant t =
   Invariant.invariant [%here] t [%sexp_of: t]
   @@ fun () ->
@@ -68,8 +70,9 @@ let invariant t =
   | Function {return; args} ->
       assert (Option.for_all ~f:is_sized return) ;
       assert (Vector.for_all ~f:is_sized args)
-  | Array {elt} -> assert (is_sized elt)
-  | Tuple {elts} | Struct {elts} -> assert (Vector.for_all ~f:is_sized elts)
+  | Array {elt} -> assert (is_sized_or_opaque elt)
+  | Tuple {elts} | Struct {elts} ->
+      assert (Vector.for_all ~f:is_sized_or_opaque elts)
   | Integer {bits} | Float {bits} -> assert (bits > 0)
   | Pointer _ | Opaque _ -> assert true
 
