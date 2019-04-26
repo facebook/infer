@@ -986,6 +986,7 @@ module Procname = struct
 
   let equal = [%compare.equal: t]
 
+  (** hash function for procname *)
   let hash = Hashtbl.hash
 
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
@@ -1278,15 +1279,12 @@ module Procname = struct
 
   let describe f pn = F.pp_print_string f (hashable_name pn)
 
-  (** hash function for procname *)
-  let hash_pname = Hashtbl.hash
-
   module Hashable = struct
     type nonrec t = t
 
     let equal = equal
 
-    let hash = hash_pname
+    let hash = hash
   end
 
   module Hash = Hashtbl.Make (Hashable)
