@@ -1000,15 +1000,15 @@ let xlate_instr :
       let return_dst = label_of_block return_blk in
       let unwind_blk = Llvm.get_unwind_dest instr in
       let unwind_dst = label_of_block unwind_blk in
+      let num_args =
+        if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
+          Llvm.num_arg_operands instr
+        else (
+          warn "ignoring variable arguments to variadic function: %a"
+            pp_llvalue instr ;
+          Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
+      in
       let args =
-        let num_args =
-          if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-            Llvm.num_arg_operands instr
-          else (
-            warn "ignoring variable arguments to variadic function: %a"
-              pp_llvalue instr ;
-            Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
-        in
         List.rev_init num_args ~f:(fun i ->
             xlate_value x (Llvm.operand instr i) )
       in
@@ -1021,7 +1021,7 @@ let xlate_instr :
       | ["__llair_throw"] ->
           let dst = Llair.Jump.mk unwind_dst args in
           emit_term (Llair.Term.goto ~dst ~loc)
-      | ["_Znwm" (* operator new(size_t num) *)] ->
+      | ["_Znwm" (* operator new(size_t num) *)] when num_args = 1 ->
           let reg = xlate_name instr in
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
