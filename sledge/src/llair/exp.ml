@@ -1140,7 +1140,7 @@ let app1 ?(partial = false) op arg =
   |> check (fun e ->
          (* every App subexp of output appears in input *)
          match op with
-         | App {op= Eq | Dq} -> ()
+         | App {op= Eq | Dq | Xor} -> ()
          | _ -> (
            match e with
            | App {op= App {op= App {op= Conditional}}} -> ()
