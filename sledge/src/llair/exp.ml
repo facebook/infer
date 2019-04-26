@@ -737,7 +737,11 @@ let rec sum_to_exp typ sum =
     | _ -> Add {typ; args= sum} )
   | _ -> Add {typ; args= sum}
 
-and rational Q.{num; den} typ = simp_div (integer num typ) (integer den typ)
+and rational Q.{num; den} typ =
+  let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
+  simp_div
+    (integer (Z.clamp ~signed:true bits num) typ)
+    (integer (Z.clamp ~signed:true bits den) typ)
 
 and simp_div x y =
   match (x, y) with
