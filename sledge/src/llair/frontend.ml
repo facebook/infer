@@ -68,13 +68,15 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
       match Llvm.instr_opcode i with
       | Call -> (
         match Llvm.(value_name (operand i (num_arg_operands i))) with
-        | "llvm.dbg.declare" -> (
-          match Llvm.(get_mdnode_operands (operand i 0)) with
-          | [|var|] when not (String.is_empty (Llvm.value_name var)) ->
-              add ~key:var ~data:loc
-          | _ ->
-              warn "could not find variable for debug info %a at %a"
-                pp_llvalue (Llvm.operand i 0) Loc.pp loc )
+        | "llvm.dbg.declare" ->
+            let md = Llvm.(get_mdnode_operands (operand i 0)) in
+            if not (Array.is_empty md) then add ~key:md.(0) ~data:loc
+            else
+              warn
+                "could not find variable for debug info %a at %a with \
+                 metadata %a"
+                pp_llvalue (Llvm.operand i 0) Loc.pp loc
+                (List.pp ", " pp_llvalue) (Array.to_list md)
         | _ -> () )
       | _ -> ()
     in
