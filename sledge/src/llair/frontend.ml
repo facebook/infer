@@ -31,16 +31,16 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
     =
   let loc_of_global g =
     Loc.mk
-      ?dir:(Llvm.get_global_debug_loc_directory g)
-      ?file:(Llvm.get_global_debug_loc_filename g)
-      ~line:(Llvm.get_global_debug_loc_line g)
+      ?dir:(Llvm.get_debug_loc_directory g)
+      ?file:(Llvm.get_debug_loc_filename g)
+      ~line:(Llvm.get_debug_loc_line g)
       ?col:None
   in
   let loc_of_function f =
     Loc.mk
-      ?dir:(Llvm.get_function_debug_loc_directory f)
-      ?file:(Llvm.get_function_debug_loc_filename f)
-      ~line:(Llvm.get_function_debug_loc_line f)
+      ?dir:(Llvm.get_debug_loc_directory f)
+      ?file:(Llvm.get_debug_loc_filename f)
+      ~line:(Llvm.get_debug_loc_line f)
       ?col:None
   in
   let loc_of_instr i =
@@ -1311,7 +1311,7 @@ let transform : Llvm.llmodule -> unit =
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
-  Llvm_scalar_opts.add_merge_return pm ;
+  Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
   Llvm_scalar_opts.add_cfg_simplification pm ;
   Llvm.PassManager.run_module llmodule pm |> (ignore : bool -> _) ;
   Llvm.PassManager.dispose pm
