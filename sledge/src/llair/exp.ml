@@ -387,7 +387,7 @@ let assert_monomial add_typ mono =
   match mono with
   | Mul {typ; args} ->
       assert (Typ.castable add_typ typ) ;
-      assert (Option.exists ~f:(fun n -> 1 < n) (Typ.prim_bit_size_of typ)) ;
+      assert (Option.is_some (Typ.prim_bit_size_of typ)) ;
       Qset.iter args ~f:(fun factor exponent ->
           assert (Q.sign exponent > 0) ;
           assert_indeterminate factor |> Fn.id )
@@ -401,8 +401,10 @@ let assert_poly_term add_typ mono coeff =
   match mono with
   | Integer {data} -> assert (Z.equal Z.one data)
   | Mul {args} ->
-      if Q.equal Q.one coeff then assert (Qset.length args > 1)
-      else assert (Qset.length args > 0) ;
+      ( match Qset.min_elt args with
+      | None | Some (Integer _, _) -> assert false
+      | Some (_, n) -> assert (Qset.length args > 1 || not (Q.equal Q.one n))
+      ) ;
       assert_monomial add_typ mono |> Fn.id
   | _ -> assert_monomial add_typ mono |> Fn.id
 
