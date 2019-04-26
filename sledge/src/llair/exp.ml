@@ -444,7 +444,9 @@ let invariant ?(partial = false) e =
   | Var _ | Nondet _ | Label _ | Float _ -> assert_arity 0
   | Convert {dst; src} ->
       ( match args with
-      | [Integer {typ}] -> assert (Typ.equal src typ)
+      | [Integer {typ= Integer _ as typ}] -> assert (Typ.equal src typ)
+      | [arg] ->
+          assert (Option.for_all ~f:(Typ.convertible src) (typ_of arg))
       | _ -> assert_arity 1 ) ;
       assert (Typ.convertible src dst)
   | Add _ -> assert_polynomial e |> Fn.id
