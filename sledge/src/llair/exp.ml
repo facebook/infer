@@ -655,6 +655,15 @@ let null = integer Z.zero Typ.ptr
 let bool b = integer (Z.of_bool b) Typ.bool
 let float data = Float {data} |> check invariant
 
+let zero (typ : Typ.t) =
+  match typ with Float _ -> float "0" | _ -> integer Z.zero typ
+
+let one (typ : Typ.t) =
+  match typ with Float _ -> float "1" | _ -> integer Z.one typ
+
+let minus_one (typ : Typ.t) =
+  match typ with Float _ -> float "-1" | _ -> integer Z.minus_one typ
+
 let simp_convert signed (dst : Typ.t) src arg =
   match (dst, arg) with
   | _ when Typ.equal dst src -> arg
@@ -720,7 +729,7 @@ let sum_mul_const const sum =
 
 let rec sum_to_exp typ sum =
   match Qset.length sum with
-  | 0 -> integer Z.zero typ
+  | 0 -> zero typ
   | 1 -> (
     match Qset.min_elt sum with
     | Some (Integer _, q) -> rational q typ
@@ -817,7 +826,7 @@ let rec simp_add_ typ es poly =
   in
   Qset.fold ~f es ~init:poly
 
-let simp_add typ es = simp_add_ typ es (integer Z.zero typ)
+let simp_add typ es = simp_add_ typ es (zero typ)
 let simp_add2 typ e f = simp_add_ typ (Sum.singleton e) f
 
 (* Products of indeterminants represented by multisets. A product ∏ᵢ xᵢ^nᵢ
@@ -876,12 +885,12 @@ let simp_mul typ es =
     if Q.equal Q.zero pwr then exp
     else mul_pwr bas Q.(pwr - one) (simp_mul2 typ bas exp)
   in
-  let one = integer Z.one typ in
+  let one = one typ in
   Qset.fold es ~init:one ~f:(fun bas pwr exp ->
       if Q.sign pwr >= 0 then mul_pwr bas pwr exp
       else simp_div exp (mul_pwr bas (Q.neg pwr) one) )
 
-let simp_negate typ x = simp_mul2 typ (integer Z.minus_one typ) x
+let simp_negate typ x = simp_mul2 typ (minus_one typ) x
 
 let simp_sub typ x y =
   match (x, y) with
@@ -1345,7 +1354,7 @@ let solve e f =
           let d = rational (Q.neg q) typ in
           let r = div n d in
           Some (Map.add_exn s ~key:c ~data:r)
-      | e_f -> solve_uninterp e_f (integer Z.zero typ) )
+      | e_f -> solve_uninterp e_f (zero typ) )
     | Concat {args= ms}, Concat {args= ns} -> (
       match (concat_size ms, concat_size ns) with
       | Some p, Some q -> solve_uninterp e f >>= solve_ p q
