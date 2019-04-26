@@ -853,6 +853,7 @@ let rec xlate_func_name x llv =
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
   | GlobalIFunc -> todo "ifunc: %a" pp_llvalue llv ()
   | InlineAsm -> todo "inline asm: %a" pp_llvalue llv ()
+  | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
   | _ -> fail "unknown function: %a" pp_llvalue llv ()
 
 let ignored_callees = Hash_set.create (module String)
