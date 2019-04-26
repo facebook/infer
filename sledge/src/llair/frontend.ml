@@ -304,6 +304,9 @@ let xlate_name_opt : Llvm.llvalue -> Var.t option =
 
 let memo_value : (Llvm.llvalue, Exp.t) Hashtbl.t = Hashtbl.Poly.create ()
 
+let memo_global : (Llvm.llvalue, Global.t) Hashtbl.t =
+  Hashtbl.Poly.create ()
+
 module Llvalue = struct
   type t = Llvm.llvalue
 
@@ -593,27 +596,27 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
 
 and xlate_global : x -> Llvm.llvalue -> Global.t =
  fun x llg ->
-  let init =
-    match (Llvm.classify_value llg, Llvm.linkage llg) with
-    | _, (External | External_weak) -> None
-    | GlobalVariable, _ ->
-        Some (xlate_value x (Llvm.global_initializer llg))
-    | _ -> None
-  in
-  let g = xlate_name llg in
-  let llt = Llvm.type_of llg in
-  let typ = xlate_type x llt in
-  let siz = size_of x llt in
-  let loc = find_loc llg in
-  Global.mk g ?init siz typ loc
-
-let xlate_global : x -> Llvm.llvalue -> Global.t =
- fun x llg ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
-  ;
-  xlate_global x llg
-  |>
-  [%Trace.retn fun {pf} -> pf "%a" Global.pp]
+  Hashtbl.find_or_add memo_global llg ~default:(fun () ->
+      [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
+      ;
+      let g = xlate_name llg in
+      let llt = Llvm.type_of llg in
+      let typ = xlate_type x llt in
+      let siz = size_of x llt in
+      let loc = find_loc llg in
+      (* add to tbl without initializer in case of recursive occurrences in
+         its own initializer *)
+      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g siz typ loc) ;
+      let init =
+        match (Llvm.classify_value llg, Llvm.linkage llg) with
+        | _, (External | External_weak) -> None
+        | GlobalVariable, _ ->
+            Some (xlate_value x (Llvm.global_initializer llg))
+        | _ -> None
+      in
+      Global.mk ?init g siz typ loc
+      |>
+      [%Trace.retn fun {pf} -> pf "%a" Global.pp] )
 
 type pop_thunk = Loc.t -> Llair.inst list
 
@@ -1358,6 +1361,7 @@ let translate : string -> Llair.t =
   Hashtbl.clear scope_tbl ;
   Hashtbl.clear anon_struct_name ;
   Hashtbl.clear memo_type ;
+  Hashtbl.clear memo_global ;
   Hashtbl.clear memo_value ;
   Hash_set.clear ignored_callees ;
   Llvm.dispose_module llmodule ;
