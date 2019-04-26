@@ -902,12 +902,14 @@ let xlate_instr :
           ~src:(xlate_type x (Llvm.type_of rand))
           (xlate_value x rand)
       in
+      assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
       let llt = Llvm.element_type (Llvm.type_of instr) in
       let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
       emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of llfunc in
+      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let fname = Llvm.value_name llfunc in
       let skip msg =
         ( match Hash_set.strict_add ignored_callees fname with
@@ -995,6 +997,7 @@ let xlate_instr :
       let reg = xlate_name_opt instr in
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
       let lltyp = Llvm.type_of llfunc in
+      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let fname = Llvm.value_name llfunc in
       let return_blk = Llvm.get_normal_dest instr in
       let return_dst = label_of_block return_blk in
