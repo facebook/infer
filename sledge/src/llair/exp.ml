@@ -742,7 +742,7 @@ and rational Q.{num; den} typ = simp_div (integer num typ) (integer den typ)
 and simp_div x y =
   match (x, y) with
   (* i / j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.bdiv ~bits i j) typ
   (* e / 1 ==> e *)
@@ -755,7 +755,7 @@ and simp_div x y =
 let simp_udiv x y =
   match (x, y) with
   (* i u/ j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.budiv ~bits i j) typ
   (* e u/ 1 ==> e *)
@@ -765,7 +765,7 @@ let simp_udiv x y =
 let simp_rem x y =
   match (x, y) with
   (* i % j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.brem ~bits i j) typ
   (* e % 1 ==> 0 *)
@@ -775,7 +775,7 @@ let simp_rem x y =
 let simp_urem x y =
   match (x, y) with
   (* i u% j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
+  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.burem ~bits i j) typ
   (* e u% 1 ==> 0 *)
