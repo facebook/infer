@@ -254,4 +254,15 @@ let%test_module _ =
         (null = %z_2)
 
         (null = %z_2) |}]
+
+    let%expect_test _ =
+      let z1 = z + !1 in
+      let z1_2 = z1 * z1 in
+      pp z1_2 ;
+      pp (z1_2 * z1_2) ;
+      [%expect
+        {|
+        ((%z_2^2) + 2 × %z_2 + 1)
+
+        (6 × (%z_2^2) + 4 × (%z_2^3) + (%z_2^4) + 4 × %z_2 + 1) |}]
   end )

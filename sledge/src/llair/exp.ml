@@ -838,20 +838,14 @@ let simp_add2 typ e f = simp_add_ typ (Sum.singleton e) f
    xᵢ and the multiplicities are the exponents nᵢ. *)
 module Prod = struct
   let empty = empty_qset
-  let add exp prod = Qset.add prod exp Q.one
+
+  let add exp prod =
+    assert (match exp with Integer _ -> false | _ -> true) ;
+    Qset.add prod exp Q.one
+
   let singleton exp = add exp empty
   let union = Qset.union
 end
-
-(* map over each monomial of a polynomial *)
-let poly_map_monos poly ~f =
-  match poly with
-  | Add {typ; args= sum} ->
-      Sum.to_exp typ
-        (Sum.map sum ~f:(function
-          | Mul {typ; args= prod} -> Mul {typ; args= f prod}
-          | _ -> violates invariant poly ))
-  | _ -> fail "poly_map_monos" ()
 
 let rec simp_mul2 typ e f =
   match (e, f) with
@@ -869,13 +863,17 @@ let rec simp_mul2 typ e f =
   | Integer {data= c}, x | x, Integer {data= c} ->
       Sum.to_exp typ (Sum.singleton ~coeff:(Q.of_z c) x)
   (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==> ∏ⱼ₌₀ⁿ xⱼ *)
-  | Mul {typ; args= xs1}, Mul {args= xs2} ->
-      Mul {typ; args= Prod.union xs1 xs2}
+  | Mul {args= xs1}, Mul {args= xs2} -> Mul {typ; args= Prod.union xs1 xs2}
   (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ × ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
-  | Mul {args= prod}, (Add _ as poly) | (Add _ as poly), Mul {args= prod} ->
-      poly_map_monos ~f:(Prod.union prod) poly
+  | (Mul {args= prod} as m), Add {args= sum}
+   |Add {args= sum}, (Mul {args= prod} as m) ->
+      Sum.to_exp typ
+        (Sum.map sum ~f:(function
+          | Mul {args} -> Mul {typ; args= Prod.union prod args}
+          | Integer _ as c -> simp_mul2 typ c m
+          | mono -> Mul {typ; args= Prod.add mono prod} ))
   (* x₀ × (∏ᵢ₌₁ⁿ xᵢ) ==> ∏ᵢ₌₀ⁿ xᵢ *)
-  | Mul {typ; args= xs1}, x | x, Mul {typ; args= xs1} ->
+  | Mul {args= xs1}, x | x, Mul {args= xs1} ->
       Mul {typ; args= Prod.add x xs1}
   (* e × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ e × cᵤ × ∏ⱼ yᵤⱼ *)
   | Add {args}, e | e, Add {args} ->
@@ -899,7 +897,7 @@ let simp_negate typ x = simp_mul2 typ (minus_one typ) x
 let simp_sub typ x y =
   match (x, y) with
   (* i - j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
+  | Integer {data= i}, Integer {data= j} ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.bsub ~bits i j) typ
   (* x - y ==> x + (-1 * y) *)
