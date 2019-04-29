@@ -31,7 +31,7 @@ let create_fake_jsonbug ?(bug_type = "bug_type") ?(qualifier = "qualifier")
   ; linters_def_file
   ; doc_url
   ; traceview_id= None
-  ; censored_reason= ""
+  ; censored_reason= None
   ; access= None
   ; extras= None }
 

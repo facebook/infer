@@ -193,7 +193,7 @@ let censored_reason (issue_type : IssueType.t) source_file =
     in
     Option.some_if (not accepted) reason
   in
-  Option.value ~default:"" (List.find_map Config.filter_report ~f:rejected_by)
+  List.find_map Config.filter_report ~f:rejected_by
 
 
 let potential_exception_message = "potential exception at line"
@@ -449,7 +449,7 @@ module IssuesTxt = struct
     in
     if
       error_filter source_file key.err_name
-      && ((not Config.filtering) || String.is_empty (censored_reason key.err_name source_file))
+      && ((not Config.filtering) || Option.is_none (censored_reason key.err_name source_file))
     then Exceptions.pp_err err_data.loc key.severity key.err_name key.err_desc None fmt ()
 
 

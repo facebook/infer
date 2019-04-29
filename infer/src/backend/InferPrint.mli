@@ -10,6 +10,6 @@ open! IStd
 val loc_trace_to_jsonbug_record :
   Errlog.loc_trace_elem list -> Exceptions.severity -> Jsonbug_t.json_trace_item list
 
-val censored_reason : IssueType.t -> SourceFile.t -> string
+val censored_reason : IssueType.t -> SourceFile.t -> string option
 
 val main : report_json:string option -> unit
