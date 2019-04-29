@@ -45,13 +45,11 @@ let merge_source_files_table ~db_file =
 let merge ~db_file =
   let main_db = ResultsDatabase.get_database () in
   Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
-  |> SqliteUtils.check_result_code ~fatal:true main_db
-       ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
+  |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   merge_procedures_table ~db_file ;
   merge_source_files_table ~db_file ;
   Sqlite3.exec main_db "DETACH attached"
-  |> SqliteUtils.check_result_code ~fatal:true main_db
-       ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
+  |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
   ()
 
 

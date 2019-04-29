@@ -9,16 +9,14 @@ module L = Logging
 
 exception Error of string
 
-let error ~fatal fmt =
-  (if fatal then Format.kasprintf (fun err -> raise (Error err)) else L.internal_error) fmt
+let error fmt = Format.kasprintf (fun err -> raise (Error err)) fmt
 
-
-let check_result_code ?(fatal = false) db ~log rc =
+let check_result_code db ~log rc =
   match (rc : Sqlite3.Rc.t) with
   | OK | ROW ->
       ()
   | _ as err ->
-      error ~fatal "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
+      error "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
 
 
 let exec db ~log ~stmt =
@@ -27,16 +25,16 @@ let exec db ~log ~stmt =
       PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
   let rc = Sqlite3.exec db stmt in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-  try check_result_code ~fatal:true db ~log rc
-  with Error err -> error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
+  try check_result_code db ~log rc
+  with Error err -> error "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 
 let finalize db ~log stmt =
-  try check_result_code ~fatal:true db ~log (Sqlite3.finalize stmt) with
+  try check_result_code db ~log (Sqlite3.finalize stmt) with
   | Error err ->
-      error ~fatal:true "finalize: %s (%s)" err (Sqlite3.errmsg db)
+      error "finalize: %s (%s)" err (Sqlite3.errmsg db)
   | Sqlite3.Error err ->
-      error ~fatal:true "finalize: %s: %s (%s)" log err (Sqlite3.errmsg db)
+      error "finalize: %s: %s (%s)" log err (Sqlite3.errmsg db)
 
 
 let result_fold_rows ?finalize:(do_finalize = true) db ~log stmt ~init ~f =

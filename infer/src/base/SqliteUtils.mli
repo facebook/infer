@@ -11,7 +11,7 @@ open! IStd
     particular, they may raise if the [Sqlite3.Rc.t] result of certain operations is unexpected. *)
 exception Error of string
 
-val check_result_code : ?fatal:bool -> Sqlite3.db -> log:string -> Sqlite3.Rc.t -> unit
+val check_result_code : Sqlite3.db -> log:string -> Sqlite3.Rc.t -> unit
 (** Assert that the result is either [Sqlite3.Rc.OK] or [Sqlite3.Rc.ROW]. If the result is not
     valid, then if [fatal] is set raise {!Error}, otherwise log the error and proceed. *)
 
