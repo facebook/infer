@@ -27,6 +27,8 @@ type t =
   ; uninit: UninitDomain.Summary.t option }
 [@@deriving fields]
 
+let poly_fields = PolyFields.make Fields.map_poly
+
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit
 
 type field = F : {field: (t, 'a option) Field.t; name: string; pp: 'a pp} -> field

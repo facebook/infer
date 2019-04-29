@@ -48,6 +48,8 @@ type t =
   ; proc_desc: Procdesc.t
   ; err_log: Errlog.t }
 
+val poly_fields : t PolyFields.t
+
 val dummy : t
 (** dummy summary for testing *)
 

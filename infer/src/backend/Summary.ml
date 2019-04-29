@@ -61,13 +61,23 @@ module Status = struct
   let is_analyzed = function Analyzed -> true | _ -> false
 end
 
-type t =
-  { payloads: Payloads.t
-  ; sessions: int ref
-  ; stats: Stats.t
-  ; status: Status.t
-  ; proc_desc: Procdesc.t
-  ; err_log: Errlog.t }
+include struct
+  (* ignore dead modules added by @@deriving fields *)
+  [@@@warning "-60"]
+
+  type t =
+    { payloads: Payloads.t
+    ; sessions: int ref
+    ; stats: Stats.t
+    ; status: Status.t
+    ; proc_desc: Procdesc.t
+    ; err_log: Errlog.t }
+  [@@deriving fields]
+end
+
+let poly_fields =
+  PolyFields.(make Fields.map_poly ~subfields:[S (Fields.payloads, Payloads.poly_fields)])
+
 
 let get_status summary = summary.status
 

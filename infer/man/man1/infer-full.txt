@@ -1504,6 +1504,10 @@ INTERNAL OPTIONS
            Deactivates: Use the multirange subtyping domain (Conversely:
            --subtype-multirange)
 
+       --summary-stats
+           Activates: Print stats about summaries to standard output
+           (Conversely: --no-summary-stats)
+
        --symops-per-iteration int
            Set the number of symbolic operations per iteration (see
            --iterations)

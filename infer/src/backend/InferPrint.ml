@@ -682,6 +682,170 @@ module PreconditionStats = struct
     L.result "Procedures with data constraints: %d@." !nr_dataconstraints
 end
 
+module SummaryStats = struct
+  module MetricTypes = struct
+    type 't typ = Bool : bool typ | Int : int typ
+  end
+
+  module MakeTopN (V : PrettyPrintable.PrintableOrderedType) = struct
+    type 'k t = {capacity: int; filter: V.t -> bool; size: int; sorted_elements: (V.t * 'k) list}
+
+    let make capacity ~filter = {capacity; filter; size= 0; sorted_elements= []}
+
+    let add top k v =
+      if top.filter v then
+        let smaller, greater =
+          List.split_while top.sorted_elements ~f:(fun (v', _) -> V.compare v v' > 0)
+        in
+        if top.size >= top.capacity then
+          match smaller with
+          | [] ->
+              top
+          | _ :: tl ->
+              let sorted_elements = tl @ ((v, k) :: greater) in
+              {top with sorted_elements}
+        else
+          let sorted_elements = smaller @ ((v, k) :: greater) in
+          {top with size= top.size + 1; sorted_elements}
+      else top
+
+
+    let is_empty top = top.size <= 0
+
+    let pp ~pp_k f top =
+      if top.size > 0 then
+        let pp1 f (v, k) = F.fprintf f "@[%a -> %a@]" V.pp v pp_k k in
+        Pp.seq pp1 f (List.rev top.sorted_elements)
+  end
+
+  module IntTopN = MakeTopN (Int)
+
+  module MetricAggregator = struct
+    open MetricTypes
+
+    type ('i, 'k) t =
+      | A :
+          { name: string
+          ; value: 'o
+          ; is_empty: 'o -> bool
+          ; add: 'o -> 'k -> 'i -> 'o
+          ; pp: pp_k:(F.formatter -> 'k -> unit) -> F.formatter -> 'o -> unit }
+          -> ('i, 'k) t
+
+    let add (A aggr) k i = A {aggr with value= aggr.add aggr.value k i}
+
+    let pp ~pp_k f (A {name; pp; value; is_empty}) =
+      if not (is_empty value) then F.fprintf f "@[%s: @[%a@]@]" name (pp ~pp_k) value
+
+
+    let no_k pp ~pp_k:_ = pp
+
+    let int name add = A {name; value= 0; is_empty= Int.(( = ) 0); add; pp= no_k F.pp_print_int}
+
+    let int_sum = int "sum" (fun acc _ v -> acc + v)
+
+    let int_top3 =
+      A
+        { name= "top3"
+        ; value= IntTopN.make 3 ~filter:(fun x -> x > 1)
+        ; is_empty= IntTopN.is_empty
+        ; add= IntTopN.add
+        ; pp= IntTopN.pp }
+
+
+    let true_count = int "True" (fun acc _ b -> if b then acc + 1 else acc)
+
+    let false_count = int "False" (fun acc _ b -> if b then acc else acc + 1)
+
+    type 'k get = {get: 'i. 'i typ -> ('i, 'k) t list}
+
+    let aggregators =
+      let get : type i. i typ -> (i, _) t list = function
+        | Bool ->
+            [true_count; false_count]
+        | Int ->
+            [int_sum; int_top3]
+      in
+      {get}
+
+
+    let get aggregators typ = aggregators.get typ
+  end
+
+  module Metrics = struct
+    open MetricTypes
+
+    type 'i metric = M : {get: 'i -> 't; typ: 't typ} -> 'i metric
+
+    let for_fields poly_fields obj_metrics =
+      PolyFields.map poly_fields
+        { f=
+            (fun field_name field_get ->
+              let prefix = field_name ^ ":" in
+              List.map obj_metrics ~f:(fun (metric_name, M {typ; get= metric_get}) ->
+                  let name = prefix ^ metric_name in
+                  let get r = r |> field_get |> Obj.repr |> metric_get in
+                  (name, M {typ; get}) ) ) }
+      |> List.concat
+  end
+
+  module ObjMetrics = struct
+    open MetricTypes
+    open Metrics
+
+    let obj_is_zero = phys_equal (Obj.repr 0)
+
+    let obj_marshaled_size x = String.length (Marshal.to_string x []) - Marshal.header_size
+
+    let metrics =
+      let bool name get = (name, M {typ= Bool; get}) in
+      let int name get = (name, M {typ= Int; get}) in
+      [ int "reachable_words" Obj.reachable_words
+      ; int "marshaled size" obj_marshaled_size
+      ; bool "is_zero" obj_is_zero ]
+  end
+
+  module MetricResults = struct
+    open MetricTypes
+    open Metrics
+    module StringMap = PrettyPrintable.MakePPMap (String)
+
+    type ('i, 'k) result =
+      | R :
+          { typ: 't typ
+          ; get: 'i -> 't
+          ; aggrs: ('t, 'k) MetricAggregator.t list }
+          -> ('i, 'k) result
+
+    let init metrics aggregators =
+      List.fold metrics ~init:StringMap.empty ~f:(fun acc (name, M {typ; get}) ->
+          StringMap.add name (R {typ; get; aggrs= MetricAggregator.get aggregators typ}) acc )
+
+
+    let add results k x =
+      StringMap.map
+        (fun (R res) ->
+          let v = res.get x in
+          R {res with aggrs= List.map res.aggrs ~f:(fun aggr -> MetricAggregator.add aggr k v)} )
+        results
+
+
+    let pp ~pp_k f results =
+      let pp_value f (R {aggrs}) = Pp.seq (MetricAggregator.pp ~pp_k) f aggrs in
+      StringMap.pp ~pp_value f results
+  end
+
+  let results =
+    let summary_fields_obj_metrics = Metrics.for_fields Summary.poly_fields ObjMetrics.metrics in
+    let init = MetricResults.init summary_fields_obj_metrics MetricAggregator.aggregators in
+    ref init
+
+
+  let do_summary proc_name summary = results := MetricResults.add !results proc_name summary
+
+  let pp_stats () = L.result "%a@\n" (MetricResults.pp ~pp_k:Typ.Procname.pp) !results
+end
+
 let error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
@@ -920,6 +1084,7 @@ let process_summary filters formats_by_report_kind linereader stats summary issu
       issues_acc
   in
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary ;
+  if Config.summary_stats then SummaryStats.do_summary proc_name summary ;
   issues_acc'
 
 
@@ -1054,6 +1219,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
         issue_formats )
     !all_issues ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
+  if Config.summary_stats then SummaryStats.pp_stats () ;
   List.iter
     [Config.lint_issues_dir_name; Config.starvation_issues_dir_name; Config.racerd_issues_dir_name]
     ~f:(fun dir_name ->

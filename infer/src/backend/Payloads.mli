@@ -7,29 +7,34 @@
 
 open! IStd
 
-(* ignore dead modules added by @@deriving fields *)
-[@@@warning "-60"]
+include
+  sig
+    (* ignore dead modules added by @@deriving fields *)
+    [@@@warning "-60"]
 
-(** analysis results *)
-type t =
-  { annot_map: AnnotReachabilityDomain.t option
-  ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
-  ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
-  ; class_loads: ClassLoadsDomain.summary option
-  ; cost: CostDomain.summary option
-  ; lab_resource_leaks: ResourceLeakDomain.summary option
-  ; litho: LithoDomain.t option
-  ; pulse: PulseSummary.t option
-  ; purity: PurityDomain.summary option
-  ; quandary: QuandarySummary.t option
-  ; racerd: RacerDDomain.summary option
-  ; siof: SiofDomain.Summary.t option
-  ; starvation: StarvationDomain.summary option
-  ; typestate: TypeState.t option
-  ; uninit: UninitDomain.Summary.t option }
-[@@deriving fields]
+    (** analysis results *)
+    type t =
+      { annot_map: AnnotReachabilityDomain.t option
+      ; biabduction: BiabductionSummary.t option
+      ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
+      ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
+      ; class_loads: ClassLoadsDomain.summary option
+      ; cost: CostDomain.summary option
+      ; lab_resource_leaks: ResourceLeakDomain.summary option
+      ; litho: LithoDomain.t option
+      ; pulse: PulseSummary.t option
+      ; purity: PurityDomain.summary option
+      ; quandary: QuandarySummary.t option
+      ; racerd: RacerDDomain.summary option
+      ; siof: SiofDomain.Summary.t option
+      ; starvation: StarvationDomain.summary option
+      ; typestate: TypeState.t option
+      ; uninit: UninitDomain.Summary.t option }
+    [@@deriving fields]
+end
 
 val pp : Pp.env -> Format.formatter -> t -> unit
 
 val empty : t
+
+val poly_fields : t PolyFields.t
