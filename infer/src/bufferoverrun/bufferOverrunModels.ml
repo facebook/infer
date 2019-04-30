@@ -812,7 +812,7 @@ module Call = struct
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
-      ; +PatternMatch.implements_lang "String" &:: "length" <>$ capt_exp $!--> strlen
+      ; +PatternMatch.implements_lang "CharSequence" &:: "length" <>$ capt_exp $!--> strlen
       ; -"strlen" <>$ capt_exp $!--> strlen
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy

@@ -106,4 +106,8 @@ public class Loops {
       p = p.concat("0");
     }
   }
+
+  void charsequence_length_linear(CharSequence seq) {
+    for (int i = 0; i < seq.length(); i++) {}
+  }
 }
