@@ -83,6 +83,7 @@ rule token = parse
   | "InitExpr" {INIT_EXPR}
   | "Cond" {COND}
   | "PointerToDecl" {POINTER_TO_DECL}
+   | "SourceExpr" {SOURCE_EXPR}
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }

@@ -86,6 +86,7 @@
 %token PARAMETER_NAME
 %token PARAMETER_POS
 %token POINTER_TO_DECL
+%token SOURCE_EXPR
 %token PROTOCOL
 %token EOF
 
@@ -249,6 +250,7 @@ transition_label:
   | PARAMETER_NAME alexp { Some (CTL.ParameterName $2) }
   | PARAMETER_POS alexp { Some (CTL.ParameterPos $2) }
   | POINTER_TO_DECL { Some CTL.PointerToDecl }
+  | SOURCE_EXPR { Some CTL.SourceExpr}
   | PROTOCOL { Some CTL.Protocol }
   ;
 

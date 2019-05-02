@@ -817,3 +817,43 @@ DEFINE-CHECKER CONST_NAMING = {
 
   SET message = "That's a const";
 };
+
+DEFINE-CHECKER UNNECESSARY_OBJC_INSTANCE_METHOD = {
+
+  LET is_in_implementation =
+    is_in_objc_implementation_named(REGEXP(".*")) OR
+    is_in_objc_category_implementation_named(REGEXP(".*"));
+
+
+ LET dereference_self =
+      declaration_ref_name(REGEXP("self")) HOLDS-EVENTUALLY;
+
+LET  dereference_self_in_opaque_value_expr =
+          IN-NODE OpaqueValueExpr WITH-TRANSITION SourceExpr
+           (dereference_self)
+          HOLDS-EVENTUALLY;
+
+LET dereference_self_in_method_decl =
+           IN-NODE ObjCMethodDecl WITH-TRANSITION Body
+           (dereference_self  OR dereference_self_in_opaque_value_expr)
+           HOLDS-EVENTUALLY;
+
+  LET is_private_method =
+    declaration_has_name(REGEXP("^_")) AND
+    NOT is_objc_method_exposed AND
+    (NOT dereference_self_in_method_decl)
+    AND is_in_implementation;
+
+
+
+  SET report_when =
+    WHEN
+    is_private_method
+    HOLDS-IN-NODE ObjCMethodDecl;
+
+
+  SET name = "Unnecessary Objective-C Method";
+  SET message = "This is an unnecessary Objective-C Method";
+  SET severity = "ERROR";
+  SET mode = "ON";
+};
