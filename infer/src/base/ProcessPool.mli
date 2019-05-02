@@ -26,8 +26,15 @@ open! IStd
 (** A ['a t] process pool accepts tasks of type ['a]. ['a] will be marshalled over a Unix pipe.*)
 type _ t
 
-val create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t
+(** abstraction for generating jobs; [next finished_item] produces the next task, 
+    and receives the task that was finished, or [None] if this is the first time a worker 
+    begins work on a task *)
+type 'a task_generator = {is_empty: unit -> bool; next: 'a option -> 'a option}
+
+val create :
+  jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> tasks:'a task_generator -> 'a t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
-val run : 'a t -> 'a list -> unit
-(** use the processes in the given process pool to run all the given tasks in parallel *)
+val run : 'a t -> int -> unit
+(** use the processes in the given process pool to run all the given tasks in parallel. 
+    the int argument is used for counting only *)

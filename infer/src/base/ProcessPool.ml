@@ -11,6 +11,8 @@ module L = Logging
 
 type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 
+type 'a task_generator = {is_empty: unit -> bool; next: 'a option -> 'a option}
+
 (** the state of the pool *)
 type 'a t =
   { jobs: int
@@ -18,10 +20,12 @@ type 'a t =
   ; slots: child_info Array.t
         (** array of child processes with their pids and channels we can use to send work down to
             each child *)
+  ; pending_items: 'a option Array.t
+        (** array keeping sent tasks to children; used for feeding the generator a child finishes *)
   ; children_updates: Unix.File_descr.t
         (** all the children send updates up the same pipe to the pool *)
   ; task_bar: TaskBar.t
-  ; mutable tasks: 'a list  (** work remaining to be done *)
+  ; tasks: 'a task_generator  (** generator for work remaining to be done *)
   ; mutable idle_children: int
         (** number of children currently ready for more work, but there are no tasks to send to
             them *)
@@ -155,13 +159,13 @@ let process_updates pool buffer =
       killall pool ~slot "see backtrace above"
   | Some (Ready slot) -> (
       TaskBar.tasks_done_add pool.task_bar 1 ;
-      match pool.tasks with
-      | [] ->
+      match pool.tasks.next pool.pending_items.(slot) with
+      | None ->
           TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
           pool.idle_children <- pool.idle_children + 1
-      | x :: tasks ->
-          pool.tasks <- tasks ;
+      | Some x ->
           let {down_pipe} = pool.slots.(slot) in
+          pool.pending_items.(slot) <- Some x ;
           marshal_to_pipe down_pipe (Do x) )
   | None ->
       ()
@@ -260,8 +264,9 @@ let fork_child ~child_prelude ~slot (updates_r, updates_w) ~f =
       {pid; down_pipe= Unix.out_channel_of_descr to_child_w}
 
 
-let create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t =
- fun ~jobs ~child_prelude ~f ->
+let create :
+    jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> tasks:'a task_generator -> 'a t =
+ fun ~jobs ~child_prelude ~f ~tasks ->
   let task_bar = TaskBar.create ~jobs in
   (* Pipe to communicate from children to parent. Only one pipe is needed: the messages sent by
       children include the identifier of the child sending the message (its [slot]). This way there
@@ -271,12 +276,12 @@ let create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t 
   (* we have forked the child processes and are now in the parent *)
   let[@warning "-26"] pipe_child_w = Unix.close pipe_child_w in
   let children_updates = pipe_child_r in
-  {slots; children_updates; jobs; task_bar; tasks= []; idle_children= 0}
+  let pending_items : 'a option Array.t = Array.create ~len:jobs None in
+  {slots; children_updates; jobs; task_bar; tasks; pending_items; idle_children= 0}
 
 
-let run pool tasks =
-  pool.tasks <- tasks ;
-  TaskBar.set_tasks_total pool.task_bar (List.length tasks) ;
+let run pool n_tasks =
+  TaskBar.set_tasks_total pool.task_bar n_tasks ;
   TaskBar.tasks_done_reset pool.task_bar ;
   (* Start with a negative number of completed tasks to account for the initial [Ready]
      messages. All the children start by sending [Ready], which is interpreted by the parent process
@@ -286,14 +291,14 @@ let run pool tasks =
   (* allocate a buffer for reading children updates once for the whole run *)
   let buffer = Bytes.create buffer_size in
   (* wait for all children to run out of tasks *)
-  while not (List.is_empty pool.tasks && pool.idle_children >= pool.jobs) do
+  while not (pool.tasks.is_empty () && pool.idle_children >= pool.jobs) do
     process_updates pool buffer ; TaskBar.refresh pool.task_bar
   done ;
   wait_all pool ;
   TaskBar.finish pool.task_bar
 
 
-let run pool tasks =
+let run pool n_tasks =
   PerfEvent.(log (fun logger -> log_instant_event logger ~name:"start process pool" Global)) ;
-  run pool tasks ;
+  run pool n_tasks ;
   PerfEvent.(log (fun logger -> log_instant_event logger ~name:"end process pool" Global))

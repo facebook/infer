@@ -104,6 +104,8 @@ let main ~changed_files =
     in
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     (* Prepare tasks one cluster at a time while executing in parallel *)
-    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_source_file in
-    Tasks.Runner.run runner ~tasks:source_files_to_analyze ) ;
+    let tasks = Tasks.gen_of_list source_files_to_analyze in
+    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_source_file ~tasks in
+    let n_tasks = !n_source_files_to_analyze in
+    Tasks.Runner.run runner ~n_tasks ) ;
   output_json_makefile_stats source_files_to_analyze
