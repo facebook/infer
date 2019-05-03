@@ -57,6 +57,43 @@ type error_desc = {descriptions: string list; tags: Tags.t; dotty: string option
 (** empty error description *)
 let no_desc : error_desc = {descriptions= []; tags= []; dotty= None}
 
+let desc_context_leak pname context_typ fieldname leak_path : error_desc =
+  let fld_str = Typ.Fieldname.to_string fieldname in
+  let leak_root = "Static field " ^ fld_str ^ " |->\n" in
+  let leak_path_entry_to_str acc entry =
+    let entry_str =
+      match entry with
+      | Some fld, _ ->
+          Typ.Fieldname.to_string fld
+      | None, typ ->
+          Typ.to_string typ
+    in
+    (* intentionally omit space; [typ_to_string] adds an extra space *)
+    acc ^ entry_str ^ " |->\n"
+  in
+  let context_str = Typ.to_string context_typ in
+  let path_str =
+    let path_prefix =
+      if List.is_empty leak_path then "Leaked "
+      else List.fold ~f:leak_path_entry_to_str ~init:"" leak_path ^ "Leaked "
+    in
+    path_prefix ^ context_str
+  in
+  let preamble =
+    let pname_str =
+      match pname with
+      | Typ.Procname.Java pname_java ->
+          MF.monospaced_to_string
+            (Printf.sprintf "%s.%s"
+               (Typ.Procname.Java.get_class_name pname_java)
+               (Typ.Procname.Java.get_method pname_java))
+      | _ ->
+          ""
+    in
+    "Context " ^ context_str ^ " may leak during method " ^ pname_str ^ ":\n"
+  in
+  {no_desc with descriptions= [preamble ^ MF.code_to_string (leak_root ^ path_str)]}
+
 (** verbatim desc from a string, not to be used for user-visible descs *)
 let verbatim_desc s = {no_desc with descriptions= [s]}
 

@@ -7,6 +7,8 @@
 
 open! IStd
 
+val code_to_string : string -> string	
+
 val wrap_monospaced : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
 (** used to combine pp together, wrap content into a monospaced block  *)
 

@@ -577,6 +577,53 @@ let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
   let sigma' = sigma @ p.sigma in
   set p ~sigma:sigma'
 
+(** return the set of subexpressions of [strexp] *)	
+let strexp_get_exps strexp =
+  let rec strexp_get_exps_rec exps (se: Sil.strexp) =
+    match se with
+    | Eexp (Exn e, _) ->
+        Exp.Set.add e exps
+    | Eexp (e, _) ->
+        Exp.Set.add e exps
+    | Estruct (flds, _) ->
+        List.fold ~f:(fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) ~init:exps flds
+    | Earray (_, elems, _) ->
+        List.fold ~f:(fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) ~init:exps elems
+  in
+  strexp_get_exps_rec Exp.Set.empty strexp
+
+
+ (** get the set of expressions on the righthand side of [hpred] *)
+let hpred_get_targets (hpred: Sil.hpred) =
+  match hpred with
+  | Hpointsto (_, rhs, _) ->
+      strexp_get_exps rhs
+  | Hlseg (_, _, _, e, el) ->
+      List.fold ~f:(fun exps e -> Exp.Set.add e exps) ~init:Exp.Set.empty (e :: el)
+  | Hdllseg (_, _, _, oB, oF, iB, el) ->
+      (* only one direction supported for now *)
+      List.fold ~f:(fun exps e -> Exp.Set.add e exps) ~init:Exp.Set.empty (oB :: oF :: iB :: el)
+
+
+ (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
+    [exps] *)
+let compute_reachable_hpreds sigma exps =
+  let rec compute_reachable_hpreds_rec sigma (reach, exps) =
+    let add_hpred_if_reachable (reach, exps) (hpred: Sil.hpred) =
+      match hpred with
+      | Hpointsto (lhs, _, _) as hpred when Exp.Set.mem lhs exps ->
+          let reach' = Sil.HpredSet.add hpred reach in
+          let reach_exps = hpred_get_targets hpred in
+          (reach', Exp.Set.union exps reach_exps)
+      | _ ->
+          (reach, exps)
+    in
+    let reach', exps' = List.fold ~f:add_hpred_if_reachable ~init:(reach, exps) sigma in
+    if Int.equal (Sil.HpredSet.cardinal reach) (Sil.HpredSet.cardinal reach') then (reach, exps)
+    else compute_reachable_hpreds_rec sigma (reach', exps')
+  in
+  compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
+
 
 (* Module for normalization *)
 module Normalize = struct

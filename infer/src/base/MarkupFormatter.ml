@@ -13,6 +13,7 @@ type 'a formatter =
   ; monospaced_to_string: string -> string
   ; wrap_code: (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
   ; pp_code: Format.formatter -> string -> unit
+  ; code_to_string: string -> string
   ; wrap_bold: (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
   ; pp_bold: Format.formatter -> string -> unit
   ; bold_to_string: string -> string }
@@ -30,6 +31,7 @@ end = struct
     ; monospaced_to_string= Fn.id
     ; wrap_code= wrap_simple
     ; pp_code= pp_simple
+    ; code_to_string= Fn.id
     ; wrap_bold= wrap_simple
     ; pp_bold= pp_simple
     ; bold_to_string= Fn.id }
@@ -53,6 +55,8 @@ end = struct
 
   let pp_bold fmt s = wrap_bold Format.pp_print_string fmt s
 
+  let code_to_string s = Format.asprintf "%a" pp_code s
+
   let bold_to_string s = Format.asprintf "%a" pp_bold s
 
   let formatter =
@@ -62,6 +66,7 @@ end = struct
     ; wrap_code
     ; pp_code
     ; wrap_bold
+    ; code_to_string
     ; pp_bold
     ; bold_to_string }
 end
@@ -89,3 +94,5 @@ let wrap_bold = formatter.wrap_bold
 let pp_bold = formatter.pp_bold
 
 let bold_to_string = formatter.bold_to_string
+
+let code_to_string = formatter.code_to_string	

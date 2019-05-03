@@ -21,3 +21,8 @@ val is_fragment : Tenv.t -> Typ.Name.t -> bool
 
 val is_destroy_method : Typ.Procname.t -> bool
 (** return true if [procname] is a special lifecycle cleanup method *)
+val is_context : Tenv.t -> Typ.Name.t -> bool
+(** return true if [typename] <: android.content.Context *)
+
+ val is_application : Tenv.t -> Typ.Name.t -> bool
+(** return true if [typename] <: android.app.Application *)

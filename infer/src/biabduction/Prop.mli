@@ -43,6 +43,13 @@ type struct_init_mode = No_init | Fld_init
 
 (** {2 Basic Functions for propositions} *)
 
+val strexp_get_exps : Sil.strexp -> Exp.Set.t
+(** return the set of subexpressions of [strexp] *)
+
+val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t	
+(** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
+  [exps] *)
+
 val compare_prop : 'a t -> 'a t -> int
 (** Compare propositions *)
 

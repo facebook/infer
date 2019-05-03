@@ -83,6 +83,7 @@ end
 
 include Unsafe
 
+let context_leak = from_string "CONTEXT_LEAK"	
 (** pretty print a localised string *)
 let pp fmt t = Format.pp_print_string fmt t.unique_id
 

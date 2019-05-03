@@ -8,6 +8,12 @@
 
 open! IStd
 
+
+val explain_context_leak :
+  Typ.Procname.t -> Typ.t -> Typ.Fieldname.t -> (Typ.Fieldname.t option * Typ.t) list
+  -> Localise.error_desc
+(** Produce a description of a persistent reference to an Android Context *)
+
 (** Create descriptions of analysis errors *)
 
 val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t option

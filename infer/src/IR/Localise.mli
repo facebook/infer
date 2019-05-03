@@ -18,6 +18,9 @@ end
 type error_desc = {descriptions: string list; tags: Tags.t; dotty: string option}
 [@@deriving compare]
 
+val desc_context_leak :
+  Typ.Procname.t -> Typ.t -> Typ.Fieldname.t -> (Typ.Fieldname.t option * Typ.t) list -> error_desc
+
 val no_desc : error_desc
 (** empty error description *)
 

@@ -53,6 +53,8 @@ exception Comparing_floats_for_equality of Localise.error_desc * Logging.ocaml_p
 
 exception Condition_always_true_false of Localise.error_desc * bool * Logging.ocaml_pos
 
+exception Context_leak of Localise.error_desc * Logging.ocaml_pos
+
 exception Custom_error of string * Localise.error_desc
 
 exception Dummy_exception of Localise.error_desc

@@ -26,6 +26,8 @@ let is_method_of_objc_cpp_class pname matcher =
   | _ ->
       false
 
+let explain_context_leak pname context_typ fieldname error_path =	
+  Localise.desc_context_leak pname context_typ fieldname error_path
 
 let is_vector_method pname = is_method_of_objc_cpp_class pname vector_matcher
 

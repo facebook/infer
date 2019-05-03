@@ -28,6 +28,10 @@ let is_destroy_method pname =
 let is_subtype_package_class tenv tname package classname =
   PatternMatch.is_subtype tenv tname (Typ.Name.Java.from_package_class package classname)
 
+let is_context tenv tname = is_subtype_package_class tenv tname "android.content" "Context"
+
+let is_application tenv tname = is_subtype_package_class tenv tname "android.app" "Application"
+
 
 let is_autocloseable tenv tname = is_subtype_package_class tenv tname "java.lang" "AutoCloseable"
 

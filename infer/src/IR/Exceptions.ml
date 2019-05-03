@@ -53,6 +53,8 @@ exception Comparing_floats_for_equality of Localise.error_desc * L.ocaml_pos
 
 exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_pos
 
+exception Context_leak of Localise.error_desc * L.ocaml_pos
+
 exception Custom_error of string * Localise.error_desc
 
 exception Dummy_exception of Localise.error_desc
@@ -234,6 +236,13 @@ let recognize_exception exn =
       { name
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
+      ; visibility= Exn_user
+      ; severity= None
+      ; category= Nocat }
+  | Context_leak (desc, _) ->
+      { name= IssueType.context_leak
+      ; description= desc
+      ; ocaml_pos= None
       ; visibility= Exn_user
       ; severity= None
       ; category= Nocat }

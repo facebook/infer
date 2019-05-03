@@ -28,6 +28,8 @@ val from_string :
   ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
 (** create from an ordinary string *)
 
+val context_leak : t
+
 val set_enabled : t -> bool -> unit
 
 val abduction_case_not_implemented : t
