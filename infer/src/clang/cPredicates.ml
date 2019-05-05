@@ -1400,6 +1400,18 @@ let has_used_attribute an =
   List.exists ~f:(fun attr -> match attr with UsedAttr _ -> true | _ -> false) attributes
 
 
+(* true is a declaration has an Unavailable attribute *)
+let has_unavailable_attribute an =
+  let open Clang_ast_t in
+  let is_unavailable_attr attr = match attr with UnavailableAttr _ -> true | _ -> false in
+  match an with
+  | Ctl_parser_types.Decl d ->
+      let attrs = (Clang_ast_proj.get_decl_tuple d).di_attributes in
+      List.exists attrs ~f:is_unavailable_attr
+  | _ ->
+      false
+
+
 let has_value an al_exp =
   let open Clang_ast_t in
   let open Ctl_parser_types in

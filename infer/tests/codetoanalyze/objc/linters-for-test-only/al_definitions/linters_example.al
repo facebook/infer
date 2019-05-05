@@ -857,3 +857,12 @@ LET dereference_self_in_method_decl =
   SET severity = "ERROR";
   SET mode = "ON";
 };
+
+DEFINE-CHECKER TEST_UNAVAILABLE_ATTR = {
+
+  SET report_when =
+     has_unavailable_attribute;
+
+  SET message = "This node has unavailable attribute";
+
+};

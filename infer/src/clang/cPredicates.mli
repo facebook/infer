@@ -528,3 +528,6 @@ val is_init_expr_cxx11_constant : Ctl_parser_types.ast_node -> bool
 
 val cxx_construct_expr_has_no_parameters : Ctl_parser_types.ast_node -> bool
 (** true if a construct expr has no subexpressions *)
+
+val has_unavailable_attribute : Ctl_parser_types.ast_node -> bool
+(** true is a declaration has an Unavailable attribute *)
