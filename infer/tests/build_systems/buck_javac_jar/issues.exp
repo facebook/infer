@@ -1,1 +1,1 @@
-src/UsingJavacJar.java, UsingJavacJar.foo():java.lang.Object, 0, ERADICATE_RETURN_NOT_NULLABLE, no_bucket, WARNING, [origin,Method `foo()` may return null but it is not annotated with `@Nullable`. (Origin: null constant at line 10)]
+src/UsingJavacJar.java, UsingJavacJar.foo():java.lang.Object, 0, ERADICATE_RETURN_NOT_NULLABLE, no_bucket, WARNING, [Method `foo()` may return null but it is not annotated with `@Nullable`. (Origin: null constant at line 10)]

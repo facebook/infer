@@ -16,7 +16,6 @@ val report_error :
   -> IssueType.t
   -> Location.t
   -> ?field_name:Typ.Fieldname.t option
-  -> ?origin_loc:Location.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
   -> ?severity:Exceptions.severity
   -> string

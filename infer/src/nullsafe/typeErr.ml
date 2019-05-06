@@ -250,7 +250,6 @@ type st_report_error =
   -> IssueType.t
   -> Location.t
   -> ?field_name:Typ.Fieldname.t option
-  -> ?origin_loc:Location.t option
   -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
   -> ?severity:Exceptions.severity
   -> string
@@ -262,7 +261,7 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
   let nullable_annotation = "@Nullable" in
   let mutable_annotation = "@Mutable" in
   let present_annotation = "@Present" in
-  let kind, description, field_name, origin_loc =
+  let kind, description, field_name =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
         let name =
@@ -272,7 +271,6 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
         ( name
         , P.sprintf "The condition %s is always %b according to the existing annotations."
             (Option.value s_opt ~default:"") b
-        , None
         , None )
     | Field_not_initialized (fn, pn) ->
         let constructor_name =
@@ -289,16 +287,14 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced nullable_annotation
-        , Some fn
-        , None )
-    | Field_not_mutable (fn, (origin_description, origin_loc, _)) ->
+        , Some fn )
+    | Field_not_mutable (fn, (origin_description, _, _)) ->
         ( IssueType.eradicate_field_not_mutable
         , Format.asprintf "Field %a is modified but is not declared %a. %s" MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             MF.pp_monospaced mutable_annotation origin_description
-        , None
-        , origin_loc )
-    | Field_annotation_inconsistent (ann, fn, (origin_description, origin_loc, _)) ->
+        , None )
+    | Field_annotation_inconsistent (ann, fn, (origin_description, _, _)) ->
         let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable ->
@@ -314,7 +310,7 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
                   (Typ.Fieldname.to_simplified_string fn)
                   MF.pp_monospaced present_annotation origin_description )
         in
-        (kind_s, description, None, origin_loc)
+        (kind_s, description, None)
     | Field_over_annotated (fn, pn) ->
         let constructor_name =
           if Typ.Procname.is_constructor pn then "the constructor"
@@ -330,9 +326,8 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced nullable_annotation
-        , Some fn
-        , None )
-    | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed) ->
+        , Some fn )
+    | Null_field_access (s_opt, fn, (origin_description, _, _), indexed) ->
         let at_index = if indexed then "element at index" else "field" in
         ( IssueType.eradicate_nullable_dereference
         , Format.asprintf
@@ -340,10 +335,8 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             MF.pp_monospaced (Option.value s_opt ~default:"") at_index MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             origin_description
-        , None
-        , origin_loc )
-    | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _))
-      ->
+        , None )
+    | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, _, _)) ->
         let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable ->
@@ -361,8 +354,8 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
                   (Typ.Procname.to_simplified_string pn)
                   MF.pp_monospaced present_annotation origin_description )
         in
-        (kind_s, description, None, origin_loc)
-    | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, origin_loc, _)) ->
+        (kind_s, description, None)
+    | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, _, _)) ->
         let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable ->
@@ -380,8 +373,8 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
                   (Typ.Procname.to_simplified_string ~withclass:true pn)
                   n MF.pp_monospaced s origin_desc )
         in
-        (kind_s, description, None, origin_loc)
-    | Return_annotation_inconsistent (ann, pn, (origin_description, origin_loc, _)) ->
+        (kind_s, description, None)
+    | Return_annotation_inconsistent (ann, pn, (origin_description, _, _)) ->
         let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable ->
@@ -398,13 +391,12 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
                   (Typ.Procname.to_simplified_string pn)
                   MF.pp_monospaced present_annotation origin_description )
         in
-        (kind_s, description, None, origin_loc)
+        (kind_s, description, None)
     | Return_over_annotated pn ->
         ( IssueType.eradicate_return_over_annotated
         , Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
             (Typ.Procname.to_simplified_string pn)
             MF.pp_monospaced nullable_annotation
-        , None
         , None )
     | Inconsistent_subclass_return_annotation (pn, opn) ->
         ( IssueType.eradicate_inconsistent_subclass_return_annotation
@@ -413,7 +405,6 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             (Typ.Procname.to_simplified_string ~withclass:true pn)
             MF.pp_monospaced nullable_annotation MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
-        , None
         , None )
     | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
         let translate_position = function
@@ -435,11 +426,10 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
             MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
-        , None
         , None )
   in
   let severity = Severity.err_instance_get_severity tenv err_instance in
-  st_report_error pname pdesc kind loc ~field_name ~origin_loc
+  st_report_error pname pdesc kind loc ~field_name
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
     ?severity description
 
