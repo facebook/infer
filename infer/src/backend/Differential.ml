@@ -152,7 +152,7 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
     if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_execution_time_call
     else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
     else if ExternalPerfData.in_profiler_data_map procname then
-      IssueType.performance_variation_critical_cold_start
+      IssueType.time_complexity_increase_cold_start
     else IssueType.performance_variation
   in
   let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
@@ -174,14 +174,20 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
         if Config.developer_mode then curr_cost_msg fmt ()
         else Format.fprintf fmt "Please make sure this is an expected change."
       in
+      let cold_start_msg =
+        if ExternalPerfData.in_profiler_data_map procname then
+          "This function is called during cold start. It is very important to avoid potential \
+           regressions in this phase."
+        else ""
+      in
       let prev_degree_with_term = CostDomain.BasicCost.get_degree_with_term prev_cost in
-      Format.asprintf "Complexity of this function has %a from %a to %a. %a"
+      Format.asprintf "Complexity of this function has %a from %a to %a. %s %a"
         (MarkupFormatter.wrap_bold pp_delta)
         delta
         (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
         prev_degree_with_term
         (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
-        curr_degree_with_term pp_extra_msg ()
+        curr_degree_with_term cold_start_msg pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in

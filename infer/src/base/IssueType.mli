@@ -245,8 +245,6 @@ val parameter_not_null_checked : t
 
 val performance_variation : t
 
-val performance_variation_critical_cold_start : t
-
 val pointer_size_mismatch : t
 
 val precondition_not_found : t
@@ -298,6 +296,8 @@ val tainted_buffer_access : t
 val tainted_memory_allocation : t
 
 val thread_safety_violation : t
+
+val time_complexity_increase_cold_start : t
 
 val unary_minus_applied_to_unsigned_expression : t
 

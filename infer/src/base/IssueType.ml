@@ -347,8 +347,6 @@ let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
 let performance_variation = from_string "PERFORMANCE_VARIATION"
 
-let performance_variation_critical_cold_start = from_string "PERFORMANCE_VARIATION_COLD_START"
-
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 
 let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
@@ -402,6 +400,8 @@ let tainted_buffer_access = from_string "TAINTED_BUFFER_ACCESS"
 let tainted_memory_allocation = from_string "TAINTED_MEMORY_ALLOCATION"
 
 let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
+
+let time_complexity_increase_cold_start = from_string "TIME_COMPLEXITY_INCREASE_COLD_START"
 
 let unary_minus_applied_to_unsigned_expression =
   from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
