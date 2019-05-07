@@ -30,6 +30,3 @@ val tasks_done_add : t -> int -> unit
 
 val finish : t -> unit
 (** tear down the task bar and ready the terminal for more output *)
-
-val is_interactive : t -> bool
-(** does the task bar expect periodic refresh? *)

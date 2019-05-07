@@ -56,16 +56,17 @@ module Runner = struct
     pool
 
 
-  let run runner ~n_tasks =
+  let run runner =
     (* Flush here all buffers to avoid passing unflushed data to forked processes, leading to duplication *)
     Pervasives.flush_all () ;
     (* Compact heap before forking *)
     Gc.compact () ;
-    ProcessPool.run runner n_tasks
+    ProcessPool.run runner
 end
 
 let gen_of_list (lst : 'a list) : 'a task_generator =
   let content = ref lst in
+  let n_tasks = List.length lst in
   let is_empty () = List.is_empty !content in
   let next _finished_item =
     match !content with
@@ -75,4 +76,4 @@ let gen_of_list (lst : 'a list) : 'a task_generator =
         content := xs ;
         Some x
   in
-  {is_empty; next}
+  {n_tasks; is_empty; next}

@@ -192,6 +192,3 @@ let finish = function
       Out_channel.flush stderr
   | NonInteractive | Quiet ->
       ()
-
-
-let is_interactive = function MultiLine _ -> true | NonInteractive | Quiet -> false

@@ -26,15 +26,25 @@ open! IStd
 (** A ['a t] process pool accepts tasks of type ['a]. ['a] will be marshalled over a Unix pipe.*)
 type _ t
 
-(** abstraction for generating jobs; [next finished_item] produces the next task, 
-    and receives the task that was finished, or [None] if this is the first time a worker 
-    begins work on a task *)
-type 'a task_generator = {is_empty: unit -> bool; next: 'a option -> 'a option}
+(** abstraction for generating jobs *)
+type 'a task_generator =
+  { n_tasks: int
+        (** total number of tasks -- only used for reporting, so imprecision is not a bug *)
+  ; is_empty: unit -> bool
+        (** when should the main loop of the task manager stop expecting new tasks *)
+  ; next: 'a option -> 'a option
+        (** [next (Some finished_item)] generates the next work item.
+            The worker requesting more work has just finished processing [finished_item]. 
+            [None] is passed when the worker was previously idle. 
+            
+            In particular, it is OK to for [next] to return [None] even when [is_empty] 
+            is false.  This corresponds to the case where there is more work to be done, 
+            but it is not schedulable until some already scheduled work is finished. *)
+  }
 
 val create :
   jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> tasks:'a task_generator -> 'a t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
-val run : 'a t -> int -> unit
-(** use the processes in the given process pool to run all the given tasks in parallel. 
-    the int argument is used for counting only *)
+val run : 'a t -> unit
+(** use the processes in the given process pool to run all the given tasks in parallel. *)

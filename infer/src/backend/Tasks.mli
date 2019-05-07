@@ -26,6 +26,6 @@ module Runner : sig
   val create : jobs:int -> f:'a doer -> tasks:'a task_generator -> 'a t
   (** Create a runner running [jobs] jobs in parallel *)
 
-  val run : 'a t -> n_tasks:int -> unit
+  val run : 'a t -> unit
   (** Start the given tasks with the runner and wait until completion *)
 end
