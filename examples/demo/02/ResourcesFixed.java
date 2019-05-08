@@ -12,9 +12,9 @@ import java.io.IOException;
 public class ResourcesFixed {
 
   public static void cat() throws IOException {
-    try (FileInputStream fis = new FileInputStream(new File("infile.txt"));
-        FileOutputStream fos = new FileOutputStream(new File("outfile.txt")); ) {
-      fos.write(fis.read());
+    try (FileInputStream infile = new FileInputStream(new File("infile.txt"));
+        FileOutputStream outfile = new FileOutputStream(new File("outfile.txt")); ) {
+      outfile.write(infile.read());
     }
   }
 }
