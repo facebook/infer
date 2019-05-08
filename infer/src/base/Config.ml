@@ -1233,26 +1233,35 @@ and () =
           let issue = IssueType.from_string issue_id in
           IssueType.set_enabled issue b ; issue_id )
         ?default ~meta:"issue_type"
+        ~default_to_string:(fun _ -> "")
         ~in_help:InferCommand.[(Report, manual_generic)]
         doc
     in
     ()
   in
+  let all_issues = IssueType.all_issues () in
   let disabled_issues_ids =
-    IssueType.all_issues ()
-    |> List.filter_map ~f:(fun issue ->
-           if not issue.IssueType.enabled then Some issue.IssueType.unique_id else None )
+    List.filter_map all_issues ~f:(fun issue ->
+        Option.some_if (not issue.IssueType.enabled) issue.IssueType.unique_id )
+  in
+  let pp_issue fmt issue =
+    let pp_enabled fmt enabled =
+      if enabled then F.pp_print_string fmt "enabled by default"
+      else F.pp_print_string fmt "disabled by default"
+    in
+    F.fprintf fmt "%s (%a)" issue.IssueType.unique_id pp_enabled issue.IssueType.enabled
   in
   mk false ~default:disabled_issues_ids ~long:"disable-issue-type"
     ~deprecated:["disable_checks"; "-disable-checks"]
-    (Printf.sprintf
+    (F.asprintf
        "Do not show reports coming from this type of issue. Each checker can report a range of \
         issue types. This option provides fine-grained filtering over which types of issue should \
         be reported once the checkers have run. In particular, note that disabling issue types \
         does not make the corresponding checker not run.\n\
-       \ By default, the following issue types are disabled: %s.\n\n\
-       \ See also $(b,--report-issue-type).\n"
-       (String.concat ~sep:", " disabled_issues_ids)) ;
+        Available issue types are as follows:\n\
+       \  @[<v2>%a@].\n"
+       (Pp.seq ~print_env:Pp.text_break ~sep:"," pp_issue)
+       all_issues) ;
   mk true ~long:"enable-issue-type"
     ~deprecated:["enable_checks"; "-enable-checks"]
     "Show reports coming from this type of issue. By default, all issue types are enabled except \
