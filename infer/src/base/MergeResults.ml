@@ -16,7 +16,7 @@ let merge_procedures_table ~db_file =
   Sqlite3.exec db
     {|
 INSERT OR REPLACE INTO procedures
-SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg
+SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees
 FROM (
   attached.procedures AS sub
   LEFT OUTER JOIN procedures AS main

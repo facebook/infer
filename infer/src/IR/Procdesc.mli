@@ -248,6 +248,9 @@ val get_ret_var : t -> Pvar.t
 
 val get_start_node : t -> Node.t
 
+val get_static_callees : t -> Typ.Procname.t list
+(** get a list of unique static callees excluding self *)
+
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)
 

@@ -20,6 +20,7 @@ let procedures_schema =
   , source_file TEXT NOT NULL
   , proc_attributes BLOB NOT NULL
   , cfg BLOB
+  , callees BLOB NOT NULL
   )|}
 
 

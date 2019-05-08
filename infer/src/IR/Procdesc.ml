@@ -501,6 +501,18 @@ let fold_instrs pdesc ~init ~f =
   fold_nodes ~f:fold_node ~init pdesc
 
 
+let get_static_callees pdesc =
+  let callees =
+    fold_instrs pdesc ~init:Typ.Procname.Set.empty ~f:(fun acc _node instr ->
+        match instr with
+        | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
+            Typ.Procname.Set.add callee_pn acc
+        | _ ->
+            acc )
+  in
+  Typ.Procname.Set.remove (get_proc_name pdesc) callees |> Typ.Procname.Set.elements
+
+
 let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
 
 let find_map_instrs pdesc ~f =
