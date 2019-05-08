@@ -685,7 +685,7 @@ and ( annotation_reachability
   and siof =
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
-  and starvation = mk_checker ~long:"starvation" ~default:false "starvation analysis"
+  and starvation = mk_checker ~long:"starvation" ~default:true "starvation analysis"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" ~default:true in
   let mk_only (var, long, doc, _) =
     let (_ : bool ref) =

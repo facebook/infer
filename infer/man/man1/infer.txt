@@ -279,8 +279,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --linters, --liveness, --ownership,
-           --racerd, --siof, --uninit (Conversely: --default-checkers)       
-    See also infer-analyze(1).
+           --racerd, --siof, --starvation, --uninit (Conversely:
+           --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -1039,8 +1039,8 @@ OPTIONS
            Timeout for SQLite results database operations, in milliseconds.
            (default: five seconds times number of cores)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
-       --starvation
-           Activates: starvation analysis (Conversely: --no-starvation)       
+       --no-starvation
+           Deactivates: starvation analysis (Conversely: --starvation)       
     See also infer-analyze(1).
 
        --starvation-only

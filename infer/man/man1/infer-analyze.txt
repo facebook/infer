@@ -99,7 +99,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --linters, --liveness, --ownership,
-           --racerd, --siof, --uninit (Conversely: --default-checkers)
+           --racerd, --siof, --starvation, --uninit (Conversely:
+           --default-checkers)
 
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
@@ -301,8 +302,8 @@ OPTIONS
            Timeout for SQLite results database operations, in milliseconds.
            (default: five seconds times number of cores)
 
-       --starvation
-           Activates: starvation analysis (Conversely: --no-starvation)
+       --no-starvation
+           Deactivates: starvation analysis (Conversely: --starvation)
 
        --starvation-only
            Activates: Enable --starvation and disable all other checkers
