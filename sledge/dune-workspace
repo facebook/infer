@@ -2,4 +2,4 @@
 
 (context (opam (switch sledge) (name dev) (merlin)))
 (context (opam (switch sledge) (name coverage)))
-(context (opam (switch sledge+flambda) (name release)))
+(context (opam (switch sledge) (name release)))

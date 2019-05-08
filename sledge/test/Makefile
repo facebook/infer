@@ -70,7 +70,7 @@ define analyze
     )$$?; \
     case $$status in \
       ( 0 | 2 ) ;; \
-      ( 152 ) echo -e "RESULT: TIMEOUT" >> $(notdir $(1).$(2)).out ;; \
+      ( 137 | 152 ) echo -e "RESULT: TIMEOUT" >> $(notdir $(1).$(2)).out ;; \
       ( * ) echo -e "\nRESULT: Internal error: "$$status >> $(notdir $(1).$(2)).out ;; \
     esac ; \
     exit $$status ; \
