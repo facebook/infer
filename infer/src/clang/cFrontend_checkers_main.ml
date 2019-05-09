@@ -374,6 +374,7 @@ let linters_files =
 
 
 let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_context) ast =
+  CFrontend_errors.issue_log := IssueLog.empty ;
   L.(debug Capture Quiet)
     "Loading the following linters files: %a@\n"
     (Pp.comma_seq Format.pp_print_string)
@@ -400,7 +401,7 @@ let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_conte
       CFrontend_errors.invoke_set_of_checkers_on_node parsed_linters context
         (Ctl_parser_types.Decl ast) ;
       List.iter ~f:(do_frontend_checks_decl parsed_linters context active_map) allowed_decls ;
-      IssueLog.store Config.lint_issues_dir_name source_file ;
+      IssueLog.store !CFrontend_errors.issue_log ~dir:Config.lint_issues_dir_name ~file:source_file ;
       L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
       CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file
       (*if CFrontend_config.tableaux_evaluation then (

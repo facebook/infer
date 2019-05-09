@@ -1223,8 +1223,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   List.iter
     [Config.lint_issues_dir_name; Config.starvation_issues_dir_name; Config.racerd_issues_dir_name]
     ~f:(fun dir_name ->
-      IssueLog.load dir_name ;
-      IssueLog.iter (pp_lint_issues filters formats_by_report_kind linereader) ) ;
+      IssueLog.load dir_name
+      |> IssueLog.iter ~f:(pp_lint_issues filters formats_by_report_kind linereader) ) ;
   finalize_and_close_files formats_by_report_kind stats
 
 

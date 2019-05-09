@@ -45,13 +45,14 @@ val log_error_using_state : Summary.t -> exn -> unit
 
 val log_issue_external :
      Typ.Procname.t
+  -> issue_log:IssueLog.t
   -> Exceptions.severity
   -> loc:Location.t
   -> ltr:Errlog.loc_trace
   -> ?access:string
   -> IssueType.t
   -> string
-  -> unit
+  -> IssueLog.t
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
 
 val is_suppressed :

@@ -459,6 +459,8 @@ let expand_checkers macro_map path_map checkers =
   List.map ~f:expand_one_checker checkers
 
 
+let issue_log = ref IssueLog.empty
+
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
     (issue_desc : CIssue.issue_desc) =
@@ -469,7 +471,8 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
     | None ->
         Typ.Procname.Linters_dummy_method
   in
-  let errlog = IssueLog.get_errlog procname in
+  let issue_log', errlog = IssueLog.get_or_add ~proc:procname !issue_log in
+  issue_log := issue_log' ;
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in

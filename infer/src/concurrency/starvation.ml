@@ -191,7 +191,7 @@ module ReportMap : sig
 
   val add_strict_mode_volation : report_add_t
 
-  val log : Tenv.t -> Procdesc.t -> t -> unit
+  val log : IssueLog.t -> Tenv.t -> Procdesc.t -> t -> IssueLog.t
 end = struct
   type problem =
     | Starvation of StarvationDomain.Event.severity_t
@@ -229,8 +229,8 @@ end = struct
     add loc report map
 
 
-  let log tenv pdesc map =
-    let log_report loc {problem; pname; ltr; message} =
+  let log start_issue_log tenv pdesc map =
+    let log_report ~issue_log loc {problem; pname; ltr; message} =
       let issue_type =
         match problem with
         | Deadlock _ ->
@@ -240,22 +240,25 @@ end = struct
         | StrictModeViolation _ ->
             IssueType.strict_mode_violation
       in
-      if Reporting.is_suppressed tenv pdesc issue_type then ()
-      else Reporting.log_issue_external pname Exceptions.Error ~loc ~ltr issue_type message
+      if Reporting.is_suppressed tenv pdesc issue_type then issue_log
+      else
+        Reporting.log_issue_external ~issue_log pname Exceptions.Error ~loc ~ltr issue_type message
     in
     let mk_deduped_report ({message} as report) =
       { report with
         message= Printf.sprintf "%s Additional report(s) on the same line were suppressed." message
       }
     in
-    let log_reports compare loc = function
+    let log_reports compare loc reports issue_log =
+      match reports with
       | [] ->
-          ()
+          issue_log
       | [(_, report)] ->
-          log_report loc report
+          log_report ~issue_log loc report
       | reports ->
           List.max_elt ~compare reports
-          |> Option.iter ~f:(fun (_, rep) -> mk_deduped_report rep |> log_report loc)
+          |> Option.fold ~init:issue_log ~f:(fun acc (_, rep) ->
+                 mk_deduped_report rep |> log_report ~issue_log:acc loc )
     in
     let filter_map_deadlock = function {problem= Deadlock l} as r -> Some (l, r) | _ -> None in
     let filter_map_starvation = function
@@ -273,15 +276,15 @@ end = struct
     let compare_reports weight_compare (w, r) (w', r') =
       match weight_compare w w' with 0 -> String.compare r.message r'.message | result -> result
     in
-    let log_location loc problems =
+    let log_location loc problems issue_log =
       let deadlocks = List.filter_map problems ~f:filter_map_deadlock in
-      log_reports (compare_reports Int.compare) loc deadlocks ;
       let starvations = List.filter_map problems ~f:filter_map_starvation in
-      log_reports (compare_reports StarvationDomain.Event.compare_severity_t) loc starvations ;
       let strict_mode_violations = List.filter_map problems ~f:filter_map_strict_mode_violation in
-      log_reports (compare_reports Int.compare) loc strict_mode_violations
+      log_reports (compare_reports Int.compare) loc deadlocks issue_log
+      |> log_reports (compare_reports StarvationDomain.Event.compare_severity_t) loc starvations
+      |> log_reports (compare_reports Int.compare) loc strict_mode_violations
     in
-    LocMap.iter log_location map
+    LocMap.fold log_location map start_issue_log
 end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
@@ -486,12 +489,14 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
 
 
 let reporting {Callbacks.procedures; source_file} =
-  let report_procedure ((tenv, proc_desc) as env) =
+  let report_procedure issue_log ((tenv, proc_desc) as env) =
     if should_report proc_desc then
       Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
-      |> Option.iter ~f:(fun summary ->
+      |> Option.value_map ~default:issue_log ~f:(fun summary ->
              report_deadlocks env summary ReportMap.empty
-             |> report_starvation env summary |> ReportMap.log tenv proc_desc )
+             |> report_starvation env summary
+             |> ReportMap.log issue_log tenv proc_desc )
+    else issue_log
   in
-  List.iter procedures ~f:report_procedure ;
-  IssueLog.store Config.starvation_issues_dir_name source_file
+  List.fold procedures ~init:IssueLog.empty ~f:report_procedure
+  |> IssueLog.store ~dir:Config.starvation_issues_dir_name ~file:source_file

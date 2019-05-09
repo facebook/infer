@@ -7,6 +7,8 @@
 
 open! IStd
 
+val issue_log : IssueLog.t ref
+
 type linter =
   { condition: CTL.t
   ; issue_desc: CIssue.issue_desc
