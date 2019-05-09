@@ -22,26 +22,17 @@ let should_skip_var v =
 
 module Access = struct
   type t =
-    | Read of {path: AccessPath.t; original: AccessPath.t [@compare.ignore]}
-    | Write of {path: AccessPath.t; original: AccessPath.t [@compare.ignore]}
-    | ContainerRead of
-        { path: AccessPath.t
-        ; original: AccessPath.t [@compare.ignore]
-        ; pname: Typ.Procname.t }
-    | ContainerWrite of
-        { path: AccessPath.t
-        ; original: AccessPath.t [@compare.ignore]
-        ; pname: Typ.Procname.t }
+    | Read of {path: AccessPath.t}
+    | Write of {path: AccessPath.t}
+    | ContainerRead of {path: AccessPath.t; pname: Typ.Procname.t}
+    | ContainerWrite of {path: AccessPath.t; pname: Typ.Procname.t}
     | InterfaceCall of Typ.Procname.t
   [@@deriving compare]
 
-  let make_field_access path ~is_write =
-    if is_write then Write {path; original= path} else Read {path; original= path}
-
+  let make_field_access path ~is_write = if is_write then Write {path} else Read {path}
 
   let make_container_access path pname ~is_write =
-    if is_write then ContainerWrite {path; original= path; pname}
-    else ContainerRead {path; original= path; pname}
+    if is_write then ContainerWrite {path; pname} else ContainerRead {path; pname}
 
 
   let is_write = function
@@ -67,12 +58,12 @@ module Access = struct
 
   let map ~f access =
     match access with
-    | Read ({path} as record) ->
+    | Read {path} ->
         let path' = f path in
-        if phys_equal path path' then access else Read {record with path= path'}
-    | Write ({path} as record) ->
+        if phys_equal path path' then access else Read {path= path'}
+    | Write {path} ->
         let path' = f path in
-        if phys_equal path path' then access else Write {record with path= path'}
+        if phys_equal path path' then access else Write {path= path'}
     | ContainerWrite ({path} as record) ->
         let path' = f path in
         if phys_equal path path' then access else ContainerWrite {record with path= path'}
@@ -96,21 +87,18 @@ module Access = struct
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
 
 
-  (* FIXME: changed to make tests pass *)
   let pp_human fmt = function
-    | Read {original} ->
-        F.fprintf fmt "access to `%a`" AccessPath.pp original
-    | Write {original} ->
-        F.fprintf fmt "access to `%a`" AccessPath.pp original
-    | ContainerRead {original; pname} ->
+    | Read {path} | Write {path} ->
+        F.fprintf fmt "access to `%a`" AccessPath.pp path
+    | ContainerRead {path; pname} ->
         F.fprintf fmt "Read of container %a via call to %s"
           (MF.wrap_monospaced AccessPath.pp)
-          original
+          path
           (MF.monospaced_to_string (Typ.Procname.get_method pname))
-    | ContainerWrite {original; pname} ->
+    | ContainerWrite {path; pname} ->
         F.fprintf fmt "Write to container %a via call to %s"
           (MF.wrap_monospaced AccessPath.pp)
-          original
+          path
           (MF.monospaced_to_string (Typ.Procname.get_method pname))
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
