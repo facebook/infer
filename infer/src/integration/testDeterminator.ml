@@ -10,6 +10,36 @@ module L = Logging
 module F = Format
 module JPS = JavaProfilerSamples
 
+let load_all_statement =
+  ResultsDatabase.register_statement
+    "SELECT DISTINCT proc_name_hum FROM procedures WHERE modified_flag = 1 ORDER BY proc_name_hum"
+
+
+let load_all () =
+  ResultsDatabase.with_registered_statement load_all_statement ~f:(fun db stmt ->
+      Container.to_list stmt
+        ~fold:
+          (SqliteUtils.result_fold_single_column_rows ~finalize:false db
+             ~log:"modified_flag.load_all")
+      |> List.map ~f:Sqlite3.Data.to_string )
+
+
+let store_statement =
+  ResultsDatabase.register_statement
+    "UPDATE procedures SET modified_flag = :i WHERE proc_name = :k"
+
+
+let store pname modified =
+  let modified' = Sqlite3.Data.INT (Int64.of_int (if modified then 1 else 0)) in
+  ResultsDatabase.with_registered_statement store_statement ~f:(fun db stmt ->
+      Typ.Procname.SQLite.serialize pname
+      |> Sqlite3.bind stmt 2
+      |> SqliteUtils.check_result_code db ~log:"store bind proc name" ;
+      modified' |> Sqlite3.bind stmt 1
+      |> SqliteUtils.check_result_code db ~log:"store bind modified flag " ;
+      SqliteUtils.result_unit db ~finalize:false ~log:"store modified flag " stmt )
+
+
 (* a flag used to make the method search signature sensitive *)
 let use_method_signature = false
 
@@ -213,7 +243,7 @@ let compute_affected_methods_clang source_file changed_lines_map method_range_ma
 let relevant_tests = ref []
 
 (* Methods modified in a diff *)
-let relevant_methods = ref []
+let relevant_methods = ref JPS.ProfilerSample.empty
 
 let _get_relevant_test_to_run () = !relevant_tests
 
@@ -221,17 +251,25 @@ let emit_tests_to_run () =
   let json = `List (List.map ~f:(fun t -> `String t) !relevant_tests) in
   let outpath = Config.results_dir ^/ "test_determinator.json" in
   Yojson.Basic.to_file outpath json ;
-  L.progress "Tests to run: [%a]@\n" (Pp.seq ~sep:", " F.pp_print_string) !relevant_tests
+  L.(debug TestDeterminator Medium)
+    "Tests to run: [%a]@\n"
+    (Pp.seq ~sep:", " F.pp_print_string)
+    !relevant_tests
+
+
+let persist_relevant_method_in_db () =
+  JPS.ProfilerSample.iter (fun pname -> store pname true) !relevant_methods
 
 
 let emit_relevant_methods () =
-  let methods = List.dedup_and_sort ~compare:String.compare !relevant_methods in
-  let json = `List (List.map ~f:(fun t -> `String t) methods) in
+  let rel_methods = load_all () in
+  let json = `List (List.map ~f:(fun t -> `String t) rel_methods) in
   let outpath = Config.results_dir ^/ "diff_determinator.json" in
   Yojson.Basic.to_file outpath json ;
-  L.progress "Methods modified in this Diff: [%a]@\n"
+  L.(debug TestDeterminator Medium)
+    "Methods modified in this Diff: %a@\n"
     (Pp.seq ~sep:", " F.pp_print_string)
-    !relevant_methods
+    rel_methods
 
 
 let init_clang cfg changed_lines_file test_samples_file =
@@ -268,10 +306,7 @@ let test_to_run_clang source_file cfg changed_lines_file test_samples_file =
     compute_affected_methods_clang source_file (DiffLines.changed_lines_map ())
       (MethodRangeMap.method_range_map ())
   in
-  let affected_methods_list =
-    JPS.ProfilerSample.fold (fun m acc -> Typ.Procname.to_string m :: acc) affected_methods []
-  in
-  relevant_methods := List.append affected_methods_list !relevant_methods ;
+  relevant_methods := JPS.ProfilerSample.union affected_methods !relevant_methods ;
   let test_to_run =
     if JPS.ProfilerSample.is_empty affected_methods then []
     else

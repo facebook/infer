@@ -52,7 +52,7 @@ let replace_statement =
   ResultsDatabase.register_statement
     {|
 INSERT OR REPLACE INTO procedures
-SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr, :cfg, :callees
+SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr, :cfg, :callees, :modified_flag
 FROM (
   SELECT NULL
   FROM (
@@ -64,7 +64,7 @@ FROM (
         OR (attr_kind = :akind AND source_file <= :sfile) )|}
 
 
-let replace pname pname_blob akind loc_file attr_blob proc_desc callees =
+let replace pname pname_blob akind loc_file attr_blob proc_desc callees modified_flag =
   ResultsDatabase.with_registered_statement replace_statement ~f:(fun db replace_stmt ->
       Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
       |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
@@ -81,6 +81,9 @@ let replace pname pname_blob akind loc_file attr_blob proc_desc callees =
       |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
       Sqlite3.bind replace_stmt 7 (* :callees *) (Typ.Procname.SQLiteList.serialize callees)
       |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
+      Sqlite3.bind replace_stmt 8
+        (* :modified_flag *) (Sqlite3.Data.INT (Int64.of_int (if modified_flag then 1 else 0)))
+      |> SqliteUtils.check_result_code db ~log:"replace bind modified_flag" ;
       SqliteUtils.result_unit db ~finalize:false ~log:"Attributes.replace" replace_stmt )
 
 
@@ -137,6 +140,7 @@ let store ~proc_desc (attr : ProcAttributes.t) =
       (ProcAttributes.SQLite.serialize attr)
       proc_desc
       (Option.map proc_desc ~f:Procdesc.get_static_callees |> Option.value ~default:[])
+      false
 
 
 let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:true

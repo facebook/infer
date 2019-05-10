@@ -21,6 +21,7 @@ let procedures_schema =
   , proc_attributes BLOB NOT NULL
   , cfg BLOB
   , callees BLOB NOT NULL
+  , modified_flag INT NOT NULL DEFAULT 0
   )|}
 
 

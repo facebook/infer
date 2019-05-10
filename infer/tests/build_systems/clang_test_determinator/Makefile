@@ -23,7 +23,7 @@ $(DIFF_OUTPUT):
 		orig-$(A_CPP) mod2-$(A_CPP) || [ $$? = 1 ]) >> diff.mod2.test
 
 $(TEST_DETERMINATOR_RESULT): $(DIFF_OUTPUT)
-	$(QUIET)$(call silent_on_success,Testing test-determinator with set of changes in mod1,\
+	$(QUIET)$(call silent_on_success,Testing test-determinator-clang with set of changes in mod1,\
 		cp mod1-$(A_CPP) $(A_CPP);\
 		$(INFER_BIN) -o infer-out-mod1 --test-determinator-clang --modified-lines diff.mod1.test -- clang -c $(A_CPP))
 	$(QUIET)$(call silent_on_success,Testing test-determinator-clang with set of changes in mod2,\

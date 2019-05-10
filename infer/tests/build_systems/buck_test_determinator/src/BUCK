@@ -1,0 +1,6 @@
+cxx_library(
+  name = 'test',
+  srcs = [
+    'a.cpp', 'b.cpp',
+  ],
+)

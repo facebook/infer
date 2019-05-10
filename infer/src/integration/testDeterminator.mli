@@ -14,6 +14,8 @@ val test_to_run_clang :
 
 val emit_tests_to_run : unit -> unit
 
+val persist_relevant_method_in_db : unit -> unit
+
 val emit_relevant_methods : unit -> unit
 
 val _get_relevant_test_to_run : unit -> string list
