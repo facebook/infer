@@ -57,14 +57,38 @@ and cfg = block vector
    cfg, and it cannot be jumped to, only called. *)
 and func = {name: Global.t; entry: block; cfg: cfg}
 
-let rec sexp_of_jump ({dst; args; retreating} as jmp) =
-  if retreating then
-    [%sexp {dst: label = dst.lbl; args: Exp.t list; retreating: bool}]
-  else [%sexp_of: jump] jmp
+let sexp_cons (hd : Sexp.t) (tl : Sexp.t) =
+  match tl with
+  | List xs -> Sexp.List (hd :: xs)
+  | Atom _ -> Sexp.List [hd; tl]
 
-and sexp_of_term t = [%sexp_of: term] t
+let sexp_ctor label args = sexp_cons (Sexp.Atom label) args
 
-and sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
+let sexp_of_jump {dst; args; retreating} =
+  [%sexp {dst: label = dst.lbl; args: Exp.t list; retreating: bool}]
+
+let sexp_of_term = function
+  | Switch {key; tbl; els; loc} ->
+      sexp_ctor "Switch"
+        [%sexp
+          {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}]
+  | Iswitch {ptr; tbl; loc} ->
+      sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump vector; loc: Loc.t}]
+  | Call {call; typ; return; throw; ignore_result; loc} ->
+      sexp_ctor "Call"
+        [%sexp
+          { call: Exp.t control_transfer
+          ; typ: Typ.t
+          ; return: jump
+          ; throw: jump option
+          ; ignore_result: bool
+          ; loc: Loc.t }]
+  | Return {exp; loc} ->
+      sexp_ctor "Return" [%sexp {exp: Exp.t option; loc: Loc.t}]
+  | Throw {exc; loc} -> sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
+  | Unreachable -> Sexp.Atom "Unreachable"
+
+let sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
   [%sexp
     { lbl: label
     ; params: Var.t list
@@ -74,7 +98,10 @@ and sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
     ; parent: Var.t = parent.name.var
     ; sort_index: int }]
 
-and sexp_of_func f = [%sexp_of: func] f
+let sexp_of_cfg v = [%sexp_of: block vector] v
+
+let sexp_of_func {name; entry; cfg} =
+  [%sexp {name: Global.t; entry: block; cfg: cfg}]
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y = Int.compare x.sort_index y.sort_index
