@@ -1,4 +1,4 @@
-* lazy tracing
+* Lazy tracing
 - define a [Trace.t], move global [fs] into it, and thread through code
 - add a parent-pointing tree/dag of printing thunks to [Trace.t]
 - use "event" and "history" terminology
@@ -20,7 +20,7 @@
 - support incrementally writing trace data to file
 - support incrementally printing history as requested, in reverse
 - ? support more advanced queries
-* parallelize frontend
+* Parallelize frontend
 - make a scan_types pass over all types to populate anon_struct_name, and change struct_name to only find, not add
   see http://llvm.org/doxygen/ValueEnumerator_8cpp_source.html#l00321
 - [Trace.fork] a trace for each function
@@ -31,7 +31,7 @@
   + would need to handle concurrent accesses
   + maybe better to put entire Llair.t into shared memory
   + ? shared memory = reancient + locks
-* parallelize backend
+* Parallelize backend
 - change exec_* functions to instead of transforming the worklist, to return the new jobs (each job is an edge, depth(s?), and state)
   + also, change tracing so that they return new events rather than transform the whole event dag
 - adapt infer's ProcessPool
@@ -68,7 +68,7 @@
     - need a way to Marshal them from shared memory to write to file
       + perhaps serially at exit: copy to GC heap and Marshal as normal
       + perhaps incrementally copy oldest events from shared memory and Marshal to file
-* relax global topological ordering
+* Relax global topological ordering
 :PROPERTIES:
 :ID:       6D6A0AF5-F68F-4726-95E5-178145A4CB9B
 :END:
@@ -92,11 +92,11 @@
   + extending such a graph can only add new ordering relationships, never change existing ones, the partial order is stable under extension, so translating code while analyzing will not break the queue
   + is Fheap compatible with a partial order, rather than a total order?
   + when adding just-translated code, need to add edges for all existing (non-retreating?) Call sites of added functions: will need to index them
-* lazy translation
+* Lazy translation
 - need to [[id:6D6A0AF5-F68F-4726-95E5-178145A4CB9B][generalize to partial weak topological order]] to enable adding code during analysis without breaking the priority queue
 - translate function when analyzing a Call to a declared but untranslated function
 - if in ThinLTO mode, will need to worry about finding/loading bitcode: will need an index from function names to bitcode modules where they are defined (ThinLTO should have this info)
-* summarization
+* Summarization
 - ? standard over-approximation, or something more in tune with refutation
 - ? procedures
 - ? code segments between function entry and call sites
@@ -107,9 +107,34 @@
     - depth for which summary is "sound" assuming every worklist item has higher depth
   + a summary for a given pre and depth may be incomplete (if there is an item in the worklist)
   + a summary for a pre and depth may be extended with another for the same pre and depth, by disjoining the posts
-* differential analysis
-* start-anywhere/bottom-up analysis
-* non-dnf solver
-* arithmetic constraints
-* overflow analysis
+* Start-anywhere / bottom-up analysis
+- backward symbolic execution via biabduction
+- applicability improvement: start analysis from anywhere
+- reduce / eliminate need for test harness
+- probably still closer to top-down than bottom-up wrt scalability without compositionality
+* Scalability improvement
+- disjunction
+  + non-dnf solver
+  + incorporate "locality with respect to disjunction" to only pay for case analysis the program execution cares about
+- bound definition
+  + many variations possible, likely some are much more effective than others
+- exploration strategy
+  + breadth-first search, iterative deepening, etc. are naive
+  + maybe genetic or some other fancy exploration
+* Differential analysis
+- aim: analyze the diff between two versions of code rather than diff the reports from analyzing two versions of code
+- analyze two/multiple versions of code simultaneously
+- attempt to explore only new executions
+- mechanism to report (almost) only new issues
+- mechanism to scale as a function of diff size rather than code base size
+- guiding soundness definition: take safety of previous version as an hypothesis
+* Compositionality
+- dynamically coarsen granularity of compositionality to avoid precision loss
+- aim is as close to compositionality at per-procedure level like Infer, but eliminate imprecision due to unknown calling context by selectively sacrificing compositionality
+* Dynamically-sized arrays
+- incorporate an arithmetic abstraction to check array accesses are in-bounds
+* Widening
+- optimize bounded exploration by generalizing to invariants
+- still doing symbolic testing, not proof, so only abstract when and where the generalization is very clear, can always fall back to bounded exploration
+* Overflow analysis
 - Currently expressions are shared between the IR for code and the analyzer's formulas. In order to strengthen the analyzer to detect overflow, it will likely be necessary to distinguish these, letting the analyzer normalize with polynomials, while keeping the same order of operations as the source for the IR. Plus another level of transformers for the IR expressions where their abstract values could be checked for being in range, etc.
