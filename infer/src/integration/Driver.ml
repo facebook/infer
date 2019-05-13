@@ -305,6 +305,10 @@ let capture ~changed_files mode =
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
+let capture ~changed_files mode =
+  ScubaEventLogging.execute_with_time_logging "capture" (fun () -> capture ~changed_files mode)
+
+
 let execute_analyze ~changed_files =
   register_perf_stats_report PerfStats.TotalBackend ;
   InferAnalyze.main ~changed_files ;
@@ -405,6 +409,11 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else execute_analyze ~changed_files ;
   if should_report && Config.report then report ?suppress_console:suppress_console_report ()
+
+
+let analyze_and_report ?suppress_console_report ~changed_files mode =
+  ScubaEventLogging.execute_with_time_logging "analyze_and_report" (fun () ->
+      analyze_and_report ?suppress_console_report ~changed_files mode )
 
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
@@ -549,6 +558,10 @@ let run_prologue mode =
   ()
 
 
+let run_prologue mode =
+  ScubaEventLogging.execute_with_time_logging "run_prologue" (fun () -> run_prologue mode)
+
+
 let run_epilogue () =
   if CLOpt.is_originator then (
     if Config.developer_mode then StatsAggregator.generate_files () ;
@@ -557,6 +570,8 @@ let run_epilogue () =
   if Config.buck_cache_mode then clean_results_dir () ;
   ()
 
+
+let run_epilogue () = ScubaEventLogging.execute_with_time_logging "run_epilogue" run_epilogue
 
 let read_config_changed_files () =
   match Config.changed_files_index with

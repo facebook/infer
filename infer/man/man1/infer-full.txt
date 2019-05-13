@@ -1568,6 +1568,10 @@ INTERNAL OPTIONS
            Reset the list of folders containing linters definitions to be
            empty (see linters-def-folder).
 
+       --scuba-logging
+           Activates: (direct) logging to scuba (Conversely:
+           --no-scuba-logging)
+
        --seconds-per-iteration float
            Set the number of seconds per iteration (see --iterations)
 

@@ -85,6 +85,7 @@ let main ~changed_files =
     if result then incr n_source_files_to_analyze ;
     result
   in
+  ScubaEventLogging.log_count ~name:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let source_files_to_analyze = SourceFiles.get_all ~filter () in
   L.progress "Found %d%s source file%s to analyze in %s@." !n_source_files_to_analyze
     ( if Config.reactive_mode || Option.is_some changed_files then

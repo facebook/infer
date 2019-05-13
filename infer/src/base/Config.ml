@@ -2012,6 +2012,8 @@ and select =
     "Select bug number $(i,N). If omitted, prompt for input."
 
 
+and scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba "
+
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -2987,6 +2989,8 @@ and results_dir = !results_dir
 and seconds_per_iteration = !seconds_per_iteration
 
 and select = !select
+
+and scuba_logging = !scuba_logging
 
 and show_buckets = !print_buckets
 

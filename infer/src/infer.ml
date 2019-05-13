@@ -22,6 +22,8 @@ let run driver_mode =
   run_epilogue ()
 
 
+let run driver_mode = ScubaEventLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
+
 let setup () =
   ( match Config.command with
   | Analyze ->

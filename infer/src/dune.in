@@ -24,6 +24,7 @@ let source_dirs =
        ; "nullsafe"
        ; "pulse"
        ; "quandary"
+       ; "scuba"
        ; "topl"
        ; "unit" ] )
 

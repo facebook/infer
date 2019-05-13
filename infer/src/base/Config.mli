@@ -598,6 +598,8 @@ val rest : string list
 
 val results_dir : string
 
+val scuba_logging : bool
+
 val seconds_per_iteration : float option
 
 val select : int option
