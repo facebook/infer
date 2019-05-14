@@ -3353,7 +3353,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXStaticCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXFunctionalCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _) ->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind
-    | IntegerLiteral (_, _, expr_info, integer_literal_info) ->
+    | IntegerLiteral (_, _, expr_info, integer_literal_info)
+    | OffsetOfExpr (_, _, expr_info, integer_literal_info) ->
         integerLiteral_trans trans_state expr_info integer_literal_info
     | StringLiteral (_, _, expr_info, str_list) ->
         stringLiteral_trans trans_state expr_info (String.concat ~sep:"" str_list)
@@ -3484,7 +3485,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         booleanValue_trans trans_state expr_info type_trait_info.Clang_ast_t.xtti_value
     | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
         booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
-    | OffsetOfExpr (_, _, expr_info) | VAArgExpr (_, [], expr_info) ->
+    | VAArgExpr (_, [], expr_info) ->
         undefined_expr trans_state expr_info
     | VAArgExpr (stmt_info, stmt :: _, ei) ->
         va_arg_trans trans_state stmt_info stmt ei
