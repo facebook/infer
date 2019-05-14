@@ -333,4 +333,11 @@ public class NullMethodCall {
     Verify.verifyNotNull(object);
     return object.toString();
   }
+
+  void nullabilityNotPreservedAfterAssignment() {
+    if (getNullable() != null) {
+      Object t = getNullable();
+      t.toString();
+    }
+  }
 }
