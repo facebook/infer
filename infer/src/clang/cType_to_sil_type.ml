@@ -100,10 +100,11 @@ let rec build_array_type translate_decl tenv (qual_type : Clang_ast_t.qual_type)
 
 
 and type_desc_of_attr_type translate_decl tenv type_info attr_info =
-  match type_info.Clang_ast_t.ti_desugared_type with
+  let open Clang_ast_t in
+  match type_info.ti_desugared_type with
   | Some type_ptr -> (
     match CAst_utils.get_type type_ptr with
-    | Some (Clang_ast_t.ObjCObjectPointerType (_, qual_type)) ->
+    | Some (ObjCObjectPointerType (_, qual_type)) ->
         let typ = qual_type_to_sil_type translate_decl tenv qual_type in
         Typ.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
     | _ ->

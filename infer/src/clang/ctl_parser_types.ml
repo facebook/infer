@@ -511,6 +511,12 @@ and c_type_equal c_type abs_ctype =
   match (c_type, abs_ctype) with
   | BuiltinType (_, bi), BuiltIn abi ->
       builtin_equal bi abi
+  | BuiltinType (_, `ObjCId), TypeName ae when ALVar.compare_str_with_alexp "instancetype" ae ->
+      (* This is a special case where coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
+  compiler change 'instancetype' to ObjCId *)
+      L.(debug Linters Medium)
+        "@\n Special Case when comaping BuiltInType(ObjcId) and TypeName(instancetype)\n" ;
+      true
   | TypedefType (_, tdi), BuiltIn _ ->
       check_type_ptr tdi.tti_child_type.qt_type_ptr abs_ctype
   | PointerType _, BuiltIn _ | PointerType _, Pointer _ | ObjCObjectPointerType _, Pointer _ ->
@@ -522,6 +528,8 @@ and c_type_equal c_type abs_ctype =
   | FunctionProtoType (_, {fti_return_type= qt}, _), TypeName _
   | ObjCObjectPointerType (_, qt), _ ->
       check_type_ptr qt.qt_type_ptr abs_ctype
+  | ObjCObjectType (_, ooti), TypeName _ ->
+      check_type_ptr ooti.ooti_base_type abs_ctype
   | ObjCObjectType _, ObjCGenProt _ ->
       objc_object_type_equal c_type abs_ctype
   | ObjCInterfaceType (_, pointer), TypeName ae ->
@@ -553,6 +561,8 @@ and c_type_equal c_type abs_ctype =
   | AutoType ti, TypeName _
   | TypedefType (ti, _), ObjCGenProt _
   | AttributedType (ti, _), Pointer _ -> (
+    match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
+  | AttributedType (ti, _), TypeName _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
   | _, _ ->
       display_equality_warning () ; false
