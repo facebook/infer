@@ -6,8 +6,20 @@
 .PHONY: default
 default: exes
 
-DUNEINS=$(shell find src -name dune.in)
-DUNES=$(patsubst %.in,%,$(DUNEINS))
+EXES = src/sledge
+INSTALLS = sledge
+
+facebook/Makefile:
+	-@${MAKE} -s -C ../facebook setup
+	-@${MAKE} -s -C facebook
+
+-include facebook/Makefile
+
+DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS))
+OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS))
+
+DUNEINS = $(shell find src facebook -name dune.in)
+DUNES = $(patsubst %.in,%,$(DUNEINS))
 
 .PHONY: dunes
 dunes: $(DUNES)
@@ -16,7 +28,7 @@ dunes: $(DUNES)
 	@cat $+ > $@
 
 .PHONY: setup
-setup: dunes
+setup: facebook/Makefile dunes
 
 .PHONY: check
 check: setup
@@ -24,25 +36,25 @@ check: setup
 
 .PHONY: exes
 exes: setup
-	dune build _build/dev/src/sledge.exe _build/release/src/sledge.exe _build/dev/sledge.install _build/release/sledge.install
+	dune build $(DBG_TARGETS) $(OPT_TARGETS)
 
 .PHONY: dbg
 dbg: setup
-	dune build _build/dev/src/sledge.exe _build/dev/sledge.install
+	dune build $(DBG_TARGETS)
 
 .PHONY: opt
 opt: setup
-	dune build _build/release/src/sledge.exe _build/release/sledge.install
+	dune build $(OPT_TARGETS)
 
 .PHONY: watch
 watch: setup
-	dune build --watch _build/dev/src/sledge.exe _build/release/src/sledge.exe
+	dune build --watch $(DBG_TARGETS) $(OPT_TARGETS)
 
 .PHONY: test
 test: setup
 	dune build @_build/dev/runtest --auto-promote
 
-BISECT_DIR=$(CURDIR)/_coverage/out
+BISECT_DIR = $(CURDIR)/_coverage/out
 
 .PHONY: coverage
 coverage: setup

@@ -1,4 +1,5 @@
 .merlin
+/bin/
 /llvm/
 /model/cxxabi.bc
 /src/dune

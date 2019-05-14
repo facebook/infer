@@ -21,6 +21,7 @@ depends: [
   "ppx_compare"
   "ppx_deriving_cmdliner" {>= "0.4.2"}
   "ppx_hash"
+  "shexp"
   "zarith"
 ]
 synopsis: "SLEdge analyzer"

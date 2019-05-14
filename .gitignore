@@ -62,6 +62,7 @@ duplicates.txt
 /Makefile.autoconf
 /.buckversion
 /*/.gitignore
+/*/*/.gitignore
 
 # IntelliJ files
 /scripts/.idea/
