@@ -337,14 +337,21 @@ public class NullMethodCall {
   void nullabilityNotPreservedAfterAssignment() {
     if (getNullable() != null) {
       Object t = getNullable();
-      t.toString();
+      t.toString(); // Should not warn here
     }
   }
 
   void nullabilityStoredInBooleanFP() {
     boolean isNotNull = getNullable() != null;
     if (isNotNull) {
-      getNullable().toString();
+      getNullable().toString(); // Should not warn here
+    }
+  }
+
+  void testInAssignmentFP(@Nullable Object object) {
+    Object t;
+    while ((t = getNullable()) != null) {
+      t.toString(); // Should not warn here
     }
   }
 }
