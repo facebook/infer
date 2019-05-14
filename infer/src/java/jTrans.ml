@@ -30,7 +30,7 @@ let fix_method_definition_line linereader proc_name loc =
   in
   let regex = Str.regexp (Str.quote method_name) in
   let method_is_defined_here linenum =
-    match Printer.LineReader.from_file_linenum_original linereader loc.Location.file linenum with
+    match Printer.LineReader.from_file_linenum linereader loc.Location.file linenum with
     | None ->
         raise Caml.Not_found
     | Some line -> (
