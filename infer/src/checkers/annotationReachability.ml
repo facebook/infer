@@ -351,7 +351,7 @@ module CxxAnnotationSpecs = struct
       if List.is_empty overrides then fun _ -> false
       else make_pname_pred overrides ~src:(sinks_src ^ " -> overrides")
     in
-    let call_str = " ->\n    " in
+    let call_str = "\n    -> " in
     let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
       let src_pname = Summary.get_proc_name src_summary in
       let final_trace = List.rev (update_trace call_loc trace) in
