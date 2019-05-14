@@ -825,7 +825,7 @@ let jump_args : x -> Llvm.llvalue -> Llvm.llbasicblock -> Exp.t list =
 type code = Llair.inst list * Llair.term * Llair.block list
 
 let pp_code fs (insts, term, blocks) =
-  Format.fprintf fs "@[<hv>@[%a%t@]%t@[<hv>%a@]@]"
+  Format.fprintf fs "@[<hv>@,@[%a%t@]%t@[<hv>%a@]@]"
     (List.pp "@ " Llair.Inst.pp)
     insts
     (fun fs ->
@@ -1048,8 +1048,8 @@ let xlate_instr :
             | _ -> false
           in
           let return, blocks =
+            let args = trampoline_args x instr return_blk in
             if not (need_return_trampoline instr return_blk) then
-              let args = trampoline_args x instr return_blk in
               (Llair.Jump.mk return_dst args, [])
             else
               let lbl = name ^ ".ret" in

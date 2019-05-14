@@ -248,7 +248,7 @@ module Jump = struct
   let pp = pp_jump
 
   let invariant ?(accept_return = false) jmp =
-    Invariant.invariant [%here] jmp [%sexp_of: t]
+    Invariant.invariant [%here] (jmp, accept_return) [%sexp_of: t * bool]
     @@ fun () ->
     let {dst= {params; parent}; args} = jmp in
     if parent == dummy_func then
