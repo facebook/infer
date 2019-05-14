@@ -121,3 +121,16 @@ public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnot
     return object;
   }
 }
+
+class Super {
+  String overloadingMethodLookupFP(int i) {
+    return Integer.toString(i);
+  }
+}
+
+class Sub extends Super {
+  @Nullable
+  String overloadingMethodLookupFP(Object object) {
+    return null;
+  }
+}
