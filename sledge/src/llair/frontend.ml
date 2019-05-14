@@ -952,7 +952,8 @@ let xlate_instr :
           emit_inst (Llair.Inst.memmov ~dst ~src ~len ~loc)
       (* dropped / handled elsewhere *)
       | ["llvm"; "dbg"; ("declare" | "value")]
-       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
+       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
+       |["llvm"; "trap"] ->
           nop ()
       (* unimplemented *)
       | ["llvm"; ("stacksave" | "stackrestore")] ->
