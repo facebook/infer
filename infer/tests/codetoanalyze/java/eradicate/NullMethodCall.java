@@ -340,4 +340,11 @@ public class NullMethodCall {
       t.toString();
     }
   }
+
+  void nullabilityStoredInBooleanFP() {
+    boolean isNotNull = getNullable() != null;
+    if (isNotNull) {
+      getNullable().toString();
+    }
+  }
 }
