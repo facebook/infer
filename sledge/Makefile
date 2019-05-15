@@ -8,6 +8,7 @@ default: exes
 
 EXES = src/sledge
 INSTALLS = sledge
+FMTS = @_build/dev/src/fmt
 
 facebook/Makefile:
 	-@${MAKE} -s -C ../facebook setup
@@ -71,7 +72,7 @@ clean:
 
 .PHONY: fmt
 fmt:
-	dune build @_build/dev/src/fmt --auto-promote
+	dune build $(FMTS) --auto-promote
 	ocamlformat -i src/version.ml.in $(DUNEINS)
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 
