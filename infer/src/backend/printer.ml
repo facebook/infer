@@ -193,7 +193,12 @@ end
 
 module FilesHtml : sig
   val write_all_html_files : SourceFile.t -> unit
+
+  val ensure_file_is_written : Procdesc.Node.t -> unit
 end = struct
+  (* Only used in debug html mode *)
+  let linereader = LineReader.create ()
+
   (** Create a hash table mapping line numbers to the set of errors occurring on that line *)
   let create_table_err_per_line err_log =
     let err_per_line = Hashtbl.create 17 in
@@ -245,7 +250,7 @@ end = struct
 
 
   (** Create filename.ext.html. *)
-  let write_html_file linereader filename procs =
+  let write_html_file filename procs =
     let fname_encoding = DB.source_file_encoding filename in
     let fd, fmt = Io_infer.Html.create filename [".."; fname_encoding] in
     F.fprintf fmt "<center><h1>File %a </h1></center>@\n<table class=\"code\">@\n" SourceFile.pp
@@ -300,7 +305,6 @@ end = struct
 
 
   let write_all_html_files source_file =
-    let linereader = LineReader.create () in
     let procs_in_source = SourceFiles.proc_names_of_source source_file in
     let source_files_in_cfg, pdescs_in_cfg =
       List.fold procs_in_source ~init:(SourceFile.Set.empty, [])
@@ -317,9 +321,15 @@ end = struct
           | None ->
               acc )
     in
-    SourceFile.Set.iter
-      (fun file -> write_html_file linereader file pdescs_in_cfg)
-      source_files_in_cfg
+    SourceFile.Set.iter (fun file -> write_html_file file pdescs_in_cfg) source_files_in_cfg
+
+
+  let ensure_file_is_written =
+    let written_files = Hashtbl.create 1 in
+    fun node ->
+      let file = (Procdesc.Node.get_loc node).Location.file in
+      if not (Hashtbl.mem written_files file) then (
+        write_all_html_files file ; Hashtbl.add written_files file () )
 end
 
 (* =============== Printing functions =============== *)
@@ -334,7 +344,9 @@ let force_delayed_prints () =
 
 (** Start a session, and create a new html file for the node if it does not exist yet *)
 let node_start_session ~pp_name node session =
-  if Config.write_html then NodesHtml.start_session ~pp_name node session
+  if Config.write_html then (
+    FilesHtml.ensure_file_is_written node ;
+    NodesHtml.start_session ~pp_name node session )
 
 
 (** Finish a session, and perform delayed print actions if required *)
