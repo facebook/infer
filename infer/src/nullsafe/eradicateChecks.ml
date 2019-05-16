@@ -9,9 +9,6 @@ open! IStd
 
 (** Module for the checks called by Eradicate. *)
 
-(* do not report RETURN_NOT_NULLABLE if the return is annotated @Nonnull *)
-let return_nonnull_silent = true
-
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
   match Typ.Struct.get_field_type_and_annotation ~lookup fn typ with
@@ -313,7 +310,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
       let origin_descr = TypeAnnotation.descr_origin final_ta in
       let return_not_nullable =
         final_nullable && (not ret_annotated_nullable) && (not ret_implicitly_nullable)
-        && not (return_nonnull_silent && ret_annotated_nonnull)
+        && not ret_annotated_nonnull
       in
       let return_value_not_present =
         Config.eradicate_optional_present && (not final_present) && ret_annotated_present
