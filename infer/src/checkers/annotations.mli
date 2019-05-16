@@ -65,6 +65,8 @@ val ia_is_false_on_null : Annot.Item.t -> bool
 
 val ia_is_initializer : Annot.Item.t -> bool
 
+val ia_is_cleanup : Annot.Item.t -> bool
+
 val ia_is_field_injector_readonly : Annot.Item.t -> bool
 (** Annotations for readonly injectors.
     The injector framework initializes the field but does not write null into it. *)

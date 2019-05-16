@@ -27,6 +27,8 @@ let bind_string = "BindString"
 
 let camel_nonnull = "NonNull"
 
+let cleanup = "Cleanup"
+
 let expensive = "Expensive"
 
 let false_on_null = "FalseOnNull"
@@ -180,6 +182,8 @@ let ia_is_true_on_null ia = ia_ends_with ia true_on_null
 let ia_is_nonblocking ia = ia_ends_with ia nonblocking
 
 let ia_is_initializer ia = ia_ends_with ia initializer_
+
+let ia_is_cleanup ia = ia_ends_with ia cleanup
 
 let ia_is_volatile ia = ia_contains ia volatile
 

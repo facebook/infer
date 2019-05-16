@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.View;
 import com.facebook.infer.annotation.Assertions;
+import com.facebook.infer.annotation.Cleanup;
 import com.facebook.infer.annotation.Initializer;
 import javax.annotation.Nullable;
 
@@ -119,6 +120,13 @@ class TestInitializerBuilder {
     Assertions.assertCondition(required1 != null && required2 != null);
 
     return new TestInitializer(this);
+  }
+
+  @Cleanup
+  void testCleanup() {
+    this.required1 = null;
+    this.required2 = null;
+    this.optional = null;
   }
 }
 

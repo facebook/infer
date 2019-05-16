@@ -33,6 +33,7 @@ let explain_expr tenv node e =
   | None ->
       None
 
+
 let is_virtual = function (p, _, _) :: _ when Mangled.is_this p -> true | _ -> false
 
 (** Check an access (read or write) to a field. *)
@@ -143,6 +144,7 @@ let check_nonzero tenv find_canonical_duplicate =
 let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_ref typestate
     exp_lhs exp_rhs typ loc fname t_ia_opt typecheck_expr : unit =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
+  let curr_pattrs = Procdesc.get_attributes curr_pdesc in
   let t_lhs, ta_lhs, _ =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
       (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
@@ -153,20 +155,25 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
       loc
   in
+  let field_is_injector_readwrite () =
+    match t_ia_opt with
+    | Some (_, ia) ->
+        Annotations.ia_is_field_injector_readwrite ia
+    | _ ->
+        false
+  in
+  let field_is_in_cleanup_context () =
+    let ia, _ = (Models.get_modelled_annotated_signature curr_pattrs).AnnotatedSignature.ret in
+    Annotations.ia_is_cleanup ia
+  in
   let should_report_nullable =
-    let field_is_field_injector_readwrite () =
-      match t_ia_opt with
-      | Some (_, ia) ->
-          Annotations.ia_is_field_injector_readwrite ia
-      | _ ->
-          false
-    in
     (not (AndroidFramework.is_destroy_method curr_pname))
     && (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs))
     && TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs
     && PatternMatch.type_is_class t_lhs
     && (not (Typ.Fieldname.Java.is_outer_instance fname))
-    && not (field_is_field_injector_readwrite ())
+    && (not (field_is_injector_readwrite ()))
+    && not (field_is_in_cleanup_context ())
   in
   let should_report_absent =
     Config.eradicate_optional_present
