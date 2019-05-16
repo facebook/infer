@@ -866,6 +866,10 @@ and buck_targets_blacklist =
     ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
 
 
+and call_graph_schedule =
+  CLOpt.mk_bool ~long:"call-graph-schedule" ~default:false "use call graph for scheduling analysis"
+
+
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -2610,6 +2614,8 @@ and buck_out = !buck_out
 and buck_targets_blacklist = !buck_targets_blacklist
 
 and bufferoverrun = !bufferoverrun
+
+and call_graph_schedule = !call_graph_schedule
 
 and capture =
   (* take `--clang-frontend-action` as the source of truth as long as that option exists *)

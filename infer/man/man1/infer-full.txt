@@ -1155,6 +1155,10 @@ INTERNAL OPTIONS
        --buck-targets-blacklist-reset
            Set --buck-targets-blacklist to the empty list.
 
+       --call-graph-schedule
+           Activates: use call graph for scheduling analysis (Conversely:
+           --no-call-graph-schedule)
+
        --no-capture
            Deactivates: capture and translate source files into infer's
            intermediate language for analysis (Conversely: --capture)

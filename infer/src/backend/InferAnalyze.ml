@@ -17,18 +17,28 @@ let clear_caches () =
   Typ.Procname.SQLite.clear_cache ()
 
 
-(** Create tasks to analyze an execution environment *)
-let analyze_source_file : SourceFile.t Tasks.doer =
- fun source_file ->
-  if Config.memcached then Memcached.connect () ;
-  DB.Results_dir.init source_file ;
-  let exe_env = Exe_env.mk () in
-  L.task_progress SourceFile.pp source_file ~f:(fun () ->
-      (* clear cache for each source file to avoid it growing unboundedly *)
-      clear_caches () ;
-      Callbacks.analyze_file exe_env source_file ;
-      if Config.write_html then Printer.write_all_html_files source_file ) ;
-  if Config.memcached then Memcached.disconnect ()
+let analyze_target : TaskScheduler.target Tasks.doer =
+  let analyze_source_file exe_env source_file =
+    DB.Results_dir.init source_file ;
+    L.task_progress SourceFile.pp source_file ~f:(fun () ->
+        Callbacks.analyze_file exe_env source_file ;
+        if Config.write_html then Printer.write_all_html_files source_file )
+  in
+  let analyze_proc_name exe_env proc_name =
+    L.task_progress Typ.Procname.pp proc_name ~f:(fun () ->
+        Callbacks.analyze_proc_name exe_env proc_name )
+  in
+  fun target ->
+    if Config.memcached then Memcached.connect () ;
+    let exe_env = Exe_env.mk () in
+    (* clear cache for each source file to avoid it growing unboundedly *)
+    clear_caches () ;
+    ( match target with
+    | Procname procname ->
+        analyze_proc_name exe_env procname
+    | File source_file ->
+        analyze_source_file exe_env source_file ) ;
+    if Config.memcached then Memcached.disconnect ()
 
 
 let output_json_makefile_stats clusters =
@@ -95,17 +105,14 @@ let main ~changed_files =
     Config.results_dir ;
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
-  ( if Int.equal Config.jobs 1 then (
-    Tasks.run_sequentially ~f:analyze_source_file source_files_to_analyze ;
+  if Int.equal Config.jobs 1 then (
+    let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> TaskScheduler.File sf) in
+    Tasks.run_sequentially ~f:analyze_target target_files ;
     L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )
-  else
-    let source_files_to_analyze =
-      List.permute source_files_to_analyze
-        ~random_state:(Random.State.make (Array.create ~len:1 0))
-    in
+  else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
+    let tasks = TaskScheduler.schedule source_files_to_analyze in
     (* Prepare tasks one cluster at a time while executing in parallel *)
-    let tasks = Tasks.gen_of_list source_files_to_analyze in
-    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_source_file ~tasks in
+    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~tasks in
     Tasks.Runner.run runner ) ;
   output_json_makefile_stats source_files_to_analyze

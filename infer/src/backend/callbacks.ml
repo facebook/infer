@@ -140,23 +140,26 @@ let create_perf_stats_report source_file =
   PerfStats.get_reporter (PerfStats.Backend source_file) ()
 
 
-(** Invoke all procedure and cluster callbacks on a given environment. *)
-let analyze_file (exe_env : Exe_env.t) source_file =
+let analyze_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
+  Option.iter source_file_opt ~f:(fun source_file ->
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   let analyze_ondemand summary proc_desc = iterate_procedure_callbacks exe_env summary proc_desc in
-  (* Invoke procedure callbacks using on-demand analysis schedulling *)
   Ondemand.set_callbacks {Ondemand.exe_env; analyze_ondemand} ;
-  let procs_to_analyze =
-    (* analyze all the currently defined procedures *)
-    SourceFiles.proc_names_of_source source_file
-  in
-  if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ;
   let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
-  (* Invoke cluster callbacks. *)
-  iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
-  (* Perf logging needs to remain at the end - after analysis work is complete *)
-  create_perf_stats_report source_file ;
-  (* Unregister callbacks *)
+  Option.iter source_file_opt ~f:(fun source_file ->
+      iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
+      create_perf_stats_report source_file ) ;
   Ondemand.unset_callbacks () ;
   Language.curr_language := saved_language
+
+
+(** Invoke all procedure and cluster callbacks on a given environment. *)
+let analyze_file (exe_env : Exe_env.t) source_file =
+  let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
+  analyze_procedures exe_env procs_to_analyze (Some source_file)
+
+
+(** Invoke procedure callbacks on a given environment. *)
+let analyze_proc_name (exe_env : Exe_env.t) proc_name = analyze_procedures exe_env [proc_name] None
