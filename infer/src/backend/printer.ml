@@ -220,33 +220,20 @@ end = struct
     F.fprintf fmt "\n<div class=\"msg\" style=\"margin-left:9ex\">%s</div>" err_string
 
 
-  let process_proc source table_nodes_at_linenum global_err_log proc_desc =
+  let process_proc table_nodes_at_linenum global_err_log proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let proc_file = (Procdesc.get_loc proc_desc).file in
-    let process_proc =
-      Procdesc.is_defined proc_desc && SourceFile.equal proc_file source
-      &&
-      match Attributes.find_file_capturing_procedure proc_name with
-      | None ->
-          true
-      | Some (source_captured, _) ->
-          SourceFile.equal source_captured proc_file
+    let _ = (* Initializes wto_indexes *) Procdesc.get_wto proc_desc in
+    let process_node n =
+      let lnum = (Procdesc.Node.get_loc n).Location.line in
+      let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Caml.Not_found -> [] in
+      Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
     in
-    if process_proc then (
-      let _ = (* Initializes wto_indexes *) Procdesc.get_wto proc_desc in
-      let process_node n =
-        let lnum = (Procdesc.Node.get_loc n).Location.line in
-        let curr_nodes =
-          try Hashtbl.find table_nodes_at_linenum lnum with Caml.Not_found -> []
-        in
-        Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
-      in
-      List.iter ~f:process_node (Procdesc.get_nodes proc_desc) ;
-      match Summary.get proc_name with
-      | None ->
-          ()
-      | Some summary ->
-          Errlog.update global_err_log (Summary.get_err_log summary) )
+    List.iter ~f:process_node (Procdesc.get_nodes proc_desc) ;
+    match Summary.get proc_name with
+    | None ->
+        ()
+    | Some summary ->
+        Errlog.update global_err_log (Summary.get_err_log summary)
 
 
   (** Create filename.ext.html. *)
@@ -257,7 +244,7 @@ end = struct
       filename ;
     let global_err_log = Errlog.empty () in
     let table_nodes_at_linenum = Hashtbl.create 11 in
-    List.iter ~f:(process_proc filename table_nodes_at_linenum global_err_log) procs ;
+    List.iter ~f:(process_proc table_nodes_at_linenum global_err_log) procs ;
     let table_err_per_line = create_table_err_per_line global_err_log in
     let print_one_line line_number line_raw =
       let line_html = Escape.escape_xml line_raw in
@@ -304,24 +291,45 @@ end = struct
           Str.string_match regex fname 0
 
 
+  (*
+    Stores all the proc_descs in source files.
+    We need to keep collecting them because some may be captured by other files, happens especially
+    with templates in header files.
+  *)
+  let pdescs_in_source = Hashtbl.create 1
+
   let write_all_html_files source_file =
     let procs_in_source = SourceFiles.proc_names_of_source source_file in
-    let source_files_in_cfg, pdescs_in_cfg =
-      List.fold procs_in_source ~init:(SourceFile.Set.empty, [])
-        ~f:(fun ((files, pdescs) as acc) proc_name ->
+    let source_files_in_cfg =
+      List.fold procs_in_source ~init:SourceFile.Set.empty ~f:(fun files proc_name ->
           match Procdesc.load proc_name with
           | Some proc_desc ->
-              let updated_files =
-                if Procdesc.is_defined proc_desc then
-                  let file = (Procdesc.get_loc proc_desc).Location.file in
-                  if is_whitelisted file then SourceFile.Set.add file files else files
+              if Procdesc.is_defined proc_desc then
+                let file = (Procdesc.get_loc proc_desc).Location.file in
+                if is_whitelisted file then (
+                  let pdescs_in_file =
+                    try Hashtbl.find pdescs_in_source file
+                    with Caml.Not_found -> Typ.Procname.Map.empty
+                  in
+                  let pdescs_in_file = Typ.Procname.Map.add proc_name proc_desc pdescs_in_file in
+                  Hashtbl.replace pdescs_in_source file pdescs_in_file ;
+                  SourceFile.Set.add file files )
                 else files
-              in
-              (updated_files, proc_desc :: pdescs)
+              else files
           | None ->
-              acc )
+              files )
     in
-    SourceFile.Set.iter (fun file -> write_html_file file pdescs_in_cfg) source_files_in_cfg
+    SourceFile.Set.iter
+      (fun file ->
+        let pdescs_in_file =
+          match Hashtbl.find pdescs_in_source file with
+          | pdescs_map ->
+              Typ.Procname.Map.bindings pdescs_map |> List.map ~f:snd
+          | exception Caml.Not_found ->
+              []
+        in
+        write_html_file file pdescs_in_file )
+      source_files_in_cfg
 
 
   let ensure_file_is_written =
