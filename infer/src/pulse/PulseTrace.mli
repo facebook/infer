@@ -21,14 +21,14 @@ type breadcrumb =
       ; actuals: HilExp.t list
       ; location: Location.t }
 
-type t = breadcrumb list [@@deriving compare]
+type breadcrumbs = breadcrumb list [@@deriving compare]
 
-val pp : F.formatter -> t -> unit
+val pp_breadcrumbs : F.formatter -> breadcrumbs -> unit
 
-val add_errlog_of_trace :
-  nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
+val add_errlog_of_breadcrumbs :
+  nesting:int -> breadcrumbs -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 
-val get_start_location : t -> Location.t option
+val start_location_of_breadcrumbs : breadcrumbs -> Location.t option
 
 type 'a action =
   | Immediate of {imm: 'a; location: Location.t}

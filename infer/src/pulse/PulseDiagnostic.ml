@@ -13,8 +13,11 @@ type t =
       { access: HilExp.AccessExpression.t
       ; invalidated_by: PulseInvalidation.t PulseTrace.action
       ; accessed_by: HilExp.AccessExpression.t PulseTrace.action
-      ; trace: PulseTrace.t }
-  | StackVariableAddressEscape of {variable: Var.t; trace: PulseTrace.t; location: Location.t}
+      ; trace: PulseTrace.breadcrumbs }
+  | StackVariableAddressEscape of
+      { variable: Var.t
+      ; trace: PulseTrace.breadcrumbs
+      ; location: Location.t }
 
 let describe_access = PulseTrace.pp_action (Pp.in_backticks HilExp.AccessExpression.pp)
 
@@ -78,11 +81,11 @@ let get_trace = function
            (PulseTrace.outer_location_of_action accessed_by)
       @@ PulseTrace.add_errlog_of_action ~nesting:1 pp_invalid_access accessed_by
       @@ add_header_if_some ~title:"trace of how the access expression was constructed starts here"
-           (PulseTrace.get_start_location trace)
-      @@ PulseTrace.add_errlog_of_trace ~nesting:1 trace
+           (PulseTrace.start_location_of_breadcrumbs trace)
+      @@ PulseTrace.add_errlog_of_breadcrumbs ~nesting:1 trace
       @@ []
   | StackVariableAddressEscape {trace; location; _} ->
-      PulseTrace.add_errlog_of_trace ~nesting:0 trace
+      PulseTrace.add_errlog_of_breadcrumbs ~nesting:0 trace
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]

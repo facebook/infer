@@ -13,8 +13,11 @@ type t =
       { access: HilExp.AccessExpression.t
       ; invalidated_by: PulseInvalidation.t PulseTrace.action
       ; accessed_by: HilExp.AccessExpression.t PulseTrace.action
-      ; trace: PulseTrace.t }
-  | StackVariableAddressEscape of {variable: Var.t; trace: PulseTrace.t; location: Location.t}
+      ; trace: PulseTrace.breadcrumbs }
+  | StackVariableAddressEscape of
+      { variable: Var.t
+      ; trace: PulseTrace.breadcrumbs
+      ; location: Location.t }
 
 val get_message : t -> string
 

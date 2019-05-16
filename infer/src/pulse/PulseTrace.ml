@@ -62,15 +62,20 @@ let errlog_trace_elem_of_breadcrumb ~nesting crumb =
   Errlog.make_trace_element nesting location description tags
 
 
-type t = breadcrumb list [@@deriving compare]
+type breadcrumbs = breadcrumb list [@@deriving compare]
 
-let pp f trace = Pp.seq ~print_env:Pp.text_break pp_breadcrumb f trace
+let pp_breadcrumbs f breadcrumbs = Pp.seq ~print_env:Pp.text_break pp_breadcrumb f breadcrumbs
 
-let add_errlog_of_trace ~nesting trace errlog =
-  List.rev_map_append ~f:(errlog_trace_elem_of_breadcrumb ~nesting) trace errlog
+let add_errlog_of_breadcrumbs ~nesting breadcrumbs errlog =
+  List.rev_map_append ~f:(errlog_trace_elem_of_breadcrumb ~nesting) breadcrumbs errlog
 
 
-let get_start_location = function [] -> None | crumb :: _ -> Some (location_of_breadcrumb crumb)
+let start_location_of_breadcrumbs = function
+  | [] ->
+      None
+  | crumb :: _ ->
+      Some (location_of_breadcrumb crumb)
+
 
 type 'a action =
   | Immediate of {imm: 'a; location: Location.t}
@@ -112,3 +117,4 @@ let add_errlog_of_action ~nesting pp_immediate action errlog =
 
 
 let outer_location_of_action = function Immediate {location} | ViaCall {location} -> location
+

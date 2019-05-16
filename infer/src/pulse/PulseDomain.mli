@@ -58,7 +58,7 @@ module Stack : sig
 end
 
 module AddrTracePair : sig
-  type t = AbstractAddress.t * PulseTrace.t [@@deriving compare]
+  type t = AbstractAddress.t * PulseTrace.breadcrumbs [@@deriving compare]
 end
 
 module Memory : sig

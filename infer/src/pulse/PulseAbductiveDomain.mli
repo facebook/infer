@@ -75,8 +75,8 @@ module PrePost : sig
     -> Location.t
     -> t
     -> formals:Var.t list
-    -> ret:AbstractAddress.t * PulseTrace.t
-    -> actuals:(AbstractAddress.t * HilExp.AccessExpression.t * PulseTrace.t) option list
+    -> ret:AbstractAddress.t * PulseTrace.breadcrumbs
+    -> actuals:(AbstractAddress.t * HilExp.AccessExpression.t * PulseTrace.breadcrumbs) option list
     -> domain_t
     -> (domain_t, PulseDiagnostic.t) result
 end

@@ -128,11 +128,11 @@ module AbstractAddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
 (* {3 Heap domain } *)
 
 module AddrTracePair = struct
-  type t = AbstractAddress.t * PulseTrace.t [@@deriving compare]
+  type t = AbstractAddress.t * PulseTrace.breadcrumbs [@@deriving compare]
 
   let pp f addr_trace =
     if Config.debug_level_analysis >= 3 then
-      Pp.pair ~fst:AbstractAddress.pp ~snd:PulseTrace.pp f addr_trace
+      Pp.pair ~fst:AbstractAddress.pp ~snd:PulseTrace.pp_breadcrumbs f addr_trace
     else AbstractAddress.pp f (fst addr_trace)
 end
 
