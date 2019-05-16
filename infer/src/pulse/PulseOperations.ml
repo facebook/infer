@@ -26,11 +26,11 @@ type t = PulseAbductiveDomain.t
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
-let check_addr_access access action (address, trace) astate =
+let check_addr_access access action (address, breadcrumbs) astate =
   Memory.check_valid action address astate
   |> Result.map_error ~f:(fun invalidated_by ->
-         PulseDiagnostic.AccessToInvalidAddress {access; invalidated_by; accessed_by= action; trace}
-     )
+         PulseDiagnostic.AccessToInvalidAddress
+           {access; invalidated_by; accessed_by= {action; breadcrumbs}} )
 
 
 (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
@@ -192,7 +192,7 @@ let invalidate cause location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr_trace) ->
   check_addr_access access_expr (Immediate {imm= access_expr; location}) addr_trace astate
-  >>| mark_invalid cause (fst addr_trace)
+  >>| mark_invalid cause addr_trace
 
 
 let invalidate_array_elements cause location access_expr astate =
@@ -205,10 +205,10 @@ let invalidate_array_elements cause location access_expr astate =
       astate
   | Some (edges, _) ->
       Memory.Edges.fold
-        (fun access (dest_addr, _) astate ->
+        (fun access dest_addr_trace astate ->
           match (access : Memory.Access.t) with
           | ArrayAccess _ ->
-              mark_invalid cause dest_addr astate
+              mark_invalid cause dest_addr_trace astate
           | _ ->
               astate )
         edges astate

@@ -15,7 +15,7 @@ module Invalidation = PulseInvalidation
     addresses. Otherwise they become a pain to handle when comparing memory states. *)
 module Attribute = struct
   type t =
-    | Invalid of Invalidation.t PulseTrace.action
+    | Invalid of Invalidation.t PulseTrace.t
     | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
@@ -27,7 +27,9 @@ module Attribute = struct
   let to_rank = Variants.to_rank
 
   let invalid_rank =
-    Variants.to_rank (Invalid (Immediate {imm= Invalidation.Nullptr; location= Location.dummy}))
+    Variants.to_rank
+      (Invalid
+         {action= Immediate {imm= Invalidation.Nullptr; location= Location.dummy}; breadcrumbs= []})
 
 
   let must_be_valid_rank =
@@ -44,7 +46,7 @@ module Attribute = struct
 
   let pp f = function
     | Invalid invalidation ->
-        (PulseTrace.pp_action Invalidation.pp) f invalidation
+        (PulseTrace.pp Invalidation.pp) f invalidation
     | MustBeValid action ->
         F.fprintf f "MustBeValid (read by %a @ %a)"
           (PulseTrace.pp_action HilExp.AccessExpression.pp)
@@ -175,9 +177,10 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate : AbstractAddress.t -> Invalidation.t PulseTrace.action -> t -> t
+  val invalidate :
+    AbstractAddress.t * PulseTrace.breadcrumbs -> Invalidation.t PulseTrace.action -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.action) result
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
@@ -240,8 +243,8 @@ end = struct
     add_attributes address (Attributes.singleton attribute) memory
 
 
-  let invalidate address invalidation memory =
-    add_attribute address (Attribute.Invalid invalidation) memory
+  let invalidate (address, breadcrumbs) invalidation memory =
+    add_attribute address (Attribute.Invalid {action= invalidation; breadcrumbs}) memory
 
 
   let check_valid address memory =

@@ -28,8 +28,6 @@ val pp_breadcrumbs : F.formatter -> breadcrumbs -> unit
 val add_errlog_of_breadcrumbs :
   nesting:int -> breadcrumbs -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 
-val start_location_of_breadcrumbs : breadcrumbs -> Location.t option
-
 type 'a action =
   | Immediate of {imm: 'a; location: Location.t}
   | ViaCall of {action: 'a action; proc_name: Typ.Procname.t; location: Location.t}
@@ -41,9 +39,13 @@ val immediate_of_action : 'a action -> 'a
 
 val outer_location_of_action : 'a action -> Location.t
 
-val add_errlog_of_action :
-     nesting:int
+type 'a t = {action: 'a action; breadcrumbs: breadcrumbs} [@@deriving compare]
+
+val pp : (F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
+
+val add_to_errlog :
+     header:string
   -> (F.formatter -> 'a -> unit)
-  -> 'a action
-  -> Errlog.loc_trace_elem sexp_list
-  -> Errlog.loc_trace_elem sexp_list
+  -> 'a t
+  -> Errlog.loc_trace_elem list
+  -> Errlog.loc_trace_elem list

@@ -356,7 +356,7 @@ module PrePost = struct
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
   let rec materialize_pre_from_address callee_proc_name call_location access_expr ~pre ~addr_pre
-      ~addr_caller trace call_state =
+      ~addr_caller breadcrumbs call_state =
     let mk_action action =
       PulseTrace.ViaCall {action; proc_name= callee_proc_name; location= call_location}
     in
@@ -374,7 +374,7 @@ module PrePost = struct
         | Error invalidated_by ->
             Error
               (PulseDiagnostic.AccessToInvalidAddress
-                 {access= access_expr; invalidated_by; accessed_by= action; trace})
+                 {access= access_expr; invalidated_by; accessed_by= {action; breadcrumbs}})
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result
@@ -391,7 +391,7 @@ module PrePost = struct
                   |> Option.value ~default:access_expr
                 in
                 materialize_pre_from_address callee_proc_name call_location access_expr ~pre
-                  ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest trace call_state ))
+                  ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest breadcrumbs call_state ))
         |> function Some result -> result | None -> Ok call_state )
 
 
@@ -519,8 +519,10 @@ module PrePost = struct
 
   let add_call_to_attr proc_name location attr =
     match (attr : PulseDomain.Attribute.t) with
-    | Invalid action ->
-        PulseDomain.Attribute.Invalid (PulseTrace.ViaCall {action; proc_name; location})
+    | Invalid trace ->
+        PulseDomain.Attribute.Invalid
+          { action= PulseTrace.ViaCall {action= trace.action; proc_name; location}
+          ; breadcrumbs= trace.breadcrumbs }
     | MustBeValid _ | AddressOfCppTemporary (_, _) | Closure _ | StdVectorReserve ->
         attr
 

@@ -10,7 +10,7 @@ module F = Format
 
 module Attribute : sig
   type t =
-    | Invalid of PulseInvalidation.t PulseTrace.action
+    | Invalid of PulseInvalidation.t PulseTrace.t
     | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
@@ -93,9 +93,10 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate : AbstractAddress.t -> PulseInvalidation.t PulseTrace.action -> t -> t
+  val invalidate :
+    AbstractAddress.t * PulseTrace.breadcrumbs -> PulseInvalidation.t PulseTrace.action -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t PulseTrace.action) result
+  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t PulseTrace.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 

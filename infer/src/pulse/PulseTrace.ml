@@ -118,3 +118,25 @@ let add_errlog_of_action ~nesting pp_immediate action errlog =
 
 let outer_location_of_action = function Immediate {location} | ViaCall {location} -> location
 
+type 'a t = {action: 'a action; breadcrumbs: breadcrumbs} [@@deriving compare]
+
+let pp pp_immediate f {action; _} = pp_action pp_immediate f action
+
+let add_errlog_header ~title location errlog =
+  let depth = 0 in
+  let tags = [] in
+  Errlog.make_trace_element depth location title tags :: errlog
+
+
+let add_to_errlog ~header pp_immediate trace errlog =
+  let start_location =
+    match start_location_of_breadcrumbs trace.breadcrumbs with
+    | Some location ->
+        location
+    | None ->
+        outer_location_of_action trace.action
+  in
+  add_errlog_header ~title:header start_location
+  @@ add_errlog_of_breadcrumbs ~nesting:1 trace.breadcrumbs
+  @@ add_errlog_of_action ~nesting:1 pp_immediate trace.action
+  @@ errlog
