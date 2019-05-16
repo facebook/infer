@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 module F = Format
 module DExp = DecompiledExp
 
@@ -789,10 +788,6 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let resolved_ret = apply_annotation_transformer resolved_ret_ resolved_params in
         let typestate_after_call =
           if not is_anonymous_inner_class_constructor then (
-            ( if Config.eradicate_debug then
-              let unique_id = Typ.Procname.to_unique_id callee_pname in
-              let classification = EradicateChecks.classify_procedure callee_attributes in
-              L.result "  %s unique id: %s@." classification unique_id ) ;
             if cflags.CallFlags.cf_virtual && checks.eradicate then
               EradicateChecks.check_call_receiver tenv find_canonical_duplicate curr_pdesc node
                 typestate1 call_params callee_pname instr_ref loc

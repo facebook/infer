@@ -340,8 +340,6 @@ val eradicate : bool
 
 val eradicate_condition_redundant : bool
 
-val eradicate_debug : bool
-
 val eradicate_field_not_mutable : bool
 
 val eradicate_field_over_annotated : bool

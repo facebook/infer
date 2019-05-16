@@ -1264,10 +1264,6 @@ INTERNAL OPTIONS
            Activates: Condition redundant warnings (Conversely:
            --no-eradicate-condition-redundant)
 
-       --eradicate-debug
-           Activates: Print debug info when errors are found (Conversely:
-           --no-eradicate-debug)
-
        --eradicate-field-not-mutable
            Activates: Field not mutable warnings (Conversely:
            --no-eradicate-field-not-mutable)

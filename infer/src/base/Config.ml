@@ -1300,10 +1300,6 @@ and eradicate_return_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
 
 
-and eradicate_debug =
-  CLOpt.mk_bool ~long:"eradicate-debug" "Print debug info when errors are found"
-
-
 and eradicate_verbose =
   CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
 
@@ -2705,8 +2701,6 @@ and eradicate_field_over_annotated = !eradicate_field_over_annotated
 and eradicate_optional_present = !eradicate_optional_present
 
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
-
-and eradicate_debug = !eradicate_debug
 
 and eradicate_verbose = !eradicate_verbose
 

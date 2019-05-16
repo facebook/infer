@@ -36,21 +36,6 @@ let explain_expr tenv node e =
   | None ->
       None
 
-
-(** Classify a procedure. *)
-let classify_procedure proc_attributes =
-  let pn = proc_attributes.ProcAttributes.proc_name in
-  let unique_id = Typ.Procname.to_unique_id pn in
-  let classification =
-    if Models.is_modelled_nullable pn then "M" (* modelled *)
-    else if Summary.proc_is_library proc_attributes then "L" (* library *)
-    else if not proc_attributes.ProcAttributes.is_defined then "S" (* skip *)
-    else if String.is_prefix ~prefix:"com.facebook" unique_id then "F" (* FB *)
-    else "?"
-  in
-  classification
-
-
 let is_virtual = function (p, _, _) :: _ when Mangled.is_this p -> true | _ -> false
 
 (** Check an access (read or write) to a field. *)
