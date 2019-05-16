@@ -22,14 +22,9 @@ let new_session node =
       !(summary.Summary.sessions)
 
 
-let start_session ~pp_name node =
-  if Config.write_html then
-    let session = new_session node in
-    Printer.node_start_session ~pp_name node session
-
-
-let finish_session node = if Config.write_html then Printer.node_finish_session node
-
 let with_session ~pp_name node ~f =
-  start_session ~pp_name node ;
-  Utils.try_finally_swallow_timeout ~f ~finally:(fun () -> finish_session node)
+  if Config.write_html then (
+    let session = new_session node in
+    Printer.node_start_session ~pp_name node session ;
+    Utils.try_finally_swallow_timeout ~f ~finally:(fun () -> Printer.node_finish_session node) )
+  else f ()

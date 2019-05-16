@@ -337,14 +337,13 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
       F.pp_print_string fmt " WEAK TOPOLOGICAL ORDER"
     in
     let underlying_node = Node.underlying_node node in
-    NodePrinter.start_session ~pp_name underlying_node ;
-    let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
-    L.d_printfln "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto ;
-    let loop_heads =
-      wto |> IContainer.to_rev_list ~fold:WeakTopologicalOrder.Partition.fold_heads |> List.rev
-    in
-    L.d_printfln "Loop heads: %a" (Pp.seq pp_node) loop_heads ;
-    NodePrinter.finish_session underlying_node
+    NodePrinter.with_session ~pp_name underlying_node ~f:(fun () ->
+        let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
+        L.d_printfln "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto ;
+        let loop_heads =
+          wto |> IContainer.to_rev_list ~fold:WeakTopologicalOrder.Partition.fold_heads |> List.rev
+        in
+        L.d_printfln "Loop heads: %a" (Pp.seq pp_node) loop_heads )
 
 
   let exec_wto_node ~pp_instr cfg proc_data inv_map node ~is_loop_head ~is_narrowing =

@@ -84,20 +84,19 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let pp_name fmt = F.pp_print_string fmt "eradicate"
 
       let do_node tenv node typestate =
-        NodePrinter.start_session ~pp_name node ;
-        State.set_node node ;
-        let typestates_succ, typestates_exn =
-          TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc
-            find_canonical_duplicate annotated_signature typestate node linereader
-        in
-        if Config.write_html then (
-          let d_typestate ts = L.d_printfln "%a" TypeState.pp ts in
-          L.d_strln "before:" ;
-          d_typestate typestate ;
-          L.d_strln "after:" ;
-          List.iter ~f:d_typestate typestates_succ ) ;
-        NodePrinter.finish_session node ;
-        (typestates_succ, typestates_exn)
+        NodePrinter.with_session ~pp_name node ~f:(fun () ->
+            State.set_node node ;
+            let typestates_succ, typestates_exn =
+              TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc
+                find_canonical_duplicate annotated_signature typestate node linereader
+            in
+            if Config.write_html then (
+              let d_typestate ts = L.d_printfln "%a" TypeState.pp ts in
+              L.d_strln "before:" ;
+              d_typestate typestate ;
+              L.d_strln "after:" ;
+              List.iter ~f:d_typestate typestates_succ ) ;
+            (typestates_succ, typestates_exn) )
 
 
       let proc_throws _ = DontKnow

@@ -428,27 +428,23 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
   in
   let underlying_exit_node = Procdesc.get_exit_node proc_desc in
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
-  NodePrinter.start_session ~pp_name underlying_exit_node ;
-  let summary =
-    let cfg = CFG.from_pdesc proc_desc in
-    let checks =
-      let get_proc_summary callee_pname =
-        Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
-        |> Option.bind ~f:(fun summary ->
-               let analysis_payload = BufferOverrunAnalysis.Payload.of_summary summary in
-               let checker_payload = Payload.of_summary summary in
-               Option.map2 analysis_payload checker_payload
-                 ~f:(fun analysis_payload checker_payload ->
-                   ( analysis_payload
-                   , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals
-                   , checker_payload ) ) )
+  NodePrinter.with_session ~pp_name underlying_exit_node ~f:(fun () ->
+      let cfg = CFG.from_pdesc proc_desc in
+      let checks =
+        let get_proc_summary callee_pname =
+          Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+          |> Option.bind ~f:(fun summary ->
+                 let analysis_payload = BufferOverrunAnalysis.Payload.of_summary summary in
+                 let checker_payload = Payload.of_summary summary in
+                 Option.map2 analysis_payload checker_payload
+                   ~f:(fun analysis_payload checker_payload ->
+                     ( analysis_payload
+                     , Summary.get_proc_desc summary |> Procdesc.get_pvar_formals
+                     , checker_payload ) ) )
+        in
+        compute_checks get_proc_summary proc_desc tenv integer_type_widths cfg inv_map
       in
-      compute_checks get_proc_summary proc_desc tenv integer_type_widths cfg inv_map
-    in
-    report_errors tenv checks summary ;
-    let locals = BufferOverrunAnalysis.get_local_decls proc_desc in
-    let cond_set = get_checks_summary locals checks in
-    Payload.update_summary cond_set summary
-  in
-  NodePrinter.finish_session underlying_exit_node ;
-  summary
+      report_errors tenv checks summary ;
+      let locals = BufferOverrunAnalysis.get_local_decls proc_desc in
+      let cond_set = get_checks_summary locals checks in
+      Payload.update_summary cond_set summary )
