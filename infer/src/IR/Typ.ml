@@ -1277,7 +1277,14 @@ module Procname = struct
   (** Pretty print a proc name *)
   let pp f pn = F.pp_print_string f (to_string pn)
 
-  let describe f pn = F.pp_print_string f (hashable_name pn)
+  let describe f pn =
+    let name = hashable_name pn in
+    match String.lsplit2 ~on:'<' name with
+    | Some (name_without_template, _template_part) ->
+        F.pp_print_string f name_without_template
+    | None ->
+        F.pp_print_string f name
+
 
   module Hashable = struct
     type nonrec t = t
