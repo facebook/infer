@@ -233,4 +233,9 @@ let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.
   let get_callee_summary = Payload.read proc_desc in
   let astate = compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map in
   report_errors proc_desc astate summary ;
-  match astate with Some astate -> Payload.update_summary astate summary | None -> summary
+  match astate with
+  | Some astate ->
+      debug "Purity summary :%a \n" PurityDomain.pp astate ;
+      Payload.update_summary astate summary
+  | None ->
+      summary
