@@ -162,24 +162,21 @@ let process_updates pool buffer =
   has_dead_child pool
   |> Option.iter ~f:(fun (slot, status) ->
          killall pool ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
-  match wait_for_updates pool buffer with
-  | Some (UpdateStatus (slot, t, status)) ->
-      TaskBar.update_status pool.task_bar ~slot t status
-  | Some (Crash slot) ->
-      let {pid} = pool.slots.(slot) in
-      (* clean crash, give the child process a chance to cleanup *)
-      Unix.wait (`Pid pid) |> ignore ;
-      killall pool ~slot "see backtrace above"
-  | Some (Ready slot) ->
-      TaskBar.tasks_done_add pool.task_bar 1 ;
-      send_work_to_child pool slot
-  | None -> (
-    (* no updates, so try to schedule more work if there is an idle worker *)
-    match Array.findi pool.pending_items ~f:(fun _idx item -> Option.is_none item) with
-    | None ->
-        ()
-    | Some (idle_slot, _) ->
-        send_work_to_child pool idle_slot )
+  (* try to schedule more work if there is an idle worker *)
+  Array.findi pool.pending_items ~f:(fun _idx item -> Option.is_none item)
+  |> Option.iter ~f:(fun (idle_slot, _) -> send_work_to_child pool idle_slot) ;
+  wait_for_updates pool buffer
+  |> Option.iter ~f:(function
+       | UpdateStatus (slot, t, status) ->
+           TaskBar.update_status pool.task_bar ~slot t status
+       | Crash slot ->
+           let {pid} = pool.slots.(slot) in
+           (* clean crash, give the child process a chance to cleanup *)
+           Unix.wait (`Pid pid) |> ignore ;
+           killall pool ~slot "see backtrace above"
+       | Ready slot ->
+           TaskBar.tasks_done_add pool.task_bar 1 ;
+           send_work_to_child pool slot )
 
 
 (** terminate all worker processes *)
