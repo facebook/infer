@@ -9,7 +9,12 @@ open! IStd
 
 (** Simplified html node printer for checkers *)
 
-val with_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a
+val with_session :
+     ?kind:[< `ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
+  -> pp_name:(Format.formatter -> unit)
+  -> Procdesc.Node.t
+  -> f:(unit -> 'a)
+  -> 'a
 (**
   Wraps [f] in an html debug session.
   Will swallow timeouts so do *not* use from within biabduction.

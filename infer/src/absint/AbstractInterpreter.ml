@@ -237,8 +237,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
   (* shadowed for HTML debug *)
   let exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map =
-    NodePrinter.with_session ~pp_name:(TransferFunctions.pp_session_name node)
-      (Node.underlying_node node) ~f:(fun () ->
+    NodePrinter.with_session (Node.underlying_node node)
+      ~kind:(if is_narrowing then `ExecNodeNarrowing else `ExecNode)
+      ~pp_name:(TransferFunctions.pp_session_name node)
+      ~f:(fun () ->
         exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map )
 
 
@@ -260,7 +262,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
   (* shadowed for HTML debug *)
   let compute_pre cfg node inv_map =
-    NodePrinter.with_session (Node.underlying_node node)
+    NodePrinter.with_session (Node.underlying_node node) ~kind:`ComputePre
       ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map
     )
 
@@ -332,12 +334,9 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
   include AbstractInterpreterCommon (TransferFunctions)
 
   let debug_wto wto node =
-    let pp_name fmt =
-      TransferFunctions.pp_session_name node fmt ;
-      F.pp_print_string fmt " WEAK TOPOLOGICAL ORDER"
-    in
     let underlying_node = Node.underlying_node node in
-    NodePrinter.with_session ~pp_name underlying_node ~f:(fun () ->
+    NodePrinter.with_session underlying_node ~kind:`WTO
+      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () ->
         let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
         L.d_printfln "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto ;
         let loop_heads =
