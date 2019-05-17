@@ -2109,12 +2109,6 @@ let pathset_collapse tenv pset =
 let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) :
     Paths.PathSet.t * Paths.PathSet.t =
   let mode = JoinState.Post in
-  let pset_to_plist pset =
-    let f_list p pa acc = (p, pa) :: acc in
-    Paths.PathSet.fold f_list pset []
-  in
-  let ppalist1 = pset_to_plist pset1 in
-  let ppalist2 = pset_to_plist pset2 in
   let rec join_proppath_plist ppalist2_acc ((p2, pa2) as ppa2) = function
     | [] ->
         (ppa2, List.rev ppalist2_acc)
@@ -2149,7 +2143,9 @@ let pathset_join pname tenv (pset1 : Paths.PathSet.t) (pset2 : Paths.PathSet.t) 
         let ppa2_new, ppalist1_cur' = join_proppath_plist [] ppa2'' ppalist1_cur in
         join ppalist1_cur' (ppa2_new :: ppalist2_acc') ppalist2_rest'
   in
-  let ppalist1_res_, ppalist2_res_ = join ppalist1 [] ppalist2 in
+  let ppalist1_res_, ppalist2_res_ =
+    join (Paths.PathSet.elements pset1) [] (Paths.PathSet.elements pset2)
+  in
   let ren l = List.map ~f:(fun (p, x) -> (Prop.prop_rename_primed_footprint_vars tenv p, x)) l in
   let ppalist1_res, ppalist2_res = (ren ppalist1_res_, ren ppalist2_res_) in
   let res =

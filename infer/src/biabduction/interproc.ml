@@ -139,19 +139,16 @@ let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t)
 
 (** Add [d] to the pathset todo at [node] returning true if changed *)
 let path_set_put_todo (wl : Worklist.t) (node : Procdesc.Node.t) (d : Paths.PathSet.t) : bool =
-  let changed =
-    if Paths.PathSet.is_empty d then false
-    else
-      let node_id = Procdesc.Node.get_id node in
-      let old_todo = htable_retrieve wl.Worklist.path_set_todo node_id in
-      let old_visited = htable_retrieve wl.Worklist.path_set_visited node_id in
-      let d' = Paths.PathSet.diff d old_visited in
-      (* differential fixpoint *)
-      let todo_new = Paths.PathSet.union old_todo d' in
-      Hashtbl.replace wl.Worklist.path_set_todo node_id todo_new ;
-      not (Paths.PathSet.equal old_todo todo_new)
-  in
-  changed
+  if Paths.PathSet.is_empty d then false
+  else
+    let node_id = Procdesc.Node.get_id node in
+    let old_todo = htable_retrieve wl.Worklist.path_set_todo node_id in
+    let old_visited = htable_retrieve wl.Worklist.path_set_visited node_id in
+    let d' = Paths.PathSet.diff d old_visited in
+    (* differential fixpoint *)
+    let todo_new = Paths.PathSet.union old_todo d' in
+    Hashtbl.replace wl.Worklist.path_set_todo node_id todo_new ;
+    not (Paths.PathSet.equal old_todo todo_new)
 
 
 let path_set_checkout_todo (wl : Worklist.t) (node : Procdesc.Node.t) : Paths.PathSet.t =
@@ -718,7 +715,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
 
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
-let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) add_formals : Prop.normal Prop.t =
+let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) ~add_formals : Prop.normal Prop.t =
   let construct_decl (x, typ) = (Pvar.mk x (Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals then List.map ~f:construct_decl (Procdesc.get_formals curr_f) else []
@@ -733,7 +730,7 @@ let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) add_formals : Pro
 
 
 (** Construct an initial prop from the empty prop *)
-let initial_prop_from_emp tenv curr_f = initial_prop tenv curr_f Prop.prop_emp true
+let initial_prop_from_emp tenv curr_f = initial_prop tenv curr_f Prop.prop_emp ~add_formals:true
 
 (** Construct an initial prop from an existing pre with formals *)
 let initial_prop_from_pre tenv curr_f pre =
@@ -745,8 +742,8 @@ let initial_prop_from_pre tenv curr_f pre =
     let sub = Sil.subst_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
     let pre3 = Prop.set pre2 ~pi_fp:(Prop.get_pure pre2) ~sigma_fp:pre2.Prop.sigma in
-    initial_prop tenv curr_f pre3 false
-  else initial_prop tenv curr_f pre false
+    initial_prop tenv curr_f pre3 ~add_formals:false
+  else initial_prop tenv curr_f pre ~add_formals:false
 
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
