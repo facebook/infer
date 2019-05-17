@@ -512,10 +512,10 @@ and c_type_equal c_type abs_ctype =
   | BuiltinType (_, bi), BuiltIn abi ->
       builtin_equal bi abi
   | BuiltinType (_, `ObjCId), TypeName ae when ALVar.compare_str_with_alexp "instancetype" ae ->
-      (* This is a special case where coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
+      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
   compiler change 'instancetype' to ObjCId *)
-      L.(debug Linters Medium)
-        "@\n Special Case when comaping BuiltInType(ObjcId) and TypeName(instancetype)\n" ;
+      L.(debug Linters Verbose)
+        "@\n Special Case when comparing BuiltInType(ObjcId) and TypeName(instancetype)\n" ;
       true
   | TypedefType (_, tdi), BuiltIn _ ->
       check_type_ptr tdi.tti_child_type.qt_type_ptr abs_ctype
@@ -528,7 +528,9 @@ and c_type_equal c_type abs_ctype =
   | FunctionProtoType (_, {fti_return_type= qt}, _), TypeName _
   | ObjCObjectPointerType (_, qt), _ ->
       check_type_ptr qt.qt_type_ptr abs_ctype
-  | ObjCObjectType (_, ooti), TypeName _ ->
+  | ObjCObjectType (_, ooti), TypeName ae when ALVar.compare_str_with_alexp "instancetype" ae ->
+      (* This is a special case coming from an  AttributedType with {ati_attr_kind=`Nonnull} where the 
+       compiler change 'instancetype' to ObjCId *)
       check_type_ptr ooti.ooti_base_type abs_ctype
   | ObjCObjectType _, ObjCGenProt _ ->
       objc_object_type_equal c_type abs_ctype
