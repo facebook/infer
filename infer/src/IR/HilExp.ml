@@ -151,8 +151,12 @@ let rec pp_access_expr fmt = function
       F.fprintf fmt "%a.%a" pp_access_expr ae Typ.Fieldname.pp fld
   | ArrayOffset (ae, typ, index) ->
       F.fprintf fmt "%a[%a]%a" pp_access_expr ae (pp_array_offset_opt pp) index may_pp_typ typ
+  | AddressOf (Base _ as ae) ->
+      F.fprintf fmt "&%a" pp_access_expr ae
   | AddressOf ae ->
       F.fprintf fmt "&(%a)" pp_access_expr ae
+  | Dereference (Base _ as ae) ->
+      F.fprintf fmt "*%a" pp_access_expr ae
   | Dereference ae ->
       F.fprintf fmt "*(%a)" pp_access_expr ae
 
