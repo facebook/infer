@@ -189,8 +189,6 @@ val trace_absarray : bool
 
 val trace_events_file : string
 
-val undo_join : bool
-
 val unsafe_unret : string
 
 val use_cost_threshold : bool

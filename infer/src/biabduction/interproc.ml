@@ -890,9 +890,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
         (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in
-      if Config.undo_join then
-        ignore (BiabductionSummary.Jprop.filter filter candidate_preconditions)
-      else ignore (List.map ~f:filter candidate_preconditions)
+      ignore (BiabductionSummary.Jprop.filter filter candidate_preconditions)
     in
     let get_results () =
       let specs = !valid_specs in

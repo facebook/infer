@@ -273,9 +273,6 @@ let starvation_issues_dir_name = "starvation_issues"
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 
-(** If true, optimize based on locality using reachability *)
-let undo_join = true
-
 let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
