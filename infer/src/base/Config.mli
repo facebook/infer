@@ -498,6 +498,8 @@ val nullsafe : bool
 
 val nullsafe_strict_containers : bool
 
+val oom_threshold : int option
+
 val only_cheap_debug : bool
 
 val only_footprint : bool

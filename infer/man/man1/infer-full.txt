@@ -1471,6 +1471,13 @@ INTERNAL OPTIONS
            Activates: Skip the re-execution phase (Conversely:
            --no-only-footprint)
 
+       --oom-threshold int
+           Available memory threshold (in MB) below which multi-worker
+           scheduling throttles back work. Only for use on Linux.
+
+       --oom-threshold-reset
+           Cancel the effect of --oom-threshold.
+
        --passthroughs
            Activates: In error traces, show intermediate steps that propagate
            data. When false, error traces are shorter and show only direct

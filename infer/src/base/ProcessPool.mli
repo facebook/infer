@@ -32,12 +32,12 @@ type 'a task_generator =
         (** total number of tasks -- only used for reporting, so imprecision is not a bug *)
   ; is_empty: unit -> bool
         (** when should the main loop of the task manager stop expecting new tasks *)
-  ; next: 'a option -> 'a option
-        (** [next (Some finished_item)] generates the next work item.
-            The worker requesting more work has just finished processing [finished_item]. 
-            [None] is passed when the worker was previously idle. 
-            
-            In particular, it is OK to for [next] to return [None] even when [is_empty] 
+  ; finished: 'a -> unit
+        (** Process pool calls [finished x] when a worker finishes item [x]. This is only called 
+            if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
+  ; next: unit -> 'a option
+        (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] 
+            must return [None].  However, it is OK to for [next ()] to return [None] when [is_empty] 
             is false.  This corresponds to the case where there is more work to be done, 
             but it is not schedulable until some already scheduled work is finished. *)
   }

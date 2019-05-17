@@ -1700,6 +1700,12 @@ and only_show =
     "Show the list of reports and exit"
 
 
+and oom_threshold =
+  CLOpt.mk_int_opt ~long:"oom-threshold"
+    "Available memory threshold (in MB) below which multi-worker scheduling throttles back work. \
+     Only for use on Linux."
+
+
 and passthroughs =
   CLOpt.mk_bool ~long:"passthroughs" ~default:false
     "In error traces, show intermediate steps that propagate data. When false, error traces are \
@@ -2860,6 +2866,8 @@ and nullable_annotation = !nullable_annotation
 and nullsafe_strict_containers = !nullsafe_strict_containers
 
 and no_translate_libs = not !headers
+
+and oom_threshold = !oom_threshold
 
 and only_cheap_debug = !only_cheap_debug
 

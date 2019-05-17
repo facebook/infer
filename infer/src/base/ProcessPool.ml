@@ -11,7 +11,8 @@ module L = Logging
 
 type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 
-type 'a task_generator = {n_tasks: int; is_empty: unit -> bool; next: 'a option -> 'a option}
+type 'a task_generator =
+  {n_tasks: int; is_empty: unit -> bool; finished: 'a -> unit; next: unit -> 'a option}
 
 (** the state of the pool *)
 type 'a t =
@@ -145,14 +146,60 @@ let idle_children pool =
 
 
 let send_work_to_child pool slot =
-  match pool.tasks.next pool.pending_items.(slot) with
-  | None ->
-      TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
-      pool.pending_items.(slot) <- None
-  | Some x ->
-      let {down_pipe} = pool.slots.(slot) in
-      pool.pending_items.(slot) <- Some x ;
-      marshal_to_pipe down_pipe (Do x)
+  pool.tasks.next ()
+  |> Option.iter ~f:(fun x ->
+         let {down_pipe} = pool.slots.(slot) in
+         pool.pending_items.(slot) <- Some x ;
+         marshal_to_pipe down_pipe (Do x) )
+
+
+let proc_meminfo = "/proc/meminfo"
+
+(* this should not be called in any other arch than Linux *)
+let should_throttle =
+  Option.iter Config.oom_threshold ~f:(fun _threshold ->
+      match Sys.file_exists proc_meminfo with
+      | `Yes ->
+          ()
+      | _ ->
+          L.die UserError "Can't access %s even though oom detection was requested." proc_meminfo
+  ) ;
+  let currently_throttled = ref false in
+  let get_available_memory_MB () =
+    let rec aux in_channel =
+      match In_channel.input_line in_channel with
+      | None ->
+          L.die UserError
+            "Cannot find available memory line in %s even though oom detection was requested."
+            proc_meminfo
+      | Some line -> (
+        try Scanf.sscanf line "MemAvailable: %u kB" (fun mem_kB -> mem_kB / 1024)
+        with Scanf.Scan_failure _ -> aux in_channel )
+    in
+    Utils.with_file_in proc_meminfo ~f:aux
+  in
+  fun threshold ->
+    let available_memory = get_available_memory_MB () in
+    if available_memory < threshold then (
+      if not !currently_throttled then
+        L.user_warning
+          "Available memory (%d MB) is below configured threshold, throttling back scheduling \
+           analysis work.@."
+          available_memory ;
+      currently_throttled := true )
+    else (
+      if !currently_throttled then
+        L.user_warning
+          "Available memory (%d MB) exceeds configured threshold, resuming scheduling analysis \
+           work.@."
+          available_memory ;
+      currently_throttled := false ) ;
+    !currently_throttled
+
+
+let send_work_to_child pool slot =
+  let throttled = Option.exists Config.oom_threshold ~f:should_throttle in
+  if not throttled then send_work_to_child pool slot
 
 
 (** main dispatch function that responds to messages from worker processes and updates the taskbar
@@ -176,6 +223,9 @@ let process_updates pool buffer =
            killall pool ~slot "see backtrace above"
        | Ready slot ->
            TaskBar.tasks_done_add pool.task_bar 1 ;
+           TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
+           Option.iter pool.pending_items.(slot) ~f:(fun work ->
+               pool.tasks.finished work ; pool.pending_items.(slot) <- None ) ;
            send_work_to_child pool slot )
 
 

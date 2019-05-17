@@ -19,8 +19,9 @@ let chain (gen1 : 'a task_generator) (gen2 : 'a task_generator) : 'a task_genera
     !gen1_returned_empty
   in
   let is_empty () = gen1_is_empty () && gen2.is_empty () in
+  let finished x = if gen1_is_empty () then gen2.finished x else gen1.finished x in
   let next x = if gen1_is_empty () then gen2.next x else gen1.next x in
-  {n_tasks; is_empty; next}
+  {n_tasks; is_empty; finished; next}
 
 
 let count_procedures () =
@@ -64,22 +65,21 @@ let bottom_up sources : target task_generator =
         CallGraph.flag_reachable g n.pname ;
         Some (Procname n.pname)
   in
-  let next target_opt =
+  let finished = function
+    | File _ ->
+        assert false
+    | Procname pname ->
+        scheduled := Typ.Procname.Set.remove pname !scheduled ;
+        CallGraph.remove_reachable g pname
+  in
+  let next () =
     (* do construction here, to avoid having the call graph into forked workers *)
     if not !initialized then (
       CallGraph.build_from_sources g sources ;
       initialized := true ) ;
-    ( match target_opt with
-    | None ->
-        ()
-    | Some (File _) ->
-        assert false
-    | Some (Procname pname) ->
-        scheduled := Typ.Procname.Set.remove pname !scheduled ;
-        CallGraph.remove_reachable g pname ) ;
     next_aux ()
   in
-  {n_tasks; is_empty; next}
+  {n_tasks; is_empty; finished; next}
 
 
 let of_sources sources =

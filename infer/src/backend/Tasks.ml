@@ -68,7 +68,8 @@ let gen_of_list (lst : 'a list) : 'a task_generator =
   let content = ref lst in
   let n_tasks = List.length lst in
   let is_empty () = List.is_empty !content in
-  let next _finished_item =
+  let finished _finished_item = () in
+  let next () =
     match !content with
     | [] ->
         None
@@ -76,4 +77,4 @@ let gen_of_list (lst : 'a list) : 'a task_generator =
         content := xs ;
         Some x
   in
-  {n_tasks; is_empty; next}
+  {n_tasks; is_empty; finished; next}
