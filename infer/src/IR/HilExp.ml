@@ -351,6 +351,12 @@ module AccessExpression = struct
         init
     | Sizeof (_, exp_opt) ->
         fold_vars_exp_opt exp_opt ~init ~f
+
+
+  let to_source_string access_expr =
+    (* should probably eventually check more than just the base but yolo *)
+    let var, _ = get_base access_expr in
+    if Var.appears_in_source_code var then Some (F.asprintf "%a" pp access_expr) else None
 end
 
 let rec get_typ tenv = function

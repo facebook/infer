@@ -82,18 +82,19 @@ type 'a action =
   | ViaCall of {action: 'a action; proc_name: Typ.Procname.t; location: Location.t}
 [@@deriving compare]
 
-let pp_action pp_immediate fmt = function
-  | Immediate {imm; _} ->
-      pp_immediate fmt imm
-  | ViaCall {proc_name; _} ->
-      F.fprintf fmt "call to `%a`" Typ.Procname.describe proc_name
-
-
 let rec immediate_of_action = function
   | Immediate {imm; _} ->
       imm
   | ViaCall {action; _} ->
       immediate_of_action action
+
+
+let pp_action pp_immediate fmt = function
+  | Immediate {imm; _} ->
+      pp_immediate fmt imm
+  | ViaCall {proc_name; action; _} ->
+      F.fprintf fmt "%a in call to `%a`" pp_immediate (immediate_of_action action)
+        Typ.Procname.describe proc_name
 
 
 let add_errlog_of_action ~nesting pp_immediate action errlog =

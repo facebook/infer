@@ -90,6 +90,10 @@ module AccessExpression : sig
   val fold_vars : (t, Var.t, 'accum) Container.fold
 
   val add_access : _ Access.t -> t -> t option
+
+  val to_source_string : t -> string option
+  (** get a string representation of the access expression in terms of symbols that appear in the
+     program, to show to the user *)
 end
 
 val pp : F.formatter -> t -> unit

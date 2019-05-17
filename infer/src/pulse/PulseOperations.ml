@@ -62,6 +62,9 @@ let rec walk ~dereference_to_ignore access_expr action ~on_last addr_trace path 
         Option.map ~f:(fun index -> max 0 (index - 1)) dereference_to_ignore
       in
       let astate, addr_trace' = Memory.materialize_edge (fst addr_trace) a astate in
+      let access_expr =
+        HilExp.AccessExpression.add_access a access_expr |> Option.value ~default:access_expr
+      in
       walk access_expr ~dereference_to_ignore action ~on_last addr_trace' path astate
 
 
@@ -107,10 +110,11 @@ let rec to_accesses location access_expr astate =
 (** add addresses to the state to give an address to the destination of the given access path *)
 and walk_access_expr ~on_last astate access_expr location =
   to_accesses location access_expr astate
-  >>= fun (astate, (access_var, _), access_list) ->
+  >>= fun (astate, base, access_list) ->
   let dereference_to_ignore =
     if ends_with_addressof access_expr then last_dereference access_list else None
   in
+  let access_var, _ = base in
   if Config.write_html then
     L.d_printfln "Accessing %a -> [%a]" Var.pp access_var
       (Pp.seq ~sep:"," Memory.Access.pp)
@@ -134,7 +138,9 @@ and walk_access_expr ~on_last astate access_expr location =
           Ok (astate, base_addr_trace)
       | _ ->
           let action = PulseTrace.Immediate {imm= access_expr; location} in
-          walk access_expr ~dereference_to_ignore action ~on_last base_addr_trace
+          walk
+            (HilExp.AccessExpression.base base)
+            ~dereference_to_ignore action ~on_last base_addr_trace
             (HilExp.Access.Dereference :: access_list)
             astate )
 
