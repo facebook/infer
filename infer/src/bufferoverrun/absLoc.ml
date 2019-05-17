@@ -127,8 +127,64 @@ module Allocsite = struct
 end
 
 module Loc = struct
-  type t = Var of Var.t | Allocsite of Allocsite.t | Field of t * Typ.Fieldname.t
-  [@@deriving compare]
+  include (* Enforce invariants on Field and StarField, see Symb.mli *) (
+    struct
+        type t =
+          | Var of Var.t
+          | Allocsite of Allocsite.t
+          | Field of t * Typ.Fieldname.t
+          | StarField of {prefix: t; last_field: Typ.Fieldname.t}
+        [@@deriving compare]
+
+        let of_var v = Var v
+
+        let of_allocsite a = Allocsite a
+
+        let append_field l0 ~fn =
+          let rec aux = function
+            | Var _ | Allocsite _ ->
+                Field (l0, fn)
+            | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
+                l
+            | StarField {prefix} ->
+                StarField {prefix; last_field= fn}
+            | Field (_, fn') when Typ.Fieldname.equal fn fn' ->
+                StarField {prefix= l0; last_field= fn}
+            | Field (l, _) ->
+                aux l
+          in
+          aux l0
+
+
+        let append_star_field l0 ~fn =
+          let rec aux = function
+            | Var _ | Allocsite _ ->
+                StarField {prefix= l0; last_field= fn}
+            | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
+                l
+            | StarField {prefix} ->
+                StarField {prefix; last_field= fn}
+            | Field (l, _) ->
+                aux l
+          in
+          aux l0
+      end :
+      sig
+        type t = private
+          | Var of Var.t
+          | Allocsite of Allocsite.t
+          | Field of t * Typ.Fieldname.t
+          | StarField of {prefix: t; last_field: Typ.Fieldname.t}
+        [@@deriving compare]
+
+        val of_var : Var.t -> t
+
+        val of_allocsite : Allocsite.t -> t
+
+        val append_field : t -> fn:Typ.Fieldname.t -> t
+
+        val append_star_field : t -> fn:Typ.Fieldname.t -> t
+      end )
 
   let equal = [%compare.equal: t]
 
@@ -136,14 +192,14 @@ module Loc = struct
     match (l1, l2) with Allocsite as1, Allocsite as2 -> Allocsite.eq as1 as2 | _ -> Boolean.Top
 
 
-  let unknown = Allocsite Allocsite.unknown
+  let unknown = of_allocsite Allocsite.unknown
 
   let rec is_unknown = function
     | Var _ ->
         false
     | Allocsite a ->
         Allocsite.is_unknown a
-    | Field (x, _) ->
+    | Field (x, _) | StarField {prefix= x} ->
         is_unknown x
 
 
@@ -172,7 +228,12 @@ module Loc = struct
     | Field (l, f) ->
         BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~pp_lhs_alone:(pp_paren ~paren)
           ~sep:"." fmt l f
+    | StarField {prefix; last_field} ->
+        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~pp_lhs_alone:(pp_star ~paren) ~sep:"."
+          fmt prefix last_field
 
+
+  and pp_star ~paren fmt l = pp_paren ~paren fmt l ; F.pp_print_string fmt ".*"
 
   let pp = pp_paren ~paren:false
 
@@ -192,31 +253,27 @@ module Loc = struct
         true
     | Allocsite a ->
         Allocsite.is_pretty a
-    | Field (loc, _) ->
+    | Field (loc, _) | StarField {prefix= loc} ->
         is_pretty loc
 
 
-  let of_var v = Var v
+  let of_c_strlen loc = append_field loc ~fn:(BufferOverrunField.c_strlen ())
 
-  let of_allocsite a = Allocsite a
+  let of_pvar pvar = of_var (Var.of_pvar pvar)
 
-  let of_c_strlen loc = Field (loc, BufferOverrunField.c_strlen ())
-
-  let of_pvar pvar = Var (Var.of_pvar pvar)
-
-  let of_id id = Var (Var.of_id id)
+  let of_id id = of_var (Var.of_id id)
 
   let rec of_path path =
     match path with
     | Symb.SymbolPath.Pvar pvar ->
         of_pvar pvar
     | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Callsite _ ->
-        Allocsite (Allocsite.make_symbol path)
+        of_allocsite (Allocsite.make_symbol path)
     | Symb.SymbolPath.Field (fn, path) ->
-        Field (of_path path, fn)
+        append_field (of_path path) ~fn
+    | Symb.SymbolPath.StarField {last_field= fn; prefix} ->
+        append_star_field (of_path prefix) ~fn
 
-
-  let append_field l ~fn = Field (l, fn)
 
   let is_return = function
     | Var (Var.ProgramVar x) ->
@@ -225,7 +282,9 @@ module Loc = struct
         false
 
 
-  let is_field_of ~loc ~field_loc = match field_loc with Field (l, _) -> equal loc l | _ -> false
+  let is_field_of ~loc ~field_loc =
+    match field_loc with Field (l, _) | StarField {prefix= l} -> equal loc l | _ -> false
+
 
   let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
 
@@ -241,7 +300,7 @@ module Loc = struct
         Pvar.is_global pvar
     | Var (Var.LogicalVar _) | Allocsite _ ->
         false
-    | Field (loc, _) ->
+    | Field (loc, _) | StarField {prefix= loc} ->
         is_global loc
 
 
@@ -254,6 +313,8 @@ module Loc = struct
         Allocsite.get_path allocsite
     | Field (l, fn) ->
         Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
+    | StarField {prefix; last_field} ->
+        get_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
 
 
   let rec get_param_path = function
@@ -263,6 +324,8 @@ module Loc = struct
         Allocsite.get_param_path allocsite
     | Field (l, fn) ->
         Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
+    | StarField {prefix; last_field} ->
+        get_param_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
 
 
   let rec represents_multiple_values = function
@@ -272,6 +335,8 @@ module Loc = struct
         Allocsite.represents_multiple_values allocsite
     | Field (l, _) ->
         represents_multiple_values l
+    | StarField _ ->
+        true
 
 
   let rec exists_pvar ~f = function
@@ -281,7 +346,7 @@ module Loc = struct
         f pvar
     | Allocsite allocsite ->
         Allocsite.exists_pvar ~f allocsite
-    | Field (l, _) ->
+    | Field (l, _) | StarField {prefix= l} ->
         exists_pvar ~f l
 
 
@@ -301,6 +366,11 @@ module PowLoc = struct
   let append_field ploc ~fn =
     if is_bot ploc then singleton Loc.unknown
     else fold (fun l -> add (Loc.append_field l ~fn)) ploc empty
+
+
+  let append_star_field ploc ~fn =
+    if is_bot ploc then singleton Loc.unknown
+    else fold (fun l -> add (Loc.append_star_field l ~fn)) ploc empty
 
 
   let lift_cmp cmp_loc ploc1 ploc2 =

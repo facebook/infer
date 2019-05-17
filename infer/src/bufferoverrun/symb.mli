@@ -27,6 +27,15 @@ module SymbolPath : sig
     | Deref of deref_kind * partial
     | Field of Typ.Fieldname.t * partial
     | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+    | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
+        (**
+          Represents a path starting with [prefix] and ending with the field [last_field],
+          the middle can be anything.
+          Invariants:
+          - There is at most one StarField
+          - StarField excluded, there are no duplicate fieldnames
+          - StarField can only be followed by Deref elements
+        *)
   [@@deriving compare]
 
   type t = private Normal of partial | Offset of partial | Length of partial | Modeled of partial
@@ -48,6 +57,8 @@ module SymbolPath : sig
   val deref : deref_kind:deref_kind -> partial -> partial
 
   val field : partial -> Typ.Fieldname.t -> partial
+
+  val star_field : partial -> Typ.Fieldname.t -> partial
 
   val normal : partial -> t
 

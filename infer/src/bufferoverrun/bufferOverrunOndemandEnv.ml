@@ -56,6 +56,8 @@ let mk pdesc =
             Option.map (typ_of_param_path x) ~f:(Typ.Struct.fld_typ ~lookup ~default:Typ.void fn)
         | some_typ ->
             some_typ )
+      | SPath.StarField {last_field} ->
+          BufferOverrunField.get_type last_field
       | SPath.Callsite {ret_typ} ->
           Some ret_typ
     in
@@ -66,7 +68,7 @@ let mk pdesc =
     let rec may_last_field = function
       | SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _ ->
           true
-      | SPath.Field (fn, x) ->
+      | SPath.Field (fn, x) | SPath.StarField {last_field= fn; prefix= x} ->
           may_last_field x
           && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
                  match parent_typ.Typ.desc with
@@ -91,7 +93,7 @@ let canonical_path typ_of_param_path path =
   let module KnownFields = Caml.Map.Make (K) in
   let rec helper path =
     match path with
-    | SPath.Pvar _ | SPath.Callsite _ ->
+    | SPath.Pvar _ | SPath.Callsite _ | SPath.StarField _ ->
         (None, KnownFields.empty)
     | SPath.Deref (deref_kind, ptr) ->
         let ptr_opt, known_fields = helper ptr in

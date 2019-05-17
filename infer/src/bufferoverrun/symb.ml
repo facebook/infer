@@ -26,12 +26,70 @@ module SymbolPath = struct
 
   let compare_deref_kind _ _ = 0
 
-  type partial =
-    | Pvar of Pvar.t
-    | Deref of deref_kind * partial
-    | Field of Typ.Fieldname.t * partial
-    | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
-  [@@deriving compare]
+  include (* Enforce invariants on Field and StarField *) (
+    struct
+        type partial =
+          | Pvar of Pvar.t
+          | Deref of deref_kind * partial
+          | Field of Typ.Fieldname.t * partial
+          | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+          | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
+        [@@deriving compare]
+
+        let of_pvar pvar = Pvar pvar
+
+        let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
+
+        let deref ~deref_kind p = Deref (deref_kind, p)
+
+        let star_field p0 fn =
+          let rec aux = function
+            | Pvar _ | Callsite _ ->
+                StarField {last_field= fn; prefix= p0}
+            | Deref (_, p) | Field (_, p) ->
+                aux p
+            | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
+                p
+            | StarField {prefix} ->
+                StarField {last_field= fn; prefix}
+          in
+          aux p0
+
+
+        let field p0 fn =
+          let rec aux = function
+            | Pvar _ | Callsite _ ->
+                Field (fn, p0)
+            | Field (fn', _) when Typ.Fieldname.equal fn fn' ->
+                StarField {last_field= fn; prefix= p0}
+            | Field (_, p) | Deref (_, p) ->
+                aux p
+            | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
+                p
+            | StarField {prefix} ->
+                StarField {last_field= fn; prefix}
+          in
+          aux p0
+      end :
+      sig
+        type partial = private
+          | Pvar of Pvar.t
+          | Deref of deref_kind * partial
+          | Field of Typ.Fieldname.t * partial
+          | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
+          | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
+        [@@deriving compare]
+
+        val of_pvar : Pvar.t -> partial
+
+        val of_callsite : ret_typ:Typ.t -> CallSite.t -> partial
+
+        val deref : deref_kind:deref_kind -> partial -> partial
+
+        val field : partial -> Typ.Fieldname.t -> partial
+
+        val star_field : partial -> Typ.Fieldname.t -> partial
+      end )
 
   type t = Normal of partial | Offset of partial | Length of partial | Modeled of partial
   [@@deriving compare]
@@ -39,14 +97,6 @@ module SymbolPath = struct
   let equal = [%compare.equal: t]
 
   let equal_partial = [%compare.equal: partial]
-
-  let of_pvar pvar = Pvar pvar
-
-  let of_callsite ~ret_typ cs = Callsite {ret_typ; cs}
-
-  let field p fn = Field (fn, p)
-
-  let deref ~deref_kind p = Deref (deref_kind, p)
 
   let normal p = Normal p
 
@@ -61,7 +111,7 @@ module SymbolPath = struct
   let rec get_pvar = function
     | Pvar pvar ->
         Some pvar
-    | Deref (_, partial) | Field (_, partial) ->
+    | Deref (_, partial) | Field (_, partial) | StarField {prefix= partial} ->
         get_pvar partial
     | Callsite _ ->
         None
@@ -84,6 +134,9 @@ module SymbolPath = struct
           ~pp_lhs_alone:(pp_partial_paren ~paren) ~sep:"." fmt p fn
     | Callsite {cs} ->
         F.fprintf fmt "%s" (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname cs))
+    | StarField {last_field; prefix} ->
+        BufferOverrunField.pp ~pp_lhs:(pp_star ~paren:true) ~pp_lhs_alone:(pp_star ~paren) ~sep:"."
+          fmt prefix last_field
 
 
   and pp_pointer ~paren fmt p =
@@ -91,6 +144,8 @@ module SymbolPath = struct
     F.fprintf fmt "*%a" (pp_partial_paren ~paren:false) p ;
     if paren then F.fprintf fmt ")"
 
+
+  and pp_star ~paren fmt p = pp_partial_paren ~paren fmt p ; F.pp_print_string fmt ".*"
 
   let pp_partial = pp_partial_paren ~paren:false
 
@@ -111,7 +166,7 @@ module SymbolPath = struct
     (* TODO depending on the result, the call might represent multiple values *)
     | Callsite _ | Pvar _ ->
         false
-    | Deref (Deref_ArrayIndex, _) ->
+    | Deref (Deref_ArrayIndex, _) | StarField _ ->
         true
     | Deref (Deref_CPointer, p)
     (* Deref_CPointer is unsound here but avoids many FPs for non-array pointers *)
@@ -121,7 +176,7 @@ module SymbolPath = struct
 
 
   let rec represents_multiple_values_sound = function
-    | Callsite _ ->
+    | Callsite _ | StarField _ ->
         true
     | Pvar _ ->
         false
@@ -136,14 +191,14 @@ module SymbolPath = struct
         true
     | Pvar _ ->
         false
-    | Deref (_, p) | Field (_, p) ->
+    | Deref (_, p) | Field (_, p) | StarField {prefix= p} ->
         represents_callsite_sound_partial p
 
 
   let rec exists_pvar_partial ~f = function
     | Pvar pvar ->
         f pvar
-    | Deref (_, p) | Field (_, p) ->
+    | Deref (_, p) | Field (_, p) | StarField {prefix= p} ->
         exists_pvar_partial ~f p
     | Callsite _ ->
         false
@@ -154,7 +209,7 @@ module SymbolPath = struct
         f (Pvar.to_string pvar)
     | Deref (_, x) ->
         exists_str_partial ~f x
-    | Field (fld, x) ->
+    | Field (fld, x) | StarField {last_field= fld; prefix= x} ->
         f (Typ.Fieldname.to_string fld) || exists_str_partial ~f x
     | Callsite _ ->
         false

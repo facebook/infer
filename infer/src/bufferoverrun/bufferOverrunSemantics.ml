@@ -400,7 +400,7 @@ let rec eval_sympath_partial ~mode params p mem =
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )
-  | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ ->
+  | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Field _ | Symb.SymbolPath.StarField _ ->
       let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 
@@ -417,6 +417,9 @@ and eval_locpath ~mode params p mem =
     | Symb.SymbolPath.Field (fn, p) ->
         let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs
+    | Symb.SymbolPath.StarField {last_field= fn; prefix} ->
+        let locs = eval_locpath ~mode params prefix mem in
+        PowLoc.append_star_field ~fn locs
   in
   if PowLoc.is_empty res then (
     match mode with

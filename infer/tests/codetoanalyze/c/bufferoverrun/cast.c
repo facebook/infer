@@ -89,3 +89,25 @@ void cast_float_to_int_Bad_FN() {
     arr[y] = 0;
   }
 }
+
+/*
+  Testing that the analyzer doesn't run infinitely on these cases
+*/
+typedef struct s_cast {
+  char* data;
+  struct s_cast* another;
+  char* data2;
+} t_cast;
+
+char cast_field_to_struct(struct s_cast* s, int i0) {
+  for (int i = i0; i > 0; i--) {
+    s = (struct s_cast*)(&s->data);
+  }
+  s = s->another;
+  for (int i = i0; i > 0; i--) {
+    s = (struct s_cast*)(&s->data);
+    s = (struct s_cast*)((unsigned char*)(void*)(s->data2) -
+                         offsetof(s->data2));
+  }
+  return *s->data;
+}
