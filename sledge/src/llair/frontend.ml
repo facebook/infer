@@ -924,13 +924,20 @@ let xlate_instr :
       | ["__llair_throw"] ->
           let exc = xlate_value x (Llvm.operand instr 0) in
           emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
-      | ["_Znwm" (* operator new(size_t num) *)] ->
+      | ["_Znwm" (* operator new(size_t num) *)]
+       |[ "_ZnwmSt11align_val_t"
+          (* operator new(unsigned long, std::align_val_t) *) ] ->
           let reg = xlate_name instr in
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
           emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
       | ["_ZdlPv" (* operator delete(void* ptr) *)]
+       |[ "_ZdlPvSt11align_val_t"
+          (* operator delete(void* ptr, std::align_val_t) *) ]
+       |[ "_ZdlPvmSt11align_val_t"
+          (* operator delete(void* ptr, unsigned long, std::align_val_t) *)
+         ]
        |["free" (* void free(void* ptr) *)] ->
           let ptr = xlate_value x (Llvm.operand instr 0) in
           emit_inst (Llair.Inst.free ~ptr ~loc)
@@ -1031,7 +1038,10 @@ let xlate_instr :
       | ["__llair_throw"] ->
           let dst = Llair.Jump.mk unwind_dst args in
           emit_term (Llair.Term.goto ~dst ~loc)
-      | ["_Znwm" (* operator new(size_t num) *)] when num_args = 1 ->
+      | ["_Znwm" (* operator new(size_t num) *)]
+       |[ "_ZnwmSt11align_val_t"
+          (* operator new(unsigned long num, std::align_val_t) *) ]
+        when num_args > 0 ->
           let reg = xlate_name instr in
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
