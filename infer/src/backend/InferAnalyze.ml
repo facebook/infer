@@ -25,8 +25,9 @@ let analyze_target : TaskScheduler.target Tasks.doer =
         if Config.write_html then Printer.write_all_html_files source_file )
   in
   let analyze_proc_name exe_env proc_name =
-    L.task_progress Typ.Procname.pp proc_name ~f:(fun () ->
-        Callbacks.analyze_proc_name exe_env proc_name )
+    L.debug Analysis Verbose "%a starting@." Typ.Procname.pp proc_name ;
+    Callbacks.analyze_proc_name exe_env proc_name ;
+    L.debug Analysis Verbose "%a DONE@." Typ.Procname.pp proc_name
   in
   fun target ->
     if Config.memcached then Memcached.connect () ;
