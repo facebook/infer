@@ -50,6 +50,7 @@ type inst = private
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
+  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst vector
@@ -130,6 +131,7 @@ module Inst : sig
   val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
+  val abort : loc:Loc.t -> inst
   val loc : inst -> Loc.t
   val locals : inst -> Var.Set.t
 end

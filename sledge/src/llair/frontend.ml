@@ -956,10 +956,10 @@ let xlate_instr :
           let src = xlate_value x (Llvm.operand instr 1) in
           let len = xlate_value x (Llvm.operand instr 2) in
           emit_inst (Llair.Inst.memmov ~dst ~src ~len ~loc)
+      | ["abort"] | ["llvm"; "trap"] -> emit_inst (Llair.Inst.abort ~loc)
       (* dropped / handled elsewhere *)
       | ["llvm"; "dbg"; ("declare" | "value")]
-       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
-       |["llvm"; "trap"] ->
+       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
           nop ()
       (* unimplemented *)
       | ["llvm"; ("stacksave" | "stackrestore")] ->

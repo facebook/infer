@@ -614,6 +614,7 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
   | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
   | Free {ptr} -> exec_spec pre (free_spec us ptr)
   | Nondet _ -> Ok pre
+  | Abort _ -> Error ()
 
 let skip : Sh.t -> (Sh.t, _) result option = fun pre -> Some (Ok pre)
 

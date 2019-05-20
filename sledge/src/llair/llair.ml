@@ -16,6 +16,7 @@ type inst =
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+  | Abort of {loc: Loc.t}
 [@@deriving sexp]
 
 type cmnd = inst vector [@@deriving sexp]
@@ -135,6 +136,7 @@ let pp_inst fs inst =
   | Nondet {reg; msg; loc} ->
       pf "@[<2>nondet %a\"%s\";@]\t%a" (Option.pp "%a " Var.pp) reg msg
         Loc.pp loc
+  | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
 
 let pp_args pp_arg fs args =
   Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
@@ -216,6 +218,7 @@ module Inst = struct
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
+  let abort ~loc = Abort {loc}
 
   let loc = function
     | Load {loc}
@@ -225,14 +228,16 @@ module Inst = struct
      |Memmov {loc}
      |Alloc {loc}
      |Free {loc}
-     |Nondet {loc} ->
+     |Nondet {loc}
+     |Abort {loc} ->
         loc
 
   let union_locals inst vs =
     match inst with
     | Load {reg} | Alloc {reg} | Nondet {reg= Some reg} -> Set.add vs reg
-    | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _ | Nondet {reg= None}
-      ->
+    | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
+     |Nondet {reg= None}
+     |Abort _ ->
         vs
 
   let locals inst = union_locals inst Var.Set.empty
