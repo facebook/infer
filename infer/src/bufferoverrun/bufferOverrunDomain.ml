@@ -536,7 +536,6 @@ module Val = struct
        l ->
     let do_on_demand path typ =
       let may_last_field = may_last_field path in
-      let path = OndemandEnv.canonical_path typ_of_param_path path in
       of_path tenv ~may_last_field integer_type_widths entry_location typ path
     in
     match Loc.is_literal_string l with

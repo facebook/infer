@@ -41,10 +41,9 @@ struct List {
   int v;
 };
 
-// [l->next->prev->v] is unsoundly canonicalized to [l->next->v].
 int get_v(struct List* l) { return l->next->prev->v; }
 
-int call_get_v_Good_FP() {
+int call_get_v_Good() {
   int a[10];
   struct List* l = (struct List*)malloc(sizeof(struct List));
   struct List* next = (struct List*)malloc(sizeof(struct List));
@@ -55,7 +54,7 @@ int call_get_v_Good_FP() {
   a[get_v(l)] = 0;
 }
 
-int call_get_v_Bad_FN() {
+int call_get_v_Bad() {
   int a[10];
   struct List* l = (struct List*)malloc(sizeof(struct List));
   struct List* next = (struct List*)malloc(sizeof(struct List));
@@ -64,4 +63,29 @@ int call_get_v_Bad_FN() {
   l->v = 10;
   next->v = 0;
   a[get_v(l)] = 0;
+}
+
+// [l->next->prev->next->prev->v] is abstracted in [l->next->prev.*.v].
+int get_v2(struct List* l) { return l->next->prev->next->prev->v; }
+
+int call_get_v2_Good_FP() {
+  int a[10];
+  struct List* l = (struct List*)malloc(sizeof(struct List));
+  struct List* next = (struct List*)malloc(sizeof(struct List));
+  l->next = next;
+  next->prev = l;
+  l->v = 0;
+  next->v = 10;
+  a[get_v2(l)] = 0;
+}
+
+int call_get_v2_Bad() {
+  int a[10];
+  struct List* l = (struct List*)malloc(sizeof(struct List));
+  struct List* next = (struct List*)malloc(sizeof(struct List));
+  l->next = next;
+  next->prev = l;
+  l->v = 10;
+  next->v = 0;
+  a[get_v2(l)] = 0;
 }
