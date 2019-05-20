@@ -1289,6 +1289,10 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
   |>
   [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).Llair.lbl]
 
+let report_undefined func name =
+  if Option.is_some (Llvm.use_begin func) then
+    [%Trace.info "undefined function: %a" Global.pp name]
+
 let xlate_function : x -> Llvm.llvalue -> Llair.func =
  fun x llf ->
   [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
@@ -1322,7 +1326,9 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         trav_blocks (List.rev entry_blocks) entry_blk
       in
       Llair.Func.mk ~name ~entry ~cfg
-  | At_end _ -> Llair.Func.mk_undefined ~name ~params )
+  | At_end _ ->
+      report_undefined llf name ;
+      Llair.Func.mk_undefined ~name ~params )
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
 
