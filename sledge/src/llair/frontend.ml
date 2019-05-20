@@ -580,11 +580,10 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
           exp
       | _ -> fail "xlate_opcode: %a" pp_llvalue llv () )
-  | VAArg -> todo "variadic functions: %a" pp_llvalue llv ()
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | UserOp1 | UserOp2
    |Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad | CleanupRet
-   |CatchRet | CatchPad | CleanupPad | CatchSwitch ->
+   |CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
       fail "xlate_opcode: %a" pp_llvalue llv () )
   |>
   [%Trace.retn fun {pf} exp -> pf "%a" Exp.pp exp]
@@ -634,7 +633,7 @@ let pop_stack_frame_of_function :
           (fun instr ->
             match Llvm.instr_opcode instr with
             | Alloca ->
-                todo "stack allocation after function entry:@ %a" pp_llvalue
+                warn "stack allocation after function entry:@ %a" pp_llvalue
                   instr ()
             | _ -> () )
           blk )
@@ -957,8 +956,7 @@ let xlate_instr :
           nop ()
       (* unimplemented *)
       | ["llvm"; ("stacksave" | "stackrestore")] ->
-          todo "stack allocation after function entry:@ %a" pp_llvalue instr
-            ()
+          skip "dynamic stack deallocation"
       | "llvm" :: "coro" :: _ -> todo "coroutines:@ %a" pp_llvalue instr ()
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
@@ -977,11 +975,16 @@ let xlate_instr :
               let num_args =
                 if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
                   Llvm.num_arg_operands instr
-                else (
-                  warn
-                    "ignoring variable arguments to variadic function: %a"
-                    pp_llvalue instr () ;
-                  Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
+                else
+                  let fname = Llvm.value_name llfunc in
+                  ( match Hash_set.strict_add ignored_callees fname with
+                  | Ok () when not (Llvm.is_declaration llfunc) ->
+                      warn
+                        "ignoring variable arguments to variadic function: \
+                         %a"
+                        Global.pp (xlate_global x llfunc) ()
+                  | _ -> () ) ;
+                  Array.length (Llvm.param_types (Llvm.element_type lltyp))
               in
               List.rev_init num_args ~f:(fun i ->
                   xlate_value x (Llvm.operand instr i) )
@@ -1008,8 +1011,11 @@ let xlate_instr :
         if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
           Llvm.num_arg_operands instr
         else (
-          warn "ignoring variable arguments to variadic function: %a"
-            pp_llvalue instr () ;
+          ( match Hash_set.strict_add ignored_callees fname with
+          | Ok () when not (Llvm.is_declaration llfunc) ->
+              warn "ignoring variable arguments to variadic function: %a"
+                Global.pp (xlate_global x llfunc) ()
+          | _ -> () ) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
       let args =
