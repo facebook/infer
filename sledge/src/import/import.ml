@@ -58,7 +58,7 @@ let warn fmt =
   Format.pp_open_box fs 2 ;
   Format.pp_print_string fs "Warning: " ;
   Format.kfprintf
-    (fun fs ->
+    (fun fs () ->
       Format.pp_close_box fs () ;
       Format.pp_force_newline fs () )
     fs fmt

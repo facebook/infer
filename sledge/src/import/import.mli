@@ -75,7 +75,7 @@ type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
 
 exception Unimplemented of string
 
-val warn : ('a, unit) fmt -> 'a
+val warn : ('a, unit -> unit) fmt -> 'a
 (** Issue a warning for a survivable problem. *)
 
 val todo : ('a, unit -> _) fmt -> 'a

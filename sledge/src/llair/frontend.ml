@@ -58,7 +58,7 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
                 (List.find_a_dup ~compare:Loc.compare [loc; data; Loc.none])
             then
               warn "ignoring location %a conflicting with %a for %a" Loc.pp
-                loc Loc.pp data pp_llvalue key ) ;
+                loc Loc.pp data pp_llvalue key () ) ;
         data )
   in
   let scan_locs m =
@@ -76,7 +76,7 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
                 "could not find variable for debug info %a at %a with \
                  metadata %a"
                 pp_llvalue (Llvm.operand i 0) Loc.pp loc
-                (List.pp ", " pp_llvalue) (Array.to_list md)
+                (List.pp ", " pp_llvalue) (Array.to_list md) ()
         | _ -> () )
       | _ -> ()
     in
@@ -913,7 +913,7 @@ let xlate_instr :
       let fname = Llvm.value_name llfunc in
       let skip msg =
         ( match Hash_set.strict_add ignored_callees fname with
-        | Ok () -> warn "ignoring uninterpreted %s %s" msg fname
+        | Ok () -> warn "ignoring uninterpreted %s %s" msg fname ()
         | Error _ -> () ) ;
         let reg = xlate_name_opt instr in
         let msg = Llvm.string_of_llvalue instr in
@@ -980,7 +980,7 @@ let xlate_instr :
                 else (
                   warn
                     "ignoring variable arguments to variadic function: %a"
-                    pp_llvalue instr ;
+                    pp_llvalue instr () ;
                   Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
               in
               List.rev_init num_args ~f:(fun i ->
@@ -1009,7 +1009,7 @@ let xlate_instr :
           Llvm.num_arg_operands instr
         else (
           warn "ignoring variable arguments to variadic function: %a"
-            pp_llvalue instr ;
+            pp_llvalue instr () ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
       let args =
@@ -1244,7 +1244,7 @@ let xlate_instr :
   | VAArg ->
       let reg = xlate_name_opt instr in
       let msg = Llvm.string_of_llvalue instr in
-      warn "variadic function argument: %s" msg ;
+      warn "variadic function argument: %s" msg () ;
       emit_inst (Llair.Inst.nondet ~reg ~msg ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
