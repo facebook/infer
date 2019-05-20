@@ -145,7 +145,7 @@ but they are currently the same for all functions: i8*
 * frontend
 ** ? translate PtrToInt and IntToPtr as cast when sizes match
 ** use llvm.lifetime.{start,end} to determine where to (alloc and?) free locals
-** hoist alloca's to the beginning of the entry block whenever possible
+** hoist alloca's to the beginning of the entry block whenever they dominate the return instr
 ** clean up translation of intrinsics
 separation between xlate_intrinsic (which translates an intrinsic function name to an expression constructor) and the Call case of xlate_instr (which translates calls to intrinsic functions to instructions) is not clear
 ** extract struct field names from llvm debug info
@@ -153,24 +153,24 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 - remove unreachable blocks
 - combine blocks with cmnd= []; term= Unreachable into one
 ** support variadic functions
-- lower by implementing in terms of the core
-- implement the va_list type as a pair or pointers into a stack represented as a linked-list, one pointer to the current element and one to the head
-- a call to a variadic function pushes the args in reverse order, so that the first arg is at the top of the stack, and passes a pointer to the top as the last arg to the callee
-- va_start intrinsic returns a pointer to the first va arg, by just projecting the current pointer from the last arg
-- va_arg instruction returns the current va arg using argument va_list pointer to the stack, and sets the argument va_list current pointer to the next stack element
-- va_copy is just a pointer copy of the source to destination va_list arguments, creating another pointer into the stack of va args, the head pointer of copies is null
-- va_end deallocates the list starting from the head pointer
+- nothing prevents the compiler from generating code that directly manipulates the target-specific va_list struct, and it appears to do so at least for amd64, so the only safe approach is to use the same representation:
+  #+BEGIN_SRC C
+  typedef struct {
+     unsigned int gp_offset;
+     unsigned int fp_offset;
+     void *overflow_arg_area;
+     void *reg_save_area;
+  } va_list[1];
+  #+END_SRC
 ** support dynamic sized stack allocation (alloca in non-entry blocks) 
 - lower by implementing in terms of the core
 - add a linked list of stack slots data structure
 - each element contains
   + a pointer to some memory allocated for that slot's contents
   + a pointer to the next older slot
-  + a pointer to the beginning of the function's stack frame
-- add a global variable that always points to the head of the stack
-- alloca in non-entry blocks adds an element and stores the result of alloc in it, sets next, and uses the frame pointer of the previous head
-- function call adds a 'frame sentinel' element whose frame pointer points to itself, slot pointer is null (but used for va_arg below)
-- function return (and other popping terminators) traverses the stack, popping elements, calling free on the slot pointers, until the element pointed to by the frame pointer is encountered
+- add a local variable 'top' to each function with a non-entry alloca; that points to a pointer that always points to the head of the stack; initially NULL
+- alloca in non-entry blocks adds an element and stores the result of alloc in it, sets next to contents of 'top', and stores result into 'top'
+- function return (and other popping terminators) traverses the stack, popping elements, calling free on the slot pointers, until finding NULL in next
 - stacksave intrinsic returns a pointer to a stack element
 - stackrestore intrinsic pops the stack like return but only back to the argument pointer
 ** handle inline asm enough to over-approximate control-flow
