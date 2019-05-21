@@ -2,6 +2,7 @@
 /bin/
 /llvm/
 /model/cxxabi.bc
+/model/dune
 /src/dune
 /src/import/dune
 /src/llair/dune

@@ -19,7 +19,7 @@ facebook/Makefile:
 DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS))
 OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS))
 
-DUNEINS = $(shell find src facebook -name dune.in)
+DUNEINS = $(shell find src facebook model -name dune.in)
 DUNES = $(patsubst %.in,%,$(DUNEINS))
 
 .PHONY: dunes

@@ -1350,11 +1350,19 @@ let translate : string -> Llair.t =
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in
+  let model_module =
+    let model_memorybuffer =
+      Llvm.MemoryBuffer.of_string
+        (Option.value_exn (Model.read "/cxxabi.bc"))
+    in
+    Llvm_irreader.parse_ir llcontext model_memorybuffer
+  in
   let llmodule =
     let llmemorybuffer = Llvm.MemoryBuffer.of_file file in
     try Llvm_irreader.parse_ir llcontext llmemorybuffer
     with Llvm_irreader.Error msg -> invalid_llvm msg
   in
+  Llvm_linker.link_modules' llmodule model_module ;
   Llvm_analysis.verify_module llmodule |> Option.iter ~f:invalid_llvm ;
   transform llmodule ;
   scan_locs llmodule ;

@@ -9,9 +9,10 @@ CLANG_ARGS?=-g $(OPT_ARGS)
 
 # select llvm and clang
 SWITCH?=$(shell opam switch show)
-LLVM?=../llvm/_install/$(SWITCH)
+ROOT?=..
+LLVM=$(ROOT)/llvm/_install/$(SWITCH)
 
-LIBCXXABI=../llvm/projects/libcxxabi
+LIBCXXABI=$(ROOT)/llvm/projects/libcxxabi
 
 cxxabi.bc : cxxabi.cpp
 	$(LLVM)/bin/clang $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
