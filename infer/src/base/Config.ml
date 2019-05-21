@@ -2017,6 +2017,11 @@ and select =
 
 and scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba "
 
+and scuba_normals =
+  CLOpt.mk_string_map ~long:"scuba-normal"
+    "add an extra string (normal) field to be set for each sample of scuba, format <name>=<value>"
+
+
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -2996,6 +3001,8 @@ and seconds_per_iteration = !seconds_per_iteration
 and select = !select
 
 and scuba_logging = !scuba_logging
+
+and scuba_normals = !scuba_normals
 
 and show_buckets = !print_buckets
 

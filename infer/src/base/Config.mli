@@ -600,6 +600,8 @@ val results_dir : string
 
 val scuba_logging : bool
 
+val scuba_normals : string String.Map.t
+
 val seconds_per_iteration : float option
 
 val select : int option

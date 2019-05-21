@@ -17,6 +17,11 @@ let maybe_add_normal ~name ~value sample =
   match value with None -> sample | Some value -> Scuba.add_normal ~name ~value sample
 
 
+let set_command_line_normales sample =
+  let add_normal ~key ~data = Scuba.add_normal ~name:key ~value:data in
+  Map.fold Config.scuba_normals ~init:sample ~f:add_normal
+
+
 let set_common_fields sample =
   let open Scuba in
   sample
@@ -29,7 +34,7 @@ let set_common_fields sample =
 
 
 let create_sample ~event_name ~value =
-  Scuba.new_sample ~time:None |> set_common_fields
+  Scuba.new_sample ~time:None |> set_common_fields |> set_command_line_normales
   |> Scuba.add_normal ~name:"event" ~value:event_name
   |> Scuba.add_int ~name:"value" ~value
 

@@ -1579,6 +1579,10 @@ INTERNAL OPTIONS
            Activates: (direct) logging to scuba (Conversely:
            --no-scuba-logging)
 
+       --scuba-normal +key=value
+           add an extra string (normal) field to be set for each sample of
+           scuba, format <name>=<value>
+
        --seconds-per-iteration float
            Set the number of seconds per iteration (see --iterations)
 
