@@ -24,10 +24,18 @@ let analyze_target : TaskScheduler.target Tasks.doer =
         Callbacks.analyze_file exe_env source_file ;
         if Config.write_html then Printer.write_all_html_files source_file )
   in
+  (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures. 
+     The default roughly reflects the average number of procedures in a C++ file. *)
+  let per_procedure_logging_granularity = 200 in
+  (* [procs_left] is set to 1 so that we log the first procedure sent to us. *)
+  let procs_left = ref 1 in
   let analyze_proc_name exe_env proc_name =
-    L.debug Analysis Verbose "%a starting@." Typ.Procname.pp proc_name ;
-    Callbacks.analyze_proc_name exe_env proc_name ;
-    L.debug Analysis Verbose "%a DONE@." Typ.Procname.pp proc_name
+    decr procs_left ;
+    if Int.( <= ) !procs_left 0 then (
+      L.progress "Analysing block of %d procs, starting with %a@."
+        per_procedure_logging_granularity Typ.Procname.pp proc_name ;
+      procs_left := per_procedure_logging_granularity ) ;
+    Callbacks.analyze_proc_name exe_env proc_name
   in
   fun target ->
     if Config.memcached then Memcached.connect () ;
