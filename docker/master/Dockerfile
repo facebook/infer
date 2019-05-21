@@ -22,12 +22,12 @@ RUN apt-get update && \
       make \
       openjdk-8-jdk-headless \
       patch \
+      patchelf \
       pkg-config \
       python2.7 \
       unzip \
       xz-utils \
-      zlib1g-dev \
-      patchelf && \
+      zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Some scripts in facebook-clang-plugins assume "python" is available
@@ -39,7 +39,7 @@ RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x8
 
 # Disable sandboxing
 # Without this opam fails to compile OCaml for some reason. We don't need sandboxing inside a Docker container anyway.
-RUN opam init --reinit --bare --disable-sandboxing -ya
+RUN opam init --reinit --bare --disable-sandboxing --yes --auto-setup
 
 # Download the latest Infer master
 RUN cd / && \
@@ -56,7 +56,12 @@ RUN cd /infer && \
     ./facebook-clang-plugins/clang/setup.sh
 
 # Generate a release
-RUN cd /infer && make install-with-libs BUILD_MODE=opt PATCHELF=patchelf DESTDIR="/infer-release" libdir_relative_to_bindir="../lib"
+RUN cd /infer && \ 
+    make install-with-libs \
+    BUILD_MODE=opt \ 
+    PATCHELF=patchelf \
+    DESTDIR="/infer-release" \ 
+    libdir_relative_to_bindir="../lib"
 
 FROM debian:stretch-slim AS executor 
 
