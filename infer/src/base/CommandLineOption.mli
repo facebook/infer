@@ -101,6 +101,11 @@ val mk_string_list :
     An option "--[long]-reset" is automatically created that resets the list to [] when found on the
     command line.  *)
 
+val mk_string_map :
+     ?default:string String.Map.t
+  -> ?default_to_string:(string String.Map.t -> string)
+  -> string String.Map.t ref t
+
 val mk_path :
   default:string -> ?default_to_string:(string -> string) -> ?f:(string -> string) -> string ref t
 (** like [mk_string] but will resolve the string into an absolute path so that children processes

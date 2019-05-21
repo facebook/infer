@@ -523,6 +523,41 @@ let mk_string_list ?(default = []) ?(default_to_string = String.concat ~sep:",")
   mk_with_reset [] ~reset_doc ~long ?parse_mode mk
 
 
+let map_to_str map =
+  let pair_to_str (a, b) = a ^ "=" ^ b in
+  let list = Map.to_alist map |> List.map ~f:pair_to_str in
+  String.concat list ~sep:","
+
+
+let mk_string_map ?(default = String.Map.empty) ?(default_to_string = map_to_str)
+    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "key=value") doc =
+  let flag = mk_flag ~deprecated ?short ~long in
+  let split_str str =
+    match String.lsplit2 str ~on:'=' with
+    | Some a ->
+        a
+    | None ->
+        raise (Arg.Bad "Expected format is <key>=<value>")
+  in
+  let add_to_map map ~key ~data =
+    match Map.add map ~key ~data with
+    | `Ok a ->
+        a
+    | `Duplicate ->
+        raise (Arg.Bad "Duplicate keys are not allowed")
+  in
+  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta:("+" ^ meta) doc
+    ~default_to_string
+    ~mk_setter:(fun var str ->
+      let key, data = split_str str in
+      var := add_to_map !var ~key ~data )
+    ~mk_spec:(fun set -> String set )
+      (* In spirit of JSON we could have presented json as list of key-value pairs
+      with e.g. "key" and "value" fields, but for simplicity let's present each key-value pair
+      as it is passed to command line, which is a <key>=<value> *)
+    ~decode_json:(list_json_decoder (string_json_decoder ~flag))
+
+
 let normalize_path_in_args_being_parsed ?(f = Fn.id) ~is_anon_arg str =
   if Filename.is_relative str then (
     (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
