@@ -140,11 +140,12 @@ let rec canon r a =
 let rec extend a r =
   match Exp.classify a with
   | `Interpreted | `Simplified -> Exp.fold ~f:extend a ~init:r
-  | `Atomic | `Uninterpreted ->
+  | `Uninterpreted ->
       Map.find_or_add r.rep a
         ~if_found:(fun _ -> r)
         ~default:a
         ~if_added:(fun rep -> Exp.fold ~f:extend a ~init:{r with rep})
+  | `Atomic -> r
 
 let extend a r = extend a r |> check invariant
 
