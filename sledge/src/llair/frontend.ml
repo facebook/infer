@@ -1335,6 +1335,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
 let transform : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
+  Llvm_ipo.add_global_dce pm ;
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;

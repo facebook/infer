@@ -16,7 +16,7 @@ Jbuild_plugin.V1.send
  (name llair_)
  (public_name llair)
  %s
- (libraries ctypes ctypes.foreign llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target %s))
+ (libraries ctypes ctypes.foreign llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo %s))
 |}
      (flags `lib deps)
      (libraries deps)
