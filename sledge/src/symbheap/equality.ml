@@ -111,7 +111,8 @@ let apply s a = try Map.find_exn s a with Caml.Not_found -> a
 let rec norm s a =
   match Exp.classify a with
   | `Interpreted -> Exp.map ~f:(norm s) a
-  | _ -> apply s a
+  | `Simplified -> apply s (Exp.map ~f:(norm s) a)
+  | `Atomic | `Uninterpreted -> apply s a
 
 (** exps are congruent if equal after normalizing subexps *)
 let congruent r a b =
@@ -132,14 +133,14 @@ let lookup r a =
 let rec canon r a =
   match Exp.classify a with
   | `Interpreted -> Exp.map ~f:(canon r) a
-  | `Uninterpreted -> lookup r (Exp.map ~f:(canon r) a)
+  | `Simplified | `Uninterpreted -> lookup r (Exp.map ~f:(canon r) a)
   | `Atomic -> apply r.rep a
 
 (** add an exp to the carrier *)
 let rec extend a r =
   match Exp.classify a with
-  | `Interpreted -> Exp.fold ~f:extend a ~init:r
-  | _ ->
+  | `Interpreted | `Simplified -> Exp.fold ~f:extend a ~init:r
+  | `Atomic | `Uninterpreted ->
       Map.find_or_add r.rep a
         ~if_found:(fun _ -> r)
         ~default:a
@@ -154,7 +155,7 @@ let compose r s =
         if Exp.equal v1 v2 then v1
         else fail "domains intersect: %a" Exp.pp key () )
   in
-  {r with rep} |> check invariant
+  {r with rep}
 
 let merge a b r =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Exp.pp a Exp.pp b pp r]
@@ -186,6 +187,15 @@ let rec close r =
     match find_missing r with
     | Some (a', b') -> close (merge a' b' r)
     | None -> r
+
+let close r =
+  [%Trace.call fun {pf} -> pf "%a" pp r]
+  ;
+  close r
+  |>
+  [%Trace.retn fun {pf} r' ->
+    pf "%a" pp_diff (r, r') ;
+    invariant r']
 
 let and_eq a b r =
   if not r.sat then r
@@ -266,7 +276,9 @@ let map_exps ({sat= _; rep} as r) ~f =
   in
   (if rep' == rep then r else {r with rep= rep'})
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" pp r ; invariant r]
+  [%Trace.retn fun {pf} r' ->
+    pf "%a" pp_diff (r, r') ;
+    invariant r']
 
 let rename r sub = map_exps r ~f:(fun e -> Exp.rename e sub)
 

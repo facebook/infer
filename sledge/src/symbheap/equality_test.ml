@@ -9,9 +9,9 @@ let%test_module _ =
   ( module struct
     open Equality
 
-    (* let () = Trace.init ~margin:160 ~config:all () *)
-
     let () = Trace.init ~margin:68 ~config:none ()
+
+    (* let () = Trace.init ~margin:160 ~config:all () *)
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf pp
     let pp_classes = printf pp_classes
@@ -327,4 +327,67 @@ let%test_module _ =
     let r12 = of_eqs [(!16, z - x); (x + !8 - z, z + !16 + !8 - z)]
 
     let%expect_test _ = pp_classes r12 ; [%expect {| (%z_7 + -16) = %x_5 |}]
+
+    let r13 = of_eqs [(Exp.eq x !2, y); (Exp.dq x !2, z); (y, z)]
+
+    let%expect_test _ =
+      pp r13 ;
+      [%expect
+        {|
+      {sat= true;
+       rep= [[%x_5 ↦ ];
+             [%y_6 ↦ ];
+             [%z_7 ↦ %y_6];
+             [(%x_5 = 2) ↦ %y_6];
+             [(%x_5 ≠ 2) ↦ %y_6];
+             [= ↦ ];
+             [≠ ↦ ];
+             [2 ↦ ]]} |}]
+
+    let%test _ = not (is_false r13) (* incomplete *)
+
+    let a = Exp.dq x !0
+    let r14 = of_eqs [(a, a); (x, !1)]
+
+    let%expect_test _ =
+      pp r14 ;
+      [%expect
+        {| {sat= true; rep= [[%x_5 ↦ 1]; [≠ ↦ ]; [0 ↦ ]; [1 ↦ ]]} |}]
+
+    let%test _ = entails_eq r14 a (Exp.bool true)
+
+    let b = Exp.dq y !0
+    let r14 = of_eqs [(a, b); (x, !1)]
+
+    let%expect_test _ =
+      pp r14 ;
+      [%expect
+        {|
+          {sat= true;
+           rep= [[%x_5 ↦ 1];
+                 [%y_6 ↦ ];
+                 [(%y_6 ≠ 0) ↦ -1];
+                 [≠ ↦ ];
+                 [0 ↦ ];
+                 [1 ↦ ]]} |}]
+
+    let%test _ = entails_eq r14 a (Exp.bool true)
+    let%test _ = entails_eq r14 b (Exp.bool true)
+
+    let b = Exp.convert ~dst:i64 ~src:i8 (Exp.dq x !0)
+    let r15 = of_eqs [(b, b); (x, !1)]
+
+    let%expect_test _ =
+      pp r15 ;
+      [%expect
+        {|
+          {sat= true;
+           rep= [[%x_5 ↦ 1];
+                 [((i64)(i8) (%x_5 ≠ 0)) ↦ 1];
+                 [≠ ↦ ];
+                 [(i64)(i8) ↦ ];
+                 [0 ↦ ];
+                 [1 ↦ ]]} |}]
+
+    let%test _ = entails_eq r15 b !1
   end )

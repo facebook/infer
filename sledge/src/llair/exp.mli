@@ -206,5 +206,5 @@ val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
 val typ : t -> Typ.t option
-val classify : t -> [> `Atomic | `Interpreted | `Uninterpreted]
+val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
 val solve : t -> t -> (t, t, comparator_witness) Map.t option
