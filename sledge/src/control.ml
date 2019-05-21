@@ -367,17 +367,14 @@ let harness : Llair.t -> Work.t option =
   List.find_map ["__llair_main"; "_Z12__llair_mainv"; "main"]
     ~f:(fun name ->
       Vector.find_map pgm.functions ~f:(fun func ->
-          let fname = Var.name func.name.var in
-          Option.some_if (String.equal name fname) (fname, func) ) )
+          Option.some_if (String.equal name (Var.name func.name.var)) func
+      ) )
   |> function
-  | Some (("__llair_main" | "_Z12__llair_mainv" | "main"), main) ->
-      let block = main.entry in
-      if List.is_empty block.params then
-        Some
-          (Work.init
-             (fst (Domain.call (Domain.init pgm.globals) [] [] block.locals))
-             block)
-      else None
+  | Some {entry= {params= []} as block} ->
+      Some
+        (Work.init
+           (fst (Domain.call (Domain.init pgm.globals) [] [] block.locals))
+           block)
   | _ -> None
 
 let exec_pgm : Llair.t -> unit =
