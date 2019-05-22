@@ -12,6 +12,7 @@ import android.app.PendingIntent;
 import com.facebook.infer.annotation.Assertions;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -353,5 +354,9 @@ public class NullMethodCall {
     while ((t = getNullable()) != null) {
       t.toString(); // Should not warn here
     }
+  }
+
+  String testPathGetParent() {
+    return Paths.get("foo").getParent().toString();
   }
 }

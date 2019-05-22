@@ -372,6 +372,7 @@ let annotated_list_nullable =
     ; ( on
       , "java.net.URLClassLoader.newInstance(java.net.URL[],java.lang.ClassLoader):java.net.URLClassLoader"
       )
+    ; (ng, "java.nio.file.Path.getParent():java.nio.file.Path")
     ; (n1, "java.util.AbstractList.equals(java.lang.Object):boolean")
     ; (ca, "java.util.ArrayList.add(java.lang.Object):boolean")
     ; (ca, "java.util.List.add(java.lang.Object):boolean")
