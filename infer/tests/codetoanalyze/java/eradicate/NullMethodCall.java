@@ -359,4 +359,11 @@ public class NullMethodCall {
   String testPathGetParent() {
     return Paths.get("foo").getParent().toString();
   }
+
+  String testNotDetectingInvariantFP(@Nullable Object object1, @Nullable Object object2) {
+    if (object1 == null && object2 == null) {
+      return "both null";
+    }
+    return object1 == null ? object2.toString() : "null";
+  }
 }
