@@ -147,3 +147,24 @@ void dereferenceOfAliasesCheckedForNullOkay(T* t) {
     s->doSomething();
   }
 }
+
+void pointerTestOkay(T* t) {
+  T* p = t->mayReturnNullObject();
+  if (p) {
+    p->doSomething();
+  }
+}
+
+void pointerTestBad(T* t) {
+  T* p = t->mayReturnNullObject();
+  if (p) {
+    // ...
+  }
+  p->doSomething();
+}
+
+void methodTestedForNullOkay(T* t) {
+  if (t->mayReturnNullObject()) {
+    t->mayReturnNullObject()->doSomething();
+  }
+}
