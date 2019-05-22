@@ -23,8 +23,13 @@ module Node : NodeSig
 
 type t
 
+val clear : t -> unit
+
 val create : int -> t
 (** [create n] makes an empty graph with initial capacity [n] which grows as required *)
+
+val n_procs : t -> int
+(** number of procedures in graph *)
 
 val build_from_sources : t -> SourceFile.t list -> unit
 (** build restriction of call graph to procedures reachable from provided sources *)
@@ -39,3 +44,6 @@ val remove_reachable : t -> Typ.Procname.t -> unit
 (** remove all nodes reachable from procname *)
 
 val get_unflagged_leaves : t -> Node.t list
+
+val to_dotty : t -> string -> unit
+(** output call graph in dotty format with the given filename in results dir *)

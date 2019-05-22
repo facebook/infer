@@ -46,6 +46,8 @@ module NodeMap = Caml.Hashtbl.Make (Int)
     [trim_id_map] makes the image equal to the domain of [node_map]. *)
 type t = {id_map: int IdMap.t; node_map: Node.t NodeMap.t}
 
+let clear {id_map; node_map} = IdMap.clear id_map ; NodeMap.clear node_map
+
 let create initial_capacity =
   {id_map= IdMap.create initial_capacity; node_map= NodeMap.create initial_capacity}
 
@@ -57,7 +59,7 @@ let node_of_id {node_map} id = NodeMap.find_opt node_map id
 let mem {node_map} id = NodeMap.mem node_map id
 
 (** [id_map] may contain undefined procedures, so use [node_map] for actual size *)
-let length {node_map} = NodeMap.length node_map
+let n_procs {node_map} = NodeMap.length node_map
 
 let node_of_procname g pname = id_of_procname g pname |> Option.bind ~f:(node_of_id g)
 
@@ -123,8 +125,8 @@ let pp_dot fmt {node_map} =
   F.fprintf fmt "}@."
 
 
-let to_dotty g =
-  let outc = Filename.concat Config.results_dir "callgraph.dot" |> Out_channel.create in
+let to_dotty g filename =
+  let outc = Filename.concat Config.results_dir filename |> Out_channel.create in
   let fmt = F.formatter_of_out_channel outc in
   pp_dot fmt g ; Out_channel.close outc
 
@@ -153,16 +155,15 @@ let build_from_sources g sources =
   let time0 = Mtime_clock.counter () in
   L.progress "Building call graph...@\n%!" ;
   build_from_captured_procs g ;
-  let captured_length = length g in
+  let n_captured = n_procs g in
   List.iter sources ~f:(fun sf ->
       SourceFiles.proc_names_of_source sf |> List.iter ~f:(flag_reachable g) ) ;
   remove_unflagged_and_unflag_all g ;
   trim_id_map g ;
-  if Config.debug_level_analysis > 0 then to_dotty g ;
-  L.progress "Building call graph took %a@\n" Mtime.Span.pp (Mtime_clock.count time0) ;
+  if Config.debug_level_analysis > 0 then to_dotty g "callgraph.dot" ;
   L.progress
-    "Constructed call graph from %d total procs, %d reachable defined procs, and takes %d bytes@."
-    captured_length (length g)
+    "Built call graph in %a, from %d total procs, %d reachable defined procs and takes %d bytes@."
+    Mtime.Span.pp (Mtime_clock.count time0) n_captured (n_procs g)
     (Obj.(reachable_words (repr g)) * (Sys.word_size / 8))
 
 

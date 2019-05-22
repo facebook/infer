@@ -49,7 +49,14 @@ let bottom_up sources : target task_generator =
   let pending : CallGraph.Node.t list ref = ref [] in
   let scheduled = ref Typ.Procname.Set.empty in
   let is_empty () =
-    !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled
+    let empty = !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled in
+    if empty then (
+      L.progress "Finished call graph scheduling, %d procs remaining (in cycles).@."
+        (CallGraph.n_procs g) ;
+      if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "cycles.dot" ;
+      (* save some memory *)
+      CallGraph.clear g ) ;
+    empty
   in
   let rec next_aux () =
     match !pending with
