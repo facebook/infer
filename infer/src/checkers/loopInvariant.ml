@@ -196,8 +196,13 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_inv_by_default ~get_callee_p
                    | AbstractDomain.Types.Top ->
                        (* modified global *)
                        (* if one of the callees modifies a global static
-                          variable, invalidate all unmodeled function calls *)
-                       InvalidatedVars.union acc (force all_unmodeled_modified)
+                          variable, invalidate all unmodeled function calls + args *)
+                       let all_params = PurityDomain.all_params_modified args in
+                       let invalidated_args =
+                         get_vars_to_invalidate node loop_head args all_params
+                           (InvalidatedVars.add (Var.of_id id) acc)
+                       in
+                       InvalidatedVars.union invalidated_args (force all_unmodeled_modified)
                    | AbstractDomain.Types.NonTop modified_params ->
                        if ModifiedParamIndices.is_empty modified_params then (*pure*)
                          acc

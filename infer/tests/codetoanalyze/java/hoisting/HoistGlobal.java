@@ -91,17 +91,16 @@ class HoistGlobal {
     }
   }
 
-  void remove_first_dont_hoist_FP(LinkedList<String> list) {
+  void remove_first_dont_hoist(LinkedList<String> list) {
 
     while (list.size() >= 10) {
       list.removeFirst();
     }
   }
 
-  String get_first_hoist(LinkedList<String> list, String s) {
-
+  String get_first_hoist_FN(LinkedList<String> list, String s) {
     for (int i = 0; i <= 10; i++) {
-      String first = list.getFirst();
+      String first = list.getFirst(); // list is invalidated
       if (list.contains(s)) { // hoist
         return first;
       }
