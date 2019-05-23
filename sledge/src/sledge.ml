@@ -7,7 +7,7 @@
 
 (** Sledge executable entry point *)
 
-let main ~input ~output ~compile_only =
+let main ~bound ~compile_only ~input ~output =
   try
     let program =
       if String.is_suffix input ~suffix:".llair" then
@@ -26,7 +26,9 @@ let main ~input ~output ~compile_only =
           Out_channel.with_file filename ~f:(fun oc ->
               let fs = Format.formatter_of_out_channel oc in
               Format.fprintf fs "%a@." Llair.pp program ) ) ;
-    if not compile_only then ( Control.exec_pgm program ; Trace.flush () ) ;
+    if not compile_only then (
+      Control.exec_pgm ~bound program ;
+      Trace.flush () ) ;
     Format.printf "@\nRESULT: Success@."
   with exn ->
     let bt = Caml.Printexc.get_raw_backtrace () in

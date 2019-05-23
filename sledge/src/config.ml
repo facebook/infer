@@ -29,7 +29,9 @@ let trace_conv =
   (parse, print)
 
 type t =
-  { compile_only: bool [@aka ["c"]]
+  { bound: int [@aka ["b"]] [@default 1]
+        (** Specify bound on execution exploration *)
+  ; compile_only: bool [@aka ["c"]]
         (** Do not analyze: terminate after translating input LLVM to LLAIR. *)
   ; input: string [@pos 0] [@docv "input.bc"]
         (** LLVM bitcode file to analyze, in either binary $(b,.bc) or
@@ -53,6 +55,6 @@ let run main =
   |> function
   | `Error _ -> Caml.exit 1
   | `Help | `Version -> Caml.exit 0
-  | `Ok {compile_only; input; output; trace} ->
+  | `Ok {bound; compile_only; input; output; trace} ->
       Trace.init ~config:trace () ;
-      main ~input ~output ~compile_only
+      main ~bound ~compile_only ~input ~output

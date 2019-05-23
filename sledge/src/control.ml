@@ -9,7 +9,7 @@
 
     The analysis' semantics of control flow. *)
 
-let bound = 10
+let bound = ref 1
 
 module Stack : sig
   type t
@@ -217,7 +217,7 @@ end = struct
     let edge = {Edge.dst= curr; src= prev; stk} in
     let depth = Option.value (Depths.find depths edge) ~default:0 in
     let depth = if retreating then depth + 1 else depth in
-    if depth > bound then (
+    if depth > !bound then (
       [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
       work )
     else
@@ -377,10 +377,11 @@ let harness : Llair.t -> Work.t option =
            block)
   | _ -> None
 
-let exec_pgm : Llair.t -> unit =
- fun pgm ->
+let exec_pgm : bound:int -> Llair.t -> unit =
+ fun ~bound:bnd pgm ->
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
+  bound := bnd ;
   ( match harness pgm with
   | Some work -> Work.run ~f:(exec_block pgm) work
   | None -> fail "no applicable harness" () )

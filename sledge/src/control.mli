@@ -7,4 +7,4 @@
 
 (** The analysis' semantics of control flow. *)
 
-val exec_pgm : Llair.t -> unit
+val exec_pgm : bound:int -> Llair.t -> unit
