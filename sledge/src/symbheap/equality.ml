@@ -264,17 +264,15 @@ let or_ r s =
 let map_exps ({sat= _; rep} as r) ~f =
   [%Trace.call fun {pf} -> pf "%a" pp r]
   ;
-  let map ~equal_key ~equal_data ~f_key ~f_data m =
+  let map m =
     Map.fold m ~init:m ~f:(fun ~key ~data m ->
-        let key' = f_key key in
-        let data' = f_data data in
-        if equal_key key' key then
-          if equal_data data' data then m else Map.set m ~key ~data:data'
+        let key' = f key in
+        let data' = f data in
+        if Exp.equal key' key then
+          if Exp.equal data' data then m else Map.set m ~key ~data:data'
         else Map.remove m key |> Map.add_exn ~key:key' ~data:data' )
   in
-  let rep' =
-    map rep ~equal_key:Exp.equal ~equal_data:Exp.equal ~f_key:f ~f_data:f
-  in
+  let rep' = map rep in
   (if rep' == rep then r else {r with rep= rep'})
   |>
   [%Trace.retn fun {pf} r' ->
