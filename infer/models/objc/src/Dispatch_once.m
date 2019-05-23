@@ -14,6 +14,6 @@ typedef void (^dispatch_block_t)(void);
 
 typedef long dispatch_once_t;
 
-static void _dispatch_once(dispatch_once_t* predicate, dispatch_block_t block) {
+static void _dispatch_once(dispatch_once_t* predicate, __nonnull dispatch_block_t block) {
   block();
 }
