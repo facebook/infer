@@ -866,3 +866,14 @@ DEFINE-CHECKER TEST_UNAVAILABLE_ATTR = {
   SET message = "This node has unavailable attribute";
 
 };
+
+DEFINE-CHECKER TEST_IS_OPTIONAL_METHOD = {
+
+  SET report_when =
+  WHEN
+     is_optional_objc_method
+  HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "This is an optional method";
+
+};

@@ -1049,6 +1049,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.adhere_to_protocol an
   | "is_in_block", [], _ ->
       CPredicates.is_in_block lcxt
+  | "is_optional_objc_method", [], an ->
+      CPredicates.is_optional_objc_method an
   | "is_in_cxx_constructor", [name], _ ->
       CPredicates.is_in_cxx_constructor lcxt name
   | "is_in_cxx_destructor", [name], _ ->

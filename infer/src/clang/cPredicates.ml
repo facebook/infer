@@ -858,6 +858,14 @@ let cxx_construct_expr_has_name an name =
       false
 
 
+let is_optional_objc_method an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, omdi)) ->
+      omdi.omdi_is_optional
+  | _ ->
+      false
+
+
 let is_in_block context =
   match context.CLintersContext.current_method with Some (BlockDecl _) -> true | _ -> false
 

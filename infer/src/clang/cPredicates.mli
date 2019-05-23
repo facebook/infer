@@ -90,6 +90,9 @@ val is_method_property_accessor_of_ivar :
 val is_in_block : CLintersContext.context -> bool
 (** true if the current node is in the context of an objc block *)
 
+val is_optional_objc_method : Ctl_parser_types.ast_node -> bool
+(** true if the current node is an objc method declaration which is declared with @optional *)
+
 val is_in_cxx_constructor : CLintersContext.context -> ALVar.alexp -> bool
 (** 'is_in_cxx_constructor context name' is true if the curent node is within a CXX constructor whose name contains 'name' *)
 
