@@ -9,8 +9,6 @@
 
     The analysis' semantics of control flow. *)
 
-let bound = ref 1
-
 module Stack : sig
   type t
   type as_inlined_location = t [@@deriving compare, sexp_of]
@@ -147,7 +145,7 @@ end
 module Work : sig
   type t
 
-  val init : Domain.t -> Llair.block -> t
+  val init : Domain.t -> Llair.block -> int -> t
 
   type x
 
@@ -193,13 +191,13 @@ end = struct
     let join x y =
       Map.merge x y ~f:(fun ~key:_ -> function
         | `Left d | `Right d -> Some d
-        | `Both (d1, d2) -> Some (Int.min d1 d2) )
+        | `Both (d1, d2) -> Some (Int.max d1 d2) )
   end
 
   type priority = int * Edge.t [@@deriving compare]
   type priority_queue = priority Fheap.t
   type waiting_states = (Domain.t * Depths.t) list Map.M(Llair.Block).t
-  type t = priority_queue * waiting_states
+  type t = priority_queue * waiting_states * int
   type x = Depths.t -> t -> t
 
   let empty_waiting_states = Map.empty (module Llair.Block)
@@ -213,11 +211,12 @@ end = struct
   let skip _ w = w
   let seq x y d w = y d (x d w)
 
-  let add ?prev ~retreating stk state curr depths ((pq, ws) as work) =
+  let add ?prev ~retreating stk state curr depths ((pq, ws, bound) as work)
+      =
     let edge = {Edge.dst= curr; src= prev; stk} in
     let depth = Option.value (Depths.find depths edge) ~default:0 in
     let depth = if retreating then depth + 1 else depth in
-    if depth > !bound then (
+    if depth > bound then (
       [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
       work )
     else
@@ -225,23 +224,23 @@ end = struct
       [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
       let depths = Depths.set depths ~key:edge ~data:depth in
       let ws = Map.add_multi ws ~key:curr ~data:(state, depths) in
-      (pq, ws)
+      (pq, ws, bound)
 
-  let init state curr =
+  let init state curr bound =
     add ~retreating:false Stack.empty state curr Depths.empty
-      (Fheap.create ~cmp:compare_priority, empty_waiting_states)
+      (Fheap.create ~cmp:compare_priority, empty_waiting_states, bound)
 
-  let rec run ~f (pq0, ws) =
+  let rec run ~f (pq0, ws, bnd) =
     match Fheap.pop pq0 with
     | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
       match Map.find_and_remove ws dst with
       | Some (state :: states, ws) ->
           let join (qa, da) (q, d) = (Domain.join q qa, Depths.join d da) in
           let qs, depths = List.fold ~f:join ~init:state states in
-          run ~f (f stk qs dst depths (pq, ws))
+          run ~f (f stk qs dst depths (pq, ws, bnd))
       | _ ->
           [%Trace.info "done: %a" Edge.pp edge] ;
-          run ~f (pq, ws) )
+          run ~f (pq, ws, bnd) )
     | None -> [%Trace.info "queue empty"] ; ()
 end
 
@@ -362,7 +361,7 @@ let exec_block : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
       Report.invalid_access_inst state inst ;
       Work.skip
 
-let harness : Llair.t -> Work.t option =
+let harness : Llair.t -> (int -> Work.t) option =
  fun pgm ->
   List.find_map ["__llair_main"; "_Z12__llair_mainv"; "main"]
     ~f:(fun name ->
@@ -378,12 +377,11 @@ let harness : Llair.t -> Work.t option =
   | _ -> None
 
 let exec_pgm : bound:int -> Llair.t -> unit =
- fun ~bound:bnd pgm ->
+ fun ~bound pgm ->
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
-  bound := bnd ;
   ( match harness pgm with
-  | Some work -> Work.run ~f:(exec_block pgm) work
+  | Some work -> Work.run ~f:(exec_block pgm) (work bound)
   | None -> fail "no applicable harness" () )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
