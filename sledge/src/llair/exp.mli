@@ -121,6 +121,7 @@ module Var : sig
     val extend : t -> replace:var -> with_:var -> t
     val invert : t -> t
     val exclude : t -> Set.t -> t
+    val restrict : t -> Set.t -> t
     val is_empty : t -> bool
     val domain : t -> Set.t
     val range : t -> Set.t

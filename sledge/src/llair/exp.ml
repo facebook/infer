@@ -596,6 +596,9 @@ module Var = struct
     let exclude sub vs =
       Set.fold vs ~init:sub ~f:Map.remove |> check invariant
 
+    let restrict sub vs =
+      Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
+
     let domain sub =
       Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
           Set.add domain key )

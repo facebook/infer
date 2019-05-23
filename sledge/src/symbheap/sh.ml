@@ -195,10 +195,13 @@ let rec apply_subst sub ({us= _; xs= _; cong; pure; heap; djns} as q) =
 and rename sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
-  let sub = Var.Subst.exclude sub q.xs in
-  let us = Var.Subst.apply_set sub q.us in
-  let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Subst.range sub)) in
-  (if us == q.us && q' == q then q else {q' with us})
+  let sub = Var.Subst.restrict sub q.us in
+  ( if Var.Subst.is_empty sub then q
+  else
+    let us = Var.Subst.apply_set sub q.us in
+    assert (not (Set.equal us q.us)) ;
+    let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Subst.range sub)) in
+    {q' with us} )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -210,9 +213,11 @@ and freshen_xs q ~wrt =
   [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
   ;
   let sub = Var.Subst.freshen q.xs ~wrt in
-  let xs = Var.Subst.apply_set sub q.xs in
-  let q' = apply_subst sub q in
-  (if xs == q.xs && q' == q then q else {q' with xs})
+  ( if Var.Subst.is_empty sub then q
+  else
+    let xs = Var.Subst.apply_set sub q.xs in
+    let q' = apply_subst sub q in
+    if xs == q.xs && q' == q then q else {q' with xs} )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
