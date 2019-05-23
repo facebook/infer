@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Set;
 
 class HoistGlobal {
 
@@ -58,5 +60,62 @@ class HoistGlobal {
     for (int i = 0; i < size; i++) {
       global_modification_dont_hoist(size);
     }
+  }
+
+  private void processModulesDirectory_dont_hoist_FP(
+      Set<String> modulesToDelete, String[] existingFiles) {
+    final AppModuleFileInfo fInfo = new AppModuleFileInfo();
+    for (String existingFile : existingFiles) {
+      fInfo.setFileName(existingFile);
+      final boolean delete = modulesToDelete.contains(fInfo.mModuleName);
+    }
+  }
+
+  private void processModulesDirectory_param_dont_hoist_FP(
+      Set<String> modulesToDelete,
+      String[] existingFiles,
+      AppModuleFileInfo fInfo,
+      AppModuleFileInfo fInfo2) {
+    for (String existingFile : existingFiles) {
+      fInfo.setFileName(existingFile);
+
+      final boolean delete = modulesToDelete.contains(fInfo2.mModuleName);
+    }
+  }
+
+  private void processModulesDirectory_hoist(Set<Integer> modulesToDelete, String[] existingFiles) {
+    final AppModuleFileInfo fInfo = new AppModuleFileInfo();
+    for (String existingFile : existingFiles) {
+      fInfo.setFileName(existingFile);
+      final boolean delete = modulesToDelete.contains(fInfo.x);
+    }
+  }
+
+  void remove_first_dont_hoist_FP(LinkedList<String> list) {
+
+    while (list.size() >= 10) {
+      list.removeFirst();
+    }
+  }
+
+  String get_first_hoist(LinkedList<String> list, String s) {
+
+    for (int i = 0; i <= 10; i++) {
+      String first = list.getFirst();
+      if (list.contains(s)) { // hoist
+        return first;
+      }
+    }
+    return "";
+  }
+}
+
+class AppModuleFileInfo {
+
+  static String mModuleName;
+  static Integer x;
+
+  void setFileName(String fileName) {
+    mModuleName = fileName;
   }
 }
