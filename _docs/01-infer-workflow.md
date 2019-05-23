@@ -19,7 +19,7 @@ to your own project.
   build system, for instance if you are analyzing single files with
   `infer run -- javac Hello.java`.
 4. After a successful Infer run, you can explore Infer's reports in
-  more details by running `inferTraceBugs` from the same directory.
+  more details by running `infer-explore` from the same directory.
 
 ## The two phases of an Infer run
 
