@@ -294,8 +294,6 @@ val continue_capture : bool
 
 val cost : bool
 
-val cost_invariant_by_default : bool
-
 val costs_current : string option
 
 val costs_previous : string option
@@ -557,6 +555,8 @@ val pulse_max_disjuncts : int
 val pulse_widen_threshold : int
 
 val purity : bool
+
+val pure_by_default : bool
 
 val quandary : bool
 

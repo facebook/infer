@@ -26,7 +26,7 @@ type invariant_map = VarsInLoop.t Procdesc.NodeMap.t
 val get_inv_vars_in_loop :
      Tenv.t
   -> ReachingDefs.invariant_map
-  -> is_inv_by_default:bool
+  -> is_pure_by_default:bool
   -> get_callee_purity:(   Typ.Procname.t
                         -> PurityDomain.ModifiedParamIndices.t AbstractDomain.Types.top_lifted
                            sexp_option)

@@ -18,9 +18,9 @@ class UnknownCallsTest {
     for (int i = 0; i < length; ++i) {}
   }
 
-  // call to JSONArray.length is not modeled, hence the result will
-  // not be invariant. Therefore we get quadratic bound.
-  public void jsonArray_quadratic(JSONArray jsonArray) {
+  // call to JSONArray.length is not modeled, but we assume it to be
+  // invariant for cost analysis.
+  public void jsonArray(JSONArray jsonArray) {
     for (int i = 0; i < jsonArray.length(); ++i) {}
   }
 

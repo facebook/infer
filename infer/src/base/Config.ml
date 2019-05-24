@@ -965,11 +965,6 @@ and continue =
      a procedure was changed beforehand, keep the changed marking.)"
 
 
-and cost_invariant_by_default =
-  CLOpt.mk_bool ~long:"invariant-by-default" ~default:false
-    "[Cost]Consider functions to be invariant by default"
-
-
 and costs_current =
   CLOpt.mk_path_opt ~long:"costs-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -1879,6 +1874,11 @@ and pulse_widen_threshold =
     "Under-approximate after $(i,int) loop iterations"
 
 
+and pure_by_default =
+  CLOpt.mk_bool ~long:"pure-by-default" ~default:false
+    "[Purity]Consider unknown functions to be pure by default"
+
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:InferCommand.[(Analyze, manual_quandary)]
@@ -2664,8 +2664,6 @@ and continue_capture = !continue
 
 and cost = !cost
 
-and cost_invariant_by_default = !cost_invariant_by_default
-
 and costs_current = !costs_current
 
 and costs_previous = !costs_previous
@@ -2949,6 +2947,8 @@ and pulse_max_disjuncts = !pulse_max_disjuncts
 and pulse_widen_threshold = !pulse_widen_threshold
 
 and purity = !purity
+
+and pure_by_default = !pure_by_default
 
 and quandary = !quandary
 

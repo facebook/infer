@@ -1346,10 +1346,6 @@ INTERNAL OPTIONS
        --icfg-dotty-outfile-reset
            Cancel the effect of --icfg-dotty-outfile.
 
-       --invariant-by-default
-           Activates: [Cost]Consider functions to be invariant by default
-           (Conversely: --no-invariant-by-default)
-
        --iphoneos-target-sdk-version-path-regex-reset
            Set --iphoneos-target-sdk-version-path-regex to the empty list.
 
@@ -1537,6 +1533,10 @@ INTERNAL OPTIONS
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations (default: 3)
+
+       --pure-by-default
+           Activates: [Purity]Consider unknown functions to be pure by
+           default (Conversely: --no-pure-by-default)
 
        --reactive-capture
            Activates: Compile source files only when required by analyzer
