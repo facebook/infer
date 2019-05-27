@@ -8,6 +8,8 @@
 (** Translate LLVM to LLAIR *)
 
 let pp_lltype fs t = Format.pp_print_string fs (Llvm.string_of_lltype t)
+
+(* WARNING: SLOW on instructions and functions *)
 let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 
 let pp_llblock fs t =
@@ -57,8 +59,8 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
               Option.is_none
                 (List.find_a_dup ~compare:Loc.compare [loc; data; Loc.none])
             then
-              warn "ignoring location %a conflicting with %a for %a" Loc.pp
-                loc Loc.pp data pp_llvalue key () ) ;
+              warn "ignoring location %a conflicting with %a" Loc.pp loc
+                Loc.pp data () ) ;
         data )
   in
   let scan_locs m =
@@ -73,10 +75,9 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
             if not (Array.is_empty md) then add ~key:md.(0) ~data:loc
             else
               warn
-                "could not find variable for debug info %a at %a with \
+                "could not find variable for debug info at %a with \
                  metadata %a"
-                pp_llvalue (Llvm.operand i 0) Loc.pp loc
-                (List.pp ", " pp_llvalue) (Array.to_list md) ()
+                Loc.pp loc (List.pp ", " pp_llvalue) (Array.to_list md) ()
         | _ -> () )
       | _ -> ()
     in
@@ -633,8 +634,8 @@ let pop_stack_frame_of_function :
           (fun instr ->
             match Llvm.instr_opcode instr with
             | Alloca ->
-                warn "stack allocation after function entry:@ %a" pp_llvalue
-                  instr ()
+                warn "stack allocation after function entry:@ %a" Loc.pp
+                  (find_loc instr) ()
             | _ -> () )
           blk )
     func ;
@@ -915,8 +916,7 @@ let xlate_instr :
         | Ok () -> warn "ignoring uninterpreted %s %s" msg fname ()
         | Error _ -> () ) ;
         let reg = xlate_name_opt instr in
-        let msg = Llvm.string_of_llvalue instr in
-        emit_inst (Llair.Inst.nondet ~reg ~msg ~loc)
+        emit_inst (Llair.Inst.nondet ~reg ~msg:fname ~loc)
       in
       (* intrinsics *)
       match String.split fname ~on:'.' with
@@ -1259,9 +1259,8 @@ let xlate_instr :
       nop ()
   | VAArg ->
       let reg = xlate_name_opt instr in
-      let msg = Llvm.string_of_llvalue instr in
-      warn "variadic function argument: %s" msg () ;
-      emit_inst (Llair.Inst.nondet ~reg ~msg ~loc)
+      warn "variadic function argument: %a" Loc.pp loc () ;
+      emit_inst (Llair.Inst.nondet ~reg ~msg:"vaarg" ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
   | Fence | AtomicCmpXchg | AtomicRMW ->
