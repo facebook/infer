@@ -1334,6 +1334,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
 let transform : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
+  Llvm_ipo.add_internalize pm ~all_but_main:true ;
   Llvm_ipo.add_global_dce pm ;
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
@@ -1349,19 +1350,28 @@ let translate : string -> Llair.t =
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in
-  let model_module =
+  let llmodule =
     let model_memorybuffer =
       Llvm.MemoryBuffer.of_string
         (Option.value_exn (Model.read "/cxxabi.bc"))
     in
     Llvm_irreader.parse_ir llcontext model_memorybuffer
   in
-  let llmodule =
-    let llmemorybuffer = Llvm.MemoryBuffer.of_file file in
-    try Llvm_irreader.parse_ir llcontext llmemorybuffer
-    with Llvm_irreader.Error msg -> invalid_llvm msg
-  in
-  Llvm_linker.link_modules' llmodule model_module ;
+  let link_ctx = Llvm_linker.get_linker llmodule in
+  In_channel.with_file file
+    ~f:
+      (In_channel.iter_lines ~f:(fun bc_file ->
+           [%Trace.info "linking in %s" bc_file] ;
+           let llmemorybuffer =
+             try Llvm.MemoryBuffer.of_file bc_file
+             with Llvm.IoError msg -> fail "%s: %s" bc_file msg ()
+           in
+           let newmodule =
+             try Llvm_irreader.parse_ir llcontext llmemorybuffer
+             with Llvm_irreader.Error msg -> invalid_llvm msg
+           in
+           Llvm_linker.link_in link_ctx newmodule )) ;
+  Llvm_linker.linker_dispose link_ctx ;
   Llvm_analysis.verify_module llmodule |> Option.iter ~f:invalid_llvm ;
   transform llmodule ;
   scan_locs llmodule ;
