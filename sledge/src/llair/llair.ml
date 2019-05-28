@@ -108,7 +108,9 @@ let sexp_of_func {name; entry; cfg} =
 let compare_block x y = Int.compare x.sort_index y.sort_index
 let equal_block x y = Int.equal x.sort_index y.sort_index
 
-type t = {globals: Global.t vector; functions: func vector}
+type functions = func Var.Map.t [@@deriving sexp_of]
+
+type t = {globals: Global.t vector; functions: functions}
 [@@deriving sexp_of]
 
 let pp_inst fs inst =
@@ -411,8 +413,7 @@ module Func = struct
         iter_term func ~f:(fun term -> Term.invariant term)
     | _ -> assert false
 
-  let find functions name =
-    Vector.find functions ~f:(fun {name= {var}} -> Var.equal name var)
+  let find functions name = Map.find functions name
 
   let mk ~name ~entry ~cfg =
     let func = {name; entry; cfg} in
@@ -479,9 +480,9 @@ module FuncQ = Hash_queue.Make (Var)
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
-    Array.iter functions ~f:(fun func ->
+    Map.iter functions ~f:(fun func ->
         FuncQ.enqueue_back_exn roots func.name.var func ) ;
-    Array.iter functions ~f:(fun func ->
+    Map.iter functions ~f:(fun func ->
         Func.fold_term func ~init:() ~f:(fun () -> function
           | Call {call= {dst}} -> (
             match Var.of_exp dst with
@@ -507,9 +508,7 @@ let set_derived_metadata functions =
             jump els
         | Iswitch {tbl} -> Vector.iter tbl ~f:jump
         | Call {call= {dst} as call; return; throw} ->
-            ( match
-                Var.of_exp dst >>= Func.find (Vector.of_array functions)
-              with
+            ( match Var.of_exp dst >>= Func.find functions with
             | Some func ->
                 if Set.mem ancestors func.entry then call.retreating <- true
                 else visit ancestors func func.entry
@@ -531,36 +530,28 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let sort_cfgs functions =
-    Array.iter functions ~f:(fun {cfg} ->
+    Map.iter functions ~f:(fun {cfg} ->
         Array.sort
           ~compare:(fun x y -> Int.compare x.sort_index y.sort_index)
           (Vector.to_array cfg) )
   in
-  let sort_functions functions =
-    Array.sort
-      ~compare:(fun x y -> Int.compare x.entry.sort_index y.entry.sort_index)
-      functions
+  let functions =
+    List.fold functions ~init:Var.Map.empty ~f:(fun m func ->
+        Map.add_exn m ~key:func.name.var ~data:func )
   in
-  let functions = Array.of_list functions in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
   set_sort_indices tips_to_roots ;
   sort_cfgs functions ;
-  sort_functions functions ;
-  Vector.of_array functions
+  functions
 
 let invariant pgm =
   Invariant.invariant [%here] pgm [%sexp_of: t]
   @@ fun () ->
-  let {globals; functions} = pgm in
   assert (
     not
-      (Vector.contains_dup globals ~compare:(fun g1 g2 ->
-           Var.compare g1.Global.var g2.Global.var )) ) ;
-  assert (
-    not
-      (Vector.contains_dup functions ~compare:(fun f1 f2 ->
-           Var.compare f1.name.var f2.name.var )) )
+      (Vector.contains_dup pgm.globals ~compare:(fun g1 g2 ->
+           Var.compare g1.Global.var g2.Global.var )) )
 
 let mk ~globals ~functions =
   { globals= Vector.of_list_rev globals
@@ -571,5 +562,7 @@ let pp fs {globals; functions} =
   Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
     (Vector.pp "@\n@\n" Global.pp_defn)
     globals
-    (Vector.pp "@\n@\n" Func.pp)
-    functions
+    (List.pp "@\n@\n" Func.pp)
+    ( Map.data functions
+    |> List.sort ~compare:(fun x y ->
+           Int.compare x.entry.sort_index y.entry.sort_index ) )

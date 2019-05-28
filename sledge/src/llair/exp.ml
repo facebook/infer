@@ -504,6 +504,17 @@ module Var = struct
     let of_vector = Set.of_vector (module T)
   end
 
+  module Map = struct
+    include (
+      Map :
+        module type of Map
+        with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
+
+    type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
+
+    let empty = Map.empty (module T)
+  end
+
   let demangle =
     let open Ctypes in
     let cxa_demangle =

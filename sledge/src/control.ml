@@ -364,10 +364,7 @@ let exec_block : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
 let harness : Llair.t -> (int -> Work.t) option =
  fun pgm ->
   List.find_map ["__llair_main"; "_Z12__llair_mainv"; "main"]
-    ~f:(fun name ->
-      Vector.find_map pgm.functions ~f:(fun func ->
-          Option.some_if (String.equal name (Var.name func.name.var)) func
-      ) )
+    ~f:(fun name -> Llair.Func.find pgm.functions (Var.program name))
   |> function
   | Some {entry= {params= []} as block} ->
       Some

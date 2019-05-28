@@ -101,6 +101,13 @@ module Var : sig
     val of_vector : var vector -> t
   end
 
+  module Map : sig
+    type 'a t = (var, 'a, comparator_witness) Map.t
+    [@@deriving compare, equal, sexp]
+
+    val empty : 'a t
+  end
+
   val pp : t pp
   val pp_demangled : t pp
 

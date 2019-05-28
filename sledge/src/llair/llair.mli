@@ -109,9 +109,11 @@ and cfg
     parameters are the function parameters. *)
 and func = private {name: Global.t; entry: block; cfg: cfg}
 
+type functions
+
 type t = private
   { globals: Global.t vector  (** Global variable definitions. *)
-  ; functions: func vector  (** (Global) function definitions. *) }
+  ; functions: functions  (** (Global) function definitions. *) }
 
 val pp : t pp
 
@@ -197,7 +199,7 @@ module Func : sig
   val mk : name:Global.t -> entry:block -> cfg:block vector -> func
   val mk_undefined : name:Global.t -> params:Var.t list -> t
 
-  val find : func vector -> Var.t -> func option
+  val find : functions -> Var.t -> func option
   (** Look up a function of the given name in the given functions. *)
 
   val is_undefined : func -> bool
