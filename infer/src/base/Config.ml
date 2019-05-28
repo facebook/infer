@@ -914,19 +914,29 @@ and clang_frontend_action =
     "use --capture and --linters instead" ~symbols:clang_frontend_action_symbols
 
 
-and clang_include_to_override_regex =
-  CLOpt.mk_string_opt ~long:"clang-include-to-override-regex"
-    ~deprecated:["-clang-include-to-override"] ~meta:"dir_OCaml_regex"
-    "Use this option in the uncommon case where the normal compilation process overrides the \
-     location of internal compiler headers. This option should specify regular expression with \
-     the path to those headers so that infer can use its own clang internal headers instead."
-
-
 and clang_ignore_regex =
   CLOpt.mk_string_opt ~long:"clang-ignore-regex" ~meta:"dir_OCaml_regex"
     "The files in this regex will be ignored in the compilation process and an empty file will be \
      passed to clang instead. This is to be used with the buck flavour infer-capture-all to work \
      around missing generated files."
+
+
+and clang_isystem_to_override_regex =
+  CLOpt.mk_string_opt ~long:"clang-isystem-to-override-regex"
+    ~deprecated:["-clang-include-to-override-regex"; "-clang-include-to-override"]
+    ~meta:"dir_OCaml_regex"
+    "Use this option in the uncommon case where the normal compilation process overrides the \
+     location of internal compiler headers. This option should specify regular expression with \
+     the path to those headers so that infer can use its own clang internal headers instead. \
+     Concretely, this will replace $(b,-isystem <path matching the regex>) with $(b,-isystem \
+     /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include)."
+
+
+and clang_libcxx_include_to_override_regex =
+  CLOpt.mk_string_opt ~long:"clang-libcxx-include-to-override-regex" ~meta:"dir_OCaml_regex"
+    "Use this option in the uncommon case where the normal compilation process overrides the \
+     location of libc++. Concretely, this will replace $(b,-I <path matching the regex>) with \
+     $(b,-I /path/to/infer/facebook-clang-plugins/clang/install/include/c++/v1)."
 
 
 and class_loads_roots =
@@ -2650,7 +2660,9 @@ and clang_extra_flags = !clang_extra_flags
 
 and clang_ignore_regex = !clang_ignore_regex
 
-and clang_include_to_override_regex = !clang_include_to_override_regex
+and clang_isystem_to_override_regex = !clang_isystem_to_override_regex
+
+and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
 

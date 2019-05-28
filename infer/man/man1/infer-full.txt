@@ -1187,15 +1187,26 @@ INTERNAL OPTIONS
        --clang-ignore-regex-reset
            Cancel the effect of --clang-ignore-regex.
 
-       --clang-include-to-override-regex dir_OCaml_regex
+       --clang-isystem-to-override-regex dir_OCaml_regex
            Use this option in the uncommon case where the normal compilation
            process overrides the location of internal compiler headers. This
            option should specify regular expression with the path to those
            headers so that infer can use its own clang internal headers
-           instead.
+           instead. Concretely, this will replace -isystem <path matching the
+           regex> with -isystem
+           /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include.
 
-       --clang-include-to-override-regex-reset
-           Cancel the effect of --clang-include-to-override-regex.
+       --clang-isystem-to-override-regex-reset
+           Cancel the effect of --clang-isystem-to-override-regex.
+
+       --clang-libcxx-include-to-override-regex dir_OCaml_regex
+           Use this option in the uncommon case where the normal compilation
+           process overrides the location of libc++. Concretely, this will
+           replace -I <path matching the regex> with -I
+           /path/to/infer/facebook-clang-plugins/clang/install/include/c++/v1.
+
+       --clang-libcxx-include-to-override-regex-reset
+           Cancel the effect of --clang-libcxx-include-to-override-regex.
 
        --class-loads-roots +string
            Report class loads of this list of Java methods

@@ -84,7 +84,11 @@ let file_arg_cmd_sanitizer cmd =
   {cmd with argv= [Format.sprintf "@%s" file]}
 
 
-let include_override_regex = Option.map ~f:Str.regexp Config.clang_include_to_override_regex
+let isystem_to_override_regex = Option.map ~f:Str.regexp Config.clang_isystem_to_override_regex
+
+let libcxx_include_to_override_regex =
+  Option.map ~f:Str.regexp Config.clang_libcxx_include_to_override_regex
+
 
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
    [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse order) [prev]. *)
@@ -161,9 +165,16 @@ let clang_cc1_cmd_sanitizer cmd =
         (* In compilation database mode, dependency files are not assumed to exist *)
         "/dev/null"
     | "-isystem" :: _, arg -> (
-      match include_override_regex with
+      match isystem_to_override_regex with
       | Some isystem_to_override_regex when Str.string_match isystem_to_override_regex arg 0 ->
           fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.1" ^/ "include"
+      | _ ->
+          arg )
+    | "-I" :: _, arg -> (
+      match libcxx_include_to_override_regex with
+      | Some libcxx_include_to_override_regex
+        when Str.string_match libcxx_include_to_override_regex arg 0 ->
+          fcp_dir ^/ "clang" ^/ "install" ^/ "include" ^/ "c++" ^/ "v1"
       | _ ->
           arg )
     | _ ->
