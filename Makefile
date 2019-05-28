@@ -87,23 +87,25 @@ endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += objc_getters_setters objc_missing_fld objc_retain_cycles objc_retain_cycles_weak
 DIRECT_TESTS += \
-	objc_errors \
-	objc_frontend \
-	objc_ioslints \
-	objc_linters \
-	objc_linters-def-folder \
-	objc_linters-for-test-only \
-	objc_liveness \
-	objc_nullable \
-	objc_performance objc_uninit \
-	objcpp_errors \
-	objcpp_frontend \
-	objcpp_linters \
-	objcpp_linters-for-test-only \
-	objcpp_liveness \
-	objcpp_nullable \
-	objcpp_racerd \
-	objcpp_retain-cycles \
+  objc_errors \
+  objc_frontend \
+  objc_ioslints \
+  objc_linters \
+  objc_linters-def-folder \
+  objc_linters-for-test-only \
+  objc_liveness \
+  objc_nullable \
+  objc_performance \
+  objc_quandary \
+  objc_uninit \
+  objcpp_errors \
+  objcpp_frontend \
+  objcpp_linters \
+  objcpp_linters-for-test-only \
+  objcpp_liveness \
+  objcpp_nullable \
+  objcpp_racerd \
+  objcpp_retain-cycles \
 
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty

@@ -15,7 +15,7 @@
 + (void)notASink:(NSObject*)param;
 @end
 
-void callSinkDirectBad() {
+void FN_callSinkDirectBad() {
   NSObject* source = [InferTaint source];
   [InferTaint sink:source];
 }
