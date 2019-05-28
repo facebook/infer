@@ -1274,7 +1274,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
             let skip_loop =
               match ik with
               | Sil.Ik_while | Sil.Ik_for ->
-                  not (IntLit.iszero i) (* skip wile(1) and for (;1;) *)
+                  not (IntLit.iszero i) (* skip while(1) and for (;1;) *)
               | Sil.Ik_dowhile ->
                   true (* skip do..while *)
               | Sil.Ik_land_lor ->

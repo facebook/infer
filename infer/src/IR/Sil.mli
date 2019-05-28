@@ -48,7 +48,7 @@ type instr =
       [*lexp1:typ = exp2] where
         [lexp1] is an expression denoting a heap address
         [typ] is the root type of [lexp1]
-        [exp2] is the expression whose value is store. *)
+        [exp2] is the expression whose value is stored. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
