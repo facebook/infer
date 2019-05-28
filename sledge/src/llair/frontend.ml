@@ -989,7 +989,7 @@ let xlate_instr :
                       warn
                         "ignoring variable arguments to variadic function: \
                          %a"
-                        Global.pp (xlate_global x llfunc) ()
+                        Exp.pp func ()
                   | _ -> () ) ;
                   Array.length (Llvm.param_types (Llvm.element_type lltyp))
               in
