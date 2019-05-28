@@ -252,4 +252,25 @@ public class ArrayListTest {
     for (int i = 0; i < slist.size(); i++) {}
   }
 
+  void sort_comparator_nlogn(ArrayList<Person> people) {
+    java.util.Collections.sort(people, new LexicographicComparator());
+  }
+}
+
+class LexicographicComparator implements java.util.Comparator<Person> {
+  @Override
+  public int compare(Person a, Person b) {
+    return a.name.compareToIgnoreCase(b.name);
+  }
+}
+
+class Person {
+
+  String name;
+  int age;
+
+  Person(String n, int a) {
+    name = n;
+    age = a;
+  }
 }

@@ -88,7 +88,7 @@ module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     make_dispatcher
-      [ +PatternMatch.implements_collections &:: "sort" $ capt_exp $--> Collections.sort
+      [ +PatternMatch.implements_collections &:: "sort" $ capt_exp $+...$--> Collections.sort
       ; +PatternMatch.implements_list &:: "contains" <>$ capt_exp
         $+...$--> Collections.linear ~of_function:"List.contains"
       ; +PatternMatch.implements_collections
