@@ -141,33 +141,32 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
       List.rev_append res_rev post_args
 
 
-(* Work around various path or library issues occurring when one tries to substitute Apple's version
-   of clang with a different version. Also mitigate version discrepancies in clang's
-   fatal warnings. *)
+(** Work around various path or library issues occurring when one tries to substitute Apple's version
+    of clang with a different version. Also mitigate version discrepancies in clang's
+    fatal warnings. *)
 let clang_cc1_cmd_sanitizer cmd =
   (* command line options not supported by the opensource compiler or the plugins *)
   let blacklisted_flags_with_arg = ["-mllvm"] in
   let replace_options_arg options arg =
-    match options with
-    | option :: _ ->
-        if String.equal option "-arch" && String.equal arg "armv7k" then "armv7"
-          (* replace armv7k arch with armv7 *)
-        else if String.is_suffix arg ~suffix:"dep.tmp" then (
-          (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
-          Unix.mkdir_p (Filename.dirname arg) ;
+    match (options, arg) with
+    | [], _ ->
+        arg
+    | "-arch" :: _, "armv7k" ->
+        (* replace armv7k arch with armv7 *) "armv7"
+    | _, arg when String.is_suffix arg ~suffix:"dep.tmp" ->
+        (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
+        Unix.mkdir_p (Filename.dirname arg) ;
+        arg
+    | "-dependency-file" :: _, _ when Option.is_some Config.buck_compilation_database ->
+        (* In compilation database mode, dependency files are not assumed to exist *)
+        "/dev/null"
+    | "-isystem" :: _, arg -> (
+      match include_override_regex with
+      | Some isystem_to_override_regex when Str.string_match isystem_to_override_regex arg 0 ->
+          fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.1" ^/ "include"
+      | _ ->
           arg )
-        else if
-          String.equal option "-dependency-file" && Option.is_some Config.buck_compilation_database
-          (* In compilation database mode, dependency files are not assumed to exist *)
-        then "/dev/null"
-        else if String.equal option "-isystem" then
-          match include_override_regex with
-          | Some regexp when Str.string_match regexp arg 0 ->
-              fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.1" ^/ "include"
-          | _ ->
-              arg
-        else arg
-    | [] ->
+    | _ ->
         arg
   in
   let args_defines =
