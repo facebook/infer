@@ -1391,7 +1391,6 @@ let translate : string -> Llair.t =
   Hashtbl.clear memo_value ;
   Hash_set.clear ignored_callees ;
   Llvm.dispose_module llmodule ;
-  Llvm.dispose_context llcontext ;
   Llair.mk ~globals ~functions
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
