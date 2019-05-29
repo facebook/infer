@@ -183,7 +183,6 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 - tests have a few exceptions, possibly for only unrealistic code
 ** support multiple address spaces
 - need to, at least, treat addrspacecast as converting between pointer types of different sizes
-** combine scan_locs, scan_names, and scan_types into a single pass
 ** exceptions
 - is it correct to translate landingpad clauses not matching to unreachable, or should the exception be re-thrown
 - check suspicious translation of landingpads

@@ -28,9 +28,12 @@ let invalid_llvm : string -> 'a =
 
 (* gather debug locations *)
 let loc_tbl = Hashtbl.Poly.create ()
+let name_tbl = Hashtbl.Poly.create ()
+let scope_tbl = Hashtbl.Poly.create ()
 
-let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
-    =
+let ( (scan_names_and_locs : Llvm.llmodule -> unit)
+    , (find_name : Llvm.llvalue -> string)
+    , (find_loc : Llvm.llvalue -> Loc.t) ) =
   let loc_of_global g =
     Loc.mk
       ?dir:(Llvm.get_debug_loc_directory g)
@@ -63,43 +66,6 @@ let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
                 Loc.pp data () ) ;
         data )
   in
-  let scan_locs m =
-    let scan_instr i =
-      let loc = loc_of_instr i in
-      add ~key:i ~data:loc ;
-      match Llvm.instr_opcode i with
-      | Call -> (
-        match Llvm.(value_name (operand i (num_arg_operands i))) with
-        | "llvm.dbg.declare" ->
-            let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then add ~key:md.(0) ~data:loc
-            else
-              warn
-                "could not find variable for debug info at %a with \
-                 metadata %a"
-                Loc.pp loc (List.pp ", " pp_llvalue) (Array.to_list md) ()
-        | _ -> () )
-      | _ -> ()
-    in
-    let scan_block b = Llvm.iter_instrs scan_instr b in
-    let scan_function f =
-      add ~key:f ~data:(loc_of_function f) ;
-      Llvm.iter_blocks scan_block f
-    in
-    let scan_global g = add ~key:g ~data:(loc_of_global g) in
-    Llvm.iter_globals scan_global m ;
-    Llvm.iter_functions scan_function m
-  in
-  let find_loc v =
-    Option.value (Hashtbl.find loc_tbl v) ~default:Loc.none
-  in
-  (scan_locs, find_loc)
-
-let name_tbl = Hashtbl.Poly.create ()
-let scope_tbl = Hashtbl.Poly.create ()
-
-let ( (scan_names : Llvm.llmodule -> unit)
-    , (find_name : Llvm.llvalue -> string) ) =
   let scan_name llv =
     let next, void_tbl =
       let scope =
@@ -151,9 +117,29 @@ let ( (scan_names : Llvm.llmodule -> unit)
     in
     Hashtbl.add_exn name_tbl ~key:llv ~data:name
   in
-  let scan_names m =
-    let scan_global g = scan_name g in
-    let scan_instr i = scan_name i in
+  let scan_names_and_locs m =
+    let scan_global g =
+      scan_name g ;
+      add ~key:g ~data:(loc_of_global g)
+    in
+    let scan_instr i =
+      scan_name i ;
+      let loc = loc_of_instr i in
+      add ~key:i ~data:loc ;
+      match Llvm.instr_opcode i with
+      | Call -> (
+        match Llvm.(value_name (operand i (num_arg_operands i))) with
+        | "llvm.dbg.declare" ->
+            let md = Llvm.(get_mdnode_operands (operand i 0)) in
+            if not (Array.is_empty md) then add ~key:md.(0) ~data:loc
+            else
+              warn
+                "could not find variable for debug info at %a with \
+                 metadata %a"
+                Loc.pp loc (List.pp ", " pp_llvalue) (Array.to_list md) ()
+        | _ -> () )
+      | _ -> ()
+    in
     let scan_block b =
       scan_name (Llvm.value_of_block b) ;
       Llvm.iter_instrs scan_instr b
@@ -161,13 +147,17 @@ let ( (scan_names : Llvm.llmodule -> unit)
     let scan_function f =
       scan_name f ;
       Llvm.iter_params scan_name f ;
+      add ~key:f ~data:(loc_of_function f) ;
       Llvm.iter_blocks scan_block f
     in
     Llvm.iter_globals scan_global m ;
     Llvm.iter_functions scan_function m
   in
   let find_name v = Hashtbl.find_exn name_tbl v in
-  (scan_names, find_name)
+  let find_loc v =
+    Option.value (Hashtbl.find loc_tbl v) ~default:Loc.none
+  in
+  (scan_names_and_locs, find_name, find_loc)
 
 let label_of_block : Llvm.llbasicblock -> string =
  fun blk -> find_name (Llvm.value_of_block blk)
@@ -1376,8 +1366,7 @@ let translate : string -> Llair.t =
       let link_ctx = Llvm_linker.get_linker llmodule in
       let link_in bc_file =
         [%Trace.info "linking in %s" bc_file] ;
-        let newmodule = read_and_parse bc_file in
-        Llvm_linker.link_in link_ctx newmodule
+        Llvm_linker.link_in link_ctx (read_and_parse bc_file)
       in
       In_channel.with_file file ~f:(In_channel.iter_lines ~f:link_in) ;
       Llvm_linker.linker_dispose link_ctx ;
@@ -1387,8 +1376,7 @@ let translate : string -> Llair.t =
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
   ) ;
   transform ~gdce:(not single_bc_input) llmodule ;
-  scan_locs llmodule ;
-  scan_names llmodule ;
+  scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
   in
