@@ -97,10 +97,10 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
           match Hashtbl.find void_tbl fname with
           | None ->
               Hashtbl.set void_tbl ~key:fname ~data:1 ;
-              Format.sprintf "%s.void" fname
+              fname ^ ".void"
           | Some count ->
               Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
-              Format.sprintf "%s.void.%i" fname count )
+              String.concat_array [|fname; ".void."; Int.to_string count|] )
       | _ -> (
         match Llvm.value_name llv with
         | "" ->
@@ -112,7 +112,7 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
           match Int.of_string name with
           | _ ->
               (* escape to avoid clash with names of anonymous values *)
-              Format.sprintf "\"%s\"" name
+              String.concat_array [|"\""; name; "\""|]
           | exception _ -> name ) )
     in
     Hashtbl.add_exn name_tbl ~key:llv ~data:name
