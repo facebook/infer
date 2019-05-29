@@ -26,10 +26,16 @@ let invalid_llvm : string -> 'a =
   Format.printf "@\n%s@\n" msg ;
   raise (Invalid_llvm first_line)
 
-(* gather debug locations *)
-let loc_tbl = Hashtbl.Poly.create ()
-let name_tbl = Hashtbl.Poly.create ()
-let scope_tbl = Hashtbl.Poly.create ()
+(* gather names and debug locations *)
+
+let sym_tbl : (Llvm.llvalue, string * Loc.t) Hashtbl.t =
+  Hashtbl.Poly.create ~size:4_194_304 ()
+
+let scope_tbl :
+    ( [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
+    , int ref * (string, int) Hashtbl.t )
+    Hashtbl.t =
+  Hashtbl.Poly.create ~size:32_768 ()
 
 let ( (scan_names_and_locs : Llvm.llmodule -> unit)
     , (find_name : Llvm.llvalue -> string)
@@ -55,27 +61,14 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
       ~line:(Llvm.get_debug_loc_line i)
       ~col:(Llvm.get_debug_loc_column i)
   in
-  let add ~key ~data =
-    Hashtbl.update loc_tbl key ~f:(fun prev ->
-        Option.iter prev ~f:(fun loc ->
-            if
-              Option.is_none
-                (List.find_a_dup ~compare:Loc.compare [loc; data; Loc.none])
-            then
-              warn "ignoring location %a conflicting with %a" Loc.pp loc
-                Loc.pp data () ) ;
-        data )
-  in
-  let scan_name llv =
+  let add_sym llv loc =
     let next, void_tbl =
       let scope =
         match Llvm.classify_value llv with
         | Argument -> `Fun (Llvm.param_parent llv)
         | BasicBlock -> `Fun (Llvm.block_parent (Llvm.block_of_value llv))
-        | Function | GlobalAlias | GlobalIFunc | GlobalVariable ->
-            `Mod (Llvm.global_parent llv)
         | Instruction _ -> `Fun (Llvm.block_parent (Llvm.instr_parent llv))
-        | _ -> fail "scan_name: %a" pp_llvalue llv ()
+        | _ -> `Mod (Llvm.global_parent llv)
       in
       Hashtbl.find_or_add scope_tbl scope ~default:(fun () ->
           (ref 0, Hashtbl.Poly.create ()) )
@@ -115,23 +108,19 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
               String.concat_array [|"\""; name; "\""|]
           | exception _ -> name ) )
     in
-    Hashtbl.add_exn name_tbl ~key:llv ~data:name
+    Hashtbl.set sym_tbl ~key:llv ~data:(name, loc)
   in
   let scan_names_and_locs m =
-    let scan_global g =
-      scan_name g ;
-      add ~key:g ~data:(loc_of_global g)
-    in
+    let scan_global g = add_sym g (loc_of_global g) in
     let scan_instr i =
-      scan_name i ;
       let loc = loc_of_instr i in
-      add ~key:i ~data:loc ;
+      add_sym i loc ;
       match Llvm.instr_opcode i with
       | Call -> (
         match Llvm.(value_name (operand i (num_arg_operands i))) with
         | "llvm.dbg.declare" ->
             let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then add ~key:md.(0) ~data:loc
+            if not (Array.is_empty md) then add_sym md.(0) loc
             else
               warn
                 "could not find variable for debug info at %a with \
@@ -141,22 +130,19 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
       | _ -> ()
     in
     let scan_block b =
-      scan_name (Llvm.value_of_block b) ;
+      add_sym (Llvm.value_of_block b) Loc.none ;
       Llvm.iter_instrs scan_instr b
     in
     let scan_function f =
-      scan_name f ;
-      Llvm.iter_params scan_name f ;
-      add ~key:f ~data:(loc_of_function f) ;
+      Llvm.iter_params (fun prm -> add_sym prm Loc.none) f ;
+      add_sym f (loc_of_function f) ;
       Llvm.iter_blocks scan_block f
     in
     Llvm.iter_globals scan_global m ;
     Llvm.iter_functions scan_function m
   in
-  let find_name v = Hashtbl.find_exn name_tbl v in
-  let find_loc v =
-    Option.value (Hashtbl.find loc_tbl v) ~default:Loc.none
-  in
+  let find_name v = fst (Hashtbl.find_exn sym_tbl v) in
+  let find_loc v = snd (Hashtbl.find_exn sym_tbl v) in
   (scan_names_and_locs, find_name, find_loc)
 
 let label_of_block : Llvm.llbasicblock -> string =
@@ -1397,8 +1383,7 @@ let translate : string -> Llair.t =
         else xlate_function x llf :: functions )
       [] llmodule
   in
-  Hashtbl.clear loc_tbl ;
-  Hashtbl.clear name_tbl ;
+  Hashtbl.clear sym_tbl ;
   Hashtbl.clear scope_tbl ;
   Hashtbl.clear anon_struct_name ;
   Hashtbl.clear memo_type ;
