@@ -1383,7 +1383,9 @@ let translate : string -> Llair.t =
       Llvm_linker.linker_dispose link_ctx ;
       llmodule
   in
-  Llvm_analysis.verify_module llmodule |> Option.iter ~f:invalid_llvm ;
+  assert (
+    Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
+  ) ;
   transform ~gdce:(not single_bc_input) llmodule ;
   scan_locs llmodule ;
   scan_names llmodule ;
