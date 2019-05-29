@@ -10,7 +10,6 @@ module InvariantVars = AbstractDomain.FiniteSet (Var)
 module VarsInLoop = AbstractDomain.FiniteSet (Var)
 module InvalidatedVars = AbstractDomain.FiniteSet (Var)
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
-module Models = InvariantModels
 module VarSet = AbstractDomain.FiniteSet (Var)
 
 let debug fmt = L.(debug Analysis Medium) fmt
@@ -25,15 +24,15 @@ let is_defined_outside loop_nodes reaching_defs var =
 
 
 let is_not_modeled tenv callee_pname =
-  match Models.ProcName.dispatch tenv callee_pname with Some _ -> false | None -> true
+  match PurityModels.ProcName.dispatch tenv callee_pname with Some _ -> false | None -> true
 
 
 let get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname args =
   (* Take into account purity behavior of modeled functions *)
-  match Models.ProcName.dispatch tenv callee_pname with
-  | Some inv ->
+  match PurityModels.ProcName.dispatch tenv callee_pname with
+  | Some callee_purity ->
       PurityDomain.(
-        if InvariantModels.is_invariant inv then pure else impure_params (all_params_modified args))
+        if is_pure callee_purity then pure else impure_params (all_params_modified args))
   | None -> (
       debug "No model for %a \n" Typ.Procname.pp callee_pname ;
       (* If there is no model, invoke purity analysis to see if function is pure *)

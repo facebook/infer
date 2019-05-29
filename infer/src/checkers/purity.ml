@@ -160,17 +160,14 @@ module TransferFunctions = struct
         track_modified_params inferbo_mem formals ae |> Domain.join astate
     | Call (_, Direct called_pname, args, _, _) ->
         Domain.join astate
-          ( match InvariantModels.ProcName.dispatch tenv called_pname with
-          | Some inv ->
-              if InvariantModels.is_invariant inv then Domain.pure
-              else
-                find_params_matching_modified_args inferbo_mem formals args
-                  (Domain.all_params_modified args)
+          ( match PurityModels.ProcName.dispatch tenv called_pname with
+          | Some callee_summary ->
+              find_modified_if_impure inferbo_mem formals args callee_summary
           | None -> (
             match get_callee_summary called_pname with
-            | Some summary ->
+            | Some callee_summary ->
                 debug "Reading from %a \n" Typ.Procname.pp called_pname ;
-                find_modified_if_impure inferbo_mem formals args summary
+                find_modified_if_impure inferbo_mem formals args callee_summary
             | None ->
                 if Typ.Procname.is_constructor called_pname then Domain.pure
                 else Domain.impure_global ) )
