@@ -15,64 +15,64 @@ class Test {
     global_arr = new Integer[size];
   }
 
-  void set_bad(int x, int y) {
+  void set_impure(int x, int y) {
     a = x + y;
   }
 
-  void global_array_set_bad(int x, int y) {
+  void global_array_set_impure(int x, int y) {
     global_arr[0] = x + y;
   }
 
-  int local_write_ok(int x, int y) {
+  int local_write_pure(int x, int y) {
     int k = x + y;
     k++;
     return k;
   }
 
-  void call_pure_ok(int size) {
+  void call_pure_pure(int size) {
     for (int i = 0; i < size; i++) {
-      local_write_ok(i, size);
+      local_write_pure(i, size);
     }
   }
 
-  void call_impure_bad(int size) {
+  void call_impure_impure(int size) {
     int d = 0;
     for (int i = 0; i < size; i++) {
-      set_bad(i, size);
+      set_impure(i, size);
     }
   }
 
   // no change to outside state, the local allocation is ok.
-  int local_alloc_ok(int x, int y) {
+  int local_alloc_pure(int x, int y) {
     ArrayList<Integer> list = new ArrayList<Integer>(x + y);
     for (Integer el : list) {
-      call_pure_ok(el);
+      call_pure_pure(el);
     }
     return list.size();
   }
 
-  void parameter_field_write_bad(Test test, boolean b) {
+  void parameter_field_write_impure(Test test, boolean b) {
     int c = b ? 0 : 1;
     test.a = c;
   }
 
-  int parameter_field_access_ok(Test test) {
+  int parameter_field_access_pure(Test test) {
     return test.a;
   }
 
   // expected to be impure since y points to x
-  void local_field_write_bad(Test x) {
+  void local_field_write_impure(Test x) {
     Test y = x;
     y.a = 0;
   }
 
-  void swap_bad(int[] array, int i, int j) {
+  void swap_impure(int[] array, int i, int j) {
     int tmp = array[i];
     array[i] = array[j];
     array[j] = tmp;
   }
 
-  void alias_bad(int[] array, int i, int j) {
+  void alias_impure(int[] array, int i, int j) {
     int[] a = array;
     a[j] = i;
   }
@@ -80,12 +80,12 @@ class Test {
   // Currently, we can't distinguish between returning new Objects or
   // creating new Objects locally. Ideally, the latter should be fine
   // as long as it doesn't leak to the result.
-  public ArrayList<Integer> emptyList_bad_FP() {
+  public ArrayList<Integer> emptyList_impure_FP() {
     return new ArrayList<Integer>();
   }
 
   // All unmodeled calls will be marked as modifying global state
-  static long systemNanoTime_bad() {
+  static long systemNanoTime_impure() {
     return System.nanoTime();
   }
 }

@@ -12,7 +12,7 @@ class GlobalTest {
 
     int x = 0;
     // modifies global var 's' hence impure
-    void set_bad() {
+    void set_impure() {
       s = 10;
     }
   }
@@ -22,20 +22,20 @@ class GlobalTest {
   }
 
   // calls foo which modifies global var
-  void call_set_bad() {
+  void call_set_impure() {
     Foo f = new Foo();
-    f.set_bad();
+    f.set_impure();
   }
 
   // foo is global which is modified by incr.
-  void global_mod_via_argument_passing_bad(int size, Foo f) {
+  void global_mod_via_argument_passing_impure(int size, Foo f) {
     for (int i = 0; i < size; i++) {
       incr(foo, i);
     }
   }
 
   // aliased_foo is aliasing a global and then is modified by incr.
-  void global_mod_via_argument_passing_bad_aliased(int size, Foo f) {
+  void global_mod_via_argument_passing_impure_aliased(int size, Foo f) {
     Foo aliased_foo = foo; // Inferbo can't recognize aliasing here
     // and assumes aliased_foo is in [-oo,+oo] not in foo
     for (int i = 0; i < size; i++) {
