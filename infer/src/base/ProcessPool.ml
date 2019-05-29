@@ -151,7 +151,7 @@ let has_dead_child pool =
          , status ) )
 
 
-let child_is_idle = function Idle _ -> true | _ -> false
+let child_is_idle = function Idle -> true | _ -> false
 
 let all_children_idle pool = Array.for_all pool.children_states ~f:child_is_idle
 
