@@ -100,6 +100,6 @@ codetoanalyze/c/errors/resource_leaks/leak.c, fileNotClosed, 5, RESOURCE_LEAK, n
 codetoanalyze/c/errors/resource_leaks/leak.c, socketNotClosed, 5, RESOURCE_LEAK, no_bucket
 codetoanalyze/c/errors/sizeof/sizeof_706.c, sentinel_bad, 0, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/frontend/enumeration/other_enum.c, other_enum_test, 4, DIVIDE_BY_ZERO, no_bucket
-codetoanalyze/c/frontend/offsetof_expr/offsetof_expr.c, test_offsetof_expr, 5, DIVIDE_BY_ZERO, no_bucket
+codetoanalyze/c/frontend/offsetof_expr/offsetof_expr.c, test_offsetof_expr, 3, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/frontend/vaarg_expr/vaarg_expr.c, vaarg_foo, 6, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/frontend/vaarg_expr/vaarg_expr.c, vaarg_foo, 8, DIVIDE_BY_ZERO, no_bucket

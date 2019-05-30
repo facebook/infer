@@ -15,9 +15,8 @@ struct address {
 
 int test_offsetof_expr() {
   int i = offsetof(struct address, v2);
-  if (i == 9) {
-    return 9 / 0;
-  } else {
-    return 4 / 0;
+  if (i == 2) {
+    return 1 / 0;
   }
+  return 42;
 }
