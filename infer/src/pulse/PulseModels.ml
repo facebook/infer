@@ -174,11 +174,16 @@ module StdVector = struct
         Ok [astate]
 end
 
+module DelayedDestruction = struct
+  let destroy : model = fun _ ~ret:_ ~actuals:_ astate -> Ok [astate]
+end
+
 module ProcNameDispatcher = struct
   let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
-      [ -"std" &:: "function" &:: "operator()" &--> Cplusplus.operator_call
+      [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> DelayedDestruction.destroy
+      ; -"std" &:: "function" &:: "operator()" &--> Cplusplus.operator_call
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace
