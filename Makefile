@@ -156,14 +156,6 @@ endif
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck genrule buck_javac_jar
-# Introduce the dependency only if the two tests are going to be built in parallel, so that they do
-# not run in parallel (otherwise Buck has a bad time). This works by checking if one of the main
-# testing targets was passed as a goal on the command line.
-ifneq ($(filter build_systems_tests config_tests test test-replace,${MAKECMDGOALS}),)
-build_genrule_print: build_buck_print
-build_genrule_replace: build_buck_replace
-build_genrule_test: build_buck_test
-endif
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
@@ -172,13 +164,6 @@ endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
 BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
-# the waf test and the make test run the same `make` command; use the same trick as for
-# "build_buck_test" to prevent make from running them in parallel
-ifneq ($(filter build_systems_tests config_tests test test-replace,${MAKECMDGOALS}),)
-build_waf_replace: build_make_replace
-build_waf_print: build_make_print
-build_waf_test: build_make_test
-endif
 endif
 
 ifeq ($(IS_INFER_RELEASE),no)

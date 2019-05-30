@@ -14,8 +14,7 @@ SOURCES = $(wildcard ../codetoanalyze/make/*.c)
 include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
-	$(QUIET)$(MAKE) -C ../codetoanalyze/make clean
-	$(QUIET)cd ../codetoanalyze/make && \
-	$(call silent_on_success,Testing Waf clang integration,\
-	  $(INFER_BIN) --dump-duplicate-symbols --results-dir $(CUR_DIR)/$(@D) -- \
-	    ./waf)
+	$(QUIET)$(call silent_on_success,Testing Waf clang integration,\
+	  $(TESTLOCK) sh -c "$(MAKE) -C ../codetoanalyze/make clean && \
+	    cd ../codetoanalyze/make && $(INFER_BIN) --dump-duplicate-symbols \
+		  --results-dir $(CUR_DIR)/$(@D) -- ./waf")
