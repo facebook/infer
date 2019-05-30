@@ -90,11 +90,11 @@ digraph cfg {
 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" [label="2: Exit Boxing::getS \n  " color=yellow style=filled]
 	
 
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$15=_fun_NSString::stringWithUTF8String:((char const *)\"hello world\":char const *) [line 41, column 10]\n  *&return:NSString*=n$15 [line 41, column 3]\n  EXIT_SCOPE(n$15); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$15=_fun_NSString::stringWithUTF8String:(\"hello world\":char*) [line 41, column 10]\n  *&return:NSString*=n$15 [line 41, column 3]\n  EXIT_SCOPE(n$15); [line 41, column 3]\n  APPLY_ABSTRACTION; [line 41, column 3]\n " shape="box"]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 40, column 3]\n  n$16=_fun_strdup((char const *)\"hello world\":char const *) [line 40, column 19]\n  n$17=_fun_NSString::stringWithUTF8String:((char const *)n$16:char const *) [line 40, column 17]\n  *&s:NSString*=n$17 [line 40, column 3]\n  NULLIFY(&s); [line 40, column 3]\n  EXIT_SCOPE(n$16,n$17,s); [line 40, column 3]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 40, column 3]\n  n$16=_fun_strdup(\"hello world\":char*) [line 40, column 19]\n  n$17=_fun_NSString::stringWithUTF8String:(n$16:char*) [line 40, column 17]\n  *&s:NSString*=n$17 [line 40, column 3]\n  NULLIFY(&s); [line 40, column 3]\n  EXIT_SCOPE(n$16,n$17,s); [line 40, column 3]\n " shape="box"]
 	
 
 	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;

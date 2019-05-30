@@ -268,6 +268,7 @@ let get_struct_decls decl =
   | IndirectFieldDecl _
   | OMPDeclareReductionDecl _
   | UnresolvedUsingValueDecl _
+  | OMPRequiresDecl _
   | OMPThreadPrivateDecl _
   | ObjCPropertyImplDecl _
   | PragmaCommentDecl _

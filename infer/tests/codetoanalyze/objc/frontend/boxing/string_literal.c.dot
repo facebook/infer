@@ -7,7 +7,7 @@ digraph cfg {
 "get_string1.37988b3a9459aa3258beba816a2c79fc_2" [label="2: Exit get_string1 \n  " color=yellow style=filled]
 	
 
-"get_string1.37988b3a9459aa3258beba816a2c79fc_3" [label="3:  Return Stmt \n   n$0=_fun_NSString::stringWithUTF8String:((char const *)\"Hello World!\":char const *) [line 12, column 10]\n  *&return:NSString*=n$0 [line 12, column 3]\n  EXIT_SCOPE(n$0); [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
+"get_string1.37988b3a9459aa3258beba816a2c79fc_3" [label="3:  Return Stmt \n   n$0=_fun_NSString::stringWithUTF8String:(\"Hello World!\":char*) [line 12, column 10]\n  *&return:NSString*=n$0 [line 12, column 3]\n  EXIT_SCOPE(n$0); [line 12, column 3]\n  APPLY_ABSTRACTION; [line 12, column 3]\n " shape="box"]
 	
 
 	 "get_string1.37988b3a9459aa3258beba816a2c79fc_3" -> "get_string1.37988b3a9459aa3258beba816a2c79fc_2" ;

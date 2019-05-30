@@ -193,3 +193,18 @@ int test_switch11() {
   }
   return 0;
 }
+
+int switch_gnu_range(char c) {
+  int i;
+  switch (c) {
+    case 'a' ... 'f':
+      return 0;
+      break;
+    case '0' ... /* some long comment to make the end of the range on the next
+                    line */
+        '9':
+      i = atoi(c);
+      break;
+  }
+  return i;
+}

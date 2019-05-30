@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 
 (** Functions for transformations of ast nodes *)
 
@@ -116,6 +115,14 @@ let get_stmt stmt_ptr source_range =
   stmt
 
 
+let get_stmt_exn stmt_ptr source_range =
+  match get_stmt stmt_ptr source_range with
+  | Some stmt ->
+      stmt
+  | None ->
+      L.die InternalError "statement clang pointer %d not found" stmt_ptr
+
+
 let get_stmt_opt stmt_ptr_opt source_range =
   match stmt_ptr_opt with Some stmt_ptr -> get_stmt stmt_ptr source_range | None -> None
 
@@ -200,11 +207,10 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   in
   let annot_name_opt =
     match get_type qt_type_ptr with
-    | Some (AttributedType (_, attr_info)) ->
-        if attr_info.ati_attr_kind = `Nullable then Some Annotations.nullable
-        else if attr_info.ati_attr_kind = `Nonnull then Some Annotations.nonnull
-          (* other annotations go here *)
-        else None
+    | Some (AttributedType (_, {ati_attr_kind= TypeNullableAttrKind})) ->
+        Some Annotations.nullable
+    | Some (AttributedType (_, {ati_attr_kind= TypeNonNullAttrKind})) ->
+        Some Annotations.nonnull
     | _ ->
         None
   in
@@ -545,7 +551,7 @@ let has_block_attribute decl =
   match decl with
   | VarDecl (decl_info, _, _, _) ->
       let attributes = decl_info.di_attributes in
-      List.exists ~f:(fun attr -> match attr with BlocksAttr _ -> true | _ -> false) attributes
+      List.exists ~f:(fun attr -> match attr with `BlocksAttr _ -> true | _ -> false) attributes
   | _ ->
       false
 

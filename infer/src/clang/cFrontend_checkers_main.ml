@@ -259,13 +259,20 @@ let rec do_frontend_checks_stmt linters (context : CLintersContext.context)
           [(context, lstmt @ [stmt])]
       | _ ->
           [(context, lstmt)] )
-    | IfStmt (_, [stmt1; stmt2; cond_stmt; inside_if_stmt; inside_else_stmt]) ->
-        let inside_if_stmt_context =
+    | IfStmt (stmt_info, _, {Clang_ast_t.isi_cond; isi_cond_var; isi_then; isi_else}) ->
+        let cond_stmt = CAst_utils.get_stmt_exn isi_cond stmt_info.si_source_range in
+        let inside_then_stmt_context =
           {context with CLintersContext.if_context= compute_if_context context cond_stmt}
         in
+        let then_stmt = CAst_utils.get_stmt_exn isi_then stmt_info.si_source_range in
+        let other_stmts =
+          Option.to_list isi_cond_var
+          @ ( Option.map isi_else ~f:(fun (else_body, _) ->
+                  CAst_utils.get_stmt_exn else_body stmt_info.si_source_range )
+            |> Option.to_list )
+        in
         (* distinguish between then and else branch as they need different context *)
-        [ (context, [stmt1; stmt2; cond_stmt; inside_else_stmt])
-        ; (inside_if_stmt_context, [inside_if_stmt]) ]
+        [(context, cond_stmt :: other_stmts); (inside_then_stmt_context, [then_stmt])]
     | ForStmt (_, stmt1 :: stmts) ->
         let inside_for_stmt_decl_context =
           {context with CLintersContext.in_for_loop_declaration= true}

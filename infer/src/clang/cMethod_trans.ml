@@ -127,14 +127,8 @@ let sil_func_attributes_of_attributes attrs =
     match al with
     | [] ->
         List.rev acc
-    | Clang_ast_t.SentinelAttr attribute_info :: tl ->
-        let sentinel, null_pos =
-          match attribute_info.Clang_ast_t.ai_parameters with
-          | [a; b] ->
-              (int_of_string a, int_of_string b)
-          | _ ->
-              assert false
-        in
+    | `SentinelAttr (_attr_info, {Clang_ast_t.sai_sentinel= sentinel; sai_null_pos= null_pos})
+      :: tl ->
         do_translation (PredSymb.FA_sentinel (sentinel, null_pos) :: acc) tl
     | _ :: tl ->
         do_translation acc tl

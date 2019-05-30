@@ -280,9 +280,7 @@ let component_with_unconventional_superclass_advice context an =
     Given n factory methods, the rule should emit n-1 issues. Each issue's
     location should point to the method declaration. *)
 let component_with_multiple_factory_methods_advice context an =
-  let is_unavailable_attr attr =
-    match attr with Clang_ast_t.UnavailableAttr _ -> true | _ -> false
-  in
+  let is_unavailable_attr attr = match attr with `UnavailableAttr _ -> true | _ -> false in
   let is_available_factory_method if_decl (decl : Clang_ast_t.decl) =
     match decl with
     | ObjCMethodDecl (decl_info, _, _) ->

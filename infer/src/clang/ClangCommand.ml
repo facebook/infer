@@ -167,7 +167,7 @@ let clang_cc1_cmd_sanitizer cmd =
     | "-isystem" :: _, arg -> (
       match isystem_to_override_regex with
       | Some isystem_to_override_regex when Str.string_match isystem_to_override_regex arg 0 ->
-          fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "7.0.1" ^/ "include"
+          fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "8.0.0" ^/ "include"
       | _ ->
           arg )
     | "-I" :: _, arg -> (

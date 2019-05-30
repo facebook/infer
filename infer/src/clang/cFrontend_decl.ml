@@ -264,6 +264,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | IndirectFieldDecl _
     | OMPDeclareReductionDecl _
     | UnresolvedUsingValueDecl _
+    | OMPRequiresDecl _
     | OMPThreadPrivateDecl _
     | PragmaCommentDecl _
     | PragmaDetectMismatchDecl _

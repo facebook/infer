@@ -211,7 +211,10 @@ module Loops : sig
         ; condition: Clang_ast_t.stmt
         ; increment: Clang_ast_t.stmt
         ; body: Clang_ast_t.stmt }
-    | While of {decl_stmt: Clang_ast_t.stmt; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
+    | While of
+        { decl_stmt: Clang_ast_t.stmt option
+        ; condition: Clang_ast_t.stmt
+        ; body: Clang_ast_t.stmt }
     | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
   val get_cond : loop_kind -> Clang_ast_t.stmt

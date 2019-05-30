@@ -76,27 +76,17 @@ let declaration_name decl =
 
 
 let get_available_attr_ios_sdk an =
-  let open Clang_ast_t in
-  let rec get_available_attr attrs =
-    match attrs with
-    | [] ->
-        None
-    | AvailabilityAttr attr_info :: rest -> (
-      match attr_info.ai_parameters with
-      | "ios" :: version :: _ ->
-          Some
-            (String.Search_pattern.replace_all
-               (String.Search_pattern.create "_")
-               ~in_:version ~with_:".")
-      | _ ->
-          get_available_attr rest )
-    | _ :: rest ->
-        get_available_attr rest
-  in
   match an with
   | Ctl_parser_types.Decl decl ->
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
-      get_available_attr decl_info.di_attributes
+      List.find_map decl_info.di_attributes ~f:(function
+        | `AvailabilityAttr (_attr_info, {Clang_ast_t.aai_platform= Some "ios"; aai_introduced}) ->
+            let get_opt_number = Option.value ~default:0 in
+            Some
+              (Printf.sprintf "%d.%d" aai_introduced.vt_major
+                 (get_opt_number aai_introduced.vt_minor))
+        | _ ->
+            None )
   | _ ->
       None
 
@@ -1385,33 +1375,38 @@ let rec get_decl_attributes_for_callexpr an =
       []
 
 
+let visibility_matches vis_str (visibility : Clang_ast_t.visibility_attr) =
+  match (visibility, vis_str) with
+  | DefaultVisibility, "Default" ->
+      true
+  | HiddenVisibility, "Hidden" ->
+      true
+  | ProtectedVisibility, "Protected" ->
+      true
+  | _ ->
+      false
+
+
 let has_visibility_attribute an visibility =
-  let open Clang_ast_t in
-  let rec has_visibility_attr attrs param =
-    match attrs with
-    | [] ->
-        false
-    | VisibilityAttr attr_info :: rest ->
-        if List.exists ~f:(fun s -> String.equal param (String.strip s)) attr_info.ai_parameters
-        then true
-        else has_visibility_attr rest param
-    | _ :: rest ->
-        has_visibility_attr rest param
+  let has_visibility_attr attrs param =
+    List.exists attrs ~f:(function
+      | `VisibilityAttr (_attr_info, visibility) ->
+          visibility_matches param visibility
+      | _ ->
+          false )
   in
   let attributes = get_decl_attributes_for_callexpr an in
   match visibility with ALVar.Const vis -> has_visibility_attr attributes vis | _ -> false
 
 
 let has_used_attribute an =
-  let open Clang_ast_t in
   let attributes = get_decl_attributes_for_callexpr an in
-  List.exists ~f:(fun attr -> match attr with UsedAttr _ -> true | _ -> false) attributes
+  List.exists ~f:(fun attr -> match attr with `UsedAttr _ -> true | _ -> false) attributes
 
 
 (* true is a declaration has an Unavailable attribute *)
 let has_unavailable_attribute an =
-  let open Clang_ast_t in
-  let is_unavailable_attr attr = match attr with UnavailableAttr _ -> true | _ -> false in
+  let is_unavailable_attr attr = match attr with `UnavailableAttr _ -> true | _ -> false in
   match an with
   | Ctl_parser_types.Decl d ->
       let attrs = (Clang_ast_proj.get_decl_tuple d).di_attributes in

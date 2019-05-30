@@ -201,7 +201,7 @@ digraph cfg {
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_3" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_2" ;
-"g3.8a9fd7dfda802921fdc4079f9a528ce8_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf((char const *)\"exit\\n\":char const *) [line 75, column 3]\n  EXIT_SCOPE(n$0); [line 75, column 3]\n " shape="box"]
+"g3.8a9fd7dfda802921fdc4079f9a528ce8_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf(\"exit\\n\":char*) [line 75, column 3]\n  EXIT_SCOPE(n$0); [line 75, column 3]\n " shape="box"]
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_4" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_3" ;
@@ -209,7 +209,7 @@ digraph cfg {
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_5" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_4" ;
-"g3.8a9fd7dfda802921fdc4079f9a528ce8_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf((char const *)\"A\\n\":char const *) [line 72, column 3]\n  EXIT_SCOPE(n$2); [line 72, column 3]\n  APPLY_ABSTRACTION; [line 72, column 3]\n " shape="box"]
+"g3.8a9fd7dfda802921fdc4079f9a528ce8_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf(\"A\\n\":char*) [line 72, column 3]\n  EXIT_SCOPE(n$2); [line 72, column 3]\n  APPLY_ABSTRACTION; [line 72, column 3]\n " shape="box"]
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_6" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_5" ;
@@ -225,7 +225,7 @@ digraph cfg {
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_9" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_2" ;
-"g3.8a9fd7dfda802921fdc4079f9a528ce8_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf((char const *)\"g3\\n\":char const *) [line 67, column 3]\n  EXIT_SCOPE(n$4); [line 67, column 3]\n " shape="box"]
+"g3.8a9fd7dfda802921fdc4079f9a528ce8_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf(\"g3\\n\":char*) [line 67, column 3]\n  EXIT_SCOPE(n$4); [line 67, column 3]\n " shape="box"]
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_10" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_9" ;
@@ -284,7 +284,7 @@ digraph cfg {
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_23" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_20" ;
-"g3.8a9fd7dfda802921fdc4079f9a528ce8_24" [label="24:  Call _fun_printf \n   n$17=_fun_printf((char const *)\"B\\n\":char const *) [line 59, column 3]\n  EXIT_SCOPE(n$17); [line 59, column 3]\n " shape="box"]
+"g3.8a9fd7dfda802921fdc4079f9a528ce8_24" [label="24:  Call _fun_printf \n   n$17=_fun_printf(\"B\\n\":char*) [line 59, column 3]\n  EXIT_SCOPE(n$17); [line 59, column 3]\n " shape="box"]
 	
 
 	 "g3.8a9fd7dfda802921fdc4079f9a528ce8_24" -> "g3.8a9fd7dfda802921fdc4079f9a528ce8_21" ;
@@ -299,7 +299,7 @@ digraph cfg {
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_3" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_2" ;
-"g4.b0b5c8f28ad7834e70a958a8882fa59a_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf((char const *)\"exit\\n\":char const *) [line 96, column 3]\n  EXIT_SCOPE(n$0); [line 96, column 3]\n " shape="box"]
+"g4.b0b5c8f28ad7834e70a958a8882fa59a_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf(\"exit\\n\":char*) [line 96, column 3]\n  EXIT_SCOPE(n$0); [line 96, column 3]\n " shape="box"]
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_4" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_3" ;
@@ -307,7 +307,7 @@ digraph cfg {
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_5" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_4" ;
-"g4.b0b5c8f28ad7834e70a958a8882fa59a_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf((char const *)\"A\\n\":char const *) [line 93, column 3]\n  EXIT_SCOPE(n$2); [line 93, column 3]\n  APPLY_ABSTRACTION; [line 93, column 3]\n " shape="box"]
+"g4.b0b5c8f28ad7834e70a958a8882fa59a_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf(\"A\\n\":char*) [line 93, column 3]\n  EXIT_SCOPE(n$2); [line 93, column 3]\n  APPLY_ABSTRACTION; [line 93, column 3]\n " shape="box"]
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_6" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_5" ;
@@ -319,7 +319,7 @@ digraph cfg {
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_8" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_7" ;
-"g4.b0b5c8f28ad7834e70a958a8882fa59a_9" [label="9:  Call _fun_printf \n   n$4=_fun_printf((char const *)\"g4\\n\":char const *) [line 89, column 3]\n  EXIT_SCOPE(n$4); [line 89, column 3]\n  APPLY_ABSTRACTION; [line 89, column 3]\n " shape="box"]
+"g4.b0b5c8f28ad7834e70a958a8882fa59a_9" [label="9:  Call _fun_printf \n   n$4=_fun_printf(\"g4\\n\":char*) [line 89, column 3]\n  EXIT_SCOPE(n$4); [line 89, column 3]\n  APPLY_ABSTRACTION; [line 89, column 3]\n " shape="box"]
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_9" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_8" ;
@@ -378,7 +378,7 @@ digraph cfg {
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_22" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_19" ;
-"g4.b0b5c8f28ad7834e70a958a8882fa59a_23" [label="23:  Call _fun_printf \n   n$17=_fun_printf((char const *)\"B\\n\":char const *) [line 81, column 3]\n  EXIT_SCOPE(n$17); [line 81, column 3]\n " shape="box"]
+"g4.b0b5c8f28ad7834e70a958a8882fa59a_23" [label="23:  Call _fun_printf \n   n$17=_fun_printf(\"B\\n\":char*) [line 81, column 3]\n  EXIT_SCOPE(n$17); [line 81, column 3]\n " shape="box"]
 	
 
 	 "g4.b0b5c8f28ad7834e70a958a8882fa59a_23" -> "g4.b0b5c8f28ad7834e70a958a8882fa59a_20" ;
@@ -393,7 +393,7 @@ digraph cfg {
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_3" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_8" ;
-"g5.37c965a8d6d7bec292c7b11ff315d9ea_4" [label="4:  Call _fun_printf \n   n$1=_fun_printf((char const *)\"exit\\n\":char const *) [line 118, column 3]\n  EXIT_SCOPE(n$1); [line 118, column 3]\n  APPLY_ABSTRACTION; [line 118, column 3]\n " shape="box"]
+"g5.37c965a8d6d7bec292c7b11ff315d9ea_4" [label="4:  Call _fun_printf \n   n$1=_fun_printf(\"exit\\n\":char*) [line 118, column 3]\n  EXIT_SCOPE(n$1); [line 118, column 3]\n  APPLY_ABSTRACTION; [line 118, column 3]\n " shape="box"]
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_4" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_3" ;
@@ -405,7 +405,7 @@ digraph cfg {
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_6" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_2" ;
-"g5.37c965a8d6d7bec292c7b11ff315d9ea_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf((char const *)\"A\\n\":char const *) [line 114, column 3]\n  EXIT_SCOPE(n$3); [line 114, column 3]\n " shape="box"]
+"g5.37c965a8d6d7bec292c7b11ff315d9ea_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf(\"A\\n\":char*) [line 114, column 3]\n  EXIT_SCOPE(n$3); [line 114, column 3]\n " shape="box"]
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_7" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_6" ;
@@ -468,7 +468,7 @@ digraph cfg {
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_21" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_18" ;
-"g5.37c965a8d6d7bec292c7b11ff315d9ea_22" [label="22:  Call _fun_printf \n   n$18=_fun_printf((char const *)\"B\\n\":char const *) [line 102, column 3]\n  EXIT_SCOPE(n$18); [line 102, column 3]\n " shape="box"]
+"g5.37c965a8d6d7bec292c7b11ff315d9ea_22" [label="22:  Call _fun_printf \n   n$18=_fun_printf(\"B\\n\":char*) [line 102, column 3]\n  EXIT_SCOPE(n$18); [line 102, column 3]\n " shape="box"]
 	
 
 	 "g5.37c965a8d6d7bec292c7b11ff315d9ea_22" -> "g5.37c965a8d6d7bec292c7b11ff315d9ea_19" ;
@@ -483,7 +483,7 @@ digraph cfg {
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_3" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_8" ;
-"g6.4a4314ef967aad20a9e7c423bc16e39c_4" [label="4:  Call _fun_printf \n   n$1=_fun_printf((char const *)\"exit\\n\":char const *) [line 140, column 3]\n  EXIT_SCOPE(n$1); [line 140, column 3]\n  APPLY_ABSTRACTION; [line 140, column 3]\n " shape="box"]
+"g6.4a4314ef967aad20a9e7c423bc16e39c_4" [label="4:  Call _fun_printf \n   n$1=_fun_printf(\"exit\\n\":char*) [line 140, column 3]\n  EXIT_SCOPE(n$1); [line 140, column 3]\n  APPLY_ABSTRACTION; [line 140, column 3]\n " shape="box"]
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_4" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_3" ;
@@ -495,7 +495,7 @@ digraph cfg {
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_6" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_2" ;
-"g6.4a4314ef967aad20a9e7c423bc16e39c_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf((char const *)\"A\\n\":char const *) [line 136, column 3]\n  EXIT_SCOPE(n$3); [line 136, column 3]\n " shape="box"]
+"g6.4a4314ef967aad20a9e7c423bc16e39c_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf(\"A\\n\":char*) [line 136, column 3]\n  EXIT_SCOPE(n$3); [line 136, column 3]\n " shape="box"]
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_7" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_6" ;
@@ -558,7 +558,7 @@ digraph cfg {
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_21" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_18" ;
-"g6.4a4314ef967aad20a9e7c423bc16e39c_22" [label="22:  Call _fun_printf \n   n$18=_fun_printf((char const *)\"B\\n\":char const *) [line 124, column 3]\n  EXIT_SCOPE(n$18); [line 124, column 3]\n " shape="box"]
+"g6.4a4314ef967aad20a9e7c423bc16e39c_22" [label="22:  Call _fun_printf \n   n$18=_fun_printf(\"B\\n\":char*) [line 124, column 3]\n  EXIT_SCOPE(n$18); [line 124, column 3]\n " shape="box"]
 	
 
 	 "g6.4a4314ef967aad20a9e7c423bc16e39c_22" -> "g6.4a4314ef967aad20a9e7c423bc16e39c_19" ;
@@ -573,7 +573,7 @@ digraph cfg {
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_3" -> "g7.727bb92f57c3951d11695a52c92c2b0c_2" ;
-"g7.727bb92f57c3951d11695a52c92c2b0c_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf((char const *)\"terminating!\\n\":char const *) [line 163, column 3]\n  EXIT_SCOPE(n$0); [line 163, column 3]\n " shape="box"]
+"g7.727bb92f57c3951d11695a52c92c2b0c_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf(\"terminating!\\n\":char*) [line 163, column 3]\n  EXIT_SCOPE(n$0); [line 163, column 3]\n " shape="box"]
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_4" -> "g7.727bb92f57c3951d11695a52c92c2b0c_3" ;
@@ -585,7 +585,7 @@ digraph cfg {
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_6" -> "g7.727bb92f57c3951d11695a52c92c2b0c_25" ;
-"g7.727bb92f57c3951d11695a52c92c2b0c_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf((char const *)\"out!\\n\":char const *) [line 160, column 3]\n  EXIT_SCOPE(n$3); [line 160, column 3]\n " shape="box"]
+"g7.727bb92f57c3951d11695a52c92c2b0c_7" [label="7:  Call _fun_printf \n   n$3=_fun_printf(\"out!\\n\":char*) [line 160, column 3]\n  EXIT_SCOPE(n$3); [line 160, column 3]\n " shape="box"]
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_7" -> "g7.727bb92f57c3951d11695a52c92c2b0c_6" ;
@@ -661,7 +661,7 @@ digraph cfg {
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_24" -> "g7.727bb92f57c3951d11695a52c92c2b0c_21" ;
-"g7.727bb92f57c3951d11695a52c92c2b0c_25" [label="25:  Call _fun_printf \n   n$10=_fun_printf((char const *)\"wow\\n\":char const *) [line 153, column 11]\n  EXIT_SCOPE(n$10); [line 153, column 11]\n " shape="box"]
+"g7.727bb92f57c3951d11695a52c92c2b0c_25" [label="25:  Call _fun_printf \n   n$10=_fun_printf(\"wow\\n\":char*) [line 153, column 11]\n  EXIT_SCOPE(n$10); [line 153, column 11]\n " shape="box"]
 	
 
 	 "g7.727bb92f57c3951d11695a52c92c2b0c_25" -> "g7.727bb92f57c3951d11695a52c92c2b0c_5" ;
@@ -692,7 +692,7 @@ digraph cfg {
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_3" -> "g8.c98b82371573afc08575815d90f5eac4_2" ;
-"g8.c98b82371573afc08575815d90f5eac4_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf((char const *)\"terminating!\\n\":char const *) [line 186, column 3]\n  EXIT_SCOPE(n$0); [line 186, column 3]\n " shape="box"]
+"g8.c98b82371573afc08575815d90f5eac4_4" [label="4:  Call _fun_printf \n   n$0=_fun_printf(\"terminating!\\n\":char*) [line 186, column 3]\n  EXIT_SCOPE(n$0); [line 186, column 3]\n " shape="box"]
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_4" -> "g8.c98b82371573afc08575815d90f5eac4_3" ;
@@ -700,7 +700,7 @@ digraph cfg {
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_5" -> "g8.c98b82371573afc08575815d90f5eac4_4" ;
-"g8.c98b82371573afc08575815d90f5eac4_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf((char const *)\"out!\\n\":char const *) [line 184, column 3]\n  EXIT_SCOPE(n$2); [line 184, column 3]\n " shape="box"]
+"g8.c98b82371573afc08575815d90f5eac4_6" [label="6:  Call _fun_printf \n   n$2=_fun_printf(\"out!\\n\":char*) [line 184, column 3]\n  EXIT_SCOPE(n$2); [line 184, column 3]\n " shape="box"]
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_6" -> "g8.c98b82371573afc08575815d90f5eac4_5" ;
@@ -776,7 +776,7 @@ digraph cfg {
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_23" -> "g8.c98b82371573afc08575815d90f5eac4_20" ;
-"g8.c98b82371573afc08575815d90f5eac4_24" [label="24:  Call _fun_printf \n   n$8=_fun_printf((char const *)\"wow\\n\":char const *) [line 177, column 11]\n  EXIT_SCOPE(n$8); [line 177, column 11]\n  APPLY_ABSTRACTION; [line 177, column 11]\n " shape="box"]
+"g8.c98b82371573afc08575815d90f5eac4_24" [label="24:  Call _fun_printf \n   n$8=_fun_printf(\"wow\\n\":char*) [line 177, column 11]\n  EXIT_SCOPE(n$8); [line 177, column 11]\n  APPLY_ABSTRACTION; [line 177, column 11]\n " shape="box"]
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_24" -> "g8.c98b82371573afc08575815d90f5eac4_20" ;

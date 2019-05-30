@@ -460,7 +460,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let nbytes = match size with `SizeOfWithSize nbytes -> Some nbytes | _ -> None in
         let sizeof_data = {Exp.typ; nbytes; dynamic_length= None; subtype= Subtype.exact} in
         mk_trans_result (Exp.Sizeof sizeof_data, typ) empty_control
-    | `AlignOf | `OpenMPRequiredSimdAlign | `VecStep ->
+    | `AlignOf | `OpenMPRequiredSimdAlign | `PreferredAlignOf | `VecStep ->
         let nondet = (Exp.Var (Ident.create_fresh Ident.knormal), typ) in
         mk_trans_result nondet empty_control
 
@@ -481,18 +481,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let get_annotate_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
-      let get_attr_opt = function AnnotateAttr a -> Some a | _ -> None in
-      match List.find_map ~f:get_attr_opt decl_info.di_attributes with
-      | Some attribute_info -> (
-        match attribute_info.ai_parameters with
-        | [_; arg; _] ->
-            Some arg
-        | _ ->
-            (* it's not supposed to happen due to hardcoded exporting logic
-                  coming from ASTExporter.h in facebook-clang-plugins *)
-            assert false )
-      | None ->
-          None
+      let get_attr_opt = function `AnnotateAttr (_, annotation) -> Some annotation | _ -> None in
+      List.find_map ~f:get_attr_opt decl_info.di_attributes
     in
     let name = QualifiedCppName.to_qual_string qual_name in
     let function_attr_opt = Option.bind decl_opt ~f:get_annotate_attr_arg in
@@ -1753,18 +1743,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         res_trans_cond
 
 
-  and ifStmt_trans trans_state stmt_info stmt_list =
+  and ifStmt_trans trans_state stmt_info (if_stmt_info : Clang_ast_t.if_stmt_info) =
     let context = trans_state.context in
-    let succ_nodes = trans_state.succ_nodes in
+    let source_range = stmt_info.Clang_ast_t.si_source_range in
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let join_node = Procdesc.create_node context.procdesc sil_loc Procdesc.Node.Join_node [] in
-    Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [] ;
-    let trans_state' = {trans_state with succ_nodes= [join_node]} in
-    let do_branch branch stmt_branch prune_nodes =
+    let do_branch branch stmt_branch prune_nodes trans_state =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
-      let res_trans_b = instruction trans_state' stmt_branch in
+      let res_trans_b = instruction trans_state stmt_branch in
       let nodes_branch =
         match res_trans_b.control.root_nodes with
         | [] ->
@@ -1779,27 +1766,63 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
         prune_nodes'
     in
-    match stmt_list with
-    | [_; decl_stmt; cond; stmt1; stmt2] ->
-        (* set the flat to inform that we are translating a condition of a if *)
-        let continuation' = mk_cond_continuation trans_state.continuation in
-        let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
-        let res_trans_cond = cond_trans ~if_kind:Sil.Ik_if ~negate_cond:false trans_state'' cond in
-        let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
-        (* Note: by contruction prune nodes are leafs_nodes_cond *)
-        do_branch true stmt1 res_trans_cond.control.leaf_nodes ;
-        do_branch false stmt2 res_trans_cond.control.leaf_nodes ;
-        mk_trans_result (mk_fresh_void_exp_typ ())
-          { empty_control with
-            root_nodes= res_trans_decl.control.root_nodes
-          ; leaf_nodes= [join_node] }
-    | _ ->
-        assert false
+    let join_node = Procdesc.create_node context.procdesc sil_loc Procdesc.Node.Join_node [] in
+    Procdesc.node_set_succs_exn context.procdesc join_node trans_state.succ_nodes [] ;
+    let trans_state_join_succ = {trans_state with succ_nodes= [join_node]} in
+    (* translate the condition expression *)
+    let res_trans_cond =
+      (* set the flag to inform that we are translating a condition of an "if" *)
+      let continuation' = mk_cond_continuation trans_state.continuation in
+      let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
+      let cond_stmt = CAst_utils.get_stmt_exn if_stmt_info.isi_cond source_range in
+      cond_trans ~if_kind:Sil.Ik_if ~negate_cond:false trans_state'' cond_stmt
+    in
+    (* translate the variable declaration inside the condition if present *)
+    let res_trans_cond_var =
+      match if_stmt_info.isi_cond_var with
+      | Some cond_var ->
+          declStmt_in_condition_trans trans_state cond_var res_trans_cond
+      | None ->
+          res_trans_cond
+    in
+    let then_body = CAst_utils.get_stmt_exn if_stmt_info.isi_then source_range in
+    (* Note: by contruction prune nodes are leafs_nodes_cond *)
+    do_branch true then_body res_trans_cond.control.leaf_nodes trans_state_join_succ ;
+    let else_body =
+      match if_stmt_info.isi_else with
+      | None ->
+          Clang_ast_t.NullStmt (stmt_info, [])
+      | Some (else_body_ptr, _) ->
+          CAst_utils.get_stmt_exn else_body_ptr source_range
+    in
+    do_branch false else_body res_trans_cond.control.leaf_nodes trans_state_join_succ ;
+    (* translate the initialisation if present *)
+    let res_trans_init =
+      match if_stmt_info.isi_init with
+      | Some init_stmt_ptr ->
+          let init_stmt = CAst_utils.get_stmt_exn init_stmt_ptr source_range in
+          instruction
+            {trans_state with succ_nodes= res_trans_cond_var.control.root_nodes}
+            init_stmt
+      | None ->
+          res_trans_cond_var
+    in
+    let root_nodes = res_trans_init.control.root_nodes in
+    mk_trans_result (mk_fresh_void_exp_typ ())
+      {empty_control with root_nodes; leaf_nodes= [join_node]}
 
 
   and caseStmt_trans trans_state stmt_info case_stmt_list =
-    (* ignore the [case lhs ... rhs: body] form, only support the [case condition: body] form *)
-    let[@warning "-8"] [condition; _rhs; body] = case_stmt_list in
+    let condition, body =
+      match case_stmt_list with
+      | [condition; body] ->
+          (condition, body)
+      | [condition; _rhs; body] ->
+          (* ignore the [case lhs ... rhs: body] form, only support the [case condition: body] form *)
+          (condition, body)
+      | _ ->
+          assert false
+    in
     let body_trans_result = instruction trans_state body in
     (let open SwitchCase in
     add {condition= Case condition; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
@@ -1814,12 +1837,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     body_trans_result
 
 
-  and switchStmt_trans trans_state stmt_info switch_stmt_list =
+  and switchStmt_trans trans_state stmt_info switch_stmt_info =
     (* overview: translate the body of the switch statement, which automatically collects the
        various cases at the same time, then link up the cases together and together with the switch
        condition variable *)
     (* unsupported: initialization *)
-    let[@warning "-8"] [_initialization; variable; condition; body] = switch_stmt_list in
+    let condition =
+      CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_cond
+        stmt_info.Clang_ast_t.si_source_range
+    in
+    let body =
+      CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_body
+        stmt_info.Clang_ast_t.si_source_range
+    in
     let context = trans_state.context in
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -1843,7 +1873,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       { res_trans_cond_tmp with
         control= {res_trans_cond_tmp.control with root_nodes; leaf_nodes= [switch_node]} }
     in
-    let variable_result = declStmt_in_condition_trans trans_state variable condition_result in
+    let variable_result =
+      match switch_stmt_info.Clang_ast_t.ssi_cond_var with
+      | None ->
+          condition_result
+      | Some variable ->
+          declStmt_in_condition_trans trans_state variable condition_result
+    in
     let trans_state_no_pri =
       if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
         {trans_state_pri with priority= Free}
@@ -1983,9 +2019,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_cond = cond_trans ~if_kind ~negate_cond:false trans_state_cond cond_stmt in
     let res_trans_decl =
       match loop_kind with
-      | Loops.For {decl_stmt} | Loops.While {decl_stmt} ->
+      | Loops.For {decl_stmt} | Loops.While {decl_stmt= Some decl_stmt} ->
           declStmt_in_condition_trans trans_state decl_stmt res_trans_cond
-      | Loops.DoWhile _ ->
+      | Loops.While {decl_stmt= None} | Loops.DoWhile _ ->
           res_trans_cond
     in
     let body_succ_nodes =
@@ -2081,8 +2117,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
     match stmt_list with
-    | [iterator_decl; begin_stmt; end_stmt; exit_cond; increment; assign_current_index; loop_body]
-      ->
+    | [ _init
+      ; iterator_decl
+      ; begin_stmt
+      ; end_stmt
+      ; exit_cond
+      ; increment
+      ; assign_current_index
+      ; loop_body ] ->
         let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
         let null_stmt = NullStmt (stmt_info, []) in
         let beginend_stmt = CompoundStmt (stmt_info, [begin_stmt; end_stmt]) in
@@ -2108,8 +2150,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* variable item but we still need to add the variable to the locals *)
     let assign_next_object, cond = Ast_expressions.make_next_object_exp stmt_info item items in
     let body' = Clang_ast_t.CompoundStmt (stmt_info, [body; assign_next_object]) in
-    let null_stmt = Clang_ast_t.NullStmt (stmt_info, []) in
-    let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
+    let loop = Clang_ast_t.WhileStmt (stmt_info, [cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
 
@@ -2306,7 +2347,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         vdi.Clang_ast_t.vdi_init_expr
     in
     let has_unused_attr attributes =
-      List.exists attributes ~f:(function Clang_ast_t.UnusedAttr _ -> true | _ -> false)
+      List.exists attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
     in
     let rec aux : decl list -> trans_result option = function
       | [] ->
@@ -2683,11 +2724,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state message_stmt
 
 
-  (* @synchronized(anObj) {body} is translated as 
-      
+  (* @synchronized(anObj) {body} is translated as
+
      __set_locked_attribue(anObj);
      body;
-     __delete_locked_attribute(anObj);    
+     __delete_locked_attribute(anObj);
    *)
   and objCAtSynchronizedStmt_trans trans_state stmt_list stmt_info =
     match stmt_list with
@@ -3152,7 +3193,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match (stmts, attrs) with
     | [stmt], [attr] -> (
       match (stmt, attr) with
-      | NullStmt _, FallThroughAttr _ ->
+      | NullStmt _, `FallThroughAttr _ ->
           no_op_trans trans_state.succ_nodes
       | _ ->
           CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -3286,6 +3327,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
     | CallExpr (stmt_info, stmt_list, ei) | UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
+    | ConstantExpr (_, stmt_list, _) -> (
+      match stmt_list with
+      | [stmt] ->
+          instruction_aux trans_state stmt
+      | stmts ->
+          L.die InternalError "Expected exactly one statement in ConstantExpr, got %d"
+            (List.length stmts) )
     | CXXMemberCallExpr (stmt_info, stmt_list, ei) ->
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
     | CXXOperatorCallExpr (stmt_info, stmt_list, ei) ->
@@ -3306,10 +3354,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ConditionalOperator (stmt_info, stmt_list, expr_info) ->
         (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
-    | IfStmt (stmt_info, stmt_list) ->
-        ifStmt_trans trans_state stmt_info stmt_list
-    | SwitchStmt (stmt_info, switch_stmt_list) ->
-        switchStmt_trans trans_state stmt_info switch_stmt_list
+    | IfStmt (stmt_info, _, if_stmt_info) ->
+        ifStmt_trans trans_state stmt_info if_stmt_info
+    | SwitchStmt (stmt_info, _, switch_stmt_info) ->
+        switchStmt_trans trans_state stmt_info switch_stmt_info
     | CaseStmt (stmt_info, stmt_list) ->
         caseStmt_trans trans_state stmt_info stmt_list
     | DefaultStmt (stmt_info, stmt_list) ->
@@ -3318,8 +3366,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmtExpr_trans trans_state si_source_range stmt_list
     | ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
         forStmt_trans trans_state ~init ~decl_stmt ~condition ~increment ~body stmt_info
+    | WhileStmt (stmt_info, [condition; body]) ->
+        whileStmt_trans trans_state ~decl_stmt:None ~condition ~body stmt_info
     | WhileStmt (stmt_info, [decl_stmt; condition; body]) ->
-        whileStmt_trans trans_state ~decl_stmt ~condition ~body stmt_info
+        whileStmt_trans trans_state ~decl_stmt:(Some decl_stmt) ~condition ~body stmt_info
     | DoStmt (stmt_info, [body; condition]) ->
         doStmt_trans trans_state ~condition ~body stmt_info
     | CXXForRangeStmt (stmt_info, stmt_list) ->

@@ -762,10 +762,12 @@ let transition_decl_to_decl_via_protocol d =
 let transition_stmt_to_stmt_via_condition st =
   let open Clang_ast_t in
   match st with
-  | IfStmt (_, _ :: _ :: cond :: _)
+  | IfStmt (stmt_info, _, {isi_cond; _}) ->
+      let cond = CAst_utils.get_stmt_exn isi_cond stmt_info.si_source_range in
+      [Stmt cond]
   | ConditionalOperator (_, cond :: _, _)
   | ForStmt (_, [_; _; cond; _; _])
-  | WhileStmt (_, [_; cond; _]) ->
+  | WhileStmt (_, ([_; cond; _] | [cond; _])) ->
       [Stmt cond]
   | _ ->
       []

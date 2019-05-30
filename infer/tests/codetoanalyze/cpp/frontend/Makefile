@@ -13,6 +13,7 @@ INFER_OPTIONS =
 
 
 SOURCES = \
+  $(wildcard *.cpp) \
   $(wildcard */*.cpp) \
   $(wildcard shared/*/*.cpp) \
 

@@ -257,7 +257,10 @@ module Loops = struct
         ; condition: Clang_ast_t.stmt
         ; increment: Clang_ast_t.stmt
         ; body: Clang_ast_t.stmt }
-    | While of {decl_stmt: Clang_ast_t.stmt; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
+    | While of
+        { decl_stmt: Clang_ast_t.stmt option
+        ; condition: Clang_ast_t.stmt
+        ; body: Clang_ast_t.stmt }
     | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
   let get_body loop_kind =
@@ -312,10 +315,10 @@ module Scope = struct
     | BreakStmt (stmt_info, _) | ContinueStmt (stmt_info, _) ->
         let vars_to_destroy = List.take vars_in_scope (List.length vars_in_scope - break_count) in
         add_scope_vars_to_destroy var_map stmt_info vars_to_destroy
+    (* TODO handle variable declarations inside for / foreach / while / switch *)
     | WhileStmt (_, stmt_list)
     | DoStmt (_, stmt_list)
-    | SwitchStmt (_, stmt_list)
-    (* TODO handle variable declarations inside for / foreach *)
+    | SwitchStmt (_, stmt_list, _)
     | ForStmt (_, stmt_list)
     | CXXForRangeStmt (_, stmt_list) ->
         let break_count = List.length vars_in_scope in

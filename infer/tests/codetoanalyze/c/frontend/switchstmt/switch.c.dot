@@ -11,6 +11,47 @@ digraph cfg {
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_1" [label="1: Start switch_gnu_range\nFormals:  c:char\nLocals:  i:int \n  " color=yellow style=filled]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_1" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" [label="2: Exit switch_gnu_range \n  " color=yellow style=filled]
+	
+
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 209, column 10]\n  *&return:int=n$0 [line 209, column 3]\n  NULLIFY(&i); [line 209, column 3]\n  EXIT_SCOPE(n$0,i); [line 209, column 3]\n  APPLY_ABSTRACTION; [line 209, column 3]\n " shape="box"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" [label="4:  SwitchStmt \n   n$1=*&c:char [line 199, column 11]\n " shape="box"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" ;
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&c:char [line 206, column 16]\n  n$4=_fun_atoi(n$3:int) [line 206, column 11]\n  *&i:int=n$4 [line 206, column 7]\n  NULLIFY(&c); [line 206, column 7]\n  EXIT_SCOPE(n$3,n$4,c); [line 206, column 7]\n  APPLY_ABSTRACTION; [line 206, column 7]\n " shape="box"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" [label="6:  Return Stmt \n   *&return:int=0 [line 201, column 7]\n  APPLY_ABSTRACTION; [line 201, column 7]\n " shape="box"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" [label="7: Prune (true branch, switch) \n   PRUNE((n$1 == 48), true); [line 203, column 5]\n  EXIT_SCOPE(n$1); [line 203, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" [label="8: Prune (false branch, switch) \n   PRUNE(!(n$1 == 48), false); [line 203, column 5]\n  EXIT_SCOPE(n$1); [line 203, column 5]\n  APPLY_ABSTRACTION; [line 203, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$1 == 97), true); [line 200, column 5]\n  EXIT_SCOPE(n$1); [line 200, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$1 == 97), false); [line 200, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" ;
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" ;
 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" [label="1: Start test_switch1\nFormals: \nLocals:  x:int value:int \n  " color=yellow style=filled]
 	
 
@@ -39,7 +80,7 @@ digraph cfg {
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf((char const *)\"(after_switch)HELLO WORLD!\":char const *) [line 31, column 5]\n  EXIT_SCOPE(n$1); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char*) [line 31, column 5]\n  EXIT_SCOPE(n$1); [line 31, column 5]\n  APPLY_ABSTRACTION; [line 31, column 5]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
@@ -48,15 +89,15 @@ digraph cfg {
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" ;
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf((char const *)\"(2/def)HELLO WORLD!\":char const *) [line 28, column 9]\n  EXIT_SCOPE(n$4); [line 28, column 9]\n  APPLY_ABSTRACTION; [line 28, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf(\"(2/def)HELLO WORLD!\":char*) [line 28, column 9]\n  EXIT_SCOPE(n$4); [line 28, column 9]\n  APPLY_ABSTRACTION; [line 28, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf((char const *)\"(1)HELLO WORLD!\":char const *) [line 24, column 9]\n  EXIT_SCOPE(n$6); [line 24, column 9]\n  APPLY_ABSTRACTION; [line 24, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(1)HELLO WORLD!\":char*) [line 24, column 9]\n  EXIT_SCOPE(n$6); [line 24, column 9]\n  APPLY_ABSTRACTION; [line 24, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" [label="12:  Call _fun_printf \n   n$8=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 21, column 9]\n  EXIT_SCOPE(n$8); [line 21, column 9]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" [label="12:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 21, column 9]\n  EXIT_SCOPE(n$8); [line 21, column 9]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" ;
@@ -64,7 +105,7 @@ digraph cfg {
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" [label="14:  Call _fun_printf \n   n$10=_fun_printf((char const *)\"(out)HELLO WORLD!\":char const *) [line 18, column 7]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" [label="14:  Call _fun_printf \n   n$10=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 18, column 7]\n " shape="box"]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" ;
@@ -162,7 +203,7 @@ digraph cfg {
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" ;
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 192, column 7]\n  EXIT_SCOPE(n$4); [line 192, column 7]\n  APPLY_ABSTRACTION; [line 192, column 7]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 192, column 7]\n  EXIT_SCOPE(n$4); [line 192, column 7]\n  APPLY_ABSTRACTION; [line 192, column 7]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
@@ -210,7 +251,7 @@ digraph cfg {
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_8" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 41, column 7]\n  EXIT_SCOPE(n$5); [line 41, column 7]\n  APPLY_ABSTRACTION; [line 41, column 7]\n " shape="box"]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 41, column 7]\n  EXIT_SCOPE(n$5); [line 41, column 7]\n  APPLY_ABSTRACTION; [line 41, column 7]\n " shape="box"]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_9" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
@@ -280,7 +321,7 @@ digraph cfg {
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 63, column 7]\n  EXIT_SCOPE(n$5); [line 63, column 7]\n  APPLY_ABSTRACTION; [line 63, column 7]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 63, column 7]\n  EXIT_SCOPE(n$5); [line 63, column 7]\n  APPLY_ABSTRACTION; [line 63, column 7]\n " shape="box"]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
@@ -355,7 +396,7 @@ digraph cfg {
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 82, column 7]\n  EXIT_SCOPE(n$5); [line 82, column 7]\n  APPLY_ABSTRACTION; [line 82, column 7]\n " shape="box"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 82, column 7]\n  EXIT_SCOPE(n$5); [line 82, column 7]\n  APPLY_ABSTRACTION; [line 82, column 7]\n " shape="box"]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
@@ -430,7 +471,7 @@ digraph cfg {
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" ;
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 109, column 9]\n  EXIT_SCOPE(n$3); [line 109, column 9]\n  APPLY_ABSTRACTION; [line 109, column 9]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 109, column 9]\n  EXIT_SCOPE(n$3); [line 109, column 9]\n  APPLY_ABSTRACTION; [line 109, column 9]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
@@ -438,7 +479,7 @@ digraph cfg {
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf((char const *)\"(out)HELLO WORLD!\":char const *) [line 105, column 7]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 105, column 7]\n " shape="box"]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" ;
@@ -507,7 +548,7 @@ digraph cfg {
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_13" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_12" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_14" [label="14:  Call _fun_printf \n   n$7=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 120, column 7]\n  EXIT_SCOPE(n$7); [line 120, column 7]\n  APPLY_ABSTRACTION; [line 120, column 7]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_14" [label="14:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 120, column 7]\n  EXIT_SCOPE(n$7); [line 120, column 7]\n  APPLY_ABSTRACTION; [line 120, column 7]\n " shape="box"]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_14" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
@@ -578,7 +619,7 @@ digraph cfg {
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 140, column 7]\n  EXIT_SCOPE(n$5); [line 140, column 7]\n  APPLY_ABSTRACTION; [line 140, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 140, column 7]\n  EXIT_SCOPE(n$5); [line 140, column 7]\n  APPLY_ABSTRACTION; [line 140, column 7]\n " shape="box"]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
@@ -699,7 +740,7 @@ digraph cfg {
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" [label="20:  Call _fun_printf \n   n$8=_fun_printf((char const *)\"(0)HELLO WORLD!\":char const *) [line 159, column 9]\n  EXIT_SCOPE(n$8); [line 159, column 9]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" [label="20:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 159, column 9]\n  EXIT_SCOPE(n$8); [line 159, column 9]\n " shape="box"]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" ;

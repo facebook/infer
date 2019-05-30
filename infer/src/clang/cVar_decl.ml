@@ -57,7 +57,7 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
 let has_block_attribute decl_info =
   let open Clang_ast_t in
   List.exists decl_info.di_attributes ~f:(fun attr ->
-      match attr with BlocksAttr _ -> true | _ -> false )
+      match attr with `BlocksAttr _ -> true | _ -> false )
 
 
 let add_var_to_locals procdesc var_decl typ pvar =
