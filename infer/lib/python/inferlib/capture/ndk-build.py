@@ -29,8 +29,13 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 class NdkBuildCapture():
     def __init__(self, args, cmd):
-        cmd = [cmd[0], 'NDK_TOOLCHAIN_VERSION=clang', 'TARGET_CC=clang',
-               'TARGET_CXX=clang++', 'TARGET_LD=ld'] + cmd[1:]
+        cmd = [
+            cmd[0],
+            'NDK_TOOLCHAIN_VERSION=clang',
+            'TARGET_CC=clang',
+            'TARGET_CXX=clang',
+            'TARGET_LD=ld',
+        ] + cmd[1:]
         self.args = args
         self.cmd = cmd
         command_name = os.path.basename(cmd[0])
