@@ -27,12 +27,11 @@ let is_not_modeled tenv callee_pname =
   match PurityModels.ProcName.dispatch tenv callee_pname with Some _ -> false | None -> true
 
 
-let get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname args =
+let get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname =
   (* Take into account purity behavior of modeled functions *)
   match PurityModels.ProcName.dispatch tenv callee_pname with
   | Some callee_purity ->
-      PurityDomain.(
-        if is_pure callee_purity then pure else impure_params (all_params_modified args))
+      callee_purity
   | None -> (
       debug "No model for %a \n" Typ.Procname.pp callee_pname ;
       (* If there is no model, invoke purity analysis to see if function is pure *)
@@ -60,7 +59,7 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
                true
            | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
                PurityDomain.is_pure
-                 (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname args)
+                 (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname)
                && (* check if all params are invariant *)
                   List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
            | _ ->
@@ -188,7 +187,7 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
              match instr with
              | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
                  let purity =
-                   get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname args
+                   get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname
                  in
                  PurityDomain.(
                    match purity with
