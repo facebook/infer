@@ -1053,6 +1053,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_in_block lcxt
   | "is_optional_objc_method", [], an ->
       CPredicates.is_optional_objc_method an
+  | "is_call_to_optional_objc_method", [], an ->
+      CPredicates.is_call_to_optional_objc_method an
   | "is_in_cxx_constructor", [name], _ ->
       CPredicates.is_in_cxx_constructor lcxt name
   | "is_in_cxx_destructor", [name], _ ->
@@ -1173,6 +1175,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.method_return_type an typ
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
+  | "objc_method_call_within_responds_to_selector_block", [], an ->
+      CPredicates.objc_method_call_within_responds_to_selector_block lcxt an
   | "using_namespace", [namespace], an ->
       CPredicates.using_namespace an namespace
   | "is_at_selector_with_name", [name], an ->

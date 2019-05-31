@@ -273,3 +273,20 @@ DEFINE-CHECKER WRONG_SCOPE_FOR_DISPATCH_ONCE_T = {
 		SET severity = "WARNING";
 		SET mode = "ON";
 };
+
+
+DEFINE-CHECKER UNSAFE_CALL_TO_OPTIONAL_METHOD = {
+
+  SET report_when =
+   WHEN
+     is_call_to_optional_objc_method
+     AND
+     (NOT objc_method_call_within_responds_to_selector_block)
+  HOLDS-IN-NODE ObjCMessageExpr;
+
+  SET message = "This is a call to an `@optional` protocol method. Calling it without checking if its implemented can lead to crashes at run time.";
+	SET suggestion = "Please make sure to test the method is implemented by first calling `if ([object respondsToSelector:@selector(%decl_name%)]) ...` ";
+	SET severity = "ERROR";
+	SET mode = "ON";
+
+};

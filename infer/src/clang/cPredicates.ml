@@ -856,6 +856,19 @@ let is_optional_objc_method an =
       false
 
 
+let is_call_to_optional_objc_method an =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, _, _, omei)) -> (
+    match CAst_utils.get_decl_opt omei.omei_decl_pointer with
+    | Some d ->
+        is_optional_objc_method (Ctl_parser_types.Decl d)
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let is_in_block context =
   match context.CLintersContext.current_method with Some (BlockDecl _) -> true | _ -> false
 
@@ -1320,6 +1333,20 @@ let within_responds_to_selector_block (cxt : CLintersContext.context) an =
     | Some if_context ->
         let in_selector_block = if_context.within_responds_to_selector_block in
         List.mem ~equal:String.equal in_selector_block named_decl_info.ni_name
+    | None ->
+        false )
+  | _ ->
+      false
+
+
+let objc_method_call_within_responds_to_selector_block (cxt : CLintersContext.context) an =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, _, _, mdi)) -> (
+    match cxt.if_context with
+    | Some if_context ->
+        let in_selector_block = if_context.within_responds_to_selector_block in
+        List.mem ~equal:String.equal in_selector_block mdi.omei_selector
     | None ->
         false )
   | _ ->
