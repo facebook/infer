@@ -21,6 +21,7 @@ depends: [
   "llvm" {= "8.0.0"}
   "ppx_compare"
   "ppx_deriving_cmdliner" {>= "0.4.2"}
+  "ppx_import"
   "ppx_hash"
   "shexp"
   "zarith"

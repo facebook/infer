@@ -34,7 +34,8 @@ let flags exe_or_lib deps =
       (ocamlc_flags (%s))
       (ocamlopt_flags (%s))
       (preprocess
-       (pps
+       (staged_pps
+         ppx_import
          ppx_compare
          ppx_custom_printf
          ppx_deriving_cmdliner

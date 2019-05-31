@@ -15,6 +15,16 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
+type lllinkage = [%import: Llvm.Linkage.t] [@@deriving sexp]
+type llopcode = [%import: Llvm.Opcode.t] [@@deriving sexp]
+
+type llvaluekind = [%import: (Llvm.ValueKind.t[@with Opcode.t := llopcode])]
+[@@deriving sexp]
+
+let _pp_lllinkage fs l = Sexp.pp_hum fs (sexp_of_lllinkage l)
+let _pp_llopcode fs l = Sexp.pp_hum fs (sexp_of_llopcode l)
+let _pp_llvaluekind fs l = Sexp.pp_hum fs (sexp_of_llvaluekind l)
+
 exception Invalid_llvm of string
 
 let invalid_llvm : string -> 'a =
