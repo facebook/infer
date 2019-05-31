@@ -573,21 +573,21 @@ and xlate_global : x -> Llvm.llvalue -> Global.t =
       let g = xlate_name llg in
       let llt = Llvm.type_of llg in
       let typ = xlate_type x llt in
-      let siz = size_of x llt in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
-      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g siz typ loc) ;
+      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g typ loc) ;
       let init =
         match (Llvm.classify_value llg, Llvm.linkage llg) with
         | _, (External | External_weak) -> None
         | GlobalVariable, _ ->
-            Some (xlate_value x (Llvm.global_initializer llg))
+            let siz = size_of x (Llvm.element_type llt) in
+            Some (xlate_value x (Llvm.global_initializer llg), siz)
         | _ -> None
       in
-      Global.mk ?init g siz typ loc
+      Global.mk ?init g typ loc
       |>
-      [%Trace.retn fun {pf} -> pf "%a" Global.pp] )
+      [%Trace.retn fun {pf} -> pf "%a" Global.pp_defn] )
 
 type pop_thunk = Loc.t -> Llair.inst list
 

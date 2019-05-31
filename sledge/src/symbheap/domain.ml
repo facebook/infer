@@ -13,7 +13,7 @@ let pp = Sh.pp
 
 let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Global.var; init= Some arr; siz} ->
+    | {Global.var; init= Some (arr, siz)} ->
         let loc = Exp.var var in
         let len = Exp.integer (Z.of_int siz) Typ.siz in
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})

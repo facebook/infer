@@ -202,7 +202,7 @@ let rec dummy_block =
 
 and dummy_func =
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
-  { name= Global.mk (Var.program "dummy") 0 dummy_ptr_typ Loc.none
+  { name= Global.mk (Var.program "dummy") dummy_ptr_typ Loc.none
   ; entry= dummy_block
   ; cfg= Vector.empty }
 

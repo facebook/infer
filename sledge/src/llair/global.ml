@@ -7,7 +7,7 @@
 
 (** Global variables *)
 
-type t = {var: Var.t; init: Exp.t option; siz: int; typ: Typ.t; loc: Loc.t}
+type t = {var: Var.t; init: (Exp.t * int) option; typ: Typ.t; loc: Loc.t}
 [@@deriving compare, equal, hash, sexp]
 
 let pp fs {var} =
@@ -20,7 +20,7 @@ let pp fs {var} =
 
 let pp_defn fs {var; init; typ} =
   Format.fprintf fs "@[<2>%a %a%a@]" Typ.pp typ Var.pp var
-    (Option.pp " =@ @[%a@]" Exp.pp)
+    (Option.pp " =@ @[%a@]" (fun fs (init, _) -> Exp.pp fs init))
     init
 
 let invariant g =
@@ -29,4 +29,4 @@ let invariant g =
   let {typ} = g in
   assert (Typ.is_sized typ)
 
-let mk ?init var siz typ loc = {var; init; siz; typ; loc} |> check invariant
+let mk ?init var typ loc = {var; init; typ; loc} |> check invariant
