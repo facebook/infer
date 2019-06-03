@@ -52,6 +52,9 @@ val implements_enumeration : Tenv.t -> string -> bool
 val implements_jackson : string -> Tenv.t -> string -> bool
 (** Check whether class implements a class from Jackson *)
 
+val implements_org_json : string -> Tenv.t -> string -> bool
+(** Check whether class implements a class from Json *)
+
 val implements_inject : string -> Tenv.t -> string -> bool
 (** Check whether class implements a Javax Inject *)
 

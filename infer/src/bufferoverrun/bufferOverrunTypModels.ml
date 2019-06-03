@@ -27,4 +27,5 @@ let dispatch : (Tenv.t, typ_model) ProcnameDispatcher.TypName.dispatcher =
   make_dispatcher
     [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> std_array
     ; +PatternMatch.implements_collection &::.*--> collection
-    ; +PatternMatch.implements_iterator &::.*--> collection ]
+    ; +PatternMatch.implements_iterator &::.*--> collection
+    ; +PatternMatch.implements_org_json "JSONArray" &::.*--> collection ]

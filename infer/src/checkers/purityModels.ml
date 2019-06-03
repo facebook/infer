@@ -140,5 +140,9 @@ module ProcName = struct
       ; +PatternMatch.implements_queue &:: "remove" <>--> modifies_first
       ; +PatternMatch.implements_queue &:: "peek" <>--> PurityDomain.pure
       ; +PatternMatch.implements_list &:: "subList" <>--> PurityDomain.pure
-      ; +PatternMatch.implements_arrays &:: "binarySearch" <>--> PurityDomain.pure ]
+      ; +PatternMatch.implements_arrays &:: "binarySearch" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_org_json "JSONArray" &::+ startsWith "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_org_json "JSONObject"
+        &::+ startsWith "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_org_json "JSONArray" &:: "length" <>--> PurityDomain.pure ]
 end

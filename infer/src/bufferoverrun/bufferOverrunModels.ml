@@ -838,6 +838,10 @@ module Call = struct
       ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_map)
         $+...$--> Collection.new_collection
+      ; +PatternMatch.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
+      ; -"__new"
+        <>$ capt_exp_of_typ (+PatternMatch.implements_org_json "JSONArray")
+        $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; +PatternMatch.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
@@ -951,6 +955,8 @@ module Call = struct
       ; +PatternMatch.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg
         $--> Collection.put
+      ; +PatternMatch.implements_org_json "JSONArray"
+        &:: "put" <>$ capt_var_exn $+...$--> Collection.put
       ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
         $--> Collection.putAll
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
@@ -962,5 +968,8 @@ module Call = struct
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
       ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
-      ; +PatternMatch.implements_map &:: "size" <>$ capt_exp $!--> Collection.size ]
+      ; +PatternMatch.implements_org_json "JSONArray"
+        &:: "length" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.implements_org_json "JSONArray"
+        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init ]
 end

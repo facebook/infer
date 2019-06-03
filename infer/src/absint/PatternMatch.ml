@@ -90,6 +90,8 @@ let implements_android class_name = implements ("android." ^ class_name)
 
 let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class_name)
 
+let implements_org_json class_name = implements ("org.json." ^ class_name)
+
 (** The type the method is invoked on *)
 let get_this_type proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
