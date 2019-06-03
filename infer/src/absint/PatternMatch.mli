@@ -30,6 +30,9 @@ val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 val is_subtype_of_str : Tenv.t -> Typ.Name.t -> string -> bool
 (** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
 
+val implements_arrays : Tenv.t -> string -> bool
+(** Check whether class implements Java's Arrays *)
+
 val implements_iterator : Tenv.t -> string -> bool
 (** Check whether class implements Java's Iterator *)
 

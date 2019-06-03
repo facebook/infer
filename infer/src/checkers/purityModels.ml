@@ -56,7 +56,9 @@ module ProcName = struct
         &::+ startsWith "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_android "content.res.Resources"
         &::+ startsWith "get" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_arrays &:: "asList" <>--> PurityDomain.pure
       ; +PatternMatch.implements_lang "Iterable" &:: "iterator" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_list &:: "listIterator" <>--> PurityDomain.pure
       ; +PatternMatch.implements_collection &:: "iterator" <>--> PurityDomain.pure
       ; +PatternMatch.implements_iterator &:: "hasNext" <>--> PurityDomain.pure
       ; +PatternMatch.implements_iterator &:: "next" <>--> modifies_first
@@ -136,5 +138,7 @@ module ProcName = struct
       ; +PatternMatch.implements_queue &:: "poll" <>--> modifies_first
       ; +PatternMatch.implements_queue &:: "add" <>--> modifies_first
       ; +PatternMatch.implements_queue &:: "remove" <>--> modifies_first
-      ; +PatternMatch.implements_queue &:: "peek" <>--> PurityDomain.pure ]
+      ; +PatternMatch.implements_queue &:: "peek" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_list &:: "subList" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_arrays &:: "binarySearch" <>--> PurityDomain.pure ]
 end

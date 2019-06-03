@@ -6,6 +6,8 @@
  */
 package codetoanalyze.java.performance;
 
+import java.util.Arrays;
+
 public class Array {
 
   public void array_access_good() {
@@ -28,5 +30,22 @@ public class Array {
     for (int j = 0; j < length; ++j) {
       if (10 < optionNumerators[j] + 1) {}
     }
+  }
+
+  int binary_search_log(String[] arr) {
+    return Arrays.binarySearch(arr, "x");
+  }
+
+  void fill_linear(String[] arr) {
+    Arrays.fill(arr, "x");
+  }
+
+  void copyOf_linear(String[] arr) {
+    String[] new_arr = Arrays.copyOf(arr, arr.length);
+    for (String el : new_arr) {}
+  }
+
+  void copyOf_constant(String[] arr) {
+    String[] new_arr = Arrays.copyOf(arr, 10);
   }
 }

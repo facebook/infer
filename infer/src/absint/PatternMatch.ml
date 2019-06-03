@@ -54,6 +54,8 @@ let implements interface tenv typename =
   supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
 
 
+let implements_arrays = implements "java.util.Arrays"
+
 let implements_iterator = implements "java.util.Iterator"
 
 let implements_collection = implements "java.util.Collection"

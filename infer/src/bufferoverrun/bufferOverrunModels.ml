@@ -328,12 +328,17 @@ let inferbo_min e1 e2 =
   {exec; check= no_check}
 
 
-let inferbo_set_size e1 e2 =
-  let exec {integer_type_widths; location} ~ret:_ mem =
-    let locs = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_pow_loc in
-    let length = Sem.eval integer_type_widths e2 mem in
-    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) locs mem
-  and check = check_alloc_size ~can_be_zero:true e2 in
+let set_size {integer_type_widths; location} array_v size_exp mem =
+  let locs = Dom.Val.get_pow_loc array_v in
+  let length = Sem.eval integer_type_widths size_exp mem in
+  Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) locs mem
+
+
+let inferbo_set_size src_exp size_exp =
+  let exec ({integer_type_widths} as model) ~ret:_ mem =
+    let src_v = Sem.eval integer_type_widths src_exp mem in
+    set_size model src_v size_exp mem
+  and check = check_alloc_size ~can_be_zero:true size_exp in
   {exec; check}
 
 
@@ -422,6 +427,20 @@ let snprintf = by_risky_value_from Trace.snprintf Dom.Val.Itv.nat
 
 let vsnprintf = by_risky_value_from Trace.vsnprintf Dom.Val.Itv.nat
 
+let copy array_v ret_id mem =
+  let dest_loc = Loc.of_id ret_id |> PowLoc.singleton in
+  Dom.Mem.update_mem dest_loc array_v mem
+
+
+(** Creates a new array with the values from the given array.*)
+let create_copy_array src_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let array_v = Sem.eval integer_type_widths src_exp mem in
+    copy array_v id mem
+  in
+  {exec; check= no_check}
+
+
 module CFArray = struct
   (** Creates a new array from the given array by copying the first X
      elements. *)
@@ -438,16 +457,6 @@ module CFArray = struct
         ~last_included:true mem location cond_set
     in
     {exec; check}
-
-
-  (** Creates a new array with the values from the given array.*)
-  let create_copy_array src_exp =
-    let exec {integer_type_widths} ~ret:(id, _) mem =
-      let dest_loc = Loc.of_id id |> PowLoc.singleton in
-      let v = Sem.eval integer_type_widths src_exp mem in
-      Dom.Mem.update_mem dest_loc v mem
-    in
-    {exec; check= no_check}
 
 
   let at (array_exp, _) (index_exp, _) = at ?size:None array_exp index_exp
@@ -612,30 +621,40 @@ end
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
 module Collection = struct
-  let new_collection _ =
-    let exec {pname; node_hash; location} ~ret:(id, _) mem =
-      let represents_multiple_values = true in
-      let traces = Trace.(Set.singleton location ArrayDeclaration) in
-      let coll_allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+  let create_collection {pname; node_hash; location} ~ret:(id, _) mem ~length =
+    let represents_multiple_values = true in
+    let traces = Trace.(Set.singleton location ArrayDeclaration) in
+    let coll_allocsite =
+      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+        ~represents_multiple_values
+    in
+    let internal_array =
+      let allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
           ~represents_multiple_values
       in
-      let internal_array =
-        let allocsite =
-          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-            ~represents_multiple_values
-        in
-        Dom.Val.of_java_array_alloc allocsite ~length:Itv.zero ~traces
-      in
-      let coll_loc = Loc.of_allocsite coll_allocsite in
-      let internal_array_loc =
-        Loc.append_field coll_loc ~fn:BufferOverrunField.java_collection_internal_array
-      in
-      mem
-      |> Dom.Mem.add_heap internal_array_loc internal_array
-      |> Dom.Mem.add_stack (Loc.of_id id)
-           (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
+      Dom.Val.of_java_array_alloc allocsite ~length ~traces
     in
+    let coll_loc = Loc.of_allocsite coll_allocsite in
+    let internal_array_loc =
+      Loc.append_field coll_loc ~fn:BufferOverrunField.java_collection_internal_array
+    in
+    mem
+    |> Dom.Mem.add_heap internal_array_loc internal_array
+    |> Dom.Mem.add_stack (Loc.of_id id) (coll_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
+
+
+  (** Returns a fixed-size list with a given length backed by the specified array. *)
+  let copyOf array_exp length_exp =
+    let exec ({integer_type_widths} as model) ~ret:(id, _) mem =
+      let array_v = Sem.eval integer_type_widths array_exp mem in
+      copy array_v id mem |> set_size model array_v length_exp
+    in
+    {exec; check= no_check}
+
+
+  let new_collection _ =
+    let exec = create_collection ~length:Itv.zero in
     {exec; check= no_check}
 
 
@@ -722,6 +741,19 @@ module Collection = struct
     {exec; check= no_check}
 
 
+  (** Returns a view of the portion of this list between the specified
+     fromIndex, inclusive, and toIndex, exclusive. Simply model it as
+     creating a new list with length toIndex - fromIndex.  *)
+  let subList from_exp to_exp =
+    let exec ({integer_type_widths} as model) ~ret mem =
+      let from_idx = Sem.eval integer_type_widths from_exp mem in
+      let to_idx = Sem.eval integer_type_widths to_exp mem in
+      let length = Itv.minus (Dom.Val.get_itv to_idx) (Dom.Val.get_itv from_idx) in
+      create_collection model ~ret mem ~length
+    in
+    {exec; check= no_check}
+
+
   (** increase the size by [0, |collection_to_add|] because put replaces the value
      rather than add a new one when the key is found in the map *)
   let putAll coll_id coll_to_add =
@@ -785,7 +817,7 @@ module Call = struct
       ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
       ; -"__exit" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
-      ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> CFArray.create_copy_array
+      ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> StdBasicString.length
       ; -"CFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
@@ -808,6 +840,9 @@ module Call = struct
         $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +PatternMatch.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
+      ; +PatternMatch.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp
+        $+...$--> Collection.copyOf
       ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
@@ -910,6 +945,7 @@ module Call = struct
         &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $!--> Collection.add_at_index
       ; +PatternMatch.implements_lang "Iterable"
         &:: "iterator" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_list &:: "listIterator" <>$ capt_exp $+...$--> Collection.iterator
       ; +PatternMatch.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
@@ -918,6 +954,8 @@ module Call = struct
       ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
         $--> Collection.putAll
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
+      ; +PatternMatch.implements_list &:: "subList" <>$ any_arg $+ capt_exp $+ capt_exp
+        $--> Collection.subList
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
       ; +PatternMatch.implements_collection

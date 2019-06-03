@@ -39,6 +39,18 @@ module Collections = struct
     |> BasicCost.of_non_negative_bound ~degree_kind
 
 
+  let copyOf size_exp {integer_type_widths; location} ~ret:_ inferbo_mem =
+    let upper_bound =
+      let itv =
+        BufferOverrunSemantics.eval integer_type_widths size_exp inferbo_mem
+        |> BufferOverrunDomain.Val.get_itv
+      in
+      match itv with Bottom -> Bounds.Bound.pinf | NonBottom itv_pure -> Itv.ItvPure.ub itv_pure
+    in
+    Bounds.NonNegativeBound.of_modeled_function "Arrays.copyOf" location upper_bound
+    |> BasicCost.of_non_negative_bound ~degree_kind:Polynomials.DegreeKind.Linear
+
+
   let linear = of_length_bound ~degree_kind:Polynomials.DegreeKind.Linear
 
   let logarithmic = of_length_bound ~degree_kind:Polynomials.DegreeKind.Log
@@ -89,17 +101,24 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     make_dispatcher
       [ +PatternMatch.implements_collections &:: "sort" $ capt_exp $+...$--> Collections.sort
+      ; +PatternMatch.implements_list &:: "sort" $ capt_exp $+...$--> Collections.sort
       ; +PatternMatch.implements_list &:: "contains" <>$ capt_exp
         $+...$--> Collections.linear ~of_function:"List.contains"
       ; +PatternMatch.implements_collections
         &:: "binarySearch" <>$ capt_exp
         $+...$--> Collections.logarithmic ~of_function:"Collections.binarySearch"
+      ; +PatternMatch.implements_arrays &:: "binarySearch" <>$ capt_exp
+        $+...$--> Collections.logarithmic ~of_function:"Arrays.binarySearch"
+      ; +PatternMatch.implements_arrays &:: "copyOf" <>$ any_arg $+ capt_exp
+        $+...$--> Collections.copyOf
       ; +PatternMatch.implements_collections
         &:: "copy" <>$ capt_exp
         $+...$--> Collections.linear ~of_function:"Collections.copy"
       ; +PatternMatch.implements_collections
         &:: "fill" <>$ capt_exp
         $+...$--> Collections.linear ~of_function:"Collections.fill"
+      ; +PatternMatch.implements_arrays &:: "fill" <>$ capt_exp
+        $+...$--> Collections.linear ~of_function:"Arrays.fill"
       ; +PatternMatch.implements_collections
         &:: "reverse" <>$ capt_exp
         $+...$--> Collections.linear ~of_function:"Collections.reverse"
