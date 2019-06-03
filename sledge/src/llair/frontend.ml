@@ -1324,7 +1324,7 @@ let transform ~gdce : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
   if gdce then (
-    Llvm_ipo.add_internalize_predicate pm ~predicate:(fun fn ->
+    Llvm_ipo.add_internalize_predicate pm (fun fn ->
         List.exists
           ["__llair_main"; "_Z12__llair_mainv"; "main"]
           ~f:(String.equal fn) ) ;
