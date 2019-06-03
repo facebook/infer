@@ -75,6 +75,7 @@ fmt:
 	dune build $(FMTS) --auto-promote
 	ocamlformat -i src/version.ml.in $(DUNEINS)
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
+	${MAKE} -C test fmt
 
 # print any variable for Makefile debugging
 print-%:

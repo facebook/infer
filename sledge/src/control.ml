@@ -19,11 +19,12 @@ module Stack : sig
   val push_call :
        Var.Set.t
     -> retreating:bool
+    -> bound:int
     -> return:Llair.jump
     -> Domain.from_call
     -> ?throw:Llair.jump
     -> t
-    -> t
+    -> t option
 
   val pop_return :
        t
@@ -114,9 +115,26 @@ end = struct
     (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
     |> check invariant
 
-  let push_call locals ~retreating ~return from_call ?throw stk =
-    push_jump locals
-      (push_throw throw (push_return ~retreating return from_call stk))
+  let push_call locals ~retreating ~bound ~return from_call ?throw stk =
+    [%Trace.call fun {pf} -> pf "%a" print_abbrev stk]
+    ;
+    let rec count_f_in_stack acc f = function
+      | Return {stk= next_frame; dst= dest_block} ->
+          count_f_in_stack
+            (if Llair.Jump.equal dest_block f then acc + 1 else acc)
+            f next_frame
+      | _ -> acc
+    in
+    let n = count_f_in_stack 0 return stk in
+    ( if n > bound then None
+    else
+      Some
+        (push_jump locals
+           (push_throw throw (push_return ~retreating return from_call stk)))
+    )
+    |>
+    [%Trace.retn fun {pf} _ ->
+      pf "%d of %a on stack" n Llair.Jump.pp return]
 
   let pop_return stk ~init ~f =
     let rec pop_return_ scope = function
@@ -252,13 +270,15 @@ let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
   let state, _ = Domain.call state args dst.params dst.locals in
   exec_goto stk state block jmp
 
-let exec_call stk state block ({dst; args; retreating} : Llair.jump) return
-    throw =
+let exec_call ~bound stk state block ({dst; args; retreating} : Llair.jump)
+    return throw =
   let state, from_call = Domain.call state args dst.params dst.locals in
-  let stk =
-    Stack.push_call dst.locals ~retreating ~return from_call ?throw stk
-  in
-  Work.add stk ~prev:block ~retreating state dst
+  match
+    Stack.push_call ~bound dst.locals ~retreating ~return from_call ?throw
+      stk
+  with
+  | Some stk -> Work.add stk ~prev:block ~retreating state dst
+  | None -> Work.skip
 
 let exec_return stk state block exp =
   match Stack.pop_return stk ~init:state ~f:Domain.retn with
@@ -287,8 +307,9 @@ let exec_skip_func :
   in
   exec_jump stk state block return
 
-let exec_term : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
- fun pgm stk state block ->
+let exec_term :
+    bound:int -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
+ fun ~bound pgm stk state block ->
   [%Trace.info "exec %a" Llair.Term.pp block.term] ;
   match block.term with
   | Switch {key; tbl; els} ->
@@ -338,7 +359,7 @@ let exec_term : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
             | None when Llair.Func.is_undefined callee ->
                 exec_skip_func stk state block return
             | None ->
-                exec_call stk state block
+                exec_call ~bound stk state block
                   {dst= callee.entry; args; retreating}
                   return throw )
             |> Work.seq x ) )
@@ -352,11 +373,12 @@ let exec_inst :
   Domain.exec_inst state inst
   |> Result.map_error ~f:(fun () -> (state, inst))
 
-let exec_block : Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
- fun pgm stk state block ->
+let exec_block :
+    bound:int -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
+ fun ~bound pgm stk state block ->
   [%Trace.info "exec %a" Llair.Block.pp block] ;
   match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
-  | Ok state -> exec_term pgm stk state block
+  | Ok state -> exec_term ~bound pgm stk state block
   | Error (state, inst) ->
       Report.invalid_access_inst state inst ;
       Work.skip
@@ -378,7 +400,7 @@ let exec_pgm : bound:int -> Llair.t -> unit =
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
   ( match harness pgm with
-  | Some work -> Work.run ~f:(exec_block pgm) (work bound)
+  | Some work -> Work.run ~f:(exec_block ~bound pgm) (work bound)
   | None -> fail "no applicable harness" () )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
