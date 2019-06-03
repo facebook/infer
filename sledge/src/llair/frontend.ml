@@ -1323,8 +1323,12 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
 let transform ~gdce : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
-  if gdce then Llvm_ipo.add_internalize pm ~all_but_main:true ;
-  Llvm_ipo.add_global_dce pm ;
+  if gdce then (
+    Llvm_ipo.add_internalize_predicate pm ~predicate:(fun fn ->
+        List.exists
+          ["__llair_main"; "_Z12__llair_mainv"; "main"]
+          ~f:(String.equal fn) ) ;
+    Llvm_ipo.add_global_dce pm ) ;
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
