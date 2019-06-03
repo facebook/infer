@@ -905,6 +905,24 @@ and clang_extra_flags =
     "Pass values as command-line arguments to invocations of clang"
 
 
+and clang_blacklisted_flags =
+  CLOpt.mk_string_list ~long:"clang-blacklisted-flags"
+    ~default:
+      [ "--expt-relaxed-constexpr"
+      ; "-fembed-bitcode-marker"
+      ; "-fno-absolute-module-directory"
+      ; "-fno-canonical-system-headers" ]
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    "Clang flags to filter out"
+
+
+and clang_blacklisted_flags_with_arg =
+  CLOpt.mk_string_list ~long:"clang-blacklisted-flags-with-arg"
+    ~default:["-index-store-path"; "-mllvm"]
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    "Clang flags (taking args) to filter out"
+
+
 and clang_compilation_dbs = ref []
 
 and clang_frontend_action =
@@ -2657,6 +2675,10 @@ and check_version = !check_version
 and clang_biniou_file = !clang_biniou_file
 
 and clang_extra_flags = !clang_extra_flags
+
+and clang_blacklisted_flags = !clang_blacklisted_flags
+
+and clang_blacklisted_flags_with_arg = !clang_blacklisted_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 

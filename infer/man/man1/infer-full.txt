@@ -172,6 +172,15 @@ OPTIONS
            Specify a file containing the AST of the program, in biniou format       
     See also infer-capture(1).
 
+       --clang-blacklisted-flags +string
+           Clang flags to filter out (default:
+           --expt-relaxed-constexpr,-fembed-bitcode-marker,-fno-absolute-module-directory,-fno-canonical-system-headers)       
+    See also infer-capture(1).
+
+       --clang-blacklisted-flags-with-arg +string
+           Clang flags (taking args) to filter out (default:
+           -index-store-path,-mllvm)           See also infer-capture(1).
+
        --class-loads
            Activates: Java class loading analysis (Conversely:
            --no-class-loads)           See also infer-analyze(1).
@@ -1177,6 +1186,12 @@ INTERNAL OPTIONS
 
        --clang-biniou-file-reset
            Cancel the effect of --clang-biniou-file.
+
+       --clang-blacklisted-flags-reset
+           Set --clang-blacklisted-flags to the empty list.
+
+       --clang-blacklisted-flags-with-arg-reset
+           Set --clang-blacklisted-flags-with-arg to the empty list.
 
        --clang-ignore-regex dir_OCaml_regex
            The files in this regex will be ignored in the compilation process

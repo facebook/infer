@@ -15,14 +15,6 @@ type t =
   ; quoting_style: ClangQuotes.style
   ; is_driver: bool }
 
-(** bad for every clang invocation *)
-let clang_blacklisted_flags =
-  [ "--expt-relaxed-constexpr"
-  ; "-fembed-bitcode-marker"
-  ; "-fno-absolute-module-directory"
-  ; "-fno-canonical-system-headers" ]
-
-
 let fcp_dir =
   Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name
   ^/ "facebook-clang-plugins"
@@ -92,8 +84,8 @@ let libcxx_include_to_override_regex =
 
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
    [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse order) [prev]. *)
-let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
-    ?(blacklisted_flags = []) ?(blacklisted_flags_with_arg = []) ?(post_args = []) args =
+let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(post_args = [])
+    args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
      some change has been performed *)
   let rec aux in_argfiles (prev_is_blacklisted_with_arg, res_rev, changed) args =
@@ -130,9 +122,9 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
             L.external_warning "Error reading argument file '%s': %s@\n" at_argfile
               (Exn.to_string e) ;
             aux in_argfiles' (false, at_argfile :: res_rev, changed) tl )
-    | flag :: tl when List.mem ~equal:String.equal blacklisted_flags flag ->
+    | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags flag ->
         aux in_argfiles (false, res_rev, true) tl
-    | flag :: tl when List.mem ~equal:String.equal blacklisted_flags_with_arg flag ->
+    | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag ->
         (* remove the flag and its arg separately in case we are at the end of an argfile *)
         aux in_argfiles (true, res_rev, true) tl
     | arg :: tl ->
@@ -150,7 +142,6 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
     fatal warnings. *)
 let clang_cc1_cmd_sanitizer cmd =
   (* command line options not supported by the opensource compiler or the plugins *)
-  let blacklisted_flags_with_arg = ["-mllvm"] in
   let replace_options_arg options arg =
     match (options, arg) with
     | [], _ ->
@@ -194,19 +185,15 @@ let clang_cc1_cmd_sanitizer cmd =
        argv_cons "-Wno-everything"
   in
   let clang_arguments =
-    filter_and_replace_unsupported_args ~blacklisted_flags:clang_blacklisted_flags
-      ~blacklisted_flags_with_arg ~replace_options_arg ~post_args:(List.rev post_args_rev) cmd.argv
+    filter_and_replace_unsupported_args ~replace_options_arg ~post_args:(List.rev post_args_rev)
+      cmd.argv
   in
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
 
 
 let mk ~is_driver quoting_style ~prog ~args =
   (* Some arguments break the compiler so they need to be removed even before the normalization step *)
-  let blacklisted_flags_with_arg = ["-index-store-path"] in
-  let sanitized_args =
-    filter_and_replace_unsupported_args ~blacklisted_flags:clang_blacklisted_flags
-      ~blacklisted_flags_with_arg args
-  in
+  let sanitized_args = filter_and_replace_unsupported_args args in
   let sanitized_args =
     if is_driver then sanitized_args @ List.rev Config.clang_extra_flags else sanitized_args
   in

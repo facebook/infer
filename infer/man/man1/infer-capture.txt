@@ -196,6 +196,14 @@ CLANG OPTIONS
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou format
 
+       --clang-blacklisted-flags +string
+           Clang flags to filter out (default:
+           --expt-relaxed-constexpr,-fembed-bitcode-marker,-fno-absolute-module-directory,-fno-canonical-system-headers)
+
+       --clang-blacklisted-flags-with-arg +string
+           Clang flags (taking args) to filter out (default:
+           -index-store-path,-mllvm)
+
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
            times)

@@ -276,6 +276,10 @@ val clang_biniou_file : string option
 
 val clang_extra_flags : string list
 
+val clang_blacklisted_flags : string list
+
+val clang_blacklisted_flags_with_arg : string list
+
 val clang_frontend_action_string : string
 
 val clang_ignore_regex : string option
