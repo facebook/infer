@@ -38,11 +38,11 @@ let flags exe_or_lib deps =
          ppx_import
          ppx_compare
          ppx_custom_printf
-         ppx_deriving_cmdliner
          ppx_expect
          ppx_hash
          ppx_here
          ppx_inline_test
+         ppx_let
          ppx_sexp_conv
          ppx_sexp_value
          ppx_trace

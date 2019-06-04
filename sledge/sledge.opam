@@ -12,18 +12,17 @@ build: [
 depends: [
   "ocaml"
   "base" {>= "v0.12.0"}
-  "cmdliner"
-  "core_kernel"
+  "core"
   "crunch" {build}
   "ctypes"
   "ctypes-foreign"
   "dune" {build}
   "llvm" {= "8.0.0"}
   "ppx_compare"
-  "ppx_deriving_cmdliner" {>= "0.4.2"}
   "ppx_import"
   "ppx_hash"
   "shexp"
+  "yojson"
   "zarith"
 ]
 synopsis: "SLEdge analyzer"

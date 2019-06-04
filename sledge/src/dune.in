@@ -22,7 +22,7 @@ Jbuild_plugin.V1.send
  (public_name sledge)
  (package sledge)
  %s
- (libraries cmdliner %s))
+ (libraries shexp.process yojson %s))
 |}
      (flags `exe deps)
      (libraries deps)

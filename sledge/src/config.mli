@@ -5,15 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Configuration options *)
+(** Configuration options from config file *)
 
-val run :
-     (   bound:int
-      -> compile_only:bool
-      -> input:string
-      -> output:string option
-      -> 'a)
-  -> 'a
-(** [run main] parses command line options, performs some imperative
-    initialization, and then executes [main] passing the configuration
-    options. *)
+val find : string -> string option
+val find_exn : string -> string

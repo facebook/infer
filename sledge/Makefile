@@ -10,16 +10,10 @@ EXES = src/sledge
 INSTALLS = sledge
 FMTS = @_build/dev/src/fmt
 
-facebook/Makefile:
-	-@${MAKE} -s -C ../facebook setup
-	-@${MAKE} -s -C facebook
-
--include facebook/Makefile
-
 DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS))
 OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS))
 
-DUNEINS = $(shell find src facebook model -name dune.in)
+DUNEINS = $(shell find src model -name dune.in)
 DUNES = $(patsubst %.in,%,$(DUNEINS))
 
 .PHONY: dunes
@@ -29,7 +23,7 @@ dunes: $(DUNES)
 	@cat $+ > $@
 
 .PHONY: setup
-setup: facebook/Makefile dunes
+setup: dunes
 
 .PHONY: check
 check: setup

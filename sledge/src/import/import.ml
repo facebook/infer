@@ -31,6 +31,7 @@ include (
 external ( == ) : 'a -> 'a -> bool = "%eq"
 
 include Stdio
+module Command = Core.Command
 module Hash_queue = Core_kernel.Hash_queue
 
 (** Tuple operations *)

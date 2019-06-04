@@ -1320,15 +1320,14 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
 
-let transform ~gdce : Llvm.llmodule -> unit =
+let transform : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
-  if gdce then (
-    Llvm_ipo.add_internalize_predicate pm (fun fn ->
-        List.exists
-          ["__llair_main"; "_Z12__llair_mainv"; "main"]
-          ~f:(String.equal fn) ) ;
-    Llvm_ipo.add_global_dce pm ) ;
+  Llvm_ipo.add_internalize_predicate pm (fun fn ->
+      List.exists
+        ["__llair_main"; "_Z12__llair_mainv"; "main"]
+        ~f:(String.equal fn) ) ;
+  Llvm_ipo.add_global_dce pm ;
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
@@ -1337,12 +1336,10 @@ let transform ~gdce : Llvm.llmodule -> unit =
   Llvm.PassManager.run_module llmodule pm |> (ignore : bool -> _) ;
   Llvm.PassManager.dispose pm
 
-let translate : string -> Llair.t =
- fun file ->
-  [%Trace.call fun {pf} -> pf "%s" file]
+let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
+ fun llcontext link_ctx bc_file ->
+  [%Trace.call fun {pf} -> pf "%s" bc_file]
   ;
-  Llvm.install_fatal_error_handler invalid_llvm ;
-  let llcontext = Llvm.global_context () in
   let read_and_parse bc_file =
     let llmemorybuffer =
       try Llvm.MemoryBuffer.of_file bc_file
@@ -1351,34 +1348,31 @@ let translate : string -> Llair.t =
     try Llvm_irreader.parse_ir llcontext llmemorybuffer
     with Llvm_irreader.Error msg -> invalid_llvm msg
   in
-  let single_bc_input =
-    List.exists
-      ~f:(fun suffix -> String.is_suffix file ~suffix)
-      [".bc"; ".ll"]
-  in
+  Llvm_linker.link_in link_ctx (read_and_parse bc_file)
+  |>
+  [%Trace.retn fun {pf} _ -> pf ""]
+
+let translate : string list -> Llair.t =
+ fun inputs ->
+  [%Trace.call fun {pf} ->
+    pf "%a" (List.pp "@ " Format.pp_print_string) inputs]
+  ;
+  Llvm.install_fatal_error_handler invalid_llvm ;
+  let llcontext = Llvm.global_context () in
   let llmodule =
-    if single_bc_input then read_and_parse file
-    else
-      let llmodule =
-        let model_memorybuffer =
-          Llvm.MemoryBuffer.of_string
-            (Option.value_exn (Model.read "/cxxabi.bc"))
-        in
-        Llvm_irreader.parse_ir llcontext model_memorybuffer
-      in
-      let link_ctx = Llvm_linker.get_linker llmodule in
-      let link_in bc_file =
-        [%Trace.info "linking in %s" bc_file] ;
-        Llvm_linker.link_in link_ctx (read_and_parse bc_file)
-      in
-      In_channel.with_file file ~f:(In_channel.iter_lines ~f:link_in) ;
-      Llvm_linker.linker_dispose link_ctx ;
-      llmodule
+    let model_memorybuffer =
+      Llvm.MemoryBuffer.of_string
+        (Option.value_exn (Model.read "/cxxabi.bc"))
+    in
+    Llvm_irreader.parse_ir llcontext model_memorybuffer
   in
+  let link_ctx = Llvm_linker.get_linker llmodule in
+  List.iter inputs ~f:(link_in llcontext link_ctx) ;
+  Llvm_linker.linker_dispose link_ctx ;
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
   ) ;
-  transform ~gdce:(not single_bc_input) llmodule ;
+  transform llmodule ;
   scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
