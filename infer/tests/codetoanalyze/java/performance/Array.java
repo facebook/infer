@@ -48,4 +48,16 @@ public class Array {
   void copyOf_constant(String[] arr) {
     String[] new_arr = Arrays.copyOf(arr, 10);
   }
+
+  void init_array_linear() {
+    int[] table = new int[256];
+    for (int i = 0; i < table.length; ++i) {
+      table[i] = i;
+    }
+  }
+
+  void fill_big_constant_FP() {
+    String[] arr = new String[300];
+    Arrays.fill(arr, 0);
+  }
 }

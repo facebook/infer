@@ -264,7 +264,12 @@ module Check = struct
 
   let lindex integer_type_widths ~array_exp ~index_exp ~last_included mem location cond_set =
     let idx = Sem.eval integer_type_widths index_exp mem in
-    let arr = Sem.eval_arr integer_type_widths array_exp mem in
+    let arr =
+      if Language.curr_language_is Java then
+        let arr_locs = Sem.eval_locs array_exp mem in
+        if PowLoc.is_empty arr_locs then Dom.Val.Itv.top else Dom.Mem.find_set arr_locs mem
+      else Sem.eval_arr integer_type_widths array_exp mem
+    in
     let idx_sym_exp =
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) index_exp
     in

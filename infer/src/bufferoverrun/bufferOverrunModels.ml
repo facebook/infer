@@ -115,19 +115,32 @@ let malloc ~can_be_zero size_exp =
       match Dom.Mem.find_simple_alias id mem with Some (l, None) -> Loc.get_path l | _ -> None
     in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
+    let represents_multiple_values = not (Itv.is_one size) in
     let allocsite =
-      let represents_multiple_values = not (Itv.is_one size) in
       Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
     in
     let size_exp_opt =
       let size_exp = Option.value dyn_length ~default:length0 in
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f integer_type_widths mem) size_exp
     in
-    let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
-    mem
-    |> Dom.Mem.add_stack (Loc.of_id id) v
-    |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
-    |> BoUtils.Exec.init_c_array_fields model_env path typ (Dom.Val.get_array_locs v) ?dyn_length
+    if Language.curr_language_is Java then
+      let internal_arr =
+        let allocsite =
+          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+            ~represents_multiple_values
+        in
+        Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
+      in
+      let arr_loc = Loc.of_allocsite allocsite in
+      mem
+      |> Dom.Mem.add_heap arr_loc internal_arr
+      |> Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_pow_loc ~traces (PowLoc.singleton arr_loc))
+    else
+      let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces in
+      mem
+      |> Dom.Mem.add_stack (Loc.of_id id) v
+      |> Dom.Mem.init_array_relation allocsite ~offset_opt:(Some offset) ~size ~size_exp_opt
+      |> BoUtils.Exec.init_c_array_fields model_env path typ (Dom.Val.get_array_locs v) ?dyn_length
   and check = check_alloc_size ~can_be_zero size_exp in
   {exec; check}
 
