@@ -564,5 +564,4 @@ let pp fs {globals; functions} =
     globals
     (List.pp "@\n@\n" Func.pp)
     ( Map.data functions
-    |> List.sort ~compare:(fun x y ->
-           Int.compare x.entry.sort_index y.entry.sort_index ) )
+    |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )
