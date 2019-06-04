@@ -56,8 +56,18 @@ public class Array {
     }
   }
 
-  void fill_big_constant_FP() {
+  void fill_big_constant() {
     String[] arr = new String[300];
     Arrays.fill(arr, 0);
+  }
+
+  void sort_array_nlogn(int size) {
+    String[] arr = new String[size];
+    Arrays.sort(arr);
+  }
+
+  void bsearch_log(int i) {
+    String[] arr = new String[i];
+    Arrays.binarySearch(arr, "u");
   }
 }

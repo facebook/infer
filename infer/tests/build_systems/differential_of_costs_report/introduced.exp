@@ -1,6 +1,6 @@
 INFINITE_EXECUTION_TIME_CALL, no_bucket, src/DiffExample.java, DiffExample.f1(int):void, 0, [Unbounded loop,Loop at line 26]
 PERFORMANCE_VARIATION, no_bucket, src/DiffExample.java, DiffExample.f4(int):int, 0, [Updated Cost is 6 + 5 ⋅ k (degree is 1),{k},Loop at line 45]
-PERFORMANCE_VARIATION, no_bucket, src/DiffExample.java, DiffExample.f5(java.util.ArrayList):void, 0, [Updated Cost is 2 + list.length × log(list.length) (degree is 1 + 1⋅log),{list.length},Modeled call to List.length,{list.length},Modeled call to List.length]
+PERFORMANCE_VARIATION, no_bucket, src/DiffExample.java, DiffExample.f5(java.util.ArrayList):void, 0, [Updated Cost is 2 + list.length × log(list.length) (degree is 1 + 1⋅log),{list.length},Modeled call to Collections.sort,{list.length},Modeled call to Collections.sort]
 INFINITE_EXECUTION_TIME_CALL, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f1(int):void, 0, [Unbounded loop,Loop at line 26]
 TIME_COMPLEXITY_INCREASE_COLD_START, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f4(int):int, 0, [Updated Cost is 6 + 5 ⋅ k (degree is 1),{k},Loop at line 45]
-PERFORMANCE_VARIATION, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f5(java.util.ArrayList):void, 0, [Updated Cost is 2 + list.length × log(list.length) (degree is 1 + 1⋅log),{list.length},Modeled call to List.length,{list.length},Modeled call to List.length]
+PERFORMANCE_VARIATION, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f5(java.util.ArrayList):void, 0, [Updated Cost is 2 + list.length × log(list.length) (degree is 1 + 1⋅log),{list.length},Modeled call to Collections.sort,{list.length},Modeled call to Collections.sort]
