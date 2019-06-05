@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import java.util.ArrayList;
+import java.util.Map;
 
 class HoistExpensive {
 
@@ -47,5 +48,25 @@ class HoistExpensive {
     for (int i = 0; i < size; i++) {
       cheap_iterator_dont_hoist(list);
     }
+  }
+
+  private Map<String, Foo> mLeakObjectResults;
+
+  class Foo {
+
+    String className;
+  }
+
+  public String getLeakSummary() {
+
+    StringBuilder leakedObjectSB = new StringBuilder();
+    for (String key : mLeakObjectResults.keySet()) {
+      leakedObjectSB
+          .append(key)
+          .append(",")
+          .append(mLeakObjectResults.get(key).className)
+          .append("\n");
+    }
+    return leakedObjectSB.toString();
   }
 }

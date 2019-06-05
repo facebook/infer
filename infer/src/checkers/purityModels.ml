@@ -132,7 +132,12 @@ module ProcName = struct
       ; +PatternMatch.implements_map &:: "isEmpty" <>--> PurityDomain.pure
       ; +PatternMatch.implements_map &:: "get" <>--> PurityDomain.pure
       ; +PatternMatch.implements_map &:: "put" <>--> modifies_first
+      ; +PatternMatch.implements_map &:: "putAll" <>--> modifies_first
       ; +PatternMatch.implements_map &:: "containsKey" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_map &:: "keySet" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_map &:: "values" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_map &:: "entrySet" <>--> PurityDomain.pure
+      ; +PatternMatch.implements_map &:: "size" <>--> PurityDomain.pure
       ; +PatternMatch.implements_map_entry &:: "getKey" <>--> PurityDomain.pure
       ; +PatternMatch.implements_map_entry &:: "getValue" <>--> PurityDomain.pure
       ; +PatternMatch.implements_queue &:: "poll" <>--> modifies_first
