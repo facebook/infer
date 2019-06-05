@@ -33,4 +33,4 @@ let find key = Yojson.Basic.Util.(to_string_option (member key contents))
 let find_exn key =
   match find key with
   | Some data -> data
-  | None -> fail "%s not specified in config file %s" key config_file
+  | None -> fail "%s not specified in config file %s" key config_file ()

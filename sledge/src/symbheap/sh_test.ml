@@ -9,7 +9,7 @@ let%test_module _ =
   ( module struct
     (* let () = Trace.init ~margin:68 ~config:all () *)
 
-    let () = Trace.init ~margin:68 ~config:none ()
+    let () = Trace.init ~margin:68 ~config:Trace.none ()
     let pp = Format.printf "@\n%a@." Sh.pp
     let pp_djn = Format.printf "@\n%a@." Sh.pp_djn
     let ( ~$ ) = Var.Set.of_list

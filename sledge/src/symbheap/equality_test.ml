@@ -9,7 +9,7 @@ let%test_module _ =
   ( module struct
     open Equality
 
-    let () = Trace.init ~margin:68 ~config:none ()
+    let () = Trace.init ~margin:68 ~config:Trace.none ()
 
     (* let () = Trace.init ~margin:160 ~config:all () *)
     let printf pp = Format.printf "@\n%a@." pp
