@@ -218,9 +218,11 @@ let capture ~changed_files = function
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args
-          ( ( if not (List.is_empty Config.buck_blacklist) then
-              ["--blacklist-regex"; "(" ^ String.concat ~sep:")|(" Config.buck_blacklist ^ ")"]
-            else [] )
+          ( ( match (build_system, Config.buck_blacklist) with
+            | Config.BBuck, _ :: _ ->
+                ["--blacklist-regex"; "(" ^ String.concat ~sep:")|(" Config.buck_blacklist ^ ")"]
+            | _ ->
+                [] )
           @ (if not Config.continue_capture then [] else ["--continue"])
           @ ( match Config.force_integration with
             | None ->
