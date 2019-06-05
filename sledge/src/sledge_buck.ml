@@ -136,8 +136,10 @@ let llvm_link_opt ~output modules =
   eval ~context
     ( run
         (Lazy.force llvm_bin ^ "llvm-link")
-        ( "-internalize" :: "-internalize-public-api-list=main" :: "-o=-"
-        :: modules )
+        ( "-internalize"
+        :: ( "-internalize-public-api-list="
+           ^ String.concat ~sep:"," (Config.find_list "entry_points") )
+        :: "-o=-" :: modules )
     |- run
          (Lazy.force llvm_bin ^ "opt")
          ["-o=" ^ output; "-globaldce"; "-globalopt"] )

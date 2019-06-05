@@ -30,6 +30,9 @@ let contents =
 
 let find key = Yojson.Basic.Util.(to_string_option (member key contents))
 
+let find_list key =
+  Yojson.Basic.Util.(filter_string (to_list (member key contents)))
+
 let find_exn key =
   match find key with
   | Some data -> data

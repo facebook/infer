@@ -3,6 +3,7 @@
 /llvm/
 /model/dune
 /src/dune
+/src/config/dune
 /src/import/dune
 /src/llair/dune
 /src/symbheap/dune

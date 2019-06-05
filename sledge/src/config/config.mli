@@ -9,3 +9,4 @@
 
 val find : string -> string option
 val find_exn : string -> string
+val find_list : string -> string list

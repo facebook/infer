@@ -385,8 +385,9 @@ let exec_block :
 
 let harness : Llair.t -> (int -> Work.t) option =
  fun pgm ->
-  List.find_map ["__llair_main"; "_Z12__llair_mainv"; "main"]
-    ~f:(fun name -> Llair.Func.find pgm.functions (Var.program name))
+  let entry_points = Config.find_list "entry_points" in
+  List.find_map entry_points ~f:(fun name ->
+      Llair.Func.find pgm.functions (Var.program name) )
   |> function
   | Some {entry= {params= []} as block} ->
       Some
