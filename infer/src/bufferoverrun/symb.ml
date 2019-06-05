@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 module BoundEnd = struct
   type t = LowerBound | UpperBound [@@deriving compare]
@@ -230,6 +231,20 @@ module Symbol = struct
     | BoundEnd of {unsigned: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
   [@@deriving compare]
 
+  let pp : F.formatter -> t -> unit =
+   fun fmt s ->
+    match s with
+    | OneValue {unsigned; path} | BoundEnd {unsigned; path} ->
+        SymbolPath.pp fmt path ;
+        ( if Config.developer_mode then
+          match s with
+          | BoundEnd {bound_end} ->
+              Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
+          | OneValue _ ->
+              () ) ;
+        if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if unsigned then 'u' else 's')
+
+
   let compare s1 s2 =
     match (s1, s2) with
     | OneValue _, BoundEnd _ ->
@@ -239,8 +254,10 @@ module Symbol = struct
     | OneValue {unsigned= unsigned1}, OneValue {unsigned= unsigned2}
     | BoundEnd {unsigned= unsigned1}, BoundEnd {unsigned= unsigned2} ->
         let r = compare s1 s2 in
-        if Int.equal r 0 then assert (Bool.equal unsigned1 unsigned2) ;
-        r
+        if Int.equal r 0 && not (Bool.equal unsigned1 unsigned2) then (
+          L.internal_error "values are equal but their signs are different: %a <> %a" pp s1 pp s2 ;
+          Bool.compare unsigned1 unsigned2 )
+        else r
 
 
   type 'res eval = t -> BoundEnd.t -> 'res AbstractDomain.Types.bottom_lifted
@@ -262,20 +279,6 @@ module Symbol = struct
 
   let make_boundend : BoundEnd.t -> unsigned:bool -> SymbolPath.t -> t =
    fun bound_end ~unsigned path -> BoundEnd {unsigned; path; bound_end}
-
-
-  let pp : F.formatter -> t -> unit =
-   fun fmt s ->
-    match s with
-    | OneValue {unsigned; path} | BoundEnd {unsigned; path} ->
-        SymbolPath.pp fmt path ;
-        ( if Config.developer_mode then
-          match s with
-          | BoundEnd {bound_end} ->
-              Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
-          | OneValue _ ->
-              () ) ;
-        if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if unsigned then 'u' else 's')
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
