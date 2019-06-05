@@ -1328,6 +1328,7 @@ let transform : Llvm.llmodule -> unit =
         ["__llair_main"; "_Z12__llair_mainv"; "main"]
         ~f:(String.equal fn) ) ;
   Llvm_ipo.add_global_dce pm ;
+  Llvm_ipo.add_global_optimizer pm ;
   Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;

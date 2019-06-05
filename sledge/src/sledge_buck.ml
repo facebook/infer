@@ -138,7 +138,9 @@ let llvm_link_opt ~output modules =
         (Lazy.force llvm_bin ^ "llvm-link")
         ( "-internalize" :: "-internalize-public-api-list=main" :: "-o=-"
         :: modules )
-    |- run (Lazy.force llvm_bin ^ "opt") ["-o=" ^ output; "-globaldce"] )
+    |- run
+         (Lazy.force llvm_bin ^ "opt")
+         ["-o=" ^ output; "-globaldce"; "-globalopt"] )
 
 (** command line interface *)
 
