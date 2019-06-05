@@ -72,53 +72,63 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
       ~col:(Llvm.get_debug_loc_column i)
   in
   let add_sym llv loc =
-    let next, void_tbl =
-      let scope =
-        match Llvm.classify_value llv with
-        | Argument -> `Fun (Llvm.param_parent llv)
-        | BasicBlock -> `Fun (Llvm.block_parent (Llvm.block_of_value llv))
-        | Instruction _ -> `Fun (Llvm.block_parent (Llvm.instr_parent llv))
-        | _ -> `Mod (Llvm.global_parent llv)
-      in
-      Hashtbl.find_or_add scope_tbl scope ~default:(fun () ->
-          (ref 0, Hashtbl.Poly.create ()) )
+    let maybe_scope =
+      match Llvm.classify_value llv with
+      | Argument -> Some (`Fun (Llvm.param_parent llv))
+      | BasicBlock ->
+          Some (`Fun (Llvm.block_parent (Llvm.block_of_value llv)))
+      | Instruction _ ->
+          Some (`Fun (Llvm.block_parent (Llvm.instr_parent llv)))
+      | GlobalVariable | Function -> Some (`Mod (Llvm.global_parent llv))
+      | UndefValue -> None
+      | _ ->
+          warn "Unexpected type of llv, might crash: %a" pp_llvalue llv () ;
+          Some (`Mod (Llvm.global_parent llv))
     in
-    let name =
-      match Llvm.classify_type (Llvm.type_of llv) with
-      | Void -> (
-          let fname =
-            match Llvm.classify_value llv with
-            | Instruction (Call | Invoke) -> (
-              match
-                Llvm.value_name
-                  (Llvm.operand llv (Llvm.num_operands llv - 1))
-              with
-              | "" -> Int.to_string (!next - 1)
-              | s -> s )
-            | _ -> "void"
-          in
-          match Hashtbl.find void_tbl fname with
-          | None ->
-              Hashtbl.set void_tbl ~key:fname ~data:1 ;
-              fname ^ ".void"
-          | Some count ->
-              Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
-              String.concat_array [|fname; ".void."; Int.to_string count|] )
-      | _ -> (
-        match Llvm.value_name llv with
-        | "" ->
-            (* anonymous values take the next SSA name *)
-            let name = !next in
-            next := name + 1 ;
-            Int.to_string name
-        | name -> (
-          match Int.of_string name with
-          | _ ->
-              (* escape to avoid clash with names of anonymous values *)
-              String.concat_array [|"\""; name; "\""|]
-          | exception _ -> name ) )
-    in
-    Hashtbl.set sym_tbl ~key:llv ~data:(name, loc)
+    match maybe_scope with
+    | None -> ()
+    | Some scope ->
+        let next, void_tbl =
+          Hashtbl.find_or_add scope_tbl scope ~default:(fun () ->
+              (ref 0, Hashtbl.Poly.create ()) )
+        in
+        let name =
+          match Llvm.classify_type (Llvm.type_of llv) with
+          | Void -> (
+              let fname =
+                match Llvm.classify_value llv with
+                | Instruction (Call | Invoke) -> (
+                  match
+                    Llvm.value_name
+                      (Llvm.operand llv (Llvm.num_operands llv - 1))
+                  with
+                  | "" -> Int.to_string (!next - 1)
+                  | s -> s )
+                | _ -> "void"
+              in
+              match Hashtbl.find void_tbl fname with
+              | None ->
+                  Hashtbl.set void_tbl ~key:fname ~data:1 ;
+                  fname ^ ".void"
+              | Some count ->
+                  Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                  String.concat_array
+                    [|fname; ".void."; Int.to_string count|] )
+          | _ -> (
+            match Llvm.value_name llv with
+            | "" ->
+                (* anonymous values take the next SSA name *)
+                let name = !next in
+                next := name + 1 ;
+                Int.to_string name
+            | name -> (
+              match Int.of_string name with
+              | _ ->
+                  (* escape to avoid clash with names of anonymous values *)
+                  String.concat_array [|"\""; name; "\""|]
+              | exception _ -> name ) )
+        in
+        Hashtbl.set sym_tbl ~key:llv ~data:(name, loc)
   in
   let scan_names_and_locs m =
     let scan_global g = add_sym g (loc_of_global g) in
@@ -1404,4 +1414,6 @@ let translate : string list -> Llair.t =
   Llvm.dispose_module llmodule ;
   Llair.mk ~globals ~functions
   |>
-  [%Trace.retn fun {pf} _ -> pf ""]
+  [%Trace.retn fun {pf} _ ->
+    pf "number of globals %d, number of functions %d" (List.length globals)
+      (List.length functions)]
