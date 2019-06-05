@@ -122,7 +122,10 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
             L.external_warning "Error reading argument file '%s': %s@\n" at_argfile
               (Exn.to_string e) ;
             aux in_argfiles' (false, at_argfile :: res_rev, changed) tl )
-    | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags flag ->
+    | flag :: tl
+      when List.mem ~equal:String.equal Config.clang_blacklisted_flags flag
+           || List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg
+                (String.split ~on:'=' flag |> List.hd |> Option.value ~default:"") ->
         aux in_argfiles (false, res_rev, true) tl
     | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag ->
         (* remove the flag and its arg separately in case we are at the end of an argfile *)
