@@ -39,7 +39,7 @@ let setup () =
           (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
               avoid getting errors because some of their contents is missing (removed by
               [Driver.clean_results_dir ()]). *)
-          buck && flavors)
+          (buck && flavors) || genrule_mode)
         || not
              ( Driver.(equal_mode driver_mode Analyze)
              || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )

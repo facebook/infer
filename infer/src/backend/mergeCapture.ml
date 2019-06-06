@@ -146,11 +146,25 @@ let process_merge_file deps_file =
   L.progress "Files linked: %d@\n" stats.files_linked
 
 
+let merge_global_tenvs infer_deps_file =
+  let global_tenv = Tenv.create () in
+  let merge infer_out_src =
+    let global_tenv_path =
+      infer_out_src ^/ Config.global_tenv_filename |> DB.filename_from_string
+    in
+    Tenv.read global_tenv_path
+    |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
+  in
+  MergeResults.iter_infer_deps infer_deps_file ~f:merge ;
+  Tenv.store_global global_tenv
+
+
 let merge_captured_targets () =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
   MergeResults.merge_buck_flavors_results infer_deps_file ;
+  if Config.genrule_master_mode then merge_global_tenvs infer_deps_file ;
   process_merge_file infer_deps_file ;
   L.progress "Merging captured Buck targets took %a@\n%!" Mtime.Span.pp (Mtime_clock.count time0)
 

@@ -388,6 +388,10 @@ val gen_previous_build_command_script : string option
 
 val generated_classes : string option
 
+val genrule_master_mode : bool
+
+val genrule_mode : bool
+
 val get_linter_doc_url : linter_id:string -> string option
 
 val hoisting_report_only_expensive : bool

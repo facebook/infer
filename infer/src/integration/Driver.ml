@@ -72,7 +72,8 @@ let register_perf_stats_report stats_type =
 (* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
    get rid of non-deterministic outputs.*)
 let clean_results_dir () =
-  if Config.flavors then ResultsDatabase.db_canonicalize () ;
+  let cache_capture = Config.(flavors || genrule_mode) in
+  if cache_capture then ResultsDatabase.db_canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
@@ -85,7 +86,7 @@ let clean_results_dir () =
         ; frontend_stats_dir_name
         ; reporting_stats_dir_name ]
       in
-      if flavors then common_list
+      if cache_capture then common_list
       else captured_dir_name :: racerd_issues_dir_name :: starvation_issues_dir_name :: common_list
     in
     List.mem ~equal:String.equal dirs_to_delete
@@ -93,7 +94,7 @@ let clean_results_dir () =
   let should_delete_file =
     let files_to_delete =
       (* we do not need to keep the database in Buck/Java mode *)
-      (if Config.flavors then [] else [ResultsDatabase.database_filename])
+      (if cache_capture then [] else [ResultsDatabase.database_filename])
       @ [ Config.log_file
         ; (* some versions of sqlite do not clean up after themselves *)
           ResultsDatabase.database_filename ^ "-shm"
@@ -397,6 +398,8 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     match mode with
     | PythonCapture (BBuck, _) when Config.flavors && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
+        true
+    | Analyze when Config.genrule_master_mode ->
         true
     | Analyze ->
         RunState.get_merge_capture ()

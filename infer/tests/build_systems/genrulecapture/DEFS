@@ -1,0 +1,88 @@
+import os
+
+original_java_library = java_library
+original_android_library = android_library
+
+def _get_infer_bin():
+  return read_config("infer", "infer_bin")
+
+def _get_project_root():
+  return read_config("infer", "project_root")
+
+def _get_infer_deps():
+  infer_out = read_config("infer", "infer_out")
+  infer_deps = "{}/infer-deps.txt".format(infer_out)
+  return infer_deps
+
+def _infer_capture_genrule(
+    name,
+    srcs
+  ):
+	
+  args = [
+      "--jobs",
+      "1",
+      "--genrule-mode",
+      "--quiet",
+      "--no-progress-bar",
+      "--results-dir",
+      "$OUT",
+      "--sourcepath",
+      "$SRCDIR",
+      "--project-root",
+      _get_project_root(),
+      "--classpath",
+      "$(classpath :{})".format(name),
+      "--generated-classes",
+      "$(location :{})".format(name),
+      "capture",
+  ]
+  
+  args_file = os.path.join("$TMP", "args.txt")
+  subcommands = [
+    "echo {} >> {}".format(arg, args_file)
+    for arg in args
+  ] + [
+    " ".join([_get_infer_bin(), "@" + args_file]),
+    # need to use a cross-platform kind of flock to avoid fragmentation
+    'echo -e "_\\t_\\t$OUT" >> {}'.format(_get_infer_deps())
+  ]
+	
+  genrule(
+      name = name + "_infer_capture",
+      srcs = srcs,
+      cmd = " && ".join(subcommands),
+      out = "infer_out",
+      labels = ["infer_capture_genrule"],
+  )  
+
+
+def _make_infer_capture_genrule(name, kwargs):
+  java_sources = [
+    f
+    for f in kwargs.get("srcs", [])
+    if f.endswith(".java")
+  ]
+
+  if java_sources != []:
+    _infer_capture_genrule(name, java_sources)
+    kwargs["labels"] = kwargs.get("labels", []) + ["infer_enabled"]
+  
+  return kwargs
+
+
+def java_library(name, **kwargs):
+  new_kwargs = _make_infer_capture_genrule(name, kwargs)
+
+  original_java_library(
+    name=name,
+    **new_kwargs
+  )
+
+def android_library(name, **kwargs):
+  new_kwargs = _make_infer_capture_genrule(name, kwargs)
+
+  original_android_library(
+    name=name,
+    **new_kwargs
+  )
