@@ -20,7 +20,7 @@ $(OBJECTS): $(SOURCES) $(BUCKCONFIG)
 	$(TESTLOCK) $(BUCK) build --config tools.javac_jar= $(TARGET)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(BUCKCONFIG)
-	$(TESTLOCK) $(REMOVE_DIR) buck-out && \
+	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java integration with javac_jar,\
 	INFER_BIN=$(INFER_BIN) \
-	$(TESTLOCK) $(INFER_BIN) $(INFER_OPTIONS) -- $(BUCK) build $(TARGET))
+	$(INFER_BIN) $(INFER_OPTIONS) -- $(BUCK) build $(TARGET))

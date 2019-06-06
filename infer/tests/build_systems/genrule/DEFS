@@ -1,0 +1,52 @@
+import os
+
+original_java_library = java_library
+def java_library(
+    name,
+    srcs=[],
+    **kwargs
+    ):
+
+  original_java_library(
+    name=name,
+    srcs=srcs,
+    **kwargs
+  )
+
+  create_infer_genrule(name, srcs)
+
+original_android_library = android_library
+def android_library(
+    name,
+    srcs=[],
+    **kwargs
+    ):
+
+  original_android_library(
+    name=name,
+    srcs=srcs,
+    **kwargs
+  )
+
+  create_infer_genrule(name, srcs)
+
+def create_infer_genrule(
+    name,
+    srcs
+    ):
+  genrule_name = name + '_infer'
+  genrule(
+    name = genrule_name,
+    srcs=srcs,
+    cmd = ' '.join([
+        os.getenv('INFER_BIN', 'infer'),
+        '--genrule-mode',
+        '--project-root', os.getenv('PROJECT_ROOT', os.environ['PWD']),
+        '--eradicate-only',
+        '--results-dir', '$OUT',
+        '--classpath', '$(classpath :{})'.format(name),
+        '--sourcepath', '$SRCDIR',
+        '--generated-classes', '$(location :{})'.format(name),
+    ]),
+    out = 'infer_out',
+  )

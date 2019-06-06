@@ -2,6 +2,6 @@ java_library(
     name='module2',
     srcs=['Class2.java'],
     deps=[
-        '//infer/tests/build_systems/buck_cross_module/module1:module1'
+        '//module1:module1'
     ]
 )

@@ -4,28 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../..
-ROOT_DIR = $(TESTS_DIR)/../..
 
-BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
-SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
-OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/lib__module2__output/module2.jar
+BUCK_TARGET = //module2:module2
 INFER_OPTIONS = --eradicate --no-linters
-INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
-CLEAN_EXTRA = $(ROOT_DIR)/buck-out
+INFERPRINT_OPTIONS = --issues-tests
+CLEAN_EXTRA = buck-out
+SOURCES = $(shell find . -name '*.java')
+
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make
 
-$(OBJECTS): $(JAVA_SOURCE_FILES)
-	$(QUIET)cd $(ROOT_DIR) && \
-	$(call silent_on_success,Compiling Buck Java tests,\
-	INFER_BIN=$(INFER_BIN) \
-	$(TESTLOCK) $(BUCK) build --deep --no-cache $(BUCK_TARGET))
-
-infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
-	$(QUIET)cd $(ROOT_DIR) && \
-	$(TESTLOCK) $(REMOVE_DIR) buck-out && \
+infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
+	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java integration,\
 	INFER_BIN=$(INFER_BIN) \
-	$(TESTLOCK) $(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --deep --no-cache $(BUCK_TARGET))

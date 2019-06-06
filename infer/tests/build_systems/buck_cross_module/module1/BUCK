@@ -2,7 +2,7 @@ java_library(
     name='module1',
     srcs=['Class1.java'],
     deps=[
-        '//infer/tests/build_systems/genrule/annotations:annotations',
+        '//annotations:annotations',
     ],
     visibility=[
         'PUBLIC'

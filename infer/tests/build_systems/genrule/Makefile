@@ -4,41 +4,24 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../..
-ROOT_DIR = $(TESTS_DIR)/../..
 
-BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
+BUCK_TARGET = //module2:module2
 INFER_TARGET = $(BUCK_TARGET)_infer
-SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
-OBJECTS = $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/lib__module2_compile__output/module2_compile.jar
-JSON_REPORT = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json
-INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
-
-# fake infer-out because we only copy the results.json from buck-out.
-INFER_OUT = .
+INFERPRINT_OPTIONS = --issues-tests
+SOURCES = $(shell find . -name '*.java')
+CLEAN_EXTRA = buck-out
+INFER_OUT = buck-out/gen/module2/module2_infer/infer_out
+JSON_REPORT = $(INFER_OUT)/report.json
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make
 
-$(OBJECTS): $(JAVA_SOURCE_FILES)
-	$(QUIET)cd $(ROOT_DIR) && \
-	$(call silent_on_success,Compiling Buck genrule for Java sources,\
-	$(TESTLOCK) $(BUCK) build --no-cache $(BUCK_TARGET))
-
-.PHONY: genrule
-genrule: $(JSON_REPORT)
-
-
-$(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES) $(MAKEFILE_LIST)
-	$(QUIET)cd $(ROOT_DIR) && \
-	$(TESTLOCK) $(REMOVE_DIR) buck-out && \
+$(JSON_REPORT): $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
+	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck genrule for Java integration,\
-	INFER_BIN="$(INFER_BIN)" PROJECT_ROOT="$(PWD)" $(TESTLOCK) $(BUCK) build --no-cache $(INFER_TARGET))
+	INFER_BIN="$(INFER_BIN)" $(BUCK) build --no-cache $(INFER_TARGET))
 	$(QUIET)touch $@
 
-report.json: $(JSON_REPORT) $(MAKEFILE_LIST)
-#	the report contains absolute paths
-	$(QUIET)sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@
-
-issues.exp.test$(TEST_SUFFIX): report.json $(INFER_BIN)
+issues.exp.test$(TEST_SUFFIX): $(JSON_REPORT) $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q \
-	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	   $(INFERPRINT_OPTIONS) $@ --from-json-report $(JSON_REPORT)
