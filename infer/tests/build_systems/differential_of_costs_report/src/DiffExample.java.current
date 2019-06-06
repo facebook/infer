@@ -10,6 +10,7 @@ import java.util.ArrayList;
 // This class has the following costs:
 // 1 bottom (zero), 2 constant, 1 linear, 1 top
 // constructor: constant
+// private access$000 method for accessing f8 
 // f1: top
 // f2: bottom (zero)
 // f3: constant
@@ -17,9 +18,20 @@ import java.util.ArrayList;
 // f5: n log n
 // f6: n log n
 // f7: top by call to f1
+// f8: quadratic
 
 public class DiffExample {
 
+  int z;
+  ArrayList<String> list =
+      new ArrayList<String>() {
+      
+        @Override
+        public String toString() {
+           f8(z);
+          return super.toString();
+        }
+      };
     // cost: top
     private static void f1(int k) {
         int i = 0;
@@ -61,4 +73,12 @@ public class DiffExample {
     private static void f7(int k) {
         f1(k);
     }
+
+   // cost: quadratic
+    private static void f8(int k) {
+        for (int i = 0; i < k; i++) {
+            f4(k);
+        }
+    }
+
 }

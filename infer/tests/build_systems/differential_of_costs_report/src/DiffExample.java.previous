@@ -4,10 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+ 
+import java.util.ArrayList;
 
 // This class has the following costs:
 // 2 constant, 1 linear, 1 quadratic
 // constructor: constant
+// private access$000 method for accessing f4 
 // f1: linear
 // f2: quadratic
 // f4: constant
@@ -16,6 +19,17 @@
 // f7: top
 
 public class DiffExample {
+
+  int z;
+  ArrayList<String> list =
+      new ArrayList<String>() {
+ 
+        @Override
+        public String toString() {
+          f4(z);  
+          return super.toString();
+        }
+      };
     // cost: linear
     private static int f1(int k) {
         for (int i = 0; i < k; i++) {
