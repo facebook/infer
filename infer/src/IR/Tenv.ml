@@ -100,13 +100,14 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
         FileLocal (Marshal.from_string b 0)
 end
 
-let merge ~src ~dst =
+let merge ~src ~dst = TypenameHash.iter (fun pname cfg -> TypenameHash.replace dst pname cfg) src
+
+let merge_per_file ~src ~dst =
   match (src, dst) with
   | Global, Global ->
       Global
   | FileLocal src_tenv, FileLocal dst_tenv ->
-      TypenameHash.iter (fun pname cfg -> TypenameHash.replace dst_tenv pname cfg) src_tenv ;
-      FileLocal dst_tenv
+      merge ~src:src_tenv ~dst:dst_tenv ; FileLocal dst_tenv
   | Global, FileLocal _ | FileLocal _, Global ->
       L.die InternalError "Cannot merge Global tenv with FileLocal tenv"
 
@@ -125,9 +126,10 @@ let global_tenv : t option ref = ref None
 
 let global_tenv_path = Config.(results_dir ^/ global_tenv_filename) |> DB.filename_from_string
 
+let read path = Serialization.read_from_file tenv_serializer path
+
 let load_global () : t option =
-  if is_none !global_tenv then
-    global_tenv := Serialization.read_from_file tenv_serializer global_tenv_path ;
+  if is_none !global_tenv then global_tenv := read global_tenv_path ;
   !global_tenv
 
 

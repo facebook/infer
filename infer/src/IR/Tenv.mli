@@ -20,6 +20,9 @@ val load : SourceFile.t -> t option
 
 val store_debug_file_for_source : SourceFile.t -> t -> unit
 
+val read : DB.filename -> t option
+(** read and return a type environment from the given file *)
+
 val load_global : unit -> t option
 (** load the global type environment (Java) *)
 
@@ -54,8 +57,11 @@ val pp_per_file : Format.formatter -> per_file -> unit
   [@@warning "-32"]
 (** print per file type environment *)
 
-val merge : src:per_file -> dst:per_file -> per_file
+val merge : src:t -> dst:t -> unit
+(** Merge [src] into [dst] possibly overwriting pre existing procs in [dst]. *)
+
+val merge_per_file : src:per_file -> dst:per_file -> per_file
 (** Best-effort merge of [src] into [dst]. If a procedure is both in [dst] and [src], the one in
-   [src] will get overwritten. *)
+   [dst] will get overwritten. *)
 
 module SQLite : SqliteUtils.Data with type t = per_file

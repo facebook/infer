@@ -56,7 +56,7 @@ let add source_file cfg tenv integer_type_widths =
               if not (Caml.Hashtbl.mem existing_proc_names proc_name) then proc_name :: proc_names
               else proc_names )
         in
-        (Tenv.merge ~dst:old_tenv ~src:tenv, proc_names)
+        (Tenv.merge_per_file ~dst:old_tenv ~src:tenv, proc_names)
     | None ->
         (tenv, new_proc_names)
   in

@@ -42,7 +42,8 @@ let merge_source_files_table ~db_file =
        ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
 
 
-let merge ~db_file =
+let merge infer_out_src =
+  let db_file = infer_out_src ^/ ResultsDatabase.database_filename in
   let main_db = ResultsDatabase.get_database () in
   Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
   |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
@@ -53,7 +54,7 @@ let merge ~db_file =
   ()
 
 
-let merge_buck_flavors_results infer_deps_file =
+let iter_infer_deps infer_deps_file ~f =
   let one_line line =
     match String.split ~on:'\t' line with
     | [_; _; target_results_dir] ->
@@ -62,7 +63,7 @@ let merge_buck_flavors_results infer_deps_file =
             Filename.dirname (Config.project_root ^/ "buck-out") ^/ target_results_dir
           else target_results_dir
         in
-        merge ~db_file:(infer_out_src ^/ ResultsDatabase.database_filename)
+        f infer_out_src
     | _ ->
         assert false
   in
@@ -71,3 +72,6 @@ let merge_buck_flavors_results infer_deps_file =
       List.iter ~f:one_line lines
   | Error error ->
       L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
+
+
+let merge_buck_flavors_results infer_deps_file = iter_infer_deps infer_deps_file ~f:merge
