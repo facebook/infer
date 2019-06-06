@@ -208,14 +208,14 @@ let phase fmt = log ~to_console:false phase_file_fmts fmt
 
 let progress fmt = log ~to_console:(not Config.quiet) progress_file_fmts fmt
 
-let task_progress ~f pp x =
+let log_task fmt =
   let to_console =
     match Config.progress_bar with `Plain -> true | `Quiet | `MultiLine -> false
   in
-  log ~to_console progress_file_fmts "%a starting@." pp x ;
-  f () ;
-  log ~to_console progress_file_fmts "%a DONE@." pp x
+  log ~to_console progress_file_fmts fmt
 
+
+let task_progress ~f pp x = log_task "%a starting@." pp x ; f () ; log_task "%a DONE@." pp x
 
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 

@@ -32,7 +32,7 @@ let analyze_target : TaskScheduler.target Tasks.doer =
   let analyze_proc_name exe_env proc_name =
     decr procs_left ;
     if Int.( <= ) !procs_left 0 then (
-      L.progress "Analysing block of %d procs, starting with %a@."
+      L.log_task "Analysing block of %d procs, starting with %a@."
         per_procedure_logging_granularity Typ.Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
     Callbacks.analyze_proc_name exe_env proc_name
