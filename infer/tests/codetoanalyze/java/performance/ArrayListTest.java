@@ -255,6 +255,10 @@ public class ArrayListTest {
   void sort_comparator_nlogn(ArrayList<Person> people) {
     java.util.Collections.sort(people, new LexicographicComparator());
   }
+
+  Person max_linear(ArrayList<Person> people) {
+    return java.util.Collections.max(people, new LexicographicComparator());
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {

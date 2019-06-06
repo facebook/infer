@@ -122,6 +122,12 @@ module Call = struct
         &:: "reverse" <>$ capt_exp
         $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.reverse"
       ; +PatternMatch.implements_collections
+        &:: "max" <>$ capt_exp
+        $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.max"
+      ; +PatternMatch.implements_collections
+        &:: "min" <>$ capt_exp
+        $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.min"
+      ; +PatternMatch.implements_collections
         &:: "shuffle" <>$ capt_exp
         $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.shuffle"
       ; +PatternMatch.implements_lang "String"
