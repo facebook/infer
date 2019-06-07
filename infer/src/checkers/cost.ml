@@ -762,16 +762,18 @@ module Check = struct
 
 
   let check_and_report WorstCaseCost.{costs; reports} proc_desc summary =
-    CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
-      ~f:(fun kind ReportConfig.{name; threshold} -> function
-      | ThresholdReports.Threshold _ ->
-          ()
-      | ThresholdReports.ReportOn {location; cost} ->
-          report_threshold proc_desc summary ~name ~location ~cost
-            ~threshold:(Option.value_exn threshold) ~kind ) ;
-    CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
-      ~f:(fun _kind ReportConfig.{name; top_and_bottom} cost ->
-        if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost )
+    let pname = Procdesc.get_proc_name proc_desc in
+    if not (Typ.Procname.is_java_access_method pname) then (
+      CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
+        ~f:(fun kind ReportConfig.{name; threshold} -> function
+        | ThresholdReports.Threshold _ ->
+            ()
+        | ThresholdReports.ReportOn {location; cost} ->
+            report_threshold proc_desc summary ~name ~location ~cost
+              ~threshold:(Option.value_exn threshold) ~kind ) ;
+      CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
+        ~f:(fun _kind ReportConfig.{name; top_and_bottom} cost ->
+          if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t

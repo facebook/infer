@@ -342,7 +342,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
 
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
-    | Some {post} ->
+    | Some {post} when not (Typ.Procname.is_java_access_method proc_name) ->
         let basic_operation_cost = CostDomain.get_operation_cost post in
         let degree_with_term = CostDomain.BasicCost.get_degree_with_term basic_operation_cost in
         let hum =
@@ -367,7 +367,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; hum }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
-    | None ->
+    | _ ->
         None
 end)
 
