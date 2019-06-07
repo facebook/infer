@@ -199,6 +199,8 @@ module Name : sig
 
       val java_lang_string : t
 
+      val void : t
+
       val package : t -> string option
 
       val type_name : t -> string

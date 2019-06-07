@@ -33,6 +33,12 @@ val map_changed :
   -> f:(Sil.instr -> Sil.instr)
   -> not_reversed_t
 
+val concat_map_changed :
+     equal:(Sil.instr -> Sil.instr -> bool)
+  -> not_reversed_t
+  -> f:(Sil.instr -> Sil.instr array)
+  -> not_reversed_t
+
 val reverse_order : not_reversed_t -> reversed t
 
 val is_empty : _ t -> bool

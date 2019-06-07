@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --topl-properties tomcat.topl --biabduction-only
+INFER_OPTIONS = --topl-properties tomcat.topl --topl-properties iterators.topl --biabduction-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)

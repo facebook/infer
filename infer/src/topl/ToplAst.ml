@@ -7,6 +7,8 @@
 
 open! IStd
 
+type property_name = string [@@deriving compare, hash, sexp]
+
 type register_name = string
 
 (** TODO: use Const.t *)
@@ -26,8 +28,9 @@ type label =
   ; procedure_name: procedure_name_pattern
   ; arguments: value_pattern list option }
 
-type vertex = string
+type vertex = string [@@deriving compare, hash, sexp]
 
 type transition = {source: vertex; target: vertex; label: label}
 
-type t = {name: string; message: string option; prefixes: string list; transitions: transition list}
+type t =
+  {name: property_name; message: string option; prefixes: string list; transitions: transition list}

@@ -2289,6 +2289,10 @@ and trace_rearrange =
     "Detailed tracing information during prop re-arrangement operations"
 
 
+and trace_topl =
+  CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
+
+
 and tracing =
   CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
     "Report error traces for runtime exceptions (Java only): generate preconditions for \
@@ -3140,6 +3144,8 @@ and trace_ondemand = !trace_ondemand
 and trace_join = !trace_join
 
 and trace_rearrange = !trace_rearrange
+
+and trace_topl = !trace_topl
 
 and tracing = !tracing
 

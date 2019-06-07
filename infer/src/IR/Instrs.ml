@@ -91,6 +91,14 @@ let map_changed =
     if phys_equal instrs instrs' then t else NotReversed instrs'
 
 
+let concat_map_changed ~equal (NotReversed instrs as t) ~f =
+  let instrs' = Array.concat_map ~f instrs in
+  if
+    Int.equal (Array.length instrs) (Array.length instrs')
+    && Array.for_all2_exn ~f:equal instrs instrs'
+  then t
+  else NotReversed instrs'
+
 let reverse_order (NotReversed instrs) = Reversed (RevArray.of_rev_array instrs)
 
 (* Functions on both reversed and non-reversed arrays *)

@@ -228,6 +228,15 @@ module Node = struct
       true )
 
 
+  (** Like [replace_instrs], but 1 instr gets replaced by 0, 1, or more instructions. *)
+  let replace_instrs_by node ~f =
+    let instrs' = Instrs.concat_map_changed ~equal:phys_equal node.instrs ~f:(f node) in
+    if phys_equal instrs' node.instrs then false
+    else (
+      node.instrs <- instrs' ;
+      true )
+
+
   let pp_stmt fmt = function
     | AssertionFailure ->
         F.pp_print_string fmt "Assertion failure"
@@ -520,11 +529,20 @@ let find_map_instrs pdesc ~f =
   find_map_nodes ~f:find_map_node pdesc
 
 
-let replace_instrs pdesc ~f =
-  let f updated node =
-    Node.replace_instrs ~f node || (* do not short-circuit [Node.replace_instrs] *) updated
-  in
+let update_nodes pdesc ~(update : Node.t -> bool) : bool =
+  let f acc node = update node || acc in
+  (* do not shortcut call to [update] *)
   fold_nodes pdesc ~init:false ~f
+
+
+let replace_instrs pdesc ~f =
+  let update node = Node.replace_instrs ~f node in
+  update_nodes pdesc ~update
+
+
+let replace_instrs_by pdesc ~f =
+  let update node = Node.replace_instrs_by ~f node in
+  update_nodes pdesc ~update
 
 
 (** fold between two nodes or until we reach a branching structure *)

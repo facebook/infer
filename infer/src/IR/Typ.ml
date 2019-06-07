@@ -447,6 +447,8 @@ module Name = struct
       let java_lang_object = make ~package:"java.lang" "Object"
 
       let java_lang_string = make ~package:"java.lang" "String"
+
+      let void = make "void"
     end
 
     let from_string name_str = JavaClass (Mangled.from_string name_str)

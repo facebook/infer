@@ -1746,6 +1746,10 @@ INTERNAL OPTIONS
            Activates: Detailed tracing information during prop re-arrangement
            operations (Conversely: --no-trace-rearrange)
 
+       --trace-topl
+           Activates: Detailed tracing information during TOPL analysis
+           (Conversely: --no-trace-topl)
+
        --tracing
            Activates: Report error traces for runtime exceptions (Java only):
            generate preconditions for runtimeexceptions in Java and report

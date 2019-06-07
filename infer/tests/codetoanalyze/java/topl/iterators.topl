@@ -1,0 +1,29 @@
+property HasNext
+  prefix <java.util.{Collection,Iterator}>
+  start -> start: *
+  start -> invalid: I = iterator(*)
+  invalid -> valid: <true> = hasNext(i) // treat as shorthand for <B> = hasNext if (b)
+  valid -> invalid: next(i)
+  invalid -> error: next(i)
+
+property UnsafeIterator
+  prefix <java.util.{Collection,Iterator}>
+  start -> iterating: I = iterator(C)
+  iterating -> modified: remove(c, *)
+  iterating -> modified: add(c, *)
+  modified -> error: next(i)
+
+property UnsafeMapIterator
+  start -> start: *
+  start -> gotView: View = keySet(M)
+  start -> gotView: View = values(M)
+  gotView -> iterating: I = iterator(view)
+  iterating -> updated: put(m, *)
+  updated -> error: next(i)
+
+property SkipIndexAfterRemove
+  prefix <java.util.ArrayList>
+  start -> start: *
+  start -> removed: remove(Collection, Index)
+  removed -> ok:    get(collection, index)
+  removed -> error: get(collection, J) // TODO: if (j!=index)

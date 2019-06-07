@@ -59,8 +59,13 @@ let should_be_analyzed proc_attributes =
   (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
 
 
+let get_proc_attr proc_name =
+  IList.force_until_first_some
+    [lazy (Summary.proc_resolve_attributes proc_name); lazy (Topl.get_proc_attr proc_name)]
+
+
 let procedure_should_be_analyzed proc_name =
-  match Summary.proc_resolve_attributes proc_name with
+  match get_proc_attr proc_name with
   | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
@@ -270,11 +275,10 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
-  match Procdesc.load callee_pname with
-  | Some _ as pdesc_opt ->
-      pdesc_opt
-  | None ->
-      Option.map ~f:Summary.get_proc_desc (Summary.get callee_pname)
+  IList.force_until_first_some
+    [ lazy (Procdesc.load callee_pname)
+    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.get callee_pname))
+    ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
 (** analyze_proc_name ?caller_pdesc proc_name performs an on-demand analysis of proc_name triggered

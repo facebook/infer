@@ -1,0 +1,81 @@
+(*
+ * Copyright (c) 2019-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+open! IStd
+
+module Vname = struct
+  module T = struct
+    type t = ToplAst.property_name * ToplAst.vertex [@@deriving compare, hash, sexp]
+  end
+
+  include T
+  include Hashable.Make (T)
+end
+
+type vname = Vname.t
+
+type vindex = int
+
+type tindex = int
+
+type transition = {source: vindex; target: vindex; label: ToplAst.label}
+
+(** INV1: Array.length states = Array.length outgoing
+    INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists *)
+type t =
+  { states: vname array
+  ; transitions: transition array
+  ; outgoing: tindex list array
+  ; vindex: vname -> vindex }
+
+(** [index_in H a x] is the (last) index of [x] in array [a]. *)
+let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array) : k -> int =
+  let h = H.create ~size:(2 * Array.length a) () in
+  let f i x = H.set h ~key:x ~data:i in
+  Array.iteri ~f a ;
+  let find x = H.find_exn h x in
+  find
+
+
+let make properties =
+  let states : vname array =
+    let open ToplAst in
+    let f p =
+      let f {source; target; _} = [(p.name, source); (p.name, target)] in
+      List.concat_map ~f p.transitions
+    in
+    Array.of_list (List.concat_map ~f properties)
+  in
+  let vindex = index_in (module Vname.Table) states in
+  let transitions : transition array =
+    let f p =
+      let prefix_pname pname =
+        "^\\(\\|" ^ String.concat ~sep:"\\|" p.ToplAst.prefixes ^ "\\)\\." ^ pname ^ "()$"
+      in
+      let f t =
+        let source = vindex ToplAst.(p.name, t.source) in
+        let target = vindex ToplAst.(p.name, t.target) in
+        let procedure_name = prefix_pname ToplAst.(t.label.procedure_name) in
+        let label = {t.ToplAst.label with procedure_name} in
+        {source; target; label}
+      in
+      List.map ~f p.ToplAst.transitions
+    in
+    Array.of_list (List.concat_map ~f properties)
+  in
+  let outgoing : tindex list array =
+    let vcount = Array.length states in
+    let a = Array.create ~len:vcount [] in
+    let f i t = a.(t.source) <- i :: a.(t.source) in
+    Array.iteri ~f transitions ; a
+  in
+  {states; transitions; outgoing; vindex}
+
+
+let transition a i = a.transitions.(i)
+
+let tcount a = Array.length a.transitions
