@@ -172,7 +172,10 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
       in
       let pp_extra_msg fmt () =
         if Config.developer_mode then curr_cost_msg fmt ()
-        else Format.fprintf fmt "Please make sure this is an expected change."
+        else
+          Format.fprintf fmt
+            "Please make sure this is an expected change. You can inspect the trace to understand \
+             the complexity increase:"
       in
       let cold_start_msg =
         if ExternalPerfData.in_profiler_data_map procname then
@@ -181,7 +184,14 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
         else ""
       in
       let prev_degree_with_term = CostDomain.BasicCost.get_degree_with_term prev_cost in
-      Format.asprintf "Complexity of this function has %a from %a to %a. %s %a"
+      let msg =
+        (* Java Only *)
+        if String.equal method_name Typ.Procname.Java.constructor_method_name then "constructor"
+        else if String.equal method_name Typ.Procname.Java.class_initializer_method_name then
+          "class initializer"
+        else "this function"
+      in
+      Format.asprintf "Complexity of %s has %a from %a to %a. %s %a" msg
         (MarkupFormatter.wrap_bold pp_delta)
         delta
         (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
