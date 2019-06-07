@@ -354,12 +354,22 @@ let pp_t = pp
 
 (** Invariant *)
 
-let typ_of = function
+let rec typ_of = function
   | Add {typ} | Mul {typ} | Integer {typ} | App {op= Convert {dst= typ}} ->
       Some typ
   | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule}}
     ->
       Some Typ.bool
+  | App
+      { op=
+          App
+            { op=
+                Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr
+            ; arg= x }
+      ; arg= y } -> (
+    match typ_of x with Some _ as t -> t | None -> typ_of y )
+  | App {op= App {op= App {op= Conditional}; arg= thn}; arg= els} -> (
+    match typ_of thn with Some _ as t -> t | None -> typ_of els )
   | _ -> None
 
 let typ = typ_of
