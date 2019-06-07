@@ -18,9 +18,9 @@ let pp fs {var} =
   in
   pf "@%s%a" name Var.pp_demangled var
 
-let pp_defn fs {var; init; typ} =
-  Format.fprintf fs "@[<2>%a %a%a@]" Typ.pp typ Var.pp var
-    (Option.pp " =@ @[%a@]" (fun fs (init, _) -> Exp.pp fs init))
+let pp_defn fs {var; init; typ; loc} =
+  Format.fprintf fs "@[<2>%a %a%a%a@]" Typ.pp typ Var.pp var Loc.pp loc
+    (Option.pp "@ = @[%a@]" (fun fs (init, _) -> Exp.pp fs init))
     init
 
 let invariant g =
