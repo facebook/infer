@@ -1037,6 +1037,8 @@ let xlate_instr :
       | ["__llair_throw"] ->
           let dst = Llair.Jump.mk unwind_dst args in
           emit_term (Llair.Term.goto ~dst ~loc)
+      | ["abort"] ->
+          emit_term ~prefix:[Llair.Inst.abort ~loc] Llair.Term.unreachable
       | ["_Znwm" (* operator new(size_t num) *)]
        |[ "_ZnwmSt11align_val_t"
           (* operator new(unsigned long num, std::align_val_t) *) ]
