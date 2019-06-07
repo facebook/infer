@@ -22,7 +22,7 @@ int an_int = 0;
 int c() { return an_int; }
 
 int main() {
-  char* c1 = a_string;
+  const char* c1 = a_string;
 
   return c();
 }

@@ -12,4 +12,5 @@
 /test/*/*.bc
 /test/*/*.bc.err
 /test/*/*.bc.out
+/test/report.current
 _build

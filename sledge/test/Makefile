@@ -4,8 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 # additional arguments to pass to clang
-OPT_ARGS?=-Os
-CLANG_ARGS?=-g $(OPT_ARGS)
+CLANG_ARGS?=-O0
+
+# executable to test
+SLEDGE_EXE=$(CURDIR)/../_build/dev/src/sledge.exe
 
 # additional arguments to pass to sledge
 SLEDGE_ARGS?=
@@ -13,83 +15,66 @@ SLEDGE_ARGS?=
 # limits for each test run
 TIMEOUT?=30
 MEMOUT?=4096
-MEMOUTk=$(shell echo $$(( $(MEMOUT) * 1024 )))
 
-# executable to test
-SLEDGE_EXE=$(CURDIR)/../_build/dev/src/sledge.exe
+SLEDGE=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_EXE)
 
-MODEL_DIR=$(CURDIR)/../model
+DIFF?=diff
 
 # configure the non-host llvm and clang
-export PATH := $(CURDIR)/../_opam/llvm/bin:$(PATH)
-
-# code to test
-SrcCs:=$(shell find -L * -not -path 'llvm/*' -name '*.c')
-SrcCPPs:=$(shell find -L * -not -path 'llvm/*' -name '*.cpp')
-SrcLLs:=$(shell find -L * -name '*.ll')
-SrcBCs:=$(shell find -L * -name '*.bc')
-
-GenBCs:=$(patsubst %.c,%.bc,$(SrcCs)) $(patsubst %.cpp,%.bc,$(SrcCPPs))
-
-TestBCs:=$(GenBCs) $(SrcBCs)
-TestLLs:=$(SrcLLs)
-Tests:=$(TestBCs) $(TestLLs)
-Outs:=$(patsubst %.bc,%.bc.out,$(TestBCs)) $(patsubst %.ll,%.ll.out,$(TestLLs))
+export PATH := $(CURDIR)/../llvm/_install/sledge/bin:$(PATH)
 
 default: test
 
-$(MODEL_DIR)/cxxabi.bc : $(MODEL_DIR)/cxxabi.cpp
-	@(cd $(dir $@) && clang $(CLANG_ARGS) -I../llvm/projects/libcxxabi/include -I../llvm/projects/libcxxabi/src -c -emit-llvm cxxabi.cpp)
+# all analyze tests
+translate:
+	@find -L llvm -name '*.ll' -or -name '*.bc' \
+	 | parallel --bar $(SLEDGE) llvm translate $(SLEDGE_ARGS)
+
+_translate-report-raw:
+	@find -L llvm -name '*.out' \
+	 | xargs grep "RESULT:" \
+	 | sed 's/\.out:/:	/' | sort | sort -s -t':' -k 3,4
+
+# report all results
+translate-report-full:
+	@$(MAKE) --silent _translate-report-raw | column -ts$$'\t'
+
+# report all errors
+translate-report-errors:
+	@$(MAKE) --silent _translate-report-raw \
+	 | grep -E -v "RESULT: (Success|Invalid input)" \
+	 | column -ts$$'\t'
+
+# report errors
+translate-report:
+	@$(MAKE) --silent _translate-report-raw \
+	 | grep -E -v "RESULT: Unimplemented: (coroutines|landingpad of type other than {i8\*, i32}|windows exception handling|non-integral pointer types|types with undetermined size):" \
+	 | grep -E -v "RESULT: (Success|Invalid input)" \
+	 | column -ts$$'\t'
 
 # compile c to llvm bitcode
 %.bc : %.c
-	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).c -o - | opt $(OPT_ARGS) -o $(notdir $*).bc)
-
-#  $(MODEL_DIR)/cxxabi.bc
-#	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).c -o - | llvm-link $(MODEL_DIR)/cxxabi.bc - | opt $(OPT_ARGS) -o $(notdir $*).bc)
+	@(cd $(dir $*) && clang -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).cpp -o - | opt $(OPT_ARGS) -o $(notdir $*).bc)
+	@(cd $(dir $*) && clang -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
 
-#  $(MODEL_DIR)/cxxabi.bc
-#	@(cd $(dir $*) && clang $(CLANG_ARGS) -c -emit-llvm $(notdir $*).cpp -o - | llvm-link $(MODEL_DIR)/cxxabi.bc - | opt $(OPT_ARGS) -o $(notdir $*).bc)
+# code to test analyze
+AnalyzeCs:=$(shell find * -not -path 'llvm/*' -name '*.c')
+AnalyzeCPPs:=$(shell find * -not -path 'llvm/*' -name '*.cpp')
 
-# disassemble bitcode to llvm assembly
-%.ll : %.bc
-	@(cd $(dir $*) && llvm-dis -show-annotations -o $(notdir $*).ll $(notdir $*).bc)
+AnalyzeBCs:=$(patsubst %.c,%.bc,$(AnalyzeCs)) $(patsubst %.cpp,%.bc,$(AnalyzeCPPs))
+AnalyzeLLs:=$(shell find * -not -path 'llvm/*' -name '*.ll')
 
-# analyze one test input
-define analyze
-  @bash -c ' \
-    if test -e $(1).$(2); then \
-    cd $(dir $(1)); \
-    status=$$( \
-        ( ulimit -t $(TIMEOUT) -v $(MEMOUTk) \
-        ; $(SLEDGE_EXE) $(SLEDGE_ARGS) $(notdir $(1).$(2)) 1> $(notdir $(1).$(2)).out 2> $(notdir $(1).$(2)).err ) \
-    )$$?; \
-    case $$status in \
-      ( 0 | 2 ) ;; \
-      ( 137 | 152 ) echo -e "RESULT: TIMEOUT" >> $(notdir $(1).$(2)).out ;; \
-      ( * ) echo -e "\nRESULT: Internal error: "$$status >> $(notdir $(1).$(2)).out ;; \
-    esac ; \
-    exit $$status ; \
-    fi; '
-endef
+AnalyzeTests:=$(AnalyzeBCs) $(AnalyzeLLs)
 
-# analyze ll
-%.ll.out : %.ll
-	$(call analyze,$*,ll)
+# compile all c/c++ to bc
+compile: $(AnalyzeBCs)
 
-# analyze bc
-%.bc.out : %.bc
-	$(call analyze,$*,bc)
-
-# compile all c to bc
-compile: $(GenBCs)
-
-# run all tests
-test: $(Outs)
+# all analyze tests
+analyze: compile
+	@parallel --bar $(SLEDGE) llvm analyze $(SLEDGE_ARGS) ::: $(AnalyzeTests)
 
 # run all tests and generate code coverage information
 BISECT_DIR=$(CURDIR)/../_coverage/out
@@ -100,66 +85,48 @@ coverage:
 	@find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I ../_build/coverage/ -text ../_coverage/summary.txt -html ../_coverage/
 	@echo "open ../_coverage/index.html"
 
-# translate all tests
-translate:
-	$(MAKE) SLEDGE_ARGS='$(SLEDGE_ARGS) --compile-only' test
+_analyze-report-raw:
+	@find * -not -path 'llvm/*' -name '*.out' \
+	 | xargs grep "RESULT:" \
+	 | sed 's/\.out:/:	/' | sort | sort -s -t':' -k 3,4
 
 # report all results
-full-report:
-	@find -L * -name '*.out' \
-	 | xargs grep "RESULT:" \
-	 | sed 's/.out:/:	/' | column -ts$$'\t' | sort | sort -s -t':' -k 3,4  | uniq
+analyze-report-full:
+	@$(MAKE) --silent _analyze-report-raw | column -ts$$'\t'
 
-# report all errors
-report-errors:
-	@find -L * -name '*.out' \
-	 | xargs grep "RESULT:" \
-	 | grep -E -v "RESULT: (Success|Invalid input)" \
-	 | sed 's/.out:/:	/' | column -ts$$'\t' | sort | sort -s -t':' -k 3,4 | uniq
-
-# report errors
-report:
-	@find -L * -name '*.out' \
-	 | xargs grep "RESULT:" \
-	 | grep -E -v "RESULT: Unimplemented: (landingpad of type other than {i8\*, i32}|windows exception handling|non-integral pointer types|types with undetermined size):" \
-	 | grep -E -v "RESULT: (Success|Invalid input)" \
-	 | sed 's/.out:/:	/' | column -ts$$'\t' | sort | sort -s -t':' -k 3,4 | uniq
+# list tests with zero or multiple RESULT lines
+report-invalid-results:
+	@find -L * -name '*.out' -exec grep -H -c "RESULT:" {} \; \
+	 | grep -v ":1$"
 
 # report warnings
 warnings:
-	@find -L * -name '*.out' | xargs grep -h "Warning:" | sort | uniq
+	@find -L * -name '*.out' | xargs grep -h "Warning:" | sort
+
+# run tests and check against expected results
+test:
+	-@$(MAKE) --silent --keep-going clean analyze translate 2>/dev/null
+	@$(MAKE) --silent _analyze-report-raw > report.current
+	@$(MAKE) --silent _translate-report-raw >> report.current
+	@$(DIFF) report.expected report.current
+
+# set current results as new expected results
+promote:
+	@cp report.current report.expected
 
 # remove generated bitcode files
-cleanBC:
-	@rm -f $(GenBCs)
+cleanbc:
+	@rm -f $(AnalyzeBCs)
 
 # remove result files
 cleanout:
 	@find -L * -name "*.out" -or -name '*.err' \
 	 | xargs rm -f
 
-# remove result files for TIMEOUTs
-cleanTO:
-	@find -L * -name "*.out" -or -name '*.err' \
-	 | xargs grep -l TIMEOUT \
-	 | xargs rm -f
-
-# remove result files for MEMOUTs
-cleanMO:
-	@find -L * -name "*.out" -or -name '*.err' \
-	 | xargs grep -l MEMOUT \
-	 | xargs rm -f
-
-# remove result files for Internal Errors
-cleanIE:
-	@find -L * -name "*.out" -or -name '*.err' \
-	 | xargs grep -l -E "RESULT: (Internal error|Unimplemented|Unknown error)" \
-	 | xargs rm -f
-
-clean: cleanBC cleanout
+clean: cleanbc cleanout
 
 fmt:
-	clang-format -i $(SrcCs) $(SrcCPPs)
+	clang-format -i $(AnalyzeCs) $(AnalyzeCPPs)
 
 # print any variable for Makefile debugging
 print-%:
