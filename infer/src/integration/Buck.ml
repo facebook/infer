@@ -72,6 +72,7 @@ module Query = struct
     | Set of string list
     | Target of string
     | Union of expr list
+    | Labelfilter of {label: string; expr: expr}
 
   exception NotATarget
 
@@ -96,6 +97,8 @@ module Query = struct
         Union exprs
 
 
+  let label_filter ~label expr = Labelfilter {label; expr}
+
   let rec pp fmt = function
     | Target s ->
         F.pp_print_string fmt s
@@ -109,11 +112,15 @@ module Query = struct
         F.fprintf fmt "set(%a)" (Pp.seq F.pp_print_string) sl
     | Union exprs ->
         Pp.seq ~sep:" + " pp fmt exprs
+    | Labelfilter {label; expr} ->
+        F.fprintf fmt "attrfilter(labels, %s, %a)" label pp expr
 
 
-  let exec expr =
+  let exec ?(buck_config = []) expr =
     let query = F.asprintf "%a" pp expr in
-    let cmd = ["buck"; "query"] @ List.rev_append Config.buck_build_args_no_inline [query] in
+    let cmd =
+      ("buck" :: "query" :: buck_config) @ List.rev_append Config.buck_build_args_no_inline [query]
+    in
     let tmp_prefix = "buck_query_" in
     let debug = L.(debug Capture Medium) in
     Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:Fn.id
@@ -142,6 +149,7 @@ let parameters_with_argument =
 
 let get_accepted_buck_kinds_pattern () =
   if Option.is_some Config.buck_compilation_database then "^(apple|cxx)_(binary|library|test)$"
+  else if Config.genrule_master_mode then "^(java|android)_library$"
   else "^(apple|cxx)_(binary|library)$"
 
 
@@ -149,11 +157,31 @@ let max_command_line_length = 50
 
 let die_if_empty f = function [] -> f L.(die UserError) | l -> l
 
+let buck_config =
+  lazy
+    ( if Config.genrule_master_mode then
+      [ "infer.project_root=" ^ Utils.realpath Config.project_root
+      ; "infer.infer_out=" ^ Utils.realpath Config.results_dir
+      ; "infer.version=" ^ Version.versionString
+      ; "infer.infer_bin=" ^ Config.bin_dir ^/ Config.exe_basename
+      ; "infer.mode=capture" ]
+      |> List.fold ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
+    else [] )
+
+
+(** for genrule_master_mode, this is the label expected on the capture genrules *)
+let infer_enabled_label = "infer_enabled"
+
+(** for genrule_master_mode, this is the target name suffix for the capture genrules *)
+let genrule_suffix = "_infer"
+
 let resolve_pattern_targets ~filter_kind ~dep_depth targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> (match dep_depth with None -> Fn.id | Some depth -> Query.deps ?depth)
   |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern ()) else Fn.id)
-  |> Query.exec
+  |> (if Config.genrule_master_mode then Query.label_filter ~label:infer_enabled_label else Fn.id)
+  |> Query.exec ~buck_config:(Lazy.force buck_config)
+  |> (if Config.genrule_master_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix) else Fn.id)
   |> die_if_empty (fun die -> die "*** buck query returned no targets.")
 
 
@@ -210,9 +238,7 @@ let inline_argument_files buck_args =
   List.concat_map ~f:expand_buck_arg buck_args
 
 
-type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
-
-let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors original_buck_args =
+let parse_command_and_targets ~filter_kind ~dep_depth original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_blacklist_regexp =
@@ -259,13 +285,21 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
       ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
       buck_targets_blacklist_regexp
   in
+  (command, parsed_args.rev_not_targets', targets)
+
+
+type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
+
+let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors original_buck_args =
+  let command, rev_not_targets, targets =
+    parse_command_and_targets ~filter_kind ~dep_depth original_buck_args
+  in
   match targets with
   | [] ->
       L.(die UserError)
         "ERROR: no targets found in Buck command `%a`." (Pp.seq F.pp_print_string)
         original_buck_args
   | _ ->
-      let rev_not_targets = parsed_args.rev_not_targets' in
       let targets =
         List.rev_map targets ~f:(fun t ->
             Target.(t |> of_string |> add_flavor ~extra_flavors |> to_string) )

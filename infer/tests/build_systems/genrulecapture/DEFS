@@ -43,17 +43,15 @@ def _infer_capture_genrule(
     "echo {} >> {}".format(arg, args_file)
     for arg in args
   ] + [
-    " ".join([_get_infer_bin(), "@" + args_file]),
-    # need to use a cross-platform kind of flock to avoid fragmentation
-    'echo -e "_\\t_\\t$OUT" >> {}'.format(_get_infer_deps())
+    " ".join([_get_infer_bin(), "@" + args_file])
   ]
 	
   genrule(
-      name = name + "_infer_capture",
+      name = name + "_infer",
       srcs = srcs,
       cmd = " && ".join(subcommands),
       out = "infer_out",
-      labels = ["infer_capture_genrule"],
+      labels = ["infer_genrule"],
   )  
 
 

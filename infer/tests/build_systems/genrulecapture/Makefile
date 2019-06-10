@@ -8,17 +8,17 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYSE = $(ROOT_DIR)/scripts/genrule_run.sh 
 BUCK_TARGET = //module2:module2
-INFER_OUT = $(shell pwd)/infer-out
 CLEAN_EXTRA = buck-out 
 SOURCES = $(shell find . -name '*.java')
 
 INFERPRINT_OPTIONS = --issues-tests
-INFER_OPTIONS = --debug-exceptions
+INFER_OPTIONS = --genrule-master-mode --debug-exceptions
 
 include $(TESTS_DIR)/infer.make
 
 $(INFER_OUT)/report.json: $(MAKEFILE_LIST) $(SOURCES)
 	$(QUIET) $(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing genrule capture integration in $(TEST_REL_DIR),\
-	  $(ANALYSE) $(BUCK_TARGET) $(INFER_OUT) $(INFER_OPTIONS))
+	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) -- \
+	    buck build --no-cache $(BUCK_TARGET))
 

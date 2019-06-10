@@ -89,6 +89,8 @@ val etc_dir : string
 
 val events_dir_name : string
 
+val exe_basename : string
+
 val fail_on_issue_exit_code : int
 
 val frontend_stats_dir_name : string

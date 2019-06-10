@@ -17,6 +17,7 @@ module F = Format
 type mode =
   | Analyze
   | BuckGenrule of string
+  | BuckGenruleMaster of string list
   | BuckCompilationDB of string * string list
   | Clang of Clang.compiler * string * string list
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
@@ -33,6 +34,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Analyze driver mode"
   | BuckGenrule prog ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
+  | BuckGenruleMaster build_cmd ->
+      F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BuckCompilationDB (prog, args) ->
       F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args
         args
@@ -200,6 +203,9 @@ let capture ~changed_files = function
   | BuckGenrule path ->
       L.progress "Capturing for Buck genrule compatibility...@." ;
       JMain.from_arguments path
+  | BuckGenruleMaster build_cmd ->
+      L.progress "Capturing for BuckGenruleMaster integration...@." ;
+      BuckGenrule.capture build_cmd
   | Clang (compiler, prog, args) ->
       if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
@@ -399,9 +405,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | PythonCapture (BBuck, _) when Config.flavors && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | Analyze when Config.genrule_master_mode ->
-        true
-    | Analyze ->
+    | Analyze | BuckGenruleMaster _ ->
         RunState.get_merge_capture ()
     | _ ->
         (* else rely on the command line value *) Config.merge
@@ -523,6 +527,8 @@ let mode_of_build_command build_cmd =
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
           PythonCapture (BBuck, build_cmd)
+      | BBuck when Config.genrule_master_mode ->
+          BuckGenruleMaster build_cmd
       | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
           PythonCapture (build_system, build_cmd) )
 
