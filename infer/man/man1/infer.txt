@@ -389,6 +389,7 @@ OPTIONS
            (disabled by default),
              GRAPHQL_FIELD_ACCESS (enabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
+             INEFFICIENT_KEYSET_ITERATOR (enabled by default),
              INFERBO_ALLOC_IS_BIG (enabled by default),
              INFERBO_ALLOC_IS_NEGATIVE (enabled by default),
              INFERBO_ALLOC_IS_ZERO (enabled by default),
@@ -613,6 +614,16 @@ OPTIONS
        --immutable-cast-only
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)           See also infer-analyze(1).
+
+       --inefficient-keyset-iterator
+           Activates: Check for inefficient uses of keySet iterator instead
+           of entrySet iterator. (Conversely:
+           --no-inefficient-keyset-iterator)           See also infer-analyze(1).
+
+       --inefficient-keyset-iterator-only
+           Activates: Enable --inefficient-keyset-iterator and disable all
+           other checkers (Conversely: --no-inefficient-keyset-iterator-only)       
+    See also infer-analyze(1).
 
        --iphoneos-target-sdk-version string
            Specify the target SDK version to use for iphoneos           See also infer-capture(1).

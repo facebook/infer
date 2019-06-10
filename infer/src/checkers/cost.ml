@@ -824,10 +824,7 @@ let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
-  let control_maps, loop_head_to_loop_nodes =
-    let loop_head_to_source_nodes_map = Loop_control.get_loop_head_to_source_nodes node_cfg in
-    Loop_control.get_control_maps loop_head_to_source_nodes_map
-  in
+  let control_maps, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps node_cfg in
   (* computes the control dependencies: node -> var set *)
   let control_dep_invariant_map = Control.compute_invariant_map proc_desc tenv control_maps in
   (* compute loop invariant map for control var analysis *)

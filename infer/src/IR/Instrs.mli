@@ -62,3 +62,5 @@ val pp : Pp.env -> Format.formatter -> _ t -> unit
 val fold : (_ t, Sil.instr, 'a) Container.fold
 
 val iter : (_ t, Sil.instr) Container.iter
+
+val get_underlying_not_reversed : not_reversed t -> Sil.instr array

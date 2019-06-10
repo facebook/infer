@@ -184,3 +184,8 @@ let get_control_maps loop_head_to_source_nodes_map =
         { exit_map= Control.ExitNodeToLoopHeads.empty
         ; loop_head_to_guard_nodes= Control.LoopHeadToGuardNodes.empty }
     , LoopInvariant.LoopHeadToLoopNodes.empty )
+
+
+let get_loop_control_maps cfg =
+  let loop_head_to_source_nodes_map = get_loop_head_to_source_nodes cfg in
+  get_control_maps loop_head_to_source_nodes_map

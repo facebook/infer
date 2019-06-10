@@ -608,6 +608,7 @@ and ( annotation_reachability
     , eradicate
     , fragment_retains_view
     , immutable_cast
+    , inefficient_keyset_iterator
     , linters
     , litho
     , liveness
@@ -654,6 +655,9 @@ and ( annotation_reachability
     mk_checker ~long:"immutable-cast" ~default:false
       "the detection of object cast from immutable type to mutable type. For instance, it will \
        detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
+  and inefficient_keyset_iterator =
+    mk_checker ~long:"inefficient-keyset-iterator" ~default:false
+      "Check for inefficient uses of keySet iterator instead of entrySet iterator."
   and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"
   and litho = mk_checker ~long:"litho" "Experimental checkers supporting the Litho framework"
   and liveness =
@@ -727,6 +731,7 @@ and ( annotation_reachability
   , eradicate
   , fragment_retains_view
   , immutable_cast
+  , inefficient_keyset_iterator
   , linters
   , litho
   , liveness
@@ -2822,6 +2827,8 @@ and hoisting_report_only_expensive = !hoisting_report_only_expensive
 and icfg_dotty_outfile = !icfg_dotty_outfile
 
 and immutable_cast = !immutable_cast
+
+and inefficient_keyset_iterator = !inefficient_keyset_iterator
 
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 

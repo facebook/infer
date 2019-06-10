@@ -141,6 +141,15 @@ OPTIONS
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)
 
+       --inefficient-keyset-iterator
+           Activates: Check for inefficient uses of keySet iterator instead
+           of entrySet iterator. (Conversely:
+           --no-inefficient-keyset-iterator)
+
+       --inefficient-keyset-iterator-only
+           Activates: Enable --inefficient-keyset-iterator and disable all
+           other checkers (Conversely: --no-inefficient-keyset-iterator-only)
+
        --jobs,-j int
            Run the specified number of analysis jobs simultaneously (default:
            <number of cores>)

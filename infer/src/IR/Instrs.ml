@@ -56,6 +56,8 @@ type not_reversed_t = not_reversed t
 
 let of_array instrs = NotReversed instrs
 
+let get_underlying_not_reversed = function NotReversed instrs -> instrs
+
 let empty = of_array [||]
 
 let singleton instr = of_array [|instr|]

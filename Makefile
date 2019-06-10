@@ -139,6 +139,7 @@ DIRECT_TESTS += \
   java_eradicate \
   java_hoisting \
   java_hoistingExpensive \
+  java_inefficientKeysetIterator \
   java_infer \
   java_performance \
   java_purity \

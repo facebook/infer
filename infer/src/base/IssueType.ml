@@ -277,6 +277,8 @@ let graphql_field_access = from_string "GRAPHQL_FIELD_ACCESS"
 
 let guardedby_violation_racerd = from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
 
+let inefficient_keyset_iterator = from_string "INEFFICIENT_KEYSET_ITERATOR"
+
 let inferbo_alloc_is_big = from_string "INFERBO_ALLOC_IS_BIG"
 
 let inferbo_alloc_is_negative = from_string "INFERBO_ALLOC_IS_NEGATIVE"

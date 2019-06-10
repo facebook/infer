@@ -20,9 +20,8 @@ val get_loop_head_to_source_nodes : Procdesc.t -> Procdesc.Node.t list Procdesc.
   loop_head (target of back-edges) --> source nodes
 *)
 
-val get_control_maps :
-     Procdesc.Node.t list Procdesc.NodeMap.t
-  -> Control.loop_control_maps * Control.GuardNodes.t Procdesc.NodeMap.t
+val get_loop_control_maps :
+  Procdesc.t -> Control.loop_control_maps * Control.GuardNodes.t Procdesc.NodeMap.t
 (**
   Get a pair of maps (exit_map, loop_head_to_guard_map) where
   exit_map : exit_node -> loop_head set (i.e. target of the back edges) 
