@@ -9,6 +9,8 @@
 
     The analysis' semantics of control flow. *)
 
+type exec_opts = {bound: int; skip_throw: bool}
+
 module Stack : sig
   type t
   type as_inlined_location = t [@@deriving compare, sexp_of]
@@ -270,12 +272,12 @@ let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
   let state, _ = Domain.call state args dst.params dst.locals in
   exec_goto stk state block jmp
 
-let exec_call ~bound stk state block ({dst; args; retreating} : Llair.jump)
+let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
     return throw =
   let state, from_call = Domain.call state args dst.params dst.locals in
   match
-    Stack.push_call ~bound dst.locals ~retreating ~return from_call ?throw
-      stk
+    Stack.push_call ~bound:opts.bound dst.locals ~retreating ~return
+      from_call ?throw stk
   with
   | Some stk -> Work.add stk ~prev:block ~retreating state dst
   | None -> Work.skip
@@ -308,8 +310,13 @@ let exec_skip_func :
   exec_jump stk state block return
 
 let exec_term :
-    bound:int -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
- fun ~bound pgm stk state block ->
+       opts:exec_opts
+    -> Llair.t
+    -> Stack.t
+    -> Domain.t
+    -> Llair.block
+    -> Work.x =
+ fun ~opts pgm stk state block ->
   [%Trace.info "exec %a" Llair.Term.pp block.term] ;
   match block.term with
   | Switch {key; tbl; els} ->
@@ -359,12 +366,13 @@ let exec_term :
             | None when Llair.Func.is_undefined callee ->
                 exec_skip_func stk state block return
             | None ->
-                exec_call ~bound stk state block
+                exec_call ~opts stk state block
                   {dst= callee.entry; args; retreating}
                   return throw )
             |> Work.seq x ) )
   | Return {exp} -> exec_return stk state block exp
-  | Throw {exc} -> exec_throw stk state block exc
+  | Throw {exc} ->
+      if opts.skip_throw then Work.skip else exec_throw stk state block exc
   | Unreachable -> Work.skip
 
 let exec_inst :
@@ -374,11 +382,16 @@ let exec_inst :
   |> Result.map_error ~f:(fun () -> (state, inst))
 
 let exec_block :
-    bound:int -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
- fun ~bound pgm stk state block ->
+       opts:exec_opts
+    -> Llair.t
+    -> Stack.t
+    -> Domain.t
+    -> Llair.block
+    -> Work.x =
+ fun ~opts pgm stk state block ->
   [%Trace.info "exec %a" Llair.Block.pp block] ;
   match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
-  | Ok state -> exec_term ~bound pgm stk state block
+  | Ok state -> exec_term ~opts pgm stk state block
   | Error (state, inst) ->
       Report.invalid_access_inst state inst ;
       Work.skip
@@ -396,12 +409,12 @@ let harness : Llair.t -> (int -> Work.t) option =
            block)
   | _ -> None
 
-let exec_pgm : bound:int -> Llair.t -> unit =
- fun ~bound pgm ->
+let exec_pgm : exec_opts -> Llair.t -> unit =
+ fun opts pgm ->
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
   ( match harness pgm with
-  | Some work -> Work.run ~f:(exec_block ~bound pgm) (work bound)
+  | Some work -> Work.run ~f:(exec_block ~opts pgm) (work opts.bound)
   | None -> fail "no applicable harness" () )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]

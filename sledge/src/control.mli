@@ -7,4 +7,8 @@
 
 (** The analysis' semantics of control flow. *)
 
-val exec_pgm : bound:int -> Llair.t -> unit
+type exec_opts =
+  { bound: int  (** Loop/recursion unrolling bound *)
+  ; skip_throw: bool  (** Treat throw as unreachable *) }
+
+val exec_pgm : exec_opts -> Llair.t -> unit

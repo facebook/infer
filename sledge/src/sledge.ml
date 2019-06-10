@@ -63,8 +63,11 @@ let analyze =
     flag "bound"
       (optional_with_default 1 int)
       ~doc:"<int> stop execution exploration at depth <int>"
+  and skip_throw =
+    flag "skip-throw" no_arg
+      ~doc:"do not explore past throwing an exception"
   in
-  fun program () -> Control.exec_pgm ~bound (program ())
+  fun program () -> Control.exec_pgm {bound; skip_throw} (program ())
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in
