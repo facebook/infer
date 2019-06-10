@@ -397,6 +397,7 @@ module Func = struct
   let invariant func =
     Invariant.invariant [%here] func [%sexp_of: t]
     @@ fun () ->
+    assert (func == func.entry.parent) ;
     let {name= {typ}; cfg} = func in
     match typ with
     | Pointer _ ->
@@ -416,6 +417,11 @@ module Func = struct
   let find functions name = Map.find functions name
 
   let mk ~name ~entry ~cfg =
+    let locals =
+      Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
+          Set.union locals block.locals )
+    in
+    let entry = {entry with locals} in
     let func = {name; entry; cfg} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
@@ -434,12 +440,8 @@ module Func = struct
       | Return _ | Throw _ | Unreachable -> ()
     in
     resolve_parent_and_jumps entry ;
-    let locals =
-      Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
-          resolve_parent_and_jumps block ;
-          Set.union locals block.locals )
-    in
-    {func with entry= {entry with locals}} |> check invariant
+    Vector.iter cfg ~f:resolve_parent_and_jumps ;
+    func |> check invariant
 
   let mk_undefined ~name ~params =
     let entry =
