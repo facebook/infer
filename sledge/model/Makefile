@@ -15,7 +15,7 @@ LLVM=$(ROOT)/llvm/_install/$(SWITCH)
 LIBCXXABI=$(ROOT)/llvm/projects/libcxxabi
 
 cxxabi.bc : cxxabi.cpp
-	$(LLVM)/bin/clang $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
+	$(LLVM)/bin/clang --sysroot=/usr $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
 
 clean:
 	rm cxxabi.bc
