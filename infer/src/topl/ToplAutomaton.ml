@@ -7,6 +7,8 @@
 
 open! IStd
 
+let tt = ToplUtils.debug
+
 module Vname = struct
   module T = struct
     type t = ToplAst.property_name * ToplAst.vertex [@@deriving compare, hash, sexp]
@@ -25,20 +27,20 @@ type tindex = int
 type transition = {source: vindex; target: vindex; label: ToplAst.label}
 
 (** INV1: Array.length states = Array.length outgoing
-    INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists *)
+    INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
+    INV3: max_args is the maximum length of the arguments list in a label on a transition *)
 type t =
   { states: vname array
   ; transitions: transition array
   ; outgoing: tindex list array
-  ; vindex: vname -> vindex }
+  ; vindex: vname -> vindex
+  ; max_args: int (* redundant; cached for speed *) }
 
 (** [index_in H a x] is the (last) index of [x] in array [a]. *)
 let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array) : k -> int =
   let h = H.create ~size:(2 * Array.length a) () in
   let f i x = H.set h ~key:x ~data:i in
-  Array.iteri ~f a ;
-  let find x = H.find_exn h x in
-  find
+  Array.iteri ~f a ; H.find_exn h
 
 
 let make properties =
@@ -48,8 +50,9 @@ let make properties =
       let f {source; target; _} = [(p.name, source); (p.name, target)] in
       List.concat_map ~f p.transitions
     in
-    Array.of_list (List.concat_map ~f properties)
+    Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_map ~f properties))
   in
+  if Config.trace_topl then Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)\n" i p v) states ;
   let vindex = index_in (module Vname.Table) states in
   let transitions : transition array =
     let f p =
@@ -73,9 +76,22 @@ let make properties =
     let f i t = a.(t.source) <- i :: a.(t.source) in
     Array.iteri ~f transitions ; a
   in
-  {states; transitions; outgoing; vindex}
+  let max_args =
+    let f x t =
+      let y = Option.value_map ~default:0 ~f:List.length t.label.ToplAst.arguments in
+      Int.max x y
+    in
+    Array.fold ~init:0 ~f transitions
+  in
+  {states; transitions; outgoing; vindex; max_args}
 
+
+let outgoing a i = a.outgoing.(i)
+
+let vcount a = Array.length a.states
 
 let transition a i = a.transitions.(i)
 
 let tcount a = Array.length a.transitions
+
+let max_args a = a.max_args

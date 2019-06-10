@@ -158,6 +158,8 @@ let minus_one = int IntLit.minus_one
 (** Create integer constant corresponding to the boolean value *)
 let bool b = if b then one else zero
 
+let and_2ary e1 e2 = BinOp (LAnd, e1, e2)
+
 (** Create expression [e1 == e2] *)
 let eq e1 e2 = BinOp (Eq, e1, e2)
 
@@ -169,6 +171,12 @@ let le e1 e2 = BinOp (Le, e1, e2)
 
 (** Create expression [e1 < e2] *)
 let lt e1 e2 = BinOp (Lt, e1, e2)
+
+let nary_of_2ary op_2ary zero es =
+  match es with [] -> zero | e :: es -> List.fold ~init:e ~f:op_2ary es
+
+
+let and_nary = nary_of_2ary and_2ary one
 
 let fold_captured ~f exp acc =
   let rec fold_captured_ exp captured_acc =

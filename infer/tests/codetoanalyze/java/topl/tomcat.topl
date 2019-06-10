@@ -1,11 +1,11 @@
 property ForwardUncommitted
   message "A ServletResponse was forwarded before being committed."
   // TODO assume InterleavedResponse_Weak
-  prefix <javax.servlet>
-  prefix <javax.servlet.{ServletOutputStream,ServletResponse}>
-  prefix <java.io.PrintWriter>
+  prefix "javax.servlet"
+  prefix "javax.servlet.{ServletOutputStream,ServletResponse}"
+  prefix "java.io.PrintWriter"
   start -> start: *
-  start -> tracking: R = <ServletResponse.\<init\>>
+  start -> tracking: R = "ServletResponse.\<init\>"
   tracking -> ok: flushBuffer(r)
   tracking -> gotWriter: W = getWriter(r)
   gotWriter -> ok: flush(w)
@@ -13,9 +13,9 @@ property ForwardUncommitted
   tracking -> gotStream: S = getOutputStream(r)
   gotStream -> ok: flush(s)
   gotStream -> ok: flushBuffer(r)
-  tracking -> error: <RequestDispatcher.forward>(*, *, r)
-  gotWriter -> error: <RequestDispatcher.forward>(*, *, r)
-  gotStream -> error: <RequestDispatcher.forward>(*, *, r)
+  tracking -> error: "RequestDispatcher.forward"(*, *, r)
+  gotWriter -> error: "RequestDispatcher.forward"(*, *, r)
+  gotStream -> error: "RequestDispatcher.forward"(*, *, r)
 
 // The documentation of ServletResponse.getOutputStream says that "either this
 // method getWriter may be called to write to the body, not both." So,
@@ -23,7 +23,7 @@ property ForwardUncommitted
 // broken, which is why we also have the weaker version InterleavedResponse2.
 property InterleavedResponse1
   message "A ServletResponse was asked for both a writer and a stream."
-  prefix <javax.servlet.ServletResponse>
+  prefix "javax.servlet.ServletResponse"
   start -> start: *
   start -> gotWriter: W = getWriter(R)
   start -> gotStream: S = getOutputStream(R)
@@ -33,7 +33,7 @@ property InterleavedResponse1
 property InterleavedResponse2
   // vertex names: w = got writer; W = used writer; similarly for s, S
   message "Incompatible methods for putting data into a response were used."
-  prefix <javax.servlet.ServletResponse>
+  prefix "javax.servlet.ServletResponse"
   start -> start: *
   start -> w: W = getWriter(R)
   start -> s: S = getOutputStream(R)

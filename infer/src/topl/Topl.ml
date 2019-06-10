@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-let tt fmt = L.d_printf "ToplTrace: " ; L.d_printfln fmt
+let tt = ToplUtils.debug
 
 let parse topl_file =
   let f ch =
@@ -17,10 +17,10 @@ let parse topl_file =
     with ToplParser.Error ->
       let Lexing.{pos_lnum; pos_bol; pos_cnum; _} = Lexing.lexeme_start_p lexbuf in
       let col = pos_cnum - pos_bol + 1 in
-      L.(die UserError) "@[%s:%d:%d: topl parse error@]@\n@?" topl_file pos_lnum col
+      L.die UserError "@[%s:%d:%d: topl parse error@]@\n@?" topl_file pos_lnum col
   in
   try In_channel.with_file topl_file ~f
-  with Sys_error msg -> L.(die UserError) "@[topl:%s: %s@]@\n@?" topl_file msg
+  with Sys_error msg -> L.die UserError "@[topl:%s: %s@]@\n@?" topl_file msg
 
 
 let properties = lazy (List.concat_map ~f:parse Config.topl_properties)
@@ -29,66 +29,19 @@ let automaton = lazy (ToplAutomaton.make (Lazy.force properties))
 
 let is_active () = not (List.is_empty (Lazy.force properties))
 
-let cfg = Cfg.create ()
-
-let sourcefile = SourceFile.create "SynthesizedToplProperty.java"
-
-let sourcefile_location = Location.none sourcefile
-
-(* NOTE: For now, Topl is mostly untyped; that is, everything has type Object. *)
-let type_of_paramtyp (_t : Typ.Procname.Parameter.t) : Typ.t =
-  let classname = Typ.mk (Tstruct Typ.Name.Java.java_lang_object) in
-  Typ.mk (Tptr (classname, Pk_pointer))
-
-
-(** NOTE: Similar to [JTrans.formals_from_signature]. *)
-let formals_of_procname proc_name =
-  let params = Typ.Procname.get_parameters proc_name in
-  let new_arg_name =
-    let n = ref (-1) in
-    fun () -> incr n ; Printf.sprintf "arg%d" !n
-  in
-  let f t =
-    let name = Mangled.from_string (new_arg_name ()) in
-    let typ = type_of_paramtyp t in
-    (name, typ)
-  in
-  List.map ~f params
-
-
-(** The procedure description and its nodes will have location [sourcefile_location]. *)
-let empty_proc_desc proc_name =
-  let attr =
-    let formals = formals_of_procname proc_name in
-    let is_defined = true in
-    let loc = sourcefile_location in
-    {(ProcAttributes.default sourcefile proc_name) with formals; is_defined; loc}
-  in
-  let proc_desc = Cfg.create_proc_desc cfg attr in
-  let start_node =
-    Procdesc.create_node proc_desc sourcefile_location Procdesc.Node.Start_node []
-  in
-  let exit_node = Procdesc.create_node proc_desc sourcefile_location Procdesc.Node.Exit_node [] in
-  Procdesc.node_set_succs_exn proc_desc start_node [exit_node] [exit_node] ;
-  Procdesc.set_start_node proc_desc start_node ;
-  Procdesc.set_exit_node proc_desc exit_node ;
-  proc_desc
-
-
-let is_synthesized = function
-  | Typ.Procname.Java j ->
-      String.equal "topl.Property" (Typ.Procname.Java.get_class_name j)
-  | _ ->
-      false
-
-
-let get_proc_desc proc_name =
-  if is_synthesized proc_name then Some ((* TODO *) empty_proc_desc proc_name) else None
-
+let get_proc_desc proc_name = ToplMonitor.generate (Lazy.force automaton) proc_name
 
 let get_proc_attr proc_name =
   (* TODO: optimize -- don't generate body just to get attributes  *)
   Option.map ~f:Procdesc.get_attributes (get_proc_desc proc_name)
+
+
+let max_args = ref 0
+
+let get_max_args () =
+  let instrument_max_args = !max_args in
+  let automaton_max_args = ToplAutomaton.max_args (Lazy.force automaton) in
+  Int.max instrument_max_args automaton_max_args
 
 
 let get_transitions_count () = ToplAutomaton.tcount (Lazy.force automaton)
@@ -104,7 +57,7 @@ let evaluate_static_guard label (e_fun, arg_ts) =
         let re = Str.regexp label.ToplAst.procedure_name in
         let result = Str.string_match re name 0 in
         if Config.trace_topl then
-          tt "match name='%s' re='%s' result=%b" name label.ToplAst.procedure_name result ;
+          tt "match name='%s' re='%s' result=%b\n" name label.ToplAst.procedure_name result ;
         result
     | _ ->
         false
@@ -123,78 +76,87 @@ let get_active_transitions e_fun arg_ts =
   Array.init (ToplAutomaton.tcount a) ~f
 
 
-let topl_class_exp =
-  let class_name = Mangled.from_string "topl.Property" in
-  let var_name = Pvar.mk_global class_name in
-  Exp.Lvar var_name
-
-
-let topl_class_name : Typ.Name.t = Typ.Name.Java.from_string "topl.Property"
-
-let topl_class_typ = Typ.mk (Tstruct topl_class_name)
-
-let transition_field_name i = Typ.Fieldname.Java.from_string (Printf.sprintf "transition%d" i)
-
-let transition_var i = Exp.Lfield (topl_class_exp, transition_field_name i, topl_class_typ)
-
 let set_transitions loc active_transitions =
   let store i b =
     let value = if b then Exp.one else Exp.zero in
-    Sil.Store (transition_var i, topl_class_typ, value, loc)
+    Sil.Store (ToplUtils.static_var (ToplName.transition i), ToplUtils.topl_class_typ, value, loc)
   in
   Array.mapi ~f:store active_transitions
 
 
-let topl_fun name n =
-  let ret_typ = Some Typ.Name.Java.Split.void in
-  let args_typ = List.init n ~f:(fun _ -> Typ.Name.Java.Split.java_lang_object) in
-  Exp.Const
-    (Const.Cfun
-       (Typ.Procname.Java
-          (Typ.Procname.Java.make topl_class_name ret_typ name args_typ Typ.Procname.Java.Static)))
-
-
 let call_save_args loc ret_id ret_typ arg_ts =
-  let arg_ts = arg_ts @ [(Exp.Var ret_id, ret_typ)] in
-  let e_fun = topl_fun "saveArgs" (List.length arg_ts) in
-  let ret_id = Ident.create_fresh Ident.knormal in
-  let ret_typ = Typ.mk Tvoid in
-  [|Sil.Call ((ret_id, ret_typ), e_fun, arg_ts, loc, CallFlags.default)|]
+  let dummy_ret_id = Ident.create_fresh Ident.knormal in
+  [| ToplUtils.topl_call dummy_ret_id Tvoid loc ToplName.save_args
+       ((Exp.Var ret_id, ret_typ) :: arg_ts) |]
 
 
 let call_execute loc =
-  let e_fun = topl_fun "execute" 0 in
-  let ret_id = Ident.create_fresh Ident.knormal in
-  let ret_typ = Typ.mk Tvoid in
-  [|Sil.Call ((ret_id, ret_typ), e_fun, [], loc, CallFlags.default)|]
+  let dummy_ret_id = Ident.create_fresh Ident.knormal in
+  [|ToplUtils.topl_call dummy_ret_id Tvoid loc ToplName.execute []|]
 
 
+(* Side-effect: increases [!max_args] when it sees a call with more arguments. *)
 let instrument_instruction = function
   | Sil.Call ((ret_id, ret_typ), e_fun, arg_ts, loc, _call_flags) as i ->
       let active_transitions = get_active_transitions e_fun arg_ts in
       if not (Array.exists ~f:(fun x -> x) active_transitions) then [|i|]
-      else
+      else (
+        max_args := Int.max !max_args (List.length arg_ts) ;
+        tt "found %d arguments\n" (List.length arg_ts) ;
         let i1s = set_transitions loc active_transitions in
         let i2s = call_save_args loc ret_id ret_typ arg_ts in
         let i3s = call_execute loc in
-        Array.concat [[|i|]; i1s; i2s; i3s]
+        Array.concat [[|i|]; i1s; i2s; i3s] )
   | i ->
       [|i|]
 
 
 (* PRE: Calling [Tenv.mk_struct tenv <args>] twice is a no-op. *)
 let add_types tenv =
-  let transition_field i = (transition_field_name i, Typ.mk (Tint IBool), []) in
-  let rec transitions n =
-    if Int.equal n 0 then [] else transition_field (n - 1) :: transitions (n - 1)
+  let get_registers () =
+    let a = Lazy.force automaton in
+    let h = String.Table.create () in
+    let record =
+      let open ToplAst in
+      function
+      | SaveInRegister reg | EqualToRegister reg -> Hashtbl.set h ~key:reg ~data:() | _ -> ()
+    in
+    for i = 0 to ToplAutomaton.tcount a - 1 do
+      let label = (ToplAutomaton.transition a i).label in
+      record label.return ;
+      Option.iter ~f:(List.iter ~f:record) label.arguments
+    done ;
+    Hashtbl.keys h
   in
-  let statics = transitions (get_transitions_count ()) in
-  let _topl_class = Tenv.mk_struct tenv topl_class_name ~statics in
+  let transition_field i =
+    (Typ.Fieldname.Java.from_string (ToplName.transition i), Typ.mk (Tint IBool), [])
+  in
+  let saved_arg_field i =
+    (Typ.Fieldname.Java.from_string (ToplName.saved_arg i), ToplUtils.any_type, [])
+  in
+  let register_field name =
+    (Typ.Fieldname.Java.from_string (ToplName.reg name), ToplUtils.any_type, [])
+  in
+  let statics =
+    let state = (Typ.Fieldname.Java.from_string ToplName.state, Typ.mk (Tint IInt), []) in
+    let retval = (Typ.Fieldname.Java.from_string ToplName.retval, ToplUtils.any_type, []) in
+    let transitions = List.init (get_transitions_count ()) ~f:transition_field in
+    let saved_args = List.init (get_max_args ()) ~f:saved_arg_field in
+    let registers = List.map ~f:register_field (get_registers ()) in
+    List.concat [[retval; state]; transitions; saved_args; registers]
+  in
+  let _topl_class = Tenv.mk_struct tenv ToplUtils.topl_class_name ~statics in
   ()
 
 
 let instrument tenv procdesc =
-  add_types tenv ;
-  let f _node = instrument_instruction in
-  let _updated = Procdesc.replace_instrs_by procdesc ~f in
-  ()
+  if not (ToplUtils.is_synthesized (Procdesc.get_proc_name procdesc)) then (
+    let f _node = instrument_instruction in
+    tt "instrument\n" ;
+    let _updated = Procdesc.replace_instrs_by procdesc ~f in
+    tt "add types %d\n" !max_args ; add_types tenv ; tt "done\n" )
+
+
+let sourcefile = ToplMonitor.sourcefile
+
+let cfg = ToplMonitor.cfg

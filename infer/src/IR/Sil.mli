@@ -480,6 +480,8 @@ val hpred_sub : subst -> hpred -> hpred
 
 (** {2 Functions for replacing occurrences of expressions.} *)
 
+val exp_replace_exp : (Exp.t * Exp.t) list -> Exp.t -> Exp.t
+
 val atom_replace_exp : (Exp.t * Exp.t) list -> atom -> atom
 
 val hpred_replace_exp : (Exp.t * Exp.t) list -> hpred -> hpred

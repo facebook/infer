@@ -6,7 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** The Smallfoot Intermediate Language: Expressions *)
+(** The Smallfoot Intermediate Language: Expressions
+
+NOTE: For doing substitutionson expressions, there are some functions in [Sil].
+*)
 
 open! IStd
 module F = Format
@@ -112,6 +115,9 @@ val le : t -> t -> t
 
 val lt : t -> t -> t
 (** Create expression [e1 < e2] *)
+
+val and_nary : t list -> t
+(** Create expression [e1 && e2 && e3 && ...] *)
 
 val free_vars : t -> Ident.t Sequence.t
 (** all the idents appearing in the expression *)

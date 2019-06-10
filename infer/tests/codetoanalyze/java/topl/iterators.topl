@@ -1,5 +1,6 @@
 property HasNext
-  prefix <java.util.{Collection,Iterator}>
+  prefix "Iterator"
+  prefix "List"
   start -> start: *
   start -> invalid: I = iterator(*)
   invalid -> valid: <true> = hasNext(i) // treat as shorthand for <B> = hasNext if (b)
@@ -7,7 +8,8 @@ property HasNext
   invalid -> error: next(i)
 
 property UnsafeIterator
-  prefix <java.util.{Collection,Iterator}>
+  prefix "Collection"
+  prefix "Iterator"
   start -> iterating: I = iterator(C)
   iterating -> modified: remove(c, *)
   iterating -> modified: add(c, *)
@@ -22,7 +24,7 @@ property UnsafeMapIterator
   updated -> error: next(i)
 
 property SkipIndexAfterRemove
-  prefix <java.util.ArrayList>
+  prefix "ArrayList"
   start -> start: *
   start -> removed: remove(Collection, Index)
   removed -> ok:    get(collection, index)

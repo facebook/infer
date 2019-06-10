@@ -17,10 +17,15 @@
     if is_guard i then ToplAst.EqualToRegister j else ToplAst.SaveInRegister j
 %}
 
-%token <int> INDENT (* The lexer uses this token only internally. *)
-%token <string> CONSTANT
-%token <string> ID
+(* Switching and common tokens *)
+%token <int> INTEGER
 %token <string> STRING
+%token GT
+%token LT
+
+(* TOPL tokens *)
+%token <int> INDENT (* The lexer uses this token only internally. *)
+%token <string> ID
 %token ARROW
 %token ASGN
 %token COLON
@@ -35,6 +40,10 @@
 %token RP
 %token STAR
 
+(* SIL tokens *)
+%token FALSE
+%token TRUE
+
 %start <ToplAst.t list> properties
 
 %%
@@ -47,7 +56,7 @@ one_property:
 
 message: MESSAGE s=STRING { s }
 
-prefix: PREFIX c=CONSTANT { c }
+prefix: PREFIX s=STRING { s }
 
 transition:
     source=ID ARROW target=ID COLON label=label
@@ -63,14 +72,19 @@ call_pattern: p=procedure_pattern a=arguments_pattern? { (p, a) }
 
 procedure_pattern:
     i=ID { i }
-  | c=CONSTANT { c }
+  | s=STRING { s }
   | STAR { ".*" }
 
 arguments_pattern: LP a=separated_list(COMMA, value_pattern) RP { a }
 
 value_pattern:
     i=ID { value_pattern_of_id i }
-  | c=CONSTANT { ToplAst.EqualToConstant c }
   | STAR { ToplAst.Ignore }
+  | LT e=sil_expression GT { ToplAst.EqualToConstant e }
+
+sil_expression:
+    TRUE { Exp.one }
+  | FALSE { Exp.zero }
+  | x=INTEGER { Exp.int (IntLit.of_int x) }
 
 %%

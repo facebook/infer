@@ -99,6 +99,7 @@ let concat_map_changed ~equal (NotReversed instrs as t) ~f =
   then t
   else NotReversed instrs'
 
+
 let reverse_order (NotReversed instrs) = Reversed (RevArray.of_rev_array instrs)
 
 (* Functions on both reversed and non-reversed arrays *)

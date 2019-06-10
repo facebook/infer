@@ -11,8 +11,7 @@ type property_name = string [@@deriving compare, hash, sexp]
 
 type register_name = string
 
-(** TODO: use Const.t *)
-type constant = string
+type constant = Exp.t
 
 type value_pattern =
   | Ignore

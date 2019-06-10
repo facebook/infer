@@ -19,3 +19,9 @@ val get_proc_desc : Typ.Procname.t -> Procdesc.t option
 val instrument : Tenv.t -> Procdesc.t -> unit
 (** Inserts calls to the TOPL automaton. Mutates the arguments: it is the caller's responsibility
 to instrument procedures at most once. *)
+
+val sourcefile : SourceFile.t
+(** The (fake) sourcefile in which synthesized code resides. *)
+
+val cfg : Cfg.t
+(** The CFG of the synthesized code. *)

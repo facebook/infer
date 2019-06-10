@@ -19,14 +19,11 @@ open! IStd
    boolean variable transitionN to tell if the static part of a transition guard is satisfied. The N
    is just some identifier for the transition, and integers are convenient identifiers.
 
-   NOTE: Now, the signature is the minimal needed for code instrumentation, but the implementation
-   does some extra work (such as grouping transitions by their source) that will be useful for
-   code generation. (TODO: remove note once code generation is implemented.)
+   Transitions are grouped by their source to ease generation of the monitor code.
 *)
-
 type t
 
-type vindex = int
+type vindex = int (* from 0 to vcount()-1, inclusive *)
 
 type tindex = int (* from 0 to tcount()-1, inclusive *)
 
@@ -34,6 +31,12 @@ type transition = {source: vindex; target: vindex; label: ToplAst.label}
 
 val make : ToplAst.t list -> t
 
+val outgoing : t -> vindex -> tindex list
+
+val vcount : t -> int
+
 val transition : t -> tindex -> transition
 
 val tcount : t -> int
+
+val max_args : t -> int
