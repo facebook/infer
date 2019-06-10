@@ -56,7 +56,12 @@ and cfg = block vector
 (* [entry] is not part of [cfg] since it is special in several ways: its
    params are the func params, its locals are all the locals in it plus the
    cfg, and it cannot be jumped to, only called. *)
-and func = {name: Global.t; entry: block; cfg: cfg}
+and func =
+  { name: Global.t
+  ; entry: block
+  ; cfg: cfg
+  ; freturn: Var.t option
+  ; fthrow: Var.t }
 
 let sexp_cons (hd : Sexp.t) (tl : Sexp.t) =
   match tl with
@@ -201,10 +206,13 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
+  let dummy_var = Var.program "dummy" in
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
-  { name= Global.mk (Var.program "dummy") dummy_ptr_typ Loc.none
+  { name= Global.mk dummy_var dummy_ptr_typ Loc.none
   ; entry= dummy_block
-  ; cfg= Vector.empty }
+  ; cfg= Vector.empty
+  ; freturn= None
+  ; fthrow= dummy_var }
 
 (** Instructions *)
 
@@ -416,13 +424,25 @@ module Func = struct
 
   let find functions name = Map.find functions name
 
-  let mk ~name ~entry ~cfg =
+  let mk ~(name : Global.t) ~entry ~cfg =
     let locals =
       Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
           Set.union locals block.locals )
     in
+    let freturn, locals =
+      match name.typ with
+      | Pointer {elt= Function {return= Some _}} ->
+          let freturn, locals =
+            Var.fresh "freturn" ~wrt:(Set.add_list entry.params locals)
+          in
+          (Some freturn, locals)
+      | _ -> (None, locals)
+    in
+    let fthrow, locals =
+      Var.fresh "fthrow" ~wrt:(Set.add_list entry.params locals)
+    in
     let entry = {entry with locals} in
-    let func = {name; entry; cfg} in
+    let func = {name; entry; cfg; freturn; fthrow} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =

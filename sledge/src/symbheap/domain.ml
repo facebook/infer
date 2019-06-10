@@ -29,7 +29,7 @@ type from_call = Var.Subst.t [@@deriving compare, equal, sexp]
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify the fresh vars. *)
-let call q actuals formals locals =
+let call actuals formals locals q =
   [%Trace.call fun {pf} ->
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ q: %a@]"
@@ -52,14 +52,25 @@ let call q actuals formals locals =
 (** Leave scope of locals and express in terms of actuals instead of
     formals: existentially quantify locals and formals, and apply inverse of
     fresh variables for formals renaming to restore the shadowed variables. *)
-let retn locals freshen_locals q =
+let retn actual formal locals freshen_locals q =
   [%Trace.call fun {pf} ->
-    pf "@[<hv>locals: {@[%a@]}@ subst: %a@ q: %a@]" Var.Set.pp locals
-      Var.Subst.pp
+    pf "@[<hv>%a%alocals: {@[%a@]}@ subst: %a@ q: %a@]"
+      (Option.pp "%a to " Exp.pp)
+      actual (Option.pp "%a@ " Var.pp) formal Var.Set.pp locals Var.Subst.pp
       (Var.Subst.invert freshen_locals)
       Sh.pp q]
   ;
-  Sh.rename (Var.Subst.invert freshen_locals) (Sh.exists locals q)
+  let q' =
+    match (actual, formal) with
+    | Some actl, Some frml -> Sh.and_ (Exp.eq (Exp.var frml) actl) q
+    | None, None -> q
+    | _ ->
+        fail "mismatched actual and formal return: %a to %a"
+          (Option.pp "%a" Exp.pp) actual (Option.pp "%a" Var.pp) formal ()
+  in
+  Sh.rename
+    (Var.Subst.invert freshen_locals)
+    (Sh.exists (Option.fold ~f:Set.remove ~init:locals formal) q')
   |>
   [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
 

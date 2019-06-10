@@ -212,6 +212,7 @@ module Set : sig
 
   val pp : 'e pp -> ('e, 'c) t pp
   val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool
+  val add_list : 'e list -> ('e, 'c) t -> ('e, 'c) t
 
   val diff_inter_diff :
     ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t * ('e, 'c) t

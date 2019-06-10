@@ -3,6 +3,7 @@ frontend/cond_alloca.bc:	RESULT: Internal error: no applicable harness
 exec/globals.bc:	RESULT: Success
 exec/global_vars.bc:	RESULT: Success
 exec/recursion.bc:	RESULT: Success
+exec/wrap_malloc.bc:	RESULT: Success
 frontend/destructor_bases.bc:	RESULT: Success
 frontend/exceptions.bc:	RESULT: Success
 frontend/rethrow.bc:	RESULT: Success

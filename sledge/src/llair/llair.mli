@@ -107,7 +107,12 @@ and cfg
 
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
-and func = private {name: Global.t; entry: block; cfg: cfg}
+and func = private
+  { name: Global.t
+  ; entry: block
+  ; cfg: cfg
+  ; freturn: Var.t option
+  ; fthrow: Var.t }
 
 type functions
 
