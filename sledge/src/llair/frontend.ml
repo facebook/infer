@@ -940,10 +940,16 @@ let xlate_instr :
           let exc = xlate_value x (Llvm.operand instr 0) in
           emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
       | ["_Znwm" (* operator new(size_t num) *)]
+       |["__llair_alloc" (* void* __llair_alloc(unsigned size) *)]
        |[ "_ZnwmSt11align_val_t"
           (* operator new(unsigned long, std::align_val_t) *) ] ->
           let reg = xlate_name instr in
-          let num = xlate_value x (Llvm.operand instr 0) in
+          let num_operand = Llvm.operand instr 0 in
+          let num =
+            Exp.convert ~dst:Typ.siz
+              (xlate_value x num_operand)
+              ~src:(xlate_type x (Llvm.type_of num_operand))
+          in
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
           emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)

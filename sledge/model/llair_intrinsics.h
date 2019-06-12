@@ -13,6 +13,9 @@ extern "C" {
 
 __attribute__((noreturn)) void __llair_throw(void* thrown_exception);
 
+/* This models allocation that cannot fail. */
+void* __llair_alloc(unsigned size);
+
 #ifdef __cplusplus
 }
 #endif
