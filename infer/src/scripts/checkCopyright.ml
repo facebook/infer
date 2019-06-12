@@ -17,7 +17,7 @@ let exit_code_of_event = function CopyrightModified -> 1 | CopyrightMalformed ->
 type comment_style =
   | Line of string * bool
       (** line comments, eg "#" for shell, and whether there should be a
-                              newline before the copyright notice *)
+          newline before the copyright notice *)
   | Block of string * string * string * bool  (** block comments, eg ("(*", "*", "*)") for ocaml *)
 [@@deriving compare]
 
@@ -169,25 +169,7 @@ let contains_monoidics cstart cend lines = contains_string ~substring:"Monoidics
 
 let contains_ropas cstart cend lines = contains_string ~substring:"ROPAS" cstart cend lines
 
-let get_copyright_year cstart cend lines =
-  let found = ref None in
-  let do_line line =
-    try
-      let fmt_re = Str.regexp "[0-9]+" in
-      ignore (Str.search_forward fmt_re line 0) ;
-      let fmt_match = Str.matched_string line in
-      if String.length fmt_match = 4 then
-        try found := Some (int_of_string fmt_match) with _ -> ()
-    with Caml.Not_found -> ()
-  in
-  for i = cstart to cend do
-    let line = lines.(i) in
-    if String.is_substring ~substring:"Copyright" line then do_line line
-  done ;
-  !found
-
-
-let pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt =
+let pp_copyright ~monoidics ~ropas com_style fmt =
   let running_comment = match com_style with Line (s, _) | Block (_, s, _, _) -> s in
   let indent = indent_of_comment_style com_style in
   let pp_line str =
@@ -206,19 +188,16 @@ let pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt =
   pp_start () ;
   if ropas then (
     pp_line " Copyright (c) 2016-present, Programming Research Laboratory (ROPAS)" ;
-    pp_line "                             Seoul National University, Korea" ;
-    pp_line " Copyright (c) 2017-present, Facebook, Inc." )
-  else (
-    if monoidics then pp_line " Copyright (c) 2009-2013, Monoidics ltd." ;
-    pp_line " Copyright (c) %d-present, Facebook, Inc." copyright_year ) ;
+    pp_line "                             Seoul National University, Korea" )
+  else if monoidics then pp_line " Copyright (c) 2009-2013, Monoidics ltd." ;
+  pp_line " Copyright (c) Facebook, Inc. and its affiliates." ;
   pp_line "" ;
   pp_line " This source code is licensed under the MIT license found in the" ;
   pp_line " LICENSE file in the root directory of this source tree." ;
   pp_end ()
 
 
-let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas
-    ~copyright_year com_style =
+let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas com_style =
   let old_copyright =
     let r = ref "" in
     for i = cstart to cend do
@@ -226,9 +205,7 @@ let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~r
     done ;
     !r
   in
-  let new_copyright =
-    Format.asprintf "%t" (pp_copyright ~monoidics ~ropas ~copyright_year com_style)
-  in
+  let new_copyright = Format.asprintf "%t" (pp_copyright ~monoidics ~ropas com_style) in
   let changed = not (String.equal old_copyright new_copyright) in
   if !show_diff && changed then (
     let with_suffix fname suff = Filename.basename fname ^ suff in
@@ -275,8 +252,7 @@ let comment_style_of_filename fname =
   List.Assoc.find com_style_of_lang ~equal:Filename.check_suffix fname
 
 
-let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false) ~copyright_year
-    com_style =
+let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false) com_style =
   let lang = lang_of_comment_style com_style in
   let pp_range_opt fmt = function
     | None ->
@@ -284,8 +260,8 @@ let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false)
     | Some (s, e) ->
         F.fprintf fmt "%d-%d" s e
   in
-  F.eprintf "%s (lang:%s notice:%a monoidics:%b ropas:%b year:%d)\n%!" fname lang pp_range_opt
-    notice_range monoidics ropas copyright_year ;
+  F.eprintf "%s (lang:%s notice:%a monoidics:%b ropas:%b)\n%!" fname lang pp_range_opt notice_range
+    monoidics ropas ;
   let pp_newfile fmt =
     let copy_lines_before, copy_lines_after =
       match notice_range with
@@ -301,7 +277,7 @@ let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false)
     if
       starts_with_newline com_style && copy_lines_before > 0 && lines.(copy_lines_before - 1) <> ""
     then F.fprintf fmt "@\n" ;
-    pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt ;
+    pp_copyright ~monoidics ~ropas com_style fmt ;
     for i = copy_lines_after to Array.length lines - 1 do
       F.fprintf fmt "%s\n" lines.(i)
     done ;
@@ -321,10 +297,9 @@ let check_copyright fname =
   | None, None ->
       ()
   | None, Some com_style ->
-      let copyright_year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
-      output_diff ~fname lines ~copyright_year com_style ;
+      output_diff ~fname lines com_style ;
       raise (CopyrightEvent CopyrightModified)
-  | Some n, fname_com_style -> (
+  | Some n, fname_com_style ->
       let cstart, contents_com_style =
         find_comment_start_and_style lines n |> Option.value ~default:(0, Line ("#", false))
       in
@@ -367,18 +342,10 @@ let check_copyright fname =
         raise (CopyrightEvent CopyrightMalformed) ) ;
       let monoidics = contains_monoidics cstart cend lines in
       let ropas = contains_ropas cstart cend lines in
-      match get_copyright_year cstart cend lines with
-      | None ->
-          F.eprintf "Can't find copyright year: %s@." fname ;
-          raise (CopyrightEvent CopyrightMalformed)
-      | Some copyright_year ->
-          if
-            copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas
-              ~copyright_year com_style
-          then (
-            output_diff ~fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas ~copyright_year
-              com_style ;
-            raise (CopyrightEvent CopyrightModified) ) )
+      if copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas com_style
+      then (
+        output_diff ~fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas com_style ;
+        raise (CopyrightEvent CopyrightModified) )
 
 
 let speclist =
