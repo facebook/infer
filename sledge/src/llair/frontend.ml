@@ -23,7 +23,7 @@ type llvaluekind = [%import: (Llvm.ValueKind.t[@with Opcode.t := llopcode])]
 
 let _pp_lllinkage fs l = Sexp.pp_hum fs (sexp_of_lllinkage l)
 let _pp_llopcode fs l = Sexp.pp_hum fs (sexp_of_llopcode l)
-let _pp_llvaluekind fs l = Sexp.pp_hum fs (sexp_of_llvaluekind l)
+let pp_llvaluekind fs l = Sexp.pp_hum fs (sexp_of_llvaluekind l)
 
 exception Invalid_llvm of string
 
@@ -906,7 +906,23 @@ let xlate_instr :
       let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
       emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
-      let llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
+      let llfunc =
+        let maybe_llfunc =
+          Llvm.operand instr (Llvm.num_operands instr - 1)
+        in
+        let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
+        match llfunc_valuekind with
+        | Function -> maybe_llfunc
+        | ConstantExpr ->
+            if Llvm.constexpr_opcode maybe_llfunc == BitCast then
+              Llvm.operand maybe_llfunc 0
+            else
+              fail "Unknown value in a call instruction %a" pp_llvalue
+                maybe_llfunc ()
+        | _ ->
+            fail "Unhandled operand type in a call instruction %a"
+              pp_llvaluekind llfunc_valuekind ()
+      in
       let lltyp = Llvm.type_of llfunc in
       assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let fname = Llvm.value_name llfunc in
