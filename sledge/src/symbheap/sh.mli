@@ -23,7 +23,7 @@ type starjunction = private
 
 and disjunction = starjunction list
 
-type t = starjunction
+type t = starjunction [@@deriving equal, compare, sexp]
 
 val pp_seg : seg pp
 val pp_seg_norm : Equality.t -> seg pp

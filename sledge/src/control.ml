@@ -231,7 +231,7 @@ end = struct
   type t = priority_queue * waiting_states * int
   type x = Depths.t -> t -> t
 
-  let empty_waiting_states = Map.empty (module Llair.Block)
+  let empty_waiting_states : waiting_states = Map.empty (module Llair.Block)
   let pp_priority fs (n, e) = Format.fprintf fs "%i: %a" n Edge.pp e
 
   let pp fs pq =
@@ -280,23 +280,33 @@ let exec_goto stk state block ({dst; retreating} : Llair.jump) =
   Work.add ~prev:block ~retreating stk state dst
 
 let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
-  let state, _ = Domain.call args dst.params dst.locals state in
+  let state = Domain.jump args dst.params dst.locals state in
   exec_goto stk state block jmp
 
 let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
-    return throw =
+    (return : Llair.jump) throw =
+  [%Trace.call fun {pf} ->
+    pf "%a from %a" Var.pp dst.parent.name.var Var.pp
+      return.dst.parent.name.var]
+  ;
   let state, from_call = Domain.call args dst.params dst.locals state in
-  match
-    Stack.push_call ~bound:opts.bound dst ~retreating ~return from_call
-      ?throw stk
-  with
+  ( match
+      Stack.push_call ~bound:opts.bound dst ~retreating ~return from_call
+        ?throw stk
+    with
   | Some stk -> Work.add stk ~prev:block ~retreating state dst
-  | None -> Work.skip
+  | None -> Work.skip )
+  |>
+  [%Trace.retn fun {pf} _ -> pf ""]
 
-let exec_pop pop stk state block exp =
-  match pop stk ~init:state ~f:(Domain.retn exp) with
-  | Some (jmp, state, stk) -> exec_jump stk state block jmp
-  | None -> Work.skip
+let exec_pop pop stk state (block : Llair.block) exp =
+  [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
+  ;
+  ( match pop stk ~init:state ~f:(Domain.retn exp) with
+  | Some ((jmp : Llair.jump), state, stk) -> exec_jump stk state block jmp
+  | None -> Work.skip )
+  |>
+  [%Trace.retn fun {pf} _ -> pf ""]
 
 let exec_return stk state block exp =
   exec_pop Stack.pop_return stk state block exp

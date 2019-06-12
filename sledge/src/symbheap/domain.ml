@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2018-present, Facebook, Inc.
+ * Copyright (c) 2019-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,74 +7,61 @@
 
 (** Abstract domain *)
 
-type t = Sh.t
+type t = State_domain.t * State_domain.t
 
-let pp = Sh.pp
+let pp fs (entry, current) =
+  Format.fprintf fs "@[<v 1> entry: %a@;current: %a@]" State_domain.pp entry
+    State_domain.pp current
 
 let init globals =
-  Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Global.var; init= Some (arr, siz)} ->
-        let loc = Exp.var var in
-        let len = Exp.integer (Z.of_int siz) Typ.siz in
-        Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
-    | _ -> q )
+  let init_state = State_domain.init globals in
+  (init_state, init_state)
 
-let join = Sh.or_
-let assume q b = Exec.assume b q
-let exec_inst = Exec.inst
-let exec_intrinsic = Exec.intrinsic
+let join (entry_a, current_a) (entry_b, current_b) =
+  assert (State_domain.equal entry_b entry_a) ;
+  (entry_a, State_domain.join current_a current_b)
 
-type from_call = Var.Subst.t [@@deriving compare, equal, sexp]
+let assume (entry, current) q =
+  match State_domain.assume current q with
+  | Some current -> Some (entry, current)
+  | None -> None
 
-(** Express formula in terms of formals instead of actuals, and enter scope
-    of locals: rename formals to fresh vars in formula and actuals, add
-    equations between each formal and actual, and quantify the fresh vars. *)
-let call actuals formals locals q =
-  [%Trace.call fun {pf} ->
-    pf
-      "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ q: %a@]"
-      (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
-      (List.rev formals) Var.Set.pp locals Sh.pp q]
+let exec_inst (entry, current) inst =
+  match State_domain.exec_inst current inst with
+  | Ok current -> Ok (entry, current)
+  | Error e -> Error e
+
+let exec_intrinsic (entry, current) result intrinsic actuals =
+  match State_domain.exec_intrinsic current result intrinsic actuals with
+  | None -> None
+  | Some (Ok current) -> Some (Ok (entry, current))
+  | Some (Error e) -> Some (Error e)
+
+type from_call =
+  {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
+[@@deriving sexp_of]
+
+let jump actuals formals locals (entry, current) =
+  let current, _ = State_domain.call actuals formals locals current in
+  (entry, current)
+
+let call actuals formals locals (_, current) =
+  [%Trace.call fun {pf} -> pf ""]
   ;
-  let q', freshen_locals = Sh.freshen q ~wrt:locals in
-  let and_eq q formal actual =
-    let actual' = Exp.rename actual freshen_locals in
-    Sh.and_ (Exp.eq (Exp.var formal) actual') q
+  let current, state_from_call =
+    State_domain.call actuals formals locals current
   in
-  let and_eqs formals actuals q =
-    List.fold2_exn ~f:and_eq formals actuals ~init:q
-  in
-  (Sh.extend_us locals (and_eqs formals actuals q'), freshen_locals)
+  ((current, current), {state_from_call; caller_entry= current})
   |>
-  [%Trace.retn fun {pf} (q', s) ->
-    pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp s Sh.pp q']
+  [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
-(** Leave scope of locals and express in terms of actuals instead of
-    formals: existentially quantify locals and formals, and apply inverse of
-    fresh variables for formals renaming to restore the shadowed variables. *)
-let retn actual formal locals freshen_locals q =
-  [%Trace.call fun {pf} ->
-    pf "@[<hv>%a%alocals: {@[%a@]}@ subst: %a@ q: %a@]"
-      (Option.pp "%a to " Exp.pp)
-      actual (Option.pp "%a@ " Var.pp) formal Var.Set.pp locals Var.Subst.pp
-      (Var.Subst.invert freshen_locals)
-      Sh.pp q]
+let retn actual formal locals {caller_entry; state_from_call} (_, current) =
+  [%Trace.call fun {pf} -> pf ""]
   ;
-  let q' =
-    match (actual, formal) with
-    | Some actl, Some frml -> Sh.and_ (Exp.eq (Exp.var frml) actl) q
-    | None, None -> q
-    | _ ->
-        fail "mismatched actual and formal return: %a to %a"
-          (Option.pp "%a" Exp.pp) actual (Option.pp "%a" Var.pp) formal ()
-  in
-  Sh.rename
-    (Var.Subst.invert freshen_locals)
-    (Sh.exists (Option.fold ~f:Set.remove ~init:locals formal) q')
+  ( caller_entry
+  , State_domain.retn actual formal locals state_from_call current )
   |>
-  [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
+  [%Trace.retn fun {pf} -> pf "@,%a" pp]
 
-let resolve_callee lookup ptr _ =
-  match Var.of_exp ptr with
-  | Some callee_name -> lookup callee_name
-  | None -> []
+let resolve_callee f e (_, current) =
+  State_domain.resolve_callee f e current
