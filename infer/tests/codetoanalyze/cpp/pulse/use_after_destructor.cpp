@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -254,8 +254,9 @@ std::unique_ptr<A>* allocate_in_branch_ok(bool b) {
 std::string mk_string();
 
 bool variable_init_ternary_ok(bool b) {
-  // this can cause issues because of the way the frontend treatment of ternary ?: interacts with
-  // the treatment of passing return values by reference as parameters
+  // this can cause issues because of the way the frontend treatment of ternary
+  // ?: interacts with the treatment of passing return values by reference as
+  // parameters
   std::string newPath = b ? "" : mk_string();
 }
 
