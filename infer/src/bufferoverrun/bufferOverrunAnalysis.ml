@@ -311,7 +311,6 @@ let get_local_decls : Procdesc.t -> local_decls =
 let compute_invariant_map :
     Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
  fun pdesc tenv integer_type_widths get_proc_summary_and_formals ->
-  Preanal.do_preanalysis pdesc tenv ;
   let cfg = CFG.from_pdesc pdesc in
   let pdata =
     let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in

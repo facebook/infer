@@ -55,7 +55,8 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   NullabilityPreanalysis.analysis cfg tenv ;
-  SourceFiles.add source_file cfg (FileLocal tenv) (Some integer_type_widths) ;
+  Typ.Procname.Hash.iter (fun _ pdesc -> Preanal.do_preanalysis pdesc tenv) cfg ;
+  SourceFiles.add source_file cfg (Tenv.FileLocal tenv) (Some integer_type_widths) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
   if
     Config.debug_mode || Config.testing_mode || Config.frontend_tests

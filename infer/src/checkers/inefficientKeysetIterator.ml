@@ -33,7 +33,7 @@ let find_first_arg_id ~fun_name ~lhs_f = function
  *)
 let find_first_arg_pvar node ~fun_name =
   let instrs = Procdesc.Node.get_instrs node in
-  if Int.equal (Instrs.count instrs) 4 then
+  if Instrs.count instrs >= 4 then
     let instr_arr = Instrs.get_underlying_not_reversed instrs in
     match instr_arr.(3) with
     | Sil.Store (Exp.Lvar _, _, Exp.Var rhs_id, _) ->
@@ -48,7 +48,7 @@ let report_matching_get summary pvar loop_nodes : unit =
   LoopNodes.iter
     (fun node ->
       let instrs = Procdesc.Node.get_instrs node in
-      if Int.equal (Instrs.count instrs) 5 then
+      if Instrs.count instrs >= 5 then
         let instr_arr = Instrs.get_underlying_not_reversed instrs in
         find_first_arg_id ~fun_name:"get" ~lhs_f:(fun _ -> true) instr_arr.(3)
         |> Option.iter ~f:(fun arg_id ->

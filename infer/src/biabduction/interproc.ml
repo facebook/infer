@@ -1224,7 +1224,6 @@ let perform_transition proc_cfg tenv proc_name summary =
 let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
-  Preanal.do_preanalysis proc_desc tenv ;
   let summaryfp =
     BiabductionConfig.run_in_footprint_mode (analyze_proc summary exe_env tenv) proc_cfg
     |> perform_transition proc_cfg tenv proc_name

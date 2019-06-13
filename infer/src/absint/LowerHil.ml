@@ -117,8 +117,7 @@ module MakeAbstractInterpreterWithConfig
 
   type domain = TransferFunctions.Domain.t
 
-  let compute_post ({ProcData.pdesc; tenv} as proc_data) ~initial =
-    Preanal.do_preanalysis pdesc tenv ;
+  let compute_post proc_data ~initial =
     let initial' = (initial, Bindings.empty) in
     let pp_instr (_, bindings) instr =
       match LowerHilInterpreter.hil_instr_of_sil bindings instr with
