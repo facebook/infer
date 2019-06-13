@@ -488,6 +488,8 @@ val cxx_construct_expr_has_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bo
 
 val has_used_attribute : Ctl_parser_types.ast_node -> bool
 
+val has_no_escape_attribute : Ctl_parser_types.ast_node -> bool
+
 val iphoneos_target_sdk_version_by_path : CLintersContext.context -> string option
 
 val iphoneos_target_sdk_version_greater_or_equal : CLintersContext.context -> string -> bool

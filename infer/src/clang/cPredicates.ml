@@ -1402,6 +1402,30 @@ let rec get_decl_attributes_for_callexpr an =
       []
 
 
+let rec get_decl_attributes_for_callexpr_param an =
+  let open Clang_ast_t in
+  let open Ctl_parser_types in
+  let get_attr_param p = match p with ParmVarDecl (di, _, _, _) -> di.di_attributes | _ -> [] in
+  match an with
+  | Stmt (CallExpr (_, func :: _, _)) ->
+      get_decl_attributes_for_callexpr_param (Stmt func)
+  | Stmt (ImplicitCastExpr (_, [stmt], _, _)) ->
+      get_decl_attributes_for_callexpr_param (Stmt stmt)
+  | Stmt (DeclRefExpr (si, _, _, drti)) -> (
+      L.debug Linters Verbose "#####POINTER LOOP UP: '%i'@\n" si.si_pointer ;
+      match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
+      | Some (FunctionDecl (_, _, _, fdi)) ->
+          List.fold fdi.fdi_parameters
+            ~f:(fun acc p -> List.append (get_attr_param p) acc)
+            ~init:[]
+      | Some (ParmVarDecl _ as d) ->
+          get_attr_param d
+      | _ ->
+          [] )
+  | _ ->
+      []
+
+
 let visibility_matches vis_str (visibility : Clang_ast_t.visibility_attr) =
   match (visibility, vis_str) with
   | DefaultVisibility, "Default" ->
@@ -1424,6 +1448,11 @@ let has_visibility_attribute an visibility =
   in
   let attributes = get_decl_attributes_for_callexpr an in
   match visibility with ALVar.Const vis -> has_visibility_attr attributes vis | _ -> false
+
+
+let has_no_escape_attribute an =
+  let attributes = get_decl_attributes_for_callexpr_param an in
+  List.exists ~f:(fun attr -> match attr with `NoEscapeAttr _ -> true | _ -> false) attributes
 
 
 let has_used_attribute an =

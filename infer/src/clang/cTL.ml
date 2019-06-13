@@ -1191,6 +1191,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.has_visibility_attribute an vis
   | "has_used_attribute", [], an ->
       CPredicates.has_used_attribute an
+  | "has_no_escape_attribute", [], an ->
+      CPredicates.has_no_escape_attribute an
   | "has_unavailable_attribute", [], an ->
       CPredicates.has_unavailable_attribute an
   | "within_available_class_block", [], an ->

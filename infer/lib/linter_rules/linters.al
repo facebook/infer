@@ -176,11 +176,35 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
 
 
 DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
-	  SET report_when =
-		     WHEN
-				   ((is_node("BlockDecl") AND captures_cxx_references())
-					 HOLDS-NEXT)
-         HOLDS-IN-NODE BlockExpr;
+
+		// The current node is block definition capturing a C++ reference
+		LET capture_reference =
+ 			WHEN
+				((is_node("BlockDecl") AND captures_cxx_references()) HOLDS-NEXT)
+ 			HOLDS-IN-NODE BlockExpr;
+
+ 		// At some point we encounter a block definition capturing a C++ reference
+ 		LET block_definition_capture_reference =
+			capture_reference HOLDS-EVENTUALLY;
+
+		// A variable definition initialized with a block capturing a C++ reference
+ 		LET variable_initialized_with_block =
+		IN-NODE VarDecl WITH-TRANSITION InitExpr
+			(block_definition_capture_reference)
+ 		HOLDS-EVENTUALLY;
+
+ 		// Reference to a variable initialized with a capturing block
+ 		LET variable_block_definition =
+			IN-NODE DeclRefExpr WITH-TRANSITION PointerToDecl
+				(variable_initialized_with_block)
+			HOLDS-EVENTUALLY;
+
+		// Report when a function that does not have NoEscapeAttribute call a block or a variable definied with
+		// a block capturing a C++ ref
+		SET report_when =
+			WHEN
+				(NOT has_no_escape_attribute) AND (block_definition_capture_reference OR variable_block_definition)
+			HOLDS-IN-NODE CallExpr;
 
 	  SET message =
 	        "C++ Reference variable(s) %cxx_ref_captured_in_block% captured by Objective-C block";

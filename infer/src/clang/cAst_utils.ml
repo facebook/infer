@@ -130,6 +130,7 @@ let get_stmt_opt stmt_ptr_opt source_range =
 let get_decl_opt_with_decl_ref decl_ref_opt =
   match decl_ref_opt with
   | Some decl_ref ->
+      L.debug Capture Verbose "#####POINTER LOOK UP: '%i'@\n" decl_ref.Clang_ast_t.dr_decl_pointer ;
       get_decl decl_ref.Clang_ast_t.dr_decl_pointer
   | None ->
       None
