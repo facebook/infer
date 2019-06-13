@@ -912,7 +912,7 @@ let xlate_instr :
         in
         let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
         match llfunc_valuekind with
-        | Function -> maybe_llfunc
+        | Function | Instruction _ | InlineAsm | Argument -> maybe_llfunc
         | ConstantExpr ->
             if Llvm.constexpr_opcode maybe_llfunc == BitCast then
               Llvm.operand maybe_llfunc 0
