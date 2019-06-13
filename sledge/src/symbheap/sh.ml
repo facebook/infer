@@ -159,6 +159,22 @@ let rec invariant q =
             invariant sjn ) )
   with exc -> [%Trace.info "%a" pp q] ; raise exc
 
+let rec simplify {us; xs; cong; pure; heap; djns} =
+  [%Trace.call fun {pf} -> pf "%a" pp {us; xs; cong; pure; heap; djns}]
+  ;
+  let heap = List.map heap ~f:(map_seg ~f:(Equality.normalize cong)) in
+  let pure = List.map pure ~f:(Equality.normalize cong) in
+  let cong = Equality.true_ in
+  let djns = List.map djns ~f:(List.map ~f:simplify) in
+  let all_vars =
+    fv {us= Set.union us xs; xs= Var.Set.empty; cong; pure; heap; djns}
+  in
+  let xs = Set.inter all_vars xs in
+  let us = Set.inter all_vars us in
+  {us; xs; cong; pure; heap; djns} |> check invariant
+  |>
+  [%Trace.retn fun {pf} s -> pf "%a" pp s]
+
 (** Quantification and Vocabulary *)
 
 let rename_seg sub ({loc; bas; len; siz; arr} as h) =

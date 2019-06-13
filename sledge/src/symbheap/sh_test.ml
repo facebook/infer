@@ -89,4 +89,30 @@ let%test_module _ =
         ∨ (∃ %x_1, %x_3 .   1 = %y_2 = %x_3 ∧ emp)
         ∨ (∃ %x_1 .   0 = %x_1 ∧ emp)
         ) |}]
+
+    let%expect_test _ =
+      let q =
+        Sh.(
+          exists
+            ~$[x_]
+            (or_
+               (pure (x = !0))
+               (exists
+                  ~$[x_]
+                  (or_
+                     (and_ (x = !1) (pure (y = !1)))
+                     (exists ~$[x_] (pure (x = !2)))))))
+      in
+      pp q ;
+      pp (Sh.simplify q) ;
+      [%expect
+        {|
+        ∃ %x_1 .
+        emp
+        * ( (  0 = %x_1 ∧ emp)
+          ∨ (∃ %x_1 .emp
+             * ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (∃ %x_1 .  2 = %x_1 ∧ emp) ))
+          )
+
+        emp * ( (emp) ∨ (emp * ( (emp) ∨ (emp) )) ) |}]
   end )

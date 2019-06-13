@@ -9,7 +9,13 @@
 
 type t = Sh.t [@@deriving equal, sexp_of]
 
-let pp = Sh.pp
+let pp_full fs s = [%Trace.fprintf fs "%a" Sh.pp s]
+let pp fs s = [%Trace.fprintf fs "%a" Sh.pp (Sh.simplify s)]
+let pp fs s = pp_full fs s ; pp fs s
+
+(* I think it would be nice if `-t State_domain.pp` enabled the simplified
+   printing, with `-t State_domain.pp_full` for the more verbose one. So how
+   about this renaming? *)
 
 let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function

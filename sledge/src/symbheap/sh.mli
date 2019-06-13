@@ -30,6 +30,7 @@ val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
 val pp_djn : disjunction pp
+val simplify : t -> t
 
 include Invariant.S with type t := t
 
