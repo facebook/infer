@@ -18,8 +18,14 @@ Jbuild_plugin.V1.send
  (action (run make ROOT=../../.. cxxabi.bc)))
 
 (rule
+ (targets lib_fuzzer_main.bc)
+ (deps lib_fuzzer_main.c Makefile)
+ (action (run make ROOT=../../.. lib_fuzzer_main.bc)))
+
+
+(rule
  (targets model.ml)
- (deps cxxabi.bc)
+ (deps cxxabi.bc lib_fuzzer_main.bc)
  (action (run ocaml-crunch -m plain -e bc -o model.ml .)))
 
 (library

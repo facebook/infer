@@ -130,16 +130,20 @@ let bitcode_files_of ~target =
   List.map ~f:(make_absolute (Lazy.force buck_root)) modules
 
 (* link and optimize the modules *)
-let llvm_link_opt ~output modules =
+let llvm_link_opt ~lib_fuzzer_harness ~output modules =
   let context = context () in
+  let modules = if lib_fuzzer_harness then "-" :: modules else modules in
   let open Process in
   eval ~context
-    ( run
-        (Lazy.force llvm_bin ^ "llvm-link")
-        ( "-internalize"
-        :: ( "-internalize-public-api-list="
-           ^ String.concat ~sep:"," (Config.find_list "entry_points") )
-        :: "-o=-" :: modules )
+    ( ( if lib_fuzzer_harness then
+        echo ~n:() (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
+      else return () )
+    |- run
+         (Lazy.force llvm_bin ^ "llvm-link")
+         ( "-internalize"
+         :: ( "-internalize-public-api-list="
+            ^ String.concat ~sep:"," (Config.find_list "entry_points") )
+         :: "-o=-" :: modules )
     |- run
          (Lazy.force llvm_bin ^ "opt")
          ["-o=" ^ output; "-globaldce"; "-globalopt"] )
@@ -199,8 +203,12 @@ let main ~(command : unit Command.basic_command) ~analyze =
       and output =
         flag "output" (required abs_path_arg)
           ~doc:"<file> write linked output to <file>"
+      and lib_fuzzer_harness =
+        flag "lib-fuzzer" no_arg
+          ~doc:"add a harness for lib fuzzer binaries"
       in
-      fun () -> llvm_link_opt ~output (bitcode_files_of ~target)
+      fun () ->
+        llvm_link_opt ~lib_fuzzer_harness ~output (bitcode_files_of ~target)
     in
     command ~summary ~readme param
   in
