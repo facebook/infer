@@ -118,3 +118,27 @@ let captured_vars_from_block_info context source_range captured_vars =
     List.map ~f:(fun cv -> Option.value_exn cv.Clang_ast_t.bcv_variable) captured_vars
   in
   List.filter_map ~f:(sil_var_of_captured_var context source_range procname) cv_decl_ref_list
+
+
+let mk_temp_sil_var procdesc ~name =
+  let procname = Procdesc.get_proc_name procdesc in
+  Pvar.mk_tmp name procname
+
+
+let mk_temp_sil_var_for_expr context ~name ~clang_pointer expr_info =
+  match Caml.Hashtbl.find_opt context.CContext.temporary_names clang_pointer with
+  | Some pvar_typ ->
+      pvar_typ
+  | None ->
+      let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+      let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+      let pvar_typ = (mk_temp_sil_var context.CContext.procdesc ~name, typ) in
+      Caml.Hashtbl.add context.CContext.temporary_names clang_pointer pvar_typ ;
+      pvar_typ
+
+
+let materialize_cpp_temporary context stmt_info expr_info =
+  (* the type we get here is a 'best effort' type - the translation may decide to use different type
+     later *)
+  mk_temp_sil_var_for_expr context ~name:Pvar.materialized_cpp_temporary
+    ~clang_pointer:stmt_info.Clang_ast_t.si_pointer expr_info

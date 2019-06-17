@@ -7,9 +7,8 @@
 
 open! IStd
 
-(** Contains current class and current method to be translated as well as local variables, *)
-
-(** and the cg, cfg, and tenv corresponding to the current file. *)
+(** Contains current class and current method to be translated as well as local variables,
+    and the cfg, and tenv corresponding to the current file. *)
 
 module StmtMap = ClangPointers.Map
 
@@ -29,9 +28,9 @@ type t =
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
-        (** mapping from a statement to a list of variables, that go out of scope after the end of the
-     statement *)
-  }
+        (** mapping from a statement to a list of variables, that go out of scope after the end of
+            the statement *)
+  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t }
 
 val get_curr_class : t -> curr_class
 

@@ -7,16 +7,9 @@
 
 open! IStd
 module Hashtbl = Caml.Hashtbl
-
-(** Contains current class and current method to be translated as well as local variables, *)
-
-(** and the cg, cfg, and tenv corresponding to the current file. *)
-
 module StmtMap = ClangPointers.Map
 
-type pointer = int [@@deriving compare]
-
-(* = Clang_ast_t.pointer *)
+type pointer = (* = Clang_ast_t.pointer *) int [@@deriving compare]
 
 type curr_class = ContextClsDeclPtr of pointer | ContextNoCls [@@deriving compare]
 
@@ -32,7 +25,8 @@ type t =
   ; outer_context: t option
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
   ; label_map: str_node_map
-  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t }
+  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
+  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t }
 
 let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
     outer_context vars_to_destroy =
@@ -45,7 +39,8 @@ let create_context translation_unit_context tenv cfg procdesc immediate_curr_cla
   ; outer_context
   ; blocks_static_vars= Typ.Procname.Map.empty
   ; label_map= Hashtbl.create 17
-  ; vars_to_destroy }
+  ; vars_to_destroy
+  ; temporary_names= Hashtbl.create 0 }
 
 
 let rec is_objc_method context =

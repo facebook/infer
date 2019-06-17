@@ -195,21 +195,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Ident.NameGenerator.set_current ident_state
 
 
-  let mk_temp_sil_var procdesc var_name_suffix =
-    let procname = Procdesc.get_proc_name procdesc in
-    Pvar.mk_tmp var_name_suffix procname
-
-
-  let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
-    let qual_type = expr_info.Clang_ast_t.ei_qual_type in
-    let typ = CType_decl.qual_type_to_sil_type tenv qual_type in
-    (mk_temp_sil_var procdesc var_name_prefix, typ)
-
-
-  let create_var_exp_tmp_var trans_state expr_info var_name =
+  let create_var_exp_tmp_var trans_state expr_info ~clang_pointer ~var_name =
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
-    let pvar, typ = mk_temp_sil_var_for_expr context.CContext.tenv procdesc var_name expr_info in
+    let pvar, typ =
+      CVar_decl.mk_temp_sil_var_for_expr context ~name:var_name ~clang_pointer expr_info
+    in
     let var_data =
       ProcAttributes.{name= Pvar.get_name pvar; typ; modify_in_block= false; is_constexpr= false}
     in
@@ -246,7 +237,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               exp
           | _ ->
               let procdesc = trans_state.context.CContext.procdesc in
-              let pvar = mk_temp_sil_var procdesc "__temp_return_" in
+              let pvar = CVar_decl.mk_temp_sil_var procdesc ~name:"__temp_return_" in
               let var_data : ProcAttributes.var_data =
                 { name= Pvar.get_name pvar
                 ; typ= return_type
@@ -1541,7 +1532,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             Procdesc.Node.Join_node []
         in
         Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [] ;
-        let pvar = mk_temp_sil_var procdesc "SIL_temp_conditional___" in
+        let pvar = CVar_decl.mk_temp_sil_var procdesc ~name:"SIL_temp_conditional___" in
         let var_data =
           ProcAttributes.
             {name= Pvar.get_name pvar; typ= var_typ; modify_in_block= false; is_constexpr= false}
@@ -2204,7 +2195,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some var_exp_typ ->
           var_exp_typ
       | None ->
-          create_var_exp_tmp_var trans_state expr_info "SIL_init_list__"
+          create_var_exp_tmp_var trans_state expr_info ~var_name:"SIL_init_list__"
+            ~clang_pointer:stmt_info.Clang_ast_t.si_pointer
     in
     if List.is_empty stmts then
       (* perform zero initialization of a primitive type, record types will have
@@ -2985,12 +2977,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
-    (* typ_tmp is 'best guess' type of variable - translation may decide to use different type
-       later *)
-    let pvar, typ_tmp =
-      mk_temp_sil_var_for_expr context.CContext.tenv procdesc Pvar.materialized_cpp_temporary
-        expr_info
-    in
+    let pvar, typ_tmp = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
     let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
     let var_exp_typ = (Exp.Lvar pvar, typ_tmp) in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
@@ -3002,11 +2989,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     res_trans
 
 
-  and compoundLiteralExpr_trans trans_state stmt_list expr_info =
+  and compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info =
     let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
     let var_exp_typ =
       if Option.is_some trans_state.var_exp_typ then trans_state.var_exp_typ
-      else Some (create_var_exp_tmp_var trans_state expr_info "SIL_compound_literal__")
+      else
+        Some
+          (create_var_exp_tmp_var trans_state expr_info ~var_name:"SIL_compound_literal__"
+             ~clang_pointer:stmt_info.Clang_ast_t.si_pointer)
     in
     let trans_state' = {trans_state with var_exp_typ} in
     instruction trans_state' stmt
@@ -3523,8 +3513,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
-    | CompoundLiteralExpr (_, stmt_list, expr_info) ->
-        compoundLiteralExpr_trans trans_state stmt_list expr_info
+    | CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
+        compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
     | CXXBindTemporaryExpr ({Clang_ast_t.si_source_range}, stmt_list, _, _) ->
