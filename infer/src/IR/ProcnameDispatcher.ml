@@ -140,9 +140,7 @@ let name_cons :
  fun m name ->
   let {on_templated_name; get_markers} = m in
   let match_fuzzy_name =
-    let fuzzy_name_regexp =
-      name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9_:<>]+>\\)?$" |> Str.regexp
-    in
+    let fuzzy_name_regexp = name |> Str.quote |> Printf.sprintf "^%s\\(<.+>\\)?$" |> Str.regexp in
     fun s -> Str.string_match fuzzy_name_regexp s 0
   in
   let on_qual_name context f qual_name =
