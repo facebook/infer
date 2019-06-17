@@ -1428,11 +1428,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            all_res_trans)
 
 
-  and inject_destructors destr_kind trans_state stmt_info =
-    let context = trans_state.context in
-    if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then None
+  and destructor_calls destr_kind trans_state stmt_info vars_to_destroy =
+    if List.is_empty vars_to_destroy then None
     else
-      let procname = Procdesc.get_proc_name context.CContext.procdesc in
+      let context = trans_state.context in
       (* The source location of destructor should reflect the end of the statement *)
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
@@ -1443,27 +1442,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
       let all_res_trans =
-        try
-          let map = context.CContext.vars_to_destroy in
-          let vars_to_destroy = CContext.StmtMap.find_exn map stmt_info.Clang_ast_t.si_pointer in
-          L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
-          List.filter_map vars_to_destroy ~f:(function
-            | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
-                let pvar = CVar_decl.sil_var_of_decl context decl procname in
-                if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
-                  None
-                else
-                  let exp = Exp.Lvar pvar in
-                  let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                  let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
-                  cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                    qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
-                    ~is_inner_destructor:false
-            | _ ->
-                assert false )
-        with Caml.Not_found ->
-          L.(debug Capture Verbose) "@\n Variables that go out of scope are not found...@\n@." ;
-          []
+        L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
+        List.filter_map vars_to_destroy ~f:(fun (pvar, typ, qual_type) ->
+            let exp = Exp.Lvar pvar in
+            let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
+            cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+              qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
+              ~is_inner_destructor:false )
       in
       if List.is_empty all_res_trans then None
       else
@@ -1474,6 +1459,33 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
              ~node_name:(Destruction destr_kind) stmt_info' ~return:(mk_fresh_void_exp_typ ())
              all_res_trans)
+
+
+  and inject_destructors destr_kind trans_state stmt_info =
+    let context = trans_state.context in
+    if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then None
+    else
+      match
+        CContext.StmtMap.find context.CContext.vars_to_destroy stmt_info.Clang_ast_t.si_pointer
+      with
+      | None ->
+          L.(debug Capture Verbose) "@\nNo variables going out of scope here.@\n" ;
+          None
+      | Some var_decls_to_destroy ->
+          let procname = Procdesc.get_proc_name context.CContext.procdesc in
+          let vars_to_destroy =
+            List.filter_map var_decls_to_destroy ~f:(function
+              | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
+                  let pvar = CVar_decl.sil_var_of_decl context decl procname in
+                  if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
+                    None
+                  else
+                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                    Some (pvar, typ, qual_type)
+              | _ ->
+                  assert false )
+          in
+          destructor_calls destr_kind trans_state stmt_info vars_to_destroy
 
 
   and compoundStmt_trans trans_state stmt_list =
