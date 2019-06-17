@@ -9,24 +9,6 @@ open! IStd
 module F = Format
 module BasicCost = Polynomials.NonNegativePolynomial
 
-type cost_kind = OperationCost | AllocationCost | IOCost [@@deriving compare]
-
-module CostKind : PrettyPrintable.PrintableOrderedType with type t = cost_kind = struct
-  type t = cost_kind [@@deriving compare]
-
-  let pp f k =
-    let k_str =
-      match k with
-      | OperationCost ->
-          "OperationCost"
-      | AllocationCost ->
-          "AllocationCost"
-      | IOCost ->
-          "IOCost"
-    in
-    F.pp_print_string f k_str
-end
-
 module CostKindMap = struct
   include PrettyPrintable.MakePPMap (CostKind)
 
@@ -73,7 +55,7 @@ let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp p
 
 let get_cost_kind kind cost_record = VariantCostMap.get kind cost_record
 
-let get_operation_cost cost_record = get_cost_kind OperationCost cost_record
+let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
 
 let map ~f cost_record = VariantCostMap.map f cost_record
 
@@ -89,11 +71,11 @@ let plus cost_record1 cost_record2 =
 
 
 (* Map representing cost record {OperationCost:1; AllocationCost:0; IOCost:0} *)
-let unit_cost_atomic_operation = VariantCostMap.increment OperationCost zero_record
+let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost zero_record
 
 (* Map representing cost record {OperationCost:0; AllocationCost:1; IOCost:0} *)
-let unit_cost_allocation = VariantCostMap.increment AllocationCost zero_record
+let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record
 
 (* Map representing cost record {OperationCost:operation_cost; AllocationCost:0; IOCost:0} *)
 let of_operation_cost operation_cost =
-  VariantCostMap.increase_by OperationCost operation_cost zero_record
+  VariantCostMap.increase_by CostKind.OperationCost operation_cost zero_record

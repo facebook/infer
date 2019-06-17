@@ -79,7 +79,10 @@ module CostsSummary = struct
     in
     List.fold ~init
       ~f:(fun acc (v : Jsonbug_t.cost_item) ->
-        count_aux acc (CostDomain.BasicCost.decode v.polynomial) )
+        List.fold ~init:acc
+          ~f:(fun acc (f, _) ->
+            count_aux acc (CostDomain.BasicCost.decode (f v).Jsonbug_t.polynomial) )
+          CostKind.enabled_cost_kinds )
       costs
 
 
@@ -136,7 +139,7 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
+let issue_of_cost ~kind cost_info ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let class_name =
@@ -149,11 +152,11 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
   let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
-    if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_execution_time_call
-    else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_execution_time_call
-    else if ExternalPerfData.in_profiler_data_map procname then
-      IssueType.time_complexity_increase_cold_start
-    else IssueType.performance_variation
+    if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_cost_call ~kind
+    else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_cost_call ~kind
+    else
+      let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
+      IssueType.complexity_increase ~kind ~is_on_cold_start
   in
   let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
   let curr_cost_msg fmt () =
@@ -250,7 +253,7 @@ let issue_of_cost cost_info ~delta ~prev_cost ~curr_cost =
       DB < DA => introduced
  *)
 let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
-  let fold_aux ~key:_ ~data (left, both, right) =
+  let fold_aux ~kind ~key:_ ~data (left, both, right) =
     match data with
     | `Both (current, previous) ->
         let max_degree_polynomial l =
@@ -274,14 +277,14 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
           if cmp > 0 then
             (* introduced *)
             let left' =
-              issue_of_cost curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
+              issue_of_cost ~kind curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
               |> concat_opt left
             in
             (left', both, right)
           else if cmp < 0 then
             (* fixed *)
             let right' =
-              issue_of_cost curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+              issue_of_cost ~kind curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
               |> concat_opt right
             in
             (left, both, right')
@@ -294,12 +297,19 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
   in
   let key_func (cost_info, _) = cost_info.Jsonbug_t.hash in
   let to_map = to_map key_func in
-  let decoded_costs costs =
-    List.map costs ~f:(fun c -> (c, CostDomain.BasicCost.decode c.Jsonbug_t.polynomial))
+  let decoded_costs costs ~extract_cost_f =
+    List.map costs ~f:(fun c ->
+        (c, CostDomain.BasicCost.decode (extract_cost_f c).Jsonbug_t.polynomial) )
   in
-  let current_costs' = decoded_costs current_costs in
-  let previous_costs' = decoded_costs previous_costs in
-  Map.fold2 (to_map current_costs') (to_map previous_costs') ~f:fold_aux ~init:([], [], [])
+  let get_current_costs = decoded_costs current_costs in
+  let get_previous_costs = decoded_costs previous_costs in
+  List.fold ~init:([], [], [])
+    ~f:(fun acc (extract_cost_f, kind) ->
+      Map.fold2
+        (to_map (get_current_costs ~extract_cost_f))
+        (to_map (get_previous_costs ~extract_cost_f))
+        ~f:(fold_aux ~kind) ~init:acc )
+    CostKind.enabled_cost_kinds
 
 
 (** Set operations should keep duplicated issues with identical hashes *)

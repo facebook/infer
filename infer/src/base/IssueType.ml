@@ -22,6 +22,13 @@ module Unsafe : sig
   val from_string :
     ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
 
+  val from_cost_string :
+       ?enabled:bool
+    -> ?is_on_cold_start:bool
+    -> kind:CostKind.t
+    -> (string -> string, Format.formatter, unit, string) format4
+    -> t
+
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
@@ -76,6 +83,14 @@ end = struct
     with Caml.Not_found ->
       all_issues := IssueSet.add issue !all_issues ;
       issue
+
+
+  let from_cost_string ?(enabled = true) ?(is_on_cold_start = false) ~(kind : CostKind.t) s =
+    let issue_type_base = Format.asprintf s (CostKind.to_issue_string kind) in
+    let issue_type =
+      if is_on_cold_start then issue_type_base ^ "_COLD_START" else issue_type_base
+    in
+    from_string ~enabled issue_type
 
 
   let all_issues () = IssueSet.elements !all_issues
@@ -252,14 +267,8 @@ let eradicate_value_not_present =
   from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
 
 
-let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUTION_CALL"
-
-let expensive_allocation_call = from_string ~enabled:false "EXPENSIVE_ALLOCATION_CALL"
-
-let expensive_IO_call = from_string ~enabled:false "EXPENSIVE_IO_TIME_CALL"
-
-let expensive_execution_time_call_cold_start =
-  from_string ~enabled:false "EXPENSIVE_EXECUTION_CALL_IN_COLD_START"
+let expensive_cost_call ~kind ~is_on_cold_start =
+  from_cost_string ~enabled:false ~kind ~is_on_cold_start "EXPENSIVE_%s"
 
 
 let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HANDLING"
@@ -289,7 +298,7 @@ let inferbo_alloc_may_be_big = from_string "INFERBO_ALLOC_MAY_BE_BIG"
 
 let inferbo_alloc_may_be_negative = from_string "INFERBO_ALLOC_MAY_BE_NEGATIVE"
 
-let infinite_execution_time_call = from_string ~enabled:false "INFINITE_EXECUTION_TIME_CALL"
+let infinite_cost_call ~kind = from_cost_string ~enabled:false "INFINITE_%s" ~kind
 
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
@@ -347,8 +356,6 @@ let nullsafe_nullable_dereference =
 
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
-let performance_variation = from_string "PERFORMANCE_VARIATION"
-
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 
 let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
@@ -403,7 +410,9 @@ let tainted_memory_allocation = from_string "TAINTED_MEMORY_ALLOCATION"
 
 let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
 
-let time_complexity_increase_cold_start = from_string "TIME_COMPLEXITY_INCREASE_COLD_START"
+let complexity_increase ~kind ~is_on_cold_start =
+  from_cost_string ~kind ~is_on_cold_start "%s_COMPLEXITY_INCREASE"
+
 
 let unary_minus_applied_to_unsigned_expression =
   from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
@@ -449,4 +458,14 @@ let vector_invalidation = from_string "VECTOR_INVALIDATION"
 
 let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
 
-let zero_execution_time_call = from_string ~enabled:false "ZERO_EXECUTION_TIME_CALL"
+let zero_cost_call ~kind = from_cost_string ~enabled:false ~kind "ZERO_%s"
+
+(* register enabled cost issues *)
+let () =
+  List.iter CostKind.enabled_cost_kinds ~f:(fun (_, kind) ->
+      List.iter [true; false] ~f:(fun is_on_cold_start ->
+          let _ = zero_cost_call ~kind in
+          let _ = expensive_cost_call ~kind ~is_on_cold_start in
+          let _ = infinite_cost_call ~kind in
+          let _ = complexity_increase ~kind ~is_on_cold_start in
+          () ) )

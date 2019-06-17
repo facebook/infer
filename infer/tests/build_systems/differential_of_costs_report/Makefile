@@ -18,10 +18,10 @@ $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffExampleColdStart.java.current src/DiffExampleColdStart.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: current,\
-	$(INFER_BIN) --enable-issue-type INFINITE_EXECUTION_TIME_CALL --cost-only -o $(CURRENT_DIR) -- $(JAVAC) src/*.java)
+	$(INFER_BIN) --enable-issue-type INFINITE_EXECUTION_TIME --cost-only -o $(CURRENT_DIR) -- $(JAVAC) src/*.java)
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffExampleColdStart.java.previous src/DiffExampleColdStart.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: previous,\
-	$(INFER_BIN) --debug --enable-issue-type INFINITE_EXECUTION_TIME_CALL --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)
+	$(INFER_BIN) --debug --enable-issue-type INFINITE_EXECUTION_TIME --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)

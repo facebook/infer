@@ -343,11 +343,9 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
     | Some {post} when not (Typ.Procname.is_java_access_method proc_name) ->
-        let basic_operation_cost = CostDomain.get_operation_cost post in
-        let degree_with_term = CostDomain.BasicCost.get_degree_with_term basic_operation_cost in
-        let hum =
-          { Jsonbug_t.hum_polynomial=
-              Format.asprintf "%a" CostDomain.BasicCost.pp_hum basic_operation_cost
+        let hum cost =
+          let degree_with_term = CostDomain.BasicCost.get_degree_with_term cost in
+          { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
           ; hum_degree=
               Format.asprintf "%a"
                 (CostDomain.BasicCost.pp_degree ~only_bigO:false)
@@ -357,14 +355,17 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
                 (CostDomain.BasicCost.pp_degree ~only_bigO:true)
                 degree_with_term }
         in
+        let cost_info cost =
+          {Jsonbug_t.polynomial= CostDomain.BasicCost.encode cost; hum= hum cost}
+        in
         let cost_item =
           let file = SourceFile.to_rel_path loc.Location.file in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_name= Typ.Procname.get_method proc_name
           ; procedure_id= procedure_id_of_procname proc_name
-          ; polynomial= CostDomain.BasicCost.encode basic_operation_cost
-          ; hum }
+          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post)
+          ; alloc_cost= cost_info (CostDomain.get_cost_kind CostKind.AllocationCost post) }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
     | _ ->

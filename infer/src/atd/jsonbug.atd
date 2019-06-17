@@ -61,13 +61,20 @@ type hum_info = {
   big_o : string;
 }
 
+
+type cost_info = {
+  polynomial : string;
+  hum : hum_info;
+}
+
+
 type cost_item = {
   hash : string;
   loc : loc;
   procedure_name : string;
   procedure_id : string;
-  polynomial : string;
-  hum : hum_info;
+  alloc_cost : cost_info;
+  exec_cost : cost_info;
 }
 
 type costs_report = cost_item list

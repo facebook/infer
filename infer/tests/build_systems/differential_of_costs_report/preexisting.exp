@@ -1,2 +1,2 @@
-INFINITE_EXECUTION_TIME_CALL, no_bucket, src/DiffExample.java, DiffExample.f7(int):void, 0, [Call to void DiffExample.f1(int),Unbounded loop,Loop at line 38]
-INFINITE_EXECUTION_TIME_CALL, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f7(int):void, 0, [Call to void DiffExampleColdStart.f1(int),Unbounded loop,Loop at line 26]
+INFINITE_EXECUTION_TIME, no_bucket, src/DiffExample.java, DiffExample.f7(int):void, 0, [Call to void DiffExample.f1(int),Unbounded loop,Loop at line 38]
+INFINITE_EXECUTION_TIME, no_bucket, src/DiffExampleColdStart.java, DiffExampleColdStart.f7(int):void, 0, [Call to void DiffExampleColdStart.f1(int),Unbounded loop,Loop at line 26]

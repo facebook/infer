@@ -43,6 +43,7 @@ public class DiffExampleColdStart {
     // cost: linear
     private static int f4(int k) {
         for (int i = 0; i < k; i++) {
+         int [] a = new int[100];
         }
         return 0;
     }

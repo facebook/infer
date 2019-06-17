@@ -53,7 +53,9 @@ OPTIONS
            disabling issue types does not make the corresponding checker not
            run.           Available issue types are as follows:
              
-           ANALYSIS_STOPS (disabled by default),
+           ALLOCATION_COMPLEXITY_INCREASE (enabled by default),
+             ALLOCATION_COMPLEXITY_INCREASE_COLD_START (enabled by default),
+             ANALYSIS_STOPS (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
@@ -118,10 +120,13 @@ OPTIONS
              ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
              ERADICATE_RETURN_VALUE_NOT_PRESENT (enabled by default),
              ERADICATE_VALUE_NOT_PRESENT (enabled by default),
-             EXPENSIVE_ALLOCATION_CALL (disabled by default),
-             EXPENSIVE_EXECUTION_CALL (disabled by default),
-             EXPENSIVE_EXECUTION_CALL_IN_COLD_START (disabled by default),
-             EXPENSIVE_IO_TIME_CALL (disabled by default),
+             EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
+             EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
+           default),
+             EXPENSIVE_ALLOCATION (disabled by default),
+             EXPENSIVE_ALLOCATION_COLD_START (disabled by default),
+             EXPENSIVE_EXECUTION_TIME (disabled by default),
+             EXPENSIVE_EXECUTION_TIME_COLD_START (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
@@ -135,7 +140,8 @@ OPTIONS
              INFERBO_ALLOC_IS_ZERO (enabled by default),
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
-             INFINITE_EXECUTION_TIME_CALL (disabled by default),
+             INFINITE_ALLOCATION (disabled by default),
+             INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INSECURE_INTENT_HANDLING (enabled by default),
              INTEGER_OVERFLOW_L1 (enabled by default),
@@ -161,7 +167,6 @@ OPTIONS
              NULL_DEREFERENCE (enabled by default),
              NULL_TEST_AFTER_DEREFERENCE (disabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
-             PERFORMANCE_VARIATION (enabled by default),
              POINTER_SIZE_MISMATCH (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
@@ -188,7 +193,6 @@ OPTIONS
              TAINTED_BUFFER_ACCESS (enabled by default),
              TAINTED_MEMORY_ALLOCATION (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
-             TIME_COMPLEXITY_INCREASE_COLD_START (enabled by default),
              UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by
            default),
              UNINITIALIZED_VALUE (enabled by default),
@@ -211,7 +215,8 @@ OPTIONS
              Unknown_proc (enabled by default),
              VECTOR_INVALIDATION (enabled by default),
              Wrong_argument_number (enabled by default),
-             ZERO_EXECUTION_TIME_CALL (disabled by default).
+             ZERO_ALLOCATION (disabled by default),
+             ZERO_EXECUTION_TIME (disabled by default).
            
 
        --enable-issue-type +issue_type

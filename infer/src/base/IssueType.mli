@@ -92,6 +92,8 @@ val codequery : t
 
 val comparing_floats_for_equality : t
 
+val complexity_increase : kind:CostKind.t -> is_on_cold_start:bool -> t
+
 val component_factory_function : t
 
 val component_file_cyclomatic_complexity : t
@@ -163,13 +165,7 @@ val eradicate_return_value_not_present : t
 
 val eradicate_value_not_present : t
 
-val expensive_execution_time_call : t
-
-val expensive_allocation_call : t
-
-val expensive_IO_call : t
-
-val expensive_execution_time_call_cold_start : t
+val expensive_cost_call : kind:CostKind.t -> is_on_cold_start:bool -> t
 
 val exposed_insecure_intent_handling : t
 
@@ -193,7 +189,7 @@ val inferbo_alloc_may_be_big : t
 
 val inferbo_alloc_may_be_negative : t
 
-val infinite_execution_time_call : t
+val infinite_cost_call : kind:CostKind.t -> t
 
 val inherently_dangerous_function : t
 
@@ -244,8 +240,6 @@ val nullsafe_field_not_nullable : t
 val nullsafe_nullable_dereference : t
 
 val parameter_not_null_checked : t
-
-val performance_variation : t
 
 val pointer_size_mismatch : t
 
@@ -299,8 +293,6 @@ val tainted_memory_allocation : t
 
 val thread_safety_violation : t
 
-val time_complexity_increase_cold_start : t
-
 val unary_minus_applied_to_unsigned_expression : t
 
 val uninitialized_value : t
@@ -343,4 +335,4 @@ val vector_invalidation : t
 
 val wrong_argument_number : t
 
-val zero_execution_time_call : t
+val zero_cost_call : kind:CostKind.t -> t

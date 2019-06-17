@@ -22,15 +22,15 @@ module ReportConfig = struct
   type t = {name: string; threshold: int option; top_and_bottom: bool}
 
   let as_list =
-    [ ( CostDomain.OperationCost
+    [ ( CostKind.OperationCost
       , { name= "The execution time"
         ; threshold= Option.some_if Config.use_cost_threshold 200
         ; top_and_bottom= true } )
-    ; ( CostDomain.AllocationCost
+    ; ( CostKind.AllocationCost
       , { name= "The allocations"
         ; threshold= Option.some_if Config.use_cost_threshold 3
         ; top_and_bottom= false } )
-    ; (CostDomain.IOCost, {name= "The IOs"; threshold= None; top_and_bottom= false}) ]
+    ; (CostKind.IOCost, {name= "The IOs"; threshold= None; top_and_bottom= false}) ]
 
 
   let as_map =
@@ -715,18 +715,13 @@ end
 module Check = struct
   let report_threshold proc_desc summary ~name ~location ~cost ~threshold ~kind =
     let report_issue_type =
-      match kind with
-      | CostDomain.AllocationCost ->
-          IssueType.expensive_allocation_call
-      | CostDomain.OperationCost ->
-          L.(debug Analysis Medium)
-            "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp
-            (Procdesc.get_proc_name proc_desc) ;
-          if ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc) then
-            IssueType.expensive_execution_time_call_cold_start
-          else IssueType.expensive_execution_time_call
-      | CostDomain.IOCost ->
-          IssueType.expensive_IO_call
+      L.(debug Analysis Medium)
+        "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp
+        (Procdesc.get_proc_name proc_desc) ;
+      let is_on_cold_start =
+        ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc)
+      in
+      IssueType.expensive_cost_call ~kind ~is_on_cold_start
     in
     let degree_str = BasicCost.degree_str cost in
     let message =
@@ -744,7 +739,7 @@ module Check = struct
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_bottom proc_desc summary ~name ~cost =
+  let report_top_and_bottom kind proc_desc summary ~name ~cost =
     let report issue suffix =
       let message =
         F.asprintf "%s of the function %a %s" name Typ.Procname.pp
@@ -756,9 +751,8 @@ module Check = struct
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) summary issue message
     in
-    if BasicCost.is_top cost then
-      report IssueType.infinite_execution_time_call "cannot be computed"
-    else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
+    if BasicCost.is_top cost then report (IssueType.infinite_cost_call ~kind) "cannot be computed"
+    else if BasicCost.is_zero cost then report (IssueType.zero_cost_call ~kind) "is zero"
 
 
   let check_and_report WorstCaseCost.{costs; reports} proc_desc summary =
@@ -772,8 +766,8 @@ module Check = struct
             report_threshold proc_desc summary ~name ~location ~cost
               ~threshold:(Option.value_exn threshold) ~kind ) ;
       CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
-        ~f:(fun _kind ReportConfig.{name; top_and_bottom} cost ->
-          if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost ) )
+        ~f:(fun kind ReportConfig.{name; top_and_bottom} cost ->
+          if top_and_bottom then report_top_and_bottom kind proc_desc summary ~name ~cost ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
