@@ -4,33 +4,59 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#include <iostream>
-
 namespace temporaries {
 
-struct A {
-  int f;
+template <typename X>
+struct UniquePtr {
+  X* x_;
+  ~UniquePtr() {
+    if (x_) {
+      delete x_;
+    }
+  }
+  UniquePtr(X* y) { x_ = y; }
+
+  UniquePtr(UniquePtr<X>& p) = delete; // no copy constructor
+  UniquePtr(UniquePtr<X>&& p) {
+    x_ = p.get();
+    p.x_ = nullptr;
+  }
+
+  X* get() const { return x_; }
+
+  X& operator*() const { return *get(); }
+
+  X* operator->() const { return get(); }
 };
 
-std::unique_ptr<A> some_f();
+struct A {
+  int s_;
+  ~A() {}
+  A() { A(42); }
+  A(int s) { s_ = s; }
+  A(A& a) { s_ = a.s_; }
+};
 
-void FN_call_some_f_deref_bad() {
-  const A& a_ref = *some_f(); // temporary unique_ptr returned by `some_f` is
-                              // destroyed at the end of the statement
-  std::cout << a_ref.f;
+UniquePtr<A> mk_UniquePtr_A() { return UniquePtr<A>(new A); }
+
+int FN_call_mk_UniquePtr_A_deref_bad() {
+  A* a = mk_UniquePtr_A().get(); // temporary unique_ptr returned by
+                                 // `mk_UniquePtr_A` is destroyed at the end
+                                 // of the statement
+  return a->s_;
 }
 
-void call_some_f_ok() {
-  auto local = some_f(); // ok, as ownership of a temporary unique_ptr is passed
-                         // to `local`
-  const A& a_ref = *local;
-  std::cout << a_ref.f;
+int call_mk_UniquePtr_A_ok() {
+  const UniquePtr<A>& local =
+      mk_UniquePtr_A(); // ok, as ownership of a temporary unique_ptr is passed
+                        // to `local`
+  return local->s_;
 }
 
-void call_some_f_copy_object_ok() {
-  auto a = *some_f().get(); // ok, as value is copied before temporary
-                            // unique_prt is destroyed
-  std::cout << a.f;
+int call_mk_UniquePtr_A_copy_object_ok() {
+  A a = *mk_UniquePtr_A().get(); // ok, as value is copied before temporary
+                                 // unique_prt is destroyed
+  return a.s_;
 }
 
 } // namespace temporaries
