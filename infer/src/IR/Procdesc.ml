@@ -89,6 +89,7 @@ module Node = struct
     | ObjCCPPThrow
     | OutOfBound
     | ReturnStmt
+    | Scope of string
     | Skip of string
     | SwitchStmt
     | ThisNotNull
@@ -326,6 +327,8 @@ module Node = struct
         F.pp_print_string fmt "Out of bound"
     | ReturnStmt ->
         F.pp_print_string fmt "Return Stmt"
+    | Scope descr ->
+        F.fprintf fmt "Scope(%s)" descr
     | Skip reason ->
         F.pp_print_string fmt reason
     | SwitchStmt ->

@@ -7,7 +7,7 @@ digraph cfg {
 "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" [label="3:  Call _fun_XForward::call \n   n$1=*&x:XForward* [line 33, column 51]\n  _=*n$1:XForward [line 33, column 51]\n  n$3=_fun_XForward::call(n$1:XForward*) [line 33, column 51]\n  NULLIFY(&x); [line 33, column 51]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 33, column 51]\n  APPLY_ABSTRACTION; [line 33, column 51]\n " shape="box"]
+"call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" [label="3:  Call _fun_XForward::call \n   n$0=*&x:XForward* [line 33, column 51]\n  _=*n$0:XForward [line 33, column 51]\n  n$2=_fun_XForward::call(n$0:XForward*) [line 33, column 51]\n  NULLIFY(&x); [line 33, column 51]\n  EXIT_SCOPE(_,n$0,n$2,x); [line 33, column 51]\n  APPLY_ABSTRACTION; [line 33, column 51]\n " shape="box"]
 	
 
 	 "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" -> "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_2" ;
@@ -44,7 +44,7 @@ digraph cfg {
 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_2" [label="2: Exit npe_call_after_call \n  " color=yellow style=filled]
 	
 
-"npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" [label="3:  Call _fun_X::call \n   n$1=_fun_getX() [line 20, column 30]\n  _=*n$1:X [line 20, column 30]\n  n$3=_fun_X::call(n$1:X*) [line 20, column 30]\n  EXIT_SCOPE(_,n$1,n$3); [line 20, column 30]\n  APPLY_ABSTRACTION; [line 20, column 30]\n " shape="box"]
+"npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" [label="3:  Call _fun_X::call \n   n$0=_fun_getX() [line 20, column 30]\n  _=*n$0:X [line 20, column 30]\n  n$2=_fun_X::call(n$0:X*) [line 20, column 30]\n  EXIT_SCOPE(_,n$0,n$2); [line 20, column 30]\n  APPLY_ABSTRACTION; [line 20, column 30]\n " shape="box"]
 	
 
 	 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" -> "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_2" ;
@@ -55,7 +55,7 @@ digraph cfg {
 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" [label="2: Exit npe_call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   n$1=_fun_call_with_forward_declaration(null:XForward*) [line 36, column 3]\n  EXIT_SCOPE(n$1); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
+"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   n$0=_fun_call_with_forward_declaration(null:XForward*) [line 36, column 3]\n  EXIT_SCOPE(n$0); [line 36, column 3]\n  APPLY_ABSTRACTION; [line 36, column 3]\n " shape="box"]
 	
 
 	 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" -> "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" ;

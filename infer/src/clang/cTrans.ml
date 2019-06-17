@@ -1446,63 +1446,39 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         try
           let map = context.CContext.vars_to_destroy in
           let vars_to_destroy = CContext.StmtMap.find_exn map stmt_info.Clang_ast_t.si_pointer in
-          List.filter_map
-            ~f:(function
-              | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
-                  let pvar = CVar_decl.sil_var_of_decl context decl procname in
-                  if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
-                    None
-                  else
-                    let exp = Exp.Lvar pvar in
-                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
-                    cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                      qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
-                      ~is_inner_destructor:false
-              | _ ->
-                  assert false )
-            vars_to_destroy
+          L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
+          List.filter_map vars_to_destroy ~f:(function
+            | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
+                let pvar = CVar_decl.sil_var_of_decl context decl procname in
+                if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
+                  None
+                else
+                  let exp = Exp.Lvar pvar in
+                  let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                  let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
+                  cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                    qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
+                    ~is_inner_destructor:false
+            | _ ->
+                assert false )
         with Caml.Not_found ->
           L.(debug Capture Verbose) "@\n Variables that go out of scope are not found...@\n@." ;
           []
       in
-      let sil_loc =
-        CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
-      in
-      Some
-        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-           ~node_name:(Destruction destr_kind) stmt_info' ~return:(mk_fresh_void_exp_typ ())
-           all_res_trans)
+      if List.is_empty all_res_trans then None
+      else
+        let sil_loc =
+          CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+        in
+        Some
+          (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+             ~node_name:(Destruction destr_kind) stmt_info' ~return:(mk_fresh_void_exp_typ ())
+             all_res_trans)
 
 
-  and compoundStmt_trans trans_state stmt_info stmt_list =
-    (* Computing destructor call nodes to inject at the end of the compound statement,
-       except if the statement ends with Return statemenent *)
-    let destr_trans_result =
-      match List.last stmt_list with
-      | Some (Clang_ast_t.ReturnStmt _) ->
-          None
-      | _ ->
-          inject_destructors Procdesc.Node.DestrScope trans_state stmt_info
-    in
-    (* Injecting destructor call nodes at the end of the compound statement *)
-    let succ_nodes =
-      match destr_trans_result with
-      | Some {control= {root_nodes= []}} | None ->
-          trans_state.succ_nodes
-      | Some {control= {root_nodes}} ->
-          root_nodes
-    in
-    let trans_state' = {trans_state with succ_nodes} in
-    let compound_control, returns = instructions trans_state' stmt_list in
-    let compound_control' =
-      match destr_trans_result with
-      | Some {control= {leaf_nodes= []}} | None ->
-          compound_control
-      | Some {control= {leaf_nodes}} ->
-          {compound_control with leaf_nodes}
-    in
-    mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control'
+  and compoundStmt_trans trans_state stmt_list =
+    let compound_control, returns = instructions trans_state stmt_list in
+    mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control
 
 
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
@@ -1794,7 +1770,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let else_body =
       match if_stmt_info.isi_else with
       | None ->
-          Clang_ast_t.NullStmt (stmt_info, [])
+          Clang_ast_t.NullStmt ({stmt_info with si_pointer= CAst_utils.get_fresh_pointer ()}, [])
       | Some (else_body_ptr, _) ->
           CAst_utils.get_stmt_exn else_body_ptr source_range
     in
@@ -1947,10 +1923,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and tryStmt_trans trans_state stmts =
     let open Clang_ast_t in
     let translate_catch catch_root_nodes_acc = function
-      | CXXCatchStmt (catch_stmt_info, catch_body_stmts, _) ->
-          let catch_trans_result =
-            compoundStmt_trans trans_state catch_stmt_info catch_body_stmts
-          in
+      | CXXCatchStmt (_, catch_body_stmts, _) ->
+          let catch_trans_result = compoundStmt_trans trans_state catch_body_stmts in
           (* no risk of duplicates because two catch blocks should never have the same root nodes
              (they have to be in different syntactic locations, after all!) *)
           catch_trans_result.control.root_nodes @ catch_root_nodes_acc
@@ -2128,6 +2102,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; increment
       ; assign_current_index
       ; loop_body ] ->
+        (* do not use [stmt_info]'s pointer again because we use a pointer map to assign lists of
+           variables to destruct to each statement and so re-using pointers can be problematic and
+           lead to multiple destructions of the same variables *)
+        let stmt_info = {stmt_info with si_pointer= CAst_utils.get_fresh_pointer ()} in
         let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
         let null_stmt = NullStmt (stmt_info, []) in
         let beginend_stmt = CompoundStmt (stmt_info, [begin_stmt; end_stmt]) in
@@ -3277,7 +3255,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
         instr pp_pointer instr ;
       let trans_result =
-        try instruction_translate trans_state instr
+        try instruction_scope trans_state instr
         with e ->
           IExn.reraise_after e ~f:(fun () ->
               let should_log_error = not !logged_error in
@@ -3322,6 +3300,36 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       trans_result
 
 
+  (** inject destructors at the end of the translation of the statement if the context map says
+     there are variables to destruct *)
+  and instruction_scope trans_state stmt =
+    let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+    let destr_trans_result =
+      (* Statements that break control flow will inject appropriate destructor calls themselves and
+         trying to insert them again here would be wasteful and produce nodes that are "unconnected"
+         (without a predecessor in the CFG) since the inner statement translation will, well.. break
+         control flow. *)
+      if CScope.breaks_control_flow stmt then (
+        L.debug Capture Verbose "break of control flow detected, skipping destructor injection@\n" ;
+        None )
+      else inject_destructors Procdesc.Node.DestrScope trans_state stmt_info
+    in
+    (* adjust successors of the translation of [stmt] to point at the injected destructors *)
+    let trans_state =
+      match destr_trans_result with
+      | Some {control= {root_nodes= []}} | None ->
+          trans_state
+      | Some {control= {root_nodes}} ->
+          {trans_state with succ_nodes= root_nodes}
+    in
+    let stmt_result = instruction_translate trans_state stmt in
+    match destr_trans_result with
+    | None | Some {control= {leaf_nodes= []}} ->
+        stmt_result
+    | Some {control= {leaf_nodes}} ->
+        {stmt_result with control= {stmt_result.control with leaf_nodes}}
+
+
   and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
     match instr with
     | GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
@@ -3355,9 +3363,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           cxx_construct_inherited_expr_info ~is_inherited_ctor:true
     | ObjCMessageExpr (stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
-    | CompoundStmt (stmt_info, stmt_list) ->
+    | CompoundStmt (_, stmt_list) ->
         (* No node for this statement. We just collect its statement list*)
-        compoundStmt_trans trans_state stmt_info stmt_list
+        compoundStmt_trans trans_state stmt_list
     | ConditionalOperator (stmt_info, stmt_list, expr_info) ->
         (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
@@ -3478,10 +3486,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         mk_trans_result (last_or_mk_fresh_void_exp_typ returns) control
     | BlockExpr (stmt_info, _, expr_info, decl) ->
         blockExpr_trans trans_state stmt_info expr_info decl
-    | ObjCAutoreleasePoolStmt (stmt_info, stmts) ->
-        compoundStmt_trans trans_state stmt_info stmts
-    | ObjCAtTryStmt (stmt_info, stmts) ->
-        compoundStmt_trans trans_state stmt_info stmts
+    | ObjCAutoreleasePoolStmt (_, stmts) ->
+        compoundStmt_trans trans_state stmts
+    | ObjCAtTryStmt (_, stmts) ->
+        compoundStmt_trans trans_state stmts
     | CXXTryStmt (_, try_stmts) ->
         tryStmt_trans trans_state try_stmts
     | CXXCatchStmt _ ->
@@ -3489,10 +3497,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
     | ObjCAtThrowStmt (stmt_info, stmts) | CXXThrowExpr (stmt_info, stmts, _) ->
         objc_cxx_throw_trans trans_state stmt_info stmts
-    | ObjCAtFinallyStmt (stmt_info, stmts) ->
-        compoundStmt_trans trans_state stmt_info stmts
-    | ObjCAtCatchStmt (stmt_info, _, _) ->
-        compoundStmt_trans trans_state stmt_info []
+    | ObjCAtFinallyStmt (_, stmts) ->
+        compoundStmt_trans trans_state stmts
+    | ObjCAtCatchStmt _ ->
+        compoundStmt_trans trans_state []
     | PredefinedExpr (_, _, expr_info, _) ->
         stringLiteral_trans trans_state expr_info ""
     | BinaryConditionalOperator (stmt_info, stmts, expr_info) ->

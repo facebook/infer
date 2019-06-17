@@ -15,20 +15,20 @@ digraph cfg {
 	
 
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_4" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_3" ;
-"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int [line 17, column 7]\n " shape="box"]
+"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 17, column 7]\n " shape="box"]
 	
 
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_5" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_6" ;
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_5" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_7" ;
-"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == 1234), true); [line 17, column 7]\n  EXIT_SCOPE(n$1); [line 17, column 7]\n " shape="invhouse"]
+"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 1234), true); [line 17, column 7]\n  EXIT_SCOPE(n$0); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_6" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_8" ;
-"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == 1234), false); [line 17, column 7]\n  EXIT_SCOPE(n$1); [line 17, column 7]\n  APPLY_ABSTRACTION; [line 17, column 7]\n " shape="invhouse"]
+"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 1234), false); [line 17, column 7]\n  EXIT_SCOPE(n$0); [line 17, column 7]\n  APPLY_ABSTRACTION; [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_7" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_4" ;
-"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&x:int [line 18, column 9]\n  *&y:int=n$3 [line 18, column 5]\n  NULLIFY(&y); [line 18, column 5]\n  NULLIFY(&x); [line 18, column 5]\n  EXIT_SCOPE(n$3,y,x); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
+"if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 18, column 9]\n  *&y:int=n$1 [line 18, column 5]\n  NULLIFY(&y); [line 18, column 5]\n  NULLIFY(&x); [line 18, column 5]\n  EXIT_SCOPE(n$1,y,x); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="box"]
 	
 
 	 "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_8" -> "if_then#3243301102387331199.d347686d1797cf6cf5f5b9b986a1e67d_4" ;
@@ -51,11 +51,11 @@ digraph cfg {
 	
 
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_4" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_3" ;
-"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_5" [label="5: Prune (true branch, if) \n   n$1=*&x:int [line 44, column 11]\n  PRUNE(n$1, true); [line 44, column 11]\n  EXIT_SCOPE(n$1); [line 44, column 11]\n " shape="invhouse"]
+"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_5" [label="5: Prune (true branch, if) \n   n$0=*&x:int [line 44, column 11]\n  PRUNE(n$0, true); [line 44, column 11]\n  EXIT_SCOPE(n$0); [line 44, column 11]\n " shape="invhouse"]
 	
 
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_5" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_8" ;
-"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_6" [label="6: Prune (false branch, if) \n   n$1=*&x:int [line 44, column 11]\n  PRUNE(!n$1, false); [line 44, column 11]\n  NULLIFY(&x); [line 44, column 11]\n  EXIT_SCOPE(n$1,x); [line 44, column 11]\n  APPLY_ABSTRACTION; [line 44, column 11]\n " shape="invhouse"]
+"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_6" [label="6: Prune (false branch, if) \n   n$0=*&x:int [line 44, column 11]\n  PRUNE(!n$0, false); [line 44, column 11]\n  NULLIFY(&x); [line 44, column 11]\n  EXIT_SCOPE(n$0,x); [line 44, column 11]\n  APPLY_ABSTRACTION; [line 44, column 11]\n " shape="invhouse"]
 	
 
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_6" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_4" ;
@@ -64,7 +64,7 @@ digraph cfg {
 
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_7" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_5" ;
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_7" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_6" ;
-"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&x:int [line 45, column 9]\n  *&y:int=n$3 [line 45, column 5]\n  NULLIFY(&x); [line 45, column 5]\n  NULLIFY(&y); [line 45, column 5]\n  EXIT_SCOPE(n$3,x,y); [line 45, column 5]\n  APPLY_ABSTRACTION; [line 45, column 5]\n " shape="box"]
+"if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 45, column 9]\n  *&y:int=n$1 [line 45, column 5]\n  NULLIFY(&x); [line 45, column 5]\n  NULLIFY(&y); [line 45, column 5]\n  EXIT_SCOPE(n$1,x,y); [line 45, column 5]\n  APPLY_ABSTRACTION; [line 45, column 5]\n " shape="box"]
 	
 
 	 "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_8" -> "if_then_cond_var#9765064652804376901.7ddd70d5a9df7af72d704522a5beba46_4" ;
@@ -87,16 +87,16 @@ digraph cfg {
 	
 
 	 "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_4" -> "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_3" ;
-"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int [line 34, column 7]\n  NULLIFY(&x); [line 34, column 7]\n  EXIT_SCOPE(x); [line 34, column 7]\n " shape="box"]
+"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 34, column 7]\n  NULLIFY(&x); [line 34, column 7]\n  EXIT_SCOPE(x); [line 34, column 7]\n " shape="box"]
 	
 
 	 "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_5" -> "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_6" ;
 	 "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_5" -> "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_7" ;
-"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == 1234), true); [line 34, column 7]\n  EXIT_SCOPE(n$1); [line 34, column 7]\n " shape="invhouse"]
+"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 1234), true); [line 34, column 7]\n  EXIT_SCOPE(n$0); [line 34, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_6" -> "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_8" ;
-"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == 1234), false); [line 34, column 7]\n  EXIT_SCOPE(n$1); [line 34, column 7]\n " shape="invhouse"]
+"if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 1234), false); [line 34, column 7]\n  EXIT_SCOPE(n$0); [line 34, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_7" -> "if_then_else#3656205175867614205.85ec2e9f625ee4f71821f6eee2969089_9" ;
@@ -127,11 +127,11 @@ digraph cfg {
 	
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_4" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_3" ;
-"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_5" [label="5: Prune (true branch, if) \n   n$1=*&x:int [line 52, column 11]\n  PRUNE(n$1, true); [line 52, column 11]\n  EXIT_SCOPE(n$1); [line 52, column 11]\n " shape="invhouse"]
+"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_5" [label="5: Prune (true branch, if) \n   n$0=*&x:int [line 52, column 11]\n  PRUNE(n$0, true); [line 52, column 11]\n  EXIT_SCOPE(n$0); [line 52, column 11]\n " shape="invhouse"]
 	
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_5" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_8" ;
-"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_6" [label="6: Prune (false branch, if) \n   n$1=*&x:int [line 52, column 11]\n  PRUNE(!n$1, false); [line 52, column 11]\n  EXIT_SCOPE(n$1); [line 52, column 11]\n " shape="invhouse"]
+"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_6" [label="6: Prune (false branch, if) \n   n$0=*&x:int [line 52, column 11]\n  PRUNE(!n$0, false); [line 52, column 11]\n  EXIT_SCOPE(n$0); [line 52, column 11]\n " shape="invhouse"]
 	
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_6" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_9" ;
@@ -140,11 +140,11 @@ digraph cfg {
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_7" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_5" ;
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_7" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_6" ;
-"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&x:int [line 53, column 9]\n  *&y:int=n$3 [line 53, column 5]\n  NULLIFY(&x); [line 53, column 5]\n  NULLIFY(&y); [line 53, column 5]\n  EXIT_SCOPE(n$3,x,y); [line 53, column 5]\n  APPLY_ABSTRACTION; [line 53, column 5]\n " shape="box"]
+"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 53, column 9]\n  *&y:int=n$1 [line 53, column 5]\n  NULLIFY(&x); [line 53, column 5]\n  NULLIFY(&y); [line 53, column 5]\n  EXIT_SCOPE(n$1,x,y); [line 53, column 5]\n  APPLY_ABSTRACTION; [line 53, column 5]\n " shape="box"]
 	
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_8" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_4" ;
-"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_9" [label="9:  BinaryOperatorStmt: Assign \n   n$5=*&x:int [line 55, column 9]\n  *&y:int=(n$5 * 2) [line 55, column 5]\n  NULLIFY(&x); [line 55, column 5]\n  NULLIFY(&y); [line 55, column 5]\n  EXIT_SCOPE(n$5,x,y); [line 55, column 5]\n  APPLY_ABSTRACTION; [line 55, column 5]\n " shape="box"]
+"if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_9" [label="9:  BinaryOperatorStmt: Assign \n   n$2=*&x:int [line 55, column 9]\n  *&y:int=(n$2 * 2) [line 55, column 5]\n  NULLIFY(&x); [line 55, column 5]\n  NULLIFY(&y); [line 55, column 5]\n  EXIT_SCOPE(n$2,x,y); [line 55, column 5]\n  APPLY_ABSTRACTION; [line 55, column 5]\n " shape="box"]
 	
 
 	 "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_9" -> "if_then_else_cond_var#2787713781872682235.ef4601af9985bcc4fc7e24bbd9a44d0f_4" ;
@@ -167,16 +167,16 @@ digraph cfg {
 	
 
 	 "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_4" -> "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_2" ;
-"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int [line 25, column 7]\n  NULLIFY(&x); [line 25, column 7]\n  EXIT_SCOPE(x); [line 25, column 7]\n " shape="box"]
+"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 25, column 7]\n  NULLIFY(&x); [line 25, column 7]\n  EXIT_SCOPE(x); [line 25, column 7]\n " shape="box"]
 	
 
 	 "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_5" -> "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_6" ;
 	 "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_5" -> "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_7" ;
-"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == 1234), true); [line 25, column 7]\n  EXIT_SCOPE(n$1); [line 25, column 7]\n " shape="invhouse"]
+"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 1234), true); [line 25, column 7]\n  EXIT_SCOPE(n$0); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_6" -> "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_8" ;
-"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == 1234), false); [line 25, column 7]\n  EXIT_SCOPE(n$1); [line 25, column 7]\n " shape="invhouse"]
+"if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 1234), false); [line 25, column 7]\n  EXIT_SCOPE(n$0); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_7" -> "if_then_else_return#4431567770337235941.d66facc967fa3d7bd91a335f2fa44d33_9" ;
@@ -207,20 +207,20 @@ digraph cfg {
 	
 
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_4" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_2" ;
-"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int [line 62, column 18]\n " shape="box"]
+"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 62, column 18]\n " shape="box"]
 	
 
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_5" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_6" ;
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_5" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_7" ;
-"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == 4), true); [line 62, column 18]\n  EXIT_SCOPE(n$1); [line 62, column 18]\n " shape="invhouse"]
+"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 4), true); [line 62, column 18]\n  EXIT_SCOPE(n$0); [line 62, column 18]\n " shape="invhouse"]
 	
 
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_6" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_8" ;
-"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == 4), false); [line 62, column 18]\n  NULLIFY(&x); [line 62, column 18]\n  EXIT_SCOPE(n$1,x); [line 62, column 18]\n  APPLY_ABSTRACTION; [line 62, column 18]\n " shape="invhouse"]
+"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 4), false); [line 62, column 18]\n  NULLIFY(&x); [line 62, column 18]\n  EXIT_SCOPE(n$0,x); [line 62, column 18]\n  APPLY_ABSTRACTION; [line 62, column 18]\n " shape="invhouse"]
 	
 
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_7" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_3" ;
-"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&x:int [line 63, column 9]\n  *&y:int=n$3 [line 63, column 5]\n  NULLIFY(&x); [line 63, column 5]\n  NULLIFY(&y); [line 63, column 5]\n  EXIT_SCOPE(n$3,x,y); [line 63, column 5]\n  APPLY_ABSTRACTION; [line 63, column 5]\n " shape="box"]
+"if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 63, column 9]\n  *&y:int=n$1 [line 63, column 5]\n  NULLIFY(&x); [line 63, column 5]\n  NULLIFY(&y); [line 63, column 5]\n  EXIT_SCOPE(n$1,x,y); [line 63, column 5]\n  APPLY_ABSTRACTION; [line 63, column 5]\n " shape="box"]
 	
 
 	 "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_8" -> "if_then_init#11608825163312327704.a731baaac66bccf9a8e7312d2dc99b5f_3" ;
@@ -247,20 +247,20 @@ digraph cfg {
 	
 
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_4" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_2" ;
-"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int [line 10, column 7]\n " shape="box"]
+"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 10, column 7]\n " shape="box"]
 	
 
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_5" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_6" ;
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_5" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_7" ;
-"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == 1234), true); [line 10, column 7]\n  EXIT_SCOPE(n$1); [line 10, column 7]\n " shape="invhouse"]
+"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 1234), true); [line 10, column 7]\n  EXIT_SCOPE(n$0); [line 10, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_6" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_8" ;
-"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == 1234), false); [line 10, column 7]\n  EXIT_SCOPE(n$1); [line 10, column 7]\n  APPLY_ABSTRACTION; [line 10, column 7]\n " shape="invhouse"]
+"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 1234), false); [line 10, column 7]\n  EXIT_SCOPE(n$0); [line 10, column 7]\n  APPLY_ABSTRACTION; [line 10, column 7]\n " shape="invhouse"]
 	
 
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_7" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_3" ;
-"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&x:int [line 11, column 9]\n  *&y:int=n$3 [line 11, column 5]\n  NULLIFY(&y); [line 11, column 5]\n  NULLIFY(&x); [line 11, column 5]\n  EXIT_SCOPE(n$3,y,x); [line 11, column 5]\n  APPLY_ABSTRACTION; [line 11, column 5]\n " shape="box"]
+"if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&x:int [line 11, column 9]\n  *&y:int=n$1 [line 11, column 5]\n  NULLIFY(&y); [line 11, column 5]\n  NULLIFY(&x); [line 11, column 5]\n  EXIT_SCOPE(n$1,y,x); [line 11, column 5]\n  APPLY_ABSTRACTION; [line 11, column 5]\n " shape="box"]
 	
 
 	 "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_8" -> "if_then_return#7560400730320632534.710a386e6459fee25726e9e12804127e_3" ;

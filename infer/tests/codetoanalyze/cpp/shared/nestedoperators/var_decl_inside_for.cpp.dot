@@ -15,24 +15,24 @@ digraph cfg {
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_3" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 17, column 31]\n  *&i:int=(n$1 - 1) [line 17, column 31]\n  EXIT_SCOPE(n$1); [line 17, column 31]\n  APPLY_ABSTRACTION; [line 17, column 31]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" [label="5:  UnaryOperator \n   n$0=*&i:int [line 17, column 31]\n  *&i:int=(n$0 - 1) [line 17, column 31]\n  EXIT_SCOPE(n$0); [line 17, column 31]\n  APPLY_ABSTRACTION; [line 17, column 31]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_3" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 17, column 24]\n  PRUNE(n$2, true); [line 17, column 24]\n  EXIT_SCOPE(n$2); [line 17, column 24]\n " shape="invhouse"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" [label="6: Prune (true branch, for loop) \n   n$1=*&x:int [line 17, column 24]\n  PRUNE(n$1, true); [line 17, column 24]\n  EXIT_SCOPE(n$1); [line 17, column 24]\n " shape="invhouse"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 17, column 24]\n  PRUNE(!n$2, false); [line 17, column 24]\n  NULLIFY(&x); [line 17, column 24]\n  NULLIFY(&i); [line 17, column 24]\n  NULLIFY(&result); [line 17, column 24]\n  EXIT_SCOPE(n$2,x,i,result); [line 17, column 24]\n  APPLY_ABSTRACTION; [line 17, column 24]\n " shape="invhouse"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" [label="7: Prune (false branch, for loop) \n   n$1=*&x:int [line 17, column 24]\n  PRUNE(!n$1, false); [line 17, column 24]\n  NULLIFY(&x); [line 17, column 24]\n  NULLIFY(&i); [line 17, column 24]\n  NULLIFY(&result); [line 17, column 24]\n  EXIT_SCOPE(n$1,x,i,result); [line 17, column 24]\n  APPLY_ABSTRACTION; [line 17, column 24]\n " shape="invhouse"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_2" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 17, column 20]\n  n$3=*&i:int [line 17, column 28]\n  *&x:int=n$3 [line 17, column 20]\n  EXIT_SCOPE(n$3); [line 17, column 20]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 17, column 20]\n  n$2=*&i:int [line 17, column 28]\n  *&x:int=n$2 [line 17, column 20]\n  EXIT_SCOPE(n$2); [line 17, column 20]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" ;
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$5=*&x:int [line 18, column 15]\n  n$6=*&result:int [line 18, column 5]\n  *&result:int=(n$6 + n$5) [line 18, column 5]\n  NULLIFY(&x); [line 18, column 5]\n  EXIT_SCOPE(n$5,n$6,x); [line 18, column 5]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int [line 18, column 15]\n  n$4=*&result:int [line 18, column 5]\n  *&result:int=(n$4 + n$3) [line 18, column 5]\n  NULLIFY(&x); [line 18, column 5]\n  EXIT_SCOPE(n$3,n$4,x); [line 18, column 5]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" ;
@@ -55,15 +55,15 @@ digraph cfg {
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_4" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_3" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 10, column 30]\n  *&i:int=(n$1 + 1) [line 10, column 30]\n  EXIT_SCOPE(n$1); [line 10, column 30]\n  APPLY_ABSTRACTION; [line 10, column 30]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" [label="5:  UnaryOperator \n   n$0=*&i:int [line 10, column 30]\n  *&i:int=(n$0 + 1) [line 10, column 30]\n  EXIT_SCOPE(n$0); [line 10, column 30]\n  APPLY_ABSTRACTION; [line 10, column 30]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_3" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 10, column 23]\n  PRUNE(n$2, true); [line 10, column 23]\n  EXIT_SCOPE(n$2); [line 10, column 23]\n " shape="invhouse"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" [label="6: Prune (true branch, for loop) \n   n$1=*&x:int [line 10, column 23]\n  PRUNE(n$1, true); [line 10, column 23]\n  EXIT_SCOPE(n$1); [line 10, column 23]\n " shape="invhouse"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 10, column 23]\n  PRUNE(!n$2, false); [line 10, column 23]\n  NULLIFY(&i); [line 10, column 23]\n  NULLIFY(&x); [line 10, column 23]\n  NULLIFY(&result); [line 10, column 23]\n  EXIT_SCOPE(n$2,i,x,result); [line 10, column 23]\n  APPLY_ABSTRACTION; [line 10, column 23]\n " shape="invhouse"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" [label="7: Prune (false branch, for loop) \n   n$1=*&x:int [line 10, column 23]\n  PRUNE(!n$1, false); [line 10, column 23]\n  NULLIFY(&i); [line 10, column 23]\n  NULLIFY(&x); [line 10, column 23]\n  NULLIFY(&result); [line 10, column 23]\n  EXIT_SCOPE(n$1,i,x,result); [line 10, column 23]\n  APPLY_ABSTRACTION; [line 10, column 23]\n " shape="invhouse"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_2" ;
@@ -72,7 +72,7 @@ digraph cfg {
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" ;
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&x:int [line 11, column 15]\n  n$5=*&result:int [line 11, column 5]\n  *&result:int=(n$5 + n$4) [line 11, column 5]\n  NULLIFY(&x); [line 11, column 5]\n  EXIT_SCOPE(n$4,n$5,x); [line 11, column 5]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int [line 11, column 15]\n  n$3=*&result:int [line 11, column 5]\n  *&result:int=(n$3 + n$2) [line 11, column 5]\n  NULLIFY(&x); [line 11, column 5]\n  EXIT_SCOPE(n$2,n$3,x); [line 11, column 5]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" ;

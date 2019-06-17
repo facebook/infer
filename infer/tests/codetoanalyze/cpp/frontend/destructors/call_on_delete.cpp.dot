@@ -7,7 +7,7 @@ digraph cfg {
 "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_2" [label="2: Exit deleteInt \n  " color=yellow style=filled]
 	
 
-"deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_3" [label="3:  Call delete \n   n$1=*&x:int* [line 14, column 33]\n  n$2=_fun___delete(n$1:int*) [line 14, column 26]\n  NULLIFY(&x); [line 14, column 26]\n  EXIT_SCOPE(n$1,n$2,x); [line 14, column 26]\n  APPLY_ABSTRACTION; [line 14, column 26]\n " shape="box"]
+"deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_3" [label="3:  Call delete \n   n$0=*&x:int* [line 14, column 33]\n  n$1=_fun___delete(n$0:int*) [line 14, column 26]\n  NULLIFY(&x); [line 14, column 26]\n  EXIT_SCOPE(n$0,n$1,x); [line 14, column 26]\n  APPLY_ABSTRACTION; [line 14, column 26]\n " shape="box"]
 	
 
 	 "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_3" -> "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
 	
 
-"deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_3" [label="3:  Call delete \n   n$1=*&x:X* [line 12, column 29]\n  n$2=_fun___delete(n$1:X*) [line 12, column 22]\n  NULLIFY(&x); [line 12, column 22]\n  EXIT_SCOPE(n$1,n$2,x); [line 12, column 22]\n  APPLY_ABSTRACTION; [line 12, column 22]\n " shape="box"]
+"deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_3" [label="3:  Call delete \n   n$0=*&x:X* [line 12, column 29]\n  n$1=_fun___delete(n$0:X*) [line 12, column 22]\n  NULLIFY(&x); [line 12, column 22]\n  EXIT_SCOPE(n$0,n$1,x); [line 12, column 22]\n  APPLY_ABSTRACTION; [line 12, column 22]\n " shape="box"]
 	
 
 	 "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_3" -> "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_2" ;

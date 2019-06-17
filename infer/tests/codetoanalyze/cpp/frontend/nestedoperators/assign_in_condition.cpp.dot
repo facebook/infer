@@ -15,16 +15,16 @@ digraph cfg {
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_3" ;
-"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&p:int* [line 9, column 9]\n  *n$1:int=0 [line 9, column 8]\n  NULLIFY(&p); [line 9, column 8]\n  EXIT_SCOPE(p); [line 9, column 8]\n " shape="box"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int* [line 9, column 9]\n  *n$0:int=0 [line 9, column 8]\n  NULLIFY(&p); [line 9, column 8]\n  EXIT_SCOPE(p); [line 9, column 8]\n " shape="box"]
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" ;
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" ;
-"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" [label="6: Prune (true branch, if) \n   n$2=*n$1:int [line 9, column 7]\n  PRUNE(n$2, true); [line 9, column 7]\n  EXIT_SCOPE(n$1,n$2); [line 9, column 7]\n " shape="invhouse"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" [label="6: Prune (true branch, if) \n   n$1=*n$0:int [line 9, column 7]\n  PRUNE(n$1, true); [line 9, column 7]\n  EXIT_SCOPE(n$0,n$1); [line 9, column 7]\n " shape="invhouse"]
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_8" ;
-"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" [label="7: Prune (false branch, if) \n   n$2=*n$1:int [line 9, column 7]\n  PRUNE(!n$2, false); [line 9, column 7]\n  EXIT_SCOPE(n$1,n$2); [line 9, column 7]\n " shape="invhouse"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" [label="7: Prune (false branch, if) \n   n$1=*n$0:int [line 9, column 7]\n  PRUNE(!n$1, false); [line 9, column 7]\n  EXIT_SCOPE(n$0,n$1); [line 9, column 7]\n " shape="invhouse"]
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" ;

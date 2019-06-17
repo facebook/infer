@@ -22,46 +22,46 @@ digraph cfg {
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_2" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" [label="4:  SwitchStmt \n   n$2=*&n:int [line 12, column 11]\n  NULLIFY(&n); [line 12, column 11]\n  EXIT_SCOPE(n); [line 12, column 11]\n " shape="box"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" [label="4:  SwitchStmt \n   n$1=*&n:int [line 12, column 11]\n  NULLIFY(&n); [line 12, column 11]\n  EXIT_SCOPE(n); [line 12, column 11]\n " shape="box"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" [label="5:  BinaryOperatorStmt: Assign \n   n$6=_fun_h() [line 19, column 13]\n  *&res:int=n$6 [line 19, column 7]\n  EXIT_SCOPE(n$6); [line 19, column 7]\n  APPLY_ABSTRACTION; [line 19, column 7]\n " shape="box"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=_fun_h() [line 19, column 13]\n  *&res:int=n$3 [line 19, column 7]\n  EXIT_SCOPE(n$3); [line 19, column 7]\n  APPLY_ABSTRACTION; [line 19, column 7]\n " shape="box"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$2 == 77), true); [line 18, column 5]\n  NULLIFY(&res); [line 18, column 5]\n  EXIT_SCOPE(n$2,res); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$1 == 77), true); [line 18, column 5]\n  NULLIFY(&res); [line 18, column 5]\n  EXIT_SCOPE(n$1,res); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$2 == 77), false); [line 18, column 5]\n  EXIT_SCOPE(n$2); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$1 == 77), false); [line 18, column 5]\n  EXIT_SCOPE(n$1); [line 18, column 5]\n  APPLY_ABSTRACTION; [line 18, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$2 == 66), true); [line 16, column 5]\n  NULLIFY(&res); [line 16, column 5]\n  EXIT_SCOPE(n$2,res); [line 16, column 5]\n  APPLY_ABSTRACTION; [line 16, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 66), true); [line 16, column 5]\n  NULLIFY(&res); [line 16, column 5]\n  EXIT_SCOPE(n$1,res); [line 16, column 5]\n  APPLY_ABSTRACTION; [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$2 == 66), false); [line 16, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 66), false); [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$2 == 33), true); [line 14, column 5]\n  NULLIFY(&res); [line 14, column 5]\n  EXIT_SCOPE(n$2,res); [line 14, column 5]\n  APPLY_ABSTRACTION; [line 14, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 33), true); [line 14, column 5]\n  NULLIFY(&res); [line 14, column 5]\n  EXIT_SCOPE(n$1,res); [line 14, column 5]\n  APPLY_ABSTRACTION; [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$2 == 33), false); [line 14, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$1 == 33), false); [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$2 == 22), true); [line 13, column 5]\n  NULLIFY(&res); [line 13, column 5]\n  EXIT_SCOPE(n$2,res); [line 13, column 5]\n  APPLY_ABSTRACTION; [line 13, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 22), true); [line 13, column 5]\n  NULLIFY(&res); [line 13, column 5]\n  EXIT_SCOPE(n$1,res); [line 13, column 5]\n  APPLY_ABSTRACTION; [line 13, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$2 == 22), false); [line 13, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$1 == 22), false); [line 13, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" ;

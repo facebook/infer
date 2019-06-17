@@ -40,11 +40,11 @@ digraph cfg {
 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 24, column 3]\n  n$1=_fun_get_ptr() [line 24, column 11]\n  _=*n$1:X [line 24, column 11]\n  n$3=_fun_X::call(n$1:X*) [line 24, column 11]\n  *&c:int=n$3 [line 24, column 3]\n  NULLIFY(&c); [line 24, column 3]\n  EXIT_SCOPE(_,n$1,n$3,c); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 24, column 3]\n  n$0=_fun_get_ptr() [line 24, column 11]\n  _=*n$0:X [line 24, column 11]\n  n$2=_fun_X::call(n$0:X*) [line 24, column 11]\n  *&c:int=n$2 [line 24, column 3]\n  NULLIFY(&c); [line 24, column 3]\n  EXIT_SCOPE(_,n$0,n$2,c); [line 24, column 3]\n  APPLY_ABSTRACTION; [line 24, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" ;
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 23, column 3]\n  n$4=_fun_get_ptr() [line 23, column 11]\n  n$5=*n$4.f:int [line 23, column 11]\n  *&f:int=n$5 [line 23, column 3]\n  NULLIFY(&f); [line 23, column 3]\n  EXIT_SCOPE(n$4,n$5,f); [line 23, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 23, column 3]\n  n$3=_fun_get_ptr() [line 23, column 11]\n  n$4=*n$3.f:int [line 23, column 11]\n  *&f:int=n$4 [line 23, column 3]\n  NULLIFY(&f); [line 23, column 3]\n  EXIT_SCOPE(n$3,n$4,f); [line 23, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" ;
@@ -55,11 +55,11 @@ digraph cfg {
 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
 	
 
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 19, column 3]\n  n$1=_fun_get_ref() [line 19, column 11]\n  _=*n$1:X [line 19, column 11]\n  n$3=_fun_X::call(n$1:X&) [line 19, column 11]\n  *&c:int=n$3 [line 19, column 3]\n  NULLIFY(&c); [line 19, column 3]\n  EXIT_SCOPE(_,n$1,n$3,c); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 19, column 3]\n  n$0=_fun_get_ref() [line 19, column 11]\n  _=*n$0:X [line 19, column 11]\n  n$2=_fun_X::call(n$0:X&) [line 19, column 11]\n  *&c:int=n$2 [line 19, column 3]\n  NULLIFY(&c); [line 19, column 3]\n  EXIT_SCOPE(_,n$0,n$2,c); [line 19, column 3]\n  APPLY_ABSTRACTION; [line 19, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 18, column 3]\n  n$4=_fun_get_ref() [line 18, column 11]\n  n$5=*n$4.f:int [line 18, column 11]\n  *&f:int=n$5 [line 18, column 3]\n  NULLIFY(&f); [line 18, column 3]\n  EXIT_SCOPE(n$4,n$5,f); [line 18, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 18, column 3]\n  n$3=_fun_get_ref() [line 18, column 11]\n  n$4=*n$3.f:int [line 18, column 11]\n  *&f:int=n$4 [line 18, column 3]\n  NULLIFY(&f); [line 18, column 3]\n  EXIT_SCOPE(n$3,n$4,f); [line 18, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" ;

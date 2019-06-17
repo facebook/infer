@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_2" [label="2: Exit A::__infer_inner_destructor_~A \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&this:A* [line 10, column 10]\n  *n$3.f:int=0 [line 10, column 10]\n  NULLIFY(&this); [line 10, column 10]\n  EXIT_SCOPE(n$3,this); [line 10, column 10]\n  APPLY_ABSTRACTION; [line 10, column 10]\n " shape="box"]
+"__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&this:A* [line 10, column 10]\n  *n$2.f:int=0 [line 10, column 10]\n  NULLIFY(&this); [line 10, column 10]\n  EXIT_SCOPE(n$2,this); [line 10, column 10]\n  APPLY_ABSTRACTION; [line 10, column 10]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" -> "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_2" [label="2: Exit B::__infer_inner_destructor_~B \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&this:B* [line 18, column 11]\n  *n$3.f:int=1 [line 18, column 11]\n  NULLIFY(&this); [line 18, column 11]\n  EXIT_SCOPE(n$3,this); [line 18, column 11]\n  APPLY_ABSTRACTION; [line 18, column 11]\n " shape="box"]
+"__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&this:B* [line 18, column 11]\n  *n$2.f:int=1 [line 18, column 11]\n  NULLIFY(&this); [line 18, column 11]\n  EXIT_SCOPE(n$2,this); [line 18, column 11]\n  APPLY_ABSTRACTION; [line 18, column 11]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" -> "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_2" ;

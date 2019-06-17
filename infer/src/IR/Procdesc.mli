@@ -70,6 +70,7 @@ module Node : sig
     | ObjCCPPThrow
     | OutOfBound
     | ReturnStmt
+    | Scope of string
     | Skip of string
     | SwitchStmt
     | ThisNotNull

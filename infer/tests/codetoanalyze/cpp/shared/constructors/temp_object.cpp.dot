@@ -132,7 +132,7 @@ digraph cfg {
 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 14, column 19]\n  n$2=*&x:temp_object::X const & [line 14, column 23]\n  n$3=*n$2.f:int [line 14, column 23]\n  *n$1.f:int=n$3 [line 14, column 19]\n  NULLIFY(&x); [line 14, column 19]\n  NULLIFY(&this); [line 14, column 19]\n  EXIT_SCOPE(n$1,n$2,n$3,x,this); [line 14, column 19]\n  APPLY_ABSTRACTION; [line 14, column 19]\n " shape="box"]
+"X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 14, column 19]\n  n$1=*&x:temp_object::X const & [line 14, column 23]\n  n$2=*n$1.f:int [line 14, column 23]\n  *n$0.f:int=n$2 [line 14, column 19]\n  NULLIFY(&x); [line 14, column 19]\n  NULLIFY(&this); [line 14, column 19]\n  EXIT_SCOPE(n$0,n$1,n$2,x,this); [line 14, column 19]\n  APPLY_ABSTRACTION; [line 14, column 19]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" -> "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_2" ;
@@ -143,7 +143,7 @@ digraph cfg {
 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 12, column 21]\n  n$2=*&a:int [line 12, column 25]\n  *n$1.f:int=n$2 [line 12, column 21]\n  NULLIFY(&a); [line 12, column 21]\n  NULLIFY(&this); [line 12, column 21]\n  EXIT_SCOPE(n$1,n$2,a,this); [line 12, column 21]\n  APPLY_ABSTRACTION; [line 12, column 21]\n " shape="box"]
+"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 12, column 21]\n  n$1=*&a:int [line 12, column 25]\n  *n$0.f:int=n$1 [line 12, column 21]\n  NULLIFY(&a); [line 12, column 21]\n  NULLIFY(&this); [line 12, column 21]\n  EXIT_SCOPE(n$0,n$1,a,this); [line 12, column 21]\n  APPLY_ABSTRACTION; [line 12, column 21]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" ;
@@ -154,7 +154,7 @@ digraph cfg {
 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:temp_object::X* [line 11, column 14]\n  n$2=*&a:int [line 11, column 18]\n  *n$1.f:int=n$2 [line 11, column 14]\n  NULLIFY(&a); [line 11, column 14]\n  NULLIFY(&this); [line 11, column 14]\n  EXIT_SCOPE(n$1,n$2,a,this); [line 11, column 14]\n  APPLY_ABSTRACTION; [line 11, column 14]\n " shape="box"]
+"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 11, column 14]\n  n$1=*&a:int [line 11, column 18]\n  *n$0.f:int=n$1 [line 11, column 14]\n  NULLIFY(&a); [line 11, column 14]\n  NULLIFY(&this); [line 11, column 14]\n  EXIT_SCOPE(n$0,n$1,a,this); [line 11, column 14]\n  APPLY_ABSTRACTION; [line 11, column 14]\n " shape="box"]
 	
 
 	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" ;

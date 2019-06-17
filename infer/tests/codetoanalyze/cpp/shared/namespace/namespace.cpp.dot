@@ -11,15 +11,15 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 55, column 7]\n  *&j:double=n$1 [line 55, column 3]\n  NULLIFY(&j); [line 55, column 3]\n  EXIT_SCOPE(n$1,j); [line 55, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 55, column 7]\n  *&j:double=n$0 [line 55, column 3]\n  NULLIFY(&j); [line 55, column 3]\n  EXIT_SCOPE(n$0,j); [line 55, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=_fun_bar::value() [line 54, column 7]\n  *&i:int=n$2 [line 54, column 3]\n  NULLIFY(&i); [line 54, column 3]\n  EXIT_SCOPE(n$2,i); [line 54, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_bar::value() [line 54, column 7]\n  *&i:int=n$1 [line 54, column 3]\n  NULLIFY(&i); [line 54, column 3]\n  EXIT_SCOPE(n$1,i); [line 54, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=_fun_foo::value() [line 53, column 7]\n  *&i:int=n$3 [line 53, column 3]\n  NULLIFY(&i); [line 53, column 3]\n  EXIT_SCOPE(n$3,i); [line 53, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_foo::value() [line 53, column 7]\n  *&i:int=n$2 [line 53, column 3]\n  NULLIFY(&i); [line 53, column 3]\n  EXIT_SCOPE(n$2,i); [line 53, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -27,23 +27,23 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  Call _fun_foo::Rectangle::set_values \n   _=*&rect2:foo::Rectangle [line 50, column 3]\n  n$5=_fun_foo::Rectangle::set_values(&rect2:foo::Rectangle&,7:int,10:int) [line 50, column 3]\n  EXIT_SCOPE(_,n$5,rect2); [line 50, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  Call _fun_foo::Rectangle::set_values \n   _=*&rect2:foo::Rectangle [line 50, column 3]\n  n$4=_fun_foo::Rectangle::set_values(&rect2:foo::Rectangle&,7:int,10:int) [line 50, column 3]\n  EXIT_SCOPE(_,n$4,rect2); [line 50, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(rect2:foo::Rectangle); [line 49, column 3]\n  n$6=_fun_foo::Rectangle::Rectangle(&rect2:foo::Rectangle*) [line 49, column 18]\n  EXIT_SCOPE(n$6); [line 49, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(rect2:foo::Rectangle); [line 49, column 3]\n  n$5=_fun_foo::Rectangle::Rectangle(&rect2:foo::Rectangle*) [line 49, column 18]\n  EXIT_SCOPE(n$5); [line 49, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  Call _fun_bar::Rectangle::set_values \n   _=*&rect1:bar::Rectangle [line 47, column 3]\n  n$8=_fun_bar::Rectangle::set_values(&rect1:bar::Rectangle&,3:int,4:int) [line 47, column 3]\n  EXIT_SCOPE(_,n$8,rect1); [line 47, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  Call _fun_bar::Rectangle::set_values \n   _=*&rect1:bar::Rectangle [line 47, column 3]\n  n$7=_fun_bar::Rectangle::set_values(&rect1:bar::Rectangle&,3:int,4:int) [line 47, column 3]\n  EXIT_SCOPE(_,n$7,rect1); [line 47, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(rect1:bar::Rectangle); [line 46, column 3]\n  n$9=_fun_bar::Rectangle::Rectangle(&rect1:bar::Rectangle*) [line 46, column 18]\n  EXIT_SCOPE(n$9); [line 46, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(rect1:bar::Rectangle); [line 46, column 3]\n  n$8=_fun_bar::Rectangle::Rectangle(&rect1:bar::Rectangle*) [line 46, column 18]\n  EXIT_SCOPE(n$8); [line 46, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:foo::my_record); [line 44, column 3]\n  n$10=_fun_foo::my_record::(&x:foo::my_record*) [line 44, column 18]\n  EXIT_SCOPE(n$10); [line 44, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:foo::my_record); [line 44, column 3]\n  n$9=_fun_foo::my_record::(&x:foo::my_record*) [line 44, column 18]\n  EXIT_SCOPE(n$9); [line 44, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;

@@ -61,16 +61,16 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let f () =
       match Typ.Procname.Hash.find cfg procname with
       | procdesc when Procdesc.is_defined procdesc && not (model_exists procname) -> (
-          let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
+          L.(debug Capture Verbose)
+            "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
+            (Typ.Procname.to_string procname) ;
+          let vars_to_destroy = CScope.Variables.compute_vars_to_destroy_map body in
           let context =
             CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt
               has_return_param outer_context_opt vars_to_destroy
           in
           let start_node = Procdesc.get_start_node procdesc in
           let exit_node = Procdesc.get_exit_node procdesc in
-          L.(debug Capture Verbose)
-            "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
-            (Typ.Procname.to_string procname) ;
           let meth_body_nodes =
             T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
           in

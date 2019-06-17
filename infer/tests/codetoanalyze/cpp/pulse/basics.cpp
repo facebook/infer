@@ -101,6 +101,48 @@ int struct_inside_loop_ok(std::vector<int> numbers) {
   return sum;
 }
 
+int struct_inside_loop_break_ok(std::vector<int> numbers) {
+  int sum;
+  for (auto number : numbers) {
+    A a = getA();
+    if (number < 0) {
+      break;
+    }
+    sum += a.f(number);
+  }
+  return sum;
+}
+
+int struct_inside_loop_continue_ok(std::vector<int> numbers) {
+  int sum;
+  for (auto number : numbers) {
+    A a = getA();
+    if (number < 0) {
+      continue;
+    }
+    sum += a.f(number);
+  }
+  return sum;
+}
+
+int return_from_inner_scope_ok(bool b) {
+  {
+    A a = getA();
+    if (b) {
+      return;
+    }
+  }
+}
+
+void return_inside_single_branch_if_in_loop_ok() {
+  while (true) {
+    if (true) {
+      A a;
+      return;
+    }
+  }
+}
+
 struct UseAfterSelfDestruct {
   A a_;
   int x_;

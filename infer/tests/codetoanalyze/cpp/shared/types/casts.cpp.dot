@@ -18,7 +18,7 @@ digraph cfg {
 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" [label="2: Exit stat_cast \n  " color=yellow style=filled]
 	
 
-"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(la:long long); [line 10, column 3]\n  n$1=*&a:int [line 10, column 41]\n  *&la:long long=n$1 [line 10, column 3]\n  NULLIFY(&a); [line 10, column 3]\n  NULLIFY(&la); [line 10, column 3]\n  EXIT_SCOPE(n$1,a,la); [line 10, column 3]\n  APPLY_ABSTRACTION; [line 10, column 3]\n " shape="box"]
+"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(la:long long); [line 10, column 3]\n  n$0=*&a:int [line 10, column 41]\n  *&la:long long=n$0 [line 10, column 3]\n  NULLIFY(&a); [line 10, column 3]\n  NULLIFY(&la); [line 10, column 3]\n  EXIT_SCOPE(n$0,a,la); [line 10, column 3]\n  APPLY_ABSTRACTION; [line 10, column 3]\n " shape="box"]
 	
 
 	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" ;

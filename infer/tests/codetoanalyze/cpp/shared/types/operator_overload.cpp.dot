@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_3" -> "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_2" ;
-"div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 28, column 3]\n  n$2=*&x:X& [line 28, column 11]\n  n$3=_fun_operator*(n$2:X&,0:int) [line 28, column 11]\n  *&v:int=n$3 [line 28, column 3]\n  NULLIFY(&x); [line 28, column 3]\n  EXIT_SCOPE(n$2,n$3,x); [line 28, column 3]\n " shape="box"]
+"div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 28, column 3]\n  n$1=*&x:X& [line 28, column 11]\n  n$2=_fun_operator*(n$1:X&,0:int) [line 28, column 11]\n  *&v:int=n$2 [line 28, column 3]\n  NULLIFY(&x); [line 28, column 3]\n  EXIT_SCOPE(n$1,n$2,x); [line 28, column 3]\n " shape="box"]
 	
 
 	 "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" -> "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_3" ;
@@ -37,7 +37,7 @@ digraph cfg {
 	
 
 	 "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_3" -> "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_2" ;
-"div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 34, column 3]\n  n$2=*&x:X& [line 34, column 11]\n  _=*n$2:X [line 34, column 11]\n  n$4=_fun_X::operator[](n$2:X&,0:int) [line 34, column 11]\n  *&v:int=n$4 [line 34, column 3]\n  NULLIFY(&x); [line 34, column 3]\n  EXIT_SCOPE(_,n$2,n$4,x); [line 34, column 3]\n " shape="box"]
+"div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 34, column 3]\n  n$1=*&x:X& [line 34, column 11]\n  _=*n$1:X [line 34, column 11]\n  n$3=_fun_X::operator[](n$1:X&,0:int) [line 34, column 11]\n  *&v:int=n$3 [line 34, column 3]\n  NULLIFY(&x); [line 34, column 3]\n  EXIT_SCOPE(_,n$1,n$3,x); [line 34, column 3]\n " shape="box"]
 	
 
 	 "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" -> "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_3" ;
@@ -52,7 +52,7 @@ digraph cfg {
 	
 
 	 "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_3" -> "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_2" ;
-"div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 20, column 3]\n  n$3=*&x:X& [line 20, column 11]\n  n$4=_fun_X::operator[](n$3:X&,0:int) [line 20, column 11]\n  *&v:int=n$4 [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  EXIT_SCOPE(n$3,n$4,x); [line 20, column 3]\n " shape="box"]
+"div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 20, column 3]\n  n$2=*&x:X& [line 20, column 11]\n  n$3=_fun_X::operator[](n$2:X&,0:int) [line 20, column 11]\n  *&v:int=n$3 [line 20, column 3]\n  NULLIFY(&x); [line 20, column 3]\n  EXIT_SCOPE(n$2,n$3,x); [line 20, column 3]\n " shape="box"]
 	
 
 	 "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" -> "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_3" ;
