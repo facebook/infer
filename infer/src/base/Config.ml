@@ -1703,11 +1703,6 @@ and modified_lines =
      with $(b,--test-determinator)."
 
 
-and modified_targets =
-  CLOpt.mk_path_opt ~deprecated:["modified_targets"] ~long:"modified-targets" ~meta:"file"
-    "Read the file of Buck targets modified since the last analysis"
-
-
 and monitor_prop_size =
   CLOpt.mk_bool ~deprecated:["monitor_prop_size"] ~long:"monitor-prop-size"
     "Monitor size of props, and print every time the current max is exceeded"
@@ -2912,8 +2907,6 @@ and ml_buckets = !ml_buckets
 and models_mode = !models_mode
 
 and modified_lines = !modified_lines
-
-and modified_targets = !modified_targets
 
 and monitor_prop_size = !monitor_prop_size
 

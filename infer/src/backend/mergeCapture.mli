@@ -7,6 +7,4 @@
 
 open! IStd
 
-val record_modified_targets_from_file : string -> unit
-
 val merge_captured_targets : unit -> unit

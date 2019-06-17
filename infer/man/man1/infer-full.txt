@@ -1479,12 +1479,6 @@ INTERNAL OPTIONS
        --modified-lines-reset
            Cancel the effect of --modified-lines.
 
-       --modified-targets file
-           Read the file of Buck targets modified since the last analysis
-
-       --modified-targets-reset
-           Cancel the effect of --modified-targets.
-
        --monitor-prop-size
            Activates: Monitor size of props, and print every time the current
            max is exceeded (Conversely: --no-monitor-prop-size)

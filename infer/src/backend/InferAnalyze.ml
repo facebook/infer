@@ -88,11 +88,6 @@ let register_active_checkers () =
 
 
 let main ~changed_files =
-  ( match Config.modified_targets with
-  | Some file ->
-      MergeCapture.record_modified_targets_from_file file
-  | None ->
-      () ) ;
   register_active_checkers () ;
   if Config.reanalyze then Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
   else DB.Results_dir.clean_specs_dir () ;

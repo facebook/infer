@@ -496,8 +496,6 @@ val models_mode : bool
 
 val modified_lines : string option
 
-val modified_targets : string option
-
 val monitor_prop_size : bool
 
 val nelseg : bool
