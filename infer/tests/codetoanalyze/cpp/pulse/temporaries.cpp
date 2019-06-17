@@ -59,4 +59,21 @@ int call_mk_UniquePtr_A_copy_object_ok() {
   return a.s_;
 }
 
+void temporary_in_conditional_ok() {
+  while (true) {
+    int x = true ? 0 : A(4).s_;
+  }
+}
+
+void call_mk_UniquePtr_A_get_field_ok() { int x = A().s_; }
+
+int FN_bind_temporary_to_const_bad() {
+  A* a_ptr;
+  {
+    const UniquePtr<A>& local = mk_UniquePtr_A();
+    a_ptr = local.get();
+  }
+  return a_ptr->s_;
+}
+
 } // namespace temporaries
