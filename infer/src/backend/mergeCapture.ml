@@ -11,6 +11,7 @@ module L = Logging
 (** Module to merge the results of capture for different buck targets. *)
 
 let merge_global_tenvs infer_deps_file =
+  let time0 = Mtime_clock.counter () in
   let global_tenv = Tenv.create () in
   let merge infer_out_src =
     let global_tenv_path =
@@ -20,7 +21,8 @@ let merge_global_tenvs infer_deps_file =
     |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
   in
   MergeResults.iter_infer_deps infer_deps_file ~f:merge ;
-  Tenv.store_global global_tenv
+  Tenv.store_global global_tenv ;
+  L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0)
 
 
 let merge_captured_targets () =

@@ -19,6 +19,10 @@ type t =
   ; parameters: parameters  (** currently only one string parameter *) }
 [@@deriving compare]
 
+val equal : t -> t -> bool
+
+val hash : t -> int
+
 val volatile : t
 (** annotation for fields marked with the "volatile" keyword *)
 

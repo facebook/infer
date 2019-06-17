@@ -231,6 +231,8 @@ end
 
 include T
 
+let hash = Hashtbl.hash
+
 let mk_type_quals ?default ?is_const ?is_restrict ?is_volatile () =
   let default_ = {is_const= false; is_restrict= false; is_volatile= false} in
   let mk_aux ?(default = default_) ?(is_const = default.is_const)
@@ -348,6 +350,8 @@ module Name = struct
   type t = name [@@deriving compare]
 
   let equal = [%compare.equal: t]
+
+  let hash = Hashtbl.hash
 
   let qual_name = function
     | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
@@ -1391,6 +1395,8 @@ module Fieldname = struct
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
+
+  let hash = Hashtbl.hash
 
   module T = struct
     type nonrec t = t

@@ -19,6 +19,10 @@ type t =
   ; parameters: parameters  (** currently only one string parameter *) }
 [@@deriving compare]
 
+let equal = [%compare.equal: t]
+
+let hash = Hashtbl.hash
+
 let volatile = {class_name= "volatile"; parameters= []}
 
 let final = {class_name= "final"; parameters= []}
