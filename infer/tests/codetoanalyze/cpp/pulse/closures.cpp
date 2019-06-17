@@ -13,7 +13,7 @@ struct S {
   ~S() {}
 };
 
-int ref_capture_destroy_invoke_bad() {
+int FN_ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     S s;
@@ -22,7 +22,7 @@ int ref_capture_destroy_invoke_bad() {
   return f(); // s used here
 }
 
-int implicit_ref_capture_destroy_invoke_bad() {
+int FN_implicit_ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();

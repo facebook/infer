@@ -75,7 +75,7 @@ module PulseTransferFunctions = struct
         >>= PulseOperations.havoc [crumb] loc lhs_access
 
 
-  let exec_unknown_call summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
+  let exec_unknown_call _summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
       call_loc astate =
     let read_all args astate =
       PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
@@ -94,11 +94,6 @@ module PulseTransferFunctions = struct
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
         L.d_printfln "operator= detected@." ;
         match actuals with
-        (* We want to assign *lhs to *rhs when rhs is materialized temporary created in constructor *)
-        | [AccessExpression lhs; HilExp.AccessExpression (AddressOf (Base rhs_base as rhs_exp))]
-          when Var.is_cpp_temporary (fst rhs_base) ->
-            let lhs_deref = HilExp.AccessExpression.dereference lhs in
-            exec_assign summary lhs_deref (HilExp.AccessExpression rhs_exp) call_loc astate
         (* copy assignment *)
         | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
             let lhs_deref = HilExp.AccessExpression.dereference lhs in
