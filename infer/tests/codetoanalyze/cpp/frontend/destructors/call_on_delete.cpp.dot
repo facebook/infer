@@ -36,7 +36,7 @@ digraph cfg {
 "~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_2" [label="2: Exit X::~X \n  " color=yellow style=filled]
 	
 
-"~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_3" [label="3:  Destruction \n   n$0=*&this:X* [line 9, column 9]\n  _=*n$0:X [line 9, column 9]\n  n$2=_fun_X::__infer_inner_destructor_~X(n$0:X*) injected [line 9, column 9]\n  NULLIFY(&this); [line 9, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 9, column 9]\n  APPLY_ABSTRACTION; [line 9, column 9]\n " shape="box"]
+"~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:X* [line 9, column 9]\n  _=*n$0:X [line 9, column 9]\n  n$2=_fun_X::__infer_inner_destructor_~X(n$0:X*) injected [line 9, column 9]\n  NULLIFY(&this); [line 9, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 9, column 9]\n  APPLY_ABSTRACTION; [line 9, column 9]\n " shape="box"]
 	
 
 	 "~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_3" -> "~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_2" ;

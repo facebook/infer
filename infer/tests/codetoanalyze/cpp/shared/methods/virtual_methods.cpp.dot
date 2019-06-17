@@ -199,7 +199,7 @@ digraph cfg {
 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_2" [label="2: Exit Triangle::__infer_inner_destructor_~Triangle \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Polygon::__infer_inner_destructor_~Polygon(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
+"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" [label="3:  Destruction(fields) \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Polygon::__infer_inner_destructor_~Polygon(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" -> "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_2" ;
@@ -210,7 +210,7 @@ digraph cfg {
 "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_2" [label="2: Exit Triangle::~Triangle \n  " color=yellow style=filled]
 	
 
-"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" [label="3:  Destruction \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Triangle::__infer_inner_destructor_~Triangle(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
+"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:Triangle* [line 29, column 15]\n  _=*n$0:Triangle [line 29, column 15]\n  n$2=_fun_Triangle::__infer_inner_destructor_~Triangle(n$0:Triangle*) injected virtual [line 29, column 15]\n  NULLIFY(&this); [line 29, column 15]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 29, column 15]\n  APPLY_ABSTRACTION; [line 29, column 15]\n " shape="box"]
 	
 
 	 "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" -> "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_2" ;

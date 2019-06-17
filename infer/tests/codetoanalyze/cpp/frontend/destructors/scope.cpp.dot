@@ -48,11 +48,11 @@ digraph cfg {
 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" [label="2: Exit destructor_scope::test1 \n   NULLIFY(&x3); [line 55, column 1]\n  NULLIFY(&y2); [line 55, column 1]\n  NULLIFY(&s); [line 55, column 1]\n  NULLIFY(&y1); [line 55, column 1]\n  NULLIFY(&y3); [line 55, column 1]\n  NULLIFY(&x2); [line 55, column 1]\n  NULLIFY(&x1); [line 55, column 1]\n " color=yellow style=filled]
 	
 
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" [label="3:  Destruction \n   _=*&y1:destructor_scope::Y [line 55, column 1]\n  n$1=_fun_destructor_scope::Y::~Y(&y1:destructor_scope::Y*) injected [line 55, column 1]\n  _=*&s:destructor_scope::S [line 55, column 1]\n  n$3=_fun_destructor_scope::S::~S(&s:destructor_scope::S*) injected [line 55, column 1]\n  _=*&x1:destructor_scope::X [line 55, column 1]\n  n$5=_fun_destructor_scope::X::~X(&x1:destructor_scope::X*) injected [line 55, column 1]\n  EXIT_SCOPE(_,_,_,n$1,n$3,n$5,x1,y1,s); [line 55, column 1]\n  APPLY_ABSTRACTION; [line 55, column 1]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" [label="3:  Destruction(Scope) \n   _=*&y1:destructor_scope::Y [line 55, column 1]\n  n$1=_fun_destructor_scope::Y::~Y(&y1:destructor_scope::Y*) injected [line 55, column 1]\n  _=*&s:destructor_scope::S [line 55, column 1]\n  n$3=_fun_destructor_scope::S::~S(&s:destructor_scope::S*) injected [line 55, column 1]\n  _=*&x1:destructor_scope::X [line 55, column 1]\n  n$5=_fun_destructor_scope::X::~X(&x1:destructor_scope::X*) injected [line 55, column 1]\n  EXIT_SCOPE(_,_,_,n$1,n$3,n$5,x1,y1,s); [line 55, column 1]\n  APPLY_ABSTRACTION; [line 55, column 1]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" [label="4:  Destruction \n   _=*&y3:destructor_scope::Y [line 54, column 11]\n  n$8=_fun_destructor_scope::Y::~Y(&y3:destructor_scope::Y*) injected [line 54, column 11]\n  EXIT_SCOPE(_,n$8,y3); [line 54, column 11]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" [label="4:  Destruction(Scope) \n   _=*&y3:destructor_scope::Y [line 54, column 11]\n  n$8=_fun_destructor_scope::Y::~Y(&y3:destructor_scope::Y*) injected [line 54, column 11]\n  EXIT_SCOPE(_,n$8,y3); [line 54, column 11]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" ;
@@ -64,11 +64,11 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_5" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" [label="7:  Destruction \n   _=*&y2:destructor_scope::Y [line 52, column 3]\n  n$13=_fun_destructor_scope::Y::~Y(&y2:destructor_scope::Y*) injected [line 52, column 3]\n  _=*&x2:destructor_scope::X [line 52, column 3]\n  n$15=_fun_destructor_scope::X::~X(&x2:destructor_scope::X*) injected [line 52, column 3]\n  EXIT_SCOPE(_,_,n$13,n$15,x2,y2); [line 52, column 3]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" [label="7:  Destruction(Scope) \n   _=*&y2:destructor_scope::Y [line 52, column 3]\n  n$13=_fun_destructor_scope::Y::~Y(&y2:destructor_scope::Y*) injected [line 52, column 3]\n  _=*&x2:destructor_scope::X [line 52, column 3]\n  n$15=_fun_destructor_scope::X::~X(&x2:destructor_scope::X*) injected [line 52, column 3]\n  EXIT_SCOPE(_,_,n$13,n$15,x2,y2); [line 52, column 3]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" [label="8:  Destruction \n   _=*&x3:destructor_scope::X [line 51, column 5]\n  n$18=_fun_destructor_scope::X::~X(&x3:destructor_scope::X*) injected [line 51, column 5]\n  EXIT_SCOPE(_,n$18,x3); [line 51, column 5]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" [label="8:  Destruction(Scope) \n   _=*&x3:destructor_scope::X [line 51, column 5]\n  n$18=_fun_destructor_scope::X::~X(&x3:destructor_scope::X*) injected [line 51, column 5]\n  EXIT_SCOPE(_,n$18,x3); [line 51, column 5]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" ;
@@ -133,7 +133,7 @@ digraph cfg {
 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" [label="2: Exit destructor_scope::test2 \n   NULLIFY(&x1); [line 66, column 1]\n  NULLIFY(&x3); [line 66, column 1]\n  NULLIFY(&x2); [line 66, column 1]\n " color=yellow style=filled]
 	
 
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" [label="3:  Destruction \n   _=*&x1:destructor_scope::X [line 66, column 1]\n  n$1=_fun_destructor_scope::X::~X(&x1:destructor_scope::X*) injected [line 66, column 1]\n  APPLY_ABSTRACTION; [line 66, column 1]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" [label="3:  Destruction(Scope) \n   _=*&x1:destructor_scope::X [line 66, column 1]\n  n$1=_fun_destructor_scope::X::~X(&x1:destructor_scope::X*) injected [line 66, column 1]\n  APPLY_ABSTRACTION; [line 66, column 1]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" ;
@@ -188,7 +188,7 @@ digraph cfg {
 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_2" [label="2: Exit destructor_scope::S::__infer_inner_destructor_~S \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0.x1:destructor_scope::X [line 19, column 8]\n  n$2=_fun_destructor_scope::X::~X(n$0.x1:destructor_scope::X*) injected [line 19, column 8]\n  NULLIFY(&this); [line 19, column 8]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 19, column 8]\n  APPLY_ABSTRACTION; [line 19, column 8]\n " shape="box"]
+"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" [label="3:  Destruction(fields) \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0.x1:destructor_scope::X [line 19, column 8]\n  n$2=_fun_destructor_scope::X::~X(n$0.x1:destructor_scope::X*) injected [line 19, column 8]\n  NULLIFY(&this); [line 19, column 8]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 19, column 8]\n  APPLY_ABSTRACTION; [line 19, column 8]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" -> "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_2" ;
@@ -199,7 +199,7 @@ digraph cfg {
 "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_2" [label="2: Exit destructor_scope::S::~S \n  " color=yellow style=filled]
 	
 
-"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0:destructor_scope::S [line 19, column 8]\n  n$2=_fun_destructor_scope::S::__infer_inner_destructor_~S(n$0:destructor_scope::S*) injected [line 19, column 8]\n  NULLIFY(&this); [line 19, column 8]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 19, column 8]\n  APPLY_ABSTRACTION; [line 19, column 8]\n " shape="box"]
+"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0:destructor_scope::S [line 19, column 8]\n  n$2=_fun_destructor_scope::S::__infer_inner_destructor_~S(n$0:destructor_scope::S*) injected [line 19, column 8]\n  NULLIFY(&this); [line 19, column 8]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 19, column 8]\n  APPLY_ABSTRACTION; [line 19, column 8]\n " shape="box"]
 	
 
 	 "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" -> "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_2" ;
@@ -210,11 +210,11 @@ digraph cfg {
 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_2" [label="2: Exit destructor_scope::W::__infer_inner_destructor_~W \n   NULLIFY(&x); [line 34, column 3]\n  NULLIFY(&y); [line 34, column 3]\n " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0.s:destructor_scope::S [line 34, column 3]\n  n$6=_fun_destructor_scope::S::~S(n$0.s:destructor_scope::S*) injected [line 34, column 3]\n  _=*n$0.y:destructor_scope::Y [line 34, column 3]\n  n$4=_fun_destructor_scope::Y::~Y(n$0.y:destructor_scope::Y*) injected [line 34, column 3]\n  _=*n$0.x:destructor_scope::X [line 34, column 3]\n  n$2=_fun_destructor_scope::X::~X(n$0.x:destructor_scope::X*) injected [line 34, column 3]\n  NULLIFY(&this); [line 34, column 3]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,this); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" [label="3:  Destruction(fields) \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0.s:destructor_scope::S [line 34, column 3]\n  n$6=_fun_destructor_scope::S::~S(n$0.s:destructor_scope::S*) injected [line 34, column 3]\n  _=*n$0.y:destructor_scope::Y [line 34, column 3]\n  n$4=_fun_destructor_scope::Y::~Y(n$0.y:destructor_scope::Y*) injected [line 34, column 3]\n  _=*n$0.x:destructor_scope::X [line 34, column 3]\n  n$2=_fun_destructor_scope::X::~X(n$0.x:destructor_scope::X*) injected [line 34, column 3]\n  NULLIFY(&this); [line 34, column 3]\n  EXIT_SCOPE(_,_,_,n$0,n$2,n$4,n$6,this); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_2" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" [label="4:  Destruction \n   _=*&y:destructor_scope::Y [line 34, column 3]\n  n$9=_fun_destructor_scope::Y::~Y(&y:destructor_scope::Y*) injected [line 34, column 3]\n  _=*&x:destructor_scope::X [line 34, column 3]\n  n$11=_fun_destructor_scope::X::~X(&x:destructor_scope::X*) injected [line 34, column 3]\n  EXIT_SCOPE(_,_,n$9,n$11,y,x); [line 34, column 3]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" [label="4:  Destruction(Scope) \n   _=*&y:destructor_scope::Y [line 34, column 3]\n  n$9=_fun_destructor_scope::Y::~Y(&y:destructor_scope::Y*) injected [line 34, column 3]\n  _=*&x:destructor_scope::X [line 34, column 3]\n  n$11=_fun_destructor_scope::X::~X(&x:destructor_scope::X*) injected [line 34, column 3]\n  EXIT_SCOPE(_,_,n$9,n$11,y,x); [line 34, column 3]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" ;
@@ -250,7 +250,7 @@ digraph cfg {
 "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_2" [label="2: Exit destructor_scope::W::~W \n  " color=yellow style=filled]
 	
 
-"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0:destructor_scope::W [line 34, column 3]\n  n$2=_fun_destructor_scope::W::__infer_inner_destructor_~W(n$0:destructor_scope::W*) injected [line 34, column 3]\n  NULLIFY(&this); [line 34, column 3]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
+"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0:destructor_scope::W [line 34, column 3]\n  n$2=_fun_destructor_scope::W::__infer_inner_destructor_~W(n$0:destructor_scope::W*) injected [line 34, column 3]\n  NULLIFY(&this); [line 34, column 3]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 34, column 3]\n  APPLY_ABSTRACTION; [line 34, column 3]\n " shape="box"]
 	
 
 	 "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" -> "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_2" ;
@@ -282,7 +282,7 @@ digraph cfg {
 "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_2" [label="2: Exit destructor_scope::X::~X \n  " color=yellow style=filled]
 	
 
-"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::X* [line 10, column 9]\n  _=*n$0:destructor_scope::X [line 10, column 9]\n  n$2=_fun_destructor_scope::X::__infer_inner_destructor_~X(n$0:destructor_scope::X*) injected [line 10, column 9]\n  NULLIFY(&this); [line 10, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 10, column 9]\n  APPLY_ABSTRACTION; [line 10, column 9]\n " shape="box"]
+"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:destructor_scope::X* [line 10, column 9]\n  _=*n$0:destructor_scope::X [line 10, column 9]\n  n$2=_fun_destructor_scope::X::__infer_inner_destructor_~X(n$0:destructor_scope::X*) injected [line 10, column 9]\n  NULLIFY(&this); [line 10, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 10, column 9]\n  APPLY_ABSTRACTION; [line 10, column 9]\n " shape="box"]
 	
 
 	 "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" -> "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_2" ;
@@ -307,7 +307,7 @@ digraph cfg {
 "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_2" [label="2: Exit destructor_scope::Y::~Y \n  " color=yellow style=filled]
 	
 
-"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::Y* [line 14, column 9]\n  _=*n$0:destructor_scope::Y [line 14, column 9]\n  n$2=_fun_destructor_scope::Y::__infer_inner_destructor_~Y(n$0:destructor_scope::Y*) injected [line 14, column 9]\n  NULLIFY(&this); [line 14, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 14, column 9]\n  APPLY_ABSTRACTION; [line 14, column 9]\n " shape="box"]
+"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:destructor_scope::Y* [line 14, column 9]\n  _=*n$0:destructor_scope::Y [line 14, column 9]\n  n$2=_fun_destructor_scope::Y::__infer_inner_destructor_~Y(n$0:destructor_scope::Y*) injected [line 14, column 9]\n  NULLIFY(&this); [line 14, column 9]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 14, column 9]\n  APPLY_ABSTRACTION; [line 14, column 9]\n " shape="box"]
 	
 
 	 "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" -> "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_2" ;

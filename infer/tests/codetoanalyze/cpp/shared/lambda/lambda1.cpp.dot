@@ -159,7 +159,7 @@ digraph cfg {
 "capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_2" [label="2: Exit Capture::capture_this_explicit \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 52, column 3]\n  NULLIFY(&lambda); [line 52, column 3]\n " color=yellow style=filled]
 	
 
-"capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_3" [label="3:  Destruction \n   _=*&lambda:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19 [line 52, column 3]\n  n$1=_fun_Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19::~(&lambda:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19*) injected [line 52, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
+"capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_3" [label="3:  Destruction(Scope) \n   _=*&lambda:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19 [line 52, column 3]\n  n$1=_fun_Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19::~(&lambda:Capture::capture_this_explicit::lambda_shared_lambda_lambda1.cpp:51:19*) injected [line 52, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 52, column 3]\n  APPLY_ABSTRACTION; [line 52, column 3]\n " shape="box"]
 	
 
 	 "capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_3" -> "capture_this_explicit#Capture#(13194085360619722149).2dba35a78268b10ad413414cc832a8f0_2" ;
@@ -174,7 +174,7 @@ digraph cfg {
 "capture_this_with_auto#Capture#(15696525048884093218).38be242109186a45cc282c38962c68e2_2" [label="2: Exit Capture::capture_this_with_auto \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 66, column 3]\n  NULLIFY(&lambda); [line 66, column 3]\n " color=yellow style=filled]
 	
 
-"capture_this_with_auto#Capture#(15696525048884093218).38be242109186a45cc282c38962c68e2_3" [label="3:  Destruction \n   _=*&lambda:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19 [line 66, column 3]\n  n$1=_fun_Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19::~(&lambda:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19*) injected [line 66, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 66, column 3]\n  APPLY_ABSTRACTION; [line 66, column 3]\n " shape="box"]
+"capture_this_with_auto#Capture#(15696525048884093218).38be242109186a45cc282c38962c68e2_3" [label="3:  Destruction(Scope) \n   _=*&lambda:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19 [line 66, column 3]\n  n$1=_fun_Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19::~(&lambda:Capture::capture_this_with_auto::lambda_shared_lambda_lambda1.cpp:65:19*) injected [line 66, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 66, column 3]\n  APPLY_ABSTRACTION; [line 66, column 3]\n " shape="box"]
 	
 
 	 "capture_this_with_auto#Capture#(15696525048884093218).38be242109186a45cc282c38962c68e2_3" -> "capture_this_with_auto#Capture#(15696525048884093218).38be242109186a45cc282c38962c68e2_2" ;
@@ -189,7 +189,7 @@ digraph cfg {
 "capture_star_this#Capture#(2506493005619132138).63fd6aa2a7efbd48dc1a62c0c2bd2161_2" [label="2: Exit Capture::capture_star_this \n   NULLIFY(&lambda); [line 58, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 58, column 3]\n " color=yellow style=filled]
 	
 
-"capture_star_this#Capture#(2506493005619132138).63fd6aa2a7efbd48dc1a62c0c2bd2161_3" [label="3:  Destruction \n   _=*&lambda:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19 [line 58, column 3]\n  n$1=_fun_Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19::~(&lambda:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19*) injected [line 58, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 58, column 3]\n  APPLY_ABSTRACTION; [line 58, column 3]\n " shape="box"]
+"capture_star_this#Capture#(2506493005619132138).63fd6aa2a7efbd48dc1a62c0c2bd2161_3" [label="3:  Destruction(Scope) \n   _=*&lambda:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19 [line 58, column 3]\n  n$1=_fun_Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19::~(&lambda:Capture::capture_star_this::lambda_shared_lambda_lambda1.cpp:55:19*) injected [line 58, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 58, column 3]\n  APPLY_ABSTRACTION; [line 58, column 3]\n " shape="box"]
 	
 
 	 "capture_star_this#Capture#(2506493005619132138).63fd6aa2a7efbd48dc1a62c0c2bd2161_3" -> "capture_star_this#Capture#(2506493005619132138).63fd6aa2a7efbd48dc1a62c0c2bd2161_2" ;
@@ -204,7 +204,7 @@ digraph cfg {
 "capture_this_with_equal#Capture#(805776379555510952).ecd73e9a4e2bef0d060a242b61508f10_2" [label="2: Exit Capture::capture_this_with_equal \n   NULLIFY(&lambda); [line 62, column 3]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 62, column 3]\n " color=yellow style=filled]
 	
 
-"capture_this_with_equal#Capture#(805776379555510952).ecd73e9a4e2bef0d060a242b61508f10_3" [label="3:  Destruction \n   _=*&lambda:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19 [line 62, column 3]\n  n$1=_fun_Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19::~(&lambda:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19*) injected [line 62, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 62, column 3]\n  APPLY_ABSTRACTION; [line 62, column 3]\n " shape="box"]
+"capture_this_with_equal#Capture#(805776379555510952).ecd73e9a4e2bef0d060a242b61508f10_3" [label="3:  Destruction(Scope) \n   _=*&lambda:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19 [line 62, column 3]\n  n$1=_fun_Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19::~(&lambda:Capture::capture_this_with_equal::lambda_shared_lambda_lambda1.cpp:61:19*) injected [line 62, column 3]\n  EXIT_SCOPE(_,n$1,lambda); [line 62, column 3]\n  APPLY_ABSTRACTION; [line 62, column 3]\n " shape="box"]
 	
 
 	 "capture_this_with_equal#Capture#(805776379555510952).ecd73e9a4e2bef0d060a242b61508f10_3" -> "capture_this_with_equal#Capture#(805776379555510952).ecd73e9a4e2bef0d060a242b61508f10_2" ;
@@ -459,7 +459,7 @@ digraph cfg {
 "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::__infer_inner_destructor_~ \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" [label="3:  Destruction \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0.__anon_field_1:SomeStruct [line 77, column 12]\n  n$4=_fun_SomeStruct::~SomeStruct(n$0.__anon_field_1:SomeStruct*) injected [line 77, column 12]\n  _=*n$0.__anon_field_0:SomeStruct [line 77, column 12]\n  n$2=_fun_SomeStruct::~SomeStruct(n$0.__anon_field_0:SomeStruct*) injected [line 77, column 12]\n  NULLIFY(&this); [line 77, column 12]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,this); [line 77, column 12]\n  APPLY_ABSTRACTION; [line 77, column 12]\n " shape="box"]
+"__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" [label="3:  Destruction(fields) \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0.__anon_field_1:SomeStruct [line 77, column 12]\n  n$4=_fun_SomeStruct::~SomeStruct(n$0.__anon_field_1:SomeStruct*) injected [line 77, column 12]\n  _=*n$0.__anon_field_0:SomeStruct [line 77, column 12]\n  n$2=_fun_SomeStruct::~SomeStruct(n$0.__anon_field_0:SomeStruct*) injected [line 77, column 12]\n  NULLIFY(&this); [line 77, column 12]\n  EXIT_SCOPE(_,_,n$0,n$2,n$4,this); [line 77, column 12]\n  APPLY_ABSTRACTION; [line 77, column 12]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_3" -> "__infer_inner_destructor_~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(138105074354565016.e6c800e9d586d901864d79972d303d01_2" ;
@@ -470,7 +470,7 @@ digraph cfg {
 "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_2" [label="2: Exit struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::~ \n  " color=yellow style=filled]
 	
 
-"~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" [label="3:  Destruction \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 [line 77, column 12]\n  n$2=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::__infer_inner_destructor_~(n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*) injected [line 77, column 12]\n  NULLIFY(&this); [line 77, column 12]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 77, column 12]\n  APPLY_ABSTRACTION; [line 77, column 12]\n " shape="box"]
+"~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12* [line 77, column 12]\n  _=*n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12 [line 77, column 12]\n  n$2=_fun_struct_capture::lambda_shared_lambda_lambda1.cpp:77:12::__infer_inner_destructor_~(n$0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12*) injected [line 77, column 12]\n  NULLIFY(&this); [line 77, column 12]\n  EXIT_SCOPE(_,n$0,n$2,this); [line 77, column 12]\n  APPLY_ABSTRACTION; [line 77, column 12]\n " shape="box"]
 	
 
 	 "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_3" -> "~#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#(13810507435456501647).7325714c5315daf013352ff960c1611b_2" ;

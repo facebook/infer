@@ -1366,8 +1366,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info_loc
       in
       Some
-        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:Destruction
-           stmt_info_loc ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+           ~node_name:(Destruction DestrVirtualBase) stmt_info_loc
+           ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
 
 
   and cxx_inject_field_destructors_in_destructor_body trans_state stmt_info =
@@ -1422,11 +1423,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
       in
       Some
-        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:Destruction
-           stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+           ~node_name:(Destruction DestrFields) stmt_info' ~return:(mk_fresh_void_exp_typ ())
+           all_res_trans)
 
 
-  and inject_destructors trans_state stmt_info =
+  and inject_destructors destr_kind trans_state stmt_info =
     let context = trans_state.context in
     if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then None
     else
@@ -1468,8 +1470,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
       in
       Some
-        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:Destruction
-           stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+           ~node_name:(Destruction destr_kind) stmt_info' ~return:(mk_fresh_void_exp_typ ())
+           all_res_trans)
 
 
   and compoundStmt_trans trans_state stmt_info stmt_list =
@@ -1480,7 +1483,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some (Clang_ast_t.ReturnStmt _) ->
           None
       | _ ->
-          inject_destructors trans_state stmt_info
+          inject_destructors Procdesc.Node.DestrScope trans_state stmt_info
     in
     (* Injecting destructor call nodes at the end of the compound statement *)
     let succ_nodes =
@@ -2563,7 +2566,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ()
     in
     let mk_ret_node instrs =
-      let destr_trans_result = inject_destructors trans_state_pri stmt_info in
+      let destr_trans_result =
+        inject_destructors Procdesc.Node.DestrReturnStmt trans_state_pri stmt_info
+      in
       check_destructor_translation destr_trans_result ;
       let is_destructor =
         match procname with
@@ -3213,7 +3218,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match trans_state.continuation with
     | Some bn -> (
         let trans_state' = {trans_state with succ_nodes= bn.break} in
-        match inject_destructors trans_state' stmt_info with
+        match inject_destructors Procdesc.Node.DestrBreakStmt trans_state' stmt_info with
         | Some ({control= {root_nodes= _ :: _}} as destr_trans_result) ->
             {destr_trans_result with control= {destr_trans_result.control with leaf_nodes= []}}
         | Some {control= {root_nodes= []}} | None ->
@@ -3229,7 +3234,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match trans_state.continuation with
     | Some bn -> (
         let trans_state' = {trans_state with succ_nodes= bn.continue} in
-        match inject_destructors trans_state' stmt_info with
+        match inject_destructors Procdesc.Node.DestrContinueStmt trans_state' stmt_info with
         | Some ({control= {root_nodes= _ :: _}} as destr_trans_result) ->
             {destr_trans_result with control= {destr_trans_result.control with leaf_nodes= []}}
         | Some {control= {root_nodes= []}} | None ->
@@ -3255,9 +3260,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       stmt_info ret_typ stmts
 
 
+  and instruction trans_state instr = instruction_log trans_state instr
+
   (** Translates a clang instruction into SIL instructions. It takes a a [trans_state] containing
       current info on the translation and it returns a [trans_result].*)
-  and instruction =
+  and instruction_log =
     (* log errors only at the innermost recursive call *)
     let logged_error = ref false in
     fun trans_state instr ->
@@ -3270,7 +3277,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
         instr pp_pointer instr ;
       let trans_result =
-        try instruction_aux trans_state instr
+        try instruction_translate trans_state instr
         with e ->
           IExn.reraise_after e ~f:(fun () ->
               let should_log_error = not !logged_error in
@@ -3315,7 +3322,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       trans_result
 
 
-  and instruction_aux trans_state (instr : Clang_ast_t.stmt) =
+  and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
     match instr with
     | GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
         gotoStmt_trans trans_state stmt_info label_name
@@ -3330,7 +3337,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ConstantExpr (_, stmt_list, _) -> (
       match stmt_list with
       | [stmt] ->
-          instruction_aux trans_state stmt
+          instruction_translate trans_state stmt
       | stmts ->
           L.die InternalError "Expected exactly one statement in ConstantExpr, got %d"
             (List.length stmts) )

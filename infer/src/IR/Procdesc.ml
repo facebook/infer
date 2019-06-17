@@ -32,6 +32,30 @@ module Node = struct
 
   let equal_id = [%compare.equal: id]
 
+  type destruction_kind =
+    | DestrBreakStmt
+    | DestrContinueStmt
+    | DestrFields
+    | DestrReturnStmt
+    | DestrScope
+    | DestrVirtualBase
+  [@@deriving compare]
+
+  let string_of_destruction_kind = function
+    | DestrBreakStmt ->
+        "break"
+    | DestrContinueStmt ->
+        "continue"
+    | DestrFields ->
+        "fields"
+    | DestrReturnStmt ->
+        "return"
+    | DestrScope ->
+        "Scope"
+    | DestrVirtualBase ->
+        "virtual base"
+
+
   type stmt_nodekind =
     | AssertionFailure
     | BetweenJoinAndExit
@@ -48,7 +72,7 @@ module Node = struct
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
-    | Destruction
+    | Destruction of destruction_kind
     | ExceptionHandler
     | ExceptionsSink
     | FallbackNode
@@ -268,8 +292,8 @@ module Node = struct
         F.pp_print_string fmt "DeclStmt"
     | DefineBody ->
         F.pp_print_string fmt "define_body"
-    | Destruction ->
-        F.pp_print_string fmt "Destruction"
+    | Destruction kind ->
+        F.fprintf fmt "Destruction(%s)" (string_of_destruction_kind kind)
     | ExceptionHandler ->
         F.pp_print_string fmt "exception handler"
     | ExceptionsSink ->
@@ -779,7 +803,7 @@ let is_connected proc_desc =
   let is_exit_node n = match Node.get_kind n with Node.Exit_node -> true | _ -> false in
   let is_between_join_and_exit_node n =
     match Node.get_kind n with
-    | Node.Stmt_node BetweenJoinAndExit | Node.Stmt_node Destruction -> (
+    | Node.Stmt_node (BetweenJoinAndExit | Destruction _) -> (
       match Node.get_succs n with [n'] when is_exit_node n' -> true | _ -> false )
     | _ ->
         false

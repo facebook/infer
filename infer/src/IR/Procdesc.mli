@@ -28,6 +28,14 @@ module Node : sig
 
   val equal_id : id -> id -> bool
 
+  type destruction_kind =
+    | DestrBreakStmt
+    | DestrContinueStmt
+    | DestrFields
+    | DestrReturnStmt
+    | DestrScope
+    | DestrVirtualBase
+
   (** kind of statement node *)
   type stmt_nodekind =
     | AssertionFailure
@@ -45,7 +53,7 @@ module Node : sig
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
-    | Destruction
+    | Destruction of destruction_kind
     | ExceptionHandler
     | ExceptionsSink
     | FallbackNode
