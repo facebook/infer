@@ -22,6 +22,11 @@ struct S {
   // operator= is called
 
   ~S() { delete f; }
+
+  void reinit(S s) {
+    f = new int;
+    *f = *(s.f);
+  }
 };
 
 // destructor called at end of function, no issues
@@ -34,7 +39,14 @@ void nested_scope_destructor_ok() {
 int reinit_after_explicit_destructor_ok() {
   S s(1);
   s.~S();
-  s = S(2);
+  s.reinit(S(2));
+  return *s.f;
+}
+
+int FN_reinit_after_explicit_destructor_bad() {
+  S s(1);
+  s.~S();
+  s = S(2); // a temporary is created then operator= is called
   return *s.f;
 }
 
