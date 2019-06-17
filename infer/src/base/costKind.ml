@@ -22,15 +22,29 @@ let pp f k =
   let k_str =
     match k with
     | OperationCost ->
-        "OperationCost"
+        "Execution Cost"
     | AllocationCost ->
-        "AllocationCost"
+        "Allocation Cost"
     | IOCost ->
-        "IOCost"
+        "IO Cost"
   in
   F.pp_print_string f k_str
 
 
+let to_json_cost_info c = function
+  | OperationCost ->
+      c.Jsonbug_t.exec_cost
+  | AllocationCost ->
+      c.Jsonbug_t.alloc_cost
+  | IOCost ->
+      assert false
+
+
+(* We use this threshold to give error if the cost is above it.
+   Currently it's set randomly to 200 for OperationCost and 3 for AllocationCost. *)
+let to_threshold = function OperationCost -> Some 200 | AllocationCost -> Some 3 | IOCost -> None
+
+type kind_spec = {kind: t; (* for non-diff analysis *) top_and_bottom: bool}
+
 let enabled_cost_kinds =
-  [ ((fun c -> c.Jsonbug_t.exec_cost), OperationCost)
-  ; ((fun c -> c.Jsonbug_t.alloc_cost), AllocationCost) ]
+  [{kind= OperationCost; top_and_bottom= true}; {kind= AllocationCost; top_and_bottom= false}]

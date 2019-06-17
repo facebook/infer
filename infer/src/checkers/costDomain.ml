@@ -9,29 +9,13 @@ open! IStd
 module F = Format
 module BasicCost = Polynomials.NonNegativePolynomial
 
-module CostKindMap = struct
-  include PrettyPrintable.MakePPMap (CostKind)
-
-  type no_value = |
-
-  let iter2 map1 map2 ~f =
-    let (_ : no_value t) =
-      merge
-        (fun k v1_opt v2_opt ->
-          (match (v1_opt, v2_opt) with Some v1, Some v2 -> f k v1 v2 | _ -> ()) ;
-          None )
-        map1 map2
-    in
-    ()
-end
-
 (**
   Module to simulate a record 
     {OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t} with a map
     {OperationCost, AllocationCost, IOCost} -> BasicCost.t
 *)
 module VariantCostMap = struct
-  include PrettyPrintable.PPMonoMapOfPPMap (CostKindMap) (BasicCost)
+  include PrettyPrintable.PPMonoMapOfPPMap (CostIssues.CostKindMap) (BasicCost)
 
   let[@warning "-32"] add _ = Logging.die InternalError "Don't call me"
 

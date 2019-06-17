@@ -85,6 +85,7 @@ end = struct
       issue
 
 
+  (** cost issues are already registered below.*)
   let from_cost_string ?(enabled = true) ?(is_on_cold_start = false) ~(kind : CostKind.t) s =
     let issue_type_base = Format.asprintf s (CostKind.to_issue_string kind) in
     let issue_type =
@@ -462,7 +463,7 @@ let zero_cost_call ~kind = from_cost_string ~enabled:false ~kind "ZERO_%s"
 
 (* register enabled cost issues *)
 let () =
-  List.iter CostKind.enabled_cost_kinds ~f:(fun (_, kind) ->
+  List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_cold_start ->
           let _ = zero_cost_call ~kind in
           let _ = expensive_cost_call ~kind ~is_on_cold_start in

@@ -79,10 +79,10 @@ module CostsSummary = struct
     in
     List.fold ~init
       ~f:(fun acc (v : Jsonbug_t.cost_item) ->
-        List.fold ~init:acc
-          ~f:(fun acc (f, _) ->
-            count_aux acc (CostDomain.BasicCost.decode (f v).Jsonbug_t.polynomial) )
-          CostKind.enabled_cost_kinds )
+        CostIssues.CostKindMap.fold
+          (fun _ CostIssues.{extract_cost_f} acc ->
+            count_aux acc (CostDomain.BasicCost.decode (extract_cost_f v).Jsonbug_t.polynomial) )
+          CostIssues.enabled_cost_map acc )
       costs
 
 
@@ -139,7 +139,8 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-let issue_of_cost ~kind cost_info ~delta ~prev_cost ~curr_cost =
+let issue_of_cost CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} cost_info
+    ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let class_name =
@@ -152,11 +153,11 @@ let issue_of_cost ~kind cost_info ~delta ~prev_cost ~curr_cost =
   let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
-    if CostDomain.BasicCost.is_top curr_cost then IssueType.infinite_cost_call ~kind
-    else if CostDomain.BasicCost.is_zero curr_cost then IssueType.zero_cost_call ~kind
+    if CostDomain.BasicCost.is_top curr_cost then infinite_issue
+    else if CostDomain.BasicCost.is_zero curr_cost then zero_issue
     else
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
-      IssueType.complexity_increase ~kind ~is_on_cold_start
+      complexity_increase_issue ~is_on_cold_start
   in
   let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
   let curr_cost_msg fmt () =
@@ -253,7 +254,7 @@ let issue_of_cost ~kind cost_info ~delta ~prev_cost ~curr_cost =
       DB < DA => introduced
  *)
 let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
-  let fold_aux ~kind ~key:_ ~data (left, both, right) =
+  let fold_aux issue_spec ~key:_ ~data (left, both, right) =
     match data with
     | `Both (current, previous) ->
         let max_degree_polynomial l =
@@ -277,14 +278,14 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
           if cmp > 0 then
             (* introduced *)
             let left' =
-              issue_of_cost ~kind curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
+              issue_of_cost issue_spec curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
               |> concat_opt left
             in
             (left', both, right)
           else if cmp < 0 then
             (* fixed *)
             let right' =
-              issue_of_cost ~kind curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+              issue_of_cost issue_spec curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
               |> concat_opt right
             in
             (left, both, right')
@@ -303,13 +304,13 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
   in
   let get_current_costs = decoded_costs current_costs in
   let get_previous_costs = decoded_costs previous_costs in
-  List.fold ~init:([], [], [])
-    ~f:(fun acc (extract_cost_f, kind) ->
+  CostIssues.CostKindMap.fold
+    (fun _kind CostIssues.({extract_cost_f} as issue_spec) acc ->
       Map.fold2
         (to_map (get_current_costs ~extract_cost_f))
         (to_map (get_previous_costs ~extract_cost_f))
-        ~f:(fold_aux ~kind) ~init:acc )
-    CostKind.enabled_cost_kinds
+        ~f:(fold_aux issue_spec) ~init:acc )
+    CostIssues.enabled_cost_map ([], [], [])
 
 
 (** Set operations should keep duplicated issues with identical hashes *)

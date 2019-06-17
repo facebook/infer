@@ -16,28 +16,6 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.cost
 end)
 
-(* We use this threshold to give error if the cost is above it.
-   Currently it's set randomly to 200 for OperationCost and 3 for AllocationCost. *)
-module ReportConfig = struct
-  type t = {name: string; threshold: int option; top_and_bottom: bool}
-
-  let as_list =
-    [ ( CostKind.OperationCost
-      , { name= "The execution time"
-        ; threshold= Option.some_if Config.use_cost_threshold 200
-        ; top_and_bottom= true } )
-    ; ( CostKind.AllocationCost
-      , { name= "The allocations"
-        ; threshold= Option.some_if Config.use_cost_threshold 3
-        ; top_and_bottom= false } )
-    ; (CostKind.IOCost, {name= "The IOs"; threshold= None; top_and_bottom= false}) ]
-
-
-  let as_map =
-    List.fold as_list ~init:CostDomain.CostKindMap.empty ~f:(fun acc (k, v) ->
-        CostDomain.CostKindMap.add k v acc )
-end
-
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
@@ -639,16 +617,19 @@ module ThresholdReports = struct
     | Threshold of BasicCost.t
     | ReportOn of {location: Location.t; cost: BasicCost.t}
 
-  type t = threshold_or_report CostDomain.CostKindMap.t
+  type t = threshold_or_report CostIssues.CostKindMap.t
 
-  let none = CostDomain.CostKindMap.empty
+  let none : t = CostIssues.CostKindMap.empty
 
   let config =
-    List.fold ReportConfig.as_list ~init:none ~f:(fun acc -> function
-      | k, ReportConfig.{threshold= Some threshold} ->
-          CostDomain.CostKindMap.add k (Threshold (BasicCost.of_int_exn threshold)) acc
-      | _ ->
-          acc )
+    CostIssues.CostKindMap.fold
+      (fun kind kind_spec acc ->
+        match kind_spec with
+        | CostIssues.{threshold= Some threshold} ->
+            CostIssues.CostKindMap.add kind (Threshold (BasicCost.of_int_exn threshold)) acc
+        | _ ->
+            acc )
+      CostIssues.enabled_cost_map none
 end
 
 (*
@@ -676,7 +657,7 @@ module WorstCaseCost = struct
     in
     let costs = CostDomain.plus costs node_cost in
     let reports =
-      CostDomain.CostKindMap.merge
+      CostIssues.CostKindMap.merge
         (fun _kind threshold_or_report_opt cost_opt ->
           match (threshold_or_report_opt, cost_opt) with
           | None, _ ->
@@ -713,7 +694,8 @@ module WorstCaseCost = struct
 end
 
 module Check = struct
-  let report_threshold proc_desc summary ~name ~location ~cost ~threshold ~kind =
+  let report_threshold proc_desc summary ~name ~location ~cost CostIssues.{expensive_issue}
+      ~threshold =
     let report_issue_type =
       L.(debug Analysis Medium)
         "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp
@@ -721,7 +703,7 @@ module Check = struct
       let is_on_cold_start =
         ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc)
       in
-      IssueType.expensive_cost_call ~kind ~is_on_cold_start
+      expensive_issue ~is_on_cold_start
     in
     let degree_str = BasicCost.degree_str cost in
     let message =
@@ -739,7 +721,7 @@ module Check = struct
       ~extras:(compute_errlog_extras cost) report_issue_type message
 
 
-  let report_top_and_bottom kind proc_desc summary ~name ~cost =
+  let report_top_and_bottom proc_desc summary ~name ~cost CostIssues.{zero_issue; infinite_issue} =
     let report issue suffix =
       let message =
         F.asprintf "%s of the function %a %s" name Typ.Procname.pp
@@ -751,23 +733,23 @@ module Check = struct
         ~ltr:(BasicCost.polynomial_traces cost)
         ~extras:(compute_errlog_extras cost) summary issue message
     in
-    if BasicCost.is_top cost then report (IssueType.infinite_cost_call ~kind) "cannot be computed"
-    else if BasicCost.is_zero cost then report (IssueType.zero_cost_call ~kind) "is zero"
+    if BasicCost.is_top cost then report infinite_issue "cannot be computed"
+    else if BasicCost.is_zero cost then report zero_issue "is zero"
 
 
   let check_and_report WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
     if not (Typ.Procname.is_java_access_method pname) then (
-      CostDomain.CostKindMap.iter2 ReportConfig.as_map reports
-        ~f:(fun kind ReportConfig.{name; threshold} -> function
+      CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
+        ~f:(fun _kind (CostIssues.{name; threshold} as kind_spec) -> function
         | ThresholdReports.Threshold _ ->
             ()
         | ThresholdReports.ReportOn {location; cost} ->
-            report_threshold proc_desc summary ~name ~location ~cost
-              ~threshold:(Option.value_exn threshold) ~kind ) ;
-      CostDomain.CostKindMap.iter2 ReportConfig.as_map costs
-        ~f:(fun kind ReportConfig.{name; top_and_bottom} cost ->
-          if top_and_bottom then report_top_and_bottom kind proc_desc summary ~name ~cost ) )
+            report_threshold proc_desc summary ~name ~location ~cost kind_spec
+              ~threshold:(Option.value_exn threshold) ) ;
+      CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
+        ~f:(fun _kind (CostIssues.{name; top_and_bottom} as issue_spec) cost ->
+          if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost issue_spec ) )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t
