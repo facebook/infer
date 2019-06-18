@@ -26,7 +26,7 @@ module C = struct
     match actuals with
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
-          (PulseTrace.Immediate {imm= PulseInvalidation.CFree deleted_access; location})
+          (PulseTrace.Immediate {imm= PulseDomain.Invalidation.CFree deleted_access; location})
           location deleted_access astate
         >>| List.return
     | _ ->
@@ -41,7 +41,7 @@ module Cplusplus = struct
     match actuals with
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
-          (PulseTrace.Immediate {imm= PulseInvalidation.CppDelete deleted_access; location})
+          (PulseTrace.Immediate {imm= PulseDomain.Invalidation.CppDelete deleted_access; location})
           location deleted_access astate
         >>| List.return
     | _ ->
@@ -104,7 +104,7 @@ module StdVector = struct
     let array_address = to_internal_array vector in
     let array = deref_internal_array vector in
     let invalidation =
-      PulseTrace.Immediate {imm= PulseInvalidation.StdVector (vector_f, vector); location}
+      PulseTrace.Immediate {imm= PulseDomain.Invalidation.StdVector (vector_f, vector); location}
     in
     PulseOperations.invalidate_array_elements invalidation location array astate
     >>= PulseOperations.invalidate invalidation location array
@@ -117,7 +117,9 @@ module StdVector = struct
     | AccessExpression vector :: _ ->
         let crumb =
           PulseTrace.Call
-            { f= `Model (Format.asprintf "%a" PulseInvalidation.pp_std_vector_function vector_f)
+            { f=
+                `Model
+                  (Format.asprintf "%a" PulseDomain.Invalidation.pp_std_vector_function vector_f)
             ; actuals
             ; location }
         in

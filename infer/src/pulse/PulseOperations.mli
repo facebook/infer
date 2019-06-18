@@ -62,14 +62,14 @@ val write :
   -> t access_result
 
 val invalidate :
-     PulseInvalidation.t PulseTrace.action
+     PulseDomain.Invalidation.t PulseTrace.action
   -> Location.t
   -> HilExp.AccessExpression.t
   -> t
   -> t access_result
 
 val invalidate_array_elements :
-     PulseInvalidation.t PulseTrace.action
+     PulseDomain.Invalidation.t PulseTrace.action
   -> Location.t
   -> HilExp.AccessExpression.t
   -> t

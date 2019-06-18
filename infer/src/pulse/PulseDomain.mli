@@ -8,9 +8,36 @@
 open! IStd
 module F = Format
 
+module Invalidation : sig
+  type std_vector_function =
+    | Assign
+    | Clear
+    | Emplace
+    | EmplaceBack
+    | Insert
+    | PushBack
+    | Reserve
+    | ShrinkToFit
+  [@@deriving compare]
+
+  val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
+
+  type t =
+    | CFree of HilExp.AccessExpression.t
+    | CppDelete of HilExp.AccessExpression.t
+    | GoneOutOfScope of Pvar.t * Typ.t
+    | Nullptr
+    | StdVector of std_vector_function * HilExp.AccessExpression.t
+  [@@deriving compare]
+
+  val issue_type_of_cause : t -> IssueType.t
+
+  val describe : Format.formatter -> t -> unit
+end
+
 module Attribute : sig
   type t =
-    | Invalid of PulseInvalidation.t PulseTrace.t
+    | Invalid of Invalidation.t PulseTrace.t
     | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
@@ -94,9 +121,9 @@ module Memory : sig
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
   val invalidate :
-    AbstractAddress.t * PulseTrace.breadcrumbs -> PulseInvalidation.t PulseTrace.action -> t -> t
+    AbstractAddress.t * PulseTrace.breadcrumbs -> Invalidation.t PulseTrace.action -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, PulseInvalidation.t PulseTrace.t) result
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 

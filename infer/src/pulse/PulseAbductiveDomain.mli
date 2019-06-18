@@ -46,14 +46,17 @@ module Memory : sig
        HilExp.AccessExpression.t PulseTrace.action
     -> AbstractAddress.t
     -> t
-    -> (t, PulseInvalidation.t PulseTrace.t) result
+    -> (t, PulseDomain.Invalidation.t PulseTrace.t) result
 
   val find_opt : AbstractAddress.t -> t -> PulseDomain.Memory.cell option
 
   val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> t -> t
 
   val invalidate :
-    AbstractAddress.t * PulseTrace.breadcrumbs -> PulseInvalidation.t PulseTrace.action -> t -> t
+       AbstractAddress.t * PulseTrace.breadcrumbs
+    -> PulseDomain.Invalidation.t PulseTrace.action
+    -> t
+    -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
 

@@ -11,7 +11,7 @@ module F = Format
 type t =
   | AccessToInvalidAddress of
       { access: HilExp.AccessExpression.t
-      ; invalidated_by: PulseInvalidation.t PulseTrace.t
+      ; invalidated_by: PulseDomain.Invalidation.t PulseTrace.t
       ; accessed_by: HilExp.AccessExpression.t PulseTrace.t }
   | StackVariableAddressEscape of
       { variable: Var.t
@@ -86,10 +86,10 @@ let get_message = function
       let pp_invalidation_trace line f trace =
         match trace.PulseTrace.action with
         | Immediate {imm= invalidation; _} ->
-            F.fprintf f "%a on line %d" PulseInvalidation.describe invalidation line
+            F.fprintf f "%a on line %d" PulseDomain.Invalidation.describe invalidation line
         | ViaCall {action; proc_name; _} ->
             F.fprintf f "%a on line %d indirectly during the call to `%a`"
-              PulseInvalidation.describe
+              PulseDomain.Invalidation.describe
               (PulseTrace.immediate_of_action action)
               line Typ.Procname.describe proc_name
       in
@@ -112,7 +112,8 @@ let get_message = function
 let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by} ->
       PulseTrace.add_to_errlog ~header:"invalidation part of the trace starts here"
-        (fun f invalidation -> F.fprintf f "memory %a" PulseInvalidation.describe invalidation)
+        (fun f invalidation ->
+          F.fprintf f "memory %a" PulseDomain.Invalidation.describe invalidation )
         invalidated_by
       @@ PulseTrace.add_to_errlog ~header:"use-after-lifetime part of the trace starts here"
            (fun f access -> F.fprintf f "invalid access to `%a`" HilExp.AccessExpression.pp access)
@@ -127,6 +128,7 @@ let get_trace = function
 
 let get_issue_type = function
   | AccessToInvalidAddress {invalidated_by} ->
-      PulseTrace.immediate_of_action invalidated_by.action |> PulseInvalidation.issue_type_of_cause
+      PulseTrace.immediate_of_action invalidated_by.action
+      |> PulseDomain.Invalidation.issue_type_of_cause
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape

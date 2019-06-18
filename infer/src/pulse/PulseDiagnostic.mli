@@ -11,7 +11,7 @@ open! IStd
 type t =
   | AccessToInvalidAddress of
       { access: HilExp.AccessExpression.t
-      ; invalidated_by: PulseInvalidation.t PulseTrace.t
+      ; invalidated_by: PulseDomain.Invalidation.t PulseTrace.t
       ; accessed_by: HilExp.AccessExpression.t PulseTrace.t }
   | StackVariableAddressEscape of
       { variable: Var.t
