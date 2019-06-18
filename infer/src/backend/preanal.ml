@@ -195,16 +195,12 @@ let do_liveness pdesc tenv =
   let liveness_inv_map =
     LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial
   in
-  add_nullify_instrs pdesc tenv liveness_inv_map ;
-  Procdesc.signal_did_preanalysis pdesc
+  add_nullify_instrs pdesc tenv liveness_inv_map
 
 
 (** add Abstract instructions into the IR to give hints about when abstraction should be
     performed *)
-let do_abstraction pdesc =
-  add_abstraction_instructions pdesc ;
-  Procdesc.signal_did_preanalysis pdesc
-
+let do_abstraction pdesc = add_abstraction_instructions pdesc
 
 let do_funptr_sub pdesc tenv =
   let updated = FunctionPointers.substitute_function_pointers pdesc tenv in
@@ -212,10 +208,9 @@ let do_funptr_sub pdesc tenv =
 
 
 let do_preanalysis pdesc tenv =
-  if not (Procdesc.did_preanalysis pdesc) then (
-    if
-      Config.function_pointer_specialization
-      && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))
-    then do_funptr_sub pdesc tenv ;
-    do_liveness pdesc tenv ;
-    do_abstraction pdesc )
+  if
+    Config.function_pointer_specialization
+    && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))
+  then do_funptr_sub pdesc tenv ;
+  do_liveness pdesc tenv ;
+  do_abstraction pdesc

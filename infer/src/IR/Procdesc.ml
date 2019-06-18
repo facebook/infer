@@ -471,11 +471,6 @@ let compute_distance_to_exit_node pdesc =
   mark_distance 0 [exit_node]
 
 
-(** check or indicate if we have performed preanalysis on the CFG *)
-let did_preanalysis pdesc = pdesc.attributes.did_preanalysis
-
-let signal_did_preanalysis pdesc = pdesc.attributes.did_preanalysis <- true
-
 let get_attributes pdesc = pdesc.attributes
 
 let set_attributes pdesc attributes = pdesc.attributes <- attributes

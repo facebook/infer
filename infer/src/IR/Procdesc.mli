@@ -206,9 +206,6 @@ val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 val create_node_from_not_reversed :
   t -> Location.t -> Node.nodekind -> Instrs.not_reversed_t -> Node.t
 
-val did_preanalysis : t -> bool
-(** true if we ran the preanalysis on the CFG associated with [t] *)
-
 val fold_instrs : t -> init:'accum -> f:('accum -> Node.t -> Sil.instr -> 'accum) -> 'accum
 (** fold over all nodes and their instructions *)
 
@@ -295,9 +292,6 @@ val set_exit_node : t -> Node.t -> unit
 (** Set the exit node of the procedure *)
 
 val set_start_node : t -> Node.t -> unit
-
-val signal_did_preanalysis : t -> unit
-(** indicate that we have performed preanalysis on the CFG associated with [t] *)
 
 val get_wto : t -> Node.t WeakTopologicalOrder.Partition.t
 

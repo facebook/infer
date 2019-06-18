@@ -40,7 +40,6 @@ let pp_var_data fmt {name; typ; modify_in_block} =
 type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
-  ; mutable did_preanalysis: bool  (** true if we performed preanalysis on the CFG for this proc *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
@@ -67,7 +66,6 @@ type t =
 let default translation_unit proc_name =
   { access= PredSymb.Default
   ; captured= []
-  ; did_preanalysis= false
   ; exceptions= []
   ; formals= []
   ; const_formals= []
@@ -99,7 +97,6 @@ let pp_parameters =
 let pp f
     ({ access
      ; captured
-     ; did_preanalysis
      ; exceptions
      ; formals
      ; const_formals
@@ -147,7 +144,6 @@ let pp f
     F.fprintf f "; func_attributes= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break PredSymb.pp_func_attribute)
       func_attributes ;
-  pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
