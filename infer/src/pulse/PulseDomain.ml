@@ -491,11 +491,26 @@ let pp fmt {heap; stack} =
   F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@]}" Memory.pp heap Stack.pp stack
 
 
-module GraphGC : sig
-  val visit : t -> AbstractAddressSet.t
-  (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
-     from the stack variables *)
+module GraphVisit : sig
+  val fold :
+       var_filter:(Var.t -> bool)
+    -> t
+    -> init:'accum
+    -> f:(   'accum
+          -> AbstractAddress.t
+          -> Var.t
+          -> Memory.Access.t list
+          -> ('accum, 'final) Base.Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> AbstractAddressSet.t * 'final
+  (** Generic graph traversal of the memory starting from each variable in the stack that pass
+      [var_filter], in order. Returns the result of folding over every address in the graph and the
+      set of addresses that have been visited before [f] returned [Stop] or all reachable addresses
+      were seen. [f] is passed each address together with the variable from which the address was
+      reached and the access path from that variable to the address. *)
 end = struct
+  open Base.Continue_or_stop
+
   let visit address visited =
     if AbstractAddressSet.mem address visited then `AlreadyVisited
     else
@@ -503,29 +518,50 @@ end = struct
       `NotAlreadyVisited visited
 
 
-  let rec visit_address astate address visited =
+  let rec visit_address orig_var ~f rev_accesses astate address ((visited, accum) as visited_accum)
+      =
     match visit address visited with
     | `AlreadyVisited ->
-        visited
+        Continue visited_accum
     | `NotAlreadyVisited visited -> (
-      match Memory.find_opt address astate.heap with
-      | None ->
-          visited
-      | Some (edges, _) ->
-          visit_edges astate ~edges visited )
+      match f accum address orig_var rev_accesses with
+      | Continue accum -> (
+        match Memory.find_opt address astate.heap with
+        | None ->
+            Continue (visited, accum)
+        | Some (edges, _) ->
+            visit_edges orig_var ~f rev_accesses astate ~edges (visited, accum) )
+      | Stop fin ->
+          Stop (visited, fin) )
 
 
-  and visit_edges ~edges astate visited =
-    Memory.Edges.fold
-      (fun _access (address, _trace) visited -> visit_address astate address visited)
-      edges visited
+  and visit_edges orig_var ~f rev_accesses ~edges astate visited_accum =
+    let finish visited_accum = Continue visited_accum in
+    Container.fold_until edges
+      ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
+      ~finish ~init:visited_accum ~f:(fun visited_accum (access, (address, _trace)) ->
+        match visit_address orig_var ~f (access :: rev_accesses) astate address visited_accum with
+        | Continue _ as cont ->
+            cont
+        | Stop fin ->
+            Stop (Stop fin) )
 
 
-  let visit astate =
-    Stack.fold
-      (fun _var (address, _loc) visited -> visit_address astate address visited)
-      astate.stack AbstractAddressSet.empty
+  let fold ~var_filter astate ~init ~f ~finish =
+    let finish (visited, accum) = (visited, finish accum) in
+    let init = (AbstractAddressSet.empty, init) in
+    Container.fold_until astate.stack
+      ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold) ~init ~finish
+      ~f:(fun visited_accum (var, (address, _loc)) ->
+        if var_filter var then visit_address var ~f [] astate address visited_accum
+        else Continue visited_accum )
 end
 
 include GraphComparison
-include GraphGC
+
+let reachable_addresses astate =
+  GraphVisit.fold astate
+    ~var_filter:(fun _ -> true)
+    ~init:() ~finish:Fn.id
+    ~f:(fun () _ _ _ -> Continue ())
+  |> fst

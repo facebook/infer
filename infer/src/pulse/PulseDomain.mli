@@ -109,9 +109,9 @@ val empty : t
 
 include AbstractDomain.NoJoin with type t := t
 
-val visit : t -> AbstractAddressSet.t
+val reachable_addresses : t -> AbstractAddressSet.t
 (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
-     from the stack variables *)
+    from the stack variables *)
 
 type mapping
 

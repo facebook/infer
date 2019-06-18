@@ -240,14 +240,14 @@ let mk_initial proc_desc =
 
 
 let discard_unreachable ({pre; post} as astate) =
-  let pre_addresses = PulseDomain.visit (pre :> PulseDomain.t) in
+  let pre_addresses = PulseDomain.reachable_addresses (pre :> PulseDomain.t) in
   let pre_old_heap = (pre :> PulseDomain.t).heap in
   let pre_new_heap =
     PulseDomain.Memory.filter
       (fun address -> PulseDomain.AbstractAddressSet.mem address pre_addresses)
       pre_old_heap
   in
-  let post_addresses = PulseDomain.visit (post :> PulseDomain.t) in
+  let post_addresses = PulseDomain.reachable_addresses (post :> PulseDomain.t) in
   let all_addresses = PulseDomain.AbstractAddressSet.union pre_addresses post_addresses in
   let post_old_heap = (post :> PulseDomain.t).heap in
   let post_new_heap =
