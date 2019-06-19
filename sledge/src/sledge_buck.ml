@@ -146,7 +146,9 @@ let llvm_link_opt ~lib_fuzzer_harness ~output modules =
          :: "-o=-" :: modules )
     |- run
          (Lazy.force llvm_bin ^ "opt")
-         ["-o=" ^ output; "-globaldce"; "-globalopt"] )
+         [ "-o=" ^ output; "-globaldce"; "-globalopt"; "-mergefunc"
+         ; "-constmerge"; "-argpromotion"; "-ipsccp"; "-mem2reg"; "-dce"
+         ; "-globaldce"; "-deadargelim" ] )
 
 (** command line interface *)
 
