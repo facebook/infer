@@ -43,7 +43,7 @@ int reinit_after_explicit_destructor_ok() {
   return *s.f;
 }
 
-int FN_reinit_after_explicit_destructor_bad() {
+int reinit_after_explicit_destructor_bad() {
   S s(1);
   s.~S();
   s = S(2); // a temporary is created then operator= is called
@@ -97,11 +97,10 @@ void use_after_scope1_bad() {
   // destructor for s here; second time the value held by s has been destructed
 }
 
-void FN_use_after_scope2_bad() {
+// same as above
+void use_after_scope2_bad() {
   S s(1);
-  {
-    s = S(1);
-  } // destructor runs here, but our frontend currently doesn't insert it
+  { s = S(1); }
 }
 
 struct POD {

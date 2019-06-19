@@ -211,3 +211,47 @@ module Variables = struct
   let compute_vars_to_destroy_map body =
     visit_stmt body (empty_scope, ClangPointers.Map.empty) |> snd
 end
+
+module CXXTemporaries = struct
+  let rec visit_stmt context stmt temporaries =
+    match (stmt : Clang_ast_t.stmt) with
+    | MaterializeTemporaryExpr
+        ( stmt_info
+        , stmt_list
+        , expr_info
+        , { mtei_decl_ref=
+              (* C++ temporaries bound to a const reference see their lifetimes extended to that of
+                 the reference *)
+              None } ) ->
+        let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
+        let temporaries = (pvar, typ, expr_info.ei_qual_type) :: temporaries in
+        visit_stmt_list context stmt_list temporaries
+    | ExprWithCleanups _ ->
+        (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop accumulating *)
+        temporaries
+    | ConditionalOperator _
+    | BinaryOperator (_, _, _, {boi_kind= `LAnd | `LOr | `LT | `GT | `LE | `GE | `EQ | `NE}) ->
+        (* Do not destroy temporaries created under a conditional operator. This is incorrect but
+           better than destroying temporaries that are created in only one branch unconditionally
+           after the conditional.
+
+           Note that destroying the variable inside the branch of the conditional would also be
+           incorrect since the conditional operator may be only part of the enclosing full
+           expression.
+
+           Example of tricky case: [foo(x?y:z, w)] or [cond && y] where [y] generates a C++
+           temporary. *)
+        temporaries
+    | _ ->
+        let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
+        visit_stmt_list context stmt_list temporaries
+
+
+  and visit_stmt_list context stmt_list temporaries =
+    List.fold stmt_list
+      ~f:(fun temporaries stmt -> visit_stmt context stmt temporaries)
+      ~init:temporaries
+
+
+  let get_destroyable_temporaries context stmt_list = visit_stmt_list context stmt_list []
+end

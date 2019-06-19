@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 # use our own clang's standard library so that the tests are uniform across distributions
-CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c
+CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c --stdlib=libc++
 INFER_OPTIONS = --biabduction-only --ml-buckets cpp --debug-exceptions --project-root $(TESTS_DIR) \
                 --pmd-xml --report-custom-error --cxx-infer-headers
 INFERPRINT_OPTIONS = --issues-tests
@@ -59,12 +59,12 @@ SOURCES = \
   shared/types/struct_forward_declare.cpp \
   shared/types/struct_pass_by_value.cpp \
   $(wildcard smart_ptr/*.cpp) \
-	$(wildcard stack_escape/*.cpp) \
-	$(wildcard static_local/*.cpp) \
+  $(wildcard stack_escape/*.cpp) \
+  $(wildcard static_local/*.cpp) \
   $(wildcard subtyping/*.cpp) \
   $(wildcard templates/*.cpp) \
   $(wildcard types/*.cpp) \
-	$(wildcard use_after_free/*.cpp) \
+  $(wildcard use_after_free/*.cpp) \
   $(wildcard vector/*.cpp) \
 
 include $(TESTS_DIR)/clang.make

@@ -38,6 +38,7 @@ module Node = struct
     | DestrFields
     | DestrReturnStmt
     | DestrScope
+    | DestrTemporariesCleanup
     | DestrVirtualBase
   [@@deriving compare]
 
@@ -52,6 +53,8 @@ module Node = struct
         "return"
     | DestrScope ->
         "Scope"
+    | DestrTemporariesCleanup ->
+        "temporaries cleanup"
     | DestrVirtualBase ->
         "virtual base"
 
@@ -75,6 +78,7 @@ module Node = struct
     | Destruction of destruction_kind
     | ExceptionHandler
     | ExceptionsSink
+    | ExprWithCleanups
     | FallbackNode
     | FinallyBranch
     | GCCAsmStmt
@@ -299,6 +303,8 @@ module Node = struct
         F.pp_print_string fmt "exception handler"
     | ExceptionsSink ->
         F.pp_print_string fmt "exceptions sink"
+    | ExprWithCleanups ->
+        F.pp_print_string fmt "ExprWithCleanups"
     | FallbackNode ->
         F.pp_print_string fmt "Fallback node"
     | FinallyBranch ->

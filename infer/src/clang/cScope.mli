@@ -12,3 +12,8 @@ val breaks_control_flow : Clang_ast_t.stmt -> bool
 module Variables : sig
   val compute_vars_to_destroy_map : Clang_ast_t.stmt -> Clang_ast_t.decl list ClangPointers.Map.t
 end
+
+module CXXTemporaries : sig
+  val get_destroyable_temporaries :
+    CContext.t -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t * Clang_ast_t.qual_type) list
+end

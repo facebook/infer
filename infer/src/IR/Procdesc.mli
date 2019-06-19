@@ -34,6 +34,7 @@ module Node : sig
     | DestrFields
     | DestrReturnStmt
     | DestrScope
+    | DestrTemporariesCleanup
     | DestrVirtualBase
 
   (** kind of statement node *)
@@ -56,6 +57,7 @@ module Node : sig
     | Destruction of destruction_kind
     | ExceptionHandler
     | ExceptionsSink
+    | ExprWithCleanups
     | FallbackNode
     | FinallyBranch
     | GCCAsmStmt

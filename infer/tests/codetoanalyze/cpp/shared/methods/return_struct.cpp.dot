@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 20, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:X); [line 20, column 9]\n  n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A::get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) assign_last [line 20, column 9]\n  n$9=_fun_X::X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n  NULLIFY(&a); [line 20, column 9]\n  EXIT_SCOPE(_,n$5,n$8,n$9,a,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 20, column 9]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 20, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:X); [line 20, column 9]\n  n$8=*&a:A* [line 20, column 9]\n  _=*n$8:A [line 20, column 9]\n  n$11=_fun_A::get(n$8:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) assign_last [line 20, column 9]\n  n$12=_fun_X::X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$4:X [line 20, column 17]\n  n$6=_fun_X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) injected [line 20, column 17]\n  NULLIFY(&a); [line 20, column 17]\n  EXIT_SCOPE(_,_,n$6,n$8,n$11,n$12,a,0$?%__sil_tmpSIL_materialize_temp__n$4); [line 20, column 17]\n " shape="box"]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;

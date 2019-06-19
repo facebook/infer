@@ -39,7 +39,7 @@ struct A {
 
 UniquePtr<A> mk_UniquePtr_A() { return UniquePtr<A>(new A); }
 
-int FN_call_mk_UniquePtr_A_deref_bad() {
+int call_mk_UniquePtr_A_deref_bad() {
   A* a = mk_UniquePtr_A().get(); // temporary unique_ptr returned by
                                  // `mk_UniquePtr_A` is destroyed at the end
                                  // of the statement
@@ -59,10 +59,14 @@ int call_mk_UniquePtr_A_copy_object_ok() {
   return a.s_;
 }
 
-void temporary_in_conditional_ok() {
+void temporary_in_ternary_ok() {
   while (true) {
     int x = true ? 0 : A(4).s_;
   }
+}
+
+void temporary_in_condition_ok() {
+  while (true && A(4).s_ && true) {}
 }
 
 void call_mk_UniquePtr_A_get_field_ok() { int x = A().s_; }

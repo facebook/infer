@@ -2630,10 +2630,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     trans_result
 
 
-  (** We analyze the content of the expr. We treat ExprWithCleanups as a wrapper. It may be that
-     later on (when we treat ARC) some info can be taken from it.  For ParenExpression we translate
-     its body composed by the stmt_list. In paren expression there should be only one stmt that
-     defines the expression *)
   and parenExpr_trans trans_state source_range stmt_list =
     let stmt =
       extract_stmt_from_singleton stmt_list source_range
@@ -3227,6 +3223,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           stmt_info
 
 
+  and exprWithCleanups_trans trans_state stmt_info stmt_list =
+    let temporaries_to_destroy =
+      CScope.CXXTemporaries.get_destroyable_temporaries trans_state.context stmt_list
+    in
+    let destr_trans_result_opt =
+      destructor_calls Procdesc.Node.DestrTemporariesCleanup trans_state stmt_info
+        temporaries_to_destroy
+    in
+    let[@warning "-8"] [stmt] = stmt_list in
+    let result = instruction trans_state stmt in
+    match destr_trans_result_opt with
+    | None ->
+        result
+    | Some destr_trans_result ->
+        let sil_loc =
+          CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+            stmt_info
+        in
+        PriorityNode.compute_results_to_parent trans_state sil_loc ~node_name:ExprWithCleanups
+          stmt_info ~return:result.return [result; destr_trans_result]
+
+
   (* Expect that this doesn't happen *)
   and undefined_expr trans_state expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -3451,9 +3469,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         else unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info
     | ReturnStmt (stmt_info, stmt_list) ->
         returnStmt_trans trans_state stmt_info stmt_list
-    (* We analyze the content of the expr. We treat ExprWithCleanups as a wrapper. *)
-    (*  It may be that later on (when we treat ARC) some info can be taken from it. *)
-    | ExprWithCleanups ({Clang_ast_t.si_source_range}, stmt_list, _, _)
+    | ExprWithCleanups (stmt_info, stmt_list, _, _) ->
+        exprWithCleanups_trans trans_state stmt_info stmt_list
     | ParenExpr ({Clang_ast_t.si_source_range}, stmt_list, _) ->
         parenExpr_trans trans_state si_source_range stmt_list
     | ObjCBoolLiteralExpr (_, _, expr_info, n)

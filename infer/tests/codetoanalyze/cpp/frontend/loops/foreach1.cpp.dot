@@ -36,11 +36,11 @@ digraph cfg {
 	
 
 	 "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_9" -> "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$5:iterator __begin1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$11:iterator 0$?%__sil_tmp__temp_return_n$19:iterator 0$?%__sil_tmp__temp_construct_n$21:iterator 0$?%__sil_tmp__temp_construct_n$23:iterator temp:int value:int __range1:vec& vector:vec \n  " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$5:iterator __begin1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$14:iterator 0$?%__sil_tmp__temp_return_n$25:iterator 0$?%__sil_tmp__temp_construct_n$27:iterator 0$?%__sil_tmp__temp_construct_n$29:iterator temp:int value:int __range1:vec& vector:vec \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_14" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&0$?%__sil_tmp__temp_return_n$19); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$21); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$11); [line 38, column 1]\n  NULLIFY(&__end1); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$23); [line 38, column 1]\n  NULLIFY(&__begin1); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 38, column 1]\n  NULLIFY(&vector); [line 38, column 1]\n " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n   NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$14); [line 38, column 1]\n  NULLIFY(&__end1); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$27); [line 38, column 1]\n  NULLIFY(&__begin1); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 38, column 1]\n  NULLIFY(&vector); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_construct_n$29); [line 38, column 1]\n  NULLIFY(&0$?%__sil_tmp__temp_return_n$25); [line 38, column 1]\n " color=yellow style=filled]
 	
 
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Destruction(Scope) \n   _=*&__end1:iterator [line 37, column 3]\n  n$1=_fun_iterator::~iterator(&__end1:iterator*) injected [line 37, column 3]\n  _=*&__begin1:iterator [line 37, column 3]\n  n$3=_fun_iterator::~iterator(&__begin1:iterator*) injected [line 37, column 3]\n  EXIT_SCOPE(_,_,n$1,n$3,__begin1,__end1); [line 37, column 3]\n  APPLY_ABSTRACTION; [line 37, column 3]\n " shape="box"]
@@ -51,36 +51,36 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(__end1:iterator); [line 35, column 18]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$5:iterator); [line 35, column 18]\n  n$6=*&__range1:vec& [line 35, column 18]\n  _=*n$6:vec [line 35, column 18]\n  n$9=_fun_vec::end(n$6:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator*) assign_last [line 35, column 18]\n  n$10=_fun_iterator::iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator&) [line 35, column 18]\n  NULLIFY(&__range1); [line 35, column 18]\n  EXIT_SCOPE(_,n$6,n$9,n$10,0$?%__sil_tmpSIL_materialize_temp__n$5,__range1); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(__end1:iterator); [line 35, column 18]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$5:iterator); [line 35, column 18]\n  n$9=*&__range1:vec& [line 35, column 18]\n  _=*n$9:vec [line 35, column 18]\n  n$12=_fun_vec::end(n$9:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator*) assign_last [line 35, column 18]\n  n$13=_fun_iterator::iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator&) [line 35, column 18]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator [line 35, column 18]\n  n$7=_fun_iterator::~iterator(&0$?%__sil_tmpSIL_materialize_temp__n$5:iterator*) injected [line 35, column 18]\n  NULLIFY(&__range1); [line 35, column 18]\n  EXIT_SCOPE(_,_,n$7,n$9,n$12,n$13,0$?%__sil_tmpSIL_materialize_temp__n$5,__range1); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(__begin1:iterator); [line 35, column 18]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$11:iterator); [line 35, column 18]\n  n$12=*&__range1:vec& [line 35, column 18]\n  _=*n$12:vec [line 35, column 18]\n  n$15=_fun_vec::begin(n$12:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator*) assign_last [line 35, column 18]\n  n$16=_fun_iterator::iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$11:iterator&) [line 35, column 18]\n  EXIT_SCOPE(_,n$12,n$15,n$16,0$?%__sil_tmpSIL_materialize_temp__n$11); [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(__begin1:iterator); [line 35, column 18]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$14:iterator); [line 35, column 18]\n  n$18=*&__range1:vec& [line 35, column 18]\n  _=*n$18:vec [line 35, column 18]\n  n$21=_fun_vec::begin(n$18:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$14:iterator*) assign_last [line 35, column 18]\n  n$22=_fun_iterator::iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$14:iterator&) [line 35, column 18]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$14:iterator [line 35, column 18]\n  n$16=_fun_iterator::~iterator(&0$?%__sil_tmpSIL_materialize_temp__n$14:iterator*) injected [line 35, column 18]\n  EXIT_SCOPE(_,_,n$16,n$18,n$21,n$22,0$?%__sil_tmpSIL_materialize_temp__n$14); [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_iterator::operator++ \n   n$20=_fun_iterator::operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$19:iterator*) assign_last [line 35, column 18]\n  EXIT_SCOPE(n$20,0$?%__sil_tmp__temp_return_n$19); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_iterator::operator++ \n   n$26=_fun_iterator::operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$25:iterator*) assign_last [line 35, column 18]\n  EXIT_SCOPE(n$26,0$?%__sil_tmp__temp_return_n$25); [line 35, column 18]\n  APPLY_ABSTRACTION; [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8:  Call _fun_operator!= \n   n$22=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$21:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$24=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$23:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$25=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$21:iterator,&0$?%__sil_tmp__temp_construct_n$23:iterator) [line 35, column 18]\n  EXIT_SCOPE(n$22,n$24); [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8:  Call _fun_operator!= \n   n$28=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$27:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$30=_fun_iterator::iterator(&0$?%__sil_tmp__temp_construct_n$29:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$31=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$27:iterator,&0$?%__sil_tmp__temp_construct_n$29:iterator) [line 35, column 18]\n  EXIT_SCOPE(n$28,n$30); [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" ;
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$25, true); [line 35, column 18]\n  EXIT_SCOPE(n$25); [line 35, column 18]\n " shape="invhouse"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$31, true); [line 35, column 18]\n  EXIT_SCOPE(n$31); [line 35, column 18]\n " shape="invhouse"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_9" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$25, false); [line 35, column 18]\n  EXIT_SCOPE(n$25); [line 35, column 18]\n " shape="invhouse"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$31, false); [line 35, column 18]\n  EXIT_SCOPE(n$31); [line 35, column 18]\n " shape="invhouse"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(temp:int); [line 36, column 5]\n  n$26=*&value:int [line 36, column 16]\n  n$27=*&value:int [line 36, column 24]\n  *&temp:int=((n$26 * n$27) + 10) [line 36, column 5]\n  NULLIFY(&value); [line 36, column 5]\n  NULLIFY(&temp); [line 36, column 5]\n  EXIT_SCOPE(n$26,n$27,value,temp); [line 36, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(temp:int); [line 36, column 5]\n  n$32=*&value:int [line 36, column 16]\n  n$33=*&value:int [line 36, column 24]\n  *&temp:int=((n$32 * n$33) + 10) [line 36, column 5]\n  NULLIFY(&value); [line 36, column 5]\n  NULLIFY(&temp); [line 36, column 5]\n  EXIT_SCOPE(n$32,n$33,value,temp); [line 36, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(value:int); [line 35, column 8]\n  n$29=_fun_iterator::operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$29 [line 35, column 8]\n  EXIT_SCOPE(n$29); [line 35, column 8]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(value:int); [line 35, column 8]\n  n$35=_fun_iterator::operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$35 [line 35, column 8]\n  EXIT_SCOPE(n$35); [line 35, column 8]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" ;
@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(vector:vec); [line 34, column 3]\n  n$31=_fun_vec::vec(&vector:vec*,10:int) [line 34, column 7]\n  EXIT_SCOPE(n$31); [line 34, column 7]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(vector:vec); [line 34, column 3]\n  n$37=_fun_vec::vec(&vector:vec*,10:int) [line 34, column 7]\n  EXIT_SCOPE(n$37); [line 34, column 7]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_14" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" ;
