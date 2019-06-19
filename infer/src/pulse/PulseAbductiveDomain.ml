@@ -356,9 +356,10 @@ module PrePost = struct
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
   let rec materialize_pre_from_address callee_proc_name call_location access_expr ~pre ~addr_pre
-      ~addr_caller breadcrumbs call_state =
+      ~addr_caller history call_state =
     let mk_action action =
-      PulseTrace.ViaCall {action; proc_name= callee_proc_name; location= call_location}
+      PulseDomain.InterprocAction.ViaCall
+        {action; proc_name= callee_proc_name; location= call_location}
     in
     match visit call_state ~addr_callee:addr_pre ~addr_caller with
     | `AlreadyVisited, call_state ->
@@ -374,7 +375,7 @@ module PrePost = struct
         | Error invalidated_by ->
             Error
               (PulseDiagnostic.AccessToInvalidAddress
-                 {access= access_expr; invalidated_by; accessed_by= {action; breadcrumbs}})
+                 {access= access_expr; invalidated_by; accessed_by= {action; history}})
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result
@@ -391,7 +392,7 @@ module PrePost = struct
                   |> Option.value ~default:access_expr
                 in
                 materialize_pre_from_address callee_proc_name call_location access_expr ~pre
-                  ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest breadcrumbs call_state ))
+                  ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest history call_state ))
         |> function Some result -> result | None -> Ok call_state )
 
 
@@ -456,7 +457,8 @@ module PrePost = struct
     fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
       ~f:(fun var ~stack_value:(addr_pre, loc_opt) ~addr_caller call_state ->
         let trace =
-          Option.map loc_opt ~f:(fun loc -> PulseTrace.VariableDeclaration loc) |> Option.to_list
+          Option.map loc_opt ~f:(fun loc -> PulseDomain.ValueHistory.VariableDeclaration loc)
+          |> Option.to_list
         in
         let access_expr = HilExp.AccessExpression.base (var, Typ.void) in
         materialize_pre_from_address callee_proc_name call_location access_expr
@@ -521,8 +523,8 @@ module PrePost = struct
     match (attr : PulseDomain.Attribute.t) with
     | Invalid trace ->
         PulseDomain.Attribute.Invalid
-          { action= PulseTrace.ViaCall {action= trace.action; proc_name; location}
-          ; breadcrumbs= trace.breadcrumbs }
+          { action= PulseDomain.InterprocAction.ViaCall {action= trace.action; proc_name; location}
+          ; history= trace.history }
     | MustBeValid _ | AddressOfCppTemporary (_, _) | Closure _ | StdVectorReserve ->
         attr
 
@@ -580,7 +582,7 @@ module PrePost = struct
           let addr_curr, subst = subst_find_or_new subst addr_callee in
           ( subst
           , ( addr_curr
-            , PulseTrace.Call
+            , PulseDomain.ValueHistory.Call
                 {f= `HilCall (Direct callee_proc_name); actuals= [ (* TODO *) ]; location= call_loc}
               :: trace_post ) ) )
     in

@@ -9,6 +9,8 @@ module F = Format
 module L = Logging
 open Result.Monad_infix
 module AbstractAddress = PulseDomain.AbstractAddress
+module InterprocAction = PulseDomain.InterprocAction
+module ValueHistory = PulseDomain.ValueHistory
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   struct
@@ -52,7 +54,7 @@ module PulseTransferFunctions = struct
   let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
       astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
-    let crumb = PulseTrace.Assignment {lhs= lhs_access; location= loc} in
+    let crumb = ValueHistory.Assignment {lhs= lhs_access; location= loc} in
     match rhs_exp with
     | AccessExpression rhs_access -> (
         PulseOperations.read loc rhs_access astate
@@ -80,7 +82,7 @@ module PulseTransferFunctions = struct
     let read_all args astate =
       PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
-    let crumb = PulseTrace.Call {f= `HilCall call; actuals; location= call_loc} in
+    let crumb = ValueHistory.Call {f= `HilCall call; actuals; location= call_loc} in
     match call with
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
         L.d_printfln "constructor call detected@." ;
@@ -152,7 +154,7 @@ module PulseTransferFunctions = struct
     (* invalidate both [&x] and [x]: reading either is now forbidden *)
     let invalidate pvar typ access astate =
       PulseOperations.invalidate
-        (PulseTrace.Immediate {imm= GoneOutOfScope (pvar, typ); location= call_loc})
+        (InterprocAction.Immediate {imm= GoneOutOfScope (pvar, typ); location= call_loc})
         call_loc access astate
     in
     let out_of_scope_base = HilExp.AccessExpression.base (Var.of_pvar pvar, typ) in

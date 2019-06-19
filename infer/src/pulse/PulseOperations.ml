@@ -9,6 +9,8 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
+module InterprocAction = PulseDomain.InterprocAction
+module ValueHistory = PulseDomain.ValueHistory
 module Memory = PulseAbductiveDomain.Memory
 module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix
@@ -26,11 +28,11 @@ type t = PulseAbductiveDomain.t
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
-let check_addr_access access action (address, breadcrumbs) astate =
+let check_addr_access access action (address, history) astate =
   Memory.check_valid action address astate
   |> Result.map_error ~f:(fun invalidated_by ->
          PulseDiagnostic.AccessToInvalidAddress
-           {access; invalidated_by; accessed_by= {action; breadcrumbs}} )
+           {access; invalidated_by; accessed_by= {action; history}} )
 
 
 (** Walk the heap starting from [addr] and following [path]. Stop either at the element before last
@@ -127,8 +129,8 @@ and walk_access_expr ~on_last astate access_expr location =
         let astate, (addr, init_loc_opt) = Stack.materialize access_var astate in
         let trace =
           Option.map init_loc_opt ~f:(fun init_loc ->
-              if Var.is_cpp_temporary access_var then PulseTrace.CppTemporaryCreated init_loc
-              else PulseTrace.VariableDeclaration init_loc )
+              if Var.is_cpp_temporary access_var then ValueHistory.CppTemporaryCreated init_loc
+              else ValueHistory.VariableDeclaration init_loc )
           |> Option.to_list
         in
         (astate, (addr, trace))
@@ -137,7 +139,7 @@ and walk_access_expr ~on_last astate access_expr location =
       | [HilExp.Access.TakeAddress] ->
           Ok (astate, base_addr_trace)
       | _ ->
-          let action = PulseTrace.Immediate {imm= access_expr; location} in
+          let action = InterprocAction.Immediate {imm= access_expr; location} in
           walk
             (HilExp.AccessExpression.base base)
             ~dereference_to_ignore action ~on_last base_addr_trace
@@ -220,7 +222,7 @@ let invalidate_array_elements cause location access_expr astate =
         edges astate
 
 
-let check_address_escape escape_location proc_desc address trace astate =
+let check_address_escape escape_location proc_desc address history astate =
   let check_address_of_cpp_temporary () =
     Memory.find_opt address astate
     |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
@@ -229,7 +231,7 @@ let check_address_escape escape_location proc_desc address trace astate =
                | Attribute.AddressOfCppTemporary (variable, _) ->
                    Error
                      (PulseDiagnostic.StackVariableAddressEscape
-                        {variable; location= escape_location; trace})
+                        {variable; location= escape_location; history})
                | _ ->
                    Ok () ) )
   in
@@ -246,7 +248,8 @@ let check_address_escape escape_location proc_desc address trace astate =
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable
             AbstractAddress.pp address ;
           Error
-            (PulseDiagnostic.StackVariableAddressEscape {variable; location= escape_location; trace}) )
+            (PulseDiagnostic.StackVariableAddressEscape
+               {variable; location= escape_location; history}) )
         else Ok () )
   in
   check_address_of_cpp_temporary () >>= check_address_of_stack_variable >>| fun () -> astate
@@ -323,7 +326,7 @@ module Closures = struct
   let write location access_expr pname captured astate =
     let closure_addr = AbstractAddress.mk_fresh () in
     write location access_expr
-      (closure_addr, [PulseTrace.Assignment {lhs= access_expr; location}])
+      (closure_addr, [ValueHistory.Assignment {lhs= access_expr; location}])
       astate
     >>| fun astate ->
     let fake_capture_edges = mk_capture_edges captured in
@@ -338,7 +341,7 @@ module Closures = struct
             read location access_expr astate
             >>= fun (astate, (address, trace)) ->
             let new_trace =
-              PulseTrace.Capture {captured_as; captured= captured_access_expr; location} :: trace
+              ValueHistory.Capture {captured_as; captured= captured_access_expr; location} :: trace
             in
             Ok (astate, (address, new_trace) :: captured)
         | _ ->

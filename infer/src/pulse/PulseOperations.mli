@@ -41,35 +41,35 @@ val read :
      Location.t
   -> HilExp.AccessExpression.t
   -> t
-  -> (t * (AbstractAddress.t * PulseTrace.breadcrumbs)) access_result
+  -> (t * (AbstractAddress.t * PulseDomain.ValueHistory.t)) access_result
 
 val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
 
-val havoc_var : PulseTrace.breadcrumbs -> Var.t -> t -> t
+val havoc_var : PulseDomain.ValueHistory.t -> Var.t -> t -> t
 
 val havoc :
-  PulseTrace.breadcrumbs -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+  PulseDomain.ValueHistory.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
 
 val realloc_var : Var.t -> Location.t -> t -> t
 
-val write_var : Var.t -> AbstractAddress.t * PulseTrace.breadcrumbs -> t -> t
+val write_var : Var.t -> AbstractAddress.t * PulseDomain.ValueHistory.t -> t -> t
 
 val write :
      Location.t
   -> HilExp.AccessExpression.t
-  -> AbstractAddress.t * PulseTrace.breadcrumbs
+  -> AbstractAddress.t * PulseDomain.ValueHistory.t
   -> t
   -> t access_result
 
 val invalidate :
-     PulseDomain.Invalidation.t PulseTrace.action
+     PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
   -> Location.t
   -> HilExp.AccessExpression.t
   -> t
   -> t access_result
 
 val invalidate_array_elements :
-     PulseDomain.Invalidation.t PulseTrace.action
+     PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
   -> Location.t
   -> HilExp.AccessExpression.t
   -> t
@@ -78,7 +78,12 @@ val invalidate_array_elements :
 val remove_vars : Var.t list -> t -> t
 
 val check_address_escape :
-  Location.t -> Procdesc.t -> AbstractAddress.t -> PulseTrace.breadcrumbs -> t -> t access_result
+     Location.t
+  -> Procdesc.t
+  -> AbstractAddress.t
+  -> PulseDomain.ValueHistory.t
+  -> t
+  -> t access_result
 
 module Interproc : sig
   val call :

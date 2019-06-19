@@ -96,12 +96,147 @@ module Invalidation = struct
         F.fprintf f "StdVector(%a)" describe invalidation
 end
 
+module ValueHistory = struct
+  type event =
+    | VariableDeclaration of Location.t
+    | CppTemporaryCreated of Location.t
+    | Assignment of {lhs: HilExp.AccessExpression.t; location: Location.t}
+    | Capture of
+        { captured_as: AccessPath.base
+        ; captured: HilExp.AccessExpression.t
+        ; location: Location.t }
+    | Call of
+        { f: [`HilCall of HilInstr.call | `Model of string]
+        ; actuals: HilExp.t list
+        ; location: Location.t }
+  [@@deriving compare]
+
+  let pp_event_no_location fmt = function
+    | VariableDeclaration _ ->
+        F.pp_print_string fmt "variable declared"
+    | CppTemporaryCreated _ ->
+        F.pp_print_string fmt "C++ temporary created"
+    | Capture {captured_as; captured; location= _} ->
+        F.fprintf fmt "`%a` captured as `%a`" HilExp.AccessExpression.pp captured
+          AccessPath.pp_base captured_as
+    | Assignment {lhs; location= _} ->
+        F.fprintf fmt "assigned to `%a`" HilExp.AccessExpression.pp lhs
+    | Call {f; actuals; location= _} ->
+        let pp_f fmt = function
+          | `HilCall call ->
+              F.fprintf fmt "%a" HilInstr.pp_call call
+          | `Model model ->
+              F.pp_print_string fmt model
+        in
+        F.fprintf fmt "returned from call to `%a(%a)`" pp_f f (Pp.seq ~sep:"," HilExp.pp) actuals
+
+
+  let location_of_event = function
+    | VariableDeclaration location
+    | CppTemporaryCreated location
+    | Assignment {location}
+    | Capture {location}
+    | Call {location} ->
+        location
+
+
+  let pp_event fmt crumb =
+    F.fprintf fmt "%a at %a" pp_event_no_location crumb Location.pp_line (location_of_event crumb)
+
+
+  let errlog_trace_elem_of_event ~nesting crumb =
+    let location = location_of_event crumb in
+    let description = F.asprintf "%a" pp_event_no_location crumb in
+    let tags = [] in
+    Errlog.make_trace_element nesting location description tags
+
+
+  type t = event list [@@deriving compare]
+
+  let pp f events = Pp.seq ~print_env:Pp.text_break pp_event f events
+
+  let add_to_errlog ~nesting events errlog =
+    List.rev_map_append ~f:(errlog_trace_elem_of_event ~nesting) events errlog
+
+
+  let get_start_location = function [] -> None | crumb :: _ -> Some (location_of_event crumb)
+end
+
+module InterprocAction = struct
+  type 'a t =
+    | Immediate of {imm: 'a; location: Location.t}
+    | ViaCall of {action: 'a t; proc_name: Typ.Procname.t; location: Location.t}
+  [@@deriving compare]
+
+  let rec get_immediate = function
+    | Immediate {imm; _} ->
+        imm
+    | ViaCall {action; _} ->
+        get_immediate action
+
+
+  let pp pp_immediate fmt = function
+    | Immediate {imm; _} ->
+        pp_immediate fmt imm
+    | ViaCall {proc_name; action; _} ->
+        F.fprintf fmt "%a in call to `%a`" pp_immediate (get_immediate action)
+          Typ.Procname.describe proc_name
+
+
+  let add_to_errlog ~nesting pp_immediate action errlog =
+    let rec aux ~nesting rev_errlog action =
+      match action with
+      | Immediate {imm; location} ->
+          let rev_errlog =
+            Errlog.make_trace_element nesting location (F.asprintf "%a here" pp_immediate imm) []
+            :: rev_errlog
+          in
+          List.rev_append rev_errlog errlog
+      | ViaCall {action; proc_name; location} ->
+          aux ~nesting:(nesting + 1)
+            ( Errlog.make_trace_element nesting location
+                (F.asprintf "when calling `%a` here" Typ.Procname.describe proc_name)
+                []
+            :: rev_errlog )
+            action
+    in
+    aux ~nesting [] action
+
+
+  let to_outer_location = function Immediate {location} | ViaCall {location} -> location
+end
+
+module Trace = struct
+  type 'a t = {action: 'a InterprocAction.t; history: ValueHistory.t} [@@deriving compare]
+
+  let pp pp_immediate f {action; _} = InterprocAction.pp pp_immediate f action
+
+  let add_errlog_header ~title location errlog =
+    let depth = 0 in
+    let tags = [] in
+    Errlog.make_trace_element depth location title tags :: errlog
+
+
+  let add_to_errlog ~header pp_immediate trace errlog =
+    let start_location =
+      match ValueHistory.get_start_location trace.history with
+      | Some location ->
+          location
+      | None ->
+          InterprocAction.to_outer_location trace.action
+    in
+    add_errlog_header ~title:header start_location
+    @@ ValueHistory.add_to_errlog ~nesting:1 trace.history
+    @@ InterprocAction.add_to_errlog ~nesting:1 pp_immediate trace.action
+    @@ errlog
+end
+
 (** Purposefully declared before [AbstractAddress] to avoid attributes depending on
     addresses. Otherwise they become a pain to handle when comparing memory states. *)
 module Attribute = struct
   type t =
-    | Invalid of Invalidation.t PulseTrace.t
-    | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
+    | Invalid of Invalidation.t Trace.t
+    | MustBeValid of HilExp.AccessExpression.t InterprocAction.t
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -114,7 +249,7 @@ module Attribute = struct
   let invalid_rank =
     Variants.to_rank
       (Invalid
-         {action= Immediate {imm= Invalidation.Nullptr; location= Location.dummy}; breadcrumbs= []})
+         {action= Immediate {imm= Invalidation.Nullptr; location= Location.dummy}; history= []})
 
 
   let must_be_valid_rank =
@@ -131,12 +266,12 @@ module Attribute = struct
 
   let pp f = function
     | Invalid invalidation ->
-        (PulseTrace.pp Invalidation.pp) f invalidation
+        (Trace.pp Invalidation.pp) f invalidation
     | MustBeValid action ->
         F.fprintf f "MustBeValid (read by %a @ %a)"
-          (PulseTrace.pp_action HilExp.AccessExpression.pp)
+          (InterprocAction.pp HilExp.AccessExpression.pp)
           action Location.pp
-          (PulseTrace.outer_location_of_action action)
+          (InterprocAction.to_outer_location action)
     | AddressOfCppTemporary (var, location_opt) ->
         F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
     | Closure pname ->
@@ -215,11 +350,11 @@ module AbstractAddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
 (* {3 Heap domain } *)
 
 module AddrTracePair = struct
-  type t = AbstractAddress.t * PulseTrace.breadcrumbs [@@deriving compare]
+  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
 
   let pp f addr_trace =
     if Config.debug_level_analysis >= 3 then
-      Pp.pair ~fst:AbstractAddress.pp ~snd:PulseTrace.pp_breadcrumbs f addr_trace
+      Pp.pair ~fst:AbstractAddress.pp ~snd:ValueHistory.pp f addr_trace
     else AbstractAddress.pp f (fst addr_trace)
 end
 
@@ -262,10 +397,9 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate :
-    AbstractAddress.t * PulseTrace.breadcrumbs -> Invalidation.t PulseTrace.action -> t -> t
+  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.t) result
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
@@ -328,8 +462,8 @@ end = struct
     add_attributes address (Attributes.singleton attribute) memory
 
 
-  let invalidate (address, breadcrumbs) invalidation memory =
-    add_attribute address (Attribute.Invalid {action= invalidation; breadcrumbs}) memory
+  let invalidate (address, history) invalidation memory =
+    add_attribute address (Attribute.Invalid {action= invalidation; history}) memory
 
 
   let check_valid address memory =

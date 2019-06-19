@@ -43,18 +43,18 @@ module Memory : sig
   val add_edge : AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
 
   val check_valid :
-       HilExp.AccessExpression.t PulseTrace.action
+       HilExp.AccessExpression.t PulseDomain.InterprocAction.t
     -> AbstractAddress.t
     -> t
-    -> (t, PulseDomain.Invalidation.t PulseTrace.t) result
+    -> (t, PulseDomain.Invalidation.t PulseDomain.Trace.t) result
 
   val find_opt : AbstractAddress.t -> t -> PulseDomain.Memory.cell option
 
   val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> t -> t
 
   val invalidate :
-       AbstractAddress.t * PulseTrace.breadcrumbs
-    -> PulseDomain.Invalidation.t PulseTrace.action
+       AbstractAddress.t * PulseDomain.ValueHistory.t
+    -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
     -> t
     -> t
 
@@ -79,8 +79,9 @@ module PrePost : sig
     -> Location.t
     -> t
     -> formals:Var.t list
-    -> ret:AbstractAddress.t * PulseTrace.breadcrumbs
-    -> actuals:(AbstractAddress.t * HilExp.AccessExpression.t * PulseTrace.breadcrumbs) option list
+    -> ret:AbstractAddress.t * PulseDomain.ValueHistory.t
+    -> actuals:(AbstractAddress.t * HilExp.AccessExpression.t * PulseDomain.ValueHistory.t) option
+               list
     -> domain_t
     -> (domain_t, PulseDiagnostic.t) result
 end

@@ -35,10 +35,52 @@ module Invalidation : sig
   val describe : Format.formatter -> t -> unit
 end
 
+module ValueHistory : sig
+  type event =
+    | VariableDeclaration of Location.t
+    | CppTemporaryCreated of Location.t
+    | Assignment of {lhs: HilExp.access_expression; location: Location.t}
+    | Capture of
+        { captured_as: AccessPath.base
+        ; captured: HilExp.access_expression
+        ; location: Location.t }
+    | Call of
+        { f: [`HilCall of HilInstr.call | `Model of string]
+        ; actuals: HilExp.t list
+        ; location: Location.t }
+
+  type t = event list [@@deriving compare]
+
+  val add_to_errlog :
+    nesting:int -> event list -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
+end
+
+module InterprocAction : sig
+  type 'a t =
+    | Immediate of {imm: 'a; location: Location.t}
+    | ViaCall of {action: 'a t; proc_name: Typ.Procname.t; location: Location.t}
+  [@@deriving compare]
+
+  val get_immediate : 'a t -> 'a
+
+  val to_outer_location : 'a t -> Location.t
+end
+
+module Trace : sig
+  type 'a t = {action: 'a InterprocAction.t; history: ValueHistory.t} [@@deriving compare]
+
+  val add_to_errlog :
+       header:string
+    -> (F.formatter -> 'a -> unit)
+    -> 'a t
+    -> Errlog.loc_trace_elem list
+    -> Errlog.loc_trace_elem list
+end
+
 module Attribute : sig
   type t =
-    | Invalid of Invalidation.t PulseTrace.t
-    | MustBeValid of HilExp.AccessExpression.t PulseTrace.action
+    | Invalid of Invalidation.t Trace.t
+    | MustBeValid of HilExp.AccessExpression.t InterprocAction.t
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -48,7 +90,7 @@ end
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
-  val get_must_be_valid : t -> HilExp.AccessExpression.t PulseTrace.action option
+  val get_must_be_valid : t -> HilExp.AccessExpression.t InterprocAction.t option
 end
 
 module AbstractAddress : sig
@@ -85,7 +127,7 @@ module Stack : sig
 end
 
 module AddrTracePair : sig
-  type t = AbstractAddress.t * PulseTrace.breadcrumbs [@@deriving compare]
+  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
 end
 
 module Memory : sig
@@ -120,10 +162,9 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val invalidate :
-    AbstractAddress.t * PulseTrace.breadcrumbs -> Invalidation.t PulseTrace.action -> t -> t
+  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t PulseTrace.t) result
+  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 

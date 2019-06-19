@@ -11,11 +11,11 @@ open! IStd
 type t =
   | AccessToInvalidAddress of
       { access: HilExp.AccessExpression.t
-      ; invalidated_by: PulseDomain.Invalidation.t PulseTrace.t
-      ; accessed_by: HilExp.AccessExpression.t PulseTrace.t }
+      ; invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
+      ; accessed_by: HilExp.AccessExpression.t PulseDomain.Trace.t }
   | StackVariableAddressEscape of
       { variable: Var.t
-      ; trace: PulseTrace.breadcrumbs
+      ; history: PulseDomain.ValueHistory.t
       ; location: Location.t }
 
 val get_message : t -> string

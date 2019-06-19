@@ -11,16 +11,16 @@ module F = Format
 type t =
   | AccessToInvalidAddress of
       { access: HilExp.AccessExpression.t
-      ; invalidated_by: PulseDomain.Invalidation.t PulseTrace.t
-      ; accessed_by: HilExp.AccessExpression.t PulseTrace.t }
+      ; invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
+      ; accessed_by: HilExp.AccessExpression.t PulseDomain.Trace.t }
   | StackVariableAddressEscape of
       { variable: Var.t
-      ; trace: PulseTrace.breadcrumbs
+      ; history: PulseDomain.ValueHistory.t
       ; location: Location.t }
 
 let get_location = function
   | AccessToInvalidAddress {accessed_by} ->
-      PulseTrace.outer_location_of_action accessed_by.action
+      PulseDomain.InterprocAction.to_outer_location accessed_by.action
   | StackVariableAddressEscape {location} ->
       location
 
@@ -44,8 +44,8 @@ let get_message = function
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
       *)
-      let pp_access_trace invalidated f trace =
-        match trace.PulseTrace.action with
+      let pp_access_trace invalidated f (trace : HilExp.AccessExpression.t PulseDomain.Trace.t) =
+        match trace.action with
         | Immediate {imm= access; _} -> (
           match HilExp.AccessExpression.to_source_string access with
           | Some access_s when HilExp.AccessExpression.equal access invalidated ->
@@ -65,7 +65,8 @@ let get_message = function
         | ViaCall {action; proc_name; _} -> (
             let access_and_invalidated_s =
               match
-                ( HilExp.AccessExpression.to_source_string (PulseTrace.immediate_of_action action)
+                ( HilExp.AccessExpression.to_source_string
+                    (PulseDomain.InterprocAction.get_immediate action :> HilExp.AccessExpression.t)
                 , HilExp.AccessExpression.to_source_string invalidated )
               with
               | Some access_s, Some invalidated_s ->
@@ -84,17 +85,19 @@ let get_message = function
                   proc_name HilExp.AccessExpression.pp invalidated )
       in
       let pp_invalidation_trace line f trace =
-        match trace.PulseTrace.action with
+        match trace.PulseDomain.Trace.action with
         | Immediate {imm= invalidation; _} ->
             F.fprintf f "%a on line %d" PulseDomain.Invalidation.describe invalidation line
         | ViaCall {action; proc_name; _} ->
             F.fprintf f "%a on line %d indirectly during the call to `%a`"
               PulseDomain.Invalidation.describe
-              (PulseTrace.immediate_of_action action)
+              (PulseDomain.InterprocAction.get_immediate action)
               line Typ.Procname.describe proc_name
       in
       let line_of_trace trace =
-        let {Location.line; _} = PulseTrace.outer_location_of_action trace.PulseTrace.action in
+        let {Location.line; _} =
+          PulseDomain.InterprocAction.to_outer_location trace.PulseDomain.Trace.action
+        in
         line
       in
       let invalidation_line = line_of_trace invalidated_by in
@@ -111,16 +114,18 @@ let get_message = function
 
 let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by} ->
-      PulseTrace.add_to_errlog ~header:"invalidation part of the trace starts here"
+      PulseDomain.Trace.add_to_errlog ~header:"invalidation part of the trace starts here"
         (fun f invalidation ->
           F.fprintf f "memory %a" PulseDomain.Invalidation.describe invalidation )
         invalidated_by
-      @@ PulseTrace.add_to_errlog ~header:"use-after-lifetime part of the trace starts here"
-           (fun f access -> F.fprintf f "invalid access to `%a`" HilExp.AccessExpression.pp access)
+      @@ PulseDomain.Trace.add_to_errlog ~header:"use-after-lifetime part of the trace starts here"
+           (fun f (access : HilExp.AccessExpression.t) ->
+             F.fprintf f "invalid access to `%a`" HilExp.AccessExpression.pp
+               (access :> HilExp.AccessExpression.t) )
            accessed_by
       @@ []
-  | StackVariableAddressEscape {trace; location; _} ->
-      PulseTrace.add_errlog_of_breadcrumbs ~nesting:0 trace
+  | StackVariableAddressEscape {history; location; _} ->
+      PulseDomain.ValueHistory.add_to_errlog ~nesting:0 history
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
@@ -128,7 +133,7 @@ let get_trace = function
 
 let get_issue_type = function
   | AccessToInvalidAddress {invalidated_by} ->
-      PulseTrace.immediate_of_action invalidated_by.action
+      PulseDomain.InterprocAction.get_immediate invalidated_by.action
       |> PulseDomain.Invalidation.issue_type_of_cause
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape
