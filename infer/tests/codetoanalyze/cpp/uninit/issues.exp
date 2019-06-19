@@ -16,7 +16,6 @@ codetoanalyze/cpp/uninit/uninit.cpp, bad1, 2, UNINITIALIZED_VALUE, no_bucket, ER
 codetoanalyze/cpp/uninit/uninit.cpp, bad2, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, branch1_FP, 11, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, capture_by_ref_init2_FP, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-codetoanalyze/cpp/uninit/uninit.cpp, capture_by_ref_init2_FP, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, capture_by_ref_init_FP, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, condition_no_init_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, copy_pointer_bad, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
