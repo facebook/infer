@@ -41,6 +41,8 @@ and access_expression = private
 [@@deriving compare]
 
 module AccessExpression : sig
+  val of_id : Ident.t -> Typ.t -> access_expression
+
   val base : AccessPath.base -> access_expression
 
   val field_offset : access_expression -> Typ.Fieldname.t -> access_expression
@@ -121,3 +123,12 @@ val is_int_zero : t -> bool
 val eval : t -> Const.t option
 
 val ignore_cast : t -> t
+
+val access_expr_of_exp :
+     include_array_indexes:bool
+  -> f_resolve_id:(Var.t -> AccessExpression.t option)
+  -> Exp.t
+  -> Typ.t
+  -> access_expression option
+(** best effort translating a SIL expression to an access path, not semantics preserving in
+    particular in the presence of pointer arithmetic *)

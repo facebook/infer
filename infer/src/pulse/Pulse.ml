@@ -77,21 +77,24 @@ module PulseTransferFunctions = struct
         >>= PulseOperations.havoc [crumb] loc lhs_access
 
 
-  let exec_unknown_call _summary _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
+  let exec_unknown_call _summary ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
       call_loc astate =
     let read_all args astate =
       PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
     let crumb = ValueHistory.Call {f= `HilCall call; actuals; location= call_loc} in
+    let havoc_ret (ret, _) astate = PulseOperations.havoc_var [crumb] ret astate in
+    let read_actuals_havoc_ret actuals ret astate = read_all actuals astate >>| havoc_ret ret in
     match call with
     | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
         L.d_printfln "constructor call detected@." ;
         match actuals with
         | AccessExpression constructor_access :: rest ->
             let constructed_object = HilExp.AccessExpression.dereference constructor_access in
-            PulseOperations.havoc [crumb] call_loc constructed_object astate >>= read_all rest
+            PulseOperations.havoc [crumb] call_loc constructed_object astate
+            >>= read_actuals_havoc_ret rest ret
         | _ ->
-            Ok astate )
+            Ok (havoc_ret ret astate) )
     | Direct (Typ.Procname.ObjC_Cpp callee_pname)
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
         L.d_printfln "operator= detected@." ;
@@ -101,12 +104,13 @@ module PulseTransferFunctions = struct
             let lhs_deref = HilExp.AccessExpression.dereference lhs in
             let rhs_deref = HilExp.AccessExpression.dereference rhs in
             PulseOperations.havoc [crumb] call_loc lhs_deref astate
-            >>= fun astate -> PulseOperations.read call_loc rhs_deref astate >>| fst
+            >>= fun astate ->
+            PulseOperations.read call_loc rhs_deref astate >>| fst >>| havoc_ret ret
         | _ ->
-            read_all actuals astate )
+            read_actuals_havoc_ret actuals ret astate )
     | _ ->
         L.d_printfln "skipping unknown procedure@." ;
-        read_all actuals astate
+        read_actuals_havoc_ret actuals ret astate
 
 
   let interprocedural_call caller_summary ret (call : HilInstr.call) (actuals : HilExp.t list)
@@ -191,20 +195,57 @@ module PulseTransferFunctions = struct
             posts )
 
 
-  let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t) =
+  let hil_of_sil ?(add_deref = false) exp typ =
+    HilExp.of_sil ~include_array_indexes:true ~f_resolve_id:(fun _ -> None) ~add_deref exp typ
+
+
+  let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : Sil.instr) =
     match instr with
-    | Assign (lhs_access, rhs_exp, loc) ->
-        let post = exec_assign summary lhs_access rhs_exp loc astate |> check_error summary in
+    | Load (lhs_id, rhs_exp, typ, loc) ->
+        let lhs_access = HilExp.AccessExpression.of_id lhs_id typ in
+        let rhs_hexp = hil_of_sil ~add_deref:true rhs_exp typ in
+        let post = exec_assign summary lhs_access rhs_hexp loc astate |> check_error summary in
         [post]
-    | Assume (condition, _, _, loc) ->
+    | Store (lhs_exp, typ, rhs_exp, loc) ->
+        let lhs_access_expr =
+          match
+            HilExp.access_expr_of_exp ~include_array_indexes:true
+              ~f_resolve_id:(fun _ -> None)
+              lhs_exp typ
+          with
+          | Some access_expr ->
+              access_expr
+          | None ->
+              L.die InternalError "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp
+                Location.pp_file_pos loc
+        in
+        let rhs_hexp = hil_of_sil rhs_exp typ in
         let post =
-          PulseOperations.read_all loc (HilExp.get_access_exprs condition) astate
+          exec_assign summary lhs_access_expr rhs_hexp loc astate |> check_error summary
+        in
+        [post]
+    | Prune (condition, loc, _is_then_branch, _if_kind) ->
+        let condition_hexp = hil_of_sil condition (Typ.mk (Tint IBool)) in
+        let post =
+          PulseOperations.read_all loc (HilExp.get_access_exprs condition_hexp) astate
           |> check_error summary
         in
         [post]
-    | Call (ret, call, actuals, flags, loc) ->
+    | Call ((ret_id, ret_typ), call_exp, actuals, loc, call_flags) ->
+        let ret_hil = (Var.of_id ret_id, ret_typ) in
+        let call_hil =
+          match hil_of_sil call_exp (Typ.mk Tvoid) with
+          | Constant (Cfun procname) | Closure (procname, _) ->
+              HilInstr.Direct procname
+          | HilExp.AccessExpression access_expr ->
+              HilInstr.Indirect access_expr
+          | call_exp ->
+              L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
+        in
+        let actuals_hil = List.map ~f:(fun (exp, typ) -> hil_of_sil exp typ) actuals in
         let posts =
-          dispatch_call summary ret call actuals flags loc astate |> check_error summary
+          dispatch_call summary ret_hil call_hil actuals_hil call_flags loc astate
+          |> check_error summary
         in
         posts
     | Metadata (ExitScope (vars, _)) ->
@@ -221,10 +262,8 @@ module PulseTransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
-module HilConfig = LowerHil.DefaultConfig
-
 module DisjunctiveTransferFunctions =
-  TransferFunctions.MakeHILDisjunctive
+  TransferFunctions.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
       let join_policy =
@@ -234,9 +273,7 @@ module DisjunctiveTransferFunctions =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
-module DisjunctiveAnalyzer =
-  LowerHil.MakeAbstractInterpreterWithConfig (AbstractInterpreter.MakeWTO) (HilConfig)
-    (DisjunctiveTransferFunctions)
+module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFunctions)
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in

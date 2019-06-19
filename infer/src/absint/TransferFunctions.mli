@@ -55,22 +55,16 @@ module type DisjReady = sig
 
   type extras
 
-  type instr
-
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t list
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
-end
-
-module type HILDisjReady = sig
-  include DisjReady with type instr := HilInstr.t
 end
 
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a
    disjunction between these states. The transfer functions are executed on each state in the
    disjunct independently. The join on the disjunctive state is governed by the policy described in
    [DConfig]. *)
-module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : DisjunctiveConfig) : sig
+module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveConfig) : sig
   module Disjuncts : sig
     type t
 
@@ -80,7 +74,7 @@ module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : Disjunct
   end
 
   include
-    HIL
+    SIL
     with type extras = TransferFunctions.extras
      and module CFG = TransferFunctions.CFG
      and type Domain.t = Disjuncts.t

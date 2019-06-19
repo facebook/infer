@@ -73,35 +73,12 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_access_expr =
-        match HilExp.ignore_cast (exp_of_sil ~add_deref:true lhs_exp typ) with
-        | HilExp.AccessExpression access_expr ->
+        match HilExp.access_expr_of_exp ~include_array_indexes ~f_resolve_id lhs_exp typ with
+        | Some access_expr ->
             access_expr
-        | BinaryOperator (_, exp0, exp1) -> (
-          (* pointer arithmetic. somewhere in one of the expressions, there should be at least
-               one pointer type represented as an access path. just use that access path and forget
-               about the arithmetic. if you need to model this more precisely, you should be using
-               SIL instead *)
-          match HilExp.get_access_exprs exp0 with
-          | ap :: _ ->
-              ap
-          | [] -> (
-            match HilExp.get_access_exprs exp1 with
-            | ap :: _ ->
-                ap
-            | [] ->
-                L.(die InternalError)
-                  "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
-                  Location.pp_file_pos loc ) )
-        | HilExp.Constant (Const.Cint i) ->
-            (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
-               debugging. doesn't really matter what we do here, so just create a dummy var *)
-            let dummy_base_var =
-              Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
-            in
-            HilExp.AccessExpression.base (dummy_base_var, Typ.void_star)
-        | _ ->
-            L.(die InternalError)
-              "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc
+        | None ->
+            L.die InternalError "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp
+              Location.pp_file_pos loc
       in
       Instr (Assign (lhs_access_expr, exp_of_sil rhs_exp typ, loc))
   | Call ((ret_id, ret_typ), call_exp, formals, loc, call_flags) ->

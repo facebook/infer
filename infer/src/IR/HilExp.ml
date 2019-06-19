@@ -631,3 +631,27 @@ and eval = function
 
 
 let rec ignore_cast e = match e with Cast (_, e) -> ignore_cast e | _ -> e
+
+let access_expr_of_exp ~include_array_indexes ~f_resolve_id exp typ =
+  match ignore_cast (of_sil ~include_array_indexes ~f_resolve_id ~add_deref:true exp typ) with
+  | AccessExpression access_expr ->
+      Some access_expr
+  | BinaryOperator (_, exp0, exp1) -> (
+    (* pointer arithmetic. somewhere in one of the expressions, there should be at least
+               one pointer type represented as an access path. just use that access path and forget
+               about the arithmetic. if you need to model this more precisely, you should be using
+               SIL instead *)
+    match get_access_exprs exp0 with
+    | ap :: _ ->
+        Some ap
+    | [] -> (
+      match get_access_exprs exp1 with ap :: _ -> Some ap | [] -> None ) )
+  | Constant (Const.Cint i) ->
+      (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
+               debugging. doesn't really matter what we do here, so just create a dummy var *)
+      let dummy_base_var =
+        Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
+      in
+      Some (AccessExpression.base (dummy_base_var, Typ.void_star))
+  | _ ->
+      None

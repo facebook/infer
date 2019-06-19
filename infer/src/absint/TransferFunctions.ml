@@ -48,18 +48,12 @@ module type DisjReady = sig
 
   type extras
 
-  type instr
-
-  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.t list
+  val exec_instr : Domain.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.t list
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
 
-module type HILDisjReady = sig
-  include DisjReady with type instr := HilInstr.t
-end
-
-module MakeHILDisjunctive (TransferFunctions : HILDisjReady) (DConfig : DisjunctiveConfig) = struct
+module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveConfig) = struct
   module CFG = TransferFunctions.CFG
 
   type extras = TransferFunctions.extras
