@@ -61,6 +61,13 @@ let%test_module _ =
         ) infer_frame: emp * false |}]
 
     let%expect_test _ =
+      check_frame Sh.emp [n_; m_] (Sh.and_ (Exp.eq m n) Sh.emp) ;
+      [%expect
+        {|
+        ( infer_frame: emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
+        ) infer_frame: emp |}]
+
+    let%expect_test _ =
       check_frame
         (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a})
         [] Sh.emp ;

@@ -60,8 +60,14 @@ let single_existential_occurrence xs exp =
           | _ -> raise Multiple_existential_occurrences )
   with Multiple_existential_occurrences -> Many
 
+let special_cases xs = function
+  | Exp.(App {op= App {op= Eq; arg= Var _}; arg= Var _}) as e ->
+      if Set.is_subset (Exp.fv e) ~of_:xs then Exp.bool true else e
+  | e -> e
+
 let excise_exp ({us; min; xs} as goal) pure exp =
   let exp' = Equality.normalize min.cong exp in
+  let exp' = special_cases xs exp' in
   if Exp.is_true exp' then Some ({goal with pgs= true}, pure)
   else
     match single_existential_occurrence xs exp' with
