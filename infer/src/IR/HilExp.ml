@@ -237,6 +237,13 @@ module AccessExpression = struct
     aux init [] access_expr
 
 
+  let to_accesses access_expr =
+    let (), base, accesses =
+      to_accesses_fold access_expr ~init:() ~f_array_offset:(fun () index -> ((), index))
+    in
+    (base, accesses)
+
+
   let add_access access access_expr =
     match (access : _ Access.t) with
     | FieldAccess fld ->
@@ -248,6 +255,14 @@ module AccessExpression = struct
     | TakeAddress ->
         address_of access_expr
 
+
+  let add_rev_accesses rev_accesses access_expr =
+    List.fold rev_accesses ~init:(Some access_expr) ~f:(fun access_expr_opt access ->
+        let open Option.Monad_infix in
+        access_expr_opt >>= add_access access )
+
+
+  let add_accesses accesses access_expr = add_rev_accesses (List.rev accesses) access_expr
 
   (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
   let rec to_access_path t =
@@ -353,10 +368,14 @@ module AccessExpression = struct
         fold_vars_exp_opt exp_opt ~init ~f
 
 
-  let to_source_string access_expr =
+  let appears_in_source_code access_expr =
     (* should probably eventually check more than just the base but yolo *)
     let var, _ = get_base access_expr in
-    if Var.appears_in_source_code var then Some (F.asprintf "%a" pp access_expr) else None
+    Var.appears_in_source_code var
+
+
+  let to_source_string access_expr =
+    if appears_in_source_code access_expr then Some (F.asprintf "%a" pp access_expr) else None
 end
 
 let rec get_typ tenv = function

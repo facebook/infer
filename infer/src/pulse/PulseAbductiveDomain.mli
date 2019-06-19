@@ -43,7 +43,7 @@ module Memory : sig
   val add_edge : AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
 
   val check_valid :
-       HilExp.AccessExpression.t PulseDomain.InterprocAction.t
+       HilExp.AccessExpression.t PulseDomain.explained PulseDomain.InterprocAction.t
     -> AbstractAddress.t
     -> t
     -> (t, PulseDomain.Invalidation.t PulseDomain.Trace.t) result
@@ -89,3 +89,8 @@ end
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
     keep its size down *)
+
+val explain_access_expr :
+  HilExp.AccessExpression.t -> t -> HilExp.AccessExpression.t PulseDomain.explained
+
+val explain_hil_exp : HilExp.t -> t -> HilExp.t PulseDomain.explained

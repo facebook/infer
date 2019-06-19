@@ -31,6 +31,7 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 let check_addr_access access action (address, history) astate =
   Memory.check_valid action address astate
   |> Result.map_error ~f:(fun invalidated_by ->
+         let access = PulseAbductiveDomain.explain_access_expr access astate in
          PulseDiagnostic.AccessToInvalidAddress
            {access; invalidated_by; accessed_by= {action; history}} )
 
@@ -139,7 +140,10 @@ and walk_access_expr ~on_last astate access_expr location =
       | [HilExp.Access.TakeAddress] ->
           Ok (astate, base_addr_trace)
       | _ ->
-          let action = InterprocAction.Immediate {imm= access_expr; location} in
+          let action =
+            InterprocAction.Immediate
+              {imm= PulseAbductiveDomain.explain_access_expr access_expr astate; location}
+          in
           walk
             (HilExp.AccessExpression.base base)
             ~dereference_to_ignore action ~on_last base_addr_trace
@@ -199,14 +203,18 @@ let write location access_expr addr astate =
 let invalidate cause location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr_trace) ->
-  check_addr_access access_expr (Immediate {imm= access_expr; location}) addr_trace astate
+  check_addr_access access_expr
+    (Immediate {imm= PulseAbductiveDomain.explain_access_expr access_expr astate; location})
+    addr_trace astate
   >>| mark_invalid cause addr_trace
 
 
 let invalidate_array_elements cause location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr_trace) ->
-  check_addr_access access_expr (Immediate {imm= access_expr; location}) addr_trace astate
+  check_addr_access access_expr
+    (Immediate {imm= PulseAbductiveDomain.explain_access_expr access_expr astate; location})
+    addr_trace astate
   >>| fun astate ->
   match Memory.find_opt (fst addr_trace) astate with
   | None ->
@@ -315,7 +323,10 @@ module Closures = struct
                 ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold) edges
                 ~f:(fun (access, addr_trace) ->
                   if is_captured_fake_access access then
-                    check_addr_access lambda (Immediate {imm= lambda; location}) addr_trace astate
+                    check_addr_access lambda
+                      (Immediate
+                         {imm= PulseAbductiveDomain.explain_access_expr lambda astate; location})
+                      addr_trace astate
                     >>| fun _ -> ()
                   else Ok () )
           | _ ->
@@ -326,7 +337,9 @@ module Closures = struct
   let write location access_expr pname captured astate =
     let closure_addr = AbstractAddress.mk_fresh () in
     write location access_expr
-      (closure_addr, [ValueHistory.Assignment {lhs= access_expr; location}])
+      ( closure_addr
+      , [ ValueHistory.Assignment
+            {lhs= PulseAbductiveDomain.explain_access_expr access_expr astate; location} ] )
       astate
     >>| fun astate ->
     let fake_capture_edges = mk_capture_edges captured in
@@ -341,7 +354,11 @@ module Closures = struct
             read location access_expr astate
             >>= fun (astate, (address, trace)) ->
             let new_trace =
-              ValueHistory.Capture {captured_as; captured= captured_access_expr; location} :: trace
+              ValueHistory.Capture
+                { captured_as
+                ; captured= PulseAbductiveDomain.explain_access_expr captured_access_expr astate
+                ; location }
+              :: trace
             in
             Ok (astate, (address, new_trace) :: captured)
         | _ ->

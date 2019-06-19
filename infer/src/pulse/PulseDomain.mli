@@ -8,6 +8,8 @@
 open! IStd
 module F = Format
 
+type 'a explained = private 'a
+
 module Invalidation : sig
   type std_vector_function =
     | Assign
@@ -23,11 +25,11 @@ module Invalidation : sig
   val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
 
   type t =
-    | CFree of HilExp.AccessExpression.t
-    | CppDelete of HilExp.AccessExpression.t
+    | CFree of HilExp.AccessExpression.t explained
+    | CppDelete of HilExp.AccessExpression.t explained
     | GoneOutOfScope of Pvar.t * Typ.t
     | Nullptr
-    | StdVector of std_vector_function * HilExp.AccessExpression.t
+    | StdVector of std_vector_function * HilExp.AccessExpression.t explained
   [@@deriving compare]
 
   val issue_type_of_cause : t -> IssueType.t
@@ -39,14 +41,14 @@ module ValueHistory : sig
   type event =
     | VariableDeclaration of Location.t
     | CppTemporaryCreated of Location.t
-    | Assignment of {lhs: HilExp.access_expression; location: Location.t}
+    | Assignment of {lhs: HilExp.AccessExpression.t explained; location: Location.t}
     | Capture of
         { captured_as: AccessPath.base
-        ; captured: HilExp.access_expression
+        ; captured: HilExp.AccessExpression.t explained
         ; location: Location.t }
     | Call of
         { f: [`HilCall of HilInstr.call | `Model of string]
-        ; actuals: HilExp.t list
+        ; actuals: HilExp.t explained list
         ; location: Location.t }
 
   type t = event list [@@deriving compare]
@@ -80,7 +82,7 @@ end
 module Attribute : sig
   type t =
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of HilExp.AccessExpression.t InterprocAction.t
+    | MustBeValid of HilExp.AccessExpression.t explained InterprocAction.t
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -90,7 +92,7 @@ end
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
-  val get_must_be_valid : t -> HilExp.AccessExpression.t InterprocAction.t option
+  val get_must_be_valid : t -> HilExp.AccessExpression.t explained InterprocAction.t option
 end
 
 module AbstractAddress : sig
@@ -192,3 +194,7 @@ type isograph_relation =
 val isograph_map : lhs:t -> rhs:t -> mapping -> isograph_relation
 
 val is_isograph : lhs:t -> rhs:t -> mapping -> bool
+
+val explain_access_expr : HilExp.AccessExpression.t -> t -> HilExp.AccessExpression.t explained
+
+val explain_hil_exp : HilExp.t -> t -> HilExp.t explained

@@ -54,7 +54,10 @@ module PulseTransferFunctions = struct
   let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
       astate =
     (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
-    let crumb = ValueHistory.Assignment {lhs= lhs_access; location= loc} in
+    let crumb =
+      ValueHistory.Assignment
+        {lhs= PulseAbductiveDomain.explain_access_expr lhs_access astate; location= loc}
+    in
     match rhs_exp with
     | AccessExpression rhs_access -> (
         PulseOperations.read loc rhs_access astate
@@ -82,7 +85,12 @@ module PulseTransferFunctions = struct
     let read_all args astate =
       PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
-    let crumb = ValueHistory.Call {f= `HilCall call; actuals; location= call_loc} in
+    let crumb =
+      ValueHistory.Call
+        { f= `HilCall call
+        ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+        ; location= call_loc }
+    in
     let havoc_ret (ret, _) astate = PulseOperations.havoc_var [crumb] ret astate in
     let read_actuals_havoc_ret actuals ret astate = read_all actuals astate >>| havoc_ret ret in
     match call with

@@ -10,6 +10,8 @@ module L = Logging
 
 (* {2 Abstract domain description } *)
 
+type 'a explained = 'a [@@deriving compare]
+
 module Invalidation = struct
   type std_vector_function =
     | Assign
@@ -42,11 +44,11 @@ module Invalidation = struct
 
 
   type t =
-    | CFree of HilExp.AccessExpression.t
-    | CppDelete of HilExp.AccessExpression.t
+    | CFree of HilExp.AccessExpression.t explained
+    | CppDelete of HilExp.AccessExpression.t explained
     | GoneOutOfScope of Pvar.t * Typ.t
     | Nullptr
-    | StdVector of std_vector_function * HilExp.AccessExpression.t
+    | StdVector of std_vector_function * HilExp.AccessExpression.t explained
   [@@deriving compare]
 
   let issue_type_of_cause = function
@@ -100,14 +102,14 @@ module ValueHistory = struct
   type event =
     | VariableDeclaration of Location.t
     | CppTemporaryCreated of Location.t
-    | Assignment of {lhs: HilExp.AccessExpression.t; location: Location.t}
+    | Assignment of {lhs: HilExp.AccessExpression.t explained; location: Location.t}
     | Capture of
         { captured_as: AccessPath.base
-        ; captured: HilExp.AccessExpression.t
+        ; captured: HilExp.AccessExpression.t explained
         ; location: Location.t }
     | Call of
         { f: [`HilCall of HilInstr.call | `Model of string]
-        ; actuals: HilExp.t list
+        ; actuals: HilExp.t explained list
         ; location: Location.t }
   [@@deriving compare]
 
@@ -120,7 +122,8 @@ module ValueHistory = struct
         F.fprintf fmt "`%a` captured as `%a`" HilExp.AccessExpression.pp captured
           AccessPath.pp_base captured_as
     | Assignment {lhs; location= _} ->
-        F.fprintf fmt "assigned to `%a`" HilExp.AccessExpression.pp lhs
+        if HilExp.AccessExpression.appears_in_source_code lhs then
+          F.fprintf fmt "assigned to `%a`" HilExp.AccessExpression.pp lhs
     | Call {f; actuals; location= _} ->
         let pp_f fmt = function
           | `HilCall call ->
@@ -236,7 +239,7 @@ end
 module Attribute = struct
   type t =
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of HilExp.AccessExpression.t InterprocAction.t
+    | MustBeValid of HilExp.AccessExpression.t explained InterprocAction.t
     | AddressOfCppTemporary of Var.t * Location.t option
     | Closure of Typ.Procname.t
     | StdVectorReserve
@@ -784,3 +787,77 @@ let reachable_addresses astate =
     ~init:() ~finish:Fn.id
     ~f:(fun () _ _ _ -> Continue ())
   |> fst
+
+
+let rec evaluate_accesses address accesses astate =
+  match accesses with
+  | [] ->
+      Some address
+  | access :: next_accesses ->
+      let open Option.Monad_infix in
+      Memory.find_edge_opt address access astate.heap
+      >>= fun (addr, _) -> evaluate_accesses addr next_accesses astate
+
+
+let evaluate_access_path var should_deref astate =
+  let open Option.Monad_infix in
+  Stack.find_opt var astate.stack
+  >>= fun (addr_var, _) ->
+  if should_deref then evaluate_accesses addr_var [HilExp.Access.Dereference] astate
+  else Some addr_var
+
+
+let explain_address address astate =
+  GraphVisit.fold astate ~init:() ~var_filter:Var.appears_in_source_code
+    ~finish:(fun _ -> None)
+    ~f:(fun () address' var accesses ->
+      if AbstractAddress.equal address address' then Stop (Some (var, accesses)) else Continue ()
+      )
+  |> snd
+  |> Option.bind ~f:(fun (var, rev_accesses) ->
+         let base = HilExp.AccessExpression.address_of_base (var, Typ.void) in
+         HilExp.AccessExpression.add_rev_accesses rev_accesses base )
+
+
+let explain_access_expr access_expr astate =
+  if HilExp.AccessExpression.appears_in_source_code access_expr then access_expr
+  else
+    let (base_var, _), accesses = HilExp.AccessExpression.to_accesses access_expr in
+    let should_deref, accesses_left =
+      match accesses with [HilExp.Access.TakeAddress] -> (false, []) | _ -> (true, accesses)
+    in
+    match
+      let open Option.Monad_infix in
+      evaluate_access_path base_var should_deref astate
+      >>= fun base_address ->
+      explain_address base_address astate >>= HilExp.AccessExpression.add_accesses accesses_left
+    with
+    | Some explained ->
+        explained
+    | None ->
+        L.d_printfln "Can't explain how to reach address %a from state %a"
+          HilExp.AccessExpression.pp access_expr pp astate ;
+        access_expr
+
+
+let rec explain_hil_exp (e : HilExp.t) astate =
+  match e with
+  | AccessExpression access_expr ->
+      HilExp.AccessExpression (explain_access_expr access_expr astate)
+  | UnaryOperator (op, e', t) ->
+      HilExp.UnaryOperator (op, explain_hil_exp e' astate, t)
+  | BinaryOperator (op, e1, e2) ->
+      HilExp.BinaryOperator (op, explain_hil_exp e1 astate, explain_hil_exp e2 astate)
+  | Exception e' ->
+      HilExp.Exception (explain_hil_exp e' astate)
+  | Closure (proc_name, captured) ->
+      HilExp.Closure
+        (proc_name, List.map captured ~f:(fun (base, e') -> (base, explain_hil_exp e' astate)))
+  | Constant _ ->
+      e
+  | Cast (t, e') ->
+      HilExp.Cast (t, explain_hil_exp e' astate)
+  | Sizeof (t, Some e') ->
+      HilExp.Sizeof (t, Some (explain_hil_exp e' astate))
+  | Sizeof (_, None) ->
+      e

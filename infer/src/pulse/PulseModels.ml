@@ -27,7 +27,10 @@ module C = struct
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
           (PulseDomain.InterprocAction.Immediate
-             {imm= PulseDomain.Invalidation.CFree deleted_access; location})
+             { imm=
+                 PulseDomain.Invalidation.CFree
+                   (PulseAbductiveDomain.explain_access_expr deleted_access astate)
+             ; location })
           location deleted_access astate
         >>| List.return
     | _ ->
@@ -43,7 +46,10 @@ module Cplusplus = struct
     | [AccessExpression deleted_access] ->
         PulseOperations.invalidate
           (PulseDomain.InterprocAction.Immediate
-             {imm= PulseDomain.Invalidation.CppDelete deleted_access; location})
+             { imm=
+                 PulseDomain.Invalidation.CppDelete
+                   (PulseAbductiveDomain.explain_access_expr deleted_access astate)
+             ; location })
           location deleted_access astate
         >>| List.return
     | _ ->
@@ -63,7 +69,10 @@ module Cplusplus = struct
         Ok astate )
     >>| fun astate ->
     [ PulseOperations.havoc_var
-        [PulseDomain.ValueHistory.Call {f= `Model "<lambda>"; actuals; location}]
+        [ PulseDomain.ValueHistory.Call
+            { f= `Model "<lambda>"
+            ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+            ; location } ]
         ret_var astate ]
 
 
@@ -72,7 +81,12 @@ module Cplusplus = struct
     let read_all args astate =
       PulseOperations.read_all location (List.concat_map args ~f:HilExp.get_access_exprs) astate
     in
-    let crumb = PulseDomain.ValueHistory.Call {f= `Model "<placement new>"; actuals; location} in
+    let crumb =
+      PulseDomain.ValueHistory.Call
+        { f= `Model "<placement new>"
+        ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+        ; location }
+    in
     match List.rev actuals with
     | HilExp.AccessExpression expr :: other_actuals ->
         PulseOperations.read location expr astate
@@ -107,7 +121,10 @@ module StdVector = struct
     let array = deref_internal_array vector in
     let invalidation =
       PulseDomain.InterprocAction.Immediate
-        {imm= PulseDomain.Invalidation.StdVector (vector_f, vector); location}
+        { imm=
+            PulseDomain.Invalidation.StdVector
+              (vector_f, PulseAbductiveDomain.explain_access_expr vector astate)
+        ; location }
     in
     PulseOperations.invalidate_array_elements invalidation location array astate
     >>= PulseOperations.invalidate invalidation location array
@@ -123,7 +140,7 @@ module StdVector = struct
             { f=
                 `Model
                   (Format.asprintf "%a" PulseDomain.Invalidation.pp_std_vector_function vector_f)
-            ; actuals
+            ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
             ; location }
         in
         reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
@@ -133,7 +150,12 @@ module StdVector = struct
 
   let at : model =
    fun location ~ret ~actuals astate ->
-    let crumb = PulseDomain.ValueHistory.Call {f= `Model "std::vector::at"; actuals; location} in
+    let crumb =
+      PulseDomain.ValueHistory.Call
+        { f= `Model "std::vector::at"
+        ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+        ; location }
+    in
     match actuals with
     | [AccessExpression vector_access_expr; index_exp] ->
         PulseOperations.read location
@@ -154,7 +176,10 @@ module StdVector = struct
     match actuals with
     | [AccessExpression vector; _value] ->
         let crumb =
-          PulseDomain.ValueHistory.Call {f= `Model "std::vector::reserve"; actuals; location}
+          PulseDomain.ValueHistory.Call
+            { f= `Model "std::vector::reserve"
+            ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+            ; location }
         in
         reallocate_internal_array [crumb] vector Reserve location astate
         >>= PulseOperations.StdVector.mark_reserved location vector
@@ -168,7 +193,10 @@ module StdVector = struct
     match actuals with
     | [AccessExpression vector; _value] ->
         let crumb =
-          PulseDomain.ValueHistory.Call {f= `Model "std::vector::push_back"; actuals; location}
+          PulseDomain.ValueHistory.Call
+            { f= `Model "std::vector::push_back"
+            ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
+            ; location }
         in
         PulseOperations.StdVector.is_reserved location vector astate
         >>= fun (astate, is_reserved) ->

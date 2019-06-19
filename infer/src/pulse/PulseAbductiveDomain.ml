@@ -85,6 +85,12 @@ let ( <= ) ~lhs ~rhs =
         ~rhs:(rhs.post :> PulseDomain.t)
 
 
+let explain_access_expr access_expr {post} =
+  PulseDomain.explain_access_expr access_expr (post :> base_domain)
+
+
+let explain_hil_exp hil_exp {post} = PulseDomain.explain_hil_exp hil_exp (post :> base_domain)
+
 module Stack = struct
   let is_abducible astate var =
     (* HACK: formals are pre-registered in the initial state *)
@@ -375,7 +381,9 @@ module PrePost = struct
         | Error invalidated_by ->
             Error
               (PulseDiagnostic.AccessToInvalidAddress
-                 {access= access_expr; invalidated_by; accessed_by= {action; history}})
+                 { access= explain_access_expr access_expr call_state.astate
+                 ; invalidated_by
+                 ; accessed_by= {action; history} })
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result
@@ -730,3 +738,6 @@ module PrePost = struct
         | Some astate_post ->
             Ok astate_post )
 end
+
+let explain_access_expr access_expr {post} =
+  PulseDomain.explain_access_expr access_expr (post :> base_domain)

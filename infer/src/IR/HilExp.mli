@@ -64,6 +64,8 @@ module AccessExpression : sig
     -> f_array_offset:('accum -> t option -> 'accum * 'array_index)
     -> 'accum * AccessPath.base * 'array_index Access.t list
 
+  val to_accesses : access_expression -> AccessPath.base * t option Access.t list
+
   val to_access_path : access_expression -> AccessPath.t
 
   val to_access_paths : access_expression list -> AccessPath.t list
@@ -92,6 +94,12 @@ module AccessExpression : sig
   val fold_vars : (t, Var.t, 'accum) Container.fold
 
   val add_access : _ Access.t -> t -> t option
+
+  val add_accesses : _ Access.t list -> t -> t option
+
+  val add_rev_accesses : _ Access.t list -> t -> t option
+
+  val appears_in_source_code : t -> bool
 
   val to_source_string : t -> string option
   (** get a string representation of the access expression in terms of symbols that appear in the
