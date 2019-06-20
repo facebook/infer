@@ -6,6 +6,7 @@
  */
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -45,5 +46,18 @@ class CollectionsTest {
 
   void copy_linear(List<String> list_from, List<String> list_to) {
     Collections.copy(list_to, list_from);
+  }
+
+  void unmodifiable_linear(List<String> list) {
+    List<String> unmod_list = Collections.unmodifiableList(list);
+    for (int i = 0; i < unmod_list.size(); i++) {}
+  }
+
+  void unmodifiable_map(Map<String, String> map) {
+    for (Map.Entry<String, String> entry : Collections.unmodifiableMap(map).entrySet()) {}
+  }
+
+  void unmodifiable_set(Set<Integer> set) {
+    for (Integer el : Collections.unmodifiableSet(set)) {}
   }
 }

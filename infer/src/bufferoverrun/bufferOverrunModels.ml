@@ -817,6 +817,11 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+let unmodifiable _ s =
+  String.is_prefix ~prefix:"unmodifiable" s
+  && List.exists ~f:(fun suffix -> String.is_suffix ~suffix s) ["Set"; "Collection"; "Map"; "List"]
+
+
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -939,6 +944,8 @@ module Call = struct
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
         (* model sets as lists *)
+      ; +PatternMatch.implements_collections
+        &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
       ; +PatternMatch.implements_collections
         &:: "singleton" <>$ capt_exp $--> Collection.singleton_collection
       ; +PatternMatch.implements_collections
