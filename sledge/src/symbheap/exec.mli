@@ -7,7 +7,8 @@
 
 (** Symbolic Execution *)
 
-val assume : Exp.t -> Sh.t -> Sh.t option
+val assume : Sh.t -> Exp.t -> Sh.t option
+val return : Sh.t -> Var.t -> Exp.t -> Sh.t
 val inst : Sh.t -> Llair.inst -> (Sh.t, unit) result
 
 val intrinsic :

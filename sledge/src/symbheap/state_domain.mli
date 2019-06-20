@@ -12,16 +12,25 @@ type t [@@deriving equal, sexp_of]
 val pp : t pp
 val init : Global.t vector -> t
 val join : t -> t -> t
-val assume : t -> Exp.t -> t option
+val exec_assume : t -> Exp.t -> t option
 val exec_inst : t -> Llair.inst -> (t, unit) result
+val exec_return : t -> Var.t -> Exp.t -> t
 
 val exec_intrinsic :
   t -> Var.t option -> Var.t -> Exp.t list -> (t, unit) result option
 
 type from_call [@@deriving compare, equal, sexp]
 
-val call : Exp.t list -> Var.t list -> Var.Set.t -> t -> t * from_call
-val retn : Exp.t option -> Var.t option -> Var.Set.t -> from_call -> t -> t
+val call :
+     Exp.t list
+  -> Var.t list
+  -> Var.Set.t
+  -> ?temps:Var.Set.t
+  -> t
+  -> t * from_call
+
+val post : Var.Set.t -> t -> t
+val retn : Var.t list -> from_call -> t -> t
 
 val resolve_callee :
   (Var.t -> Llair.func list) -> Exp.t -> t -> Llair.func list

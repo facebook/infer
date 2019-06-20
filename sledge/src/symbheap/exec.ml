@@ -33,7 +33,9 @@ let zero = Exp.integer Z.zero Typ.siz
  * Instruction small axioms
  *)
 
-let assume cnd pre =
+let return pre formal exp = Sh.and_ (Exp.eq (Exp.var formal) exp) pre
+
+let assume pre cnd =
   let post = Sh.and_ cnd pre in
   if Sh.is_false post then None else Some post
 

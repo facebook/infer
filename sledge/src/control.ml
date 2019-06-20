@@ -29,16 +29,13 @@ module Stack : sig
     -> t option
 
   val pop_return :
-       t
-    -> init:'a
-    -> f:(Var.t option -> Var.Set.t -> Domain.from_call -> 'a -> 'a)
-    -> (Llair.jump * 'a * t) option
+    t -> (Var.Set.t * Domain.from_call * Llair.jump * t) option
 
   val pop_throw :
        t
     -> init:'a
-    -> f:(Var.t option -> Var.Set.t -> Domain.from_call -> 'a -> 'a)
-    -> (Llair.jump * 'a * t) option
+    -> unwind:(Var.t list -> Var.Set.t -> Domain.from_call -> 'a -> 'a)
+    -> (Var.Set.t * Domain.from_call * Llair.jump * t * 'a) option
 end = struct
   type t =
     | Locals of Var.Set.t * t
@@ -46,8 +43,7 @@ end = struct
         { retreating: bool
               (** return from a call not known to be nonrecursive *)
         ; dst: Llair.Jump.t
-        ; freturn: Var.t option
-        ; fthrow: Var.t
+        ; params: Var.t list
         ; from_call: Domain.from_call
         ; stk: t }
     | Throw of Llair.Jump.t * t
@@ -112,16 +108,15 @@ end = struct
     (if Set.is_empty lcls then stk else Locals (lcls, stk))
     |> check invariant
 
-  let push_return ~retreating dst freturn fthrow from_call stk =
-    Return {retreating; dst; freturn; fthrow; from_call; stk}
-    |> check invariant
+  let push_return ~retreating dst params from_call stk =
+    Return {retreating; dst; params; from_call; stk} |> check invariant
 
   let push_throw jmp stk =
     (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
     |> check invariant
 
-  let push_call {Llair.locals; parent= {freturn; fthrow}} ~retreating ~bound
-      ~return from_call ?throw stk =
+  let push_call {Llair.params; locals} ~retreating ~bound ~return from_call
+      ?throw stk =
     [%Trace.call fun {pf} -> pf "%a" print_abbrev stk]
     ;
     let rec count_f_in_stack acc f = function
@@ -137,36 +132,28 @@ end = struct
       Some
         (push_jump locals
            (push_throw throw
-              (push_return ~retreating return freturn fthrow from_call stk)))
-    )
+              (push_return ~retreating return params from_call stk))) )
     |>
     [%Trace.retn fun {pf} _ ->
       pf "%d of %a on stack" n Llair.Jump.pp return]
 
-  let pop_return stk ~init ~f =
+  let pop_return stk =
     let rec pop_return_ scope = function
       | Locals (locals, stk) -> pop_return_ (Set.union locals scope) stk
       | Throw (_, stk) -> pop_return_ scope stk
-      | Return {dst; freturn; from_call; stk} ->
-          let dst =
-            match freturn with
-            | Some freturn -> {dst with args= Exp.var freturn :: dst.args}
-            | None -> dst
-          in
-          Some (dst, f freturn scope from_call init, stk)
+      | Return {from_call; dst; stk} -> Some (scope, from_call, dst, stk)
       | Empty -> None
     in
     pop_return_ Var.Set.empty stk
 
-  let pop_throw stk ~init ~f =
+  let pop_throw stk ~init ~unwind =
     let rec pop_throw_ scope state = function
       | Locals (locals, stk) ->
           pop_throw_ (Set.union locals scope) state stk
-      | Return {freturn; from_call; stk} ->
-          pop_throw_ Var.Set.empty (f freturn scope from_call state) stk
-      | Throw (dst, Return {fthrow; from_call; stk}) ->
-          let dst = {dst with args= Exp.var fthrow :: dst.args} in
-          Some (dst, f (Some fthrow) scope from_call state, stk)
+      | Return {params; from_call; stk} ->
+          pop_throw_ Var.Set.empty (unwind params scope from_call state) stk
+      | Throw (dst, Return {from_call; stk}) ->
+          Some (scope, from_call, dst, stk, state)
       | Empty -> None
       | Throw _ as stk -> violates invariant stk
     in
@@ -279,8 +266,8 @@ let exec_goto stk state block ({dst; retreating} : Llair.jump) =
   let stk = Stack.push_jump dst.locals stk in
   Work.add ~prev:block ~retreating stk state dst
 
-let exec_jump stk state block ({dst; args} as jmp : Llair.jump) =
-  let state = Domain.jump args dst.params dst.locals state in
+let exec_jump ?temps stk state block ({dst; args} as jmp : Llair.jump) =
+  let state = Domain.jump args dst.params dst.locals ?temps state in
   exec_goto stk state block jmp
 
 let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
@@ -299,20 +286,52 @@ let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let exec_pop pop stk state (block : Llair.block) exp =
+let exec_return stk pre_state (block : Llair.block) exp =
   [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
   ;
-  ( match pop stk ~init:state ~f:(Domain.retn exp) with
-  | Some ((jmp : Llair.jump), state, stk) -> exec_jump stk state block jmp
+  ( match Stack.pop_return stk with
+  | Some (scope, from_call, retn_site, stk) ->
+      let freturn = block.parent.freturn in
+      let exit_state =
+        match (freturn, exp) with
+        | Some freturn, Some return_val ->
+            Domain.exec_return pre_state freturn return_val
+        | None, None -> pre_state
+        | _ -> violates Llair.Func.invariant block.parent
+      in
+      let post_state = Domain.post scope from_call exit_state in
+      let retn_state =
+        Domain.retn block.parent.entry.params from_call post_state
+      in
+      exec_jump stk retn_state block
+        ~temps:(Option.fold ~f:Set.add freturn ~init:Var.Set.empty)
+        ( match freturn with
+        | Some freturn -> Llair.Jump.push_arg (Exp.var freturn) retn_site
+        | None -> retn_site )
   | None -> Work.skip )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let exec_return stk state block exp =
-  exec_pop Stack.pop_return stk state block exp
-
-let exec_throw stk state block exc =
-  exec_pop Stack.pop_throw stk state block (Some exc)
+let exec_throw stk pre_state (block : Llair.block) exc =
+  [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
+  ;
+  let unwind params scope from_call state =
+    Domain.retn params from_call (Domain.post scope from_call state)
+  in
+  ( match Stack.pop_throw stk ~unwind ~init:pre_state with
+  | Some (scope, from_call, retn_site, stk, unwind_state) ->
+      let fthrow = block.parent.fthrow in
+      let exit_state = Domain.exec_return unwind_state fthrow exc in
+      let post_state = Domain.post scope from_call exit_state in
+      let retn_state =
+        Domain.retn block.parent.entry.params from_call post_state
+      in
+      exec_jump stk retn_state block
+        ~temps:(Set.add Var.Set.empty fthrow)
+        (Llair.Jump.push_arg (Exp.var fthrow) retn_site)
+  | None -> Work.skip )
+  |>
+  [%Trace.retn fun {pf} _ -> pf ""]
 
 let exec_skip_func :
     Stack.t -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
@@ -342,12 +361,12 @@ let exec_term :
   | Switch {key; tbl; els} ->
       Vector.fold tbl
         ~f:(fun x (case, jump) ->
-          match Domain.assume state (Exp.eq key case) with
+          match Domain.exec_assume state (Exp.eq key case) with
           | Some state -> exec_jump stk state block jump |> Work.seq x
           | None -> x )
         ~init:
           ( match
-              Domain.assume state
+              Domain.exec_assume state
                 (Vector.fold tbl ~init:(Exp.bool true)
                    ~f:(fun b (case, _) -> Exp.and_ (Exp.dq key case) b))
             with
@@ -356,7 +375,7 @@ let exec_term :
   | Iswitch {ptr; tbl} ->
       Vector.fold tbl ~init:Work.skip ~f:(fun x (jump : Llair.jump) ->
           match
-            Domain.assume state
+            Domain.exec_assume state
               (Exp.eq ptr
                  (Exp.label
                     ~parent:(Var.name jump.dst.parent.name.var)

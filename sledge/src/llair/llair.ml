@@ -276,6 +276,8 @@ module Jump = struct
   let mk lbl args =
     {dst= {dummy_block with lbl}; args; retreating= false}
     |> check invariant
+
+  let push_arg arg jmp = {jmp with args= arg :: jmp.args}
 end
 
 (** Basic-Block Terminators *)
@@ -285,7 +287,7 @@ module Term = struct
 
   let pp = pp_term
 
-  let invariant term =
+  let invariant ?parent term =
     Invariant.invariant [%here] term [%sexp_of: t]
     @@ fun () ->
     match term with
@@ -301,7 +303,12 @@ module Term = struct
             ~accept_return:(Option.is_some retn_typ && not ignore_result) ;
           Option.iter throw ~f:(Jump.invariant ~accept_return:true)
       | _ -> assert false )
-    | Return _ | Throw _ | Unreachable -> assert true
+    | Return {exp} -> (
+      match parent with
+      | Some parent ->
+          assert (Bool.(Option.is_some exp = Option.is_some parent.freturn))
+      | None -> assert true )
+    | Throw _ | Unreachable -> assert true
 
   let goto ~dst ~loc =
     Switch {key= Exp.bool false; tbl= Vector.empty; els= dst; loc}
@@ -318,14 +325,8 @@ module Term = struct
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
   let call ~func ~typ ~args ~return ~throw ~ignore_result ~loc =
-    Call
-      { call= {dst= func; args; retreating= false}
-      ; typ
-      ; return
-      ; throw
-      ; ignore_result
-      ; loc }
-    |> check invariant
+    let call = {dst= func; args; retreating= false} in
+    Call {call; typ; return; throw; ignore_result; loc} |> check invariant
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant
   let throw ~exc ~loc = Throw {exc; loc} |> check invariant
@@ -354,11 +355,7 @@ module Block = struct
 
   let mk ~lbl ~params ~cmnd ~term =
     let locals =
-      let locals_cmnd cmnd vs =
-        Vector.fold_right cmnd ~init:vs ~f:Inst.union_locals
-      in
-      let locals_params params vs = List.fold params ~init:vs ~f:Set.add in
-      locals_params params (locals_cmnd cmnd Var.Set.empty)
+      Vector.fold_right ~f:Inst.union_locals cmnd ~init:Var.Set.empty
     in
     { lbl
     ; params
@@ -408,7 +405,7 @@ module Func = struct
     assert (func == func.entry.parent) ;
     let {name= {typ}; cfg} = func in
     match typ with
-    | Pointer _ ->
+    | Pointer {elt= Function {return}} ->
         assert (
           not
             (Vector.contains_dup cfg ~compare:(fun b1 b2 ->
@@ -419,7 +416,8 @@ module Func = struct
                (List.concat_map (Vector.to_list cfg) ~f:(fun {params} ->
                     params ))
                ~compare:Var.compare) ) ;
-        iter_term func ~f:(fun term -> Term.invariant term)
+        assert (Bool.(Option.is_some return = Option.is_some func.freturn)) ;
+        iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 
   let find functions name = Map.find functions name
@@ -427,21 +425,18 @@ module Func = struct
   let mk ~(name : Global.t) ~entry ~cfg =
     let locals =
       Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
-          Set.union locals block.locals )
-    in
-    let freturn, locals =
-      match name.typ with
-      | Pointer {elt= Function {return= Some _}} ->
-          let freturn, locals =
-            Var.fresh "freturn" ~wrt:(Set.add_list entry.params locals)
-          in
-          (Some freturn, locals)
-      | _ -> (None, locals)
-    in
-    let fthrow, locals =
-      Var.fresh "fthrow" ~wrt:(Set.add_list entry.params locals)
+          Set.add_list block.params (Set.union locals block.locals) )
     in
     let entry = {entry with locals} in
+    let wrt = Set.add_list entry.params locals in
+    let freturn, wrt =
+      match name.typ with
+      | Pointer {elt= Function {return= Some _}} ->
+          let freturn, wrt = Var.fresh "freturn" ~wrt in
+          (Some freturn, wrt)
+      | _ -> (None, wrt)
+    in
+    let fthrow, _ = Var.fresh "fthrow" ~wrt in
     let func = {name; entry; cfg; freturn; fthrow} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;

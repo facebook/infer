@@ -21,8 +21,8 @@ let join (entry_a, current_a) (entry_b, current_b) =
   assert (State_domain.equal entry_b entry_a) ;
   (entry_a, State_domain.join current_a current_b)
 
-let assume (entry, current) q =
-  match State_domain.assume current q with
+let exec_assume (entry, current) cnd =
+  match State_domain.exec_assume current cnd with
   | Some current -> Some (entry, current)
   | None -> None
 
@@ -30,6 +30,9 @@ let exec_inst (entry, current) inst =
   match State_domain.exec_inst current inst with
   | Ok current -> Ok (entry, current)
   | Error e -> Error e
+
+let exec_return (entry, current) formal actual =
+  (entry, State_domain.exec_return current formal actual)
 
 let exec_intrinsic (entry, current) result intrinsic actuals =
   match State_domain.exec_intrinsic current result intrinsic actuals with
@@ -41,8 +44,10 @@ type from_call =
   {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
 [@@deriving sexp_of]
 
-let jump actuals formals locals (entry, current) =
-  let current, _ = State_domain.call actuals formals locals current in
+let jump actuals formals locals ?temps (entry, current) =
+  let current, _ =
+    State_domain.call actuals formals locals ?temps current
+  in
   (entry, current)
 
 let call actuals formals locals (_, current) =
@@ -55,11 +60,17 @@ let call actuals formals locals (_, current) =
   |>
   [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
-let retn actual formal locals {caller_entry; state_from_call} (_, current) =
+let post locals {caller_entry} (_, current) =
   [%Trace.call fun {pf} -> pf ""]
   ;
-  ( caller_entry
-  , State_domain.retn actual formal locals state_from_call current )
+  (caller_entry, State_domain.post locals current)
+  |>
+  [%Trace.retn fun {pf} -> pf "@,%a" pp]
+
+let retn formals {caller_entry; state_from_call} (_, current) =
+  [%Trace.call fun {pf} -> pf ""]
+  ;
+  (caller_entry, State_domain.retn formals state_from_call current)
   |>
   [%Trace.retn fun {pf} -> pf "@,%a" pp]
 

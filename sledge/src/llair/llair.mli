@@ -95,7 +95,7 @@ and term = private
 and block = private
   { lbl: label
   ; params: Var.t list  (** Formal parameters, first-param-last stack *)
-  ; locals: Var.Set.t  (** Local variables, including [params]. *)
+  ; locals: Var.Set.t  (** Local variables *)
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
@@ -148,6 +148,7 @@ module Jump : sig
 
   val pp : jump pp
   val mk : string -> Exp.t list -> jump
+  val push_arg : Exp.t -> jump -> jump
 end
 
 module Term : sig
