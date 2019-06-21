@@ -231,7 +231,9 @@ let analyze_proc ?caller_pdesc callee_pdesc =
     in
     current_taskbar_status := Some (t0, status) ;
     !ProcessPoolState.update_status t0 status ;
-    callbacks.analyze_ondemand summary pdesc
+    let summary = callbacks.analyze_ondemand summary pdesc in
+    if Topl.is_active () then Topl.add_errors callbacks.exe_env summary ;
+    summary
   in
   Some (run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc)
 

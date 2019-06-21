@@ -154,7 +154,127 @@ let instrument tenv procdesc =
     let f _node = instrument_instruction in
     tt "instrument\n" ;
     let _updated = Procdesc.replace_instrs_by procdesc ~f in
-    tt "add types %d\n" !max_args ; add_types tenv ; tt "done\n" )
+    tt "add types %d@\n" !max_args ; add_types tenv ; tt "done@\n" )
+
+
+(** [lookup_static_var var prop] expects [var] to have the form [Exp.Lfield (obj, fieldname)],
+and looks up inside the spatial part of [prop]. This function is currently used only to get
+around some limitations:
+  (a) one cannot do boolean-conjunction on symbolic heaps; and
+  (b) the prover fails to see that 0!=o.f * o|-f->0 is inconsistent
+*)
+let lookup_static_var env (var : Exp.t) (prop : 'a Prop.t) : Exp.t option =
+  let from_strexp = function Sil.Eexp (e, _) -> Some e | _ -> None in
+  let get_field field (f, e) = if Typ.Fieldname.equal field f then from_strexp e else None in
+  let get_strexp field = function
+    | Sil.Estruct (fs, _inst) ->
+        List.find_map ~f:(get_field field) fs
+    | _ ->
+        None
+  in
+  let get_hpred obj field = function
+    | Sil.Hpointsto (obj', se, _typ) when Exp.equal obj obj' ->
+        get_strexp field se
+    | _ ->
+        None
+  in
+  match var with
+  | Exp.Lfield (obj, field, _typ) ->
+      let iter = Prop.prop_iter_create prop in
+      let iter = Option.bind ~f:(fun x -> Prop.prop_iter_find x (get_hpred obj field)) iter in
+      let state = Option.map ~f:(Prop.prop_iter_current env) iter in
+      Option.map ~f:snd state
+  | _ ->
+      None
+
+
+let is_inconsistent env query =
+  tt "ask if inconsistent: %a@\n" (Prop.pp_prop Pp.text) query ;
+  let prover_result = Prover.check_inconsistency_base env query in
+  tt "prover_result = %b@\n" prover_result ;
+  prover_result
+
+
+let conjoin_props env post pre =
+  (* PRE: p and q have no footprints: that would make no sense in pre/posts. *)
+  (* TODO: Ideally, this should be boolean-conjunction. The function [Dom.prop_partial_meet]
+    comes close but fails in all practical cases. *)
+  List.fold ~init:post ~f:(Prop.prop_atom_and env) (Prop.get_pure pre)
+
+
+(**
+For each (pre, post) pair of symbolic heaps and each (start, error) pair of Topl automata states,
+define
+  φ := pre & post & (state_pre==start)
+  ψ := φ & (state_post!=error)
+where & stands for boolean conjunction, in pre all program variables get suffix "_pre", and in post
+all program variables get suffix "_post".
+
+Warn when φ is consistent and ψ is inconsistent. (TODO: experiment with asking if it is not forced
+but *possible* to get to error.)
+
+To compute (pre & post) the function [conjoin_props] from above is used, which returns a weaker
+formula: in particular, the spatial part of pre is dropped. To get around some limitations of the
+prover we also use [lookup_static_var]; if a call to this function fails, we don't warn.
+*)
+let add_errors exe_env summary =
+  let proc_desc = summary.Summary.proc_desc in
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if not (ToplUtils.is_synthesized proc_name) then
+    let env = Exe_env.get_tenv exe_env proc_name in
+    let preposts : Prop.normal BiabductionSummary.spec list =
+      let biabduction_summary = summary.Summary.payloads.Payloads.biabduction in
+      let check_phase x =
+        if not BiabductionSummary.(equal_phase x.phase RE_EXECUTION) then
+          L.die InternalError "Topl.add_errors should only be called after RE_EXECUTION"
+      in
+      let extract_specs x = BiabductionSummary.(normalized_specs_to_specs x.preposts) in
+      Option.iter ~f:check_phase biabduction_summary ;
+      Option.value_map ~default:[] ~f:extract_specs biabduction_summary
+    in
+    let subscript varname sub = Printf.sprintf "%s_%s" varname sub in
+    let subscript_pre varname = subscript varname "pre" in
+    let subscript_post varname = subscript varname "post" in
+    let state_var = ToplUtils.static_var ToplName.state in
+    let handle_preposts BiabductionSummary.{pre; posts} =
+      let pre = BiabductionSummary.Jprop.to_prop pre in
+      tt "PRE = %a@\n" (Prop.pp_prop Pp.text) pre ;
+      let handle_start_error start_pre_value (start, error) =
+        let start_exp = Exp.int (IntLit.of_int start) in
+        let error_exp = Exp.int (IntLit.of_int error) in
+        let pre_start =
+          Prop.normalize env (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_pre) pre)
+        in
+        let pre_start = Prop.conjoin_eq env start_exp start_pre_value pre_start in
+        let handle_post (post, _path (* TODO: use for getting a trace*)) =
+          let handle_state_post_value state_post_value =
+            tt "POST = %a@\n" (Prop.pp_prop Pp.text) post ;
+            let loc = Procdesc.get_loc proc_desc in
+            let post =
+              Prop.normalize env (Prop.prop_expmap (Exp.rename_pvars ~f:subscript_post) post)
+            in
+            let phi = conjoin_props env post pre_start in
+            let psi = Prop.conjoin_neq env error_exp state_post_value phi in
+            if (not (is_inconsistent env phi)) && is_inconsistent env psi then (
+              let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
+              let message = Printf.sprintf "property %s reaches error" property in
+              tt "INCONSISTENT (WARN)@\n" ;
+              Reporting.log_error summary IssueType.topl_error ~loc message )
+            else tt "CONSISTENT (do NOT warn)@\n"
+          in
+          (* Don't warn if [lookup_static_var] fails. *)
+          Option.iter ~f:handle_state_post_value (lookup_static_var env state_var post)
+        in
+        List.iter ~f:handle_post posts
+      in
+      let start_error_pairs = ToplAutomaton.get_start_error_pairs (Lazy.force automaton) in
+      let handle_state_pre_value state_pre_value =
+        List.iter ~f:(handle_start_error state_pre_value) start_error_pairs
+      in
+      (* Don't warn if [lookup_static_var] fails. *)
+      Option.iter ~f:handle_state_pre_value (lookup_static_var env state_var pre)
+    in
+    List.iter ~f:handle_preposts preposts
 
 
 let sourcefile = ToplMonitor.sourcefile

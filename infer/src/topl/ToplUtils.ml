@@ -40,6 +40,8 @@ let static_var x : Exp.t =
 
 let local_var proc_name x : Exp.t = Exp.Lvar (Pvar.mk (Mangled.from_string x) proc_name)
 
+let constant_int (x : int) : Exp.t = Exp.int (IntLit.of_int x)
+
 let is_synthesized = function
   | Typ.Procname.Java j ->
       String.equal ToplName.topl_property (Typ.Procname.Java.get_class_name j)

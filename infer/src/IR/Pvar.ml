@@ -281,3 +281,9 @@ let get_initializer_pname {pv_name; pv_kind} =
       else Some (Typ.Procname.from_string_c_fun name)
   | _ ->
       None
+
+
+let rename ~f {pv_name; pv_kind} =
+  let pv_name = Mangled.rename ~f pv_name in
+  let pv_hash = name_hash pv_name in
+  {pv_hash; pv_name; pv_kind}

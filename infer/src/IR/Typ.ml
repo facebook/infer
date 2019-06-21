@@ -1436,7 +1436,6 @@ module Fieldname = struct
     | _ ->
         None
 
-
   module Clang = struct
     let from_class_name class_name field_name = Clang {class_name; field_name}
   end

@@ -453,6 +453,7 @@ OPTIONS
              TAINTED_BUFFER_ACCESS (enabled by default),
              TAINTED_MEMORY_ALLOCATION (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
+             TOPL_ERROR (enabled by default),
              UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION (disabled by
            default),
              UNINITIALIZED_VALUE (enabled by default),

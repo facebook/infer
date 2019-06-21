@@ -152,3 +152,5 @@ val get_name_of_local_with_procname : t -> Mangled.t
 var and the name of the procname in case of locals *)
 
 val materialized_cpp_temporary : string
+
+val rename : f:(string -> string) -> t -> t

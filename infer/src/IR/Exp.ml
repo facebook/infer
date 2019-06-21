@@ -313,6 +313,34 @@ let rec gen_program_vars =
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
 
+let rec rename_pvars ~(f : string -> string) : t -> t =
+  let re e = rename_pvars ~f e in
+  let rv v = Pvar.rename ~f v in
+  function
+  | UnOp (op, e, t) ->
+      UnOp (op, re e, t)
+  | BinOp (op, e1, e2) ->
+      BinOp (op, re e1, re e2)
+  | Exn e ->
+      Exn (re e)
+  | Closure {name; captured_vars} ->
+      let captured_vars = List.map ~f:(function e, v, t -> (re e, rv v, t)) captured_vars in
+      Closure {name; captured_vars}
+  | Cast (t, e) ->
+      Cast (t, re e)
+  | Lvar v ->
+      Lvar (rv v)
+  | Lfield (e, fld, t) ->
+      Lfield (re e, fld, t)
+  | Lindex (e1, e2) ->
+      Lindex (re e1, re e2)
+  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
+      let dynamic_length = Option.map ~f:re dynamic_length in
+      Sizeof {typ; nbytes; dynamic_length; subtype}
+  | e (* Should have only cases without subexpressions. *) ->
+      e
+
+
 let zero_of_type typ =
   match typ.Typ.desc with
   | Typ.Tint _ ->

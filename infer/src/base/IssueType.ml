@@ -415,6 +415,8 @@ let complexity_increase ~kind ~is_on_cold_start =
   from_cost_string ~kind ~is_on_cold_start "%s_COMPLEXITY_INCREASE"
 
 
+let topl_error = from_string "TOPL_ERROR"
+
 let unary_minus_applied_to_unsigned_expression =
   from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
 

@@ -1,0 +1,8 @@
+property HasNext
+  prefix "Iterator"
+  prefix "List"
+  start -> start: *
+  start -> invalid: I = iterator(*)
+  invalid -> valid: hasNext(i)
+  valid -> invalid: next(i)
+  invalid -> error: next(i)

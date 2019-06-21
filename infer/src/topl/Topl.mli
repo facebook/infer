@@ -20,6 +20,9 @@ val instrument : Tenv.t -> Procdesc.t -> unit
 (** Inserts calls to the TOPL automaton. Mutates the arguments: it is the caller's responsibility
 to instrument procedures at most once. *)
 
+val add_errors : Exe_env.t -> Summary.t -> unit
+(** Adds error using {!Reporting}. *)
+
 val sourcefile : SourceFile.t
 (** The (fake) sourcefile in which synthesized code resides. *)
 

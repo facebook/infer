@@ -130,6 +130,10 @@ val ident_mem : t -> Ident.t -> bool
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
 
+val rename_pvars : f:(string -> string) -> t -> t
+(** Rename all Pvars according to the function [f]. WARNING: You want to rename pvars before you
+combine expressions from different symbolic states, which you RARELY want to.*)
+
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)
 

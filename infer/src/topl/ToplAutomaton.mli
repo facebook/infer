@@ -23,6 +23,8 @@ open! IStd
 *)
 type t
 
+type vname = ToplAst.property_name * ToplAst.vertex
+
 type vindex = int (* from 0 to vcount()-1, inclusive *)
 
 type tindex = int (* from 0 to tcount()-1, inclusive *)
@@ -33,6 +35,8 @@ val make : ToplAst.t list -> t
 
 val outgoing : t -> vindex -> tindex list
 
+val vname : t -> vindex -> vname
+
 val vcount : t -> int
 
 val transition : t -> tindex -> transition
@@ -40,3 +44,8 @@ val transition : t -> tindex -> transition
 val tcount : t -> int
 
 val max_args : t -> int
+
+val get_start_error_pairs : t -> (vindex * vindex) list
+(** Returns pairs [(i,j)] of vertex indices corresponding to pairs [((p, "start"), (p, "error"))] of
+vertex names, where [p] ranges over property names.
+POST: no vertex index occurs more than once in the result. *)

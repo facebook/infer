@@ -1,0 +1,2 @@
+codetoanalyze/java/topl/Iterators.java, Iterators.hasNextBad(java.util.List):void, 0, TOPL_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/Iterators.java, Iterators.hasNextInterproceduralBad(java.util.List):void, 0, TOPL_ERROR, no_bucket, ERROR, []
