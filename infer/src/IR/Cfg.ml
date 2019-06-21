@@ -33,7 +33,10 @@ let get_all_defined_proc_names cfg =
 (** Create a new procdesc *)
 let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   let pdesc = Procdesc.from_proc_attributes proc_attributes in
-  Typ.Procname.Hash.add cfg proc_attributes.proc_name pdesc ;
+  let pname = proc_attributes.proc_name in
+  if Typ.Procname.Hash.mem cfg pname then
+    L.die InternalError "Creating two procdescs for the same procname." ;
+  Typ.Procname.Hash.add cfg pname pdesc ;
   pdesc
 
 
