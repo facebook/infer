@@ -127,8 +127,6 @@ and template_spec_info =
       ; args: template_arg list }
 [@@deriving compare]
 
-val hash : t -> int
-
 val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit [@@warning "-32"]
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
@@ -627,9 +625,6 @@ module Fieldname : sig
   type t [@@deriving compare]
 
   val equal : t -> t -> bool
-
-  val hash : t -> int
-
   (** Equality for field names. *)
 
   (** Set for fieldnames *)

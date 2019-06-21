@@ -7,6 +7,8 @@
 
 open! IStd
 
+val shallow_equal : 'a -> 'a -> bool
+
 (**
   Helpers function to enforce physical equality.
 

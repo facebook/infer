@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module Hashtbl = Caml.Hashtbl
 module L = Logging
 
 (** Module for Type Environments. *)
 
 (** Hash tables on type names. *)
-module TypenameHash = Hashtbl.Make (Typ.Name)
+module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
+
+module TypenameHashNormalizer = MaximumSharing.ForHashtbl (TypenameHash)
 
 (** Type for type environment. *)
 type t = Typ.Struct.t TypenameHash.t
@@ -161,142 +162,12 @@ let store_to_filename tenv tenv_filename =
   if Config.debug_mode then store_debug_file tenv tenv_filename
 
 
-(** Use a prime for the initial hashtable size, since, typically, we expect a lot of types. 
-    Prime sizes make hash functions happier across table resizes. *)
-let medium_size_prime = 1003
-
-module type HashconsS = sig
-  module Hashtable : Caml.Hashtbl.S
-
-  val reset : unit -> unit
-
-  val hashcons : Hashtable.key -> Hashtable.key
-end
-
-module Hashcons (H : Caml.Hashtbl.S) : HashconsS with module Hashtable = H = struct
-  module Hashtable = H
-
-  let reset, hashcons =
-    let tbl : H.key H.t = H.create medium_size_prime in
-    ( (fun () -> H.reset tbl)
-    , fun x -> match H.find_opt tbl x with Some x' -> x' | None -> H.add tbl x x ; x )
-end
-
-module HashconsList (T : Caml.Hashtbl.HashedType) (H : HashconsS with type Hashtable.key = T.t) :
-  HashconsS with type Hashtable.key = T.t list = struct
-  module Hashtable = Hashtbl.Make (struct
-    type t = T.t list
-
-    let hash = Hashtbl.hash
-
-    let equal (x : t) (y : t) =
-      let open Polymorphic_compare in
-      x = y
-  end)
-
-  let reset, hashcons =
-    let tbl : T.t list Hashtable.t = Hashtable.create medium_size_prime in
-    ( (fun () -> Hashtable.reset tbl)
-    , fun x ->
-        let x = IList.map_changed x ~equal:phys_equal ~f:H.hashcons in
-        match Hashtable.find_opt tbl x with Some x' -> x' | None -> Hashtable.add tbl x x ; x )
-end
-
-module PnameHC = Hashcons (Typ.Procname.Hash)
-module PnameListHC = HashconsList (Typ.Procname) (PnameHC)
-module TnameHC = Hashcons (TypenameHash)
-module TnameListHC = HashconsList (Typ.Name) (TnameHC)
-module StringHC = Hashcons (Hashtbl.Make (String))
-module StringListHC = HashconsList (String) (StringHC)
-module FieldnameHC = Hashcons (Hashtbl.Make (Typ.Fieldname))
-module TypHC = Hashcons (Hashtbl.Make (Typ))
-
-module AnnotHC = struct
-  include Hashcons (Hashtbl.Make (Annot))
-
-  let hashcons ({class_name; parameters} : Annot.t) : Annot.t =
-    {class_name= StringHC.hashcons class_name; parameters= StringListHC.hashcons parameters}
-end
-
-module AnnotVis = struct
-  type t = Annot.t * bool [@@deriving compare]
-
-  let equal = [%compare.equal: t]
-
-  let hash = Hashtbl.hash
-end
-
-module AnnotVisHC = struct
-  include Hashcons (Hashtbl.Make (AnnotVis))
-
-  let hashcons (annot, visibility) = hashcons (AnnotHC.hashcons annot, visibility)
-end
-
-module AnnotItemHC = HashconsList (AnnotVis) (AnnotVisHC)
-
-module Field = struct
-  type t = Typ.Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
-
-  let equal = [%compare.equal: t]
-
-  let hash = Hashtbl.hash
-end
-
-module FieldHC = struct
-  include Hashcons (Hashtbl.Make (Field))
-
-  let hashcons (fieldname, typ, annot_item) =
-    hashcons (FieldnameHC.hashcons fieldname, TypHC.hashcons typ, AnnotItemHC.hashcons annot_item)
-end
-
-module FieldListHC = HashconsList (Field) (FieldHC)
-
-let reset_hashtables () =
-  PnameHC.reset () ;
-  PnameListHC.reset () ;
-  TnameHC.reset () ;
-  TnameListHC.reset () ;
-  StringHC.reset () ;
-  StringListHC.reset () ;
-  FieldnameHC.reset () ;
-  TypHC.reset () ;
-  AnnotHC.reset () ;
-  AnnotVisHC.reset () ;
-  AnnotItemHC.reset () ;
-  FieldHC.reset () ;
-  FieldListHC.reset ()
-
-
-(** Global tenv size is a problem in the genrule capture integration for java. 
-    This function tries to improve sharing of values in the tenv, and assumes 
-    Java data structures (it's still correct for Clangs, just not necessarily 
-    as effective. *)
-let canonicalize tenv =
-  reset_hashtables () ;
-  let result = create () in
-  let canonicalize_one tname
-      ({fields; statics; supers; methods; exported_objc_methods; annots} : Typ.Struct.t) =
-    let tname = TnameHC.hashcons tname in
-    let tstruct =
-      Typ.Struct.internal_mk_struct ~supers:(TnameListHC.hashcons supers)
-        ~fields:(FieldListHC.hashcons fields) ~statics:(FieldListHC.hashcons statics)
-        ~methods:(PnameListHC.hashcons methods)
-        ~exported_objc_methods:(PnameListHC.hashcons exported_objc_methods)
-        ~annots:(AnnotItemHC.hashcons annots) ()
-    in
-    TypenameHash.add result tname tstruct
-  in
-  TypenameHash.iter canonicalize_one tenv ;
-  reset_hashtables () ;
-  result
-
-
 let store_global tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
   L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
     (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
-  let tenv = canonicalize tenv in
+  let tenv = TypenameHashNormalizer.normalize tenv in
   L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
     (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
   global_tenv := Some tenv ;
