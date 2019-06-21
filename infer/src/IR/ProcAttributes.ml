@@ -173,6 +173,6 @@ let pp f
   F.fprintf f "; proc_id= %s }@]" (Typ.Procname.to_unique_id proc_name)
 
 
-module SQLite = SqliteUtils.MarshalledData (struct
+module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t
 end)

@@ -72,12 +72,17 @@ module type Data = sig
   val deserialize : Sqlite3.Data.t -> t
 end
 
+(** A default implementation of the Data API that encodes every objects as marshalled blobs with no sharing *)
+module MarshalledDataForComparison (D : sig
+  type t
+end) : Data with type t = D.t
+
 (** A default implementation of the Data API that encodes every objects as marshalled blobs *)
-module MarshalledData (D : sig
+module MarshalledDataNOTForComparison (D : sig
   type t
 end) : Data with type t = D.t
 
 (** A default implementation of the Data API that encodes None as a NULL SQLite value *)
-module MarshalledNullableData (D : sig
+module MarshalledNullableDataNOTForComparison (D : sig
   type t
 end) : Data with type t = D.t option

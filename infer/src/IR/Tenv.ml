@@ -76,6 +76,10 @@ let pp_per_file fmt = function
 
 
 module SQLite : SqliteUtils.Data with type t = per_file = struct
+  module Serializer = SqliteUtils.MarshalledDataNOTForComparison (struct
+    type nonrec t = t
+  end)
+
   type t = per_file
 
   let global_string = "global"
@@ -84,14 +88,14 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
     | Global ->
         Sqlite3.Data.TEXT global_string
     | FileLocal tenv ->
-        Sqlite3.Data.BLOB (Marshal.to_string tenv [])
+        Serializer.serialize tenv
 
 
-  let deserialize = function[@warning "-8"]
+  let deserialize = function
     | Sqlite3.Data.TEXT g when String.equal g global_string ->
         Global
-    | Sqlite3.Data.BLOB b ->
-        FileLocal (Marshal.from_string b 0)
+    | blob ->
+        FileLocal (Serializer.deserialize blob)
 end
 
 let merge ~src ~dst = TypenameHash.iter (fun pname cfg -> TypenameHash.replace dst pname cfg) src

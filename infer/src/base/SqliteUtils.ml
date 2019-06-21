@@ -107,10 +107,25 @@ module type Data = sig
   val deserialize : Sqlite3.Data.t -> t
 end
 
-module MarshalledData (D : sig
+module type T = sig
   type t
-end) =
-struct
+end
+
+module MarshalledDataForComparison (D : T) = struct
+  type t = D.t
+
+  let deserialize = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
+
+  (*
+    If the serialized data is used for comparison (e.g. used in WHERE clause), we need to normalize it.
+    Marshalling is brittle as it depends on sharing.
+
+    For now let's suppose that marshalling with no sharing is normalizing.
+  *)
+  let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [Marshal.No_sharing])
+end
+
+module MarshalledDataNOTForComparison (D : T) = struct
   type t = D.t
 
   let deserialize = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
@@ -118,10 +133,7 @@ struct
   let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [])
 end
 
-module MarshalledNullableData (D : sig
-  type t
-end) =
-struct
+module MarshalledNullableDataNOTForComparison (D : T) = struct
   type t = D.t option
 
   let deserialize = function[@warning "-8"]

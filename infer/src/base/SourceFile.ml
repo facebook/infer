@@ -180,19 +180,24 @@ let changed_sources_from_changed_files changed_files =
 
 
 module SQLite = struct
-  type nonrec t = t
+  module T = struct
+    type nonrec t = t
+  end
+
+  module Serializer = SqliteUtils.MarshalledDataForComparison (T)
+  include T
 
   let serialize = function
     | RelativeProjectRoot path ->
         (* show the most common paths as text (for debugging, possibly perf) *)
         Sqlite3.Data.TEXT path
     | _ as x ->
-        Sqlite3.Data.BLOB (Marshal.to_string x [])
+        Serializer.serialize x
 
 
-  let deserialize = function[@warning "-8"]
+  let deserialize = function
     | Sqlite3.Data.TEXT rel_path ->
         RelativeProjectRoot rel_path
-    | Sqlite3.Data.BLOB b ->
-        Marshal.from_string b 0
+    | blob ->
+        Serializer.deserialize blob
 end

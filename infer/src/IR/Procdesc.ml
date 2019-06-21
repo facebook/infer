@@ -867,7 +867,7 @@ let is_connected proc_desc =
       error
 
 
-module SQLite = SqliteUtils.MarshalledNullableData (struct
+module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)
 

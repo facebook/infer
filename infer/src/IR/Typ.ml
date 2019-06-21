@@ -19,7 +19,7 @@ module IntegerWidths = struct
 
   let java = {char_width= 16; short_width= 16; int_width= 32; long_width= 64; longlong_width= 64}
 
-  module SQLite = SqliteUtils.MarshalledNullableData (struct
+  module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
     type nonrec t = t
   end)
 
@@ -1359,33 +1359,31 @@ module Procname = struct
   let to_filename ?crc_only pname = to_concrete_filename ?crc_only pname
 
   module SQLite = struct
-    let pname_to_key =
-      Base.Hashtbl.create
-        ( module struct
-          type nonrec t = t
+    module T = struct
+      type nonrec t = t
 
-          let compare = compare
+      let compare = compare
 
-          let hash = hash
+      let hash = hash
 
-          let sexp_of_t p = Sexp.Atom (to_string p)
-        end )
+      let sexp_of_t p = Sexp.Atom (to_string p)
+    end
 
+    module Serializer = SqliteUtils.MarshalledDataForComparison (T)
+
+    let pname_to_key = Base.Hashtbl.create (module T)
 
     let serialize pname =
-      let default () = Sqlite3.Data.BLOB (Marshal.to_string pname []) in
+      let default () = Serializer.serialize pname in
       Base.Hashtbl.find_or_add pname_to_key pname ~default
 
 
-    let deserialize : Sqlite3.Data.t -> t = function[@warning "-8"]
-      | Sqlite3.Data.BLOB b ->
-          Marshal.from_string b 0
-
+    let deserialize = Serializer.deserialize
 
     let clear_cache () = Base.Hashtbl.clear pname_to_key
   end
 
-  module SQLiteList = SqliteUtils.MarshalledData (struct
+  module SQLiteList = SqliteUtils.MarshalledDataNOTForComparison (struct
     type nonrec t = t list
   end)
 end
