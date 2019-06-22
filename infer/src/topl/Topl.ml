@@ -57,7 +57,7 @@ let evaluate_static_guard label (e_fun, arg_ts) =
         let re = Str.regexp label.ToplAst.procedure_name in
         let result = Str.string_match re name 0 in
         if Config.trace_topl then
-          tt "match name='%s' re='%s' result=%b\n" name label.ToplAst.procedure_name result ;
+          tt "match name='%s' re='%s' result=%b@\n" name label.ToplAst.procedure_name result ;
         result
     | _ ->
         false
@@ -102,7 +102,7 @@ let instrument_instruction = function
       if not (Array.exists ~f:(fun x -> x) active_transitions) then [|i|]
       else (
         max_args := Int.max !max_args (List.length arg_ts) ;
-        tt "found %d arguments\n" (List.length arg_ts) ;
+        tt "found %d arguments@\n" (List.length arg_ts) ;
         let i1s = set_transitions loc active_transitions in
         let i2s = call_save_args loc ret_id ret_typ arg_ts in
         let i3s = call_execute loc in
@@ -152,7 +152,7 @@ let add_types tenv =
 let instrument tenv procdesc =
   if not (ToplUtils.is_synthesized (Procdesc.get_proc_name procdesc)) then (
     let f _node = instrument_instruction in
-    tt "instrument\n" ;
+    tt "instrument@\n" ;
     let _updated = Procdesc.replace_instrs_by procdesc ~f in
     tt "add types %d@\n" !max_args ; add_types tenv ; tt "done@\n" )
 
