@@ -767,7 +767,7 @@ conf-clean: clean
 	$(REMOVE) $(PYTHON_DIR)/inferlib/*.pyc
 	$(REMOVE) $(PYTHON_DIR)/inferlib/*/*.pyc
 	$(REMOVE) .buckversion
-	$(REMOVE) Makefile.config
+	$(REMOVE) Makefile.autoconf
 	$(REMOVE) acinclude.m4
 	$(REMOVE) aclocal.m4
 	$(REMOVE_DIR) autom4te.cache/
