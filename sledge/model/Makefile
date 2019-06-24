@@ -14,8 +14,13 @@ LLVM=$(ROOT)/llvm/_install/$(SWITCH)
 
 LIBCXXABI=$(ROOT)/llvm/projects/libcxxabi
 
+PLATFORM=$(shell uname)
+ifeq ($(PLATFORM),Linux)
+CLANG_ARGS += --sysroot=/usr
+endif
+
 cxxabi.bc : cxxabi.cpp
-	$(LLVM)/bin/clang --sysroot=/usr $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
+	$(LLVM)/bin/clang $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
 
 lib_fuzzer_main.bc : lib_fuzzer_main.c
 	$(LLVM)/bin/clang $(CLANG_ARGS) -c -emit-llvm -o $@ $<
