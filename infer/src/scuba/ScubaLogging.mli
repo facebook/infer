@@ -20,10 +20,6 @@ open! IStd
 val log_count : label:string -> value:int -> unit
 (** Log anything that can be counted. Events will be prefixed with "count." *)
 
-val log_many : LogEntry.t list -> unit
-
-val log_one : LogEntry.t -> unit
-
 val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 (**
     A helper to log execution time of a particular function.
@@ -34,7 +30,5 @@ val execute_with_time_logging : string -> (unit -> 'a) -> 'a
       let f a b = ScubaLogging.execute_with_time_logging "f" (fun () -> f a b)
     |}
  *)
-
-val flush_log_events : unit -> unit
 
 val register_global_log_flushing_at_exit : unit -> unit
