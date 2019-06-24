@@ -690,7 +690,7 @@ let minus_one (typ : Typ.t) =
 
 let simp_convert signed (dst : Typ.t) src arg =
   match (dst, arg) with
-  | _ when Typ.equal dst src -> arg
+  | _ when Typ.castable dst src -> arg
   | Integer {bits= m}, Integer {data; typ= Integer {bits= n}} ->
       integer (Z.clamp ~signed (min m n) data) dst
   | _ -> App {op= Convert {signed; dst; src}; arg}
