@@ -45,7 +45,6 @@ and term =
 and block =
   { lbl: label
   ; params: Var.t list
-  ; locals: Var.Set.t
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
@@ -54,10 +53,10 @@ and block =
 and cfg = block vector
 
 (* [entry] is not part of [cfg] since it is special in several ways: its
-   params are the func params, its locals are all the locals in it plus the
-   cfg, and it cannot be jumped to, only called. *)
+   params are the func params, and it cannot be jumped to, only called. *)
 and func =
   { name: Global.t
+  ; locals: Var.Set.t
   ; entry: block
   ; cfg: cfg
   ; freturn: Var.t option
@@ -94,11 +93,10 @@ let sexp_of_term = function
   | Throw {exc; loc} -> sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
   | Unreachable -> Sexp.Atom "Unreachable"
 
-let sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
+let sexp_of_block {lbl; params; cmnd; term; parent; sort_index} =
   [%sexp
     { lbl: label
     ; params: Var.t list
-    ; locals: Var.Set.t
     ; cmnd: cmnd
     ; term: term
     ; parent: Var.t = parent.name.var
@@ -106,8 +104,8 @@ let sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
 
 let sexp_of_cfg v = [%sexp_of: block vector] v
 
-let sexp_of_func {name; entry; cfg} =
-  [%sexp {name: Global.t; entry: block; cfg: cfg}]
+let sexp_of_func {name; locals; entry; cfg} =
+  [%sexp {name: Global.t; locals: Var.Set.t; entry: block; cfg: cfg}]
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y = Int.compare x.sort_index y.sort_index
@@ -199,7 +197,6 @@ let pp_block fs {lbl; params; cmnd; term; sort_index} =
 let rec dummy_block =
   { lbl= "dummy"
   ; params= []
-  ; locals= Var.Set.empty
   ; cmnd= Vector.empty
   ; term= Unreachable
   ; parent= dummy_func
@@ -209,6 +206,7 @@ and dummy_func =
   let dummy_var = Var.program "dummy" in
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
   { name= Global.mk dummy_var dummy_ptr_typ Loc.none
+  ; locals= Var.Set.empty
   ; entry= dummy_block
   ; cfg= Vector.empty
   ; freturn= None
@@ -354,12 +352,8 @@ module Block = struct
     assert (not (List.contains_dup blk.params ~compare:Var.compare))
 
   let mk ~lbl ~params ~cmnd ~term =
-    let locals =
-      Vector.fold_right ~f:Inst.union_locals cmnd ~init:Var.Set.empty
-    in
     { lbl
     ; params
-    ; locals
     ; cmnd
     ; term
     ; parent= dummy_block.parent
@@ -403,7 +397,7 @@ module Func = struct
     Invariant.invariant [%here] func [%sexp_of: t]
     @@ fun () ->
     assert (func == func.entry.parent) ;
-    let {name= {typ}; cfg} = func in
+    let {name= {typ}; entry; cfg} = func in
     match typ with
     | Pointer {elt= Function {return}} ->
         assert (
@@ -413,8 +407,8 @@ module Func = struct
         assert (
           not
             (List.contains_dup
-               (List.concat_map (Vector.to_list cfg) ~f:(fun {params} ->
-                    params ))
+               (List.concat_map (entry :: Vector.to_list cfg) ~f:(fun blk ->
+                    blk.params ))
                ~compare:Var.compare) ) ;
         assert (Bool.(Option.is_some return = Option.is_some func.freturn)) ;
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
@@ -424,10 +418,15 @@ module Func = struct
 
   let mk ~(name : Global.t) ~entry ~cfg =
     let locals =
-      Vector.fold ~init:entry.locals cfg ~f:(fun locals block ->
-          Set.add_list block.params (Set.union locals block.locals) )
+      let locals_cmnd locals cmnd =
+        Vector.fold_right ~f:Inst.union_locals cmnd ~init:locals
+      in
+      let locals_block locals block =
+        Set.add_list block.params (locals_cmnd locals block.cmnd)
+      in
+      let init = locals_cmnd Var.Set.empty entry.cmnd in
+      Vector.fold ~f:locals_block cfg ~init
     in
-    let entry = {entry with locals} in
     let wrt = Set.add_list entry.params locals in
     let freturn, wrt =
       match name.typ with
@@ -437,7 +436,7 @@ module Func = struct
       | _ -> (None, wrt)
     in
     let fthrow, _ = Var.fresh "fthrow" ~wrt in
-    let func = {name; entry; cfg; freturn; fthrow} in
+    let func = {name; locals; entry; cfg; freturn; fthrow} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =

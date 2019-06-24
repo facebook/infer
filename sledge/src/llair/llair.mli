@@ -95,7 +95,6 @@ and term = private
 and block = private
   { lbl: label
   ; params: Var.t list  (** Formal parameters, first-param-last stack *)
-  ; locals: Var.Set.t  (** Local variables *)
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
@@ -109,6 +108,7 @@ and cfg
     parameters are the function parameters. *)
 and func = private
   { name: Global.t
+  ; locals: Var.Set.t  (** Local variables *)
   ; entry: block
   ; cfg: cfg
   ; freturn: Var.t option

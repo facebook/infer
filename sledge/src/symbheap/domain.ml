@@ -44,9 +44,9 @@ type from_call =
   {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
 [@@deriving sexp_of]
 
-let jump actuals formals locals ?temps (entry, current) =
+let jump actuals formals ?temps (entry, current) =
   let current, _ =
-    State_domain.call actuals formals locals ?temps current
+    State_domain.call actuals formals Var.Set.empty ?temps current
   in
   (entry, current)
 
