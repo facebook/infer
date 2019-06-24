@@ -392,3 +392,10 @@ let yojson_lookup yojson_assoc elt_name ~src ~f ~default =
   Option.value_map ~default
     ~f:(fun res -> f res ~src)
     (List.Assoc.find ~equal:String.equal yojson_assoc elt_name)
+
+
+let timeit ~f =
+  let start_time = Mtime_clock.counter () in
+  let ret_val = f () in
+  let duration_ms = Mtime_clock.count start_time |> Mtime.Span.to_ms |> int_of_float in
+  (ret_val, duration_ms)

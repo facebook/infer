@@ -315,7 +315,7 @@ let capture ~changed_files mode =
 
 
 let capture ~changed_files mode =
-  ScubaEventLogging.execute_with_time_logging "capture" (fun () -> capture ~changed_files mode)
+  ScubaLogging.execute_with_time_logging "capture" (fun () -> capture ~changed_files mode)
 
 
 let execute_analyze ~changed_files =
@@ -421,7 +421,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
 
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =
-  ScubaEventLogging.execute_with_time_logging "analyze_and_report" (fun () ->
+  ScubaLogging.execute_with_time_logging "analyze_and_report" (fun () ->
       analyze_and_report ?suppress_console_report ~changed_files mode )
 
 
@@ -570,7 +570,7 @@ let run_prologue mode =
 
 
 let run_prologue mode =
-  ScubaEventLogging.execute_with_time_logging "run_prologue" (fun () -> run_prologue mode)
+  ScubaLogging.execute_with_time_logging "run_prologue" (fun () -> run_prologue mode)
 
 
 let run_epilogue () =
@@ -582,7 +582,7 @@ let run_epilogue () =
   ()
 
 
-let run_epilogue () = ScubaEventLogging.execute_with_time_logging "run_epilogue" run_epilogue
+let run_epilogue () = ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue
 
 let read_config_changed_files () =
   match Config.changed_files_index with

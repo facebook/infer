@@ -131,3 +131,6 @@ val yojson_lookup :
   -> default:'a
   -> 'a
 (** Lookup a json value on an assoc list.  If not present, returns default.  Otherwise returns (f json_value ~src) where src has element name appended. f is typically one of the above _of_yojson functions. *)
+
+val timeit : f:(unit -> 'a) -> 'a * int
+(** Returns the execution time of [f] in milliseconds together with its result *)

@@ -22,7 +22,7 @@ let run driver_mode =
   run_epilogue ()
 
 
-let run driver_mode = ScubaEventLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
+let run driver_mode = ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
 
 let setup () =
   ( match Config.command with
@@ -101,6 +101,9 @@ let prepare_events_logging () =
 
 
 let () =
+  (* We specifically want to collect samples only from the main process until
+     we figure out what other entries and how we want to collect *)
+  if CommandLineOption.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
   ( if Config.linters_validate_syntax_only then
     match CTLParserHelper.validate_al_files () with
     | Ok () ->

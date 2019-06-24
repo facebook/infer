@@ -27,7 +27,7 @@ let analyze_target : TaskScheduler.target Tasks.doer =
           Dotty.print_icfg_dotty Topl.sourcefile Topl.cfg ;
         if Config.write_html then Printer.write_all_html_files source_file )
   in
-  (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures. 
+  (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
   let per_procedure_logging_granularity = 200 in
   (* [procs_left] is set to 1 so that we log the first procedure sent to us. *)
@@ -102,7 +102,7 @@ let main ~changed_files =
     if result then incr n_source_files_to_analyze ;
     result
   in
-  ScubaEventLogging.log_count ~name:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
+  ScubaLogging.log_count ~label:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let source_files_to_analyze = SourceFiles.get_all ~filter () in
   L.progress "Found %d%s source file%s to analyze in %s@." !n_source_files_to_analyze
     ( if Config.reactive_mode || Option.is_some changed_files then
