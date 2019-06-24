@@ -58,7 +58,7 @@ translate-report:
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	@(cd $(dir $*) && clang -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
+	@(cd $(dir $*) && clang++ -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
 
 # code to test analyze
 AnalyzeCs:=$(shell find * -not -path 'llvm/*' -name '*.c')
