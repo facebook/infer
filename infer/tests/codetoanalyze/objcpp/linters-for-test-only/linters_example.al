@@ -233,3 +233,18 @@ DEFINE-CHECKER ONLY_ONE_CLASS_METHOD = {
   SET mode = "ON";
 
 };
+
+DEFINE-CHECKER TEST_PROPERTY_ON_NTH_PARAMETER = {
+
+  LET check_prop =
+  WHEN
+     HOLDS-NEXT WITH-TRANSITION ParameterPos "2"
+      (has_value("Sample") HOLDS-EVENTUALLY)
+  HOLDS-IN-NODE CXXMemberCallExpr;
+
+  SET report_when =
+     call_cxx_method("test") AND check_prop;
+
+  SET message = "The second parameter is the string Sample";
+
+};

@@ -1,3 +1,4 @@
+codetoanalyze/objcpp/linters-for-test-only/BadRegexInPointNameForPerfLogging.mm, testRegexSafe, 17, TEST_PROPERTY_ON_NTH_PARAMETER, no_bucket, WARNING, []
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest::newWithAction, 25, TEST_REFERENCE, no_bucket, WARNING, []
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest::newWithAction, 42, TEST_REFERENCE, no_bucket, WARNING, []
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest::newWithActionRef, 22, TEST_REFERENCE, no_bucket, WARNING, []

@@ -842,6 +842,13 @@ let transition_via_specified_parameter ~pos an key =
   in
   let apply_decl arg = Decl arg in
   let apply_stmt arg = Stmt arg in
+  let compute_nodes parameters =
+    let parameter_of_corresp_key =
+      if pos then parameter_of_corresp_pos else invalid_param_name_use ()
+    in
+    let arg_stmt_opt = parameter_of_corresp_key parameters key in
+    node_opt_to_ast_node_list apply_stmt arg_stmt_opt
+  in
   match an with
   | Stmt (ObjCMessageExpr (_, stmt_list, _, omei)) ->
       let method_name = omei.omei_selector in
@@ -851,11 +858,9 @@ let transition_via_specified_parameter ~pos an key =
       let arg_stmt_opt = parameter_of_corresp_key stmt_list key in
       node_opt_to_ast_node_list apply_stmt arg_stmt_opt
   | Stmt (CallExpr (_, _ :: args, _)) ->
-      let parameter_of_corresp_key =
-        if pos then parameter_of_corresp_pos else invalid_param_name_use ()
-      in
-      let arg_stmt_opt = parameter_of_corresp_key args key in
-      node_opt_to_ast_node_list apply_stmt arg_stmt_opt
+      compute_nodes args
+  | Stmt (CXXMemberCallExpr (_, stmt_list, _)) ->
+      compute_nodes stmt_list
   | Decl (ObjCMethodDecl (_, named_decl_info, omdi)) ->
       let method_name = named_decl_info.ni_name in
       let parameter_of_corresp_key =
