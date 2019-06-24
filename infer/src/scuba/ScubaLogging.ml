@@ -31,6 +31,7 @@ let set_common_fields sample =
   |> maybe_add_normal ~name:"job_id" ~value:Config.job_id
   |> add_normal ~name:"command" ~value:(InferCommand.to_string Config.command)
   |> add_normal ~name:"infer_commit" ~value:Version.commit
+  |> add_normal ~name:"execution_id" ~value:(Int64.to_string Config.execution_id)
 
 
 let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =

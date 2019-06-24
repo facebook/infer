@@ -122,8 +122,9 @@ let () =
   setup () ;
   log_environment_info () ;
   prepare_events_logging () ;
-  if Config.debug_mode && CLOpt.is_originator then
+  if Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
+    L.progress "Execution ID %Ld@." Config.execution_id ) ;
   ( if Config.test_determinator then (
     TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
       Config.method_decls_info ;
