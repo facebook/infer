@@ -913,12 +913,13 @@ let xlate_instr :
         let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
         match llfunc_valuekind with
         | Function | Instruction _ | InlineAsm | Argument -> maybe_llfunc
-        | ConstantExpr ->
-            if Llvm.constexpr_opcode maybe_llfunc == BitCast then
-              Llvm.operand maybe_llfunc 0
-            else
+        | ConstantExpr -> (
+          match Llvm.constexpr_opcode maybe_llfunc with
+          | BitCast -> Llvm.operand maybe_llfunc 0
+          | IntToPtr -> todo "maybe handle calls with inttoptr" ()
+          | _ ->
               fail "Unknown value in a call instruction %a" pp_llvalue
-                maybe_llfunc ()
+                maybe_llfunc () )
         | _ ->
             fail "Unhandled operand type in a call instruction %a"
               pp_llvaluekind llfunc_valuekind ()
