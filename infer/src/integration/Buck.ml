@@ -160,9 +160,7 @@ let die_if_empty f = function [] -> f L.(die UserError) | l -> l
 let buck_config =
   lazy
     ( if Config.genrule_master_mode then
-      [ "infer.project_root=" ^ Utils.realpath Config.project_root
-      ; "infer.infer_out=" ^ Utils.realpath Config.results_dir
-      ; "infer.version=" ^ Version.versionString
+      [ "infer.version=" ^ Version.versionString
       ; "infer.infer_bin=" ^ Config.bin_dir ^/ Config.exe_basename
       ; "infer.mode=capture" ]
       |> List.fold ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)

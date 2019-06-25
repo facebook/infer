@@ -7,12 +7,7 @@ def _get_infer_bin():
   return read_config("infer", "infer_bin")
 
 def _get_project_root():
-  return read_config("infer", "project_root")
-
-def _get_infer_deps():
-  infer_out = read_config("infer", "infer_out")
-  infer_deps = "{}/infer-deps.txt".format(infer_out)
-  return infer_deps
+  return "\$(git rev-parse --show-toplevel)/infer/tests/build_systems/genrulecapture"
 
 def _infer_capture_genrule(
     name,
