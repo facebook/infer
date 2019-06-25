@@ -1358,7 +1358,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
 let transform : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
-  let entry_points = Config.find_list "entry_points" in
+  let entry_points = Config.find_list "entry-points" in
   Llvm_ipo.add_internalize_predicate pm (fun fn ->
       List.exists entry_points ~f:(String.equal fn) ) ;
   Llvm_ipo.add_global_dce pm ;

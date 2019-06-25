@@ -36,7 +36,11 @@ let context () =
 (* invoke the LTO build for the target *)
 let buck_build ~context target =
   let open Process in
-  eval ~context (run "buck" ["build"; "@mode/" ^ Lazy.force mode; target])
+  eval ~context
+    (run "buck"
+       [ "build"
+       ; "@mode/" ^ Lazy.force mode
+       ; "-c"; "sledge.build=True"; target ])
 
 (* split a fully-qualified buck target into file and rule *)
 let parse_target target =
@@ -119,6 +123,13 @@ let parse_linker_arg ~context rev_modules arg =
 
 (* build target and find constituent bitcode modules *)
 let bitcode_files_of ~target =
+  let target =
+    if
+      List.exists (Config.find_list "buck-target-patterns")
+        ~f:(fun substring -> String.is_substring target ~substring)
+    then target ^ "_sledge"
+    else target
+  in
   let context = context () in
   buck_build ~context target ;
   let modules =
@@ -142,7 +153,7 @@ let llvm_link_opt ~lib_fuzzer_harness ~output modules =
          (Lazy.force llvm_bin ^ "llvm-link")
          ( "-internalize"
          :: ( "-internalize-public-api-list="
-            ^ String.concat ~sep:"," (Config.find_list "entry_points") )
+            ^ String.concat ~sep:"," (Config.find_list "entry-points") )
          :: "-o=-" :: modules )
     |- run
          (Lazy.force llvm_bin ^ "opt")
@@ -220,7 +231,8 @@ let main ~(command : unit Command.basic_command) ~analyze =
      //fully/qualified/build:target. The mechanism used to integrate with \
      buck uses the arguments passed to the linker, so the target must \
      specify a binary that will be linked, not for instance a library \
-     archive."
+     archive. Sledge passes the --config sledge.build=True flag to buck, which can \
+     be used to configure buck targets for sledge."
   in
   Command.group ~summary ~readme ~preserve_subcommand_order:()
     [("analyze", analyze_cmd); ("bitcode", bitcode_cmd); ("link", link_cmd)]
