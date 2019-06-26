@@ -23,8 +23,10 @@ to instrument procedures at most once. *)
 val add_errors : Exe_env.t -> Summary.t -> unit
 (** Adds error using {!Reporting}. *)
 
-val sourcefile : SourceFile.t
-(** The (fake) sourcefile in which synthesized code resides. *)
+val sourcefile : unit -> SourceFile.t
+(** The (fake) sourcefile in which synthesized code resides. This function has a side-effect,
+because that's how [SourceFile] works, so do NOT call when Topl is inactive. *)
 
-val cfg : Cfg.t
-(** The CFG of the synthesized code. *)
+val cfg : unit -> Cfg.t
+(** The CFG of the synthesized code. This function has a side-effect, because that's how [Cfg]
+works, so do NOT call when Topl is inactive.*)

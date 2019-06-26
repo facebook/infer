@@ -10,10 +10,10 @@ open! IStd
 val generate : ToplAutomaton.t -> Typ.Procname.t -> Procdesc.t option
 (** [generate automaton proc_name] returns a CFG, provided that [proc_name] is a recognized procedure name *)
 
-val sourcefile : SourceFile.t
+val sourcefile : unit -> SourceFile.t
 (** For debug. *)
 
-val cfg : Cfg.t
+val cfg : unit -> Cfg.t
 (** For debug. This datastructure accumulates all the procedures that were synthesized by the
 current process. If the implementation is correct, then different processes synthesize the same
 procedures, given the same set of Topl properties. However, for debug, we print the datastructure

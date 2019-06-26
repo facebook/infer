@@ -19,12 +19,12 @@ let clear_caches () =
 
 let analyze_target : TaskScheduler.target Tasks.doer =
   let analyze_source_file exe_env source_file =
-    DB.Results_dir.init Topl.sourcefile ;
+    if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         Callbacks.analyze_file exe_env source_file ;
         if Topl.is_active () && Config.debug_mode then
-          Dotty.print_icfg_dotty Topl.sourcefile Topl.cfg ;
+          Dotty.print_icfg_dotty (Topl.sourcefile ()) (Topl.cfg ()) ;
         if Config.write_html then Printer.write_all_html_files source_file )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.

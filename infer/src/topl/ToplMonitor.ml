@@ -9,13 +9,21 @@ open! IStd
 module L = Logging
 
 let sourcefile =
-  let pid = Pid.to_int (Unix.getpid ()) in
-  SourceFile.create (Printf.sprintf "SynthesizedToplProperty%d.java" pid)
+  (* Avoid side-effect when [sourcefile ()] is never called. *)
+  let x =
+    lazy
+      (let pid = Pid.to_int (Unix.getpid ()) in
+       SourceFile.create (Printf.sprintf "SynthesizedToplProperty%d.java" pid))
+  in
+  fun () -> Lazy.force x
 
 
-let cfg = Cfg.create ()
+let cfg =
+  let x = lazy (Cfg.create ()) in
+  fun () -> Lazy.force x
 
-let sourcefile_location = Location.none sourcefile
+
+let sourcefile_location () = Location.none (sourcefile ())
 
 let type_of_paramtyp (_t : Typ.Procname.Parameter.t) : Typ.t = ToplUtils.any_type
 
@@ -50,11 +58,13 @@ let procedure proc_name (make_body : node_generator) : Procdesc.t =
   let attr =
     let formals = formals_of_procname proc_name in
     let is_defined = true in
-    let loc = sourcefile_location in
-    {(ProcAttributes.default sourcefile proc_name) with formals; is_defined; loc}
+    let loc = sourcefile_location () in
+    {(ProcAttributes.default (sourcefile ()) proc_name) with formals; is_defined; loc}
   in
-  let proc_desc = Cfg.create_proc_desc cfg attr in
-  let create_node kind instrs = Procdesc.create_node proc_desc sourcefile_location kind instrs in
+  let proc_desc = Cfg.create_proc_desc (cfg ()) attr in
+  let create_node kind instrs =
+    Procdesc.create_node proc_desc (sourcefile_location ()) kind instrs
+  in
   let exit_node = create_node Procdesc.Node.Exit_node [] in
   let set_succs node succs = Procdesc.node_set_succs_exn proc_desc node succs [exit_node] in
   let {start_node= body_start; exit_node= body_exit} = make_body create_node set_succs in
@@ -109,7 +119,7 @@ let pure_exp e : Exp.t * Sil.instr list =
   let pairs = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) es in
   let subst = List.map ~f:(function e, id -> (e, Exp.Var id)) pairs in
   let e' = Sil.exp_replace_exp subst e in
-  let mk_load (e, id) = Sil.Load (id, e, ToplUtils.any_type, sourcefile_location) in
+  let mk_load (e, id) = Sil.Load (id, e, ToplUtils.any_type, sourcefile_location ()) in
   let loads = List.map ~f:mk_load pairs in
   (e', loads)
 
@@ -130,13 +140,13 @@ let gen_if (cond : Exp.t) (true_branch : node_generator) (false_branch : node_ge
   let cond, preamble = pure_exp cond in
   let prune_true =
     let node_type = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody) in
-    let instr = Sil.Prune (cond, sourcefile_location, true, Sil.Ik_if) in
+    let instr = Sil.Prune (cond, sourcefile_location (), true, Sil.Ik_if) in
     create_node node_type (preamble @ [instr])
   in
   let prune_false =
     let node_type = Procdesc.Node.Prune_node (false, Sil.Ik_if, PruneNodeKind_MethodBody) in
     let instr =
-      Sil.Prune (Exp.UnOp (Unop.LNot, cond, None), sourcefile_location, false, Sil.Ik_if)
+      Sil.Prune (Exp.UnOp (Unop.LNot, cond, None), sourcefile_location (), false, Sil.Ik_if)
     in
     create_node node_type (preamble @ [instr])
   in
@@ -156,19 +166,19 @@ let stmt_node instrs : node_generator =
 
 let sil_assign lhs rhs =
   let tempvar = Ident.create_fresh Ident.knormal in
-  [ Sil.Load (tempvar, rhs, ToplUtils.any_type, sourcefile_location)
-  ; Sil.Store (lhs, ToplUtils.any_type, Exp.Var tempvar, sourcefile_location) ]
+  [ Sil.Load (tempvar, rhs, ToplUtils.any_type, sourcefile_location ())
+  ; Sil.Store (lhs, ToplUtils.any_type, Exp.Var tempvar, sourcefile_location ()) ]
 
 
 let assign lhs rhs : node_generator = stmt_node (sil_assign lhs rhs)
 
 let simple_call function_name : node_generator =
   let ret_id = Ident.create_fresh Ident.knormal in
-  stmt_node [ToplUtils.topl_call ret_id Tvoid sourcefile_location function_name []]
+  stmt_node [ToplUtils.topl_call ret_id Tvoid (sourcefile_location ()) function_name []]
 
 
 let gen_maybe_call ret_id : node_generator =
-  stmt_node [ToplUtils.topl_call ret_id (Tint IBool) sourcefile_location ToplName.maybe []]
+  stmt_node [ToplUtils.topl_call ret_id (Tint IBool) (sourcefile_location ()) ToplName.maybe []]
 
 
 let arguments_count proc_name = List.length (Typ.Procname.get_parameters proc_name)
@@ -240,7 +250,7 @@ let generate_execute_state automaton proc_name =
             ( ToplUtils.static_var ToplName.state
             , Typ.mk (Tint IInt)
             , Exp.int (IntLit.of_int transition.target)
-            , sourcefile_location ) ]
+            , sourcefile_location () ) ]
       :: step (ToplUtils.static_var ToplName.retval) transition.label.ToplAst.return
       :: Option.value_map ~default:[] ~f:(List.mapi ~f:arg_action)
            transition.label.ToplAst.arguments
@@ -297,5 +307,5 @@ let maybe_synthesize_it automaton proc_name =
 
 let generate automaton proc_name =
   IList.force_until_first_some
-    [ lazy (Typ.Procname.Hash.find_opt cfg proc_name)
+    [ lazy (Typ.Procname.Hash.find_opt (cfg ()) proc_name)
     ; lazy (maybe_synthesize_it automaton proc_name) ]

@@ -29,7 +29,10 @@ let automaton = lazy (ToplAutomaton.make (Lazy.force properties))
 
 let is_active () = not (List.is_empty (Lazy.force properties))
 
-let get_proc_desc proc_name = ToplMonitor.generate (Lazy.force automaton) proc_name
+let get_proc_desc proc_name =
+  (* Avoid calling [ToplMonitor.generate] when inactive to avoid side-effects. *)
+  if is_active () then ToplMonitor.generate (Lazy.force automaton) proc_name else None
+
 
 let get_proc_attr proc_name =
   (* TODO: optimize -- don't generate body just to get attributes  *)
@@ -277,6 +280,11 @@ let add_errors exe_env summary =
     List.iter ~f:handle_preposts preposts
 
 
-let sourcefile = ToplMonitor.sourcefile
+let sourcefile () =
+  if not (is_active ()) then L.die InternalError "Called Topl.sourcefile when Topl is inactive" ;
+  ToplMonitor.sourcefile ()
 
-let cfg = ToplMonitor.cfg
+
+let cfg () =
+  if not (is_active ()) then L.die InternalError "Called Topl.cfg when Topl is inactive" ;
+  ToplMonitor.cfg ()
