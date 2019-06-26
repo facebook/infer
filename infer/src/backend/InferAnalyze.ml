@@ -89,7 +89,10 @@ let register_active_checkers () =
 
 let main ~changed_files =
   register_active_checkers () ;
-  if Config.reanalyze then Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
+  if Config.reanalyze then (
+    L.progress "Invalidating procedures to be reanalyzed@." ;
+    Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+    L.progress "Done@." )
   else DB.Results_dir.clean_specs_dir () ;
   let n_all_source_files = ref 0 in
   let n_source_files_to_analyze = ref 0 in
