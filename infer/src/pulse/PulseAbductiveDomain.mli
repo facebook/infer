@@ -29,7 +29,10 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> PulseDomain.Stack.value option
 
-  val materialize : Var.t -> t -> t * PulseDomain.Stack.value
+  val eval : Var.t -> t -> t * PulseDomain.AddrTracePair.t
+  (** return the value of the variable in the stack or create a fresh one if needed *)
+
+  val mem : Var.t -> t -> bool
 end
 
 (** stack operations like {!PulseDomain.Heap} but that also take care of propagating facts to the
@@ -43,7 +46,7 @@ module Memory : sig
   val add_edge : AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
 
   val check_valid :
-       HilExp.AccessExpression.t PulseDomain.explained PulseDomain.InterprocAction.t
+       unit PulseDomain.InterprocAction.t
     -> AbstractAddress.t
     -> t
     -> (t, PulseDomain.Invalidation.t PulseDomain.Trace.t) result
@@ -62,7 +65,9 @@ module Memory : sig
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
-  val materialize_edge : AbstractAddress.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
+  val eval_edge : AbstractAddress.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
+  (** [eval_edge addr access astate] follows the edge [addr --access--> .] in memory and returns
+      what it points to or creates a fresh value if that edge didn't exist.  *)
 end
 
 module PrePost : sig
@@ -79,18 +84,12 @@ module PrePost : sig
     -> Location.t
     -> t
     -> formals:Var.t list
-    -> ret:AbstractAddress.t * PulseDomain.ValueHistory.t
-    -> actuals:(AbstractAddress.t * HilExp.AccessExpression.t * PulseDomain.ValueHistory.t) option
-               list
+    -> actuals:((AbstractAddress.t * PulseDomain.ValueHistory.t) * Typ.t) list
     -> domain_t
-    -> (domain_t, PulseDiagnostic.t) result
+    -> (domain_t * AbstractAddress.t option, PulseDiagnostic.t) result
+  (** return the abstract state after the call along with an optional return value *)
 end
 
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
     keep its size down *)
-
-val explain_access_expr :
-  HilExp.AccessExpression.t -> t -> HilExp.AccessExpression.t PulseDomain.explained
-
-val explain_hil_exp : HilExp.t -> t -> HilExp.t PulseDomain.explained

@@ -14,66 +14,77 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 
 module Closures : sig
   val check_captured_addresses :
-       Location.t
-    -> HilExp.AccessExpression.t
-    -> PulseDomain.AbstractAddress.t
-    -> t
-    -> t access_result
+    unit PulseDomain.InterprocAction.t -> AbstractAddress.t -> t -> (t, PulseDiagnostic.t) result
   (** assert the validity of the addresses captured by the lambda *)
-
-  val record :
-       Location.t
-    -> HilExp.AccessExpression.t
-    -> Typ.Procname.t
-    -> (AccessPath.base * HilExp.t) list
-    -> t
-    -> t access_result
-  (** record that the access expression points to a lambda with its captured addresses *)
 end
 
-module StdVector : sig
-  val is_reserved : Location.t -> HilExp.AccessExpression.t -> t -> (t * bool) access_result
+val eval : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
+(** Use the stack and heap to evaluate the given expression down to an abstract address representing
+    its value.
 
-  val mark_reserved : Location.t -> HilExp.AccessExpression.t -> t -> t access_result
-end
+    Return an error state if it traverses some known invalid address or if the end destination is
+    known to be invalid. *)
 
-val read :
+val eval_deref : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
+(** Like [eval] but evaluates [*exp]. *)
+
+val eval_access :
      Location.t
-  -> HilExp.AccessExpression.t
+  -> PulseDomain.AddrTracePair.t
+  -> PulseDomain.Memory.Access.t
   -> t
-  -> (t * (AbstractAddress.t * PulseDomain.ValueHistory.t)) access_result
+  -> (t * PulseDomain.AddrTracePair.t) access_result
+(** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
+    so dereferences it according to the access. *)
 
-val read_all : Location.t -> HilExp.AccessExpression.t list -> t -> t access_result
+val havoc_id : Ident.t -> PulseDomain.ValueHistory.t -> t -> t
 
-val havoc_var : PulseDomain.ValueHistory.t -> Var.t -> t -> t
+val havoc_deref :
+  Location.t -> PulseDomain.AddrTracePair.t -> PulseDomain.ValueHistory.t -> t -> t access_result
 
-val havoc :
-  PulseDomain.ValueHistory.t -> Location.t -> HilExp.AccessExpression.t -> t -> t access_result
+val havoc_field :
+     Location.t
+  -> PulseDomain.AddrTracePair.t
+  -> Typ.Fieldname.t
+  -> PulseDomain.ValueHistory.t
+  -> t
+  -> t access_result
 
 val realloc_var : Var.t -> Location.t -> t -> t
 
-val write_var : Var.t -> AbstractAddress.t * PulseDomain.ValueHistory.t -> t -> t
+val write_id : Ident.t -> PulseDomain.Stack.value -> t -> t
 
-val write :
+val write_deref :
      Location.t
-  -> HilExp.AccessExpression.t
-  -> AbstractAddress.t * PulseDomain.ValueHistory.t
+  -> ref:PulseDomain.AddrTracePair.t
+  -> obj:PulseDomain.AddrTracePair.t
   -> t
   -> t access_result
+(** write the edge [ref --*--> obj] *)
 
 val invalidate :
-     PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-  -> Location.t
-  -> HilExp.AccessExpression.t
+     Location.t
+  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
+  -> PulseDomain.AddrTracePair.t
   -> t
   -> t access_result
+(** record that the address is invalid *)
+
+val invalidate_deref :
+     Location.t
+  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
+  -> PulseDomain.AddrTracePair.t
+  -> t
+  -> t access_result
+(** record that what the address points to is invalid *)
 
 val invalidate_array_elements :
-     PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-  -> Location.t
-  -> HilExp.AccessExpression.t
+     Location.t
+  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
+  -> PulseDomain.AddrTracePair.t
   -> t
   -> t access_result
+(** record that all the array elements that address points to is invalid *)
 
 val remove_vars : Var.t list -> t -> t
 
@@ -84,16 +95,3 @@ val check_address_escape :
   -> PulseDomain.ValueHistory.t
   -> t
   -> t access_result
-
-module Interproc : sig
-  val call :
-       Typ.Procname.t
-    -> formals:Var.t list
-    -> ret:AccessPath.base
-    -> actuals:HilExp.t list
-    -> CallFlags.t
-    -> Location.t
-    -> t
-    -> PulseSummary.t
-    -> PulseAbductiveDomain.t list access_result
-end

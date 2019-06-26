@@ -10,9 +10,8 @@ open! IStd
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of
-      { access: HilExp.AccessExpression.t PulseDomain.explained
-      ; invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
-      ; accessed_by: HilExp.AccessExpression.t PulseDomain.explained PulseDomain.Trace.t }
+      { invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
+      ; accessed_by: unit PulseDomain.Trace.t }
   | StackVariableAddressEscape of
       { variable: Var.t
       ; history: PulseDomain.ValueHistory.t

@@ -220,50 +220,6 @@ module AccessExpression = struct
 
   let pp = pp_access_expr
 
-  let to_accesses_fold access_expr ~init ~f_array_offset =
-    let rec aux accum accesses = function
-      | Base base ->
-          (accum, base, accesses)
-      | FieldOffset (access_expr, fld) ->
-          aux accum (Access.FieldAccess fld :: accesses) access_expr
-      | ArrayOffset (access_expr, typ, index) ->
-          let accum, index' = f_array_offset accum index in
-          aux accum (Access.ArrayAccess (typ, index') :: accesses) access_expr
-      | AddressOf access_expr ->
-          aux accum (Access.TakeAddress :: accesses) access_expr
-      | Dereference access_expr ->
-          aux accum (Access.Dereference :: accesses) access_expr
-    in
-    aux init [] access_expr
-
-
-  let to_accesses access_expr =
-    let (), base, accesses =
-      to_accesses_fold access_expr ~init:() ~f_array_offset:(fun () index -> ((), index))
-    in
-    (base, accesses)
-
-
-  let add_access access access_expr =
-    match (access : _ Access.t) with
-    | FieldAccess fld ->
-        Some (field_offset access_expr fld)
-    | ArrayAccess (typ, _index) ->
-        Some (array_offset access_expr typ None)
-    | Dereference ->
-        Some (dereference access_expr)
-    | TakeAddress ->
-        address_of access_expr
-
-
-  let add_rev_accesses rev_accesses access_expr =
-    List.fold rev_accesses ~init:(Some access_expr) ~f:(fun access_expr_opt access ->
-        let open Option.Monad_infix in
-        access_expr_opt >>= add_access access )
-
-
-  let add_accesses accesses access_expr = add_rev_accesses (List.rev accesses) access_expr
-
   (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
   let rec to_access_path t =
     let rec to_access_path_ t =
@@ -366,16 +322,6 @@ module AccessExpression = struct
         init
     | Sizeof (_, exp_opt) ->
         fold_vars_exp_opt exp_opt ~init ~f
-
-
-  let appears_in_source_code access_expr =
-    (* should probably eventually check more than just the base but yolo *)
-    let var, _ = get_base access_expr in
-    Var.appears_in_source_code var
-
-
-  let to_source_string access_expr =
-    if appears_in_source_code access_expr then Some (F.asprintf "%a" pp access_expr) else None
 end
 
 let rec get_typ tenv = function

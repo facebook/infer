@@ -10,6 +10,7 @@ module L = Logging
 open Result.Monad_infix
 module AbstractAddress = PulseDomain.AbstractAddress
 module InterprocAction = PulseDomain.InterprocAction
+module Invalidation = PulseDomain.Invalidation
 module ValueHistory = PulseDomain.ValueHistory
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
@@ -45,114 +46,87 @@ module Payload = SummaryPayload.Make (struct
   let field = Payloads.Fields.pulse
 end)
 
+let proc_name_of_call call_exp =
+  match (call_exp : Exp.t) with
+  | Const (Cfun proc_name) | Closure {name= proc_name} ->
+      Some proc_name
+  | _ ->
+      None
+
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
   module Domain = PulseAbductiveDomain
 
   type extras = Summary.t
 
-  let rec exec_assign summary (lhs_access : HilExp.AccessExpression.t) (rhs_exp : HilExp.t) loc
-      astate =
-    (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
-    let crumb =
-      ValueHistory.Assignment
-        {lhs= PulseAbductiveDomain.explain_access_expr lhs_access astate; location= loc}
-    in
-    match rhs_exp with
-    | AccessExpression rhs_access -> (
-        PulseOperations.read loc rhs_access astate
-        >>= fun (astate, (rhs_addr, rhs_trace)) ->
-        let return_addr_trace = (rhs_addr, crumb :: rhs_trace) in
-        PulseOperations.write loc lhs_access return_addr_trace astate
-        >>= fun astate ->
-        match lhs_access with
-        | Base (var, _) when Var.is_return var ->
-            PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr rhs_trace
-              astate
-        | _ ->
-            Ok astate )
-    | Closure (pname, captured) ->
-        PulseOperations.Closures.record loc lhs_access pname captured astate
-    | Cast (_, e) ->
-        exec_assign summary lhs_access e loc astate
-    | _ ->
-        PulseOperations.read_all loc (HilExp.get_access_exprs rhs_exp) astate
-        >>= PulseOperations.havoc [crumb] loc lhs_access
-
-
-  let exec_unknown_call _summary ret (call : HilInstr.call) (actuals : HilExp.t list) _flags
-      call_loc astate =
-    let read_all args astate =
-      PulseOperations.read_all call_loc (List.concat_map args ~f:HilExp.get_access_exprs) astate
-    in
-    let crumb =
-      ValueHistory.Call
-        { f= `HilCall call
-        ; actuals= List.map actuals ~f:(fun e -> PulseAbductiveDomain.explain_hil_exp e astate)
-        ; location= call_loc }
-    in
-    let havoc_ret (ret, _) astate = PulseOperations.havoc_var [crumb] ret astate in
-    let read_actuals_havoc_ret actuals ret astate = read_all actuals astate >>| havoc_ret ret in
-    match call with
-    | Direct callee_pname when Typ.Procname.is_constructor callee_pname -> (
+  let exec_unknown_call reason ret call actuals _flags call_loc astate =
+    let event = ValueHistory.Call {f= reason; location= call_loc} in
+    let havoc_ret (ret, _) astate = PulseOperations.havoc_id ret [event] astate in
+    match proc_name_of_call call with
+    | Some callee_pname when Typ.Procname.is_constructor callee_pname -> (
         L.d_printfln "constructor call detected@." ;
         match actuals with
-        | AccessExpression constructor_access :: rest ->
-            let constructed_object = HilExp.AccessExpression.dereference constructor_access in
-            PulseOperations.havoc [crumb] call_loc constructed_object astate
-            >>= read_actuals_havoc_ret rest ret
+        | (object_ref, _) :: _ ->
+            PulseOperations.havoc_deref call_loc object_ref [event] astate >>| havoc_ret ret
         | _ ->
             Ok (havoc_ret ret astate) )
-    | Direct (Typ.Procname.ObjC_Cpp callee_pname)
+    | Some (Typ.Procname.ObjC_Cpp callee_pname)
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname -> (
         L.d_printfln "operator= detected@." ;
         match actuals with
         (* copy assignment *)
-        | [AccessExpression lhs; HilExp.AccessExpression rhs] ->
-            let lhs_deref = HilExp.AccessExpression.dereference lhs in
-            let rhs_deref = HilExp.AccessExpression.dereference rhs in
-            PulseOperations.havoc [crumb] call_loc lhs_deref astate
-            >>= fun astate ->
-            PulseOperations.read call_loc rhs_deref astate >>| fst >>| havoc_ret ret
+        | [(lhs, _); _rhs] ->
+            PulseOperations.havoc_deref call_loc lhs [event] astate >>| havoc_ret ret
         | _ ->
-            read_actuals_havoc_ret actuals ret astate )
+            Ok (havoc_ret ret astate) )
     | _ ->
         L.d_printfln "skipping unknown procedure@." ;
-        read_actuals_havoc_ret actuals ret astate
+        Ok (havoc_ret ret astate)
 
 
-  let interprocedural_call caller_summary ret (call : HilInstr.call) (actuals : HilExp.t list)
-      flags call_loc astate =
-    let unknown_function () =
-      exec_unknown_call caller_summary ret call actuals flags call_loc astate >>| List.return
+  let interprocedural_call caller_summary ret call_exp actuals flags call_loc astate =
+    let unknown_function reason =
+      exec_unknown_call reason ret call_exp actuals flags call_loc astate >>| List.return
     in
-    match call with
-    | Direct callee_pname -> (
+    match proc_name_of_call call_exp with
+    | Some callee_pname -> (
       match Payload.read_full caller_summary.Summary.proc_desc callee_pname with
       | Some (callee_proc_desc, preposts) ->
           let formals =
             Procdesc.get_formals callee_proc_desc
             |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
           in
-          PulseOperations.Interproc.call callee_pname ~formals ~ret ~actuals flags call_loc astate
-            preposts
+          (* call {!PulseAbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
+          List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
+              (* apply all pre/post specs *)
+              PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
+                astate
+              >>| fun (post, return_val_opt) ->
+              let event = ValueHistory.Call {f= `Call call_exp; location= call_loc} in
+              let post =
+                match return_val_opt with
+                | Some return_val ->
+                    PulseOperations.write_id (fst ret) (return_val, [event]) post
+                | None ->
+                    PulseOperations.havoc_id (fst ret) [event] post
+              in
+              post :: posts )
       | None ->
           (* no spec found for some reason (unknown function, ...) *)
           L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
-          unknown_function () )
-    | Indirect access_expression ->
-        L.d_printfln "Indirect call %a@\n" HilExp.AccessExpression.pp access_expression ;
-        unknown_function ()
+          unknown_function (`UnknownCall call_exp) )
+    | None ->
+        L.d_printfln "Indirect call %a@\n" Exp.pp call_exp ;
+        unknown_function (`IndirectCall call_exp)
 
 
   (** has an object just gone out of scope? *)
-  let get_out_of_scope_object (call : HilInstr.call) (actuals : HilExp.t list)
-      (flags : CallFlags.t) =
+  let get_out_of_scope_object call_exp actuals (flags : CallFlags.t) =
     (* injected destructors are precisely inserted where an object goes out of scope *)
     if flags.cf_injected_destructor then
-      match (call, actuals) with
-      | ( Direct (Typ.Procname.ObjC_Cpp pname)
-        , [AccessExpression (AddressOf (Base (ProgramVar pvar, typ)))] )
+      match (proc_name_of_call call_exp, actuals) with
+      | Some (Typ.Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
         when Pvar.is_local pvar && not (Typ.Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
           Some (pvar, typ)
@@ -163,36 +137,44 @@ module PulseTransferFunctions = struct
 
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope call_loc (pvar, typ) astate =
-    (* invalidate both [&x] and [x]: reading either is now forbidden *)
-    let invalidate pvar typ access astate =
-      PulseOperations.invalidate
-        (InterprocAction.Immediate {imm= GoneOutOfScope (pvar, typ); location= call_loc})
-        call_loc access astate
+    let event =
+      InterprocAction.Immediate {imm= Invalidation.GoneOutOfScope (pvar, typ); location= call_loc}
     in
-    let out_of_scope_base = HilExp.AccessExpression.base (Var.of_pvar pvar, typ) in
-    invalidate pvar typ (HilExp.AccessExpression.dereference out_of_scope_base) astate
-    >>= invalidate pvar typ out_of_scope_base
+    (* invalidate both [&x] and [x]: reading either is now forbidden *)
+    PulseOperations.eval call_loc (Exp.Lvar pvar) astate
+    >>= fun (astate, out_of_scope_base) ->
+    PulseOperations.invalidate_deref call_loc event out_of_scope_base astate
+    >>= PulseOperations.invalidate call_loc event out_of_scope_base
 
 
-  let dispatch_call summary ret (call : HilInstr.call) (actuals : HilExp.t list) flags call_loc
-      astate =
+  let dispatch_call summary ret call_exp actuals call_loc flags astate =
+    (* evaluate all actuals *)
+    List.fold_result actuals ~init:(astate, [])
+      ~f:(fun (astate, rev_actuals_evaled) (actual_exp, actual_typ) ->
+        PulseOperations.eval call_loc actual_exp astate
+        >>| fun (astate, actual_evaled) ->
+        (astate, (actual_evaled, actual_typ) :: rev_actuals_evaled) )
+    >>= fun (astate, rev_actuals_evaled) ->
+    let actuals_evaled = List.rev rev_actuals_evaled in
     let model =
-      match call with
-      | Indirect _ ->
+      match proc_name_of_call call_exp with
+      | Some callee_pname ->
+          PulseModels.dispatch callee_pname flags
+      | None ->
           (* function pointer, etc.: skip for now *)
           None
-      | Direct callee_pname ->
-          PulseModels.dispatch callee_pname flags
     in
     match model with
     | Some model ->
-        model call_loc ~ret ~actuals astate
+        model call_loc ~ret ~actuals:actuals_evaled astate
     | None -> (
         (* do interprocedural call then destroy objects going out of scope *)
         PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-        let posts = interprocedural_call summary ret call actuals flags call_loc astate in
+        let posts =
+          interprocedural_call summary ret call_exp actuals_evaled flags call_loc astate
+        in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-        match get_out_of_scope_object call actuals flags with
+        match get_out_of_scope_object call_exp actuals flags with
         | Some pvar_typ ->
             L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
             posts
@@ -203,66 +185,46 @@ module PulseTransferFunctions = struct
             posts )
 
 
-  let hil_of_sil ?(add_deref = false) exp typ =
-    HilExp.of_sil ~include_array_indexes:true ~f_resolve_id:(fun _ -> None) ~add_deref exp typ
-
-
   let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : Sil.instr) =
     match instr with
-    | Load (lhs_id, rhs_exp, typ, loc) ->
-        let lhs_access = HilExp.AccessExpression.of_id lhs_id typ in
-        let rhs_hexp = hil_of_sil ~add_deref:true rhs_exp typ in
-        let post = exec_assign summary lhs_access rhs_hexp loc astate |> check_error summary in
-        [post]
-    | Store (lhs_exp, typ, rhs_exp, loc) ->
-        let lhs_access_expr =
-          match
-            HilExp.access_expr_of_exp ~include_array_indexes:true
-              ~f_resolve_id:(fun _ -> None)
-              lhs_exp typ
-          with
-          | Some access_expr ->
-              access_expr
-          | None ->
-              L.die InternalError "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp
-                Location.pp_file_pos loc
+    | Load (lhs_id, rhs_exp, _typ, loc) ->
+        (* [lhs_id := *rhs_exp] *)
+        let result =
+          PulseOperations.eval_deref loc rhs_exp astate
+          >>| fun (astate, (rhs_addr, rhs_history)) ->
+          PulseOperations.write_id lhs_id (rhs_addr, rhs_history) astate
         in
-        let rhs_hexp = hil_of_sil rhs_exp typ in
-        let post =
-          exec_assign summary lhs_access_expr rhs_hexp loc astate |> check_error summary
+        [check_error summary result]
+    | Store (lhs_exp, _typ, rhs_exp, loc) ->
+        (* [*lhs_exp := rhs_exp] *)
+        let event = ValueHistory.Assignment {location= loc} in
+        let result =
+          PulseOperations.eval loc rhs_exp astate
+          >>= fun (astate, (rhs_addr, rhs_history)) ->
+          PulseOperations.eval loc lhs_exp astate
+          >>= fun (astate, lhs_addr_hist) ->
+          PulseOperations.write_deref loc ~ref:lhs_addr_hist
+            ~obj:(rhs_addr, event :: rhs_history)
+            astate
+          >>= fun astate ->
+          match lhs_exp with
+          | Lvar pvar when Pvar.is_return pvar ->
+              PulseOperations.check_address_escape loc summary.Summary.proc_desc rhs_addr
+                rhs_history astate
+          | _ ->
+              Ok astate
         in
-        [post]
+        [check_error summary result]
     | Prune (condition, loc, _is_then_branch, _if_kind) ->
-        let condition_hexp = hil_of_sil condition (Typ.mk (Tint IBool)) in
-        let post =
-          PulseOperations.read_all loc (HilExp.get_access_exprs condition_hexp) astate
-          |> check_error summary
-        in
+        (* ignored for now *)
+        let post = PulseOperations.eval loc condition astate |> check_error summary |> fst in
         [post]
-    | Call ((ret_id, ret_typ), call_exp, actuals, loc, call_flags) ->
-        let ret_hil = (Var.of_id ret_id, ret_typ) in
-        let call_hil =
-          match hil_of_sil call_exp (Typ.mk Tvoid) with
-          | Constant (Cfun procname) | Closure (procname, _) ->
-              HilInstr.Direct procname
-          | HilExp.AccessExpression access_expr ->
-              HilInstr.Indirect access_expr
-          | call_exp ->
-              L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
-        in
-        let actuals_hil = List.map ~f:(fun (exp, typ) -> hil_of_sil exp typ) actuals in
-        let posts =
-          dispatch_call summary ret_hil call_hil actuals_hil call_flags loc astate
-          |> check_error summary
-        in
-        posts
+    | Call (ret, call_exp, actuals, loc, call_flags) ->
+        dispatch_call summary ret call_exp actuals loc call_flags astate |> check_error summary
     | Metadata (ExitScope (vars, _)) ->
-        let post = PulseOperations.remove_vars vars astate in
-        [post]
+        [PulseOperations.remove_vars vars astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
-        let var = Var.of_pvar pvar in
-        let post = PulseOperations.realloc_var var location astate in
-        [post]
+        [PulseOperations.realloc_var (Var.of_pvar pvar) location astate]
     | Metadata (Abstract _ | Nullify _ | Skip) ->
         [astate]
 

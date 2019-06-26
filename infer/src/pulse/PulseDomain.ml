@@ -10,8 +10,6 @@ module L = Logging
 
 (* {2 Abstract domain description } *)
 
-type 'a explained = 'a [@@deriving compare]
-
 module Invalidation = struct
   type std_vector_function =
     | Assign
@@ -44,17 +42,17 @@ module Invalidation = struct
 
 
   type t =
-    | CFree of HilExp.AccessExpression.t explained
-    | CppDelete of HilExp.AccessExpression.t explained
+    | CFree
+    | CppDelete
     | GoneOutOfScope of Pvar.t * Typ.t
     | Nullptr
-    | StdVector of std_vector_function * HilExp.AccessExpression.t explained
+    | StdVector of std_vector_function
   [@@deriving compare]
 
   let issue_type_of_cause = function
-    | CFree _ ->
+    | CFree ->
         IssueType.use_after_free
-    | CppDelete _ ->
+    | CppDelete ->
         IssueType.use_after_delete
     | GoneOutOfScope _ ->
         IssueType.use_after_lifetime
@@ -64,12 +62,12 @@ module Invalidation = struct
         IssueType.vector_invalidation
 
 
-  let describe f = function
-    | CFree access_expr ->
-        F.fprintf f "was invalidated by call to `free()` on `%a`" HilExp.AccessExpression.pp
-          access_expr
-    | CppDelete access_expr ->
-        F.fprintf f "was invalidated by `delete` on `%a`" HilExp.AccessExpression.pp access_expr
+  let describe f cause =
+    match cause with
+    | CFree ->
+        F.pp_print_string f "was invalidated by call to `free()`"
+    | CppDelete ->
+        F.pp_print_string f "was invalidated by `delete`"
     | GoneOutOfScope (pvar, typ) ->
         let pp_var f pvar =
           if Pvar.is_cpp_temporary pvar then
@@ -78,17 +76,16 @@ module Invalidation = struct
         in
         F.fprintf f "%a whose lifetime has ended" pp_var pvar
     | Nullptr ->
-        F.fprintf f "is the null pointer"
-    | StdVector (std_vector_f, access_expr) ->
-        F.fprintf f "was potentially invalidated by `%a()` on `%a`" pp_std_vector_function
-          std_vector_f HilExp.AccessExpression.pp access_expr
+        F.pp_print_string f "is the null pointer"
+    | StdVector std_vector_f ->
+        F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
 
 
   let pp f invalidation =
     match invalidation with
-    | CFree _ ->
+    | CFree ->
         F.fprintf f "CFree(%a)" describe invalidation
-    | CppDelete _ ->
+    | CppDelete ->
         F.fprintf f "CppDelete(%a)" describe invalidation
     | GoneOutOfScope _ ->
         describe f invalidation
@@ -102,14 +99,10 @@ module ValueHistory = struct
   type event =
     | VariableDeclaration of Location.t
     | CppTemporaryCreated of Location.t
-    | Assignment of {lhs: HilExp.AccessExpression.t explained; location: Location.t}
-    | Capture of
-        { captured_as: AccessPath.base
-        ; captured: HilExp.AccessExpression.t explained
-        ; location: Location.t }
+    | Assignment of {location: Location.t}
+    | Capture of {captured_as: Pvar.t; location: Location.t}
     | Call of
-        { f: [`HilCall of HilInstr.call | `Model of string]
-        ; actuals: HilExp.t explained list
+        { f: [`Call of Exp.t | `UnknownCall of Exp.t | `IndirectCall of Exp.t | `Model of string]
         ; location: Location.t }
   [@@deriving compare]
 
@@ -118,20 +111,22 @@ module ValueHistory = struct
         F.pp_print_string fmt "variable declared"
     | CppTemporaryCreated _ ->
         F.pp_print_string fmt "C++ temporary created"
-    | Capture {captured_as; captured; location= _} ->
-        F.fprintf fmt "`%a` captured as `%a`" HilExp.AccessExpression.pp captured
-          AccessPath.pp_base captured_as
-    | Assignment {lhs; location= _} ->
-        if HilExp.AccessExpression.appears_in_source_code lhs then
-          F.fprintf fmt "assigned to `%a`" HilExp.AccessExpression.pp lhs
-    | Call {f; actuals; location= _} ->
+    | Capture {captured_as; location= _} ->
+        F.fprintf fmt "value captured as `%a`" (Pvar.pp Pp.text) captured_as
+    | Assignment _ ->
+        F.pp_print_string fmt "assigned"
+    | Call {f; location= _} ->
         let pp_f fmt = function
-          | `HilCall call ->
-              F.fprintf fmt "%a" HilInstr.pp_call call
+          | `Call call_exp ->
+              F.fprintf fmt "`%a()`" Exp.pp call_exp
+          | `UnknownCall call_exp ->
+              F.fprintf fmt "unknown function `%a`" Exp.pp call_exp
+          | `IndirectCall call_exp ->
+              F.fprintf fmt "unresolved expression `%a`" Exp.pp call_exp
           | `Model model ->
-              F.pp_print_string fmt model
+              F.fprintf fmt "`%s()` (pulse model)" model
         in
-        F.fprintf fmt "returned from call to `%a(%a)`" pp_f f (Pp.seq ~sep:"," HilExp.pp) actuals
+        F.fprintf fmt "returned from call to %a" pp_f f
 
 
   let location_of_event = function
@@ -239,8 +234,8 @@ end
 module Attribute = struct
   type t =
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of HilExp.AccessExpression.t explained InterprocAction.t
-    | AddressOfCppTemporary of Var.t * Location.t option
+    | MustBeValid of unit InterprocAction.t
+    | AddressOfCppTemporary of Var.t * ValueHistory.t
     | Closure of Typ.Procname.t
     | StdVectorReserve
   [@@deriving compare, variants]
@@ -256,13 +251,7 @@ module Attribute = struct
 
 
   let must_be_valid_rank =
-    Variants.to_rank
-      (MustBeValid
-         (Immediate
-            { imm=
-                HilExp.AccessExpression.base
-                  (AccessPath.base_of_pvar (Pvar.mk_global Mangled.self) Typ.void)
-            ; location= Location.dummy }))
+    Variants.to_rank (MustBeValid (Immediate {imm= (); location= Location.dummy}))
 
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
@@ -272,11 +261,11 @@ module Attribute = struct
         (Trace.pp Invalidation.pp) f invalidation
     | MustBeValid action ->
         F.fprintf f "MustBeValid (read by %a @ %a)"
-          (InterprocAction.pp HilExp.AccessExpression.pp)
+          (InterprocAction.pp (fun _ () -> ()))
           action Location.pp
           (InterprocAction.to_outer_location action)
-    | AddressOfCppTemporary (var, location_opt) ->
-        F.fprintf f "&%a (%a)" Var.pp var (Pp.option Location.pp) location_opt
+    | AddressOfCppTemporary (var, history) ->
+        F.fprintf f "&%a (%a)" Var.pp var ValueHistory.pp history
     | Closure pname ->
         Typ.Procname.pp f pname
     | StdVectorReserve ->
@@ -532,22 +521,16 @@ module Stack = struct
       F.fprintf f "%a%a" pp_ampersand var Var.pp var
   end
 
-  module VarValue = struct
-    type t = AbstractAddress.t * Location.t option [@@deriving compare]
-
-    let pp = Pp.pair ~fst:AbstractAddress.pp ~snd:(Pp.option Location.pp)
-  end
-
-  include PrettyPrintable.MakePPMonoMap (VarAddress) (VarValue)
+  include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrTracePair)
 
   let pp fmt m =
     let pp_item fmt (var_address, v) =
-      F.fprintf fmt "%a=%a" VarAddress.pp var_address VarValue.pp v
+      F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrTracePair.pp v
     in
     PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
 
 
-  let compare = compare VarValue.compare
+  let compare = compare AddrTracePair.compare
 end
 
 type t = {heap: Memory.t; stack: Stack.t}
@@ -787,77 +770,3 @@ let reachable_addresses astate =
     ~init:() ~finish:Fn.id
     ~f:(fun () _ _ _ -> Continue ())
   |> fst
-
-
-let rec evaluate_accesses address accesses astate =
-  match accesses with
-  | [] ->
-      Some address
-  | access :: next_accesses ->
-      let open Option.Monad_infix in
-      Memory.find_edge_opt address access astate.heap
-      >>= fun (addr, _) -> evaluate_accesses addr next_accesses astate
-
-
-let evaluate_access_path var should_deref astate =
-  let open Option.Monad_infix in
-  Stack.find_opt var astate.stack
-  >>= fun (addr_var, _) ->
-  if should_deref then evaluate_accesses addr_var [HilExp.Access.Dereference] astate
-  else Some addr_var
-
-
-let explain_address address astate =
-  GraphVisit.fold astate ~init:() ~var_filter:Var.appears_in_source_code
-    ~finish:(fun _ -> None)
-    ~f:(fun () address' var accesses ->
-      if AbstractAddress.equal address address' then Stop (Some (var, accesses)) else Continue ()
-      )
-  |> snd
-  |> Option.bind ~f:(fun (var, rev_accesses) ->
-         let base = HilExp.AccessExpression.address_of_base (var, Typ.void) in
-         HilExp.AccessExpression.add_rev_accesses rev_accesses base )
-
-
-let explain_access_expr access_expr astate =
-  if HilExp.AccessExpression.appears_in_source_code access_expr then access_expr
-  else
-    let (base_var, _), accesses = HilExp.AccessExpression.to_accesses access_expr in
-    let should_deref, accesses_left =
-      match accesses with [HilExp.Access.TakeAddress] -> (false, []) | _ -> (true, accesses)
-    in
-    match
-      let open Option.Monad_infix in
-      evaluate_access_path base_var should_deref astate
-      >>= fun base_address ->
-      explain_address base_address astate >>= HilExp.AccessExpression.add_accesses accesses_left
-    with
-    | Some explained ->
-        explained
-    | None ->
-        L.d_printfln "Can't explain how to reach address %a from state %a"
-          HilExp.AccessExpression.pp access_expr pp astate ;
-        access_expr
-
-
-let rec explain_hil_exp (e : HilExp.t) astate =
-  match e with
-  | AccessExpression access_expr ->
-      HilExp.AccessExpression (explain_access_expr access_expr astate)
-  | UnaryOperator (op, e', t) ->
-      HilExp.UnaryOperator (op, explain_hil_exp e' astate, t)
-  | BinaryOperator (op, e1, e2) ->
-      HilExp.BinaryOperator (op, explain_hil_exp e1 astate, explain_hil_exp e2 astate)
-  | Exception e' ->
-      HilExp.Exception (explain_hil_exp e' astate)
-  | Closure (proc_name, captured) ->
-      HilExp.Closure
-        (proc_name, List.map captured ~f:(fun (base, e') -> (base, explain_hil_exp e' astate)))
-  | Constant _ ->
-      e
-  | Cast (t, e') ->
-      HilExp.Cast (t, explain_hil_exp e' astate)
-  | Sizeof (t, Some e') ->
-      HilExp.Sizeof (t, Some (explain_hil_exp e' astate))
-  | Sizeof (_, None) ->
-      e

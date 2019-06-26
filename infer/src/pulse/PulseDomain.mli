@@ -8,8 +8,6 @@
 open! IStd
 module F = Format
 
-type 'a explained = private 'a
-
 module Invalidation : sig
   type std_vector_function =
     | Assign
@@ -25,11 +23,11 @@ module Invalidation : sig
   val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
 
   type t =
-    | CFree of HilExp.AccessExpression.t explained
-    | CppDelete of HilExp.AccessExpression.t explained
+    | CFree
+    | CppDelete
     | GoneOutOfScope of Pvar.t * Typ.t
     | Nullptr
-    | StdVector of std_vector_function * HilExp.AccessExpression.t explained
+    | StdVector of std_vector_function
   [@@deriving compare]
 
   val issue_type_of_cause : t -> IssueType.t
@@ -41,14 +39,10 @@ module ValueHistory : sig
   type event =
     | VariableDeclaration of Location.t
     | CppTemporaryCreated of Location.t
-    | Assignment of {lhs: HilExp.AccessExpression.t explained; location: Location.t}
-    | Capture of
-        { captured_as: AccessPath.base
-        ; captured: HilExp.AccessExpression.t explained
-        ; location: Location.t }
+    | Assignment of {location: Location.t}
+    | Capture of {captured_as: Pvar.t; location: Location.t}
     | Call of
-        { f: [`HilCall of HilInstr.call | `Model of string]
-        ; actuals: HilExp.t explained list
+        { f: [`Call of Exp.t | `UnknownCall of Exp.t | `IndirectCall of Exp.t | `Model of string]
         ; location: Location.t }
 
   type t = event list [@@deriving compare]
@@ -82,8 +76,8 @@ end
 module Attribute : sig
   type t =
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of HilExp.AccessExpression.t explained InterprocAction.t
-    | AddressOfCppTemporary of Var.t * Location.t option
+    | MustBeValid of unit InterprocAction.t
+    | AddressOfCppTemporary of Var.t * ValueHistory.t
     | Closure of Typ.Procname.t
     | StdVectorReserve
   [@@deriving compare]
@@ -92,7 +86,7 @@ end
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
-  val get_must_be_valid : t -> HilExp.AccessExpression.t explained InterprocAction.t option
+  val get_must_be_valid : t -> unit InterprocAction.t option
 end
 
 module AbstractAddress : sig
@@ -117,19 +111,16 @@ module AbstractAddressSet : PrettyPrintable.PPSet with type elt = AbstractAddres
 
 module AbstractAddressMap : PrettyPrintable.PPMap with type key = AbstractAddress.t
 
+module AddrTracePair : sig
+  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
+end
+
 module Stack : sig
-  include
-    PrettyPrintable.MonoMap
-    with type key = Var.t
-     and type value = AbstractAddress.t * Location.t option
+  include PrettyPrintable.MonoMap with type key = Var.t and type value = AddrTracePair.t
 
   (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
      different type *)
   val compare : t -> t -> int [@@warning "-32"]
-end
-
-module AddrTracePair : sig
-  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
 end
 
 module Memory : sig
@@ -194,7 +185,3 @@ type isograph_relation =
 val isograph_map : lhs:t -> rhs:t -> mapping -> isograph_relation
 
 val is_isograph : lhs:t -> rhs:t -> mapping -> bool
-
-val explain_access_expr : HilExp.AccessExpression.t -> t -> HilExp.AccessExpression.t explained
-
-val explain_hil_exp : HilExp.t -> t -> HilExp.t explained

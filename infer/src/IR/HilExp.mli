@@ -41,7 +41,7 @@ and access_expression = private
 [@@deriving compare]
 
 module AccessExpression : sig
-  val of_id : Ident.t -> Typ.t -> access_expression
+  val of_id : Ident.t -> Typ.t -> access_expression [@@warning "-32"]
 
   val base : AccessPath.base -> access_expression
 
@@ -56,15 +56,7 @@ module AccessExpression : sig
     [@@warning "-32"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
 
-  val address_of_base : AccessPath.base -> access_expression
-
-  val to_accesses_fold :
-       access_expression
-    -> init:'accum
-    -> f_array_offset:('accum -> t option -> 'accum * 'array_index)
-    -> 'accum * AccessPath.base * 'array_index Access.t list
-
-  val to_accesses : access_expression -> AccessPath.base * t option Access.t list
+  val address_of_base : AccessPath.base -> access_expression [@@warning "-32"]
 
   val to_access_path : access_expression -> AccessPath.t
 
@@ -92,18 +84,6 @@ module AccessExpression : sig
   [@@deriving compare]
 
   val fold_vars : (t, Var.t, 'accum) Container.fold
-
-  val add_access : _ Access.t -> t -> t option
-
-  val add_accesses : _ Access.t list -> t -> t option
-
-  val add_rev_accesses : _ Access.t list -> t -> t option
-
-  val appears_in_source_code : t -> bool
-
-  val to_source_string : t -> string option
-  (** get a string representation of the access expression in terms of symbols that appear in the
-     program, to show to the user *)
 end
 
 val pp : F.formatter -> t -> unit
