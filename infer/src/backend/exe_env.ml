@@ -7,6 +7,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Execution environments: basically a cache of where procedures are and what is their CFG and type
    environment *)
@@ -46,7 +47,7 @@ let get_file_data exe_env pname =
     let source_file_opt =
       match Attributes.load pname with
       | None ->
-          L.(debug Analysis Medium) "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname ;
+          L.debug Analysis Medium "can't find attributes for %a@." Typ.Procname.pp pname ;
           None
       | Some proc_attributes when Config.reactive_capture ->
           let get_captured_file {ProcAttributes.translation_unit} = translation_unit in
@@ -84,6 +85,12 @@ let java_global_tenv =
 
 
 let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env proc_name =
+  let pp_loc_opt f = function
+    | Some loc ->
+        F.fprintf f " in file '%a' at %a" SourceFile.pp loc.Location.file Location.pp loc
+    | None ->
+        ()
+  in
   match proc_name with
   | Typ.Procname.Java _ ->
       Lazy.force value_on_java
@@ -94,15 +101,13 @@ let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env pro
       | Some v ->
           v
       | None ->
-          let loc = State.get_loc_exn () in
-          L.(die InternalError)
-            "get_column_value: %s not found for %a in file '%a' at %a" column_name Typ.Procname.pp
-            proc_name SourceFile.pp loc.Location.file Location.pp loc )
+          let loc_opt = State.get_loc () in
+          L.die InternalError "get_column_value: %s not found for %a%a" column_name Typ.Procname.pp
+            proc_name pp_loc_opt loc_opt )
     | None ->
-        let loc = State.get_loc_exn () in
-        L.(die InternalError)
-          "get_column_value: file_data not found for %a in file '%a' at %a" Typ.Procname.pp
-          proc_name SourceFile.pp loc.Location.file Location.pp loc )
+        let loc_opt = State.get_loc () in
+        L.die InternalError "get_column_value: file_data not found for %a%a" Typ.Procname.pp
+          proc_name pp_loc_opt loc_opt )
 
 
 (** return the type environment associated to the procedure *)
