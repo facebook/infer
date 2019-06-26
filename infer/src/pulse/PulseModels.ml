@@ -18,6 +18,8 @@ type model = exec_fun
 
 module Misc = struct
   let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok []
+
+  let skip : model = fun _ ~ret:_ ~actuals:_ astate -> Ok [astate]
 end
 
 module C = struct
@@ -156,15 +158,12 @@ module StdVector = struct
         Ok [astate]
 end
 
-module DelayedDestruction = struct
-  let destroy : model = fun _ ~ret:_ ~actuals:_ astate -> Ok [astate]
-end
-
 module ProcNameDispatcher = struct
   let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
-      [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> DelayedDestruction.destroy
+      [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
+      ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
       ; -"std" &:: "function" &:: "operator()" &--> Cplusplus.operator_call
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
