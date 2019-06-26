@@ -44,7 +44,25 @@ module type S = sig
   (** compute and return the postcondition for the given procedure starting from [initial]. *)
 end
 
-(** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)
+(** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain.
+
+   CAVEAT: the translation does not attempt to preserve the semantics in the case where side-effects
+   happen between an assignment to a logical variable and the assignement of that logical variable
+   to a program variable. For instance the following SIL program
+
+    n$0 = *&x.f
+    _ = delete(&x)
+    *&y = n$0
+
+    becomes
+
+    _ = delete(&x)
+    *&y = *&x.f
+
+    The latter is a use-after-delete of &x whereas the original SIL program is well behaved.
+
+    Only use HIL if that is not something your checker needs to care about.
+ *)
 module MakeAbstractInterpreterWithConfig
     (MakeAbstractInterpreter : AbstractInterpreter.Make)
     (HilConfig : HilConfig)
