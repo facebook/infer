@@ -1019,10 +1019,27 @@ let check_inconsistency_base tenv prop =
     *)
     Inequalities.inconsistent ineq
   in
-  inconsistent_ptsto ()
-  || check_inconsistency_two_hpreds tenv prop
-  || List.exists ~f:inconsistent_atom pi
-  || inconsistent_inequalities () || inconsistent_this_self_var ()
+  let tests =
+    [ lazy (inconsistent_ptsto ())
+    ; lazy (check_inconsistency_two_hpreds tenv prop)
+    ; lazy (List.exists ~f:inconsistent_atom pi)
+    ; lazy (inconsistent_inequalities ())
+    ; lazy (inconsistent_this_self_var ()) ]
+  in
+  let f index = function
+    | None ->
+        fun test -> Option.some_if (Lazy.force test) index
+    | s ->
+        fun _ -> s
+  in
+  List.foldi ~init:None ~f tests
+
+
+(** Shadows the above, adding some debug output. *)
+let check_inconsistency_base tenv prop =
+  let reason = check_inconsistency_base tenv prop in
+  L.d_printfln "Prover.check_inconsistency_base: inconsistency reason %a" (Pp.option Int.pp) reason ;
+  Option.is_some reason
 
 
 (** Inconsistency checking. *)
