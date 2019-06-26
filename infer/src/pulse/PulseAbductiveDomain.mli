@@ -33,6 +33,8 @@ module Stack : sig
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
+
+  val exists : (Var.t -> PulseDomain.Stack.value -> bool) -> t -> bool
 end
 
 (** stack operations like {!PulseDomain.Heap} but that also take care of propagating facts to the
@@ -52,6 +54,8 @@ module Memory : sig
     -> (t, PulseDomain.Invalidation.t PulseDomain.Trace.t) result
 
   val find_opt : AbstractAddress.t -> t -> PulseDomain.Memory.cell option
+
+  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> PulseDomain.AddrTracePair.t option
 
   val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> t -> t
 

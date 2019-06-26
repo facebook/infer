@@ -94,6 +94,11 @@ S* return_static_local_ok() {
   return local;
 }
 
+static const S& return_static_local_ref_ok() {
+  static const S& s{1};
+  return s;
+}
+
 S* return_static_local_inner_scope_ok(bool b) {
   S* local = nullptr;
   if (b) {

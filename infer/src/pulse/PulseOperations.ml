@@ -216,12 +216,24 @@ let invalidate_array_elements location cause addr_trace astate =
 
 
 let check_address_escape escape_location proc_desc address history astate =
+  let is_assigned_to_global address astate =
+    let points_to_address pointer address astate =
+      Memory.find_edge_opt pointer Dereference astate
+      |> Option.exists ~f:(fun (pointee, _) -> AbstractAddress.equal pointee address)
+    in
+    Stack.exists
+      (fun var (pointer, _) -> Var.is_global var && points_to_address pointer address astate)
+      astate
+  in
   let check_address_of_cpp_temporary () =
     Memory.find_opt address astate
     |> Option.fold_result ~init:() ~f:(fun () (_, attrs) ->
            IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
                match attr with
-               | Attribute.AddressOfCppTemporary (variable, _) ->
+               | Attribute.AddressOfCppTemporary (variable, _)
+                 when not (is_assigned_to_global address astate) ->
+                   (* The returned address corresponds to a C++ temporary. It will have gone out of
+                      scope by now except if it was bound to a global. *)
                    Error
                      (PulseDiagnostic.StackVariableAddressEscape
                         {variable; location= escape_location; history})

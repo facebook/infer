@@ -136,6 +136,8 @@ module Stack = struct
   let find_opt var astate = BaseStack.find_opt var (astate.post :> base_domain).stack
 
   let mem var astate = BaseStack.mem var (astate.post :> base_domain).stack
+
+  let exists f astate = BaseStack.exists f (astate.post :> base_domain).stack
 end
 
 module Memory = struct
@@ -170,8 +172,12 @@ module Memory = struct
     map_post_heap astate ~f:(fun heap -> BaseMemory.add_edge addr access new_addr_trace heap)
 
 
+  let find_edge_opt address access astate =
+    BaseMemory.find_edge_opt address access (astate.post :> base_domain).heap
+
+
   let eval_edge addr access astate =
-    match BaseMemory.find_edge_opt addr access (astate.post :> base_domain).heap with
+    match find_edge_opt addr access astate with
     | Some addr_trace' ->
         (astate, addr_trace')
     | None ->
