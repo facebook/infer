@@ -55,7 +55,7 @@ let bottom_up sources : target task_generator =
         (CallGraph.n_procs g) ;
       if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "cycles.dot" ;
       (* save some memory *)
-      CallGraph.clear g ) ;
+      CallGraph.reset g ) ;
     empty
   in
   let rec next_aux () =

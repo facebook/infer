@@ -46,7 +46,7 @@ module NodeMap = Caml.Hashtbl.Make (Int)
     [trim_id_map] makes the image equal to the domain of [node_map]. *)
 type t = {id_map: int IdMap.t; node_map: Node.t NodeMap.t}
 
-let clear {id_map; node_map} = IdMap.clear id_map ; NodeMap.clear node_map
+let reset {id_map; node_map} = IdMap.reset id_map ; NodeMap.reset node_map
 
 let create initial_capacity =
   {id_map= IdMap.create initial_capacity; node_map= NodeMap.create initial_capacity}

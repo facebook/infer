@@ -23,7 +23,7 @@ module Node : NodeSig
 
 type t
 
-val clear : t -> unit
+val reset : t -> unit
 
 val create : int -> t
 (** [create n] makes an empty graph with initial capacity [n] which grows as required *)
