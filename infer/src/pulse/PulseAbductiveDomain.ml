@@ -577,8 +577,7 @@ module PrePost = struct
           let addr_curr, subst = subst_find_or_new subst addr_callee in
           ( subst
           , ( addr_curr
-            , PulseDomain.ValueHistory.Call
-                {f= `Call (Const (Cfun callee_proc_name)); location= call_loc}
+            , PulseDomain.ValueHistory.Call {f= `Call callee_proc_name; location= call_loc}
               :: trace_post ) ) )
     in
     let caller_post =

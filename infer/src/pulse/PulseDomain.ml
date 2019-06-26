@@ -102,7 +102,11 @@ module ValueHistory = struct
     | Assignment of {location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | Call of
-        { f: [`Call of Exp.t | `UnknownCall of Exp.t | `IndirectCall of Exp.t | `Model of string]
+        { f:
+            [ `Call of Typ.Procname.t
+            | `UnknownCall of Typ.Procname.t
+            | `IndirectCall of Exp.t
+            | `Model of string ]
         ; location: Location.t }
   [@@deriving compare]
 
@@ -117,10 +121,10 @@ module ValueHistory = struct
         F.pp_print_string fmt "assigned"
     | Call {f; location= _} ->
         let pp_f fmt = function
-          | `Call call_exp ->
-              F.fprintf fmt "`%a()`" Exp.pp call_exp
-          | `UnknownCall call_exp ->
-              F.fprintf fmt "unknown function `%a`" Exp.pp call_exp
+          | `Call proc_name ->
+              F.fprintf fmt "`%a()`" Typ.Procname.pp proc_name
+          | `UnknownCall proc_name ->
+              F.fprintf fmt "unknown function `%a`" Typ.Procname.pp proc_name
           | `IndirectCall call_exp ->
               F.fprintf fmt "unresolved expression `%a`" Exp.pp call_exp
           | `Model model ->

@@ -42,7 +42,11 @@ module ValueHistory : sig
     | Assignment of {location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | Call of
-        { f: [`Call of Exp.t | `UnknownCall of Exp.t | `IndirectCall of Exp.t | `Model of string]
+        { f:
+            [ `Call of Typ.Procname.t  (** known function with summary *)
+            | `UnknownCall of Typ.Procname.t  (** known function without summary *)
+            | `IndirectCall of Exp.t  (** couldn't link the expression to a proc name *)
+            | `Model of string  (** hardcoded model *) ]
         ; location: Location.t }
 
   type t = event list [@@deriving compare]
