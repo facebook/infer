@@ -42,9 +42,7 @@ int FN_reassign_lambda_capture_destroy_invoke_bad() {
   return f();
 }
 
-// frontend doesn't understand difference between capture-by-value and
-// capture-by-ref, need to fix
-int FP_value_capture_destroy_invoke_ok() {
+int value_capture_destroy_invoke_ok() {
   std::function<int()> f;
   {
     S s;
@@ -53,8 +51,7 @@ int FP_value_capture_destroy_invoke_ok() {
   return f();
 }
 
-// same thing here
-int FP_implicit_value_capture_destroy_invoke_ok() {
+int implicit_value_capture_destroy_invoke_ok() {
   std::function<int()> f;
   {
     S s;

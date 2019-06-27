@@ -84,9 +84,14 @@ module Closures = struct
 
   let record location pname captured astate =
     let captured_addresses =
-      List.rev_map captured ~f:(fun (captured_as, (address_captured, trace_captured)) ->
-          let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
-          (address_captured, new_trace) )
+      List.rev_filter_map captured
+        ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
+          match mode with
+          | `ByValue ->
+              None
+          | `ByReference ->
+              let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
+              Some (address_captured, new_trace) )
     in
     let closure_addr = AbstractAddress.mk_fresh () in
     let fake_capture_edges = mk_capture_edges captured_addresses in
@@ -133,7 +138,12 @@ let eval location exp0 astate =
         List.fold_result captured_vars ~init:(astate, [])
           ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _) ->
             eval capt_exp astate
-            >>| fun (astate, addr_trace) -> (astate, (captured_as, addr_trace) :: rev_captured) )
+            >>| fun (astate, addr_trace) ->
+            let mode =
+              (* HACK: the frontend follows this discipline *)
+              match (capt_exp : Exp.t) with Lvar _ -> `ByReference | _ -> `ByValue
+            in
+            (astate, (captured_as, addr_trace, mode) :: rev_captured) )
         >>| fun (astate, rev_captured) ->
         Closures.record location name (List.rev rev_captured) astate
     | Cast (_, exp') ->
