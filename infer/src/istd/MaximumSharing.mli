@@ -7,12 +7,18 @@
 
 open! IStd
 
-exception MaximumSharingLazyValue
-
 (**
   Current implementation will stack overflow on deep (TODO: a tailrec version)
   or circular values (much harder to detect sharing, also not needed for now).
 *)
+
+module Sharer : sig
+  type t
+
+  val create : unit -> t
+
+  val normalize_value : t -> 'a -> 'a
+end
 
 module ForHashtbl (H : Caml.Hashtbl.S) : sig
   val normalize : 'a H.t -> 'a H.t
