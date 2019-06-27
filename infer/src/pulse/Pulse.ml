@@ -40,12 +40,6 @@ let check_error summary = function
       raise_notrace AbstractDomain.Stop_analysis
 
 
-module Payload = SummaryPayload.Make (struct
-  type t = PulseSummary.t
-
-  let field = Payloads.Fields.pulse
-end)
-
 let proc_name_of_call call_exp =
   match (call_exp : Exp.t) with
   | Const (Cfun proc_name) | Closure {name= proc_name} ->
@@ -86,39 +80,13 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call caller_summary ret call_exp actuals flags call_loc astate =
-    let unknown_function reason =
-      exec_unknown_call reason ret call_exp actuals flags call_loc astate >>| List.return
-    in
     match proc_name_of_call call_exp with
-    | Some callee_pname -> (
-      match Payload.read_full caller_summary.Summary.proc_desc callee_pname with
-      | Some (callee_proc_desc, preposts) ->
-          let formals =
-            Procdesc.get_formals callee_proc_desc
-            |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
-          in
-          (* call {!PulseAbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-          List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
-              (* apply all pre/post specs *)
-              PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
-                astate
-              >>| fun (post, return_val_opt) ->
-              let event = ValueHistory.Call {f= `Call callee_pname; location= call_loc} in
-              let post =
-                match return_val_opt with
-                | Some return_val ->
-                    PulseOperations.write_id (fst ret) (return_val, [event]) post
-                | None ->
-                    PulseOperations.havoc_id (fst ret) [event] post
-              in
-              post :: posts )
-      | None ->
-          (* no spec found for some reason (unknown function, ...) *)
-          L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
-          unknown_function (`UnknownCall callee_pname) )
+    | Some callee_pname ->
+        PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals astate
     | None ->
         L.d_printfln "Indirect call %a@\n" Exp.pp call_exp ;
-        unknown_function (`IndirectCall call_exp)
+        exec_unknown_call (`IndirectCall call_exp) ret call_exp actuals flags call_loc astate
+        >>| List.return
 
 
   (** has an object just gone out of scope? *)
@@ -167,7 +135,7 @@ module PulseTransferFunctions = struct
     match model with
     | Some model ->
         L.d_printfln "Found model for call@\n" ;
-        model call_loc ~ret ~actuals:actuals_evaled astate
+        model ~caller_summary:summary call_loc ~ret ~actuals:actuals_evaled astate
     | None -> (
         (* do interprocedural call then destroy objects going out of scope *)
         PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
@@ -254,7 +222,7 @@ let checker {Callbacks.proc_desc; tenv; summary} =
   in
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
-      Payload.update_summary
+      PulsePayload.update_summary
         (PulseSummary.of_posts (DisjunctiveTransferFunctions.Disjuncts.elements posts))
         summary
   | None ->

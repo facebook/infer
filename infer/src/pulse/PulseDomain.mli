@@ -163,6 +163,8 @@ module Memory : sig
 
   val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 
+  val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
+
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool

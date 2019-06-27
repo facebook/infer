@@ -292,3 +292,32 @@ let remove_vars vars astate =
   in
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then astate else PulseAbductiveDomain.discard_unreachable astate'
+
+
+let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
+  match PulsePayload.read_full caller_summary.Summary.proc_desc callee_pname with
+  | Some (callee_proc_desc, preposts) ->
+      let formals =
+        Procdesc.get_formals callee_proc_desc
+        |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
+      in
+      (* call {!PulseAbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
+      List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
+          (* apply all pre/post specs *)
+          PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
+            astate
+          >>| fun (post, return_val_opt) ->
+          let event = ValueHistory.Call {f= `Call callee_pname; location= call_loc} in
+          let post =
+            match return_val_opt with
+            | Some return_val ->
+                write_id (fst ret) (return_val, [event]) post
+            | None ->
+                havoc_id (fst ret) [event] post
+          in
+          post :: posts )
+  | None ->
+      (* no spec found for some reason (unknown function, ...) *)
+      L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
+      let event = ValueHistory.Call {f= `UnknownCall callee_pname; location= call_loc} in
+      Ok [havoc_id (fst ret) [event] astate]

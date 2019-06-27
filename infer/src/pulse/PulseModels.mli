@@ -7,7 +7,8 @@
 open! IStd
 
 type exec_fun =
-     Location.t
+     caller_summary:Summary.t
+  -> Location.t
   -> ret:Ident.t * Typ.t
   -> actuals:(PulseDomain.AddrTracePair.t * Typ.t) list
   -> PulseAbductiveDomain.t

@@ -8,7 +8,8 @@ open! IStd
 open Result.Monad_infix
 
 type exec_fun =
-     Location.t
+     caller_summary:Summary.t
+  -> Location.t
   -> ret:Ident.t * Typ.t
   -> actuals:(PulseDomain.AddrTracePair.t * Typ.t) list
   -> PulseAbductiveDomain.t
@@ -18,7 +19,7 @@ type model = exec_fun
 
 module Misc = struct
   let shallow_copy model_desc : model =
-   fun location ~ret:(ret_id, _) ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
     let event = PulseDomain.ValueHistory.Call {f= `Model model_desc; location} in
     ( match actuals with
     | [(dest_pointer_hist, _); (src_pointer_hist, _)] ->
@@ -35,14 +36,14 @@ module Misc = struct
     >>| fun astate -> [PulseOperations.havoc_id ret_id [event] astate]
 
 
-  let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok []
+  let early_exit : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ _ -> Ok []
 
-  let skip : model = fun _ ~ret:_ ~actuals:_ astate -> Ok [astate]
+  let skip : model = fun ~caller_summary:_ _ ~ret:_ ~actuals:_ astate -> Ok [astate]
 end
 
 module C = struct
   let free : model =
-   fun location ~ret:_ ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
         PulseOperations.invalidate location
@@ -55,7 +56,7 @@ end
 
 module Cplusplus = struct
   let delete : model =
-   fun location ~ret:_ ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
         PulseOperations.invalidate location
@@ -67,7 +68,7 @@ module Cplusplus = struct
 
 
   let placement_new : model =
-   fun location ~ret:(ret_id, _) ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
     let event = PulseDomain.ValueHistory.Call {f= `Model "<placement new>"; location} in
     match List.rev actuals with
     | ((address, _), _) :: _ ->
@@ -78,19 +79,28 @@ end
 
 module StdFunction = struct
   let operator_call : model =
-   fun location ~ret:(ret_id, _) ~actuals astate ->
-    ( match actuals with
-    | (lambda_ptr_hist, _) :: _ ->
+   fun ~caller_summary location ~ret ~actuals astate ->
+    let havoc_ret (ret_id, _) astate =
+      let event =
+        PulseDomain.ValueHistory.Call {f= `Model "std::function::operator()"; location}
+      in
+      [PulseOperations.havoc_id ret_id [event] astate]
+    in
+    match actuals with
+    | [] ->
+        Ok (havoc_ret ret astate)
+    | (lambda_ptr_hist, _) :: actuals -> (
         PulseOperations.eval_access location lambda_ptr_hist Dereference astate
         >>= fun (astate, (lambda, _)) ->
         PulseOperations.Closures.check_captured_addresses
           (PulseDomain.InterprocAction.Immediate {imm= (); location})
           lambda astate
-    | _ ->
-        Ok astate )
-    >>| fun astate ->
-    let event = PulseDomain.ValueHistory.Call {f= `Model "<lambda>"; location} in
-    [PulseOperations.havoc_id ret_id [event] astate]
+        >>= fun astate ->
+        match PulseAbductiveDomain.Memory.get_closure_proc_name lambda astate with
+        | None ->
+            (* we don't know what proc name this lambda resolves to *) Ok (havoc_ret ret astate)
+        | Some callee_proc_name ->
+            PulseOperations.call ~caller_summary location callee_proc_name ~ret ~actuals astate )
 end
 
 module StdVector = struct
@@ -125,7 +135,7 @@ module StdVector = struct
 
 
   let invalidate_references vector_f : model =
-   fun location ~ret:_ ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | (vector, _) :: _ ->
         let crumb =
@@ -141,7 +151,7 @@ module StdVector = struct
 
 
   let at : model =
-   fun location ~ret ~actuals astate ->
+   fun ~caller_summary:_ location ~ret ~actuals astate ->
     let event = PulseDomain.ValueHistory.Call {f= `Model "std::vector::at"; location} in
     match actuals with
     | [(vector, _); (index, _)] ->
@@ -152,7 +162,7 @@ module StdVector = struct
 
 
   let reserve : model =
-   fun location ~ret:_ ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(vector, _); _value] ->
         let crumb = PulseDomain.ValueHistory.Call {f= `Model "std::vector::reserve"; location} in
@@ -164,7 +174,7 @@ module StdVector = struct
 
 
   let push_back : model =
-   fun location ~ret:_ ~actuals astate ->
+   fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(vector, _); _value] ->
         let crumb = PulseDomain.ValueHistory.Call {f= `Model "std::vector::push_back"; location} in

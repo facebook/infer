@@ -248,6 +248,8 @@ module Attribute = struct
 
   let to_rank = Variants.to_rank
 
+  let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
+
   let invalid_rank =
     Variants.to_rank
       (Invalid
@@ -291,6 +293,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.MustBeValid action) = attr in
            action )
+
+
+  let get_closure_proc_name attrs =
+    Set.find_rank attrs Attribute.closure_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Closure proc_name) = attr in
+           proc_name )
 
 
   let is_std_vector_reserved attrs =
@@ -397,6 +406,8 @@ module Memory : sig
 
   val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 
+  val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
+
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
@@ -469,6 +480,11 @@ end = struct
         Error invalidation
     | None ->
         Ok ()
+
+
+  let get_closure_proc_name address memory =
+    Graph.find_opt address (snd memory)
+    |> Option.bind ~f:(fun attributes -> Attributes.get_closure_proc_name attributes)
 
 
   let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory

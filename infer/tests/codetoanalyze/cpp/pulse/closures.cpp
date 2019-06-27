@@ -156,3 +156,16 @@ void capture_multiple_vars_by_value_ok(C c, C c2) {
     return d;
   };
 }
+
+void call_lambda_ok() {
+  auto f = [](S* s) { int x = s->f; };
+  S* s = new S();
+  f(s);
+}
+
+void call_lambda_bad() {
+  auto f = [](S* s) { int x = s->f; };
+  S* s = new S();
+  delete s;
+  f(s);
+}

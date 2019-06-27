@@ -99,3 +99,14 @@ val check_address_escape :
   -> PulseDomain.ValueHistory.t
   -> t
   -> t access_result
+
+val call :
+     caller_summary:Summary.t
+  -> Location.t
+  -> Typ.Procname.t
+  -> ret:Ident.t * Typ.t
+  -> actuals:((AbstractAddress.t * PulseDomain.ValueHistory.t) * Typ.t) list
+  -> t
+  -> t list access_result
+(** perform an interprocedural call: apply the summary for the call proc name passed as argument if
+    it exists *)
