@@ -93,12 +93,8 @@ std::function<int()> ref_capture_read_lambda_ok() {
       f; // reading (but not invoking) the lambda doesn't use its captured vars
 }
 
-int FN_delete_lambda_then_call_bad() {
+int delete_lambda_then_call_bad() {
   std::function<int()> lambda = [] { return 1; };
-  // std::function<_>_~function() has no implementation so the call is
-  // skipped and we don't apply the logic for marking the object as
-  // destructed because it's an explicit call (as opposed to a call
-  // injected by the frontend)
   lambda.~function();
   return lambda();
 }

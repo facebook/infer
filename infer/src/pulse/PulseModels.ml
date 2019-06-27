@@ -195,6 +195,7 @@ module ProcNameDispatcher = struct
     make_dispatcher
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+      ; -"std" &:: "function" &:: "~function" &--> Cplusplus.delete
       ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
       ; -"std" &:: "function" &:: "operator=" &--> Misc.shallow_copy "std::function::operator="
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
