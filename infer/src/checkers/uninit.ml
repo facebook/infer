@@ -190,8 +190,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           check_hil_expr ~loc e
       | HilExp.AccessExpression access_expr ->
           check_access_expr ~loc access_expr
-      | _ ->
-          ()
+      | hil_expr ->
+          HilExp.get_access_exprs hil_expr
+          |> List.iter ~f:(fun access_expr -> check_access_expr ~loc access_expr)
     in
     let update_prepost access_expr rhs =
       let lhs_base = HilExp.AccessExpression.get_base access_expr in

@@ -193,7 +193,7 @@ int ok10() {
   return 1;
 }
 
-void FN_capture_read_bad() {
+void capture_read_bad() {
   int x;
   [x]() {
     int y = x;
@@ -329,4 +329,9 @@ void FN_call_to_maybe_uninit_fn_ptr_bad(bool nondet) {
   if (nondet)
     f = use_square_ok1;
   f();
+}
+
+void use_uninit_in_expr_bad() {
+  int x;
+  int y = x + 2;
 }
