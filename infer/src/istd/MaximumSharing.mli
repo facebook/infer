@@ -8,8 +8,8 @@
 open! IStd
 
 (**
-  Current implementation will stack overflow on deep (TODO: a tailrec version)
-  or circular values (much harder to detect sharing, also not needed for now).
+  Current implementation will stack overflow on deep values (TODO: a tailrec version)
+  and throw on circular values.
 *)
 
 module Sharer : sig
