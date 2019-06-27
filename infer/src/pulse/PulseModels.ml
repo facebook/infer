@@ -194,6 +194,7 @@ module ProcNameDispatcher = struct
     let open ProcnameDispatcher.ProcName in
     make_dispatcher
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
+      ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
       ; -"std" &:: "function" &:: "~function" &--> Cplusplus.delete
       ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
