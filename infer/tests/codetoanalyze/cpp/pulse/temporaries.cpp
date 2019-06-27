@@ -65,7 +65,18 @@ void temporary_in_ternary_ok() {
   }
 }
 
-void temporary_in_condition_ok() {
+void temporary_in_if_condition_ok() {
+  if (A(4).s_) {
+  }
+
+  if (true && A(4).s_ && true) {
+  }
+}
+
+void temporary_in_while_condition_ok() {
+  while (A(4).s_) {
+  }
+
   while (true && A(4).s_ && true) {}
 }
 

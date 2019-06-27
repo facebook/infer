@@ -1611,7 +1611,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       create_prune_node context.procdesc ~branch ~negate_cond e ins sil_loc if_kind
     in
     (* this function translate cond without doing shortcircuit *)
-    let no_short_circuit_cond ~is_cmp =
+    let no_short_circuit_cond ~is_cmp cond =
       L.(debug Capture Verbose) " No short-circuit condition@\n" ;
       let res_trans_cond =
         if is_null_stmt cond then
@@ -1704,16 +1704,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | `LOr ->
           short_circuit (if negate_cond then Binop.LAnd else Binop.LOr) s1 s2
       | `LT | `GT | `LE | `GE | `EQ | `NE ->
-          no_short_circuit_cond ~is_cmp:true
+          no_short_circuit_cond ~is_cmp:true cond
       | _ ->
-          no_short_circuit_cond ~is_cmp:false )
+          no_short_circuit_cond ~is_cmp:false cond )
     | ParenExpr (_, [s], _) ->
-        (* condition can be wrapped in parenthesys *)
+        (* condition can be wrapped in parentheses *)
         cond_trans ~if_kind ~negate_cond trans_state s
     | UnaryOperator (_, [s], _, {uoi_kind= `LNot}) ->
         cond_trans ~if_kind ~negate_cond:(not negate_cond) trans_state s
-    | _ ->
-        no_short_circuit_cond ~is_cmp:false
+    | ExprWithCleanups (_, [s], _, _)
+    (* Skip destructors of temporaries inside conditionals otherwise
+       we would destroy them before dereferencing them in the prune
+       nodes. A better fix probably exists. *)
+    | s ->
+        no_short_circuit_cond ~is_cmp:false s
 
 
   and declStmt_in_condition_trans trans_state decl_stmt res_trans_cond =
