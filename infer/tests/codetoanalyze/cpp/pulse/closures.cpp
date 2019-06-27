@@ -13,7 +13,7 @@ struct S {
   ~S() {}
 };
 
-int FN_ref_capture_destroy_invoke_bad() {
+int ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     S s;
@@ -22,7 +22,7 @@ int FN_ref_capture_destroy_invoke_bad() {
   return f(); // s used here
 }
 
-int FN_implicit_ref_capture_destroy_invoke_bad() {
+int implicit_ref_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();
@@ -44,7 +44,7 @@ int FN_reassign_lambda_capture_destroy_invoke_bad() {
 
 // frontend doesn't understand difference between capture-by-value and
 // capture-by-ref, need to fix
-int value_capture_destroy_invoke_ok() {
+int FP_value_capture_destroy_invoke_ok() {
   std::function<int()> f;
   {
     S s;
@@ -54,7 +54,7 @@ int value_capture_destroy_invoke_ok() {
 }
 
 // same thing here
-int implicit_value_capture_destroy_invoke_ok() {
+int FP_implicit_value_capture_destroy_invoke_ok() {
   std::function<int()> f;
   {
     S s;

@@ -86,6 +86,10 @@ val invalidate_array_elements :
   -> t access_result
 (** record that all the array elements that address points to is invalid *)
 
+val shallow_copy :
+  Location.t -> PulseDomain.AddrTracePair.t -> t -> (t * AbstractAddress.t) access_result
+(** returns the address of a new cell with the same edges as the original *)
+
 val remove_vars : Var.t list -> t -> t
 
 val check_address_escape :

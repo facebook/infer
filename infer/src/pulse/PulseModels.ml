@@ -17,6 +17,24 @@ type exec_fun =
 type model = exec_fun
 
 module Misc = struct
+  let shallow_copy model_desc : model =
+   fun location ~ret:(ret_id, _) ~actuals astate ->
+    let event = PulseDomain.ValueHistory.Call {f= `Model model_desc; location} in
+    ( match actuals with
+    | [(dest_pointer_hist, _); (src_pointer_hist, _)] ->
+        PulseOperations.eval_access location src_pointer_hist Dereference astate
+        >>= fun (astate, obj) ->
+        PulseOperations.shallow_copy location obj astate
+        >>= fun (astate, obj_copy) ->
+        let obj_hist = snd obj in
+        PulseOperations.write_deref location ~ref:dest_pointer_hist
+          ~obj:(obj_copy, event :: obj_hist)
+          astate
+    | _ ->
+        Ok astate )
+    >>| fun astate -> [PulseOperations.havoc_id ret_id [event] astate]
+
+
   let early_exit : model = fun _ ~ret:_ ~actuals:_ _ -> Ok []
 
   let skip : model = fun _ ~ret:_ ~actuals:_ astate -> Ok [astate]
@@ -48,20 +66,6 @@ module Cplusplus = struct
         Ok [astate]
 
 
-  let operator_call : model =
-   fun location ~ret:(ret_id, _) ~actuals astate ->
-    ( match actuals with
-    | (lambda, _) :: _ ->
-        PulseOperations.Closures.check_captured_addresses
-          (PulseDomain.InterprocAction.Immediate {imm= (); location})
-          (fst lambda) astate
-    | _ ->
-        Ok astate )
-    >>| fun astate ->
-    let event = PulseDomain.ValueHistory.Call {f= `Model "<lambda>"; location} in
-    [PulseOperations.havoc_id ret_id [event] astate]
-
-
   let placement_new : model =
    fun location ~ret:(ret_id, _) ~actuals astate ->
     let event = PulseDomain.ValueHistory.Call {f= `Model "<placement new>"; location} in
@@ -70,6 +74,23 @@ module Cplusplus = struct
         Ok [PulseOperations.write_id ret_id (address, [event]) astate]
     | _ ->
         Ok [PulseOperations.havoc_id ret_id [event] astate]
+end
+
+module StdFunction = struct
+  let operator_call : model =
+   fun location ~ret:(ret_id, _) ~actuals astate ->
+    ( match actuals with
+    | (lambda_ptr_hist, _) :: _ ->
+        PulseOperations.eval_access location lambda_ptr_hist Dereference astate
+        >>= fun (astate, (lambda, _)) ->
+        PulseOperations.Closures.check_captured_addresses
+          (PulseDomain.InterprocAction.Immediate {imm= (); location})
+          lambda astate
+    | _ ->
+        Ok astate )
+    >>| fun astate ->
+    let event = PulseDomain.ValueHistory.Call {f= `Model "<lambda>"; location} in
+    [PulseOperations.havoc_id ret_id [event] astate]
 end
 
 module StdVector = struct
@@ -164,7 +185,8 @@ module ProcNameDispatcher = struct
     make_dispatcher
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
-      ; -"std" &:: "function" &:: "operator()" &--> Cplusplus.operator_call
+      ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
+      ; -"std" &:: "function" &:: "operator=" &--> Misc.shallow_copy "std::function::operator="
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
       ; -"std" &:: "vector" &:: "clear" &--> StdVector.invalidate_references Clear
       ; -"std" &:: "vector" &:: "emplace" &--> StdVector.invalidate_references Emplace

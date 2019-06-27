@@ -215,6 +215,21 @@ let invalidate_array_elements location cause addr_trace astate =
         edges astate
 
 
+let shallow_copy location addr_hist astate =
+  let action = action_of_address location in
+  check_addr_access action addr_hist astate
+  >>| fun astate ->
+  let cell =
+    match Memory.find_opt (fst addr_hist) astate with
+    | None ->
+        (Memory.Edges.empty, Attributes.empty)
+    | Some cell ->
+        cell
+  in
+  let copy = AbstractAddress.mk_fresh () in
+  (Memory.set_cell copy cell astate, copy)
+
+
 let check_address_escape escape_location proc_desc address history astate =
   let is_assigned_to_global address astate =
     let points_to_address pointer address astate =

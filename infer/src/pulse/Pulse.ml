@@ -166,6 +166,7 @@ module PulseTransferFunctions = struct
     in
     match model with
     | Some model ->
+        L.d_printfln "Found model for call@\n" ;
         model call_loc ~ret ~actuals:actuals_evaled astate
     | None -> (
         (* do interprocedural call then destroy objects going out of scope *)
