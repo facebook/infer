@@ -80,4 +80,31 @@ int FN_bind_temporary_to_const_bad() {
   return a_ptr->s_;
 }
 
+struct AutoConvertibleFromA {
+  ~AutoConvertibleFromA() {}
+
+  // auto-conversion between A and AutoConvertibleFromA
+  constexpr AutoConvertibleFromA(const A&) {}
+};
+
+struct InitListConstructible {
+  ~InitListConstructible() {}
+  InitListConstructible(const InitListConstructible&) noexcept;
+};
+
+A make_an_A(); // creates an A
+InitListConstructible make_a_InitListConstructible(AutoConvertibleFromA);
+
+// test that the frontend deals with this correctly
+void temporary_in_constructor_in_init_list_ok() {
+  while (true) {
+    // A -> AutoConvertibleFromA conversion requires a temporary to be
+    // materialized to hold the A& necessary for the conversion, then
+    // InitListConstructible's copy constructor generates the init list we want
+    // to test
+    InitListConstructible p =
+        InitListConstructible{make_a_InitListConstructible(make_an_A())};
+  }
+}
+
 } // namespace temporaries

@@ -2168,8 +2168,25 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match List.map2 field_exps stmts ~f:init_field with
     | Ok result ->
         result
-    | Unequal_lengths ->
-        (* This can happen with union initializers. Skip them for now *) []
+    | Unequal_lengths -> (
+      match stmts with
+      | [stmt] ->
+          (* let's assume that the statement initialises the whole struct (e.g. a constructor call) *)
+          L.debug Capture Medium
+            "assuming initListExpr is initializing the whole struct %a in one go" Exp.pp var_exp ;
+          [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
+      | _ ->
+          (* This can happen with union initializers. Skip them for now *)
+          L.debug Capture Medium
+            "couldn't translate initListExpr properly: list lengths do not match:@\n\
+            \  field_exps is %d: [%a]@\n\
+            \  stmts      is %d: [%a]@\n"
+            (List.length field_exps)
+            (Pp.seq ~sep:"," (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text)))
+            field_exps (List.length stmts)
+            (Pp.seq ~sep:"," (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string))
+            stmts ;
+          [] )
 
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
