@@ -76,6 +76,9 @@ val rem_seg : seg -> t -> t
     (physically equal to) one of the elements of [q.heap]. Raises if [s] is
     not an element of [q.heap]. *)
 
+val filter_heap : f:(seg -> bool) -> t -> t
+(** [filter_heap q f] Remove all segments in [q] for which [f] returns false *)
+
 (** Quantification and Vocabulary *)
 
 val exists : Var.Set.t -> t -> t

@@ -231,8 +231,8 @@ let main ~(command : unit Command.basic_command) ~analyze =
      //fully/qualified/build:target. The mechanism used to integrate with \
      buck uses the arguments passed to the linker, so the target must \
      specify a binary that will be linked, not for instance a library \
-     archive. Sledge passes the --config sledge.build=True flag to buck, which can \
-     be used to configure buck targets for sledge."
+     archive. Sledge passes the --config sledge.build=True flag to buck, \
+     which can be used to configure buck targets for sledge."
   in
   Command.group ~summary ~readme ~preserve_subcommand_order:()
     [("analyze", analyze_cmd); ("bitcode", bitcode_cmd); ("link", link_cmd)]

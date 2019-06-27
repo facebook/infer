@@ -66,8 +66,12 @@ let analyze =
   and skip_throw =
     flag "skip-throw" no_arg
       ~doc:"do not explore past throwing an exception"
+  and function_summaries =
+    flag "function-summaries" no_arg
+      ~doc:"Use function summaries (in development)"
   in
-  fun program () -> Control.exec_pgm {bound; skip_throw} (program ())
+  fun program () ->
+    Control.exec_pgm {bound; skip_throw; function_summaries} (program ())
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in

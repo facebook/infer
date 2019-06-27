@@ -22,9 +22,19 @@ val exec_intrinsic :
 type from_call [@@deriving sexp_of]
 
 val jump : Exp.t list -> Var.t list -> ?temps:Var.Set.t -> t -> t
-val call : Exp.t list -> Var.t list -> Var.Set.t -> t -> t * from_call
+
+val call :
+     summaries:bool
+  -> Exp.t list
+  -> Var.t list
+  -> Var.Set.t
+  -> Global.t vector
+  -> t
+  -> t * from_call
+
 val post : Var.Set.t -> from_call -> t -> t
 val retn : Var.t list -> from_call -> t -> t
+val dnf : t -> t list
 
 val resolve_callee :
   (Var.t -> Llair.func list) -> Exp.t -> t -> Llair.func list

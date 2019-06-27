@@ -22,6 +22,11 @@ type t =
             'rep(resentative)' of [a] *) }
 [@@deriving compare, equal, sexp]
 
+let classes r =
+  Map.fold r.rep ~init:empty_map ~f:(fun ~key ~data cls ->
+      if Exp.equal key data then cls
+      else Map.add_multi cls ~key:data ~data:key )
+
 (** Pretty-printing *)
 
 let pp fs {sat; rep} =
@@ -37,16 +42,12 @@ let pp fs {sat; rep} =
     (Map.to_alist rep)
 
 let pp_classes fs r =
-  let cls =
-    Map.fold r.rep ~init:empty_map ~f:(fun ~key ~data cls ->
-        if Exp.equal key data then cls
-        else Map.add_multi cls ~key:data ~data:key )
-  in
   List.pp "@ @<2>∧ "
     (fun fs (key, data) ->
       Format.fprintf fs "@[%a@ = %a@]" Exp.pp key (List.pp "@ = " Exp.pp)
         (List.sort ~compare:Exp.compare data) )
-    fs (Map.to_alist cls)
+    fs
+    (Map.to_alist (classes r))
 
 let pp_diff fs (r, s) =
   let pp_sdiff_map pp_elt_diff equal nam fs x y =
@@ -219,6 +220,10 @@ let entails r s =
   Map.for_alli s.rep ~f:(fun ~key:e ~data:e' -> entails_eq r e e')
 
 let normalize = canon
+
+let class_of r e =
+  let e' = normalize r e in
+  e' :: Map.find_multi (classes r) e'
 
 let difference r a b =
   [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Exp.pp a Exp.pp b pp r]

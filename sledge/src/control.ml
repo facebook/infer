@@ -9,7 +9,7 @@
 
     The analysis' semantics of control flow. *)
 
-type exec_opts = {bound: int; skip_throw: bool}
+type exec_opts = {bound: int; skip_throw: bool; function_summaries: bool}
 
 module Stack : sig
   type t
@@ -254,19 +254,27 @@ let exec_jump ?temps stk state block ({dst; args} as jmp : Llair.jump) =
   exec_goto stk state block jmp
 
 let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
-    (return : Llair.jump) throw =
+    (return : Llair.jump) throw globals =
   [%Trace.call fun {pf} ->
     pf "%a from %a" Var.pp dst.parent.name.var Var.pp
       return.dst.parent.name.var]
   ;
-  let locals = dst.parent.locals in
-  let state, from_call = Domain.call args dst.params locals state in
-  ( match
-      Stack.push_call ~bound:opts.bound dst ~retreating ~return from_call
-        ?throw stk
-    with
-  | Some stk -> Work.add stk ~prev:block ~retreating state dst
-  | None -> Work.skip )
+  let dnf_states =
+    if opts.function_summaries then Domain.dnf state else [state]
+  in
+  List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
+      let locals = dst.parent.locals in
+      let state, from_call =
+        Domain.call ~summaries:opts.function_summaries args dst.params
+          locals globals state
+      in
+      Work.seq acc
+        ( match
+            Stack.push_call ~bound:opts.bound dst ~retreating ~return
+              from_call ?throw stk
+          with
+        | Some stk -> Work.add stk ~prev:block ~retreating state dst
+        | None -> Work.skip ) )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
@@ -395,7 +403,7 @@ let exec_term :
             | None ->
                 exec_call ~opts stk state block
                   {dst= callee.entry; args; retreating}
-                  return throw )
+                  return throw pgm.globals )
             |> Work.seq x ) )
   | Return {exp} -> exec_return stk state block exp
   | Throw {exc} ->
@@ -423,8 +431,8 @@ let exec_block :
       Report.invalid_access_inst state inst ;
       Work.skip
 
-let harness : Llair.t -> (int -> Work.t) option =
- fun pgm ->
+let harness : opts:exec_opts -> Llair.t -> (int -> Work.t) option =
+ fun ~opts pgm ->
   let entry_points = Config.find_list "entry-points" in
   List.find_map entry_points ~f:(fun name ->
       Llair.Func.find pgm.functions (Var.program name) )
@@ -432,7 +440,9 @@ let harness : Llair.t -> (int -> Work.t) option =
   | Some {locals; entry= {params= []} as block} ->
       Some
         (Work.init
-           (fst (Domain.call [] [] locals (Domain.init pgm.globals)))
+           (fst
+              (Domain.call ~summaries:opts.function_summaries [] [] locals
+                 pgm.globals (Domain.init pgm.globals)))
            block)
   | _ -> None
 
@@ -440,7 +450,7 @@ let exec_pgm : exec_opts -> Llair.t -> unit =
  fun opts pgm ->
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
-  ( match harness pgm with
+  ( match harness ~opts pgm with
   | Some work -> Work.run ~f:(exec_block ~opts pgm) (work opts.bound)
   | None -> fail "no applicable harness" () )
   |>

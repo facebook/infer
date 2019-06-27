@@ -9,6 +9,7 @@
 
 type exec_opts =
   { bound: int  (** Loop/recursion unrolling bound *)
-  ; skip_throw: bool  (** Treat throw as unreachable *) }
+  ; skip_throw: bool  (** Treat throw as unreachable *)
+  ; function_summaries: bool  (** Use function summarisation *) }
 
 val exec_pgm : exec_opts -> Llair.t -> unit

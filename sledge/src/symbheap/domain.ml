@@ -45,18 +45,27 @@ type from_call =
 [@@deriving sexp_of]
 
 let jump actuals formals ?temps (entry, current) =
-  let current, _ =
-    State_domain.call actuals formals Var.Set.empty ?temps current
-  in
+  let current, _ = State_domain.jump actuals formals ?temps current in
   (entry, current)
 
-let call actuals formals locals (_, current) =
-  [%Trace.call fun {pf} -> pf ""]
-  ;
-  let current, state_from_call =
-    State_domain.call actuals formals locals current
+let call ~summaries actuals formals locals globals_vec (_, current) =
+  let globals =
+    Var.Set.of_vector
+      (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
   in
-  ((current, current), {state_from_call; caller_entry= current})
+  ([%Trace.call fun {pf} ->
+     pf
+       "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
+        globals: {@[%a@]}@ current: %a@]"
+       (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
+       (List.rev formals) Var.Set.pp locals Var.Set.pp globals
+       State_domain.pp current]
+  ;
+  let caller_current, state_from_call =
+    State_domain.call ~summaries actuals formals locals globals current
+  in
+  ( (caller_current, caller_current)
+  , {state_from_call; caller_entry= current} ))
   |>
   [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
@@ -73,6 +82,9 @@ let retn formals {caller_entry; state_from_call} (_, current) =
   (caller_entry, State_domain.retn formals state_from_call current)
   |>
   [%Trace.retn fun {pf} -> pf "@,%a" pp]
+
+let dnf (entry, current) =
+  List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
 let resolve_callee f e (_, current) =
   State_domain.resolve_callee f e current

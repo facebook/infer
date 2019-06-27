@@ -45,11 +45,14 @@ val entails_eq : t -> Exp.t -> Exp.t -> bool
 val entails : t -> t -> bool
 (** Test if one relation entails another. *)
 
+val class_of : t -> Exp.t -> Exp.t list
+(** Equivalence class of [e]: all the expressions in [f] in the relation
+    such that [e = f] is implied by the relation. *)
+
 val normalize : t -> Exp.t -> Exp.t
 (** Normalize an exp [e] to [e'] such that [e = e'] is implied by the
     relation, where [e'] and its sub-exps are expressed in terms of the
-    relation's canonical representatives of each equivalence-modulo-offset
-    class. *)
+    relation's canonical representatives of each equivalence class. *)
 
 val difference : t -> Exp.t -> Exp.t -> Z.t option
 (** The difference as an offset. [difference r a b = Some k] if [r] implies

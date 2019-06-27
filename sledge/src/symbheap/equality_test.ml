@@ -211,6 +211,18 @@ let%test_module _ =
 
       %v_3 = %w_4 = %x_5 = %y_6 = %z_7 |}]
 
+    let%expect_test _ =
+      printf (List.pp " , " Exp.pp) (Equality.class_of r7 t) ;
+      printf (List.pp " , " Exp.pp) (Equality.class_of r7 x) ;
+      printf (List.pp " , " Exp.pp) (Equality.class_of r7 z) ;
+      [%expect
+        {|
+        %t_1
+
+        %v_3 , %x_5
+
+        %w_4 , %z_7 , %y_6 |}]
+
     let r7' = and_eq x z r7
 
     let%expect_test _ =

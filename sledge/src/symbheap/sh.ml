@@ -404,6 +404,9 @@ let with_pure pure q = {q with pure} |> check invariant
 let rem_seg seg q =
   {q with heap= List.remove_exn q.heap seg} |> check invariant
 
+let filter_heap ~f q =
+  {q with heap= List.filter q.heap ~f} |> check invariant
+
 (** Query *)
 
 let is_emp = function
