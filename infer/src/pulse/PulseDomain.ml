@@ -384,6 +384,8 @@ module Memory : sig
 
   val find_opt : AbstractAddress.t -> t -> cell option
 
+  val fold_attrs : (AbstractAddress.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+
   val set_attrs : AbstractAddress.t -> Attributes.t -> t -> t
 
   val set_edges : AbstractAddress.t -> edges -> t -> t
@@ -514,6 +516,8 @@ end = struct
         let attrs = Option.value attrs_opt ~default:Attributes.empty in
         Some (edges, attrs)
 
+
+  let fold_attrs f memory init = Graph.fold f (snd memory) init
 
   let set_attrs addr attrs memory = (fst memory, Graph.add addr attrs (snd memory))
 

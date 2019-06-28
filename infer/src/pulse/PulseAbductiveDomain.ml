@@ -671,6 +671,32 @@ module PrePost = struct
         call_state
 
 
+  let record_post_remaining_attributes callee_proc_name call_loc pre_post call_state =
+    let heap0 = (call_state.astate.post :> base_domain).heap in
+    let heap =
+      PulseDomain.Memory.fold_attrs
+        (fun addr_callee attrs heap ->
+          if AddressSet.mem addr_callee call_state.visited then
+            (* already recorded the attributes when we were walking the edges map *) heap
+          else
+            match AddressMap.find_opt addr_callee call_state.subst with
+            | None ->
+                (* callee address has no meaning for the caller *) heap
+            | Some addr_caller ->
+                let attrs' =
+                  Attributes.map
+                    ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc attr)
+                    attrs
+                in
+                PulseDomain.Memory.set_attrs addr_caller attrs' heap )
+        (pre_post.post :> PulseDomain.t).heap heap0
+    in
+    if phys_equal heap heap0 then call_state
+    else
+      let post = Domain.make (call_state.astate.post :> PulseDomain.t).stack heap in
+      {call_state with astate= {call_state.astate with post}}
+
+
   let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
     PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
     let r =
@@ -678,7 +704,10 @@ module PrePost = struct
         call_state
       |> apply_post_for_globals callee_proc_name call_location pre_post
       |> record_post_for_return callee_proc_name call_location pre_post
-      |> fun ({astate; _}, return_caller) -> (astate, return_caller)
+      |> fun (call_state, return_caller) ->
+      ( record_post_remaining_attributes callee_proc_name call_location pre_post call_state
+      , return_caller )
+      |> fun ({astate}, return_caller) -> (astate, return_caller)
     in
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     r

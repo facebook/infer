@@ -94,3 +94,14 @@ void feed_invalid_into_access_bad() {
   struct Y* y = may_return_invalid_ptr_ok();
   call_store(y);
 }
+
+void invalidate_and_set_to_null(struct X** x_ptr) {
+  delete (*x_ptr);
+  *x_ptr = nullptr;
+}
+
+void access_to_invalidated_alias(struct X* x, struct X* y) {
+  y = x;
+  invalidate_and_set_to_null(&x);
+  wraps_read(*y);
+}
