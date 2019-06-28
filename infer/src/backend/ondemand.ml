@@ -12,17 +12,13 @@ open! IStd
 module L = Logging
 module F = Format
 
-type analyze_ondemand = Summary.t -> Procdesc.t -> Summary.t
-
-type callbacks = {exe_env: Exe_env.t; analyze_ondemand: analyze_ondemand}
-
-let callbacks_ref = ref None
+let exe_env_ref = ref None
 
 let cached_results = lazy (Typ.Procname.Hash.create 128)
 
-let set_callbacks (callbacks : callbacks) = callbacks_ref := Some callbacks
+let set_exe_env (env : Exe_env.t) = exe_env_ref := Some env
 
-let unset_callbacks () = callbacks_ref := None
+let unset_exe_env () = exe_env_ref := None
 
 (* always incremented before use *)
 let nesting = ref (-1)
@@ -195,7 +191,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     match exn with
     | SymOp.Analysis_failure_exe kind ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
-            the failure occurred *)
+              the failure occurred *)
         log_error_and_continue exn initial_summary kind
     | _ ->
         (* this happens with assert false or some other unrecognized exception *)
@@ -215,8 +211,44 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   summary
 
 
+let dump_duplicate_procs source_file procs =
+  let duplicate_procs =
+    List.filter_map procs ~f:(fun pname ->
+        match Attributes.load pname with
+        | Some
+            { is_defined=
+                true
+                (* likely not needed: if [pname] is part of [procs] then it *is* defined, so we
+               expect the attribute to be defined too *)
+            ; translation_unit
+            ; loc }
+          when (* defined in another file *)
+               (not (SourceFile.equal source_file translation_unit))
+               && (* really defined in that file and not in an include *)
+                  SourceFile.equal translation_unit loc.file ->
+            Some (pname, translation_unit)
+        | _ ->
+            None )
+  in
+  let output_to_file duplicate_procs =
+    Out_channel.with_file (Config.results_dir ^/ Config.duplicates_filename)
+      ~append:true ~perm:0o666 ~f:(fun outc ->
+        let fmt = F.formatter_of_out_channel outc in
+        List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
+            F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n"
+              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) ;
+        F.pp_print_flush fmt () )
+  in
+  if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
+
+
+let create_perf_stats_report source_file =
+  PerfStats.register_report PerfStats.TimeAndMemory (PerfStats.Backend source_file) ;
+  PerfStats.get_reporter (PerfStats.Backend source_file) ()
+
+
 let analyze_proc ?caller_pdesc callee_pdesc =
-  let callbacks = Option.value_exn !callbacks_ref in
+  let exe_env = Option.value_exn !exe_env_ref in
   (* wrap [callbacks.analyze_ondemand] to update the status bar *)
   let analyze_proc summary pdesc =
     let proc_name = Procdesc.get_proc_name callee_pdesc in
@@ -231,8 +263,8 @@ let analyze_proc ?caller_pdesc callee_pdesc =
     in
     current_taskbar_status := Some (t0, status) ;
     !ProcessPoolState.update_status t0 status ;
-    let summary = callbacks.analyze_ondemand summary pdesc in
-    if Topl.is_active () then Topl.add_errors callbacks.exe_env summary ;
+    let summary = Callbacks.iterate_procedure_callbacks exe_env summary pdesc in
+    if Topl.is_active () then Topl.add_errors exe_env summary ;
     summary
   in
   Some (run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc)
@@ -312,3 +344,27 @@ let analyze_proc_name ?caller_pdesc callee_pname =
 
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
+
+let analyze_procedures exe_env procs_to_analyze source_file_opt =
+  let saved_language = !Language.curr_language in
+  Option.iter source_file_opt ~f:(fun source_file ->
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
+  set_exe_env exe_env ;
+  let analyze_proc_name_call pname = ignore (analyze_proc_name pname : Summary.t option) in
+  List.iter ~f:analyze_proc_name_call procs_to_analyze ;
+  Option.iter source_file_opt ~f:(fun source_file ->
+      Callbacks.iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
+      create_perf_stats_report source_file ) ;
+  unset_exe_env () ;
+  Language.curr_language := saved_language
+
+
+(** Invoke all procedure and cluster callbacks on a given environment. *)
+let analyze_file (exe_env : Exe_env.t) source_file =
+  let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
+  analyze_procedures exe_env procs_to_analyze (Some source_file)
+
+
+(** Invoke procedure callbacks on a given environment. *)
+let analyze_proc_name_toplevel (exe_env : Exe_env.t) proc_name =
+  analyze_procedures exe_env [proc_name] None

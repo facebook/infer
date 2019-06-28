@@ -9,10 +9,6 @@ open! IStd
 
 (** Module for on-demand analysis. *)
 
-type analyze_ondemand = Summary.t -> Procdesc.t -> Summary.t
-
-type callbacks = {exe_env: Exe_env.t; analyze_ondemand: analyze_ondemand}
-
 val get_proc_desc : Typ.Procname.t -> Procdesc.t option
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 
@@ -24,11 +20,14 @@ val analyze_proc_name : ?caller_pdesc:Procdesc.t -> Typ.Procname.t -> Summary.t 
 (** [analyze_proc_name ~caller_pdesc proc_name] performs an on-demand analysis of proc_name
    triggered during the analysis of caller_pdesc *)
 
-val set_callbacks : callbacks -> unit
-(** Set the callbacks used to perform on-demand analysis. *)
-
-val unset_callbacks : unit -> unit
-(** Unset the callbacks used to perform on-demand analysis. *)
+val set_exe_env : Exe_env.t -> unit
+(** Set the execution enviroment used during on-demand analysis. *)
 
 val clear_cache : unit -> unit
 (** empty the cache of ondemand results *)
+
+val analyze_file : Exe_env.t -> SourceFile.t -> unit
+(** Invoke all the callbacks registered in {!Callbacks} on the given file. *)
+
+val analyze_proc_name_toplevel : Exe_env.t -> Typ.Procname.t -> unit
+(** Invoke all the callbacks registered in {!Callbacks} on the given procedure. *)

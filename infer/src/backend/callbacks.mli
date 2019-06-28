@@ -36,8 +36,8 @@ val register_procedure_callback :
 val register_cluster_callback : name:string -> Language.t -> cluster_callback_t -> unit
 (** register a cluster callback *)
 
-val analyze_file : Exe_env.t -> SourceFile.t -> unit
-(** Invoke all the registered callbacks on the given file. *)
+val iterate_procedure_callbacks : Exe_env.t -> Summary.t -> Procdesc.t -> Summary.t
+(** Invoke all registered procedure callbacks on the given procedure. *)
 
-val analyze_proc_name : Exe_env.t -> Typ.Procname.t -> unit
-(** Invoke all the registered callbacks on the given procedure. *)
+val iterate_cluster_callbacks : Typ.Procname.t sexp_list -> Exe_env.t -> SourceFile.t -> unit
+(** Invoke all registered cluster callbacks on a cluster of procedures. *)

@@ -22,7 +22,7 @@ let analyze_target : TaskScheduler.target Tasks.doer =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
-        Callbacks.analyze_file exe_env source_file ;
+        Ondemand.analyze_file exe_env source_file ;
         if Topl.is_active () && Config.debug_mode then
           Dotty.print_icfg_dotty (Topl.sourcefile ()) (Topl.cfg ()) ;
         if Config.write_html then Printer.write_all_html_files source_file )
@@ -38,7 +38,7 @@ let analyze_target : TaskScheduler.target Tasks.doer =
       L.log_task "Analysing block of %d procs, starting with %a@."
         per_procedure_logging_granularity Typ.Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
-    Callbacks.analyze_proc_name exe_env proc_name
+    Ondemand.analyze_proc_name_toplevel exe_env proc_name
   in
   fun target ->
     if Config.memcached then Memcached.connect () ;

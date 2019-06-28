@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 
 (** Module to register and invoke callbacks *)
 
@@ -102,64 +101,3 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
     List.iter
       ~f:(fun {language; callback} -> if language_matches language then callback environment)
       !cluster_callbacks
-
-
-let dump_duplicate_procs source_file procs =
-  let duplicate_procs =
-    List.filter_map procs ~f:(fun pname ->
-        match Attributes.load pname with
-        | Some
-            { is_defined=
-                true
-                (* likely not needed: if [pname] is part of [procs] then it *is* defined, so we
-                   expect the attribute to be defined too *)
-            ; translation_unit
-            ; loc }
-          when (* defined in another file *)
-               (not (SourceFile.equal source_file translation_unit))
-               && (* really defined in that file and not in an include *)
-                  SourceFile.equal translation_unit loc.file ->
-            Some (pname, translation_unit)
-        | _ ->
-            None )
-  in
-  let output_to_file duplicate_procs =
-    Out_channel.with_file (Config.results_dir ^/ Config.duplicates_filename)
-      ~append:true ~perm:0o666 ~f:(fun outc ->
-        let fmt = F.formatter_of_out_channel outc in
-        List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
-            F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n"
-              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) ;
-        F.pp_print_flush fmt () )
-  in
-  if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
-
-
-let create_perf_stats_report source_file =
-  PerfStats.register_report PerfStats.TimeAndMemory (PerfStats.Backend source_file) ;
-  PerfStats.get_reporter (PerfStats.Backend source_file) ()
-
-
-let analyze_procedures exe_env procs_to_analyze source_file_opt =
-  let saved_language = !Language.curr_language in
-  Option.iter source_file_opt ~f:(fun source_file ->
-      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
-  let analyze_ondemand summary proc_desc = iterate_procedure_callbacks exe_env summary proc_desc in
-  Ondemand.set_callbacks {Ondemand.exe_env; analyze_ondemand} ;
-  let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
-  List.iter ~f:analyze_proc_name procs_to_analyze ;
-  Option.iter source_file_opt ~f:(fun source_file ->
-      iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
-      create_perf_stats_report source_file ) ;
-  Ondemand.unset_callbacks () ;
-  Language.curr_language := saved_language
-
-
-(** Invoke all procedure and cluster callbacks on a given environment. *)
-let analyze_file (exe_env : Exe_env.t) source_file =
-  let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
-  analyze_procedures exe_env procs_to_analyze (Some source_file)
-
-
-(** Invoke procedure callbacks on a given environment. *)
-let analyze_proc_name (exe_env : Exe_env.t) proc_name = analyze_procedures exe_env [proc_name] None

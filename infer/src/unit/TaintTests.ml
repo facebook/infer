@@ -115,10 +115,8 @@ let tests =
     make_load_fld ~rhs_typ:(Typ.mk Tvoid) lhs_id_str fld_str (Exp.Var (ident_of_str root_str))
   in
   let assert_empty = invariant "{ }" in
-  (* hack: register an empty analyze_ondemand to prevent a crash because the callback is unset *)
-  let analyze_ondemand summary _ = summary in
-  let callbacks = {Ondemand.exe_env= Exe_env.mk (); analyze_ondemand} in
-  Ondemand.set_callbacks callbacks ;
+  let exe_env = Exe_env.mk () in
+  Ondemand.set_exe_env exe_env ;
   let test_list =
     [ ("source recorded", [assign_to_source "ret_id"; invariant "{ ret_id$0* => (SOURCE -> ?) }"])
     ; ("non-source not recorded", [assign_to_non_source "ret_id"; assert_empty])
