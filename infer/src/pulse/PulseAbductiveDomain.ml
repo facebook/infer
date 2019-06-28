@@ -528,37 +528,7 @@ module PrePost = struct
         attr
 
 
-  let rec record_post_for_address callee_proc_name call_loc ({pre; post} as pre_post) ~addr_callee
-      ~addr_caller call_state =
-    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp addr_caller ;
-    match visit call_state ~addr_callee ~addr_caller with
-    | `AlreadyVisited, call_state ->
-        call_state
-    | `NotAlreadyVisited, call_state -> (
-      match PulseDomain.Memory.find_opt addr_callee (post :> PulseDomain.t).PulseDomain.heap with
-      | None ->
-          call_state
-      | Some ((edges_post, _attrs_post) as cell_post) ->
-          let cell_pre_opt =
-            PulseDomain.Memory.find_opt addr_callee (pre :> PulseDomain.t).PulseDomain.heap
-          in
-          let call_state_after_post =
-            if is_cell_read_only ~cell_pre_opt ~cell_post then call_state
-            else
-              record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt ~addr_caller
-                ~cell_post call_state
-          in
-          IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold
-            ~init:call_state_after_post edges_post
-            ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
-              let call_state, addr_curr_dest =
-                call_state_subst_find_or_new call_state addr_callee_dest
-              in
-              record_post_for_address callee_proc_name call_loc pre_post
-                ~addr_callee:addr_callee_dest ~addr_caller:addr_curr_dest call_state ) )
-
-
-  and record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
+  let record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
       ~cell_post:(edges_post, attrs_post) ~addr_caller call_state =
     let post_edges_minus_pre =
       delete_edges_in_callee_pre_from_caller ~addr_callee ~cell_pre_opt ~addr_caller call_state
@@ -595,6 +565,36 @@ module PrePost = struct
            (call_state.astate.post :> base_domain).heap)
     in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}
+
+
+  let rec record_post_for_address callee_proc_name call_loc ({pre; post} as pre_post) ~addr_callee
+      ~addr_caller call_state =
+    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp addr_caller ;
+    match visit call_state ~addr_callee ~addr_caller with
+    | `AlreadyVisited, call_state ->
+        call_state
+    | `NotAlreadyVisited, call_state -> (
+      match PulseDomain.Memory.find_opt addr_callee (post :> PulseDomain.t).PulseDomain.heap with
+      | None ->
+          call_state
+      | Some ((edges_post, _attrs_post) as cell_post) ->
+          let cell_pre_opt =
+            PulseDomain.Memory.find_opt addr_callee (pre :> PulseDomain.t).PulseDomain.heap
+          in
+          let call_state_after_post =
+            if is_cell_read_only ~cell_pre_opt ~cell_post then call_state
+            else
+              record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt ~addr_caller
+                ~cell_post call_state
+          in
+          IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold
+            ~init:call_state_after_post edges_post
+            ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
+              let call_state, addr_curr_dest =
+                call_state_subst_find_or_new call_state addr_callee_dest
+              in
+              record_post_for_address callee_proc_name call_loc pre_post
+                ~addr_callee:addr_callee_dest ~addr_caller:addr_curr_dest call_state ) )
 
 
   let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual call_state =
@@ -660,7 +660,7 @@ module PrePost = struct
         (* should have been checked before by [materialize_pre] *)
         assert false
     | Ok call_state ->
-        Some call_state
+        call_state
 
 
   let apply_post_for_globals callee_proc_name call_location pre_post call_state =
@@ -682,10 +682,9 @@ module PrePost = struct
     let r =
       apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
         call_state
-      |> Option.map ~f:(fun call_state ->
-             apply_post_for_globals callee_proc_name call_location pre_post call_state
-             |> record_post_for_return callee_proc_name call_location pre_post
-             |> fun ({astate; _}, return_caller) -> (astate, return_caller) )
+      |> apply_post_for_globals callee_proc_name call_location pre_post
+      |> record_post_for_return callee_proc_name call_location pre_post
+      |> fun ({astate; _}, return_caller) -> (astate, return_caller)
     in
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     r
@@ -726,17 +725,9 @@ module PrePost = struct
     | Some (Error _ as error) ->
         (* error: the function call requires to read some state known to be invalid *)
         error
-    | Some (Ok call_state) -> (
+    | Some (Ok call_state) ->
         (* reset [visited] *)
         let call_state = {call_state with visited= AddressSet.empty} in
         (* apply the postcondition *)
-        match apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state with
-        | exception Aliasing ->
-            Ok (astate, None)
-        | None ->
-            (* same as when trying to apply the pre: give up for that pre/post pair and return the
-             original state *)
-            Ok (astate, None)
-        | Some astate_post ->
-            Ok astate_post )
+        Ok (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state)
 end
