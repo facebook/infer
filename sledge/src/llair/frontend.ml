@@ -1395,8 +1395,8 @@ let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let translate : string list -> Llair.t =
- fun inputs ->
+let translate : lib_fuzzer_harness:bool -> string list -> Llair.t =
+ fun ~lib_fuzzer_harness inputs ->
   [%Trace.call fun {pf} ->
     pf "%a" (List.pp "@ " Format.pp_print_string) inputs]
   ;
@@ -1409,6 +1409,13 @@ let translate : string list -> Llair.t =
     in
     Llvm_irreader.parse_ir llcontext model_memorybuffer
   in
+  ( if lib_fuzzer_harness then
+    let lib_fuzzer_memorybuffer =
+      Llvm.MemoryBuffer.of_string
+        (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
+    in
+    Llvm_linker.link_modules' llmodule
+      (Llvm_irreader.parse_ir llcontext lib_fuzzer_memorybuffer) ) ;
   let link_ctx = Llvm_linker.get_linker llmodule in
   List.iter inputs ~f:(link_in llcontext link_ctx) ;
   Llvm_linker.linker_dispose link_ctx ;
