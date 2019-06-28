@@ -143,9 +143,11 @@ module Memory : sig
 
   val find_opt : AbstractAddress.t -> t -> cell option
 
-  val set_cell : AbstractAddress.t -> cell -> t -> t
+  val set_attrs : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val find_attrs_opt : AbstractAddress.t -> t -> Attributes.t option
+  val set_edges : AbstractAddress.t -> edges -> t -> t
+
+  val set_cell : AbstractAddress.t -> cell -> t -> t
 
   val find_edges_opt : AbstractAddress.t -> t -> edges option
 

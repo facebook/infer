@@ -384,9 +384,11 @@ module Memory : sig
 
   val find_opt : AbstractAddress.t -> t -> cell option
 
-  val set_cell : AbstractAddress.t -> cell -> t -> t
+  val set_attrs : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val find_attrs_opt : AbstractAddress.t -> t -> Attributes.t option
+  val set_edges : AbstractAddress.t -> edges -> t -> t
+
+  val set_cell : AbstractAddress.t -> cell -> t -> t
 
   val find_edges_opt : AbstractAddress.t -> t -> edges option
 
@@ -512,6 +514,10 @@ end = struct
         let attrs = Option.value attrs_opt ~default:Attributes.empty in
         Some (edges, attrs)
 
+
+  let set_attrs addr attrs memory = (fst memory, Graph.add addr attrs (snd memory))
+
+  let set_edges addr edges memory = (Graph.add addr edges (fst memory), snd memory)
 
   let set_cell addr (edges, attrs) memory =
     (Graph.add addr edges (fst memory), Graph.add addr attrs (snd memory))

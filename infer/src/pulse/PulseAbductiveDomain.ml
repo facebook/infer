@@ -533,17 +533,12 @@ module PrePost = struct
     let post_edges_minus_pre =
       delete_edges_in_callee_pre_from_caller ~addr_callee ~cell_pre_opt ~addr_caller call_state
     in
-    let new_attrs =
-      let attrs_post =
+    let heap = (call_state.astate.post :> base_domain).heap in
+    let heap =
+      let attrs_post_caller =
         Attributes.map ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc attr) attrs_post
       in
-      match
-        PulseDomain.Memory.find_attrs_opt addr_caller (call_state.astate.post :> base_domain).heap
-      with
-      | None ->
-          attrs_post
-      | Some old_attrs_post ->
-          Attributes.union_prefer_left old_attrs_post attrs_post
+      PulseDomain.Memory.set_attrs addr_caller attrs_post_caller heap
     in
     let subst, translated_post_edges =
       PulseDomain.Memory.Edges.fold_map ~init:call_state.subst edges_post
@@ -554,16 +549,15 @@ module PrePost = struct
             , PulseDomain.ValueHistory.Call {f= `Call callee_proc_name; location= call_loc}
               :: trace_post ) ) )
     in
-    let caller_post =
-      let new_edges =
+    let heap =
+      let edges_post_caller =
         PulseDomain.Memory.Edges.union
           (fun _ _ post_cell -> Some post_cell)
           post_edges_minus_pre translated_post_edges
       in
-      Domain.make (call_state.astate.post :> base_domain).stack
-        (PulseDomain.Memory.set_cell addr_caller (new_edges, new_attrs)
-           (call_state.astate.post :> base_domain).heap)
+      PulseDomain.Memory.set_edges addr_caller edges_post_caller heap
     in
+    let caller_post = Domain.make (call_state.astate.post :> base_domain).stack heap in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}
 
 
