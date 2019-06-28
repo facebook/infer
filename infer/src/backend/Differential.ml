@@ -139,7 +139,7 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-let issue_of_cost CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} cost_info
+let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} cost_info
     ~delta ~prev_cost ~curr_cost =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
@@ -195,7 +195,9 @@ let issue_of_cost CostIssues.{complexity_increase_issue; zero_issue; infinite_is
           "class initializer"
         else "this function"
       in
-      Format.asprintf "Complexity of %s has %a from %a to %a. %s %a" msg
+      Format.asprintf "%s of %s has %a from %a to %a. %s %a"
+        (CostKind.to_complexity_string kind)
+        msg
         (MarkupFormatter.wrap_bold pp_delta)
         delta
         (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
@@ -254,7 +256,7 @@ let issue_of_cost CostIssues.{complexity_increase_issue; zero_issue; infinite_is
       DB < DA => introduced
  *)
 let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
-  let fold_aux issue_spec ~key:_ ~data (left, both, right) =
+  let fold_aux kind issue_spec ~key:_ ~data (left, both, right) =
     match data with
     | `Both (current, previous) ->
         let max_degree_polynomial l =
@@ -278,14 +280,14 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
           if cmp > 0 then
             (* introduced *)
             let left' =
-              issue_of_cost issue_spec curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
+              issue_of_cost kind issue_spec curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
               |> concat_opt left
             in
             (left', both, right)
           else if cmp < 0 then
             (* fixed *)
             let right' =
-              issue_of_cost issue_spec curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+              issue_of_cost kind issue_spec curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
               |> concat_opt right
             in
             (left, both, right')
@@ -305,11 +307,11 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
   let get_current_costs = decoded_costs current_costs in
   let get_previous_costs = decoded_costs previous_costs in
   CostIssues.CostKindMap.fold
-    (fun _kind CostIssues.({extract_cost_f} as issue_spec) acc ->
+    (fun kind CostIssues.({extract_cost_f} as issue_spec) acc ->
       Map.fold2
         (to_map (get_current_costs ~extract_cost_f))
         (to_map (get_previous_costs ~extract_cost_f))
-        ~f:(fold_aux issue_spec) ~init:acc )
+        ~f:(fold_aux kind issue_spec) ~init:acc )
     CostIssues.enabled_cost_map ([], [], [])
 
 

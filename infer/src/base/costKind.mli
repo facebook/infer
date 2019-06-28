@@ -15,6 +15,8 @@ val compare : t -> t -> int
 
 val pp : Format.formatter -> t -> unit
 
+val to_complexity_string : t -> string
+
 val to_issue_string : t -> string
 
 val to_json_cost_info : Jsonbug_t.cost_item -> t -> Jsonbug_t.cost_info

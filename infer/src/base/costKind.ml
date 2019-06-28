@@ -18,6 +18,15 @@ let to_issue_string = function
       "IO"
 
 
+let to_complexity_string = function
+  | AllocationCost ->
+      "Allocation complexity"
+  | OperationCost ->
+      "Time complexity"
+  | IOCost ->
+      "IO complexity"
+
+
 let pp f k =
   let k_str =
     match k with
