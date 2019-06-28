@@ -62,7 +62,8 @@ let garbage_collect (q : t) ~wrt =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-type from_call = Var.Subst.t [@@deriving compare, equal, sexp]
+type from_call = {subst: Var.Subst.t; frame: Sh.t}
+[@@deriving compare, equal, sexp]
 
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
@@ -84,10 +85,10 @@ let jump actuals formals ?temps q =
   in
   ( Option.fold ~f:(Fn.flip Sh.exists) temps
       ~init:(and_eqs formals actuals q')
-  , freshen_locals )
+  , {subst= freshen_locals; frame= Sh.emp} )
   |>
-  [%Trace.retn fun {pf} (q', s) ->
-    pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp s Sh.pp q']
+  [%Trace.retn fun {pf} (q', {subst}) ->
+    pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp subst Sh.pp q']
 
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
@@ -108,10 +109,11 @@ let call ~summaries actuals formals locals globals q =
   let and_eqs formals actuals q =
     List.fold2_exn ~f:and_eq formals actuals ~init:q
   in
-  let q'', state_from_call =
+  let q'', subst =
     (Sh.extend_us locals (and_eqs formals actuals q'), freshen_locals)
   in
-  if summaries then (
+  ( if not summaries then (q'', {subst; frame= Sh.emp})
+  else
     let formals_set = Var.Set.of_list formals in
     let non_function_specific_vars =
       Set.diff (Sh.fv q'') (Set.union formals_set globals)
@@ -135,12 +137,14 @@ let call ~summaries actuals formals locals globals q =
         (List.fold2_exn ~f:and_eq formals actuals ~init:q'')
     in
     let xs, foot = Sh.bind_exists ~wrt:pre.us foot in
-    let frame = Solver.infer_frame pre xs foot in
-    [%Trace.info "Maybe frame %a" (Option.pp "%a" pp) frame] ) ;
-  (q'', state_from_call)
+    let frame =
+      Option.value ~default:Sh.emp (Solver.infer_frame pre xs foot)
+    in
+    (function_summary_pre, {subst; frame}) )
   |>
-  [%Trace.retn fun {pf} (q', s) ->
-    pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp s pp q']
+  [%Trace.retn fun {pf} (q', {subst; frame}) ->
+    pf "@[<v>subst: %a@ frame: %a@ q': %a@]" Var.Subst.pp subst pp frame pp
+      q']
 
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals q =
@@ -154,18 +158,18 @@ let post locals q =
 (** Express in terms of actuals instead of formals: existentially quantify
     formals, and apply inverse of fresh variables for formals renaming to
     restore the shadowed variables. *)
-let retn formals freshen_locals q =
+let retn formals {subst; frame} q =
   [%Trace.call fun {pf} ->
-    pf "@[<hv>formals: {@[%a@]}@ subst: %a@ q: %a@]" (List.pp ", " Var.pp)
-      formals Var.Subst.pp
-      (Var.Subst.invert freshen_locals)
-      Sh.pp q]
+    pf "@[<v>formals: {@[%a@]}@ subst: %a@ q: %a@]" (List.pp ", " Var.pp)
+      formals Var.Subst.pp (Var.Subst.invert subst) pp q]
   ;
-  Sh.rename
-    (Var.Subst.invert freshen_locals)
-    (Sh.exists (Var.Set.of_list formals) q)
+  let func_post =
+    Sh.rename (Var.Subst.invert subst)
+      (Sh.exists (Var.Set.of_list formals) q)
+  in
+  Sh.star frame func_post
   |>
-  [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
+  [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let resolve_callee lookup ptr _ =
   match Var.of_exp ptr with

@@ -77,7 +77,7 @@ let post locals {caller_entry} (_, current) =
   [%Trace.retn fun {pf} -> pf "@,%a" pp]
 
 let retn formals {caller_entry; state_from_call} (_, current) =
-  [%Trace.call fun {pf} -> pf ""]
+  [%Trace.call fun {pf} -> pf "@,%a" State_domain.pp current]
   ;
   (caller_entry, State_domain.retn formals state_from_call current)
   |>
