@@ -165,7 +165,8 @@ let llvm_link_opt ~lib_fuzzer_harness ~output modules =
 
 open Command.Let_syntax
 
-let ( |*> ) x f = x |> Command.Param.apply f
+let ( |*> ) a' f' = a' |> Command.Param.apply f'
+let ( |**> ) = Command.Param.map2 ~f:(fun a f b -> f b a)
 
 let abs_path_arg =
   Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
@@ -214,18 +215,17 @@ let main ~(command : unit Command.basic_command) ~analyze =
       "Link code in a buck target to a single LLVM bitcode module. This \
        also internalizes all symbols except `main` and removes dead code."
     in
-    let param =
-      let%map_open target = target_flag
-      and output =
+    let link =
+      let%map_open output =
         flag "output" (required abs_path_arg)
           ~doc:"<file> write linked output to <file>"
       and lib_fuzzer_harness =
         flag "lib-fuzzer" no_arg
           ~doc:"add a harness for lib fuzzer binaries"
       in
-      fun () ->
-        llvm_link_opt ~lib_fuzzer_harness ~output (bitcode_files_of ~target)
+      fun () -> llvm_link_opt ~lib_fuzzer_harness ~output
     in
+    let param = bitcode_inputs |**> link in
     command ~summary ~readme param
   in
   let summary = "integration with Buck" in

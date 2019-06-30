@@ -84,11 +84,13 @@ Link code in a buck target to a single LLVM bitcode module. This also internaliz
 
 === flags ===
 
-  -output <file>   write linked output to <file>
-  [-lib-fuzzer]    add a harness for lib fuzzer binaries
-  [-trace <spec>]  enable debug tracing
-  [-help]          print this help text and exit
-                   (alias: -?)
+  -output <file>            write linked output to <file>
+  [-lib-fuzzer]             add a harness for lib fuzzer binaries
+  [-output-modules <file>]  write list of bitcode files to <file>, or to
+                            standard output if <file> is `-`
+  [-trace <spec>]           enable debug tracing
+  [-help]                   print this help text and exit
+                            (alias: -?)
 
 
 ====== sledge llvm ======
