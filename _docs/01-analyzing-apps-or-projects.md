@@ -58,11 +58,19 @@ infer run -- make -j 4
 ```
 
 
-### Gradle
+### Gradle / Android
+
+Normally, you would need to do a clean build first, otherwise infer will
+complain with error: `"Nothing to compile. Try cleaning the build first."`
+However, cleaning the build will delete all of your built binaries, which is
+inconvenient, so use the flag
+[`--rerun-tasks`](https://stackoverflow.com/questions/7289874/resetting-the-up-to-date-property-of-gradle-tasks)
+to force a gradle rebuild instead.
 
 ```bash
+cd MyAndroidApp/folder_that_contains_gradlew
+infer run -- ./gradlew assembleDebug --rerun-tasks
 infer run -- gradle <gradle task, e.g. "build">
-infer run -- ./gradlew <gradle task, e.g. "build">
 ```
 
 ### Make
