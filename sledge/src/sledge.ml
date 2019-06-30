@@ -68,7 +68,7 @@ let analyze =
       ~doc:"do not explore past throwing an exception"
   and function_summaries =
     flag "function-summaries" no_arg
-      ~doc:"Use function summaries (in development)"
+      ~doc:"use function summaries (in development)"
   in
   fun program () ->
     Control.exec_pgm {bound; skip_throw; function_summaries} (program ())

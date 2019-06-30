@@ -1,1 +1,9 @@
 (ignored_subdirs (llvm test))
+
+(rule
+ (targets sledge-help.txt)
+ (deps src/sledge.ml src/sledge_buck.ml tools/gen_help.sh src/sledge.exe)
+ (action
+  (with-stdout-to sledge-help.txt
+   (run tools/gen_help.sh)))
+ (mode promote-until-clean))

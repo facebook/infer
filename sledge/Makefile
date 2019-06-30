@@ -10,8 +10,8 @@ EXES = src/sledge
 INSTALLS = sledge
 FMTS = @_build/dev/src/fmt
 
-DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS))
-OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS))
+DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS)) _build/dev/sledge-help.txt
+OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS)) _build/release/sledge-help.txt
 
 DUNEINS = $(shell find src model -name dune.in)
 DUNES = $(patsubst %.in,%,$(DUNEINS))

@@ -1,0 +1,206 @@
+SLEdge static analyzer
+
+  sledge SUBCOMMAND
+
+The [-trace <spec>] argument of each subcommand enables debug tracing according to <spec>, which is a sequence of module and function names separated by + or -. For example, M-M.f enables all tracing in the M module except the M.f function. The <spec> value * enables all debug tracing.
+
+=== subcommands ===
+
+  buck         integration with Buck
+  . analyze    analyze buck target
+  . bitcode    report bitcode files in buck target
+  . link       link buck target to LLVM bitcode
+  llvm         integration with LLVM
+  . analyze    analyze LLVM bitcode
+  . translate  translate LLVM bitcode to LLAIR
+  analyze      analyze LLAIR code
+  disassemble  print LLAIR code in textual form
+  version      print version information
+  help         explain a given subcommand (perhaps recursively)
+
+
+====== sledge buck ======
+
+integration with Buck
+
+  sledge buck SUBCOMMAND
+
+Code can be provided by a buck build target, such as //fully/qualified/build:target. The mechanism used to integrate with buck uses the arguments passed to the linker, so the target must specify a binary that will be linked, not for instance a library archive. Sledge passes the --config sledge.build=True flag to buck, which can be used to configure buck targets for sledge.
+
+=== subcommands ===
+
+  analyze  analyze buck target
+  bitcode  report bitcode files in buck target
+  link     link buck target to LLVM bitcode
+  help     explain a given subcommand (perhaps recursively)
+
+
+====== sledge buck analyze ======
+
+analyze buck target
+
+  sledge buck analyze <target>
+
+Analyze code in a buck target. This is a convenience wrapper for the sequence `sledge buck bitcode`; `sledge llvm translate`; `sledge analyze`.
+
+=== flags ===
+
+  [-bound <int>]            stop execution exploration at depth <int>
+  [-function-summaries]     use function summaries (in development)
+  [-lib-fuzzer]             add a harness for lib fuzzer binaries
+  [-output-llair <file>]    write generated LLAIR to <file>
+  [-output-modules <file>]  write list of bitcode files to <file>
+  [-skip-throw]             do not explore past throwing an exception
+  [-trace <spec>]           enable debug tracing
+  [-help]                   print this help text and exit
+                            (alias: -?)
+
+
+====== sledge buck bitcode ======
+
+report bitcode files in buck target
+
+  sledge buck bitcode <target>
+
+Build a buck target and report the included bitcode files.
+
+=== flags ===
+
+  [-output-modules <file>]  write list of bitcode files to <file>
+  [-trace <spec>]           enable debug tracing
+  [-help]                   print this help text and exit
+                            (alias: -?)
+
+
+====== sledge buck link ======
+
+link buck target to LLVM bitcode
+
+  sledge buck link <target>
+
+Link code in a buck target to a single LLVM bitcode module. This also internalizes all symbols except `main` and removes dead code.
+
+=== flags ===
+
+  -output <file>   write linked output to <file>
+  [-lib-fuzzer]    add a harness for lib fuzzer binaries
+  [-trace <spec>]  enable debug tracing
+  [-help]          print this help text and exit
+                   (alias: -?)
+
+
+====== sledge llvm ======
+
+integration with LLVM
+
+  sledge llvm SUBCOMMAND
+
+Code can be provided by one or more LLVM bitcode files.
+
+=== subcommands ===
+
+  analyze    analyze LLVM bitcode
+  translate  translate LLVM bitcode to LLAIR
+  help       explain a given subcommand (perhaps recursively)
+
+
+====== sledge llvm analyze ======
+
+analyze LLVM bitcode
+
+  sledge llvm analyze <input> [<input> ...]
+
+Analyze code in one or more LLVM bitcode files. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
+
+=== flags ===
+
+  [-bound <int>]          stop execution exploration at depth <int>
+  [-function-summaries]   use function summaries (in development)
+  [-lib-fuzzer]           add a harness for lib fuzzer binaries
+  [-output-llair <file>]  write generated LLAIR to <file>
+  [-skip-throw]           do not explore past throwing an exception
+  [-trace <spec>]         enable debug tracing
+  [-help]                 print this help text and exit
+                          (alias: -?)
+
+
+====== sledge llvm translate ======
+
+translate LLVM bitcode to LLAIR
+
+  sledge llvm translate <input> [<input> ...]
+
+Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be either: an LLVM bitcode file, in binary (.bc) or textual (.ll) form; or of the form @<argsfile>, where <argsfile> names a file containing one <input> per line.
+
+=== flags ===
+
+  [-lib-fuzzer]           add a harness for lib fuzzer binaries
+  [-output-llair <file>]  write generated LLAIR to <file>
+  [-trace <spec>]         enable debug tracing
+  [-help]                 print this help text and exit
+                          (alias: -?)
+
+
+====== sledge analyze ======
+
+analyze LLAIR code
+
+  sledge analyze <input>
+
+The <input> file must be binary LLAIR, such as produced by `sledge translate`.
+
+=== flags ===
+
+  [-bound <int>]         stop execution exploration at depth <int>
+  [-function-summaries]  use function summaries (in development)
+  [-skip-throw]          do not explore past throwing an exception
+  [-trace <spec>]        enable debug tracing
+  [-help]                print this help text and exit
+                         (alias: -?)
+
+
+====== sledge disassemble ======
+
+print LLAIR code in textual form
+
+  sledge disassemble <input>
+
+The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
+
+=== flags ===
+
+  [-output <file>]  write generated textual LLAIR to <file>, or to standard
+                    output if omitted
+  [-trace <spec>]   enable debug tracing
+  [-help]           print this help text and exit
+                    (alias: -?)
+
+
+====== sledge version ======
+
+print version information
+
+  sledge version 
+
+=== flags ===
+
+  [-build-info]  print build info for this build
+  [-version]     print the version of this build
+  [-help]        print this help text and exit
+                 (alias: -?)
+
+
+====== sledge help ======
+
+explain a given subcommand (perhaps recursively)
+
+  sledge help [SUBCOMMAND]
+
+=== flags ===
+
+  [-expand-dots]  expand subcommands in recursive help
+  [-flags]        show flags as well in recursive help
+  [-recursive]    show subcommands of subcommands, etc.
+  [-help]         print this help text and exit
+                  (alias: -?)
+
