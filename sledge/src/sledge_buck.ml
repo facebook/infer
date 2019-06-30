@@ -176,15 +176,18 @@ let main ~(command : unit Command.basic_command) ~analyze =
     let%map_open target = target_flag
     and output =
       flag "output-modules" (optional string)
-        ~doc:"<file> write list of bitcode files to <file>"
+        ~doc:
+          "<file> write list of bitcode files to <file>, or to standard \
+           output if <file> is `-`"
     in
     let bitcode_files = bitcode_files_of ~target in
     ( match output with
-    | Some file -> Out_channel.write_lines file bitcode_files
-    | None ->
+    | Some "-" ->
         Format.printf "%a"
           (List.pp " " Format.pp_print_string)
-          bitcode_files ) ;
+          bitcode_files
+    | Some file -> Out_channel.write_lines file bitcode_files
+    | None -> () ) ;
     bitcode_files
   in
   let bitcode_cmd =

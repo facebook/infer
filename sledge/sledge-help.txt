@@ -49,7 +49,8 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
   [-function-summaries]     use function summaries (in development)
   [-lib-fuzzer]             add a harness for lib fuzzer binaries
   [-output-llair <file>]    write generated LLAIR to <file>
-  [-output-modules <file>]  write list of bitcode files to <file>
+  [-output-modules <file>]  write list of bitcode files to <file>, or to
+                            standard output if <file> is `-`
   [-skip-throw]             do not explore past throwing an exception
   [-trace <spec>]           enable debug tracing
   [-help]                   print this help text and exit
@@ -66,7 +67,8 @@ Build a buck target and report the included bitcode files.
 
 === flags ===
 
-  [-output-modules <file>]  write list of bitcode files to <file>
+  [-output-modules <file>]  write list of bitcode files to <file>, or to
+                            standard output if <file> is `-`
   [-trace <spec>]           enable debug tracing
   [-help]                   print this help text and exit
                             (alias: -?)
