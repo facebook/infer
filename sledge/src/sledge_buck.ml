@@ -141,7 +141,7 @@ let bitcode_files_of ~target =
   List.map ~f:(make_absolute (Lazy.force buck_root)) modules
 
 (* link and optimize the modules *)
-let llvm_link_opt ~lib_fuzzer_harness ~output modules =
+let llvm_link_opt ~lib_fuzzer_harness ~bitcode_output modules =
   let context = context () in
   let modules = if lib_fuzzer_harness then "-" :: modules else modules in
   let open Process in
@@ -157,7 +157,7 @@ let llvm_link_opt ~lib_fuzzer_harness ~output modules =
          :: "-o=-" :: modules )
     |- run
          (Lazy.force llvm_bin ^ "opt")
-         [ "-o=" ^ output; "-globaldce"; "-globalopt"; "-mergefunc"
+         [ "-o=" ^ bitcode_output; "-globaldce"; "-globalopt"; "-mergefunc"
          ; "-constmerge"; "-argpromotion"; "-ipsccp"; "-mem2reg"; "-dce"
          ; "-globaldce"; "-deadargelim" ] )
 
@@ -175,14 +175,14 @@ let main ~(command : unit Command.basic_command) ~analyze =
   let target_flag = Command.Param.(anon ("<target>" %: string)) in
   let bitcode_inputs =
     let%map_open target = target_flag
-    and output =
-      flag "output-modules" (optional string)
+    and modules =
+      flag "modules" (optional string)
         ~doc:
           "<file> write list of bitcode files to <file>, or to standard \
            output if <file> is `-`"
     in
     let bitcode_files = bitcode_files_of ~target in
-    ( match output with
+    ( match modules with
     | Some "-" ->
         Format.printf "%a"
           (List.pp " " Format.pp_print_string)
@@ -216,14 +216,14 @@ let main ~(command : unit Command.basic_command) ~analyze =
        also internalizes all symbols except `main` and removes dead code."
     in
     let link =
-      let%map_open output =
-        flag "output" (required abs_path_arg)
-          ~doc:"<file> write linked output to <file>"
+      let%map_open bitcode_output =
+        flag "bitcode-output" (required abs_path_arg)
+          ~doc:"<file> write linked bitcode to <file>"
       and lib_fuzzer_harness =
         flag "lib-fuzzer" no_arg
           ~doc:"add a harness for lib fuzzer binaries"
       in
-      fun () -> llvm_link_opt ~lib_fuzzer_harness ~output
+      fun () -> llvm_link_opt ~lib_fuzzer_harness ~bitcode_output
     in
     let param = bitcode_inputs |**> link in
     command ~summary ~readme param

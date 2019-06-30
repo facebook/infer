@@ -85,15 +85,15 @@ let analyze_cmd =
   command ~summary ~readme param
 
 let translate =
-  let%map_open output =
-    flag "output-llair" (optional string)
+  let%map_open llair_output =
+    flag "llair-output" (optional string)
       ~doc:"<file> write generated LLAIR to <file>"
   and lib_fuzzer_harness =
     flag "lib-fuzzer" no_arg ~doc:"add a harness for lib fuzzer binaries"
   in
   fun bitcode_inputs () ->
     let program = Frontend.translate ~lib_fuzzer_harness bitcode_inputs in
-    Option.iter ~f:(marshal program) output ;
+    Option.iter ~f:(marshal program) llair_output ;
     program
 
 let llvm_grp =
@@ -147,15 +147,15 @@ let disassemble_cmd =
   in
   let param =
     let%map_open input = anon ("<input>" %: string)
-    and output =
-      flag "output" (optional string)
+    and llair =
+      flag "llair" (optional string)
         ~doc:
           "<file> write generated textual LLAIR to <file>, or to standard \
            output if omitted"
     in
     fun () ->
       let program = unmarshal input () in
-      match output with
+      match llair with
       | None -> Format.printf "%a@." Llair.pp program
       | Some file ->
           Out_channel.with_file file ~f:(fun oc ->
