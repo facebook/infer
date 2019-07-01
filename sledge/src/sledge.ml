@@ -7,6 +7,8 @@
 
 (** SLEdge command line interface *)
 
+let () = Backtrace.Exn.set_recording Version.debug
+
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
