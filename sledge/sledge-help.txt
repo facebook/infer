@@ -49,6 +49,7 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
+  [-margin <cols>]        wrap debug tracing at <cols> columns
   [-modules <file>]       write list of bitcode files to <file>, or to standard
                           output if <file> is `-`
   [-skip-throw]           do not explore past throwing an exception
@@ -67,6 +68,7 @@ Build a buck target and report the included bitcode files.
 
 === flags ===
 
+  [-margin <cols>]   wrap debug tracing at <cols> columns
   [-modules <file>]  write list of bitcode files to <file>, or to standard
                      output if <file> is `-`
   [-trace <spec>]    enable debug tracing
@@ -86,6 +88,7 @@ Link code in a buck target to a single LLVM bitcode module. This also internaliz
 
   -bitcode-output <file>  write linked bitcode to <file>
   [-fuzzer]               add a harness for libFuzzer targets
+  [-margin <cols>]        wrap debug tracing at <cols> columns
   [-modules <file>]       write list of bitcode files to <file>, or to standard
                           output if <file> is `-`
   [-trace <spec>]         enable debug tracing
@@ -122,6 +125,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
+  [-margin <cols>]        wrap debug tracing at <cols> columns
   [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
@@ -140,6 +144,7 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
+  [-margin <cols>]        wrap debug tracing at <cols> columns
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
@@ -157,6 +162,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 
   [-bound <int>]         stop execution exploration at depth <int>
   [-function-summaries]  use function summaries (in development)
+  [-margin <cols>]       wrap debug tracing at <cols> columns
   [-skip-throw]          do not explore past throwing an exception
   [-trace <spec>]        enable debug tracing
   [-help]                print this help text and exit
@@ -173,11 +179,12 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
 === flags ===
 
-  [-llair <file>]  write generated textual LLAIR to <file>, or to standard
-                   output if omitted
-  [-trace <spec>]  enable debug tracing
-  [-help]          print this help text and exit
-                   (alias: -?)
+  [-llair <file>]   write generated textual LLAIR to <file>, or to standard
+                    output if omitted
+  [-margin <cols>]  wrap debug tracing at <cols> columns
+  [-trace <spec>]   enable debug tracing
+  [-help]           print this help text and exit
+                    (alias: -?)
 
 
 ====== sledge version ======

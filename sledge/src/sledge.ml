@@ -23,12 +23,16 @@ let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
 
 (* define a command, with trace flag, and with action wrapped in reporting *)
 let command ~summary ?readme param =
-  let trace_flag =
-    let open Command.Param in
-    flag "trace" ~doc:"<spec> enable debug tracing"
-      (optional_with_default Trace.none
-         (Arg_type.create (fun s -> Trace.parse s |> Result.ok_exn)))
-    >>| fun config -> Trace.init ~config ()
+  let trace =
+    let%map_open config =
+      flag "trace" ~doc:"<spec> enable debug tracing"
+        (optional_with_default Trace.none
+           (Arg_type.create (fun s -> Trace.parse s |> Result.ok_exn)))
+    and margin =
+      flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
+        (optional int)
+    in
+    Trace.init ?margin ~config ()
   in
   let wrap main () =
     try
@@ -49,7 +53,7 @@ let command ~summary ?readme param =
             (Caml.Printexc.to_string exn) ) ;
       Caml.Printexc.raise_with_backtrace exn bt
   in
-  Command.basic ~summary ?readme (trace_flag *> param >>| wrap)
+  Command.basic ~summary ?readme (trace *> param >>| wrap)
 
 let marshal program file =
   Out_channel.with_file file ~f:(fun oc ->
