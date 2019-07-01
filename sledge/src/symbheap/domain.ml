@@ -9,13 +9,14 @@
 
 type t = State_domain.t * State_domain.t
 
+let embed q = (q, q)
+let project (_, curr) = curr
+
 let pp fs (entry, current) =
   Format.fprintf fs "@[<v 1> entry: %a@;current: %a@]" State_domain.pp entry
     State_domain.pp current
 
-let init globals =
-  let init_state = State_domain.init globals in
-  (init_state, init_state)
+let init globals = embed (State_domain.init globals)
 
 let join (entry_a, current_a) (entry_b, current_b) =
   assert (State_domain.equal entry_b entry_a) ;

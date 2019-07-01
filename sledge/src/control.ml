@@ -405,7 +405,7 @@ let exec_term :
                   callee.name.var args
               with
             | Some (Error ()) ->
-                Report.invalid_access_term state block.term ;
+                Report.invalid_access_term (Domain.project state) block.term ;
                 Work.skip
             | Some (Ok state) -> exec_goto stk state block return
             | None when Llair.Func.is_undefined callee ->
@@ -438,7 +438,7 @@ let exec_block :
   match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
   | Ok state -> exec_term ~opts pgm stk state block
   | Error (state, inst) ->
-      Report.invalid_access_inst state inst ;
+      Report.invalid_access_inst (Domain.project state) inst ;
       Work.skip
 
 let harness : opts:exec_opts -> Llair.t -> (int -> Work.t) option =

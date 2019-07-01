@@ -29,7 +29,7 @@ let%test_module _ =
       pp (Sh.star p q) ;
       [%expect
         {|
-        ∃ %x_1 . emp
+        ∃ %x_1 .   emp
 
           0 = %x_1 ∧ emp
 
@@ -50,10 +50,10 @@ let%test_module _ =
       pp_djn (Sh.dnf q) ;
       [%expect
         {|
-        emp
-        * ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .emp
-             * ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (∃ %x_1 .  2 = %x_1 ∧ emp) ))
+          ( (  0 = %x_1 ∧ emp)
+          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp)
+                       ∨ (∃ %x_1 .  2 = %x_1 ∧ emp)
+                       ))
           )
 
         ( (∃ %x_1, %x_2 .   2 = %x_2 ∧ emp)
@@ -79,10 +79,10 @@ let%test_module _ =
       [%expect
         {|
         ∃ %x_1 .
-        emp
-        * ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .emp
-             * ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (∃ %x_1 .  2 = %x_1 ∧ emp) ))
+          ( (  0 = %x_1 ∧ emp)
+          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp)
+                       ∨ (∃ %x_1 .  2 = %x_1 ∧ emp)
+                       ))
           )
 
         ( (∃ %x_1, %x_3, %x_4 .   2 = %x_4 ∧ emp)
@@ -108,11 +108,11 @@ let%test_module _ =
       [%expect
         {|
         ∃ %x_1 .
-        emp
-        * ( (  0 = %x_1 ∧ emp)
-          ∨ (∃ %x_1 .emp
-             * ( (  1 = %x_1 = %y_2 ∧ emp) ∨ (∃ %x_1 .  2 = %x_1 ∧ emp) ))
+          ( (  0 = %x_1 ∧ emp)
+          ∨ (∃ %x_1 .  ( (  1 = %x_1 = %y_2 ∧ emp)
+                       ∨ (∃ %x_1 .  2 = %x_1 ∧ emp)
+                       ))
           )
 
-        emp * ( (emp) ∨ (emp * ( (emp) ∨ (emp) )) ) |}]
+          ( (  emp) ∨ (  ( (  emp) ∨ (  emp) )) ) |}]
   end )

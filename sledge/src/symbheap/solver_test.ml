@@ -50,22 +50,22 @@ let%test_module _ =
       check_frame Sh.emp [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame: emp \- emp
-        ) infer_frame: emp |}]
+        ( infer_frame:   emp \-   emp
+        ) infer_frame:   emp |}]
 
     let%expect_test _ =
       check_frame (Sh.false_ Var.Set.empty) [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame: emp * false \- emp
-        ) infer_frame: emp * false |}]
+        ( infer_frame:   false \-   emp
+        ) infer_frame:   false |}]
 
     let%expect_test _ =
       check_frame Sh.emp [n_; m_] (Sh.and_ (Exp.eq m n) Sh.emp) ;
       [%expect
         {|
-        ( infer_frame: emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
-        ) infer_frame: emp |}]
+        ( infer_frame:   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
+        ) infer_frame:   emp |}]
 
     let%expect_test _ =
       check_frame
@@ -73,7 +73,7 @@ let%test_module _ =
         [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame:   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ \- emp
+        ( infer_frame:   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ \-   emp
         ) infer_frame:   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ |}]
 
     let%expect_test _ =
@@ -86,7 +86,7 @@ let%test_module _ =
         ( infer_frame:
             %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
           \-   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
-        ) infer_frame: emp |}]
+        ) infer_frame:   emp |}]
 
     let%expect_test _ =
       check_frame
@@ -232,8 +232,7 @@ let%test_module _ =
           \- ∃ %a_1, %m_8 .
               %l_6 -[)-> ⟨%m_8,%a_1⟩
         ) infer_frame:
-          emp
-          * ( (  %a_1 = %a_2
+            ( (  %a_1 = %a_2
                ∧ 2 = %n_9
                ∧ 16 = %m_8
                ∧ (%l_6 + 16) -[ %l_6, 16 )-> ⟨0,%a_3⟩)

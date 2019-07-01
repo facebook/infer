@@ -64,7 +64,9 @@ let rec pp vs fs {us; xs; cong; pure; heap; djns} =
     "@ @<2>∧ " Exp.pp fs pure_exps ;
   let first = first && List.is_empty pure_exps in
   if List.is_empty heap then
-    Format.fprintf fs (if first then "emp" else "@ @<5>∧ emp")
+    Format.fprintf fs
+      ( if first then if List.is_empty djns then "  emp" else ""
+      else "@ @<5>∧ emp" )
   else
     List.pp
       ~pre:(if first then "  " else "@ @<2>∧ ")
@@ -80,7 +82,10 @@ let rec pp vs fs {us; xs; cong; pure; heap; djns} =
            [%compare: Exp.t * (Exp.t * Z.t)]
              (s1.bas, b_o s1.loc)
              (s2.bas, b_o s2.loc) )) ;
-  List.pp ~pre:"@ * " "@ * "
+  let first = first && List.is_empty heap in
+  List.pp
+    ~pre:(if first then "  " else "@ * ")
+    "@ * "
     (pp_djn (Set.union vs (Set.union us xs)))
     fs djns ;
   Format.pp_close_box fs ()

@@ -9,6 +9,7 @@
 
 type t
 
+val project : t -> State_domain.t
 val pp : t pp
 val init : Global.t vector -> t
 val join : t -> t -> t

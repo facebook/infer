@@ -77,7 +77,7 @@ let parse s =
       Ok {none with trace_mods_funs}
   with Assert_failure _ as exn -> Error exn
 
-let init ?(margin = 300) ~config:c () =
+let init ?(margin = 240) ~config:c () =
   Format.set_margin margin ;
   Format.set_max_indent (margin - 1) ;
   Format.pp_set_margin fs margin ;
