@@ -13,11 +13,15 @@ let inputs =
   let b = Array.create ~len:10_000 a in
   let c = Array.create ~len:1_000 b in
   let d = Array.create ~len:1_000 c in
+  let rec e = 1 :: e in
+  let rec f = 1 :: 2 :: f in
   [ ("unit", Obj.repr (), `PhysEqual)
-  ; ("same representation", Obj.repr ([42], [|42; 0|]), `Marshal_MustBeBetter)
+  ; ("same representation", Obj.repr ([42], [|42; 0|]), `MarshalNoSharing_MustBeBetter)
   ; ("10K times the same element", Obj.repr b, `PhysEqual)
   ; ("1K times 10K times the same element", Obj.repr c, `PhysEqual)
-  ; ("1K times 1K times 10K times the same element", Obj.repr d, `PhysEqual) ]
+  ; ("1K times 1K times 10K times the same element", Obj.repr d, `PhysEqual)
+  ; ("Self cycle", Obj.repr e, `MarshalWithSharing (* ideally `PhysEqual *))
+  ; ("Cyclic value", Obj.repr f, `MarshalWithSharing (* ideally `PhysEqual *)) ]
 
 
 let tests =
@@ -30,9 +34,9 @@ let tests =
     let serialized_input_with_sharing = Marshal.to_string input [] in
     let serialized_input_no_sharing =
       match checks with
-      | `PhysEqual ->
+      | `PhysEqual | `MarshalWithSharing ->
           "UNUSED"
-      | `Marshal_MustBeBetter ->
+      | `MarshalNoSharing_MustBeBetter ->
           (* OOMs for big or cyclic values *)
           Marshal.to_string input [Marshal.No_sharing]
     in
@@ -53,19 +57,15 @@ let tests =
     *)
     let reachable_words_normalized = Obj.reachable_words normalized in
     assert_bool "less reachable words" (reachable_words_normalized <= reachable_words_input) ;
-    let eq =
-      (* Cannot use [assert_equal] because it doesn't shortcut physical equalities *)
-      match checks with
-      | `PhysEqual ->
-          phys_equal input normalized
-      | `Marshal_MustBeBetter ->
-          Polymorphic_compare.equal input normalized
-    in
-    assert_bool "equal" eq ;
+    (* Cannot use [assert_equal] because it doesn't shortcut physical equalities *)
     match checks with
     | `PhysEqual ->
-        ()
-    | `Marshal_MustBeBetter ->
+        assert_bool "phys_equal" (phys_equal input normalized)
+    | `MarshalWithSharing ->
+        let serialized_normalized_with_sharing = Marshal.to_string normalized [] in
+        assert_equal serialized_input_with_sharing serialized_normalized_with_sharing
+    | `MarshalNoSharing_MustBeBetter ->
+        assert_bool "equal" (Polymorphic_compare.equal input normalized) ;
         assert_bool "strictly less reachable words"
           (reachable_words_normalized < reachable_words_input) ;
         (*

@@ -7,8 +7,6 @@
 
 open! IStd
 
-exception MaximumSharingCyclicValue
-
 exception MaximumSharingLazyValue
 
 module Hashing : sig
@@ -82,7 +80,9 @@ end = struct
   module HPhysEq = Caml.Hashtbl.Make (PhysEqualedHashedScannableBlock)
   module HNorm = Caml.Hashtbl.Make (HashedNormalizedScannableBlock)
 
-  type visited = Visiting | Normalized of HashedNormalizedScannableBlock.t
+  type visited =
+    | Visiting of {mutable to_patch: (PhysEqualedHashedScannableBlock.t * int) list}
+    | Normalized of HashedNormalizedScannableBlock.t
 
   type t =
     { inplace: bool
@@ -107,15 +107,24 @@ end = struct
 
   let hash_and_normalize_int o = (Hashing.of_int (Obj.obj o : int), o)
 
+  let dummy_should_not_be_hashed_or_used =
+    (*
+      Must be different than any block found in values.
+      Must fail if hashed (there is actually no way to ensure that :( ))
+    *)
+    Obj.repr (lazy (assert false))
+
+
   (* 
     TODO: be much more efficient and write it in C to be able to use the GC flags to
     mark visited values.
-   *)
-  let rec hash_and_normalize_obj sharer o =
-    if Obj.is_int o then hash_and_normalize_int o else hash_and_normalize_block sharer o
+  *)
+  let rec hash_and_normalize_obj sharer o parent_shallow_hash_block parent_field_i =
+    if Obj.is_int o then hash_and_normalize_int o
+    else hash_and_normalize_block sharer o parent_shallow_hash_block parent_field_i
 
 
-  and hash_and_normalize_block sharer block =
+  and hash_and_normalize_block sharer block parent_shallow_hash_block parent_field_i =
     let shallow_hash = Hashing.shallow block in
     let shallow_hash_block = (shallow_hash, block) in
     let tag = Obj.tag block in
@@ -148,13 +157,25 @@ end = struct
       | Some (Normalized hash_normalized) ->
           (* The block has already been visited, we can reuse the result. *)
           hash_normalized
-      | Some Visiting ->
+      | Some (Visiting visiting) ->
           (*
             The block is being visited, which means we have a cycle.
+            We record fields to be patched after we have finished treating the cycle.
+
+            For termination we have to return a shallow hash.
+            We also need to return a phys_equally different value so that it will trigger
+            copy-on-write on the whole cycle (then patch can safely be applied and in any order),
+            even though it may not be necessary if the whole cycle and its dependencies could be
+            kept as-is.
+            The value that is returned should not be hashed or used.  The current implementation
+            respects it.
           *)
-          raise MaximumSharingCyclicValue
+          visiting.to_patch <- (parent_shallow_hash_block, parent_field_i) :: visiting.to_patch ;
+          (shallow_hash, dummy_should_not_be_hashed_or_used)
       | None ->
-          HPhysEq.add sharer.visited_blocks shallow_hash_block Visiting ;
+          let visited = Visiting {to_patch= []} in
+          let[@warning "-8"] (Visiting visiting) = visited in
+          HPhysEq.add sharer.visited_blocks shallow_hash_block visited ;
           let hash_normalized =
             if Int.equal tag Obj.forward_tag then (
               assert (not sharer.fail_on_forward) ;
@@ -166,13 +187,14 @@ end = struct
                 This remains untested for now (hence the assertion above).
                 Not obvious to test as optimizations or the GC can already do the substitution.
               *)
-              hash_and_normalize_obj sharer (Obj.field block 0) )
+              hash_and_normalize_obj sharer (Obj.field block 0) parent_shallow_hash_block
+                parent_field_i )
             else (
               (* For regular blocks, normalize each field then use a shallow comparison. *)
               assert ((not sharer.fail_on_objects) || not (Int.equal tag Obj.object_tag)) ;
               let hash_shallow_normalized =
                 let size = Obj.size block in
-                hash_and_normalize_block_fields sharer block block size 0
+                hash_and_normalize_block_fields sharer shallow_hash_block block block size 0
                   (Hashing.alloc_of_block ~tag ~size)
               in
               match HNorm.find_opt sharer.hash_normalized hash_shallow_normalized with
@@ -182,15 +204,47 @@ end = struct
                   HNorm.add sharer.hash_normalized hash_shallow_normalized hash_shallow_normalized ;
                   hash_shallow_normalized )
           in
+          let hash_normalized =
+            match visiting.to_patch with
+            | [] (* not the head of a cycle *) ->
+                hash_normalized
+            | _ :: _ as to_patch ->
+                (*
+                  The whole cycle has been treated, we now need to patch values that pointed to
+                  this block.  We need to look them up in the [visited_blocks] hash table because
+                  they have been duplicated since we recorded them.
+                *)
+                let _, normalized = hash_normalized in
+                List.iter to_patch ~f:(fun (hash_block_to_patch, field_i_to_patch) ->
+                    let normalized_block_to_patch =
+                      if phys_equal hash_block_to_patch shallow_hash_block then
+                        (* Self-cycle, e.g. [let rec x = 1 :: x]. No lookup! *)
+                        normalized
+                      else
+                        let[@warning "-8"] (Normalized (_, normalized_block_to_patch)) =
+                          HPhysEq.find sharer.visited_blocks hash_block_to_patch
+                        in
+                        normalized_block_to_patch
+                    in
+                    Obj.set_field normalized_block_to_patch field_i_to_patch normalized ) ;
+                (*
+                  For cycle heads, for consistency with the [Visiting] case above we need to
+                  use the shallow hash.
+                *)
+                (shallow_hash, normalized)
+          in
           HPhysEq.replace sharer.visited_blocks shallow_hash_block (Normalized hash_normalized) ;
           hash_normalized
 
 
-  and hash_and_normalize_block_fields sharer original_block new_block size field_i hash_state =
+  and hash_and_normalize_block_fields sharer original_shallow_hash_block original_block new_block
+      size field_i hash_state =
     if field_i >= size then (Hashing.get_hash_value hash_state, new_block)
     else
       let field_v = Obj.field original_block field_i in
-      let field_hash, field_v' = hash_and_normalize_obj sharer field_v in
+      let field_hash, field_v' =
+        hash_and_normalize_obj sharer field_v original_shallow_hash_block field_i
+      in
       let hash_state = Hashing.fold_hash_value hash_state field_hash in
       let new_block =
         if phys_equal field_v field_v' then new_block
@@ -204,8 +258,12 @@ end = struct
           Obj.set_field new_block field_i field_v' ;
           new_block
       in
-      (hash_and_normalize_block_fields [@tailcall]) sharer original_block new_block size
-        (field_i + 1) hash_state
+      (hash_and_normalize_block_fields [@tailcall]) sharer original_shallow_hash_block
+        original_block new_block size (field_i + 1) hash_state
+
+
+  let dummy_should_not_be_patched =
+    (Hashing.of_int 0, (* Make sure it fails hard if [Obj.set_field] is called on it *) Obj.repr 0)
 
 
   (**
@@ -214,7 +272,8 @@ end = struct
     Preserves polymorphic compare, hashing, no-sharing marshalling.
     May have an impact on code using [phys_equal] or marshalling with sharing.
   *)
-  let normalize_value sharer v = hash_and_normalize_obj sharer (Obj.repr v) |> snd |> Obj.obj
+  let normalize_value sharer v =
+    hash_and_normalize_obj sharer (Obj.repr v) dummy_should_not_be_patched (-1) |> snd |> Obj.obj
 end
 
 module ForHashtbl (H : Caml.Hashtbl.S) = struct
