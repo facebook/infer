@@ -19,7 +19,12 @@ val exec_inst : t -> Llair.inst -> (t, unit) result
 val exec_return : t -> Var.t -> Exp.t -> t
 
 val exec_intrinsic :
-  t -> Var.t option -> Var.t -> Exp.t list -> (t, unit) result option
+     skip_throw:bool
+  -> t
+  -> Var.t option
+  -> Var.t
+  -> Exp.t list
+  -> (t, unit) result option
 
 type from_call [@@deriving sexp_of]
 

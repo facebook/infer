@@ -12,4 +12,9 @@ val return : Sh.t -> Var.t -> Exp.t -> Sh.t
 val inst : Sh.t -> Llair.inst -> (Sh.t, unit) result
 
 val intrinsic :
-  Sh.t -> Var.t option -> Var.t -> Exp.t list -> (Sh.t, unit) result option
+     skip_throw:bool
+  -> Sh.t
+  -> Var.t option
+  -> Var.t
+  -> Exp.t list
+  -> (Sh.t, unit) result option

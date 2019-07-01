@@ -37,8 +37,10 @@ let exec_inst (entry, current) inst =
 let exec_return (entry, current) formal actual =
   (entry, State_domain.exec_return current formal actual)
 
-let exec_intrinsic (entry, current) result intrinsic actuals =
-  match State_domain.exec_intrinsic current result intrinsic actuals with
+let exec_intrinsic ~skip_throw (entry, current) result intrinsic actuals =
+  match
+    State_domain.exec_intrinsic ~skip_throw current result intrinsic actuals
+  with
   | None -> None
   | Some (Ok current) -> Some (Ok (entry, current))
   | Some (Error e) -> Some (Error e)

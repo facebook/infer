@@ -620,7 +620,7 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
 
 let skip : Sh.t -> (Sh.t, _) result option = fun pre -> Some (Ok pre)
 
-let intrinsic :
+let intrinsic ~skip_throw :
        Sh.t
     -> Var.t option
     -> Var.t
@@ -697,4 +697,9 @@ let intrinsic :
   (* size_t strlen (const char* ptr) *)
   | Some reg, "strlen", [ptr] ->
       Some (exec_spec pre (strlen_spec us reg ptr))
+  (*
+   * cxxabi
+   *)
+  | Some _, "__cxa_allocate_exception", [_] when skip_throw ->
+      skip (Sh.false_ pre.us)
   | _ -> None

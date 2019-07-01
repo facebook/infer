@@ -400,7 +400,7 @@ let exec_term :
     | callees ->
         List.fold callees ~init:Work.skip ~f:(fun x callee ->
             ( match
-                Domain.exec_intrinsic state
+                Domain.exec_intrinsic ~skip_throw:opts.skip_throw state
                   (List.hd return.dst.params)
                   callee.name.var args
               with
