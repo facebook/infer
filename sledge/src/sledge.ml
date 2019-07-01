@@ -88,11 +88,11 @@ let translate =
   let%map_open llair_output =
     flag "llair-output" (optional string)
       ~doc:"<file> write generated LLAIR to <file>"
-  and lib_fuzzer_harness =
-    flag "lib-fuzzer" no_arg ~doc:"add a harness for lib fuzzer binaries"
+  and fuzzer =
+    flag "fuzzer" no_arg ~doc:"add a harness for libFuzzer targets"
   in
   fun bitcode_inputs () ->
-    let program = Frontend.translate ~lib_fuzzer_harness bitcode_inputs in
+    let program = Frontend.translate ~fuzzer bitcode_inputs in
     Option.iter ~f:(marshal program) llair_output ;
     program
 

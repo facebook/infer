@@ -141,12 +141,12 @@ let bitcode_files_of ~target =
   List.map ~f:(make_absolute (Lazy.force buck_root)) modules
 
 (* link and optimize the modules *)
-let llvm_link_opt ~lib_fuzzer_harness ~bitcode_output modules =
+let llvm_link_opt ~fuzzer ~bitcode_output modules =
   let context = context () in
-  let modules = if lib_fuzzer_harness then "-" :: modules else modules in
+  let modules = if fuzzer then "-" :: modules else modules in
   let open Process in
   eval ~context
-    ( ( if lib_fuzzer_harness then
+    ( ( if fuzzer then
         echo ~n:() (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
       else return () )
     |- run
@@ -219,11 +219,10 @@ let main ~(command : unit Command.basic_command) ~analyze =
       let%map_open bitcode_output =
         flag "bitcode-output" (required abs_path_arg)
           ~doc:"<file> write linked bitcode to <file>"
-      and lib_fuzzer_harness =
-        flag "lib-fuzzer" no_arg
-          ~doc:"add a harness for lib fuzzer binaries"
+      and fuzzer =
+        flag "fuzzer" no_arg ~doc:"add a harness for libFuzzer targets"
       in
-      fun () -> llvm_link_opt ~lib_fuzzer_harness ~bitcode_output
+      fun () -> llvm_link_opt ~fuzzer ~bitcode_output
     in
     let param = bitcode_inputs |**> link in
     command ~summary ~readme param
