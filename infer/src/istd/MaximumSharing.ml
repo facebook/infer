@@ -85,9 +85,7 @@ end = struct
     | Normalized of HashedNormalizedScannableBlock.t
 
   type t =
-    { inplace: bool
-          (** Uses [Obj.set_field] on possibly immutable values, hence should be avoided when used with flambda *)
-    ; noscan_blocks: HashedNoscanBlock.t HNoscan.t
+    { noscan_blocks: HashedNoscanBlock.t HNoscan.t
     ; visited_blocks: visited HPhysEq.t
     ; hash_normalized: HashedNormalizedScannableBlock.t HNorm.t
     ; fail_on_forward: bool
@@ -95,8 +93,7 @@ end = struct
     ; fail_on_objects: bool }
 
   let create () =
-    { inplace= false
-    ; noscan_blocks= HNoscan.create 1
+    { noscan_blocks= HNoscan.create 1
     ; visited_blocks= HPhysEq.create 1
     ; hash_normalized= HNorm.create 1
     ; (* these are just for safety because the code hasn't been tested on them, it should work fine though *)
@@ -250,8 +247,7 @@ end = struct
         if phys_equal field_v field_v' then new_block
         else
           let new_block =
-            if phys_equal original_block new_block && not sharer.inplace then
-              (* copy-on-write *)
+            if phys_equal original_block new_block then (* copy-on-write *)
               Obj.dup original_block
             else new_block
           in
