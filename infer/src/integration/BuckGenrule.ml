@@ -52,8 +52,10 @@ let capture build_cmd =
   in
   L.(debug Capture Quiet)
     "Processed buck command '%a'@." (Pp.seq F.pp_print_string) updated_buck_cmd ;
-  let time0 = Mtime_clock.counter () in
-  run_buck_capture updated_buck_cmd ;
-  L.progress "Genrule capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
-  RunState.set_merge_capture true ;
-  RunState.store ()
+  if List.is_empty targets then L.external_warning "WARNING: found no buck targets to analyze.@."
+  else
+    let time0 = Mtime_clock.counter () in
+    run_buck_capture updated_buck_cmd ;
+    L.progress "Genrule capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
+    RunState.set_merge_capture true ;
+    RunState.store ()

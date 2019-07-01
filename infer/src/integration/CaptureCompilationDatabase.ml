@@ -71,6 +71,9 @@ let get_compilation_database_files_buck ~prog ~args =
     Buck.add_flavors_to_buck_arguments ~filter_kind:`Yes ~dep_depth
       ~extra_flavors:Config.append_buck_flavors args
   with
+  | {targets} when List.is_empty targets ->
+      L.external_warning "WARNING: found no buck targets to analyze.@." ;
+      []
   | {command= "build" as command; rev_not_targets; targets} ->
       let targets_args = Buck.store_args_in_file targets in
       let build_args =

@@ -179,8 +179,7 @@ let resolve_pattern_targets ~filter_kind ~dep_depth targets =
   |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern ()) else Fn.id)
   |> (if Config.genrule_master_mode then Query.label_filter ~label:infer_enabled_label else Fn.id)
   |> Query.exec ~buck_config:(Lazy.force buck_config)
-  |> (if Config.genrule_master_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix) else Fn.id)
-  |> die_if_empty (fun die -> die "*** buck query returned no targets.")
+  |> if Config.genrule_master_mode then List.rev_map ~f:(fun s -> s ^ genrule_suffix) else Fn.id
 
 
 let resolve_alias_targets aliases =
@@ -292,17 +291,11 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
   let command, rev_not_targets, targets =
     parse_command_and_targets ~filter_kind ~dep_depth original_buck_args
   in
-  match targets with
-  | [] ->
-      L.(die UserError)
-        "ERROR: no targets found in Buck command `%a`." (Pp.seq F.pp_print_string)
-        original_buck_args
-  | _ ->
-      let targets =
-        List.rev_map targets ~f:(fun t ->
-            Target.(t |> of_string |> add_flavor ~extra_flavors |> to_string) )
-      in
-      {command; rev_not_targets; targets}
+  let targets =
+    List.rev_map targets ~f:(fun t ->
+        Target.(t |> of_string |> add_flavor ~extra_flavors |> to_string) )
+  in
+  {command; rev_not_targets; targets}
 
 
 let rec exceed_length ~max = function

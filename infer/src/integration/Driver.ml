@@ -193,35 +193,37 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 
-let capture ~changed_files = function
-  | Analyze ->
-      ()
-  | BuckCompilationDB (prog, args) ->
-      L.progress "Capturing using Buck's compilation database...@." ;
-      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
-      capture_with_compilation_database ~changed_files json_cdb
-  | BuckGenrule path ->
-      L.progress "Capturing for Buck genrule compatibility...@." ;
-      JMain.from_arguments path
-  | BuckGenruleMaster build_cmd ->
-      L.progress "Capturing for BuckGenruleMaster integration...@." ;
-      BuckGenrule.capture build_cmd
-  | Clang (compiler, prog, args) ->
-      if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
-      Clang.capture compiler ~prog ~args
-  | ClangCompilationDB db_files ->
-      L.progress "Capturing using compilation database...@." ;
-      capture_with_compilation_database ~changed_files db_files
-  | Javac (compiler, prog, args) ->
-      if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
-      Javac.capture compiler ~prog ~args
-  | Maven (prog, args) ->
-      L.progress "Capturing in maven mode...@." ;
-      Maven.capture ~prog ~args
-  | PythonCapture (build_system, build_cmd) ->
-      register_perf_stats_report PerfStats.TotalFrontend ;
+let python_capture build_system build_cmd =
+  register_perf_stats_report PerfStats.TotalFrontend ;
+  let in_buck_mode = Config.equal_build_system build_system BBuck in
+  let build_cmd_opt =
+    if in_buck_mode && Config.flavors then (
+      (* let children infer processes know that they are inside Buck *)
+      let infer_args_with_buck =
+        String.concat
+          ~sep:(String.of_char CLOpt.env_var_sep)
+          (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
+      in
+      Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
+      let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
+      let {Buck.command; rev_not_targets; targets} =
+        Buck.add_flavors_to_buck_arguments ~filter_kind:`Auto ~dep_depth:None ~extra_flavors:[]
+          buck_args
+      in
+      if List.is_empty targets then None
+      else
+        let all_args = List.rev_append rev_not_targets targets in
+        let updated_buck_cmd =
+          [prog; command]
+          @ List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
+        in
+        Logging.(debug Capture Quiet)
+          "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
+        Some updated_buck_cmd )
+    else Some build_cmd
+  in
+  Option.iter build_cmd_opt ~f:(fun updated_build_cmd ->
       L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
-      let in_buck_mode = Config.equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args
@@ -261,31 +263,7 @@ let capture ~changed_files = function
                 []
             | Some d ->
                 ["--xcode-developer-dir"; d] )
-          @ "--"
-            ::
-            ( if in_buck_mode && Config.flavors then (
-              (* let children infer processes know that they are inside Buck *)
-              let infer_args_with_buck =
-                String.concat
-                  ~sep:(String.of_char CLOpt.env_var_sep)
-                  (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
-              in
-              Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-              let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
-              let {Buck.command; rev_not_targets; targets} =
-                Buck.add_flavors_to_buck_arguments ~filter_kind:`Auto ~dep_depth:None
-                  ~extra_flavors:[] buck_args
-              in
-              let all_args = List.rev_append rev_not_targets targets in
-              let updated_buck_cmd =
-                [prog; command]
-                @ List.rev_append Config.buck_build_args_no_inline
-                    (Buck.store_args_in_file all_args)
-              in
-              Logging.(debug Capture Quiet)
-                "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
-              updated_buck_cmd )
-            else build_cmd ) )
+          @ ("--" :: updated_build_cmd) )
       in
       if in_buck_mode && Config.flavors then ( RunState.set_merge_capture true ; RunState.store () ) ;
       run_command ~prog:infer_py ~args
@@ -297,7 +275,36 @@ let capture ~changed_files = function
           | status ->
               command_error_handling ~always_die:true ~prog:infer_py ~args status )
         () ;
-      PerfStats.get_reporter PerfStats.TotalFrontend ()
+      PerfStats.get_reporter PerfStats.TotalFrontend () )
+
+
+let capture ~changed_files = function
+  | Analyze ->
+      ()
+  | BuckCompilationDB (prog, args) ->
+      L.progress "Capturing using Buck's compilation database...@." ;
+      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
+      capture_with_compilation_database ~changed_files json_cdb
+  | BuckGenrule path ->
+      L.progress "Capturing for Buck genrule compatibility...@." ;
+      JMain.from_arguments path
+  | BuckGenruleMaster build_cmd ->
+      L.progress "Capturing for BuckGenruleMaster integration...@." ;
+      BuckGenrule.capture build_cmd
+  | Clang (compiler, prog, args) ->
+      if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
+      Clang.capture compiler ~prog ~args
+  | ClangCompilationDB db_files ->
+      L.progress "Capturing using compilation database...@." ;
+      capture_with_compilation_database ~changed_files db_files
+  | Javac (compiler, prog, args) ->
+      if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
+      Javac.capture compiler ~prog ~args
+  | Maven (prog, args) ->
+      L.progress "Capturing in maven mode...@." ;
+      Maven.capture ~prog ~args
+  | PythonCapture (build_system, build_cmd) ->
+      python_capture build_system build_cmd
   | XcodeXcpretty (prog, args) ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
