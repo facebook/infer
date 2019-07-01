@@ -14,19 +14,21 @@ let common_flags =
 
 let ocamlc_flags =
   match Jbuild_plugin.V1.context with
-  | "release" -> "-w -26-32 -noassert"
+  | "opt" | "dbg-opt" -> "-w -26-32 -noassert"
   | _ -> "-g"
 
 let ocamlopt_flags =
   match Jbuild_plugin.V1.context with
-  | "release" -> ocamlc_flags ^ " -w -a -O3"
+  | "opt" | "dbg-opt" -> ocamlc_flags ^ " -w -a -O3"
   | _ -> ocamlc_flags
 
 let coverage_ppx =
   match Jbuild_plugin.V1.context with "coverage" -> "bisect_ppx" | _ -> ""
 
 let ppx_flags =
-  match Jbuild_plugin.V1.context with "dev" -> "--debug" | _ -> ""
+  match Jbuild_plugin.V1.context with
+  | "dbg" | "dbg-opt" -> "--debug"
+  | _ -> ""
 
 let flags exe_or_lib deps =
   Printf.sprintf

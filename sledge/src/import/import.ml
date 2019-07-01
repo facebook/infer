@@ -108,18 +108,20 @@ module Invariant = struct
   include Base.Invariant
 
   let invariant here t sexp_of_t f =
-    try f ()
-    with exn ->
-      let bt = Caml.Printexc.get_raw_backtrace () in
-      let exn =
-        Error.to_exn
-          (Error.create_s
-             (Base.Sexp.message "invariant failed"
-                [ ("", Source_code_position.sexp_of_t here)
-                ; ("exn", sexp_of_exn exn)
-                ; ("", sexp_of_t t) ]))
-      in
-      Caml.Printexc.raise_with_backtrace exn bt
+    assert (
+      ( try f ()
+        with exn ->
+          let bt = Caml.Printexc.get_raw_backtrace () in
+          let exn =
+            Error.to_exn
+              (Error.create_s
+                 (Base.Sexp.message "invariant failed"
+                    [ ("", Source_code_position.sexp_of_t here)
+                    ; ("exn", sexp_of_exn exn)
+                    ; ("", sexp_of_t t) ]))
+          in
+          Caml.Printexc.raise_with_backtrace exn bt ) ;
+      true )
 end
 
 let map_preserving_phys_equal map t ~f =

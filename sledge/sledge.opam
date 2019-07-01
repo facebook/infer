@@ -7,7 +7,7 @@ dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 build: [
   [make "setup"]
-  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "build" "-p" name "--profile" "opt" "-j" jobs]
 ]
 depends: [
   "ocaml"

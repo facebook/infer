@@ -8,10 +8,11 @@ default: exes
 
 EXES = src/sledge
 INSTALLS = sledge
-FMTS = @_build/dev/src/fmt
+FMTS = @_build/dbg/src/fmt
 
-DBG_TARGETS = $(patsubst %,_build/dev/%.exe,$(EXES)) $(patsubst %,_build/dev/%.install,$(INSTALLS)) _build/dev/sledge-help.txt
-OPT_TARGETS = $(patsubst %,_build/release/%.exe,$(EXES)) $(patsubst %,_build/release/%.install,$(INSTALLS)) _build/release/sledge-help.txt
+DBG_TARGETS = $(patsubst %,_build/dbg/%.exe,$(EXES)) $(patsubst %,_build/dbg/%.install,$(INSTALLS)) _build/dbg/sledge-help.txt
+OPT_TARGETS = $(patsubst %,_build/opt/%.exe,$(EXES)) $(patsubst %,_build/opt/%.install,$(INSTALLS)) _build/opt/sledge-help.txt
+DBG_OPT_TARGETS = $(patsubst %,_build/dbg-opt/%.exe,$(EXES)) $(patsubst %,_build/dbg-opt/%.install,$(INSTALLS)) _build/dbg-opt/sledge-help.txt
 
 DUNEINS = $(shell find src model -name dune.in)
 DUNES = $(patsubst %.in,%,$(DUNEINS))
@@ -31,11 +32,15 @@ check: setup
 
 .PHONY: exes
 exes: setup
-	dune build $(DBG_TARGETS) $(OPT_TARGETS)
+	dune build $(DBG_TARGETS) $(DBG_OPT_TARGETS) $(OPT_TARGETS)
 
 .PHONY: dbg
 dbg: setup
 	dune build $(DBG_TARGETS)
+
+.PHONY: do
+do: setup
+	dune build $(DBG_OPT_TARGETS)
 
 .PHONY: opt
 opt: setup
@@ -43,15 +48,15 @@ opt: setup
 
 .PHONY: watch
 watch: setup
-	dune build --watch $(DBG_TARGETS) $(OPT_TARGETS)
+	dune build --watch $(DBG_TARGETS) $(DBG_OPT_TARGETS) $(OPT_TARGETS)
 
 .PHONY: test
 test: setup
-	dune build @_build/dev/runtest --auto-promote
+	dune build @_build/dbg/runtest --auto-promote
 
 .PHONY: ci-test
 ci-test: setup
-	dune build @_build/dev/runtest
+	dune build @_build/dbg/runtest
 
 BISECT_DIR = $(CURDIR)/_coverage/out
 

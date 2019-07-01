@@ -1,5 +1,6 @@
 (lang dune 1.0)
 
-(context (opam (switch sledge) (name dev) (merlin)))
+(context (opam (switch sledge) (name dbg) (merlin)))
+(context (opam (switch sledge) (name dbg-opt)))
+(context (opam (switch sledge) (name opt)))
 (context (opam (switch sledge) (name coverage)))
-(context (opam (switch sledge) (name release)))
