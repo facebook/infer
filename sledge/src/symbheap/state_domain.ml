@@ -66,7 +66,8 @@ let garbage_collect (q : t) ~wrt =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-type from_call = {subst: Var.Subst.t; frame: Sh.t}
+type from_call =
+  {subst: Var.Subst.t; frame: Sh.t; actuals_to_formals: (Exp.t * Var.t) list}
 [@@deriving compare, equal, sexp]
 
 (** Express formula in terms of formals instead of actuals, and enter scope
@@ -89,7 +90,7 @@ let jump actuals formals ?temps q =
   in
   ( Option.fold ~f:(Fn.flip Sh.exists) temps
       ~init:(and_eqs formals actuals q')
-  , {subst= freshen_locals; frame= Sh.emp} )
+  , {subst= freshen_locals; frame= Sh.emp; actuals_to_formals= []} )
   |>
   [%Trace.retn fun {pf} (q', {subst}) ->
     pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp subst Sh.pp q']
@@ -116,7 +117,8 @@ let call ~summaries actuals formals locals globals q =
   let q'', subst =
     (Sh.extend_us locals (and_eqs formals actuals q'), freshen_locals)
   in
-  ( if not summaries then (q'', {subst; frame= Sh.emp})
+  ( if not summaries then
+    (q'', {subst; frame= Sh.emp; actuals_to_formals= []})
   else
     let formals_set = Var.Set.of_list formals in
     let non_function_specific_vars =
@@ -144,7 +146,8 @@ let call ~summaries actuals formals locals globals q =
     let frame =
       Option.value ~default:Sh.emp (Solver.infer_frame pre xs foot)
     in
-    (function_summary_pre, {subst; frame}) )
+    ( function_summary_pre
+    , {subst; frame; actuals_to_formals= List.zip_exn actuals formals} ) )
   |>
   [%Trace.retn fun {pf} (q', {subst; frame}) ->
     pf "@[<v>subst: %a@ frame: %a@ q': %a@]" Var.Subst.pp subst pp frame pp
@@ -162,11 +165,16 @@ let post locals q =
 (** Express in terms of actuals instead of formals: existentially quantify
     formals, and apply inverse of fresh variables for formals renaming to
     restore the shadowed variables. *)
-let retn formals {subst; frame} q =
+let retn formals {subst; frame; actuals_to_formals} q =
   [%Trace.call fun {pf} ->
-    pf "@[<v>formals: {@[%a@]}@ subst: %a@ q: %a@]" (List.pp ", " Var.pp)
-      formals Var.Subst.pp (Var.Subst.invert subst) pp q]
+    pf "@[<v>formals: {@[%a@]}@ subst: %a@ q: %a@ frame: %a@]"
+      (List.pp ", " Var.pp) formals Var.Subst.pp (Var.Subst.invert subst) pp
+      q pp frame]
   ;
+  let and_eq q (actual, formal) =
+    Sh.and_ (Exp.eq (Exp.var formal) actual) q
+  in
+  let q = List.fold ~f:and_eq actuals_to_formals ~init:q in
   let func_post =
     Sh.rename (Var.Subst.invert subst)
       (Sh.exists (Var.Set.of_list formals) q)

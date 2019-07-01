@@ -53,7 +53,7 @@ let jump actuals formals ?temps (entry, current) =
   let current, _ = State_domain.jump actuals formals ?temps current in
   (entry, current)
 
-let call ~summaries actuals formals locals globals_vec (_, current) =
+let call ~summaries actuals formals locals globals_vec (entry, current) =
   let globals =
     Var.Set.of_vector
       (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
@@ -69,8 +69,7 @@ let call ~summaries actuals formals locals globals_vec (_, current) =
   let caller_current, state_from_call =
     State_domain.call ~summaries actuals formals locals globals current
   in
-  ( (caller_current, caller_current)
-  , {state_from_call; caller_entry= current} ))
+  ((caller_current, caller_current), {state_from_call; caller_entry= entry}))
   |>
   [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
