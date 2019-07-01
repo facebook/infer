@@ -22,6 +22,8 @@ let join (entry_a, current_a) (entry_b, current_b) =
   assert (State_domain.equal entry_b entry_a) ;
   (entry_a, State_domain.join current_a current_b)
 
+let is_false (_, curr) = State_domain.is_false curr
+
 let exec_assume (entry, current) cnd =
   match State_domain.exec_assume current cnd with
   | Some current -> Some (entry, current)

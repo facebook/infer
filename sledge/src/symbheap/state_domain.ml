@@ -25,6 +25,7 @@ let init globals =
     | _ -> q )
 
 let join = Sh.or_
+let is_false = Sh.is_false
 let exec_assume = Exec.assume
 let exec_return = Exec.return
 let exec_inst = Exec.inst

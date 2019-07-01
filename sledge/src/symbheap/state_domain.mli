@@ -12,6 +12,7 @@ type t [@@deriving equal, sexp_of]
 val pp : t pp
 val init : Global.t vector -> t
 val join : t -> t -> t
+val is_false : t -> bool
 val exec_assume : t -> Exp.t -> t option
 val exec_inst : t -> Llair.inst -> (t, unit) result
 val exec_return : t -> Var.t -> Exp.t -> t

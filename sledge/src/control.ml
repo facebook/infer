@@ -407,6 +407,7 @@ let exec_term :
             | Some (Error ()) ->
                 Report.invalid_access_term (Domain.project state) block.term ;
                 Work.skip
+            | Some (Ok state) when Domain.is_false state -> Work.skip
             | Some (Ok state) -> exec_goto stk state block return
             | None when Llair.Func.is_undefined callee ->
                 exec_skip_func stk state block return
