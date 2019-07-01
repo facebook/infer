@@ -20,7 +20,7 @@ CLANG_ARGS += --sysroot=/usr
 endif
 
 cxxabi.bc : cxxabi.cpp
-	$(LLVM)/bin/clang $(CLANG_ARGS) -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
+	$(LLVM)/bin/clang $(CLANG_ARGS) -D_LIBCXXABI_HAS_NO_THREADS -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
 
 lib_fuzzer_main.bc : lib_fuzzer_main.c
 	$(LLVM)/bin/clang $(CLANG_ARGS) -c -emit-llvm -o $@ $<
