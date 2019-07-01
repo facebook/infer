@@ -7,11 +7,12 @@ permalink: /docs/getting-started.html
 
 ## How to Download and Install Infer
 
-You can use Homebrew (Mac only), our binary releases, build infer from
-source, or use our Docker image. As of April 2019 (version 0.16.0),
-**it will require about 1.2 GB of disk space.**
+You can either install via Homebrew (Mac only), download our binary releases,
+build infer from source, or use our Docker image. As of April 2019 (version 0.16.0),
+**the binary releases will require about 1.2 GB of disk space.** Downloading the source
+code and building it will require a lot more than 1.2 GB, to compile clang for instance.
 
-# Use Homebrew (macOS only)
+### Use Homebrew (macOS only)
 
 On macOS, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a terminal:
 
@@ -19,7 +20,7 @@ On macOS, the simplest way is to use [Homebrew](http://brew.sh/). Type this into
 brew install infer
 ```
 
-# Use a Direct Download from Github (Linux or macOS)
+### Use a Direct Download from Github (Linux or macOS)
 
 On Linux, or if you do not wish to use Homebrew on Mac, you can directly
 download our [latest binary
@@ -46,13 +47,16 @@ tar -xJf infer-osx-v0.16.0.tar.xz    # Unzip the compressed file. This will crea
 mv infer-osx-v0.16.0/ /Applications/ # Move the infer folder into /Applications
 rm infer-osx-v0.16.0.tar.xz          # Delete the original downloaded file
 
-# These next steps are optional, to put the infer binary in the PATH environment variable
+# These next steps are optional, to add the infer binary to the PATH environment variable
 
 # Open ~/.bash_profile in a text editor
 nano ~/.bash_profile
 
 # Add this line to the end of ".bash_profile". Then save the file with Ctrl+X, then Y, then Enter
 PATH=/Applications/infer-osx-v0.16.0/bin:$PATH
+
+# Alternatively, create a symbolic link to infer (instead of editing '.bash_profile')
+ln -s "/Applications/infer-osx-v0.16.0/bin/infer" /usr/local/bin/infer
 
 # Check that infer is on the PATH:
 type infer
