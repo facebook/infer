@@ -228,9 +228,9 @@ let load_from_arguments classes_out_path =
     List.fold ~f:append_path ~init:classpath (List.rev path_list)
   in
   let classpath =
-    combine (split Config.classpath) ""
+    combine (split Config.bootclasspath) ""
+    |> combine (split Config.classpath)
     |> combine (String.Set.elements roots)
-    |> combine (split Config.bootclasspath)
   in
   (classpath, search_sources (), classes)
 
