@@ -9,10 +9,8 @@
 
 let unknown_call call =
   [%Trace.kprintf
-    (fun _ -> assert false)
-      "@\n\
-       @[<v 2>%a Called unknown function %a executing instruction@;<1 \
-       2>@[%a@]@]@."
+    Stop.on_unknown_call
+      "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
       (fun fs call -> Loc.pp fs (Llair.Term.loc call))
       call
       (fun fs (call : Llair.Term.t) ->
@@ -25,13 +23,14 @@ let unknown_call call =
       call Llair.Term.pp call]
 
 let invalid_access state pp access loc =
-  Format.printf "@\n@[<v 2>%a Invalid memory access@;<1 2>@[%a@]@]@." Loc.pp
-    (loc access) pp access ;
-  [%Trace.kprintf
-    (fun _ -> assert false)
-      "@\n\
-       @[<v 2>%a Invalid memory access@;<1 2>@[%a@]@;<1 2>@[{ %a@ }@]@]@."
-      Loc.pp (loc access) pp access State_domain.pp state]
+  let rep fs =
+    Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Loc.pp
+      (loc access) pp access
+  in
+  Format.printf "@\n@[<v 2>%t@]@." rep ;
+  [%Trace.printf
+    "@\n@[<v 2>%t@;<1 2>@[{ %a@ }@]@]@." rep State_domain.pp state] ;
+  Stop.on_invalid_access ()
 
 let invalid_access_inst state inst =
   invalid_access state Llair.Inst.pp inst Llair.Inst.loc
