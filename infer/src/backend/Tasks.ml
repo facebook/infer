@@ -12,20 +12,6 @@ type 'a doer = 'a -> unit
 
 type 'a task_generator = 'a ProcessPool.task_generator
 
-let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =
-  let task_bar = TaskBar.create ~jobs:1 in
-  (ProcessPoolState.update_status :=
-     fun t status ->
-       TaskBar.update_status task_bar ~slot:0 t status ;
-       TaskBar.refresh task_bar) ;
-  TaskBar.set_tasks_total task_bar (List.length tasks) ;
-  TaskBar.tasks_done_reset task_bar ;
-  List.iter
-    ~f:(fun task -> f task ; TaskBar.tasks_done_add task_bar 1 ; TaskBar.refresh task_bar)
-    tasks ;
-  TaskBar.finish task_bar
-
-
 let fork_protect ~f x =
   (* this is needed whenever a new process is started *)
   Epilogues.reset () ;
@@ -66,9 +52,10 @@ end
 
 let gen_of_list (lst : 'a list) : 'a task_generator =
   let content = ref lst in
-  let n_tasks = List.length lst in
+  let length = ref (List.length lst) in
+  let remaining_tasks () = !length in
   let is_empty () = List.is_empty !content in
-  let finished _finished_item = () in
+  let finished _finished_item = decr length in
   let next () =
     match !content with
     | [] ->
@@ -77,4 +64,23 @@ let gen_of_list (lst : 'a list) : 'a task_generator =
         content := xs ;
         Some x
   in
-  {n_tasks; is_empty; finished; next}
+  {remaining_tasks; is_empty; finished; next}
+
+
+let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =
+  let task_generator = gen_of_list tasks in
+  let task_bar = TaskBar.create ~jobs:1 in
+  (ProcessPoolState.update_status :=
+     fun t status ->
+       TaskBar.update_status task_bar ~slot:0 t status ;
+       TaskBar.refresh task_bar) ;
+  TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
+  TaskBar.tasks_done_reset task_bar ;
+  let rec run_tasks () =
+    if not (task_generator.is_empty ()) then (
+      Option.iter (task_generator.next ()) ~f:(fun t -> f t ; task_generator.finished t) ;
+      TaskBar.set_remaining_tasks task_bar (task_generator.remaining_tasks ()) ;
+      TaskBar.refresh task_bar ;
+      run_tasks () )
+  in
+  run_tasks () ; TaskBar.finish task_bar

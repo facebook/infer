@@ -168,10 +168,10 @@ let set_tasks_total task_bar n =
       ()
 
 
-let tasks_done_add task_bar n =
+let set_remaining_tasks task_bar n =
   match task_bar with
   | MultiLine multiline ->
-      multiline.tasks_done <- multiline.tasks_done + n
+      multiline.tasks_done <- multiline.tasks_total - n
   | NonInteractive | Quiet ->
       ()
 

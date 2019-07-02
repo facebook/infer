@@ -25,8 +25,8 @@ val set_tasks_total : t -> int -> unit
 val tasks_done_reset : t -> unit
 (** record that 0 tasks have been completed so far *)
 
-val tasks_done_add : t -> int -> unit
-(** record that a number of tasks have been completed *)
+val set_remaining_tasks : t -> int -> unit
+(** set the number of tasks remaining to complete *)
 
 val finish : t -> unit
 (** tear down the task bar and ready the terminal for more output *)

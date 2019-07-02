@@ -12,7 +12,7 @@ type target = Procname of Typ.Procname.t | File of SourceFile.t
 type 'a task_generator = 'a Tasks.task_generator
 
 let chain (gen1 : 'a task_generator) (gen2 : 'a task_generator) : 'a task_generator =
-  let n_tasks = gen1.n_tasks + gen2.n_tasks in
+  let remaining_tasks () = gen1.remaining_tasks () + gen2.remaining_tasks () in
   let gen1_returned_empty = ref false in
   let gen1_is_empty () =
     gen1_returned_empty := !gen1_returned_empty || gen1.is_empty () ;
@@ -21,7 +21,7 @@ let chain (gen1 : 'a task_generator) (gen2 : 'a task_generator) : 'a task_genera
   let is_empty () = gen1_is_empty () && gen2.is_empty () in
   let finished x = if gen1_is_empty () then gen2.finished x else gen1.finished x in
   let next x = if gen1_is_empty () then gen2.next x else gen1.next x in
-  {n_tasks; is_empty; finished; next}
+  {remaining_tasks; is_empty; finished; next}
 
 
 let count_procedures () =
@@ -43,7 +43,8 @@ let initial_call_graph_capacity = 1009
 
 let bottom_up sources : target task_generator =
   (* this will potentially grossly overapproximate the tasks *)
-  let n_tasks = count_procedures () in
+  let remaining = ref (count_procedures ()) in
+  let remaining_tasks () = !remaining in
   let g = CallGraph.create initial_call_graph_capacity in
   let initialized = ref false in
   let pending : CallGraph.Node.t list ref = ref [] in
@@ -51,6 +52,7 @@ let bottom_up sources : target task_generator =
   let is_empty () =
     let empty = !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled in
     if empty then (
+      remaining := 0 ;
       L.progress "Finished call graph scheduling, %d procs remaining (in cycles).@."
         (CallGraph.n_procs g) ;
       if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "cycles.dot" ;
@@ -76,6 +78,7 @@ let bottom_up sources : target task_generator =
     | File _ ->
         assert false
     | Procname pname ->
+        decr remaining ;
         scheduled := Typ.Procname.Set.remove pname !scheduled ;
         CallGraph.remove_reachable g pname
   in
@@ -86,7 +89,7 @@ let bottom_up sources : target task_generator =
       initialized := true ) ;
     next_aux ()
   in
-  {n_tasks; is_empty; finished; next}
+  {remaining_tasks; is_empty; finished; next}
 
 
 let of_sources sources =

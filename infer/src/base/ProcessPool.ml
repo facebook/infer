@@ -20,7 +20,10 @@ type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 type 'a child_state = Initializing | Idle | Processing of 'a
 
 type 'a task_generator =
-  {n_tasks: int; is_empty: unit -> bool; finished: 'a -> unit; next: unit -> 'a option}
+  { remaining_tasks: unit -> int
+  ; is_empty: unit -> bool
+  ; finished: 'a -> unit
+  ; next: unit -> 'a option }
 
 (** the state of the pool *)
 type 'a t =
@@ -234,7 +237,7 @@ let process_updates pool buffer =
            Unix.wait (`Pid pid) |> ignore ;
            killall pool ~slot "see backtrace above"
        | Ready slot ->
-           TaskBar.tasks_done_add pool.task_bar 1 ;
+           TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
            TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
            ( match pool.children_states.(slot) with
            | Processing work ->
@@ -361,13 +364,9 @@ let create :
 
 
 let run pool =
-  TaskBar.set_tasks_total pool.task_bar pool.tasks.n_tasks ;
+  let total_tasks = pool.tasks.remaining_tasks () in
+  TaskBar.set_tasks_total pool.task_bar total_tasks ;
   TaskBar.tasks_done_reset pool.task_bar ;
-  (* Start with a negative number of completed tasks to account for the initial [Ready]
-     messages. All the children start by sending [Ready], which is interpreted by the parent process
-     as "one task has been completed". Starting with a negative number is a simple if hacky way to
-     account for these spurious "done" tasks.  *)
-  TaskBar.tasks_done_add pool.task_bar (-pool.jobs) ;
   (* allocate a buffer for reading children updates once for the whole run *)
   let buffer = Bytes.create buffer_size in
   (* wait for all children to run out of tasks *)

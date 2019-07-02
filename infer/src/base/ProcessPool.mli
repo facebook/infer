@@ -28,8 +28,8 @@ type _ t
 
 (** abstraction for generating jobs *)
 type 'a task_generator =
-  { n_tasks: int
-        (** total number of tasks -- only used for reporting, so imprecision is not a bug *)
+  { remaining_tasks: unit -> int
+        (** number of tasks remaining to complete -- only used for reporting, so imprecision is not a bug *)
   ; is_empty: unit -> bool
         (** when should the main loop of the task manager stop expecting new tasks *)
   ; finished: 'a -> unit
