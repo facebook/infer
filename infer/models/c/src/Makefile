@@ -11,7 +11,7 @@ CFLAGS=-c -w
 all: $(OBJECTS) 
 
 clean:
-	$(QUIET)rm -rf $(OBJECTS) 
+	$(QUIET)rm -rf $(OBJECTS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@

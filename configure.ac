@@ -130,8 +130,18 @@ AS_IF(
         [XCODE_BASE=$XCODE_SELECT_OUT HAS_OBJC=yes],
   [HAS_OBJC=no])
 
+AC_CHECK_TOOL([XCRUN], [xcrun], [no])
+
+AC_ARG_VAR([SDKROOT], [path to the OSX platform SDK used by clang])
+AS_IF(
+  [test "x$SDKROOT" = "x" && test "x$XCRUN" != "xno"],
+        [SDKROOT=`xcrun --sdk macosx --show-sdk-path`]
+)
+
 AC_SUBST([XCODE_BASE])
 AC_SUBST([HAS_OBJC])
+AC_SUBST([SDKROOT])
+
 
 # prefer clang over gcc because the plugins makes use of
 # clang-specific #pragma's
@@ -350,8 +360,6 @@ AS_IF([test "$SED" != "xno"], [
 AC_SUBST([GNU_SED])
 
 AC_CHECK_TOOL([BREW], [brew], [no])
-AC_ARG_VAR([SDKROOT], [path to the OSX platform SDK used by clang])
-AC_SUBST([SDKROOT])
 
 AC_CHECK_TOOL([INSTALL_NAME_TOOL], [install_name_tool], [no])
 AC_SUBST([INSTALL_NAME_TOOL])

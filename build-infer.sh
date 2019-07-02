@@ -142,17 +142,6 @@ echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
 opam_retry install_opam_deps
 
-#fix for Mojave
-if [ "$OSTYPE" == "darwin18" ]; then
-    if [ "$(command -v xcode-select)" == "" ]; then
-        xcode-select --install
-    fi
-    SDKROOT=${SDKROOT:-/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk}
-    if [ -d "$SDKROOT" ]; then
-        export SDKROOT
-    fi
-fi
-
 if [ "$ONLY_SETUP_OPAM" == "yes" ]; then
   exit 0
 fi
