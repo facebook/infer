@@ -1289,33 +1289,38 @@ let size_of t =
 (** Transform *)
 
 let map e ~f =
-  let map_bin mk ~f x y =
-    let x' = f x in
-    let y' = f y in
-    if x' == x && y' == y then e else mk x' y'
+  let map_ : (t -> t) -> t -> t =
+   fun map_ e ->
+    let map_bin mk ~f x y =
+      let x' = f x in
+      let y' = f y in
+      if x' == x && y' == y then e else mk x' y'
+    in
+    let map_vector mk ~f args =
+      let args' = Vector.map_preserving_phys_equal ~f args in
+      if args' == args then e else mk args'
+    in
+    let map_qset mk typ ~f args =
+      let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
+      if args' == args then e else mk typ args'
+    in
+    match e with
+    | App {op; arg} -> map_bin (app1 ~partial:true) ~f op arg
+    | Add {args; typ} -> map_qset addN typ ~f args
+    | Mul {args; typ} -> map_qset mulN typ ~f args
+    | Splat {byt; siz} -> map_bin simp_splat ~f byt siz
+    | Memory {siz; arr} -> map_bin simp_memory ~f siz arr
+    | Concat {args} -> map_vector simp_concat ~f args
+    | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
+    | _ -> e
   in
-  let map_vector mk ~f args =
-    let args' = Vector.map_preserving_phys_equal ~f args in
-    if args' == args then e else mk args'
-  in
-  let map_qset mk typ ~f args =
-    let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
-    if args' == args then e else mk typ args'
-  in
-  match e with
-  | App {op; arg} -> map_bin (app1 ~partial:true) ~f op arg
-  | Add {args; typ} -> map_qset addN typ ~f args
-  | Mul {args; typ} -> map_qset mulN typ ~f args
-  | Splat {byt; siz} -> map_bin simp_splat ~f byt siz
-  | Memory {siz; arr} -> map_bin simp_memory ~f siz arr
-  | Concat {args} -> map_vector simp_concat ~f args
-  | _ -> e
+  fix map_ (fun e -> e) e
 
 let rename e sub =
   let rec rename_ e sub =
     match e with
     | Var _ -> Var.Subst.apply sub e
-    | _ -> map e ~f:(fun f -> rename_ f sub)
+    | _ -> map ~f:(fun f -> rename_ f sub) e
   in
   rename_ e sub |> check (invariant ~partial:true)
 

@@ -49,7 +49,7 @@ let garbage_collect (q : t) ~wrt =
   (* only support DNF for now *)
   assert (List.is_empty q.djns) ;
   let rec all_reachable_vars previous current (q : t) =
-    if previous == current then current
+    if Var.Set.equal previous current then current
     else
       let new_set =
         List.fold ~init:current q.heap ~f:(fun current seg ->
