@@ -2161,8 +2161,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let field_exps =
       match Tenv.lookup tenv tname with
       | Some {fields} ->
-          List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
-              Some (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+          List.map fields ~f:(fun (fieldname, fieldtype, _) ->
+              (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
       | None ->
           assert false
     in
@@ -2180,7 +2180,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             "assuming initListExpr is initializing the whole struct %a in one go" Exp.pp var_exp ;
           [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
       | _ ->
-          (* This can happen with union initializers. Skip them for now *)
+          (* This happens with some braced-init-list for instance; translate each sub-statement so
+             as not to lose instructions (we might even get the translation right) *)
           L.debug Capture Medium
             "couldn't translate initListExpr properly: list lengths do not match:@\n\
             \  field_exps is %d: [%a]@\n\
@@ -2190,7 +2191,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             field_exps (List.length stmts)
             (Pp.seq ~sep:"," (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string))
             stmts ;
-          [] )
+          let control, _ = instructions trans_state stmts in
+          [mk_trans_result (var_exp, var_typ) control] )
 
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
@@ -2283,12 +2285,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match init_expr_opt with
     | None -> (
       match
-        Option.map ~f:(fun qt -> qt.Clang_ast_t.qt_type_ptr) qual_type
-        |> Option.find_map ~f:CAst_utils.get_type
+        Option.bind qual_type ~f:(fun qt -> CAst_utils.get_type qt.Clang_ast_t.qt_type_ptr)
       with
       | Some (Clang_ast_t.VariableArrayType (_, _, stmt_pointer)) ->
           (* Set the dynamic length of the variable length array. Variable length array cannot
-                 have an initialization expression. *)
+             have an initialization expression. *)
           init_dynamic_array trans_state var_exp_typ var_stmt_info stmt_pointer
       | _ ->
           (* Nothing to do if no init expression and not a variable length array *)

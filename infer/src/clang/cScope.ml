@@ -30,7 +30,7 @@ type 'a scope = {current: 'a list; current_kind: scope_kind; outers: ('a list * 
 
 (** executes [f] in new scope where [kind] has been pushed on top *)
 let in_ kind scope ~f =
-  L.debug Capture Verbose "<@[<v2>%s|" (string_of_kind kind) ;
+  L.debug Capture Verbose "<@[<v2>%s|@," (string_of_kind kind) ;
   let scope =
     {current= []; current_kind= kind; outers= (scope.current, scope.current_kind) :: scope.outers}
   in
@@ -38,7 +38,7 @@ let in_ kind scope ~f =
   let (current, current_kind), outers =
     match scope.outers with [] -> assert false | top :: rest -> (top, rest)
   in
-  L.debug Capture Verbose "@]%s>@\n" (string_of_kind scope.current_kind) ;
+  L.debug Capture Verbose "@]@;/%s>" (string_of_kind scope.current_kind) ;
   (scope.current, {current; current_kind; outers}, x)
 
 
@@ -165,7 +165,7 @@ module Variables = struct
         in
         (* the reverse order is the one we want to destroy the variables in at the end of the scope
            *)
-        L.debug Capture Verbose "+%a" (Pp.seq ~sep:"," pp_var_decl) new_vars ;
+        L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," pp_var_decl) new_vars ;
         (rev_append new_vars scope, map)
     | _ -> (
         let stmt_info, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
@@ -203,7 +203,8 @@ module Variables = struct
 
 
   and visit_stmt_list stmt_list scope_map =
-    List.fold stmt_list ~f:(fun scope_map stmt -> visit_stmt stmt scope_map) ~init:scope_map
+    List.fold stmt_list ~init:scope_map ~f:(fun scope_map stmt ->
+        L.debug Capture Verbose "@;" ; visit_stmt stmt scope_map )
 
 
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}
@@ -213,7 +214,7 @@ module Variables = struct
 end
 
 module CXXTemporaries = struct
-  let rec visit_stmt context stmt temporaries =
+  let rec visit_stmt_aux context stmt temporaries =
     match (stmt : Clang_ast_t.stmt) with
     | MaterializeTemporaryExpr
         ( stmt_info
@@ -224,6 +225,7 @@ module CXXTemporaries = struct
                  the reference *)
               None } ) ->
         let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
+        L.debug Capture Verbose "+%a@," (Pvar.pp Pp.text) pvar ;
         let temporaries = (pvar, typ, expr_info.ei_qual_type) :: temporaries in
         visit_stmt_list context stmt_list temporaries
     | ExprWithCleanups _ ->
@@ -242,15 +244,26 @@ module CXXTemporaries = struct
            Example of tricky case: [foo(x?y:z, w)] or [cond && y] where [y] generates a C++
            temporary. *)
         temporaries
+    | LambdaExpr _ ->
+        (* do not analyze the code of another function *) temporaries
     | _ ->
         let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
         visit_stmt_list context stmt_list temporaries
 
 
+  and visit_stmt context stmt temporaries =
+    L.debug Capture Verbose "<@[<hv2>%a|@,"
+      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      stmt ;
+    let r = visit_stmt_aux context stmt temporaries in
+    L.debug Capture Verbose "@]@;/%a>" (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
+    r
+
+
   and visit_stmt_list context stmt_list temporaries =
-    List.fold stmt_list
-      ~f:(fun temporaries stmt -> visit_stmt context stmt temporaries)
-      ~init:temporaries
+    List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
+        L.debug Capture Verbose "@;" ;
+        visit_stmt context stmt temporaries )
 
 
   let get_destroyable_temporaries context stmt_list = visit_stmt_list context stmt_list []
