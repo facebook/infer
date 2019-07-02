@@ -40,15 +40,23 @@ let add_models jar_filename =
 
 let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
 
-let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
+let split_classpath =
+  assert (Int.( = ) (String.length JFile.sep) 1) ;
+  let char_sep = JFile.sep.[0] in
+  fun cp -> String.split ~on:char_sep cp
 
-let append_path classpath path =
-  let full_path = Utils.filename_to_absolute ~root:Config.project_root path in
-  if Sys.file_exists full_path = `Yes then
-    if Int.equal (String.length classpath) 0 then full_path else classpath ^ JFile.sep ^ full_path
-  else (
-    L.debug Capture Medium "Path %s not found" full_path ;
-    classpath )
+
+let classpath_of_paths paths =
+  let of_path path =
+    let full_path = Utils.filename_to_absolute ~root:Config.project_root path in
+    match Sys.file_exists full_path with
+    | `Yes ->
+        Some full_path
+    | _ ->
+        L.debug Capture Medium "Path %s not found" full_path ;
+        None
+  in
+  List.filter_map paths ~f:of_path |> String.concat ~sep:JFile.sep
 
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
@@ -133,7 +141,7 @@ let load_from_verbose_output javac_verbose_out =
     match In_channel.input_line_exn file_in with
     | exception End_of_file ->
         In_channel.close file_in ;
-        let classpath = List.fold ~f:append_path ~init:"" (String.Set.elements roots @ paths) in
+        let classpath = classpath_of_paths (String.Set.elements roots @ paths) in
         (classpath, sources, classes)
     | line ->
         if Str.string_match class_filename_re line 0 then
@@ -224,13 +232,9 @@ let search_sources () =
 let load_from_arguments classes_out_path =
   let roots, classes = search_classes classes_out_path in
   let split cp_option = Option.value_map ~f:split_classpath ~default:[] cp_option in
-  let combine path_list classpath =
-    List.fold ~f:append_path ~init:classpath (List.rev path_list)
-  in
   let classpath =
-    combine (split Config.bootclasspath) ""
-    |> combine (split Config.classpath)
-    |> combine (String.Set.elements roots)
+    split Config.bootclasspath @ split Config.classpath @ String.Set.elements roots
+    |> classpath_of_paths
   in
   (classpath, search_sources (), classes)
 
