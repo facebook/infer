@@ -123,7 +123,26 @@ let restore_global_state st =
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
-let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
+let analyze summary callee_pdesc =
+  let exe_env = Option.value_exn !exe_env_ref in
+  let proc_name = Procdesc.get_proc_name callee_pdesc in
+  let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
+  let t0 = Mtime_clock.now () in
+  let status =
+    let nesting =
+      if !nesting <= max_nesting_to_print then String.make !nesting '>'
+      else Printf.sprintf "%d>" !nesting
+    in
+    F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Typ.Procname.pp proc_name
+  in
+  current_taskbar_status := Some (t0, status) ;
+  !ProcessPoolState.update_status t0 status ;
+  let summary = Callbacks.iterate_procedure_callbacks exe_env summary callee_pdesc in
+  if Topl.is_active () then Topl.add_errors exe_env summary ;
+  summary
+
+
+let run_proc_analysis ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
@@ -167,7 +186,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   let attributes = Procdesc.get_attributes callee_pdesc in
   try
     let summary =
-      if attributes.ProcAttributes.is_defined then analyze_proc initial_summary callee_pdesc
+      if attributes.ProcAttributes.is_defined then analyze initial_summary callee_pdesc
       else initial_summary
     in
     let final_summary = postprocess summary in
@@ -199,14 +218,14 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
 
 
 (* shadowed for tracing *)
-let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
+let run_proc_analysis ~caller_pdesc callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Typ.Procname.to_string callee_pname))]
           () )) ;
-  let summary = run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc in
+  let summary = run_proc_analysis ~caller_pdesc callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
 
@@ -247,29 +266,6 @@ let create_perf_stats_report source_file =
   PerfStats.get_reporter (PerfStats.Backend source_file) ()
 
 
-let analyze_proc ?caller_pdesc callee_pdesc =
-  let exe_env = Option.value_exn !exe_env_ref in
-  (* wrap [callbacks.analyze_ondemand] to update the status bar *)
-  let analyze_proc summary pdesc =
-    let proc_name = Procdesc.get_proc_name callee_pdesc in
-    let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
-    let t0 = Mtime_clock.now () in
-    let status =
-      let nesting =
-        if !nesting <= max_nesting_to_print then String.make !nesting '>'
-        else Printf.sprintf "%d>" !nesting
-      in
-      F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Typ.Procname.pp proc_name
-    in
-    current_taskbar_status := Some (t0, status) ;
-    !ProcessPoolState.update_status t0 status ;
-    let summary = Callbacks.iterate_procedure_callbacks exe_env summary pdesc in
-    if Topl.is_active () then Topl.add_errors exe_env summary ;
-    summary
-  in
-  Some (run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc)
-
-
 let hash_procname proc_name = Typ.Procname.to_unique_id proc_name |> Utils.string_crc_hex32
 
 let memcache_get proc_name =
@@ -299,7 +295,7 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
         | None ->
             let proc_attributes = Procdesc.get_attributes callee_pdesc in
             if should_be_analyzed proc_attributes then
-              (analyze_proc ~caller_pdesc callee_pdesc, true)
+              (Some (run_proc_analysis ~caller_pdesc:(Some caller_pdesc) callee_pdesc), true)
             else (Summary.get callee_pname, true)
       in
       if update_memcached then memcache_set callee_pname summary_option ;
@@ -331,7 +327,7 @@ let analyze_proc_name ?caller_pdesc callee_pname =
             if procedure_should_be_analyzed callee_pname then
               match get_proc_desc callee_pname with
               | Some callee_pdesc ->
-                  (analyze_proc ?caller_pdesc callee_pdesc, true)
+                  (Some (run_proc_analysis ~caller_pdesc callee_pdesc), true)
               | None ->
                   (Summary.get callee_pname, true)
             else (
