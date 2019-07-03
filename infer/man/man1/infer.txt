@@ -287,9 +287,9 @@ OPTIONS
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --linters, --liveness, --ownership,
-           --racerd, --siof, --starvation, --uninit (Conversely:
-           --default-checkers)           See also infer-analyze(1).
+           --fragment-retains-view, --linters, --liveness, --racerd, --siof,
+           --starvation, --uninit (Conversely: --default-checkers)       
+    See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -780,14 +780,6 @@ OPTIONS
        --only-show
            Activates: Show the list of reports and exit (Conversely:
            --no-only-show)           See also infer-explore(1).
-
-       --no-ownership
-           Deactivates: the detection of C++ lifetime bugs (Conversely:
-           --ownership)           See also infer-analyze(1).
-
-       --ownership-only
-           Activates: Enable --ownership and disable all other checkers
-           (Conversely: --no-ownership-only)           See also infer-analyze(1).
 
        --perf-profiler-data-file file
            Specify the file containing perf profiler data to read       

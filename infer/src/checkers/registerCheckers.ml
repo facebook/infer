@@ -81,9 +81,6 @@ let all_checkers =
     ; callbacks=
         [ (Procedure NullabilitySuggest.checker, Language.Java)
         ; (Procedure NullabilitySuggest.checker, Language.Clang) ] }
-  ; { name= "ownership"
-    ; active= Config.ownership
-    ; callbacks= [(Procedure Ownership.checker, Language.Clang)] }
   ; {name= "pulse"; active= Config.pulse; callbacks= [(Procedure Pulse.checker, Language.Clang)]}
   ; { name= "quandary"
     ; active= Config.quandary || Config.quandaryBO

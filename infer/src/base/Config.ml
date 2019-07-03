@@ -614,7 +614,6 @@ and ( annotation_reachability
     , liveness
     , loop_hoisting
     , nullsafe
-    , ownership
     , printf_args
     , pulse
     , purity
@@ -667,13 +666,13 @@ and ( annotation_reachability
     mk_checker ~long:"nullsafe"
       ~deprecated:["-check-nullable"; "-suggest-nullable"]
       "[EXPERIMENTAL] Nullable type checker (incomplete: use --eradicate for now)"
-  and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
     mk_checker ~long:"printf-args" ~default:false
       "the detection of mismatch between the Java printf format strings and the argument types \
        For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
        \"world\")`"
-  and pulse = mk_checker ~long:"pulse" "[EXPERIMENTAL] C++ lifetime analysis"
+  and pulse =
+    mk_checker ~long:"pulse" ~deprecated:["-ownership"] "[EXPERIMENTAL] C++ lifetime analysis"
   and purity = mk_checker ~long:"purity" ~default:false "[EXPERIMENTAL] Purity analysis"
   and quandary = mk_checker ~long:"quandary" ~default:false "the quandary taint analysis"
   and quandaryBO =
@@ -737,7 +736,6 @@ and ( annotation_reachability
   , liveness
   , loop_hoisting
   , nullsafe
-  , ownership
   , printf_args
   , pulse
   , purity
@@ -2925,8 +2923,6 @@ and only_cheap_debug = !only_cheap_debug
 and only_footprint = !only_footprint
 
 and only_show = !only_show
-
-and ownership = !ownership
 
 and passthroughs = !passthroughs
 

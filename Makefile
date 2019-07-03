@@ -60,15 +60,15 @@ DIRECT_TESTS += \
   cpp_conflicts \
   cpp_errors \
   cpp_frontend \
-	cpp_linters \
+  cpp_linters \
   cpp_linters-for-test-only \
   cpp_liveness \
   cpp_nullable \
-  cpp_ownership cpp_pulse \
+  cpp_pulse \
   cpp_quandary cpp_quandaryBO \
   cpp_racerd \
   cpp_siof \
-	cpp_starvation \
+  cpp_starvation \
   cpp_uninit \
 
 

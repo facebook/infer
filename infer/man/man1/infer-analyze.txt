@@ -98,9 +98,8 @@ OPTIONS
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --linters, --liveness, --ownership,
-           --racerd, --siof, --starvation, --uninit (Conversely:
-           --default-checkers)
+           --fragment-retains-view, --linters, --liveness, --racerd, --siof,
+           --starvation, --uninit (Conversely: --default-checkers)
 
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
@@ -196,14 +195,6 @@ OPTIONS
        --nullsafe-only
            Activates: Enable --nullsafe and disable all other checkers
            (Conversely: --no-nullsafe-only)
-
-       --no-ownership
-           Deactivates: the detection of C++ lifetime bugs (Conversely:
-           --ownership)
-
-       --ownership-only
-           Activates: Enable --ownership and disable all other checkers
-           (Conversely: --no-ownership-only)
 
        --perf-profiler-data-file file
            Specify the file containing perf profiler data to read
