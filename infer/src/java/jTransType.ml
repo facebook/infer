@@ -51,23 +51,7 @@ let cast_type = function
       Typ.mk (Typ.Tint Typ.IShort)
 
 
-let const_type const =
-  match const with
-  | `String _ ->
-      JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.string_cl))
-  | `Class _ ->
-      JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.class_cl))
-  | `Double _ ->
-      JBasics.TBasic `Double
-  | `Int _ ->
-      JBasics.TBasic `Int
-  | `Float _ ->
-      JBasics.TBasic `Float
-  | `Long _ ->
-      JBasics.TBasic `Long
-  | `ANull ->
-      JConfig.obj_type
-
+let const_type const = JBir.type_of_expr (JBir.Const const)
 
 let typename_of_classname cn = Typ.Name.Java.from_string (JBasics.cn_name cn)
 

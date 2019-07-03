@@ -175,6 +175,10 @@ let get_constant (c : JBir.const) =
       Const.Cint (IntLit.of_int64 i64)
   | `String jstr ->
       Const.Cstr (JBasics.jstr_pp jstr)
+  | `MethodType _ ->
+      raise (Frontend_error "MethodType constant")
+  | `MethodHandle _ ->
+      raise (Frontend_error "MethodHandle constant")
 
 
 let get_binop typ binop =
@@ -256,7 +260,7 @@ let get_bytecode cm =
         Array.map
           ~f:(function
             | JCode.OpInvoke (`Dynamic _, ms) ->
-                JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
+                JCode.OpInvoke (`Static (`Class, JBasics.java_lang_object), ms)
             | opcode ->
                 opcode )
           bytecode.JCode.c_code

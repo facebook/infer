@@ -7,19 +7,12 @@
  *)
 
 open! IStd
-open Javalib_pack
 
 (** {2 Class names and types} *)
 
 let builtins_package = "com.facebook.infer.builtins"
 
 let infer_builtins_cl = builtins_package ^ ".InferBuiltins"
-
-let obj_type = JBasics.TObject (JBasics.TClass JBasics.java_lang_object)
-
-let string_cl = "java.lang.String"
-
-let class_cl = "java.lang.Class"
 
 let npe_cl = "java.lang.NullPointerException"
 

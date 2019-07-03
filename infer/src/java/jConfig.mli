@@ -6,13 +6,6 @@
  *)
 
 open! IStd
-open Javalib_pack
-
-val string_cl : string
-
-val class_cl : string
-
-val obj_type : JBasics.value_type
 
 val boolean_code : string
 
