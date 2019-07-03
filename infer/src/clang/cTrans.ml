@@ -3802,7 +3802,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     exec_with_node_creation ~f:instruction trans_state stmt
 
 
-  (* TODO write translate function for cxx constructor exprs *)
   and get_custom_stmt_trans stmt =
     match stmt with
     | `ClangStmt stmt ->
