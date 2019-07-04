@@ -232,6 +232,8 @@ module Name : sig
     val java_io_serializable : t
 
     val java_lang_cloneable : t
+
+    val java_lang_class : t
   end
 
   module Cpp : sig

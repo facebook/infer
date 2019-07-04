@@ -350,9 +350,8 @@ let rec get_typ tenv = function
   | Constant (Cfloat _) ->
       Some (Typ.mk (Typ.Tfloat Typ.FFloat))
   | Constant (Cclass _) ->
-      (* TODO: this only happens in Java. We probably need to change it to `Cclass of Typ.Name.t`
-         to give a useful result here *)
-      None
+      let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
+      Some Typ.(mk (Tptr (typ, Pk_pointer)))
   | Constant (Cstr _) ->
       (* TODO: this will need to behave differently depending on whether we're in C++ or Java *)
       None

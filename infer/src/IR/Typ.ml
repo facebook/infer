@@ -462,11 +462,13 @@ module Name = struct
 
     let is_class = function JavaClass _ -> true | _ -> false
 
-    let java_lang_object = from_string "java.lang.Object"
-
     let java_io_serializable = from_string "java.io.Serializable"
 
+    let java_lang_class = from_string "java.lang.Class"
+
     let java_lang_cloneable = from_string "java.lang.Cloneable"
+
+    let java_lang_object = from_string "java.lang.Object"
 
     let split_typename typename = Split.of_string (name typename)
 
@@ -1435,6 +1437,7 @@ module Fieldname = struct
         Some (Name.qual_name class_name)
     | _ ->
         None
+
 
   module Clang = struct
     let from_class_name class_name field_name = Clang {class_name; field_name}

@@ -39,9 +39,8 @@ end)
 (* using an indentifier for a class object, create an access path representing that lock;
    this is for synchronizing on Java class objects only *)
 let lock_of_class =
-  let type_name = Typ.Name.Java.from_string "java.lang.Class" in
-  let typ = Typ.mk (Typ.Tstruct type_name) in
-  let typ' = Typ.mk (Typ.Tptr (typ, Typ.Pk_pointer)) in
+  let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
+  let typ' = Typ.(mk (Tptr (typ, Pk_pointer))) in
   fun class_id ->
     let ident = Ident.create_normal class_id 0 in
     AccessPath.of_id ident typ'
