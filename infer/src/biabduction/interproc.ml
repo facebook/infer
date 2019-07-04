@@ -1249,7 +1249,8 @@ let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
   summary_compact
 
 
-let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t =
+let analyze_procedure {Callbacks.summary; tenv; exe_env} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
   if Topl.is_active () then Topl.instrument tenv proc_desc ;

@@ -214,7 +214,8 @@ module DisjunctiveTransferFunctions =
 
 module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFunctions)
 
-let checker {Callbacks.proc_desc; tenv; summary} =
+let checker {Callbacks.tenv; summary} =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_data = ProcData.make proc_desc tenv summary in
   AbstractAddress.init () ;
   let initial =

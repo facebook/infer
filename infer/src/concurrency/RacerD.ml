@@ -504,7 +504,8 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
+let analyze_procedure {Callbacks.tenv; summary} =
+  let proc_desc = Summary.get_proc_desc summary in
   let open RacerDModels in
   let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in

@@ -214,7 +214,8 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
     sink_map
 
 
-let report_src_snk_path {Callbacks.proc_desc; tenv; summary} sink_map snk_annot src_annot =
+let report_src_snk_path {Callbacks.tenv; summary} sink_map snk_annot src_annot =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
   if method_overrides_annot src_annot tenv proc_name then
@@ -374,7 +375,7 @@ module CxxAnnotationSpecs = struct
     in
     let snk_annot = annotation_of_str snk_name in
     let report proc_data annot_map =
-      let proc_desc = proc_data.Callbacks.proc_desc in
+      let proc_desc = Summary.get_proc_desc proc_data.Callbacks.summary in
       let proc_name = Procdesc.get_proc_name proc_desc in
       if src_pred proc_name then
         let loc = Procdesc.get_loc proc_desc in
@@ -437,7 +438,8 @@ module ExpensiveAnnotationSpec = struct
 
   let method_is_expensive tenv pname = is_modeled_expensive tenv pname || is_expensive tenv pname
 
-  let check_expensive_subtyping_rules {Callbacks.proc_desc; tenv; summary} overridden_pname =
+  let check_expensive_subtyping_rules {Callbacks.tenv; summary} overridden_pname =
+    let proc_desc = Summary.get_proc_desc summary in
     let proc_name = Procdesc.get_proc_name proc_desc in
     let loc = Procdesc.get_loc proc_desc in
     if not (method_is_expensive tenv overridden_pname) then
@@ -463,7 +465,8 @@ module ExpensiveAnnotationSpec = struct
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= expensive_annot
     ; report=
-        (fun ({Callbacks.tenv; proc_desc} as proc_data) astate ->
+        (fun ({Callbacks.tenv; summary} as proc_data) astate ->
+          let proc_desc = Summary.get_proc_desc summary in
           let proc_name = Procdesc.get_proc_name proc_desc in
           if is_expensive tenv proc_name then
             PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name ;
@@ -610,7 +613,8 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))
 
-let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Summary.t =
+let checker ({Callbacks.tenv; summary} as callback) : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
   let specs = get_annot_specs (Procdesc.get_proc_name proc_desc) in
   let proc_data = ProcData.make proc_desc tenv specs in

@@ -368,7 +368,8 @@ let compute_summary :
 
 
 let do_analysis : Callbacks.proc_callback_args -> Summary.t =
- fun {proc_desc; tenv; integer_type_widths; summary} ->
+ fun {tenv; integer_type_widths; summary} ->
+  let proc_desc = Summary.get_proc_desc summary in
   let inv_map = cached_compute_invariant_map proc_desc tenv integer_type_widths in
   let locals = get_local_decls proc_desc in
   let formals = Procdesc.get_pvar_formals proc_desc in

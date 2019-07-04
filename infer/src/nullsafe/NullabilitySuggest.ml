@@ -179,7 +179,8 @@ let is_outside_codebase proc_name field_name =
       false
 
 
-let checker {Callbacks.summary; proc_desc; tenv} =
+let checker {Callbacks.summary; tenv} =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let annotation = Localise.nullable_annotation_name proc_name in
   let report astate (proc_data : extras ProcData.t) =

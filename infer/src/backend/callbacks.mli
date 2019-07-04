@@ -14,7 +14,6 @@ type proc_callback_args =
   ; tenv: Tenv.t
   ; integer_type_widths: Typ.IntegerWidths.t
   ; summary: Summary.t
-  ; proc_desc: Procdesc.t
   ; exe_env: Exe_env.t }
 
 (** Type of a procedure callback:

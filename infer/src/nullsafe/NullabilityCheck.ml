@@ -337,8 +337,8 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Exceptional))
 
-let checker {Callbacks.summary; proc_desc; tenv} =
+let checker {Callbacks.summary; tenv} =
   let initial = (NullableAP.empty, NullCheckedPname.empty) in
-  let proc_data = ProcData.make proc_desc tenv summary in
+  let proc_data = ProcData.make (Summary.get_proc_desc summary) tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial) ;
   summary

@@ -264,7 +264,8 @@ let siof_check pdesc gname (summary : Summary.t) =
       ()
 
 
-let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Summary.t =
+let checker {Callbacks.tenv; summary; get_procs_in_file} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let pname = Procdesc.get_proc_name proc_desc in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =

@@ -223,7 +223,8 @@ let compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map =
   Analyzer.compute_post proc_data ~initial:PurityDomain.pure
 
 
-let checker {Callbacks.tenv; summary; proc_desc; integer_type_widths} : Summary.t =
+let checker {Callbacks.tenv; summary; integer_type_widths} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in

@@ -78,7 +78,8 @@ let when_dominating_pred_satisfies idom my_node ~f =
   match preds with [pred_node] -> f pred_node | _ -> ()
 
 
-let checker Callbacks.{summary; proc_desc} : Summary.t =
+let checker Callbacks.{summary} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let cfg = CFG.from_pdesc proc_desc in
   let _, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps cfg in
   let idom = Dominators.get_idoms proc_desc in

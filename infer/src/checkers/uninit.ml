@@ -339,7 +339,8 @@ module Initial = struct
             base_access_expr :: acc )
 end
 
-let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
+let checker {Callbacks.tenv; summary} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   (* start with empty set of uninit local vars and empty set of init formal params *)
   let maybe_uninit_vars = Initial.get_locals tenv proc_desc in
   let initial =

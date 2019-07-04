@@ -792,7 +792,8 @@ let get_cost_summary astate = CostDomain.{post= astate.WorstCaseCost.costs}
 
 let report_errors proc_desc astate summary = Check.check_and_report astate proc_desc summary
 
-let checker {Callbacks.tenv; proc_desc; integer_type_widths; summary} : Summary.t =
+let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in

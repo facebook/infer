@@ -14,7 +14,6 @@ type proc_callback_args =
   ; tenv: Tenv.t
   ; integer_type_widths: Typ.IntegerWidths.t
   ; summary: Summary.t
-  ; proc_desc: Procdesc.t
   ; exe_env: Exe_env.t }
 
 type proc_callback_t = proc_callback_args -> Summary.t
@@ -77,9 +76,7 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
               log_begin_event logger ~name ~categories:["backend"]
                 ~arguments:[("proc", `String (Typ.Procname.to_string proc_name))]
                 () )) ;
-        let summary =
-          callback {get_procs_in_file; tenv; integer_type_widths; summary; proc_desc; exe_env}
-        in
+        let summary = callback {get_procs_in_file; tenv; integer_type_widths; summary; exe_env} in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
       else summary )

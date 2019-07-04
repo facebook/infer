@@ -211,7 +211,8 @@ let get_captured_by_ref_invariant_map proc_desc proc_data =
   CapturedByRefAnalyzer.exec_cfg cfg proc_data ~initial:VarSet.empty
 
 
-let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
+let checker {Callbacks.tenv; summary} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_data = ProcData.make_default proc_desc tenv in
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
   let cfg = CFG.from_pdesc proc_desc in

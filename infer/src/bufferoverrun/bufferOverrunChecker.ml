@@ -422,7 +422,8 @@ let get_checks_summary : BufferOverrunAnalysis.local_decls -> checks -> checks_s
 
 
 let checker : Callbacks.proc_callback_args -> Summary.t =
- fun {proc_desc; tenv; integer_type_widths; summary} ->
+ fun {tenv; integer_type_widths; summary} ->
+  let proc_desc = Summary.get_proc_desc summary in
   let inv_map =
     BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
   in

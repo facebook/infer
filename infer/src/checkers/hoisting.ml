@@ -149,7 +149,8 @@ let report_errors proc_desc tenv get_callee_purity reaching_defs_invariant_map
     loop_head_to_inv_instrs
 
 
-let checker Callbacks.{tenv; summary; proc_desc; integer_type_widths} : Summary.t =
+let checker Callbacks.{tenv; summary; integer_type_widths} : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in

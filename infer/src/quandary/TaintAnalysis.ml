@@ -845,7 +845,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 
-  let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
+  let checker {Callbacks.tenv; summary} : Summary.t =
+    let proc_desc = Summary.get_proc_desc summary in
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
       let pname = Procdesc.get_proc_name pdesc in

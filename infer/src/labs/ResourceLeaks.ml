@@ -86,8 +86,8 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
-  let proc_data = ProcData.make proc_desc tenv () in
+let checker {Callbacks.summary; tenv} : Summary.t =
+  let proc_data = ProcData.make (Summary.get_proc_desc summary) tenv () in
   match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial with
   | Some post ->
       report_if_leak post summary proc_data ;

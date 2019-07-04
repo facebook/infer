@@ -112,9 +112,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         (!calls_this, None)
 
 
-  let callback2 calls_this checks
-      {Callbacks.proc_desc= curr_pdesc; summary; tenv; get_procs_in_file} annotated_signature
+  let callback2 calls_this checks {Callbacks.summary; tenv; get_procs_in_file} annotated_signature
       linereader proc_loc : unit =
+    let curr_pdesc = Summary.get_proc_desc summary in
     let idenv = Idenv.create curr_pdesc in
     let curr_pname = Summary.get_proc_name summary in
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
@@ -301,7 +301,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
 
 
   (** Entry point for the eradicate-based checker infrastructure. *)
-  let callback checks ({Callbacks.proc_desc; summary} as callback_args) : Summary.t =
+  let callback checks ({Callbacks.summary} as callback_args) : Summary.t =
+    let proc_desc = Summary.get_proc_desc summary in
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
     let filter_special_cases () =
