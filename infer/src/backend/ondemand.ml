@@ -123,7 +123,8 @@ let restore_global_state st =
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
-let analyze summary callee_pdesc =
+let analyze callee_summary =
+  let callee_pdesc = Summary.get_proc_desc callee_summary in
   let exe_env = Option.value_exn !exe_env_ref in
   let proc_name = Procdesc.get_proc_name callee_pdesc in
   let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
@@ -137,7 +138,7 @@ let analyze summary callee_pdesc =
   in
   current_taskbar_status := Some (t0, status) ;
   !ProcessPoolState.update_status t0 status ;
-  let summary = Callbacks.iterate_procedure_callbacks exe_env summary callee_pdesc in
+  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
   if Topl.is_active () then Topl.add_errors exe_env summary ;
   summary
 
@@ -157,8 +158,8 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
       Typ.Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    let initial_summary = Summary.reset callee_pdesc in
-    add_active callee_pname ; initial_summary
+    let initial_callee_summary = Summary.reset callee_pdesc in
+    add_active callee_pname ; initial_callee_summary
   in
   let postprocess summary =
     decr nesting ;
@@ -182,18 +183,18 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary
   in
   let old_state = save_global_state () in
-  let initial_summary = preprocess () in
+  let initial_callee_summary = preprocess () in
   let attributes = Procdesc.get_attributes callee_pdesc in
   try
-    let summary =
-      if attributes.ProcAttributes.is_defined then analyze initial_summary callee_pdesc
-      else initial_summary
+    let callee_summary =
+      if attributes.ProcAttributes.is_defined then analyze initial_callee_summary
+      else initial_callee_summary
     in
-    let final_summary = postprocess summary in
+    let final_callee_summary = postprocess callee_summary in
     restore_global_state old_state ;
     (* don't forget to reset this so we output messages for future errors too *)
     logged_error := false ;
-    final_summary
+    final_callee_summary
   with exn -> (
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
@@ -211,10 +212,10 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
     | SymOp.Analysis_failure_exe kind ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
               the failure occurred *)
-        log_error_and_continue exn initial_summary kind
+        log_error_and_continue exn initial_callee_summary kind
     | _ ->
         (* this happens with assert false or some other unrecognized exception *)
-        log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn)) )
+        log_error_and_continue exn initial_callee_summary (FKcrash (Exn.to_string exn)) )
 
 
 (* shadowed for tracing *)

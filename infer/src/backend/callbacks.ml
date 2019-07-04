@@ -50,7 +50,8 @@ let get_procedure_definition exe_env proc_name =
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
-let iterate_procedure_callbacks exe_env summary proc_desc =
+let iterate_procedure_callbacks exe_env summary =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let procedure_language = Typ.Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
