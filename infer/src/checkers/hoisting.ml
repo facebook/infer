@@ -153,12 +153,12 @@ let checker Callbacks.{tenv; summary; integer_type_widths} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map summary tenv in
   let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
   let extract_cost_if_expensive =
     if Config.hoisting_report_only_expensive then
       let inferbo_invariant_map =
-        BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+        BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
       in
       let get_callee_cost_summary_and_formals callee_pname =
         Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname

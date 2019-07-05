@@ -243,13 +243,13 @@ struct
     let exit_node = create_node Procdesc.Node.Exit_node [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
-    (pdesc, assert_map)
+    (Summary.reset pdesc, assert_map)
 
 
   let create_test test_program extras ~initial pp_opt test_pname _ =
     let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
-    let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
-    let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) ~initial in
+    let summary, assert_map = structured_program_to_cfg test_program test_pname in
+    let inv_map = I.exec_pdesc (ProcData.make summary (Tenv.create ()) extras) ~initial in
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =
         try

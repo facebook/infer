@@ -67,7 +67,7 @@ module Make (Spec : Spec) : S = struct
 
     let exec_instr astate_set proc_data node instr =
       let node_kind = CFG.Node.kind node in
-      let pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
+      let pname = Summary.get_proc_name proc_data.ProcData.summary in
       Domain.fold
         (fun astate acc ->
           Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc )
@@ -96,9 +96,7 @@ module Make (Spec : Spec) : S = struct
           (fun astate -> Spec.report astate (ProcCfg.Exceptional.Node.loc node) proc_name)
           astate_set
     in
-    let inv_map =
-      Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) ~initial:Domain.empty
-    in
+    let inv_map = Analyzer.exec_pdesc (ProcData.make_default summary tenv) ~initial:Domain.empty in
     Analyzer.InvariantMap.iter do_reporting inv_map ;
     summary
 end

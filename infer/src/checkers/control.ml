@@ -159,9 +159,9 @@ module ControlDepAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctionsContro
 
 type invariant_map = ControlDepAnalyzer.invariant_map
 
-let compute_invariant_map pdesc tenv control_maps : invariant_map =
-  let proc_data = ProcData.make pdesc tenv control_maps in
-  let node_cfg = CFG.from_pdesc pdesc in
+let compute_invariant_map summary tenv control_maps : invariant_map =
+  let proc_data = ProcData.make summary tenv control_maps in
+  let node_cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
   ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:ControlDepSet.empty
 
 

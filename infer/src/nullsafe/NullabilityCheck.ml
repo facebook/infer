@@ -18,7 +18,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = Summary.t
+  type extras = unit
 
   let rec is_pointer_subtype tenv typ1 typ2 =
     match (typ1.Typ.desc, typ2.Typ.desc) with
@@ -97,11 +97,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Option.map ~f:Procdesc.get_attributes (Ondemand.get_proc_desc pname)
 
 
-  let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
-    let summary = extras in
+  let report_nullable_dereference ap call_sites {ProcData.summary} loc =
     if is_conflicting_report summary loc then ()
     else
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let annotation = Localise.nullable_annotation_name pname in
       let call_site =
         try CallSites.min_elt call_sites
@@ -339,6 +338,6 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.E
 
 let checker {Callbacks.summary; tenv} =
   let initial = (NullableAP.empty, NullCheckedPname.empty) in
-  let proc_data = ProcData.make (Summary.get_proc_desc summary) tenv summary in
+  let proc_data = ProcData.make summary tenv () in
   ignore (Analyzer.compute_post proc_data ~initial) ;
   summary

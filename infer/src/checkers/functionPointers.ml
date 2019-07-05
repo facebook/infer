@@ -90,13 +90,13 @@ let substitute_function_ptrs ~function_pointers node instr =
       instr
 
 
-let get_function_pointers proc_desc tenv =
-  let proc_data = ProcData.make_default proc_desc tenv in
-  let cfg = CFG.from_pdesc proc_desc in
+let get_function_pointers summary tenv =
+  let proc_data = ProcData.make_default summary tenv in
+  let cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
   Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty
 
 
-let substitute_function_pointers proc_desc tenv =
-  let function_pointers = get_function_pointers proc_desc tenv in
+let substitute_function_pointers summary tenv =
+  let function_pointers = get_function_pointers summary tenv in
   let f = substitute_function_ptrs ~function_pointers in
-  Procdesc.replace_instrs proc_desc ~f
+  Procdesc.replace_instrs (Summary.get_proc_desc summary) ~f

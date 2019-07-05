@@ -124,11 +124,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let report_trace ?(sink_indexes = IntSet.empty) trace cur_site (proc_data : extras ProcData.t)
         =
       let get_summary pname =
-        if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc) then
+        if Typ.Procname.equal pname (Summary.get_proc_name proc_data.summary) then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.bottom
         else
-          match Payload.read proc_data.pdesc pname with
+          match Payload.read (Summary.get_proc_desc proc_data.summary) pname with
           | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
@@ -473,7 +473,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       if Var.is_global var then
         let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
         let sources =
-          let caller_pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
+          let caller_pname = Summary.get_proc_name proc_data.ProcData.summary in
           TraceDomain.Source.get ~caller_pname dummy_call_site
             [HilExp.AccessExpression access_expr]
             proc_data.tenv
@@ -642,7 +642,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       let astate_with_direct_sources =
         let sources =
-          let caller_pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
+          let caller_pname = Summary.get_proc_name proc_data.ProcData.summary in
           TraceDomain.Source.get ~caller_pname call_site actuals proc_data.tenv
         in
         List.fold sources ~init:astate_with_sink
@@ -655,7 +655,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 add_actual_source source index actuals astate_with_sink proc_data )
       in
       let astate_with_summary =
-        match Payload.read proc_data.pdesc callee_pname with
+        match Payload.read (Summary.get_proc_desc proc_data.summary) callee_pname with
         | None ->
             handle_unknown_call callee_pname astate_with_direct_sources
         | Some summary -> (
@@ -697,7 +697,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
       | Assign (Base (Var.ProgramVar pvar, _), rhs_exp, _)
         when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp
-             && Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
+             && Typ.equal_desc Tvoid
+                  (Procdesc.get_ret_type (Summary.get_proc_desc proc_data.summary)).desc ->
           (* similar to the case above; the Java frontend translates "return no exception" as
              `return null` in a void function *)
           astate
@@ -770,8 +771,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       access_tree
 
 
-  let make_summary {ProcData.pdesc; extras= {formal_map}} access_tree =
-    let is_java = Typ.Procname.is_java (Procdesc.get_proc_name pdesc) in
+  let make_summary {ProcData.summary; extras= {formal_map}} access_tree =
+    let is_java = Typ.Procname.is_java (Summary.get_proc_name summary) in
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
       TaintDomain.fold
@@ -868,7 +869,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let formal_map = FormalMap.make proc_desc in
       {formal_map; summary}
     in
-    let proc_data = ProcData.make proc_desc tenv extras in
+    let proc_data = ProcData.make summary tenv extras in
     match Analyzer.compute_post proc_data ~initial with
     | Some access_tree ->
         Payload.update_summary (make_summary proc_data access_tree) summary

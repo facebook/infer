@@ -53,7 +53,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.pdesc= _; tenv= _} _
+  let exec_instr (astate : ResourceLeakDomain.t) {ProcData.summary= _; tenv= _} _
       (instr : HilInstr.t) =
     match instr with
     | Call (_return_opt, Direct _callee_procname, _actuals, _, _loc) ->
@@ -87,7 +87,7 @@ let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
 let checker {Callbacks.summary; tenv} : Summary.t =
-  let proc_data = ProcData.make (Summary.get_proc_desc summary) tenv () in
+  let proc_data = ProcData.make summary tenv () in
   match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial with
   | Some post ->
       report_if_leak post summary proc_data ;
@@ -95,4 +95,4 @@ let checker {Callbacks.summary; tenv} : Summary.t =
   | None ->
       L.(die InternalError)
         "Analyzer failed to compute post for %a" Typ.Procname.pp
-        (Procdesc.get_proc_name proc_data.pdesc)
+        (Summary.get_proc_name proc_data.summary)

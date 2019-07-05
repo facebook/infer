@@ -52,7 +52,7 @@ module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
   module Domain = PulseAbductiveDomain
 
-  type extras = Summary.t
+  type extras = unit
 
   let exec_unknown_call reason ret call actuals _flags call_loc astate =
     let event = ValueHistory.Call {f= reason; location= call_loc} in
@@ -154,7 +154,7 @@ module PulseTransferFunctions = struct
             posts )
 
 
-  let exec_instr (astate : Domain.t) {ProcData.extras= summary} _cfg_node (instr : Sil.instr) =
+  let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
     match instr with
     | Load (lhs_id, rhs_exp, _typ, loc) ->
         (* [lhs_id := *rhs_exp] *)
@@ -215,11 +215,11 @@ module DisjunctiveTransferFunctions =
 module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFunctions)
 
 let checker {Callbacks.tenv; summary} =
-  let proc_desc = Summary.get_proc_desc summary in
-  let proc_data = ProcData.make proc_desc tenv summary in
+  let proc_data = ProcData.make summary tenv () in
   AbstractAddress.init () ;
   let initial =
-    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial proc_desc)
+    DisjunctiveTransferFunctions.Disjuncts.singleton
+      (PulseAbductiveDomain.mk_initial (Summary.get_proc_desc summary))
   in
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->

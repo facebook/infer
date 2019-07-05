@@ -211,14 +211,14 @@ let report_errors pdesc astate summary =
         proc_name
 
 
-let compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map =
-  let proc_name = Procdesc.get_proc_name proc_desc in
+let compute_summary summary tenv get_callee_summary inferbo_invariant_map =
+  let proc_name = Summary.get_proc_name summary in
   let formals =
-    Procdesc.get_formals proc_desc
+    Procdesc.get_formals (Summary.get_proc_desc summary)
     |> List.map ~f:(fun (mname, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
   let proc_data =
-    ProcData.make proc_desc tenv {inferbo_invariant_map; formals; get_callee_summary}
+    ProcData.make summary tenv {inferbo_invariant_map; formals; get_callee_summary}
   in
   Analyzer.compute_post proc_data ~initial:PurityDomain.pure
 
@@ -226,10 +226,10 @@ let compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map =
 let checker {Callbacks.tenv; summary; integer_type_widths} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
-    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
   in
   let get_callee_summary = Payload.read proc_desc in
-  let astate = compute_summary proc_desc tenv get_callee_summary inferbo_invariant_map in
+  let astate = compute_summary summary tenv get_callee_summary inferbo_invariant_map in
   report_errors proc_desc astate summary ;
   match astate with
   | Some astate ->

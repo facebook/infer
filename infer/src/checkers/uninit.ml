@@ -179,8 +179,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate : Domain.t) {ProcData.pdesc; extras= {formals; summary}; tenv} _
+  let exec_instr (astate : Domain.t) {ProcData.summary; extras= {formals}; tenv} _
       (instr : HilInstr.t) =
+    let pdesc = Summary.get_proc_desc summary in
     let check_access_expr ~loc rhs_access_expr =
       if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then
         report_intra rhs_access_expr loc summary
@@ -350,7 +351,7 @@ let checker {Callbacks.tenv; summary} : Summary.t =
   in
   let proc_data =
     let formals = FormalMap.make proc_desc in
-    ProcData.make proc_desc tenv {formals; summary}
+    ProcData.make summary tenv {formals; summary}
   in
   match Analyzer.compute_post proc_data ~initial with
   | Some {RecordDomain.prepost} ->

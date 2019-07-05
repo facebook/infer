@@ -159,7 +159,7 @@ let make_error_trace astate ap ud =
 
 
 let pretty_field_name proc_data field_name =
-  match Procdesc.get_proc_name proc_data.ProcData.pdesc with
+  match Summary.get_proc_name proc_data.ProcData.summary with
   | Typ.Procname.Java jproc_name ->
       let proc_class_name = Typ.Procname.Java.get_class_name jproc_name in
       let field_class_name = Typ.Fieldname.Java.get_class field_name in
@@ -218,7 +218,7 @@ let checker {Callbacks.summary; tenv} =
   else
     (* Assume all fields are not null in the beginning *)
     let initial = Domain.empty in
-    let proc_data = ProcData.make_default proc_desc tenv in
+    let proc_data = ProcData.make_default summary tenv in
     ( match Analyzer.compute_post proc_data ~initial with
     | Some post ->
         report post proc_data

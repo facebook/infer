@@ -39,16 +39,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else
             let is_write = if List.is_empty access_list then is_write_access else false in
             let access = TraceElem.make_field_access prefix_path' ~is_write loc in
+            let pdesc = Summary.get_proc_desc proc_data.summary in
             match OwnershipDomain.get_owned prefix_path ownership with
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
                 let pre =
                   AccessSnapshot.make access locks threads
-                    (AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes)
-                    proc_data.pdesc
+                    (AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes) pdesc
                 in
                 add_field_access pre
             | OwnershipAbstractValue.Unowned ->
-                let pre = AccessSnapshot.make access locks threads False proc_data.pdesc in
+                let pre = AccessSnapshot.make access locks threads False pdesc in
                 add_field_access pre )
     in
     List.fold (HilExp.get_access_exprs exp) ~init:accesses ~f:(fun acc access_expr ->
@@ -244,7 +244,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else None
 
 
-  let treat_container_accesses ret_base callee_pname actuals loc {ProcData.tenv; pdesc} astate () =
+  let treat_container_accesses ret_base callee_pname actuals loc {ProcData.tenv; summary} astate ()
+      =
     let open RacerDModels in
     Option.bind (get_container_access callee_pname tenv) ~f:(fun container_access ->
         match List.hd actuals with
@@ -253,18 +254,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let is_write =
               match container_access with ContainerWrite -> true | ContainerRead -> false
             in
-            make_container_access ret_base callee_pname ~is_write receiver_ap loc tenv pdesc astate
+            make_container_access ret_base callee_pname ~is_write receiver_ap loc tenv
+              (Summary.get_proc_desc summary) astate
         | _ ->
             L.internal_error "Call to %a is marked as a container write, but has no receiver"
               Typ.Procname.pp callee_pname ;
             None )
 
 
-  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; pdesc}
+  let do_proc_call ret_base callee_pname actuals call_flags loc {ProcData.tenv; summary}
       (astate : Domain.t) () =
     let open Domain in
     let open RacerDModels in
     let open ConcurrencyModels in
+    let pdesc = Summary.get_proc_desc summary in
     let ret_access_path = (ret_base, []) in
     let astate =
       if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
@@ -478,7 +481,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate' with accesses}
 
 
-  let exec_instr (astate : Domain.t) ({ProcData.pdesc} as proc_data) _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) ({ProcData.summary} as proc_data) _ (instr : HilInstr.t) =
     match instr with
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let astate = add_reads actuals loc astate proc_data in
@@ -488,7 +491,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> IOption.if_none_eval
              ~f:(do_proc_call ret_base callee_pname actuals call_flags loc proc_data astate)
     | Call (_, Indirect _, _, _, _) ->
-        if Typ.Procname.is_java (Procdesc.get_proc_name pdesc) then
+        if Typ.Procname.is_java (Summary.get_proc_name summary) then
           L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
         else astate
     | Assign (lhs_access_expr, rhs_exp, loc) ->
@@ -515,7 +518,7 @@ let analyze_procedure {Callbacks.tenv; summary} =
   let open RacerDDomain in
   if should_analyze_proc proc_desc tenv then
     let formal_map = FormalMap.make proc_desc in
-    let proc_data = ProcData.make proc_desc tenv ProcData.empty_extras in
+    let proc_data = ProcData.make summary tenv ProcData.empty_extras in
     let initial =
       let threads =
         if

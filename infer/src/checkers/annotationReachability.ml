@@ -588,10 +588,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           callee_call_map astate
 
 
-  let exec_instr astate {ProcData.pdesc; tenv; ProcData.extras} _ = function
+  let exec_instr astate {ProcData.summary; tenv; ProcData.extras} _ = function
     | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
+        let pdesc = Summary.get_proc_desc summary in
         let caller_pname = Procdesc.get_proc_name pdesc in
         let call_site = CallSite.make callee_pname call_loc in
         check_call tenv callee_pname caller_pname call_site astate extras
@@ -617,7 +618,7 @@ let checker ({Callbacks.tenv; summary} as callback) : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
   let specs = get_annot_specs (Procdesc.get_proc_name proc_desc) in
-  let proc_data = ProcData.make proc_desc tenv specs in
+  let proc_data = ProcData.make summary tenv specs in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _) ->
       List.iter specs ~f:(fun spec -> spec.AnnotationSpec.report callback annot_map) ;

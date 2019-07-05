@@ -52,7 +52,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
-  let exec_instr (astate : Domain.t) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
+  let exec_instr (astate : Domain.t) {ProcData.summary; tenv; extras} _ (instr : HilInstr.t) =
     let open ConcurrencyModels in
     let open StarvationModels in
     let log_parse_error error pname actuals =
@@ -75,13 +75,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           None
     in
-    let is_java = Procdesc.get_proc_name pdesc |> Typ.Procname.is_java in
+    let is_java = Summary.get_proc_name summary |> Typ.Procname.is_java in
     let do_lock locks loc astate =
       List.filter_map ~f:get_lock_path locks |> Domain.acquire tenv astate loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
-      Payload.read pdesc callee
+      Payload.read (Summary.get_proc_desc summary) callee
       |> Option.value_map ~default:astate ~f:(Domain.integrate_summary tenv astate callee loc)
     in
     match instr with
@@ -141,7 +141,7 @@ let analyze_procedure {Callbacks.tenv; summary} =
   if StarvationModels.should_skip_analysis tenv pname [] then summary
   else
     let formals = FormalMap.make proc_desc in
-    let proc_data = ProcData.make proc_desc tenv formals in
+    let proc_data = ProcData.make summary tenv formals in
     let loc = Procdesc.get_loc proc_desc in
     let initial =
       if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.bottom

@@ -188,7 +188,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
   (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
      So, as of now, the termination of narrowing is not guaranteed in general. *)
-  let exec_node ~pp_instr ({ProcData.pdesc} as proc_data) node ~is_loop_head ~is_narrowing
+  let exec_node ~pp_instr ({ProcData.summary} as proc_data) node ~is_loop_head ~is_narrowing
       astate_pre inv_map =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
@@ -218,10 +218,12 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         else if is_narrowing && not (Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre) then (
           L.(debug Analysis Verbose)
             "Terminate narrowing because old and new states are not comparable at %a:%a@."
-            Typ.Procname.pp (Procdesc.get_proc_name pdesc) Node.pp_id node_id ;
+            Typ.Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;
           (inv_map, ReachedFixPoint) )
         else
-          let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
+          let visit_count' =
+            VisitCount.succ ~pdesc:(Summary.get_proc_desc summary) old_state.State.visit_count
+          in
           update_inv_map new_pre ~visit_count:visit_count'
       else
         (* first time visiting this node *)
@@ -268,15 +270,16 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
 
   (** compute and return an invariant map for [pdesc] *)
-  let make_exec_pdesc ~exec_cfg_internal ({ProcData.pdesc} as proc_data) ~do_narrowing ~initial =
-    exec_cfg_internal ~pp_instr:pp_sil_instr (CFG.from_pdesc pdesc) proc_data ~do_narrowing
-      ~initial
+  let make_exec_pdesc ~exec_cfg_internal ({ProcData.summary} as proc_data) ~do_narrowing ~initial =
+    exec_cfg_internal ~pp_instr:pp_sil_instr
+      (CFG.from_pdesc (Summary.get_proc_desc summary))
+      proc_data ~do_narrowing ~initial
 
 
   (** compute and return the postcondition of [pdesc] *)
   let make_compute_post ~exec_cfg_internal ?(pp_instr = pp_sil_instr)
-      ({ProcData.pdesc} as proc_data) ~do_narrowing ~initial =
-    let cfg = CFG.from_pdesc pdesc in
+      ({ProcData.summary} as proc_data) ~do_narrowing ~initial =
+    let cfg = CFG.from_pdesc (Summary.get_proc_desc summary) in
     let inv_map = exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
@@ -287,7 +290,7 @@ module MakeWithScheduler
 struct
   include AbstractInterpreterCommon (TransferFunctions)
 
-  let rec exec_worklist ~pp_instr cfg ({ProcData.pdesc} as proc_data) work_queue inv_map =
+  let rec exec_worklist ~pp_instr cfg ({ProcData.summary} as proc_data) work_queue inv_map =
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
         exec_worklist ~pp_instr cfg proc_data work_queue' inv_map
@@ -295,7 +298,7 @@ struct
         let inv_map_post, work_queue_post =
           match compute_pre cfg node inv_map with
           | Some astate_pre -> (
-              let is_loop_head = CFG.is_loop_head pdesc node in
+              let is_loop_head = CFG.is_loop_head (Summary.get_proc_desc summary) node in
               match
                 exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing:false astate_pre
                   inv_map

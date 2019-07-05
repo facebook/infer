@@ -7,12 +7,12 @@
 
 open! IStd
 
-type 'a t = {pdesc: Procdesc.t; tenv: Tenv.t; extras: 'a}
+type 'a t = {summary: Summary.t; tenv: Tenv.t; extras: 'a}
 
 type no_extras = unit
 
 let empty_extras = ()
 
-let make pdesc tenv extras = {pdesc; tenv; extras}
+let make summary tenv extras = {summary; tenv; extras}
 
-let make_default pdesc tenv = make pdesc tenv empty_extras
+let make_default summary tenv = make summary tenv empty_extras

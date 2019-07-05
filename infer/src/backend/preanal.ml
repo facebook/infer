@@ -123,20 +123,20 @@ end
 
 module NullifyAnalysis = AbstractInterpreter.MakeRPO (NullifyTransferFunctions)
 
-let add_nullify_instrs pdesc tenv liveness_inv_map =
+let add_nullify_instrs summary tenv liveness_inv_map =
   let address_taken_vars =
-    if Typ.Procname.is_java (Procdesc.get_proc_name pdesc) then AddressTaken.Domain.empty
+    if Typ.Procname.is_java (Summary.get_proc_name summary) then AddressTaken.Domain.empty
       (* can't take the address of a variable in Java *)
     else
       let initial = AddressTaken.Domain.empty in
-      match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) ~initial with
+      match AddressTaken.Analyzer.compute_post (ProcData.make_default summary tenv) ~initial with
       | Some post ->
           post
       | None ->
           AddressTaken.Domain.empty
   in
-  let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc pdesc in
-  let nullify_proc_data = ProcData.make pdesc tenv liveness_inv_map in
+  let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc (Summary.get_proc_desc summary) in
+  let nullify_proc_data = ProcData.make summary tenv liveness_inv_map in
   let initial = (VarDomain.empty, VarDomain.empty) in
   let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
   (* only nullify pvars that are local; don't nullify those that can escape *)
@@ -189,28 +189,30 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
 
 (** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it
     easy for analyses to do abstract garbage collection *)
-let do_liveness pdesc tenv =
-  let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
+let do_liveness summary tenv =
+  let liveness_proc_cfg = BackwardCfg.from_pdesc (Summary.get_proc_desc summary) in
   let initial = Liveness.Domain.empty in
   let liveness_inv_map =
-    LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial
+    LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default summary tenv) ~initial
   in
-  add_nullify_instrs pdesc tenv liveness_inv_map
+  add_nullify_instrs summary tenv liveness_inv_map
 
 
 (** add Abstract instructions into the IR to give hints about when abstraction should be
     performed *)
 let do_abstraction pdesc = add_abstraction_instructions pdesc
 
-let do_funptr_sub pdesc tenv =
-  let updated = FunctionPointers.substitute_function_pointers pdesc tenv in
+let do_funptr_sub summary tenv =
+  let updated = FunctionPointers.substitute_function_pointers summary tenv in
+  let pdesc = Summary.get_proc_desc summary in
   if updated then Attributes.store ~proc_desc:(Some pdesc) (Procdesc.get_attributes pdesc)
 
 
 let do_preanalysis pdesc tenv =
+  let summary = Summary.reset pdesc in
   if
     Config.function_pointer_specialization
     && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))
-  then do_funptr_sub pdesc tenv ;
-  do_liveness pdesc tenv ;
+  then do_funptr_sub summary tenv ;
+  do_liveness summary tenv ;
   do_abstraction pdesc

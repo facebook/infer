@@ -69,8 +69,9 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (No
 
 type invariant_map = Analyzer.invariant_map
 
-let compute_invariant_map pdesc tenv =
-  let proc_data = ProcData.make_default pdesc tenv in
+let compute_invariant_map summary tenv =
+  let pdesc = Summary.get_proc_desc summary in
+  let proc_data = ProcData.make_default summary tenv in
   let node_cfg = NodeCFG.from_pdesc pdesc in
   Analyzer.exec_cfg node_cfg proc_data ~initial:(init_reaching_defs_with_formals pdesc)
 

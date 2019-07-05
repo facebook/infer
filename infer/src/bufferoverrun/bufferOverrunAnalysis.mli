@@ -14,7 +14,7 @@ type invariant_map
 
 type local_decls = AbsLoc.PowLoc.t
 
-val cached_compute_invariant_map : Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map
+val cached_compute_invariant_map : Summary.t -> Tenv.t -> Typ.IntegerWidths.t -> invariant_map
 
 val extract_pre : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t option
 

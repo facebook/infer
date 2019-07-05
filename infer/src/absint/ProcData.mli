@@ -7,12 +7,12 @@
 
 open! IStd
 
-type 'a t = {pdesc: Procdesc.t; tenv: Tenv.t; extras: 'a}
+type 'a t = {summary: Summary.t; tenv: Tenv.t; extras: 'a}
 
 type no_extras
 
 val empty_extras : no_extras
 
-val make : Procdesc.t -> Tenv.t -> 'a -> 'a t
+val make : Summary.t -> Tenv.t -> 'a -> 'a t
 
-val make_default : Procdesc.t -> Tenv.t -> no_extras t
+val make_default : Summary.t -> Tenv.t -> no_extras t

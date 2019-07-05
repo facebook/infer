@@ -795,15 +795,15 @@ let report_errors proc_desc astate summary = Check.check_and_report astate proc_
 let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
-    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
-  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc tenv in
+  let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map summary tenv in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps node_cfg in
   (* computes the control dependencies: node -> var set *)
-  let control_dep_invariant_map = Control.compute_invariant_map proc_desc tenv control_maps in
+  let control_dep_invariant_map = Control.compute_invariant_map summary tenv control_maps in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
     let get_callee_purity callee_pname =

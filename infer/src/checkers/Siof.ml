@@ -134,7 +134,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
-  let exec_instr astate {ProcData.pdesc} _ (instr : Sil.instr) =
+  let exec_instr astate {ProcData.summary} _ (instr : Sil.instr) =
+    let pdesc = Summary.get_proc_desc summary in
     match instr with
     | Store (Lvar global, Typ.{desc= Tptr _}, Lvar _, loc)
       when (Option.equal Typ.Procname.equal)
@@ -282,7 +283,7 @@ let checker {Callbacks.tenv; summary; get_procs_in_file} : Summary.t =
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
-  let proc_data = ProcData.make_default proc_desc tenv in
+  let proc_data = ProcData.make_default summary tenv in
   let initial =
     ( Bottom
     , if standard_streams_initialized_in_tu then SiofDomain.VarNames.of_list standard_streams

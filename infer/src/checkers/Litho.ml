@@ -207,7 +207,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate (proc_data : extras ProcData.t) _ (instr : HilInstr.t) : Domain.t =
-    let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
+    let caller_pname = Summary.get_proc_name proc_data.summary in
     match instr with
     | Call
         ( return_base
@@ -215,7 +215,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , _ ) ->
-        let summary = Payload.read proc_data.pdesc callee_procname in
+        let domain_summary =
+          Payload.read (Summary.get_proc_desc proc_data.summary) callee_procname
+        in
         let receiver =
           Domain.LocalAccessPath.make
             (HilExp.AccessExpression.to_access_path receiver_ae)
@@ -224,7 +226,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if
           ( LithoFramework.is_component_builder callee_procname proc_data.tenv
           (* track Builder's in order to check required prop's *)
-          || GraphQLGetters.is_function callee_procname summary
+          || GraphQLGetters.is_function callee_procname domain_summary
           || (* track GraphQL getters in order to report graphql field accesses *)
              Domain.mem receiver astate
              (* track anything called on a receiver we're already tracking *) )
@@ -243,9 +245,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Domain.add return_access_path return_calls astate
         else
           (* treat it like a normal call *)
-          apply_callee_summary summary caller_pname return_base actuals astate
+          apply_callee_summary domain_summary caller_pname return_base actuals astate
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let summary = Payload.read proc_data.pdesc callee_procname in
+        let summary = Payload.read (Summary.get_proc_desc proc_data.summary) callee_procname in
         apply_callee_summary summary caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the
@@ -272,7 +274,7 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.E
 
 let checker {Callbacks.summary; tenv} =
   let proc_desc = Summary.get_proc_desc summary in
-  let proc_data = ProcData.make_default proc_desc tenv in
+  let proc_data = ProcData.make_default summary tenv in
   match Analyzer.compute_post proc_data ~initial:Domain.empty with
   | Some post ->
       if RequiredProps.should_report proc_desc tenv then RequiredProps.report post tenv summary ;

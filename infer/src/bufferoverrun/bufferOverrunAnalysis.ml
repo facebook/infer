@@ -31,9 +31,9 @@ type extras = {get_proc_summary_and_formals: get_proc_summary_and_formals; oenv:
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 module Init = struct
-  let initial_state {ProcData.pdesc; tenv; extras= {oenv}} start_node =
+  let initial_state {ProcData.summary; tenv; extras= {oenv}} start_node =
     let try_decl_local =
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let model_env =
         let node_hash = CFG.Node.hash start_node in
         let location = CFG.Node.loc start_node in
@@ -45,7 +45,10 @@ module Init = struct
         BoUtils.Exec.decl_local model_env (mem, inst_num) (loc, typ)
     in
     let mem = Dom.Mem.init oenv in
-    let mem, _ = List.fold ~f:try_decl_local ~init:(mem, 1) (Procdesc.get_locals pdesc) in
+    let mem, _ =
+      List.fold ~f:try_decl_local ~init:(mem, 1)
+        (Procdesc.get_locals (Summary.get_proc_desc summary))
+    in
     mem
 end
 
@@ -159,8 +162,8 @@ module TransferFunctions = struct
 
 
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {pdesc; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}} node
-       instr ->
+   fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}}
+       node instr ->
     match instr with
     | Load (id, _, _, _) when Ident.is_none id ->
         mem
@@ -185,7 +188,7 @@ module TransferFunctions = struct
     | Store (exp1, _, Const (Const.Cstr s), location) ->
         let locs = Sem.eval_locs exp1 mem in
         let model_env =
-          let pname = Procdesc.get_proc_name pdesc in
+          let pname = Summary.get_proc_name summary in
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
         in
@@ -216,10 +219,10 @@ module TransferFunctions = struct
           if not v.represents_multiple_values then
             match PowLoc.is_singleton_or_more locs with
             | IContainer.Singleton loc_v -> (
-                let pname = Procdesc.get_proc_name pdesc in
+                let pname = Summary.get_proc_name summary in
                 match Typ.Procname.get_method pname with
                 | "__inferbo_empty" when Loc.is_return loc_v -> (
-                  match Procdesc.get_pvar_formals pdesc with
+                  match Procdesc.get_pvar_formals (Summary.get_proc_desc summary) with
                   | [(formal, _)] ->
                       let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
                       Dom.Mem.store_empty_alias formal_v loc_v mem
@@ -268,7 +271,7 @@ module TransferFunctions = struct
         Dom.Mem.add_unknown id ~location mem
     | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
         let model_env =
-          let pname = Procdesc.get_proc_name pdesc in
+          let pname = Summary.get_proc_name summary in
           let node_hash = CFG.Node.hash node in
           BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
         in
@@ -309,12 +312,13 @@ let get_local_decls : Procdesc.t -> local_decls =
 
 
 let compute_invariant_map :
-    Procdesc.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
- fun pdesc tenv integer_type_widths get_proc_summary_and_formals ->
+    Summary.t -> Tenv.t -> Typ.IntegerWidths.t -> get_proc_summary_and_formals -> invariant_map =
+ fun summary tenv integer_type_widths get_proc_summary_and_formals ->
+  let pdesc = Summary.get_proc_desc summary in
   let cfg = CFG.from_pdesc pdesc in
   let pdata =
     let oenv = Dom.OndemandEnv.mk pdesc tenv integer_type_widths in
-    ProcData.make pdesc tenv {get_proc_summary_and_formals; oenv}
+    ProcData.make summary tenv {get_proc_summary_and_formals; oenv}
   in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
   Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata
@@ -330,8 +334,8 @@ let cached_compute_invariant_map =
     let hash (pname, _) = Hashtbl.hash pname
   end) in
   let inv_map_cache = WeakInvMapHashTbl.create 100 in
-  fun pdesc tenv integer_type_widths ->
-    let pname = Procdesc.get_proc_name pdesc in
+  fun summary tenv integer_type_widths ->
+    let pname = Summary.get_proc_name summary in
     match WeakInvMapHashTbl.find_opt inv_map_cache (pname, None) with
     | Some (_, Some inv_map) ->
         inv_map
@@ -340,14 +344,14 @@ let cached_compute_invariant_map =
         assert false
     | None ->
         let get_proc_summary_and_formals callee_pname =
-          Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname
+          Ondemand.analyze_proc_name ~caller_pdesc:(Summary.get_proc_desc summary) callee_pname
           |> Option.bind ~f:(fun summary ->
                  Payload.of_summary summary
                  |> Option.map ~f:(fun payload ->
                         (payload, Summary.get_proc_desc summary |> Procdesc.get_pvar_formals) ) )
         in
         let inv_map =
-          compute_invariant_map pdesc tenv integer_type_widths get_proc_summary_and_formals
+          compute_invariant_map summary tenv integer_type_widths get_proc_summary_and_formals
         in
         WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map) ;
         inv_map
@@ -370,7 +374,7 @@ let compute_summary :
 let do_analysis : Callbacks.proc_callback_args -> Summary.t =
  fun {tenv; integer_type_widths; summary} ->
   let proc_desc = Summary.get_proc_desc summary in
-  let inv_map = cached_compute_invariant_map proc_desc tenv integer_type_widths in
+  let inv_map = cached_compute_invariant_map summary tenv integer_type_widths in
   let locals = get_local_decls proc_desc in
   let formals = Procdesc.get_pvar_formals proc_desc in
   let cfg = CFG.from_pdesc proc_desc in

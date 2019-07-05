@@ -425,7 +425,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
  fun {tenv; integer_type_widths; summary} ->
   let proc_desc = Summary.get_proc_desc summary in
   let inv_map =
-    BufferOverrunAnalysis.cached_compute_invariant_map proc_desc tenv integer_type_widths
+    BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
   in
   let underlying_exit_node = Procdesc.get_exit_node proc_desc in
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
