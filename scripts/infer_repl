@@ -6,7 +6,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # where to find toplevel.bc, can be overridden
 BUILD_DIR=${BUILD_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
-INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}\n' \;)
+INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}/byte\n' \;)
 
 # The -init option is effective only in interactive mode.
 # In batch mode, scripts need to import toplevel_init themselves.
