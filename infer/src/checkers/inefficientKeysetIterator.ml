@@ -16,9 +16,11 @@ let find_loaded_pvar id = function
       None
 
 
-let find_first_arg_id ~fun_name ~lhs_f = function
+let find_first_arg_id ~fun_name ~class_name_f ~lhs_f = function
   | Sil.Call ((lhs_id, _), Exp.Const (Const.Cfun pname), (Exp.Var rhs_id, _) :: _, _, _)
-    when lhs_f lhs_id && String.equal fun_name (Typ.Procname.get_method pname) ->
+    when lhs_f lhs_id
+         && String.equal fun_name (Typ.Procname.get_method pname)
+         && Typ.Procname.get_class_name pname |> Option.exists ~f:class_name_f ->
       Some rhs_id
   | _ ->
       None
@@ -31,26 +33,29 @@ let find_first_arg_id ~fun_name ~lhs_f = function
      n$X+1    = fun_name(n$X,....)
     *&$irvarZ = n$X+1
  *)
-let find_first_arg_pvar node ~fun_name =
+let find_first_arg_pvar node ~fun_name ~class_name_f =
   let instrs = Procdesc.Node.get_instrs node in
   if Instrs.count instrs >= 4 then
     let instr_arr = Instrs.get_underlying_not_reversed instrs in
     match instr_arr.(3) with
     | Sil.Store (Exp.Lvar _, _, Exp.Var rhs_id, _) ->
-        find_first_arg_id ~fun_name ~lhs_f:(Ident.equal rhs_id) instr_arr.(2)
+        find_first_arg_id ~fun_name ~class_name_f ~lhs_f:(Ident.equal rhs_id) instr_arr.(2)
         |> Option.bind ~f:(fun arg_id -> find_loaded_pvar arg_id instr_arr.(0))
     | _ ->
         None
   else None
 
 
-let report_matching_get summary pvar loop_nodes : unit =
+let report_matching_get tenv summary pvar loop_nodes : unit =
   LoopNodes.iter
     (fun node ->
       let instrs = Procdesc.Node.get_instrs node in
       if Instrs.count instrs >= 5 then
         let instr_arr = Instrs.get_underlying_not_reversed instrs in
-        find_first_arg_id ~fun_name:"get" ~lhs_f:(fun _ -> true) instr_arr.(3)
+        find_first_arg_id ~fun_name:"get"
+          ~class_name_f:(PatternMatch.implements_map tenv)
+          ~lhs_f:(fun _ -> true)
+          instr_arr.(3)
         |> Option.iter ~f:(fun arg_id ->
                find_loaded_pvar arg_id instr_arr.(0)
                |> Option.iter ~f:(fun arg_pvar ->
@@ -78,19 +83,28 @@ let when_dominating_pred_satisfies idom my_node ~f =
   match preds with [pred_node] -> f pred_node | _ -> ()
 
 
-let checker Callbacks.{summary} : Summary.t =
+let checker Callbacks.{summary; tenv} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let cfg = CFG.from_pdesc proc_desc in
   let _, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps cfg in
   let idom = Dominators.get_idoms proc_desc in
   Procdesc.NodeMap.iter
     (fun loop_head loop_nodes ->
-      if find_first_arg_pvar loop_head ~fun_name:"hasNext" |> Option.is_some then
+      if
+        find_first_arg_pvar loop_head ~fun_name:"hasNext"
+          ~class_name_f:(PatternMatch.implements_iterator tenv)
+        |> Option.is_some
+      then
         when_dominating_pred_satisfies idom loop_head ~f:(fun itr_node ->
-            if Option.is_some (find_first_arg_pvar itr_node ~fun_name:"iterator") then
+            if
+              Option.is_some
+                (find_first_arg_pvar itr_node ~fun_name:"iterator"
+                   ~class_name_f:(PatternMatch.implements_set tenv))
+            then
               when_dominating_pred_satisfies idom itr_node ~f:(fun keySet_node ->
                   find_first_arg_pvar keySet_node ~fun_name:"keySet"
+                    ~class_name_f:(PatternMatch.implements_map tenv)
                   |> Option.iter ~f:(fun get_pvar ->
-                         report_matching_get summary get_pvar loop_nodes ) ) ) )
+                         report_matching_get tenv summary get_pvar loop_nodes ) ) ) )
     loop_head_to_loop_nodes ;
   summary

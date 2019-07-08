@@ -64,6 +64,9 @@ val implements_io : string -> Tenv.t -> string -> bool
 val implements_map : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Map *)
 
+val implements_set : Tenv.t -> string -> bool
+(** Check whether class implements a Java's Set *)
+
 val implements_map_entry : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Map$Entry *)
 

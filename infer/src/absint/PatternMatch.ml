@@ -78,6 +78,8 @@ let implements_io class_name = implements ("java.io." ^ class_name)
 
 let implements_map = implements "java.util.Map"
 
+let implements_set = implements "java.util.Set"
+
 let implements_map_entry = implements "java.util.Map$Entry"
 
 let implements_queue = implements "java.util.Queue"
