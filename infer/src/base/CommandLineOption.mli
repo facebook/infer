@@ -134,7 +134,7 @@ val mk_symbol_seq :
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
     element of [symbols]. *)
 
-val mk_json : Yojson.Basic.json ref t
+val mk_json : Yojson.Basic.t ref t
 
 val mk_anon : unit -> string list ref
 (** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse

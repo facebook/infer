@@ -131,7 +131,7 @@ type t =
   { introduced: Jsonbug_t.report
   ; fixed: Jsonbug_t.report
   ; preexisting: Jsonbug_t.report
-  ; costs_summary: Yojson.Basic.json }
+  ; costs_summary: Yojson.Basic.t }
 
 let to_map key_func report =
   List.fold_left

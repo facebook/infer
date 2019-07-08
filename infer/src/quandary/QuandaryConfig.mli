@@ -12,19 +12,19 @@ open! IStd
 module Source : sig
   type t = {procedure: string; kinds: string list; index: string}
 
-  val of_json : [> `List of Yojson.Basic.json list] -> t list
+  val of_json : [> `List of Yojson.Basic.t list] -> t list
 end
 
 module Sink : sig
   type t = {procedure: string; kinds: string list; index: string}
 
-  val of_json : [> `List of Yojson.Basic.json list] -> t list
+  val of_json : [> `List of Yojson.Basic.t list] -> t list
 end
 
 module Sanitizer : sig
   type t = {procedure: string; kind: string}
 
-  val of_json : [> `List of Yojson.Basic.json list] -> t list
+  val of_json : [> `List of Yojson.Basic.t list] -> t list
 end
 
 val is_endpoint : string -> bool

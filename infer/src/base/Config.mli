@@ -133,13 +133,13 @@ val os_type : os_type
 
 val passthroughs : bool
 
-val patterns_modeled_expensive : string * Yojson.Basic.json
+val patterns_modeled_expensive : string * Yojson.Basic.t
 
-val patterns_never_returning_null : string * Yojson.Basic.json
+val patterns_never_returning_null : string * Yojson.Basic.t
 
-val patterns_skip_implementation : string * Yojson.Basic.json
+val patterns_skip_implementation : string * Yojson.Basic.t
 
-val patterns_skip_translation : string * Yojson.Basic.json
+val patterns_skip_translation : string * Yojson.Basic.t
 
 val perf_stats_prefix : string
 
@@ -225,11 +225,11 @@ val analysis_suppress_errors : string list
 
 val annotation_reachability : bool
 
-val annotation_reachability_cxx : Yojson.Basic.json
+val annotation_reachability_cxx : Yojson.Basic.t
 
-val annotation_reachability_cxx_sources : Yojson.Basic.json
+val annotation_reachability_cxx_sources : Yojson.Basic.t
 
-val annotation_reachability_custom_pairs : Yojson.Basic.json
+val annotation_reachability_custom_pairs : Yojson.Basic.t
 
 val anon_args : string list
 
@@ -312,7 +312,7 @@ val cxx : bool
 
 val cxx_infer_headers : bool
 
-val cxx_scope_guards : Yojson.Basic.json
+val cxx_scope_guards : Yojson.Basic.t
 
 val debug_exceptions : bool
 
@@ -469,7 +469,7 @@ val litho : bool
 
 val liveness : bool
 
-val liveness_dangerous_classes : Yojson.Basic.json
+val liveness_dangerous_classes : Yojson.Basic.t
 
 val log_events : bool
 
@@ -570,13 +570,13 @@ val pure_by_default : bool
 
 val quandary : bool
 
-val quandary_endpoints : Yojson.Basic.json
+val quandary_endpoints : Yojson.Basic.t
 
-val quandary_sanitizers : Yojson.Basic.json
+val quandary_sanitizers : Yojson.Basic.t
 
-val quandary_sinks : Yojson.Basic.json
+val quandary_sinks : Yojson.Basic.t
 
-val quandary_sources : Yojson.Basic.json
+val quandary_sources : Yojson.Basic.t
 
 val quandaryBO : bool
 
@@ -656,7 +656,7 @@ val sqlite_vfs : string option
 
 val starvation : bool
 
-val starvation_skip_analysis : Yojson.Basic.json
+val starvation_skip_analysis : Yojson.Basic.t
 
 val starvation_strict_mode : bool
 
@@ -676,7 +676,7 @@ val test_filtering : bool
 
 val testing_mode : bool
 
-val threadsafe_aliases : Yojson.Basic.json
+val threadsafe_aliases : Yojson.Basic.t
 
 val topl_properties : string list
 

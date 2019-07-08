@@ -24,9 +24,9 @@ type stats_type =
   | Reporting
   | Driver
 
-val from_json : Yojson.Basic.json -> perf_stats
+val from_json : Yojson.Basic.t -> perf_stats
 
-val aggregate : perf_stats list -> Yojson.Basic.json
+val aggregate : perf_stats list -> Yojson.Basic.t
 
 val register_report : stats_kind -> stats_type -> unit
 (** Register performance reporting function *)

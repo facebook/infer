@@ -9,6 +9,6 @@ open! IStd
 
 type t
 
-val to_json : t -> Yojson.Basic.json
+val to_json : t -> Yojson.Basic.t
 
 val compute_statistics : float list -> t option

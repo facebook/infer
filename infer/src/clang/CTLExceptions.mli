@@ -17,4 +17,4 @@ exception ALFileException of exc_info
 
 val create_exc_info : string -> Lexing.lexbuf -> exc_info
 
-val json_of_exc_info : exc_info -> Yojson.Basic.json
+val json_of_exc_info : exc_info -> Yojson.Basic.t

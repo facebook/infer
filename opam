@@ -47,7 +47,7 @@ depends: [
   "sqlite3"
   "utop" {with-test}
   "xmlm" {>="1.2.0"}
-  "yojson" {<"1.6.0"}
+  "yojson" {>="1.7.0"}
   "zarith" {>="1.7"}
 ]
 depexts: [

@@ -98,7 +98,7 @@ type desc =
   ; doc: string
   ; spec: spec
         (** how to go from an option in the json config file to a list of command-line options *)
-  ; decode_json: inferconfig_dir:string -> Yojson.Basic.json -> string list }
+  ; decode_json: inferconfig_dir:string -> Yojson.Basic.t -> string list }
 
 let dashdash ?short long =
   match (long, short) with

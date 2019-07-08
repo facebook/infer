@@ -50,7 +50,7 @@ val directory_iter : (string -> unit) -> string -> unit
 val directory_is_empty : string -> bool
 (** Returns true if a given directory is empty. The directory is assumed to exist. *)
 
-val read_json_file : string -> (Yojson.Basic.json, string) Result.t
+val read_json_file : string -> (Yojson.Basic.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
@@ -59,7 +59,7 @@ val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 val with_intermediate_temp_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid write-write races *)
 
-val write_json_to_file : string -> Yojson.Basic.json -> unit
+val write_json_to_file : string -> Yojson.Basic.t -> unit
 
 val consume_in : In_channel.t -> unit
 (** consume and ignore all the lines from the channel until End_of_file is reached *)
@@ -114,20 +114,20 @@ val strip_balanced_once : drop:(char -> bool) -> string -> string
    string; for instance, [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"]
    returns "aaba" *)
 
-val assoc_of_yojson : Yojson.Basic.json -> src:string -> (string, Yojson.Basic.json) List.Assoc.t
+val assoc_of_yojson : Yojson.Basic.t -> src:string -> (string, Yojson.Basic.t) List.Assoc.t
 (** Verify we have a json object (or empty list) and return the corresponding assoc list.  Otherwise die with a message including src. *)
 
-val string_of_yojson : Yojson.Basic.json -> src:string -> string
+val string_of_yojson : Yojson.Basic.t -> src:string -> string
 (** Verify we have a json string and return the corresponding ocaml string.  Otherwise die with a message including src. *)
 
-val string_list_of_yojson : Yojson.Basic.json -> src:string -> string list
+val string_list_of_yojson : Yojson.Basic.t -> src:string -> string list
 (** Verify we have a json list of strings and return the corresponding ocaml string list.  Otherwise die with a message including src. *)
 
 val yojson_lookup :
-     (string, Yojson.Basic.json) List.Assoc.t
+     (string, Yojson.Basic.t) List.Assoc.t
   -> string
   -> src:string
-  -> f:(Yojson.Basic.json -> src:string -> 'a)
+  -> f:(Yojson.Basic.t -> src:string -> 'a)
   -> default:'a
   -> 'a
 (** Lookup a json value on an assoc list.  If not present, returns default.  Otherwise returns (f json_value ~src) where src has element name appended. f is typically one of the above _of_yojson functions. *)

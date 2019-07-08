@@ -108,9 +108,9 @@ let aggregate_stats_files paths =
 
 
 type json_aggregated_stats =
-  { frontend_json_data: Yojson.Basic.json option
-  ; backend_json_data: Yojson.Basic.json option
-  ; reporting_json_data: Yojson.Basic.json option }
+  { frontend_json_data: Yojson.Basic.t option
+  ; backend_json_data: Yojson.Basic.t option
+  ; reporting_json_data: Yojson.Basic.t option }
 
 let aggregate_all_stats origin =
   let accumulate_paths acc paths =

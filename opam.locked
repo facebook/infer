@@ -120,7 +120,7 @@ depends: [
   "typerep" {= "v0.11.0"}
   "variantslib" {= "v0.11.0"}
   "xmlm" {= "1.3.0"}
-  "yojson" {= "1.4.1"}
+  "yojson" {= "1.7.0"}
   "zarith" {= "1.7"}
 ]
 depexts: [

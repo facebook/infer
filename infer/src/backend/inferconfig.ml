@@ -218,7 +218,7 @@ let patterns_of_json_with_key (json_key, json) =
         error
   in
   (* Translate a JSON entry into a matching pattern *)
-  let create_pattern (assoc : (string * Yojson.Basic.json) list) =
+  let create_pattern (assoc : (string * Yojson.Basic.t) list) =
     let create_method_pattern assoc =
       let loop mp = function
         | key, `String s when String.equal key "class" ->
