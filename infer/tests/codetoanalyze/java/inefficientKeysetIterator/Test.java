@@ -8,6 +8,7 @@ import android.os.Bundle;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 class Test {
 
@@ -26,10 +27,36 @@ class Test {
     }
   }
 
-  void inefficient_loop_itr_bad_FN(HashMap<String, Integer> testMap) {
+  void inefficient_loop_itr_heur_bad_FN(HashMap<String, Integer> testMap) {
 
     Iterator itr2 = testMap.keySet().iterator();
     int i = 0;
+    int j = 1;
+    int k = 2;
+    int l = 3;
+    while (itr2.hasNext()) {
+      String key = (String) itr2.next();
+      testMap.get(key);
+    }
+  }
+
+  void inefficient_loop_itr_heur_bad(HashMap<String, Integer> testMap) {
+
+    Iterator itr2 = testMap.keySet().iterator();
+    int i = 0;
+    while (itr2.hasNext()) {
+      String key = (String) itr2.next();
+      testMap.get(key);
+    }
+  }
+
+  void inefficient_loop_itr_heur_btw_bad(HashMap<String, Integer> testMap) {
+
+    Set<String> keySet = testMap.keySet();
+    int i = 0;
+    int j = 1;
+    int l = 3;
+    Iterator itr2 = keySet.iterator();
     while (itr2.hasNext()) {
       String key = (String) itr2.next();
       testMap.get(key);

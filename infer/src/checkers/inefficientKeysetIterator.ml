@@ -75,12 +75,26 @@ let report_matching_get tenv summary pvar loop_nodes : unit =
     loop_nodes
 
 
-let when_dominating_pred_satisfies idom my_node ~f =
-  let preds =
-    Procdesc.Node.get_preds my_node
+(** Heuristic: check up to 4 direct predecessor nodes *)
+let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
+  let preds node =
+    Procdesc.Node.get_preds node
     |> List.filter ~f:(fun node -> Dominators.dominates idom node my_node)
   in
-  match preds with [pred_node] -> f pred_node | _ -> ()
+  let rec aux node (counter : int) =
+    if Int.equal counter 0 then ()
+    else
+      match preds node with
+      | [pred_node] -> (
+        match find_first_arg_pvar pred_node ~fun_name ~class_name_f with
+        | Some pvar ->
+            f pred_node pvar
+        | None ->
+            aux pred_node (counter - 1) )
+      | _ ->
+          ()
+  in
+  aux my_node 4
 
 
 let checker Callbacks.{summary; tenv} : Summary.t =
@@ -95,16 +109,10 @@ let checker Callbacks.{summary; tenv} : Summary.t =
           ~class_name_f:(PatternMatch.implements_iterator tenv)
         |> Option.is_some
       then
-        when_dominating_pred_satisfies idom loop_head ~f:(fun itr_node ->
-            if
-              Option.is_some
-                (find_first_arg_pvar itr_node ~fun_name:"iterator"
-                   ~class_name_f:(PatternMatch.implements_set tenv))
-            then
-              when_dominating_pred_satisfies idom itr_node ~f:(fun keySet_node ->
-                  find_first_arg_pvar keySet_node ~fun_name:"keySet"
-                    ~class_name_f:(PatternMatch.implements_map tenv)
-                  |> Option.iter ~f:(fun get_pvar ->
-                         report_matching_get tenv summary get_pvar loop_nodes ) ) ) )
+        when_dominating_preds_satisfy idom loop_head ~fun_name:"iterator"
+          ~class_name_f:(PatternMatch.implements_set tenv) ~f:(fun itr_node _ ->
+            when_dominating_preds_satisfy idom itr_node ~fun_name:"keySet"
+              ~class_name_f:(PatternMatch.implements_map tenv) ~f:(fun _keySet_node get_pvar ->
+                report_matching_get tenv summary get_pvar loop_nodes ) ) )
     loop_head_to_loop_nodes ;
   summary
