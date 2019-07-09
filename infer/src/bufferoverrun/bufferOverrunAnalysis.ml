@@ -344,7 +344,7 @@ let cached_compute_invariant_map =
         assert false
     | None ->
         let get_proc_summary_and_formals callee_pname =
-          Ondemand.analyze_proc_name ~caller_pdesc:(Summary.get_proc_desc summary) callee_pname
+          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
           |> Option.bind ~f:(fun summary ->
                  Payload.of_summary summary
                  |> Option.map ~f:(fun payload ->

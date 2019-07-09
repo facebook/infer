@@ -1221,7 +1221,8 @@ let perform_transition proc_cfg tenv proc_name summary =
   else summary
 
 
-let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
+let analyze_procedure_aux summary exe_env tenv : Summary.t =
+  let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   let summaryfp =
@@ -1250,11 +1251,10 @@ let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
 
 
 let analyze_procedure {Callbacks.summary; tenv; exe_env} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
-  if Topl.is_active () then Topl.instrument tenv proc_desc ;
-  try analyze_procedure_aux summary exe_env tenv proc_desc
+  if Topl.is_active () then Topl.instrument tenv (Summary.get_proc_desc summary) ;
+  try analyze_procedure_aux summary exe_env tenv
   with exn ->
     IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
     Reporting.log_error_using_state summary exn ;

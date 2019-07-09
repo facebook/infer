@@ -807,7 +807,7 @@ let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
     let get_callee_purity callee_pname =
-      match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
+      match Ondemand.analyze_proc_name ~caller_summary:summary callee_pname with
       | Some {Summary.payloads= {Payloads.purity}} ->
           purity
       | _ ->
@@ -823,7 +823,7 @@ let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let get_callee_summary_and_formals callee_pname =
-      Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+      Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
       |> Option.bind ~f:(fun summary ->
              Payload.of_summary summary
              |> Option.map ~f:(fun payload ->

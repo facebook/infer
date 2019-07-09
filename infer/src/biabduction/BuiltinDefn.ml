@@ -15,12 +15,13 @@ module L = Logging
 type t = Builtin.registered
 
 (** model va_arg as always returning 0 *)
-let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} :
+let execute___builtin_va_arg {Builtin.summary; tenv; prop_; path; args; loc; exe_env} :
     Builtin.ret_typ =
   match args with
   | [(lexp3, typ3)] ->
       let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
-      SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton instr') [(prop_, path)]
+      SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton instr')
+        [(prop_, path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -85,7 +86,9 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
 
 
 (* Add an array in prop if it is not allocated.*)
-let execute___require_allocated_array {Builtin.tenv; pdesc; prop_; path; args} : Builtin.ret_typ =
+let execute___require_allocated_array {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ
+    =
+  let pdesc = Summary.get_proc_desc summary in
   match args with
   | [(lexp, typ)] -> (
     match add_array_to_prop tenv pdesc prop_ lexp typ with
@@ -97,11 +100,11 @@ let execute___require_allocated_array {Builtin.tenv; pdesc; prop_; path; args} :
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___get_array_length {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+let execute___get_array_length {Builtin.tenv; summary; prop_; path; ret_id_typ; args} :
     Builtin.ret_typ =
   match args with
   | [(lexp, typ)] -> (
-    match add_array_to_prop tenv pdesc prop_ lexp typ with
+    match add_array_to_prop tenv (Summary.get_proc_desc summary) prop_ lexp typ with
     | None ->
         []
     | Some (len, prop) ->
@@ -110,7 +113,8 @@ let execute___get_array_length {Builtin.tenv; pdesc; prop_; path; ret_id_typ; ar
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___set_array_length {Builtin.tenv; pdesc; prop_; path; args} : Builtin.ret_typ =
+let execute___set_array_length {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ =
+  let pdesc = Summary.get_proc_desc summary in
   match args with
   | [(lexp, typ); (len, _)] -> (
     match add_array_to_prop tenv pdesc prop_ lexp typ with
@@ -138,9 +142,9 @@ let execute___set_array_length {Builtin.tenv; pdesc; prop_; path; args} : Builti
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___print_value {Builtin.tenv; pdesc; prop_; path; args} : Builtin.ret_typ =
+let execute___print_value {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ =
   L.(debug Analysis Medium) "__print_value: " ;
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = Summary.get_proc_name summary in
   let do_arg (lexp, _) =
     let n_lexp, _ = check_arith_norm_exp tenv pname lexp prop_ in
     L.(debug Analysis Medium) "%a " Exp.pp n_lexp
@@ -211,10 +215,11 @@ let create_type tenv n_lexp typ prop =
   else null_case @ non_null_case
 
 
-let execute___get_type_of {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+let execute___get_type_of {Builtin.summary; tenv; prop_; path; ret_id_typ; args} : Builtin.ret_typ
+    =
   match args with
   | [(lexp, typ)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       let props = create_type tenv n_lexp typ prop in
       let aux prop =
@@ -256,11 +261,11 @@ let replace_ptsto_texp tenv prop root_e texp =
   Prop.normalize tenv prop''
 
 
-let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args} :
+let execute___instanceof_cast ~instof {Builtin.summary; tenv; prop_; path; ret_id_typ; args} :
     Builtin.ret_typ =
   match args with
   | [(val1_, typ1); (texp2_, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
       let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
       let is_cast_to_reference =
@@ -359,10 +364,11 @@ let set_resource_attribute tenv prop path n_lexp loc ra_res =
 
 
 (** Set the attibute of the value as file *)
-let execute___set_file_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} : Builtin.ret_typ =
+let execute___set_file_attribute {Builtin.tenv; summary; prop_; path; args; loc} : Builtin.ret_typ
+    =
   match args with
   | [(lexp, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc PredSymb.Rfile
   | _ ->
@@ -371,11 +377,11 @@ let execute___set_file_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} :
 
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
-let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} :
+let execute___method_set_ignore_attribute {Builtin.tenv; summary; prop_; path; args; loc} :
     Builtin.ret_typ =
   match args with
   | [_; (lexp, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc PredSymb.Rignore
   | _ ->
@@ -383,10 +389,10 @@ let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; arg
 
 
 (** Set the attibute of the value as memory *)
-let execute___set_mem_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} : Builtin.ret_typ =
+let execute___set_mem_attribute {Builtin.tenv; summary; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       set_resource_attribute tenv prop path n_lexp loc (PredSymb.Rmemory PredSymb.Mnew)
   | _ ->
@@ -406,19 +412,20 @@ let delete_attr tenv pdesc prop path exp attr =
 
 
 (** Set attibute att *)
-let execute___set_attr attr {Builtin.tenv; pdesc; prop_; path; args} : Builtin.ret_typ =
+let execute___set_attr attr {Builtin.tenv; summary; prop_; path; args} : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      set_attr tenv pdesc prop_ path lexp attr
+      set_attr tenv (Summary.get_proc_desc summary) prop_ path lexp attr
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
 (** Delete the locked attibute of the value*)
-let execute___delete_locked_attribute {Builtin.tenv; prop_; pdesc; path; args} : Builtin.ret_typ =
+let execute___delete_locked_attribute {Builtin.tenv; prop_; summary; path; args} : Builtin.ret_typ
+    =
   match args with
   | [(lexp, _)] ->
-      delete_attr tenv pdesc prop_ path lexp PredSymb.Alocked
+      delete_attr tenv (Summary.get_proc_desc summary) prop_ path lexp PredSymb.Alocked
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -490,11 +497,11 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp 
       raise (Exceptions.Array_of_pointsto __POS__) )
 
 
-let execute_free mk ?(mark_as_freed = true) {Builtin.pdesc; instr; tenv; prop_; path; args; loc} :
-    Builtin.ret_typ =
+let execute_free mk ?(mark_as_freed = true) {Builtin.summary; instr; tenv; prop_; path; args; loc}
+    : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       let prop_nonzero =
         (* case n_lexp!=0 *)
@@ -509,7 +516,7 @@ let execute_free mk ?(mark_as_freed = true) {Builtin.pdesc; instr; tenv; prop_; 
         @ (* model: if 0 then skip else execute_free_nonzero_ *)
           List.concat_map
             ~f:(fun p ->
-              execute_free_nonzero_ mk ~mark_as_freed pdesc tenv instr p
+              execute_free_nonzero_ mk ~mark_as_freed (Summary.get_proc_desc summary) tenv instr p
                 (Prop.exp_normalize_prop tenv p lexp)
                 typ loc )
             prop_nonzero
@@ -526,9 +533,9 @@ let execute_free mk ?(mark_as_freed = true) {Builtin.pdesc; instr; tenv; prop_; 
  This should behave correctly most of the time. *)
 let execute_free_cf mk = execute_free mk ~mark_as_freed:false
 
-let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args; loc} :
+let execute_alloc mk can_return_null {Builtin.summary; tenv; prop_; path; ret_id_typ; args; loc} :
     Builtin.ret_typ =
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = Summary.get_proc_name summary in
   let rec evaluate_char_sizeof e =
     match e with
     | Exp.Var _ ->
@@ -600,14 +607,14 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id_t
   else [(prop_alloc, path)]
 
 
-let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r) : Builtin.ret_typ
-    =
+let execute___cxx_typeid ({Builtin.summary; tenv; prop_; args; loc; exe_env} as r) :
+    Builtin.ret_typ =
   match args with
   | type_info_exp :: rest -> (
       let res = execute_alloc PredSymb.Mnew false {r with args= [type_info_exp]} in
       match rest with
       | [(field_exp, _); (lexp, typ_)] ->
-          let pname = Procdesc.get_proc_name pdesc in
+          let pname = Summary.get_proc_name summary in
           let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
           let typ =
             List.find
@@ -621,14 +628,14 @@ let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r)
           let set_instr =
             Sil.Store (field_exp, Typ.mk Tvoid, Exp.Const (Const.Cstr typ_string), loc)
           in
-          SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) res
+          SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) res
       | _ ->
           res )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as builtin_args) :
+let execute_pthread_create ({Builtin.tenv; summary; prop_; path; args; exe_env} as builtin_args) :
     Builtin.ret_typ =
   match args with
   | [_; _; start_routine; arg] -> (
@@ -653,7 +660,7 @@ let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as
           [(prop_, path)]
       | Some pname -> (
           L.d_printfln "pthread_create: calling function %a" Typ.Procname.pp pname ;
-          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc pname with
+          match Ondemand.analyze_proc_name ~caller_summary:summary pname with
           | None ->
               (* no precondition to check, skip *)
               [(prop_, path)]
@@ -678,11 +685,11 @@ let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_a
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute__unwrap_exception {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+let execute__unwrap_exception {Builtin.tenv; summary; prop_; path; ret_id_typ; args} :
     Builtin.ret_typ =
   match args with
   | [(ret_exn, _)] -> (
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_ret_exn, prop = check_arith_norm_exp tenv pname ret_exn prop_ in
       match n_ret_exn with
       | Exp.Exn exp ->
@@ -694,11 +701,11 @@ let execute__unwrap_exception {Builtin.tenv; pdesc; prop_; path; ret_id_typ; arg
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_return_first_argument {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+let execute_return_first_argument {Builtin.tenv; summary; prop_; path; ret_id_typ; args} :
     Builtin.ret_typ =
   match args with
   | (arg1_, _) :: _ ->
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Procdesc.get_proc_name (Summary.get_proc_desc summary) in
       let arg1, prop = check_arith_norm_exp tenv pname arg1_ prop_ in
       let prop' = return_result tenv arg1 prop ret_id_typ in
       [(prop', path)]
@@ -706,11 +713,11 @@ let execute_return_first_argument {Builtin.tenv; pdesc; prop_; path; ret_id_typ;
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} : Builtin.ret_typ
-    =
+let execute___split_get_nth {Builtin.tenv; summary; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(lexp1, _); (lexp2, _); (lexp3, _)] -> (
-      let pname = Procdesc.get_proc_name pdesc in
+      let pname = Summary.get_proc_name summary in
       let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
       let n_lexp2, prop___ = check_arith_norm_exp tenv pname lexp2 prop__ in
       let n_lexp3, prop = check_arith_norm_exp tenv pname lexp3 prop___ in
@@ -742,7 +749,8 @@ let execute___infer_assume {Builtin.tenv; prop_; path; args} : Builtin.ret_typ =
 
 
 (* creates a named error state *)
-let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ =
+let execute___infer_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ
+    =
   let error_str =
     match args with
     | [(lexp_msg, _)] -> (
@@ -757,12 +765,12 @@ let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} 
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) [(prop_, path)]
 
 
 (* translate builtin assertion failure *)
-let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ
-    =
+let execute___assert_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env} :
+    Builtin.ret_typ =
   let error_str =
     match List.length args with
     | 4 ->
@@ -773,11 +781,11 @@ let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env}
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) [(prop_, path)]
 
 
 let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
-    {Builtin.pdesc; tenv; ret_id_typ; loc; exe_env} =
+    {Builtin.summary; tenv; ret_id_typ; loc; exe_env} =
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.__objc_alloc_no_fail) in
   let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
   let sizeof_typ = Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
@@ -792,7 +800,7 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
     Sil.Call
       (ret_id_typ, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)
   in
-  SymExec.instrs exe_env tenv pdesc (Instrs.singleton alloc_instr) symb_state
+  SymExec.instrs exe_env tenv summary (Instrs.singleton alloc_instr) symb_state
 
 
 (* NSArray models *)

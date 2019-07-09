@@ -433,7 +433,7 @@ let checker : Callbacks.proc_callback_args -> Summary.t =
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
         let get_proc_summary callee_pname =
-          Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+          Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
           |> Option.bind ~f:(fun summary ->
                  let analysis_payload = BufferOverrunAnalysis.Payload.of_summary summary in
                  let checker_payload = Payload.of_summary summary in

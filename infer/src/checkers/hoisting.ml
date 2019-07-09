@@ -161,7 +161,7 @@ let checker Callbacks.{tenv; summary; integer_type_widths} : Summary.t =
         BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
       in
       let get_callee_cost_summary_and_formals callee_pname =
-        Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname
+        Ondemand.analyze_proc_name ~caller_summary:summary callee_pname
         |> Option.bind ~f:(fun summary ->
                summary.Summary.payloads.Payloads.cost
                |> Option.map ~f:(fun cost_summary ->
@@ -173,7 +173,7 @@ let checker Callbacks.{tenv; summary; integer_type_widths} : Summary.t =
     else fun _ -> None
   in
   let get_callee_purity callee_pname =
-    match Ondemand.analyze_proc_name ~caller_pdesc:proc_desc callee_pname with
+    match Ondemand.analyze_proc_name ~caller_summary:summary callee_pname with
     | Some {Summary.payloads= {Payloads.purity}} ->
         purity
     | _ ->

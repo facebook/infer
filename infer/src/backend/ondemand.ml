@@ -282,7 +282,7 @@ let memcache_set proc_name summ =
     Summary.SummaryServer.set ~key summ
 
 
-let analyze_proc_desc ~caller_pdesc callee_pdesc =
+let analyze_proc_desc ~caller_summary callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   if is_active callee_pname then None
   else
@@ -296,7 +296,11 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
         | None ->
             let proc_attributes = Procdesc.get_attributes callee_pdesc in
             if should_be_analyzed proc_attributes then
-              (Some (run_proc_analysis ~caller_pdesc:(Some caller_pdesc) callee_pdesc), true)
+              ( Some
+                  (run_proc_analysis
+                     ~caller_pdesc:(Some (Summary.get_proc_desc caller_summary))
+                     callee_pdesc)
+              , true )
             else (Summary.get callee_pname, true)
       in
       if update_memcached then memcache_set callee_pname summary_option ;
@@ -312,9 +316,9 @@ let get_proc_desc callee_pname =
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
-(** analyze_proc_name ?caller_pdesc proc_name performs an on-demand analysis of proc_name triggered
-    during the analysis of caller_pdesc *)
-let analyze_proc_name ?caller_pdesc callee_pname =
+(** analyze_proc_name ?caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
+    during the analysis of caller_summary *)
+let analyze_proc_name ?caller_summary callee_pname =
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
@@ -328,7 +332,11 @@ let analyze_proc_name ?caller_pdesc callee_pname =
             if procedure_should_be_analyzed callee_pname then
               match get_proc_desc callee_pname with
               | Some callee_pdesc ->
-                  (Some (run_proc_analysis ~caller_pdesc callee_pdesc), true)
+                  ( Some
+                      (run_proc_analysis
+                         ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                         callee_pdesc)
+                  , true )
               | None ->
                   (Summary.get callee_pname, true)
             else (

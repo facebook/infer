@@ -43,9 +43,7 @@ module Make (P : Payload) : S with type t = P.t = struct
 
   let read_all ?caller_summary ~callee_pname =
     let open Option.Monad_infix in
-    Ondemand.analyze_proc_name
-      ?caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-      callee_pname
+    Ondemand.analyze_proc_name ?caller_summary callee_pname
     >>= fun summary ->
     of_summary summary >>| fun payload -> (Summary.get_proc_desc summary, payload)
 

@@ -113,8 +113,8 @@ let method_has_annot annot tenv pname =
 
 let method_overrides_annot annot tenv pname = method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls ~caller_pdesc annot pname =
-  match Ondemand.analyze_proc_name ~caller_pdesc pname with
+let lookup_annotation_calls ~caller_summary annot pname =
+  match Ondemand.analyze_proc_name ~caller_summary pname with
   | Some {Summary.payloads= {Payloads.annot_map= Some annot_map}} -> (
     try AnnotReachabilityDomain.find annot annot_map
     with Caml.Not_found -> AnnotReachabilityDomain.SinkMap.empty )
@@ -221,7 +221,7 @@ let report_src_snk_path {Callbacks.tenv; summary} sink_map snk_annot src_annot =
   if method_overrides_annot src_annot tenv proc_name then
     let f_report = report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
     report_call_stack summary (method_has_annot snk_annot tenv) ~string_of_pname ~call_str:" -> "
-      (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
+      (lookup_annotation_calls ~caller_summary:summary snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 
 
@@ -383,7 +383,7 @@ module CxxAnnotationSpecs = struct
           let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
           report_call_stack proc_data.Callbacks.summary snk_pred
             ~string_of_pname:cxx_string_of_pname ~call_str
-            (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
+            (lookup_annotation_calls ~caller_summary:proc_data.Callbacks.summary snk_annot)
             report_cxx_annotation_stack (CallSite.make proc_name loc) sink_map
         with Caml.Not_found -> ()
     in

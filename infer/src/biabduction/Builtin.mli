@@ -10,7 +10,7 @@ open! IStd
 (** Module for builtin functions with their symbolic execution handler *)
 
 type args =
-  { pdesc: Procdesc.t
+  { summary: Summary.t
   ; instr: Sil.instr
   ; tenv: Tenv.t
   ; prop_: Prop.normal Prop.t

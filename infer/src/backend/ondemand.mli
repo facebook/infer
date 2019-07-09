@@ -12,13 +12,13 @@ open! IStd
 val get_proc_desc : Typ.Procname.t -> Procdesc.t option
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 
-val analyze_proc_desc : caller_pdesc:Procdesc.t -> Procdesc.t -> Summary.t option
-(** [analyze_proc_desc ~caller_pdesc callee_pdesc] performs an on-demand analysis of callee_pdesc
-   triggered during the analysis of caller_pdesc *)
+val analyze_proc_desc : caller_summary:Summary.t -> Procdesc.t -> Summary.t option
+(** [analyze_proc_desc ~caller_summary callee_pdesc] performs an on-demand analysis of callee_pdesc
+   triggered during the analysis of caller_summary *)
 
-val analyze_proc_name : ?caller_pdesc:Procdesc.t -> Typ.Procname.t -> Summary.t option
-(** [analyze_proc_name ~caller_pdesc proc_name] performs an on-demand analysis of proc_name
-   triggered during the analysis of caller_pdesc *)
+val analyze_proc_name : ?caller_summary:Summary.t -> Typ.Procname.t -> Summary.t option
+(** [analyze_proc_name ~caller_summary callee_pname] performs an on-demand analysis of callee_pname
+   triggered during the analysis of caller_summary *)
 
 val set_exe_env : Exe_env.t -> unit
 (** Set the execution enviroment used during on-demand analysis. *)

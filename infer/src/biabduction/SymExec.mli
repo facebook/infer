@@ -28,7 +28,7 @@ val instrs :
      ?mask_errors:bool
   -> Exe_env.t
   -> Tenv.t
-  -> Procdesc.t
+  -> Summary.t
   -> Instrs.not_reversed_t
   -> (Prop.normal Prop.t * Paths.Path.t) list
   -> (Prop.normal Prop.t * Paths.Path.t) list
