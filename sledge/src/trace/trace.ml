@@ -17,9 +17,15 @@ type trace_mod_funs =
   {trace_mod: bool option; trace_funs: bool Map.M(String).t}
 
 type trace_mods_funs = trace_mod_funs Map.M(String).t
-type config = {trace_all: bool; trace_mods_funs: trace_mods_funs}
 
-let none = {trace_all= false; trace_mods_funs= Map.empty (module String)}
+type config =
+  {trace_all: bool; trace_mods_funs: trace_mods_funs; colors: bool}
+
+let none =
+  { trace_all= false
+  ; trace_mods_funs= Map.empty (module String)
+  ; colors= false }
+
 let all = {none with trace_all= true}
 let config : config ref = ref none
 
@@ -77,14 +83,30 @@ let parse s =
       Ok {none with trace_mods_funs}
   with Assert_failure _ as exn -> Error exn
 
-let init ?(margin = 240) ~config:c () =
+let pp_styled style fmt fs =
+  Format.pp_open_box fs 2 ;
+  if (not !config.colors) || match style with `None -> true | _ -> false
+  then Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+  else (
+    ( match style with
+    | `Bold -> Format.fprintf fs "\027[1m"
+    | `Cyan -> Format.fprintf fs "\027[36m"
+    | `Magenta -> Format.fprintf fs "\027[95m"
+    | _ -> () ) ;
+    Format.kfprintf
+      (fun fs ->
+        Format.fprintf fs "\027[0m" ;
+        Format.pp_close_box fs () )
+      fs fmt )
+
+let init ?(colors = false) ?(margin = 240) ~config:c () =
   Format.set_margin margin ;
   Format.set_max_indent (margin - 1) ;
   Format.pp_set_margin fs margin ;
   Format.pp_set_max_indent fs (margin - 1) ;
   Format.pp_open_vbox fs 0 ;
   Caml.at_exit flush ;
-  config := c
+  config := {c with colors}
 
 let unwrap s =
   let rec index s i =

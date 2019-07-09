@@ -41,10 +41,11 @@ let pp fs {sat; rep} =
     (pp_alist Exp.pp pp_exp_v)
     (Map.to_alist rep)
 
-let pp_classes fs r =
+let pp_classes ?is_x fs r =
   List.pp "@ @<2>∧ "
     (fun fs (key, data) ->
-      Format.fprintf fs "@[%a@ = %a@]" Exp.pp key (List.pp "@ = " Exp.pp)
+      Format.fprintf fs "@[%a@ = %a@]" (Exp.pp_full ?is_x) key
+        (List.pp "@ = " (Exp.pp_full ?is_x))
         (List.sort ~compare:Exp.compare data) )
     fs
     (Map.to_alist (classes r))

@@ -242,22 +242,29 @@ let uncurry =
   in
   uncurry_ []
 
-let rec pp fs exp =
+let rec pp ?is_x fs exp =
+  let get_var_style var =
+    match is_x with
+    | None -> `None
+    | Some is_x -> if not (is_x var) then `Bold else `Cyan
+  in
   let pp_ pp fs exp =
     let pf fmt =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match exp with
-    | Var {name; id= 0} -> pf "%%%s" name
-    | Var {name; id} -> pf "%%%s_%d" name id
+    | Var {name; id= 0} as var ->
+        Trace.pp_styled (get_var_style var) "%%%s" fs name
+    | Var {name; id} as var ->
+        Trace.pp_styled (get_var_style var) "%%%s_%d" fs name id
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
     | Splat {byt; siz} -> pf "%a^%a" pp byt pp siz
     | Memory {siz; arr} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
     | Concat {args} -> pf "%a" (Vector.pp "@,^" pp) args
-    | Integer {data} -> pf "%a" Z.pp data
+    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
     | Eq -> pf "="
     | Dq -> pf "@<1>≠"
@@ -350,7 +357,9 @@ and pp_record fs elts =
 
 type exp = t
 
-let pp_t = pp
+let pp_t = pp ?is_x:None
+let pp_full = pp
+let pp = pp_t
 
 (** Invariant *)
 
@@ -508,7 +517,8 @@ module Var = struct
 
     type t = Set.M(T).t [@@deriving compare, equal, sexp]
 
-    let pp vs = Set.pp pp_t vs
+    let pp_full ?is_x vs = Set.pp (pp_full ?is_x) vs
+    let pp = pp_full ?is_x:None
     let empty = Set.empty (module T)
     let of_list = Set.of_list (module T)
     let of_vector = Set.of_vector (module T)

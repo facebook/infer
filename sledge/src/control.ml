@@ -280,8 +280,15 @@ let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
 
 let summary_table = Hashtbl.create (module Var)
 
+let pp_st _ =
+  [%Trace.printf
+    "@[<v>%t@]" (fun fs ->
+        Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
+            Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Var.pp key
+              (List.pp "@," Domain.pp) data ) )]
+
 let exec_return ~opts stk pre_state (block : Llair.block) exp =
-  [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
+  [%Trace.call fun {pf} -> pf "from %a@ " Var.pp block.parent.name.var]
   ;
   ( match Stack.pop_return stk with
   | Some (from_call, retn_site, stk) ->
@@ -294,9 +301,10 @@ let exec_return ~opts stk pre_state (block : Llair.block) exp =
         | _ -> violates Llair.Func.invariant block.parent
       in
       let function_summary = exit_state in
-      if opts.function_summaries then
+      if opts.function_summaries then (
         Hashtbl.add_multi summary_table ~key:block.parent.name.var
           ~data:function_summary ;
+        pp_st () ) ;
       let post_state =
         Domain.post block.parent.locals from_call exit_state
       in
@@ -310,11 +318,7 @@ let exec_return ~opts stk pre_state (block : Llair.block) exp =
         | None -> retn_site )
   | None -> Work.skip )
   |>
-  [%Trace.retn fun {pf} _ ->
-    pf "@[<v>%t@]" (fun fs ->
-        Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
-            Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Var.pp key
-              (List.pp "@," Domain.pp) data ) )]
+  [%Trace.retn fun {pf} _ -> pf ""]
 
 let exec_throw stk pre_state (block : Llair.block) exc =
   [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]

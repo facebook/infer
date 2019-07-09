@@ -46,6 +46,7 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
 === flags ===
 
   [-bound <int>]          stop execution exploration at depth <int>
+  [-colors]               enable printing in colors
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -68,6 +69,7 @@ Build a buck target and report the included bitcode files.
 
 === flags ===
 
+  [-colors]          enable printing in colors
   [-margin <cols>]   wrap debug tracing at <cols> columns
   [-modules <file>]  write list of bitcode files to <file>, or to standard
                      output if <file> is `-`
@@ -87,6 +89,7 @@ Link code in a buck target to a single LLVM bitcode module. This also internaliz
 === flags ===
 
   -bitcode-output <file>  write linked bitcode to <file>
+  [-colors]               enable printing in colors
   [-fuzzer]               add a harness for libFuzzer targets
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-modules <file>]       write list of bitcode files to <file>, or to standard
@@ -122,6 +125,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 === flags ===
 
   [-bound <int>]          stop execution exploration at depth <int>
+  [-colors]               enable printing in colors
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -142,6 +146,7 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
 === flags ===
 
+  [-colors]               enable printing in colors
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
   [-margin <cols>]        wrap debug tracing at <cols> columns
@@ -161,6 +166,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 === flags ===
 
   [-bound <int>]         stop execution exploration at depth <int>
+  [-colors]              enable printing in colors
   [-function-summaries]  use function summaries (in development)
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-skip-throw]          do not explore past throwing an exception
@@ -179,6 +185,7 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
 === flags ===
 
+  [-colors]         enable printing in colors
   [-llair <file>]   write generated textual LLAIR to <file>, or to standard
                     output if omitted
   [-margin <cols>]  wrap debug tracing at <cols> columns

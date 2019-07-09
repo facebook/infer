@@ -11,7 +11,7 @@
 type t [@@deriving compare, equal, sexp]
 
 val pp : t pp
-val pp_classes : t pp
+val pp_classes : ?is_x:(Exp.t -> bool) -> t pp
 
 include Invariant.S with type t := t
 

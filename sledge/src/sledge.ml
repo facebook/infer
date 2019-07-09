@@ -31,8 +31,8 @@ let command ~summary ?readme param =
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
         (optional int)
-    in
-    Trace.init ?margin ~config ()
+    and colors = flag "colors" no_arg ~doc:"enable printing in colors" in
+    Trace.init ~colors ?margin ~config ()
   in
   let wrap main () =
     try

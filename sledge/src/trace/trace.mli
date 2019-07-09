@@ -19,17 +19,25 @@ type trace_mods_funs = trace_mod_funs Map.M(String).t
 type config =
   { trace_all: bool  (** Enable all tracing *)
   ; trace_mods_funs: trace_mods_funs
-        (** Specify tracing of individual toplevel modules *) }
+        (** Specify tracing of individual toplevel modules *)
+  ; colors: bool  (** Enable color output *) }
 
 val none : config
 val all : config
 val parse : string -> (config, exn) result
 
-val init : ?margin:int -> config:config -> unit -> unit
+val init : ?colors:bool -> ?margin:int -> config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)
 
 type 'a printf = ('a, Formatter.t, unit) format -> 'a
 type pf = {pf: 'a. 'a printf}
+
+val pp_styled :
+     [> `Bold | `Cyan | `Magenta | `None]
+  -> ('a, Format.formatter, unit, unit) format4
+  -> Format.formatter
+  -> 'a
+(** If config.colors is set to true, print in the specificed color *)
 
 val printf : string -> string -> 'a printf
 (** Like [Format.printf], if enabled, otherwise like [Format.iprintf]. *)

@@ -81,6 +81,7 @@ val comparator : (t, comparator_witness) Comparator.t
 
 type exp = t
 
+val pp_full : ?is_x:(exp -> bool) -> t pp
 val pp : t pp
 val invariant : ?partial:bool -> t -> unit
 
@@ -95,6 +96,7 @@ module Var : sig
     type t = (var, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
+    val pp_full : ?is_x:(exp -> bool) -> t pp
     val pp : t pp
     val empty : t
     val of_list : var list -> t

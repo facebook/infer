@@ -28,12 +28,13 @@ type t = starjunction [@@deriving compare, equal, sexp]
 let map_seg {loc; bas; len; siz; arr} ~f =
   {loc= f loc; bas= f bas; len= f len; siz= f siz; arr= f arr}
 
-let pp_seg fs {loc; bas; len; siz; arr} =
-  Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" Exp.pp loc
+let pp_seg ?is_x fs {loc; bas; len; siz; arr} =
+  let exp_pp = Exp.pp_full ?is_x in
+  Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" exp_pp loc
     (fun fs (bas, len) ->
       if (not (Exp.equal loc bas)) || not (Exp.equal len siz) then
-        Format.fprintf fs " %a, %a " Exp.pp bas Exp.pp len )
-    (bas, len) Exp.pp (Exp.memory ~siz ~arr)
+        Format.fprintf fs " %a, %a " exp_pp bas exp_pp len )
+    (bas, len) exp_pp (Exp.memory ~siz ~arr)
 
 let pp_seg_norm cong fs seg =
   pp_seg fs (map_seg seg ~f:(Equality.normalize cong))
@@ -42,18 +43,20 @@ let pp_us ?(pre = ("" : _ fmt)) fs us =
   if not (Set.is_empty us) then
     [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
 
-let rec pp vs fs {us; xs; cong; pure; heap; djns} =
+let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
+  let all_xs = Set.union all_xs xs in
+  let is_x var = Set.mem all_xs (Option.value_exn (Var.of_exp var)) in
   pp_us fs us ;
   let xs_i_vs, xs_d_vs = Set.inter_diff vs xs in
   if not (Set.is_empty xs_i_vs) then (
-    Format.fprintf fs "@<2>∃ @[%a@] ." Var.Set.pp xs_i_vs ;
+    Format.fprintf fs "@<2>∃ @[%a@] ." (Var.Set.pp_full ~is_x) xs_i_vs ;
     if not (Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;
   if not (Set.is_empty xs_d_vs) then
-    Format.fprintf fs "@<2>∃ @[%a@] .@ " Var.Set.pp xs_d_vs ;
+    Format.fprintf fs "@<2>∃ @[%a@] .@ " (Var.Set.pp_full ~is_x) xs_d_vs ;
   let first = Equality.is_true cong in
   if not first then Format.fprintf fs "  " ;
-  Equality.pp_classes fs cong ;
+  Equality.pp_classes ~is_x fs cong ;
   let pure_exps =
     List.filter_map pure ~f:(fun e ->
         let e' = Equality.normalize cong e in
@@ -61,7 +64,7 @@ let rec pp vs fs {us; xs; cong; pure; heap; djns} =
   in
   List.pp
     ~pre:(if first then "  " else "@ @<2>∧ ")
-    "@ @<2>∧ " Exp.pp fs pure_exps ;
+    "@ @<2>∧ " (Exp.pp_full ~is_x) fs pure_exps ;
   let first = first && List.is_empty pure_exps in
   if List.is_empty heap then
     Format.fprintf fs
@@ -70,7 +73,7 @@ let rec pp vs fs {us; xs; cong; pure; heap; djns} =
   else
     List.pp
       ~pre:(if first then "  " else "@ @<2>∧ ")
-      "@ * " pp_seg fs
+      "@ * " (pp_seg ~is_x) fs
       (List.sort
          (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
@@ -86,21 +89,21 @@ let rec pp vs fs {us; xs; cong; pure; heap; djns} =
   List.pp
     ~pre:(if first then "  " else "@ * ")
     "@ * "
-    (pp_djn (Set.union vs (Set.union us xs)))
+    (pp_djn (Set.union vs (Set.union us xs)) all_xs)
     fs djns ;
   Format.pp_close_box fs ()
 
-and pp_djn vs fs = function
+and pp_djn vs all_xs fs = function
   | [] -> Format.fprintf fs "false"
   | djn ->
       Format.fprintf fs "@[<hv>( %a@ )@]"
         (List.pp "@ @<2>∨ " (fun fs sjn ->
-             Format.fprintf fs "@[<hv 1>(%a)@]" (pp vs)
+             Format.fprintf fs "@[<hv 1>(%a)@]" (pp vs all_xs)
                {sjn with us= Set.diff sjn.us vs} ))
         djn
 
-let pp = pp Var.Set.empty
-let pp_djn = pp_djn Var.Set.empty
+let pp = pp Var.Set.empty Var.Set.empty
+let pp_djn = pp_djn Var.Set.empty Var.Set.empty
 
 let fold_exps_seg {loc; bas; len; siz; arr} ~init ~f =
   let f b z = Exp.fold_exps b ~init:z ~f in
