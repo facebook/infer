@@ -567,15 +567,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       specs
 
 
-  let merge_callee_map call_site pdesc callee_pname tenv specs astate =
-    match Payload.read pdesc callee_pname with
+  let merge_callee_map call_site summary callee_pname tenv specs astate =
+    match Payload.read ~caller_summary:summary ~callee_pname with
     | None ->
         astate
     | Some callee_call_map ->
         let add_call_site annot sink calls astate =
           if AnnotReachabilityDomain.CallSites.is_empty calls then astate
           else
-            let pname = Procdesc.get_proc_name pdesc in
+            let pname = Summary.get_proc_name summary in
             List.fold
               ~f:(fun astate (spec : AnnotationSpec.t) ->
                 if spec.sanitizer_predicate tenv pname then astate
@@ -592,11 +592,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
-        let pdesc = Summary.get_proc_desc summary in
-        let caller_pname = Procdesc.get_proc_name pdesc in
+        let caller_pname = Summary.get_proc_name summary in
         let call_site = CallSite.make callee_pname call_loc in
         check_call tenv callee_pname caller_pname call_site astate extras
-        |> merge_callee_map call_site pdesc callee_pname tenv extras
+        |> merge_callee_map call_site summary callee_pname tenv extras
     | Sil.Load (id, exp, _, _) when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Store (Exp.Lvar pvar, _, exp, _) when is_tracking_exp astate exp ->

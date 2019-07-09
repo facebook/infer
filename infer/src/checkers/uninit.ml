@@ -99,14 +99,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     || is_array_element_passed_by_ref callee_formals t access_expr idx
 
 
-  let report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary callee_formals_opt
-      =
+  let report_on_function_params tenv maybe_uninit_vars actuals loc summary callee_formals_opt =
     List.iteri actuals ~f:(fun idx e ->
         match HilExp.ignore_cast e with
         | HilExp.AccessExpression access_expr ->
             let _, t = HilExp.AccessExpression.get_base access_expr in
             if
-              should_report_var pdesc tenv maybe_uninit_vars access_expr
+              should_report_var (Summary.get_proc_desc summary) tenv maybe_uninit_vars access_expr
               && (not (Typ.is_pointer t))
               && not
                    (Option.exists callee_formals_opt ~f:(fun callee_formals ->
@@ -153,8 +152,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else None
 
 
-  let remove_initialized_params pdesc call maybe_uninit_vars idx access_expr remove_fields =
-    match Payload.read pdesc call with
+  let remove_initialized_params summary call maybe_uninit_vars idx access_expr remove_fields =
+    match Payload.read ~caller_summary:summary ~callee_pname:call with
     | Some {pre= init_formals; post= _} -> (
       match init_nth_actual_param call idx init_formals with
       | Some var_formal ->
@@ -171,8 +170,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   (* true if a function initializes at least a param or a field of a struct param *)
-  let function_initializes_some_formal_params pdesc call =
-    match Payload.read pdesc call with
+  let function_initializes_some_formal_params summary call =
+    match Payload.read ~caller_summary:summary ~callee_pname:call with
     | Some {pre= initialized_formal_params; post= _} ->
         not (D.is_empty initialized_formal_params)
     | _ ->
@@ -234,7 +233,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* if it's a default constructor, we use the following heuristic: we assume that it initializes
     correctly all fields when there is an implementation of the constructor that initilizes at least one
     field. If there is no explicit implementation we cannot assume fields are initialized *)
-        if function_initializes_some_formal_params pdesc call then
+        if function_initializes_some_formal_params summary call then
           let maybe_uninit_vars =
             (* in HIL/SIL the default constructor has only one param: the struct *)
             MaybeUninitVars.remove_all_fields tenv base astate.maybe_uninit_vars
@@ -269,7 +268,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                            ~f:(is_fld_or_array_elem_passed_by_ref t access_expr idx) -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
-                        remove_initialized_params pdesc pname acc idx access_expr_to_remove false
+                        remove_initialized_params summary pname acc idx access_expr_to_remove false
                     | _ ->
                         MaybeUninitVars.remove access_expr_to_remove acc )
                   | base when Option.exists pname_opt ~f:Typ.Procname.is_constructor ->
@@ -278,7 +277,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   | _, {Typ.desc= Tptr _} -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
-                        remove_initialized_params pdesc pname acc idx access_expr_to_remove true
+                        remove_initialized_params summary pname acc idx access_expr_to_remove true
                     | _ ->
                         MaybeUninitVars.remove_everything_under tenv access_expr_to_remove acc )
                   | _ ->
@@ -292,8 +291,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         ( match call with
         | Direct _ ->
-            report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary
-              callee_formals_opt
+            report_on_function_params tenv maybe_uninit_vars actuals loc summary callee_formals_opt
         | Indirect _ ->
             () ) ;
         {astate with maybe_uninit_vars}

@@ -81,7 +81,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
-      Payload.read (Summary.get_proc_desc summary) callee
+      Payload.read ~caller_summary:summary ~callee_pname:callee
       |> Option.value_map ~default:astate ~f:(Domain.integrate_summary tenv astate callee loc)
     in
     match instr with
@@ -327,7 +327,7 @@ let should_report pdesc =
       false
 
 
-let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
+let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
   let methods =
     Tenv.lookup tenv clazz
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
@@ -336,7 +336,7 @@ let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
     Ondemand.get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
            if should_report other_pdesc then
-             Payload.read current_pdesc mthd
+             Payload.read ~caller_summary:current_summary ~callee_pname:mthd
              |> Option.map ~f:(fun payload -> (mthd, payload))
              |> Option.fold ~init:acc ~f
            else acc )
@@ -353,8 +353,8 @@ let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
          once, as opposed to twice with all other deadlock pairs. *)
 let report_deadlocks env {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
-  let _, current_pdesc = env in
-  let current_pname = Procdesc.get_proc_name current_pdesc in
+  let _, current_summary = env in
+  let current_pname = Summary.get_proc_name current_summary in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
       not
@@ -409,8 +409,8 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
 
 let report_starvation env {StarvationDomain.events; ui} report_map' =
   let open StarvationDomain in
-  let _, current_pdesc = env in
-  let current_pname = Procdesc.get_proc_name current_pdesc in
+  let _, current_summary = env in
+  let current_pname = Summary.get_proc_name current_summary in
   let report_remote_block ui_explain event current_lock endpoint_pname endpoint_elem report_map =
     let lock = endpoint_elem.Order.elem.first in
     match endpoint_elem.Order.elem.eventually.elem with
@@ -489,9 +489,10 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
 
 
 let reporting {Callbacks.procedures; source_file} =
-  let report_procedure issue_log ((tenv, proc_desc) as env) =
+  let report_procedure issue_log ((tenv, summary) as env) =
+    let proc_desc = Summary.get_proc_desc summary in
     if should_report proc_desc then
-      Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
+      Payload.read_toplevel_procedure (Procdesc.get_proc_name proc_desc)
       |> Option.value_map ~default:issue_log ~f:(fun summary ->
              report_deadlocks env summary ReportMap.empty
              |> report_starvation env summary

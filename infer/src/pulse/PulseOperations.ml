@@ -305,7 +305,7 @@ let remove_vars vars astate =
 
 
 let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
-  match PulsePayload.read_full caller_summary.Summary.proc_desc callee_pname with
+  match PulsePayload.read_full ~caller_summary ~callee_pname with
   | Some (callee_proc_desc, preposts) ->
       let formals =
         Procdesc.get_formals callee_proc_desc

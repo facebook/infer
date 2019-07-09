@@ -197,7 +197,8 @@ let should_report pdesc =
       true
 
 
-let report_errors pdesc astate summary =
+let report_errors astate summary =
+  let pdesc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name pdesc in
   match astate with
   | Some astate ->
@@ -224,13 +225,12 @@ let compute_summary summary tenv get_callee_summary inferbo_invariant_map =
 
 
 let checker {Callbacks.tenv; summary; integer_type_widths} : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
   in
-  let get_callee_summary = Payload.read proc_desc in
+  let get_callee_summary callee_pname = Payload.read ~caller_summary:summary ~callee_pname in
   let astate = compute_summary summary tenv get_callee_summary inferbo_invariant_map in
-  report_errors proc_desc astate summary ;
+  report_errors astate summary ;
   match astate with
   | Some astate ->
       debug "Purity summary :%a \n" PurityDomain.pp astate ;

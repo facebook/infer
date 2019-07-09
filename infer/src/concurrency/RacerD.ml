@@ -322,7 +322,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             astate
         | NoEffect -> (
             let rebased_summary_opt =
-              Payload.read pdesc callee_pname
+              Payload.read ~caller_summary:summary ~callee_pname
               |> Option.map ~f:(fun summary ->
                      let rebased_accesses =
                        Ondemand.get_proc_desc callee_pname
@@ -1170,15 +1170,16 @@ let make_results_table file_env =
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc} acc)
       accesses acc
   in
-  List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, proc_desc) ->
-      Procdesc.get_proc_name proc_desc |> Payload.read proc_desc
-      |> Option.fold ~init:acc ~f:(aggregate_post tenv proc_desc) )
+  List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, summary) ->
+      Payload.read_toplevel_procedure (Summary.get_proc_name summary)
+      |> Option.fold ~init:acc ~f:(aggregate_post tenv (Summary.get_proc_desc summary)) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
    class. this lets us analyze each class individually *)
 let aggregate_by_class file_env =
-  List.fold file_env ~init:String.Map.empty ~f:(fun acc ((tenv, pdesc) as proc) ->
+  List.fold file_env ~init:String.Map.empty ~f:(fun acc ((tenv, summary) as proc) ->
+      let pdesc = Summary.get_proc_desc summary in
       if should_report_on_proc tenv pdesc then
         Procdesc.get_proc_name pdesc |> Typ.Procname.get_class_name
         |> Option.fold ~init:acc ~f:(fun acc classname ->

@@ -216,7 +216,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , _
         , _ ) ->
         let domain_summary =
-          Payload.read (Summary.get_proc_desc proc_data.summary) callee_procname
+          Payload.read ~caller_summary:proc_data.summary ~callee_pname:callee_procname
         in
         let receiver =
           Domain.LocalAccessPath.make
@@ -247,7 +247,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* treat it like a normal call *)
           apply_callee_summary domain_summary caller_pname return_base actuals astate
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let summary = Payload.read (Summary.get_proc_desc proc_data.summary) callee_procname in
+        let summary =
+          Payload.read ~caller_summary:proc_data.summary ~callee_pname:callee_procname
+        in
         apply_callee_summary summary caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the

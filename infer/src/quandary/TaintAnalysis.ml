@@ -128,7 +128,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.bottom
         else
-          match Payload.read (Summary.get_proc_desc proc_data.summary) pname with
+          match Payload.read ~caller_summary:proc_data.summary ~callee_pname:pname with
           | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
@@ -655,7 +655,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 add_actual_source source index actuals astate_with_sink proc_data )
       in
       let astate_with_summary =
-        match Payload.read (Summary.get_proc_desc proc_data.summary) callee_pname with
+        match Payload.read ~caller_summary:proc_data.summary ~callee_pname with
         | None ->
             handle_unknown_call callee_pname astate_with_direct_sources
         | Some summary -> (

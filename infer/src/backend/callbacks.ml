@@ -19,7 +19,7 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
-  {procedures: (Tenv.t * Procdesc.t) list; source_file: SourceFile.t; exe_env: Exe_env.t}
+  {procedures: (Tenv.t * Summary.t) list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
 type cluster_callback_t = cluster_callback_args -> unit
 
@@ -46,7 +46,7 @@ let get_procedure_definition exe_env proc_name =
   Procdesc.load proc_name
   |> Option.map ~f:(fun proc_desc ->
          let tenv = Exe_env.get_tenv exe_env proc_name in
-         (tenv, proc_desc) )
+         (tenv, Summary.reset proc_desc) )
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
@@ -91,8 +91,8 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
     let environment = {procedures; source_file; exe_env} in
     let language_matches language =
       match procedures with
-      | (_, pdesc) :: _ ->
-          Language.equal language (Typ.Procname.get_language (Procdesc.get_proc_name pdesc))
+      | (_, summary) :: _ ->
+          Language.equal language (Typ.Procname.get_language (Summary.get_proc_name summary))
       | _ ->
           true
     in
