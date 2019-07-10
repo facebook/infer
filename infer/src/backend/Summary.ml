@@ -71,7 +71,8 @@ include struct
     ; stats: Stats.t
     ; status: Status.t
     ; proc_desc: Procdesc.t
-    ; err_log: Errlog.t }
+    ; err_log: Errlog.t
+    ; callee_pnames: Typ.Procname.Set.t }
   [@@deriving fields]
 end
 
@@ -243,7 +244,8 @@ let init_summary proc_desc =
     ; stats= Stats.empty
     ; status= Status.Pending
     ; proc_desc
-    ; err_log= Errlog.empty () }
+    ; err_log= Errlog.empty ()
+    ; callee_pnames= Typ.Procname.Set.empty }
   in
   Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
   summary
