@@ -2404,7 +2404,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match (decl_list : Clang_ast_t.decl list) with
     | VarDecl _ :: _ | CXXRecordDecl _ :: _ | RecordDecl _ :: _ ->
         collect_all_decl trans_state decl_list succ_nodes stmt_info
-    | (TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _) :: _ ->
+    | (NamespaceAliasDecl _ | TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _)
+      :: _ ->
         mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | decl :: _ ->
         CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
