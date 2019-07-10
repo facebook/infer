@@ -126,9 +126,10 @@ let report_loads summary astate =
            ClassLoadsDomain.iter report_load astate )
 
 
-let analyze_procedure {Callbacks.tenv; summary} =
+let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   L.debug Analysis Verbose "CL: ANALYZING %a@." Typ.Procname.pp proc_name ;
   let loc = Procdesc.get_loc proc_desc in
   (* load the method's class *)

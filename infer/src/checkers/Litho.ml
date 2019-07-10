@@ -274,8 +274,9 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Exceptional))
 
-let checker {Callbacks.summary; tenv} =
+let checker {Callbacks.summary; exe_env} =
   let proc_desc = Summary.get_proc_desc summary in
+  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let proc_data = ProcData.make_default summary tenv in
   match Analyzer.compute_post proc_data ~initial:Domain.empty with
   | Some post ->

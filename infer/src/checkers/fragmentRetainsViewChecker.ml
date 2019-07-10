@@ -47,9 +47,10 @@ let report_warning class_name fld fld_typ summary =
   Reporting.log_warning summary ~loc IssueType.checkers_fragment_retain_view description
 
 
-let callback_fragment_retains_view_java java_pname {Callbacks.summary; tenv} =
+let callback_fragment_retains_view_java java_pname {Callbacks.summary; exe_env} =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
+  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let is_on_destroy_view =
     String.equal (Typ.Procname.Java.get_method java_pname) on_destroy_view
   in

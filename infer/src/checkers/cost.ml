@@ -792,7 +792,10 @@ let get_cost_summary astate = CostDomain.{post= astate.WorstCaseCost.costs}
 
 let report_errors proc_desc astate summary = Check.check_and_report astate proc_desc summary
 
-let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
+let checker {Callbacks.exe_env; summary} : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
+  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let proc_desc = Summary.get_proc_desc summary in
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
@@ -837,8 +840,7 @@ let checker {Callbacks.tenv; integer_type_widths; summary} : Summary.t =
   let () =
     let exit_cost_record = astate.WorstCaseCost.costs in
     L.(debug Analysis Verbose)
-      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp
-      (Procdesc.get_proc_name proc_desc)
+      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Typ.Procname.pp proc_name
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
       CostDomain.VariantCostMap.pp exit_cost_record
   in

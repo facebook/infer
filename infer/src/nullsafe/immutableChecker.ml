@@ -42,5 +42,6 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
       ()
 
 
-let callback_check_immutable_cast ({Callbacks.tenv} as args) =
+let callback_check_immutable_cast ({Callbacks.exe_env; summary} as args) =
+  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   Eradicate.callback_check_return_type (check_immutable_cast tenv) args

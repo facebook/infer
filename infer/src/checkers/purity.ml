@@ -224,7 +224,10 @@ let compute_summary summary tenv get_callee_summary inferbo_invariant_map =
   Analyzer.compute_post proc_data ~initial:PurityDomain.pure
 
 
-let checker {Callbacks.tenv; summary; integer_type_widths} : Summary.t =
+let checker {Callbacks.exe_env; summary} : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
+  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map summary tenv integer_type_widths
   in

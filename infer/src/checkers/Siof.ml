@@ -268,9 +268,10 @@ let siof_check gname (summary : Summary.t) =
       ()
 
 
-let checker {Callbacks.tenv; summary; get_procs_in_file} : Summary.t =
+let checker {Callbacks.exe_env; summary; get_procs_in_file} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let pname = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env pname in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =
       let magic_iostream_marker =

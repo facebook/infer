@@ -846,11 +846,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 
-  let checker {Callbacks.tenv; summary} : Summary.t =
+  let checker {Callbacks.exe_env; summary} : Summary.t =
     let proc_desc = Summary.get_proc_desc summary in
+    let pname = Procdesc.get_proc_name proc_desc in
+    let tenv = Exe_env.get_tenv exe_env pname in
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
-      let pname = Procdesc.get_proc_name pdesc in
       List.fold
         ~f:(fun acc (name, typ, taint_opt) ->
           match taint_opt with
@@ -876,7 +877,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | None ->
         if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
           L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp
-            (Procdesc.get_proc_name proc_desc) ;
+            pname ;
           summary )
         else summary
 end

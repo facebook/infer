@@ -97,8 +97,9 @@ let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
   aux my_node 4
 
 
-let checker Callbacks.{summary; tenv} : Summary.t =
+let checker Callbacks.{summary; exe_env} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
+  let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let cfg = CFG.from_pdesc proc_desc in
   let _, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps cfg in
   let idom = Dominators.get_idoms proc_desc in

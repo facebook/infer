@@ -338,8 +338,10 @@ module Initial = struct
             base_access_expr :: acc )
 end
 
-let checker {Callbacks.tenv; summary} : Summary.t =
+let checker {Callbacks.exe_env; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   (* start with empty set of uninit local vars and empty set of init formal params *)
   let maybe_uninit_vars = Initial.get_locals tenv proc_desc in
   let initial =
@@ -356,7 +358,6 @@ let checker {Callbacks.tenv; summary} : Summary.t =
       Payload.update_summary prepost summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
-        L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp
-          (Procdesc.get_proc_name proc_desc) ;
+        L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp proc_name ;
         summary )
       else summary

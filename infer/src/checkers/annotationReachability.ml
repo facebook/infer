@@ -214,9 +214,10 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
     sink_map
 
 
-let report_src_snk_path {Callbacks.tenv; summary} sink_map snk_annot src_annot =
+let report_src_snk_path {Callbacks.exe_env; summary} sink_map snk_annot src_annot =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let loc = Procdesc.get_loc proc_desc in
   if method_overrides_annot src_annot tenv proc_name then
     let f_report = report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
@@ -438,9 +439,10 @@ module ExpensiveAnnotationSpec = struct
 
   let method_is_expensive tenv pname = is_modeled_expensive tenv pname || is_expensive tenv pname
 
-  let check_expensive_subtyping_rules {Callbacks.tenv; summary} overridden_pname =
+  let check_expensive_subtyping_rules {Callbacks.exe_env; summary} overridden_pname =
     let proc_desc = Summary.get_proc_desc summary in
     let proc_name = Procdesc.get_proc_name proc_desc in
+    let tenv = Exe_env.get_tenv exe_env proc_name in
     let loc = Procdesc.get_loc proc_desc in
     if not (method_is_expensive tenv overridden_pname) then
       let description =
@@ -465,9 +467,10 @@ module ExpensiveAnnotationSpec = struct
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= expensive_annot
     ; report=
-        (fun ({Callbacks.tenv; summary} as proc_data) astate ->
+        (fun ({Callbacks.exe_env; summary} as proc_data) astate ->
           let proc_desc = Summary.get_proc_desc summary in
           let proc_name = Procdesc.get_proc_name proc_desc in
+          let tenv = Exe_env.get_tenv exe_env proc_name in
           if is_expensive tenv proc_name then
             PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name ;
           report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot ) }
@@ -613,10 +616,11 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))
 
-let checker ({Callbacks.tenv; summary} as callback) : Summary.t =
-  let proc_desc = Summary.get_proc_desc summary in
+let checker ({Callbacks.exe_env; summary} as callback) : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
-  let specs = get_annot_specs (Procdesc.get_proc_name proc_desc) in
+  let specs = get_annot_specs proc_name in
   let proc_data = ProcData.make summary tenv specs in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _) ->

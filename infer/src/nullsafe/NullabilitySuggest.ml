@@ -179,9 +179,10 @@ let is_outside_codebase proc_name field_name =
       false
 
 
-let checker {Callbacks.summary; tenv} =
+let checker {Callbacks.summary; exe_env} =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let annotation = Localise.nullable_annotation_name proc_name in
   let report astate (proc_data : extras ProcData.t) =
     let report_access_path ap udchain =
@@ -211,7 +212,6 @@ let checker {Callbacks.summary; tenv} =
     in
     Domain.iter report_access_path astate
   in
-  let proc_name = Procdesc.get_proc_name proc_desc in
   if AndroidFramework.is_destroy_method proc_name then
     (* Skip the fields nullified in Fragment onDestroy and onDestroyView *)
     summary

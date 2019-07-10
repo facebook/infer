@@ -134,10 +134,11 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-let analyze_procedure {Callbacks.tenv; summary} =
+let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
   let open StarvationDomain in
   let pname = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env pname in
   if StarvationModels.should_skip_analysis tenv pname [] then summary
   else
     let formals = FormalMap.make proc_desc in

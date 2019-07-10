@@ -10,11 +10,7 @@ open! IStd
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args =
-  { get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
-  ; tenv: Tenv.t
-  ; integer_type_widths: Typ.IntegerWidths.t
-  ; summary: Summary.t
-  ; exe_env: Exe_env.t }
+  {get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list; summary: Summary.t; exe_env: Exe_env.t}
 
 (** Type of a procedure callback:
     - List of all the procedures the callback will be called on.

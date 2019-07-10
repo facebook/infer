@@ -169,9 +169,10 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
       ()
 
 
-let callback_printf_args {Callbacks.tenv; summary} : Summary.t =
+let callback_printf_args {Callbacks.exe_env; summary} : Summary.t =
   let proc_desc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   Procdesc.iter_instrs
     (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc summary)
     proc_desc ;

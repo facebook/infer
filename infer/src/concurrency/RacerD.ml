@@ -507,8 +507,10 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-let analyze_procedure {Callbacks.tenv; summary} =
+let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let open RacerDModels in
   let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
@@ -531,7 +533,7 @@ let analyze_procedure {Callbacks.tenv; summary} =
         else ThreadsDomain.NoThread
       in
       let add_owned_local acc (var_data : ProcAttributes.var_data) =
-        let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name proc_desc) in
+        let pvar = Pvar.mk var_data.name proc_name in
         let base = AccessPath.base_of_pvar pvar var_data.typ in
         OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
       in
@@ -553,7 +555,7 @@ let analyze_procedure {Callbacks.tenv; summary} =
         in
         OwnershipDomain.add (formal, []) ownership_value acc
       in
-      if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
+      if is_initializer tenv proc_name then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
           | Some base ->
@@ -588,9 +590,7 @@ let analyze_procedure {Callbacks.tenv; summary} =
     match Analyzer.compute_post proc_data ~initial with
     | Some {threads; locks; accesses; ownership; attribute_map} ->
         let return_var_ap =
-          AccessPath.of_pvar
-            (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
-            (Procdesc.get_ret_type proc_desc)
+          AccessPath.of_pvar (Pvar.get_ret_pvar proc_name) (Procdesc.get_ret_type proc_desc)
         in
         let return_ownership = OwnershipDomain.get_owned return_var_ap ownership in
         let return_attributes =

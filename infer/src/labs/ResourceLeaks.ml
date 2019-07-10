@@ -86,13 +86,13 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 let report_if_leak _post _summary (_proc_data : unit ProcData.t) = ()
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker {Callbacks.summary; tenv} : Summary.t =
+let checker {Callbacks.summary; exe_env} : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
+  let tenv = Exe_env.get_tenv exe_env proc_name in
   let proc_data = ProcData.make summary tenv () in
   match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial with
   | Some post ->
       report_if_leak post summary proc_data ;
       Payload.update_summary post summary
   | None ->
-      L.(die InternalError)
-        "Analyzer failed to compute post for %a" Typ.Procname.pp
-        (Summary.get_proc_name proc_data.summary)
+      L.(die InternalError) "Analyzer failed to compute post for %a" Typ.Procname.pp proc_name
