@@ -289,33 +289,6 @@ let register_callee ?caller_summary callee_pname =
     caller_summary
 
 
-let analyze_proc_desc ~caller_summary callee_pdesc =
-  let callee_pname = Procdesc.get_proc_name callee_pdesc in
-  register_callee ~caller_summary callee_pname ;
-  if is_active callee_pname then None
-  else
-    let cache = Lazy.force cached_results in
-    try Typ.Procname.Hash.find cache callee_pname
-    with Caml.Not_found ->
-      let summary_option, update_memcached =
-        match memcache_get callee_pname with
-        | Some summ_opt ->
-            (summ_opt, false)
-        | None ->
-            let proc_attributes = Procdesc.get_attributes callee_pdesc in
-            if should_be_analyzed proc_attributes then
-              ( Some
-                  (run_proc_analysis
-                     ~caller_pdesc:(Some (Summary.get_proc_desc caller_summary))
-                     callee_pdesc)
-              , true )
-            else (Summary.get callee_pname, true)
-      in
-      if update_memcached then memcache_set callee_pname summary_option ;
-      Typ.Procname.Hash.add cache callee_pname summary_option ;
-      summary_option
-
-
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
   IList.force_until_first_some
@@ -324,9 +297,7 @@ let get_proc_desc callee_pname =
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
-(** analyze_proc_name ?caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
-    during the analysis of caller_summary *)
-let analyze_proc_name ?caller_summary callee_pname =
+let analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
@@ -338,8 +309,8 @@ let analyze_proc_name ?caller_summary callee_pname =
         | Some summ_opt ->
             (summ_opt, false)
         | None ->
-            if procedure_should_be_analyzed callee_pname then
-              match get_proc_desc callee_pname with
+            if should_be_analyzed then
+              match callee_pdesc with
               | Some callee_pdesc ->
                   ( Some
                       (run_proc_analysis
@@ -355,6 +326,20 @@ let analyze_proc_name ?caller_summary callee_pname =
       if update_memcached then memcache_set callee_pname callee_summary_option ;
       Typ.Procname.Hash.add cache callee_pname callee_summary_option ;
       callee_summary_option
+
+
+let analyze_proc_desc ~caller_summary callee_pdesc =
+  let should_be_analyzed = should_be_analyzed (Procdesc.get_attributes callee_pdesc) in
+  let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  analyze_proc ~caller_summary callee_pname (Some callee_pdesc) should_be_analyzed
+
+
+(** analyze_proc_name ?caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
+    during the analysis of caller_summary *)
+let analyze_proc_name ?caller_summary callee_pname =
+  let should_be_analyzed = procedure_should_be_analyzed callee_pname in
+  let callee_pdesc = get_proc_desc callee_pname in
+  analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed
 
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
