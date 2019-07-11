@@ -25,6 +25,13 @@ let merge_global_tenvs infer_deps_file =
   L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0)
 
 
+let merge_changed_functions () =
+  L.progress "Merging changed functions files...@." ;
+  let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
+  MergeResults.merge_buck_changed_functions infer_deps_file ;
+  L.progress "Done merging changed functions files@."
+
+
 let merge_captured_targets () =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;

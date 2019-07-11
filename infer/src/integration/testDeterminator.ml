@@ -9,36 +9,7 @@ open! IStd
 module L = Logging
 module F = Format
 module JPS = JavaProfilerSamples
-
-let load_all_statement =
-  ResultsDatabase.register_statement
-    "SELECT DISTINCT proc_name_hum FROM procedures WHERE modified_flag = 1 ORDER BY proc_name_hum"
-
-
-let load_all () =
-  ResultsDatabase.with_registered_statement load_all_statement ~f:(fun db stmt ->
-      Container.to_list stmt
-        ~fold:
-          (SqliteUtils.result_fold_single_column_rows ~finalize:false db
-             ~log:"modified_flag.load_all")
-      |> List.map ~f:Sqlite3.Data.to_string )
-
-
-let store_statement =
-  ResultsDatabase.register_statement
-    "UPDATE procedures SET modified_flag = :i WHERE proc_name = :k"
-
-
-let store pname modified =
-  let modified' = Sqlite3.Data.INT (Int64.of_int (if modified then 1 else 0)) in
-  ResultsDatabase.with_registered_statement store_statement ~f:(fun db stmt ->
-      Typ.Procname.SQLite.serialize pname
-      |> Sqlite3.bind stmt 2
-      |> SqliteUtils.check_result_code db ~log:"store bind proc name" ;
-      modified' |> Sqlite3.bind stmt 1
-      |> SqliteUtils.check_result_code db ~log:"store bind modified flag " ;
-      SqliteUtils.result_unit db ~finalize:false ~log:"store modified flag " stmt )
-
+module YB = Yojson.Basic
 
 (* a flag used to make the method search signature sensitive *)
 let use_method_signature = false
@@ -54,7 +25,9 @@ let initialized_test_determinator = ref false
 let is_test_determinator_init () = !initialized_test_determinator
 
 module MethodRangeMap = struct
-  let map : (Location.t * Location.t) RangeMap.t ref = ref RangeMap.empty
+  type t = (Location.t * Location.t) RangeMap.t
+
+  let map : t ref = ref RangeMap.empty
 
   let method_range_map () = !map
 
@@ -107,15 +80,8 @@ module MethodRangeMap = struct
         L.die UserError "Missing method declaration info argument"
 
 
-  let create_clang_method_range_map cfg =
-    let update_method_range_map pdesc =
-      let start_node = Procdesc.get_start_node pdesc in
-      let exit_node = Procdesc.get_exit_node pdesc in
-      let range = (Procdesc.Node.get_loc start_node, Procdesc.Node.get_loc exit_node) in
-      let key = Procdesc.get_proc_name pdesc in
-      map := RangeMap.add key range !map
-    in
-    Typ.Procname.Hash.iter (fun _ pdesc -> update_method_range_map pdesc) cfg
+  let create_clang_method_range_map process_ast_fn =
+    process_ast_fn (fun key range -> map := RangeMap.add key range !map)
 
 
   let pp_map fmt () =
@@ -249,33 +215,32 @@ let _get_relevant_test_to_run () = !relevant_tests
 
 let emit_tests_to_run () =
   let json = `List (List.map ~f:(fun t -> `String t) !relevant_tests) in
-  let outpath = Config.results_dir ^/ "test_determinator.json" in
-  Yojson.Basic.to_file outpath json ;
+  let outpath = Config.results_dir ^/ Config.test_determinator_output in
+  YB.to_file outpath json ;
   L.(debug TestDeterminator Medium)
     "Tests to run: [%a]@\n"
     (Pp.seq ~sep:", " F.pp_print_string)
     !relevant_tests
 
 
-let persist_relevant_method_in_db () =
-  JPS.ProfilerSample.iter (fun pname -> store pname true) !relevant_methods
-
-
 let emit_relevant_methods () =
-  let rel_methods = load_all () in
-  let json = `List (List.map ~f:(fun t -> `String t) rel_methods) in
-  let outpath = Config.results_dir ^/ "diff_determinator.json" in
-  Yojson.Basic.to_file outpath json ;
+  let cleaned_methods =
+    List.dedup_and_sort ~compare:String.compare
+      (List.map (JPS.ProfilerSample.elements !relevant_methods) ~f:Typ.Procname.to_string)
+  in
+  let json = `List (List.map ~f:(fun t -> `String t) cleaned_methods) in
+  let outpath = Config.results_dir ^/ Config.export_changed_functions_output in
+  YB.to_file outpath json ;
   L.(debug TestDeterminator Medium)
     "Methods modified in this Diff: %a@\n"
     (Pp.seq ~sep:", " F.pp_print_string)
-    rel_methods
+    cleaned_methods
 
 
-let init_clang cfg changed_lines_file test_samples_file =
+let init_clang process_ast_fn changed_lines_file test_samples_file =
   DiffLines.init_changed_lines_map changed_lines_file ;
   DiffLines.print_changed_lines () ;
-  MethodRangeMap.create_clang_method_range_map cfg ;
+  MethodRangeMap.create_clang_method_range_map process_ast_fn ;
   L.(debug TestDeterminator Medium) "%a@\n" MethodRangeMap.pp_map () ;
   match test_samples_file with
   | Some _ ->
@@ -297,11 +262,12 @@ let init_java changed_lines_file test_samples_file code_graph_file =
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
-let test_to_run_clang source_file cfg changed_lines_file test_samples_file =
+let test_to_run_clang source_file ~process_ast_fn ~changed_lines_file ~test_samples_file =
   L.(debug TestDeterminator Quiet)
     "****** Start Test Determinator for  %s *****@\n"
     (SourceFile.to_string source_file) ;
-  if is_test_determinator_init () then () else init_clang cfg changed_lines_file test_samples_file ;
+  if is_test_determinator_init () then ()
+  else init_clang process_ast_fn changed_lines_file test_samples_file ;
   let affected_methods =
     compute_affected_methods_clang source_file (DiffLines.changed_lines_map ())
       (MethodRangeMap.method_range_map ())

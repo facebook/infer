@@ -99,3 +99,10 @@ let location_of_source_range ?(pick_location = `Start) default_source_file sourc
 
 let location_of_stmt_info default_source_file stmt_info =
   location_of_source_range default_source_file stmt_info.Clang_ast_t.si_source_range
+
+
+let location_of_decl_info default_source_file decl_info =
+  ( location_of_source_range ~pick_location:`Start default_source_file
+      decl_info.Clang_ast_t.di_source_range
+  , location_of_source_range ~pick_location:`End default_source_file
+      decl_info.Clang_ast_t.di_source_range )

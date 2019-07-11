@@ -63,9 +63,6 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
     || Option.is_some Config.icfg_dotty_outfile
   then Dotty.print_icfg_dotty source_file cfg ;
   L.(debug Capture Verbose) "Stored on disk:@[<v>%a@]@." Cfg.pp_proc_signatures cfg ;
-  if Config.test_determinator_clang then (
-    TestDeterminator.test_to_run_clang source_file cfg Config.modified_lines None ;
-    TestDeterminator.persist_relevant_method_in_db () ) ;
   let procedures_translated_summary =
     EventLogger.ProceduresTranslatedSummary
       { procedures_translated_total= !CFrontend_config.procedures_attempted

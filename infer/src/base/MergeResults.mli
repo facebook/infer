@@ -11,4 +11,8 @@ val merge_buck_flavors_results : string -> unit
 (** Merge the results from sub-invocations of infer inside buck-out/. Takes as argument the
     infer_deps file. *)
 
+val merge_buck_changed_functions : string -> unit
+(** Merge the changed functions from sub-invocations of infer inside buck-out/. Takes as argument the
+    infer_deps file. *)
+
 val iter_infer_deps : string -> f:(string -> unit) -> unit

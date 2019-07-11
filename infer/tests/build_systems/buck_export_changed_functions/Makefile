@@ -9,9 +9,9 @@ include $(TESTS_DIR)/base.make
 A_CPP = src/a.cpp
 B_CPP = src/b.cpp
 BUCK_TARGET = //src:test
-TEST_DETERMINATOR_RESULT = infer-out/diff_determinator.json
+TEST_DETERMINATOR_RESULT = infer-out/changed_functions.json
 DIFF_OUTPUT = diff.mod.test
-INFER_OPTIONS = --flavors --no-linters --test-determinator-clang --modified-lines $(DIFF_OUTPUT) --project-root $(TESTS_DIR)
+INFER_OPTIONS = --flavors --linters --no-capture --export-changed-functions --modified-lines $(DIFF_OUTPUT) --project-root $(TESTS_DIR)
 
 $(DIFF_OUTPUT):
 	$(QUIET)echo -n '$(A_CPP):' > diff.mod.test
@@ -24,16 +24,16 @@ $(DIFF_OUTPUT):
 	$(QUIET)echo >> diff.mod.test
 
 $(TEST_DETERMINATOR_RESULT): $(DIFF_OUTPUT)
-	$(QUIET)$(call silent_on_success,Testing test-determinator-clang with set of changes,\
+	$(QUIET)$(call silent_on_success,Testing export-changed-functions with set of changes,\
 		$(INFER_BIN) $(INFER_OPTIONS) -- buck build --no-cache $(BUCK_TARGET))
 
 .PHONY: test
 test: $(TEST_DETERMINATOR_RESULT)
-	$(QUIET)$(call check_no_diff,diff_determinator.json.exp,$(TEST_DETERMINATOR_RESULT))
+	$(QUIET)$(call check_no_diff,changed_functions.json.exp,$(TEST_DETERMINATOR_RESULT))
 
 .PHONY: replace
 replace: $(TEST_DETERMINATOR_RESULT)
-	$(COPY) $(TEST_DETERMINATOR_RESULT) diff_determinator.json.exp
+	$(COPY) $(TEST_DETERMINATOR_RESULT) changed_functions.json.exp
 
 .PHONY: clean
 clean:

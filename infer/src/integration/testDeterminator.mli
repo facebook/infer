@@ -10,11 +10,13 @@ open! IStd
 val test_to_run_java : string option -> string option -> string option -> unit
 
 val test_to_run_clang :
-  SourceFile.t -> Procdesc.t Typ.Procname.Hash.t -> string option -> string option -> unit
+     SourceFile.t
+  -> process_ast_fn:((Typ.Procname.t -> Location.t * Location.t -> unit) -> unit)
+  -> changed_lines_file:string option
+  -> test_samples_file:string option
+  -> unit
 
 val emit_tests_to_run : unit -> unit
-
-val persist_relevant_method_in_db : unit -> unit
 
 val emit_relevant_methods : unit -> unit
 

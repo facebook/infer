@@ -1326,6 +1326,15 @@ INTERNAL OPTIONS
        --exit-node-bias
            nodes nearest the exit node are analyzed first
 
+       --export-changed-functions
+           Activates: Make infer outout changed functions, similar to
+           test-determinator. It is used together with the --modified-lines.
+           (Conversely: --no-export-changed-functions)
+
+       --export-changed-functions-output path
+           Name of file for export-changed-functions results (default:
+           changed_functions.json)
+
        --external-java-packages-reset
            Set --external-java-packages to the empty list.
 
@@ -1712,10 +1721,9 @@ INTERNAL OPTIONS
            which speficy the relevant arguments. (Conversely:
            --no-test-determinator)
 
-       --test-determinator-clang
-           Activates: Run infer in Test Determinator mode for clang. It is
-           used together with the --modified-lines. (Conversely:
-           --no-test-determinator-clang)
+       --test-determinator-output path
+           Name of file for test-determinator results (default:
+           test_determinator.json)
 
        --test-filtering
            Activates: List all the files Infer can report on (should be

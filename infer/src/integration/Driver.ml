@@ -109,7 +109,10 @@ let clean_results_dir () =
       (not
          (List.exists
             ~f:(String.equal (Filename.basename name))
-            [Config.report_json; Config.costs_report_json]))
+            [ Config.report_json
+            ; Config.costs_report_json
+            ; Config.test_determinator_output
+            ; Config.export_changed_functions_output ]))
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
@@ -418,6 +421,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (* else rely on the command line value *) Config.merge
   in
   if should_merge then (
+    if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     MergeCapture.merge_captured_targets () ;
     RunState.set_merge_capture false ;
     RunState.store () ) ;

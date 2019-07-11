@@ -27,3 +27,5 @@ val location_of_source_range :
 (** picks the start of the source range by default *)
 
 val location_of_stmt_info : SourceFile.t -> Clang_ast_t.stmt_info -> Location.t
+
+val location_of_decl_info : SourceFile.t -> Clang_ast_t.decl_info -> Location.t * Location.t

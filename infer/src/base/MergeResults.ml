@@ -6,6 +6,8 @@
  *)
 open! IStd
 module L = Logging
+module YB = Yojson.Basic
+module YBU = Yojson.Basic.Util
 
 let merge_procedures_table ~db_file =
   let db = ResultsDatabase.get_database () in
@@ -16,7 +18,7 @@ let merge_procedures_table ~db_file =
   Sqlite3.exec db
     {|
 INSERT OR REPLACE INTO procedures
-SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees, sub.modified_flag
+SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees
 FROM (
   attached.procedures AS sub
   LEFT OUTER JOIN procedures AS main
@@ -42,7 +44,7 @@ let merge_source_files_table ~db_file =
        ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
 
 
-let merge infer_out_src =
+let merge_dbs infer_out_src =
   let db_file = infer_out_src ^/ ResultsDatabase.database_filename in
   let main_db = ResultsDatabase.get_database () in
   Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
@@ -52,6 +54,21 @@ let merge infer_out_src =
   Sqlite3.exec main_db "DETACH attached"
   |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
   ()
+
+
+let merge_changed_functions_json infer_out_src =
+  let main_changed_fs_file = Config.results_dir ^/ Config.export_changed_functions_output in
+  let changed_fs_file = infer_out_src ^/ Config.export_changed_functions_output in
+  let main_json = try YB.from_file main_changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
+  let changed_json = try YB.from_file changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
+  let all_fs =
+    `List
+      (List.dedup_and_sort
+         ~compare:(fun s1 s2 ->
+           match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
+         (List.append main_json changed_json))
+  in
+  YB.to_file main_changed_fs_file all_fs
 
 
 let iter_infer_deps infer_deps_file ~f =
@@ -74,4 +91,7 @@ let iter_infer_deps infer_deps_file ~f =
       L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
 
 
-let merge_buck_flavors_results infer_deps_file = iter_infer_deps infer_deps_file ~f:merge
+let merge_buck_flavors_results infer_deps_file = iter_infer_deps infer_deps_file ~f:merge_dbs
+
+let merge_buck_changed_functions infer_deps_file =
+  iter_infer_deps infer_deps_file ~f:merge_changed_functions_json

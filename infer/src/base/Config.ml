@@ -2230,10 +2230,21 @@ and test_determinator =
      $(b,--test-profiler) flags, which speficy the relevant arguments."
 
 
-and test_determinator_clang =
-  CLOpt.mk_bool ~long:"test-determinator-clang" ~default:false
-    "Run infer in Test Determinator mode for clang. It is used together with the \
-     $(b,--modified-lines)."
+and test_determinator_output =
+  CLOpt.mk_path ~long:"test-determinator-output" ~default:"test_determinator.json"
+    "Name of file for test-determinator results"
+
+
+and export_changed_functions =
+  CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
+    ~default:false
+    "Make infer outout changed functions, similar to test-determinator. It is used together with \
+     the $(b,--modified-lines)."
+
+
+and export_changed_functions_output =
+  CLOpt.mk_path ~long:"export-changed-functions-output" ~default:"changed_functions.json"
+    "Name of file for export-changed-functions results"
 
 
 and test_filtering =
@@ -3119,7 +3130,11 @@ and keep_going = !keep_going
 
 and test_determinator = !test_determinator
 
-and test_determinator_clang = !test_determinator_clang
+and test_determinator_output = !test_determinator_output
+
+and export_changed_functions = !export_changed_functions
+
+and export_changed_functions_output = !export_changed_functions_output
 
 and test_filtering = !test_filtering
 

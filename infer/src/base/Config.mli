@@ -670,7 +670,11 @@ val symops_per_iteration : int option
 
 val test_determinator : bool
 
-val test_determinator_clang : bool
+val test_determinator_output : string
+
+val export_changed_functions : bool
+
+val export_changed_functions_output : string
 
 val test_filtering : bool
 
