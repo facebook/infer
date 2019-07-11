@@ -72,7 +72,7 @@ include struct
     ; status: Status.t
     ; proc_desc: Procdesc.t
     ; err_log: Errlog.t
-    ; callee_pnames: Typ.Procname.Set.t }
+    ; mutable callee_pnames: Typ.Procname.Set.t }
   [@@deriving fields]
 end
 

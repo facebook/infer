@@ -282,8 +282,16 @@ let memcache_set proc_name summ =
     Summary.SummaryServer.set ~key summ
 
 
+let register_callee ?caller_summary callee_pname =
+  Option.iter
+    ~f:(fun (summary : Summary.t) ->
+      summary.callee_pnames <- Typ.Procname.Set.add callee_pname summary.callee_pnames )
+    caller_summary
+
+
 let analyze_proc_desc ~caller_summary callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  register_callee ~caller_summary callee_pname ;
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
@@ -319,12 +327,13 @@ let get_proc_desc callee_pname =
 (** analyze_proc_name ?caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
     during the analysis of caller_summary *)
 let analyze_proc_name ?caller_summary callee_pname =
+  register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
     try Typ.Procname.Hash.find cache callee_pname
     with Caml.Not_found ->
-      let summary_option, update_memcached =
+      let callee_summary_option, update_memcached =
         match memcache_get callee_pname with
         | Some summ_opt ->
             (summ_opt, false)
@@ -343,9 +352,9 @@ let analyze_proc_name ?caller_summary callee_pname =
               EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
               (Summary.get callee_pname, true) )
       in
-      if update_memcached then memcache_set callee_pname summary_option ;
-      Typ.Procname.Hash.add cache callee_pname summary_option ;
-      summary_option
+      if update_memcached then memcache_set callee_pname callee_summary_option ;
+      Typ.Procname.Hash.add cache callee_pname callee_summary_option ;
+      callee_summary_option
 
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
