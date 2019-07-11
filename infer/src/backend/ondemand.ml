@@ -334,12 +334,18 @@ let analyze_proc_desc ~caller_summary callee_pdesc =
   analyze_proc ~caller_summary callee_pname (Some callee_pdesc) should_be_analyzed
 
 
-(** analyze_proc_name ?caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
+(** analyze_proc_name ~caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
     during the analysis of caller_summary *)
-let analyze_proc_name ?caller_summary callee_pname =
+let analyze_proc_name ~caller_summary callee_pname =
   let should_be_analyzed = procedure_should_be_analyzed callee_pname in
   let callee_pdesc = get_proc_desc callee_pname in
-  analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed
+  analyze_proc ~caller_summary callee_pname callee_pdesc should_be_analyzed
+
+
+let analyze_proc_name_no_caller callee_pname =
+  let should_be_analyzed = procedure_should_be_analyzed callee_pname in
+  let callee_pdesc = get_proc_desc callee_pname in
+  analyze_proc ?caller_summary:None callee_pname callee_pdesc should_be_analyzed
 
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
@@ -349,7 +355,9 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   Option.iter source_file_opt ~f:(fun source_file ->
       if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   set_exe_env exe_env ;
-  let analyze_proc_name_call pname = ignore (analyze_proc_name pname : Summary.t option) in
+  let analyze_proc_name_call pname =
+    ignore (analyze_proc_name_no_caller pname : Summary.t option)
+  in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
       Callbacks.iterate_cluster_callbacks procs_to_analyze exe_env source_file ;

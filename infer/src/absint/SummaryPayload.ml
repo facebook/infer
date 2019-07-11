@@ -41,19 +41,21 @@ module Make (P : Payload) : S with type t = P.t = struct
 
   let of_summary (summary : Summary.t) = of_payloads summary.payloads
 
-  let read_all ?caller_summary ~callee_pname =
+  let get_payload analysis_result =
     let open Option.Monad_infix in
-    Ondemand.analyze_proc_name ?caller_summary callee_pname
+    analysis_result
     >>= fun summary ->
     of_summary summary >>| fun payload -> (Summary.get_proc_desc summary, payload)
 
 
-  let read_full ~caller_summary ~callee_pname = read_all ~caller_summary ~callee_pname
+  let read_full ~caller_summary ~callee_pname =
+    Ondemand.analyze_proc_name ~caller_summary callee_pname |> get_payload
+
 
   let read ~caller_summary ~callee_pname =
-    read_all ~caller_summary ~callee_pname |> Option.map ~f:snd
+    Ondemand.analyze_proc_name ~caller_summary callee_pname |> get_payload |> Option.map ~f:snd
 
 
   let read_toplevel_procedure callee_pname =
-    read_all ?caller_summary:None ~callee_pname |> Option.map ~f:snd
+    Ondemand.analyze_proc_name_no_caller callee_pname |> get_payload |> Option.map ~f:snd
 end
