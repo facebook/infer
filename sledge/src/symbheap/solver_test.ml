@@ -89,6 +89,25 @@ let%test_module _ =
         ) infer_frame:   emp |}]
 
     let%expect_test _ =
+      let common = Sh.seg {loc= l2; bas= b; len= !10; siz= !10; arr= a2} in
+      let seg1 = Sh.seg {loc= l; bas= b; len= !10; siz= !10; arr= a} in
+      let minued = Sh.star common seg1 in
+      let subtrahend =
+        Sh.and_ (Exp.eq m n)
+          (Sh.exists
+             (Var.Set.of_list [m_])
+             (Sh.extend_us (Var.Set.of_list [m_]) common))
+      in
+      infer_frame minued [n_; m_] subtrahend ;
+      [%expect
+        {|
+        ( infer_frame:
+            %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ * %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
+          \- ∃ %m_8, %n_9 .
+            ∃ %m_10 .   %m_8 = %n_9 ∧ %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
+        ) infer_frame: ∃ %m_10 .   %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
+
+    let%expect_test _ =
       check_frame
         (Sh.star
            (Sh.seg {loc= l; bas= b; len= m; siz= n; arr= a})
