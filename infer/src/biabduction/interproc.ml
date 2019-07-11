@@ -880,17 +880,17 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
         ~f:(fun spec -> spec.BiabductionSummary.pre)
         (Tabulation.get_specs_from_payload summary)
     in
-    let valid_specs = ref [] in
+    let valid_specs_rev = ref [] in
     let go () =
       let filter p =
         let speco = execute_filter_prop summary exe_env tenv proc_cfg p in
-        (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
+        (match speco with None -> () | Some spec -> valid_specs_rev := spec :: !valid_specs_rev) ;
         speco
       in
       ignore (BiabductionSummary.Jprop.filter filter candidate_preconditions)
     in
     let get_results () =
-      let specs = !valid_specs in
+      let specs = List.rev !valid_specs_rev in
       let source = (Procdesc.get_loc (ProcCfg.Exceptional.proc_desc proc_cfg)).file in
       let filename =
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
