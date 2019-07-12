@@ -46,3 +46,7 @@ let merge_captured_targets () =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"merge buck targets" ())) ;
   merge_captured_targets () ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
+
+
+let merge_captured_targets () =
+  ScubaLogging.execute_with_time_logging "merge_captured_targets" merge_captured_targets
