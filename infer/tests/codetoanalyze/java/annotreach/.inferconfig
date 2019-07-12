@@ -1,0 +1,21 @@
+{
+  "force-delete-results-dir": true,
+  "modeled-expensive": [
+    {
+      "language": "Java",
+      "class": "android.app.Activity",
+      "method": "findViewById"
+    },
+    {
+      "language": "Java",
+      "class": "android.view.View",
+      "method": "findViewById"
+    }
+  ],
+  "annotation-reachability-custom-pairs": [
+    {
+       "sources": ["UserDefinedSource1", "UserDefinedSource2"],
+       "sink": "UserDefinedSink"
+    }
+  ]
+}
