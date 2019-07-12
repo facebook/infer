@@ -74,7 +74,7 @@ let call ~summaries actuals formals locals globals_vec (entry, current) =
   [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
 let post locals {caller_entry} (_, current) =
-  [%Trace.call fun {pf} -> pf ""]
+  [%Trace.call fun {pf} -> pf "locals: %a" Var.Set.pp locals]
   ;
   (caller_entry, State_domain.post locals current)
   |>
@@ -92,3 +92,11 @@ let dnf (entry, current) =
 
 let resolve_callee f e (_, current) =
   State_domain.resolve_callee f e current
+
+let create_summary ~locals ~formals (entry, current) =
+  State_domain.create_summary ~locals ~formals entry current
+
+let apply_summary fs (entry, current) =
+  Option.map
+    ~f:(fun c -> (entry, c))
+    (State_domain.apply_summary fs current)

@@ -277,7 +277,8 @@ let exists xs q =
   ;
   assert (
     Set.is_subset xs ~of_:q.us
-    || Trace.fail "%a" Var.Set.pp (Set.diff xs q.us) ) ;
+    || Trace.fail "Sh.exists fail xs - q.us:%a" Var.Set.pp
+         (Set.diff xs q.us) ) ;
   {q with us= Set.diff q.us xs; xs= Set.union q.xs xs} |> check invariant
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]

@@ -68,6 +68,7 @@ let special_cases xs = function
 let excise_exp ({us; min; xs} as goal) pure exp =
   let exp' = Equality.normalize min.cong exp in
   let exp' = special_cases xs exp' in
+  [%Trace.info "exp': %a" Exp.pp exp'] ;
   if Exp.is_true exp' then Some ({goal with pgs= true}, pure)
   else
     match single_existential_occurrence xs exp' with

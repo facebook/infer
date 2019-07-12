@@ -28,6 +28,15 @@ val exec_intrinsic :
 
 type from_call [@@deriving sexp_of]
 
+(* formals should include all the parameters of the summary. That is both
+   formals and globals.*)
+val create_summary :
+     locals:Var.Set.t
+  -> formals:Var.Set.t
+  -> t
+  -> State_domain.function_summary
+
+val apply_summary : State_domain.function_summary -> t -> t option
 val jump : Exp.t list -> Var.t list -> ?temps:Var.Set.t -> t -> t
 
 val call :

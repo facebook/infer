@@ -171,6 +171,50 @@ let resolve_callee lookup ptr _ =
   | Some callee_name -> lookup callee_name
   | None -> []
 
+type function_summary = {xs: Var.Set.t; foot: t; post: t}
+
+let pp_function_summary fs {xs; foot; post} =
+  Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
+    pp foot pp post
+
+let create_summary ~locals ~formals entry current =
+  [%Trace.call fun {pf} ->
+    pf "formals %a@ entry: %a@ current: %a" Var.Set.pp formals pp entry pp
+      current]
+  ;
+  let foot = Sh.exists locals entry in
+  let post = Sh.exists locals current in
+  let foot, subst = Sh.freshen ~wrt:(Set.union foot.us post.us) foot in
+  let restore_formals q =
+    Set.fold formals ~init:q ~f:(fun q var ->
+        let var = Exp.var var in
+        let renamed_var = Exp.rename var subst in
+        Sh.and_ (Exp.eq renamed_var var) q )
+  in
+  (* Add back the original formals name *)
+  let post = Sh.rename subst post in
+  let foot = restore_formals foot in
+  let post = restore_formals post in
+  [%Trace.info "subst: %a" Var.Subst.pp subst] ;
+  let xs = Set.inter (Sh.fv foot) (Sh.fv post) in
+  let xs = Set.diff xs formals in
+  let xs_and_formals = Set.union xs formals in
+  let foot = Sh.exists (Set.diff foot.us xs_and_formals) foot in
+  let post = Sh.exists (Set.diff post.us xs_and_formals) post in
+  {xs; foot; post}
+  |>
+  [%Trace.retn fun {pf} -> pf "@,%a" pp_function_summary]
+
+let apply_summary ({xs; foot; post} as fs) q =
+  [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_function_summary fs pp q]
+  ;
+  let frame = Solver.infer_frame q xs foot in
+  [%Trace.info "frame %a" (Option.pp "%a" pp) frame] ;
+  Option.map ~f:(Sh.star post) frame
+  |>
+  [%Trace.retn fun {pf} r ->
+    match r with None -> pf "None" | Some q -> pf "@,%a" pp q]
+
 let%test_module _ =
   ( module struct
     let pp = Format.printf "@.%a@." Sh.pp
