@@ -45,6 +45,8 @@ val mainthread : string
 
 val ui_thread : string
 
+val worker_thread : string
+
 val visibleForTesting : string
 
 val generated_graphql : string

@@ -252,14 +252,14 @@ module AnnotationSpec = struct
 end
 
 module StandardAnnotationSpec = struct
-  let from_annotations src_annots snk_annot =
+  let from_annotations str_src_annots str_snk_annot =
+    let src_annots = List.map str_src_annots ~f:annotation_of_str in
+    let snk_annot = annotation_of_str str_snk_annot in
+    let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
     let open AnnotationSpec in
     { source_predicate=
         (fun tenv pname -> List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
-    ; sink_predicate=
-        (fun tenv pname ->
-          let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
-          check_attributes has_annot tenv pname )
+    ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= snk_annot
     ; report=
@@ -491,23 +491,22 @@ let parse_user_defined_specs = function
 
 
 let annot_specs =
+  let user_defined_specs =
+    parse_user_defined_specs Config.annotation_reachability_custom_pairs
+    |> List.map ~f:(fun (str_src_annots, str_snk_annot) ->
+           StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot )
+  in
+  let open Annotations in
+  let cannot_call_ui_annots = [any_thread; for_non_ui_thread; worker_thread] in
+  let cannot_call_non_ui_annots = [any_thread; for_ui_thread; mainthread; ui_thread] in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())
   ; ( Language.Java
-    , let user_defined_specs =
-        let specs = parse_user_defined_specs Config.annotation_reachability_custom_pairs in
-        List.map specs ~f:(fun (src_annots, snk_annot) ->
-            StandardAnnotationSpec.from_annotations
-              (List.map ~f:annotation_of_str src_annots)
-              (annotation_of_str snk_annot) )
-      in
-      ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
-      :: StandardAnnotationSpec.from_annotations
-           [ annotation_of_str Annotations.any_thread
-           ; annotation_of_str Annotations.for_non_ui_thread ]
-           (annotation_of_str Annotations.ui_thread)
-      :: StandardAnnotationSpec.from_annotations
-           [annotation_of_str Annotations.ui_thread; annotation_of_str Annotations.for_ui_thread]
-           (annotation_of_str Annotations.for_non_ui_thread)
+    , ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
+      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
+      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
+      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots for_ui_thread
+      :: StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread
+      :: StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots for_non_ui_thread
       :: user_defined_specs ) ]
 
 

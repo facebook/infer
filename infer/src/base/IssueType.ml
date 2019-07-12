@@ -136,14 +136,18 @@ let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
 
 let cannot_star = from_string "Cannot_star"
 
-let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY"
+let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory"
 
-let checkers_annotation_reachability_error = from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+let checkers_annotation_reachability_error =
+  from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR" ~hum:"Annotation Reachability Error"
 
-let checkers_calls_expensive_method = from_string "CHECKERS_CALLS_EXPENSIVE_METHOD"
+
+let checkers_calls_expensive_method =
+  from_string "CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called"
+
 
 let checkers_expensive_overrides_unexpensive =
-  from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
+  from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED" ~hum:"Expensive Overrides Unannotated"
 
 
 let checkers_fragment_retain_view =

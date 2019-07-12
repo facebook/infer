@@ -7,7 +7,9 @@
 
 package codetoanalyze.java.checkers;
 
+import android.support.annotation.MainThread;
 import android.support.annotation.UiThread;
+import android.support.annotation.WorkerThread;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,6 +32,9 @@ public class UiThreads {
   @UiThread
   void uiThread() {}
 
+  @MainThread
+  void mainThread() {}
+
   @AnyThread
   void anyThread() {}
 
@@ -49,6 +54,16 @@ public class UiThreads {
     forNonUiThread();
   }
 
+  @MainThread
+  void callForNonUiThreadBad3() {
+    forNonUiThread();
+  }
+
+  @AnyThread
+  void callForNonUiThreadBad4() {
+    forNonUiThread();
+  }
+
   @AnyThread
   void callUiThreadBad1() {
     uiThread();
@@ -56,6 +71,11 @@ public class UiThreads {
 
   @ForNonUiThread
   void callUiThreadBad2() {
+    uiThread();
+  }
+
+  @WorkerThread
+  void callUiThreadBad3() {
     uiThread();
   }
 
@@ -82,10 +102,5 @@ public class UiThreads {
   @UiThread
   void callAnyThreadOk3() {
     anyThread();
-  }
-
-  @AnyThread
-  void callForNonUiThreadOk() {
-    forNonUiThread();
   }
 }

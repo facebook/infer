@@ -52,5 +52,8 @@ codetoanalyze/java/checkers/TwoCheckersExample.java, codetoanalyze.java.checkers
 codetoanalyze/java/checkers/TwoCheckersExample.java, codetoanalyze.java.checkers.TwoCheckersExample.shouldRaisePerformanceCriticalError():java.util.List, 1, CHECKERS_CALLS_EXPENSIVE_METHOD, no_bucket, ERROR, []
 codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callForNonUiThreadBad1():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callForNonUiThreadBad2():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callForNonUiThreadBad3():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callForNonUiThreadBad4():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callUiThreadBad1():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callUiThreadBad2():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, codetoanalyze.java.checkers.UiThreads.callUiThreadBad3():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
