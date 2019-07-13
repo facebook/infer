@@ -14,7 +14,7 @@ include
 
     (** analysis results *)
     type t =
-      { annot_map: AnnotReachabilityDomain.t option
+      { annot_map: AnnotationReachabilityDomain.t option
       ; biabduction: BiabductionSummary.t option
       ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
       ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option

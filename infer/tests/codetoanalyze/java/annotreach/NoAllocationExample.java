@@ -63,24 +63,4 @@ public class NoAllocationExample {
   void onlyAllocatesInAcceptableWay() {
     acceptableAllocation();
   }
-
-  native boolean rareCase();
-
-  @NoAllocation
-  void onlyAllocatesUsingUnlikely() {
-    if (Branch.unlikely(rareCase())) {
-      allocates();
-    }
-  }
-
-  native boolean anotherRareCase();
-
-  @NoAllocation
-  void nestedUnlikely() {
-    if (Branch.unlikely(rareCase())) {
-      if (!Branch.unlikely(anotherRareCase())) {
-        allocates();
-      }
-    }
-  }
 }

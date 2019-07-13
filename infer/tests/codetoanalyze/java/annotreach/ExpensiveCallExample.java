@@ -146,55 +146,7 @@ public class ExpensiveCallExample implements AnnotatedInterface {
     mOther.callsExpensive1();
   }
 
-  @PerformanceCritical
-  void callExpensiveMethodWithUnlikely() {
-    if (Branch.unlikely(mOther != null)) {
-      mOther.callsExpensive1();
-    }
-  }
-
-  @PerformanceCritical
-  void onlyOneExpensiveCallUsingUnlikely() {
-    if (Branch.unlikely(mOther != null)) {
-      mOther.callsExpensive1();
-    }
-    expensiveMethod();
-  }
-
-  @PerformanceCritical
-  void callsExpensiveInTheUnlikelyElseBranch() {
-    if (Branch.unlikely(mOther != null)) {
-      // Do nothing
-    } else {
-      expensiveMethod();
-    }
-  }
-
   native boolean test();
-
-  @PerformanceCritical
-  void callsExpensiveWithDisjunctionAfterUnlikely() {
-    if (Branch.unlikely(mOther != null) || test()) {
-      expensiveMethod();
-    }
-  }
-
-  @PerformanceCritical
-  void callsExpensiveWithUnlikelyInLocalVariable() {
-    boolean b = Branch.unlikely(mOther != null);
-    if (b) {
-      expensiveMethod();
-    }
-  }
-
-  @PerformanceCritical
-  void callsExpensiveWithOverriddenUnlikelyCondition() {
-    boolean b = Branch.unlikely(mOther != null);
-    b = test();
-    if (b) {
-      expensiveMethod();
-    }
-  }
 
   @PerformanceCritical
   void callsExpensiveInConditionalBranch() {

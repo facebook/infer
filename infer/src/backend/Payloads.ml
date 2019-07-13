@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type t =
-  { annot_map: AnnotReachabilityDomain.t option
+  { annot_map: AnnotationReachabilityDomain.t option
   ; biabduction: BiabductionSummary.t option
   ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
@@ -37,7 +37,7 @@ let fields =
   let mk field name pp = F {field; name; pp= (fun _ -> pp)} in
   let mk_pe field name pp = F {field; name; pp} in
   Fields.to_list
-    ~annot_map:(fun f -> mk f "AnnotationReachability" AnnotReachabilityDomain.pp)
+    ~annot_map:(fun f -> mk f "AnnotationReachability" AnnotationReachabilityDomain.pp)
     ~biabduction:(fun f -> mk_pe f "Biabduction" BiabductionSummary.pp)
     ~buffer_overrun_analysis:(fun f -> mk f "BufferOverrunAnalysis" BufferOverrunAnalysisSummary.pp)
     ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)

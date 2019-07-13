@@ -6,61 +6,16 @@
  *)
 
 open! IStd
-open! AbstractDomain.Types
 module F = Format
 module MF = MarkupFormatter
 module U = Utils
 
 let dummy_constructor_annot = "__infer_is_constructor"
 
-module Domain = struct
-  module TrackingVar = AbstractDomain.FiniteSet (Var)
-  module TrackingDomain = AbstractDomain.BottomLifted (TrackingVar)
-  include AbstractDomain.Pair (AnnotReachabilityDomain) (TrackingDomain)
-
-  let add_call_site annot sink call_site ((annot_map, previous_vstate) as astate) =
-    match previous_vstate with
-    | Bottom ->
-        astate
-    | NonBottom _ ->
-        let sink_map =
-          try AnnotReachabilityDomain.find annot annot_map
-          with Caml.Not_found -> AnnotReachabilityDomain.SinkMap.empty
-        in
-        let sink_map' =
-          if AnnotReachabilityDomain.SinkMap.mem sink sink_map then sink_map
-          else
-            let singleton = AnnotReachabilityDomain.CallSites.singleton call_site in
-            AnnotReachabilityDomain.SinkMap.singleton sink singleton
-        in
-        if phys_equal sink_map' sink_map then astate
-        else (AnnotReachabilityDomain.add annot sink_map' annot_map, previous_vstate)
-
-
-  let stop_tracking ((annot_map, _) : t) = (annot_map, Bottom)
-
-  let add_tracking_var var ((annot_map, previous_vstate) as astate) =
-    match previous_vstate with
-    | Bottom ->
-        astate
-    | NonBottom vars ->
-        (annot_map, NonBottom (TrackingVar.add var vars))
-
-
-  let remove_tracking_var var ((annot_map, previous_vstate) as astate) =
-    match previous_vstate with
-    | Bottom ->
-        astate
-    | NonBottom vars ->
-        (annot_map, NonBottom (TrackingVar.remove var vars))
-
-
-  let is_tracked_var var (_, vstate) =
-    match vstate with Bottom -> false | NonBottom vars -> TrackingVar.mem var vars
-end
+module Domain = AnnotationReachabilityDomain
 
 module Payload = SummaryPayload.Make (struct
-  type t = AnnotReachabilityDomain.t
+  type t = Domain.t
 
   let field = Payloads.Fields.annot_map
 end)
@@ -114,12 +69,9 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname = method_overrides (method_has_annot annot) tenv pname
 
 let lookup_annotation_calls ~caller_summary annot pname =
-  match Ondemand.analyze_proc_name ~caller_summary pname with
-  | Some {Summary.payloads= {Payloads.annot_map= Some annot_map}} -> (
-    try AnnotReachabilityDomain.find annot annot_map
-    with Caml.Not_found -> AnnotReachabilityDomain.SinkMap.empty )
-  | _ ->
-      AnnotReachabilityDomain.SinkMap.empty
+  Payload.read ~caller_summary ~callee_pname:pname
+  |> Option.bind ~f:(Domain.find_opt annot)
+  |> Option.value ~default:Domain.SinkMap.empty
 
 
 let update_trace loc trace =
@@ -189,10 +141,10 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
       in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_callees, updated_callees =
-        AnnotReachabilityDomain.SinkMap.fold
+        Domain.SinkMap.fold
           (fun _ call_sites ((unseen, visited) as accu) ->
             try
-              let call_site = AnnotReachabilityDomain.CallSites.min_elt call_sites in
+              let call_site = Domain.CallSites.min_elt call_sites in
               let p = CallSite.pname call_site in
               let loc = CallSite.loc call_site in
               if Typ.Procname.Set.mem p visited then accu
@@ -202,10 +154,10 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
       in
       List.iter ~f:(loop fst_call_loc updated_callees (new_trace, new_stack_str)) unseen_callees
   in
-  AnnotReachabilityDomain.SinkMap.iter
+  Domain.SinkMap.iter
     (fun _ call_sites ->
       try
-        let fst_call_site = AnnotReachabilityDomain.CallSites.min_elt call_sites in
+        let fst_call_site = Domain.CallSites.min_elt call_sites in
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
@@ -228,12 +180,10 @@ let report_src_snk_path {Callbacks.exe_env; summary} sink_map snk_annot src_anno
 
 let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
   try
-    let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
+    let sink_map = Domain.find snk_annot annot_map in
     List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot) src_annot_list
   with Caml.Not_found -> ()
 
-
-(* New implementation starts here *)
 
 let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}
 
@@ -245,7 +195,7 @@ module AnnotationSpec = struct
     ; sink_predicate: predicate
     ; sanitizer_predicate: predicate
     ; sink_annotation: Annot.t
-    ; report: Callbacks.proc_callback_args -> AnnotReachabilityDomain.t -> unit }
+    ; report: Callbacks.proc_callback_args -> Domain.t -> unit }
 
   (* The default sanitizer does not sanitize anything *)
   let default_sanitizer _ _ = false
@@ -381,7 +331,7 @@ module CxxAnnotationSpecs = struct
       if src_pred proc_name then
         let loc = Procdesc.get_loc proc_desc in
         try
-          let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
+          let sink_map = Domain.find snk_annot annot_map in
           report_call_stack proc_data.Callbacks.summary snk_pred
             ~string_of_pname:cxx_string_of_pname ~call_str
             (lookup_annotation_calls ~caller_summary:proc_data.Callbacks.summary snk_annot)
@@ -530,35 +480,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = AnnotationSpec.t list
 
-  (* This is specific to the @NoAllocation and @PerformanceCritical checker
-     and the "unlikely" method is used to guard branches that are expected to run sufficiently
-     rarely to not affect the performances *)
-  let is_unlikely pname =
-    match pname with
-    | Typ.Procname.Java java_pname ->
-        String.equal (Typ.Procname.Java.get_method java_pname) "unlikely"
-    | _ ->
-        false
-
-
-  let is_tracking_exp astate = function
-    | Exp.Var id ->
-        Domain.is_tracked_var (Var.of_id id) astate
-    | Exp.Lvar pvar ->
-        Domain.is_tracked_var (Var.of_pvar pvar) astate
-    | _ ->
-        false
-
-
-  let prunes_tracking_var astate = function
-    | Exp.BinOp (Binop.Eq, lhs, rhs) when is_tracking_exp astate lhs ->
-        Exp.equal rhs Exp.one
-    | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, lhs, rhs), _) when is_tracking_exp astate lhs ->
-        Exp.equal rhs Exp.zero
-    | _ ->
-        false
-
-
   let check_call tenv callee_pname caller_pname call_site astate specs =
     List.fold ~init:astate
       ~f:(fun astate (spec : AnnotationSpec.t) ->
@@ -575,7 +496,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | Some callee_call_map ->
         let add_call_site annot sink calls astate =
-          if AnnotReachabilityDomain.CallSites.is_empty calls then astate
+          if Domain.CallSites.is_empty calls then astate
           else
             let pname = Summary.get_proc_name summary in
             List.fold
@@ -584,28 +505,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 else Domain.add_call_site annot sink call_site astate )
               ~init:astate specs
         in
-        AnnotReachabilityDomain.fold
-          (fun annot sink_map astate ->
-            AnnotReachabilityDomain.SinkMap.fold (add_call_site annot) sink_map astate )
+        Domain.fold
+          (fun annot sink_map astate -> Domain.SinkMap.fold (add_call_site annot) sink_map astate)
           callee_call_map astate
 
 
   let exec_instr astate {ProcData.summary; tenv; ProcData.extras} _ = function
-    | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
-        Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Summary.get_proc_name summary in
         let call_site = CallSite.make callee_pname call_loc in
         check_call tenv callee_pname caller_pname call_site astate extras
         |> merge_callee_map call_site summary callee_pname tenv extras
-    | Sil.Load (id, exp, _, _) when is_tracking_exp astate exp ->
-        Domain.add_tracking_var (Var.of_id id) astate
-    | Sil.Store (Exp.Lvar pvar, _, exp, _) when is_tracking_exp astate exp ->
-        Domain.add_tracking_var (Var.of_pvar pvar) astate
-    | Sil.Store (Exp.Lvar pvar, _, _, _) ->
-        Domain.remove_tracking_var (Var.of_pvar pvar) astate
-    | Sil.Prune (exp, _, _, _) when prunes_tracking_var astate exp ->
-        Domain.stop_tracking astate
     | _ ->
         astate
 
@@ -618,11 +528,11 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Except
 let checker ({Callbacks.exe_env; summary} as callback) : Summary.t =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
+  let initial = Domain.empty in
   let specs = get_annot_specs proc_name in
   let proc_data = ProcData.make summary tenv specs in
   match Analyzer.compute_post proc_data ~initial with
-  | Some (annot_map, _) ->
+  | Some annot_map ->
       List.iter specs ~f:(fun spec -> spec.AnnotationSpec.report callback annot_map) ;
       Payload.update_summary annot_map summary
   | None ->
