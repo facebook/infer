@@ -77,6 +77,59 @@ module Cplusplus = struct
         Ok [PulseOperations.havoc_id ret_id [event] astate]
 end
 
+module StdBasicString = struct
+  let internal_string =
+    Typ.Fieldname.Clang.from_class_name
+      (Typ.CStruct (QualifiedCppName.of_list ["std"; "basic_string"]))
+      "__infer_model_backing_string"
+
+
+  let internal_string_access = HilExp.Access.FieldAccess internal_string
+
+  let to_internal_string location bstring astate =
+    PulseOperations.eval_access location bstring internal_string_access astate
+
+
+  let data : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+    let event = PulseDomain.ValueHistory.Call {f= Model "std::basic_string::data()"; location} in
+    match actuals with
+    | [(this_hist, _)] ->
+        to_internal_string location this_hist astate
+        >>= fun (astate, string_addr_hist) ->
+        PulseOperations.eval_access location string_addr_hist Dereference astate
+        >>| fun (astate, (string, hist)) ->
+        [PulseOperations.write_id ret_id (string, event :: hist) astate]
+    | _ ->
+        Ok [PulseOperations.havoc_id ret_id [event] astate]
+
+
+  let destructor : model =
+   fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
+    let model = PulseDomain.Model "std::basic_string::~basic_string()" in
+    let call_event = PulseDomain.ValueHistory.Call {f= model; location} in
+    match actuals with
+    | [(this_hist, _)] ->
+        to_internal_string location this_hist astate
+        >>= fun (astate, string_addr_hist) ->
+        let invalidation =
+          PulseDomain.InterprocAction.ViaCall
+            { location
+            ; f= model
+            ; action=
+                ViaCall
+                  { location
+                  ; f= Model "deleting the underlying string"
+                  ; action= Immediate {imm= PulseDomain.Invalidation.CppDelete; location} } }
+        in
+        PulseOperations.invalidate_deref location invalidation string_addr_hist astate
+        >>= fun astate ->
+        PulseOperations.invalidate location invalidation string_addr_hist astate
+        >>| fun astate -> [astate]
+    | _ ->
+        Ok [PulseOperations.havoc_id ret_id [call_event] astate]
+end
+
 module StdFunction = struct
   let operator_call : model =
    fun ~caller_summary location ~ret ~actuals astate ->
@@ -105,11 +158,13 @@ module StdVector = struct
   let internal_array =
     Typ.Fieldname.Clang.from_class_name
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "vector"]))
-      "__internal_array"
+      "__infer_model_backing_array"
 
+
+  let internal_array_access = HilExp.Access.FieldAccess internal_array
 
   let to_internal_array location vector astate =
-    PulseOperations.eval_access location vector (FieldAccess internal_array) astate
+    PulseOperations.eval_access location vector internal_array_access astate
 
 
   let element_of_internal_array location vector index astate =
@@ -175,7 +230,9 @@ module StdVector = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(vector, _); _value] ->
-        let crumb = PulseDomain.ValueHistory.Call {f= Model "std::vector::push_back()"; location} in
+        let crumb =
+          PulseDomain.ValueHistory.Call {f= Model "std::vector::push_back()"; location}
+        in
         if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
           (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
              (a perfect analysis would also make sure we don't exceed the reserved size) *)
@@ -194,6 +251,8 @@ module ProcNameDispatcher = struct
       [ -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
       ; -"folly" &:: "Optional" &:: "reset" &--> Misc.skip
       ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+      ; -"std" &:: "basic_string" &:: "data" &--> StdBasicString.data
+      ; -"std" &:: "basic_string" &:: "~basic_string" &--> StdBasicString.destructor
       ; -"std" &:: "function" &:: "operator()" &--> StdFunction.operator_call
       ; -"std" &:: "function" &:: "operator=" &--> Misc.shallow_copy "std::function::operator="
       ; -"std" &:: "vector" &:: "assign" &--> StdVector.invalidate_references Assign
