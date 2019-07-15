@@ -1395,6 +1395,10 @@ INTERNAL OPTIONS
        --icfg-dotty-outfile-reset
            Cancel the effect of --icfg-dotty-outfile.
 
+       --incremental-analysis
+           Activates: [EXPERIMENTAL] Use incremental analysis for changed
+           files (Conversely: --no-incremental-analysis)
+
        --iphoneos-target-sdk-version-path-regex-reset
            Set --iphoneos-target-sdk-version-path-regex to the empty list.
 
