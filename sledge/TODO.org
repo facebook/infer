@@ -177,6 +177,7 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 - inline asm can take addresses of blocks as args, that can be jumped to
 - treating inline asm conservatively requires considering these control flows
 ** support missing intrinsics
+** Try to extract scope for `ConstantExpr` and `ConstantPointerNull` value types
 ** support vector operations
 - by lowering into multiple scalar operations
 - most cases handled by Frontend.transform

@@ -81,8 +81,11 @@ let ( (scan_names_and_locs : Llvm.llmodule -> unit)
           Some (`Fun (Llvm.block_parent (Llvm.instr_parent llv)))
       | GlobalVariable | Function -> Some (`Mod (Llvm.global_parent llv))
       | UndefValue -> None
+      | ConstantExpr -> None
+      | ConstantPointerNull -> None
       | _ ->
-          warn "Unexpected type of llv, might crash: %a" pp_llvalue llv () ;
+          warn "Unexpected type %a of llv, might crash: %a" pp_llvaluekind
+            (Llvm.classify_value llv) pp_llvalue llv () ;
           Some (`Mod (Llvm.global_parent llv))
     in
     match maybe_scope with

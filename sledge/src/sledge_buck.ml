@@ -159,7 +159,14 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
          (Lazy.force llvm_bin ^ "opt")
          [ "-o=" ^ bitcode_output; "-globaldce"; "-globalopt"; "-mergefunc"
          ; "-constmerge"; "-argpromotion"; "-ipsccp"; "-mem2reg"; "-dce"
-         ; "-globaldce"; "-deadargelim" ] )
+         ; "-globaldce"; "-deadargelim"; "-global-merge-on-const"
+         ; "-global-merge-ignore-single-use=false"
+         ; "-global-merge-group-by-use=false"
+           (* global-merge-max-offset is set to 0 by default. If a global
+              variable has larger allocation size than the max-offset, it is
+              not merged, therefore the global-merge pass is a noop. We set
+              it to something big, so that it merges as much as possible. *)
+         ; "-global-merge-max-offset=1000000"; "-global-merge" ] )
 
 (** command line interface *)
 
