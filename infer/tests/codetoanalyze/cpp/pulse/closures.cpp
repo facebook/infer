@@ -95,7 +95,8 @@ std::function<int()> ref_capture_read_lambda_ok() {
       f; // reading (but not invoking) the lambda doesn't use its captured vars
 }
 
-int delete_lambda_then_call_bad() {
+// explicit destructor call is not modelled
+int FN_delete_lambda_then_call_bad() {
   std::function<int()> lambda = [] { return 1; };
   lambda.~function();
   return lambda();

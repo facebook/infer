@@ -132,26 +132,27 @@ module PulseTransferFunctions = struct
           (* function pointer, etc.: skip for now *)
           None
     in
-    match model with
-    | Some model ->
-        L.d_printfln "Found model for call@\n" ;
-        model ~caller_summary:summary call_loc ~ret ~actuals:actuals_evaled astate
-    | None -> (
-        (* do interprocedural call then destroy objects going out of scope *)
-        PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-        let posts =
-          interprocedural_call summary ret call_exp actuals_evaled flags call_loc astate
-        in
-        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-        match get_out_of_scope_object call_exp actuals flags with
-        | Some pvar_typ ->
-            L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
-            posts
-            >>= fun posts ->
-            List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc pvar_typ astate)
-            |> Result.all
-        | None ->
-            posts )
+    (* do interprocedural call then destroy objects going out of scope *)
+    let posts =
+      match model with
+      | Some model ->
+          L.d_printfln "Found model for call@\n" ;
+          model ~caller_summary:summary call_loc ~ret ~actuals:actuals_evaled astate
+      | None ->
+          PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+          let r = interprocedural_call summary ret call_exp actuals_evaled flags call_loc astate in
+          PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+          r
+    in
+    match get_out_of_scope_object call_exp actuals flags with
+    | Some pvar_typ ->
+        L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
+        posts
+        >>= fun posts ->
+        List.map posts ~f:(fun astate -> exec_object_out_of_scope call_loc pvar_typ astate)
+        |> Result.all
+    | None ->
+        posts
 
 
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
