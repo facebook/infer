@@ -20,7 +20,7 @@
     <connection>scm:git:git@github.com:facebook/infer.git</connection>
     <developerConnection>scm:git:git@github.com:facebook/infer.git</developerConnection>
     <url>https://github.com/facebook/infer</url>
-    <tag>infer-annotations-0.17.0</tag>
+    <tag>infer-annotation-0.17.0</tag>
   </scm>
 
   <developers>
