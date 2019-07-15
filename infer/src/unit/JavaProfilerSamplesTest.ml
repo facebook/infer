@@ -62,7 +62,7 @@ let test_jni_parse_str_with_valid_input =
       Format.fprintf fmt "Expected: '%a', found: '%a'" (Format.pp_print_list T.pp) expected
         (Format.pp_print_list T.pp) actual
     in
-    assert_equal ~cmp:(List.equal ~equal:T.equal) ~pp_diff expected found
+    assert_equal ~cmp:(List.equal T.equal) ~pp_diff expected found
   in
   [ ( "test_jni_parse_str_with_method_signature"
     , "(IZLjava/lang/String;)[C"
@@ -160,9 +160,7 @@ let test_jni_to_java_type_with_invalid_input =
 let test_from_json_string_with_valid_input =
   let create_test input expected ~use_signature _ =
     let found = JavaProfilerSamples.from_json_string input ~use_signature in
-    assert_equal
-      ~cmp:(List.equal ~equal:JavaProfilerSamples.equal_labeled_profiler_sample)
-      expected found
+    assert_equal ~cmp:(List.equal JavaProfilerSamples.equal_labeled_profiler_sample) expected found
   in
   let input1 = "[{\"test\": \"label1\",\"methods\": []}]" in
   let expected1 = [("label1", JavaProfilerSamples.ProfilerSample.of_list [])] in

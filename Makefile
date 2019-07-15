@@ -793,7 +793,7 @@ endif
 # This is a magical version number that doesn't reinstall the world when added on top of what we
 # have in opam.locked. To upgrade this version number, manually try to install several utop versions
 # until you find one that doesn't recompile the world. TODO(t20828442): get rid of magic
-OPAM_DEV_DEPS = ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 3) ocp-indent merlin utop.2.2.0 webbrowser
+OPAM_DEV_DEPS = ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 3) ocp-indent merlin utop.2.4.0 webbrowser
 
 ifneq ($(EMACS),no)
 OPAM_DEV_DEPS += tuareg

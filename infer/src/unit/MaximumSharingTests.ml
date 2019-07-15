@@ -65,7 +65,7 @@ let tests =
         let serialized_normalized_with_sharing = Marshal.to_string normalized [] in
         assert_equal serialized_input_with_sharing serialized_normalized_with_sharing
     | `MarshalNoSharing_MustBeBetter ->
-        assert_bool "equal" (Polymorphic_compare.equal input normalized) ;
+        assert_bool "equal" (Poly.equal input normalized) ;
         assert_bool "strictly less reachable words"
           (reachable_words_normalized < reachable_words_input) ;
         (*

@@ -156,7 +156,7 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
         let s = M.find (get_key node) map in
         let node_normalized_instrs = Procdesc.NodeMap.find node s in
         let collect_duplicates node' normalized_instrs' nset =
-          if List.equal ~equal:Sil.equal_instr node_normalized_instrs normalized_instrs' then
+          if List.equal Sil.equal_instr node_normalized_instrs normalized_instrs' then
             Procdesc.NodeSet.add node' nset
           else nset
         in

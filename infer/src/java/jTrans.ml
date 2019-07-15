@@ -239,7 +239,7 @@ let get_test_operator op =
       Binop.Ne
 
 
-let is_java_native cm = Poly.( = ) cm.Javalib.cm_implementation Javalib.Native
+let is_java_native cm = Poly.equal cm.Javalib.cm_implementation Javalib.Native
 
 let is_clone ms = String.equal (JBasics.ms_name ms) JConfig.clone_name
 

@@ -251,7 +251,7 @@ end)
 let hashqueue_of_sequence ?init s =
   let q = match init with None -> HashQueue.create () | Some q0 -> q0 in
   Sequence.iter s ~f:(fun id ->
-      let (_ : [`Key_already_present | `Ok]) = HashQueue.enqueue q id () in
+      let (_ : [`Key_already_present | `Ok]) = HashQueue.enqueue_back q id () in
       () ) ;
   q
 

@@ -128,7 +128,7 @@ type al_file =
   ; global_paths: (string * ALVar.alexp list) list
   ; checkers: ctl_checker list }
 
-let equal_ast_node = Poly.( = )
+let equal_ast_node = Poly.equal
 
 module Debug = struct
   let pp_transition fmt trans_opt =
@@ -817,12 +817,12 @@ let parameter_of_corresp_name method_name args name =
     List.filter (String.split ~on:':' method_name) ~f:(fun label -> not (String.is_empty label))
   in
   match List.zip names args with
-  | Some names_args -> (
+  | Ok names_args -> (
       let names_arg_opt =
         List.find names_args ~f:(fun (arg_label, _) -> ALVar.compare_str_with_alexp arg_label name)
       in
       match names_arg_opt with Some (_, arg) -> Some arg | None -> None )
-  | None ->
+  | Unequal_lengths ->
       None
 
 
@@ -911,10 +911,10 @@ let field_of_corresp_name_from_init_list_expr name init_nodes (expr_info : Clang
   | Some decl -> (
       let fields = transition_via_fields (Decl decl) in
       match List.zip init_nodes fields with
-      | Some init_nodes_fields ->
+      | Ok init_nodes_fields ->
           List.filter ~f:(fun (_, field) -> field_has_name name field) init_nodes_fields
           |> List.map ~f:(fun (node, _) -> node)
-      | None ->
+      | Unequal_lengths ->
           [] )
   | None ->
       []

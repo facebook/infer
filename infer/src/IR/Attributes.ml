@@ -139,7 +139,6 @@ let store ~proc_desc (attr : ProcAttributes.t) =
       (Option.map proc_desc ~f:Procdesc.get_static_callees |> Option.value ~default:[])
 
 
-
 let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =

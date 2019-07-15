@@ -336,11 +336,11 @@ let expand_formula phi map_ error_msg_ =
           | false, fparams, f1 -> (
             (* in this case it should be a defined macro *)
             match List.zip fparams actual_param with
-            | Some sub ->
+            | Ok sub ->
                 let f1_sub = apply_substitution f1 sub in
                 let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
                 expand f1_sub map' error_msg'
-            | None ->
+            | Unequal_lengths ->
                 L.(die ExternalError)
                   "Formula identifier '%s' is not called with the right number of parameters" name
             )

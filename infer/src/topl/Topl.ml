@@ -66,7 +66,7 @@ let evaluate_static_guard label (e_fun, arg_ts) =
         false
   in
   let match_args () =
-    let same_length xs ys = Option.is_some (List.zip xs ys) in
+    let same_length xs ys = Int.equal (Caml.List.compare_lengths xs ys) 0 in
     Option.value_map label.ToplAst.arguments ~f:(same_length arg_ts) ~default:true
   in
   match_name () && match_args ()

@@ -17,7 +17,7 @@ let test_unixdiff_process_raw_directives_with_valid_input =
       let actual_str = Format.asprintf "%a" (Pp.seq ~sep:"" UnixDiffTest.pp) actual in
       Format.fprintf fmt "Expected: '%s', found: '%s'" expected_str actual_str
     in
-    assert_equal ~cmp:(List.equal ~equal:UnixDiffTest.equal) ~pp_diff expected found
+    assert_equal ~cmp:(List.equal UnixDiffTest.equal) ~pp_diff expected found
   in
   [ ( "test_unixdiff_process_raw_directives_1"
     , "UOOU"
@@ -78,7 +78,7 @@ let test_parse_directives_with_valid_input =
       let actual_str = Format.asprintf "%a" (Pp.seq ~sep:", " Format.pp_print_int) actual in
       Format.fprintf fmt "Expected: '%s', found: '%s'" expected_str actual_str
     in
-    assert_equal ~cmp:(List.equal ~equal:Int.equal) ~pp_diff expected found
+    assert_equal ~cmp:(List.equal Int.equal) ~pp_diff expected found
   in
   [ (* 
   === test1 ===
@@ -251,7 +251,7 @@ let test_parse_unix_diff_with_valid_input =
       let actual_str = Format.asprintf "%a" (Pp.seq ~sep:", " Format.pp_print_int) actual in
       Format.fprintf fmt "Expected: '%s', found: '%s'" expected_str actual_str
     in
-    assert_equal ~cmp:(List.equal ~equal:Int.equal) ~pp_diff expected found
+    assert_equal ~cmp:(List.equal Int.equal) ~pp_diff expected found
   in
   [("test_parse_unix_diff_1", "OONUU", [1]); ("test_parse_unix_diff_2", "UOONUONN", [2; 4; 5])]
   |> List.map ~f:(fun (name, test_input, expected_output) ->

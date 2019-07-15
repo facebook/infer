@@ -47,7 +47,7 @@ let tests =
   let open OUnit2 in
   let cmp l1 l2 =
     let sort = List.sort ~compare:Procdesc.Node.compare in
-    List.equal ~equal:Procdesc.Node.equal (sort l1) (sort l2)
+    List.equal Procdesc.Node.equal (sort l1) (sort l2)
   in
   let pp_diff fmt (actual, expected) =
     let pp_sep fmt _ = F.pp_print_char fmt ',' in

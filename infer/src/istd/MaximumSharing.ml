@@ -70,7 +70,7 @@ end = struct
       with type t = Hashing.hash_value * Obj.t )
 
 
-  module HashedNoscanBlock = (val hashed_obj Polymorphic_compare.equal)
+  module HashedNoscanBlock = (val hashed_obj Poly.equal)
 
   module PhysEqualedHashedScannableBlock = (val hashed_obj phys_equal)
 

@@ -737,7 +737,7 @@ module Call = struct
       -> 'marker
       -> ('context, 'captured_types, 'markers) one_arg_matcher =
    fun get_m get_c marker ->
-    let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
+    let marker_static_checker markers = Poly.equal marker (get_m markers) in
     let match_arg _context capt arg = Typ.equal (FuncArg.typ arg) (get_c capt) in
     {match_arg; marker_static_checker}
 

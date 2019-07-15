@@ -85,12 +85,11 @@ let test_file_renamings_find_previous =
 
 let test_relative_complements =
   let create_test pred (l1, l2) (expected_l1, expected_l2, expected_l3) _ =
-    let compare = Int.compare in
     let output_l1, output_l2, output_l3 =
-      DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.relative_complements ~compare
-        ~pred l1 l2
+      DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.relative_complements
+        ~compare:Int.compare ~pred l1 l2
     in
-    let list_equal l1 l2 = List.equal ~equal:(fun v1 v2 -> Int.equal (compare v1 v2) 0) l1 l2 in
+    let list_equal l1 l2 = List.equal Int.equal l1 l2 in
     assert_equal ~pp_diff:(pp_diff_of_int_list "First list") ~cmp:list_equal expected_l1 output_l1 ;
     assert_equal ~pp_diff:(pp_diff_of_int_list "Second list") ~cmp:list_equal expected_l2 output_l2 ;
     assert_equal ~pp_diff:(pp_diff_of_int_list "Third list") ~cmp:list_equal expected_l3 output_l3

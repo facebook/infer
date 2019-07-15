@@ -29,7 +29,7 @@ let find_json_files_in_dir dir =
     let json_regex = Str.regexp_case_fold ".*\\.json$" in
     (not (Str.string_match json_files_to_ignore_regex path 0))
     && Str.string_match json_regex path 0
-    && Polymorphic_compare.( = ) s.st_kind Unix.S_REG
+    && Poly.equal s.st_kind Unix.S_REG
   in
   match dir_exists dir with
   | true ->

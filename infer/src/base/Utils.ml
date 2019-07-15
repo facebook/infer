@@ -257,8 +257,7 @@ let create_dir dir =
     with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
-        try Polymorphic_compare.( = ) (Unix.stat dir).Unix.st_kind Unix.S_DIR
-        with Unix.Unix_error _ -> false
+        try Poly.equal (Unix.stat dir).Unix.st_kind Unix.S_DIR with Unix.Unix_error _ -> false
       in
       if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir )
 

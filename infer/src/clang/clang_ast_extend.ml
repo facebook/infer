@@ -54,7 +54,7 @@ module TypePointerOrd = struct
     | _, Clang_ast_types.TypePtr.Ptr _ ->
         -1
     | Builtin a, Builtin b ->
-        Polymorphic_compare.compare a b
+        Poly.compare a b
     | Builtin _, _ ->
         1
     | _, Builtin _ ->
