@@ -47,7 +47,11 @@ val apply_summary : function_summary -> t -> t option
 (* formals should include all the parameters of the summary. That is both
    formals and globals.*)
 val create_summary :
-  locals:Var.Set.t -> formals:Var.Set.t -> t -> t -> function_summary
+     locals:Var.Set.t
+  -> formals:Var.Set.t
+  -> entry:t
+  -> current:t
+  -> function_summary * t
 
 val post : Var.Set.t -> t -> t
 val retn : Var.t list -> from_call -> t -> t

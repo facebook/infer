@@ -94,9 +94,12 @@ let resolve_callee f e (_, current) =
   State_domain.resolve_callee f e current
 
 let create_summary ~locals ~formals (entry, current) =
-  State_domain.create_summary ~locals ~formals entry current
+  let fs, current =
+    State_domain.create_summary ~locals ~formals ~entry ~current
+  in
+  (fs, (entry, current))
 
-let apply_summary fs (entry, current) =
+let apply_summary (entry, current) fs =
   Option.map
     ~f:(fun c -> (entry, c))
     (State_domain.apply_summary fs current)

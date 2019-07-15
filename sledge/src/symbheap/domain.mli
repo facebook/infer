@@ -34,9 +34,9 @@ val create_summary :
      locals:Var.Set.t
   -> formals:Var.Set.t
   -> t
-  -> State_domain.function_summary
+  -> State_domain.function_summary * t
 
-val apply_summary : State_domain.function_summary -> t -> t option
+val apply_summary : t -> State_domain.function_summary -> t option
 val jump : Exp.t list -> Var.t list -> ?temps:Var.Set.t -> t -> t
 
 val call :

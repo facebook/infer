@@ -253,7 +253,7 @@ let exec_jump ?temps stk state block ({dst; args} as jmp : Llair.jump) =
   let state = Domain.jump args dst.params ?temps state in
   exec_goto stk state block jmp
 
-let caller_state_log = ref []
+let summary_table = Hashtbl.create (module Var)
 
 let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
     (return : Llair.jump) throw globals =
@@ -264,27 +264,35 @@ let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
   let dnf_states =
     if opts.function_summaries then Domain.dnf state else [state]
   in
+  let locals = dst.parent.locals in
+  let domain_call = Domain.call args dst.params locals globals in
   List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
-      let locals = dst.parent.locals in
-      caller_state_log :=
-        fst
-          (Domain.call ~summaries:false args dst.params locals globals state)
-        :: !caller_state_log ;
-      let state, from_call =
-        Domain.call ~summaries:opts.function_summaries args dst.params
-          locals globals state
+      let maybe_summary_post =
+        if opts.function_summaries then
+          let state = fst (domain_call ~summaries:false state) in
+          Hashtbl.find summary_table dst.parent.name.var
+          >>= List.find_map ~f:(Domain.apply_summary state)
+        else None
       in
-      Work.seq acc
-        ( match
-            Stack.push_call ~bound:opts.bound dst ~retreating ~return
-              from_call ?throw stk
-          with
-        | Some stk -> Work.add stk ~prev:block ~retreating state dst
-        | None -> Work.skip ) )
+      [%Trace.info
+        "Maybe summary post: %a"
+          (Option.pp "%a" Domain.pp)
+          maybe_summary_post] ;
+      match maybe_summary_post with
+      | None ->
+          let state, from_call =
+            domain_call ~summaries:opts.function_summaries state
+          in
+          Work.seq acc
+            ( match
+                Stack.push_call ~bound:opts.bound dst ~retreating ~return
+                  from_call ?throw stk
+              with
+            | Some stk -> Work.add stk ~prev:block ~retreating state dst
+            | None -> Work.skip )
+      | Some post -> Work.seq acc (exec_goto stk post block return) )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
-
-let summary_table = Hashtbl.create (module Var)
 
 let pp_st _ =
   [%Trace.printf
@@ -311,11 +319,10 @@ let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
         Var.Set.of_vector
           (Vector.map globals ~f:(fun (g : Global.t) -> g.var))
       in
-      let function_summary =
-        Domain.create_summary ~locals:block.parent.locals
+      let function_summary, exit_state =
+        Domain.create_summary ~locals:block.parent.locals exit_state
           ~formals:
             (Set.union (Var.Set.of_list block.parent.entry.params) globals)
-          exit_state
       in
       if opts.function_summaries then (
         Hashtbl.add_multi summary_table ~key:block.parent.name.var
@@ -327,11 +334,6 @@ let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
       let retn_state =
         Domain.retn block.parent.entry.params from_call post_state
       in
-      let _ =
-        Domain.apply_summary function_summary
-          (List.hd_exn !caller_state_log)
-      in
-      caller_state_log := List.tl_exn !caller_state_log ;
       exec_jump stk retn_state block
         ~temps:(Option.fold ~f:Set.add freturn ~init:Var.Set.empty)
         ( match freturn with

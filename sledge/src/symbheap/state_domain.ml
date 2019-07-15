@@ -177,7 +177,7 @@ let pp_function_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
-let create_summary ~locals ~formals entry current =
+let create_summary ~locals ~formals ~entry ~current =
   [%Trace.call fun {pf} ->
     pf "formals %a@ entry: %a@ current: %a" Var.Set.pp formals pp entry pp
       current]
@@ -201,16 +201,35 @@ let create_summary ~locals ~formals entry current =
   let xs_and_formals = Set.union xs formals in
   let foot = Sh.exists (Set.diff foot.us xs_and_formals) foot in
   let post = Sh.exists (Set.diff post.us xs_and_formals) post in
-  {xs; foot; post}
+  let current = Sh.extend_us xs current in
+  ({xs; foot; post}, current)
   |>
-  [%Trace.retn fun {pf} -> pf "@,%a" pp_function_summary]
+  [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_function_summary fs]
 
 let apply_summary ({xs; foot; post} as fs) q =
   [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_function_summary fs pp q]
   ;
-  let frame = Solver.infer_frame q xs foot in
+  let xs_in_q = Set.inter xs q.Sh.us in
+  let xs_in_fv_q = Set.inter xs (Sh.fv q) in
+  (* Between creation of a summary and its use, the vocabulary of q (q.us)
+     might have been extended. That means infer_frame would fail, because q
+     and foot have different vocabulary. This might indicate that the
+     summary cannot be applied to q, however in the case where
+     free-variables of q and foot match it is benign. In the case where free
+     variables match, we temporarily reduce the vocabulary of q to match the
+     vocabulary of foot. *)
+  [%Trace.info "xs inter q.us: %a" Var.Set.pp xs_in_q] ;
+  [%Trace.info "xs inter fv.q %a" Var.Set.pp xs_in_fv_q] ;
+  let q, add_back =
+    if Set.is_empty xs_in_fv_q then (Sh.exists xs_in_q q, xs_in_q)
+    else (q, Var.Set.empty)
+  in
+  let frame =
+    if Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot else None
+  in
   [%Trace.info "frame %a" (Option.pp "%a" pp) frame] ;
   Option.map ~f:(Sh.star post) frame
+  |> Option.map ~f:(Sh.extend_us add_back)
   |>
   [%Trace.retn fun {pf} r ->
     match r with None -> pf "None" | Some q -> pf "@,%a" pp q]
