@@ -315,19 +315,25 @@ let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
         | None, None -> pre_state
         | _ -> violates Llair.Func.invariant block.parent
       in
-      let globals =
-        Var.Set.of_vector
-          (Vector.map globals ~f:(fun (g : Global.t) -> g.var))
+      let exit_state =
+        if opts.function_summaries then (
+          let globals =
+            Var.Set.of_vector
+              (Vector.map globals ~f:(fun (g : Global.t) -> g.var))
+          in
+          let function_summary, exit_state =
+            Domain.create_summary ~locals:block.parent.locals exit_state
+              ~formals:
+                (Set.union
+                   (Var.Set.of_list block.parent.entry.params)
+                   globals)
+          in
+          Hashtbl.add_multi summary_table ~key:block.parent.name.var
+            ~data:function_summary ;
+          pp_st () ;
+          exit_state )
+        else exit_state
       in
-      let function_summary, exit_state =
-        Domain.create_summary ~locals:block.parent.locals exit_state
-          ~formals:
-            (Set.union (Var.Set.of_list block.parent.entry.params) globals)
-      in
-      if opts.function_summaries then (
-        Hashtbl.add_multi summary_table ~key:block.parent.name.var
-          ~data:function_summary ;
-        pp_st () ) ;
       let post_state =
         Domain.post block.parent.locals from_call exit_state
       in
