@@ -8,6 +8,14 @@
 open! IStd
 module F = Format
 
+type call_event =
+  | Call of Typ.Procname.t  (** known function with summary *)
+  | Model of string  (** hardcoded model *)
+  | SkippedKnownCall of Typ.Procname.t  (** known function without summary *)
+  | SkippedUnknownCall of Exp.t  (** couldn't link the expression to a proc name *)
+
+val describe_call_event : F.formatter -> call_event -> unit
+
 module Invalidation : sig
   type std_vector_function =
     | Assign
@@ -41,13 +49,7 @@ module ValueHistory : sig
     | CppTemporaryCreated of Location.t
     | Assignment of {location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
-    | Call of
-        { f:
-            [ `Call of Typ.Procname.t  (** known function with summary *)
-            | `UnknownCall of Typ.Procname.t  (** known function without summary *)
-            | `IndirectCall of Exp.t  (** couldn't link the expression to a proc name *)
-            | `Model of string  (** hardcoded model *) ]
-        ; location: Location.t }
+    | Call of {f: call_event; location: Location.t}
 
   type t = event list [@@deriving compare]
 
@@ -58,7 +60,7 @@ end
 module InterprocAction : sig
   type 'a t =
     | Immediate of {imm: 'a; location: Location.t}
-    | ViaCall of {action: 'a t; proc_name: Typ.Procname.t; location: Location.t}
+    | ViaCall of {action: 'a t; f: call_event; location: Location.t}
   [@@deriving compare]
 
   val get_immediate : 'a t -> 'a

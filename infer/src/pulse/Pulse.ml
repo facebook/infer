@@ -85,7 +85,7 @@ module PulseTransferFunctions = struct
         PulseOperations.call ~caller_summary call_loc callee_pname ~ret ~actuals astate
     | None ->
         L.d_printfln "Indirect call %a@\n" Exp.pp call_exp ;
-        exec_unknown_call (`IndirectCall call_exp) ret call_exp actuals flags call_loc astate
+        exec_unknown_call (SkippedUnknownCall call_exp) ret call_exp actuals flags call_loc astate
         >>| List.return
 
 

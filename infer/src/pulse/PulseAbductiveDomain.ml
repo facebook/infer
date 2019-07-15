@@ -375,7 +375,7 @@ module PrePost = struct
       history call_state =
     let mk_action action =
       PulseDomain.InterprocAction.ViaCall
-        {action; proc_name= callee_proc_name; location= call_location}
+        {action; f= Call callee_proc_name; location= call_location}
     in
     match visit call_state ~addr_callee:addr_pre ~addr_caller with
     | `AlreadyVisited, call_state ->
@@ -522,7 +522,9 @@ module PrePost = struct
     match (attr : PulseDomain.Attribute.t) with
     | Invalid trace ->
         PulseDomain.Attribute.Invalid
-          { action= PulseDomain.InterprocAction.ViaCall {action= trace.action; proc_name; location}
+          { action=
+              PulseDomain.InterprocAction.ViaCall
+                {action= trace.action; f= Call proc_name; location}
           ; history= trace.history }
     | MustBeValid _ | AddressOfCppTemporary (_, _) | Closure _ | StdVectorReserve ->
         attr
@@ -546,7 +548,7 @@ module PrePost = struct
           let addr_curr, subst = subst_find_or_new subst addr_callee in
           ( subst
           , ( addr_curr
-            , PulseDomain.ValueHistory.Call {f= `Call callee_proc_name; location= call_loc}
+            , PulseDomain.ValueHistory.Call {f= Call callee_proc_name; location= call_loc}
               :: trace_post ) ) )
     in
     let heap =

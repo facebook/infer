@@ -317,7 +317,7 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
           PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
             astate
           >>| fun (post, return_val_opt) ->
-          let event = ValueHistory.Call {f= `Call callee_pname; location= call_loc} in
+          let event = ValueHistory.Call {f= Call callee_pname; location= call_loc} in
           let post =
             match return_val_opt with
             | Some return_val ->
@@ -329,5 +329,5 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
-      let event = ValueHistory.Call {f= `UnknownCall callee_pname; location= call_loc} in
+      let event = ValueHistory.Call {f= SkippedKnownCall callee_pname; location= call_loc} in
       Ok [havoc_id (fst ret) [event] astate]

@@ -43,23 +43,23 @@ let get_message = function
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
       *)
-      let pp_access_trace f (trace : _ PulseDomain.Trace.t) =
+      let pp_access_trace fmt (trace : _ PulseDomain.Trace.t) =
         match trace.action with
         | Immediate {imm= _; _} ->
-            F.fprintf f "accessing memory that "
-        | ViaCall {proc_name; _} ->
-            F.fprintf f "call to `%a` eventually accesses memory that " Typ.Procname.describe
-              proc_name
+            F.fprintf fmt "accessing memory that "
+        | ViaCall {f; _} ->
+            F.fprintf fmt "call to %a eventually accesses memory that "
+              PulseDomain.describe_call_event f
       in
-      let pp_invalidation_trace line f trace =
+      let pp_invalidation_trace line fmt trace =
         match trace.PulseDomain.Trace.action with
         | Immediate {imm= invalidation; _} ->
-            F.fprintf f "%a on line %d" PulseDomain.Invalidation.describe invalidation line
-        | ViaCall {action; proc_name; _} ->
-            F.fprintf f "%a on line %d indirectly during the call to `%a`"
+            F.fprintf fmt "%a on line %d" PulseDomain.Invalidation.describe invalidation line
+        | ViaCall {action; f; _} ->
+            F.fprintf fmt "%a on line %d indirectly during the call to %a"
               PulseDomain.Invalidation.describe
               (PulseDomain.InterprocAction.get_immediate action)
-              line Typ.Procname.describe proc_name
+              line PulseDomain.describe_call_event f
       in
       let line_of_trace trace =
         let {Location.line; _} =
@@ -83,7 +83,7 @@ let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by} ->
       PulseDomain.Trace.add_to_errlog ~header:"invalidation part of the trace starts here"
         (fun f invalidation ->
-          F.fprintf f "memory %a" PulseDomain.Invalidation.describe invalidation )
+          F.fprintf f "memory %a here" PulseDomain.Invalidation.describe invalidation )
         invalidated_by
       @@ PulseDomain.Trace.add_to_errlog ~header:"use-after-lifetime part of the trace starts here"
            (fun f () -> F.pp_print_string f "invalid access occurs here")

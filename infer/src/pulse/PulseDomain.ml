@@ -10,6 +10,30 @@ module L = Logging
 
 (* {2 Abstract domain description } *)
 
+type call_event =
+  | Call of Typ.Procname.t
+  | Model of string
+  | SkippedKnownCall of Typ.Procname.t
+  | SkippedUnknownCall of Exp.t
+[@@deriving compare]
+
+let pp_call_event_config ~verbose fmt =
+  let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
+  function
+  | Call proc_name ->
+      F.fprintf fmt "`%a()`" pp_proc_name proc_name
+  | Model model ->
+      F.fprintf fmt "`%s` (modelled)" model
+  | SkippedKnownCall proc_name ->
+      F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
+  | SkippedUnknownCall call_exp ->
+      F.fprintf fmt "unresolved call expression `%a`" Exp.pp call_exp
+
+
+let pp_call_event = pp_call_event_config ~verbose:true
+
+let describe_call_event = pp_call_event_config ~verbose:false
+
 module Invalidation = struct
   type std_vector_function =
     | Assign
@@ -101,13 +125,7 @@ module ValueHistory = struct
     | CppTemporaryCreated of Location.t
     | Assignment of {location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
-    | Call of
-        { f:
-            [ `Call of Typ.Procname.t
-            | `UnknownCall of Typ.Procname.t
-            | `IndirectCall of Exp.t
-            | `Model of string ]
-        ; location: Location.t }
+    | Call of {f: call_event; location: Location.t}
   [@@deriving compare]
 
   let pp_event_no_location fmt = function
@@ -120,17 +138,7 @@ module ValueHistory = struct
     | Assignment _ ->
         F.pp_print_string fmt "assigned"
     | Call {f; location= _} ->
-        let pp_f fmt = function
-          | `Call proc_name ->
-              F.fprintf fmt "`%a()`" Typ.Procname.pp proc_name
-          | `UnknownCall proc_name ->
-              F.fprintf fmt "unknown function `%a`" Typ.Procname.pp proc_name
-          | `IndirectCall call_exp ->
-              F.fprintf fmt "unresolved expression `%a`" Exp.pp call_exp
-          | `Model model ->
-              F.fprintf fmt "`%s()` (pulse model)" model
-        in
-        F.fprintf fmt "returned from call to %a" pp_f f
+        F.fprintf fmt "returned from call to %a" pp_call_event f
 
 
   let location_of_event = function
@@ -167,7 +175,7 @@ end
 module InterprocAction = struct
   type 'a t =
     | Immediate of {imm: 'a; location: Location.t}
-    | ViaCall of {action: 'a t; proc_name: Typ.Procname.t; location: Location.t}
+    | ViaCall of {action: 'a t; f: call_event; location: Location.t}
   [@@deriving compare]
 
   let rec get_immediate = function
@@ -180,9 +188,8 @@ module InterprocAction = struct
   let pp pp_immediate fmt = function
     | Immediate {imm; _} ->
         pp_immediate fmt imm
-    | ViaCall {proc_name; action; _} ->
-        F.fprintf fmt "%a in call to `%a`" pp_immediate (get_immediate action)
-          Typ.Procname.describe proc_name
+    | ViaCall {f; action; _} ->
+        F.fprintf fmt "%a in call to %a" pp_immediate (get_immediate action) pp_call_event f
 
 
   let add_to_errlog ~nesting pp_immediate action errlog =
@@ -190,14 +197,14 @@ module InterprocAction = struct
       match action with
       | Immediate {imm; location} ->
           let rev_errlog =
-            Errlog.make_trace_element nesting location (F.asprintf "%a here" pp_immediate imm) []
+            Errlog.make_trace_element nesting location (F.asprintf "%a" pp_immediate imm) []
             :: rev_errlog
           in
           List.rev_append rev_errlog errlog
-      | ViaCall {action; proc_name; location} ->
+      | ViaCall {action; f; location} ->
           aux ~nesting:(nesting + 1)
             ( Errlog.make_trace_element nesting location
-                (F.asprintf "when calling `%a` here" Typ.Procname.describe proc_name)
+                (F.asprintf "when calling %a here" pp_call_event f)
                 []
             :: rev_errlog )
             action
