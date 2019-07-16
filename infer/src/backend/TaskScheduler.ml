@@ -45,33 +45,33 @@ let bottom_up sources : target task_generator =
   (* this will potentially grossly overapproximate the tasks *)
   let remaining = ref (count_procedures ()) in
   let remaining_tasks () = !remaining in
-  let g = SyntacticCallGraph.create initial_call_graph_capacity in
+  let syntactic_call_graph = CallGraph.create initial_call_graph_capacity in
   let initialized = ref false in
-  let pending : SyntacticCallGraph.Node.t list ref = ref [] in
+  let pending : CallGraph.Node.t list ref = ref [] in
   let scheduled = ref Typ.Procname.Set.empty in
   let is_empty () =
     let empty = !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled in
     if empty then (
       remaining := 0 ;
       L.progress "Finished call graph scheduling, %d procs remaining (in cycles).@."
-        (SyntacticCallGraph.n_procs g) ;
-      if Config.debug_level_analysis > 0 then SyntacticCallGraph.to_dotty g "cycles.dot" ;
+        (CallGraph.n_procs syntactic_call_graph) ;
+      if Config.debug_level_analysis > 0 then CallGraph.to_dotty syntactic_call_graph "cycles.dot" ;
       (* save some memory *)
-      SyntacticCallGraph.reset g ) ;
+      CallGraph.reset syntactic_call_graph ) ;
     empty
   in
   let rec next_aux () =
     match !pending with
     | [] ->
-        pending := SyntacticCallGraph.get_unflagged_leaves g ;
+        pending := CallGraph.get_unflagged_leaves syntactic_call_graph ;
         if List.is_empty !pending then None else next_aux ()
-    | n :: ns when n.flag || not (SyntacticCallGraph.mem g n.id) ->
+    | n :: ns when n.flag || not (CallGraph.mem syntactic_call_graph n.id) ->
         pending := ns ;
         next_aux ()
     | n :: ns ->
         pending := ns ;
         scheduled := Typ.Procname.Set.add n.pname !scheduled ;
-        SyntacticCallGraph.flag_reachable g n.pname ;
+        CallGraph.flag_reachable syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
   let finished = function
@@ -80,12 +80,12 @@ let bottom_up sources : target task_generator =
     | Procname pname ->
         decr remaining ;
         scheduled := Typ.Procname.Set.remove pname !scheduled ;
-        SyntacticCallGraph.remove_reachable g pname
+        CallGraph.remove_reachable syntactic_call_graph pname
   in
   let next () =
     (* do construction here, to avoid having the call graph into forked workers *)
     if not !initialized then (
-      SyntacticCallGraph.build_from_sources g sources ;
+      SyntacticCallGraph.build_from_sources syntactic_call_graph sources ;
       initialized := true ) ;
     next_aux ()
   in
