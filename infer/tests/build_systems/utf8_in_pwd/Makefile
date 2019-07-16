@@ -19,17 +19,21 @@ CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 CMAKE_ANALYZE_DIR = $(CMAKE_DIR)/_build_infer
 CMAKE_SOURCES_DIR = ../codetoanalyze/cmake
 CMAKE_SOURCES = $(CMAKE_SOURCES_DIR)/hello.c
+CMAKE_FILES = $(CMAKE_SOURCES) $(CMAKE_SOURCES_DIR)/CMakeLists.txt
 
 GRADLE_DIR = $(UTF8_DIR)/gradle
 GRADLE_SOURCES_DIR = $(ROOT_DIR)/examples/java_hello
 GRADLE_SOURCES = $(wildcard $(GRADLE_SOURCES_DIR)/*.java)
+GRADLE_FILES = $(GRADLE_SOURCES)
 
 JAVAC_DIR = $(UTF8_DIR)/javac
 JAVAC_SOURCES = $(ROOT_DIR)/examples/Hello.java
+JAVAC_FILES = $(JAVAC_SOURCES)
 
 MAKE_DIR = $(UTF8_DIR)/make
 MAKE_SOURCES_DIR = ../codetoanalyze/make
 MAKE_SOURCES = $(wildcard $(MAKE_SOURCES_DIR)/*.c $(MAKE_SOURCES_DIR)/*.java)
+MAKE_FILES = $(MAKE_SOURCES) $(MAKE_SOURCES_DIR)/Makefile
 
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR) infer-out-cmake
 INFERPRINT_OPTIONS = --issues-tests
@@ -40,20 +44,23 @@ $(UTF8_DIR):
 	$(QUIET)$(MKDIR_P) $@
 
 $(CMAKE_DIR): $(CMAKE_SOURCES) $(UTF8_DIR)
-	$(QUIET)rsync -aL --exclude='_build*' $(CMAKE_SOURCES_DIR)/ $@/
+	$(QUIET)$(MKDIR_P) $@
+	$(QUIET)cp $(CMAKE_FILES) $@/
 	$(QUIET)touch $@
 
 $(GRADLE_DIR): $(GRADLE_SOURCES) $(UTF8_DIR)
-	$(QUIET)rsync -a $(GRADLE_SOURCES_DIR)/ $@/
+	$(QUIET)$(MKDIR_P) $@
+	$(QUIET)cp $(GRADLE_FILES) $@/
 	$(QUIET)touch $@
 
 $(JAVAC_DIR): $(JAVAC_SOURCES) $(UTF8_DIR)
-	$(QUIET)$(MKDIR_P) $(JAVAC_DIR)
-	$(QUIET)rsync -a $(JAVAC_SOURCES) $@
+	$(QUIET)$(MKDIR_P) $@
+	$(QUIET)cp $(JAVAC_FILES) $@/
 	$(QUIET)touch $@
 
 $(MAKE_DIR): $(MAKE_SOURCES) $(UTF8_DIR)
-	$(QUIET)rsync -a $(MAKE_SOURCES_DIR)/ $@/
+	$(QUIET)$(MKDIR_P) $@
+	$(QUIET)rsync -a $(MAKE_FILES) $@/
 	$(QUIET)touch $@
 
 infer-out-cmake/report.json: $(CMAKE_DIR) $(CMAKE_SOURCES_DIR)/CMakeLists.txt $(CLANG_DEPS)
