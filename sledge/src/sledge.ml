@@ -153,15 +153,15 @@ let disassemble_cmd =
   in
   let param =
     let%map_open input = anon ("<input>" %: string)
-    and llair =
-      flag "llair" (optional string)
+    and llair_txt_output =
+      flag "llair-txt-output" (optional string)
         ~doc:
           "<file> write generated textual LLAIR to <file>, or to standard \
            output if omitted"
     in
     fun () ->
       let program = unmarshal input () in
-      match llair with
+      match llair_txt_output with
       | None -> Format.printf "%a@." Llair.pp program
       | Some file ->
           Out_channel.with_file file ~f:(fun oc ->

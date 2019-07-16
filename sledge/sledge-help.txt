@@ -185,13 +185,13 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
 === flags ===
 
-  [-colors]         enable printing in colors
-  [-llair <file>]   write generated textual LLAIR to <file>, or to standard
-                    output if omitted
-  [-margin <cols>]  wrap debug tracing at <cols> columns
-  [-trace <spec>]   enable debug tracing
-  [-help]           print this help text and exit
-                    (alias: -?)
+  [-colors]                   enable printing in colors
+  [-llair-txt-output <file>]  write generated textual LLAIR to <file>, or to
+                              standard output if omitted
+  [-margin <cols>]            wrap debug tracing at <cols> columns
+  [-trace <spec>]             enable debug tracing
+  [-help]                     print this help text and exit
+                              (alias: -?)
 
 
 ====== sledge version ======
