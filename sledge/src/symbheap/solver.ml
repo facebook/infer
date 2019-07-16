@@ -605,9 +605,9 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
           [%Trace.info "@[<2>subtrahend@ %a@]" Sh.pp sub] ;
           let sub = Sh.extend_us us sub in
           let ws, sub = Sh.bind_exists sub ~wrt:xs in
+          let xs = Set.union xs ws in
           let sub = Sh.and_cong min.cong sub in
           let zs = Var.Set.empty in
-          let min = Sh.extend_us ws min in
           excise {us; com; min; xs; sub; zs; pgs= true}
           >>| fun remainder -> Sh.exists (Set.union ys ws) remainder )
       >>| fun remainder -> Sh.or_ remainders remainder )
