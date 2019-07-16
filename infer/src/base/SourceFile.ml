@@ -169,14 +169,16 @@ let create ?(warn_on_error = true) path =
 
 let changed_sources_from_changed_files changed_files =
   List.fold changed_files ~init:Set.empty ~f:(fun changed_files_set line ->
-      let source_file = create line in
-      let changed_files' = Set.add source_file changed_files_set in
-      (* Add source corresponding to changed header if it exists *)
-      match of_header source_file with
-      | Some src ->
-          Set.add src changed_files'
-      | None ->
-          changed_files' )
+      try
+        let source_file = create line in
+        let changed_files' = Set.add source_file changed_files_set in
+        (* Add source corresponding to changed header if it exists *)
+        match of_header source_file with
+        | Some src ->
+            Set.add src changed_files'
+        | None ->
+            changed_files'
+      with _exn -> changed_files_set )
 
 
 module SQLite = struct
