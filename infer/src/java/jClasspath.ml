@@ -40,11 +40,7 @@ let add_models jar_filename =
 
 let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
 
-let split_classpath =
-  assert (Int.( = ) (String.length JFile.sep) 1) ;
-  let char_sep = JFile.sep.[0] in
-  fun cp -> String.split ~on:char_sep cp
-
+let split_classpath = String.split ~on:JFile.sep
 
 let classpath_of_paths paths =
   let of_path path =
@@ -56,7 +52,8 @@ let classpath_of_paths paths =
         L.debug Capture Medium "Path %s not found" full_path ;
         None
   in
-  List.filter_map paths ~f:of_path |> String.concat ~sep:JFile.sep
+  let string_sep = Char.to_string JFile.sep in
+  List.filter_map paths ~f:of_path |> String.concat ~sep:string_sep
 
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list

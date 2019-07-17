@@ -38,7 +38,6 @@ depends: [
   "camlidl" {= "1.05"}
   "camlp4" {= "4.07+1"}
   "camlzip" {= "1.08"}
-  "camomile" {= "1.0.1"}
   "cmdliner" {= "1.0.4"}
   "conf-autoconf" {= "0.1"}
   "conf-gmp" {= "1"}
@@ -60,7 +59,7 @@ depends: [
   "fieldslib" {= "v0.12.0"}
   "integers" {= "0.2.2"}
   "jane-street-headers" {= "v0.12.0"}
-  "javalib" {= "3.0"}
+  "javalib" {= "3.1"}
   "jbuilder" {= "transition"}
   "jst-config" {= "v0.12.0"}
   "menhir" {= "20190626"}
