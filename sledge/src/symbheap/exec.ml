@@ -706,4 +706,9 @@ let intrinsic ~skip_throw :
    *)
   | Some _, "__cxa_allocate_exception", [_] when skip_throw ->
       skip (Sh.false_ pre.us)
+  (*
+   * folly
+   *)
+  (* bool folly::usingJEMalloc() *)
+  | Some _, "_ZN5folly13usingJEMallocEv", [] -> skip pre
   | _ -> None
