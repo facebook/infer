@@ -6,29 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module CLOpt = CommandLineOption
 module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
-
-let print_usage_exit err_s =
-  L.user_error "Load Error: %s@\n@." err_s ;
-  Config.print_usage_exit ()
-
-
-(** return the list of the .specs files in the results dir and libs, if they're defined *)
-let load_specfiles () =
-  let specs_files_in_dir dir =
-    let is_specs_file fname =
-      Sys.is_directory fname <> `Yes && Filename.check_suffix fname Config.specs_files_suffix
-    in
-    let all_filenames = try Array.to_list (Sys.readdir dir) with Sys_error _ -> [] in
-    let all_filepaths = List.map ~f:(fun fname -> Filename.concat dir fname) all_filenames in
-    List.filter ~f:is_specs_file all_filepaths
-  in
-  let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir in
-  specs_files_in_dir result_specs_dir
-
 
 let error_desc_to_plain_string error_desc =
   let pp fmt = Localise.pp_error_desc fmt error_desc in
@@ -1089,34 +1069,6 @@ let process_summary filters formats_by_report_kind linereader stats summary issu
   issues_acc'
 
 
-let spec_files_from_cmdline () =
-  if CLOpt.is_originator then (
-    (* Find spec files specified by command-line arguments.  Not run at init time since the specs
-         files may be generated between init and report time. *)
-    List.iter
-      ~f:(fun arg ->
-        if (not (Filename.check_suffix arg Config.specs_files_suffix)) && arg <> "." then
-          print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
-      Config.anon_args ;
-    if Config.test_filtering then ( Inferconfig.test () ; L.exit 0 ) ;
-    if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
-  else load_specfiles ()
-
-
-(** Create an iterator which loads spec files one at a time *)
-let get_summary_iterator () =
-  let sorted_spec_files = List.sort ~compare:String.compare (spec_files_from_cmdline ()) in
-  let do_spec f fname =
-    match Summary.load_from_file (DB.filename_from_string fname) with
-    | None ->
-        L.(die UserError) "Error: cannot open file %s@." fname
-    | Some summary ->
-        f summary
-  in
-  let iterate f = List.iter ~f:(do_spec f) sorted_spec_files in
-  iterate
-
-
 (** Although the out_file is an Option type, the None option is strictly meant for the
   logs format_kind, and all other formats should contain an outfile value. *)
 let mk_format format_kind fname =
@@ -1205,9 +1157,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   let stats = Stats.create () in
   let linereader = Printer.LineReader.create () in
   let filters = Inferconfig.create_filters () in
-  let iterate_summaries = get_summary_iterator () in
   let all_issues = ref [] in
-  iterate_summaries (fun summary ->
+  SpecsFiles.iter_from_config ~f:(fun summary ->
       all_issues :=
         process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
