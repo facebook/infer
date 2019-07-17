@@ -633,7 +633,11 @@ let intrinsic ~skip_throw :
       result Var.pp intrinsic (List.pp ",@ " Exp.pp) (List.rev actuals)
       Sh.pp pre] ;
   let us = pre.us in
-  match (result, Var.name intrinsic, actuals) with
+  let name =
+    let n = Var.name intrinsic in
+    match String.index n '.' with None -> n | Some i -> String.prefix n i
+  in
+  match (result, name, actuals) with
   (*
    * cstdlib - memory management
    *)
