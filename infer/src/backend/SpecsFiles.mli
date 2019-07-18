@@ -7,8 +7,7 @@
 
 open! IStd
 
-(* Suppress unused value warning because this method is intended for incremental analysis, which is
-   not yet finished *)
+(* Suppress unused value warning until this is used for incremental diff analysis *)
 val iter : f:(Summary.t -> unit) -> unit
   [@@warning "-32"]
 (** Iterates over all summaries from the .specs files *)
@@ -16,3 +15,9 @@ val iter : f:(Summary.t -> unit) -> unit
 val iter_from_config : f:(Summary.t -> unit) -> unit
 (** Iterates over all sumaries from the .specs files unless a list of specs files has been passed on
     the command line *)
+
+(* Suppress unused value warning until this is used for incremental diff analysis *)
+val delete : Typ.Procname.t -> unit
+  [@@warning "-32"]
+(** Delete the .specs file associated with a summary and remove the summary from the caches in
+    Summary.ml and ondemand.ml *)

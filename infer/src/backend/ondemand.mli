@@ -28,7 +28,10 @@ val set_exe_env : Exe_env.t -> unit
 (** Set the execution enviroment used during on-demand analysis. *)
 
 val clear_cache : unit -> unit
-(** empty the cache of ondemand results *)
+(** Empty the cache of ondemand results *)
+
+val remove_from_cache : Typ.Procname.t -> unit
+(** Remove an element from the cache of ondemand results *)
 
 val analyze_file : Exe_env.t -> SourceFile.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)

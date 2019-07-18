@@ -102,6 +102,8 @@ let cache : cache = Typ.Procname.Hash.create 128
 
 let clear_cache () = Typ.Procname.Hash.clear cache
 
+let remove_from_cache pname = Typ.Procname.Hash.remove cache pname
+
 let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@\n%!" Errlog.pp_errors err_log ;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
@@ -147,8 +149,8 @@ let specs_filename pname =
   pname_file ^ Config.specs_files_suffix
 
 
-(** path to the .specs file for the given procedure in the current results directory *)
-let res_dir_specs_filename pname =
+(** Return the path to the .specs file for the given procedure in the current results directory *)
+let specs_filename_of_procname pname =
   DB.Results_dir.path_to_filename DB.Results_dir.Abs_root
     [Config.specs_dir_name; specs_filename pname]
 
@@ -191,7 +193,7 @@ let load_summary_to_spec_table =
   in
   fun proc_name ->
     let summ_opt =
-      load_from_file (res_dir_specs_filename proc_name)
+      load_from_file (specs_filename_of_procname proc_name)
       |> or_from load_from_file specs_models_filename proc_name
       |> or_from load_summary_ziplibs specs_filename proc_name
       |> or_load_summary_libs Config.specs_library proc_name
@@ -233,7 +235,7 @@ let store (summ : t) =
   (* Make sure the summary in memory is identical to the saved one *)
   add proc_name final_summary ;
   Serialization.write_to_file summary_serializer
-    (res_dir_specs_filename proc_name)
+    (specs_filename_of_procname proc_name)
     ~data:final_summary
 
 
@@ -264,7 +266,7 @@ let reset proc_desc = init_summary proc_desc
 
 let reset_all ~filter () =
   let reset proc_name =
-    let filename = res_dir_specs_filename proc_name in
+    let filename = specs_filename_of_procname proc_name in
     Serialization.read_from_file summary_serializer filename
     |> Option.iter ~f:(fun summary ->
            let blank_summary = reset summary.proc_desc in

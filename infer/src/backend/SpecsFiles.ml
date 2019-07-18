@@ -63,3 +63,7 @@ let summary_iterator spec_files =
 let iter_from_config ~f = summary_iterator spec_files_from_cmdline f
 
 let iter ~f = summary_iterator load_specfiles f
+
+let delete pname =
+  let filename = Summary.specs_filename_of_procname pname |> DB.filename_to_string in
+  Unix.unlink filename ; Ondemand.remove_from_cache pname ; Summary.remove_from_cache pname

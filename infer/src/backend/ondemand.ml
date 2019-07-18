@@ -350,6 +350,8 @@ let analyze_proc_name_no_caller callee_pname =
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
 
+let remove_from_cache pname = Typ.Procname.Hash.remove (Lazy.force cached_results) pname
+
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
   Option.iter source_file_opt ~f:(fun source_file ->
