@@ -130,7 +130,9 @@ let call ~summaries actuals formals locals globals q =
     let pre = q' in
     let xs, foot = Sh.bind_exists ~wrt:pre.us foot in
     let frame =
-      Option.value ~default:Sh.emp (Solver.infer_frame pre xs foot)
+      Option.value_exn
+        (Solver.infer_frame pre xs foot)
+        ~message:"Solver couldn't infer frame of a garbage-collected pre"
     in
     let q'', subst =
       (Sh.extend_us locals (and_eqs formals actuals foot), freshen_locals)
