@@ -50,6 +50,19 @@ let modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
   of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
+(** Given a string of length n and an optional starting index i (0 by
+   default), return itv [0, n_u-i_l] *)
+let string_len_range_itv exp ~from mem =
+  let itv = BufferOverrunModels.eval_string_len exp mem |> BufferOverrunDomain.Val.get_itv in
+  Option.value_map from ~default:itv ~f:(fun (start_exp, integer_type_widths) ->
+      let start_itv =
+        BufferOverrunSemantics.eval integer_type_widths start_exp mem
+        |> BufferOverrunDomain.Val.get_itv
+      in
+      Itv.minus itv start_itv )
+  |> Itv.set_lb_zero
+
+
 module BoundsOf (Container : S) = struct
   let of_length exp {location} ~ret:_ mem ~of_function ~degree_kind =
     let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
@@ -66,7 +79,7 @@ module BoundsOf (Container : S) = struct
     BasicCost.mult n log_n
 end
 
-module String = struct
+module JavaString = struct
   let substring_aux ~begin_idx ~end_v {integer_type_widths; location} inferbo_mem =
     let begin_v = BufferOverrunSemantics.eval integer_type_widths begin_idx inferbo_mem in
     let itv =
@@ -85,6 +98,36 @@ module String = struct
     substring_aux ~begin_idx
       ~end_v:(BufferOverrunSemantics.eval integer_type_widths end_idx inferbo_mem)
       model_env inferbo_mem
+
+
+  (** O(|m|) where m is the given string and |.| is the length function *)
+  let indexOf_char exp {location} ~ret:_ inferbo_mem =
+    let itv = string_len_range_itv exp ~from:None inferbo_mem in
+    of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location
+
+
+  (** O(|m|-|n|) where m is the given string and n is the index to start searching from *)
+  let indexOf_char_starting_from exp start_exp {integer_type_widths; location} ~ret:_ inferbo_mem =
+    let itv = string_len_range_itv exp ~from:(Some (start_exp, integer_type_widths)) inferbo_mem in
+    of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location
+
+
+  (** O(|m|.|n|) where m and n are the given strings *)
+  let indexOf_str exp index_exp {location} ~ret:_ inferbo_mem =
+    let itv =
+      BufferOverrunModels.eval_string_len exp inferbo_mem |> BufferOverrunDomain.Val.get_itv
+    in
+    let index_itv =
+      BufferOverrunModels.eval_string_len index_exp inferbo_mem |> BufferOverrunDomain.Val.get_itv
+    in
+    let n =
+      of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location
+    in
+    let m =
+      of_itv ~itv:index_itv ~degree_kind:Polynomials.DegreeKind.Linear
+        ~of_function:"String.indexOf" location
+    in
+    BasicCost.mult n m
 end
 
 module BoundsOfCollection = BoundsOf (Collection)
@@ -93,6 +136,7 @@ module BoundsOfArray = BoundsOf (Array)
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
+    let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     make_dispatcher
       [ +PatternMatch.implements_collections
         &:: "sort" $ capt_exp
@@ -131,11 +175,20 @@ module Call = struct
         &:: "shuffle" <>$ capt_exp
         $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.shuffle"
       ; +PatternMatch.implements_lang "String"
-        &:: "substring" <>$ capt_exp $+ capt_exp $--> String.substring
+        &:: "substring" <>$ capt_exp $+ capt_exp $--> JavaString.substring
+      ; +PatternMatch.implements_lang "String"
+        &:: "indexOf" <>$ capt_exp
+        $+ capt_exp_of_typ (+PatternMatch.implements_lang "String")
+        $--> JavaString.indexOf_str
+      ; +PatternMatch.implements_lang "String"
+        &:: "indexOf" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $+ capt_exp
+        $--> JavaString.indexOf_char_starting_from
+      ; +PatternMatch.implements_lang "String"
+        &:: "indexOf" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $--> JavaString.indexOf_char
       ; +PatternMatch.implements_lang "String"
         &:: "substring"
         $ any_arg_of_typ (+PatternMatch.implements_lang "String")
-        $+ capt_exp $+ capt_exp $--> String.substring_no_end
+        $+ capt_exp $+ capt_exp $--> JavaString.substring_no_end
       ; +PatternMatch.implements_inject "Provider"
         &:: "get"
         <>--> modeled ~of_function:"Provider.get" ]

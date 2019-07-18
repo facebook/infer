@@ -357,6 +357,20 @@ let inferbo_set_size src_exp size_exp =
 
 let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
+(** Given a string of length n, return itv [-1, n_u-1]. *)
+let range_itv_mone exp mem =
+  eval_string_len exp mem |> BufferOverrunDomain.Val.get_itv |> Itv.set_lb_zero |> Itv.decr
+
+
+let indexOf exp =
+  let exec _ ~ret:(ret_id, _) mem =
+    (* if not found, indexOf returns -1. *)
+    let v = range_itv_mone exp mem |> Dom.Val.of_itv in
+    model_by_value v ret_id mem
+  in
+  {exec; check= no_check}
+
+
 let cast exp =
   let exec {integer_type_widths} ~ret:(ret_id, _) mem =
     let itv = Sem.eval integer_type_widths exp mem in
@@ -877,6 +891,7 @@ module Call = struct
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; +PatternMatch.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> strcat
+      ; +PatternMatch.implements_lang "String" &:: "indexOf" <>$ capt_exp $+ any_arg $--> indexOf
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
