@@ -24,9 +24,26 @@ let write_infer_deps infile =
 
 let run_buck_capture cmd =
   let buck_output_file = Filename.temp_file "buck_output" ".log" in
-  let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
-  let shell_cmd_redirected = Printf.sprintf "%s >'%s'" shell_cmd buck_output_file in
-  match Utils.with_process_in shell_cmd_redirected Utils.consume_in |> snd with
+  let shell_cmd =
+    List.map ~f:Escape.escape_shell cmd
+    |> String.concat ~sep:" "
+    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd buck_output_file
+  in
+  let path_var = "PATH" in
+  let new_path =
+    Sys.getenv path_var
+    |> Option.value_map ~default:Config.bin_dir ~f:(fun old_path -> Config.bin_dir ^ ":" ^ old_path)
+  in
+  let env = `Extend [(path_var, new_path)] in
+  let ({stdin; stdout; stderr; pid} : Unix.Process_info.t) =
+    Unix.create_process_env ~prog:"sh" ~args:["-c"; shell_cmd] ~env ()
+  in
+  let buck_stderr = Unix.in_channel_of_descr stderr in
+  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
+  Unix.close stdin ;
+  Unix.close stdout ;
+  In_channel.close buck_stderr ;
+  match Unix.waitpid pid with
   | Ok () ->
       write_infer_deps buck_output_file ; Unix.unlink buck_output_file
   | Error _ as err ->

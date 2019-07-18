@@ -67,6 +67,8 @@ val consume_in : In_channel.t -> unit
 val echo_in : In_channel.t -> unit
 (** echo the lines we get to stdout until End_of_file is reached *)
 
+val with_channel_in : f:(string -> unit) -> In_channel.t -> unit
+
 val with_process_in : string -> (In_channel.t -> 'a) -> 'a * Unix.Exit_or_signal.t
 
 val with_process_lines :

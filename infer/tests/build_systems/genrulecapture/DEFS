@@ -3,9 +3,6 @@ import os
 original_java_library = java_library
 original_android_library = android_library
 
-def _get_infer_bin():
-  return read_config("infer", "infer_bin")
-
 def _get_project_root():
   return "\$(git rev-parse --show-toplevel)/infer/tests/build_systems/genrulecapture"
 
@@ -38,7 +35,7 @@ def _infer_capture_genrule(
     "echo {} >> {}".format(arg, args_file)
     for arg in args
   ] + [
-    " ".join([_get_infer_bin(), "@" + args_file])
+    "infer @" + args_file
   ]
 	
   genrule(
