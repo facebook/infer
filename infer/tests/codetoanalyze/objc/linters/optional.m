@@ -13,7 +13,7 @@
 
 @interface Bar : NSObject
 @property(weak, nonatomic) id<BarDelegate> delegate;
-- (void)action;
+- (void)unsafeAction;
 @end
 
 @implementation Bar
