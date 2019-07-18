@@ -98,8 +98,9 @@ OPTIONS
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --linters, --liveness, --racerd, --siof,
-           --starvation, --uninit (Conversely: --default-checkers)
+           --fragment-retains-view, --inefficient-keyset-iterator, --linters,
+           --liveness, --racerd, --siof, --starvation, --uninit (Conversely:
+           --default-checkers)
 
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
@@ -140,10 +141,10 @@ OPTIONS
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)
 
-       --inefficient-keyset-iterator
-           Activates: Check for inefficient uses of keySet iterator instead
-           of entrySet iterator. (Conversely:
-           --no-inefficient-keyset-iterator)
+       --no-inefficient-keyset-iterator
+           Deactivates: Check for inefficient uses of keySet iterator that
+           access both the key and the value. (Conversely:
+           --inefficient-keyset-iterator)
 
        --inefficient-keyset-iterator-only
            Activates: Enable --inefficient-keyset-iterator and disable all

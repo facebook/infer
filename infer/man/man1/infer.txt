@@ -287,9 +287,9 @@ OPTIONS
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --linters, --liveness, --racerd, --siof,
-           --starvation, --uninit (Conversely: --default-checkers)       
-    See also infer-analyze(1).
+           --fragment-retains-view, --inefficient-keyset-iterator, --linters,
+           --liveness, --racerd, --siof, --starvation, --uninit (Conversely:
+           --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -621,10 +621,10 @@ OPTIONS
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)           See also infer-analyze(1).
 
-       --inefficient-keyset-iterator
-           Activates: Check for inefficient uses of keySet iterator instead
-           of entrySet iterator. (Conversely:
-           --no-inefficient-keyset-iterator)           See also infer-analyze(1).
+       --no-inefficient-keyset-iterator
+           Deactivates: Check for inefficient uses of keySet iterator that
+           access both the key and the value. (Conversely:
+           --inefficient-keyset-iterator)           See also infer-analyze(1).
 
        --inefficient-keyset-iterator-only
            Activates: Enable --inefficient-keyset-iterator and disable all

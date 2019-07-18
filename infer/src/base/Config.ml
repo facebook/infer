@@ -655,8 +655,8 @@ and ( annotation_reachability
       "the detection of object cast from immutable type to mutable type. For instance, it will \
        detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
   and inefficient_keyset_iterator =
-    mk_checker ~long:"inefficient-keyset-iterator" ~default:false
-      "Check for inefficient uses of keySet iterator instead of entrySet iterator."
+    mk_checker ~long:"inefficient-keyset-iterator" ~default:true
+      "Check for inefficient uses of keySet iterator that access both the key and the value."
   and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"
   and litho = mk_checker ~long:"litho" "Experimental checkers supporting the Litho framework"
   and liveness =
