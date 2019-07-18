@@ -8,9 +8,12 @@ open! IStd
 module F = Format
 
 module type NodeSig = sig
-  type t = private {id: int; pname: Typ.Procname.t; successors: int list; mutable flag: bool}
+  type t = private
+    {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
 
   val make : int -> Typ.Procname.t -> int list -> t
+
+  val add_successor : t -> int -> unit
 
   val set_flag : t -> unit
 
@@ -20,9 +23,11 @@ module type NodeSig = sig
 end
 
 module Node : NodeSig = struct
-  type t = {id: int; pname: Typ.Procname.t; successors: int list; mutable flag: bool}
+  type t = {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
 
   let make id pname successors = {id; pname; successors; flag= false}
+
+  let add_successor node successor = node.successors <- successor :: node.successors
 
   let set_flag n = n.flag <- true
 
@@ -64,19 +69,38 @@ let node_of_procname g pname = id_of_procname g pname |> Option.bind ~f:(node_of
 
 let remove (g : t) pname id = IdMap.remove g.id_map pname ; NodeMap.remove g.node_map id
 
-let add ({id_map; node_map} as graph) pname successor_pnames =
-  let get_or_set_id procname =
-    match id_of_procname graph procname with
-    | None ->
-        let id = IdMap.length id_map in
-        IdMap.replace id_map procname id ; id
-    | Some id ->
-        id
-  in
-  let id = get_or_set_id pname in
-  let successors = List.map successor_pnames ~f:get_or_set_id in
+let get_or_set_id ({id_map} as graph) procname =
+  match id_of_procname graph procname with
+  | None ->
+      let id = IdMap.length id_map in
+      IdMap.replace id_map procname id ; id
+  | Some id ->
+      id
+
+
+let create_node ({node_map} as graph) pname successor_pnames =
+  let id = get_or_set_id graph pname in
+  let successors = List.map successor_pnames ~f:(get_or_set_id graph) in
   let node = Node.make id pname successors in
   NodeMap.replace node_map id node
+
+
+let get_or_init_node node_map id pname =
+  match NodeMap.find_opt node_map id with
+  | Some node ->
+      node
+  | None ->
+      let new_node = Node.make id pname [] in
+      NodeMap.add node_map id new_node ; new_node
+
+
+let add_edge ({node_map} as graph) ~pname ~successor_pname =
+  let id = get_or_set_id graph pname in
+  let successor = get_or_set_id graph successor_pname in
+  let node = get_or_init_node node_map id pname in
+  (* initialize successor node if it isn't already initalized *)
+  get_or_init_node node_map successor successor_pname |> ignore ;
+  Node.add_successor node successor
 
 
 let remove_reachable g start_pname =

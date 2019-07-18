@@ -25,7 +25,7 @@ let build_from_captured_procs g =
       let callees =
         Sqlite3.column stmt 1 |> Typ.Procname.SQLiteList.deserialize |> List.map ~f:hashcons_pname
       in
-      CallGraph.add g proc_name callees )
+      CallGraph.create_node g proc_name callees )
 
 
 let build_from_sources g sources =

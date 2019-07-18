@@ -8,9 +8,12 @@ open! IStd
 module F = Format
 
 module type NodeSig = sig
-  type t = private {id: int; pname: Typ.Procname.t; successors: int list; mutable flag: bool}
+  type t = private
+    {id: int; pname: Typ.Procname.t; mutable successors: int list; mutable flag: bool}
 
   val make : int -> Typ.Procname.t -> int list -> t
+
+  val add_successor : t -> int -> unit
 
   val set_flag : t -> unit
 
@@ -20,8 +23,6 @@ module type NodeSig = sig
 end
 
 module Node : NodeSig
-
-module IdMap = Typ.Procname.Hash
 
 type t
 
@@ -55,5 +56,11 @@ val trim_id_map : t -> unit
 val remove_unflagged_and_unflag_all : t -> unit
 (** remove all nodes with flag set to false, and set flag to false on all remaining nodes *)
 
-val add : t -> IdMap.key -> IdMap.key sexp_list -> unit
-(** add edges from [pname] to [successor_pnames] in the graph *)
+(* suppress unused value warning until this is used for T47276251 *)
+val add_edge : t -> pname:Typ.Procname.t -> successor_pname:Typ.Procname.t -> unit
+  [@@warning "-32"]
+(** add an edge from [pname] to [successor_pname] in the graph, creating a node for [pname] if there
+    isn't one already *)
+
+val create_node : t -> Typ.Procname.t -> Typ.Procname.t sexp_list -> unit
+(** create a new node with edges from [pname] to [successor_pnames] in the graph *)
