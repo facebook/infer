@@ -10,6 +10,8 @@ open! IStd
 
 type t
 
+val initial : t
+
 val incr_summary_file_try_load : unit -> unit
 (** a query to the filesystem attempting to load a summary file *)
 
@@ -30,3 +32,6 @@ val get : unit -> t
 (** get the stats so far *)
 
 val pp : Format.formatter -> t -> unit
+
+val merge : t -> t -> t
+(** return a new value that adds up the stats in both arguments *)

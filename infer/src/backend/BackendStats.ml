@@ -60,6 +60,15 @@ let copy from ~into =
   into.summary_has_model_queries <- summary_has_model_queries
 
 
+let merge stats1 stats2 =
+  { summary_file_try_load= stats1.summary_file_try_load + stats2.summary_file_try_load
+  ; summary_read_from_disk= stats1.summary_read_from_disk + stats2.summary_read_from_disk
+  ; summary_cache_hits= stats1.summary_cache_hits + stats2.summary_cache_hits
+  ; summary_cache_misses= stats1.summary_cache_misses + stats2.summary_cache_misses
+  ; summary_has_model_queries= stats1.summary_has_model_queries + stats2.summary_has_model_queries
+  }
+
+
 let initial =
   { summary_file_try_load= 0
   ; summary_read_from_disk= 0

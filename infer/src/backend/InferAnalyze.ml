@@ -123,6 +123,19 @@ let main ~changed_files =
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let tasks = TaskScheduler.schedule source_files_to_analyze in
     (* Prepare tasks one cluster at a time while executing in parallel *)
-    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~tasks in
-    Tasks.Runner.run runner ) ;
+    let runner =
+      Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
+        ~tasks
+    in
+    let all_stats = Tasks.Runner.run runner in
+    let stats =
+      Array.fold all_stats ~init:BackendStats.initial ~f:(fun collated_stats stats_opt ->
+          match stats_opt with
+          | None ->
+              collated_stats
+          | Some stats ->
+              L.debug Analysis Quiet "gotstats:@\n%a@." BackendStats.pp stats ;
+              BackendStats.merge stats collated_stats )
+    in
+    L.debug Analysis Quiet "collected stats:@\n%a@." BackendStats.pp stats ) ;
   output_json_makefile_stats source_files_to_analyze

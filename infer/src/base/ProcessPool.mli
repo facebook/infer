@@ -23,8 +23,9 @@ open! IStd
 
     See also {!module-ProcessPoolState}. *)
 
-(** A ['a t] process pool accepts tasks of type ['a]. ['a] will be marshalled over a Unix pipe.*)
-type _ t
+(** A [('work, 'final) t] process pool accepts tasks of type ['work] and produces an array of
+   results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)
+type (_, _) t
 
 (** abstraction for generating jobs *)
 type 'a task_generator =
@@ -43,8 +44,14 @@ type 'a task_generator =
   }
 
 val create :
-  jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> tasks:'a task_generator -> 'a t
+     jobs:int
+  -> child_prelude:(unit -> unit)
+  -> f:('work -> unit)
+  -> child_epilogue:(unit -> 'final)
+  -> tasks:'work task_generator
+  -> ('work, 'final) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
-val run : 'a t -> unit
-(** use the processes in the given process pool to run all the given tasks in parallel. *)
+val run : (_, 'final) t -> 'final option Array.t
+(** use the processes in the given process pool to run all the given tasks in parallel and return
+    the results of the epilogues *)

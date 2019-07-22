@@ -22,21 +22,18 @@ let fork_protect ~f x =
   (* get different streams of random numbers in each fork, in particular to lessen contention in
      `Filename.mk_temp` *)
   Random.self_init () ;
-  Epilogues.register
-    ~f:(fun () -> L.debug Analysis Quiet "%a@." BackendStats.pp (BackendStats.get ()))
-    ~description:"dumping summaries stats" ;
   f x
 
 
 module Runner = struct
-  type 'a t = 'a ProcessPool.t
+  type ('work, 'final) t = ('work, 'final) ProcessPool.t
 
-  let create ~jobs ~f ~tasks =
+  let create ~jobs ~f ~child_epilogue ~tasks =
     PerfEvent.(
       log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
     ResultsDatabase.db_close () ;
     let pool =
-      ProcessPool.create ~jobs ~f ~tasks
+      ProcessPool.create ~jobs ~f ~child_epilogue ~tasks
         ~child_prelude:
           ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
            fork_protect ~f:(fun () -> ()))
