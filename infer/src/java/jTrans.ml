@@ -852,15 +852,15 @@ let instruction (context : JContext.t) pc instr : translation =
     Procdesc.Node.Stmt_node (Call procname_string)
   in
   try
-    match instr with
-    | JBir.AffectVar (var, expr) ->
+    match (instr : JBir.instr) with
+    | AffectVar (var, expr) ->
         let stml, sil_expr, sil_type = expression context pc expr in
         let pvar = JContext.set_pvar context var sil_type in
         let sil_instr = Sil.Store (Exp.Lvar pvar, sil_type, sil_expr, loc) in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml @ [sil_instr]) in
         Instr node
-    | JBir.Return expr_option ->
+    | Return expr_option ->
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node =
           match expr_option with
@@ -877,7 +877,7 @@ let instruction (context : JContext.t) pc instr : translation =
         in
         JContext.add_goto_jump context pc JContext.Exit ;
         Instr node
-    | JBir.AffectArray (array_ex, index_ex, value_ex) ->
+    | AffectArray (array_ex, index_ex, value_ex) ->
         let instrs_array, sil_expr_array, _ = expression context pc array_ex
         and instrs_index, sil_expr_index, _ = expression context pc index_ex
         and instrs_value, sil_expr_value, value_typ = expression context pc value_ex in
@@ -888,7 +888,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind final_instrs in
         Instr node
-    | JBir.AffectField (e_lhs, cn, fs, e_rhs) ->
+    | AffectField (e_lhs, cn, fs, e_rhs) ->
         let stml1, sil_expr_lhs, _ = expression context pc e_lhs in
         let stml2, sil_expr_rhs, _ = expression context pc e_rhs in
         let field_name = get_field_name program false tenv cn fs in
@@ -899,7 +899,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
-    | JBir.AffectStaticField (cn, fs, e_rhs) ->
+    | AffectStaticField (cn, fs, e_rhs) ->
         let class_exp =
           let classname = Mangled.from_string (JBasics.cn_name cn) in
           let var_name = Pvar.mk_global classname in
@@ -915,11 +915,11 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
-    | JBir.Goto goto_pc ->
+    | Goto goto_pc ->
         JContext.reset_pvar_type context ;
         JContext.add_goto_jump context pc (JContext.Jump goto_pc) ;
         Skip
-    | JBir.Ifd ((op, e1, e2), if_pc) ->
+    | Ifd ((op, e1, e2), if_pc) ->
         (* Note: JBir provides the condition for the false branch, under which to jump *)
         JContext.reset_pvar_type context ;
         let instrs1, sil_ex1, _ = expression context pc e1
@@ -945,14 +945,14 @@ let instruction (context : JContext.t) pc instr : translation =
           let join_node = create_node join_node_kind [] in
           Loop (join_node, prune_node_true, prune_node_false)
         else Prune (prune_node_true, prune_node_false)
-    | JBir.Throw expr ->
+    | Throw expr ->
         let instrs, sil_expr, _ = expression context pc expr in
         let sil_exn = Exp.Exn sil_expr in
         let sil_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
         let node = create_node Procdesc.Node.throw_kind (instrs @ [sil_instr]) in
         JContext.add_goto_jump context pc JContext.Exit ;
         Instr node
-    | JBir.New (var, cn, constr_type_list, constr_arg_list) ->
+    | New (var, cn, constr_type_list, constr_arg_list) ->
         let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
@@ -977,7 +977,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = create_node_kind constr_procname in
         let node = create_node node_kind instrs in
         Instr node
-    | JBir.NewArray (var, vt, expr_list) ->
+    | NewArray (var, vt, expr_list) ->
         let builtin_new_array = Exp.Const (Const.Cfun BuiltinDecl.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
         let array_type = JTransType.create_array_type content_type (List.length expr_list) in
@@ -992,7 +992,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (instrs @ [call_instr; set_instr]) in
         Instr node
-    | JBir.InvokeStatic (var_opt, cn, ms, args) ->
+    | InvokeStatic (var_opt, cn, ms, args) ->
         let sil_obj_opt, args, instrs =
           match args with
           | [arg] when is_clone ms ->
@@ -1010,7 +1010,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         Instr call_node
-    | JBir.InvokeVirtual (var_opt, obj, call_kind, ms, args) -> (
+    | InvokeVirtual (var_opt, obj, call_kind, ms, args) -> (
         let instrs, sil_obj_expr, sil_obj_type = expression context pc obj in
         let create_call_node cn invoke_kind =
           let callee_procname, call_instrs =
@@ -1045,7 +1045,7 @@ let instruction (context : JContext.t) pc instr : translation =
             trans_virtual_call cn I_Virtual
         | JBir.InterfaceCall cn ->
             trans_virtual_call cn I_Interface )
-    | JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
+    | InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
         let instrs, sil_obj_expr, sil_obj_type = expression context pc obj in
         let callee_procname, call_instrs =
           method_invocation context loc pc var_opt cn ms
@@ -1055,7 +1055,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         Instr call_node
-    | JBir.Check (JBir.CheckNullPointer expr) when Config.tracing && is_this expr ->
+    | Check (CheckNullPointer expr) when Config.tracing && is_this expr ->
         (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)
         let instrs, sil_expr, _ = expression context pc expr in
         let this_not_null_node =
@@ -1063,7 +1063,7 @@ let instruction (context : JContext.t) pc instr : translation =
             (instrs @ [assume_not_null loc sil_expr])
         in
         Instr this_not_null_node
-    | JBir.Check (JBir.CheckNullPointer expr) when Config.tracing ->
+    | Check (CheckNullPointer expr) when Config.tracing ->
         let instrs, sil_expr, _ = expression context pc expr in
         let not_null_node =
           let sil_not_null = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
@@ -1099,7 +1099,7 @@ let instruction (context : JContext.t) pc instr : translation =
           create_node npe_kind npe_instrs
         in
         Prune (not_null_node, throw_npe_node)
-    | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr)) when Config.tracing ->
+    | Check (CheckArrayBound (array_expr, index_expr)) when Config.tracing ->
         let instrs, _, sil_length_expr, sil_index_expr =
           let array_instrs, sil_array_expr, _ = expression context pc array_expr
           and length_instrs, sil_length_expr, _ =
@@ -1161,7 +1161,7 @@ let instruction (context : JContext.t) pc instr : translation =
           create_node out_of_bound_node_kind out_of_bound_instrs
         in
         Prune (in_bound_node, throw_out_of_bound_node)
-    | JBir.Check (JBir.CheckCast (expr, object_type)) when Config.tracing ->
+    | Check (CheckCast (expr, object_type)) when Config.tracing ->
         let sil_type = JTransType.expr_type context expr
         and instrs, sil_expr, _ = expression context pc expr
         and ret_id = Ident.create_fresh Ident.knormal
@@ -1209,13 +1209,29 @@ let instruction (context : JContext.t) pc instr : translation =
           create_node throw_cast_exception_kind cce_instrs
         in
         Prune (is_instance_node, throw_cast_exception_node)
-    | JBir.MonitorEnter expr ->
+    | MonitorEnter expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__set_locked_attribute
           MonitorEnter
-    | JBir.MonitorExit expr ->
+    | MonitorExit expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__delete_locked_attribute
           MonitorExit
-    | _ ->
+    | Nop ->
+        Skip
+    | Formula _ ->
+        (* Sawja formulas are not generated with the current used 
+           flags '~formula:false' *)
+        Skip
+    | Check _ ->
+        (* Infer only considers 3 kinds of runtime error exceptions 
+           currently: NullPointer, ArrayBound, Cast. And only when
+           Config.tracing=true. *)
+        Skip
+    | MayInit _ ->
+        (* Infer ignores Sawja MayInit instruction. This instruction 
+           makes explicit the implicit Java mechanism of class static 
+           initialization (the first time the VM encounters a class, 
+           it runs code about it). This may remove inter-procedural 
+           edges in Infer analyses *)
         Skip
   with Frontend_error s ->
     L.internal_error "Skipping because of: %s@." s ;
