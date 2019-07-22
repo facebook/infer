@@ -143,6 +143,8 @@ module Memory : sig
 
   val filter : (AbstractAddress.t -> bool) -> t -> t
 
+  val filter_heap : (AbstractAddress.t -> edges -> bool) -> t -> t
+
   val find_opt : AbstractAddress.t -> t -> cell option
 
   val fold_attrs : (AbstractAddress.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc

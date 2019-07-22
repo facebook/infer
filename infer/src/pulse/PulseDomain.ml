@@ -389,6 +389,8 @@ module Memory : sig
 
   val filter : (AbstractAddress.t -> bool) -> t -> t
 
+  val filter_heap : (AbstractAddress.t -> edges -> bool) -> t -> t
+
   val find_opt : AbstractAddress.t -> t -> cell option
 
   val fold_attrs : (AbstractAddress.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
@@ -538,6 +540,11 @@ end = struct
     let heap = Graph.filter (fun address _ -> f address) (fst memory) in
     let attrs = Graph.filter (fun address _ -> f address) (snd memory) in
     if phys_equal heap (fst memory) && phys_equal attrs (snd memory) then memory else (heap, attrs)
+
+
+  let filter_heap f memory =
+    let heap = Graph.filter f (fst memory) in
+    if phys_equal heap (fst memory) then memory else (heap, snd memory)
 
 
   let mem_edges addr memory = Graph.mem addr (fst memory)

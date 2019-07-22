@@ -286,7 +286,14 @@ module PrePost = struct
         (fun var _ -> Var.is_return var || Stack.is_abducible astate var)
         (astate.post :> PulseDomain.t).stack
     in
-    {astate with post= Domain.update ~stack:post_stack astate.post}
+    (* deregister empty edges in pre *)
+    let pre_heap =
+      BaseMemory.filter_heap
+        (fun _addr edges -> not (BaseMemory.Edges.is_empty edges))
+        (astate.pre :> base_domain).heap
+    in
+    { pre= InvertedDomain.update astate.pre ~heap:pre_heap
+    ; post= Domain.update ~stack:post_stack astate.post }
 
 
   let of_post astate = filter_for_summary astate |> discard_unreachable
