@@ -42,7 +42,7 @@ let get_procedure_definition exe_env proc_name =
   Procdesc.load proc_name
   |> Option.map ~f:(fun proc_desc ->
          let tenv = Exe_env.get_tenv exe_env proc_name in
-         (tenv, Summary.reset proc_desc) )
+         (tenv, Summary.OnDisk.reset proc_desc) )
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)

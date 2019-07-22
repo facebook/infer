@@ -154,7 +154,7 @@ let tests =
     ; ( "sink without source not tracked"
       , [assign_to_non_source "ret_id"; call_sink "ret_id"; assert_empty] ) ]
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
-         {formal_map= FormalMap.empty; summary= Summary.dummy}
+         {formal_map= FormalMap.empty; summary= Summary.OnDisk.dummy}
          ~initial:(MockTaintAnalysis.Domain.bottom, Bindings.empty)
   in
   "taint_test_suite" >::: test_list

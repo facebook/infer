@@ -159,8 +159,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
         StarvationDomain.acquire tenv StarvationDomain.bottom loc (Option.to_list lock)
     in
     let initial =
-      ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.proc_resolve_attributes tenv
-        proc_desc
+      ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
+        tenv proc_desc
       |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
     in
     let filter_blocks =

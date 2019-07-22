@@ -524,7 +524,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let initial =
       let threads =
         if
-          runs_on_ui_thread ~attrs_of_pname:Summary.proc_resolve_attributes tenv proc_desc
+          runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes tenv proc_desc
           |> Option.is_some
           || is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf

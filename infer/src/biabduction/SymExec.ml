@@ -519,7 +519,7 @@ let method_exists right_proc_name methods =
     | Some attrs ->
         attrs.ProcAttributes.is_defined
     | None ->
-        Summary.has_model right_proc_name
+        Summary.OnDisk.has_model right_proc_name
 
 
 let resolve_method tenv class_name proc_name =
@@ -1125,7 +1125,7 @@ let resolve_and_analyze_clang current_summary tenv prop_r n_actual_params callee
     (* to be extended to other methods *)
   then
     try
-      let has_clang_model = Summary.has_model callee_pname in
+      let has_clang_model = Summary.OnDisk.has_model callee_pname in
       let resolve_and_analyze_result =
         resolve_and_analyze tenv ~caller_summary:current_summary ~has_clang_model prop_r
           n_actual_params callee_pname call_flags
@@ -1721,7 +1721,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
     let callee_loc_opt =
       Option.map
         ~f:(fun attributes -> attributes.ProcAttributes.loc)
-        (Summary.proc_resolve_attributes callee_pname)
+        (Summary.OnDisk.proc_resolve_attributes callee_pname)
     in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason callee_loc_opt in
     [(prop_with_undef_attr, skip_path)]
@@ -1763,7 +1763,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
 
 
 and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as builtin_args) =
-  match Summary.proc_resolve_attributes proc_name with
+  match Summary.OnDisk.proc_resolve_attributes proc_name with
   | None ->
       [(prop_, path)]
   | Some callee_attributes -> (

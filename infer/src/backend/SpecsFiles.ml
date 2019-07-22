@@ -50,7 +50,7 @@ let spec_files_from_cmdline () =
 let summary_iterator spec_files =
   let sorted_spec_files = List.sort ~compare:String.compare (spec_files ()) in
   let do_spec f fname =
-    match Summary.load_from_file (DB.filename_from_string fname) with
+    match Summary.OnDisk.load_from_file (DB.filename_from_string fname) with
     | None ->
         L.(die UserError) "Error: cannot open file %s@." fname
     | Some summary ->
@@ -65,5 +65,7 @@ let iter_from_config ~f = summary_iterator spec_files_from_cmdline f
 let iter ~f = summary_iterator load_specfiles f
 
 let delete pname =
-  let filename = Summary.specs_filename_of_procname pname |> DB.filename_to_string in
-  Unix.unlink filename ; Ondemand.remove_from_cache pname ; Summary.remove_from_cache pname
+  let filename = Summary.OnDisk.specs_filename_of_procname pname |> DB.filename_to_string in
+  Unix.unlink filename ;
+  Ondemand.remove_from_cache pname ;
+  Summary.OnDisk.remove_from_cache pname

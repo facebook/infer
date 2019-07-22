@@ -96,9 +96,8 @@ let analysis cfg tenv =
   let f proc_name pdesc domain =
     if Procdesc.is_defined pdesc && Typ.Procname.is_constructor proc_name then
       match
-        FieldsAssignedInConstructorsChecker.compute_post
-          (ProcData.make (Summary.reset pdesc) tenv (Ident.Hash.create 10))
-          ~initial
+        FieldsAssignedInConstructorsChecker.compute_post ~initial
+          (ProcData.make (Summary.OnDisk.reset pdesc) tenv (Ident.Hash.create 10))
       with
       | Some new_domain ->
           FieldsAssignedInConstructors.union new_domain domain

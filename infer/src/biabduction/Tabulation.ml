@@ -834,7 +834,7 @@ let prop_set_exn tenv pname prop se_exn =
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
-  match Summary.proc_resolve_attributes callee_pname with
+  match Summary.OnDisk.proc_resolve_attributes callee_pname with
   | Some attrs ->
       (not attrs.ProcAttributes.is_model)
       && SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file

@@ -51,22 +51,6 @@ type t =
 
 val poly_fields : t PolyFields.t
 
-val dummy : t
-(** dummy summary for testing *)
-
-val has_model : Typ.Procname.t -> bool
-(** Check if a summary for a given procedure exists in the models directory *)
-
-val clear_cache : unit -> unit
-(** Remove all the elements from the cache of summaries *)
-
-val remove_from_cache : Typ.Procname.t -> unit
-(** Remove an element from the cache of summaries. Contrast to reset which re-initializes a summary
-    keeping the same Procdesc and updates the cache accordingly. *)
-
-val get : Typ.Procname.t -> t option
-(** Return the summary option for the procedure name *)
-
 val get_proc_name : t -> Typ.Procname.t
 (** Get the procedure name *)
 
@@ -88,36 +72,54 @@ val get_signature : t -> string
 val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
-val reset : Procdesc.t -> t
-(** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-
-val specs_filename_of_procname : Typ.Procname.t -> DB.filename
-(** Return the path to the .specs file for the given procedure in the current results directory *)
-
-val load_from_file : DB.filename -> t option
-(** Load procedure summary from the given file *)
-
 val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 (** Print the summary in html format *)
 
 val pp_text : Format.formatter -> t -> unit
 (** Print the summary in text format *)
 
-val proc_resolve_attributes : Typ.Procname.t -> ProcAttributes.t option
-(** Try to find the attributes for a defined proc.
+module OnDisk : sig
+  val has_model : Typ.Procname.t -> bool
+  (** Check if a summary for a given procedure exists in the models directory *)
+
+  val clear_cache : unit -> unit
+  (** Remove all the elements from the cache of summaries *)
+
+  val remove_from_cache : Typ.Procname.t -> unit
+  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a summary
+    keeping the same Procdesc and updates the cache accordingly. *)
+
+  val get : Typ.Procname.t -> t option
+  (** Return the summary option for the procedure name *)
+
+  val reset : Procdesc.t -> t
+  (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
+
+  val specs_filename_of_procname : Typ.Procname.t -> DB.filename
+  (** Return the path to the .specs file for the given procedure in the current results directory *)
+
+  val load_from_file : DB.filename -> t option
+  (** Load procedure summary from the given file *)
+
+  val proc_resolve_attributes : Typ.Procname.t -> ProcAttributes.t option
+  (** Try to find the attributes for a defined proc.
     First look at specs (to get attributes computed by analysis)
     then look at the attributes table.
     If no attributes can be found, return None.
-*)
+  *)
 
-val proc_is_library : ProcAttributes.t -> bool
-(** Check if the procedure is from a library:
+  val proc_is_library : ProcAttributes.t -> bool
+  (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
 
-val store : t -> unit
-(** Save summary for the procedure into the spec database *)
+  val store : t -> unit
+  (** Save summary for the procedure into the spec database *)
 
-val reset_all : filter:Filtering.procedures_filter -> unit -> unit
+  val reset_all : filter:Filtering.procedures_filter -> unit -> unit
+
+  val dummy : t
+  (** dummy summary for testing *)
+end
 
 module SummaryValue : Memcached.Value with type t = t option
 

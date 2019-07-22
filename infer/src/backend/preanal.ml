@@ -209,7 +209,7 @@ let do_funptr_sub summary tenv =
 
 
 let do_preanalysis pdesc tenv =
-  let summary = Summary.reset pdesc in
+  let summary = Summary.OnDisk.reset pdesc in
   if
     Config.function_pointer_specialization
     && not (Typ.Procname.is_java (Procdesc.get_proc_name pdesc))

@@ -155,7 +155,8 @@ let should_skip =
 
 
 let has_return_annot predicate pn =
-  Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes predicate
+  Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
+    predicate
 
 
 let is_functional pname =
@@ -342,8 +343,8 @@ let is_thread_safe_class pname tenv =
 
 
 let is_thread_safe_method pname tenv =
-  find_method_or_override_annotated ~attrs_of_pname:Summary.proc_resolve_attributes is_thread_safe
-    pname tenv
+  find_method_or_override_annotated ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
+    is_thread_safe pname tenv
   |> Option.is_some
 
 

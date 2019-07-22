@@ -59,7 +59,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
 
 let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
   if !BiabductionConfig.footprint then
-    match Summary.get proc_name with
+    match Summary.OnDisk.get proc_name with
     | Some summary ->
         let node =
           let node = match node with None -> State.get_node_exn () | Some node -> node in

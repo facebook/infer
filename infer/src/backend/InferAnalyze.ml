@@ -13,7 +13,7 @@ module L = Logging
 
 let clear_caches () =
   Ondemand.clear_cache () ;
-  Summary.clear_cache () ;
+  Summary.OnDisk.clear_cache () ;
   Typ.Procname.SQLite.clear_cache ()
 
 
@@ -91,7 +91,7 @@ let main ~changed_files =
   register_active_checkers () ;
   if Config.reanalyze then (
     L.progress "Invalidating procedures to be reanalyzed@." ;
-    Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+    Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
     L.progress "Done@." )
   else DB.Results_dir.clean_specs_dir () ;
   let n_all_source_files = ref 0 in

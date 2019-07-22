@@ -41,7 +41,7 @@ let is_active, add_active, remove_active =
 
 
 let already_analyzed proc_name =
-  match Summary.get proc_name with
+  match Summary.OnDisk.get proc_name with
   | Some summary ->
       Summary.(Status.is_analyzed (get_status summary))
   | None ->
@@ -57,7 +57,7 @@ let should_be_analyzed proc_attributes =
 
 let get_proc_attr proc_name =
   IList.force_until_first_some
-    [lazy (Summary.proc_resolve_attributes proc_name); lazy (Topl.get_proc_attr proc_name)]
+    [lazy (Summary.OnDisk.proc_resolve_attributes proc_name); lazy (Topl.get_proc_attr proc_name)]
 
 
 let procedure_should_be_analyzed proc_name =
@@ -158,12 +158,12 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
       Typ.Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    let initial_callee_summary = Summary.reset callee_pdesc in
+    let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
     add_active callee_pname ; initial_callee_summary
   in
   let postprocess summary =
     decr nesting ;
-    Summary.store summary ;
+    Summary.OnDisk.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -180,7 +180,10 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
       {summary.payloads with biabduction}
     in
     let new_summary = {summary with stats; payloads} in
-    Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary
+    Summary.OnDisk.store new_summary ;
+    remove_active callee_pname ;
+    log_elapsed_time () ;
+    new_summary
   in
   let old_state = save_global_state () in
   let initial_callee_summary = preprocess () in
@@ -293,7 +296,7 @@ let register_callee ?caller_summary callee_pname =
 let get_proc_desc callee_pname =
   IList.force_until_first_some
     [ lazy (Procdesc.load callee_pname)
-    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.get callee_pname))
+    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname))
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
@@ -318,10 +321,10 @@ let analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed =
                          callee_pdesc)
                   , true )
               | None ->
-                  (Summary.get callee_pname, true)
+                  (Summary.OnDisk.get callee_pname, true)
             else (
               EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
-              (Summary.get callee_pname, true) )
+              (Summary.OnDisk.get callee_pname, true) )
       in
       if update_memcached then memcache_set callee_pname callee_summary_option ;
       Typ.Procname.Hash.add cache callee_pname callee_summary_option ;

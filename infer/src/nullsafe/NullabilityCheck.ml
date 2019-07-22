@@ -41,7 +41,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ~f:(fun attributes ->
             ClangMethodKind.equal attributes.ProcAttributes.clang_method_kind
               ClangMethodKind.CPP_INSTANCE )
-          (Summary.proc_resolve_attributes callee_pname)
+          (Summary.OnDisk.proc_resolve_attributes callee_pname)
 
 
   let is_objc_instance_method callee_pname =
@@ -49,7 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun attributes ->
         ClangMethodKind.equal attributes.ProcAttributes.clang_method_kind
           ClangMethodKind.OBJC_INSTANCE )
-      (Summary.proc_resolve_attributes callee_pname)
+      (Summary.OnDisk.proc_resolve_attributes callee_pname)
 
 
   let is_blacklisted_method : Typ.Procname.t -> bool =
@@ -91,7 +91,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let lookup_local_attributes = function
     | Typ.Procname.Java _ as pname ->
         (* Looking up the attribute according to the classpath *)
-        Summary.proc_resolve_attributes pname
+        Summary.OnDisk.proc_resolve_attributes pname
     | pname ->
         (* Looking up the attributes locally, i.e. either from the file of from the includes *)
         Option.map ~f:Procdesc.get_attributes (Ondemand.get_proc_desc pname)

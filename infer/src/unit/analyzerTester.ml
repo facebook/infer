@@ -243,7 +243,7 @@ struct
     let exit_node = create_node Procdesc.Node.Exit_node [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
-    (Summary.reset pdesc, assert_map)
+    (Summary.OnDisk.reset pdesc, assert_map)
 
 
   let create_test test_program extras ~initial pp_opt test_pname _ =

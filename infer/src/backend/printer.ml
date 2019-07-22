@@ -69,7 +69,7 @@ let curr_html_formatter = ref F.std_formatter
 
 (** Return true if the node was visited during analysis *)
 let is_visited node =
-  match Summary.get (Procdesc.Node.get_proc_name node) with
+  match Summary.OnDisk.get (Procdesc.Node.get_proc_name node) with
   | None ->
       false
   | Some summary ->
@@ -182,7 +182,7 @@ end = struct
          [])
       linenum ;
     pp_node_link_seq [] ~description:true fmt nodes ;
-    ( match Summary.get pname with
+    ( match Summary.OnDisk.get pname with
     | None ->
         ()
     | Some summary ->
@@ -230,7 +230,7 @@ end = struct
       Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
     in
     List.iter ~f:process_node (Procdesc.get_nodes proc_desc) ;
-    match Summary.get proc_name with
+    match Summary.OnDisk.get proc_name with
     | None ->
         ()
     | Some summary ->
@@ -259,7 +259,7 @@ end = struct
               | Procdesc.Node.Start_node ->
                   let proc_name = Procdesc.Node.get_proc_name n in
                   let proc_name_escaped = Escape.escape_xml (Typ.Procname.to_string proc_name) in
-                  if Summary.get proc_name |> Option.is_some then (
+                  if Summary.OnDisk.get proc_name |> Option.is_some then (
                     F.pp_print_char fmt ' ' ;
                     let label = F.asprintf "summary for %s" proc_name_escaped in
                     Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label )

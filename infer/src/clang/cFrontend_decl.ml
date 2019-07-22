@@ -41,7 +41,7 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translati
 
 
 module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend = struct
-  let model_exists procname = (not Config.models_mode) && Summary.has_model procname
+  let model_exists procname = (not Config.models_mode) && Summary.OnDisk.has_model procname
 
   (** Translates the method/function's body into nodes of the cfg. *)
   let add_method ?(is_destructor_wrapper = false) trans_unit_ctx tenv cfg class_decl_opt procname

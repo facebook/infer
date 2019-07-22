@@ -754,7 +754,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         in
         let resolved_ret_ =
           let ret_ia, ret_typ = callee_annotated_signature.AnnotatedSignature.ret in
-          let is_library = Summary.proc_is_library callee_attributes in
+          let is_library = Summary.OnDisk.proc_is_library callee_attributes in
           let origin =
             TypeOrigin.Proc
               { TypeOrigin.pname= callee_pname
