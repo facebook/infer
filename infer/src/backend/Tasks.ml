@@ -14,6 +14,7 @@ type 'a task_generator = 'a ProcessPool.task_generator
 
 let fork_protect ~f x =
   (* this is needed whenever a new process is started *)
+  BackendStats.reset () ;
   Epilogues.reset () ;
   EventLogger.prepare () ;
   L.reset_formatters () ;
@@ -21,6 +22,9 @@ let fork_protect ~f x =
   (* get different streams of random numbers in each fork, in particular to lessen contention in
      `Filename.mk_temp` *)
   Random.self_init () ;
+  Epilogues.register
+    ~f:(fun () -> L.debug Analysis Quiet "%a@." BackendStats.pp (BackendStats.get ()))
+    ~description:"dumping summaries stats" ;
   f x
 
 

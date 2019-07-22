@@ -168,6 +168,7 @@ module OnDisk = struct
 
 
   let has_model pname =
+    BackendStats.incr_summary_has_model_queries () ;
     Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
 
 
@@ -176,7 +177,12 @@ module OnDisk = struct
 
 
   (** Load procedure summary from the given file *)
-  let load_from_file specs_file = Serialization.read_from_file summary_serializer specs_file
+  let load_from_file specs_file =
+    BackendStats.incr_summary_file_try_load () ;
+    let opt = Serialization.read_from_file summary_serializer specs_file in
+    if Option.is_some opt then BackendStats.incr_summary_read_from_disk () ;
+    opt
+
 
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table =
@@ -209,8 +215,10 @@ module OnDisk = struct
   let get proc_name =
     match Typ.Procname.Hash.find cache proc_name with
     | summary ->
+        BackendStats.incr_summary_cache_hits () ;
         Some summary
     | exception Caml.Not_found ->
+        BackendStats.incr_summary_cache_misses () ;
         load_summary_to_spec_table proc_name
 
 
@@ -271,8 +279,10 @@ module OnDisk = struct
   let reset_all ~filter () =
     let reset proc_name =
       let filename = specs_filename_of_procname proc_name in
+      BackendStats.incr_summary_file_try_load () ;
       Serialization.read_from_file summary_serializer filename
       |> Option.iter ~f:(fun summary ->
+             BackendStats.incr_summary_read_from_disk () ;
              let blank_summary = reset summary.proc_desc in
              Serialization.write_to_file summary_serializer filename ~data:blank_summary )
     in
