@@ -18,8 +18,8 @@ let new_session node =
       0
   | Some summary ->
       Summary.Stats.add_visited summary.stats node_id ;
-      incr summary.Summary.sessions ;
-      !(summary.Summary.sessions)
+      summary.Summary.sessions <- summary.Summary.sessions + 1 ;
+      summary.Summary.sessions
 
 
 let kind_to_string = function

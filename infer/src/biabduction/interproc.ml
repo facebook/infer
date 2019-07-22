@@ -502,7 +502,10 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     let curr_node = Worklist.remove wl in
     mark_visited summary curr_node ;
     (* mark nodes visited in fp and re phases *)
-    let session = incr summary.Summary.sessions ; !(summary.Summary.sessions) in
+    let session =
+      summary.Summary.sessions <- summary.Summary.sessions + 1 ;
+      summary.Summary.sessions
+    in
     do_before_node session curr_node ;
     do_node_and_handle curr_node session
   done ;

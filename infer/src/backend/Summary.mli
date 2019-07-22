@@ -42,7 +42,7 @@ end
 (** summary of a procedure name *)
 type t =
   { payloads: Payloads.t
-  ; sessions: int ref  (** Session number: how many nodes went through symbolic execution *)
+  ; mutable sessions: int  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
   ; status: Status.t
   ; proc_desc: Procdesc.t

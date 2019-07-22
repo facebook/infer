@@ -66,7 +66,7 @@ include struct
 
   type t =
     { payloads: Payloads.t
-    ; sessions: int ref
+    ; mutable sessions: int
     ; stats: Stats.t
     ; status: Status.t
     ; proc_desc: Procdesc.t
@@ -256,7 +256,7 @@ module OnDisk = struct
 
   let reset proc_desc =
     let summary =
-      { sessions= ref 0
+      { sessions= 0
       ; payloads= Payloads.empty
       ; stats= Stats.empty
       ; status= Status.Pending
