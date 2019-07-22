@@ -36,12 +36,20 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
     | _ ->
         false
   in
+  let is_java_external_package =
+    match procname with
+    | Typ.Procname.Java java_pname ->
+        Typ.Procname.Java.is_external java_pname
+    | _ ->
+        false
+  in
   let should_suppress_lint =
     Language.curr_language_is Java
     && Annotations.ia_is_suppress_lint
          (Summary.get_attributes summary).ProcAttributes.method_annotation.return
   in
-  if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
+  if should_suppress_lint || is_java_generated_method || is_java_external_package then ()
+    (* Skip the reporting *)
   else
     let err_log = Summary.get_err_log summary in
     let clang_method_kind = Some attrs.clang_method_kind in

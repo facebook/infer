@@ -188,7 +188,16 @@ let checker {Callbacks.summary; exe_env} =
     let report_access_path ap udchain =
       match AccessPath.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) when is_outside_codebase proc_name field_name ->
-          (* Skip reporting when the field is outside the analyzed codebase *)
+          (* Skip reporting when the field is outside the analyzed codebase.
+             Note that we do similar filtering on high level which is common
+             for all checkers.
+             But this one is different: here we look NOT at the function
+             to be reported (the one that is using the field), but the root
+             cause (the field with the wrong annotation itself).
+             NOTE: Ideally we'd like to support such filtering in the way that
+                   is agnostic to particular checker, but it is not trivial to
+                   do, so let's do it in ad hoc way.
+           *)
           ()
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)
