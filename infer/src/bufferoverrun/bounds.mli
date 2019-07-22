@@ -42,13 +42,23 @@ module Bound : sig
     -> t
 
   val of_offset_path :
-    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+       is_void:bool
+    -> (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
+    -> Symb.SymbolPath.partial
+    -> t
 
   val of_length_path :
-    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+       is_void:bool
+    -> (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
+    -> Symb.SymbolPath.partial
+    -> t
 
   val of_modeled_path :
     (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+
+  val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
+
+  val is_length_path_of : Symb.SymbolPath.partial -> t -> bool
 
   val is_zero : t -> bool
 
@@ -103,6 +113,8 @@ module Bound : sig
   val div_const_u : t -> Ints.NonZeroInt.t -> t sexp_option
 
   val get_symbols : t -> Symb.SymbolSet.t
+
+  val has_void_ptr_symb : t -> bool
 
   val are_similar : t -> t -> bool
 

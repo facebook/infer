@@ -205,7 +205,8 @@ module ArrayAccessCondition = struct
     ; last_included: bool
     ; idx_sym_exp: Relation.SymExp.t option
     ; size_sym_exp: Relation.SymExp.t option
-    ; relation: Relation.t }
+    ; relation: Relation.t
+    ; void_ptr: bool }
   [@@deriving compare]
 
   let get_symbols c =
@@ -252,7 +253,9 @@ module ArrayAccessCondition = struct
       -> t option =
    fun ~offset ~idx ~size ~last_included ~idx_sym_exp ~size_sym_exp ~relation ->
     if ItvPure.is_invalid offset || ItvPure.is_invalid idx || ItvPure.is_invalid size then None
-    else Some {offset; idx; size; last_included; idx_sym_exp; size_sym_exp; relation}
+    else
+      let void_ptr = ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb size in
+      Some {offset; idx; size; last_included; idx_sym_exp; size_sym_exp; relation; void_ptr}
 
 
   let have_similar_bounds {offset= loff; idx= lidx; size= lsiz; last_included= lcol}
@@ -409,7 +412,11 @@ module ArrayAccessCondition = struct
         let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
         let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
         let relation = Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation in
-        Some {c with offset; idx; size; idx_sym_exp; size_sym_exp; relation}
+        let void_ptr =
+          c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
+          || ItvPure.has_void_ptr_symb size
+        in
+        Some {c with offset; idx; size; idx_sym_exp; size_sym_exp; relation; void_ptr}
     | _ ->
         None
 
@@ -699,6 +706,9 @@ module Condition = struct
         ArrayAccess (ArrayAccessCondition.relation_forget_locs locs c)
     | AllocSize _ | BinaryOperation _ ->
         x
+
+
+  let is_array_access_of_void_ptr = function ArrayAccess {void_ptr} -> void_ptr | _ -> false
 end
 
 module Reported = struct
@@ -783,7 +793,10 @@ module ConditionWithTrace = struct
 
 
   let set_u5 {cond; trace} issue_type =
-    if
+    (* It suppresses issues of array accesses by void pointers.  This is not ideal but Inferbo
+       cannot analyze them precisely at the moment. *)
+    if Condition.is_array_access_of_void_ptr cond then IssueType.buffer_overrun_l5
+    else if
       ( IssueType.equal issue_type IssueType.buffer_overrun_l3
       || IssueType.equal issue_type IssueType.buffer_overrun_l4
       || IssueType.equal issue_type IssueType.buffer_overrun_l5 )

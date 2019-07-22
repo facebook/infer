@@ -92,7 +92,11 @@ module SymbolPath = struct
         val star_field : partial -> Typ.Fieldname.t -> partial
       end )
 
-  type t = Normal of partial | Offset of partial | Length of partial | Modeled of partial
+  type t =
+    | Normal of partial
+    | Offset of {p: partial; is_void: bool}
+    | Length of {p: partial; is_void: bool}
+    | Modeled of partial
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
@@ -101,9 +105,9 @@ module SymbolPath = struct
 
   let normal p = Normal p
 
-  let offset p = Offset p
+  let offset p ~is_void = Offset {p; is_void}
 
-  let length p = Length p
+  let length p ~is_void = Length {p; is_void}
 
   let modeled p = Modeled p
 
@@ -150,15 +154,17 @@ module SymbolPath = struct
 
   let pp_partial = pp_partial_paren ~paren:false
 
+  let pp_is_void fmt is_void = if is_void then F.fprintf fmt "(v)"
+
   let pp fmt = function
     | Modeled p ->
         F.fprintf fmt "%a.modeled" pp_partial p
     | Normal p ->
         pp_partial fmt p
-    | Offset p ->
-        F.fprintf fmt "%a.offset" pp_partial p
-    | Length p ->
-        F.fprintf fmt "%a.length" pp_partial p
+    | Offset {p; is_void} ->
+        F.fprintf fmt "%a.offset%a" pp_partial p pp_is_void is_void
+    | Length {p; is_void} ->
+        F.fprintf fmt "%a.length%a" pp_partial p pp_is_void is_void
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
@@ -217,8 +223,15 @@ module SymbolPath = struct
 
 
   let exists_str ~f = function
-    | Modeled p | Normal p | Offset p | Length p ->
+    | Modeled p | Normal p | Offset {p} | Length {p} ->
         exists_str_partial ~f p
+
+
+  let is_void_ptr_path = function
+    | Offset {is_void} | Length {is_void} ->
+        is_void
+    | Normal _ | Modeled _ ->
+        false
 end
 
 module Symbol = struct

@@ -63,6 +63,8 @@ module ItvPure : sig
 
   val has_infty : t -> bool
 
+  val has_void_ptr_symb : t -> bool
+
   val make_positive : t -> t
 
   val join : t -> t -> t
@@ -231,9 +233,9 @@ val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t
 
 val of_normal_path : unsigned:bool -> Symb.SymbolPath.partial -> t
 
-val of_offset_path : Symb.SymbolPath.partial -> t
+val of_offset_path : is_void:bool -> Symb.SymbolPath.partial -> t
 
-val of_length_path : Symb.SymbolPath.partial -> t
+val of_length_path : is_void:bool -> Symb.SymbolPath.partial -> t
 
 val of_modeled_path : Symb.SymbolPath.partial -> t
 

@@ -293,11 +293,35 @@ module Bound = struct
 
   let of_normal_path = of_path Symb.SymbolPath.normal
 
-  let of_offset_path = of_path Symb.SymbolPath.offset ~unsigned:false
+  let of_offset_path ~is_void = of_path (Symb.SymbolPath.offset ~is_void) ~unsigned:false
 
-  let of_length_path = of_path Symb.SymbolPath.length ~unsigned:true
+  let of_length_path ~is_void = of_path (Symb.SymbolPath.length ~is_void) ~unsigned:true
 
   let of_modeled_path = of_path Symb.SymbolPath.modeled ~unsigned:true
+
+  let is_path_of ~f = function
+    | Linear (n, se) when Z.(equal n zero) ->
+        Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun s ->
+            f (Symb.Symbol.path s) )
+    | _ ->
+        false
+
+
+  let is_offset_path_of path =
+    is_path_of ~f:(function
+      | Symb.SymbolPath.Offset {p} ->
+          Symb.SymbolPath.equal_partial p path
+      | _ ->
+          false )
+
+
+  let is_length_path_of path =
+    is_path_of ~f:(function
+      | Symb.SymbolPath.Length {p} ->
+          Symb.SymbolPath.equal_partial p path
+      | _ ->
+          false )
+
 
   let is_symbolic : t -> bool = function
     | MInf | PInf ->
@@ -864,6 +888,12 @@ module Bound = struct
         SymLinear.get_symbols se
     | MinMax (_, _, _, _, s) ->
         Symb.SymbolSet.singleton s
+
+
+  let has_void_ptr_symb x =
+    Symb.SymbolSet.exists
+      (fun s -> Symb.SymbolPath.is_void_ptr_path (Symb.Symbol.path s))
+      (get_symbols x)
 
 
   let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)

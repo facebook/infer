@@ -439,10 +439,10 @@ let eval_sympath ~mode params sympath mem =
   | Symb.SymbolPath.Normal p ->
       let v = eval_sympath_partial ~mode params p mem in
       (Val.get_itv v, Val.get_traces v)
-  | Symb.SymbolPath.Offset p ->
+  | Symb.SymbolPath.Offset {p} ->
       let v = eval_sympath_partial ~mode params p mem in
       (ArrayBlk.offsetof (Val.get_array_blk v), Val.get_traces v)
-  | Symb.SymbolPath.Length p ->
+  | Symb.SymbolPath.Length {p} ->
       let v = eval_sympath_partial ~mode params p mem in
       (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
 

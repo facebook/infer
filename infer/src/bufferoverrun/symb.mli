@@ -38,7 +38,11 @@ module SymbolPath : sig
         *)
   [@@deriving compare]
 
-  type t = private Normal of partial | Offset of partial | Length of partial | Modeled of partial
+  type t = private
+    | Normal of partial
+    | Offset of {p: partial; is_void: bool}
+    | Length of {p: partial; is_void: bool}
+    | Modeled of partial
 
   val equal_partial : partial -> partial -> bool
 
@@ -62,9 +66,9 @@ module SymbolPath : sig
 
   val normal : partial -> t
 
-  val offset : partial -> t
+  val offset : partial -> is_void:bool -> t
 
-  val length : partial -> t
+  val length : partial -> is_void:bool -> t
 
   val modeled : partial -> t
 
@@ -81,6 +85,8 @@ module SymbolPath : sig
   val exists_pvar_partial : f:(Pvar.t -> bool) -> partial -> bool
 
   val exists_str_partial : f:(string -> bool) -> partial -> bool
+
+  val is_void_ptr_path : t -> bool
 end
 
 module Symbol : sig

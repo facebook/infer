@@ -482,8 +482,8 @@ module Val = struct
               | _ ->
                   Itv.nat
             in
-            let offset = Itv.of_offset_path path in
-            let size = Itv.of_length_path path in
+            let offset = Itv.of_offset_path ~is_void:(Typ.is_pointer_to_void typ) path in
+            let size = Itv.of_length_path ~is_void:(Typ.is_pointer_to_void typ) path in
             ArrayBlk.make_c allocsite ~stride ~offset ~size
           in
           {bot with arrayblk; traces}
@@ -502,7 +502,7 @@ module Val = struct
           let l = Loc.of_path deref_path in
           let traces = traces_of_loc l in
           let allocsite = Allocsite.make_symbol deref_path in
-          let length = Itv.of_length_path path in
+          let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
       | None ->
           let l = Loc.of_path path in
@@ -516,11 +516,11 @@ module Val = struct
         let size =
           match length with
           | None (* IncompleteArrayType, no-size flexible array *) ->
-              Itv.of_length_path path
+              Itv.of_length_path ~is_void:false path
           | Some length
             when may_last_field && (IntLit.iszero length || IntLit.isone length)
                  (* 0/1-sized flexible array *) ->
-              Itv.of_length_path path
+              Itv.of_length_path ~is_void:false path
           | Some length ->
               Itv.of_big_int (IntLit.to_big_int length)
         in
