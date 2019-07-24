@@ -329,6 +329,7 @@ end = struct
           | exception Caml.Not_found ->
               []
         in
+        DB.Results_dir.init file ;
         write_html_file file pdescs_in_file )
       source_files_in_cfg
 
