@@ -1959,7 +1959,10 @@ and reactive_capture =
     "Compile source files only when required by analyzer (clang only)"
 
 
-and reanalyze = CLOpt.mk_bool ~long:"reanalyze" "Rerun the analysis"
+and reanalyze =
+  CLOpt.mk_bool ~long:"reanalyze"
+    "Rerun the analysis. Not compatible with $(b,--incremental-analysis)."
+
 
 and relative_path_backtrack =
   CLOpt.mk_int ~long:"backtrack-level" ~default:0 ~meta:"int"
@@ -2345,7 +2348,8 @@ and use_cost_threshold =
 
 and incremental_analysis =
   CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
-    "[EXPERIMENTAL] Use incremental analysis for changed files"
+    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
+     $(b,--reanalyze)."
 
 
 and version =

@@ -1397,7 +1397,8 @@ INTERNAL OPTIONS
 
        --incremental-analysis
            Activates: [EXPERIMENTAL] Use incremental analysis for changed
-           files (Conversely: --no-incremental-analysis)
+           files. Not compatible with --reanalyze. (Conversely:
+           --no-incremental-analysis)
 
        --iphoneos-target-sdk-version-path-regex-reset
            Set --iphoneos-target-sdk-version-path-regex to the empty list.
@@ -1590,7 +1591,8 @@ INTERNAL OPTIONS
            (clang only) (Conversely: --no-reactive-capture)
 
        --reanalyze
-           Activates: Rerun the analysis (Conversely: --no-reanalyze)
+           Activates: Rerun the analysis. Not compatible with
+           --incremental-analysis. (Conversely: --no-reanalyze)
 
        --report-blacklist-files-containing-reset
            Set --report-blacklist-files-containing to the empty list.
