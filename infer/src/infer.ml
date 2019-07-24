@@ -42,7 +42,9 @@ let setup () =
           (buck && flavors) || genrule_mode)
         || not
              ( Driver.(equal_mode driver_mode Analyze)
-             || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
+             || Config.(
+                  continue_capture || infer_is_clang || infer_is_javac || reactive_mode
+                  || incremental_analysis) )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if
