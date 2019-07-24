@@ -51,19 +51,15 @@ let incr_summary_has_model_queries () =
 
 
 let copy from ~into =
-  (* so we don't forget to add new fields to [copy] *)
-  let[@warning "+9"] { summary_file_try_load
-                     ; summary_read_from_disk
-                     ; summary_cache_hits
-                     ; summary_cache_misses
-                     ; summary_has_model_queries } =
+  let { summary_file_try_load
+      ; summary_read_from_disk
+      ; summary_cache_hits
+      ; summary_cache_misses
+      ; summary_has_model_queries } =
     from
   in
-  into.summary_file_try_load <- summary_file_try_load ;
-  into.summary_read_from_disk <- summary_read_from_disk ;
-  into.summary_cache_hits <- summary_cache_hits ;
-  into.summary_cache_misses <- summary_cache_misses ;
-  into.summary_has_model_queries <- summary_has_model_queries
+  Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
+    ~summary_cache_hits ~summary_cache_misses ~summary_has_model_queries
 
 
 let merge stats1 stats2 =
@@ -86,26 +82,25 @@ let initial =
 let reset () = copy initial ~into:global_stats
 
 let pp f stats =
-  (* make sure we print all the fields *)
-  let[@warning "+9"] { summary_file_try_load
-                     ; summary_read_from_disk
-                     ; summary_cache_hits
-                     ; summary_cache_misses
-                     ; summary_has_model_queries } =
-    stats
-  in
   let pp_hit_percent hit miss f =
     let total = hit + miss in
     if Int.equal total 0 then F.pp_print_string f "N/A%%"
     else F.fprintf f "%d%%" (hit * 100 / total)
   in
-  F.fprintf f
-    "@[Backend stats:@\n\
-     @[<v2>  summary_file_try_load= %d@;summary_read_from_disk= %d@;summary_cache_hits= %d \
-     (%t)@;summary_cache_misses= %d@;summary_has_model_queries= %d@;@]@]@."
-    summary_file_try_load summary_read_from_disk summary_cache_hits
-    (pp_hit_percent summary_cache_hits summary_cache_misses)
-    summary_cache_misses summary_has_model_queries
+  let pp_int_field stats f field =
+    F.fprintf f "%s= %d@;" (Field.name field) (Field.get field stats)
+  in
+  let pp_cache_hits stats f cache_hits_field =
+    F.fprintf f "%s= %d (%t)@;" (Field.name cache_hits_field) stats.summary_cache_hits
+      (pp_hit_percent stats.summary_cache_hits stats.summary_cache_misses)
+  in
+  let pp_stats stats f =
+    Fields.iter ~summary_file_try_load:(pp_int_field stats f)
+      ~summary_read_from_disk:(pp_int_field stats f) ~summary_cache_hits:(pp_cache_hits stats f)
+      ~summary_cache_misses:(pp_int_field stats f)
+      ~summary_has_model_queries:(pp_int_field stats f)
+  in
+  F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
 
 let log_to_scuba stats =
