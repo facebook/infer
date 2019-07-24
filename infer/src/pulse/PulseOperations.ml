@@ -293,12 +293,12 @@ let mark_address_of_cpp_temporary history variable address astate =
 
 let remove_vars vars astate =
   let astate =
-    List.fold vars ~init:astate ~f:(fun heap var ->
+    List.fold vars ~init:astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) when Var.is_cpp_temporary var ->
             mark_address_of_cpp_temporary history var address astate
         | _ ->
-            heap )
+            astate )
   in
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then astate else PulseAbductiveDomain.discard_unreachable astate'
