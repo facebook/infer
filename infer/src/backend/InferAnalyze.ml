@@ -9,6 +9,7 @@
 (** Main module for the analysis after the capture phase *)
 open! IStd
 
+module F = Format
 module L = Logging
 
 let clear_caches () =
@@ -87,13 +88,7 @@ let register_active_checkers () =
   RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
 
 
-let main ~changed_files =
-  register_active_checkers () ;
-  if Config.reanalyze then (
-    L.progress "Invalidating procedures to be reanalyzed@." ;
-    Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
-    L.progress "Done@." )
-  else DB.Results_dir.clean_specs_dir () ;
+let get_source_files_to_analyze ~changed_files =
   let n_all_source_files = ref 0 in
   let n_source_files_to_analyze = ref 0 in
   let filter sourcefile =
@@ -107,18 +102,25 @@ let main ~changed_files =
   in
   ScubaLogging.log_count ~label:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let source_files_to_analyze = SourceFiles.get_all ~filter () in
-  L.progress "Found %d%s source file%s to analyze in %s@." !n_source_files_to_analyze
-    ( if Config.reactive_mode || Option.is_some changed_files then
-      " (out of " ^ string_of_int !n_all_source_files ^ ")"
-    else "" )
-    (if Int.equal !n_source_files_to_analyze 1 then "" else "s")
-    Config.results_dir ;
-  (* empty all caches to minimize the process heap to have less work to do when forking *)
-  clear_caches () ;
+  let pp_n_source_files ~n_total fmt n_to_analyze =
+    let pp_total_if_not_all fmt n_total =
+      if Config.reactive_mode || Option.is_some changed_files then
+        F.fprintf fmt " (out of %d)" n_total
+    in
+    Format.fprintf fmt "Found %d%a source file%s to analyze in %s" n_to_analyze pp_total_if_not_all
+      n_total
+      (if Int.equal n_to_analyze 1 then "" else "s")
+      Config.results_dir
+  in
+  L.progress "%a@." (pp_n_source_files ~n_total:!n_all_source_files) !n_source_files_to_analyze ;
+  source_files_to_analyze
+
+
+let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
     let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> TaskScheduler.File sf) in
     Tasks.run_sequentially ~f:analyze_target target_files ;
-    L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )
+    BackendStats.get () )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let tasks = TaskScheduler.schedule source_files_to_analyze in
@@ -127,15 +129,29 @@ let main ~changed_files =
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_epilogue:BackendStats.get
         ~tasks
     in
-    let all_stats = Tasks.Runner.run runner in
-    let stats =
-      Array.fold all_stats ~init:BackendStats.initial ~f:(fun collated_stats stats_opt ->
+    let workers_stats = Tasks.Runner.run runner in
+    let collected_stats =
+      Array.fold workers_stats ~init:BackendStats.initial ~f:(fun collated_stats stats_opt ->
           match stats_opt with
           | None ->
               collated_stats
           | Some stats ->
-              L.debug Analysis Quiet "gotstats:@\n%a@." BackendStats.pp stats ;
               BackendStats.merge stats collated_stats )
     in
-    L.debug Analysis Quiet "collected stats:@\n%a@." BackendStats.pp stats ) ;
-  output_json_makefile_stats source_files_to_analyze
+    collected_stats )
+
+
+let main ~changed_files =
+  register_active_checkers () ;
+  if Config.reanalyze then (
+    L.progress "Invalidating procedures to be reanalyzed@." ;
+    Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+    L.progress "Done@." )
+  else DB.Results_dir.clean_specs_dir () ;
+  let source_files = get_source_files_to_analyze ~changed_files in
+  (* empty all caches to minimize the process heap to have less work to do when forking *)
+  clear_caches () ;
+  let stats = analyze source_files in
+  L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ;
+  L.debug Analysis Quiet "collected stats:@\n%a@." BackendStats.pp stats ;
+  output_json_makefile_stats source_files

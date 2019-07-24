@@ -95,8 +95,8 @@ let pp f stats =
   in
   F.fprintf f
     "@[Backend stats:@\n\
-     @[<v2>  file_try_load= %d@;read_from_disk= %d@;cache_hits= %d (%t)@;cache_misses= \
-     %d@;has_model_queries= %d@;@]@]@."
+     @[<v2>  summary_file_try_load= %d@;summary_read_from_disk= %d@;summary_cache_hits= %d \
+     (%t)@;summary_cache_misses= %d@;summary_has_model_queries= %d@;@]@]@."
     summary_file_try_load summary_read_from_disk summary_cache_hits
     (pp_hit_percent summary_cache_hits summary_cache_misses)
     summary_cache_misses summary_has_model_queries
