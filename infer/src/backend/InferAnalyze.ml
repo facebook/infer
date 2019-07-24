@@ -154,4 +154,5 @@ let main ~changed_files =
   let stats = analyze source_files in
   L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ;
   L.debug Analysis Quiet "collected stats:@\n%a@." BackendStats.pp stats ;
+  BackendStats.log_to_scuba stats ;
   output_json_makefile_stats source_files

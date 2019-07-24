@@ -7,12 +7,18 @@
 open! IStd
 module F = Format
 
-type t =
-  { mutable summary_file_try_load: int
-  ; mutable summary_read_from_disk: int
-  ; mutable summary_cache_hits: int
-  ; mutable summary_cache_misses: int
-  ; mutable summary_has_model_queries: int }
+include struct
+  (* ignore dead modules added by @@deriving fields *)
+  [@@@warning "-60"]
+
+  type t =
+    { mutable summary_file_try_load: int
+    ; mutable summary_read_from_disk: int
+    ; mutable summary_cache_hits: int
+    ; mutable summary_cache_misses: int
+    ; mutable summary_has_model_queries: int }
+  [@@deriving fields]
+end
 
 let global_stats =
   { summary_file_try_load= 0
@@ -100,3 +106,15 @@ let pp f stats =
     summary_file_try_load summary_read_from_disk summary_cache_hits
     (pp_hit_percent summary_cache_hits summary_cache_misses)
     summary_cache_misses summary_has_model_queries
+
+
+let log_to_scuba stats =
+  let create_counter field =
+    LogEntry.mk_count ~label:("backend_stats." ^ Field.name field) ~value:(Field.get field stats)
+  in
+  let entries =
+    Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
+      ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
+      ~summary_has_model_queries:create_counter
+  in
+  ScubaLogging.log_many entries

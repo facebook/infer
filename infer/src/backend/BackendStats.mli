@@ -35,3 +35,6 @@ val pp : Format.formatter -> t -> unit
 
 val merge : t -> t -> t
 (** return a new value that adds up the stats in both arguments *)
+
+val log_to_scuba : t -> unit
+(** Log aggregated backend stats to Scuba. Use after the stats have been fully calculated *)

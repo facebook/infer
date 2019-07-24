@@ -17,6 +17,11 @@ open! IStd
    run of Infer.
  *)
 
+val log_many : LogEntry.t list -> unit
+(** Log several events in one go. Useful when you do custom aggregations
+    and have a place to log all aggregated results at once.
+ *)
+
 val log_count : label:string -> value:int -> unit
 (** Log anything that can be counted. Events will be prefixed with "count." *)
 
