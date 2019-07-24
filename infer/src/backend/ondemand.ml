@@ -16,6 +16,10 @@ let exe_env_ref = ref None
 
 let cached_results = lazy (Typ.Procname.Hash.create 128)
 
+let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
+
+let remove_from_cache pname = Typ.Procname.Hash.remove (Lazy.force cached_results) pname
+
 let set_exe_env (env : Exe_env.t) = exe_env_ref := Some env
 
 let unset_exe_env () = exe_env_ref := None
@@ -292,7 +296,6 @@ let register_callee ?caller_summary callee_pname =
     caller_summary
 
 
-(** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
   IList.force_until_first_some
     [ lazy (Procdesc.load callee_pname)
@@ -300,7 +303,31 @@ let get_proc_desc callee_pname =
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
-let analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed =
+type callee = ProcName of Typ.Procname.t | ProcDesc of Procdesc.t
+
+let proc_name_of_callee = function
+  | ProcName proc_name ->
+      proc_name
+  | ProcDesc proc_desc ->
+      Procdesc.get_proc_name proc_desc
+
+
+let callee_should_be_analyzed = function
+  | ProcName proc_name ->
+      procedure_should_be_analyzed proc_name
+  | ProcDesc proc_desc ->
+      should_be_analyzed (Procdesc.get_attributes proc_desc)
+
+
+let get_callee_proc_desc = function
+  | ProcDesc proc_desc ->
+      Some proc_desc
+  | ProcName proc_name ->
+      get_proc_desc proc_name
+
+
+let analyze_callee ?caller_summary callee =
+  let callee_pname = proc_name_of_callee callee in
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
@@ -312,8 +339,8 @@ let analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed =
         | Some summ_opt ->
             (summ_opt, false)
         | None ->
-            if should_be_analyzed then
-              match callee_pdesc with
+            if callee_should_be_analyzed callee then
+              match get_callee_proc_desc callee with
               | Some callee_pdesc ->
                   ( Some
                       (run_proc_analysis
@@ -332,28 +359,16 @@ let analyze_proc ?caller_summary callee_pname callee_pdesc should_be_analyzed =
 
 
 let analyze_proc_desc ~caller_summary callee_pdesc =
-  let should_be_analyzed = should_be_analyzed (Procdesc.get_attributes callee_pdesc) in
-  let callee_pname = Procdesc.get_proc_name callee_pdesc in
-  analyze_proc ~caller_summary callee_pname (Some callee_pdesc) should_be_analyzed
+  analyze_callee ~caller_summary (ProcDesc callee_pdesc)
 
 
-(** analyze_proc_name ~caller_summary callee_pname performs an on-demand analysis of callee_pname triggered
-    during the analysis of caller_summary *)
 let analyze_proc_name ~caller_summary callee_pname =
-  let should_be_analyzed = procedure_should_be_analyzed callee_pname in
-  let callee_pdesc = get_proc_desc callee_pname in
-  analyze_proc ~caller_summary callee_pname callee_pdesc should_be_analyzed
+  analyze_callee ~caller_summary (ProcName callee_pname)
 
 
 let analyze_proc_name_no_caller callee_pname =
-  let should_be_analyzed = procedure_should_be_analyzed callee_pname in
-  let callee_pdesc = get_proc_desc callee_pname in
-  analyze_proc ?caller_summary:None callee_pname callee_pdesc should_be_analyzed
+  analyze_callee ?caller_summary:None (ProcName callee_pname)
 
-
-let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
-
-let remove_from_cache pname = Typ.Procname.Hash.remove (Lazy.force cached_results) pname
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
