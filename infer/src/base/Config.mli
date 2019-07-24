@@ -99,8 +99,6 @@ val idempotent_getters : bool
 
 val infer_py_argparse_error_exit_code : int
 
-val infer_top_results_dir_env_var : string
-
 val initial_analysis_time : float
 
 val ivar_attributes : string
@@ -686,6 +684,12 @@ val testing_mode : bool
 val threadsafe_aliases : Yojson.Basic.t
 
 val topl_properties : string list
+
+val toplevel_results_dir : string
+(** In some integrations, eg Buck, infer subprocesses started by the build system (started by the
+    toplevel infer process) will have their own results directory; this points to the results
+    directory of the toplevel infer process, which can be useful for, eg, storing debug info. In
+    other cases this is equal to {!results_dir}. *)
 
 val trace_error : bool
 

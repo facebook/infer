@@ -11,10 +11,7 @@ module CLOpt = CommandLineOption
 module IO = struct
   let log_file_extension = ".log"
 
-  let events_dir =
-    Option.value (Sys.getenv Config.infer_top_results_dir_env_var) ~default:Config.results_dir
-    ^/ Config.events_dir_name
-
+  let events_dir = Config.toplevel_results_dir ^/ Config.events_dir_name
 
   let out_chan = ref None
 

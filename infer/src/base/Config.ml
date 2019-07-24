@@ -2485,9 +2485,7 @@ let inferconfig_file =
 
 
 let post_parsing_initialization command_opt =
-  if CommandLineOption.is_originator then (
-    (* let subprocesses know where the toplevel process' results dir is *)
-    Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
+  if CommandLineOption.is_originator then
     (* make sure subprocesses read from the same .inferconfig as the toplevel process *)
     Option.iter inferconfig_file ~f:(fun filename ->
         let abs_filename =
@@ -2496,7 +2494,7 @@ let post_parsing_initialization command_opt =
             CLOpt.init_work_dir ^/ filename
           else filename
         in
-        Unix.putenv ~key:CommandDoc.inferconfig_env_var ~data:abs_filename ) ) ;
+        Unix.putenv ~key:CommandDoc.inferconfig_env_var ~data:abs_filename ) ;
   ( match !version with
   | `Full when !buck ->
       (* Buck reads stderr in some versions, stdout in others *)
@@ -3293,3 +3291,10 @@ let is_in_custom_symbols list_name symbol =
 
 
 let execution_id = Random.self_init () ; Random.int64 Int64.max_value
+
+let toplevel_results_dir =
+  if CLOpt.is_originator then (
+    (* let subprocesses know where the toplevel process' results dir is *)
+    Unix.putenv ~key:infer_top_results_dir_env_var ~data:results_dir ;
+    results_dir )
+  else Sys.getenv infer_top_results_dir_env_var |> Option.value ~default:results_dir

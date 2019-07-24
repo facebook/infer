@@ -11,9 +11,7 @@ module L = Logging
 let memcached_socket_relative = "memcached.socket"
 
 (** find the results_dir of the top-level infer process *)
-let results_dir =
-  Sys.getenv Config.infer_top_results_dir_env_var |> Option.value ~default:Config.results_dir
-
+let results_dir = Config.toplevel_results_dir
 
 (** log file for memcached *)
 let memcached_log = results_dir ^ "/memcached.log"
@@ -26,8 +24,8 @@ let shell = "sh"
 
 type server = {input: In_channel.t; output: Out_channel.t}
 
-(* Unix socket paths have a historical length limit of ~100 chars (!?*@&*$).  However, this applies 
-   to the argument passed in the system call to create the socket.  Thus a workaround is to cd into 
+(* Unix socket paths have a historical length limit of ~100 chars (!?*@&*$).  However, this applies
+   to the argument passed in the system call to create the socket.  Thus a workaround is to cd into
    the parent dir of the socket and then create it, hence this function. *)
 let in_results_dir ~f =
   let cwd = Unix.getcwd () in

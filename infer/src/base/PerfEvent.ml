@@ -224,13 +224,8 @@ let register_gc_stats logger =
 let logger =
   lazy
     (let log_file =
-       let results_dir =
-         (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log
-              file *)
-         Sys.getenv Config.infer_top_results_dir_env_var
-         |> Option.value ~default:Config.results_dir
-       in
-       results_dir ^/ Config.trace_events_file
+       (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log file *)
+       Config.toplevel_results_dir ^/ Config.trace_events_file
      in
      let is_toplevel_process = CommandLineOption.is_originator && not !ProcessPoolState.in_child in
      ( if is_toplevel_process then
