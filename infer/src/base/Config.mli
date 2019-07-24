@@ -411,6 +411,8 @@ val infer_is_clang : bool
 
 val infer_is_javac : bool
 
+val implicit_sdk_root : string option
+
 val inferconfig_file : string option
 
 val iphoneos_target_sdk_version : string option

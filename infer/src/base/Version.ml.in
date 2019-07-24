@@ -22,6 +22,10 @@ let commit = "@INFER_GIT_COMMIT@"
 
 let branch = "@INFER_GIT_BRANCH@"
 
+type build_platform = Linux | Darwin | Windows
+
+let build_platform = @BUILD_PLATFORM@
+
 let is_release = is_yes "@IS_RELEASE_TREE@"
 
 let tag = Printf.sprintf "v%d.%d.%d" major minor patch

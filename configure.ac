@@ -49,16 +49,37 @@ AS_IF([test "x$CLANG_INCLUDES" = "x"], [
   CLANG_INCLUDES="$CLANG_PREFIX/include"
 ])
 
-windows_build=no
-AC_MSG_CHECKING([for Windows build])
+BUILD_PLATFORM=unknown
+WINDOWS_BUILD=no
+AC_MSG_CHECKING([for build platform])
 # see https://stackoverflow.com/questions/714100/os-detecting-makefile
 # but we do this in the configure for homogeneity
 case "${OS}" in
     Windows_NT*)
-        windows_build=yes
+        BUILD_PLATFORM=Windows
         ;;
+    *)
+        uname_str=`uname -s`
+        case "${uname_str}" in
+            Linux*)
+                BUILD_PLATFORM=Linux
+                ;;
+            Darwin*)
+                BUILD_PLATFORM=Darwin
+                ;;
+            cygwin*|mingw*)
+                BUILD_PLATFORM=Windows
+                ;;
+            *)
+                AC_MSG_ERROR(["OS $unamestr is not supported"])
+                ;;
+        esac
 esac
-WINDOWS_BUILD=$windows_build
+AC_MSG_RESULT([$BUILD_PLATFORM])
+AC_SUBST([BUILD_PLATFORM])
+
+AC_MSG_CHECKING([for Windows build])
+AS_IF([test x"$BUILD_PLATFORM" = x"Windows"], [WINDOWS_BUILD=yes])
 AC_MSG_RESULT([$WINDOWS_BUILD])
 AC_SUBST([WINDOWS_BUILD])
 

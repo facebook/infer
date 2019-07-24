@@ -15,6 +15,10 @@ val patch : int
 
 val commit : string
 
+type build_platform = Linux | Darwin | Windows
+
+val build_platform : build_platform
+
 val versionString : string
 
 val versionJson : string

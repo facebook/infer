@@ -85,7 +85,7 @@ let libcxx_include_to_override_regex =
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
    [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse order) [prev]. *)
 let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(post_args = [])
-    args =
+    ?(pre_args = []) args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
      some change has been performed *)
   let rec aux in_argfiles (prev_is_blacklisted_with_arg, res_rev, changed) args =
@@ -141,7 +141,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
   match aux String.Set.empty (false, [], false) args with
   | _, res_rev, _ ->
       (* return non-reversed list *)
-      List.rev_append res_rev post_args
+      List.append pre_args (List.rev_append res_rev post_args)
 
 
 (** Work around various path or library issues occurring when one tries to substitute Apple's version
@@ -181,6 +181,17 @@ let clang_cc1_cmd_sanitizer cmd =
   let args_defines =
     if Config.bufferoverrun && not Config.biabduction then ["-D__INFER_BUFFEROVERRUN"] else []
   in
+  let explicit_sysroot_passed = has_flag cmd "-isysroot" in
+  (* supply isysroot only when SDKROOT is not set up and explicit isysroot is not provided,
+     cf. https://lists.apple.com/archives/xcode-users/2005/Dec/msg00524.html
+     for details on the effects of setting SDKROOT *)
+  let implicit_sysroot =
+    if not explicit_sysroot_passed then
+      Option.map Config.implicit_sdk_root ~f:(fun x -> ["-isysroot"; x])
+      |> Option.value ~default:[]
+    else []
+  in
+  let pre_args_rev = [] |> List.rev_append implicit_sysroot in
   let post_args_rev =
     []
     |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
@@ -193,7 +204,7 @@ let clang_cc1_cmd_sanitizer cmd =
   in
   let clang_arguments =
     filter_and_replace_unsupported_args ~replace_options_arg ~post_args:(List.rev post_args_rev)
-      cmd.argv
+      ~pre_args:(List.rev pre_args_rev) cmd.argv
   in
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
 

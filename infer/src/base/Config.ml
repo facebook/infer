@@ -448,6 +448,45 @@ let env_inside_maven = `Extend [(infer_inside_maven_env_var, "1")]
 
 let infer_is_javac = maven
 
+let locate_sdk_root () =
+  match Version.build_platform with
+  | Darwin -> (
+      let cmd = "xcrun --show-sdk-path --sdk macosx 2> /dev/null" in
+      try
+        let path, _ = Utils.with_process_in cmd In_channel.input_line in
+        path
+      with Unix.Unix_error _ -> None )
+  | _ ->
+      None
+
+
+let infer_sdkroot_env_var = "INFER_SDKROOT"
+
+(** Try to locate current SDK root on MacOS *unless* [SDKROOT] is
+   explicitly provided. The implicit SDK root is propagated to child
+   processes using a custom [INFER_SDKROOT] env var. The reason for
+   this is twofold:
+
+   1. With make and buck integrations infer is exec'ed by make/buck
+   for each source file. That's why we propagate the value by using an
+   env var instead of calling [locate_sdk_root] each time.
+
+   2. We don't use [SDKROOT] because it can mess up with other parts
+   of the toolchain not owned by infer. *)
+let implicit_sdk_root =
+  match Sys.getenv "SDKROOT" with
+  | Some _ ->
+      None
+  | None -> (
+    match Sys.getenv infer_sdkroot_env_var with
+    | Some _ as path ->
+        path
+    | None ->
+        let maybe_root = locate_sdk_root () in
+        let putenv x = Unix.putenv ~key:infer_sdkroot_env_var ~data:x in
+        Option.iter ~f:putenv maybe_root ; maybe_root )
+
+
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
