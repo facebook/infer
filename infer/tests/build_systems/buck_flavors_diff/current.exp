@@ -1,3 +1,3 @@
-src/hello.c, test1, 2, NULL_DEREFERENCE, [start of procedure test1()]
-src/hello.c, test2, 2, NULL_DEREFERENCE, [start of procedure test2(),start of procedure nullify()]
-src/hello2.c, test_hello2, 2, NULL_DEREFERENCE, [start of procedure test_hello2()]
+src/hello.c, test1, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure test1()]
+src/hello.c, test2, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure test2(),start of procedure nullify()]
+src/hello2.c, test_hello2, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure test_hello2()]

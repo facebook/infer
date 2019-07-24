@@ -1,1 +1,1 @@
-MEMORY_LEAK, src/hello.c, test3, 3, test3.8ad8757baa8564dc136c1e07507f4a98, test3
+MEMORY_LEAK, no_bucket, src/hello.c, test3, 3

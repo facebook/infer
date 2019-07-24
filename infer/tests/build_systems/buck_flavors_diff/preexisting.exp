@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, src/hello.c, test1, 2, test1.5a105e8b9d40e1329780d62ea2265d8a, test1
+NULL_DEREFERENCE, B1, src/hello.c, test1, 2

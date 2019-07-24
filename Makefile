@@ -73,7 +73,14 @@ DIRECT_TESTS += \
 
 
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck_blacklist buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
+BUILD_SYSTEMS_TESTS += \
+  buck_blacklist \
+  buck-clang-db \
+  buck_flavors \
+  buck_flavors_diff \
+  buck_flavors_run \
+  buck_flavors_deterministic \
+
 endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig inferconfig_not_strict
