@@ -38,14 +38,11 @@ let count_procedures () =
   count
 
 
-(** choose some reasonable minimum capacity that also is a prime number *)
-let initial_call_graph_capacity = 1009
-
 let bottom_up sources : target task_generator =
   (* this will potentially grossly overapproximate the tasks *)
   let remaining = ref (count_procedures ()) in
   let remaining_tasks () = !remaining in
-  let syntactic_call_graph = CallGraph.create initial_call_graph_capacity in
+  let syntactic_call_graph = CallGraph.create CallGraph.default_initial_capacity in
   let initialized = ref false in
   let pending : CallGraph.Node.t list ref = ref [] in
   let scheduled = ref Typ.Procname.Set.empty in

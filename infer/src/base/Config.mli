@@ -191,8 +191,7 @@ val unsafe_unret : string
 
 val use_cost_threshold : bool
 
-(* Suppress unused value warning because the incremental analysis feature is not yet complete *)
-val incremental_analysis : bool [@@warning "-32"]
+val incremental_analysis : bool
 
 val weak : string
 

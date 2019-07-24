@@ -158,3 +158,11 @@ let get_unflagged_leaves g =
     (fun _id (n : Node.t) acc ->
       if n.flag || List.exists n.successors ~f:(mem g) then acc else n :: acc )
     g.node_map []
+
+
+let iter_flagged graph ~f =
+  NodeMap.iter (fun _id node -> if node.Node.flag then f node else ()) graph.node_map
+
+
+(** choose some reasonable minimum capacity that also is a prime number *)
+let default_initial_capacity = 1009

@@ -56,11 +56,15 @@ val trim_id_map : t -> unit
 val remove_unflagged_and_unflag_all : t -> unit
 (** remove all nodes with flag set to false, and set flag to false on all remaining nodes *)
 
-(* suppress unused value warning until this is used for T47276251 *)
 val add_edge : t -> pname:Typ.Procname.t -> successor_pname:Typ.Procname.t -> unit
-  [@@warning "-32"]
 (** add an edge from [pname] to [successor_pname] in the graph, creating a node for [pname] if there
     isn't one already *)
 
 val create_node : t -> Typ.Procname.t -> Typ.Procname.t sexp_list -> unit
 (** create a new node with edges from [pname] to [successor_pnames] in the graph *)
+
+val iter_flagged : t -> f:(Node.t -> unit) -> unit
+(** iterate over the nodes in the graph with flag set to true *)
+
+val default_initial_capacity : int
+(** reasonable minimum capacity for the graph that is prime *)

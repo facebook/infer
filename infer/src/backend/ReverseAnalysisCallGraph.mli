@@ -6,7 +6,5 @@
  *)
 open! IStd
 
-(* Suppress unused value warning until this is used for incremental diff analysis *)
 val build : CallGraph.t -> unit
-  [@@warning "-32"]
 (** Build the graph from the summaries in the .specs files *)
