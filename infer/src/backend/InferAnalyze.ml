@@ -150,6 +150,8 @@ let invalidate_changed_procedures changed_files =
       SourceFiles.proc_names_of_source sf
       |> List.iter ~f:(CallGraph.flag_reachable reverse_callgraph) )
     changed_files ;
+  if Config.debug_level_analysis > 0 then
+    CallGraph.to_dotty reverse_callgraph "reverse_analysis_callgraph.dot" ;
   CallGraph.iter_flagged reverse_callgraph ~f:(fun node -> SpecsFiles.delete node.pname) ;
   (* save some memory *)
   CallGraph.reset reverse_callgraph

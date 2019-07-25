@@ -33,10 +33,13 @@ module Node : NodeSig = struct
 
   let unset_flag n = n.flag <- false
 
-  let pp_dot fmt {id; pname; successors} =
+  let pp_dot fmt {id; pname; successors; flag} =
     let pp_id fmt id = F.fprintf fmt "N%d" id in
     let pp_edge fmt src dst = F.fprintf fmt "  %a -> %a ;@\n" pp_id src pp_id dst in
-    F.fprintf fmt "  %a [ label = %S ];@\n" pp_id id (F.asprintf "%a" Typ.Procname.pp pname) ;
+    let pp_flag fmt flag = F.fprintf fmt "%B" flag in
+    F.fprintf fmt "  %a [ label = %S, flag = %a ];@\n" pp_id id
+      (F.asprintf "%a" Typ.Procname.pp pname)
+      pp_flag flag ;
     List.iter successors ~f:(pp_edge fmt id) ;
     F.pp_print_newline fmt ()
 end

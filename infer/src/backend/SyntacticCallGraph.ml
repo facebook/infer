@@ -37,7 +37,7 @@ let build_from_sources g sources =
       SourceFiles.proc_names_of_source sf |> List.iter ~f:(CallGraph.flag_reachable g) ) ;
   CallGraph.remove_unflagged_and_unflag_all g ;
   CallGraph.trim_id_map g ;
-  if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "callgraph.dot" ;
+  if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "syntactic_callgraph.dot" ;
   L.progress
     "Built call graph in %a, from %d total procs, %d reachable defined procs and takes %d bytes@."
     Mtime.Span.pp (Mtime_clock.count time0) n_captured (CallGraph.n_procs g)
