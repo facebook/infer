@@ -66,6 +66,7 @@ let iter ~f = summary_iterator load_specfiles f
 
 let delete pname =
   let filename = Summary.OnDisk.specs_filename_of_procname pname |> DB.filename_to_string in
-  Unix.unlink filename ;
+  (* Unix_error is raised if the file isn't present so do nothing in this case *)
+  (try Unix.unlink filename with Unix.Unix_error _ -> ()) ;
   Ondemand.remove_from_cache pname ;
   Summary.OnDisk.remove_from_cache pname
