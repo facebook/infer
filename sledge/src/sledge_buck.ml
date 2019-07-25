@@ -149,17 +149,15 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
     ( ( if fuzzer then
         echo ~n:() (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
       else return () )
-    |- run
-         (Lazy.force llvm_bin ^ "llvm-link")
-         ( "-internalize"
-         :: ( "-internalize-public-api-list="
-            ^ String.concat ~sep:"," (Config.find_list "entry-points") )
-         :: "-o=-" :: modules )
+    |- run (Lazy.force llvm_bin ^ "llvm-link") ("-o=-" :: modules)
     |- run
          (Lazy.force llvm_bin ^ "opt")
-         [ "-o=" ^ bitcode_output; "-globaldce"; "-globalopt"; "-mergefunc"
-         ; "-constmerge"; "-argpromotion"; "-ipsccp"; "-mem2reg"; "-dce"
-         ; "-globaldce"; "-deadargelim"; "-global-merge-on-const"
+         [ "-o=" ^ bitcode_output; "-internalize"
+         ; "-internalize-public-api-list="
+           ^ String.concat ~sep:"," (Config.find_list "entry-points")
+         ; "-globaldce"; "-globalopt"; "-mergefunc"; "-constmerge"
+         ; "-argpromotion"; "-ipsccp"; "-mem2reg"; "-dce"; "-globaldce"
+         ; "-deadargelim"; "-global-merge-on-const"
          ; "-global-merge-ignore-single-use=false"
          ; "-global-merge-group-by-use=false"
            (* global-merge-max-offset is set to 0 by default. If a global
