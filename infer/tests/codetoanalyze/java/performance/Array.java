@@ -70,4 +70,21 @@ public class Array {
     String[] arr = new String[i];
     Arrays.binarySearch(arr, "u");
   }
+
+  String[] gen_and_iter_types(int length) {
+    String[] result = new String[length];
+    for (int i = 0; i < length; i++) {}
+    return result;
+  }
+
+  void call_gen_and_iter_types(int x) {
+    String[] r = gen_and_iter_types(x);
+    for (int i = 0; i < r.length; i++) {}
+  }
+
+  void call_gen_and_iter_types_linear_FP(int x, int y) {
+    String[] r1 = gen_and_iter_types(x);
+    String[] r2 = gen_and_iter_types(y);
+    for (int i = 0; i < r2.length; i++) {} // should not be infinite execution time
+  }
 }

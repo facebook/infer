@@ -39,8 +39,7 @@ module Val = struct
     ; arrayblk: ArrayBlk.t
     ; offset_sym: Relation.Sym.t
     ; size_sym: Relation.Sym.t
-    ; traces: TraceSet.t
-    ; represents_multiple_values: bool }
+    ; traces: TraceSet.t }
 
   let bot : t =
     { itv= Itv.bot
@@ -50,8 +49,7 @@ module Val = struct
     ; arrayblk= ArrayBlk.bot
     ; offset_sym= Relation.Sym.bot
     ; size_sym= Relation.Sym.bot
-    ; traces= TraceSet.bottom
-    ; represents_multiple_values= false }
+    ; traces= TraceSet.bottom }
 
 
   let pp fmt x =
@@ -65,14 +63,9 @@ module Val = struct
     let trace_pp fmt traces =
       if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    let represents_multiple_values_str = if x.represents_multiple_values then "M" else "" in
-    F.fprintf fmt "%s(%a%a%a, %a, %a%a%a%a)" represents_multiple_values_str Itv.pp x.itv
-      itv_thresholds_pp x.itv_thresholds relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp
-      x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp x.traces
-
-
-  let sets_represents_multiple_values : represents_multiple_values:bool -> t -> t =
-   fun ~represents_multiple_values x -> {x with represents_multiple_values}
+    F.fprintf fmt "(%a%a%a, %a, %a%a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
+      relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym
+      relation_sym_pp x.size_sym trace_pp x.traces
 
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
@@ -85,8 +78,7 @@ module Val = struct
     ; arrayblk= ArrayBlk.unknown
     ; offset_sym= Relation.Sym.top
     ; size_sym= Relation.Sym.top
-    ; traces
-    ; represents_multiple_values= false }
+    ; traces }
 
 
   let ( <= ) ~lhs ~rhs =
@@ -99,7 +91,6 @@ module Val = struct
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
       && Relation.Sym.( <= ) ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
       && Relation.Sym.( <= ) ~lhs:lhs.size_sym ~rhs:rhs.size_sym
-      && Bool.( <= ) lhs.represents_multiple_values rhs.represents_multiple_values
 
 
   let widen ~prev ~next ~num_iters =
@@ -116,9 +107,7 @@ module Val = struct
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
       ; offset_sym= Relation.Sym.widen ~prev:prev.offset_sym ~next:next.offset_sym ~num_iters
       ; size_sym= Relation.Sym.widen ~prev:prev.size_sym ~next:next.size_sym ~num_iters
-      ; traces= TraceSet.join prev.traces next.traces
-      ; represents_multiple_values=
-          prev.represents_multiple_values || next.represents_multiple_values }
+      ; traces= TraceSet.join prev.traces next.traces }
 
 
   let join : t -> t -> t =
@@ -132,8 +121,7 @@ module Val = struct
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
       ; offset_sym= Relation.Sym.join x.offset_sym y.offset_sym
       ; size_sym= Relation.Sym.join x.size_sym y.size_sym
-      ; traces= TraceSet.join x.traces y.traces
-      ; represents_multiple_values= x.represents_multiple_values || y.represents_multiple_values }
+      ; traces= TraceSet.join x.traces y.traces }
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
@@ -291,21 +279,10 @@ module Val = struct
 
   let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem Boolean.EqualOrder.top
 
-  (* TODO: get rid of those cases *)
-  let warn_against_pruning_multiple_values : t -> t =
-   fun x ->
-    if x.represents_multiple_values && Config.write_html then
-      L.d_printfln_escaped ~color:Pp.Red "Pruned %a that represents multiple values" pp x ;
-    x
-
-
-  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t =
-   fun f x -> warn_against_pruning_multiple_values {x with itv= f x.itv}
-
+  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
 
   let lift_prune_length1 : (Itv.t -> Itv.t) -> t -> t =
-   fun f x ->
-    warn_against_pruning_multiple_values {x with arrayblk= ArrayBlk.transform_length ~f x.arrayblk}
+   fun f x -> {x with arrayblk= ArrayBlk.transform_length ~f x.arrayblk}
 
 
   let lift_prune2 :
@@ -326,9 +303,7 @@ module Val = struct
       && phys_equal arrayblk x.arrayblk
     then (* x hasn't changed, don't join traces *)
       x
-    else
-      warn_against_pruning_multiple_values
-        {x with itv; itv_thresholds; arrayblk; traces= TraceSet.join x.traces y.traces}
+    else {x with itv; itv_thresholds; arrayblk; traces= TraceSet.join x.traces y.traces}
 
 
   let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero
@@ -588,8 +563,28 @@ module StackLocs = struct
   let bot = empty
 end
 
+(* MultiLocs denotes whether abstract locations represent one or multiple concrete locations.  If
+   the value is true, the abstract location may represent multiple concrete locations, thus it
+   should be updated weakly. *)
+module MultiLocs = AbstractDomain.BooleanOr
+
+module MVal = struct
+  include AbstractDomain.Pair (MultiLocs) (Val)
+
+  let pp fmt (represents_multiple_values, v) =
+    if represents_multiple_values then F.fprintf fmt "M" ;
+    Val.pp fmt v
+
+
+  let on_demand ~default ?typ oenv l =
+    (Loc.represents_multiple_values l, Val.on_demand ~default ?typ oenv l)
+
+
+  let get_val (_, v) = v
+end
+
 module MemPure = struct
-  include AbstractDomain.Map (Loc) (Val)
+  include AbstractDomain.Map (Loc) (MVal)
 
   let bot = empty
 
@@ -597,7 +592,7 @@ module MemPure = struct
       filter_loc:(Loc.t -> LoopHeadLoc.t option) -> t -> Polynomials.NonNegativePolynomial.t =
    fun ~filter_loc mem ->
     fold
-      (fun loc v acc ->
+      (fun loc (_, v) acc ->
         match filter_loc loc with
         | Some loop_head_loc ->
             v |> Val.get_itv |> Itv.range loop_head_loc |> Itv.ItvRange.to_top_lifted_polynomial
@@ -614,10 +609,10 @@ module MemPure = struct
         (fun l v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
           | Some v1, Some v2 ->
-              Some (Val.join v1 v2)
+              Some (MVal.join v1 v2)
           | Some v1, None | None, Some v1 ->
-              let v2 = Val.on_demand ~default:Val.bot oenv l in
-              Some (Val.join v1 v2)
+              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              Some (MVal.join v1 v2)
           | None, None ->
               None )
         astate1 astate2
@@ -630,16 +625,35 @@ module MemPure = struct
         (fun l v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
           | Some v1, Some v2 ->
-              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+              Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | Some v1, None ->
-              let v2 = Val.on_demand ~default:Val.bot oenv l in
-              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, Some v2 ->
-              let v1 = Val.on_demand ~default:Val.bot oenv l in
-              Some (Val.widen ~prev:v1 ~next:v2 ~num_iters)
+              let v1 = MVal.on_demand ~default:Val.bot oenv l in
+              Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, None ->
               None )
         prev next
+
+
+  let find_opt l m = Option.map (find_opt l m) ~f:MVal.get_val
+
+  let add ?(represents_multiple_values = false) l v m =
+    let f = function
+      | None ->
+          Some (represents_multiple_values || Loc.represents_multiple_values l, v)
+      | Some (represents_multiple_values', v') ->
+          let represents_multiple_values =
+            represents_multiple_values || represents_multiple_values'
+          in
+          let v = if represents_multiple_values then Val.join v' v else v in
+          Some (represents_multiple_values, v)
+    in
+    update l f m
+
+
+  let fold f m init = fold (fun k range acc -> f k (MVal.get_val range) acc) m init
 end
 
 module AliasTarget = struct
@@ -1335,17 +1349,19 @@ module MemReach = struct
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
 
-  let add_stack : Loc.t -> Val.t -> t -> t =
-   fun k v m ->
-    {m with stack_locs= StackLocs.add k m.stack_locs; mem_pure= MemPure.add k v m.mem_pure}
+  let add_stack : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values k v m ->
+    { m with
+      stack_locs= StackLocs.add k m.stack_locs
+    ; mem_pure= MemPure.add ?represents_multiple_values k v m.mem_pure }
 
 
   let replace_stack : Loc.t -> Val.t -> t -> t =
    fun k v m -> {m with mem_pure= MemPure.add k v m.mem_pure}
 
 
-  let add_heap : Loc.t -> Val.t -> t -> t =
-   fun x v m ->
+  let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values x v m ->
     let v =
       let sym =
         if Itv.is_bottom (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x
@@ -1356,7 +1372,7 @@ module MemReach = struct
       in
       {v with Val.sym; Val.offset_sym; Val.size_sym}
     in
-    {m with mem_pure= MemPure.add x v m.mem_pure}
+    {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
 
 
   let add_unknown_from :
@@ -1377,7 +1393,8 @@ module MemReach = struct
     let transform_mem1 l m =
       let add, find =
         if is_stack_loc l m then (replace_stack, find_stack)
-        else (add_heap, find_heap_default ~default:Val.bot ?typ:None)
+        else
+          (add_heap ~represents_multiple_values:false, find_heap_default ~default:Val.bot ?typ:None)
       in
       add l (f l (find l m)) m
     in
@@ -1639,9 +1656,15 @@ module Mem = struct
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)
 
-  let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> map ~f:(MemReach.add_stack k v)
+  let add_stack : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values k v ->
+    map ~f:(MemReach.add_stack ?represents_multiple_values k v)
 
-  let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> map ~f:(MemReach.add_heap k v)
+
+  let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values k v ->
+    map ~f:(MemReach.add_heap ?represents_multiple_values k v)
+
 
   let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
    fun id ~callee_pname ~location ->

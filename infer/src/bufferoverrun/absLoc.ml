@@ -248,6 +248,13 @@ module Loc = struct
         false
 
 
+  let is_java_collection_internal_array = function
+    | Field (_, fn) ->
+        Typ.Fieldname.equal fn BufferOverrunField.java_collection_internal_array
+    | _ ->
+        false
+
+
   let rec is_pretty = function
     | Var _ ->
         true
@@ -333,6 +340,8 @@ module Loc = struct
         false
     | Allocsite allocsite ->
         Allocsite.represents_multiple_values allocsite
+    | Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
+        false
     | Field (l, _) ->
         represents_multiple_values l
     | StarField _ ->

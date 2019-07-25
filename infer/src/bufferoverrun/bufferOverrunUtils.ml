@@ -35,13 +35,11 @@ module Exec = struct
   let load_locs id typ locs mem =
     let v = Dom.Mem.find_set ~typ locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
-    if not v.represents_multiple_values then
-      match PowLoc.is_singleton_or_more locs with
-      | IContainer.Singleton loc ->
-          Dom.Mem.load_simple_alias id loc mem
-      | _ ->
-          mem
-    else mem
+    match PowLoc.is_singleton_or_more locs with
+    | IContainer.Singleton loc ->
+        Dom.Mem.load_simple_alias id loc mem
+    | _ ->
+        mem
 
 
   let rec decl_local_loc ({tenv} as model_env) loc typ ~inst_num ~represents_multiple_values
@@ -80,9 +78,9 @@ module Exec = struct
         | Language.Java ->
             (Dom.Val.of_java_array_alloc allocsite ~length:size ~traces, None)
       in
-      let arr = Dom.Val.sets_represents_multiple_values arr ~represents_multiple_values in
       let mem = Dom.Mem.init_array_relation allocsite ~offset_opt ~size ~size_exp_opt:None mem in
-      if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem else Dom.Mem.add_heap loc arr mem
+      if Int.equal dimension 1 then Dom.Mem.add_stack ~represents_multiple_values loc arr mem
+      else Dom.Mem.add_heap ~represents_multiple_values loc arr mem
     in
     let loc = Loc.of_allocsite allocsite in
     let mem, _ =

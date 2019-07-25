@@ -216,23 +216,21 @@ module TransferFunctions = struct
           else mem
         in
         let mem =
-          if not v.represents_multiple_values then
-            match PowLoc.is_singleton_or_more locs with
-            | IContainer.Singleton loc_v -> (
-                let pname = Summary.get_proc_name summary in
-                match Typ.Procname.get_method pname with
-                | "__inferbo_empty" when Loc.is_return loc_v -> (
-                  match Procdesc.get_pvar_formals (Summary.get_proc_desc summary) with
-                  | [(formal, _)] ->
-                      let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
-                      Dom.Mem.store_empty_alias formal_v loc_v mem
-                  | _ ->
-                      assert false )
+          match PowLoc.is_singleton_or_more locs with
+          | IContainer.Singleton loc_v -> (
+              let pname = Summary.get_proc_name summary in
+              match Typ.Procname.get_method pname with
+              | "__inferbo_empty" when Loc.is_return loc_v -> (
+                match Procdesc.get_pvar_formals (Summary.get_proc_desc summary) with
+                | [(formal, _)] ->
+                    let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
+                    Dom.Mem.store_empty_alias formal_v loc_v mem
                 | _ ->
-                    Dom.Mem.store_simple_alias loc_v exp2 mem )
-            | _ ->
-                mem
-          else mem
+                    assert false )
+              | _ ->
+                  Dom.Mem.store_simple_alias loc_v exp2 mem )
+          | _ ->
+              mem
         in
         let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
         mem
