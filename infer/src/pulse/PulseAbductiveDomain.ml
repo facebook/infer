@@ -275,6 +275,8 @@ let discard_unreachable ({pre; post} as astate) =
     ; post= Domain.make (post :> PulseDomain.t).stack post_new_heap }
 
 
+let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
+
 module PrePost = struct
   type domain_t = t
 
@@ -283,7 +285,7 @@ module PrePost = struct
   let filter_for_summary astate =
     let post_stack =
       BaseStack.filter
-        (fun var _ -> Var.is_return var || Stack.is_abducible astate var)
+        (fun var _ -> not (is_local var astate))
         (astate.post :> PulseDomain.t).stack
     in
     (* deregister empty edges in pre *)
@@ -296,7 +298,44 @@ module PrePost = struct
     ; post= Domain.update ~stack:post_stack astate.post }
 
 
-  let of_post astate = filter_for_summary astate |> discard_unreachable
+  let add_out_of_scope_attribute addr pvar location history heap typ =
+    let action =
+      PulseDomain.InterprocAction.Immediate
+        {imm= PulseDomain.Invalidation.GoneOutOfScope (pvar, typ); location}
+    in
+    let attr = PulseDomain.Attributes.singleton (Invalid {action; history}) in
+    PulseDomain.Memory.add_attributes addr attr heap
+
+
+  (** invalidate local variables going out of scope *)
+  let invalidate_locals pdesc astate : t =
+    let heap : BaseMemory.t = (astate.post :> PulseDomain.t).heap in
+    let heap' =
+      PulseDomain.Memory.fold_attrs
+        (fun addr attrs heap ->
+          PulseDomain.Attributes.get_address_of_stack_variable attrs
+          |> Option.value_map ~default:heap ~f:(fun (var, history, location) ->
+                 let get_local_typ_opt pvar =
+                   Procdesc.get_locals pdesc
+                   |> List.find_map ~f:(fun ProcAttributes.{name; typ} ->
+                          if Mangled.equal name (Pvar.get_name pvar) then Some typ else None )
+                 in
+                 match var with
+                 | Var.ProgramVar pvar ->
+                     get_local_typ_opt pvar
+                     |> Option.value_map ~default:heap
+                          ~f:(add_out_of_scope_attribute addr pvar location history heap)
+                 | _ ->
+                     heap ) )
+        heap heap
+    in
+    if phys_equal heap heap' then astate
+    else {pre= astate.pre; post= Domain.update astate.post ~heap:heap'}
+
+
+  let of_post pdesc astate =
+    filter_for_summary astate |> discard_unreachable |> invalidate_locals pdesc
+
 
   (* {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call
      to the current state} *)
@@ -533,7 +572,11 @@ module PrePost = struct
               PulseDomain.InterprocAction.ViaCall
                 {action= trace.action; f= Call proc_name; location}
           ; history= trace.history }
-    | MustBeValid _ | AddressOfCppTemporary (_, _) | Closure _ | StdVectorReserve ->
+    | MustBeValid _
+    | AddressOfCppTemporary (_, _)
+    | AddressOfStackVariable (_, _, _)
+    | Closure _
+    | StdVectorReserve ->
         attr
 
 

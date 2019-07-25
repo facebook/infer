@@ -291,12 +291,25 @@ let mark_address_of_cpp_temporary history variable address astate =
     astate
 
 
-let remove_vars vars astate =
+let mark_address_of_stack_variable history variable location address astate =
+  Memory.add_attributes address
+    (Attributes.singleton (AddressOfStackVariable (variable, history, location)))
+    astate
+
+
+let remove_vars vars location astate =
   let astate =
     List.fold vars ~init:astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
-        | Some (address, history) when Var.is_cpp_temporary var ->
-            mark_address_of_cpp_temporary history var address astate
+        | Some (address, history) ->
+            let astate =
+              if PulseAbductiveDomain.is_local var astate then
+                mark_address_of_stack_variable history var location address astate
+              else astate
+            in
+            if Var.is_cpp_temporary var then
+              mark_address_of_cpp_temporary history var address astate
+            else astate
         | _ ->
             astate )
   in

@@ -76,6 +76,8 @@ module Memory : sig
       what it points to or creates a fresh value if that edge didn't exist.  *)
 end
 
+val is_local : Var.t -> t -> bool
+
 module PrePost : sig
   type domain_t = t
 
@@ -83,7 +85,7 @@ module PrePost : sig
 
   val pp : Format.formatter -> t -> unit
 
-  val of_post : domain_t -> t
+  val of_post : Procdesc.t -> domain_t -> t
 
   val apply :
        Typ.Procname.t

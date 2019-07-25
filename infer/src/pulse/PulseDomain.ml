@@ -247,6 +247,7 @@ module Attribute = struct
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
     | AddressOfCppTemporary of Var.t * ValueHistory.t
+    | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
     | StdVectorReserve
   [@@deriving compare, variants]
@@ -256,6 +257,13 @@ module Attribute = struct
   let to_rank = Variants.to_rank
 
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
+
+  let address_of_stack_variable_rank =
+    let pname = Typ.Procname.from_string_c_fun "" in
+    let var = Var.of_pvar (Pvar.mk (Mangled.from_string "") pname) in
+    let location = Location.dummy in
+    Variants.to_rank (AddressOfStackVariable (var, [], location))
+
 
   let invalid_rank =
     Variants.to_rank
@@ -278,7 +286,9 @@ module Attribute = struct
           action Location.pp
           (InterprocAction.to_outer_location action)
     | AddressOfCppTemporary (var, history) ->
-        F.fprintf f "&%a (%a)" Var.pp var ValueHistory.pp history
+        F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
+    | AddressOfStackVariable (var, history, location) ->
+        F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
     | Closure pname ->
         Typ.Procname.pp f pname
     | StdVectorReserve ->
@@ -307,6 +317,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.Closure proc_name) = attr in
            proc_name )
+
+
+  let get_address_of_stack_variable attrs =
+    Set.find_rank attrs Attribute.address_of_stack_variable_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.AddressOfStackVariable (var, history, loc)) = attr in
+           (var, history, loc) )
 
 
   let is_std_vector_reserved attrs =

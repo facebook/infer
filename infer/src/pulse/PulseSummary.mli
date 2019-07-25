@@ -8,6 +8,6 @@ open! IStd
 
 type t = PulseAbductiveDomain.PrePost.t list
 
-val of_posts : PulseAbductiveDomain.t list -> t
+val of_posts : Procdesc.t -> PulseAbductiveDomain.t list -> t
 
 val pp : Format.formatter -> t -> unit

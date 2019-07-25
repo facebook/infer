@@ -8,7 +8,7 @@ open! IStd
 
 type t = PulseAbductiveDomain.PrePost.t list
 
-let of_posts posts = List.map posts ~f:PulseAbductiveDomain.PrePost.of_post
+let of_posts pdesc posts = List.map posts ~f:(PulseAbductiveDomain.PrePost.of_post pdesc)
 
 let pp fmt summary =
   PrettyPrintable.pp_collection ~pp_item:PulseAbductiveDomain.PrePost.pp fmt summary

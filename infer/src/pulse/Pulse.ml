@@ -191,8 +191,8 @@ module PulseTransferFunctions = struct
         [post]
     | Call (ret, call_exp, actuals, loc, call_flags) ->
         dispatch_call summary ret call_exp actuals loc call_flags astate |> check_error summary
-    | Metadata (ExitScope (vars, _)) ->
-        [PulseOperations.remove_vars vars astate]
+    | Metadata (ExitScope (vars, location)) ->
+        [PulseOperations.remove_vars vars location astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
         [PulseOperations.realloc_var (Var.of_pvar pvar) location astate]
     | Metadata (Abstract _ | Nullify _ | Skip) ->
@@ -219,14 +219,14 @@ let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let proc_data = ProcData.make summary tenv () in
   AbstractAddress.init () ;
+  let pdesc = Summary.get_proc_desc summary in
   let initial =
-    DisjunctiveTransferFunctions.Disjuncts.singleton
-      (PulseAbductiveDomain.mk_initial (Summary.get_proc_desc summary))
+    DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial pdesc)
   in
   match DisjunctiveAnalyzer.compute_post proc_data ~initial with
   | Some posts ->
       PulsePayload.update_summary
-        (PulseSummary.of_posts (DisjunctiveTransferFunctions.Disjuncts.elements posts))
+        (PulseSummary.of_posts pdesc (DisjunctiveTransferFunctions.Disjuncts.elements posts))
         summary
   | None ->
       summary

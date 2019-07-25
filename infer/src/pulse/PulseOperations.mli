@@ -90,7 +90,7 @@ val shallow_copy :
   Location.t -> PulseDomain.AddrTracePair.t -> t -> (t * AbstractAddress.t) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
-val remove_vars : Var.t list -> t -> t
+val remove_vars : Var.t list -> Location.t -> t -> t
 
 val check_address_escape :
      Location.t
