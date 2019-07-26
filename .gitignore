@@ -18,6 +18,7 @@
 /infer/tests/codetoanalyze/java/*/codetoanalyze
 _build_infer
 *.exp.test*
+*.dot.test
 *.test.dot
 *.test.txt
 duplicates.txt
@@ -43,6 +44,7 @@ duplicates.txt
 /infer/tests/build_systems/differential_*/**/*.class
 /infer/tests/build_systems/differential_*/**/Diff*.java
 /infer/tests/build_systems/genrule/report.json
+/infer/tests/build_systems/incremental_analysis/src
 /infer/tests/build_systems/java_test_determinator/*.test
 /infer/tests/codetoanalyze/java/classloads/*.loads
 /infer/tests/codetoanalyze/java/classloads/loads.exp
