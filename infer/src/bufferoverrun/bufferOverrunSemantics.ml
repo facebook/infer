@@ -30,7 +30,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
   | Exp.Var x1, Exp.Var x2 -> (
     match (Mem.find_alias x1 m, Mem.find_alias x2 m) with
     | Some x1', Some x2' ->
-        AliasTarget.equal x1' x2'
+        AliasTarget.equal x1' x2' && not (Mem.is_rep_multi_loc (AliasTarget.get_loc x1') m)
     | _, _ ->
         false )
   | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _) ->

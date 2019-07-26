@@ -161,6 +161,15 @@ module TransferFunctions = struct
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
 
 
+  let rec is_array_access_exp = function
+    | Exp.BinOp ((PlusPI | MinusPI), _, _) | Exp.Lindex _ ->
+        true
+    | Exp.Cast (_, x) ->
+        is_array_access_exp x
+    | _ ->
+        false
+
+
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
    fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}}
        node instr ->
@@ -184,7 +193,8 @@ module TransferFunctions = struct
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
     | Load (id, exp, typ, _) ->
-        BoUtils.Exec.load_locs id typ (Sem.eval_locs exp mem) mem
+        let represents_multiple_values = is_array_access_exp exp in
+        BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
     | Store (exp1, _, Const (Const.Cstr s), location) ->
         let locs = Sem.eval_locs exp1 mem in
         let model_env =

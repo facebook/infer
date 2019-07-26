@@ -32,9 +32,14 @@ end
 module Exec = struct
   open ModelEnv
 
-  let load_locs id typ locs mem =
+  let load_locs ~represents_multiple_values id typ locs mem =
     let v = Dom.Mem.find_set ~typ locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
+    let mem =
+      if represents_multiple_values then
+        Dom.Mem.add_heap_set ~represents_multiple_values locs v mem
+      else mem
+    in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
         Dom.Mem.load_simple_alias id loc mem

@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 
-int check_sorted_arr_good_FP(int a[], int length) {
+int check_sorted_arr_good(int a[], int length) {
   for (int i = 1; i < length; i++) {
     if (a[i] < a[i - 1]) { // should not report CONDITION_ALWAYS_FALSE
       return 0;
@@ -15,7 +15,7 @@ int check_sorted_arr_good_FP(int a[], int length) {
   return 1;
 }
 
-int check_sorted_arr10_good_FP(int a[10], int length) {
+int check_sorted_arr10_good(int a[10], int length) {
   for (int i = 1; i < length; i++) {
     if (a[i] < a[i - 1]) { // should not report CONDITION_ALWAYS_FALSE
       return 0;
@@ -24,7 +24,7 @@ int check_sorted_arr10_good_FP(int a[10], int length) {
   return 1;
 }
 
-int check_sorted_ptr_good_FP(int* a, int length) {
+int check_sorted_ptr_good(int* a, int length) {
   for (int i = 1; i < length; i++) {
     if (a[i] < a[i - 1]) { // should not report CONDITION_ALWAYS_FALSE
       return 0;
@@ -33,7 +33,7 @@ int check_sorted_ptr_good_FP(int* a, int length) {
   return 1;
 }
 
-int array_min_index_from_one_FP(int* a, int length) {
+int array_min_index_from_one(int* a, int length) {
   int index_min = 1;
   for (int i = 2; i < length; i++) {
     if (a[i] < a[index_min]) { // should not report CONDITION_ALWAYS_FALSE
@@ -51,7 +51,7 @@ int array_min_index_from_one_FP(int* a, int length) {
 */
 void call_array_min_index_from_one_good() {
   int a[2];
-  a[array_min_index_from_one_FP(a, 2) - 1] = 0;
+  a[array_min_index_from_one(a, 2) - 1] = 0;
 }
 
 void weak_update_Good_FP() {

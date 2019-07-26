@@ -580,6 +580,8 @@ module MVal = struct
     (Loc.represents_multiple_values l, Val.on_demand ~default ?typ oenv l)
 
 
+  let get_rep_multi (represents_multiple_values, _) = represents_multiple_values
+
   let get_val (_, v) = v
 end
 
@@ -637,6 +639,8 @@ module MemPure = struct
         prev next
 
 
+  let is_rep_multi_loc l m = Option.value_map ~default:false (find_opt l m) ~f:MVal.get_rep_multi
+
   let find_opt l m = Option.map (find_opt l m) ~f:MVal.get_val
 
   let add ?(represents_multiple_values = false) l v m =
@@ -685,10 +689,9 @@ module AliasTarget = struct
 
   let nullity l = Nullity l
 
-  let use l = function
-    | Simple l' | SimplePlusA (l', _) | Empty l' | Fgets l' | Nullity l' ->
-        Loc.equal l l'
+  let get_loc = function Simple l | SimplePlusA (l, _) | Empty l | Fgets l | Nullity l -> l
 
+  let use l x = Loc.equal l (get_loc x)
 
   let loc_map x ~f =
     match x with
@@ -713,9 +716,7 @@ module AliasTarget = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let is_unknown = function
-    | Simple l | SimplePlusA (l, _) | Empty l | Fgets l | Nullity l ->
-        Loc.is_unknown l
+  let is_unknown x = Loc.is_unknown (get_loc x)
 end
 
 (* Relations between values of logical variables(registers) and program variables
@@ -1292,6 +1293,8 @@ module MemReach = struct
 
   let is_stack_loc : Loc.t -> _ t0 -> bool = fun l m -> StackLocs.mem l m.stack_locs
 
+  let is_rep_multi_loc : Loc.t -> _ t0 -> bool = fun l m -> MemPure.is_rep_multi_loc l m.mem_pure
+
   let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
@@ -1373,6 +1376,11 @@ module MemReach = struct
       {v with Val.sym; Val.offset_sym; Val.size_sym}
     in
     {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
+
+
+  let add_heap_set : ?represents_multiple_values:bool -> PowLoc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values locs v m ->
+    PowLoc.fold (fun l acc -> add_heap ?represents_multiple_values l v acc) locs m
 
 
   let add_unknown_from :
@@ -1604,6 +1612,10 @@ module Mem = struct
    fun k -> f_lift_default ~default:false (MemReach.is_stack_loc k)
 
 
+  let is_rep_multi_loc : Loc.t -> _ t0 -> bool =
+   fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
+
+
   let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
 
   let find_stack : Loc.t -> _ t0 -> Val.t =
@@ -1664,6 +1676,11 @@ module Mem = struct
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
    fun ?represents_multiple_values k v ->
     map ~f:(MemReach.add_heap ?represents_multiple_values k v)
+
+
+  let add_heap_set : ?represents_multiple_values:bool -> PowLoc.t -> Val.t -> t -> t =
+   fun ?represents_multiple_values ploc v ->
+    map ~f:(MemReach.add_heap_set ?represents_multiple_values ploc v)
 
 
   let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
