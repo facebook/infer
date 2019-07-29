@@ -330,6 +330,11 @@ module Attributes = struct
     Set.find_rank attrs Attribute.std_vector_reserve_rank |> Option.is_some
 
 
+  let only_contains_address_of_stack_variable attrs =
+    Set.is_singleton attrs
+    && Option.is_some (Set.find_rank attrs Attribute.address_of_stack_variable_rank)
+
+
   include Set
 end
 

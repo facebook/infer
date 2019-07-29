@@ -174,6 +174,8 @@ module type PPUniqRankSet = sig
 
   val is_empty : t -> bool
 
+  val is_singleton : t -> bool
+
   val is_subset : t -> of_:t -> bool
 
   val map : t -> f:(elt -> elt) -> t

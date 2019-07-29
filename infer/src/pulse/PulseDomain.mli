@@ -96,6 +96,8 @@ module Attributes : sig
   val get_must_be_valid : t -> unit InterprocAction.t option
 
   val get_address_of_stack_variable : t -> (Var.t * ValueHistory.t * Location.t) option
+
+  val only_contains_address_of_stack_variable : t -> bool
 end
 
 module AbstractAddress : sig

@@ -223,6 +223,8 @@ module type PPUniqRankSet = sig
 
   val is_empty : t -> bool
 
+  val is_singleton : t -> bool
+
   val is_subset : t -> of_:t -> bool
 
   val map : t -> f:(elt -> elt) -> t
@@ -252,6 +254,8 @@ module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type e
   let fold map ~init ~f = Map.fold (fun _key value accum -> f accum value) map init
 
   let is_empty = Map.is_empty
+
+  let is_singleton m = Int.equal 1 (Map.cardinal m)
 
   let is_subset m ~of_ =
     Map.for_all

@@ -473,7 +473,8 @@ module PrePost = struct
     | None ->
         false
     | Some (edges_pre, _) ->
-        Attributes.is_empty attrs_post
+        ( Attributes.is_empty attrs_post
+        || Attributes.only_contains_address_of_stack_variable attrs_post )
         && PulseDomain.Memory.Edges.equal
              (fun (addr_dest_pre, _) (addr_dest_post, _) ->
                (* NOTE: ignores traces
