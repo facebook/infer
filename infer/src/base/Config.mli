@@ -268,6 +268,8 @@ val capture_blacklist : string option
 val captured_dir : string
 (** directory where the results of the capture phase are stored *)
 
+val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
+
 val changed_files_index : string option
 
 val check_version : string option
@@ -363,8 +365,6 @@ val fcp_syntax_only : bool
 val file_renamings : string option
 
 val filter_paths : bool
-
-val filter_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val filtering : bool
 

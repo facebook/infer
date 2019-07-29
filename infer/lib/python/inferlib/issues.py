@@ -31,6 +31,7 @@ ISSUE_SEVERITY_ADVICE = 'ADVICE'
 ISSUE_SEVERITY_LIKE = 'LIKE'
 
 # field names in rows of json reports
+JSON_INDEX_CENSORED_REASON = 'censored_reason'
 JSON_INDEX_DOTTY = 'dotty'
 JSON_INDEX_FILENAME = 'file'
 JSON_INDEX_HASH = 'hash'
@@ -177,12 +178,18 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
     return bug_list + summary
 
 
+def _get_censored_reason(report):
+    return report.get(JSON_INDEX_CENSORED_REASON)
+
 def _is_user_visible(report):
-    return report[JSON_INDEX_SEVERITY] in [
-        ISSUE_SEVERITY_ERROR,
-        ISSUE_SEVERITY_WARNING,
-        ISSUE_SEVERITY_ADVICE,
-        ISSUE_SEVERITY_LIKE]
+    if _get_censored_reason(report) is not None:
+        return False
+    else:
+        return report[JSON_INDEX_SEVERITY] in [
+            ISSUE_SEVERITY_ERROR,
+            ISSUE_SEVERITY_WARNING,
+            ISSUE_SEVERITY_ADVICE,
+            ISSUE_SEVERITY_LIKE]
 
 
 def print_and_save_errors(infer_out, project_root, json_report, bugs_out,

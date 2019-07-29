@@ -163,6 +163,26 @@ OPTIONS
            expression (only supported by the javac integration for now).       
     See also infer-capture(1) and infer-run(1).
 
+       --censor-report +string
+           Specify a filter for issues to be censored by adding a
+           'censored_reason' field in the json report. Infer will not report
+           censored issues on the console output and in bugs.txt, but tools
+           that post-process the json report can take them into account. If
+           multiple filters are specified, they are applied in the order in
+           which they are specified. Each filter is applied to each issue
+           detected, and only issues which are accepted by all filters are
+           reported. Each filter is of the form:
+           `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
+           two components are OCaml Str regular expressions, with an optional
+           `!` character prefix. If a regex has a `!` prefix, the polarity is
+           inverted, and the filter becomes a "blacklist" instead of a
+           "whitelist". Each filter is interpreted as an implication: an
+           issue matches if it does not match the `issue_type_regex` or if it
+           does match the `filename_regex`. The filenames that are tested by
+           the regex are relative to the `--project-root` directory. The
+           `<reason_string>` is a non-empty string used to explain why the
+           issue was filtered.           See also infer-report(1) and infer-run(1).
+
        --changed-files-index file
            Specify the file containing the list of source files from which
            reactive analysis should start. Source files should be specified
@@ -513,23 +533,6 @@ OPTIONS
        --file-renamings path
            JSON with a list of file renamings to use while computing
            differential reports           See also infer-reportdiff(1).
-
-       --filter-report +string
-           Specify a filter for issues to report. If multiple filters are
-           specified, they are applied in the order in which they are
-           specified. Each filter is applied to each issue detected, and only
-           issues which are accepted by all filters are reported. Each filter
-           is of the form:
-           `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
-           two components are OCaml Str regular expressions, with an optional
-           `!` character prefix. If a regex has a `!` prefix, the polarity is
-           inverted, and the filter becomes a "blacklist" instead of a
-           "whitelist". Each filter is interpreted as an implication: an
-           issue matches if it does not match the `issue_type_regex` or if it
-           does match the `filename_regex`. The filenames that are tested by
-           the regex are relative to the `--project-root` directory. The
-           `<reason_string>` is a non-empty string used to explain why the
-           issue was filtered.           See also infer-report(1) and infer-run(1).
 
        --no-filtering,-F
            Deactivates: Do not show the experimental and blacklisted issue
@@ -1184,6 +1187,9 @@ INTERNAL OPTIONS
        --capture-blacklist-reset
            Cancel the effect of --capture-blacklist.
 
+       --censor-report-reset
+           Set --censor-report to the empty list.
+
        --changed-files-index-reset
            Cancel the effect of --changed-files-index.
 
@@ -1354,9 +1360,6 @@ INTERNAL OPTIONS
        --no-filter-paths
            Deactivates: Filters specified in .inferconfig (Conversely:
            --filter-paths)
-
-       --filter-report-reset
-           Set --filter-report to the empty list.
 
        --force-integration-reset
            Cancel the effect of --force-integration.
