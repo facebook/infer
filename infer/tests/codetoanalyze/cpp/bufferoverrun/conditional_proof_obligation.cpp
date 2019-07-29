@@ -202,3 +202,27 @@ void call_conditional_inequality_depth1_2_Good() {
 void call_conditional_inequality_depth1_3_Bad() {
   conditional_inequality_depth1(6);
 }
+
+class MyString {
+  char* _data = "";
+  size_t _size = 0;
+
+ public:
+  size_t size() { return _size; }
+
+  char* data() { return _data; }
+};
+
+void set_fourth_idx(char* p) { p[3] = '0'; }
+
+void set_fourth_idx_safe(MyString* input) {
+  if (input->size() < 4) {
+    return;
+  }
+  set_fourth_idx(input->data());
+}
+
+void call_set_fourth_idx_safe_Good() {
+  MyString* s = new MyString();
+  set_fourth_idx_safe(s);
+}

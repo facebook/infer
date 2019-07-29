@@ -64,7 +64,11 @@ module TransferFunctions = struct
       |> Dom.LatestPrune.subst ~ret_id eval_sym_trace location
     with
     | Ok latest_prune' ->
-        Dom.Mem.set_latest_prune latest_prune' mem
+        (* Note that we are losing some precisions here, e.g., the best results should be "and" of
+           caller's and callee's pruned conditions.  For now, we defer the implementation of the
+           "and" since we haven't seen a case where "and" would help yet. *)
+        if Dom.LatestPrune.is_top latest_prune' then mem
+        else Dom.Mem.set_latest_prune latest_prune' mem
     | Error `SubstBottom ->
         Dom.Mem.bottom
     | Error `SubstFail ->

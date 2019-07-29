@@ -1121,6 +1121,8 @@ module LatestPrune = struct
 
   let top = Top
 
+  let is_top = function Top -> true | _ -> false
+
   let forget locs =
     let is_mem_locs x = PowLoc.mem (Loc.of_pvar x) locs in
     function
