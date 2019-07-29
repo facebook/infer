@@ -257,8 +257,10 @@ module ItvPure = struct
           of_big_int Z.(n mod m)
       | None ->
           let abs_m = Z.abs m in
-          if is_ge_zero x then (Bound.zero, Bound.of_big_int Z.(abs_m - one))
-          else if is_le_zero x then (Bound.of_big_int Z.(one - abs_m), Bound.zero)
+          if is_ge_zero x then
+            (Bound.zero, Bound.overapprox_min (Bound.of_big_int Z.(abs_m - one)) (ub x))
+          else if is_le_zero x then
+            (Bound.overapprox_max (Bound.of_big_int Z.(one - abs_m)) (lb x), Bound.zero)
           else (Bound.of_big_int Z.(one - abs_m), Bound.of_big_int Z.(abs_m - one)) )
 
 

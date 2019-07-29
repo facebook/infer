@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #include <cstdint>
+#include <cstdlib>
 
 void sizeof_bool_Good() {
   int a[2];
@@ -115,3 +116,19 @@ void call_integer_overflow_param_1_Good() { integer_overflow_param_1(0); }
 uint32_t integer_overflow_param_2(uint32_t x) { return x - 1; }
 
 void call_integer_overflow_param_2_Bad() { integer_overflow_param_2(0); }
+
+void mod_ub(const char* msg, size_t leng) {
+  size_t rem = leng % 32;
+  if (rem == 15) {
+    char d = msg[14]; // Good
+  }
+  if (rem == 10) {
+    char d = msg[14]; // Bad
+  }
+}
+
+void call_mod_ub_1_Good() { mod_ub("ab", 2); }
+
+void call_mod_ub_2_Good() { mod_ub("abcdefghijklmno", 15); }
+
+void call_mod_ub_Bad() { mod_ub("abcdefghij", 10); }
