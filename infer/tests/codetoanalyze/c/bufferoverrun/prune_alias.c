@@ -365,3 +365,15 @@ void unknown_alias_Bad() {
     a[10] = 0;
   }
 }
+
+void prune_linear_by_minmax(size_t s, size_t t) {
+  if (s > 0 && s < 1000) {
+    if (t >= s + 1) {
+      size_t u = t - 2;
+    }
+  }
+}
+
+void call_prune_linear_by_minmax_Good() {
+  prune_linear_by_minmax(unknown_function(), unknown_function());
+}

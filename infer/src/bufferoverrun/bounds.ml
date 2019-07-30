@@ -655,6 +655,16 @@ module Bound = struct
               let v = if Z.leq vmin vmeet && Z.leq vmeet vmax then vmeet else vmax in
               let d = Sign.eval_neg_if_minus sign1 Z.(v - c1) in
               mk_MinMax (c1, sign1, minmax1, d, s1)
+          | Linear (c1, x1), MinMax (c2, (Minus as sign), Max, d2, _)
+          | Linear (c1, x1), MinMax (c2, (Plus as sign), Min, d2, _)
+            when SymLinear.is_one_symbol x1 ->
+              let d = Sign.eval_big_int sign c2 d2 in
+              mk_MinMax (c1, Plus, Min, Z.(d - c1), SymLinear.get_one_symbol x1)
+          | Linear (c1, x1), MinMax (c2, (Minus as sign), Max, d2, _)
+          | Linear (c1, x1), MinMax (c2, (Plus as sign), Min, d2, _)
+            when SymLinear.is_mone_symbol x1 ->
+              let d = Sign.eval_big_int sign c2 d2 in
+              mk_MinMax (c1, Minus, Max, Z.(c1 - d), SymLinear.get_mone_symbol x1)
           | _ ->
               (* When the result is not representable, our best effort is to return the first original argument. Any other deterministic heuristics would work too. *)
               original_b1 )
