@@ -39,15 +39,15 @@ OPTIONS
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --force-delete-results-dir
            Activates: Do not refuse to delete the results directory if it
@@ -66,7 +66,7 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise. (default: auto)
+           to pager otherwise.
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
@@ -82,14 +82,13 @@ OPTIONS
 
        --progress-bar-style { auto | plain | multiline }
            Style of the progress bar. auto selects multiline if connected to
-           a tty, otherwise plain. (default: auto)
+           a tty, otherwise plain.
 
        --project-root,-C dir
-           Specify the root directory of the project (default: .)
+           Specify the root directory of the project
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
-           (default: ./infer-out)
 
        --skip-analysis-in-path +path_prefix_OCaml_regex
            Ignore files whose path matches the given prefix (can be specified
@@ -97,7 +96,6 @@ OPTIONS
 
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
-           (default: five seconds times number of cores)
 
        --  Stop argument processing, use remaining arguments as a build
            command
@@ -148,7 +146,7 @@ BUCK FOR JAVA OPTIONS
 CLANG LINTERS OPTIONS
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -197,12 +195,10 @@ CLANG OPTIONS
            Specify a file containing the AST of the program, in biniou format
 
        --clang-blacklisted-flags +string
-           Clang flags to filter out (default:
-           --expt-relaxed-constexpr,-fembed-bitcode-marker,-fno-absolute-module-directory,-fno-canonical-system-headers)
+           Clang flags to filter out
 
        --clang-blacklisted-flags-with-arg +string
-           Clang flags (taking args) to filter out (default:
-           -index-store-path,-mllvm)
+           Clang flags (taking args) to filter out
 
        --compilation-database +path
            File that contain compilation commands (can be specified multiple

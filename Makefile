@@ -280,23 +280,23 @@ endif
 
 $(INFER_COMMAND_MANUALS): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
-	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help --help-format=groff > $@
+	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help-scrubbed --help-format=groff > $@
 
 $(INFER_COMMAND_TEXT_MANUALS): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
-	$(QUIET)$(INFER_BIN) $(patsubst infer-%.txt,%,$(@F)) --help --help-format=plain > $@
+	$(QUIET)$(INFER_BIN) $(patsubst infer-%.txt,%,$(@F)) --help-scrubbed --help-format=plain > $@
 
 $(INFER_MANUAL): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
-	$(QUIET)$(INFER_BIN) --help --help-format=groff > $@
+	$(QUIET)$(INFER_BIN) --help-scrubbed --help-format=groff > $@
 
 $(INFER_TEXT_MANUAL): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
-	$(QUIET)$(INFER_BIN) --help --help-format=plain > $@
+	$(QUIET)$(INFER_BIN) --help-scrubbed --help-format=plain > $@
 
 $(INFER_FULL_TEXT_MANUAL): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
-	$(QUIET)$(INFER_BIN) --help-full --help-format=plain > $@
+	$(QUIET)$(INFER_BIN) --help-scrubbed-full --help-format=plain > $@
 
 $(INFER_GROFF_MANUALS_GZIPPED): %.gz: %
 	$(QUIET)$(REMOVE) $@

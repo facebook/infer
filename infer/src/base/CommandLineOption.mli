@@ -247,13 +247,15 @@ val is_env_var_set : string -> bool
 (** [is_env_var_set var] is true if $[var]=1 *)
 
 val show_manual :
-     ?internal_section:string
+     ?scrub_defaults:bool
+  -> ?internal_section:string
   -> Cmdliner.Manpage.format
   -> command_doc
   -> InferCommand.t option
   -> unit
 (** Display the manual of [command] to the user, or [command_doc] if [command] is None. [format] is
-    used as for [Cmdliner.Manpage.print]. If [internal_section] is specified, add a section titled
-    [internal_section] about internal (hidden) options. *)
+   used as for [Cmdliner.Manpage.print]. If [internal_section] is specified, add a section titled
+   [internal_section] about internal (hidden) options. If [scrub_defaults] then do not print default
+   values for options. *)
 
 val keep_args_file : bool ref

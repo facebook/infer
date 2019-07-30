@@ -50,15 +50,15 @@ OPTIONS
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --differential-filter-files string
            Specify the file containing the list of source files for which a
@@ -261,7 +261,7 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise. (default: auto)
+           to pager otherwise.
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
@@ -271,8 +271,7 @@ OPTIONS
        qualifier | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note }
-           Fields to emit with --issues-tests (default: file procedure
-           line_offset bug_type bucket severity bug_trace)
+           Fields to emit with --issues-tests
 
        --issues-tests file
            Write a list of issues in a format suitable for tests to file
@@ -286,7 +285,7 @@ OPTIONS
            --no-print-logs)
 
        --project-root,-C dir
-           Specify the root directory of the project (default: .)
+           Specify the root directory of the project
 
        --quiet,-q
            Activates: Do not print specs on standard output (default: only
@@ -302,15 +301,13 @@ OPTIONS
            --<analyzer>-whitelist-path-regex)
 
        --report-formatter { none | phabricator }
-           Which formatter to use when emitting the report (default:
-           phabricator)
+           Which formatter to use when emitting the report
 
        --report-suppress-errors +error_name
            do not report a type of errors
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
-           (default: ./infer-out)
 
        --skip-analysis-in-path-skips-compilation
            Activates: Whether paths in --skip-analysis-in-path should be

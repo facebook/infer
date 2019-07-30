@@ -29,15 +29,15 @@ OPTIONS
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --force-delete-results-dir
            Activates: Do not refuse to delete the results directory if it
@@ -50,7 +50,7 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise. (default: auto)
+           to pager otherwise.
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS

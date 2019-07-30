@@ -51,15 +51,15 @@ OPTIONS
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values. (default: 0)
+           values.
 
        --fail-on-issue
            Activates: Exit with error code 2 if Infer found something to
@@ -82,7 +82,7 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise. (default: auto)
+           to pager otherwise.
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
@@ -113,7 +113,7 @@ OPTIONS
            Deactivates: Show a progress bar (Conversely: --progress-bar | -p)
 
        --project-root,-C dir
-           Specify the root directory of the project (default: .)
+           Specify the root directory of the project
 
        --no-report
            Deactivates: Run the reporting phase once the analysis has
@@ -135,15 +135,13 @@ OPTIONS
        --report-hook script
            Specify a script to be executed after the analysis results are
            written. This script will be passed, --issues-json, --issues-txt,
-           --issues-xml, --project-root, and --results-dir. (default: <infer
-           installation directory>/lib/python/report.py)
+           --issues-xml, --project-root, and --results-dir.
 
        --report-suppress-errors +error_name
            do not report a type of errors
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
-           (default: ./infer-out)
 
        --skip-analysis-in-path +path_prefix_OCaml_regex
            Ignore files whose path matches the given prefix (can be specified
@@ -151,7 +149,6 @@ OPTIONS
 
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
-           (default: five seconds times number of cores)
 
        --version
            Print version information and exit

@@ -1504,6 +1504,10 @@ and help =
   CLOpt.mk_set var `HelpFull ~long:"help-full"
     ~in_help:(List.map InferCommand.all_commands ~f:(fun command -> (command, manual_generic)))
     (Printf.sprintf "Show this manual with all internal options in the %s section" manual_internal) ;
+  CLOpt.mk_set var `HelpScrubbed ~long:"help-scrubbed"
+    "Show this manual without specifying default values induced by the current build configuration" ;
+  CLOpt.mk_set var `HelpScrubbedFull ~long:"help-scrubbed-full"
+    "Show the scrubbed manual with all internal options" ;
   var
 
 
@@ -2528,6 +2532,11 @@ let post_parsing_initialization command_opt =
       CLOpt.show_manual !help_format CommandDoc.infer command_opt
   | `HelpFull ->
       CLOpt.show_manual ~internal_section:manual_internal !help_format CommandDoc.infer command_opt
+  | `HelpScrubbed ->
+      CLOpt.show_manual ~scrub_defaults:true !help_format CommandDoc.infer command_opt
+  | `HelpScrubbedFull ->
+      CLOpt.show_manual ~scrub_defaults:true ~internal_section:manual_internal !help_format
+        CommandDoc.infer command_opt
   | `None ->
       () ) ;
   if !version <> `None || !help <> `None then Pervasives.exit 0 ;
