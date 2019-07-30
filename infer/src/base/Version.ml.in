@@ -47,7 +47,7 @@ let clang_enabled = is_yes "@BUILD_C_ANALYZERS@"
 
 let java_enabled = is_yes "@BUILD_JAVA_ANALYZERS@"
 
-let is_jdk11 = is_yes "@JDK11_ENABLED@"
+let java_version = int_of_string_opt "@JAVA_MAJOR_VERSION@"
 
 let xcode_enabled = is_not_no "@XCODE_SELECT@"
 

@@ -441,6 +441,8 @@ val iterations : int
 
 val java_jar_compiler : string option
 
+val java_version : int option
+
 val javac_classes_out : string
 
 val job_id : string option

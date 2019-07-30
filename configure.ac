@@ -273,6 +273,18 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_ASSERT_OCAML_PKG([javalib])
   AC_ASSERT_OCAML_PKG([sawja])
 
+  AC_MSG_CHECKING([for Java major version])
+  JAVA_MAJOR_VERSION=`"$JAVAC" -version 2>&1 | head -n 1 | cut -d ' ' -f 2`
+  AS_IF([test "x`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`" = "x1"], [
+    # version 1.8.xx -> 8
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 2`
+  ], [
+    # otherwise pick the first number as the major version
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`
+  ])
+  AC_MSG_RESULT([$JAVA_MAJOR_VERSION])
+  AC_SUBST([JAVA_MAJOR_VERSION])
+
   AC_MSG_CHECKING([for JAVA_HOME])
   cat - <<_ACEOF >conftest.java
 public class conftest {
@@ -283,16 +295,15 @@ public class conftest {
 }
 _ACEOF
   rm -f conftest.class
-  if $JAVAC conftest.java; then
+  if "$JAVAC" conftest.java; then
     rm -f conftest.java
     _USER_JAVA_HOME=$($JAVA -cp . conftest)
     if rm -f conftest.class; then
-       javac_version=`"$JAVAC" -version 2>&1 | head -n 1`
-       [JDK11_ENABLED=`echo "$javac_version" | grep -E -q '^javac\ (11|1[0-9])' && echo yes`]
-       if test "x$JDK11_ENABLED" = "xyes"; then
+       [javac_version_10_or_more=`echo "$JAVA_MAJOR_VERSION" | grep -q -e '^1[0-9]' && echo yes`]
+       if test "x$javac_version_10_or_more" = "xyes"; then
           USER_JAVA_HOME=$_USER_JAVA_HOME
-          AC_SUBST([JDK11_ENABLED])
-       else USER_JAVA_HOME=$_USER_JAVA_HOME/..
+       else
+          USER_JAVA_HOME=$_USER_JAVA_HOME/..
        fi
     else
       AC_MSG_ERROR([Could not run test program with $JAVA])

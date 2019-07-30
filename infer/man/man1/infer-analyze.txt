@@ -385,6 +385,10 @@ JAVA OPTIONS
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable
            warnings on those packages.
+
+       --java-version int
+           The version of Java being used. Set it to your Java version if mvn
+           is failing.
 QUANDARY CHECKER OPTIONS
        --quandary-endpoints json
            Specify endpoint classes for Quandary

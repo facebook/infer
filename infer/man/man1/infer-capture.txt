@@ -261,6 +261,10 @@ JAVA OPTIONS
        --java-jar-compiler path
            Specify the Java compiler jar used to generate the bytecode
 
+       --java-version int
+           The version of Java being used. Set it to your Java version if mvn
+           is failing.
+
 
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE

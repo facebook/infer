@@ -36,7 +36,11 @@ let infer_profile =
     </profile>|}
        infer_profile_name
        (Config.bin_dir ^/ InferCommand.infer_exe_name)
-       (if Version.is_jdk11 then " <release>11</release>" else ""))
+       ( match Config.java_version with
+       | Some version when version >= 9 ->
+           Printf.sprintf "<release>%d</release>" version
+       | _ ->
+           "" ))
 
 
 let pom_worklist = ref [CLOpt.init_work_dir]

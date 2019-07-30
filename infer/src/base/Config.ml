@@ -1591,6 +1591,12 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
+and java_version =
+  CLOpt.mk_int_opt ~long:"java-version" ?default:Version.java_version
+    ~in_help:InferCommand.[(Capture, manual_java); (Analyze, manual_java)]
+    "The version of Java being used. Set it to your Java version if mvn is failing."
+
+
 and job_id = CLOpt.mk_string_opt ~long:"job-id" "Specify the job ID of this Infer run."
 
 and jobs =
@@ -2906,6 +2912,8 @@ and issues_txt = !issues_txt
 and iterations = !iterations
 
 and java_jar_compiler = !java_jar_compiler
+
+and java_version = !java_version
 
 and javac_classes_out = !javac_classes_out
 

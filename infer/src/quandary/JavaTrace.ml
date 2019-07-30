@@ -551,7 +551,7 @@ module JavaSanitizer = struct
         let sanitizer_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
           (* string concatenation is translated differently by invokedynamic in JDK11 *)
-          | "java.lang.Object", "makeConcatWithConstants" when Version.is_jdk11 ->
+          | "java.lang.Object", "makeConcatWithConstants" ->
               Some StringConcatenation
           | "java.lang.StringBuilder", "append" ->
               Some StringConcatenation

@@ -653,6 +653,10 @@ OPTIONS
            Specify the Java compiler jar used to generate the bytecode       
     See also infer-capture(1).
 
+       --java-version int
+           The version of Java being used. Set it to your Java version if mvn
+           is failing.           See also infer-analyze(1) and infer-capture(1).
+
        --jobs,-j int
            Run the specified number of analysis jobs simultaneously       
     See also infer-analyze(1).
