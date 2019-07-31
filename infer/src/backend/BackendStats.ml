@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 include struct
   (* ignore dead modules added by @@deriving fields *)
@@ -30,27 +31,25 @@ let global_stats =
 
 let get () = global_stats
 
-let incr_summary_file_try_load () =
-  global_stats.summary_file_try_load <- global_stats.summary_file_try_load + 1
+let incr field =
+  match Field.setter field with
+  | None ->
+      L.die InternalError "incr on non-mutable field %s" (Field.name field)
+  | Some set ->
+      set global_stats (Field.get field global_stats + 1)
 
 
-let incr_summary_read_from_disk () =
-  global_stats.summary_read_from_disk <- global_stats.summary_read_from_disk + 1
+let incr_summary_file_try_load () = incr Fields.summary_file_try_load
 
+let incr_summary_read_from_disk () = incr Fields.summary_read_from_disk
 
-let incr_summary_cache_hits () =
-  global_stats.summary_cache_hits <- global_stats.summary_cache_hits + 1
+let incr_summary_cache_hits () = incr Fields.summary_cache_hits
 
+let incr_summary_cache_misses () = incr Fields.summary_cache_misses
 
-let incr_summary_cache_misses () =
-  global_stats.summary_cache_misses <- global_stats.summary_cache_misses + 1
+let incr_summary_has_model_queries () = incr Fields.summary_has_model_queries
 
-
-let incr_summary_has_model_queries () =
-  global_stats.summary_has_model_queries <- global_stats.summary_has_model_queries + 1
-
-
-let copy from ~into =
+let copy from ~into : unit =
   let { summary_file_try_load
       ; summary_read_from_disk
       ; summary_cache_hits
