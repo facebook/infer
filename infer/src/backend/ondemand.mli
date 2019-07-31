@@ -27,11 +27,13 @@ val analyze_proc_name_no_caller : Typ.Procname.t -> Summary.t option
 val set_exe_env : Exe_env.t -> unit
 (** Set the execution enviroment used during on-demand analysis. *)
 
-val clear_cache : unit -> unit
-(** Empty the cache of ondemand results *)
+module LocalCache : sig
+  val clear : unit -> unit
+  (** Empty the cache of ondemand results *)
 
-val remove_from_cache : Typ.Procname.t -> unit
-(** Remove an element from the cache of ondemand results *)
+  val remove : Typ.Procname.t -> unit
+  (** Remove an element from the cache of ondemand results *)
+end
 
 val analyze_file : Exe_env.t -> SourceFile.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)

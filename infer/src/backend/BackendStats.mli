@@ -25,6 +25,12 @@ val incr_summary_cache_misses : unit -> unit
 val incr_summary_has_model_queries : unit -> unit
 (** someone asked if a proc name has a biabduction model *)
 
+val incr_ondemand_procs_analyzed : unit -> unit
+
+val incr_ondemand_local_cache_hits : unit -> unit
+
+val incr_ondemand_local_cache_misses : unit -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

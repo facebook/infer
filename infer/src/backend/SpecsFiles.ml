@@ -68,5 +68,5 @@ let delete pname =
   let filename = Summary.OnDisk.specs_filename_of_procname pname |> DB.filename_to_string in
   (* Unix_error is raised if the file isn't present so do nothing in this case *)
   (try Unix.unlink filename with Unix.Unix_error _ -> ()) ;
-  Ondemand.remove_from_cache pname ;
+  Ondemand.LocalCache.remove pname ;
   Summary.OnDisk.remove_from_cache pname

@@ -13,7 +13,7 @@ module F = Format
 module L = Logging
 
 let clear_caches () =
-  Ondemand.clear_cache () ;
+  Ondemand.LocalCache.clear () ;
   Summary.OnDisk.clear_cache () ;
   Typ.Procname.SQLite.clear_cache ()
 

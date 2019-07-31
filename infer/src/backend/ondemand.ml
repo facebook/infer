@@ -14,11 +14,23 @@ module F = Format
 
 let exe_env_ref = ref None
 
-let cached_results = lazy (Typ.Procname.Hash.create 128)
+module LocalCache = struct
+  let results = lazy (Typ.Procname.Hash.create 128)
 
-let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
+  let clear () = Typ.Procname.Hash.clear (Lazy.force results)
 
-let remove_from_cache pname = Typ.Procname.Hash.remove (Lazy.force cached_results) pname
+  let remove pname = Typ.Procname.Hash.remove (Lazy.force results) pname
+
+  let get proc_name =
+    let summ_opt_opt = Typ.Procname.Hash.find_opt (Lazy.force results) proc_name in
+    if Option.is_some summ_opt_opt then BackendStats.incr_ondemand_local_cache_hits ()
+    else BackendStats.incr_ondemand_local_cache_misses () ;
+    summ_opt_opt
+
+
+  let add proc_name summary_option =
+    Typ.Procname.Hash.add (Lazy.force results) proc_name summary_option
+end
 
 let set_exe_env (env : Exe_env.t) = exe_env_ref := Some env
 
@@ -128,6 +140,7 @@ let restore_global_state st =
 let logged_error = ref false
 
 let analyze callee_summary =
+  BackendStats.incr_ondemand_procs_analyzed () ;
   let callee_pdesc = Summary.get_proc_desc callee_summary in
   let exe_env = Option.value_exn !exe_env_ref in
   let proc_name = Procdesc.get_proc_name callee_pdesc in
@@ -331,31 +344,32 @@ let analyze_callee ?caller_summary callee =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
-    let cache = Lazy.force cached_results in
-    try Typ.Procname.Hash.find cache callee_pname
-    with Caml.Not_found ->
-      let callee_summary_option, update_memcached =
-        match memcache_get callee_pname with
-        | Some summ_opt ->
-            (summ_opt, false)
-        | None ->
-            if callee_should_be_analyzed callee then
-              match get_callee_proc_desc callee with
-              | Some callee_pdesc ->
-                  ( Some
-                      (run_proc_analysis
-                         ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                         callee_pdesc)
-                  , true )
-              | None ->
-                  (Summary.OnDisk.get callee_pname, true)
-            else (
-              EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
-              (Summary.OnDisk.get callee_pname, true) )
-      in
-      if update_memcached then memcache_set callee_pname callee_summary_option ;
-      Typ.Procname.Hash.add cache callee_pname callee_summary_option ;
-      callee_summary_option
+    match LocalCache.get callee_pname with
+    | Some callee_summary_option ->
+        callee_summary_option
+    | None ->
+        let callee_summary_option, update_memcached =
+          match memcache_get callee_pname with
+          | Some summ_opt ->
+              (summ_opt, false)
+          | None ->
+              if callee_should_be_analyzed callee then
+                match get_callee_proc_desc callee with
+                | Some callee_pdesc ->
+                    ( Some
+                        (run_proc_analysis
+                           ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                           callee_pdesc)
+                    , true )
+                | None ->
+                    (Summary.OnDisk.get callee_pname, true)
+              else (
+                EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
+                (Summary.OnDisk.get callee_pname, true) )
+        in
+        if update_memcached then memcache_set callee_pname callee_summary_option ;
+        LocalCache.add callee_pname callee_summary_option ;
+        callee_summary_option
 
 
 let analyze_proc_desc ~caller_summary callee_pdesc =
