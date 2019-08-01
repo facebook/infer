@@ -313,6 +313,14 @@ OPTIONS
        --uninit-only
            Activates: Enable --uninit and disable all other checkers
            (Conversely: --no-uninit-only)
+BIABDUCTION CHECKER OPTIONS
+       --biabduction-fallback-model-alloc-pattern string
+           Regex of methods that should be modelled as allocs if definition
+           is missing
+
+       --biabduction-fallback-model-free-pattern string
+           Regex of methods that should be modelled as free if definition is
+           missing
 BUCK FLAVORS OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the

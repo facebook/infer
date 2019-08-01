@@ -53,6 +53,10 @@ val assign : string
 
 val backend_stats_dir_name : string
 
+val biabduction_model_alloc_pattern : Str.regexp option
+
+val biabduction_model_free_pattern : Str.regexp option
+
 val bin_dir : string
 
 val bound_error_allowed_in_procedure_call : bool

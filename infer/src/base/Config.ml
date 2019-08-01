@@ -189,6 +189,8 @@ let lint_dotty_dir_name = "lint_dotty"
 
 let lint_issues_dir_name = "lint_issues"
 
+let manual_biabduction = "BIABDUCTION CHECKER OPTIONS"
+
 let manual_buck_compilation_db = "BUCK COMPILATION DATABASE OPTIONS"
 
 let manual_buck_flavors = "BUCK FLAVORS OPTIONS"
@@ -836,6 +838,18 @@ and array_level =
 - 1 = assumes that the size of every array is infinite
 - 2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct
 |}
+
+
+and biabduction_model_alloc_pattern =
+  CLOpt.mk_string_opt ~long:"biabduction-fallback-model-alloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_biabduction)]
+    "Regex of methods that should be modelled as allocs if definition is missing"
+
+
+and biabduction_model_free_pattern =
+  CLOpt.mk_string_opt ~long:"biabduction-fallback-model-free-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_biabduction)]
+    "Regex of methods that should be modelled as free if definition is missing"
 
 
 and bo_relational_domain =
@@ -2700,6 +2714,10 @@ and append_buck_flavors = !append_buck_flavors
 and array_level = !array_level
 
 and biabduction = !biabduction
+
+and biabduction_model_alloc_pattern = Option.map ~f:Str.regexp !biabduction_model_alloc_pattern
+
+and biabduction_model_free_pattern = Option.map ~f:Str.regexp !biabduction_model_free_pattern
 
 and bootclasspath = !bootclasspath
 

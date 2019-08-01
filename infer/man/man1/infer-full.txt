@@ -113,6 +113,14 @@ OPTIONS
            using the checkers framework (Conversely: --biabduction)       
     See also infer-analyze(1).
 
+       --biabduction-fallback-model-alloc-pattern string
+           Regex of methods that should be modelled as allocs if definition
+           is missing           See also infer-analyze(1).
+
+       --biabduction-fallback-model-free-pattern string
+           Regex of methods that should be modelled as free if definition is
+           missing           See also infer-analyze(1).
+
        --biabduction-only
            Activates: Enable --biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)           See also infer-analyze(1).
@@ -1145,6 +1153,12 @@ INTERNAL OPTIONS
            path. For instance, with bactraking level 1, it will convert
            /my/source/File.java with project root /my/root into
            ../source/File.java
+
+       --biabduction-fallback-model-alloc-pattern-reset
+           Cancel the effect of --biabduction-fallback-model-alloc-pattern.
+
+       --biabduction-fallback-model-free-pattern-reset
+           Cancel the effect of --biabduction-fallback-model-free-pattern.
 
        --bo-relational-domain-reset
            Cancel the effect of --bo-relational-domain.
