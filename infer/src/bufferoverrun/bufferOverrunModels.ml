@@ -680,7 +680,7 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  let new_collection _ =
+  let new_collection =
     let exec = create_collection ~length:Itv.zero in
     {exec; check= no_check}
 
@@ -710,9 +710,9 @@ module Collection = struct
 
   let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
 
-  let singleton_collection el_var =
+  let singleton_collection =
     let exec env ~ret:((id, _) as ret) mem =
-      let {exec= new_exec; check= _} = new_collection el_var in
+      let {exec= new_exec; check= _} = new_collection in
       let mem = new_exec env ~ret mem in
       change_size_by ~size_f:Itv.incr id ~ret env mem
     in
@@ -862,17 +862,17 @@ module Call = struct
       ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"__new"
-        <>$ capt_exp_of_typ (+PatternMatch.implements_pseudo_collection)
+        <>$ any_arg_of_typ (+PatternMatch.implements_pseudo_collection)
         $+...$--> Collection.new_collection
       ; -"__new"
-        <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
+        <>$ any_arg_of_typ (+PatternMatch.implements_collection)
         $+...$--> Collection.new_collection
       ; -"__new"
-        <>$ capt_exp_of_typ (+PatternMatch.implements_map)
+        <>$ any_arg_of_typ (+PatternMatch.implements_map)
         $+...$--> Collection.new_collection
       ; +PatternMatch.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
       ; -"__new"
-        <>$ capt_exp_of_typ (+PatternMatch.implements_org_json "JSONArray")
+        <>$ any_arg_of_typ (+PatternMatch.implements_org_json "JSONArray")
         $+...$--> Collection.new_collection
       ; -"__new" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; -"__new_array" <>$ capt_exp $+...$--> malloc ~can_be_zero:true
@@ -961,15 +961,13 @@ module Call = struct
         (* model sets as lists *)
       ; +PatternMatch.implements_collections
         &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
-      ; +PatternMatch.implements_collections
-        &:: "singleton" <>$ capt_exp $--> Collection.singleton_collection
-      ; +PatternMatch.implements_collections
-        &:: "emptySet" <>$ capt_exp $--> Collection.new_collection
+      ; +PatternMatch.implements_collections &:: "singleton" <>--> Collection.singleton_collection
+      ; +PatternMatch.implements_collections &:: "emptySet" <>--> Collection.new_collection
         (* model maps as lists *)
       ; +PatternMatch.implements_collections
-        &:: "singletonMap" <>$ capt_exp $--> Collection.singleton_collection
+        &:: "singletonMap" <>--> Collection.singleton_collection
       ; +PatternMatch.implements_collections
-        &:: "singletonList" <>$ capt_exp $--> Collection.singleton_collection
+        &:: "singletonList" <>--> Collection.singleton_collection
       ; +PatternMatch.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
       ; +PatternMatch.implements_collection

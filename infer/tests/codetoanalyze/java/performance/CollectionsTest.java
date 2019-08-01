@@ -60,4 +60,9 @@ class CollectionsTest {
   void unmodifiable_set(Set<Integer> set) {
     for (Integer el : Collections.unmodifiableSet(set)) {}
   }
+
+  void emptySet_zero() {
+    Set<String> set = Collections.emptySet();
+    for (String s : set) {}
+  }
 }
