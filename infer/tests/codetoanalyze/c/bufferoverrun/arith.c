@@ -540,3 +540,9 @@ void shift_right_zero_Bad(int x) {
   int arr[1];
   arr[1 + (0 >> x)] = 1;
 }
+
+#define INTENDED_INTEGER_UNDERFLOW (0ULL - 2)
+
+void use_intended_integer_underflow_Good() {
+  unsigned long long x = INTENDED_INTEGER_UNDERFLOW;
+}

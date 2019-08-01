@@ -202,6 +202,9 @@ let check_expr_for_array_access :
 
 let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
   match bop with
+  | Binop.MinusA (Some typ) when Typ.ikind_is_unsigned typ && Exp.is_zero lhs && Exp.is_const rhs
+    ->
+      cond_set
   | Binop.PlusA (Some _) | Binop.MinusA (Some _) | Binop.Mult (Some _) ->
       let lhs_v = Sem.eval integer_type_widths lhs mem in
       let rhs_v = Sem.eval integer_type_widths rhs mem in

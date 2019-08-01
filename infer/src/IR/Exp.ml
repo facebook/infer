@@ -77,6 +77,8 @@ let is_this = function Lvar pvar -> Pvar.is_this pvar | _ -> false
 
 let is_zero = function Const (Cint n) -> IntLit.iszero n | _ -> false
 
+let rec is_const = function Const _ -> true | Cast (_, x) -> is_const x | _ -> false
+
 (** {2 Utility Functions for Expressions} *)
 
 (** Turn an expression representing a type into the type it represents
