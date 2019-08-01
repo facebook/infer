@@ -37,7 +37,9 @@ $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(REMOVE_DIR) src
 	$(QUIET)$(MKDIR_P) src
 	$(QUIET)$(COPY) src_before/* src/
+	$(QUIET)$(REMOVE_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(COPY) -r $(CURRENT_DIR) $(PREVIOUS_DIR)
-	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) -- clang -c src/*.c
+	$(QUIET)$(REMOVE) $@
+	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) -- clang -c src/*.c 
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/reverse_analysis_callgraph.dot \
-	                                reverse_analysis_callgraph.dot.test
+	        reverse_analysis_callgraph.dot.test

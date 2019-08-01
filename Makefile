@@ -46,7 +46,7 @@ BUILD_SYSTEMS_TESTS += \
   tracebugs \
   utf8_in_procname \
   export_changed_functions \
-  buck_export_changed_functions \
+  incremental_analysis_remove_file \
 
 DIRECT_TESTS += \
   c_biabduction \
@@ -80,6 +80,7 @@ BUILD_SYSTEMS_TESTS += \
   buck_flavors_diff \
   buck_flavors_run \
   buck_flavors_deterministic \
+  buck_export_changed_functions \
 
 endif
 ifneq ($(CMAKE),no)
