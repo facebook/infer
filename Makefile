@@ -47,6 +47,7 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
   export_changed_functions \
   incremental_analysis_remove_file \
+  incremental_analysis_change_procedure \
 
 DIRECT_TESTS += \
   c_biabduction \

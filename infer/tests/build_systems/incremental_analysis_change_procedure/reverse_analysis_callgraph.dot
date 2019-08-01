@@ -1,0 +1,27 @@
+
+digraph callgraph {
+  N1 [ label = "a", flag = true ];
+  N1 -> N7 ;
+
+  N5 [ label = "f", flag = false ];
+  N5 -> N4 ;
+
+  N0 [ label = "b", flag = true ];
+  N0 -> N1 ;
+
+  N7 [ label = "main", flag = true ];
+
+  N6 [ label = "e", flag = true ];
+  N6 -> N7 ;
+
+  N4 [ label = "d", flag = true ];
+  N4 -> N6 ;
+  N4 -> N3 ;
+
+  N2 [ label = "g", flag = false ];
+  N2 -> N1 ;
+
+  N3 [ label = "c", flag = true ];
+  N3 -> N0 ;
+
+}
