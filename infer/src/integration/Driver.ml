@@ -407,7 +407,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (false, false)
     | (Capture | Compile | Events | Explore | Report | ReportDiff), _ ->
         (false, false)
-    | (Analyze | Diff | Run), _ ->
+    | (Analyze | Run), _ ->
         (true, true)
   in
   let should_merge =

@@ -306,8 +306,6 @@ val costs_current : string option
 
 val costs_previous : string option
 
-val current_to_previous_script : string option
-
 val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t
@@ -381,8 +379,6 @@ val frontend_stats : bool
 val frontend_tests : bool
 
 val function_pointer_specialization : bool
-
-val gen_previous_build_command_script : string option
 
 val generated_classes : string option
 
@@ -521,8 +517,6 @@ val perf_profiler_data_file : string option
 val pmd_xml : bool
 
 val precondition_stats : bool
-
-val previous_to_current_script : string option
 
 val print_active_checkers : bool
 

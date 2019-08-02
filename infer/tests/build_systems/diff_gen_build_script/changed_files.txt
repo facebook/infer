@@ -1,2 +1,0 @@
-src/some_bugs.c
-src/some_different_bugs.c

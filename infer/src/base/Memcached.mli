@@ -17,9 +17,6 @@ val disconnect : unit -> unit
 val start : unit -> unit
 (** start a memcached daemon and set up an epilogue to kill it on exit -- only for top-level *)
 
-val flush_all : unit -> unit
-(** empty the cache *)
-
 (** type to marshal, plus a unique label that will be colon-prepended to a key, 
     roughly signifying a table *)
 module type Value = sig

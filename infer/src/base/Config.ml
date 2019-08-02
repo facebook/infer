@@ -563,7 +563,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Diff | Events | Explore | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Events | Explore | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -949,7 +949,7 @@ and censor_report =
 
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index"
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Diff, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
@@ -1070,14 +1070,6 @@ and costs_previous =
   CLOpt.mk_path_opt ~long:"costs-previous"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
     "Costs report of the base revision to use for comparison"
-
-
-and current_to_previous_script =
-  CLOpt.mk_string_opt ~long:"current-to-previous-script"
-    ~in_help:InferCommand.[(Diff, manual_generic)]
-    ~meta:"shell"
-    "Specify a script to checkout a previous version of the project to compare against, assuming \
-     we are on the current version already."
 
 
 and siof_check_iostreams =
@@ -1423,11 +1415,7 @@ and flavors =
 and force_delete_results_dir =
   CLOpt.mk_bool ~long:"force-delete-results-dir" ~default:false
     ~in_help:
-      InferCommand.
-        [ (Capture, manual_generic)
-        ; (Compile, manual_generic)
-        ; (Diff, manual_generic)
-        ; (Run, manual_generic) ]
+      InferCommand.[(Capture, manual_generic); (Compile, manual_generic); (Run, manual_generic)]
     "Do not refuse to delete the results directory if it doesn't look like an infer results \
      directory."
 
@@ -1458,14 +1446,6 @@ and frontend_stats =
 and function_pointer_specialization =
   CLOpt.mk_bool ~long:"function-pointer-specialization" ~default:false
     "Do function pointer preprocessing (clang only)."
-
-
-and gen_previous_build_command_script =
-  CLOpt.mk_string_opt ~long:"gen-previous-build-command-script"
-    ~in_help:InferCommand.[(Diff, manual_generic)]
-    ~meta:"shell"
-    "Specify a script that outputs the build command to capture in the previous version of the \
-     project. The script should output the command on stdout. For example \"echo make\"."
 
 
 and generated_classes =
@@ -1824,16 +1804,6 @@ and pmd_xml =
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
-
-
-and previous_to_current_script =
-  CLOpt.mk_string_opt ~long:"previous-to-current-script"
-    ~in_help:InferCommand.[(Diff, manual_generic)]
-    ~meta:"shell"
-    "Specify a script to checkout the current version of the project. The project is supposed to \
-     already be at that current version when running $(b,infer diff); the script is used after \
-     having analyzed the current and previous versions of the project, to restore the project to \
-     the current version."
 
 
 and print_active_checkers =
@@ -2802,8 +2772,6 @@ and costs_current = !costs_current
 
 and costs_previous = !costs_previous
 
-and current_to_previous_script = !current_to_previous_script
-
 and cxx = !cxx
 
 and cxx_scope_guards = !cxx_scope_guards
@@ -2877,8 +2845,6 @@ and frontend_stats = !frontend_stats
 and function_pointer_specialization = !function_pointer_specialization
 
 and frontend_tests = !frontend_tests
-
-and gen_previous_build_command_script = !gen_previous_build_command_script
 
 and generated_classes = !generated_classes
 
@@ -3015,8 +2981,6 @@ and pmd_xml = !pmd_xml
 
 and precondition_stats = !precondition_stats
 
-and previous_to_current_script = !previous_to_current_script
-
 and printf_args = !printf_args
 
 and print_active_checkers = !print_active_checkers
@@ -3089,7 +3053,7 @@ and racerd = !racerd
 
 and racerd_guardedby = !racerd_guardedby
 
-and reactive_mode = !reactive || InferCommand.(equal Diff) command
+and reactive_mode = !reactive
 
 and reactive_capture = !reactive_capture
 

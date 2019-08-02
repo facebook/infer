@@ -81,13 +81,3 @@ let assert_results_dir advice =
          L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   prepare_logging_and_db () ;
   ()
-
-
-let delete_capture_and_analysis_data () =
-  ResultsDatabase.reset_capture_tables () ;
-  let dirs_to_delete =
-    List.map ~f:(Filename.concat Config.results_dir) Config.[captured_dir_name; specs_dir_name]
-  in
-  List.iter ~f:Utils.rmtree dirs_to_delete ;
-  List.iter ~f:Unix.mkdir_p dirs_to_delete ;
-  ()

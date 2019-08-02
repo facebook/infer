@@ -74,8 +74,6 @@ let with_server ~f =
       f s
 
 
-let flush_all () = with_server ~f:(fun s -> send_line s "flush_all")
-
 let disconnect () =
   with_server ~f:(fun s ->
       server := None ;

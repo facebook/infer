@@ -30,8 +30,6 @@ let setup () =
       ResultsDir.assert_results_dir "have you run capture before?"
   | Report | ReportDiff ->
       ResultsDir.create_results_dir ()
-  | Diff ->
-      ResultsDir.remove_results_dir () ; ResultsDir.create_results_dir ()
   | Capture | Compile | Run ->
       let driver_mode = Lazy.force Driver.mode_from_command_line in
       if
@@ -151,8 +149,6 @@ let () =
         ReportDiff.reportdiff ~current_report:Config.report_current
           ~previous_report:Config.report_previous ~current_costs:Config.costs_current
           ~previous_costs:Config.costs_previous
-    | Diff ->
-        Diff.diff (Lazy.force Driver.mode_from_command_line)
     | Explore -> (
       match (Config.procedures, Config.source_files) with
       | true, false ->

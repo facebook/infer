@@ -154,14 +154,6 @@ end
 
 include UnsafeDatabaseRef
 
-let reset_capture_tables () =
-  let db = get_database () in
-  SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
-  create_procedures_table db ;
-  SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
-  create_source_files_table db
-
-
 let db_canonicalize () =
   let db = get_database () in
   SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"

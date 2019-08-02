@@ -113,14 +113,6 @@ let compile =
     ~see_also:InferCommand.[Capture]
 
 
-let diff =
-  mk_command_doc ~title:"Infer Differential Analysis of a Project"
-    ~short_description:"Report the difference between two versions of a project"
-    ~synopsis:"$(b,infer) $(b,diff) $(i,[options])"
-    ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
-    ~see_also:InferCommand.[ReportDiff; Run]
-
-
 let explore =
   mk_command_doc ~title:"Infer Explore"
     ~short_description:"explore the error traces in infer reports"
@@ -318,7 +310,6 @@ let command_to_data =
   [ mk Analyze analyze
   ; mk Capture capture
   ; mk Compile compile
-  ; mk Diff diff
   ; mk Events events
   ; mk Explore explore
   ; mk Report report

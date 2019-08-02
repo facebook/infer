@@ -192,7 +192,7 @@ OPTIONS
        --changed-files-index file
            Specify the file containing the list of source files from which
            reactive analysis should start. Source files should be specified
-           relative to project root or be absolute           See also infer-analyze(1) and infer-diff(1).
+           relative to project root or be absolute           See also infer-analyze(1).
 
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou format       
@@ -247,11 +247,6 @@ OPTIONS
            Costs report of the base revision to use for comparison       
     See also infer-reportdiff(1).
 
-       --current-to-previous-script shell
-           Specify a script to checkout a previous version of the project to
-           compare against, assuming we are on the current version already.       
-    See also infer-diff(1).
-
        --custom-symbols json
            Specify named lists of symbols available to rules           See also infer-analyze(1).
 
@@ -269,8 +264,8 @@ OPTIONS
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
            --write-dotty, --write-html) (Conversely: --no-debug | -G)       
     See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-events(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -279,26 +274,26 @@ OPTIONS
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-events(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-events(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-events(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-events(1), infer-report(1), infer-reportdiff(1), and
+           infer-run(1).
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
@@ -541,8 +536,7 @@ OPTIONS
        --force-delete-results-dir
            Activates: Do not refuse to delete the results directory if it
            doesn't look like an infer results directory. (Conversely:
-           --no-force-delete-results-dir)           See also infer-capture(1), infer-compile(1), infer-diff(1), and
-           infer-run(1).
+           --no-force-delete-results-dir)           See also infer-capture(1), infer-compile(1), and infer-run(1).
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
@@ -570,11 +564,6 @@ OPTIONS
            for frontend tests (also sets --print-types) (Conversely:
            --no-frontend-tests)           See also infer-capture(1).
 
-       --gen-previous-build-command-script shell
-           Specify a script that outputs the build command to capture in the
-           previous version of the project. The script should output the
-           command on stdout. For example "echo make".           See also infer-diff(1).
-
        --generated-classes path
            Specify where to load the generated class files           See also infer-capture(1).
 
@@ -584,20 +573,20 @@ OPTIONS
 
        --help
            Show this manual           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-explore(1), infer-report(1),
+           infer-events(1), infer-explore(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
            to pager otherwise.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-explore(1), infer-report(1),
+           infer-events(1), infer-explore(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-diff(1), infer-events(1), infer-explore(1), infer-report(1),
+           infer-events(1), infer-explore(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --no-hoisting-report-only-expensive
@@ -789,13 +778,6 @@ OPTIONS
        --pmd-xml
            Activates: Output issues in (PMD) XML format (Conversely:
            --no-pmd-xml)           See also infer-run(1).
-
-       --previous-to-current-script shell
-           Specify a script to checkout the current version of the project.
-           The project is supposed to already be at that current version when
-           running infer diff; the script is used after having analyzed the
-           current and previous versions of the project, to restore the
-           project to the current version.           See also infer-diff(1).
 
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis
@@ -1261,9 +1243,6 @@ INTERNAL OPTIONS
        --coverage
            analysis mode to maximize coverage (can take longer)
 
-       --current-to-previous-script-reset
-           Cancel the effect of --current-to-previous-script.
-
        --debug-exceptions
            Activates: Generate lightweight debugging information: just print
            the internal exceptions during analysis (also sets
@@ -1369,9 +1348,6 @@ INTERNAL OPTIONS
        --function-pointer-specialization
            Activates: Do function pointer preprocessing (clang only).
            (Conversely: --no-function-pointer-specialization)
-
-       --gen-previous-build-command-script-reset
-           Cancel the effect of --gen-previous-build-command-script.
 
        --generated-classes-reset
            Cancel the effect of --generated-classes.
@@ -1540,9 +1516,6 @@ INTERNAL OPTIONS
        --precondition-stats
            Activates: Print stats about preconditions to standard output
            (Conversely: --no-precondition-stats)
-
-       --previous-to-current-script-reset
-           Cancel the effect of --previous-to-current-script.
 
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
@@ -1879,9 +1852,8 @@ FILES
 
 
 SEE ALSO
-       infer-analyze(1), infer-capture(1), infer-compile(1), infer-diff(1),
-       infer-events(1), infer-explore(1), infer-report(1),
-       infer-reportdiff(1), infer-run(1)
+       infer-analyze(1), infer-capture(1), infer-compile(1), infer-events(1),
+       infer-explore(1), infer-report(1), infer-reportdiff(1), infer-run(1)
 
 
 

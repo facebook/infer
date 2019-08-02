@@ -15,6 +15,3 @@ val remove_results_dir : unit -> unit
 
 val create_results_dir : unit -> unit
 (** Create the results dir and sets up logging, the database, etc. *)
-
-val delete_capture_and_analysis_data : unit -> unit
-(** delete all results from the capture and the analysis *)
