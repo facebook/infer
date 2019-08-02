@@ -1133,6 +1133,10 @@ INTERNAL OPTIONS
        --biabduction-fallback-model-free-pattern-reset
            Cancel the effect of --biabduction-fallback-model-free-pattern.
 
+       --biabduction-models-mode
+           Activates: Mode for analyzing the biabduction models (Conversely:
+           --no-biabduction-models-mode)
+
        --bo-relational-domain-reset
            Cancel the effect of --bo-relational-domain.
 
@@ -1458,10 +1462,6 @@ INTERNAL OPTIONS
        --modeled-expensive json
            Matcher or list of matchers for methods that should be considered
            expensive by the performance critical checker.
-
-       --models-mode
-           Activates: Mode for analyzing the models (Conversely:
-           --no-models-mode)
 
        --modified-lines path
            Specifies the file containing the modified lines when Infer is run

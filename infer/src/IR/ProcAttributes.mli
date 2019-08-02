@@ -28,11 +28,11 @@ type t =
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; func_attributes: PredSymb.func_attribute list
   ; is_abstract: bool  (** the procedure is abstract *)
+  ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
-  ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)

@@ -408,11 +408,11 @@ let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
 (** Path to lib/specs to retrieve the default models *)
-let models_dir = lib_dir ^/ specs_dir_name
+let biabduction_models_dir = lib_dir ^/ specs_dir_name
 
-let models_jar = lib_dir ^/ "java" ^/ "models.jar"
+let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 
-let models_src_dir =
+let biabduction_models_src_dir =
   let root = Unix.getcwd () in
   let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
   Utils.filename_to_absolute ~root dir
@@ -1099,7 +1099,8 @@ and custom_symbols =
     "Specify named lists of symbols available to rules"
 
 
-and ( bo_debug
+and ( biabduction_models_mode
+    , bo_debug
     , developer_mode
     , debug
     , debug_exceptions
@@ -1112,7 +1113,6 @@ and ( bo_debug
     , frontend_tests
     , keep_going
     , linters_developer_mode
-    , models_mode
     , only_cheap_debug
     , print_buckets
     , print_logs
@@ -1126,7 +1126,10 @@ and ( bo_debug
     List.filter_map InferCommand.all_commands ~f:(fun cmd ->
         if InferCommand.equal Explore cmd then None else Some (cmd, manual_generic) )
   in
-  let bo_debug =
+  let biabduction_models_mode =
+    CLOpt.mk_bool_group ~long:"biabduction-models-mode" "Mode for analyzing the biabduction models"
+      [] []
+  and bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
@@ -1224,8 +1227,6 @@ and ( bo_debug
       "Save filename.ext.test.dot with the cfg in dotty format for frontend tests (also sets \
        $(b,--print-types))"
       [print_types] []
-  and models_mode =
-    CLOpt.mk_bool_group ~long:"models-mode" "Mode for analyzing the models" [] [keep_going]
   and print_logs =
     CLOpt.mk_bool ~long:"print-logs"
       ~in_help:
@@ -1247,7 +1248,8 @@ and ( bo_debug
         debug )
       [debug; developer_mode] [default_linters; keep_going]
   in
-  ( bo_debug
+  ( biabduction_models_mode
+  , bo_debug
   , developer_mode
   , debug
   , debug_exceptions
@@ -1260,7 +1262,6 @@ and ( bo_debug
   , frontend_tests
   , keep_going
   , linters_developer_mode
-  , models_mode
   , only_cheap_debug
   , print_buckets
   , print_logs
@@ -2571,7 +2572,7 @@ let post_parsing_initialization command_opt =
   let symops_timeout, seconds_timeout =
     let default_symops_timeout = 1100 in
     let default_seconds_timeout = 10.0 in
-    if !models_mode then (* disable timeouts when analyzing models *)
+    if !biabduction_models_mode then (* disable timeouts when analyzing models *)
       (None, None)
     else (Some default_symops_timeout, Some default_seconds_timeout)
   in
@@ -2673,6 +2674,8 @@ and biabduction = !biabduction
 and biabduction_model_alloc_pattern = Option.map ~f:Str.regexp !biabduction_model_alloc_pattern
 
 and biabduction_model_free_pattern = Option.map ~f:Str.regexp !biabduction_model_free_pattern
+
+and biabduction_models_mode = !biabduction_models_mode
 
 and bootclasspath = !bootclasspath
 
@@ -2944,8 +2947,6 @@ and memcached_size_mb = !memcached_size_mb
 and merge = !merge
 
 and ml_buckets = !ml_buckets
-
-and models_mode = !models_mode
 
 and modified_lines = !modified_lines
 

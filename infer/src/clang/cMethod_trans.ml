@@ -258,7 +258,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
         ; func_attributes= attributes
         ; is_defined= defined
         ; is_cpp_noexcept_method= is_cpp_nothrow
-        ; is_model= Config.models_mode
+        ; is_biabduction_model= Config.biabduction_models_mode
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; loc= loc_start
         ; clang_method_kind

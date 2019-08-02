@@ -836,7 +836,7 @@ let prop_set_exn tenv pname prop se_exn =
 let include_subtrace callee_pname =
   match Summary.OnDisk.proc_resolve_attributes callee_pname with
   | Some attrs ->
-      (not attrs.ProcAttributes.is_model)
+      (not attrs.ProcAttributes.is_biabduction_model)
       && SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file
   | None ->
       false
@@ -1114,7 +1114,7 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
   in
   let callee_attributes = Summary.get_attributes callee_summary in
   (* if the callee is a model, then we don't have a tenv for it *)
-  if (not callee_attributes.ProcAttributes.is_model) && add_fields then
+  if (not callee_attributes.ProcAttributes.is_biabduction_model) && add_fields then
     let callee_tenv_opt =
       try Some (Exe_env.get_tenv exe_env callee_pname)
       with _ ->

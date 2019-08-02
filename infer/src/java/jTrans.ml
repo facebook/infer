@@ -344,8 +344,8 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
       ; exceptions= List.map ~f:JBasics.cn_name am.Javalib.am_exceptions
       ; formals
       ; is_abstract= true
+      ; is_biabduction_model= Config.biabduction_models_mode
       ; is_bridge_method= am.Javalib.am_bridge
-      ; is_model= Config.models_mode
       ; is_synthetic_method= am.Javalib.am_synthetic
       ; method_annotation
       ; ret_type= JTransType.return_type program tenv ms
@@ -368,8 +368,8 @@ let create_native_procdesc source_file program icfg cm proc_name =
         ProcAttributes.access= trans_access cm.Javalib.cm_access
       ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
       ; formals
+      ; is_biabduction_model= Config.biabduction_models_mode
       ; is_bridge_method= cm.Javalib.cm_bridge
-      ; is_model= Config.models_mode
       ; is_synthetic_method= cm.Javalib.cm_synthetic
       ; method_annotation
       ; ret_type= JTransType.return_type program tenv ms
@@ -395,8 +395,8 @@ let create_empty_procdesc source_file program linereader icfg cm proc_name =
       ProcAttributes.access= trans_access cm.Javalib.cm_access
     ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
     ; formals
+    ; is_biabduction_model= Config.biabduction_models_mode
     ; is_bridge_method= cm.Javalib.cm_bridge
-    ; is_model= Config.models_mode
     ; is_synthetic_method= cm.Javalib.cm_synthetic
     ; is_java_synchronized_method= cm.Javalib.cm_synchronized
     ; loc= loc_start
@@ -432,9 +432,9 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
         ProcAttributes.access= trans_access cm.Javalib.cm_access
       ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
       ; formals
+      ; is_biabduction_model= Config.biabduction_models_mode
       ; is_bridge_method= cm.Javalib.cm_bridge
       ; is_defined= true
-      ; is_model= Config.models_mode
       ; is_synthetic_method= cm.Javalib.cm_synthetic
       ; is_java_synchronized_method= cm.Javalib.cm_synchronized
       ; loc= loc_start
@@ -706,7 +706,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
   let instrs =
     match call_args with
     (* modeling a class bypasses the treatment of Closeable *)
-    | _ when Config.models_mode || JClasspath.is_model callee_procname ->
+    | _ when Config.biabduction_models_mode || JClasspath.is_model callee_procname ->
         call_instrs
     | ((_, {Typ.desc= Typ.Tptr ({desc= Tstruct typename}, _)}) as exp) :: _
     (* add a file attribute when calling the constructor of a subtype of Closeable *)

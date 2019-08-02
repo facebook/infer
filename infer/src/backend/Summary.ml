@@ -164,7 +164,7 @@ module OnDisk = struct
 
   (** paths to the .specs file for the given procedure in the models folder *)
   let specs_models_filename pname =
-    DB.filename_from_string (Filename.concat Config.models_dir (specs_filename pname))
+    DB.filename_from_string (Filename.concat Config.biabduction_models_dir (specs_filename pname))
 
 
   let has_model pname =

@@ -18,7 +18,7 @@ type t =
   | Invalid of {ml_source_file: string}
   | Absolute of string
   | RelativeProjectRoot of string  (** relative to project root *)
-  | RelativeInferModel of string  (** relative to infer models *)
+  | RelativeInferBiabductionModel of string  (** relative to infer models *)
 [@@deriving compare]
 
 let equal = [%compare.equal: t]
@@ -46,7 +46,7 @@ let from_abs_path ?(warn_on_error = true) fname =
   (* try to get realpath of source file. Use original if it fails *)
   let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
   let project_root_real = Utils.realpath ~warn_on_error Config.project_root in
-  let models_dir_real = Config.models_src_dir in
+  let models_dir_real = Config.biabduction_models_src_dir in
   match
     Utils.filename_to_relative ~backtrack:Config.relative_path_backtrack ~root:project_root_real
       fname_real
@@ -58,7 +58,7 @@ let from_abs_path ?(warn_on_error = true) fname =
   | None -> (
     match Utils.filename_to_relative ~root:models_dir_real fname_real with
     | Some path ->
-        RelativeInferModel path
+        RelativeInferBiabductionModel path
     | None ->
         (* fname_real is absolute already *)
         Absolute fname_real )
@@ -70,7 +70,7 @@ let to_string =
     match fname with
     | Invalid {ml_source_file} ->
         "DUMMY from " ^ ml_source_file
-    | RelativeInferModel path ->
+    | RelativeInferBiabductionModel path ->
         "INFER_MODEL/" ^ path
     | RelativeProjectRoot path ->
         path
@@ -89,8 +89,8 @@ let to_abs_path fname =
         "cannot be called with Invalid source file originating in %s" ml_source_file
   | RelativeProjectRoot path ->
       Filename.concat Config.project_root path
-  | RelativeInferModel path ->
-      Filename.concat Config.models_src_dir path
+  | RelativeInferBiabductionModel path ->
+      Filename.concat Config.biabduction_models_src_dir path
   | Absolute path ->
       path
 
@@ -108,13 +108,13 @@ let invalid ml_source_file = Invalid {ml_source_file}
 
 let is_invalid = function Invalid _ -> true | _ -> false
 
-let is_infer_model source_file =
+let is_biabduction_model source_file =
   match source_file with
   | Invalid {ml_source_file} ->
       L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
   | RelativeProjectRoot _ | Absolute _ ->
       false
-  | RelativeInferModel _ ->
+  | RelativeInferBiabductionModel _ ->
       true
 
 
@@ -123,7 +123,7 @@ let is_under_project_root = function
       L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
   | RelativeProjectRoot _ ->
       true
-  | Absolute _ | RelativeInferModel _ ->
+  | Absolute _ | RelativeInferBiabductionModel _ ->
       false
 
 

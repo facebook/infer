@@ -45,11 +45,11 @@ type t =
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; func_attributes: PredSymb.func_attribute list
   ; is_abstract: bool  (** the procedure is abstract *)
+  ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
-  ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
@@ -71,11 +71,11 @@ let default translation_unit proc_name =
   ; const_formals= []
   ; func_attributes= []
   ; is_abstract= false
+  ; is_biabduction_model= false
   ; is_bridge_method= false
   ; is_cpp_noexcept_method= false
   ; is_java_synchronized_method= false
   ; is_defined= false
-  ; is_model= false
   ; is_specialized= false
   ; is_synthetic_method= false
   ; is_variadic= false
@@ -102,11 +102,11 @@ let pp f
      ; const_formals
      ; func_attributes
      ; is_abstract
+     ; is_biabduction_model
      ; is_bridge_method
      ; is_defined
      ; is_cpp_noexcept_method
      ; is_java_synchronized_method
-     ; is_model
      ; is_specialized
      ; is_synthetic_method
      ; is_variadic
@@ -151,7 +151,7 @@ let pp f
     is_cpp_noexcept_method f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
-  pp_bool_default ~default:default.is_model "is_model" is_model f () ;
+  pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;

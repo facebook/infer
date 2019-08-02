@@ -53,9 +53,11 @@ val assign : string
 
 val backend_stats_dir_name : string
 
-val biabduction_model_alloc_pattern : Str.regexp option
+val biabduction_models_dir : string
 
-val biabduction_model_free_pattern : Str.regexp option
+val biabduction_models_jar : string
+
+val biabduction_models_src_dir : string
 
 val bin_dir : string
 
@@ -118,12 +120,6 @@ val max_narrows : int
 val max_widens : int
 
 val meet_level : int
-
-val models_dir : string
-
-val models_jar : string
-
-val models_src_dir : string
 
 val nsnotification_center_checker_backend : bool
 
@@ -234,6 +230,12 @@ val anon_args : string list
 val array_level : int
 
 val biabduction : bool
+
+val biabduction_model_alloc_pattern : Str.regexp option
+
+val biabduction_model_free_pattern : Str.regexp option
+
+val biabduction_models_mode : bool
 
 val bo_debug : int
 
@@ -487,8 +489,6 @@ val method_decls_info : string option
 
 val ml_buckets :
   [`MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown] list
-
-val models_mode : bool
 
 val modified_lines : string option
 

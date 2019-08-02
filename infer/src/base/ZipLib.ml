@@ -45,8 +45,11 @@ let zip_libraries =
             line. *)
        List.rev_filter_map Config.specs_library ~f:load_zip
      in
-     if Config.biabduction && (not Config.models_mode) && Sys.file_exists Config.models_jar = `Yes
-     then mk_zip_lib Config.models_jar :: zip_libs
+     if
+       Config.biabduction
+       && (not Config.biabduction_models_mode)
+       && Sys.file_exists Config.biabduction_models_jar = `Yes
+     then mk_zip_lib Config.biabduction_models_jar :: zip_libs
      else zip_libs)
 
 
