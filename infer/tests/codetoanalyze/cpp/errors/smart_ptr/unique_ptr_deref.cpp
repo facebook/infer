@@ -24,87 +24,88 @@ int empty_ptr_access() {
   return 0;
 }
 
-int empty_ptr_deref() {
+int FN_empty_ptr_deref_bad() {
   std::unique_ptr<int> x;
   return *x;
 }
 
-int empty_array_ptr_deref() {
+int FN_empty_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x;
   return x[0];
 }
 
-int nullptr_ptr_deref() {
+int FN_nullptr_ptr_deref_bad() {
   std::unique_ptr<int> x(nullptr);
   return *x;
 }
 
-int nullptr_array_ptr_deref() {
+int FN_nullptr_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x(nullptr);
   return x[2];
 }
 
-int empty_ptr_field_deref() {
+int FN_empty_ptr_field_deref_bad() {
   std::unique_ptr<X> x;
   return x.get()->field;
 }
 
-int empty_ptr_field_deref2() {
+int FN_empty_ptr_field_deref2_bad() {
   std::unique_ptr<X> x;
   return x->field;
 }
 
-int empty_ptr_method_deref() {
+int FN_empty_ptr_method_deref_bad() {
   std::unique_ptr<X> x;
   return x->get();
 }
 
-int reset_ptr_null_deref() {
+// FP is memory leak
+int FN_FP_reset_ptr_null_deref_bad() {
   std::unique_ptr<int> x(new int);
   x.reset();
   return *x;
 }
 
-int reset_ptr_null_deref2() {
+int FN_FP_reset_ptr_null_deref2_bad() {
   std::unique_ptr<int> x(new int);
   x.reset(new int);
   x.reset();
   return *x;
 }
 
-int reset_ptr_ok_deref() {
+int FP_reset_ptr_deref_ok() {
   std::unique_ptr<int> x;
   x.reset(new int);
   return *x;
 }
 
-int reset_ptr_ok_deref2() {
+int FP_reset_ptr_deref2_ok() {
   std::unique_ptr<int> x;
   x.reset();
   x.reset(new int);
   return *x;
 }
 
-int unique_ptr_copy_null_deref() {
+int FN_unique_ptr_copy_null_deref_bad() {
   std::unique_ptr<int> p1;
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
 }
 
-int unique_ptr_assign_null_deref() {
+int FN_unique_ptr_assign_null_deref_bad() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2;
   p1 = std::move(p2);
   return *p1;
 }
 
-int unique_ptr_move_ok_deref() {
+int FP_unique_ptr_move_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
 }
 
-int unique_ptr_assign_ok_deref() {
+int unique_ptr_assign_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2;
   p2 = std::move(p1);
@@ -112,7 +113,7 @@ int unique_ptr_assign_ok_deref() {
   return *p2;
 }
 
-int unique_ptr_move_null_deref() {
+int FN_unique_ptr_move_null_deref_bad() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;

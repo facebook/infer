@@ -420,12 +420,6 @@ let models_src_dir =
 
 (* Normalize the path *)
 
-let relative_cpp_extra_include_dir = "cpp" ^/ "include"
-
-let cpp_extra_include_dir = models_src_dir ^/ relative_cpp_extra_include_dir
-
-let relative_cpp_models_dir = relative_cpp_extra_include_dir ^/ "infer_model"
-
 let linters_def_dir = lib_dir ^/ "linter_rules"
 
 let linters_def_default_file = linters_def_dir ^/ "linters.al"
@@ -1086,25 +1080,12 @@ and current_to_previous_script =
      we are on the current version already."
 
 
-and cxx_infer_headers, siof_check_iostreams =
-  let siof_check_iostreams =
-    CLOpt.mk_bool ~long:"siof-check-iostreams"
-      ~in_help:InferCommand.[(Analyze, manual_siof)]
-      "Do not assume that iostreams (cout, cerr, ...) are always initialized. The default is to \
-       assume they are always initialized when $(b,--cxx-infer-headers) is false to avoid false \
-       positives due to lack of models of the proper initialization of io streams. However, if \
-       your program compiles against a recent libstdc++ then the infer models are not needed for \
-       precision and it is safe to turn this option on."
-  in
-  let cxx_infer_headers =
-    CLOpt.mk_bool_group ~long:"cxx-infer-headers" ~default:false
-      ~in_help:InferCommand.[(Capture, manual_clang)]
-      "Include C++ header models during compilation. Infer swaps some C++ headers for its own in \
-       order to get a better model of, eg, the standard library. This can sometimes cause \
-       compilation failures."
-      [siof_check_iostreams] []
-  in
-  (cxx_infer_headers, siof_check_iostreams)
+and siof_check_iostreams =
+  CLOpt.mk_bool ~long:"siof-check-iostreams"
+    ~in_help:InferCommand.[(Analyze, manual_siof)]
+    "Do not assume that iostreams (cout, cerr, ...) are always initialized. The default is to \
+     assume they are always initialized to avoid false positives. However, if your program \
+     compiles against a recent libstdc++ then it is safe to turn this option on."
 
 
 and cxx_scope_guards =
@@ -2491,6 +2472,10 @@ and _ =
 
 and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~long:"" `Javac ""
 
+and (_ : bool ref) =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-cxx-infer-headers"] "This option doesn't exist anymore."
+
+
 (** Parse Command Line Args *)
 
 let inferconfig_file =
@@ -2820,8 +2805,6 @@ and costs_previous = !costs_previous
 and current_to_previous_script = !current_to_previous_script
 
 and cxx = !cxx
-
-and cxx_infer_headers = !cxx_infer_headers
 
 and cxx_scope_guards = !cxx_scope_guards
 

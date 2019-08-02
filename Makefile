@@ -575,9 +575,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/'
-	find infer/models/cpp/include -type d -print0 | xargs -0 -n 1 \
-	  $(SHELL) -x -c "test -d '$(DESTDIR)$(libdir)'/infer/\$$1 || \
-	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/etc/' || \
@@ -621,8 +618,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	  $(LN_S) ../../bin/infer '$(notdir $(cc))';))
 	find infer/lib/specs/* -print0 | xargs -0 -I \{\} \
 	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
-	find infer/models/cpp/include -not -type d -print0 | xargs -0 -I \{\} \
-		$(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	$(INSTALL_DATA) -C          'infer/lib/linter_rules/linters.al' \
 	  '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al'
 	$(INSTALL_DATA) -C          'infer/etc/clang_ast.dict' \

@@ -23,31 +23,31 @@ struct WithoutCopy {
   int f2;
 };
 
-int getIntPtr(int id, std::vector<int*>& v) {
+int getIntPtrOk(int id, std::vector<int*>& v) {
   int x = v.size();
   int** res = &v[id];
   return **res;
 }
 
-int getWithCopy(int id, std::vector<WithCopy>& v) {
+int getWithCopyOk(int id, std::vector<WithCopy>& v) {
   int x = v.size();
   WithCopy* res = &v[id];
   return res->f1;
 }
 
-int getWithCopyPtr(int id, std::vector<WithCopy*>& v) {
+int getWithCopyPtrOk(int id, std::vector<WithCopy*>& v) {
   int x = v.size();
   WithCopy** res = &v[id];
   return (*res)->f1;
 }
 
-int getWithoutCopy(int id, std::vector<WithoutCopy>& v) {
+int getWithoutCopyOk(int id, std::vector<WithoutCopy>& v) {
   int x = v.size();
   WithoutCopy* res = &v[id];
   return res->f1;
 }
 
-int getWithoutCopyPtr(int id, std::vector<WithoutCopy*>& v) {
+int getWithoutCopyPtrOk(int id, std::vector<WithoutCopy*>& v) {
   int x = v.size();
   WithoutCopy** res = &v[id];
   return (*res)->f1;

@@ -66,12 +66,8 @@ let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~t
     map_file_of source_file_in_project loc_end || map_file_of source_file_in_project loc_start
   in
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
-  let file_in_models =
-    map_file_of SourceFile.is_cpp_model loc_end || map_file_of SourceFile.is_cpp_model loc_start
-  in
   map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
-  || file_in_models
   || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
   || Config.cxx
      && decl_trans_context = `Translation

@@ -259,12 +259,6 @@ OPTIONS
            Deactivates: Analyze C++ methods (Conversely: --cxx)       
     See also infer-capture(1).
 
-       --cxx-infer-headers
-           Activates: Include C++ header models during compilation. Infer
-           swaps some C++ headers for its own in order to get a better model
-           of, eg, the standard library. This can sometimes cause compilation
-           failures. (Conversely: --no-cxx-infer-headers)           See also infer-capture(1).
-
        --cxx-scope-guards json
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores.           See also infer-analyze(1).
@@ -988,12 +982,9 @@ OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are
            always initialized. The default is to assume they are always
-           initialized when --cxx-infer-headers is false to avoid false
-           positives due to lack of models of the proper initialization of io
-           streams. However, if your program compiles against a recent
-           libstdc++ then the infer models are not needed for precision and
-           it is safe to turn this option on. (Conversely:
-           --no-siof-check-iostreams)           See also infer-analyze(1).
+           initialized to avoid false positives. However, if your program
+           compiles against a recent libstdc++ then it is safe to turn this
+           option on. (Conversely: --no-siof-check-iostreams)           See also infer-analyze(1).
 
        --siof-only
            Activates: Enable --siof and disable all other checkers

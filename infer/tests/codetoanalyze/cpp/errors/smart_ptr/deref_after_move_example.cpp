@@ -10,12 +10,14 @@
 namespace deref_after_mode_example {
 
 struct Person {
+  // memory leak FP on Person::Person() because unique_ptr constructor is
+  // unknown
   std::unique_ptr<int> age{new int(35)};
   std::unique_ptr<int> move_age() { return std::move(age); }
   int access_age() { return *age; }
 };
 
-int deref_after_move_crash() {
+int FN_deref_after_move_bad() {
   Person p;
   auto x = p.move_age();
   *x;

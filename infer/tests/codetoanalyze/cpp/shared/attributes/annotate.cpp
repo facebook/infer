@@ -5,13 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// header required by TranslateAsPtr class. It's not in common header search
-// path when running clang without infer (clang wrappers add it)
-// Add -isystem '/path/to/infer/repo' to clang invocation to work around
-// compilation problem
-#include <infer/models/cpp/include/infer_model/infer_traits.h>
-
 /* Test for passing function attributes to infer via annotate attribute */
+
+#define INFER_MODEL_AS_DEREF_FIRST_ARG \
+  __attribute__((annotate("__infer_replace_with_deref_first_arg"))) {}
+
+namespace infer_traits {
+template <class T>
+class TranslateAsType {};
+} // namespace infer_traits
 
 // basic test of C function with __infer_replace_with_deref_first_arg attribute
 int derefFirstArg(int* a, int* b) INFER_MODEL_AS_DEREF_FIRST_ARG;

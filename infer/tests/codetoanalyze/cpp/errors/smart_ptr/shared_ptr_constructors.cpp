@@ -42,17 +42,27 @@ std::shared_ptr<Base> getFromDerived3(Derived* d) {
   return result;
 }
 
-void get_from_base1_nullptr_deref() { Base b = *(getFromBase1(nullptr)); }
+void FN_get_from_base1_nullptr_deref_bad() {
+  Base b = *(getFromBase1(nullptr));
+}
 
-void get_from_base2_nullptr_deref() { Base b = *(getFromBase2(nullptr)); }
+void FN_get_from_base2_nullptr_deref_bad() {
+  Base b = *(getFromBase2(nullptr));
+}
 
-void get_from_derived1_nullptr_deref() { Base b = *(getFromDerived1(nullptr)); }
+void FN_get_from_derived1_nullptr_deref_bad() {
+  Base b = *(getFromDerived1(nullptr));
+}
 
-void get_from_derived2_nullptr_deref() { Base b = *(getFromDerived2(nullptr)); }
+void FN_get_from_derived2_nullptr_deref_bad() {
+  Base b = *(getFromDerived2(nullptr));
+}
 
-void get_from_derived3_nullptr_deref() { Base b = *(getFromDerived3(nullptr)); }
+void FN_get_from_derived3_nullptr_deref_bad() {
+  Base b = *(getFromDerived3(nullptr));
+}
 
-void get_from_base1_null_f1_deref() {
+void FN_get_from_base1_null_f1_deref_bad() {
   Base b;
   int v;
   b.f1 = &v;
@@ -61,7 +71,7 @@ void get_from_base1_null_f1_deref() {
   int r = *(p->f1);
 }
 
-void get_from_base2_null_f1_deref() {
+void FN_get_from_base2_null_f1_deref_bad() {
   Base b;
   int v;
   b.f1 = &v;
@@ -70,7 +80,7 @@ void get_from_base2_null_f1_deref() {
   int r = *(p->f1);
 }
 
-void get_from_derived1_null_f1_deref() {
+void FN_get_from_derived1_null_f1_deref_bad() {
   Derived b;
   int v;
   b.f1 = &v;
@@ -79,7 +89,7 @@ void get_from_derived1_null_f1_deref() {
   int r = *(p->f1);
 }
 
-void get_from_derived2_null_f1_deref() {
+void FN_get_from_derived2_null_f1_deref_bad() {
   Derived b;
   int v;
   b.f1 = &v;
@@ -88,7 +98,7 @@ void get_from_derived2_null_f1_deref() {
   int r = *(p->f1);
 }
 
-void get_from_derived3_null_f1_deref() {
+void FN_get_from_derived3_null_f1_deref_bad() {
   Derived b;
   int v;
   b.f1 = &v;

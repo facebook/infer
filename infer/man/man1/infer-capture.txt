@@ -217,12 +217,6 @@ CLANG OPTIONS
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)
 
-       --cxx-infer-headers
-           Activates: Include C++ header models during compilation. Infer
-           swaps some C++ headers for its own in order to get a better model
-           of, eg, the standard library. This can sometimes cause compilation
-           failures. (Conversely: --no-cxx-infer-headers)
-
        --dump-duplicate-symbols
            Activates: Dump all symbols with the same name that are defined in
            more than one file. (Conversely: --no-dump-duplicate-symbols)

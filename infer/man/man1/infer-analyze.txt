@@ -421,12 +421,9 @@ SIOF CHECKER OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are
            always initialized. The default is to assume they are always
-           initialized when --cxx-infer-headers is false to avoid false
-           positives due to lack of models of the proper initialization of io
-           streams. However, if your program compiles against a recent
-           libstdc++ then the infer models are not needed for precision and
-           it is safe to turn this option on. (Conversely:
-           --no-siof-check-iostreams)
+           initialized to avoid false positives. However, if your program
+           compiles against a recent libstdc++ then it is safe to turn this
+           option on. (Conversely: --no-siof-check-iostreams)
 
        --siof-safe-methods +string
            Methods that are SIOF-safe; "foo::bar" will match "foo::bar()",

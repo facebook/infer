@@ -90,28 +90,28 @@ std::shared_ptr<Base> safeGet(std::weak_ptr<Base> p) {
   return s;
 }
 
-int safeGetFromWeakBaseConstr_bad(int v) {
+int FN_safeGetFromWeakBaseConstr_bad(int v) {
   auto b = std::make_shared<Base>(&v);
   auto s = safeGet(fromWeakBaseConstr(std::weak_ptr<Base>(b)));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromWeakBaseAssign_bad(int v) {
+int FN_safeGetFromWeakBaseAssign_bad(int v) {
   auto b = std::make_shared<Base>(&v);
   auto s = safeGet(fromWeakBaseAssign(std::weak_ptr<Base>(b)));
   b->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromWeakDerivedConstr_bad(int v) {
+int FN_safeGetFromWeakDerivedConstr_bad(int v) {
   auto d = std::make_shared<Derived>(&v);
   auto s = safeGet(fromWeakDerivedConstr(std::weak_ptr<Derived>(d)));
   d->f1 = nullptr;
   return *s->f1;
 }
 
-int safeGetFromWeakDerivedAssign_bad(int v) {
+int FN_safeGetFromWeakDerivedAssign_bad(int v) {
   auto d = std::make_shared<Derived>(&v);
   auto s = safeGet(fromWeakDerivedAssign(std::weak_ptr<Derived>(d)));
   d->f1 = nullptr;
@@ -227,7 +227,7 @@ void lock_can_be_null_bad(std::weak_ptr<int>& p) {
   int _ = *s.get();
 }
 
-int safe_deref_good(std::weak_ptr<int>& p) {
+int safe_deref_ok(std::weak_ptr<int>& p) {
   if (auto s = p.lock()) {
     return *s.get();
   }

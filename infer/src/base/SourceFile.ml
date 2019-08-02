@@ -118,15 +118,6 @@ let is_infer_model source_file =
       true
 
 
-(** Returns true if the file is a C++ model *)
-let is_cpp_model file =
-  match file with
-  | RelativeInferModel path ->
-      String.is_prefix ~prefix:Config.relative_cpp_models_dir path
-  | _ ->
-      false
-
-
 let is_under_project_root = function
   | Invalid {ml_source_file} ->
       L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file

@@ -18,7 +18,7 @@ class A {
   bool is_zero() const { return x == 0; }
 };
 
-void is_zero_impossible_npe_ok() {
+void FP_is_zero_impossible_npe_ok() {
   A a;
   int* p = nullptr;
   a.add();
@@ -36,7 +36,7 @@ void is_zero_possible_npe_bad() {
     *p = 42;
 }
 
-void not_zero_impossible_npe_ok() {
+void FP_not_zero_impossible_npe_ok() {
   A a;
   int* p = nullptr;
   a.add();
@@ -54,7 +54,7 @@ void not_zero_possible_npe_bad() {
     *p = 42;
 }
 
-void load_store_impossible_npe_ok() {
+void FP_load_store_impossible_npe_ok() {
   std::atomic<int> a(0);
   int* p = nullptr;
   a.store(1);
@@ -70,7 +70,7 @@ void load_store_possible_npe_bad() {
     *p = 42;
 }
 
-void exchange_impossible_npe_ok() {
+void FP_exchange_impossible_npe_ok() {
   std::atomic<int> a(0);
   int* p = nullptr;
   int b = a.exchange(1);
@@ -86,7 +86,7 @@ void exchange_possible_npe_bad() {
     *p = 42;
 }
 
-void compare_exchange_weak_impossible_npe1_ok() {
+void FP_compare_exchange_weak_impossible_npe1_ok() {
   std::atomic<int> a(0);
   int b = 0;
   int* p = nullptr;
@@ -104,7 +104,7 @@ void compare_exchange_weak_possible_npe1_bad() {
     *p = 42;
 }
 
-void compare_exchange_weak_impossible_npe2_ok() {
+void FP_compare_exchange_weak_impossible_npe2_ok() {
   std::atomic<int> a(0);
   int b = 1;
   int* p = nullptr;
@@ -122,7 +122,7 @@ void compare_exchange_weak_possible_npe2_bad() {
     *p = 42;
 }
 
-void compare_exchange_strong_impossible_npe1_ok() {
+void FP_compare_exchange_strong_impossible_npe1_ok() {
   std::atomic<int> a(0);
   int b = 0;
   int* p = nullptr;
@@ -140,7 +140,7 @@ void compare_exchange_strong_possible_npe1_bad() {
     *p = 42;
 }
 
-void compare_exchange_strong_impossible_npe2_ok() {
+void FP_compare_exchange_strong_impossible_npe2_ok() {
   std::atomic<int> a(0);
   int b = 1;
   int* p = nullptr;

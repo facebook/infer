@@ -1,7 +1,0 @@
-#include <infer_model/portability.h>
-
-#ifdef INFER_CPP11_ON
-# include <infer_model/iostream.h>
-#else
-# include_next <iostream>
-#endif

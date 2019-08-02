@@ -49,8 +49,7 @@ module ConditionTrace = struct
   let pp_description : F.formatter -> t -> unit =
    fun fmt ct ->
     match ct.cond_trace with
-    | Inter {callee_pname}
-      when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.issue_location.Location.file) ->
+    | Inter {callee_pname} ->
         F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string callee_pname)
     | _ ->
         ()

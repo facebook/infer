@@ -54,7 +54,7 @@ std::string do_not_ignore_empty2_Good(const std::string& s) {
   return v[0];
 }
 
-std::string do_not_ignore_empty_Bad(const std::string& s) {
+std::string FN_do_not_ignore_empty_Bad(const std::string& s) {
   std::vector<std::string> v;
   folly::split("delimiter", s, v, true);
   return v[0];

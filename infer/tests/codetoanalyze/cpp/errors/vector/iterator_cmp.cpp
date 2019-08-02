@@ -12,56 +12,56 @@ bool is_empty(const std::vector<int>& vec) { return vec.begin() == vec.end(); }
 
 bool not_empty(const std::vector<int>& vec) { return vec.begin() != vec.end(); }
 
-void empty_no_deref1_ok() {
+void ERROR_empty_no_deref1_ok() {
   int* p = nullptr;
   std::vector<int> vec;
   if (!is_empty(vec))
     *p = 42;
 }
 
-void empty_no_deref2_ok() {
+void ERROR_empty_no_deref2_ok() {
   int* p = nullptr;
   std::vector<int> vec;
   if (not_empty(vec))
     *p = 42;
 }
 
-void empty_deref1_bad() {
+void ERROR_empty_deref1_bad() {
   int* p = nullptr;
   std::vector<int> vec;
   if (is_empty(vec))
     *p = 42;
 }
 
-void empty_deref2_bad() {
+void ERROR_empty_deref2_bad() {
   int* p = nullptr;
   std::vector<int> vec;
   if (!not_empty(vec))
     *p = 42;
 }
 
-void not_empty_no_deref1_ok() {
+void ERROR_not_empty_no_deref1_ok() {
   int* p = nullptr;
   std::vector<int> vec = {1, 2, 3, 4};
   if (is_empty(vec))
     *p = 42;
 }
 
-void not_empty_no_deref2_ok() {
+void ERROR_not_empty_no_deref2_ok() {
   int* p = nullptr;
   std::vector<int> vec = {1, 2, 3, 4};
   if (!not_empty(vec))
     *p = 42;
 }
 
-void not_empty_deref1_bad() {
+void ERROR_not_empty_deref1_bad() {
   int* p = nullptr;
   std::vector<int> vec = {1, 2, 3, 4};
   if (!is_empty(vec))
     *p = 42;
 }
 
-void not_empty_deref2_bad() {
+void ERROR_not_empty_deref2_bad() {
   int* p = nullptr;
   std::vector<int> vec = {1, 2, 3, 4};
   if (not_empty(vec))

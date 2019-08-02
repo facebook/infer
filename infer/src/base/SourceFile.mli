@@ -41,9 +41,6 @@ val create : ?warn_on_error:bool -> string -> t
    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
    the given path (e.g. if it does not exist). *)
 
-val is_cpp_model : t -> bool
-(** Returns true if the file is a C++ model *)
-
 val is_infer_model : t -> bool
 
 val is_under_project_root : t -> bool

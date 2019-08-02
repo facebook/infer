@@ -7,7 +7,7 @@ SOURCES=$(wildcard *.cpp)
 CSOURCES=$(wildcard c_src/*.c)
 OBJECTS=$(patsubst %.c,%_cxx.o, $(CSOURCES)) $(patsubst %.cpp,%.o, $(SOURCES))
 CXX=clang++
-CXXFLAGS=-c -w -std=c++11 -isystem../include
+CXXFLAGS=-c -w -std=c++11
 
 all: $(OBJECTS)
 

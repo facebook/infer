@@ -508,9 +508,8 @@ struct A {
   int f : 4;
 };
 
-int decltype_read_ok_FP(int x) {
-  A a; // reports here as frontend forgets the expression used in decltype below
-       // a solution would be to annotate with __unused__ (T26148700)
+int decltype_read_ok(int x) {
+  A a;
   decltype(a.f) i;
   return x + i;
 }

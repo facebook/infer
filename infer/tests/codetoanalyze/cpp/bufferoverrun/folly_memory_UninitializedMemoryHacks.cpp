@@ -327,10 +327,10 @@ FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(unsigned char)
 #endif
 
 namespace infer_test {
-void foo_string(std::string* s, std::size_t n) {
-  folly::resizeWithoutInitialization(*s, n);
+void foo_string(std::string& s, std::size_t n) {
+  folly::resizeWithoutInitialization(s, n);
 }
-void foo_vector(std::vector<std::vector<int>>& v, std::size_t n) {
+void foo_vector(std::vector<int>& v, std::size_t n) {
   folly::resizeWithoutInitialization(v, n);
 }
 } // namespace infer_test

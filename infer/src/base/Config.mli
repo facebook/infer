@@ -75,8 +75,6 @@ val classpath : string option
 
 val costs_report_json : string
 
-val cpp_extra_include_dir : string
-
 val csl_analysis : bool
 
 val default_failure_name : string
@@ -150,8 +148,6 @@ val proc_stats_filename : string
 val property_attributes : string
 
 val racerd_issues_dir_name : string
-
-val relative_cpp_models_dir : string
 
 val relative_path_backtrack : int
 
@@ -313,8 +309,6 @@ val costs_previous : string option
 val current_to_previous_script : string option
 
 val cxx : bool
-
-val cxx_infer_headers : bool
 
 val cxx_scope_guards : Yojson.Basic.t
 

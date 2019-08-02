@@ -103,7 +103,7 @@ typedef TFM LMDM;
 
 static LM<LMDM>* al;
 
-static inline void ral_FP(lt* t, ai a) {
+static inline void ral_good(lt* t, ai a) {
   ASSERT(t);
   lo o = alo(a);
   al->u(*t, o);
@@ -138,5 +138,5 @@ static void am_Good_FP(im* it) {
   const ai a = aft(ch->i1);
   lt at;
   gal_FP(&at, a);
-  ral_FP(&at, a);
+  ral_good(&at, a);
 }

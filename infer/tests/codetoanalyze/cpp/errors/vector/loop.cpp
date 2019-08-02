@@ -31,7 +31,7 @@ void iterator_for_access_ok(std::vector<int>& vec) {
   }
 }
 
-void empty_vector_loop_ok() {
+void FP_empty_vector_loop_ok() {
   std::vector<int> vec;
   int* ptr = nullptr;
   for (const auto& elem : vec) {
