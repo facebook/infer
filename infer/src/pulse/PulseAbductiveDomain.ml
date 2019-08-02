@@ -169,7 +169,9 @@ module Memory = struct
 
 
   let add_edge addr access new_addr_trace astate =
-    map_post_heap astate ~f:(fun heap -> BaseMemory.add_edge addr access new_addr_trace heap)
+    map_post_heap astate ~f:(fun heap ->
+        BaseMemory.add_edge addr access new_addr_trace heap
+        |> BaseMemory.add_attributes addr (Attributes.singleton WrittenTo) )
 
 
   let find_edge_opt address access astate =
@@ -219,7 +221,9 @@ module Memory = struct
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 
   let set_cell addr cell astate =
-    map_post_heap astate ~f:(fun heap -> BaseMemory.set_cell addr cell heap)
+    map_post_heap astate ~f:(fun heap ->
+        BaseMemory.set_cell addr cell heap
+        |> BaseMemory.add_attributes addr (Attributes.singleton WrittenTo) )
 
 
   module Edges = BaseMemory.Edges
@@ -472,17 +476,21 @@ module PrePost = struct
     match cell_pre_opt with
     | None ->
         false
-    | Some (edges_pre, _) ->
-        ( Attributes.is_empty attrs_post
-        || Attributes.only_contains_address_of_stack_variable attrs_post )
-        && PulseDomain.Memory.Edges.equal
-             (fun (addr_dest_pre, _) (addr_dest_post, _) ->
-               (* NOTE: ignores traces
+    | Some (edges_pre, _) when not (Attributes.is_modified attrs_post) ->
+        let are_edges_equal =
+          PulseDomain.Memory.Edges.equal
+            (fun (addr_dest_pre, _) (addr_dest_post, _) ->
+              (* NOTE: ignores traces
 
                   TODO: can the traces be leveraged here? maybe easy to detect writes by looking at
                   the post trace *)
-               AbstractAddress.equal addr_dest_pre addr_dest_post )
-             edges_pre edges_post
+              AbstractAddress.equal addr_dest_pre addr_dest_post )
+            edges_pre edges_post
+        in
+        if CommandLineOption.strict_mode then assert are_edges_equal ;
+        are_edges_equal
+    | _ ->
+        false
 
 
   let materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
@@ -574,6 +582,7 @@ module PrePost = struct
                 {action= trace.action; f= Call proc_name; location}
           ; history= trace.history }
     | MustBeValid _
+    | WrittenTo
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
     | Closure _
@@ -609,6 +618,7 @@ module PrePost = struct
           post_edges_minus_pre translated_post_edges
       in
       PulseDomain.Memory.set_edges addr_caller edges_post_caller heap
+      |> PulseDomain.Memory.add_attributes addr_caller (PulseDomain.Attributes.singleton WrittenTo)
     in
     let caller_post = Domain.make (call_state.astate.post :> base_domain).stack heap in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}

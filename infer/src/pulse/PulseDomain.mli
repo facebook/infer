@@ -83,6 +83,7 @@ module Attribute : sig
   type t =
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
+    | WrittenTo
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
@@ -97,7 +98,7 @@ module Attributes : sig
 
   val get_address_of_stack_variable : t -> (Var.t * ValueHistory.t * Location.t) option
 
-  val only_contains_address_of_stack_variable : t -> bool
+  val is_modified : t -> bool
 end
 
 module AbstractAddress : sig

@@ -246,6 +246,7 @@ module Attribute = struct
   type t =
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
+    | WrittenTo
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
@@ -257,6 +258,8 @@ module Attribute = struct
   let to_rank = Variants.to_rank
 
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
+
+  let address_is_written_to_rank = Variants.to_rank WrittenTo
 
   let address_of_stack_variable_rank =
     let pname = Typ.Procname.from_string_c_fun "" in
@@ -285,6 +288,8 @@ module Attribute = struct
           (InterprocAction.pp (fun _ () -> ()))
           action Location.pp
           (InterprocAction.to_outer_location action)
+    | WrittenTo ->
+        F.fprintf f "written"
     | AddressOfCppTemporary (var, history) ->
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, history, location) ->
@@ -330,9 +335,9 @@ module Attributes = struct
     Set.find_rank attrs Attribute.std_vector_reserve_rank |> Option.is_some
 
 
-  let only_contains_address_of_stack_variable attrs =
-    Set.is_singleton attrs
-    && Option.is_some (Set.find_rank attrs Attribute.address_of_stack_variable_rank)
+  let is_modified attrs =
+    Option.is_some (Set.find_rank attrs Attribute.address_is_written_to_rank)
+    || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 
   include Set
