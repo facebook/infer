@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 
 MODIFIED_FILES_FILE = changed_files.txt
-SOURCES = $(wildcard src/*.c src/*.h)
+SOURCES = $(wildcard src_after/*.java src_before/*.java)
 INFER_OPTIONS = --changed-files-index $(MODIFIED_FILES_FILE) \
   --incremental-analysis \
   --debug-level-analysis 1
@@ -28,12 +28,18 @@ test: compare_cg
 replace: replace_cg
 
 $(CURRENT_REPORT): $(INFER_CLANG_DEPS) $(SOURCES)
-	$(QUIET)$(INFER_BIN) -o $(CURRENT_DIR) -- clang -c src/*.c
+	$(QUIET)$(REMOVE_DIR) src
+	$(QUIET)$(MKDIR_P) src
+	$(QUIET)$(COPY) src_after/* src/
+	$(QUIET)$(INFER_BIN) -o $(CURRENT_DIR) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac src/*.java
 
 $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
+	$(QUIET)$(REMOVE_DIR) src
+	$(QUIET)$(MKDIR_P) src
+	$(QUIET)$(COPY) src_before/* src/
 	$(QUIET)$(REMOVE_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(COPY) -r $(CURRENT_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(REMOVE) $@
-	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) -- clang -c src/*.c 
+	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/reverse_analysis_callgraph.dot \
 	        reverse_analysis_callgraph.dot.test

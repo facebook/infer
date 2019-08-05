@@ -127,6 +127,7 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
 	differential_interesting_paths_filter \
   differential_of_costs_report \
+  incremental_analysis_cost_change \
   differential_skip_anonymous_class_renamings \
   differential_skip_duplicated_types_on_filenames \
   differential_skip_duplicated_types_on_filenames_with_renamings \
