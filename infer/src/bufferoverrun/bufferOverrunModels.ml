@@ -643,6 +643,53 @@ module StdBasicString = struct
     {exec; check= no_check}
 end
 
+module StdVector = struct
+  (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
+  let constructor vec_exp size_exp =
+    let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
+    let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
+        mem =
+      let mem = malloc_exec model_env ~ret mem in
+      let vec_locs = Sem.eval_locs vec_exp mem in
+      let deref_of_vec =
+        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+          ~represents_multiple_values:false
+        |> Loc.of_allocsite
+      in
+      let array_v =
+        Sem.eval integer_type_widths (Exp.Var id) mem
+        |> Dom.Val.add_assign_trace_elem location vec_locs
+      in
+      mem
+      |> Dom.Mem.update_mem vec_locs (Dom.Val.of_loc deref_of_vec)
+      |> Dom.Mem.add_heap deref_of_vec array_v
+    in
+    {exec; check}
+
+
+  let at vec_exp index_exp =
+    let exec {pname; location} ~ret:(id, _) mem =
+      let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
+      let array_v =
+        let locs = Dom.Val.get_all_locs deref_of_vec in
+        if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
+        else Dom.Mem.find_set locs mem
+      in
+      Dom.Mem.add_stack (Loc.of_id id) array_v mem
+    and check {location; integer_type_widths} mem cond_set =
+      let idx = Sem.eval integer_type_widths index_exp mem in
+      let arr =
+        let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
+        Dom.Mem.find_set (Dom.Val.get_all_locs deref_of_vec) mem
+      in
+      let relation = Dom.Mem.get_relation mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
+        ~last_included:false ~latest_prune location cond_set
+    in
+    {exec; check}
+end
+
 (* Java's Collections are represented like arrays. But we don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
@@ -956,6 +1003,10 @@ module Call = struct
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "basic_string" &::.*--> no_model
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "vector" $ capt_exp $+ capt_exp
+        $--> StdVector.constructor
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
+        $--> StdVector.at
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
         (* model sets as lists *)

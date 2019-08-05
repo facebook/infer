@@ -8,14 +8,19 @@
 #include <list>
 #include <assert.h>
 
-void out_of_bound_Bad(std::vector<int> v) {
+void FN_out_of_bound_Bad(std::vector<int> v) {
   unsigned int n = v.size();
   v[n] = 1;
 }
 
-void FP_constructor_Good() {
+void constructor_Good() {
   std::vector<int> v(1);
   v[0] = 2;
+}
+
+void constructor_Bad() {
+  std::vector<int> v(1);
+  v[3] = 2;
 }
 
 void FP_push_back_Good() {
@@ -43,7 +48,7 @@ void reserve_Bad() {
   v[0] = 2;
 }
 
-void FP_safe_access(std::vector<int> v) {
+void safe_access(std::vector<int> v) {
   if (v.size() >= 10) {
     v[9] = 1;
   }
@@ -51,7 +56,7 @@ void FP_safe_access(std::vector<int> v) {
 
 void call_safe_access_Good() {
   std::vector<int> v(5, 0);
-  FP_safe_access(v);
+  safe_access(v);
 }
 
 void FP_safe_access2(std::vector<int> v) {
@@ -77,7 +82,7 @@ void FP_safe_access3_Good() {
   }
 }
 
-void FP_safe_access4(std::vector<int> v) {
+void safe_access4(std::vector<int> v) {
   if (!v.empty()) {
     v[0] = 1;
   }
@@ -85,10 +90,10 @@ void FP_safe_access4(std::vector<int> v) {
 
 void call_safe_access4_Good() {
   std::vector<int> v;
-  FP_safe_access4(v);
+  safe_access4(v);
 }
 
-void FP_safe_access5(std::vector<int> v) {
+void safe_access5(std::vector<int> v) {
   if (v.empty()) {
   } else {
     v[0] = 1;
@@ -97,17 +102,17 @@ void FP_safe_access5(std::vector<int> v) {
 
 void call_safe_access5_Good() {
   std::vector<int> v;
-  FP_safe_access5(v);
+  safe_access5(v);
 }
 
-void safe_access6(std::vector<int> v) {
+void FP_safe_access6(std::vector<int> v) {
   std::vector<int> v2(2);
   v2[v.empty()];
 }
 
 void call_safe_access6_Good() {
   std::vector<int> v;
-  safe_access6(v);
+  FP_safe_access6(v);
 }
 
 void FP_data_Good() {
