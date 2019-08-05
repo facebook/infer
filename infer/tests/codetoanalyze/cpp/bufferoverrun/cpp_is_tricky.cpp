@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace CppIsTricky {
-void vector_size_Bad() {
+void FN_vector_size_Bad() {
   const auto vec = std::vector<int>{1, 2, 3};
   const int numExpectedElements = 1;
   const auto delta = numExpectedElements - vec.size();

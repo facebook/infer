@@ -13,6 +13,16 @@ void FN_out_of_bound_Bad(std::vector<int> v) {
   v[n] = 1;
 }
 
+void simple_size_Good() {
+  std::vector<int> v(3);
+  v[v.size() - 1] = 2;
+}
+
+void simple_size_Bad() {
+  std::vector<int> v(3);
+  v[v.size()] = 2;
+}
+
 void constructor_Good() {
   std::vector<int> v(1);
   v[0] = 2;

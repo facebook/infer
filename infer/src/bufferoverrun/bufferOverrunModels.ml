@@ -688,6 +688,15 @@ module StdVector = struct
         ~last_included:false ~latest_prune location cond_set
     in
     {exec; check}
+
+
+  let size vec_exp =
+    let exec _ ~ret:(id, _) mem =
+      let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
+      let size_v = eval_array_locs_length (Dom.Val.get_all_locs deref_of_vec) mem in
+      Dom.Mem.add_stack (Loc.of_id id) size_v mem
+    in
+    {exec; check= no_check}
 end
 
 (* Java's Collections are represented like arrays. But we don't care about the elements.
@@ -1007,6 +1016,7 @@ module Call = struct
         $--> StdVector.constructor
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
         (* model sets as lists *)

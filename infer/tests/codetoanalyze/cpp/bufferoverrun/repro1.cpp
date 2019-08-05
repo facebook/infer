@@ -74,7 +74,7 @@ struct LM {
   void l(lt& t, const lo& o) { lI_FP(t, o); }
   void tL(lt& t, const lo& o) { lI_FP(t, o); }
   void u(lt& t, const lo& o) {
-    ASSERT(fB_FP(o) == t.bI);
+    ASSERT(fB(o) == t.bI);
     if (t.bI == kBN) {
       return;
     }
@@ -83,9 +83,9 @@ struct LM {
   }
 
  private:
-  BI fB_FP(const lo& o) { return (BI)th((const void*)&o) % b.size() + 1; }
+  BI fB(const lo& o) { return (BI)th((const void*)&o) % b.size() + 1; }
   void lI_FP(lt& t, const lo& o) {
-    auto bi = fB_FP(o);
+    auto bi = fB(o);
     auto r = b[bi - 1]->lO(o);
     if (r != TLOR::S) {
       t.bI = kBN;
@@ -133,7 +133,7 @@ struct arh {
   ft i1;
 };
 
-static void am_Good_FP(im* it) {
+static void am_Good(im* it) {
   const arh* ch = (const arh*)it->gKPC();
   const ai a = aft(ch->i1);
   lt at;
