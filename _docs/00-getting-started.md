@@ -21,7 +21,7 @@ latest [binary
 release](https://github.com/facebook/infer/releases/latest). Download
 the tarball then extract it anywhere on your system to start using
 infer. For example, this downloads infer in /opt on Linux (replace
-`VERSION` with the latest release, eg `VERSION=0.16.0`):
+`VERSION` with the latest release, eg `VERSION=0.17.0`):
 
 ```sh
 VERSION=0.XX.Y; \
