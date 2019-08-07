@@ -211,11 +211,6 @@ class BuckAnalyzer:
                 shutil.move(os.path.join(config.BUCK_OUT, filename), tmp)
 
     def _run_buck_with_flavors(self):
-        # TODO: Use buck to identify the project's root folder
-        if not os.path.isfile('.buckconfig'):
-            print('Please run this command from the folder where .buckconfig '
-                  'is located')
-            return os.EX_USAGE
         env_vars = utils.read_env()
         infer_args = env_vars['INFER_ARGS']
         if infer_args != '':
