@@ -150,19 +150,21 @@ module TransferFunctions = struct
       -> Dom.Mem.t =
    fun tenv integer_type_widths ret callee_formals callee_pname params caller_mem callee_exit_mem
        location ->
-    let rel_subst_map =
-      Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
-    in
     let eval_sym_trace =
       Sem.mk_eval_sym_trace integer_type_widths callee_formals params caller_mem
         ~mode:Sem.EvalNormal
     in
-    let caller_mem =
+    let caller_mem' =
       instantiate_mem_reachable ret callee_formals callee_pname ~callee_exit_mem eval_sym_trace
         caller_mem location
       |> forget_ret_relation ret callee_pname
     in
-    Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
+    Option.value_map Config.bo_relational_domain ~default:caller_mem' ~f:(fun _ ->
+        let rel_subst_map =
+          Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem
+            callee_exit_mem
+        in
+        Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem' ~callee:callee_exit_mem )
 
 
   let rec is_array_access_exp = function

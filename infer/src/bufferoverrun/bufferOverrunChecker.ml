@@ -253,7 +253,9 @@ let instantiate_cond :
  fun tenv integer_type_widths callee_pname callee_formals params caller_mem callee_exit_mem
      callee_cond location ->
   let rel_subst_map =
-    Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
+    Option.value_map Config.bo_relational_domain ~default:Relation.SubstMap.empty ~f:(fun _ ->
+        Sem.get_subst_map tenv integer_type_widths callee_formals params caller_mem callee_exit_mem
+    )
   in
   let caller_rel = Dom.Mem.get_relation caller_mem in
   let eval_sym_trace =

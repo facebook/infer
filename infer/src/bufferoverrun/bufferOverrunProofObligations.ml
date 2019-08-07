@@ -408,9 +408,13 @@ module ArrayAccessCondition = struct
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
     with
     | NonBottom offset, NonBottom idx, NonBottom size ->
-        let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
-        let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
-        let relation = Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation in
+        let idx_sym_exp, size_sym_exp, relation =
+          if Option.is_none Config.bo_relational_domain then (None, None, Relation.bot)
+          else
+            ( Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp
+            , Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp
+            , Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation )
+        in
         let void_ptr =
           c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
           || ItvPure.has_void_ptr_symb size
