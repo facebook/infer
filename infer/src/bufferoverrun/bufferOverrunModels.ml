@@ -645,16 +645,29 @@ end
 
 module StdVector = struct
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
-  let constructor vec_exp size_exp =
+  let constructor elt_typ (vec_exp, vec_typ) size_exp =
     let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
         mem =
       let mem = malloc_exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
+      let classname =
+        match vec_typ.Typ.desc with
+        | Typ.Tptr (vec_typ, _) -> (
+          match Typ.name vec_typ with
+          | None ->
+              L.(die InternalError)
+                "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
+          | Some t ->
+              t )
+        | _ ->
+            L.(die InternalError) "First parameter of constructor should be a pointer."
+      in
       let deref_of_vec =
         Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
           ~represents_multiple_values:false
         |> Loc.of_allocsite
+        |> Loc.append_field ~fn:(BufferOverrunField.cpp_vector_elem ~classname elt_typ)
       in
       let array_v =
         Sem.eval integer_type_widths (Exp.Var id) mem
@@ -1012,8 +1025,11 @@ module Call = struct
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "basic_string" &::.*--> no_model
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "vector" $ capt_exp $+ capt_exp
-        $--> StdVector.constructor
+      ; -"std" &:: "vector"
+        < capt_typ `T
+        &+ any_typ >:: "vector"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ capt_exp $--> StdVector.constructor
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size

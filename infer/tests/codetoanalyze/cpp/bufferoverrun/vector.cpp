@@ -8,7 +8,7 @@
 #include <list>
 #include <assert.h>
 
-void FN_out_of_bound_Bad(std::vector<int> v) {
+void out_of_bound_Bad(std::vector<int> v) {
   unsigned int n = v.size();
   v[n] = 1;
 }
@@ -69,7 +69,7 @@ void call_safe_access_Good() {
   safe_access(v);
 }
 
-void FP_safe_access2(std::vector<int> v) {
+void safe_access2(std::vector<int> v) {
   if (v.empty()) {
     return;
   }
@@ -82,7 +82,7 @@ void FP_safe_access2(std::vector<int> v) {
 
 void call_safe_access2_Good() {
   std::vector<int> v;
-  FP_safe_access2(v);
+  safe_access2(v);
 }
 
 void FP_safe_access3_Good() {

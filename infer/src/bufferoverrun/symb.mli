@@ -87,6 +87,8 @@ module SymbolPath : sig
   val exists_str_partial : f:(string -> bool) -> partial -> bool
 
   val is_void_ptr_path : t -> bool
+
+  val is_cpp_vector_elem : partial -> bool
 end
 
 module Symbol : sig

@@ -232,6 +232,13 @@ module SymbolPath = struct
         is_void
     | Normal _ | Modeled _ ->
         false
+
+
+  let is_cpp_vector_elem = function
+    | Field (fn, _) ->
+        BufferOverrunField.is_cpp_vector_elem fn
+    | _ ->
+        false
 end
 
 module Symbol = struct

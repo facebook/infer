@@ -424,6 +424,12 @@ module Val = struct
       let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
       TraceSet.singleton location trace
     in
+    let ptr_to_c_array_alloc deref_path size =
+      let allocsite = Allocsite.make_symbol deref_path in
+      let offset = Itv.zero in
+      let traces = traces_of_loc (Loc.of_path deref_path) in
+      of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
+    in
     let is_java = Language.curr_language_is Java in
     L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
@@ -457,7 +463,10 @@ module Val = struct
               | _ ->
                   Itv.nat
             in
-            let offset = Itv.of_offset_path ~is_void:(Typ.is_pointer_to_void typ) path in
+            let offset =
+              if SPath.is_cpp_vector_elem path then Itv.zero
+              else Itv.of_offset_path ~is_void:(Typ.is_pointer_to_void typ) path
+            in
             let size = Itv.of_length_path ~is_void:(Typ.is_pointer_to_void typ) path in
             ArrayBlk.make_c allocsite ~stride ~offset ~size
           in
@@ -466,12 +475,14 @@ module Val = struct
       match BufferOverrunTypModels.dispatch tenv typename with
       | Some (CArray {deref_kind; length}) ->
           let deref_path = SPath.deref ~deref_kind path in
-          let l = Loc.of_path deref_path in
-          let traces = traces_of_loc l in
-          let allocsite = Allocsite.make_symbol deref_path in
-          let offset = Itv.zero in
           let size = Itv.of_int_lit length in
-          of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
+          ptr_to_c_array_alloc deref_path size
+      | Some (CppStdVector {element_typ}) ->
+          let deref_path =
+            SPath.field path (BufferOverrunField.cpp_vector_elem ~classname:typename element_typ)
+          in
+          let size = Itv.of_length_path ~is_void:false path in
+          ptr_to_c_array_alloc deref_path size
       | Some JavaCollection ->
           let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
           let l = Loc.of_path deref_path in
