@@ -681,6 +681,7 @@ module AliasTarget = struct
     | Simple of Loc.t
     | SimplePlusA of Loc.t * IntLit.t
     | Empty of Loc.t
+    | Size of Loc.t
     | Fgets of Loc.t
     | Nullity of Loc.t
   [@@deriving compare]
@@ -695,6 +696,8 @@ module AliasTarget = struct
         else F.fprintf fmt "%a+%a" Loc.pp l IntLit.pp i
     | Empty l ->
         F.fprintf fmt "empty(%a)" Loc.pp l
+    | Size l ->
+        F.fprintf fmt "size(%a)" Loc.pp l
     | Fgets l ->
         F.fprintf fmt "fgets(%a)" Loc.pp l
     | Nullity l ->
@@ -705,7 +708,10 @@ module AliasTarget = struct
 
   let nullity l = Nullity l
 
-  let get_loc = function Simple l | SimplePlusA (l, _) | Empty l | Fgets l | Nullity l -> l
+  let get_loc = function
+    | Simple l | SimplePlusA (l, _) | Empty l | Size l | Fgets l | Nullity l ->
+        l
+
 
   let use l x = Loc.equal l (get_loc x)
 
@@ -717,6 +723,8 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> SimplePlusA (l, i))
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
+    | Size l ->
+        Option.map (f l) ~f:(fun l -> Size l)
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
     | Nullity l ->
@@ -1346,8 +1354,13 @@ module MemReach = struct
         Some (l, None)
     | Some (AliasTarget.SimplePlusA (l, i)) ->
         Some (l, Some i)
-    | Some (AliasTarget.Empty _ | AliasTarget.Fgets _ | AliasTarget.Nullity _) | None ->
+    | Some (AliasTarget.Empty _ | AliasTarget.Size _ | AliasTarget.Fgets _ | AliasTarget.Nullity _)
+    | None ->
         None
+
+
+  let find_size_alias : Ident.t -> _ t0 -> Loc.t option =
+   fun k m -> match Alias.find k m.alias with Some (AliasTarget.Size l) -> Some l | _ -> None
 
 
   let find_ret_alias : _ t0 -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
@@ -1656,6 +1669,10 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
+  let find_size_alias : Ident.t -> _ t0 -> Loc.t option =
+   fun k -> f_lift_default ~default:None (MemReach.find_size_alias k)
+
+
   let find_ret_alias : _ t0 -> AliasTarget.t option =
    fun m -> f_lift_default ~default:None MemReach.find_ret_alias m
 
@@ -1670,6 +1687,10 @@ module Mem = struct
 
   let load_empty_alias : Ident.t -> Loc.t -> t -> t =
    fun id loc -> load_alias id (AliasTarget.Empty loc)
+
+
+  let load_size_alias : Ident.t -> Loc.t -> t -> t =
+   fun id loc -> load_alias id (AliasTarget.Size loc)
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =

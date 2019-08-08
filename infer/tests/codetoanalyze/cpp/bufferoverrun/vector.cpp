@@ -64,7 +64,7 @@ void safe_access(std::vector<int> v) {
   }
 }
 
-void FP_call_safe_access_Good() {
+void call_safe_access_Good() {
   std::vector<int> v(5, 0);
   safe_access(v);
 }

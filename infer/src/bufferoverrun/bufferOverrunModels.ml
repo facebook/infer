@@ -644,6 +644,10 @@ module StdBasicString = struct
 end
 
 module StdVector = struct
+  let deref_of vec_exp mem =
+    Dom.Val.get_all_locs (Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem)
+
+
   let get_classname vec_typ =
     match vec_typ.Typ.desc with
     | Typ.Tptr (vec_typ, _) -> (
@@ -695,9 +699,7 @@ module StdVector = struct
         let classname = get_classname vec_typ in
         PowLoc.append_field vec_locs ~fn:(BufferOverrunField.cpp_vector_elem ~classname elt_typ)
       in
-      let deref_of_src =
-        Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem |> Dom.Val.get_all_locs
-      in
+      let deref_of_src = deref_of src_exp mem in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
       |> Dom.Mem.update_mem deref_of_vec (Dom.Mem.find_set deref_of_src mem)
@@ -707,19 +709,15 @@ module StdVector = struct
 
   let at vec_exp index_exp =
     let exec {pname; location} ~ret:(id, _) mem =
-      let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
       let array_v =
-        let locs = Dom.Val.get_all_locs deref_of_vec in
+        let locs = deref_of vec_exp mem in
         if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
         else Dom.Mem.find_set locs mem
       in
       Dom.Mem.add_stack (Loc.of_id id) array_v mem
     and check {location; integer_type_widths} mem cond_set =
       let idx = Sem.eval integer_type_widths index_exp mem in
-      let arr =
-        let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
-        Dom.Mem.find_set (Dom.Val.get_all_locs deref_of_vec) mem
-      in
+      let arr = Dom.Mem.find_set (deref_of vec_exp mem) mem in
       let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
       BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
@@ -728,11 +726,16 @@ module StdVector = struct
     {exec; check}
 
 
+  let get_size vec_exp mem = eval_array_locs_length (deref_of vec_exp mem) mem
+
   let size vec_exp =
     let exec _ ~ret:(id, _) mem =
-      let deref_of_vec = Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem in
-      let size_v = eval_array_locs_length (Dom.Val.get_all_locs deref_of_vec) mem in
-      Dom.Mem.add_stack (Loc.of_id id) size_v mem
+      let mem = Dom.Mem.add_stack (Loc.of_id id) (get_size vec_exp mem) mem in
+      match PowLoc.is_singleton_or_more (deref_of vec_exp mem) with
+      | IContainer.Singleton loc ->
+          Dom.Mem.load_size_alias id loc mem
+      | IContainer.Empty | IContainer.More ->
+          mem
     in
     {exec; check= no_check}
 end

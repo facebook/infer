@@ -310,6 +310,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         Mem.find loc mem
     | Some
         ( AliasTarget.SimplePlusA _
+        | AliasTarget.Size _
         | AliasTarget.Empty _
         | AliasTarget.Fgets _
         | AliasTarget.Nullity _ )
@@ -512,7 +513,7 @@ module Prune = struct
           let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.SimplePlusA _) | None ->
+      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _) | None ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias x mem with
@@ -529,59 +530,68 @@ module Prune = struct
           let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
           let v' = Val.modify_itv itv_v v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Fgets _) | None ->
+      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | AliasTarget.Fgets _) | None ->
           astate )
     | _ ->
         astate
 
 
+  let gen_prune_alias_functions ~prune_alias_core integer_type_widths comp x e astate =
+    let val_prune =
+      match comp with
+      | Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge ->
+          Val.prune_comp comp
+      | Binop.Eq ->
+          Val.prune_eq
+      | Binop.Ne ->
+          Val.prune_ne
+      | _ ->
+          assert false
+    in
+    let make_pruning_exp = PruningExp.make comp in
+    prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e astate
+
+
+  let prune_simple_alias =
+    let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
+      Option.value_map (Mem.find_simple_alias x mem) ~default:astate ~f:(fun (lv, opt_i) ->
+          let lhs = Mem.find lv mem in
+          let rhs =
+            let v' = eval integer_type_widths e mem in
+            Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
+          in
+          let v = val_prune lhs rhs in
+          let pruning_exp = make_pruning_exp ~lhs ~rhs in
+          update_mem_in_prune lv v ~pruning_exp astate )
+    in
+    gen_prune_alias_functions ~prune_alias_core
+
+
+  let prune_size_alias =
+    let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
+      Option.value_map (Mem.find_size_alias x mem) ~default:astate ~f:(fun lv ->
+          let array_v = Mem.find lv mem in
+          let size = Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv in
+          let rhs = eval integer_type_widths e mem in
+          let size' = val_prune size rhs in
+          let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in
+          let pruning_exp = make_pruning_exp ~lhs:size' ~rhs in
+          update_mem_in_prune lv array_v' ~pruning_exp astate )
+    in
+    gen_prune_alias_functions ~prune_alias_core
+
+
   let rec prune_binop_left : Typ.IntegerWidths.t -> Exp.t -> t -> t =
-   fun integer_type_widths e ({mem} as astate) ->
+   fun integer_type_widths e astate ->
     match e with
     | Exp.BinOp (comp, Exp.Cast (_, e1), e2) ->
         prune_binop_left integer_type_widths (Exp.BinOp (comp, e1, e2)) astate
-    | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
-    | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
-    | Exp.BinOp ((Binop.Le as comp), Exp.Var x, e')
-    | Exp.BinOp ((Binop.Ge as comp), Exp.Var x, e') -> (
-      match Mem.find_simple_alias x mem with
-      | Some (lv, opt_i) ->
-          let lhs = Mem.find lv mem in
-          let rhs =
-            let v' = eval integer_type_widths e' mem in
-            Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
-          in
-          let v = Val.prune_comp comp lhs rhs in
-          let pruning_exp = PruningExp.make comp ~lhs ~rhs in
-          update_mem_in_prune lv v ~pruning_exp astate
-      | None ->
-          astate )
-    | Exp.BinOp (Binop.Eq, Exp.Var x, e') -> (
-      match Mem.find_simple_alias x mem with
-      | Some (lv, opt_i) ->
-          let lhs = Mem.find lv mem in
-          let rhs =
-            let v' = eval integer_type_widths e' mem in
-            Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
-          in
-          let v = Val.prune_eq lhs rhs in
-          let pruning_exp = PruningExp.make Binop.Eq ~lhs ~rhs in
-          update_mem_in_prune lv v ~pruning_exp astate
-      | None ->
-          astate )
-    | Exp.BinOp (Binop.Ne, Exp.Var x, e') -> (
-      match Mem.find_simple_alias x mem with
-      | Some (lv, opt_i) ->
-          let lhs = Mem.find lv mem in
-          let rhs =
-            let v' = eval integer_type_widths e' mem in
-            Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
-          in
-          let v = Val.prune_ne lhs rhs in
-          let pruning_exp = PruningExp.make Binop.Ne ~lhs ~rhs in
-          update_mem_in_prune lv v ~pruning_exp astate
-      | None ->
-          astate )
+    | Exp.BinOp
+        (((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as comp), Exp.Var x, e')
+      ->
+        astate
+        |> prune_simple_alias integer_type_widths comp x e'
+        |> prune_size_alias integer_type_widths comp x e'
     | Exp.BinOp
         ( ((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as comp)
         , Exp.BinOp (Binop.PlusA t, e1, e2)
