@@ -644,25 +644,26 @@ module StdBasicString = struct
 end
 
 module StdVector = struct
+  let get_classname vec_typ =
+    match vec_typ.Typ.desc with
+    | Typ.Tptr (vec_typ, _) -> (
+      match Typ.name vec_typ with
+      | None ->
+          L.(die InternalError) "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
+      | Some t ->
+          t )
+    | _ ->
+        L.(die InternalError) "First parameter of constructor should be a pointer."
+
+
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
-  let constructor elt_typ (vec_exp, vec_typ) size_exp =
+  let constructor_size elt_typ (vec_exp, vec_typ) size_exp =
     let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
         mem =
       let mem = malloc_exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
-      let classname =
-        match vec_typ.Typ.desc with
-        | Typ.Tptr (vec_typ, _) -> (
-          match Typ.name vec_typ with
-          | None ->
-              L.(die InternalError)
-                "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
-          | Some t ->
-              t )
-        | _ ->
-            L.(die InternalError) "First parameter of constructor should be a pointer."
-      in
+      let classname = get_classname vec_typ in
       let deref_of_vec =
         Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
           ~represents_multiple_values:false
@@ -678,6 +679,30 @@ module StdVector = struct
       |> Dom.Mem.add_heap deref_of_vec array_v
     in
     {exec; check}
+
+
+  (* The (1) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
+  let constructor_empty elt_typ vec = constructor_size elt_typ vec Exp.zero
+
+  (* The (5) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
+  let constructor_copy elt_typ (vec_exp, vec_typ) src_exp =
+    let exec {integer_type_widths} ~ret:_ mem =
+      let vec_locs, traces =
+        let v = Sem.eval integer_type_widths vec_exp mem in
+        (Dom.Val.get_all_locs v, Dom.Val.get_traces v)
+      in
+      let deref_of_vec =
+        let classname = get_classname vec_typ in
+        PowLoc.append_field vec_locs ~fn:(BufferOverrunField.cpp_vector_elem ~classname elt_typ)
+      in
+      let deref_of_src =
+        Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem |> Dom.Val.get_all_locs
+      in
+      mem
+      |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
+      |> Dom.Mem.update_mem deref_of_vec (Dom.Mem.find_set deref_of_src mem)
+    in
+    {exec; check= no_check}
 
 
   let at vec_exp index_exp =
@@ -1058,7 +1083,19 @@ module Call = struct
         < capt_typ `T
         &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
-        $+ capt_exp $--> StdVector.constructor
+        $--> StdVector.constructor_empty
+      ; -"std" &:: "vector"
+        < capt_typ `T
+        &+ any_typ >:: "vector"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
+        $+? any_arg $--> StdVector.constructor_size
+      ; -"std" &:: "vector"
+        < capt_typ `T
+        &+ any_typ >:: "vector"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ capt_exp_of_typ (-"std" &:: "vector")
+        $+? any_arg $--> StdVector.constructor_copy
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size

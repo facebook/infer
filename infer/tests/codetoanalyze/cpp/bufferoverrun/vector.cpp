@@ -64,7 +64,7 @@ void safe_access(std::vector<int> v) {
   }
 }
 
-void call_safe_access_Good() {
+void FP_call_safe_access_Good() {
   std::vector<int> v(5, 0);
   safe_access(v);
 }
@@ -80,7 +80,7 @@ void safe_access2(std::vector<int> v) {
   }
 }
 
-void call_safe_access2_Good() {
+void FP_call_safe_access2_Good() {
   std::vector<int> v;
   safe_access2(v);
 }
@@ -98,7 +98,7 @@ void safe_access4(std::vector<int> v) {
   }
 }
 
-void call_safe_access4_Good() {
+void FP_call_safe_access4_Good() {
   std::vector<int> v;
   safe_access4(v);
 }
@@ -110,7 +110,7 @@ void safe_access5(std::vector<int> v) {
   }
 }
 
-void call_safe_access5_Good() {
+void FP_call_safe_access5_Good() {
   std::vector<int> v;
   safe_access5(v);
 }
@@ -138,7 +138,7 @@ void data_Bad() {
   p[v[4]] = 1;
 }
 
-void FP_assert_Good() {
+void assert_Good() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -147,7 +147,7 @@ void FP_assert_Good() {
   v[4] = 1;
 }
 
-void FP_assert_Good_2(int x) {
+void assert_Good_2(int x) {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -156,7 +156,7 @@ void FP_assert_Good_2(int x) {
   v[4] = 1;
 }
 
-void assert_Bad() {
+void FN_assert_Bad() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
