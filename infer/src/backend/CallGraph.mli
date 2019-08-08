@@ -63,8 +63,8 @@ val add_edge : t -> pname:Typ.Procname.t -> successor_pname:Typ.Procname.t -> un
 val create_node : t -> Typ.Procname.t -> Typ.Procname.t sexp_list -> unit
 (** create a new node with edges from [pname] to [successor_pnames] in the graph *)
 
-val iter_flagged : t -> f:(Node.t -> unit) -> unit
-(** iterate over the nodes in the graph with flag set to true *)
+val fold_flagged : t -> f:(Node.t -> 'a -> 'a) -> 'a -> 'a
+(** perform a fold over the nodes in the graph with flag set to true *)
 
 val default_initial_capacity : int
 (** reasonable minimum capacity for the graph that is prime *)

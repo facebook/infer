@@ -163,8 +163,8 @@ let get_unflagged_leaves g =
     g.node_map []
 
 
-let iter_flagged graph ~f =
-  NodeMap.iter (fun _id node -> if node.Node.flag then f node else ()) graph.node_map
+let fold_flagged graph ~f =
+  NodeMap.fold (fun _id node acc -> if node.Node.flag then f node acc else acc) graph.node_map
 
 
 (** choose some reasonable minimum capacity that also is a prime number *)

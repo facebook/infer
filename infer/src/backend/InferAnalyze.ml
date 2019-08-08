@@ -145,6 +145,7 @@ let invalidate_changed_procedures changed_files =
   L.progress "Incremental analysis: invalidating procedures that have been changed@." ;
   let reverse_callgraph = CallGraph.create CallGraph.default_initial_capacity in
   ReverseAnalysisCallGraph.build reverse_callgraph ;
+  let total_nodes = CallGraph.n_procs reverse_callgraph in
   SourceFile.Set.iter
     (fun sf ->
       SourceFiles.proc_names_of_source sf
@@ -152,7 +153,14 @@ let invalidate_changed_procedures changed_files =
     changed_files ;
   if Config.debug_level_analysis > 0 then
     CallGraph.to_dotty reverse_callgraph "reverse_analysis_callgraph.dot" ;
-  CallGraph.iter_flagged reverse_callgraph ~f:(fun node -> SpecsFiles.delete node.pname) ;
+  let invalidated_nodes =
+    CallGraph.fold_flagged reverse_callgraph
+      ~f:(fun node acc -> SpecsFiles.delete node.pname ; acc + 1)
+      0
+  in
+  L.progress
+    "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were invalidated @."
+    total_nodes invalidated_nodes ;
   (* save some memory *)
   CallGraph.reset reverse_callgraph
 
