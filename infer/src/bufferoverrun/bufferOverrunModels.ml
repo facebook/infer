@@ -728,6 +728,25 @@ module StdVector = struct
 
   let get_size vec_exp mem = eval_array_locs_length (deref_of vec_exp mem) mem
 
+  let set_size {location} vec_exp new_size mem =
+    let locs = deref_of vec_exp mem in
+    Dom.Mem.transform_mem locs mem ~f:(fun v ->
+        Dom.Val.set_array_length location ~length:new_size v )
+
+
+  let push_back vec_exp elt_exp =
+    let exec model_env ~ret:_ mem =
+      let mem =
+        let new_size = Dom.Val.plus_a (get_size vec_exp mem) (Dom.Val.of_int 1) in
+        set_size model_env vec_exp new_size mem
+      in
+      let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set (deref_of vec_exp mem) mem) in
+      let elt_v = Dom.Mem.find_set (Sem.eval_locs elt_exp mem) mem in
+      Dom.Mem.update_mem elt_locs elt_v mem
+    in
+    {exec; check= no_check}
+
+
   let size vec_exp =
     let exec _ ~ret:(id, _) mem =
       let mem = Dom.Mem.add_stack (Loc.of_id id) (get_size vec_exp mem) mem in
@@ -1101,6 +1120,9 @@ module Call = struct
         $+? any_arg $--> StdVector.constructor_copy
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "push_back" $ capt_exp $+ capt_exp
+        $--> StdVector.push_back
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init

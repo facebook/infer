@@ -33,7 +33,7 @@ void constructor_Bad() {
   v[3] = 2;
 }
 
-void FP_push_back_Good() {
+void push_back_Good() {
   std::vector<int> v;
   v.push_back(1);
   v[0] = 2;
@@ -45,7 +45,7 @@ void push_back_Bad() {
   v[1] = 2;
 }
 
-void FP_reserve_Good() {
+void reserve_Good() {
   std::vector<int> v;
   v.reserve(42);
   v.push_back(1);
@@ -156,7 +156,7 @@ void assert_Good_2(int x) {
   v[4] = 1;
 }
 
-void FN_assert_Bad() {
+void assert_Bad() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
