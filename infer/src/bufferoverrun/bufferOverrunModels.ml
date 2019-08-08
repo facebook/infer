@@ -712,6 +712,35 @@ module StdVector = struct
     {exec; check= no_check}
 end
 
+(** Java's integers are modeled with an indirection to a memory
+   location that holds the actual integer value *)
+module JavaInteger = struct
+  let intValue exp =
+    let exec _ ~ret:(id, _) mem =
+      let powloc = Sem.eval_locs exp mem in
+      let v = if PowLoc.is_empty powloc then Dom.Val.Itv.top else Dom.Mem.find_set powloc mem in
+      model_by_value v id mem
+    in
+    {exec; check= no_check}
+
+
+  let valueOf exp =
+    let exec {pname; node_hash; location; integer_type_widths} ~ret:(id, _) mem =
+      let represents_multiple_values = false in
+      let int_allocsite =
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:0 ~path:None
+          ~represents_multiple_values
+      in
+      let v = Sem.eval integer_type_widths exp mem in
+      let int_loc = Loc.of_allocsite int_allocsite in
+      mem |> Dom.Mem.add_heap int_loc v
+      |> Dom.Mem.add_stack (Loc.of_id id)
+           ( int_loc |> PowLoc.singleton
+           |> Dom.Val.of_pow_loc ~traces:Trace.(Set.singleton location JavaIntDecleration) )
+    in
+    {exec; check= no_check}
+end
+
 (* Java's Collections are represented like arrays. But we don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
@@ -1081,5 +1110,9 @@ module Call = struct
       ; +PatternMatch.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_org_json "JSONArray"
-        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init ]
+        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
+      ; +PatternMatch.implements_lang "Integer"
+        &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
+      ; +PatternMatch.implements_lang "Integer" &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
+      ]
 end

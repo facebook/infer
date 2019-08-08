@@ -490,6 +490,11 @@ module Val = struct
           let allocsite = Allocsite.make_symbol deref_path in
           let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
+      | Some JavaInteger ->
+          let l = Loc.of_path path in
+          let traces = traces_of_loc l in
+          let unsigned = Typ.is_unsigned_int typ in
+          of_itv ~traces (Itv.of_normal_path ~unsigned path)
       | None ->
           let l = Loc.of_path path in
           let traces = traces_of_loc l in

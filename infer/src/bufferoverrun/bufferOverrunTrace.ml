@@ -16,6 +16,7 @@ module BoTrace = struct
 
   type elem =
     | ArrayDeclaration
+    | JavaIntDecleration
     | Assign of PowLoc.t
     | Global of Loc.t
     | Parameter of Loc.t
@@ -77,6 +78,8 @@ module BoTrace = struct
   let pp_elem f = function
     | ArrayDeclaration ->
         F.pp_print_string f "ArrayDeclaration"
+    | JavaIntDecleration ->
+        F.pp_print_string f "JavaIntDeclaration"
     | Assign locs ->
         F.fprintf f "Assign `%a`" PowLoc.pp locs
     | Global loc ->
@@ -115,7 +118,7 @@ module BoTrace = struct
   let has_unknown = final_exists ~f:(function UnknownFrom _ -> true)
 
   let elem_has_risky = function
-    | ArrayDeclaration | Assign _ | Global _ | Parameter _ ->
+    | JavaIntDecleration | ArrayDeclaration | Assign _ | Global _ | Parameter _ ->
         false
     | Through {risky_fun} ->
         Option.is_some risky_fun
@@ -155,6 +158,8 @@ module BoTrace = struct
 
 
   let elem_err_desc = function
+    | JavaIntDecleration ->
+        "int declaration (java)"
     | ArrayDeclaration ->
         "Array declaration"
     | Assign _ ->
