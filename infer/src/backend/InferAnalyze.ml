@@ -178,7 +178,7 @@ let main ~changed_files =
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let stats = analyze source_files in
-  L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ;
+  L.progress "@\nAnalysis finished in %a@." Pp.elapsed_time () ;
   L.debug Analysis Quiet "collected stats:@\n%a@." BackendStats.pp stats ;
   BackendStats.log_to_scuba stats ;
   output_json_makefile_stats source_files
