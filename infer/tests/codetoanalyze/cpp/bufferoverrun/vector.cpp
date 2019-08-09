@@ -80,12 +80,12 @@ void safe_access2(std::vector<int> v) {
   }
 }
 
-void FP_call_safe_access2_Good() {
+void call_safe_access2_Good() {
   std::vector<int> v;
   safe_access2(v);
 }
 
-void FP_safe_access3_Good() {
+void safe_access3_Good() {
   std::vector<int> v;
   if (!v.empty()) {
     v[0] = 1;
@@ -98,7 +98,7 @@ void safe_access4(std::vector<int> v) {
   }
 }
 
-void FP_call_safe_access4_Good() {
+void call_safe_access4_Good() {
   std::vector<int> v;
   safe_access4(v);
 }
@@ -110,19 +110,19 @@ void safe_access5(std::vector<int> v) {
   }
 }
 
-void FP_call_safe_access5_Good() {
+void call_safe_access5_Good() {
   std::vector<int> v;
   safe_access5(v);
 }
 
-void FP_safe_access6(std::vector<int> v) {
+void safe_access6(std::vector<int> v) {
   std::vector<int> v2(2);
   v2[v.empty()];
 }
 
 void call_safe_access6_Good() {
   std::vector<int> v;
-  FP_safe_access6(v);
+  safe_access6(v);
 }
 
 void FP_data_Good() {

@@ -567,6 +567,13 @@ module StdArray = struct
     {exec; check= no_check}
 end
 
+let array_empty_exec ret_id array_v mem =
+  let traces = Dom.Val.get_traces array_v in
+  let size = ArrayBlk.sizeof (Dom.Val.get_array_blk array_v) in
+  let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
+  model_by_value empty ret_id mem
+
+
 module StdBasicString = struct
   (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
   let constructor_from_char_ptr tgt src len =
@@ -616,11 +623,8 @@ module StdBasicString = struct
 
   let empty e =
     let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval integer_type_widths e mem in
-      let traces = Dom.Val.get_traces v in
-      let size = ArrayBlk.sizeof (Dom.Val.get_array_blk v) in
-      let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
-      let mem = Dom.Mem.add_stack (Loc.of_id ret_id) empty mem in
+      let array_v = Sem.eval integer_type_widths e mem in
+      let mem = array_empty_exec ret_id array_v mem in
       match e with
       | Exp.Var id -> (
         match Dom.Mem.find_simple_alias id mem with
@@ -732,6 +736,20 @@ module StdVector = struct
     let locs = deref_of vec_exp mem in
     Dom.Mem.transform_mem locs mem ~f:(fun v ->
         Dom.Val.set_array_length location ~length:new_size v )
+
+
+  let empty vec_exp =
+    let exec _ ~ret:(id, _) mem =
+      let deref_of_vec = deref_of vec_exp mem in
+      let array_v = Dom.Mem.find_set deref_of_vec mem in
+      let mem = array_empty_exec id array_v mem in
+      match PowLoc.is_singleton_or_more deref_of_vec with
+      | IContainer.Singleton loc ->
+          Dom.Mem.load_empty_alias id loc mem
+      | IContainer.(Empty | More) ->
+          mem
+    in
+    {exec; check= no_check}
 
 
   let push_back vec_exp elt_exp =
@@ -1120,6 +1138,7 @@ module Call = struct
         $+? any_arg $--> StdVector.constructor_copy
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "empty" $ capt_exp $--> StdVector.empty
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "push_back" $ capt_exp $+ capt_exp
         $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
