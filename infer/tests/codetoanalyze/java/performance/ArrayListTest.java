@@ -260,6 +260,21 @@ public class ArrayListTest {
   Person max_linear(ArrayList<Person> people) {
     return java.util.Collections.max(people, new LexicographicComparator());
   }
+
+  void empty_list_constant(int k) {
+    // create an empty list with initial capacity k, which is ignored
+    ArrayList<Integer> x = new ArrayList<Integer>(k);
+    for (int i = 0; i < x.size(); i++) {}
+  }
+
+  void json_array_constructor_linear(ArrayList<Integer> arr) {
+    try {
+      org.json.JSONArray jArray = new org.json.JSONArray(arr);
+      for (int i = 0; i < jArray.length(); i++) {}
+    } catch (Exception e) {
+
+    }
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {

@@ -913,7 +913,12 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  let init lhs_id rhs_exp =
+  let init_with_capacity size_exp =
+    let exec _ ~ret:_ mem = mem and check = check_alloc_size ~can_be_zero:true size_exp in
+    {exec; check}
+
+
+  let init_with_arg lhs_id rhs_exp =
     let exec {integer_type_widths} ~ret:_ mem =
       let itr = Sem.eval integer_type_widths rhs_exp mem in
       model_by_value itr lhs_id mem
@@ -1153,7 +1158,11 @@ module Call = struct
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size
       ; +PatternMatch.implements_collection
-        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
+        &:: "<init>" <>$ capt_var_exn
+        $+ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $--> Collection.init_with_arg
+      ; +PatternMatch.implements_collection
+        &:: "<init>" <>$ any_arg $+ capt_exp $--> Collection.init_with_capacity
         (* model sets as lists *)
       ; +PatternMatch.implements_collections
         &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
@@ -1200,7 +1209,9 @@ module Call = struct
       ; +PatternMatch.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_org_json "JSONArray"
-        &:: "<init>" <>$ capt_var_exn $+ capt_exp $--> Collection.init
+        &:: "<init>" <>$ capt_var_exn
+        $+ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $--> Collection.init_with_arg
       ; +PatternMatch.implements_lang "Integer"
         &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
       ; +PatternMatch.implements_lang "Integer" &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
