@@ -1190,6 +1190,18 @@ INTERNAL OPTIONS
        --clang-blacklisted-flags-with-arg-reset
            Set --clang-blacklisted-flags-with-arg to the empty list.
 
+       --clang-idirafter-to-override-regex dir_OCaml_regex
+           Use this option in the uncommon case where the normal compilation
+           process overrides the location of internal compiler headers. This
+           option should specify regular expression with the path to those
+           headers so that infer can use its own clang internal headers
+           instead. Concretely, this will replace -idirafter <path matching
+           the regex> with -idirafter
+           /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include.
+
+       --clang-idirafter-to-override-regex-reset
+           Cancel the effect of --clang-idirafter-to-override-regex.
+
        --clang-ignore-regex dir_OCaml_regex
            The files in this regex will be ignored in the compilation process
            and an empty file will be passed to clang instead. This is to be

@@ -288,7 +288,9 @@ val clang_frontend_action_string : string
 
 val clang_ignore_regex : string option
 
-val clang_isystem_to_override_regex : string option
+val clang_isystem_to_override_regex : Str.regexp option
+
+val clang_idirafter_to_override_regex : Str.regexp option
 
 val clang_libcxx_include_to_override_regex : string option
 

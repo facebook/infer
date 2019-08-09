@@ -76,8 +76,6 @@ let file_arg_cmd_sanitizer cmd =
   {cmd with argv= [Format.sprintf "@%s" file]}
 
 
-let isystem_to_override_regex = Option.map ~f:Str.regexp Config.clang_isystem_to_override_regex
-
 let libcxx_include_to_override_regex =
   Option.map ~f:Str.regexp Config.clang_libcxx_include_to_override_regex
 
@@ -148,6 +146,12 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
     of clang with a different version. Also mitigate version discrepancies in clang's
     fatal warnings. *)
 let clang_cc1_cmd_sanitizer cmd =
+  let replace_args arg = function
+    | Some override_regex when Str.string_match override_regex arg 0 ->
+        fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "8.0.0" ^/ "include"
+    | _ ->
+        arg
+  in
   (* command line options not supported by the opensource compiler or the plugins *)
   let replace_options_arg options arg =
     match (options, arg) with
@@ -162,12 +166,10 @@ let clang_cc1_cmd_sanitizer cmd =
     | "-dependency-file" :: _, _ when Option.is_some Config.buck_compilation_database ->
         (* In compilation database mode, dependency files are not assumed to exist *)
         "/dev/null"
-    | "-isystem" :: _, arg -> (
-      match isystem_to_override_regex with
-      | Some isystem_to_override_regex when Str.string_match isystem_to_override_regex arg 0 ->
-          fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "8.0.0" ^/ "include"
-      | _ ->
-          arg )
+    | "-idirafter" :: _, arg ->
+        replace_args arg Config.clang_idirafter_to_override_regex
+    | "-isystem" :: _, arg ->
+        replace_args arg Config.clang_isystem_to_override_regex
     | "-I" :: _, arg -> (
       match libcxx_include_to_override_regex with
       | Some libcxx_include_to_override_regex

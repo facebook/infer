@@ -1006,6 +1006,15 @@ and clang_ignore_regex =
      around missing generated files."
 
 
+and clang_idirafter_to_override_regex =
+  CLOpt.mk_string_opt ~long:"clang-idirafter-to-override-regex" ~meta:"dir_OCaml_regex"
+    "Use this option in the uncommon case where the normal compilation process overrides the \
+     location of internal compiler headers. This option should specify regular expression with \
+     the path to those headers so that infer can use its own clang internal headers instead. \
+     Concretely, this will replace $(b,-idirafter <path matching the regex>) with $(b,-idirafter \
+     /path/to/infer/facebook-clang-plugins/clang/install/lib/clang/<version>/include)."
+
+
 and clang_isystem_to_override_regex =
   CLOpt.mk_string_opt ~long:"clang-isystem-to-override-regex"
     ~deprecated:["-clang-include-to-override-regex"; "-clang-include-to-override"]
@@ -2755,7 +2764,9 @@ and clang_blacklisted_flags_with_arg = !clang_blacklisted_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 
-and clang_isystem_to_override_regex = !clang_isystem_to_override_regex
+and clang_idirafter_to_override_regex = Option.map ~f:Str.regexp !clang_idirafter_to_override_regex
+
+and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to_override_regex
 
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
