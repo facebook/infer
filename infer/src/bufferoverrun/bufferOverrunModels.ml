@@ -752,6 +752,14 @@ module StdVector = struct
     {exec; check= no_check}
 
 
+  let data vec_exp =
+    let exec _ ~ret:(id, _) mem =
+      let arr = Dom.Mem.find_set (deref_of vec_exp mem) mem in
+      model_by_value arr id mem
+    in
+    {exec; check= no_check}
+
+
   let push_back vec_exp elt_exp =
     let exec model_env ~ret:_ mem =
       let mem =
@@ -1139,6 +1147,7 @@ module Call = struct
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
         $--> StdVector.at
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "empty" $ capt_exp $--> StdVector.empty
+      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "data" $ capt_exp $--> StdVector.data
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "push_back" $ capt_exp $+ capt_exp
         $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model

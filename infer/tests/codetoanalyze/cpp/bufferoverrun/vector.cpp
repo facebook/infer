@@ -125,7 +125,7 @@ void call_safe_access6_Good() {
   safe_access6(v);
 }
 
-void FP_data_Good() {
+void data_Good() {
   std::vector<int> v(5);
   int* p = v.data();
   p[4] = 1;
