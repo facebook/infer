@@ -705,6 +705,11 @@ module Check = struct
       in
       expensive_issue ~is_on_cold_start
     in
+    let bigO_str =
+      Format.asprintf ", %a"
+        (BasicCost.pp_degree ~only_bigO:true)
+        (BasicCost.get_degree_with_term cost)
+    in
     let degree_str = BasicCost.degree_str cost in
     let message =
       F.asprintf
@@ -713,7 +718,9 @@ module Check = struct
         name threshold BasicCost.pp_hum cost degree_str
     in
     let cost_trace_elem =
-      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp_hum cost degree_str in
+      let cost_desc =
+        F.asprintf "with estimated cost %a%s%s" BasicCost.pp_hum cost bigO_str degree_str
+      in
       Errlog.make_trace_element 0 location cost_desc []
     in
     Reporting.log_error summary ~loc:location
