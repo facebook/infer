@@ -774,7 +774,7 @@ module AliasMap = struct
    fun id a x -> if not (AliasTarget.is_unknown a) then add id a x else x
 
 
-  let store : Loc.t -> t -> t = fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
+  let forget : Loc.t -> t -> t = fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
 
   let find : Ident.t -> t -> AliasTarget.t option = find_opt
 end
@@ -824,7 +824,7 @@ module Alias = struct
 
   let store_simple : Loc.t -> Exp.t -> t -> t =
    fun loc e a ->
-    let a = lift_map (AliasMap.store loc) a in
+    let a = lift_map (AliasMap.forget loc) a in
     match e with
     | Exp.Var l when Loc.is_return loc ->
         let update_ret retl = {a with ret= AliasRet.v retl} in
@@ -840,7 +840,7 @@ module Alias = struct
 
   let store_empty : Val.t -> Loc.t -> t -> t =
    fun formal loc a ->
-    let a = lift_map (AliasMap.store loc) a in
+    let a = lift_map (AliasMap.forget loc) a in
     let locs = Val.get_all_locs formal in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
@@ -851,7 +851,7 @@ module Alias = struct
 
   let fgets : Ident.t -> PowLoc.t -> t -> t =
    fun id locs a ->
-    let a = PowLoc.fold (fun loc acc -> lift_map (AliasMap.store loc) acc) locs a in
+    let a = PowLoc.fold (fun loc acc -> lift_map (AliasMap.forget loc) acc) locs a in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
         load id (AliasTarget.fgets loc) a
