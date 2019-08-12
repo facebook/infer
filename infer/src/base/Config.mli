@@ -103,6 +103,8 @@ val idempotent_getters : bool
 
 val infer_py_argparse_error_exit_code : int
 
+val infer_version_env_var : string
+
 val initial_analysis_time : float
 
 val ivar_attributes : string

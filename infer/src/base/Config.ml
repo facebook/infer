@@ -438,6 +438,8 @@ let infer_top_results_dir_env_var = "INFER_TOP_RESULTS_DIR"
 
 let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
 
+let infer_version_env_var = "INFERVERSION"
+
 let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
 
 let env_inside_maven = `Extend [(infer_inside_maven_env_var, "1")]

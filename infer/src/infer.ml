@@ -120,6 +120,12 @@ let () =
           Version.versionString
   | None ->
       () ) ;
+  Sys.getenv Config.infer_version_env_var
+  |> Option.iter ~f:(fun version ->
+         if not (String.is_prefix version ~prefix:Version.commit) then
+           L.(die UserError)
+             "Version '%s' (in environment variable %s) does not match commit hash '%s'" version
+             Config.infer_version_env_var Version.commit ) ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   setup () ;
   log_environment_info () ;
