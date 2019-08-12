@@ -42,8 +42,8 @@ let mk pdesc =
             match BufferOverrunTypModels.dispatch tenv typename with
             | Some (CArray {element_typ}) ->
                 Some element_typ
-            | Some (CppStdVector {element_typ}) ->
-                Some (Typ.mk (Typ.Tptr (element_typ, Typ.Pk_pointer)))
+            | Some CppStdVector ->
+                Some (Typ.mk (Typ.Tptr (Typ.void, Typ.Pk_pointer)))
             | Some _ ->
                 L.internal_error "Deref of non-array modeled type `%a`" Typ.Name.pp typename ;
                 None

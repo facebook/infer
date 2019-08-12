@@ -477,12 +477,10 @@ module Val = struct
           let deref_path = SPath.deref ~deref_kind path in
           let size = Itv.of_int_lit length in
           ptr_to_c_array_alloc deref_path size
-      | Some (CppStdVector {element_typ}) ->
-          let deref_path =
-            SPath.field path (BufferOverrunField.cpp_vector_elem ~classname:typename element_typ)
-          in
-          let size = Itv.of_length_path ~is_void:false path in
-          ptr_to_c_array_alloc deref_path size
+      | Some CppStdVector ->
+          let l = Loc.of_path (SPath.deref ~deref_kind:Deref_CPointer path) in
+          let traces = traces_of_loc l in
+          of_loc ~traces l
       | Some JavaCollection ->
           let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
           let l = Loc.of_path deref_path in

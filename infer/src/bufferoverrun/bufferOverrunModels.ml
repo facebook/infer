@@ -648,20 +648,17 @@ module StdBasicString = struct
 end
 
 module StdVector = struct
-  let deref_of vec_exp mem =
-    Dom.Val.get_all_locs (Dom.Mem.find_set (Sem.eval_locs vec_exp mem) mem)
+  let append_field loc ~vec_typ ~elt_typ =
+    Loc.append_field loc ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
 
 
-  let get_classname vec_typ =
-    match vec_typ.Typ.desc with
-    | Typ.Tptr (vec_typ, _) -> (
-      match Typ.name vec_typ with
-      | None ->
-          L.(die InternalError) "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
-      | Some t ->
-          t )
-    | _ ->
-        L.(die InternalError) "First parameter of constructor should be a pointer."
+  let append_fields locs ~vec_typ ~elt_typ =
+    PowLoc.append_field locs ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+
+
+  let deref_of {integer_type_widths} elt_typ (vec_exp, vec_typ) mem =
+    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths vec_exp mem)
+    |> append_fields ~vec_typ ~elt_typ
 
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
@@ -671,12 +668,10 @@ module StdVector = struct
         mem =
       let mem = malloc_exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
-      let classname = get_classname vec_typ in
       let deref_of_vec =
         Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
           ~represents_multiple_values:false
         |> Loc.of_allocsite
-        |> Loc.append_field ~fn:(BufferOverrunField.cpp_vector_elem ~classname elt_typ)
       in
       let array_v =
         Sem.eval integer_type_widths (Exp.Var id) mem
@@ -684,7 +679,7 @@ module StdVector = struct
       in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_loc deref_of_vec)
-      |> Dom.Mem.add_heap deref_of_vec array_v
+      |> Dom.Mem.add_heap (append_field deref_of_vec ~vec_typ ~elt_typ) array_v
     in
     {exec; check}
 
@@ -694,16 +689,13 @@ module StdVector = struct
 
   (* The (5) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_copy elt_typ (vec_exp, vec_typ) src_exp =
-    let exec {integer_type_widths} ~ret:_ mem =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
       let vec_locs, traces =
         let v = Sem.eval integer_type_widths vec_exp mem in
         (Dom.Val.get_all_locs v, Dom.Val.get_traces v)
       in
-      let deref_of_vec =
-        let classname = get_classname vec_typ in
-        PowLoc.append_field vec_locs ~fn:(BufferOverrunField.cpp_vector_elem ~classname elt_typ)
-      in
-      let deref_of_src = deref_of src_exp mem in
+      let deref_of_vec = append_fields vec_locs ~vec_typ ~elt_typ in
+      let deref_of_src = deref_of model_env elt_typ (src_exp, vec_typ) mem in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
       |> Dom.Mem.update_mem deref_of_vec (Dom.Mem.find_set deref_of_src mem)
@@ -711,17 +703,17 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let at vec_exp index_exp =
-    let exec {pname; location} ~ret:(id, _) mem =
+  let at elt_typ vec_arg index_exp =
+    let exec ({pname; location} as model_env) ~ret:(id, _) mem =
       let array_v =
-        let locs = deref_of vec_exp mem in
+        let locs = deref_of model_env elt_typ vec_arg mem in
         if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
         else Dom.Mem.find_set locs mem
       in
       Dom.Mem.add_stack (Loc.of_id id) array_v mem
-    and check {location; integer_type_widths} mem cond_set =
+    and check ({location; integer_type_widths} as model_env) mem cond_set =
       let idx = Sem.eval integer_type_widths index_exp mem in
-      let arr = Dom.Mem.find_set (deref_of vec_exp mem) mem in
+      let arr = Dom.Mem.find_set (deref_of model_env elt_typ vec_arg mem) mem in
       let relation = Dom.Mem.get_relation mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
       BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
@@ -730,17 +722,14 @@ module StdVector = struct
     {exec; check}
 
 
-  let get_size vec_exp mem = eval_array_locs_length (deref_of vec_exp mem) mem
-
-  let set_size {location} vec_exp new_size mem =
-    let locs = deref_of vec_exp mem in
+  let set_size {location} locs new_size mem =
     Dom.Mem.transform_mem locs mem ~f:(fun v ->
         Dom.Val.set_array_length location ~length:new_size v )
 
 
-  let empty vec_exp =
-    let exec _ ~ret:(id, _) mem =
-      let deref_of_vec = deref_of vec_exp mem in
+  let empty elt_typ vec_arg =
+    let exec model_env ~ret:(id, _) mem =
+      let deref_of_vec = deref_of model_env elt_typ vec_arg mem in
       let array_v = Dom.Mem.find_set deref_of_vec mem in
       let mem = array_empty_exec id array_v mem in
       match PowLoc.is_singleton_or_more deref_of_vec with
@@ -752,31 +741,33 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let data vec_exp =
-    let exec _ ~ret:(id, _) mem =
-      let arr = Dom.Mem.find_set (deref_of vec_exp mem) mem in
+  let data elt_typ vec_arg =
+    let exec model_env ~ret:(id, _) mem =
+      let arr = Dom.Mem.find_set (deref_of model_env elt_typ vec_arg mem) mem in
       model_by_value arr id mem
     in
     {exec; check= no_check}
 
 
-  let push_back vec_exp elt_exp =
+  let push_back elt_typ vec_arg elt_exp =
     let exec model_env ~ret:_ mem =
+      let arr_locs = deref_of model_env elt_typ vec_arg mem in
       let mem =
-        let new_size = Dom.Val.plus_a (get_size vec_exp mem) (Dom.Val.of_int 1) in
-        set_size model_env vec_exp new_size mem
+        let new_size = Dom.Val.plus_a (eval_array_locs_length arr_locs mem) (Dom.Val.of_int 1) in
+        set_size model_env arr_locs new_size mem
       in
-      let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set (deref_of vec_exp mem) mem) in
+      let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
       let elt_v = Dom.Mem.find_set (Sem.eval_locs elt_exp mem) mem in
       Dom.Mem.update_mem elt_locs elt_v mem
     in
     {exec; check= no_check}
 
 
-  let size vec_exp =
-    let exec _ ~ret:(id, _) mem =
-      let mem = Dom.Mem.add_stack (Loc.of_id id) (get_size vec_exp mem) mem in
-      match PowLoc.is_singleton_or_more (deref_of vec_exp mem) with
+  let size elt_typ vec_arg =
+    let exec model_env ~ret:(id, _) mem =
+      let arr_locs = deref_of model_env elt_typ vec_arg mem in
+      let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
+      match PowLoc.is_singleton_or_more arr_locs with
       | IContainer.Singleton loc ->
           Dom.Mem.load_size_alias id loc mem
       | IContainer.Empty | IContainer.More ->
@@ -1149,14 +1140,18 @@ module Call = struct
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_typ (-"std" &:: "vector")
         $+? any_arg $--> StdVector.constructor_copy
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "operator[]" $ capt_exp $+ capt_exp
-        $--> StdVector.at
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "empty" $ capt_exp $--> StdVector.empty
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "data" $ capt_exp $--> StdVector.data
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "push_back" $ capt_exp $+ capt_exp
-        $--> StdVector.push_back
+      ; -"std" &:: "vector"
+        < capt_typ `T
+        &+ any_typ >:: "operator[]"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ capt_exp $--> StdVector.at
+      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "empty" $ capt_arg $--> StdVector.empty
+      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
+      ; -"std" &:: "vector"
+        < capt_typ `T
+        &+ any_typ >:: "push_back" $ capt_arg $+ capt_exp $--> StdVector.push_back
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
-      ; -"std" &:: "vector" < any_typ &+ any_typ >:: "size" $ capt_exp $--> StdVector.size
+      ; -"std" &:: "vector" < capt_typ `T &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; +PatternMatch.implements_collection
         &:: "<init>" <>$ capt_var_exn
         $+ capt_exp_of_typ (+PatternMatch.implements_collection)

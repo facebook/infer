@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 (**
   If fn is empty, prints [pp_lhs_alone lhs]
@@ -54,7 +55,18 @@ let c_strlen () =
 
 let cpp_vector_elem_str = "cpp.vector_elem"
 
-let cpp_vector_elem ~classname elt_typ =
+let cpp_vector_elem ~vec_typ ~elt_typ =
+  let classname =
+    match vec_typ.Typ.desc with
+    | Typ.Tptr (vec_typ, _) -> (
+      match Typ.name vec_typ with
+      | None ->
+          L.(die InternalError) "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
+      | Some t ->
+          t )
+    | _ ->
+        L.(die InternalError) "First parameter of constructor should be a pointer."
+  in
   let desc = Typ.Tptr (elt_typ, Typ.Pk_pointer) in
   mk ~cpp_classname:classname cpp_vector_elem_str {Typ.desc; quals= Typ.mk_type_quals ()}
 
