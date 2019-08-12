@@ -233,6 +233,18 @@ module Bound = struct
 
   let equal = [%compare.equal: t]
 
+  let mask_min_max_constant b =
+    match b with
+    | Linear (_c, x) ->
+        Linear (Z.zero, x)
+    | MinMax (_c, Plus, _m, _d, x) ->
+        Linear (Z.zero, SymLinear.singleton_one x)
+    | MinMax (c, Minus, _m, _d, x) ->
+        Linear (c, SymLinear.singleton_minus_one x)
+    | _ ->
+        b
+
+
   let pp_mark : markup:bool -> F.formatter -> t -> unit =
    fun ~markup f -> function
     | MInf ->
@@ -1107,6 +1119,8 @@ module NonNegativeBound = struct
     Bound.pp fmt bound ;
     if not hum then F.fprintf fmt ": %a" BoundTrace.pp t
 
+
+  let mask_min_max_constant (b, bt) = (Bound.mask_min_max_constant b, bt)
 
   let zero loop_head_loc = (Bound.zero, BoundTrace.Loop loop_head_loc)
 

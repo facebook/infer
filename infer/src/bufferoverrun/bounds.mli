@@ -150,6 +150,8 @@ module NonNegativeBound : sig
 
   val make_err_trace : t -> string * Errlog.loc_trace
 
+  val mask_min_max_constant : t -> t
+
   val zero : Location.t -> t
 
   val int_lb : t -> Ints.NonNegativeInt.t

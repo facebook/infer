@@ -62,6 +62,8 @@ module type NonNegativeSymbol = sig
 
   val int_ub : t -> NonNegativeInt.t option
 
+  val mask_min_max_constant : t -> t
+
   val subst :
        Typ.Procname.t
     -> Location.t
@@ -98,6 +100,10 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
         Bounds.Symbolic self
     | ValTop trace ->
         Bounds.ValTop trace
+
+
+  let mask_min_max_constant {degree_kind; symbol} =
+    {degree_kind; symbol= S.mask_min_max_constant symbol}
 
 
   let make degree_kind symbol = {degree_kind; symbol}
@@ -300,6 +306,19 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     in
     let cmp_terms = M.xcompare ~xcompare_elt:xcompare ~lhs:lhs.terms ~rhs:rhs.terms in
     PartialOrder.join cmp_const cmp_terms
+
+
+  let rec mask_min_max_constant {const; terms} =
+    { const
+    ; terms=
+        M.fold
+          (fun s p acc ->
+            let p' = mask_min_max_constant p in
+            M.update (S.mask_min_max_constant s)
+              (function
+                | None -> Some p' | Some p -> if ( <= ) ~lhs:p ~rhs:p' then Some p' else Some p )
+              acc )
+          terms M.empty }
 
 
   (* assumes symbols are not comparable *)
@@ -581,7 +600,9 @@ module NonNegativePolynomial = struct
         Format.pp_print_string fmt "Top"
     | Below (degree, degree_term) ->
         if only_bigO then
-          Format.fprintf fmt "O(%a)" (NonNegativeNonTopPolynomial.pp ~hum:true) degree_term
+          Format.fprintf fmt "O(%a)"
+            (NonNegativeNonTopPolynomial.pp ~hum:true)
+            (NonNegativeNonTopPolynomial.mask_min_max_constant degree_term)
         else Degree.pp fmt degree
 
 
