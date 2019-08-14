@@ -17,6 +17,8 @@ new_theory "settings";
 overload_on ("map", ``MAP``);
 overload_on ("sum", ``SUM : num list -> num``);
 overload_on ("flookup", ``FLOOKUP``);
+overload_on ("fempty", ``FEMPTY``);
+overload_on ("fdom", ``FDOM``);
 overload_on ("length", ``LENGTH``);
 overload_on ("Some", ``SOME``);
 overload_on ("None", ``NONE``);
@@ -39,5 +41,6 @@ overload_on ("option_map", ``OPTION_MAP``);
 overload_on ("option_join", ``OPTION_JOIN``);
 overload_on ("min", ``MIN``);
 overload_on ("list_update", ``LUPDATE``);
+overload_on ("last", ``LAST``);
 
 export_theory ();

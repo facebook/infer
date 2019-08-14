@@ -391,7 +391,7 @@ Proof
     first_x_assum drule >> metis_tac [PAIR_EQ])
 QED
 
-(* ----- Theorems about insert/extract value and get_offset----- *)
+(* ----- Theorems about insert/extract value and get_offset ----- *)
 
 Theorem can_extract:
   ∀v indices t.
@@ -591,6 +591,79 @@ Proof
     `sizeof t' ≤ length (drop x (value_to_bytes (el i vs)))`
     by (simp [LENGTH_DROP] >> drule v2b_size >> rw [] >> metis_tac [extract_offset_size]) >>
     simp [b2v_append])
+QED
+
+(* ----- Theorems about the step function ----- *)
+
+Theorem inc_pc_invariant:
+  ∀p s i. prog_ok p ∧ next_instr p s i ∧ ¬terminator i ∧ state_invariant p s ⇒ state_invariant p (inc_pc s)
+Proof
+  rw [state_invariant_def, inc_pc_def, allocations_ok_def, globals_ok_def,
+      stack_ok_def, frame_ok_def, heap_ok_def, EVERY_EL, ip_ok_def]
+  >- (
+    qexists_tac `dec` >> qexists_tac `block'` >> rw [] >>
+    fs [prog_ok_def, next_instr_cases] >> res_tac >> rw [] >>
+    `s.ip.i ≠ length block'.body - 1` suffices_by decide_tac >>
+    CCONTR_TAC >> fs [] >> rfs [LAST_EL, PRE_SUB1]) >>
+  metis_tac []
+QED
+
+Theorem next_instr_update:
+  ∀p s i r v. next_instr p (update_result r v s) i <=> next_instr p s i
+Proof
+  rw [next_instr_cases, update_result_def]
+QED
+
+Theorem update_invariant:
+  ∀r v s. state_invariant p (update_result r v s) ⇔ state_invariant p s
+Proof
+  rw [update_result_def, state_invariant_def, ip_ok_def, allocations_ok_def,
+      globals_ok_def, stack_ok_def, heap_ok_def, EVERY_EL, frame_ok_def]
+QED
+
+Theorem step_instr_invariant:
+  ∀i s2. step_instr p s1 i s2 ⇒ prog_ok p ∧ next_instr p s1 i ∧ state_invariant p s1 ⇒ state_invariant p s2
+Proof
+  ho_match_mp_tac step_instr_ind >> rw []
+  >- cheat
+  >- cheat
+  >- cheat
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]>>
+    metis_tac [terminator_def])
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- (
+    (* Allocation *)
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
+    >- cheat
+    >- (fs [next_instr_cases, allocate_cases] >> metis_tac [terminator_def]))
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    fs [next_instr_cases] >>
+    metis_tac [terminator_def])
+  >- (
+    (* Store *)
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
+    >- cheat
+    >- (fs [next_instr_cases] >> metis_tac [terminator_def]))
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- (
+    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    metis_tac [terminator_def])
+  >- cheat
 QED
 
 export_theory ();

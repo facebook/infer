@@ -110,6 +110,14 @@ Datatype `
 
 type_abbrev ("prog", ``:fun_name |-> def``);
 
+Definition terminator_def:
+  (terminator (Ret _) ⇔ T) ∧
+  (terminator (Br _ _ _) ⇔ T) ∧
+  (terminator (Invoke _ _ _ _ _ _) ⇔ T) ∧
+  (terminator Unreachable ⇔ T) ∧
+  (terminator _ ⇔ F)
+End
+
 (* ----- Semantic states ----- *)
 
 Datatype `
@@ -137,10 +145,13 @@ Datatype `
 Datatype `
   state =
     <| ip : pc;
-       globals : glob_var |-> word64;
+       (* Keep the size of the global with its memory address *)
+       globals : glob_var |-> (num # word64);
        locals : loc_var |-> pv;
        stack : frame list;
-       allocations : (num # num) set;
+       (* The set of allocated ranges. The bool indicates whether the range is
+        * free-able or not *)
+       allocations : (bool # num # num) set;
        heap : addr |-> bool # word8 |>`;
 
 (* ----- Things about types ----- *)
@@ -255,7 +266,7 @@ Definition eval_const_def:
   (eval_const g (GlobalC var) =
     case flookup g var of
     | None => PtrV 0w
-    | Some w => PtrV w) ∧
+    | Some (s,w) => PtrV w) ∧
   (eval_const g UndefC = UndefV)
 Termination
   WF_REL_TAC `measure (const_size o snd)` >> rw [listTheory.MEM_MAP] >>
@@ -292,12 +303,12 @@ Definition inc_pc_def:
 End
 
 Definition interval_to_set_def:
-  interval_to_set (start,stop) =
+  interval_to_set (_, start,stop) =
     { n | start ≤ n ∧ n < stop }
 End
 
 Definition interval_ok_def:
-  interval_ok (i1, i2) ⇔
+  interval_ok (_, i1, i2) ⇔
     i1 ≤ i2 ∧ i2 < 2 ** 64
 End
 
@@ -315,7 +326,7 @@ End
 
 Inductive allocate:
   (v2n v.value = Some m ∧
-   b = (w2n w, w2n w + m * len) ∧
+   b = (T, w2n w, w2n w + m * len) ∧
    is_free b s.allocations
    ⇒
    allocate s v len
@@ -325,15 +336,15 @@ End
 
 Definition deallocate_def:
   (deallocate (A n) (Some allocs) =
-    if ∃m. (n,m) ∈ allocs then
-      Some { (start,stop) | (start,stop) ∈ allocs ∧ start ≠ n }
+    if ∃m. (T,n,m) ∈ allocs then
+      Some { (b,start,stop) | (b,start,stop) ∈ allocs ∧ start ≠ n }
     else
       None) ∧
   (deallocate _ None = None)
 End
 
 Definition get_bytes_def:
-  get_bytes h (start, stop) =
+  get_bytes h (_, start, stop) =
     map
       (λoff.
         case flookup h (A (start + off)) of
@@ -531,7 +542,7 @@ Inductive step_instr:
      (inc_pc (update_result r v2 s2))) ∧
 
   (eval s a1 = <| poison := p1; value := PtrV w |> ∧
-   interval = (w2n w, w2n w + sizeof t) ∧
+   interval = (b, w2n w, w2n w + sizeof t) ∧
    is_allocated interval s.allocations ∧
    pbytes = get_bytes s.heap interval
    ⇒
@@ -542,7 +553,7 @@ Inductive step_instr:
                             s))) ∧
 
   (eval s a2 = <| poison := p2; value := PtrV w |> ∧
-   interval = (w2n w, w2n w + sizeof t) ∧
+   interval = (b, w2n w, w2n w + sizeof t) ∧
    is_allocated interval s.allocations ∧
    bytes = value_to_bytes (eval s a1).value ∧
    length bytes = sizeof t
@@ -613,14 +624,90 @@ Inductive next_instr:
   flookup d.blocks s.ip.b = Some b ∧ 
   s.ip.i < length b.body
   ⇒
-  next_instr p (el s.ip.i b.body)
+  next_instr p s (el s.ip.i b.body)
 End
 
 Inductive step:
-  next_instr p i ∧
+  next_instr p s i ∧
   step_instr p s i s'
   ⇒
   step p s s'
+End
+
+(* ----- Initial state ----- *)
+
+Definition allocations_ok_def:
+  allocations_ok s ⇔
+    ∀i1 i2.
+      i1 ∈ s.allocations ∧ i2 ∈ s.allocations
+      ⇒
+      interval_ok i1 ∧ interval_ok i2 ∧
+      (interval_to_set i1 ∩ interval_to_set i2 ≠ ∅ ⇒
+       interval_to_set i1 = interval_to_set i2)
+End
+
+Definition heap_ok_def:
+  heap_ok s ⇔
+    ∀i n. i ∈ s.allocations ∧ n ∈ interval_to_set i ⇒ flookup s.heap (A n) ≠ None
+End
+
+Definition globals_ok_def:
+  globals_ok s ⇔
+    ∀g n w.
+      flookup s.globals g = Some (n, w)
+      ⇒
+      is_allocated (F, w2n w, w2n w + n) s.allocations
+End
+
+(* The initial state contains allocations for the initialised global variables *)
+Definition is_init_state_def:
+  is_init_state s (global_init : glob_var |-> ty # v) ⇔
+    s.ip.f = Fn "main" ∧
+    s.ip.b = None ∧
+    s.ip.i = 0 ∧
+    s.locals = fempty ∧
+    s.stack = [] ∧
+    allocations_ok s ∧
+    globals_ok s ∧
+    fdom s.globals = fdom global_init ∧
+    s.allocations ⊆ {F, start, stop | T} ∧
+    ∀g w t v n.
+      flookup s.globals g = Some (n, w) ∧ flookup global_init g = Some (t,v) ⇒
+      ∃bytes.
+        get_bytes s.heap (F, w2n w, w2n w + sizeof t) = map (λb. (F,b)) bytes ∧
+        bytes_to_value t bytes = (v, []) 
+End
+
+(* ----- Invariants on state ----- *)
+
+Definition prog_ok_def:
+  prog_ok p ⇔
+    ∀fname dec bname block.
+      flookup p fname = Some dec ∧
+      flookup dec.blocks bname = Some block
+      ⇒
+      block.body ≠ [] ∧ terminator (last block.body)
+End
+
+Definition ip_ok_def:
+  ip_ok p ip ⇔
+    ∃dec block. flookup p ip.f = Some dec ∧ flookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
+End
+
+Definition frame_ok_def:
+  frame_ok p s f ⇔
+    ip_ok p f.ret ∧
+    every (λn. ∃start stop. n = A start ∧ (T, start, stop) ∈ s.allocations) f.stack_allocs
+End    
+
+Definition stack_ok_def:
+  stack_ok p s ⇔
+    every (frame_ok p s) s.stack
+End
+
+Definition state_invariant_def:
+  state_invariant p s ⇔
+    ip_ok p s.ip ∧ allocations_ok s ∧ heap_ok s ∧ globals_ok s ∧ stack_ok p s
 End
 
 export_theory();
