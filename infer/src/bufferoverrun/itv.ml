@@ -137,7 +137,7 @@ module ItvPure = struct
 
   let zero = of_bound Bound.zero
 
-  let get_iterator_itv (_, u) = (Bound.zero, Bound.plus_u u Bound.mone)
+  let get_iterator_itv = set_lb_zero
 
   let true_sem = one
 

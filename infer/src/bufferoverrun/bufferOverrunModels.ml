@@ -919,7 +919,7 @@ module Collection = struct
 
   let hasNext iterator =
     let exec _ ~ret:(ret_id, _) mem =
-      (* Set the size of the iterator to be [0, size-1], so that range
+      (* Set the size of the iterator to be [0, size], so that range
          will be size of the collection. *)
       let collection_size = eval_collection_length iterator mem |> Dom.Val.get_iterator_itv in
       model_by_value collection_size ret_id mem
