@@ -29,6 +29,7 @@ overload_on ("el", ``EL``);
 overload_on ("count_list", ``COUNT_LIST``);
 overload_on ("Suc", ``SUC``);
 overload_on ("flat", ``FLAT``);
+overload_on ("all_distinct", ``ALL_DISTINCT``);
 overload_on ("take", ``TAKE``);
 overload_on ("drop", ``DROP``);
 overload_on ("replicate", ``REPLICATE``);
@@ -42,5 +43,10 @@ overload_on ("option_join", ``OPTION_JOIN``);
 overload_on ("min", ``MIN``);
 overload_on ("list_update", ``LUPDATE``);
 overload_on ("last", ``LAST``);
+overload_on ("fdiff", ``FDIFF``);
+overload_on ("image", ``IMAGE``);
+overload_on ("bigunion", ``BIGUNION``);
+overload_on ("finite", ``FINITE``);
+overload_on ("card", ``CARD``);
 
 export_theory ();

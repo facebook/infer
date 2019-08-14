@@ -239,7 +239,7 @@ Definition get_offset_def:
     | None => None
     | Some off => Some (i * sizeof t + off)) ∧
   (get_offset (StrT ts) (i::is) =
-    if i < length ts then 
+    if i < length ts then
       case get_offset (el i ts) is of
       | None => None
       | Some off => Some (sum (map sizeof (take i ts)) + off)
@@ -282,7 +282,7 @@ Definition eval_def:
   (eval s (Variable v) =
     case flookup s.locals v of
     | None => <| poison := F; value := W1V 0w |>
-    | Some v => v) ∧ 
+    | Some v => v) ∧
   (eval s (Constant c) = <| poison := F; value := eval_const s.globals c |>)
 End
 
@@ -308,14 +308,14 @@ Definition interval_to_set_def:
 End
 
 Definition interval_ok_def:
-  interval_ok (_, i1, i2) ⇔
+  interval_ok ((_:bool), i1, i2) ⇔
     i1 ≤ i2 ∧ i2 < 2 ** 64
 End
 
 Definition is_allocated_def:
   is_allocated b1 allocs ⇔
     interval_ok b1 ∧
-    ∃b2. b2 ∈ allocs ∧ interval_to_set b1 ⊆ interval_to_set b2
+    ∃b2. b2 ∈ allocs ∧ fst b1 = fst b2 ∧ interval_to_set b1 ⊆ interval_to_set b2
 End
 
 Definition is_free_def:
@@ -324,23 +324,29 @@ Definition is_free_def:
     ∀b2. b2 ∈ allocs ⇒ interval_to_set b1 ∩ interval_to_set b2 = ∅
 End
 
+Definition set_bytes_def:
+  (set_bytes p [] n h = h) ∧
+  (set_bytes p (b::bs) n h =
+    set_bytes p bs (Suc n) (h |+ (A n, (p, b))))
+End
+
+(* Allocate a free chunk of memory, and write non-deterministic bytes into it *)
 Inductive allocate:
-  (v2n v.value = Some m ∧
+  v2n v.value = Some m ∧
    b = (T, w2n w, w2n w + m * len) ∧
-   is_free b s.allocations
+   is_free b s.allocations ∧
+   length bytes = m * len
    ⇒
    allocate s v len
      (<| poison := v.poison; value := PtrV w |>,
-      s with allocations := { b } ∪ s.allocations))
+         s with <| allocations := { b } ∪ s.allocations;
+                   heap := set_bytes v.poison bytes (w2n w) s.heap |>)
 End
 
 Definition deallocate_def:
-  (deallocate (A n) (Some allocs) =
-    if ∃m. (T,n,m) ∈ allocs then
-      Some { (b,start,stop) | (b,start,stop) ∈ allocs ∧ start ≠ n }
-    else
-      None) ∧
-  (deallocate _ None = None)
+  deallocate addrs allocs h =
+    let to_remove = { (T, n, stop) | A n ∈ set addrs ∧ (T, n, stop) ∈ allocs } in
+      (allocs DIFF to_remove, fdiff h (image A (bigunion (image interval_to_set to_remove))))
 End
 
 Definition get_bytes_def:
@@ -406,12 +412,6 @@ Termination
   decide_tac
 End
 
-Definition set_bytes_def:
-  (set_bytes p [] n h = h) ∧
-  (set_bytes p (b::bs) n h =
-    set_bytes p bs (Suc n) (h |+ (A n, (p, b))))
-End
-
 Definition do_sub_def:
   do_sub (nuw:bool) (nsw:bool) (v1:pv) (v2:pv) =
     let (diff, u_overflow, s_overflow) =
@@ -439,7 +439,7 @@ Definition do_icmp_def:
          | (W1V w1, W1V w2) => (get_comp c) w1 w2
          | (W8V w1, W8V w2) => (get_comp c) w1 w2
          | (W32V w1, W32V w2) => (get_comp c) w1 w2
-         | (W64V w1, W64V w2) => (get_comp c) w1 w2 
+         | (W64V w1, W64V w2) => (get_comp c) w1 w2
          | (PtrV w1, PtrV w2) => (get_comp c) w1 w2) |>
 End
 
@@ -476,16 +476,17 @@ End
 Inductive step_instr:
 
   (s.stack = fr::st ∧
-   FOLDR deallocate (Some s.allocations) fr.stack_allocs = Some new_allocs
+   deallocate fr.stack_allocs s.allocations s.heap = (new_allocs, new_h)
    ⇒
    step_instr prog s
      (Ret (t, a))
      (update_result fr.result_var (eval s a)
        <| ip := fr.ret;
+          globals := s.globals;
           locals := fr.saved_locals;
           stack := st;
           allocations := new_allocs;
-          heap := heap |>)) ∧
+          heap := new_h |>)) ∧
 
 (* Do the phi assignments in parallel. The manual says "For the purposes of the
  * SSA form, the use of each incoming value is deemed to occur on the edge from
@@ -500,7 +501,7 @@ Inductive step_instr:
  *)
   (eval s a = <| poison := p; value := W1V tf |> ∧
    l = Some (if tf = 1w then l1 else l2) ∧
-   flookup prog s.ip.f = Some d ∧ 
+   flookup prog s.ip.f = Some d ∧
    flookup d.blocks l = Some <| h := Head phis None; body := b |> ∧
    map (do_phi l s) phis = map Some updates
    ⇒
@@ -542,7 +543,7 @@ Inductive step_instr:
      (inc_pc (update_result r v2 s2))) ∧
 
   (eval s a1 = <| poison := p1; value := PtrV w |> ∧
-   interval = (b, w2n w, w2n w + sizeof t) ∧
+   interval = (freeable, w2n w, w2n w + sizeof t) ∧
    is_allocated interval s.allocations ∧
    pbytes = get_bytes s.heap interval
    ⇒
@@ -553,7 +554,7 @@ Inductive step_instr:
                             s))) ∧
 
   (eval s a2 = <| poison := p2; value := PtrV w |> ∧
-   interval = (b, w2n w, w2n w + sizeof t) ∧
+   interval = (freeable, w2n w, w2n w + sizeof t) ∧
    is_allocated interval s.allocations ∧
    bytes = value_to_bytes (eval s a1).value ∧
    length bytes = sizeof t
@@ -562,7 +563,7 @@ Inductive step_instr:
      (Store (t1, a1) (t2, a2))
      (inc_pc (s with heap := set_bytes p2 bytes (w2n w) s.heap))) ∧
 
-  (map (eval s o snd) tindices = i1::indices ∧ 
+  (map (eval s o snd) tindices = i1::indices ∧
    (eval s a1).value = PtrV w1 ∧
    cast_num i1.value = Some n ∧
    map (λx. cast_num x.value) indices = map Some ns ∧
@@ -594,7 +595,7 @@ Inductive step_instr:
     (Icmp c t a1 a2)
     (inc_pc (update_result r (do_icmp c (eval s a1) (eval s a2)) s))) ∧
 
-  (flookup prog fname = Some d 
+  (flookup prog fname = Some d
    ⇒
    step_instr prog s
      (Call r t fname targs)
@@ -620,8 +621,8 @@ Inductive step_instr:
 End
 
 Inductive next_instr:
-  flookup p s.ip.f = Some d ∧ 
-  flookup d.blocks s.ip.b = Some b ∧ 
+  flookup p s.ip.f = Some d ∧
+  flookup d.blocks s.ip.b = Some b ∧
   s.ip.i < length b.body
   ⇒
   next_instr p s (el s.ip.i b.body)
@@ -642,13 +643,12 @@ Definition allocations_ok_def:
       i1 ∈ s.allocations ∧ i2 ∈ s.allocations
       ⇒
       interval_ok i1 ∧ interval_ok i2 ∧
-      (interval_to_set i1 ∩ interval_to_set i2 ≠ ∅ ⇒
-       interval_to_set i1 = interval_to_set i2)
+      (interval_to_set i1 ∩ interval_to_set i2 ≠ ∅ ⇒ i1 = i2)
 End
 
 Definition heap_ok_def:
   heap_ok s ⇔
-    ∀i n. i ∈ s.allocations ∧ n ∈ interval_to_set i ⇒ flookup s.heap (A n) ≠ None
+    ∀n. flookup s.heap (A n) ≠ None ⇔ ∃i. i ∈ s.allocations ∧ n ∈ interval_to_set i
 End
 
 Definition globals_ok_def:
@@ -675,7 +675,7 @@ Definition is_init_state_def:
       flookup s.globals g = Some (n, w) ∧ flookup global_init g = Some (t,v) ⇒
       ∃bytes.
         get_bytes s.heap (F, w2n w, w2n w + sizeof t) = map (λb. (F,b)) bytes ∧
-        bytes_to_value t bytes = (v, []) 
+        bytes_to_value t bytes = (v, [])
 End
 
 (* ----- Invariants on state ----- *)
@@ -698,11 +698,12 @@ Definition frame_ok_def:
   frame_ok p s f ⇔
     ip_ok p f.ret ∧
     every (λn. ∃start stop. n = A start ∧ (T, start, stop) ∈ s.allocations) f.stack_allocs
-End    
+End
 
 Definition stack_ok_def:
   stack_ok p s ⇔
-    every (frame_ok p s) s.stack
+    every (frame_ok p s) s.stack ∧
+    all_distinct (flat (map (λf. f.stack_allocs) s.stack))
 End
 
 Definition state_invariant_def:

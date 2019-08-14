@@ -9,6 +9,7 @@
 
 open HolKernel boolLib bossLib Parse;
 open pairTheory listTheory rich_listTheory arithmeticTheory wordsTheory;
+open pred_setTheory finite_mapTheory;
 open logrootTheory numposrepTheory;
 open settingsTheory llvmTheory;
 
@@ -76,13 +77,21 @@ Proof
   Induct >> rw [] >> Cases_on `l2` >> fs []
 QED
 
+Theorem flookup_fdiff:
+  ∀m s k.
+    flookup (fdiff m s) k =
+      if k ∈ s then None else flookup m k
+Proof
+  rw [FDIFF_def, FLOOKUP_DRESTRICT] >> fs []
+QED
+
 (* ----- Theorems about log ----- *)
 
 (* Could be upstreamed to HOL *)
 Theorem mul_div_bound:
   ∀m n. n ≠ 0 ⇒ m - (n - 1) ≤ n * (m DIV n) ∧ n * (m DIV n) ≤ m
 Proof
-  rw [] >> 
+  rw [] >>
   `0 < n` by decide_tac >>
   drule DIVISION >> disch_then (qspec_then `m` mp_tac) >>
   decide_tac
@@ -194,7 +203,7 @@ Theorem b2v_size:
     ∃vs. read_str ts bs = (vs, drop (sum (map sizeof ts)) bs))
 Proof
   ho_match_mp_tac bytes_to_value_ind >>
-  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >> 
+  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >>
   fs [first_class_type_def]
   >- (simp [PAIR_MAP] >> metis_tac [SND])
   >- (
@@ -220,22 +229,22 @@ Theorem b2v_append:
     ∃vs. read_str ts (bs ++ bs') = (I ## (λx. x ++ bs')) (read_str ts bs))
 Proof
   ho_match_mp_tac bytes_to_value_ind >>
-  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >> 
+  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >>
   fs [first_class_type_def, TAKE_APPEND, DROP_APPEND,
       DECIDE ``!x y. x ≤ y ⇒ x - y = 0n``, ETA_THM]
   >- (simp [PAIR_MAP] >> metis_tac [SND])
   >- (simp [PAIR_MAP] >> metis_tac [SND])
   >- (
-    rpt (pairarg_tac >> simp []) >> fs [ADD1] >> 
+    rpt (pairarg_tac >> simp []) >> fs [ADD1] >>
     BasicProvers.VAR_EQ_TAC >> fs [LEFT_ADD_DISTRIB] >>
     first_x_assum irule >>
-    `sizeof t ≤ length bs` by decide_tac >> 
+    `sizeof t ≤ length bs` by decide_tac >>
     imp_res_tac b2v_smaller >> rfs [])
   >- (
-    rpt (pairarg_tac >> simp []) >> fs [ADD1] >> 
+    rpt (pairarg_tac >> simp []) >> fs [ADD1] >>
     BasicProvers.VAR_EQ_TAC >> fs [LEFT_ADD_DISTRIB] >>
     first_x_assum irule >>
-    `sizeof t ≤ length bs` by decide_tac >> 
+    `sizeof t ≤ length bs` by decide_tac >>
     imp_res_tac b2v_smaller >> rfs [])
 QED
 
@@ -323,7 +332,7 @@ Proof
   simp [TAKE_TAKE_MIN] >>
   `length l = n` by simp [Abbr `l`] >>
   `length (dropWhile ($= 0) (reverse l)) ≤ n`
-  by metis_tac [LESS_EQ_TRANS, LENGTH_dropWhile_LESS_EQ, LENGTH_REVERSE] >> 
+  by metis_tac [LESS_EQ_TRANS, LENGTH_dropWhile_LESS_EQ, LENGTH_REVERSE] >>
   rw [MIN_DEF] >> fs []
   >- (
     simp [TAKE_APPEND, TAKE_TAKE_MIN, MIN_DEF, take_replicate] >>
@@ -345,7 +354,7 @@ Proof
     REWRITE_TAC [GSYM w2n_11, word_0_n2w] >>
     simp [])
   >- rw [TAKE_APPEND, TAKE_TAKE]
-QED 
+QED
 
 Theorem b2v_v2b:
   ∀v t bs. value_type t v ⇒ bytes_to_value t (value_to_bytes v ++ bs) = (v, bs)
@@ -427,7 +436,7 @@ Theorem extract_insertvalue:
     insert_value v1 v2 indices = Some v3
     ⇒
     extract_value v3 indices = Some v2
-Proof 
+Proof
   recInduct insert_value_ind >> rw [insert_value_def, extract_value_def] >>
   pop_assum mp_tac >> CASE_TAC >> fs [] >> rfs [] >>
   rw [] >> simp [extract_value_def, EL_LUPDATE]
@@ -439,7 +448,7 @@ Theorem extract_insertvalue_other:
     ¬(indices1 ≼ indices2) ∧ ¬(indices2 ≼ indices1)
     ⇒
     extract_value v3 indices2 = extract_value v1 indices2
-Proof 
+Proof
   recInduct insert_value_ind >> rw [insert_value_def, extract_value_def] >>
   qpat_x_assum `_ = SOME _` mp_tac >> CASE_TAC >> rw [] >> rfs [] >>
   qpat_x_assum `¬case _ of [] => F | h::t => P h t` mp_tac >>
@@ -452,7 +461,7 @@ Theorem insert_extractvalue:
     extract_value v1 indices = Some v2
     ⇒
     insert_value v1 v2 indices = Some v1
-Proof 
+Proof
   recInduct extract_value_ind >> rw [insert_value_def, extract_value_def] >> fs [] >>
   rw [LUPDATE_SAME]
 QED
@@ -476,7 +485,7 @@ Definition extract_type_def:
   (extract_type (StrT ts) (i::idx) =
     if i < length ts then
       extract_type (el i ts) idx
-    else 
+    else
       None) ∧
   (extract_type _ _ = None)
 End
@@ -621,11 +630,87 @@ Proof
       globals_ok_def, stack_ok_def, heap_ok_def, EVERY_EL, frame_ok_def]
 QED
 
+Theorem flookup_set_bytes:
+  ∀poison bytes n h n'.
+    flookup (set_bytes poison bytes n h) (A n') =
+      if n ≤ n' ∧ n' < n + length bytes then
+        Some (poison, el (n' - n) bytes)
+      else
+        flookup h (A n')
+Proof
+  Induct_on `bytes` >> rw [set_bytes_def, EL_CONS, PRE_SUB1] >>
+  fs [ADD1, FLOOKUP_UPDATE] >>
+  `n = n'` by decide_tac >>
+  rw []
+QED
+
+Theorem allocate_invariant:
+  ∀p s1 v1 t v2 s2.
+    state_invariant p s1 ∧ allocate s1 v1 t (v2,s2) ⇒ state_invariant p s2
+Proof
+  rw [allocate_cases, state_invariant_def, ip_ok_def, heap_ok_def,
+      globals_ok_def, stack_ok_def] >>
+  rw [] >> fs []
+  >- (
+    fs [allocations_ok_def] >> rpt gen_tac >> disch_tac >> fs [is_free_def] >> rw [] >>
+    metis_tac [INTER_COMM])
+  >- (
+    rw [flookup_set_bytes]
+    >- rw [RIGHT_AND_OVER_OR, EXISTS_OR_THM, interval_to_set_def] >>
+    eq_tac >> rw [] >> fs [interval_to_set_def] >>
+    metis_tac [])
+  >- (fs [is_allocated_def] >> metis_tac [])
+  >- (fs [EVERY_EL, frame_ok_def] >> rw [] >> metis_tac [])
+QED
+
+Theorem set_bytes_invariant:
+  ∀s poison bytes n prog b.
+    state_invariant prog s ∧ is_allocated (b, n, n + length bytes) s.allocations
+    ⇒
+    state_invariant prog (s with heap := set_bytes poison bytes n s.heap)
+Proof
+  rw [state_invariant_def]
+  >- (fs [allocations_ok_def] >> rw [] >> metis_tac [])
+  >- (
+    fs [heap_ok_def, flookup_set_bytes] >> rw [] >>
+    fs [is_allocated_def, interval_to_set_def, SUBSET_DEF] >>
+    metis_tac [LESS_EQ_REFL, DECIDE ``!x y. x < x + SUC y``])
+  >- (fs [globals_ok_def] >> metis_tac [])
+  >- (fs [stack_ok_def, EVERY_EL, frame_ok_def])
+QED
+
 Theorem step_instr_invariant:
-  ∀i s2. step_instr p s1 i s2 ⇒ prog_ok p ∧ next_instr p s1 i ∧ state_invariant p s1 ⇒ state_invariant p s2
+  ∀i s2.
+    step_instr p s1 i s2 ⇒ prog_ok p ∧ next_instr p s1 i ∧ state_invariant p s1
+    ⇒
+    state_invariant p s2
 Proof
   ho_match_mp_tac step_instr_ind >> rw []
-  >- cheat
+  >- (
+    rw [update_invariant] >> fs [state_invariant_def] >> rw []
+    >- (
+      fs [stack_ok_def] >> rfs [EVERY_EL, frame_ok_def] >>
+      first_x_assum (qspec_then `0` mp_tac) >> simp [])
+    >- (fs [deallocate_def, allocations_ok_def] >> rw [] >> metis_tac [])
+    >- (
+      fs [deallocate_def, heap_ok_def] >> rw [flookup_fdiff] >>
+      eq_tac >> rw []
+      >- metis_tac [optionTheory.NOT_IS_SOME_EQ_NONE]
+      >- metis_tac [optionTheory.NOT_IS_SOME_EQ_NONE] >>
+      fs [allocations_ok_def, stack_ok_def, EXTENSION] >> metis_tac [])
+    >- (
+      fs [globals_ok_def, deallocate_def] >> rw [] >>
+      first_x_assum drule >> rw [] >> fs [is_allocated_def] >>
+      qexists_tac `b2` >> rw [] >> CCONTR_TAC >> fs [])
+    >- (
+      fs [stack_ok_def, EVERY_MEM, frame_ok_def, deallocate_def] >> rfs [] >>
+      rw []
+      >- (
+        res_tac >> rw [] >> qexists_tac `stop` >> rw [] >>
+        fs [ALL_DISTINCT_APPEND, MEM_FLAT, MEM_MAP] >>
+        metis_tac [])
+      >- (
+        fs [ALL_DISTINCT_APPEND])))
   >- cheat
   >- cheat
   >- (
@@ -640,7 +725,7 @@ Proof
   >- (
     (* Allocation *)
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
-    >- cheat
+    >- metis_tac [allocate_invariant]
     >- (fs [next_instr_cases, allocate_cases] >> metis_tac [terminator_def]))
   >- (
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
@@ -649,7 +734,7 @@ Proof
   >- (
     (* Store *)
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
-    >- cheat
+    >- (irule set_bytes_invariant >> rw [] >> metis_tac [])
     >- (fs [next_instr_cases] >> metis_tac [terminator_def]))
   >- (
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
