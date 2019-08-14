@@ -537,6 +537,18 @@ module Bound = struct
         when SymLinear.is_zero se ->
           let d = Sign.eval_neg_if_minus sign Z.(c2 - c1) in
           mk_MinMax (c1, sign, minmax, d, s)
+      | MinMax (c1, Plus, Min, d1, s1), Linear (c2, s2)
+      | Linear (c2, s2), MinMax (c1, Plus, Min, d1, s1)
+        when SymLinear.is_one_symbol_of s1 s2 ->
+          let c = Z.min c1 c2 in
+          let d = Z.(c1 + d1) in
+          mk_MinMax (c, Plus, Min, Z.(d - c), s1)
+      | MinMax (c1, Minus, Max, d1, s1), Linear (c2, s2)
+      | Linear (c2, s2), MinMax (c1, Minus, Max, d1, s1)
+        when SymLinear.is_mone_symbol_of s1 s2 ->
+          let c = Z.min c1 c2 in
+          let d = Z.(c1 - d1) in
+          mk_MinMax (c, Minus, Max, Z.(c - d), s1)
       | MinMax (c1, (Minus as sign), (Max as minmax), d1, s1), MinMax (c2, Minus, Max, d2, s2)
       | MinMax (c1, (Plus as sign), (Min as minmax), d1, s1), MinMax (c2, Plus, Min, d2, s2)
         when Symb.Symbol.equal s1 s2 ->

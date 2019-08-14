@@ -180,6 +180,7 @@ codetoanalyze/c/bufferoverrun/issue_kinds.c, l5_external_Warn_Bad, 2, BUFFER_OVE
 codetoanalyze/c/bufferoverrun/issue_kinds.c, s2_symbolic_widened_Bad, 3, BUFFER_OVERRUN_S2, no_bucket, ERROR, [<Offset trace>,Parameter `*n`,Assignment,<Length trace>,Parameter `*n`,Array declaration,Array access: Offset: [*n, +oo] Size: *n]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, s2_symbolic_widened_Good_FP, 3, BUFFER_OVERRUN_S2, no_bucket, ERROR, [<Offset trace>,Parameter `*n`,Assignment,<Length trace>,Parameter `*n`,Array declaration,Array access: Offset: [*n, +oo] Size: *n]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, zero_to_infty, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
+codetoanalyze/c/bufferoverrun/minmax.c, call_exact_minmax_sym_Bad, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,Call,Parameter `x`,Assignment,<Length trace>,Assignment,Array declaration,Array access: Offset: [2, 5] Size: 5]
 codetoanalyze/c/bufferoverrun/minmax.c, exact_min_minus_min_linear_CAF, 6, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/minmax.c, exact_min_plus_min_plus_min_UNDERRUN, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Parameter `x`,Call,Assignment,Assignment,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: [-19+min(0, x), -1] Size: 1]
 codetoanalyze/c/bufferoverrun/minmax.c, underapprox_min_minus_min_linear_CAF, 6, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
