@@ -152,10 +152,12 @@ Datatype `
        (* The set of allocated ranges. The bool indicates whether the range is
         * free-able or not *)
        allocations : (bool # num # num) set;
+       (* A byte addressed heap, with a poison tag *)
        heap : addr |-> bool # word8 |>`;
 
 (* ----- Things about types ----- *)
 
+(* How many bytes a value of the given type occupies *)
 Definition sizeof_def:
   (sizeof (IntT W1) = 1) ∧
   (sizeof (IntT W8) = 1) ∧
@@ -232,6 +234,7 @@ Definition bool_to_v_def:
   bool_to_v b = if b then W1V 1w else W1V 0w
 End
 
+(* Calculate the offset given by a list of indices *)
 Definition get_offset_def:
   (get_offset _ [] = Some 0) ∧
   (get_offset (ArrT _ t) (i::is) =
@@ -294,14 +297,6 @@ Definition v2n_def:
   (v2n _ = None)
 End
 
-Definition update_result_def:
-  update_result x v s = s with locals := s.locals |+ (x, v)
-End
-
-Definition inc_pc_def:
-  inc_pc s = s with ip := (s.ip with i := s.ip.i + 1)
-End
-
 Definition interval_to_set_def:
   interval_to_set (_, start,stop) =
     { n | start ≤ n ∧ n < stop }
@@ -322,6 +317,16 @@ Definition is_free_def:
   is_free b1 allocs ⇔
     interval_ok b1 ∧
     ∀b2. b2 ∈ allocs ⇒ interval_to_set b1 ∩ interval_to_set b2 = ∅
+End
+
+Definition get_bytes_def:
+  get_bytes h (_, start, stop) =
+    map
+      (λoff.
+        case flookup h (A (start + off)) of
+        | None => (F, 0w)
+        | Some w => w)
+      (count_list (stop - start))
 End
 
 Definition set_bytes_def:
@@ -349,16 +354,8 @@ Definition deallocate_def:
       (allocs DIFF to_remove, fdiff h (image A (bigunion (image interval_to_set to_remove))))
 End
 
-Definition get_bytes_def:
-  get_bytes h (_, start, stop) =
-    map
-      (λoff.
-        case flookup h (A (start + off)) of
-        | None => (F, 0w)
-        | Some w => w)
-      (count_list (stop - start))
-End
-
+(* Read len bytes from the list of bytes, and convert it into a word value,
+ * little-endian encoding *)
 Definition le_read_w_def:
   le_read_w len (bs : word8 list) =
     if length bs < len then
@@ -367,6 +364,7 @@ Definition le_read_w_def:
       (l2w 256 (map w2n (take len bs)), drop len bs)
 End
 
+(* Return len bytes that are the little-endian encoding of the argument word *)
 Definition le_write_w_def:
   le_write_w len w =
     let (l : word8 list) = map n2w (w2l 256 w) in
@@ -468,6 +466,14 @@ Definition insert_value_def:
     else
       None) ∧
   (insert_value _ _ _ = None)
+End
+
+Definition update_result_def:
+  update_result x v s = s with locals := s.locals |+ (x, v)
+End
+
+Definition inc_pc_def:
+  inc_pc s = s with ip := (s.ip with i := s.ip.i + 1)
 End
 
 (* NB, the semantics tracks the poison values, but not much thought has been put
@@ -601,12 +607,14 @@ Inductive step_instr:
      (Call r t fname targs)
      <| ip := <| f := fname; b := None; i := 0 |>;
         locals := alist_to_fmap (zip (d.params, map (eval s o snd) targs));
+        globals := s.globals;
+        allocations:= s.allocations;
         stack :=
           <| ret := s.ip with i := s.ip.i + 1;
              saved_locals := s.locals;
              result_var := r;
              stack_allocs := [] |> :: s.stack;
-        heap := heap |>) ∧
+        heap := s.heap |>) ∧
 
   (* TODO *)
   (step_instr prog s (Cxa_allocate_exn r a) s) ∧
@@ -635,8 +643,9 @@ Inductive step:
   step p s s'
 End
 
-(* ----- Initial state ----- *)
+(* ----- Invariants on state ----- *)
 
+(* The allocations are of intervals that don't overlap *)
 Definition allocations_ok_def:
   allocations_ok s ⇔
     ∀i1 i2.
@@ -646,11 +655,13 @@ Definition allocations_ok_def:
       (interval_to_set i1 ∩ interval_to_set i2 ≠ ∅ ⇒ i1 = i2)
 End
 
+(* The heap maps exactly the address in the allocations *)
 Definition heap_ok_def:
   heap_ok s ⇔
     ∀n. flookup s.heap (A n) ≠ None ⇔ ∃i. i ∈ s.allocations ∧ n ∈ interval_to_set i
 End
 
+(* All global variables are allocated in non-freeable memory *)
 Definition globals_ok_def:
   globals_ok s ⇔
     ∀g n w.
@@ -658,6 +669,49 @@ Definition globals_ok_def:
       ⇒
       is_allocated (F, w2n w, w2n w + n) s.allocations
 End
+
+(* Instruction pointer points to an instruction *)
+Definition ip_ok_def:
+  ip_ok p ip ⇔
+    ∃dec block. flookup p ip.f = Some dec ∧ flookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
+End
+
+Definition prog_ok_def:
+  prog_ok p ⇔
+    ((* All blocks end with terminators *)
+     ∀fname dec bname block.
+       flookup p fname = Some dec ∧
+       flookup dec.blocks bname = Some block
+       ⇒
+       block.body ≠ [] ∧ terminator (last block.body)) ∧
+    ((* All functions have an entry block *)
+     ∀fname dec.
+       flookup p fname = Some dec ⇒ ∃block. flookup dec.blocks None = Some block) ∧
+     (* There is a main function *)
+     ∃dec. flookup p (Fn "main") = Some dec
+End
+
+(* All call frames have a good return address, and the stack allocations of the
+ * frame are all in freeable memory *)
+Definition frame_ok_def:
+  frame_ok p s f ⇔
+    ip_ok p f.ret ∧
+    every (λn. ∃start stop. n = A start ∧ (T, start, stop) ∈ s.allocations) f.stack_allocs
+End
+
+(* The frames are all of, and no two stack allocations have the same address *)
+Definition stack_ok_def:
+  stack_ok p s ⇔
+    every (frame_ok p s) s.stack ∧
+    all_distinct (flat (map (λf. f.stack_allocs) s.stack))
+End
+
+Definition state_invariant_def:
+  state_invariant p s ⇔
+    ip_ok p s.ip ∧ allocations_ok s ∧ heap_ok s ∧ globals_ok s ∧ stack_ok p s
+End
+
+(* ----- Initial state ----- *)
 
 (* The initial state contains allocations for the initialised global variables *)
 Definition is_init_state_def:
@@ -669,46 +723,17 @@ Definition is_init_state_def:
     s.stack = [] ∧
     allocations_ok s ∧
     globals_ok s ∧
+    heap_ok s ∧
     fdom s.globals = fdom global_init ∧
-    s.allocations ⊆ {F, start, stop | T} ∧
+    (* The initial allocations for globals are not freeable *)
+    s.allocations ⊆ { (F, start, stop) | T } ∧
+    (* The heap starts with the initial values of the globals written to their
+     * addresses *)
     ∀g w t v n.
       flookup s.globals g = Some (n, w) ∧ flookup global_init g = Some (t,v) ⇒
       ∃bytes.
         get_bytes s.heap (F, w2n w, w2n w + sizeof t) = map (λb. (F,b)) bytes ∧
         bytes_to_value t bytes = (v, [])
-End
-
-(* ----- Invariants on state ----- *)
-
-Definition prog_ok_def:
-  prog_ok p ⇔
-    ∀fname dec bname block.
-      flookup p fname = Some dec ∧
-      flookup dec.blocks bname = Some block
-      ⇒
-      block.body ≠ [] ∧ terminator (last block.body)
-End
-
-Definition ip_ok_def:
-  ip_ok p ip ⇔
-    ∃dec block. flookup p ip.f = Some dec ∧ flookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
-End
-
-Definition frame_ok_def:
-  frame_ok p s f ⇔
-    ip_ok p f.ret ∧
-    every (λn. ∃start stop. n = A start ∧ (T, start, stop) ∈ s.allocations) f.stack_allocs
-End
-
-Definition stack_ok_def:
-  stack_ok p s ⇔
-    every (frame_ok p s) s.stack ∧
-    all_distinct (flat (map (λf. f.stack_allocs) s.stack))
-End
-
-Definition state_invariant_def:
-  state_invariant p s ⇔
-    ip_ok p s.ip ∧ allocations_ok s ∧ heap_ok s ∧ globals_ok s ∧ stack_ok p s
 End
 
 export_theory();

@@ -686,7 +686,7 @@ Theorem step_instr_invariant:
     state_invariant p s2
 Proof
   ho_match_mp_tac step_instr_ind >> rw []
-  >- (
+  >- ( (* Ret *)
     rw [update_invariant] >> fs [state_invariant_def] >> rw []
     >- (
       fs [stack_ok_def] >> rfs [EVERY_EL, frame_ok_def] >>
@@ -711,8 +711,26 @@ Proof
         metis_tac [])
       >- (
         fs [ALL_DISTINCT_APPEND])))
-  >- cheat
-  >- cheat
+  >- ( (* Br *)
+    fs [state_invariant_def] >> rw []
+    >- (
+      rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
+      qpat_x_assum `flookup _ (Fn "main") = _` kall_tac >>
+      last_x_assum drule >> disch_then drule >> fs [])
+    >- (fs [allocations_ok_def] >> metis_tac [])
+    >- (fs [heap_ok_def] >> metis_tac [])
+    >- (fs [globals_ok_def] >> metis_tac [])
+    >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
+  >- ( (* Br *)
+    fs [state_invariant_def] >> rw []
+    >- (
+      rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
+      qpat_x_assum `flookup _ (Fn "main") = _` kall_tac >>
+      last_x_assum drule >> disch_then drule >> fs [])
+    >- (fs [allocations_ok_def] >> metis_tac [])
+    >- (fs [heap_ok_def] >> metis_tac [])
+    >- (fs [globals_ok_def] >> metis_tac [])
+    >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- (
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant]>>
     metis_tac [terminator_def])
@@ -722,8 +740,7 @@ Proof
   >- (
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
     metis_tac [terminator_def])
-  >- (
-    (* Allocation *)
+  >- ( (* Allocation *)
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
     >- metis_tac [allocate_invariant]
     >- (fs [next_instr_cases, allocate_cases] >> metis_tac [terminator_def]))
@@ -731,8 +748,7 @@ Proof
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
     fs [next_instr_cases] >>
     metis_tac [terminator_def])
-  >- (
-    (* Store *)
+  >- ( (* Store *)
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
     >- (irule set_bytes_invariant >> rw [] >> metis_tac [])
     >- (fs [next_instr_cases] >> metis_tac [terminator_def]))
@@ -748,7 +764,32 @@ Proof
   >- (
     irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
     metis_tac [terminator_def])
-  >- cheat
+  >- ( (* Call *)
+    rw [state_invariant_def]
+    >- (fs [prog_ok_def, ip_ok_def] >> metis_tac [NOT_NIL_EQ_LENGTH_NOT_0])
+    >- (fs [state_invariant_def, allocations_ok_def] >> metis_tac [])
+    >- (fs [state_invariant_def, heap_ok_def] >> metis_tac [])
+    >- (fs [state_invariant_def, globals_ok_def] >> metis_tac [])
+    >- (
+      fs [state_invariant_def, stack_ok_def] >> rw []
+      >- (
+        rw [frame_ok_def] >> fs [ip_ok_def, prog_ok_def] >>
+        last_x_assum drule >> disch_then drule >> rw [] >>
+        CCONTR_TAC >> fs [] >> rfs [LAST_EL] >>
+        Cases_on `length block'.body = s1.ip.i + 1` >> fs [PRE_SUB1] >>
+        fs [next_instr_cases] >>
+        metis_tac [terminator_def])
+      >- (fs [EVERY_MEM, frame_ok_def] >> metis_tac [])))
+QED
+
+(* ----- Initial state is ok ----- *)
+
+Theorem init_invariant:
+  ∀p s init. prog_ok p ∧ is_init_state s init ⇒ state_invariant p s
+Proof
+  rw [is_init_state_def, state_invariant_def]
+  >- (rw [ip_ok_def] >> fs [prog_ok_def] >> metis_tac [NOT_NIL_EQ_LENGTH_NOT_0])
+  >- rw [stack_ok_def]
 QED
 
 export_theory ();
