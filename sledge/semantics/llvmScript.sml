@@ -33,7 +33,7 @@ Datatype `
   label = Lab string`;
 
 Datatype `
-  loc_var = Loc string`;
+  reg = Reg string`;
 
 Datatype `
   glob_var = GlobName string`;
@@ -51,7 +51,7 @@ Datatype `
   | UndefC`;
 
 Datatype `
-  arg = Constant const | Variable loc_var`;
+  arg = Constant const | Variable reg`;
 
 type_abbrev ("targ", ``:ty # arg``);
 
@@ -63,29 +63,29 @@ Datatype `
   (* Terminators *)
   | Ret targ
   | Br arg label label
-  | Invoke loc_var ty arg (targ list) label label
+  | Invoke reg ty arg (targ list) label label
   | Unreachable
   (* Non-terminators *)
-  | Sub loc_var bool bool ty arg arg
-  | Extractvalue loc_var targ (const list)
-  | Insertvalue loc_var targ targ (const list)
-  | Alloca loc_var ty targ
-  | Load loc_var ty targ
+  | Sub reg bool bool ty arg arg
+  | Extractvalue reg targ (const list)
+  | Insertvalue reg targ targ (const list)
+  | Alloca reg ty targ
+  | Load reg ty targ
   | Store targ targ
-  | Gep loc_var targ (targ list)
-  | Ptrtoint loc_var targ ty
-  | Inttoptr loc_var targ ty
+  | Gep reg targ (targ list)
+  | Ptrtoint reg targ ty
+  | Inttoptr reg targ ty
   | Icmp cond ty arg arg
-  | Call loc_var ty fun_name (targ list)
+  | Call reg ty fun_name (targ list)
   (* C++ runtime functions *)
-  | Cxa_allocate_exn loc_var arg
+  | Cxa_allocate_exn reg arg
   | Cxa_throw arg arg arg
-  | Cxa_begin_catch loc_var arg
+  | Cxa_begin_catch reg arg
   | Cxa_end_catch
-  | Cxa_get_exception_ptr loc_var arg`;
+  | Cxa_get_exception_ptr reg arg`;
 
 Datatype `
-  phi = Phi loc_var ty (label option |-> arg)`;
+  phi = Phi reg ty (label option |-> arg)`;
 
 Datatype `
   clause = Catch targ`;
@@ -104,7 +104,7 @@ Datatype `
 Datatype `
   def =
     <| r : ty;
-       params : loc_var list;
+       params : reg list;
        (* None -> entry block, and Some name -> non-entry block *)
        blocks : label option |-> block |>`;
 
@@ -140,14 +140,14 @@ Datatype `
   pc = <| f : fun_name; b : label option; i : num |>`;
 
 Datatype `
-  frame = <| ret : pc; saved_locals : loc_var |-> pv; result_var : loc_var; stack_allocs : addr list |>`;
+  frame = <| ret : pc; saved_locals : reg |-> pv; result_var : reg; stack_allocs : addr list |>`;
 
 Datatype `
   state =
     <| ip : pc;
        (* Keep the size of the global with its memory address *)
        globals : glob_var |-> (num # word64);
-       locals : loc_var |-> pv;
+       locals : reg |-> pv;
        stack : frame list;
        (* The set of allocated ranges. The bool indicates whether the range is
         * free-able or not *)
