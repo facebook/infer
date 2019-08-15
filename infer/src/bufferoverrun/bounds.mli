@@ -35,26 +35,13 @@ module Bound : sig
 
   val pinf : t
 
-  val of_normal_path :
-       (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
-    -> unsigned:bool
-    -> Symb.SymbolPath.partial
-    -> t
+  val of_normal_path : Symb.Symbol.make_t -> unsigned:bool -> Symb.SymbolPath.partial -> t
 
-  val of_offset_path :
-       is_void:bool
-    -> (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
-    -> Symb.SymbolPath.partial
-    -> t
+  val of_offset_path : is_void:bool -> Symb.Symbol.make_t -> Symb.SymbolPath.partial -> t
 
-  val of_length_path :
-       is_void:bool
-    -> (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t)
-    -> Symb.SymbolPath.partial
-    -> t
+  val of_length_path : is_void:bool -> Symb.Symbol.make_t -> Symb.SymbolPath.partial -> t
 
-  val of_modeled_path :
-    (unsigned:bool -> Symb.SymbolPath.t -> Symb.Symbol.t) -> Symb.SymbolPath.partial -> t
+  val of_modeled_path : Symb.Symbol.make_t -> Symb.SymbolPath.partial -> t
 
   val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
 

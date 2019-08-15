@@ -424,6 +424,12 @@ module Val = struct
       let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
       TraceSet.singleton location trace
     in
+    let itv_val () =
+      let l = Loc.of_path path in
+      let traces = traces_of_loc l in
+      let unsigned = Typ.is_unsigned_int typ in
+      of_itv ~traces (Itv.of_normal_path ~unsigned path)
+    in
     let ptr_to_c_array_alloc deref_path size =
       let allocsite = Allocsite.make_symbol deref_path in
       let offset = Itv.zero in
@@ -436,10 +442,7 @@ module Val = struct
       (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
     | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
-        let l = Loc.of_path path in
-        let traces = traces_of_loc l in
-        let unsigned = Typ.is_unsigned_int typ in
-        of_itv ~traces (Itv.of_normal_path ~unsigned path)
+        itv_val ()
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -489,10 +492,7 @@ module Val = struct
           let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
       | Some JavaInteger ->
-          let l = Loc.of_path path in
-          let traces = traces_of_loc l in
-          let unsigned = Typ.is_unsigned_int typ in
-          of_itv ~traces (Itv.of_normal_path ~unsigned path)
+          itv_val ()
       | None ->
           let l = Loc.of_path path in
           let traces = traces_of_loc l in

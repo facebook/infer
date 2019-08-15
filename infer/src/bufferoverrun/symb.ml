@@ -293,11 +293,11 @@ module Symbol = struct
         SymbolPath.equal path1 path2
 
 
-  let make_onevalue : unsigned:bool -> SymbolPath.t -> t =
-   fun ~unsigned path -> OneValue {unsigned; path}
+  type make_t = unsigned:bool -> SymbolPath.t -> t
 
+  let make_onevalue : make_t = fun ~unsigned path -> OneValue {unsigned; path}
 
-  let make_boundend : BoundEnd.t -> unsigned:bool -> SymbolPath.t -> t =
+  let make_boundend : BoundEnd.t -> make_t =
    fun bound_end ~unsigned path -> BoundEnd {unsigned; path; bound_end}
 
 
