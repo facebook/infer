@@ -117,6 +117,6 @@ public class Cost_test {
     return 0;
   }
 
-  // Cost: 0
-  private static void zeroCostFunction() {}
+  // Cost: 1
+  private static void unitCostFunction() {}
 }

@@ -127,7 +127,8 @@ void call_while_upto20_10_good() { while_upto20_bad(10); }
 
 void call_while_upto20_unsigned_good(unsigned x) { while_upto20_bad(x); }
 
-void zero_cost_function() {}
+// Cost: 1
+void unit_cost_function() {}
 
 int always(int i) { return i % 2 == (i + 2) % 2; }
 
