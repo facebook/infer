@@ -25,31 +25,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_access loc ~is_write_access locks threads ownership (proc_data : extras ProcData.t)
       accesses exp =
     let open Domain in
-    let rec add_field_accesses prefix_path access_acc = function
+    let pdesc = Summary.get_proc_desc proc_data.summary in
+    let rec add_field_accesses prefix_path acc = function
       | [] ->
-          access_acc
-      | access :: access_list -> (
+          acc
+      | access :: access_list ->
           let prefix_path' = (fst prefix_path, snd prefix_path @ [access]) in
-          let add_field_access pre =
-            let access_acc' = AccessDomain.add_opt pre access_acc in
-            add_field_accesses prefix_path' access_acc' access_list
-          in
           if RacerDModels.is_safe_access access prefix_path proc_data.tenv then
-            add_field_accesses prefix_path' access_acc access_list
+            add_field_accesses prefix_path' acc access_list
           else
-            let is_write = if List.is_empty access_list then is_write_access else false in
+            let is_write = List.is_empty access_list && is_write_access in
             let access = TraceElem.make_field_access prefix_path' ~is_write loc in
-            let pdesc = Summary.get_proc_desc proc_data.summary in
-            match OwnershipDomain.get_owned prefix_path ownership with
-            | OwnershipAbstractValue.OwnedIf formal_indexes ->
-                let pre =
-                  AccessSnapshot.make access locks threads
-                    (AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes) pdesc
-                in
-                add_field_access pre
-            | OwnershipAbstractValue.Unowned ->
-                let pre = AccessSnapshot.make access locks threads False pdesc in
-                add_field_access pre )
+            let pre = OwnershipDomain.get_precondition prefix_path ownership in
+            let snapshot_opt = AccessSnapshot.make access locks threads pre pdesc in
+            let access_acc' = AccessDomain.add_opt snapshot_opt acc in
+            add_field_accesses prefix_path' access_acc' access_list
     in
     List.fold (HilExp.get_access_exprs exp) ~init:accesses ~f:(fun acc access_expr ->
         let base, accesses = HilExp.AccessExpression.to_access_path access_expr in
