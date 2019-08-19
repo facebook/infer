@@ -992,7 +992,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   let open RacerDDomain in
   let open RacerDModels in
   let is_duplicate_report ({snapshot; procdesc} : reported_access)
-      {reported_sites; reported_writes; reported_reads; reported_unannotated_calls} =
+      ({reported_sites; reported_writes; reported_reads; reported_unannotated_calls}, _) =
     let pname = Procdesc.get_proc_name procdesc in
     let call_site = CallSite.make pname (TraceElem.get_loc snapshot.access) in
     if Config.filtering then
@@ -1026,95 +1026,97 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
           {reported with reported_unannotated_calls; reported_sites}
     else reported
   in
-  let report_unsafe_access accesses (reported_acc, issue_log)
-      ({snapshot; threads; tenv; procdesc} as reported_access) =
-    let pname = Procdesc.get_proc_name procdesc in
-    if is_duplicate_report reported_access reported_acc then (reported_acc, issue_log)
+  let report_thread_safety_violation ~acc ~make_description ~report_kind reported_access =
+    if is_duplicate_report reported_access acc then acc
     else
-      match snapshot.access.elem with
-      | Access.InterfaceCall reported_pname
-        when AccessSnapshot.is_unprotected snapshot
-             && ThreadsDomain.is_any threads
-             && is_marked_thread_safe procdesc tenv ->
-          (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-          let issue_log =
-            report_unannotated_interface_violation ~issue_log reported_pname reported_access
-          in
-          (update_reported reported_access reported_acc, issue_log)
-      | Access.InterfaceCall _ ->
-          (reported_acc, issue_log)
-      | (Access.Write _ | ContainerWrite _) when Typ.Procname.is_java pname ->
-          let conflict =
-            if ThreadsDomain.is_any threads then
-              (* unprotected write in method that may run in parallel with itself. warn *)
-              None
-            else
-              (* unprotected write, but not on a method that may run in parallel with itself
+      let reported_acc, issue_log = acc in
+      let issue_log =
+        report_thread_safety_violation ~issue_log ~make_description ~report_kind reported_access
+      in
+      (update_reported reported_access reported_acc, issue_log)
+  in
+  let report_unannotated_interface_violation ~acc reported_pname reported_access =
+    if is_duplicate_report reported_access acc then acc
+    else
+      let reported_acc, issue_log = acc in
+      let issue_log =
+        report_unannotated_interface_violation ~issue_log reported_pname reported_access
+      in
+      (update_reported reported_access reported_acc, issue_log)
+  in
+  let report_unsafe_access accesses acc ({snapshot; threads; tenv; procdesc} as reported_access) =
+    let pname = Procdesc.get_proc_name procdesc in
+    match snapshot.access.elem with
+    | Access.InterfaceCall reported_pname
+      when AccessSnapshot.is_unprotected snapshot
+           && ThreadsDomain.is_any threads
+           && is_marked_thread_safe procdesc tenv ->
+        (* un-annotated interface call + no lock in method marked thread-safe. warn *)
+        report_unannotated_interface_violation ~acc reported_pname reported_access
+    | Access.InterfaceCall _ ->
+        acc
+    | (Access.Write _ | ContainerWrite _) when Typ.Procname.is_java pname ->
+        let conflict =
+          if ThreadsDomain.is_any threads then
+            (* unprotected write in method that may run in parallel with itself. warn *)
+            None
+          else
+            (* unprotected write, but not on a method that may run in parallel with itself
                    (i.e., not a self race). find accesses on a background thread this access might
                    conflict with and report them *)
-              List.find_map accesses ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
-                  if TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
-                  then Some other_snapshot.access
-                  else None )
-          in
-          if
-            AccessSnapshot.is_unprotected snapshot
-            && (Option.is_some conflict || ThreadsDomain.is_any threads)
-          then
-            let issue_log =
-              report_thread_safety_violation ~issue_log
-                ~make_description:make_unprotected_write_description
-                ~report_kind:(WriteWriteRace conflict) reported_access
-            in
-            (update_reported reported_access reported_acc, issue_log)
-          else (reported_acc, issue_log)
-      | Access.Write _ | ContainerWrite _ ->
-          (* Do not report unprotected writes for ObjC_Cpp *)
-          (reported_acc, issue_log)
-      | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
-          (* unprotected read. report all writes as conflicts for java. for c++ filter out
+            List.find_map accesses ~f:(fun {snapshot= other_snapshot; threads= other_threads} ->
+                if TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
+                then Some other_snapshot.access
+                else None )
+        in
+        if
+          AccessSnapshot.is_unprotected snapshot
+          && (Option.is_some conflict || ThreadsDomain.is_any threads)
+        then
+          report_thread_safety_violation ~acc ~make_description:make_unprotected_write_description
+            ~report_kind:(WriteWriteRace conflict) reported_access
+        else acc
+    | Access.Write _ | ContainerWrite _ ->
+        (* Do not report unprotected writes for ObjC_Cpp *)
+        acc
+    | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
+        (* unprotected read. report all writes as conflicts for java. for c++ filter out
              unprotected writes *)
-          let is_conflict {snapshot; threads= other_threads} =
-            TraceElem.is_write snapshot.access
-            &&
-            if Typ.Procname.is_java pname then
-              ThreadsDomain.is_any threads || ThreadsDomain.is_any other_threads
-            else not (AccessSnapshot.is_unprotected snapshot)
-          in
-          List.find ~f:is_conflict accesses
-          |> Option.value_map ~default:(reported_acc, issue_log) ~f:(fun conflict ->
-                 let make_description =
-                   make_read_write_race_description ~read_is_sync:false conflict
-                 in
-                 let report_kind = ReadWriteRace conflict.snapshot.access in
-                 let issue_log =
-                   report_thread_safety_violation ~issue_log ~make_description ~report_kind
-                     reported_access
-                 in
-                 (update_reported reported_access reported_acc, issue_log) )
-      | Access.Read _ | ContainerRead _ ->
-          (* protected read. report unprotected writes and opposite protected writes as conflicts *)
-          let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
-            if snapshot1.lock && snapshot2.lock then false
-            else ThreadsDomain.can_conflict snapshot1.thread snapshot2.thread
-          in
-          let is_conflict {snapshot= other_snapshot; threads= other_threads} =
-            if AccessSnapshot.is_unprotected other_snapshot then
-              TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
-            else TraceElem.is_write other_snapshot.access && can_conflict snapshot other_snapshot
-          in
-          List.find accesses ~f:is_conflict
-          |> Option.value_map ~default:(reported_acc, issue_log) ~f:(fun conflict ->
-                 (* protected read with conflicting unprotected write(s). warn. *)
-                 let make_description =
-                   make_read_write_race_description ~read_is_sync:true conflict
-                 in
-                 let report_kind = ReadWriteRace conflict.snapshot.access in
-                 let issue_log =
-                   report_thread_safety_violation ~issue_log ~make_description ~report_kind
-                     reported_access
-                 in
-                 (update_reported reported_access reported_acc, issue_log) )
+        let is_conflict {snapshot; threads= other_threads} =
+          TraceElem.is_write snapshot.access
+          &&
+          if Typ.Procname.is_java pname then
+            ThreadsDomain.is_any threads || ThreadsDomain.is_any other_threads
+          else not (AccessSnapshot.is_unprotected snapshot)
+        in
+        List.find ~f:is_conflict accesses
+        |> Option.value_map ~default:acc ~f:(fun conflict ->
+               let make_description =
+                 make_read_write_race_description ~read_is_sync:false conflict
+               in
+               let report_kind = ReadWriteRace conflict.snapshot.access in
+               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access
+           )
+    | Access.Read _ | ContainerRead _ ->
+        (* protected read. report unprotected writes and opposite protected writes as conflicts *)
+        let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
+          if snapshot1.lock && snapshot2.lock then false
+          else ThreadsDomain.can_conflict snapshot1.thread snapshot2.thread
+        in
+        let is_conflict {snapshot= other_snapshot; threads= other_threads} =
+          if AccessSnapshot.is_unprotected other_snapshot then
+            TraceElem.is_write other_snapshot.access && ThreadsDomain.is_any other_threads
+          else TraceElem.is_write other_snapshot.access && can_conflict snapshot other_snapshot
+        in
+        List.find accesses ~f:is_conflict
+        |> Option.value_map ~default:acc ~f:(fun conflict ->
+               (* protected read with conflicting unprotected write(s). warn. *)
+               let make_description =
+                 make_read_write_race_description ~read_is_sync:true conflict
+               in
+               let report_kind = ReadWriteRace conflict.snapshot.access in
+               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access
+           )
   in
   let report_accesses_on_location reportable_accesses init =
     (* Don't report on location if all accesses are on non-concurrent contexts *)
@@ -1126,14 +1128,11 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
   in
   let report_guardedby_violations_on_location grouped_accesses init =
     if Config.racerd_guardedby then
-      List.fold grouped_accesses ~init ~f:(fun (acc, issue_log) r ->
-          if should_report_guardedby_violation classname r && not (is_duplicate_report r acc) then
-            let issue_log =
-              report_thread_safety_violation ~issue_log ~report_kind:GuardedByViolation
-                ~make_description:make_guardedby_violation_description r
-            in
-            (update_reported r acc, issue_log)
-          else (acc, issue_log) )
+      List.fold grouped_accesses ~init ~f:(fun acc r ->
+          if should_report_guardedby_violation classname r then
+            report_thread_safety_violation ~acc ~report_kind:GuardedByViolation
+              ~make_description:make_guardedby_violation_description r
+          else acc )
     else init
   in
   let report grouped_accesses (reported, issue_log) =
