@@ -247,14 +247,18 @@ module Symbol = struct
   let compare_extra_bool _ _ = 0
 
   type t =
-    | OneValue of {unsigned: extra_bool; path: SymbolPath.t}
-    | BoundEnd of {unsigned: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
+    | OneValue of {unsigned: extra_bool; boolean: extra_bool; path: SymbolPath.t}
+    | BoundEnd of
+        { unsigned: extra_bool
+        ; boolean: extra_bool
+        ; path: SymbolPath.t
+        ; bound_end: BoundEnd.t }
   [@@deriving compare]
 
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
     match s with
-    | OneValue {unsigned; path} | BoundEnd {unsigned; path} ->
+    | OneValue {unsigned; boolean; path} | BoundEnd {unsigned; boolean; path} ->
         SymbolPath.pp fmt path ;
         ( if Config.developer_mode then
           match s with
@@ -262,7 +266,8 @@ module Symbol = struct
               Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
           | OneValue _ ->
               () ) ;
-        if Config.bo_debug > 1 then F.fprintf fmt "(%c)" (if unsigned then 'u' else 's')
+        if Config.bo_debug > 1 then
+          F.fprintf fmt "(%c%s)" (if unsigned then 'u' else 's') (if boolean then "b" else "")
 
 
   let compare s1 s2 =
@@ -293,17 +298,21 @@ module Symbol = struct
         SymbolPath.equal path1 path2
 
 
-  type make_t = unsigned:bool -> SymbolPath.t -> t
+  type make_t = unsigned:bool -> ?boolean:bool -> SymbolPath.t -> t
 
-  let make_onevalue : make_t = fun ~unsigned path -> OneValue {unsigned; path}
+  let make_onevalue : make_t =
+   fun ~unsigned ?(boolean = false) path -> OneValue {unsigned; boolean; path}
+
 
   let make_boundend : BoundEnd.t -> make_t =
-   fun bound_end ~unsigned path -> BoundEnd {unsigned; path; bound_end}
+   fun bound_end ~unsigned ?(boolean = false) path -> BoundEnd {unsigned; boolean; path; bound_end}
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
   let is_unsigned : t -> bool = function OneValue {unsigned} | BoundEnd {unsigned} -> unsigned
+
+  let is_boolean : t -> bool = function OneValue {boolean} | BoundEnd {boolean} -> boolean
 
   let path = function OneValue {path} | BoundEnd {path} -> path
 

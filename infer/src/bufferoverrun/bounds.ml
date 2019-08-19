@@ -298,18 +298,22 @@ module Bound = struct
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
 
-  let of_path path_of_partial make_symbol ~unsigned partial =
-    let s = make_symbol ~unsigned (path_of_partial partial) in
+  let of_path path_of_partial make_symbol ~unsigned ?boolean partial =
+    let s = make_symbol ~unsigned ?boolean (path_of_partial partial) in
     of_sym (SymLinear.singleton_one s)
 
 
   let of_normal_path = of_path Symb.SymbolPath.normal
 
-  let of_offset_path ~is_void = of_path (Symb.SymbolPath.offset ~is_void) ~unsigned:false
+  let of_offset_path ~is_void =
+    of_path (Symb.SymbolPath.offset ~is_void) ~unsigned:false ~boolean:false
 
-  let of_length_path ~is_void = of_path (Symb.SymbolPath.length ~is_void) ~unsigned:true
 
-  let of_modeled_path = of_path Symb.SymbolPath.modeled ~unsigned:true
+  let of_length_path ~is_void =
+    of_path (Symb.SymbolPath.length ~is_void) ~unsigned:true ~boolean:false
+
+
+  let of_modeled_path = of_path Symb.SymbolPath.modeled ~unsigned:true ~boolean:false
 
   let is_path_of ~f = function
     | Linear (n, se) when Z.(equal n zero) ->

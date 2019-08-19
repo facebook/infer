@@ -119,4 +119,37 @@ public class Cost_test {
 
   // Cost: 1
   private static void unitCostFunction() {}
+
+  boolean rand() {
+    if (Math.random() > 0.5) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // Cost: Linear to n, not b
+  void ignore_boolean_symbols_linear(boolean b, int n) {
+    for (int i = 0; b && i < n; i++) {
+      b = true;
+    }
+  }
+
+  // Cost should not include the symbol of b.
+  void ignore_boolean_symbols_constant1(boolean b) {
+    for (; b; ) {
+      if (rand()) {
+        b = true;
+      }
+    }
+  }
+
+  // Cost should not include the symbol of b.
+  void ignore_boolean_symbols_constant2(boolean b) {
+    for (; b; ) {
+      if (rand()) {
+        b = false;
+      }
+    }
+  }
 }

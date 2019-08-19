@@ -231,7 +231,7 @@ val subst : t -> Bound.eval_sym -> t
 
 val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t
 
-val of_normal_path : unsigned:bool -> Symb.SymbolPath.partial -> t
+val of_normal_path : unsigned:bool -> ?boolean:bool -> Symb.SymbolPath.partial -> t
 
 val of_offset_path : is_void:bool -> Symb.SymbolPath.partial -> t
 
@@ -242,3 +242,5 @@ val of_modeled_path : Symb.SymbolPath.partial -> t
 val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
 
 val is_length_path_of : Symb.SymbolPath.partial -> t -> bool
+
+val has_only_boolean_symbols : t -> bool
