@@ -1,2 +1,1 @@
 codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::danger_via, 2, TEST_ANNOT_REACH, no_bucket, ERROR, []
-codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::death_via, 0, TEST_ANNOT_REACH, no_bucket, ERROR, []

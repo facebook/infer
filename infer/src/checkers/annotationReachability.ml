@@ -495,7 +495,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = AnnotationSpec.t list
 
   let is_sink tenv (spec : AnnotationSpec.t) ~caller_pname ~callee_pname =
-    spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
+    spec.sink_predicate tenv callee_pname
+    && (not (spec.sanitizer_predicate tenv callee_pname))
+    && not (spec.sanitizer_predicate tenv caller_pname)
 
 
   let check_call tenv ~caller_pname ~callee_pname call_site astate specs =
@@ -507,7 +509,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else astate )
 
 
-  let merge_callee_map call_site summary callee_pname tenv specs astate =
+  let merge_callee_map call_site summary ~caller_pname ~callee_pname tenv specs astate =
     match Payload.read ~caller_summary:summary ~callee_pname with
     | None ->
         astate
@@ -516,12 +518,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate
           else
-            let pname = Summary.get_proc_name summary in
-            List.fold
-              ~f:(fun astate (spec : AnnotationSpec.t) ->
-                if spec.sanitizer_predicate tenv pname then astate
-                else Domain.add_call_site annot sink call_site astate )
-              ~init:astate specs
+            (* Add the sink to the current state only if the caller pname is not a sanitizer for
+               that sink. Ideally we would check only the spec that was responsible for adding the
+               sink but it is not obvious how to link back from annot to specs. Instead see if one
+               of the specs thinks that this sink is indeed a sink. *)
+            List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
+                if is_sink tenv spec ~caller_pname ~callee_pname:sink then (
+                  L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n"
+                    spec.description Typ.Procname.pp callee_pname Typ.Procname.pp caller_pname
+                    Typ.Procname.pp sink ;
+                  Domain.add_call_site annot sink call_site astate )
+                else astate )
         in
         Domain.fold
           (fun annot sink_map astate -> Domain.SinkMap.fold (add_call_site annot) sink_map astate)
@@ -533,7 +540,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let caller_pname = Summary.get_proc_name summary in
         let call_site = CallSite.make callee_pname call_loc in
         check_call tenv ~callee_pname ~caller_pname call_site astate extras
-        |> merge_callee_map call_site summary callee_pname tenv extras
+        |> merge_callee_map call_site summary ~callee_pname ~caller_pname tenv extras
     | _ ->
         astate
 

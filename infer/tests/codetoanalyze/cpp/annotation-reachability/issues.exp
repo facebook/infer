@@ -1,5 +1,5 @@
-codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::Destructive::~Destructive, 0, TEST_ANNOT_REACH, no_bucket, ERROR, []
 codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::danger_via, 2, TEST_ANNOT_REACH, no_bucket, ERROR, []
-codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::death_via, 0, TEST_ANNOT_REACH, no_bucket, ERROR, []
 codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::imminent_danger, 0, TEST_ANNOT_REACH, no_bucket, ERROR, []
-codetoanalyze/cpp/annotation-reachability/reachability.cpp, CheckFrom::imminent_death, 0, TEST_ANNOT_REACH, no_bucket, ERROR, []
+codetoanalyze/cpp/annotation-reachability/sources/client.cpp, client::CallLowLevelBad::CallLowLevelBad, 0, API_ACCESS_VIOLATION, no_bucket, ERROR, []
+codetoanalyze/cpp/annotation-reachability/sources/client.cpp, client::CallLowLevelBad::~CallLowLevelBad, 0, API_ACCESS_VIOLATION, no_bucket, ERROR, []
+codetoanalyze/cpp/annotation-reachability/sources/client.cpp, client::call_protected_api_bad, 0, API_ACCESS_VIOLATION, no_bucket, ERROR, []

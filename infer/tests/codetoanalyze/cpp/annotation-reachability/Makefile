@@ -19,13 +19,28 @@ INFER_OPTIONS = --annotation-reachability-only --debug-exceptions --project-root
         }, \
         "symbols": [ "Danger::", "death" ] \
       } \
+    }, \
+    "API_ACCESS_VIOLATION": { \
+      "doc_url": "https://example.com/some_doc.html", \
+      "sources": { \
+        "paths": [ "codetoanalyze/cpp/annotation-reachability/sources/" ] \
+      }, \
+      "sinks": { \
+        "desc": "a disallowed API", \
+        "overrides": { \
+          "symbols": [ \
+            "safewrapper::" \
+          ] \
+        }, \
+        "symbols" : [ "details::" ], \
+        "paths": [ "codetoanalyze/cpp/annotation-reachability/forbidden/" ] \
+      } \
     } \
   }'
 
 INFERPRINT_OPTIONS = --issues-tests
 
-
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(wildcard *.cpp sources/*.cpp forbidden/*.cpp)
 
 include $(TESTS_DIR)/clang.make
 
