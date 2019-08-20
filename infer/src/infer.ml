@@ -43,9 +43,7 @@ let setup () =
              || Config.(
                   continue_capture || infer_is_clang || infer_is_javac || reactive_mode
                   || incremental_analysis) )
-      then (
-        L.progress "Cleaning results directory@." ;
-        ResultsDir.remove_results_dir () ) ;
+      then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if
         CLOpt.is_originator && (not Config.continue_capture)
