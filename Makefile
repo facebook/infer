@@ -21,6 +21,7 @@ endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
+  annotation-reachability-sources-override \
   assembly \
   backtrack_level \
   ck_analytics ck_imports \
@@ -55,6 +56,7 @@ DIRECT_TESTS += \
   c_performance \
   c_purity \
   c_uninit \
+  cpp_annotation-reachability \
   cpp_bufferoverrun \
   cpp_conflicts \
   cpp_errors \
@@ -125,22 +127,23 @@ endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
-	differential_interesting_paths_filter \
+  differential_interesting_paths_filter \
   differential_of_costs_report \
   incremental_analysis_cost_change \
   differential_skip_anonymous_class_renamings \
   differential_skip_duplicated_types_on_filenames \
   differential_skip_duplicated_types_on_filenames_with_renamings \
   gradle \
-	java_test_determinator \
+  java_test_determinator \
   javac \
   resource_leak_exception_lines \
-	racerd_dedup
+  racerd_dedup
 
 #TODO T41549034: Jdk11 translates string append differently, causing
 #test failures in NullPointerExceptions:stringVarEqualsFalseNPE
 
 DIRECT_TESTS += \
+  java_annotreach \
   java_bufferoverrun \
   java_checkers \
   java_classloads \

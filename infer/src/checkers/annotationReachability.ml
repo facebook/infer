@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module MF = MarkupFormatter
 module U = Utils
 
@@ -192,7 +193,8 @@ module AnnotationSpec = struct
   type predicate = Tenv.t -> Typ.Procname.t -> bool
 
   type t =
-    { source_predicate: predicate
+    { description: string  (** for debugging *)
+    ; source_predicate: predicate
     ; sink_predicate: predicate
     ; sanitizer_predicate: predicate
     ; sink_annotation: Annot.t
@@ -208,7 +210,8 @@ module StandardAnnotationSpec = struct
     let snk_annot = annotation_of_str str_snk_annot in
     let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
     let open AnnotationSpec in
-    { source_predicate=
+    { description= "StandardAnnotationSpec"
+    ; source_predicate=
         (fun tenv pname -> List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
     ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
     ; sanitizer_predicate= default_sanitizer
@@ -254,6 +257,12 @@ module CxxAnnotationSpecs = struct
     ^ "()"
 
 
+  let debug_pred ~spec_name ~desc pred pname =
+    L.d_printf "%s: Checking if `%a` is a %s... " spec_name Typ.Procname.pp pname desc ;
+    let r = pred pname in
+    L.d_printf "%b %s.@." r desc ; r
+
+
   let spec_from_config spec_name spec_cfg source_overrides =
     let src = option_name ^ " -> " ^ spec_name in
     let make_pname_pred entry ~src : Typ.Procname.t -> bool =
@@ -263,7 +272,7 @@ module CxxAnnotationSpecs = struct
       let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
       match (symbols, paths) with
       | [], [] ->
-          Logging.(die UserError) "Must specify either `paths` or `symbols` in %s" src
+          L.die UserError "Must specify either `paths` or `symbols` in %s" src
       | _, [] ->
           sym_pred
       | [], _ ->
@@ -290,6 +299,7 @@ module CxxAnnotationSpecs = struct
       | _ ->
           true
     in
+    let src_pred = debug_pred ~spec_name ~desc:"source" src_pred in
     let sinks = U.yojson_lookup spec_cfg "sinks" ~src ~f:U.assoc_of_yojson ~default:[] in
     let sinks_src = src ^ " -> sinks" in
     let snk_name = spec_name ^ "-sink" in
@@ -297,6 +307,7 @@ module CxxAnnotationSpecs = struct
       U.yojson_lookup sinks "desc" ~src:sinks_src ~f:U.string_of_yojson ~default:snk_name
     in
     let snk_pred = make_pname_pred sinks ~src:sinks_src in
+    let snk_pred = debug_pred ~spec_name ~desc:"sink" snk_pred in
     let overrides =
       U.yojson_lookup sinks "overrides" ~src:sinks_src ~f:U.assoc_of_yojson ~default:[]
     in
@@ -304,6 +315,7 @@ module CxxAnnotationSpecs = struct
       if List.is_empty overrides then fun _ -> false
       else make_pname_pred overrides ~src:(sinks_src ^ " -> overrides")
     in
+    let sanitizer_pred = debug_pred ~spec_name ~desc:"sanitizer" sanitizer_pred in
     let call_str = "\n    -> " in
     let report_cxx_annotation_stack src_summary loc trace stack_str snk_pname call_loc =
       let src_pname = Summary.get_proc_name src_summary in
@@ -339,8 +351,8 @@ module CxxAnnotationSpecs = struct
             report_cxx_annotation_stack (CallSite.make proc_name loc) sink_map
         with Caml.Not_found -> ()
     in
-    let open AnnotationSpec in
-    { source_predicate= (fun _ pname -> src_pred pname) (* not used! *)
+    { AnnotationSpec.description= Printf.sprintf "CxxAnnotationSpecs %s from config" spec_name
+    ; source_predicate= (fun _ pname -> src_pred pname) (* not used! *)
     ; sink_predicate= (fun _ pname -> snk_pred pname)
     ; sanitizer_predicate= (fun _ pname -> sanitizer_pred pname)
     ; sink_annotation= snk_annot
@@ -371,7 +383,8 @@ module NoAllocationAnnotationSpec = struct
 
   let spec =
     let open AnnotationSpec in
-    { source_predicate= (fun tenv pname -> method_overrides_annot no_allocation_annot tenv pname)
+    { description= "NoAllocationAnnotationSpec"
+    ; source_predicate= (fun tenv pname -> method_overrides_annot no_allocation_annot tenv pname)
     ; sink_predicate= (fun tenv pname -> is_allocator tenv pname)
     ; sanitizer_predicate=
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
@@ -410,7 +423,8 @@ module ExpensiveAnnotationSpec = struct
 
   let spec =
     let open AnnotationSpec in
-    { source_predicate= is_expensive
+    { description= "ExpensiveAnnotationSpec"
+    ; source_predicate= is_expensive
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
@@ -469,8 +483,7 @@ let get_annot_specs pname =
     | Typ.Procname.ObjC_Cpp _ | Typ.Procname.C _ | Typ.Procname.Block _ ->
         Language.Clang
     | _ ->
-        Logging.(die InternalError)
-          "Cannot find language for proc %s" (Typ.Procname.to_string pname)
+        L.die InternalError "Cannot find language for proc %s" (Typ.Procname.to_string pname)
   in
   List.Assoc.find_exn ~equal:Language.equal annot_specs language
 
@@ -481,14 +494,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = AnnotationSpec.t list
 
-  let check_call tenv callee_pname caller_pname call_site astate specs =
-    List.fold ~init:astate
-      ~f:(fun astate (spec : AnnotationSpec.t) ->
-        if
-          spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
-        then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
+  let is_sink tenv (spec : AnnotationSpec.t) ~caller_pname ~callee_pname =
+    spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
+
+
+  let check_call tenv ~caller_pname ~callee_pname call_site astate specs =
+    List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
+        if is_sink tenv spec ~caller_pname ~callee_pname then (
+          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.description Typ.Procname.pp
+            caller_pname Typ.Procname.pp callee_pname ;
+          Domain.add_call_site spec.sink_annotation callee_pname call_site astate )
         else astate )
-      specs
 
 
   let merge_callee_map call_site summary callee_pname tenv specs astate =
@@ -496,6 +512,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None ->
         astate
     | Some callee_call_map ->
+        L.d_printf "Applying summary for `%a`@\n" Typ.Procname.pp callee_pname ;
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate
           else
@@ -515,7 +532,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Summary.get_proc_name summary in
         let call_site = CallSite.make callee_pname call_loc in
-        check_call tenv callee_pname caller_pname call_site astate extras
+        check_call tenv ~callee_pname ~caller_pname call_site astate extras
         |> merge_callee_map call_site summary callee_pname tenv extras
     | _ ->
         astate
