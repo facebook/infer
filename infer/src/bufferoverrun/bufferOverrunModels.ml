@@ -927,6 +927,15 @@ module Collection = struct
     {exec; check= no_check}
 
 
+  let next iterator =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
+      let traces = Sem.eval integer_type_widths iterator mem |> Dom.Val.get_traces in
+      let locs = eval_collection_internal_array_locs iterator mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
+    in
+    {exec; check= no_check}
+
+
   let addAll coll_id coll_to_add =
     let exec model_env ~ret mem =
       let to_add_length = eval_collection_length coll_to_add mem |> Dom.Val.get_itv in
@@ -1193,6 +1202,7 @@ module Call = struct
       ; +PatternMatch.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
         $--> Collection.putAll
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
+      ; +PatternMatch.implements_iterator &:: "next" <>$ capt_exp $!--> Collection.next
       ; +PatternMatch.implements_list &:: "subList" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> Collection.subList
       ; +PatternMatch.implements_collection
