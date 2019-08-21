@@ -44,11 +44,11 @@ val is_thread_safe_method : Typ.Procname.t -> Tenv.t -> bool
 
 val is_marked_thread_safe : Procdesc.t -> Tenv.t -> bool
 
-val is_safe_access : AccessPath.access -> AccessPath.t -> Tenv.t -> bool
+val is_safe_access : 'a HilExp.Access.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** check if an access to a field is thread-confined, or whether the field is volatile *)
 
 val should_flag_interface_call : Tenv.t -> HilExp.t list -> CallFlags.t -> Typ.Procname.t -> bool
 (** should an interface call be flagged as potentially non-thread safe? *)
 
-val is_synchronized_container : Typ.Procname.t -> AccessPath.t -> Tenv.t -> bool
-(** is a call on an access path to a method of a synchronized container? *)
+val is_synchronized_container : Typ.Procname.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
+(** is a call on an access expression to a method of a synchronized container? *)

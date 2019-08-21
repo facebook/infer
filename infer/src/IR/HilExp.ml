@@ -30,6 +30,9 @@ module Access = struct
         F.pp_print_string fmt "&"
     | Dereference ->
         F.pp_print_string fmt "*"
+
+
+  let is_field_or_array_access = function ArrayAccess _ | FieldAccess _ -> true | _ -> false
 end
 
 (** Module where unsafe construction of [access_expression] is allowed. In the rest of the code, and
@@ -322,6 +325,52 @@ module AccessExpression = struct
         init
     | Sizeof (_, exp_opt) ->
         fold_vars_exp_opt exp_opt ~init ~f
+
+
+  let truncate = function
+    | Base _ ->
+        None
+    | FieldOffset (prefix, fieldname) ->
+        Some (prefix, Access.FieldAccess fieldname)
+    | ArrayOffset (prefix, typ, index) ->
+        Some (prefix, Access.ArrayAccess (typ, index))
+    | AddressOf prefix ->
+        Some (prefix, Access.TakeAddress)
+    | Dereference prefix ->
+        Some (prefix, Access.Dereference)
+
+
+  let to_accesses exp =
+    let rec to_accesses_aux acc = function
+      | Base _ as base ->
+          (base, acc)
+      | FieldOffset (prefix, fieldname) ->
+          to_accesses_aux (Access.FieldAccess fieldname :: acc) prefix
+      | ArrayOffset (prefix, typ, index) ->
+          to_accesses_aux (Access.ArrayAccess (typ, index) :: acc) prefix
+      | AddressOf prefix ->
+          to_accesses_aux (Access.TakeAddress :: acc) prefix
+      | Dereference prefix ->
+          to_accesses_aux (Access.Dereference :: acc) prefix
+    in
+    to_accesses_aux [] exp
+
+
+  let add_access exp = function
+    | Access.FieldAccess fieldname ->
+        Some (field_offset exp fieldname)
+    | Access.ArrayAccess (typ, index) ->
+        Some (array_offset exp typ index)
+    | Access.TakeAddress ->
+        address_of exp
+    | Access.Dereference ->
+        Some (dereference exp)
+
+
+  let append ~onto y =
+    to_accesses y |> snd
+    |> List.fold ~init:(Some onto) ~f:(fun acc access ->
+           match acc with None -> acc | Some exp -> add_access exp access )
 end
 
 let rec get_typ tenv = function

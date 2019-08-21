@@ -353,9 +353,9 @@ let is_marked_thread_safe pdesc tenv =
   is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
 
 
-let is_safe_access access prefix_path tenv =
-  match (access, AccessPath.get_typ prefix_path tenv) with
-  | ( AccessPath.FieldAccess fieldname
+let is_safe_access (access : 'a HilExp.Access.t) prefix_exp tenv =
+  match (access, HilExp.AccessExpression.get_typ prefix_exp tenv) with
+  | ( HilExp.Access.FieldAccess fieldname
     , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
     match Tenv.lookup tenv typename with
     | Some struct_typ ->
@@ -386,11 +386,10 @@ let should_flag_interface_call tenv exps call_flags pname =
   let receiver_is_not_safe exps tenv =
     List.hd exps
     |> Option.bind ~f:(fun exp -> HilExp.get_access_exprs exp |> List.hd)
-    |> Option.map ~f:HilExp.AccessExpression.to_access_path
-    |> Option.map ~f:AccessPath.truncate
+    |> Option.map ~f:HilExp.AccessExpression.truncate
     |> Option.exists ~f:(function
-         | receiver_prefix, Some receiver_field ->
-             not (is_safe_access receiver_field receiver_prefix tenv)
+         | Some (receiver_prefix, receiver_access) ->
+             not (is_safe_access receiver_access receiver_prefix tenv)
          | _ ->
              true )
   in
@@ -404,7 +403,7 @@ let should_flag_interface_call tenv exps call_flags pname =
       call_flags.CallFlags.cf_interface
       && (not (is_java_library java_pname))
       && (not (is_builder_function java_pname))
-      (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
+      (* can't ask anyone to annotate interfaces in library code, and Builders should always be
       thread-safe (would be unreasonable to ask everyone to annotate them) *)
       && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
       && (not (has_return_annot thread_safe_or_thread_confined pname))
@@ -414,7 +413,7 @@ let should_flag_interface_call tenv exps call_flags pname =
       false
 
 
-let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) tenv =
+let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression.t) tenv =
   let is_threadsafe_collection pn tenv =
     match pn with
     | Typ.Procname.Java java_pname ->
@@ -443,13 +442,18 @@ let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) t
       | None ->
           false
     in
-    match List.rev accesses with
-    | AccessPath.FieldAccess base_field :: AccessPath.FieldAccess container_field :: _
+    let open HilExp in
+    match
+      AccessExpression.to_accesses access_exp
+      |> snd
+      |> List.rev_filter ~f:Access.is_field_or_array_access
+    with
+    | Access.FieldAccess base_field :: Access.FieldAccess container_field :: _
       when Typ.Procname.is_java callee_pname ->
         let base_typename = Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class base_field) in
         is_annotated_synchronized base_typename container_field tenv
-    | [AccessPath.FieldAccess container_field] -> (
-      match base_typ.desc with
+    | [Access.FieldAccess container_field] -> (
+      match (AccessExpression.get_base access_exp |> snd).desc with
       | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _) ->
           is_annotated_synchronized base_typename container_field tenv
       | _ ->

@@ -17,6 +17,8 @@ module Access : sig
   [@@deriving compare]
 
   val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
+
+  val is_field_or_array_access : 'a t -> bool
 end
 
 type t =
@@ -60,8 +62,6 @@ module AccessExpression : sig
 
   val to_access_path : access_expression -> AccessPath.t
 
-  val to_access_paths : access_expression list -> AccessPath.t list
-
   val get_base : access_expression -> AccessPath.base
 
   val replace_base :
@@ -74,6 +74,19 @@ module AccessExpression : sig
   val pp : Format.formatter -> access_expression -> unit
 
   val equal : access_expression -> access_expression -> bool
+
+  val to_accesses : access_expression -> access_expression * t option Access.t list
+  (** return the base and a list of accesses equivalent to the input expression *)
+
+  val add_access : access_expression -> t option Access.t -> access_expression option
+
+  val truncate : access_expression -> (access_expression * t option Access.t) option
+  (** remove and return the prefix and the last access of the expression if it's a base;
+      otherwise return None *)
+
+  val append : onto:access_expression -> access_expression -> access_expression option
+  (** [append ~onto y] replaces the base of [y] with [onto] itself; this makes sense if no 
+     [Dereference (AddressOf _)] instances are introduced *)
 
   type nonrec t = access_expression = private
     | Base of AccessPath.base

@@ -6,14 +6,16 @@
  *)
 
 open! IStd
+module AccessExpression = HilExp.AccessExpression
 module F = Format
 
 module Access : sig
   type t =
-    | Read of {path: AccessPath.t}  (** Field or array read *)
-    | Write of {path: AccessPath.t}  (** Field or array write *)
-    | ContainerRead of {path: AccessPath.t; pname: Typ.Procname.t}  (** Read of container object *)
-    | ContainerWrite of {path: AccessPath.t; pname: Typ.Procname.t}
+    | Read of {exp: AccessExpression.t}  (** Field or array read *)
+    | Write of {exp: AccessExpression.t}  (** Field or array write *)
+    | ContainerRead of {exp: AccessExpression.t; pname: Typ.Procname.t}
+        (** Read of container object *)
+    | ContainerWrite of {exp: AccessExpression.t; pname: Typ.Procname.t}
         (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)
@@ -21,7 +23,7 @@ module Access : sig
 
   include ExplicitTrace.Element with type t := t
 
-  val get_access_path : t -> AccessPath.t option
+  val get_access_exp : t -> AccessExpression.t option
 end
 
 module TraceElem : sig
@@ -32,11 +34,12 @@ module TraceElem : sig
 
   val is_container_write : t -> bool
 
-  val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
+  val map : f:(AccessExpression.t -> AccessExpression.t) -> t -> t
 
-  val make_container_access : AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
+  val make_container_access :
+    AccessExpression.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
 
-  val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> t
+  val make_field_access : AccessExpression.t -> is_write:bool -> Location.t -> t
 end
 
 (** Overapproximation of number of locks that are currently held *)
@@ -143,15 +146,15 @@ module OwnershipDomain : sig
 
   val empty : t
 
-  val add : AccessPath.t -> OwnershipAbstractValue.t -> t -> t
+  val add : AccessExpression.t -> OwnershipAbstractValue.t -> t -> t
 
-  val get_owned : AccessPath.t -> t -> OwnershipAbstractValue.t
+  val get_owned : AccessExpression.t -> t -> OwnershipAbstractValue.t
 
-  val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
+  val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
 
-  val propagate_return : AccessPath.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
+  val propagate_return : AccessExpression.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
 
-  val get_precondition : AccessPath.t -> t -> AccessSnapshot.OwnershipPrecondition.t
+  val get_precondition : AccessExpression.t -> t -> AccessSnapshot.OwnershipPrecondition.t
 end
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
@@ -180,18 +183,18 @@ end
 module AttributeMapDomain : sig
   type t
 
-  val find : AccessPath.t -> t -> AttributeSetDomain.t
+  val find : AccessExpression.t -> t -> AttributeSetDomain.t
 
-  val add : AccessPath.t -> AttributeSetDomain.t -> t -> t
+  val add : AccessExpression.t -> AttributeSetDomain.t -> t -> t
 
-  val has_attribute : AccessPath.t -> Attribute.t -> t -> bool
+  val has_attribute : AccessExpression.t -> Attribute.t -> t -> bool
 
-  val get_choices : AccessPath.t -> t -> Choice.t list
+  val get_choices : AccessExpression.t -> t -> Choice.t list
   (** get the choice attributes associated with the given access path *)
 
-  val add_attribute : AccessPath.t -> Attribute.t -> t -> t
+  val add_attribute : AccessExpression.t -> Attribute.t -> t -> t
 
-  val propagate_assignment : AccessPath.t -> HilExp.t -> t -> t
+  val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
 end
 
