@@ -172,7 +172,11 @@ let main ~changed_files =
     Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
     L.progress "Done@." )
   else if Config.incremental_analysis then
-    Option.iter ~f:invalidate_changed_procedures changed_files
+    match changed_files with
+    | Some cf ->
+        invalidate_changed_procedures cf
+    | None ->
+        L.die InternalError "Incremental analysis enabled without specifying changed files"
   else DB.Results_dir.clean_specs_dir () ;
   let source_files = get_source_files_to_analyze ~changed_files in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
