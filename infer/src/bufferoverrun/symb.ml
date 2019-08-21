@@ -163,6 +163,12 @@ module SymbolPath = struct
         pp_partial fmt p
     | Offset {p; is_void} ->
         F.fprintf fmt "%a.offset%a" pp_partial p pp_is_void is_void
+    | Length {p= Field {fn; prefix= p}; is_void}
+      when BufferOverrunField.is_java_collection_internal_array fn ->
+        F.fprintf fmt "%a.length%a" pp_partial p pp_is_void is_void
+    | Length {p= StarField {last_field= fn; prefix= p}; is_void}
+      when BufferOverrunField.is_java_collection_internal_array fn ->
+        F.fprintf fmt "%a.length%a" (pp_star ~paren:false) p pp_is_void is_void
     | Length {p; is_void} ->
         F.fprintf fmt "%a.length%a" pp_partial p pp_is_void is_void
 
