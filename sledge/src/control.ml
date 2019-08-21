@@ -255,7 +255,7 @@ let exec_jump ?temps stk state block ({dst; args} as jmp : Llair.jump) =
 
 let summary_table = Hashtbl.create (module Var)
 
-let exec_call ~opts stk state block ({dst; args; retreating} : Llair.jump)
+let exec_call opts stk state block ({dst; args; retreating} : Llair.jump)
     (return : Llair.jump) throw globals =
   [%Trace.call fun {pf} ->
     pf "%a from %a" Var.pp dst.parent.name.var Var.pp
@@ -388,13 +388,8 @@ let exec_skip_func :
   exec_jump stk state block return
 
 let exec_term :
-       opts:exec_opts
-    -> Llair.t
-    -> Stack.t
-    -> Domain.t
-    -> Llair.block
-    -> Work.x =
- fun ~opts pgm stk state block ->
+    exec_opts -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
+ fun opts pgm stk state block ->
   [%Trace.info "exec %a" Llair.Term.pp block.term] ;
   match block.term with
   | Switch {key; tbl; els} ->
@@ -445,7 +440,7 @@ let exec_term :
             | None when Llair.Func.is_undefined callee ->
                 exec_skip_func stk state block return
             | None ->
-                exec_call ~opts stk state block
+                exec_call opts stk state block
                   {dst= callee.entry; args; retreating}
                   return throw pgm.globals )
             |> Work.seq x ) )
@@ -461,22 +456,17 @@ let exec_inst :
   |> Result.map_error ~f:(fun () -> (state, inst))
 
 let exec_block :
-       opts:exec_opts
-    -> Llair.t
-    -> Stack.t
-    -> Domain.t
-    -> Llair.block
-    -> Work.x =
- fun ~opts pgm stk state block ->
+    exec_opts -> Llair.t -> Stack.t -> Domain.t -> Llair.block -> Work.x =
+ fun opts pgm stk state block ->
   [%Trace.info "exec %a" Llair.Block.pp block] ;
   match Vector.fold_result ~f:exec_inst ~init:state block.cmnd with
-  | Ok state -> exec_term ~opts pgm stk state block
+  | Ok state -> exec_term opts pgm stk state block
   | Error (state, inst) ->
       Report.invalid_access_inst (Domain.project state) inst ;
       Work.skip
 
-let harness : opts:exec_opts -> Llair.t -> (int -> Work.t) option =
- fun ~opts pgm ->
+let harness : exec_opts -> Llair.t -> (int -> Work.t) option =
+ fun opts pgm ->
   let entry_points = Config.find_list "entry-points" in
   List.find_map entry_points ~f:(fun name ->
       Llair.Func.find pgm.functions (Var.program name) )
@@ -494,8 +484,8 @@ let exec_pgm : exec_opts -> Llair.t -> unit =
  fun opts pgm ->
   [%Trace.call fun {pf} -> pf "@]@,@["]
   ;
-  ( match harness ~opts pgm with
-  | Some work -> Work.run ~f:(exec_block ~opts pgm) (work opts.bound)
+  ( match harness opts pgm with
+  | Some work -> Work.run ~f:(exec_block opts pgm) (work opts.bound)
   | None -> fail "no applicable harness" () )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
