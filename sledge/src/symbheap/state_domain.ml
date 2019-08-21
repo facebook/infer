@@ -82,7 +82,7 @@ let jump actuals formals ?temps q =
   ;
   let q', freshen_locals = Sh.freshen q ~wrt:(Var.Set.of_list formals) in
   let and_eq q formal actual =
-    let actual' = Exp.rename actual freshen_locals in
+    let actual' = Exp.rename freshen_locals actual in
     Sh.and_ (Exp.eq (Exp.var formal) actual') q
   in
   let and_eqs formals actuals q =
@@ -108,7 +108,7 @@ let call ~summaries actuals formals locals globals q =
   let wrt = Set.add_list formals locals in
   let q', freshen_locals = Sh.freshen q ~wrt in
   let and_eq q formal actual =
-    let actual' = Exp.rename actual freshen_locals in
+    let actual' = Exp.rename freshen_locals actual in
     Sh.and_ (Exp.eq (Exp.var formal) actual') q
   in
   let and_eqs formals actuals q =
@@ -190,7 +190,7 @@ let create_summary ~locals ~formals ~entry ~current =
   let restore_formals q =
     Set.fold formals ~init:q ~f:(fun q var ->
         let var = Exp.var var in
-        let renamed_var = Exp.rename var subst in
+        let renamed_var = Exp.rename subst var in
         Sh.and_ (Exp.eq renamed_var var) q )
   in
   (* Add back the original formals name *)

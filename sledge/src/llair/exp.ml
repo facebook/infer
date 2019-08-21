@@ -1326,13 +1326,13 @@ let map e ~f =
   in
   fix map_ (fun e -> e) e
 
-let rename e sub =
-  let rec rename_ e sub =
+let rename sub e =
+  let rec rename_ sub e =
     match e with
     | Var _ -> Var.Subst.apply sub e
-    | _ -> map ~f:(fun f -> rename_ f sub) e
+    | _ -> map ~f:(rename_ sub) e
   in
-  rename_ e sub |> check (invariant ~partial:true)
+  rename_ sub e |> check (invariant ~partial:true)
 
 (** Query *)
 

@@ -208,7 +208,7 @@ val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
-val rename : t -> Var.Subst.t -> t
+val rename : Var.Subst.t -> t -> t
 
 (** Query *)
 

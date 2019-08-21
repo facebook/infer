@@ -285,7 +285,7 @@ let map_exps ({sat= _; rep} as r) ~f =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let rename r sub = map_exps r ~f:(fun e -> Exp.rename e sub)
+let rename r sub = map_exps r ~f:(Exp.rename sub)
 
 let fold_exps r ~init ~f =
   Map.fold r.rep ~f:(fun ~key ~data z -> f (f z data) key) ~init

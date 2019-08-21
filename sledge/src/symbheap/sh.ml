@@ -186,11 +186,11 @@ let rec simplify {us; xs; cong; pure; heap; djns} =
 (** Quantification and Vocabulary *)
 
 let rename_seg sub ({loc; bas; len; siz; arr} as h) =
-  let loc = Exp.rename loc sub in
-  let bas = Exp.rename bas sub in
-  let len = Exp.rename len sub in
-  let siz = Exp.rename siz sub in
-  let arr = Exp.rename arr sub in
+  let loc = Exp.rename sub loc in
+  let bas = Exp.rename sub bas in
+  let len = Exp.rename sub len in
+  let siz = Exp.rename sub siz in
+  let arr = Exp.rename sub arr in
   ( if
     loc == h.loc && bas == h.bas && len == h.len && siz == h.siz
     && arr == h.arr
@@ -203,9 +203,7 @@ let rename_seg sub ({loc; bas; len; siz; arr} as h) =
     invariant *)
 let rec apply_subst sub ({us= _; xs= _; cong; pure; heap; djns} as q) =
   let cong = Equality.rename cong sub in
-  let pure =
-    List.map_preserving_phys_equal pure ~f:(fun b -> Exp.rename b sub)
-  in
+  let pure = List.map_preserving_phys_equal pure ~f:(Exp.rename sub) in
   let heap = List.map_preserving_phys_equal heap ~f:(rename_seg sub) in
   let djns =
     List.map_preserving_phys_equal djns ~f:(fun d ->
