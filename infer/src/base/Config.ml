@@ -18,6 +18,32 @@ module L = Die
 
 type analyzer = Checkers | Linters [@@deriving compare]
 
+type checkers =
+  { annotation_reachability: bool ref
+  ; biabduction: bool ref
+  ; bufferoverrun: bool ref
+  ; class_loads: bool ref
+  ; cost: bool ref
+  ; eradicate: bool ref
+  ; fragment_retains_view: bool ref
+  ; immutable_cast: bool ref
+  ; inefficient_keyset_iterator: bool ref
+  ; linters: bool ref
+  ; litho: bool ref
+  ; liveness: bool ref
+  ; loop_hoisting: bool ref
+  ; nullsafe: bool ref
+  ; printf_args: bool ref
+  ; pulse: bool ref
+  ; purity: bool ref
+  ; quandary: bool ref
+  ; quandaryBO: bool ref
+  ; racerd: bool ref
+  ; resource_leak: bool ref
+  ; siof: bool ref
+  ; starvation: bool ref
+  ; uninit: bool ref }
+
 let equal_analyzer = [%compare.equal: analyzer]
 
 let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
@@ -637,30 +663,30 @@ and analyzer =
      instance, to enable only the biabduction analysis, run with $(b,--biabduction-only)."
 
 
-and ( annotation_reachability
-    , biabduction
-    , bufferoverrun
-    , class_loads
-    , cost
-    , eradicate
-    , fragment_retains_view
-    , immutable_cast
-    , inefficient_keyset_iterator
-    , linters
-    , litho
-    , liveness
-    , loop_hoisting
-    , nullsafe
-    , printf_args
-    , pulse
-    , purity
-    , quandary
-    , quandaryBO
-    , racerd
-    , resource_leak
-    , siof
-    , starvation
-    , uninit ) =
+and { annotation_reachability
+    ; biabduction
+    ; bufferoverrun
+    ; class_loads
+    ; cost
+    ; eradicate
+    ; fragment_retains_view
+    ; immutable_cast
+    ; inefficient_keyset_iterator
+    ; linters
+    ; litho
+    ; liveness
+    ; loop_hoisting
+    ; nullsafe
+    ; printf_args
+    ; pulse
+    ; purity
+    ; quandary
+    ; quandaryBO
+    ; racerd
+    ; resource_leak
+    ; siof
+    ; starvation
+    ; uninit } =
   let mk_checker ?(default = false) ?(deprecated = []) ~long doc =
     let var =
       CLOpt.mk_bool ~long
@@ -759,30 +785,30 @@ and ( annotation_reachability
       [] (* do all the work in ~f *) []
     (* do all the work in ~f *)
   in
-  ( annotation_reachability
-  , biabduction
-  , bufferoverrun
-  , class_loads
-  , cost
-  , eradicate
-  , fragment_retains_view
-  , immutable_cast
-  , inefficient_keyset_iterator
-  , linters
-  , litho
-  , liveness
-  , loop_hoisting
-  , nullsafe
-  , printf_args
-  , pulse
-  , purity
-  , quandary
-  , quandaryBO
-  , racerd
-  , resource_leak
-  , siof
-  , starvation
-  , uninit )
+  { annotation_reachability
+  ; biabduction
+  ; bufferoverrun
+  ; class_loads
+  ; cost
+  ; eradicate
+  ; fragment_retains_view
+  ; immutable_cast
+  ; inefficient_keyset_iterator
+  ; linters
+  ; litho
+  ; liveness
+  ; loop_hoisting
+  ; nullsafe
+  ; printf_args
+  ; pulse
+  ; purity
+  ; quandary
+  ; quandaryBO
+  ; racerd
+  ; resource_leak
+  ; siof
+  ; starvation
+  ; uninit }
 
 
 and annotation_reachability_cxx =
