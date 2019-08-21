@@ -9,6 +9,9 @@ open! IStd
 module AccessExpression = HilExp.AccessExpression
 module F = Format
 
+val pp_exp : F.formatter -> AccessExpression.t -> unit
+(** language sensitive pretty-printer *)
+
 module Access : sig
   type t =
     | Read of {exp: AccessExpression.t}  (** Field or array read *)

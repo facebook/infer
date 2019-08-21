@@ -91,5 +91,8 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
           true
     in
     List.iter
-      ~f:(fun {language; callback} -> if language_matches language then callback environment)
+      ~f:(fun {language; callback} ->
+        if language_matches language then (
+          Language.curr_language := language ;
+          callback environment ) )
       !cluster_callbacks

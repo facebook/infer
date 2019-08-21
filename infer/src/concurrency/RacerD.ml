@@ -676,15 +676,15 @@ let get_reporting_explanation report_kind tenv pname thread =
 
 let pp_container_access fmt (access_exp, access_pname) =
   F.fprintf fmt "container %a via call to %s"
-    (MF.wrap_monospaced AccessPath.pp)
-    (AccessExpression.to_access_path access_exp)
+    (MF.wrap_monospaced RacerDDomain.pp_exp)
+    access_exp
     (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
 
 
 let pp_access fmt (t : RacerDDomain.TraceElem.t) =
   match t.elem with
   | Read {exp} | Write {exp} ->
-      (MF.wrap_monospaced AccessPath.pp) fmt (AccessExpression.to_access_path exp)
+      (MF.wrap_monospaced RacerDDomain.pp_exp) fmt exp
   | ContainerRead {exp; pname} | ContainerWrite {exp; pname} ->
       pp_container_access fmt (exp, pname)
   | InterfaceCall _ as access ->

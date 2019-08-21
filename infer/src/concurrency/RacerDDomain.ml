@@ -21,6 +21,14 @@ let should_skip_var v =
   || match v with Var.ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
 
 
+let pp_exp fmt exp =
+  match !Language.curr_language with
+  | Clang ->
+      AccessExpression.pp fmt exp
+  | Java ->
+      AccessPath.pp fmt (AccessExpression.to_access_path exp)
+
+
 module Access = struct
   type t =
     | Read of {exp: AccessExpression.t}
@@ -88,18 +96,16 @@ module Access = struct
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
 
 
+  let mono_lang_pp = MF.wrap_monospaced pp_exp
+
   let pp_human fmt = function
     | Read {exp} | Write {exp} ->
-        F.fprintf fmt "access to `%a`" AccessPath.pp (AccessExpression.to_access_path exp)
+        F.fprintf fmt "access to %a" mono_lang_pp exp
     | ContainerRead {exp; pname} ->
-        F.fprintf fmt "Read of container %a via call to %s"
-          (MF.wrap_monospaced AccessPath.pp)
-          (AccessExpression.to_access_path exp)
+        F.fprintf fmt "Read of container %a via call to %s" mono_lang_pp exp
           (MF.monospaced_to_string (Typ.Procname.get_method pname))
     | ContainerWrite {exp; pname} ->
-        F.fprintf fmt "Write to container %a via call to %s"
-          (MF.wrap_monospaced AccessPath.pp)
-          (AccessExpression.to_access_path exp)
+        F.fprintf fmt "Write to container %a via call to %s" mono_lang_pp exp
           (MF.monospaced_to_string (Typ.Procname.get_method pname))
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
