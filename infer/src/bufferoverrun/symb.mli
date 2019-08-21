@@ -25,7 +25,7 @@ module SymbolPath : sig
   type partial = private
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
-    | Field of Typ.Fieldname.t * partial
+    | Field of {fn: Typ.Fieldname.t; prefix: partial}
     | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
     | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         (**

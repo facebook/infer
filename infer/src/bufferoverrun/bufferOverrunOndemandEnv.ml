@@ -51,7 +51,7 @@ let mk pdesc =
                 L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
           | _ ->
               L.(die InternalError) "Untyped expression is given." ) )
-      | SPath.Field (fn, x) -> (
+      | SPath.Field {fn; prefix= x} -> (
         match BufferOverrunField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
@@ -70,7 +70,7 @@ let mk pdesc =
     let rec may_last_field = function
       | SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _ ->
           true
-      | SPath.Field (fn, x) | SPath.StarField {last_field= fn; prefix= x} ->
+      | SPath.Field {fn; prefix= x} | SPath.StarField {last_field= fn; prefix= x} ->
           may_last_field x
           && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
                  match parent_typ.Typ.desc with

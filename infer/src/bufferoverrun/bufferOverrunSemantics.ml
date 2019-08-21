@@ -415,7 +415,7 @@ and eval_locpath ~mode params p mem =
     | Symb.SymbolPath.Deref (_, p) ->
         let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
-    | Symb.SymbolPath.Field (fn, p) ->
+    | Symb.SymbolPath.Field {fn; prefix= p} ->
         let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs
     | Symb.SymbolPath.StarField {last_field= fn; prefix} ->

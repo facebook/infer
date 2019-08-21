@@ -132,7 +132,7 @@ module Loc = struct
         type t =
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of t * Typ.Fieldname.t
+          | Field of {prefix: t; fn: Typ.Fieldname.t}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 
@@ -143,14 +143,14 @@ module Loc = struct
         let append_field l0 ~fn =
           let rec aux = function
             | Var _ | Allocsite _ ->
-                Field (l0, fn)
+                Field {prefix= l0; fn}
             | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
                 l
             | StarField {prefix} ->
                 StarField {prefix; last_field= fn}
-            | Field (_, fn') when Typ.Fieldname.equal fn fn' ->
+            | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
                 StarField {prefix= l0; last_field= fn}
-            | Field (l, _) ->
+            | Field {prefix= l} ->
                 aux l
           in
           aux l0
@@ -164,7 +164,7 @@ module Loc = struct
                 l
             | StarField {prefix} ->
                 StarField {prefix; last_field= fn}
-            | Field (l, _) ->
+            | Field {prefix= l} ->
                 aux l
           in
           aux l0
@@ -173,7 +173,7 @@ module Loc = struct
         type t = private
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of t * Typ.Fieldname.t
+          | Field of {prefix: t; fn: Typ.Fieldname.t}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 
@@ -199,7 +199,7 @@ module Loc = struct
         false
     | Allocsite a ->
         Allocsite.is_unknown a
-    | Field (x, _) | StarField {prefix= x} ->
+    | Field {prefix= x} | StarField {prefix= x} ->
         is_unknown x
 
 
@@ -215,17 +215,19 @@ module Loc = struct
     | Allocsite a ->
         Allocsite.pp_paren ~paren fmt a
     | Field
-        ( Allocsite
-            (Allocsite.Symbol (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))
-        , f )
+        { prefix=
+            Allocsite
+              (Allocsite.Symbol (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))
+        ; fn= f }
     | Field
-        ( Allocsite
-            (Allocsite.Known
-              {path= Some (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))})
-        , f ) ->
+        { prefix=
+            Allocsite
+              (Allocsite.Known
+                {path= Some (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))})
+        ; fn= f } ->
         BufferOverrunField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true)
           ~pp_lhs_alone:(SP.pp_pointer ~paren) ~sep:"->" fmt p f
-    | Field (l, f) ->
+    | Field {prefix= l; fn= f} ->
         BufferOverrunField.pp ~pp_lhs:(pp_paren ~paren:true) ~pp_lhs_alone:(pp_paren ~paren)
           ~sep:"." fmt l f
     | StarField {prefix; last_field} ->
@@ -242,14 +244,14 @@ module Loc = struct
   let is_var = function Var _ -> true | _ -> false
 
   let is_c_strlen = function
-    | Field (_, fn) ->
+    | Field {fn} ->
         Typ.Fieldname.equal fn (BufferOverrunField.c_strlen ())
     | _ ->
         false
 
 
   let is_java_collection_internal_array = function
-    | Field (_, fn) ->
+    | Field {fn} ->
         Typ.Fieldname.equal fn BufferOverrunField.java_collection_internal_array
     | _ ->
         false
@@ -260,7 +262,7 @@ module Loc = struct
         true
     | Allocsite a ->
         Allocsite.is_pretty a
-    | Field (loc, _) | StarField {prefix= loc} ->
+    | Field {prefix= loc} | StarField {prefix= loc} ->
         is_pretty loc
 
 
@@ -276,7 +278,7 @@ module Loc = struct
         of_pvar pvar
     | Symb.SymbolPath.Deref _ | Symb.SymbolPath.Callsite _ ->
         of_allocsite (Allocsite.make_symbol path)
-    | Symb.SymbolPath.Field (fn, path) ->
+    | Symb.SymbolPath.Field {fn; prefix= path} ->
         append_field (of_path path) ~fn
     | Symb.SymbolPath.StarField {last_field= fn; prefix} ->
         append_star_field (of_path prefix) ~fn
@@ -290,13 +292,13 @@ module Loc = struct
 
 
   let is_field_of ~loc ~field_loc =
-    match field_loc with Field (l, _) | StarField {prefix= l} -> equal loc l | _ -> false
+    match field_loc with Field {prefix= l} | StarField {prefix= l} -> equal loc l | _ -> false
 
 
   let is_literal_string = function Allocsite a -> Allocsite.is_literal_string a | _ -> None
 
   let is_literal_string_strlen = function
-    | Field (l, fn) when Typ.Fieldname.equal (BufferOverrunField.c_strlen ()) fn ->
+    | Field {prefix= l; fn} when Typ.Fieldname.equal (BufferOverrunField.c_strlen ()) fn ->
         is_literal_string l
     | _ ->
         None
@@ -307,7 +309,7 @@ module Loc = struct
         Pvar.is_global pvar
     | Var (Var.LogicalVar _) | Allocsite _ ->
         false
-    | Field (loc, _) | StarField {prefix= loc} ->
+    | Field {prefix= loc} | StarField {prefix= loc} ->
         is_global loc
 
 
@@ -318,7 +320,7 @@ module Loc = struct
         Some (Symb.SymbolPath.of_pvar pvar)
     | Allocsite allocsite ->
         Allocsite.get_path allocsite
-    | Field (l, fn) ->
+    | Field {prefix= l; fn} ->
         Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
     | StarField {prefix; last_field} ->
         get_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
@@ -329,7 +331,7 @@ module Loc = struct
         None
     | Allocsite allocsite ->
         Allocsite.get_param_path allocsite
-    | Field (l, fn) ->
+    | Field {prefix= l; fn} ->
         Option.map (get_param_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
     | StarField {prefix; last_field} ->
         get_param_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
@@ -342,7 +344,7 @@ module Loc = struct
         Allocsite.represents_multiple_values allocsite
     | Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
         false
-    | Field (l, _) ->
+    | Field {prefix= l} ->
         represents_multiple_values l
     | StarField _ ->
         true
@@ -355,7 +357,7 @@ module Loc = struct
         f pvar
     | Allocsite allocsite ->
         Allocsite.exists_pvar ~f allocsite
-    | Field (l, _) | StarField {prefix= l} ->
+    | Field {prefix= l} | StarField {prefix= l} ->
         exists_pvar ~f l
 
 

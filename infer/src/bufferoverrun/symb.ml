@@ -32,7 +32,7 @@ module SymbolPath = struct
         type partial =
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of Typ.Fieldname.t * partial
+          | Field of {fn: Typ.Fieldname.t; prefix: partial}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
@@ -47,7 +47,7 @@ module SymbolPath = struct
           let rec aux = function
             | Pvar _ | Callsite _ ->
                 StarField {last_field= fn; prefix= p0}
-            | Deref (_, p) | Field (_, p) ->
+            | Deref (_, p) | Field {prefix= p} ->
                 aux p
             | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
                 p
@@ -60,10 +60,10 @@ module SymbolPath = struct
         let field p0 fn =
           let rec aux = function
             | Pvar _ | Callsite _ ->
-                Field (fn, p0)
-            | Field (fn', _) when Typ.Fieldname.equal fn fn' ->
+                Field {fn; prefix= p0}
+            | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
                 StarField {last_field= fn; prefix= p0}
-            | Field (_, p) | Deref (_, p) ->
+            | Field {prefix= p} | Deref (_, p) ->
                 aux p
             | StarField {last_field} as p when Typ.Fieldname.equal fn last_field ->
                 p
@@ -76,7 +76,7 @@ module SymbolPath = struct
         type partial = private
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of Typ.Fieldname.t * partial
+          | Field of {fn: Typ.Fieldname.t; prefix: partial}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
@@ -116,7 +116,7 @@ module SymbolPath = struct
   let rec get_pvar = function
     | Pvar pvar ->
         Some pvar
-    | Deref (_, partial) | Field (_, partial) | StarField {prefix= partial} ->
+    | Deref (_, partial) | Field {prefix= partial} | StarField {prefix= partial} ->
         get_pvar partial
     | Callsite _ ->
         None
@@ -131,10 +131,10 @@ module SymbolPath = struct
         F.fprintf fmt "%a[*]" (pp_partial_paren ~paren:true) p
     | Deref ((Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer), p) ->
         pp_pointer ~paren fmt p
-    | Field (fn, Deref ((Deref_COneValuePointer | Deref_CPointer), p)) ->
+    | Field {fn; prefix= Deref ((Deref_COneValuePointer | Deref_CPointer), p)} ->
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
           ~pp_lhs_alone:(pp_pointer ~paren) ~sep:"->" fmt p fn
-    | Field (fn, p) ->
+    | Field {fn; prefix= p} ->
         BufferOverrunField.pp ~pp_lhs:(pp_partial_paren ~paren:true)
           ~pp_lhs_alone:(pp_partial_paren ~paren) ~sep:"." fmt p fn
     | Callsite {cs} ->
@@ -178,7 +178,7 @@ module SymbolPath = struct
     | Deref (Deref_CPointer, p)
     (* Deref_CPointer is unsound here but avoids many FPs for non-array pointers *)
     | Deref ((Deref_COneValuePointer | Deref_JavaPointer), p)
-    | Field (_, p) ->
+    | Field {prefix= p} ->
         represents_multiple_values p
 
 
@@ -189,7 +189,7 @@ module SymbolPath = struct
         false
     | Deref ((Deref_ArrayIndex | Deref_CPointer), _) ->
         true
-    | Deref ((Deref_COneValuePointer | Deref_JavaPointer), p) | Field (_, p) ->
+    | Deref ((Deref_COneValuePointer | Deref_JavaPointer), p) | Field {prefix= p} ->
         represents_multiple_values_sound p
 
 
@@ -198,14 +198,14 @@ module SymbolPath = struct
         true
     | Pvar _ ->
         false
-    | Deref (_, p) | Field (_, p) | StarField {prefix= p} ->
+    | Deref (_, p) | Field {prefix= p} | StarField {prefix= p} ->
         represents_callsite_sound_partial p
 
 
   let rec exists_pvar_partial ~f = function
     | Pvar pvar ->
         f pvar
-    | Deref (_, p) | Field (_, p) | StarField {prefix= p} ->
+    | Deref (_, p) | Field {prefix= p} | StarField {prefix= p} ->
         exists_pvar_partial ~f p
     | Callsite _ ->
         false
@@ -216,7 +216,7 @@ module SymbolPath = struct
         f (Pvar.to_string pvar)
     | Deref (_, x) ->
         exists_str_partial ~f x
-    | Field (fld, x) | StarField {last_field= fld; prefix= x} ->
+    | Field {fn= fld; prefix= x} | StarField {last_field= fld; prefix= x} ->
         f (Typ.Fieldname.to_string fld) || exists_str_partial ~f x
     | Callsite _ ->
         false
@@ -235,7 +235,7 @@ module SymbolPath = struct
 
 
   let is_cpp_vector_elem = function
-    | Field (fn, _) ->
+    | Field {fn} ->
         BufferOverrunField.is_cpp_vector_elem fn
     | _ ->
         false
