@@ -161,6 +161,8 @@ let invalidate_changed_procedures changed_files =
   L.progress
     "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were invalidated @."
     total_nodes invalidated_nodes ;
+  ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
+  ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
   (* save some memory *)
   CallGraph.reset reverse_callgraph
 
