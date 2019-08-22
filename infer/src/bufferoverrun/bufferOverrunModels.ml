@@ -575,79 +575,6 @@ let array_empty_exec ret_id array_v mem =
   model_by_value empty ret_id mem
 
 
-module StdBasicString = struct
-  (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr tgt src len =
-    let {exec= malloc_exec; check= malloc_check} = malloc ~can_be_zero:true len in
-    let exec model_env ~ret:((ret_id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
-      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
-      let mem = Dom.Mem.update_mem (Sem.eval_locs tgt mem) v mem in
-      let contents =
-        let src_locs = Sem.eval_locs src mem in
-        Dom.Mem.find_set src_locs mem
-      in
-      Dom.Mem.update_mem (Dom.Val.get_all_locs v) contents mem
-    in
-    let check ({location; integer_type_widths} as model_env) mem cond_set =
-      let cond_set = malloc_check model_env mem cond_set in
-      BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
-        mem location cond_set
-    in
-    {exec; check}
-
-
-  (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr_without_len tgt src =
-    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
-      match src with
-      | Exp.Const (Const.Cstr s) ->
-          let locs = Sem.eval_locs tgt mem in
-          BoUtils.Exec.decl_string model_env ~do_alloc:true locs s mem
-      | _ ->
-          let tgt_locs = Sem.eval_locs tgt mem in
-          let v = Sem.eval integer_type_widths src mem in
-          Dom.Mem.update_mem tgt_locs v mem
-    in
-    {exec; check= no_check}
-
-
-  (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let copy_constructor tgt src =
-    let exec _ ~ret:_ mem =
-      let tgt_locs = Sem.eval_locs tgt mem in
-      let v = Dom.Mem.find_set (Sem.eval_locs src mem) mem in
-      Dom.Mem.update_mem tgt_locs v mem
-    in
-    {exec; check= no_check}
-
-
-  let empty e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let array_v = Sem.eval integer_type_widths e mem in
-      let mem = array_empty_exec ret_id array_v mem in
-      match e with
-      | Exp.Var id -> (
-        match Dom.Mem.find_simple_alias id mem with
-        | Some (l, None) ->
-            Dom.Mem.load_empty_alias ret_id l mem
-        | _ ->
-            mem )
-      | _ ->
-          mem
-    in
-    {exec; check= no_check}
-
-
-  let length e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
-      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
-    in
-    {exec; check= no_check}
-end
-
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
     Loc.append_field loc ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
@@ -773,6 +700,79 @@ module StdVector = struct
           Dom.Mem.load_size_alias id loc mem
       | IContainer.Empty | IContainer.More ->
           mem
+    in
+    {exec; check= no_check}
+end
+
+module StdBasicString = struct
+  (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let constructor_from_char_ptr tgt src len =
+    let {exec= malloc_exec; check= malloc_check} = malloc ~can_be_zero:true len in
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      let mem = malloc_exec model_env ~ret mem in
+      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
+      let mem = Dom.Mem.update_mem (Sem.eval_locs tgt mem) v mem in
+      let contents =
+        let src_locs = Sem.eval_locs src mem in
+        Dom.Mem.find_set src_locs mem
+      in
+      Dom.Mem.update_mem (Dom.Val.get_all_locs v) contents mem
+    in
+    let check ({location; integer_type_widths} as model_env) mem cond_set =
+      let cond_set = malloc_check model_env mem cond_set in
+      BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
+        mem location cond_set
+    in
+    {exec; check}
+
+
+  (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let constructor_from_char_ptr_without_len tgt src =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
+      match src with
+      | Exp.Const (Const.Cstr s) ->
+          let locs = Sem.eval_locs tgt mem in
+          BoUtils.Exec.decl_string model_env ~do_alloc:true locs s mem
+      | _ ->
+          let tgt_locs = Sem.eval_locs tgt mem in
+          let v = Sem.eval integer_type_widths src mem in
+          Dom.Mem.update_mem tgt_locs v mem
+    in
+    {exec; check= no_check}
+
+
+  (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let copy_constructor tgt src =
+    let exec _ ~ret:_ mem =
+      let tgt_locs = Sem.eval_locs tgt mem in
+      let v = Dom.Mem.find_set (Sem.eval_locs src mem) mem in
+      Dom.Mem.update_mem tgt_locs v mem
+    in
+    {exec; check= no_check}
+
+
+  let empty e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let array_v = Sem.eval integer_type_widths e mem in
+      let mem = array_empty_exec ret_id array_v mem in
+      match e with
+      | Exp.Var id -> (
+        match Dom.Mem.find_simple_alias id mem with
+        | Some (l, None) ->
+            Dom.Mem.load_empty_alias ret_id l mem
+        | _ ->
+            mem )
+      | _ ->
+          mem
+    in
+    {exec; check= no_check}
+
+
+  let length e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval_arr integer_type_widths e mem in
+      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
+      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
     in
     {exec; check= no_check}
 end
