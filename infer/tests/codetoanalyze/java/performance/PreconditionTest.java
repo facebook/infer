@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 class PreconditionTest {
   // should be constant
-  public void constant_FP(ArrayList<Integer> list) {
+  public void constant(ArrayList<Integer> list) {
     Preconditions.checkArgument(list.size() == 2);
     for (int i = 0; i < list.size(); i++) {}
   }

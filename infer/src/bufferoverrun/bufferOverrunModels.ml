@@ -1013,6 +1013,12 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+module Preconditions = struct
+  let check_argument exp =
+    let exec {integer_type_widths} ~ret:_ mem = Sem.Prune.prune integer_type_widths exp mem in
+    {exec; check= no_check}
+end
+
 let unmodifiable _ s =
   String.is_prefix ~prefix:"unmodifiable" s
   && List.exists ~f:(fun suffix -> String.is_suffix ~suffix s) ["Set"; "Collection"; "Map"; "List"]
@@ -1216,6 +1222,8 @@ module Call = struct
       ; +PatternMatch.implements_collection
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
       ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
+      ; +PatternMatch.implements_google "common.base.Preconditions"
+        &:: "checkArgument" <>$ capt_exp $--> Preconditions.check_argument
       ; +PatternMatch.implements_pseudo_collection &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
