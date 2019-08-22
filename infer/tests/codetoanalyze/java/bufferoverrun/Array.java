@@ -68,4 +68,36 @@ class Array {
   void positive_alloc_Good() {
     a = new ArrayList<>(10);
   }
+
+  void iterate_collection_Good(ArrayList<Integer> a) {
+    if (a.size() > 10) {
+      int x = a.get(9);
+    }
+  }
+
+  void call_iterate_collection_Good() {
+    ArrayList<Integer> x = new ArrayList<Integer>();
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    this.iterate_collection_Good(x);
+  }
+
+  void iterate_collection_Bad(ArrayList<Integer> a) {
+    if (a.size() >= 5) {
+      int x = a.get(5);
+    }
+  }
+
+  void call_iterate_collection_Bad() {
+    ArrayList<Integer> x = new ArrayList<Integer>();
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    x.add(0);
+    this.iterate_collection_Bad(x);
+  }
 }

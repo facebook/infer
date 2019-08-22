@@ -892,7 +892,12 @@ module Collection = struct
   let size coll_exp =
     let exec _ ~ret:(ret_id, _) mem =
       let result = eval_collection_length coll_exp mem in
-      model_by_value result ret_id mem
+      let mem = model_by_value result ret_id mem in
+      match PowLoc.is_singleton_or_more (eval_collection_internal_array_locs coll_exp mem) with
+      | IContainer.Singleton loc ->
+          Dom.Mem.load_size_alias ret_id loc mem
+      | IContainer.Empty | IContainer.More ->
+          mem
     in
     {exec; check= no_check}
 

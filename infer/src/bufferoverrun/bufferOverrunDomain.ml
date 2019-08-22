@@ -689,6 +689,7 @@ module AliasTarget = struct
     | Size of Loc.t
     | Fgets of Loc.t
     | Nullity of Loc.t
+    | Top
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
@@ -707,6 +708,8 @@ module AliasTarget = struct
         F.fprintf fmt "fgets(%a)" Loc.pp l
     | Nullity l ->
         F.fprintf fmt "nullity(%a)" Loc.pp l
+    | Top ->
+        F.fprintf fmt "T"
 
 
   let fgets l = Fgets l
@@ -715,10 +718,12 @@ module AliasTarget = struct
 
   let get_loc = function
     | Simple l | SimplePlusA (l, _) | Empty l | Size l | Fgets l | Nullity l ->
-        l
+        Some l
+    | Top ->
+        None
 
 
-  let use l x = Loc.equal l (get_loc x)
+  let use_loc l x = Option.value_map (get_loc x) ~default:false ~f:(Loc.equal l)
 
   let loc_map x ~f =
     match x with
@@ -734,18 +739,17 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Fgets l)
     | Nullity l ->
         Option.map (f l) ~f:(fun l -> Nullity l)
+    | Top ->
+        Some Top
 
 
   let ( <= ) ~lhs ~rhs = equal lhs rhs
 
-  let join x y =
-    assert (equal x y) ;
-    x
-
+  let join x y = if equal x y then x else Top
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let is_unknown x = Loc.is_unknown (get_loc x)
+  let is_unknown x = Option.value_map (get_loc x) ~default:false ~f:Loc.is_unknown
 end
 
 (* Relations between values of logical variables(registers) and program variables
@@ -767,23 +771,76 @@ end
    AliasTarget.Empty relation, but is used when there is a program variable [i] for the length of
    the array. *)
 module AliasMap = struct
-  include AbstractDomain.Map (Ident) (AliasTarget)
+  module Key = struct
+    type t = IdentKey of Ident.t | JavaTmp of Loc.t [@@deriving compare]
+
+    let of_id id = IdentKey id
+
+    let of_java_tmp l = JavaTmp l
+
+    let pp f = function IdentKey id -> Ident.pp f id | JavaTmp l -> Loc.pp f l
+
+    let use_loc l = function JavaTmp l' -> Loc.equal l l' | IdentKey _ -> false
+  end
+
+  include AbstractDomain.InvertedMap (Key) (AliasTarget)
+
+  let some_non_top = function AliasTarget.Top -> None | v -> Some v
+
+  let add k v m = match some_non_top v with None -> remove k m | Some v -> add k v m
+
+  let join x y =
+    let join_v _key vx vy =
+      IOption.map2 vx vy ~f:(fun vx vy -> AliasTarget.join vx vy |> some_non_top)
+    in
+    merge join_v x y
+
+
+  let widen ~prev:x ~next:y ~num_iters =
+    let widen_v _key vx vy =
+      IOption.map2 vx vy ~f:(fun vx vy ->
+          AliasTarget.widen ~prev:vx ~next:vy ~num_iters |> some_non_top )
+    in
+    merge widen_v x y
+
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
     if not (is_empty x) then
       let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
+      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Key.pp k AliasTarget.pp v in
       F.pp_print_list ~pp_sep pp1 fmt (bindings x)
 
 
+  let find_id : Ident.t -> t -> AliasTarget.t option = fun id x -> find_opt (Key.of_id id) x
+
+  let find_java_tmp : Loc.t -> t -> AliasTarget.t option =
+   fun id x -> find_opt (Key.of_java_tmp id) x
+
+
   let load : Ident.t -> AliasTarget.t -> t -> t =
-   fun id a x -> if not (AliasTarget.is_unknown a) then add id a x else x
+   fun id tgt x ->
+    if AliasTarget.is_unknown tgt then x
+    else
+      let tgt =
+        match tgt with
+        | AliasTarget.Simple loc when Language.curr_language_is Java ->
+            Option.value (find_java_tmp loc x) ~default:tgt
+        | _ ->
+            tgt
+      in
+      add (Key.of_id id) tgt x
 
 
-  let forget : Loc.t -> t -> t = fun l m -> filter (fun _ y -> not (AliasTarget.use l y)) m
+  let forget : Loc.t -> t -> t =
+   fun l m -> filter (fun k y -> (not (Key.use_loc l k)) && not (AliasTarget.use_loc l y)) m
 
-  let find : Ident.t -> t -> AliasTarget.t option = find_opt
+
+  let store : Loc.t -> Ident.t -> t -> t =
+   fun l id x ->
+    if Language.curr_language_is Java && Loc.is_frontend_tmp l then
+      Option.value_map (find_id id x) ~default:x ~f:(fun tgt -> add (Key.of_java_tmp l) tgt x)
+    else x
 end
 
 module AliasRet = struct
@@ -823,7 +880,7 @@ module Alias = struct
 
   let bind_map : (AliasMap.t -> 'a) -> t -> 'a = fun f a -> f a.map
 
-  let find : Ident.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find x)
+  let find_id : Ident.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find_id x)
 
   let find_ret : t -> AliasTarget.t option = fun x -> AliasRet.get x.ret
 
@@ -833,9 +890,12 @@ module Alias = struct
    fun loc e a ->
     let a = lift_map (AliasMap.forget loc) a in
     match e with
-    | Exp.Var l when Loc.is_return loc ->
-        let update_ret retl = {a with ret= AliasRet.v retl} in
-        Option.value_map (find l a) ~default:a ~f:update_ret
+    | Exp.Var l ->
+        let a = lift_map (AliasMap.store loc l) a in
+        if Loc.is_return loc then
+          let update_ret retl = {a with ret= AliasRet.v retl} in
+          Option.value_map (find_id l a) ~default:a ~f:update_ret
+        else a
     | Exp.BinOp (Binop.PlusA _, Exp.Var id, Exp.Const (Const.Cint i))
     | Exp.BinOp (Binop.PlusA _, Exp.Const (Const.Cint i), Exp.Var id) ->
         lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, IntLit.neg i))) a
@@ -866,7 +926,8 @@ module Alias = struct
         a
 
 
-  let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove temp)
+  let remove_temp : Ident.t -> t -> t =
+   fun temp -> lift_map (AliasMap.remove (AliasMap.Key.of_id temp))
 end
 
 module CoreVal = struct
@@ -1350,22 +1411,27 @@ module MemReach = struct
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find k m.alias
+  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_id k m.alias
 
   let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k m ->
-    match Alias.find k m.alias with
+    match Alias.find_id k m.alias with
     | Some (AliasTarget.Simple l) ->
         Some (l, None)
     | Some (AliasTarget.SimplePlusA (l, i)) ->
         Some (l, Some i)
-    | Some (AliasTarget.Empty _ | AliasTarget.Size _ | AliasTarget.Fgets _ | AliasTarget.Nullity _)
+    | Some
+        ( AliasTarget.Empty _
+        | AliasTarget.Size _
+        | AliasTarget.Fgets _
+        | AliasTarget.Nullity _
+        | AliasTarget.Top )
     | None ->
         None
 
 
   let find_size_alias : Ident.t -> _ t0 -> Loc.t option =
-   fun k m -> match Alias.find k m.alias with Some (AliasTarget.Size l) -> Some l | _ -> None
+   fun k m -> match Alias.find_id k m.alias with Some (AliasTarget.Size l) -> Some l | _ -> None
 
 
   let find_ret_alias : _ t0 -> AliasTarget.t option = fun m -> Alias.find_ret m.alias

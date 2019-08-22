@@ -30,7 +30,9 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
   | Exp.Var x1, Exp.Var x2 -> (
     match (Mem.find_alias x1 m, Mem.find_alias x2 m) with
     | Some x1', Some x2' ->
-        AliasTarget.equal x1' x2' && not (Mem.is_rep_multi_loc (AliasTarget.get_loc x1') m)
+        AliasTarget.equal x1' x2'
+        && Option.value_map (AliasTarget.get_loc x1') ~default:false ~f:(fun l ->
+               not (Mem.is_rep_multi_loc l m) )
     | _, _ ->
         false )
   | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _) ->
@@ -313,7 +315,8 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         | AliasTarget.Size _
         | AliasTarget.Empty _
         | AliasTarget.Fgets _
-        | AliasTarget.Nullity _ )
+        | AliasTarget.Nullity _
+        | Top )
     | None ->
         Val.bot )
   | Exp.Lvar pvar ->
@@ -513,7 +516,7 @@ module Prune = struct
           let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _) | None ->
+      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | Top) | None ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias x mem with
@@ -530,7 +533,7 @@ module Prune = struct
           let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
           let v' = Val.modify_itv itv_v v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | AliasTarget.Fgets _) | None ->
+      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | AliasTarget.Fgets _ | Top) | None ->
           astate )
     | _ ->
         astate

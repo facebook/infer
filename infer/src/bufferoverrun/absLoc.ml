@@ -257,6 +257,8 @@ module Loc = struct
         false
 
 
+  let is_frontend_tmp = function Var x -> not (Var.appears_in_source_code x) | _ -> false
+
   let rec is_pretty = function
     | Var _ ->
         true
