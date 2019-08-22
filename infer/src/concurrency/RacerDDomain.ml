@@ -356,21 +356,17 @@ module OwnershipDomain = struct
 
   (* return the first non-Unowned ownership value found when checking progressively shorter
      prefixes of [access_exp] *)
-  let rec get_owned access_exp astate =
-    let keep_looking (access_exp : AccessExpression.t) astate =
-      match AccessExpression.truncate access_exp with
-      | Some (prefix_exp, _) ->
-          get_owned prefix_exp astate
-      | None ->
-          OwnershipAbstractValue.Unowned
-    in
-    match find access_exp astate with
-    | OwnershipAbstractValue.OwnedIf _ as v ->
+  let rec get_owned (access_exp : AccessExpression.t) astate =
+    match find_opt access_exp astate with
+    | Some (OwnershipAbstractValue.OwnedIf _ as v) ->
         v
-    | OwnershipAbstractValue.Unowned ->
-        keep_looking access_exp astate
-    | exception Caml.Not_found ->
-        keep_looking access_exp astate
+    | _ -> (
+      match access_exp with
+      | Base _ ->
+          OwnershipAbstractValue.Unowned
+      | AddressOf prefix | Dereference prefix | FieldOffset (prefix, _) | ArrayOffset (prefix, _, _)
+        ->
+          get_owned prefix astate )
 
 
   let rec ownership_of_expr expr ownership =
