@@ -419,6 +419,8 @@ module Val = struct
 
   let is_mone x = Itv.is_mone (get_itv x)
 
+  let cast typ v = {v with powloc= PowLoc.cast typ v.powloc}
+
   let of_path tenv ~may_last_field integer_type_widths location typ path =
     let traces_of_loc l =
       let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in

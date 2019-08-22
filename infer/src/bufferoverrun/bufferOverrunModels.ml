@@ -371,10 +371,11 @@ let indexOf exp =
   {exec; check= no_check}
 
 
-let cast exp =
+let cast exp size_exp =
   let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-    let itv = Sem.eval integer_type_widths exp mem in
-    model_by_value itv ret_id mem
+    let v = Sem.eval integer_type_widths exp mem in
+    let v = match size_exp with Exp.Sizeof {typ} -> Dom.Val.cast typ v | _ -> v in
+    model_by_value v ret_id mem
   in
   {exec; check= no_check}
 
@@ -1031,7 +1032,7 @@ module Call = struct
       ; -"CFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
       ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> CFArray.at
       ; -"exit" <>--> bottom
-      ; -"__cast" <>$ capt_exp $+...$--> cast
+      ; -"__cast" <>$ capt_exp $+ capt_exp $+...$--> cast
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
       ; -"infer_print" <>$ capt_exp $!--> infer_print

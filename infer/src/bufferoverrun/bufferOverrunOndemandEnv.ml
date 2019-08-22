@@ -51,6 +51,8 @@ let mk pdesc =
                 L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )
           | _ ->
               L.(die InternalError) "Untyped expression is given." ) )
+      | SPath.Field {typ= Some _ as some_typ} ->
+          some_typ
       | SPath.Field {fn; prefix= x} -> (
         match BufferOverrunField.get_type fn with
         | None ->

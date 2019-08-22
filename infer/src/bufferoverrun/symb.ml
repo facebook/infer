@@ -32,7 +32,7 @@ module SymbolPath = struct
         type partial =
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of {fn: Typ.Fieldname.t; prefix: partial}
+          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: Typ.t option}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
@@ -57,10 +57,10 @@ module SymbolPath = struct
           aux p0
 
 
-        let field p0 fn =
+        let field ?typ p0 fn =
           let rec aux = function
             | Pvar _ | Callsite _ ->
-                Field {fn; prefix= p0}
+                Field {fn; prefix= p0; typ}
             | Field {fn= fn'} when Typ.Fieldname.equal fn fn' ->
                 StarField {last_field= fn; prefix= p0}
             | Field {prefix= p} | Deref (_, p) ->
@@ -76,7 +76,7 @@ module SymbolPath = struct
         type partial = private
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of {fn: Typ.Fieldname.t; prefix: partial}
+          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: Typ.t option}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
@@ -87,7 +87,7 @@ module SymbolPath = struct
 
         val deref : deref_kind:deref_kind -> partial -> partial
 
-        val field : partial -> Typ.Fieldname.t -> partial
+        val field : ?typ:Typ.t -> partial -> Typ.Fieldname.t -> partial
 
         val star_field : partial -> Typ.Fieldname.t -> partial
       end )

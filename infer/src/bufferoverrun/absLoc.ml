@@ -132,7 +132,7 @@ module Loc = struct
         type t =
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Typ.Fieldname.t}
+          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: Typ.t option}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 
@@ -140,10 +140,10 @@ module Loc = struct
 
         let of_allocsite a = Allocsite a
 
-        let append_field l0 ~fn =
+        let append_field ?typ l0 ~fn =
           let rec aux = function
             | Var _ | Allocsite _ ->
-                Field {prefix= l0; fn}
+                Field {prefix= l0; fn; typ}
             | StarField {last_field} as l when Typ.Fieldname.equal fn last_field ->
                 l
             | StarField {prefix} ->
@@ -173,7 +173,7 @@ module Loc = struct
         type t = private
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Typ.Fieldname.t}
+          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: Typ.t option}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 
@@ -181,7 +181,7 @@ module Loc = struct
 
         val of_allocsite : Allocsite.t -> t
 
-        val append_field : t -> fn:Typ.Fieldname.t -> t
+        val append_field : ?typ:Typ.t -> t -> fn:Typ.Fieldname.t -> t
 
         val append_star_field : t -> fn:Typ.Fieldname.t -> t
       end )
@@ -320,8 +320,8 @@ module Loc = struct
         Some (Symb.SymbolPath.of_pvar pvar)
     | Allocsite allocsite ->
         Allocsite.get_path allocsite
-    | Field {prefix= l; fn} ->
-        Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
+    | Field {prefix= l; fn; typ} ->
+        Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field ?typ p fn)
     | StarField {prefix; last_field} ->
         get_path prefix |> Option.map ~f:(fun p -> Symb.SymbolPath.star_field p last_field)
 
@@ -363,6 +363,14 @@ module Loc = struct
 
   let exists_str ~f l =
     Option.exists (get_path l) ~f:(fun path -> Symb.SymbolPath.exists_str_partial ~f path)
+
+
+  let cast typ x =
+    match x with
+    | Field {prefix= l; fn} ->
+        append_field l ~fn ~typ
+    | StarField _ | Var _ | Allocsite _ ->
+        x
 end
 
 module PowLoc = struct
@@ -405,6 +413,8 @@ module PowLoc = struct
   let exists_str ~f x = exists (fun l -> Loc.exists_str ~f l) x
 
   let of_c_strlen x = map Loc.of_c_strlen x
+
+  let cast typ x = map (Loc.cast typ) x
 end
 
 let always_strong_update = false

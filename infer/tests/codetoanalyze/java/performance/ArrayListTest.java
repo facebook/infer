@@ -186,9 +186,8 @@ public class ArrayListTest {
     }
   }
 
-  // Control vars include element which is some intValue and list
-  // length. The result of intValue depends on the list element which
-  // is not modeled. Hence we get bottom for its value ans 0 cost.
+  // Control vars include element which is some intValue and list length.  The result of intValue
+  // depends on the list element.  O(list.length x (-list.elements + 11))
   // Simplified version of real code https://fburl.com/a3gge1b7
   public boolean iterate_over_arraylist_shortcut_FP(ArrayList<Integer> list) {
     for (Integer element : list) {
