@@ -475,21 +475,6 @@ Definition indices_in_range_def:
   (indices_in_range _ _ ⇔ F)
 End
 
-Definition extract_type_def:
-  (extract_type t [] = Some t) ∧
-  (extract_type (ArrT n t) (i::idx) =
-    if i < n then
-      extract_type t idx
-    else
-      None) ∧
-  (extract_type (StrT ts) (i::idx) =
-    if i < length ts then
-      extract_type (el i ts) idx
-    else
-      None) ∧
-  (extract_type _ _ = None)
-End
-
 (* The strict inequality does not hold because of 0 length arrays *)
 Theorem offset_size_leq:
   ∀t indices n.

@@ -67,11 +67,11 @@ Definition translate_ty_def:
 End
 
 Definition translate_glob_var_def:
-  translate_glob_var (Glob_var g) = Var_name g
+  translate_glob_var (Glob_var g) t = Var_name g (translate_ty t)
 End
 
 Definition translate_reg_def:
-  translate_reg (Reg r) = Var_name r
+  translate_reg (Reg r) t = Var_name r (translate_ty t)
 End
 
 Definition translate_label_def:
@@ -84,7 +84,8 @@ Definition translate_const_def:
     Record (map (λ(ty, c). translate_const c) tcs)) ∧
   (translate_const (ArrC tcs) =
     Record (map (λ(ty, c). translate_const c) tcs)) ∧
-  (translate_const (GlobalC g) = Var (translate_glob_var g)) ∧
+  (* TODO *)
+  (translate_const (GlobalC g) = Var (translate_glob_var g ARB)) ∧
   (* TODO *)
   (translate_const (GepC _ _ _ _) = ARB) ∧
   (translate_const UndefC = Nondet)
@@ -95,10 +96,10 @@ Termination
 End
 
 Definition translate_arg_def:
-  (translate_arg emap (Constant c) = translate_const c) ∧
-  (translate_arg emap (Variable r) =
+  (translate_arg emap (Constant c) t = translate_const c) ∧
+  (translate_arg emap (Variable r) t =
     case flookup emap r of
-    | None => Var (translate_reg r)
+    | None => Var (translate_reg r t)
     | Some e => e)
 End
 
@@ -112,11 +113,11 @@ End
 (* TODO *)
 Definition translate_instr_to_exp_def:
   (translate_instr_to_exp emap (llvm$Sub _ _ _ ty a1 a2) =
-    llair$Sub (translate_ty ty) (translate_arg emap a1) (translate_arg emap a2)) ∧
-  (translate_instr_to_exp emap (Extractvalue _ (_, a) cs) =
-    foldl (λe c. Select e (translate_const c)) (translate_arg emap a) cs) ∧
-  (translate_instr_to_exp emap (Insertvalue _ (_, a1) (_, a2) cs) =
-    translate_updatevalue (translate_arg emap a1) (translate_arg emap a2) cs)
+    llair$Sub (translate_ty ty) (translate_arg emap a1 ty) (translate_arg emap a2 ty)) ∧
+  (translate_instr_to_exp emap (Extractvalue _ (t, a) cs) =
+    foldl (λe c. Select e (translate_const c)) (translate_arg emap a t) cs) ∧
+  (translate_instr_to_exp emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
+    translate_updatevalue (translate_arg emap a1 t1) (translate_arg emap a2 t2) cs)
 End
 
 (* This translation of insertvalue to update and select is quadratic in the
@@ -169,23 +170,37 @@ End
 (* TODO *)
 Definition translate_instr_to_inst_def:
   (translate_instr_to_inst emap (llvm$Store (t1, a1) (t2, a2)) =
-    llair$Store (translate_arg emap a1) (translate_arg emap a2) (sizeof t2)) ∧
+    llair$Store (translate_arg emap a1 t1) (translate_arg emap a2 t2) (sizeof t2)) ∧
   (translate_instr_to_inst emap (Load r t (t1, a1)) =
-    Load (translate_reg r) (translate_arg emap a1) (sizeof t))
+    Load (translate_reg r t1) (translate_arg emap a1 t1) (sizeof t))
 End
 
 (* TODO *)
 Definition translate_instr_to_term_def:
   translate_instr_to_term f emap (Br a l1 l2) =
-    Iswitch (translate_arg emap a) [translate_label f l2; translate_label f l1]
+    Iswitch (translate_arg emap a (IntT W1)) [translate_label f l2; translate_label f l1]
 End
 
 Datatype:
   instr_class =
-  | Exp reg
+  | Exp reg ty
   | Non_exp
   | Term
   | Call
+End
+
+(* Convert index lists as for GEP into number lists, for the purpose of
+ * calculating types. Everything goes to 0 but for positive integer constants,
+ * because those things can't be used to index anything but arrays, and the type
+ * for the array contents doesn't depend on the index's value. *)
+Definition idx_to_num_def:
+  (idx_to_num (_, (Constant (IntC _ n))) = Num (ABS n)) ∧
+  (idx_to_num (_, _) = 0)
+End
+
+Definition cidx_to_num_def:
+  (cidx_to_num (IntC _ n) = Num (ABS n)) ∧
+  (cidx_to_num _ = 0)
 End
 
 Definition classify_instr_def:
@@ -199,16 +214,19 @@ Definition classify_instr_def:
   (classify_instr (Cxa_throw _ _ _) = Non_exp) ∧
   (classify_instr Cxa_end_catch = Non_exp) ∧
   (classify_instr (Cxa_begin_catch _ _) = Non_exp) ∧
-  (classify_instr (Sub r _ _ _ _ _) = Exp r) ∧
-  (classify_instr (Extractvalue r _ _) = Exp r) ∧
-  (classify_instr (Insertvalue r _ _ _) = Exp r) ∧
-  (classify_instr (Alloca r _ _) = Exp r) ∧
-  (classify_instr (Gep r _ _) = Exp r) ∧
-  (classify_instr (Ptrtoint r _ _) = Exp r) ∧
-  (classify_instr (Inttoptr r _ _) = Exp r) ∧
-  (classify_instr (Icmp r _ _ _ _) = Exp r) ∧
-  (classify_instr (Cxa_allocate_exn r _) = Exp r) ∧
-  (classify_instr (Cxa_get_exception_ptr r _) = Exp r)
+  (classify_instr (Sub r _ _ t _ _) = Exp r t) ∧
+  (classify_instr (Extractvalue r (t, _) idx) =
+    Exp r (THE (extract_type t (map cidx_to_num idx)))) ∧
+  (classify_instr (Insertvalue r (t, _) _ idx) = Exp r t) ∧
+  (classify_instr (Alloca r t _) = Exp r (PtrT t)) ∧
+  (classify_instr (Gep r t _ idx) =
+    Exp r (PtrT (THE (extract_type t (map idx_to_num idx))))) ∧
+  (classify_instr (Ptrtoint r _ t) = Exp r t) ∧
+  (classify_instr (Inttoptr r _ t) = Exp r t) ∧
+  (classify_instr (Icmp r _ _ _ _) = Exp r (IntT W1)) ∧
+  (* TODO *)
+  (classify_instr (Cxa_allocate_exn r _) = Exp r ARB) ∧
+  (classify_instr (Cxa_get_exception_ptr r _) = Exp r ARB)
 End
 
 (* Translate a list of instructions into an block. f is the name of the function
@@ -235,8 +253,8 @@ Definition translate_instrs_def:
   (translate_instrs f live_out emap [] = <| cmnd := []; term := Unreachable |>) ∧
   (translate_instrs f live_out emap (i :: is) =
     case classify_instr i of
-    | Exp r =>
-      let x = translate_reg r in
+    | Exp r t =>
+      let x = translate_reg r t in
       let e = translate_instr_to_exp emap i in
         if r ∈ live_out then
           let b = translate_instrs f live_out (emap |+ (r, Var x)) is in
@@ -257,7 +275,7 @@ Definition dest_label_def:
 End
 
 Definition dest_phi_def:
-  dest_phi (Phi r _ largs) = (r, largs)
+  dest_phi (Phi r t largs) = (r, t, largs)
 End
 
 Definition translate_label_opt_def:
@@ -269,9 +287,9 @@ Definition translate_header_def:
   (translate_header f entry Entry = []) ∧
   (translate_header f entry (Head phis _) =
     map
-      (λ(r, largs).
-        (translate_reg r,
-         map (λ(l, arg). (translate_label_opt f entry l, translate_arg fempty arg)) largs))
+      (λ(r, t, largs).
+        (translate_reg r t,
+         map (λ(l, arg). (translate_label_opt f entry l, translate_arg fempty arg t)) largs))
       (map dest_phi phis))
 End
 
@@ -333,12 +351,16 @@ Definition remove_phis_def:
   remove_phis f used_names bs = flat (snd (generate_move_blocks_list f used_names bs bs))
 End
 
+Definition translate_param_def:
+  translate_param (t, r) = translate_reg r t
+End
+
 Definition translate_def_def:
   translate_def (Lab f) d =
     let used_names = ARB in
     let entry_name = gen_name used_names "entry" in
     let bs = map (translate_block f entry_name UNIV) d.blocks in
-      <| params := map translate_reg d.params;
+      <| params := map translate_param d.params;
         (* TODO: calculate these from the produced llair, and not the llvm *)
         locals := ARB;
         entry := Lab_name f entry_name;

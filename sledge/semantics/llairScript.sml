@@ -26,7 +26,7 @@ Datatype:
 End
 
 Datatype:
-  var = Var_name string
+  var = Var_name string typ
 End
 
 Datatype:

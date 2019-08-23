@@ -81,7 +81,7 @@ Datatype:
   | Alloca reg ty targ
   | Load reg ty targ
   | Store targ targ
-  | Gep reg targ (targ list)
+  | Gep reg ty targ (targ list)
   | Ptrtoint reg targ ty
   | Inttoptr reg targ ty
   | Icmp reg cond ty arg arg
@@ -119,7 +119,7 @@ End
 Datatype:
   def =
     <| r : ty;
-       params : reg list;
+       params : (ty # reg) list;
        (* None -> entry block, and Some name -> non-entry block *)
        blocks : (label option, block) alist |>
 End
@@ -468,6 +468,21 @@ Definition do_phi_def:
     option_map (λarg. (id, eval s arg)) (alookup entries from_l)
 End
 
+Definition extract_type_def:
+  (extract_type t [] = Some t) ∧
+  (extract_type (ArrT n t) (i::idx) =
+    if i < n then
+      extract_type t idx
+    else
+      None) ∧
+  (extract_type (StrT ts) (i::idx) =
+    if i < length ts then
+      extract_type (el i ts) idx
+    else
+      None) ∧
+  (extract_type _ _ = None)
+End
+
 Definition extract_value_def:
   (extract_value v [] = Some v) ∧
   (extract_value (AggV vs) (i::indices) =
@@ -598,7 +613,7 @@ Inductive step_instr:
    get_offset t1 ns = Some off
    ⇒
    step_instr prog s
-    (Gep r ((PtrT t1), a1) tindices)
+    (Gep r t ((PtrT t1), a1) tindices)
     (inc_pc (update_result r
                <| poison := (v1.poison ∨ i1.poison ∨ exists (λv. v.poison) indices);
                   value := PtrV (n2w (w2n w1 + sizeof t1 * n + off)) |>
@@ -628,7 +643,7 @@ Inductive step_instr:
    step_instr prog s
      (Call r t fname targs)
      <| ip := <| f := fname; b := None; i := 0 |>;
-        locals := alist_to_fmap (zip (d.params, map (eval s o snd) targs));
+        locals := alist_to_fmap (zip (map snd d.params, map (eval s o snd) targs));
         globals := s.globals;
         allocations:= s.allocations;
         stack :=
