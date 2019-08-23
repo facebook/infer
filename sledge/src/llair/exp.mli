@@ -10,16 +10,11 @@
     Pure (heap-independent) expressions are complex arithmetic,
     bitwise-logical, etc. operations over literal values and registers.
 
-    Expressions are represented in curried form, where the only† recursive
-    constructor is [App], which is an application of a function symbol to an
-    argument. This is done to simplify the definition of 'subexpression' and
-    make it explicit, which is a significant help for treating equality
-    between expressions using congruence closure. The specific constructor
-    functions indicate and check the expected arity of the function symbols.
-
-    [†] [Struct_rec] is also a recursive constructor, but its values are
-    treated as atomic since, as they are recursive, doing otherwise would
-    require inductive reasoning. *)
+    Expressions for operations that are uninterpreted in the analyzer are
+    represented in curried form, where [App] is an application of a function
+    symbol to an argument. This is done to simplify the definition of
+    'subexpression' and make it explicit. The specific constructor functions
+    indicate and check the expected arity of the function symbols. *)
 
 type comparator_witness
 
