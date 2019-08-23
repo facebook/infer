@@ -814,22 +814,29 @@ and { annotation_reachability
 and annotation_reachability_cxx =
   CLOpt.mk_json ~long:"annotation-reachability-cxx"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
-    {|Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is a JSON object whose key is the issue name. "sources" and "sinks" can be specified either by symbol or path prefix.  "sinks" optionally can specify "overrides" (by symbol or path prefix) that block the reachability analysis when hit.  Example:
-  {
+    ( "Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is \
+       a JSON object whose key is the issue name. \"sources\" and \"sinks\" can be specified \
+       either by symbol (including regexps) or path prefix.  \"sinks\" optionally can specify \
+       \"overrides\" (by symbol or path prefix) that block the reachability analysis when hit.  \
+       Example:\n"
+    ^ {|{
     "ISOLATED_REACHING_CONNECT": {
-      "doc_url": "http:://optional/issue/doc/link.html",
+      "doc_url": "http:://example.com/issue/doc/optional_link.html",
       "sources": {
         "desc": "Code that should not call connect [optional]",
         "paths": [ "isolated/" ]
       },
       "sinks": {
         "symbols": [ "connect" ],
-        "overrides": { "symbols": [ "Trusted::" ] }
+        "overrides": { "symbol_regexps": [ ".*::Trusted::.*" ] }
       }
     }
   }
-This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function whose source path starts with "isolated/" that may reach the function named "connect", ignoring paths that go through a symbol starting with "Trusted::".
 |}
+    ^ "\n\
+       This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function \
+       whose source path starts with \"isolated/\" that may reach the function named \"connect\", \
+       ignoring paths that go through a symbol matching the OCaml regexp \".*::Trusted::.*\"." )
 
 
 and annotation_reachability_cxx_sources =

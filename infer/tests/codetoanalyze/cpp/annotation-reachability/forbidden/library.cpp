@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+namespace library {
+
 // low-level implementation, clients shouldn't use directly
 namespace details {
 
@@ -29,3 +31,4 @@ struct Wrapper {
 void wrapper() { details::low_level(); }
 
 } // namespace safewrapper
+} // namespace library

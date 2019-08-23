@@ -263,22 +263,35 @@ module CxxAnnotationSpecs = struct
     L.d_printf "%b %s.@." r desc ; r
 
 
+  let at_least_one_nonempty ~src symbols symbol_regexps paths =
+    if List.is_empty symbols && Option.is_none symbol_regexps && List.is_empty paths then
+      L.die UserError "Must specify at least one of `paths`, `symbols`, or `symbols_regexps` in %s"
+        src
+
+
   let spec_from_config spec_name spec_cfg source_overrides =
     let src = option_name ^ " -> " ^ spec_name in
     let make_pname_pred entry ~src : Typ.Procname.t -> bool =
       let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
+      let symbol_regexps =
+        U.yojson_lookup entry "symbol_regexps" ~src ~default:None ~f:(fun json ~src ->
+            U.string_list_of_yojson json ~src |> String.concat ~sep:"\\|" |> Str.regexp
+            |> Option.some )
+      in
       let paths = U.yojson_lookup entry "paths" ~src ~f:U.string_list_of_yojson ~default:[] in
-      let sym_pred pname = List.exists ~f:(symbol_match (Typ.Procname.to_string pname)) symbols in
+      at_least_one_nonempty ~src symbols symbol_regexps paths ;
+      let sym_pred pname_string = List.exists ~f:(symbol_match pname_string) symbols in
+      let sym_regexp_pred pname_string =
+        match symbol_regexps with
+        | None ->
+            false
+        | Some regexp ->
+            Str.string_match regexp pname_string 0
+      in
       let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
-      match (symbols, paths) with
-      | [], [] ->
-          L.die UserError "Must specify either `paths` or `symbols` in %s" src
-      | _, [] ->
-          sym_pred
-      | [], _ ->
-          path_pred
-      | _, _ ->
-          fun pname -> sym_pred pname || path_pred pname
+      fun pname ->
+        let pname_string = Typ.Procname.to_string pname in
+        sym_pred pname_string || sym_regexp_pred pname_string || path_pred pname
     in
     let sources, sources_src =
       if List.length source_overrides > 0 then (source_overrides, src_option_name)

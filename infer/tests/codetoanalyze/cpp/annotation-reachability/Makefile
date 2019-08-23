@@ -28,11 +28,12 @@ INFER_OPTIONS = --annotation-reachability-only --debug-exceptions --project-root
       "sinks": { \
         "desc": "a disallowed API", \
         "overrides": { \
-          "symbols": [ \
-            "safewrapper::" \
+          "symbol_regexps": [ \
+            ".*::safewrapper::wrapper$$", \
+            ".*::safewrapper::Wrapper::" \
           ] \
         }, \
-        "symbols" : [ "details::" ], \
+        "symbols" : [ "library::details::" ], \
         "paths": [ "codetoanalyze/cpp/annotation-reachability/forbidden/" ] \
       } \
     } \

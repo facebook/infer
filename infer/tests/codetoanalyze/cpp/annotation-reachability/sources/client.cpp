@@ -8,6 +8,8 @@
 
 namespace client {
 
+using namespace library;
+
 void call_protected_api_bad() { details::low_level(); }
 
 void call_wrapper_ok() { safewrapper::wrapper(); }
