@@ -15,10 +15,10 @@ let unknown_call call =
       call
       (fun fs (call : Llair.Term.t) ->
         match call with
-        | Call {call= {dst}} -> (
-          match Var.of_exp dst with
+        | Call {callee} -> (
+          match Var.of_exp callee with
           | Some var -> Var.pp_demangled fs var
-          | None -> Exp.pp fs dst )
+          | None -> Exp.pp fs callee )
         | _ -> () )
       call Llair.Term.pp call]
 

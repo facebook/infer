@@ -15,8 +15,9 @@ val init : Global.t vector -> t
 val join : t -> t -> t
 val is_false : t -> bool
 val exec_assume : t -> Exp.t -> t option
+val exec_kill : t -> Var.t -> t
+val exec_move : t -> Var.t -> Exp.t -> t
 val exec_inst : t -> Llair.inst -> (t, unit) result
-val exec_return : t -> Var.t -> Exp.t -> t
 
 val exec_intrinsic :
      skip_throw:bool
@@ -37,11 +38,11 @@ val create_summary :
   -> State_domain.function_summary * t
 
 val apply_summary : t -> State_domain.function_summary -> t option
-val jump : Exp.t list -> Var.t list -> ?temps:Var.Set.t -> t -> t
 
 val call :
      summaries:bool
   -> Exp.t list
+  -> Var.t option
   -> Var.t list
   -> Var.Set.t
   -> Global.t vector
@@ -49,7 +50,7 @@ val call :
   -> t * from_call
 
 val post : Var.Set.t -> from_call -> t -> t
-val retn : Var.t list -> from_call -> t -> t
+val retn : Var.t list -> Var.t option -> from_call -> t -> t
 val dnf : t -> t list
 
 val resolve_callee :

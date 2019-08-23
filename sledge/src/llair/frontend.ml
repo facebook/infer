@@ -675,150 +675,49 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
   let cxa_exception = Llvm.struct_type llcontext [|tip; dtor|] in
   (i32, xlate_type x tip, cxa_exception)
 
-(** construct the argument of a landingpad block, mainly fix the encoding
-    scheme for landingpad instruction name to block arg name *)
-let landingpad_arg : Llvm.llvalue -> Var.t =
- fun instr -> Var.program (find_name instr ^ ".exc")
-
-(** [rev_map_phis ~f blk] returns [(retn_arg, rev_args, pos)] by rev_mapping
-    over the prefix of [PHI] instructions at the beginning of [blk].
-    [retn_arg], if any, is [f] applied to the [PHI] instruction which takes
-    the return value of every [Invoke] predecessor of [blk]. [rev_args] is
-    the result of applying [f] to each of the other [PHI] instructions.
-    [pos] is the instruction iterator position before the first non-[PHI]
-    instruction of [blk]. *)
-let rev_map_phis :
-       f:(Llvm.llvalue -> 'a)
+(** Translate a control transfer from instruction [instr] to block [dst] to
+    a jump, if necessary by extending [blocks] with a trampoline containing
+    the PHIs of [dst] translated to a move. *)
+let xlate_jump :
+       x
+    -> ?reg_exps:(Var.var * Exp.t) list
+    -> Llvm.llvalue
     -> Llvm.llbasicblock
-    -> 'a option * 'a list * _ Llvm.llpos =
- fun ~f blk ->
-  let rec block_args_ found_invoke_pred retn_arg rev_args pos =
-    match (pos : _ Llvm.llpos) with
-    | Before instr -> (
-      match Llvm.instr_opcode instr with
+    -> Loc.t
+    -> Llair.block list
+    -> Llair.jump * Llair.block list =
+ fun x ?(reg_exps = []) instr dst loc blocks ->
+  let src = Llvm.instr_parent instr in
+  let rec xlate_jump_ reg_exps (pos : _ Llvm.llpos) =
+    match pos with
+    | Before dst_instr -> (
+      match Llvm.instr_opcode dst_instr with
       | PHI ->
-          (* [has_invoke_pred] holds if some value selected by this PHI is
-             the return value of an [invoke] instr. [is_retn_arg] holds if
-             for each predecessor terminated by an invoke instr, this PHI
-             instr takes the value of the invoke's return value. *)
-          let has_invoke_pred, is_retn_arg =
-            List.fold (Llvm.incoming instr) ~init:(false, true)
-              ~f:(fun (has_invoke_pred, is_retn_arg) (arg, pred) ->
-                match Llvm.block_terminator pred with
-                | Some instr -> (
-                  match Llvm.instr_opcode instr with
-                  | Invoke when Poly.equal arg instr -> (true, is_retn_arg)
-                  | Invoke -> (has_invoke_pred, false)
-                  | _ -> (has_invoke_pred, is_retn_arg) )
-                | None -> fail "rev_map_phis: %a" pp_llblock blk () )
+          let reg_exp =
+            List.find_map_exn (Llvm.incoming dst_instr)
+              ~f:(fun (arg, pred) ->
+                if Poly.equal pred src then
+                  Some (xlate_name dst_instr, xlate_value x arg)
+                else None )
           in
-          if found_invoke_pred && has_invoke_pred then
-            (* Supporting multiple PHI instructions that take the return
-               values of invoke instructions will require adding trampolines
-               for the invoke instructions to return to, that each reorder
-               arguments and invoke the translation of this block. *)
-            todo "multiple PHI instructions taking invoke return values: %a"
-              pp_llblock blk () ;
-          let retn_arg, rev_args =
-            if has_invoke_pred && is_retn_arg then (Some (f instr), rev_args)
-            else (None, f instr :: rev_args)
-          in
-          block_args_ has_invoke_pred retn_arg rev_args
-            (Llvm.instr_succ instr)
-      | LandingPad when Option.is_some retn_arg ->
-          (* Supporting returning and throwing to the same block, with
-             different arguments, will require adding trampolines. *)
-          todo
-            "return and throw to the same block with different arguments: %a"
-            pp_llblock blk ()
-      | _ -> (retn_arg, rev_args, pos) )
-    | At_end blk -> fail "rev_map_phis: %a" pp_llblock blk ()
+          xlate_jump_ (reg_exp :: reg_exps) (Llvm.instr_succ dst_instr)
+      | _ -> reg_exps )
+    | At_end blk -> fail "xlate_jump: %a" pp_llblock blk ()
   in
-  block_args_ false None [] (Llvm.instr_begin blk)
-
-(** [trampoline_args jump_instr dest_block] is the actual arguments to which
-    the translation of [dest_block] should be partially-applied, to yield a
-    trampoline accepting the return parameter of the block and then jumping
-    with all the args. *)
-let trampoline_args : x -> Llvm.llvalue -> Llvm.llbasicblock -> Exp.t list =
- fun x jmp dst ->
-  let src = Llvm.instr_parent jmp in
-  rev_map_phis dst ~f:(fun instr ->
-      List.find_map_exn (Llvm.incoming instr) ~f:(fun (arg, pred) ->
-          if Poly.equal pred src then Some (xlate_value x arg) else None )
-  )
-  |> snd3
-
-(** [unique_pred blk] is the unique predecessor of [blk], or [None] if there
-    are 0 or >1 predecessors. *)
-let unique_pred : Llvm.llbasicblock -> Llvm.llvalue option =
- fun blk ->
-  match Llvm.use_begin (Llvm.value_of_block blk) with
-  | Some use -> (
-    match Llvm.use_succ use with
-    | None -> Some (Llvm.user use)
-    | Some _ -> None )
-  | None -> None
-
-(** [return_formal_is_used instr] holds if the return value of [instr] is
-    used anywhere. *)
-let return_formal_is_used : Llvm.llvalue -> bool =
- fun instr -> Option.is_some (Llvm.use_begin instr)
-
-(** [need_return_trampoline instr blk] holds when the return formal of
-    [instr] is used, but the returned to block [blk] does not take it as an
-    argument (e.g. if it has multiple predecessors and no PHI node). *)
-let need_return_trampoline : Llvm.llvalue -> Llvm.llbasicblock -> bool =
- fun instr blk ->
-  Option.is_none (fst3 (rev_map_phis blk ~f:Fn.id))
-  && Option.is_none (unique_pred blk)
-  && return_formal_is_used instr
-
-(** [unique_used_invoke_pred blk] is the unique predecessor of [blk], if it
-    is an [Invoke] instruction, whose return value is used. *)
-let unique_used_invoke_pred : Llvm.llbasicblock -> 'a option =
- fun blk ->
-  let is_invoke i = Poly.equal (Llvm.instr_opcode i) Invoke in
-  match unique_pred blk with
-  | Some instr when is_invoke instr && return_formal_is_used instr ->
-      Some instr
-  | _ -> None
-
-(** formal parameters accepted by a block *)
-let block_formals : Llvm.llbasicblock -> Var.t list * _ Llvm.llpos =
- fun blk ->
-  let retn_arg, rev_args, pos = rev_map_phis blk ~f:xlate_name in
-  match pos with
-  | Before instr ->
-      let instr_arg =
-        match Llvm.instr_opcode instr with
-        | LandingPad ->
-            assert (Option.is_none retn_arg (* ensured by rev_map_phis *)) ;
-            Some (landingpad_arg instr)
-        | _ ->
-            Option.first_some retn_arg
-              (Option.map (unique_used_invoke_pred blk) ~f:xlate_name)
+  let jmp = Llair.Jump.mk (label_of_block dst) in
+  match xlate_jump_ reg_exps (Llvm.instr_begin dst) with
+  | [] -> (jmp, blocks)
+  | reg_exps ->
+      let mov =
+        Llair.Inst.move ~reg_exps:(Vector.of_list_rev reg_exps) ~loc
       in
-      (Option.cons instr_arg rev_args, pos)
-  | At_end blk -> fail "block_formals: %a" pp_llblock blk ()
-
-(** actual arguments passed by a jump to a block *)
-let jump_args : x -> Llvm.llvalue -> Llvm.llbasicblock -> Exp.t list =
- fun x jmp dst ->
-  let src = Llvm.instr_parent jmp in
-  let retn_arg, rev_args, _ =
-    rev_map_phis dst ~f:(fun phi ->
-        Option.value_exn
-          (List.find_map (Llvm.incoming phi) ~f:(fun (arg, pred) ->
-               if Poly.equal pred src then Some (xlate_value x arg)
-               else None )) )
-  in
-  let retn_arg =
-    Option.first_some retn_arg
-      (Option.map (unique_used_invoke_pred dst) ~f:(fun invoke ->
-           Exp.var (xlate_name invoke) ))
-  in
-  Option.cons retn_arg rev_args
+      let lbl = find_name instr ^ ".jmp" in
+      let blk =
+        Llair.Block.mk ~lbl
+          ~cmnd:(Vector.of_array [|mov|])
+          ~term:(Llair.Term.goto ~dst:jmp ~loc)
+      in
+      (Llair.Jump.mk lbl, blk :: blocks)
 
 (** An LLVM instruction is translated to a sequence of LLAIR instructions
     and a terminator, plus some additional blocks to which it may refer
@@ -1025,24 +924,21 @@ let xlate_instr :
               List.rev_init num_args ~f:(fun i ->
                   xlate_value x (Llvm.operand instr i) )
             in
-            let return = Llair.Jump.mk lbl [] in
-            Llair.Term.call ~func ~typ ~args ~loc ~return ~throw:None
-              ~ignore_result:false
+            let areturn = xlate_name_opt instr in
+            let return = Llair.Jump.mk lbl in
+            Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw:None
+              ~ignore_result:false ~loc
           in
-          let params = Option.to_list (xlate_name_opt instr) in
           continue (fun (insts, term) ->
               let cmnd = Vector.of_list insts in
-              ([], call, [Llair.Block.mk ~lbl ~params ~cmnd ~term]) ) )
+              ([], call, [Llair.Block.mk ~lbl ~cmnd ~term]) ) )
   | Invoke -> (
-      let reg = xlate_name_opt instr in
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
       let lltyp = Llvm.type_of llfunc in
       assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let fname = Llvm.value_name llfunc in
       let return_blk = Llvm.get_normal_dest instr in
-      let return_dst = label_of_block return_blk in
       let unwind_blk = Llvm.get_unwind_dest instr in
-      let unwind_dst = label_of_block unwind_blk in
       let num_args =
         if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
           Llvm.num_arg_operands instr
@@ -1058,15 +954,15 @@ let xlate_instr :
         List.rev_init num_args ~f:(fun i ->
             xlate_value x (Llvm.operand instr i) )
       in
+      let areturn = xlate_name_opt instr in
       (* intrinsics *)
       match String.split fname ~on:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
-          let arg = Option.to_list (Option.map ~f:Exp.var reg) in
-          let dst = Llair.Jump.mk return_dst arg in
-          emit_term (Llair.Term.goto ~dst ~loc)
+          let dst, blocks = xlate_jump x instr return_blk loc [] in
+          emit_term (Llair.Term.goto ~dst ~loc) ~blocks
       | ["__llair_throw"] ->
-          let dst = Llair.Jump.mk unwind_dst args in
-          emit_term (Llair.Term.goto ~dst ~loc)
+          let dst, blocks = xlate_jump x instr unwind_blk loc [] in
+          emit_term (Llair.Term.goto ~dst ~loc) ~blocks
       | ["abort"] ->
           emit_term ~prefix:[Llair.Inst.abort ~loc] Llair.Term.unreachable
       | ["_Znwm" (* operator new(size_t num) *)]
@@ -1077,11 +973,11 @@ let xlate_instr :
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
-          let args = jump_args x instr return_blk in
-          let dst = Llair.Jump.mk return_dst args in
+          let dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term
             ~prefix:[Llair.Inst.alloc ~reg ~num ~len ~loc]
             (Llair.Term.goto ~dst ~loc)
+            ~blocks
       (* unimplemented *)
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
@@ -1089,37 +985,18 @@ let xlate_instr :
       | _ ->
           let func = xlate_func_name x llfunc in
           let typ = xlate_type x (Llvm.type_of llfunc) in
+          let return, blocks = xlate_jump x instr return_blk loc [] in
+          let throw, blocks = xlate_jump x instr unwind_blk loc blocks in
+          let throw = Some throw in
           let ignore_result =
             match typ with
             | Pointer {elt= Function {return= Some _}} ->
-                not (return_formal_is_used instr)
+                Option.is_none (Llvm.use_begin instr)
             | _ -> false
           in
-          let return, blocks =
-            let args = trampoline_args x instr return_blk in
-            if not (need_return_trampoline instr return_blk) then
-              (Llair.Jump.mk return_dst args, [])
-            else
-              let lbl = name ^ ".ret" in
-              let block =
-                let params = [xlate_name instr] in
-                let cmnd = Vector.empty in
-                let term =
-                  let dst = Llair.Jump.mk return_dst args in
-                  Llair.Term.goto ~dst ~loc
-                in
-                Llair.Block.mk ~lbl ~params ~cmnd ~term
-              in
-              (Llair.Jump.mk lbl [], [block])
-          in
-          let throw =
-            let dst = unwind_dst in
-            let args = trampoline_args x instr unwind_blk in
-            Some (Llair.Jump.mk dst args)
-          in
           emit_term
-            (Llair.Term.call ~func ~typ ~args ~loc ~return ~throw
-               ~ignore_result)
+            (Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw
+               ~ignore_result ~loc)
             ~blocks )
   | Ret ->
       let exp =
@@ -1130,61 +1007,53 @@ let xlate_instr :
   | Br -> (
     match Option.value_exn (Llvm.get_branch instr) with
     | `Unconditional blk ->
-        let args = jump_args x instr blk in
-        let dst = Llair.Jump.mk (label_of_block blk) args in
-        emit_term (Llair.Term.goto ~dst ~loc)
+        let dst, blocks = xlate_jump x instr blk loc [] in
+        emit_term (Llair.Term.goto ~dst ~loc) ~blocks
     | `Conditional (cnd, thn, els) ->
         let key = xlate_value x cnd in
-        let thn_lbl = label_of_block thn in
-        let thn_args = jump_args x instr thn in
-        let thn = Llair.Jump.mk thn_lbl thn_args in
-        let els_lbl = label_of_block els in
-        let els_args = jump_args x instr els in
-        let els = Llair.Jump.mk els_lbl els_args in
-        emit_term (Llair.Term.branch ~key ~nzero:thn ~zero:els ~loc) )
+        let thn, blocks = xlate_jump x instr thn loc [] in
+        let els, blocks = xlate_jump x instr els loc blocks in
+        emit_term (Llair.Term.branch ~key ~nzero:thn ~zero:els ~loc) ~blocks
+    )
   | Switch ->
       let key = xlate_value x (Llvm.operand instr 0) in
-      let cases =
+      let cases, blocks =
         let num_cases = (Llvm.num_operands instr / 2) - 1 in
-        let rec xlate_cases i =
+        let rec xlate_cases i blocks =
           if i <= num_cases then
             let idx = Llvm.operand instr (2 * i) in
             let blk =
               Llvm.block_of_value (Llvm.operand instr ((2 * i) + 1))
             in
             let num = xlate_value x idx in
-            let dst = label_of_block blk in
-            let args = jump_args x instr blk in
-            let rest = xlate_cases (i + 1) in
-            (num, Llair.Jump.mk dst args) :: rest
-          else []
+            let jmp, blocks = xlate_jump x instr blk loc blocks in
+            let rest, blocks = xlate_cases (i + 1) blocks in
+            ((num, jmp) :: rest, blocks)
+          else ([], blocks)
         in
-        xlate_cases 1
+        xlate_cases 1 []
       in
       let tbl = Vector.of_list cases in
       let blk = Llvm.block_of_value (Llvm.operand instr 1) in
-      let dst = label_of_block blk in
-      let args = jump_args x instr blk in
-      let els = Llair.Jump.mk dst args in
-      emit_term (Llair.Term.switch ~key ~tbl ~els ~loc)
+      let els, blocks = xlate_jump x instr blk loc blocks in
+      emit_term (Llair.Term.switch ~key ~tbl ~els ~loc) ~blocks
   | IndirectBr ->
       let ptr = xlate_value x (Llvm.operand instr 0) in
       let num_dests = Llvm.num_operands instr - 1 in
-      let lldests =
-        let rec dests i =
+      let lldests, blocks =
+        let rec dests i blocks =
           if i <= num_dests then
             let v = Llvm.operand instr i in
             let blk = Llvm.block_of_value v in
-            let dst = label_of_block blk in
-            let args = jump_args x instr blk in
-            let rest = dests (i + 1) in
-            Llair.Jump.mk dst args :: rest
-          else []
+            let jmp, blocks = xlate_jump x instr blk loc blocks in
+            let rest, blocks = dests (i + 1) blocks in
+            (jmp :: rest, blocks)
+          else ([], blocks)
         in
-        dests 1
+        dests 1 []
       in
       let tbl = Vector.of_list lldests in
-      emit_term (Llair.Term.iswitch ~ptr ~tbl ~loc)
+      emit_term (Llair.Term.iswitch ~ptr ~tbl ~loc) ~blocks
   | LandingPad ->
       (* Translate the landingpad clauses to code to load the type_info from
          the thrown exception, and test the type_info against the clauses,
@@ -1192,7 +1061,7 @@ let xlate_instr :
          passing a value for the selector which the handler code tests to
          e.g. either cleanup or rethrow. *)
       let i32, tip, cxa_exception = landingpad_typs x instr in
-      let exc = Exp.var (landingpad_arg instr) in
+      let exc = Exp.var (Var.program (find_name instr ^ ".exc")) in
       let ti = Var.program (name ^ ".ti") in
       (* std::type_info* ti = ((__cxa_exception* )exc - 1)->exceptionType *)
       let load_ti =
@@ -1213,33 +1082,44 @@ let xlate_instr :
       let typeid = xlate_llvm_eh_typeid_for x tip ti in
       let lbl = name ^ ".unwind" in
       let param = xlate_name instr in
-      let params = [param] in
-      let jump_unwind sel =
-        let dst = lbl in
-        let args = [Exp.record [exc; sel]] in
-        Llair.Jump.mk dst args
+      let jump_unwind i sel rev_blocks =
+        let arg = Exp.record [exc; sel] in
+        let mov =
+          Llair.Inst.move ~reg_exps:(Vector.of_array [|(param, arg)|]) ~loc
+        in
+        let lbl = lbl ^ "." ^ Int.to_string i in
+        let blk =
+          Llair.Block.mk ~lbl
+            ~cmnd:(Vector.of_array [|mov|])
+            ~term:(Llair.Term.goto ~dst:(Llair.Jump.mk lbl) ~loc)
+        in
+        (Llair.Jump.mk lbl, blk :: rev_blocks)
       in
-      let goto_unwind sel =
-        let dst = jump_unwind sel in
-        Llair.Term.goto ~dst ~loc
+      let goto_unwind i sel blocks =
+        let dst, blocks = jump_unwind i sel blocks in
+        (Llair.Term.goto ~dst ~loc, blocks)
       in
       let term_unwind, rev_blocks =
         if Llvm.is_cleanup instr then
-          (goto_unwind (Exp.integer Z.zero i32), [])
+          goto_unwind 0 (Exp.integer Z.zero i32) []
         else
           let num_clauses = Llvm.num_operands instr in
           let lbl i = name ^ "." ^ Int.to_string i in
-          let jump i = Llair.Jump.mk (lbl i) [] in
+          let jump i = Llair.Jump.mk (lbl i) in
           let block i term =
-            Llair.Block.mk ~lbl:(lbl i) ~params:[] ~cmnd:Vector.empty ~term
+            Llair.Block.mk ~lbl:(lbl i) ~cmnd:Vector.empty ~term
           in
-          let match_filter =
-            jump_unwind (Exp.sub i32 (Exp.integer Z.zero i32) typeid)
+          let match_filter i rev_blocks =
+            jump_unwind i
+              (Exp.sub i32 (Exp.integer Z.zero i32) typeid)
+              rev_blocks
           in
-          let xlate_clause i =
+          let xlate_clause i rev_blocks =
             let clause = Llvm.operand instr i in
             let num_tis = Llvm.num_operands clause in
-            if num_tis = 0 then Llair.Term.goto ~dst:match_filter ~loc
+            if num_tis = 0 then
+              let dst, rev_blocks = match_filter i rev_blocks in
+              (Llair.Term.goto ~dst ~loc, rev_blocks)
             else
               match Llvm.classify_type (Llvm.type_of clause) with
               | Array (* filter *) -> (
@@ -1252,30 +1132,32 @@ let xlate_instr :
                       else Exp.dq tiI ti
                     in
                     let key = xlate_filter 0 in
-                    Llair.Term.branch ~loc ~key ~nzero:match_filter
-                      ~zero:(jump (i + 1))
+                    let nzero, rev_blocks = match_filter i rev_blocks in
+                    ( Llair.Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
+                    , rev_blocks )
                 | _ -> fail "xlate_instr: %a" pp_llvalue instr () )
               | _ (* catch *) ->
                   let clause = xlate_value x clause in
                   let key =
                     Exp.or_ (Exp.eq clause Exp.null) (Exp.eq clause ti)
                   in
-                  Llair.Term.branch ~loc ~key ~nzero:(jump_unwind typeid)
-                    ~zero:(jump (i + 1))
+                  let nzero, rev_blocks = jump_unwind i typeid rev_blocks in
+                  ( Llair.Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))
+                  , rev_blocks )
           in
           let rec rev_blocks i z =
             if i < num_clauses then
-              rev_blocks (i + 1) (block i (xlate_clause i) :: z)
+              let term, z = xlate_clause i z in
+              rev_blocks (i + 1) (block i term :: z)
             else block i Llair.Term.unreachable :: z
           in
-          (xlate_clause 0, rev_blocks 1 [])
+          xlate_clause 0 (rev_blocks 1 [])
       in
       continue (fun (insts, term) ->
           ( [load_ti]
           , term_unwind
           , List.rev_append rev_blocks
-              [ Llair.Block.mk ~lbl ~params ~cmnd:(Vector.of_list insts)
-                  ~term ] ) )
+              [Llair.Block.mk ~lbl ~cmnd:(Vector.of_list insts) ~term] ) )
   | Resume ->
       let rcd = xlate_value x (Llvm.operand instr 0) in
       let exc = Exp.select ~rcd ~idx:(Exp.integer Z.zero Typ.siz) in
@@ -1298,6 +1180,18 @@ let xlate_instr :
       fail "xlate_instr: %a" pp_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
+let skip_phis : Llvm.llbasicblock -> _ Llvm.llpos =
+ fun blk ->
+  let rec skip_phis_ (pos : _ Llvm.llpos) =
+    match pos with
+    | Before instr -> (
+      match Llvm.instr_opcode instr with
+      | PHI -> skip_phis_ (Llvm.instr_succ instr)
+      | _ -> pos )
+    | _ -> pos
+  in
+  skip_phis_ (Llvm.instr_begin blk)
+
 let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
  fun pop x -> function
   | Before instrI ->
@@ -1313,9 +1207,9 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
   [%Trace.call fun {pf} -> pf "%a" pp_llblock blk]
   ;
   let lbl = label_of_block blk in
-  let params, pos = block_formals blk in
+  let pos = skip_phis blk in
   let insts, term, blocks = xlate_instrs pop x pos in
-  Llair.Block.mk ~lbl ~params ~cmnd:(Vector.of_list insts) ~term :: blocks
+  Llair.Block.mk ~lbl ~cmnd:(Vector.of_list insts) ~term :: blocks
   |>
   [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).Llair.lbl]
 
@@ -1341,8 +1235,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
       in
       let entry =
         let {Llair.lbl; cmnd; term} = entry_block in
-        assert (List.is_empty entry_block.params) ;
-        Llair.Block.mk ~lbl ~params ~cmnd ~term
+        Llair.Block.mk ~lbl ~cmnd ~term
       in
       let cfg =
         let rec trav_blocks rev_cfg prev =
@@ -1355,7 +1248,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Llair.Func.mk ~name ~entry ~cfg
+      Llair.Func.mk ~name ~params ~entry ~cfg
   | At_end _ ->
       report_undefined llf name ;
       Llair.Func.mk_undefined ~name ~params )

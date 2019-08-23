@@ -18,14 +18,7 @@ module Stack : sig
   val empty : t
 
   val push_call :
-       Llair.block
-    -> retreating:bool
-    -> bound:int
-    -> return:Llair.jump
-    -> Domain.from_call
-    -> ?throw:Llair.jump
-    -> t
-    -> t option
+    Llair.func Llair.call -> bound:int -> Domain.from_call -> t -> t option
 
   val pop_return : t -> (Domain.from_call * Llair.jump * t) option
 
@@ -37,8 +30,7 @@ module Stack : sig
 end = struct
   type t =
     | Return of
-        { retreating: bool
-              (** return from a call not known to be nonrecursive *)
+        { recursive: bool  (** return from a possibly-recursive call *)
         ; dst: Llair.Jump.t
         ; params: Var.t list
         ; locals: Var.Set.t
@@ -59,8 +51,8 @@ end = struct
     if x == y then 0
     else
       match (x, y) with
-      | Return {retreating= true; stk= x}, y
-       |x, Return {retreating= true; stk= y} ->
+      | Return {recursive= true; stk= x}, y
+       |x, Return {recursive= true; stk= y} ->
           compare_as_inlined_location x y
       | Return {dst= j; stk= x}, Return {dst= k; stk= y} -> (
         match Llair.Jump.compare j k with
@@ -77,10 +69,10 @@ end = struct
       | Empty, Empty -> 0
 
   let rec print_abbrev fs = function
-    | Return {retreating= false; stk= s} ->
+    | Return {recursive= false; stk= s} ->
         print_abbrev fs s ;
         Format.pp_print_char fs 'R'
-    | Return {retreating= true; stk= s} ->
+    | Return {recursive= true; stk= s} ->
         print_abbrev fs s ;
         Format.pp_print_string fs "R↑"
     | Throw (_, s) ->
@@ -97,16 +89,16 @@ end = struct
 
   let empty = Empty |> check invariant
 
-  let push_return ~retreating dst params locals from_call stk =
-    Return {retreating; dst; params; locals; from_call; stk}
+  let push_return Llair.{callee= {params; locals}; return; recursive}
+      from_call stk =
+    Return {recursive; dst= return; params; locals; from_call; stk}
     |> check invariant
 
   let push_throw jmp stk =
     (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
     |> check invariant
 
-  let push_call (entry : Llair.block) ~retreating ~bound ~return from_call
-      ?throw stk =
+  let push_call (Llair.{return; throw} as call) ~bound from_call stk =
     [%Trace.call fun {pf} -> pf "%a" print_abbrev stk]
     ;
     let rec count_f_in_stack acc f = function
@@ -118,11 +110,7 @@ end = struct
     in
     let n = count_f_in_stack 0 return stk in
     ( if n > bound then None
-    else
-      Some
-        (push_throw throw
-           (push_return ~retreating return entry.params entry.parent.locals
-              from_call stk)) )
+    else Some (push_throw throw (push_return call from_call stk)) )
     |>
     [%Trace.retn fun {pf} _ ->
       pf "%d of %a on stack" n Llair.Jump.pp return]
@@ -246,55 +234,52 @@ end = struct
     | None -> [%Trace.info "queue empty"] ; ()
 end
 
-let exec_goto stk state block ({dst; retreating} : Llair.jump) =
+let exec_jump stk state block Llair.{dst; retreating} =
   Work.add ~prev:block ~retreating stk state dst
-
-let exec_jump ?temps stk state block ({dst; args} as jmp : Llair.jump) =
-  let state = Domain.jump args dst.params ?temps state in
-  exec_goto stk state block jmp
 
 let summary_table = Hashtbl.create (module Var)
 
-let exec_call opts stk state block ({dst; args; retreating} : Llair.jump)
-    (return : Llair.jump) throw globals =
+let exec_call opts stk state block call globals =
+  let Llair.{callee; args; areturn; return; recursive} = call in
+  let Llair.{name; params; freturn; locals; entry} = callee in
   [%Trace.call fun {pf} ->
-    pf "%a from %a" Var.pp dst.parent.name.var Var.pp
-      return.dst.parent.name.var]
+    pf "%a from %a" Var.pp name.var Var.pp return.dst.parent.name.var]
   ;
   let dnf_states =
     if opts.function_summaries then Domain.dnf state else [state]
   in
-  let locals = dst.parent.locals in
-  let domain_call = Domain.call args dst.params locals globals in
+  let domain_call =
+    Domain.call args areturn params (Set.add_option freturn locals) globals
+  in
   List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
-      let maybe_summary_post =
-        if opts.function_summaries then
-          let state = fst (domain_call ~summaries:false state) in
-          Hashtbl.find summary_table dst.parent.name.var
-          >>= List.find_map ~f:(Domain.apply_summary state)
-        else None
-      in
-      [%Trace.info
-        "Maybe summary post: %a"
-          (Option.pp "%a" Domain.pp)
-          maybe_summary_post] ;
-      match maybe_summary_post with
+      match
+        if not opts.function_summaries then None
+        else
+          let maybe_summary_post =
+            let state = fst (domain_call ~summaries:false state) in
+            Hashtbl.find summary_table name.var
+            >>= List.find_map ~f:(Domain.apply_summary state)
+          in
+          [%Trace.info
+            "Maybe summary post: %a"
+              (Option.pp "%a" Domain.pp)
+              maybe_summary_post] ;
+          maybe_summary_post
+      with
       | None ->
           let state, from_call =
             domain_call ~summaries:opts.function_summaries state
           in
           Work.seq acc
-            ( match
-                Stack.push_call ~bound:opts.bound dst ~retreating ~return
-                  from_call ?throw stk
-              with
-            | Some stk -> Work.add stk ~prev:block ~retreating state dst
+            ( match Stack.push_call call ~bound:opts.bound from_call stk with
+            | Some stk ->
+                Work.add stk ~prev:block ~retreating:recursive state entry
             | None -> Work.skip )
-      | Some post -> Work.seq acc (exec_goto stk post block return) )
+      | Some post -> Work.seq acc (exec_jump stk post block return) )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let pp_st _ =
+let pp_st () =
   [%Trace.printf
     "@[<v>%t@]" (fun fs ->
         Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
@@ -303,88 +288,72 @@ let pp_st _ =
               data ) )]
 
 let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
-  [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
+  let Llair.{name; params; freturn; locals} = block.parent in
+  [%Trace.call fun {pf} -> pf "from %a" Var.pp name.var]
   ;
   ( match Stack.pop_return stk with
   | Some (from_call, retn_site, stk) ->
-      let freturn = block.parent.freturn in
       let exit_state =
         match (freturn, exp) with
         | Some freturn, Some return_val ->
-            Domain.exec_return pre_state freturn return_val
+            Domain.exec_move pre_state freturn return_val
         | None, None -> pre_state
         | _ -> violates Llair.Func.invariant block.parent
       in
-      let exit_state =
+      let post_state = Domain.post locals from_call exit_state in
+      let post_state =
         if opts.function_summaries then (
           let globals =
             Var.Set.of_vector
               (Vector.map globals ~f:(fun (g : Global.t) -> g.var))
           in
-          let function_summary, exit_state =
-            Domain.create_summary ~locals:block.parent.locals exit_state
-              ~formals:
-                (Set.union
-                   (Var.Set.of_list block.parent.entry.params)
-                   globals)
+          let function_summary, post_state =
+            Domain.create_summary ~locals post_state
+              ~formals:(Set.union (Var.Set.of_list params) globals)
           in
-          Hashtbl.add_multi summary_table ~key:block.parent.name.var
+          Hashtbl.add_multi summary_table ~key:name.var
             ~data:function_summary ;
           pp_st () ;
-          exit_state )
-        else exit_state
+          post_state )
+        else post_state
       in
-      let post_state =
-        Domain.post block.parent.locals from_call exit_state
-      in
-      let retn_state =
-        Domain.retn block.parent.entry.params from_call post_state
-      in
-      exec_jump stk retn_state block
-        ~temps:(Option.fold ~f:Set.add freturn ~init:Var.Set.empty)
-        ( match freturn with
-        | Some freturn -> Llair.Jump.push_arg (Exp.var freturn) retn_site
-        | None -> retn_site )
+      let retn_state = Domain.retn params freturn from_call post_state in
+      exec_jump stk retn_state block retn_site
   | None -> Work.skip )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
 let exec_throw stk pre_state (block : Llair.block) exc =
-  [%Trace.call fun {pf} -> pf "from %a" Var.pp block.parent.name.var]
+  let func = block.parent in
+  [%Trace.call fun {pf} -> pf "from %a" Var.pp func.name.var]
   ;
   let unwind params scope from_call state =
-    Domain.retn params from_call (Domain.post scope from_call state)
+    Domain.retn params (Some func.fthrow) from_call
+      (Domain.post scope from_call state)
   in
   ( match Stack.pop_throw stk ~unwind ~init:pre_state with
   | Some (from_call, retn_site, stk, unwind_state) ->
-      let fthrow = block.parent.fthrow in
-      let exit_state = Domain.exec_return unwind_state fthrow exc in
-      let post_state =
-        Domain.post block.parent.locals from_call exit_state
-      in
+      let fthrow = func.fthrow in
+      let exit_state = Domain.exec_move unwind_state fthrow exc in
+      let post_state = Domain.post func.locals from_call exit_state in
       let retn_state =
-        Domain.retn block.parent.entry.params from_call post_state
+        Domain.retn func.params func.freturn from_call post_state
       in
-      exec_jump stk retn_state block
-        ~temps:(Set.add Var.Set.empty fthrow)
-        (Llair.Jump.push_arg (Exp.var fthrow) retn_site)
+      exec_jump stk retn_state block retn_site
   | None -> Work.skip )
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
 let exec_skip_func :
-    Stack.t -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
- fun stk state block ({dst; args} as return) ->
+       Stack.t
+    -> Domain.t
+    -> Llair.block
+    -> Var.t option
+    -> Llair.jump
+    -> Work.x =
+ fun stk state block areturn return ->
   Report.unknown_call block.term ;
-  let return =
-    if List.is_empty dst.params then return
-    else
-      let args =
-        List.fold_right dst.params ~init:args ~f:(fun param args ->
-            Exp.nondet (Var.name param) :: args )
-      in
-      {return with args}
-  in
+  let state = Option.fold ~f:Domain.exec_kill ~init:state areturn in
   exec_jump stk state block return
 
 let exec_term :
@@ -417,32 +386,30 @@ let exec_term :
           with
           | Some state -> exec_jump stk state block jump |> Work.seq x
           | None -> x )
-  | Call {call= {dst; args; retreating}; return; throw} -> (
+  | Call ({callee; args; areturn; return} as call) -> (
     match
       let lookup name =
         Option.to_list (Llair.Func.find pgm.functions name)
       in
-      Domain.resolve_callee lookup dst state
+      Domain.resolve_callee lookup callee state
     with
-    | [] -> exec_skip_func stk state block return
+    | [] -> exec_skip_func stk state block areturn return
     | callees ->
         List.fold callees ~init:Work.skip ~f:(fun x callee ->
             ( match
                 Domain.exec_intrinsic ~skip_throw:opts.skip_throw state
-                  (List.hd return.dst.params)
-                  callee.name.var args
+                  areturn callee.name.var args
               with
             | Some (Error ()) ->
                 Report.invalid_access_term (Domain.project state) block.term ;
                 Work.skip
             | Some (Ok state) when Domain.is_false state -> Work.skip
-            | Some (Ok state) -> exec_goto stk state block return
+            | Some (Ok state) -> exec_jump stk state block return
             | None when Llair.Func.is_undefined callee ->
-                exec_skip_func stk state block return
+                exec_skip_func stk state block areturn return
             | None ->
-                exec_call opts stk state block
-                  {dst= callee.entry; args; retreating}
-                  return throw pgm.globals )
+                exec_call opts stk state block {call with callee}
+                  pgm.globals )
             |> Work.seq x ) )
   | Return {exp} -> exec_return ~opts stk state block exp pgm.globals
   | Throw {exc} ->
@@ -471,13 +438,13 @@ let harness : exec_opts -> Llair.t -> (int -> Work.t) option =
   List.find_map entry_points ~f:(fun name ->
       Llair.Func.find pgm.functions (Var.program name) )
   |> function
-  | Some {locals; entry= {params= []} as block} ->
+  | Some {locals; params= []; entry} ->
       Some
         (Work.init
            (fst
-              (Domain.call ~summaries:opts.function_summaries [] [] locals
-                 pgm.globals (Domain.init pgm.globals)))
-           block)
+              (Domain.call ~summaries:opts.function_summaries [] None []
+                 locals pgm.globals (Domain.init pgm.globals)))
+           entry)
   | _ -> None
 
 let exec_pgm : exec_opts -> Llair.t -> unit =

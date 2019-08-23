@@ -52,7 +52,6 @@ let assume pre cnd =
   if Sh.is_false post then None else Some post
 
 let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
-let return pre formal exp = Sh.and_ (Exp.eq (Exp.var formal) exp) pre
 
 (* { emp }
  *   rs := es
@@ -670,10 +669,10 @@ let exec_spec pre {xs; foot; sub; ms; post} =
           Format.fprintf fs "%a := " Var.Set.pp ms )
       ms Sh.pp post ;
     assert (
-      let vs = Set.diff (Set.diff foot.Sh.us xs) pre.Sh.us in
+      let vs = Set.diff (Set.diff foot.us xs) pre.us in
       Set.is_empty vs || Trace.fail "unbound foot: {%a}" Var.Set.pp vs ) ;
     assert (
-      let vs = Set.diff (Set.diff post.Sh.us xs) pre.Sh.us in
+      let vs = Set.diff (Set.diff post.us xs) pre.us in
       Set.is_empty vs || Trace.fail "unbound post: {%a}" Var.Set.pp vs )]
   ;
   let foot = Sh.extend_us xs foot in
@@ -697,6 +696,10 @@ let rec exec_specs pre = function
       >>= fun post ->
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
   | [] -> Ok (Sh.false_ pre.us)
+
+let move pre reg exp =
+  exec_spec pre (move_spec pre.us (Vector.of_array [|(reg, exp)|]))
+  |> function Ok post -> post | _ -> assert false
 
 let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
  fun pre inst ->
@@ -727,18 +730,18 @@ let intrinsic ~skip_throw :
     -> Var.t
     -> Exp.t list
     -> (Sh.t, unit) result option =
- fun pre result intrinsic actuals ->
+ fun pre areturn intrinsic actuals ->
   [%Trace.info
     "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
       (Option.pp "%a := " Var.pp)
-      result Var.pp intrinsic (List.pp ",@ " Exp.pp) (List.rev actuals)
+      areturn Var.pp intrinsic (List.pp ",@ " Exp.pp) (List.rev actuals)
       Sh.pp pre] ;
   let us = pre.us in
   let name =
     let n = Var.name intrinsic in
     match String.index n '.' with None -> n | Some i -> String.prefix n i
   in
-  match (result, name, actuals) with
+  match (areturn, name, actuals) with
   (*
    * cstdlib - memory management
    *)

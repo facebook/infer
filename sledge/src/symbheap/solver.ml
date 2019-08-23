@@ -61,7 +61,7 @@ let single_existential_occurrence xs exp =
   with Multiple_existential_occurrences -> Many
 
 let special_cases xs = function
-  | Exp.(App {op= App {op= Eq; arg= Var _}; arg= Var _}) as e ->
+  | Exp.App {op= App {op= Eq; arg= Var _}; arg= Var _} as e ->
       if Set.is_subset (Exp.fv e) ~of_:xs then Exp.bool true else e
   | e -> e
 

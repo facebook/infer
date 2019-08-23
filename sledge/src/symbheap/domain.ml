@@ -29,17 +29,21 @@ let exec_assume (entry, current) cnd =
   | Some current -> Some (entry, current)
   | None -> None
 
+let exec_kill (entry, current) reg =
+  (entry, State_domain.exec_kill current reg)
+
+let exec_move (entry, current) formal actual =
+  (entry, State_domain.exec_move current formal actual)
+
 let exec_inst (entry, current) inst =
   match State_domain.exec_inst current inst with
   | Ok current -> Ok (entry, current)
   | Error e -> Error e
 
-let exec_return (entry, current) formal actual =
-  (entry, State_domain.exec_return current formal actual)
-
-let exec_intrinsic ~skip_throw (entry, current) result intrinsic actuals =
+let exec_intrinsic ~skip_throw (entry, current) areturn intrinsic actuals =
   match
-    State_domain.exec_intrinsic ~skip_throw current result intrinsic actuals
+    State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
+      actuals
   with
   | None -> None
   | Some (Ok current) -> Some (Ok (entry, current))
@@ -49,11 +53,8 @@ type from_call =
   {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
 [@@deriving sexp_of]
 
-let jump actuals formals ?temps (entry, current) =
-  let current, _ = State_domain.jump actuals formals ?temps current in
-  (entry, current)
-
-let call ~summaries actuals formals locals globals_vec (entry, current) =
+let call ~summaries actuals areturn formals locals globals_vec
+    (entry, current) =
   let globals =
     Var.Set.of_vector
       (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
@@ -67,7 +68,8 @@ let call ~summaries actuals formals locals globals_vec (entry, current) =
        State_domain.pp current]
   ;
   let caller_current, state_from_call =
-    State_domain.call ~summaries actuals formals locals globals current
+    State_domain.call ~summaries actuals areturn formals locals globals
+      current
   in
   ((caller_current, caller_current), {state_from_call; caller_entry= entry}))
   |>
@@ -80,10 +82,10 @@ let post locals {caller_entry} (_, current) =
   |>
   [%Trace.retn fun {pf} -> pf "@,%a" pp]
 
-let retn formals {caller_entry; state_from_call} (_, current) =
+let retn formals freturn {caller_entry; state_from_call} (_, current) =
   [%Trace.call fun {pf} -> pf "@,%a" State_domain.pp current]
   ;
-  (caller_entry, State_domain.retn formals state_from_call current)
+  (caller_entry, State_domain.retn formals freturn state_from_call current)
   |>
   [%Trace.retn fun {pf} -> pf "@,%a" pp]
 

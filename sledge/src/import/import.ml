@@ -264,6 +264,7 @@ module Set = struct
   let equal_m__t (module Elt : Compare_m) = equal
   let pp pp_elt fs x = List.pp ",@ " pp_elt fs (to_list x)
   let disjoint x y = is_empty (inter x y)
+  let add_option yo x = Option.fold ~f:add ~init:x yo
   let add_list ys x = List.fold ~f:add ~init:x ys
   let diff_inter_diff x y = (diff x y, inter x y, diff y x)
   let inter_diff x y = (inter x y, diff y x)

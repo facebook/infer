@@ -8,7 +8,8 @@
 (** Symbolic Execution *)
 
 val assume : Sh.t -> Exp.t -> Sh.t option
-val return : Sh.t -> Var.t -> Exp.t -> Sh.t
+val kill : Sh.t -> Var.t -> Sh.t
+val move : Sh.t -> Var.t -> Exp.t -> Sh.t
 val inst : Sh.t -> Llair.inst -> (Sh.t, unit) result
 
 val intrinsic :
