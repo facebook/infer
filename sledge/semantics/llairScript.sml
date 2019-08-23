@@ -16,22 +16,25 @@ numLib.prefer_num ();
 
 (* ----- Abstract syntax ----- *)
 
-Datatype `
+Datatype:
   typ =
   | FunctionT typ (typ list)
   | IntegerT num
   | PointerT typ
   | ArrayT typ num
-  | TupleT (typ list)`;
+  | TupleT (typ list)
+End
 
-Datatype `
-  var = Var_name string`;
+Datatype:
+  var = Var_name string
+End
 
-Datatype `
-  label = Lab_name string string`;
+Datatype:
+  label = Lab_name string string
+End
 
 (* Based on the constructor functions in exp.mli rather than the type definition *)
-Datatype `
+Datatype:
   exp =
   | Var var
   | Nondet
@@ -52,9 +55,10 @@ Datatype `
   (* Args: Record, index *)
   | Select exp exp
   (* Args: Record, index, value *)
-  | Update exp exp exp`;
+  | Update exp exp exp
+End
 
-Datatype `
+Datatype:
   inst =
   (* Args: the list of variable, expression assignments to do *)
   | Move ((var # exp) list)
@@ -74,9 +78,10 @@ Datatype `
   | Free exp
   (* Args: result reg *)
   | NondetI var
-  | Abort`;
+  | Abort
+End
 
-Datatype `
+Datatype:
   term =
   (* Args: key, branch table, default exp *)
   | Switch exp ((num # label) list) label
@@ -87,53 +92,62 @@ Datatype `
   | Call var label (exp list) typ label label
   | Return exp
   | Throw exp
-  | Unreachable`;
+  | Unreachable
+End
 
-Datatype `
-  block = <| cmnd : inst list; term : term |>`;
+Datatype:
+  block = <| cmnd : inst list; term : term |>
+End
 
 (* The llair code doesn't have params here yet, but it will need to *)
-Datatype `
+Datatype:
   func = <| params : var list;
             locals : var set;
             entry : label;
             cfg : (label, block) alist;
             freturn : var;
-            fthrow : var |>`;
+            fthrow : var |>
+End
 
 (* The int is how much space the global needs *)
-Datatype `
-  global = <| var : var; init : (exp # int) option; typ: typ |>`;
+Datatype:
+  global = <| var : var; init : (exp # int) option; typ: typ |>
+End
 
-Datatype `
-  llair = <| globals : global list; functions : (label, func) alist |>`;
+Datatype:
+  llair = <| globals : global list; functions : (label, func) alist |>
+End
 
 (* ----- Semantic states ----- *)
 
 (* TODO Given the similarities with LLVM, consider moving some definitions into
  * a common predecessor theory *)
 
-Datatype `
-  addr = A num`;
+Datatype:
+  addr = A num
+End
 
 (* These are the values that can be stored in registers. The implementation uses
  * integers with a bit-width to represent numbers, and keeps locations and sizes
  * separate.
  *)
-Datatype `
+Datatype:
   v =
   | LocV num
   | SizeV num
   | IntV int num
-  | AggV (v list)`;
+  | AggV (v list)
+End
 
-Datatype `
-  pc = <| l : label; i : num |>`;
+Datatype:
+  pc = <| l : label; i : num |>
+End
 
-Datatype `
-  frame = <| ret : pc; exn_ret : pc; ret_var : var; saved_locals : var |-> v; |>`;
+Datatype:
+  frame = <| ret : pc; exn_ret : pc; ret_var : var; saved_locals : var |-> v; |>
+End
 
-Datatype `
+Datatype:
   state =
     <| ip : pc;
        globals : var |-> word64;
@@ -147,7 +161,8 @@ Datatype `
         * semantics. *)
        allocations : (num # num) set;
        (* A byte addressed heap *)
-       heap : addr |-> word8 |>`;
+       heap : addr |-> word8 |>
+End
 
 (* ----- Semantic transitions ----- *)
 

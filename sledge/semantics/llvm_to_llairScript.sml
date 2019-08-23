@@ -180,12 +180,13 @@ Definition translate_instr_to_term_def:
     Iswitch (translate_arg emap a) [translate_label f l2; translate_label f l1]
 End
 
-Datatype `
+Datatype:
   instr_class =
   | Exp reg
   | Non_exp
   | Term
-  | Call`;
+  | Call
+End
 
 Definition classify_instr_def:
   (classify_instr (Call _ _ _ _) = Call) ∧

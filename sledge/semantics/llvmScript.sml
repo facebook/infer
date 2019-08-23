@@ -18,47 +18,56 @@ numLib.prefer_num ();
 (* ----- Abstract syntax ----- *)
 
 (* Only support 1, 8, 32, and 64 bit words for now *)
-Datatype `
-  size = W1 | W8 | W32 | W64`;
+Datatype:
+  size = W1 | W8 | W32 | W64
+End
 
-Datatype `
+Datatype:
   ty =
   | FunT ty (ty list)
   | IntT size
   | PtrT ty
   | ArrT num ty
-  | StrT (ty list)`;
+  | StrT (ty list)
+End
 
-Datatype `
-  label = Lab string`;
+Datatype:
+  label = Lab string
+End
 
-Datatype `
-  reg = Reg string`;
+Datatype:
+  reg = Reg string
+End
 
-Datatype `
-  glob_var = Glob_var string`;
+Datatype:
+  glob_var = Glob_var string
+End
 
-Datatype `
-  fun_name = Fn string`;
+Datatype:
+  fun_name = Fn string
+End
 
-Datatype `
+Datatype:
   const =
   | IntC size int
   | StrC ((ty # const) list)
   | ArrC ((ty # const) list)
   | GepC ty const (ty # const) ((ty # const) list)
   | GlobalC glob_var
-  | UndefC`;
+  | UndefC
+End
 
-Datatype `
-  arg = Constant const | Variable reg`;
+Datatype:
+  arg = Constant const | Variable reg
+End
 
-type_abbrev ("targ", ``:ty # arg``);
+Type targ = ``:ty # arg``
 
-Datatype `
-  cond = Eq | Ult | Slt`;
+Datatype:
+  cond = Eq | Ult | Slt
+End
 
-Datatype `
+Datatype:
   instr =
   (* Terminators *)
   | Ret targ
@@ -82,33 +91,40 @@ Datatype `
   | Cxa_throw arg arg arg
   | Cxa_begin_catch reg arg
   | Cxa_end_catch
-  | Cxa_get_exception_ptr reg arg`;
+  | Cxa_get_exception_ptr reg arg
+End
 
-Datatype `
-  phi = Phi reg ty ((label option, arg) alist)`;
+Datatype:
+  phi = Phi reg ty ((label option, arg) alist)
+End
 
-Datatype `
-  clause = Catch targ`;
+Datatype:
+  clause = Catch targ
+End
 
-Datatype `
-  landingpad = Landingpad ty bool (clause list)`;
+Datatype:
+  landingpad = Landingpad ty bool (clause list)
+End
 
-Datatype `
+Datatype:
   blockHeader =
   | Entry
-  | Head (phi list) (landingpad option)`;
+  | Head (phi list) (landingpad option)
+End
 
-Datatype `
-  block = <| h : blockHeader; body : instr list |>`;
+Datatype:
+  block = <| h : blockHeader; body : instr list |>
+End
 
-Datatype `
+Datatype:
   def =
     <| r : ty;
        params : reg list;
        (* None -> entry block, and Some name -> non-entry block *)
-       blocks : (label option, block) alist |>`;
+       blocks : (label option, block) alist |>
+End
 
-type_abbrev ("prog", ``:(fun_name, def) alist``);
+Type prog = ``:(fun_name, def) alist``
 
 Definition terminator_def:
   (terminator (Ret _) ⇔ T) ∧
@@ -120,10 +136,11 @@ End
 
 (* ----- Semantic states ----- *)
 
-Datatype `
-  addr = A num`;
+Datatype:
+  addr = A num
+End
 
-Datatype `
+Datatype:
   v =
   | W1V word1
   | W8V word8
@@ -131,18 +148,22 @@ Datatype `
   | W64V word64
   | AggV (v list)
   | PtrV word64
-  | UndefV`;
+  | UndefV
+End
 
-Datatype `
-  pv = <| poison : bool; value : v |>`;
+Datatype:
+  pv = <| poison : bool; value : v |>
+End
 
-Datatype `
-  pc = <| f : fun_name; b : label option; i : num |>`;
+Datatype:
+  pc = <| f : fun_name; b : label option; i : num |>
+End
 
-Datatype `
-  frame = <| ret : pc; saved_locals : reg |-> pv; result_var : reg; stack_allocs : addr list |>`;
+Datatype:
+  frame = <| ret : pc; saved_locals : reg |-> pv; result_var : reg; stack_allocs : addr list |>
+End
 
-Datatype `
+Datatype:
   state =
     <| ip : pc;
        (* Keep the size of the global with its memory address *)
@@ -153,7 +174,8 @@ Datatype `
         * free-able or not *)
        allocations : (bool # num # num) set;
        (* A byte addressed heap, with a poison tag *)
-       heap : addr |-> bool # word8 |>`;
+       heap : addr |-> bool # word8 |>
+End
 
 (* ----- Things about types ----- *)
 
