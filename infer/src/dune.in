@@ -11,7 +11,8 @@ let ( ^/ ) = Filename.concat
 
 let source_dirs =
   (if facebook then "facebook" else "opensource")
-  :: ( (if clang then ["clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
+  :: ( ( if clang then ["al"; "clang"; "unit" ^/ "clang"]
+       else ["clang_stubs"; "unit" ^/ "clang_stubs"] )
      @ [ (if java then "java" else "java_stubs")
        ; "absint"
        ; "backend"

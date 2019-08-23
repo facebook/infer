@@ -44,8 +44,8 @@ ml_src_files_without_mli:=$(shell cd .. && for i in $$(find . -not -path "./*stu
 depend:
 	cd .. && \
 	ocamldep -native \
-	  -I IR -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers \
-	  -I clang -I concurrency -I facebook -I integration -I istd -I java \
+	  -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun \
+	  -I checkers -I clang -I concurrency -I facebook -I integration -I istd -I java \
 	  -I labs -I nullsafe -I pulse -I scuba -I quandary -I topl -I unit -I unit/clang -I deadcode \
 	   $(ml_src_files) > deadcode/.depend
 
