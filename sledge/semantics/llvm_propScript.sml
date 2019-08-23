@@ -715,7 +715,7 @@ Proof
     fs [state_invariant_def] >> rw []
     >- (
       rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
-      qpat_x_assum `flookup _ (Fn "main") = _` kall_tac >>
+      qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
       last_x_assum drule >> disch_then drule >> fs [])
     >- (fs [allocations_ok_def] >> metis_tac [])
     >- (fs [heap_ok_def] >> metis_tac [])
@@ -725,7 +725,7 @@ Proof
     fs [state_invariant_def] >> rw []
     >- (
       rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
-      qpat_x_assum `flookup _ (Fn "main") = _` kall_tac >>
+      qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
       last_x_assum drule >> disch_then drule >> fs [])
     >- (fs [allocations_ok_def] >> metis_tac [])
     >- (fs [heap_ok_def] >> metis_tac [])

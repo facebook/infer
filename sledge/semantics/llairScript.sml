@@ -97,7 +97,7 @@ Datatype `
   func = <| params : var list;
             locals : var set;
             entry : label;
-            cfg : label |-> block;
+            cfg : (label, block) alist;
             freturn : var;
             fthrow : var |>`;
 
@@ -106,7 +106,7 @@ Datatype `
   global = <| var : var; init : (exp # int) option; typ: typ |>`;
 
 Datatype `
-  llair = <| globals : global list; functions : label |-> func |>`;
+  llair = <| globals : global list; functions : (label, func) alist |>`;
 
 (* ----- Semantic states ----- *)
 

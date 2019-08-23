@@ -75,7 +75,7 @@ Datatype `
   | Gep reg targ (targ list)
   | Ptrtoint reg targ ty
   | Inttoptr reg targ ty
-  | Icmp cond ty arg arg
+  | Icmp reg cond ty arg arg
   | Call reg ty fun_name (targ list)
   (* C++ runtime functions *)
   | Cxa_allocate_exn reg arg
@@ -85,7 +85,7 @@ Datatype `
   | Cxa_get_exception_ptr reg arg`;
 
 Datatype `
-  phi = Phi reg ty (label option |-> arg)`;
+  phi = Phi reg ty ((label option, arg) alist)`;
 
 Datatype `
   clause = Catch targ`;
@@ -106,9 +106,9 @@ Datatype `
     <| r : ty;
        params : reg list;
        (* None -> entry block, and Some name -> non-entry block *)
-       blocks : label option |-> block |>`;
+       blocks : (label option, block) alist |>`;
 
-type_abbrev ("prog", ``:fun_name |-> def``);
+type_abbrev ("prog", ``:(fun_name, def) alist``);
 
 Definition terminator_def:
   (terminator (Ret _) ⇔ T) ∧
@@ -443,7 +443,7 @@ End
 
 Definition do_phi_def:
   do_phi from_l s (Phi id _ entries) =
-    option_map (λarg. (id, eval s arg)) (flookup entries from_l)
+    option_map (λarg. (id, eval s arg)) (alookup entries from_l)
 End
 
 Definition extract_value_def:
@@ -507,8 +507,8 @@ Inductive step_instr:
  *)
   (eval s a = <| poison := p; value := W1V tf |> ∧
    l = Some (if tf = 1w then l1 else l2) ∧
-   flookup prog s.ip.f = Some d ∧
-   flookup d.blocks l = Some <| h := Head phis None; body := b |> ∧
+   alookup prog s.ip.f = Some d ∧
+   alookup d.blocks l = Some <| h := Head phis None; body := b |> ∧
    map (do_phi l s) phis = map Some updates
    ⇒
    step_instr prog s
@@ -598,10 +598,10 @@ Inductive step_instr:
     (inc_pc (update_result r <| poison := v1.poison; value := PtrV w |> s))) ∧
 
   (step_instr prog s
-    (Icmp c t a1 a2)
+    (Icmp r c t a1 a2)
     (inc_pc (update_result r (do_icmp c (eval s a1) (eval s a2)) s))) ∧
 
-  (flookup prog fname = Some d
+  (alookup prog fname = Some d
    ⇒
    step_instr prog s
      (Call r t fname targs)
@@ -629,8 +629,8 @@ Inductive step_instr:
 End
 
 Inductive next_instr:
-  flookup p s.ip.f = Some d ∧
-  flookup d.blocks s.ip.b = Some b ∧
+  alookup p s.ip.f = Some d ∧
+  alookup d.blocks s.ip.b = Some b ∧
   s.ip.i < length b.body
   ⇒
   next_instr p s (el s.ip.i b.body)
@@ -673,22 +673,22 @@ End
 (* Instruction pointer points to an instruction *)
 Definition ip_ok_def:
   ip_ok p ip ⇔
-    ∃dec block. flookup p ip.f = Some dec ∧ flookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
+    ∃dec block. alookup p ip.f = Some dec ∧ alookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
 End
 
 Definition prog_ok_def:
   prog_ok p ⇔
     ((* All blocks end with terminators *)
      ∀fname dec bname block.
-       flookup p fname = Some dec ∧
-       flookup dec.blocks bname = Some block
+       alookup p fname = Some dec ∧
+       alookup dec.blocks bname = Some block
        ⇒
        block.body ≠ [] ∧ terminator (last block.body)) ∧
     ((* All functions have an entry block *)
      ∀fname dec.
-       flookup p fname = Some dec ⇒ ∃block. flookup dec.blocks None = Some block) ∧
+       alookup p fname = Some dec ⇒ ∃block. alookup dec.blocks None = Some block) ∧
      (* There is a main function *)
-     ∃dec. flookup p (Fn "main") = Some dec
+     ∃dec. alookup p (Fn "main") = Some dec
 End
 
 (* All call frames have a good return address, and the stack allocations of the

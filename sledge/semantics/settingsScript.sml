@@ -48,5 +48,10 @@ overload_on ("image", ``IMAGE``);
 overload_on ("bigunion", ``BIGUNION``);
 overload_on ("finite", ``FINITE``);
 overload_on ("card", ``CARD``);
+overload_on ("map_keys", ``MAP_KEYS``);
+overload_on ("alookup", ``ALOOKUP``);
+overload_on ("filter", ``FILTER``);
+overload_on ("map2", ``list$MAP2``);
+overload_on ("foldl", ``FOLDL``);
 
 export_theory ();
