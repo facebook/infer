@@ -7,8 +7,11 @@
 
 (** Symbolic Execution *)
 
-(** generic command: ∀xs.{foot}-{post} *)
-type spec = {xs: Var.Set.t; foot: Sh.t; post: Sh.t}
+[@@@warning "+9"]
+
+(** generic command: ∀xs. {foot ∧ sub} ms := - {post} *)
+type spec =
+  {xs: Var.Set.t; foot: Sh.t; sub: Var.Subst.t; ms: Var.Set.t; post: Sh.t}
 
 type xseg = {us: Var.Set.t; xs: Var.Set.t; seg: Sh.seg}
 
@@ -29,58 +32,75 @@ let fresh_seg ~loc ?bas ?len ?siz ?arr ?(xs = Var.Set.empty) us =
 let null_eq ptr = Sh.pure (Exp.eq Exp.null ptr)
 let zero = Exp.integer Z.zero Typ.siz
 
+(* Overwritten variables renaming and remaining modified variables. [ws] are
+   the written variables; [rs] are the variables read or in the
+   precondition; [us] are the variables to which ghosts must be chosen
+   fresh. *)
+let assign ~ws ~rs ~us =
+  let ovs = Set.inter ws rs in
+  let sub = Var.Subst.freshen ovs ~wrt:us in
+  let us = Set.union us (Var.Subst.range sub) in
+  let ms = Set.diff ws (Var.Subst.domain sub) in
+  (sub, ms, us)
+
 (*
  * Instruction small axioms
  *)
-
-let return pre formal exp = Sh.and_ (Exp.eq (Exp.var formal) exp) pre
 
 let assume pre cnd =
   let post = Sh.and_ cnd pre in
   if Sh.is_false post then None else Some post
 
+let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
+let return pre formal exp = Sh.and_ (Exp.eq (Exp.var formal) exp) pre
+
 (* { p-[b;m)->⟨l,α⟩ }
  *   load l r p
- * { r=α * p-[b;m)->⟨l,α⟩ }
+ * { r=αΘ * (p-[b;m)->⟨l,α⟩)Θ }
  *)
 let load_spec us reg ptr len =
-  let {xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
+  let {us; xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
   let foot = Sh.seg seg in
-  let post = Sh.and_ (Exp.eq (Exp.var reg) seg.arr) foot in
-  {xs; foot; post}
+  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let post =
+    Sh.and_
+      (Exp.eq (Exp.var reg) (Exp.rename sub seg.arr))
+      (Sh.rename sub foot)
+  in
+  {xs; foot; sub; ms; post}
 
 (* { p-[b;m)->⟨l,α⟩ }
  *   store l p e
  * { p-[b;m)->⟨l,e⟩ }
  *)
 let store_spec us ptr exp len =
-  let {xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
+  let {us= _; xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
   let foot = Sh.seg seg in
   let post = Sh.seg {seg with arr= exp} in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d-[b;m)->⟨l,α⟩ }
  *   memset l d b
  * { d-[b;m)->⟨l,b^l⟩ }
  *)
 let memset_spec us dst byt len =
-  let {xs; seg} = fresh_seg ~loc:dst ~siz:len us in
+  let {us= _; xs; seg} = fresh_seg ~loc:dst ~siz:len us in
   let foot = Sh.seg seg in
   let post = Sh.seg {seg with arr= Exp.splat ~byt ~siz:len} in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d=s * l=0 * d-[b;m)->⟨l,α⟩ }
  *   memcpy l d s
  * { d-[b;m)->⟨l,α⟩ }
  *)
 let memcpy_eq_spec us dst src len =
-  let {xs; seg} = fresh_seg ~loc:dst ~len us in
+  let {us= _; xs; seg} = fresh_seg ~loc:dst ~len us in
   let dst_heap = Sh.seg seg in
   let foot =
     Sh.and_ (Exp.eq dst src) (Sh.and_ (Exp.eq len zero) dst_heap)
   in
   let post = dst_heap in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d-[b;m)->⟨l,α⟩ * s-[b';m')->⟨l,α'⟩ }
  *   memcpy l d s
@@ -89,16 +109,13 @@ let memcpy_eq_spec us dst src len =
 let memcpy_dj_spec us dst src len =
   let {us; xs; seg= dst_seg} = fresh_seg ~loc:dst ~siz:len us in
   let dst_heap = Sh.seg dst_seg in
-  let {us; xs; seg= src_seg} = fresh_seg ~loc:src ~siz:len ~xs us in
+  let {us= _; xs; seg= src_seg} = fresh_seg ~loc:src ~siz:len ~xs us in
   let src_heap = Sh.seg src_seg in
-  let {seg= dst_seg'} =
-    fresh_seg ~loc:dst ~bas:dst_seg.bas ~len:dst_seg.len ~siz:dst_seg.siz
-      ~arr:src_seg.arr us
-  in
+  let dst_seg' = {dst_seg with arr= src_seg.arr} in
   let dst_heap' = Sh.seg dst_seg' in
   let foot = Sh.star dst_heap src_heap in
   let post = Sh.star dst_heap' src_heap in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let memcpy_specs us dst src len =
   [memcpy_eq_spec us dst src len; memcpy_dj_spec us dst src len]
@@ -108,11 +125,11 @@ let memcpy_specs us dst src len =
  * { d-[b;m)->⟨l,α⟩ }
  *)
 let memmov_eq_spec us dst src len =
-  let {xs; seg= dst_seg} = fresh_seg ~loc:dst ~len us in
+  let {us= _; xs; seg= dst_seg} = fresh_seg ~loc:dst ~len us in
   let dst_heap = Sh.seg dst_seg in
   let foot = Sh.and_ (Exp.eq dst src) dst_heap in
   let post = dst_heap in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { d-[b;m)->⟨l,α⟩ * s-[b';m')->⟨l,α'⟩ }
  *   memmov l d s
@@ -175,7 +192,7 @@ let memmov_dn_spec us dst src len =
          ; siz= siz_mid_src_src
          ; arr= arr_mid_src_src })
   in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { s<d * d<s+l * s-[b;m)->⟨d-s,α⟩^⟨l-(d-s),β⟩^⟨d-s,γ⟩ }
  *   memmov l d s
@@ -201,7 +218,7 @@ let memmov_up_spec us dst src len =
          ; siz= siz_src_src_mid
          ; arr= arr_src_src_mid })
   in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let memmov_specs us dst src len =
   [ memmov_eq_spec us dst src len
@@ -211,15 +228,19 @@ let memmov_specs us dst src len =
 
 (* { emp }
  *   alloc r [n × l]
- * { ∃α'. r-[r;n×l)->⟨n×l,α'⟩ }
+ * { ∃α'. r-[r;(n×l)Θ)->⟨(n×l)Θ,α'⟩ }
  *)
 let alloc_spec us reg num len =
-  let loc = Exp.var reg in
+  let foot = Sh.emp in
   let siz = Exp.mul Typ.siz num len in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
+  let sub, ms, us =
+    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Exp.fv siz) ~us
+  in
+  let loc = Exp.var reg in
+  let siz = Exp.rename sub siz in
+  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
   let post = Sh.seg seg in
-  let foot = Sh.extend_us xs Sh.emp in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (*
  * Memory management - see e.g. http://jemalloc.net/jemalloc.3.html
@@ -231,10 +252,10 @@ let alloc_spec us reg num len =
  *)
 let free_spec us ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let {us= _; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.or_ (null_eq ptr) (Sh.seg seg) in
   let post = Sh.emp in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[p;m)->⟨m,α⟩ }
  *   dallocx p
@@ -242,92 +263,118 @@ let free_spec us ptr =
  *)
 let dallocx_spec us ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let {us= _; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.seg seg in
   let post = Sh.emp in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { emp }
  *   malloc r s
- * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
+ * { r=0 ∨ ∃α'. r-[r;sΘ)->⟨sΘ,α'⟩ }
  *)
 let malloc_spec us reg siz =
+  let foot = Sh.emp in
+  let sub, ms, us =
+    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Exp.fv siz) ~us
+  in
   let loc = Exp.var reg in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
-  let foot = Sh.extend_us xs Sh.emp in
+  let siz = Exp.rename sub siz in
+  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
   let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { s≠0 }
  *   mallocx r s
- * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
+ * { r=0 ∨ ∃α'. r-[r;sΘ)->⟨sΘ,α'⟩ }
  *)
 let mallocx_spec us reg siz =
+  let foot = Sh.pure Exp.(dq siz zero) in
+  let sub, ms, us =
+    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Exp.fv siz) ~us
+  in
   let loc = Exp.var reg in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
-  let foot = Sh.extend_us xs (Sh.pure Exp.(dq siz zero)) in
+  let siz = Exp.rename sub siz in
+  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
   let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { emp }
  *   calloc r [n × l]
- * { r=0 ∨ r-[r;n×l)->⟨n×l,0^n×l⟩ }
+ * { r=0 ∨ r-[r;(n×l)Θ)->⟨(n×l)Θ,0^(n×l)Θ⟩ }
  *)
 let calloc_spec us reg num len =
-  let loc = Exp.var reg in
-  let byt = Exp.integer Z.zero Typ.byt in
-  let siz = Exp.mul Typ.siz num len in
-  let arr = Exp.splat ~byt ~siz in
-  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~arr us in
   let foot = Sh.emp in
+  let siz = Exp.mul Typ.siz num len in
+  let sub, ms, us =
+    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Exp.fv siz) ~us
+  in
+  let loc = Exp.var reg in
+  let siz = Exp.rename sub siz in
+  let arr = Exp.splat ~byt:(Exp.integer Z.zero Typ.byt) ~siz in
+  let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~arr us in
   let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 let size_of_ptr = Option.value_exn (Exp.size_of Typ.ptr)
 
 (* { p-[_;_)->⟨W,_⟩ }
  *   posix_memalign r p s
- * {   r=ENOMEM * p-[_;_)->⟨W,_⟩
- *   ∨ ∃α',q. r=0 * p-[_;_)->⟨W,q⟩ * q-[q;s)->⟨s,α'⟩ }
+ * {   r=ENOMEM * (p-[_;_)->⟨W,_⟩)Θ
+ *   ∨ ∃α',q. r=0 * (p-[_;_)->⟨W,q⟩ * q-[q;s)->⟨s,α'⟩)Θ }
  * where W = sizeof void*
  *)
 let posix_memalign_spec us reg ptr siz =
-  let {xs; seg= pseg} = fresh_seg ~loc:ptr ~siz:size_of_ptr us in
+  let {us; xs; seg= pseg} = fresh_seg ~loc:ptr ~siz:size_of_ptr us in
+  let foot = Sh.seg pseg in
+  let sub, ms, us =
+    assign
+      ~ws:(Set.add Var.Set.empty reg)
+      ~rs:(Set.union foot.us (Exp.fv siz))
+      ~us
+  in
   let q, us, xs = fresh_var "q" us xs in
   let pseg' = {pseg with arr= q} in
-  let {xs; seg= qseg} = fresh_seg ~loc:q ~bas:q ~len:siz ~siz ~xs us in
-  let foot = Sh.extend_us xs (Sh.seg pseg) in
+  let {us= _; xs; seg= qseg} =
+    fresh_seg ~loc:q ~bas:q ~len:siz ~siz ~xs us
+  in
   let eok = Exp.integer (Z.of_int 0) Typ.int in
   let enomem = Exp.integer (Z.of_int 12) Typ.int in
   let post =
     Sh.or_
-      (Sh.and_ (Exp.eq (Exp.var reg) enomem) (Sh.seg pseg))
+      (Sh.and_ (Exp.eq (Exp.var reg) enomem) (Sh.rename sub foot))
       (Sh.and_
          (Exp.eq (Exp.var reg) eok)
-         (Sh.star (Sh.seg pseg') (Sh.seg qseg)))
+         (Sh.rename sub (Sh.star (Sh.seg pseg') (Sh.seg qseg))))
   in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
  *   realloc r p s
- * {   (r=0 * (p=0 ∨ p-[p;m)->⟨m,α⟩))
- *   ∨ ∃α',α'' . r-[r;s)->⟨s,α'⟩
- *     * (m≤s ? ⟨s,α'⟩=⟨m,α⟩^⟨s-m,α''⟩ : ⟨m,α⟩=⟨s,α'⟩^⟨m-s,α''⟩) }
+ * {   (r=0 * (pΘ=0 ∨ pΘ-[pΘ;m)->⟨m,α⟩))
+ *   ∨ ∃α',α'' . r-[r;sΘ)->⟨sΘ,α'⟩
+ *     * (m≤sΘ ? ⟨sΘ,α'⟩=⟨m,α⟩^⟨sΘ-m,α''⟩ : ⟨m,α⟩=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
  *)
 let realloc_spec us reg ptr siz =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
   let {us; xs; seg= pseg} =
     fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us
   in
+  let foot = Sh.or_ (null_eq ptr) (Sh.seg pseg) in
+  let sub, ms, us =
+    assign
+      ~ws:(Set.add Var.Set.empty reg)
+      ~rs:(Set.union foot.us (Exp.fv siz))
+      ~us
+  in
   let loc = Exp.var reg in
+  let siz = Exp.rename sub siz in
   let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
   let a0 = pseg.arr in
   let a1 = rseg.arr in
   let a2, _, xs = fresh_var "a" us xs in
-  let foot = Sh.extend_us xs (Sh.or_ (null_eq ptr) (Sh.seg pseg)) in
   let post =
     Sh.or_
-      (Sh.and_ Exp.(eq loc null) foot)
+      (Sh.and_ Exp.(eq loc null) (Sh.rename sub foot))
       (Sh.and_
          Exp.(
            conditional ~cnd:(le len siz)
@@ -343,28 +390,33 @@ let realloc_spec us reg ptr siz =
                       ; memory ~siz:(sub Typ.siz len siz) ~arr:a2 |])))
          (Sh.seg rseg))
   in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { s≠0 * p-[p;m)->⟨m,α⟩ }
  *   rallocx r p s
- * {   (r=0 * p-[p;m)->⟨m,α⟩)
- *   ∨ ∃α',α'' . r-[r;s)->⟨s,α'⟩
- *     * (m≤s ? ⟨s,α'⟩=⟨m,α⟩^⟨s-m,α''⟩ : ⟨m,α⟩=⟨s,α'⟩^⟨m-s,α''⟩) }
+ * {   (r=0 * pΘ-[pΘ;m)->⟨m,α⟩)
+ *   ∨ ∃α',α'' . r-[r;sΘ)->⟨sΘ,α'⟩
+ *     * (m≤sΘ ? ⟨sΘ,α'⟩=⟨m,α⟩^⟨sΘ-m,α''⟩ : ⟨m,α⟩=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
  *)
 let rallocx_spec us reg ptr siz =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
   let {us; xs; seg= pseg} =
     fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us
   in
+  let pheap = Sh.seg pseg in
+  let foot = Sh.and_ Exp.(dq siz zero) pheap in
+  let sub, ms, us =
+    assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us
+  in
   let loc = Exp.var reg in
+  let siz = Exp.rename sub siz in
   let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
   let a0 = pseg.arr in
   let a1 = rseg.arr in
   let a2, _, xs = fresh_var "a" us xs in
-  let foot = Sh.extend_us xs (Sh.and_ Exp.(dq siz zero) (Sh.seg pseg)) in
   let post =
     Sh.or_
-      (Sh.and_ Exp.(eq loc null) foot)
+      (Sh.and_ Exp.(eq loc null) (Sh.rename sub pheap))
       (Sh.and_
          Exp.(
            conditional ~cnd:(le len siz)
@@ -380,24 +432,33 @@ let rallocx_spec us reg ptr siz =
                       ; memory ~siz:(sub Typ.siz len siz) ~arr:a2 |])))
          (Sh.seg rseg))
   in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { s≠0 * p-[p;m)->⟨m,α⟩ }
  *   xallocx r p s e
- * { ∃α',α'' . s≤r≤s+e * p-[p;r)->⟨r,α'⟩
+ * { ∃α',α'' . sΘ≤r≤(s+e)Θ * pΘ-[pΘ;r)->⟨r,α'⟩
  *   * (m≤r ? ⟨r,α'⟩=⟨m,α⟩^⟨r-m,α''⟩ : ⟨m,α⟩=⟨r,α'⟩^⟨m-r,α''⟩) }
  *)
 let xallocx_spec us reg ptr siz ext =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
   let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let foot = Sh.and_ Exp.(dq siz zero) (Sh.seg seg) in
+  let sub, ms, us =
+    assign
+      ~ws:(Set.add Var.Set.empty reg)
+      ~rs:Set.(union foot.us (union (Exp.fv siz) (Exp.fv ext)))
+      ~us
+  in
   let reg = Exp.var reg in
+  let ptr = Exp.rename sub ptr in
+  let siz = Exp.rename sub siz in
+  let ext = Exp.rename sub ext in
   let {us; xs; seg= seg'} =
     fresh_seg ~loc:ptr ~bas:ptr ~len:reg ~siz:reg ~xs us
   in
   let a0 = seg.arr in
   let a1 = seg'.arr in
   let a2, _, xs = fresh_var "a" us xs in
-  let foot = Sh.extend_us xs (Sh.and_ Exp.(dq siz zero) (Sh.seg seg)) in
   let post =
     Sh.and_
       Exp.(
@@ -416,40 +477,44 @@ let xallocx_spec us reg ptr siz ext =
           (and_ (le siz reg) (le reg (add Typ.siz siz ext))))
       (Sh.seg seg')
   in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 (* { p-[p;m)->⟨m,α⟩ }
  *   sallocx r p
- * { r=m * p-[p;m)->⟨m,α⟩ }
+ * { r=m * (p-[p;m)->⟨m,α⟩)Θ }
  *)
 let sallocx_spec us reg ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.seg seg in
-  let post = Sh.and_ Exp.(eq (var reg) len) foot in
-  {xs; foot; post}
+  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let post = Sh.and_ Exp.(eq (var reg) len) (Sh.rename sub foot) in
+  {xs; foot; sub; ms; post}
 
 (* { p-[p;m)->⟨m,α⟩ }
  *   malloc_usable_size r p
- * { m≤r * p-[p;m)->⟨m,α⟩ }
+ * { m≤r * (p-[p;m)->⟨m,α⟩)Θ }
  *)
 let malloc_usable_size_spec us reg ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
-  let {xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
+  let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.seg seg in
-  let post = Sh.and_ Exp.(le len (var reg)) foot in
-  {xs; foot; post}
+  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let post = Sh.and_ Exp.(le len (var reg)) (Sh.rename sub foot) in
+  {xs; foot; sub; ms; post}
 
 (* { s≠0 }
  *   r = nallocx s
- * { r=0 ∨ r=s }
+ * { r=0 ∨ r=sΘ }
  *)
-let nallocx_spec _ reg siz =
-  let loc = Exp.var reg in
+let nallocx_spec us reg siz =
   let xs = Var.Set.empty in
   let foot = Sh.pure (Exp.dq siz zero) in
+  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let loc = Exp.var reg in
+  let siz = Exp.rename sub siz in
   let post = Sh.or_ (null_eq loc) (Sh.pure (Exp.eq loc siz)) in
-  {xs; foot; post}
+  {xs; foot; sub; ms; post}
 
 let size_of_int_mul n =
   Exp.mul Typ.siz (Option.value_exn (Exp.size_of Typ.siz)) n
@@ -463,14 +528,13 @@ let mallctl_read_spec us r i w n =
   let {us; xs; seg= rseg} = fresh_seg ~loc:r ~siz:iseg.arr ~xs us in
   let a, _, xs = fresh_var "a" us xs in
   let foot =
-    Sh.extend_us xs
-      (Sh.and_
-         Exp.(eq w null)
-         (Sh.and_ Exp.(eq n zero) (Sh.star (Sh.seg iseg) (Sh.seg rseg))))
+    Sh.and_
+      Exp.(eq w null)
+      (Sh.and_ Exp.(eq n zero) (Sh.star (Sh.seg iseg) (Sh.seg rseg)))
   in
   let rseg' = {rseg with arr= a} in
   let post = Sh.star (Sh.seg rseg') (Sh.seg iseg) in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
  *   mallctlbymib p l r i w n
@@ -486,24 +550,23 @@ let mallctlbymib_read_spec us p l r i w n =
   let const = Sh.star (Sh.seg pseg) (Sh.seg iseg) in
   let a, _, xs = fresh_var "a" us xs in
   let foot =
-    Sh.extend_us xs
-      (Sh.and_
-         Exp.(eq w null)
-         (Sh.and_ Exp.(eq n zero) (Sh.star const (Sh.seg rseg))))
+    Sh.and_
+      Exp.(eq w null)
+      (Sh.and_ Exp.(eq n zero) (Sh.star const (Sh.seg rseg)))
   in
   let rseg' = {rseg with arr= a} in
   let post = Sh.star (Sh.seg rseg') const in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
  *   mallctl r i w n
  * { w-[_;_)->⟨n,_⟩ }
  *)
 let mallctl_write_spec us r i w n =
-  let {xs; seg} = fresh_seg ~loc:w ~siz:n us in
+  let {us= _; xs; seg} = fresh_seg ~loc:w ~siz:n us in
   let post = Sh.seg seg in
   let foot = Sh.and_ Exp.(eq r null) (Sh.and_ Exp.(eq i zero) post) in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
  *   mallctl r i w n
@@ -513,10 +576,10 @@ let mallctl_write_spec us r i w n =
 let mallctlbymib_write_spec us p l r i w n =
   let wl = size_of_int_mul l in
   let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wl us in
-  let {xs; seg= wseg} = fresh_seg ~loc:w ~siz:n ~xs us in
+  let {us= _; xs; seg= wseg} = fresh_seg ~loc:w ~siz:n ~xs us in
   let post = Sh.star (Sh.seg pseg) (Sh.seg wseg) in
   let foot = Sh.and_ Exp.(eq r null) (Sh.and_ Exp.(eq i zero) post) in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let mallctl_specs us r i w n =
   [mallctl_read_spec us r i w n; mallctl_write_spec us r i w n]
@@ -541,10 +604,10 @@ let mallctlnametomib_spec us p o =
   let wn = size_of_int_mul n in
   let {us; xs; seg= pseg} = fresh_seg ~loc:p ~siz:wn ~xs us in
   let a, _, xs = fresh_var "a" us xs in
-  let foot = Sh.extend_us xs (Sh.star (Sh.seg oseg) (Sh.seg pseg)) in
+  let foot = Sh.star (Sh.seg oseg) (Sh.seg pseg) in
   let pseg' = {pseg with arr= a} in
   let post = Sh.star (Sh.seg pseg') (Sh.seg oseg) in
-  {xs; foot; post}
+  {xs; foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (*
  * cstring - see e.g. http://www.cplusplus.com/reference/cstring/
@@ -552,30 +615,41 @@ let mallctlnametomib_spec us p o =
 
 (* { p-[b;m)->⟨l,α⟩ }
  *   r = strlen p
- * { r=b+m-p-1 * p-[b;m)->⟨l,α⟩ }
+ * { r=(b+m-p-1)Θ * (p-[b;m)->⟨l,α⟩)Θ }
  *)
 let strlen_spec us reg ptr =
-  let {xs; seg} = fresh_seg ~loc:ptr us in
+  let {us; xs; seg} = fresh_seg ~loc:ptr us in
   let foot = Sh.seg seg in
-  let {Sh.loc= p; bas= b; len= m} = seg in
+  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let {Sh.loc= p; bas= b; len= m; _} = seg in
   let ret =
     Exp.sub Typ.siz
       (Exp.sub Typ.siz (Exp.add Typ.siz b m) p)
       (Exp.integer Z.one Typ.siz)
   in
-  let post = Sh.and_ (Exp.eq (Exp.var reg) ret) foot in
-  {xs; foot; post}
+  let post =
+    Sh.and_ (Exp.eq (Exp.var reg) (Exp.rename sub ret)) (Sh.rename sub foot)
+  in
+  {xs; foot; sub; ms; post}
 
 (*
  * Symbolic Execution
  *)
 
 (* execute a command with given spec from pre *)
-let exec_spec pre {xs; foot; post} =
+let exec_spec pre {xs; foot; sub; ms; post} =
   [%Trace.call fun {pf} ->
-    pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  }@;<1 -1>--@ {%a  }@]@]" Sh.pp pre
+    pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre
       (Sh.pp_us ~pre:"@<2>∀ ")
-      xs Sh.pp foot Sh.pp post ;
+      xs Sh.pp foot
+      (fun fs sub ->
+        if not (Var.Subst.is_empty sub) then
+          Format.fprintf fs "∧ %a" Var.Subst.pp sub )
+      sub
+      (fun fs ms ->
+        if not (Set.is_empty ms) then
+          Format.fprintf fs "%a := " Var.Set.pp ms )
+      ms Sh.pp post ;
     assert (
       let vs = Set.diff (Set.diff foot.Sh.us xs) pre.Sh.us in
       Set.is_empty vs || Trace.fail "unbound foot: {%a}" Var.Set.pp vs ) ;
@@ -583,9 +657,13 @@ let exec_spec pre {xs; foot; post} =
       let vs = Set.diff (Set.diff post.Sh.us xs) pre.Sh.us in
       Set.is_empty vs || Trace.fail "unbound post: {%a}" Var.Set.pp vs )]
   ;
+  let foot = Sh.extend_us xs foot in
   let zs, pre = Sh.bind_exists pre ~wrt:xs in
   ( match Solver.infer_frame pre xs foot with
-  | Some frame -> Ok (Sh.exists (Set.union zs xs) (Sh.star frame post))
+  | Some frame ->
+      Ok
+        (Sh.exists (Set.union zs xs)
+           (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   | None -> Error () )
   |>
   [%Trace.retn fun {pf} r -> pf "%a" (Result.pp "%a" Sh.pp) r]
@@ -593,7 +671,7 @@ let exec_spec pre {xs; foot; post} =
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
 let rec exec_specs pre = function
-  | ({xs; foot} as spec) :: specs ->
+  | ({xs; foot; _} as spec) :: specs ->
       let open Result.Monad_infix in
       let pre_pure = Sh.star (Sh.exists xs (Sh.pure_approx foot)) pre in
       exec_spec pre_pure spec
@@ -608,14 +686,17 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
   assert (Set.disjoint (Sh.fv pre) (Llair.Inst.locals inst)) ;
   let us = pre.us in
   match inst with
-  | Load {reg; ptr; len} -> exec_spec pre (load_spec us reg ptr len)
-  | Store {ptr; exp; len} -> exec_spec pre (store_spec us ptr exp len)
-  | Memset {dst; byt; len} -> exec_spec pre (memset_spec us dst byt len)
-  | Memcpy {dst; src; len} -> exec_specs pre (memcpy_specs us dst src len)
-  | Memmov {dst; src; len} -> exec_specs pre (memmov_specs us dst src len)
-  | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
-  | Free {ptr} -> exec_spec pre (free_spec us ptr)
-  | Nondet _ -> Ok pre
+  | Load {reg; ptr; len; _} -> exec_spec pre (load_spec us reg ptr len)
+  | Store {ptr; exp; len; _} -> exec_spec pre (store_spec us ptr exp len)
+  | Memset {dst; byt; len; _} -> exec_spec pre (memset_spec us dst byt len)
+  | Memcpy {dst; src; len; _} ->
+      exec_specs pre (memcpy_specs us dst src len)
+  | Memmov {dst; src; len; _} ->
+      exec_specs pre (memmov_specs us dst src len)
+  | Alloc {reg; num; len; _} -> exec_spec pre (alloc_spec us reg num len)
+  | Free {ptr; _} -> exec_spec pre (free_spec us ptr)
+  | Nondet {reg= Some reg; _} -> Ok (kill pre reg)
+  | Nondet {reg= None; _} -> Ok pre
   | Abort _ -> Error ()
 
 let skip : Sh.t -> (Sh.t, _) result option = fun pre -> Some (Ok pre)
