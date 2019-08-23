@@ -1052,6 +1052,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_global_var an
   | "is_static_local_var", [], an ->
       CPredicates.is_static_local_var an
+  | "is_extern_var", [], an ->
+      CPredicates.is_extern_var an
   | "adhere_to_protocol", [], an ->
       CPredicates.adhere_to_protocol an
   | "is_in_block", [], _ ->

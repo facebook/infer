@@ -27,6 +27,13 @@ SET message = "Found static local var";
 
 };
 
+DEFINE-CHECKER FIND_EXTERN_VAR = {
+SET report_when =
+  WHEN is_extern_var
+  HOLDS-IN-NODE VarDecl;
+SET message = "Found extern var";
+};
+
 DEFINE-CHECKER FIND_CXX_METHOD_OVERRIDES = {
     SET report_when = is_cxx_method_overriding;
     SET message = "%decl_name% overrides";

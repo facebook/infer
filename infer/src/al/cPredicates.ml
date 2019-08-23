@@ -509,6 +509,10 @@ let is_static_local_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_static_local_var d | _ -> false
 
 
+let is_extern_var an =
+  match an with Ctl_parser_types.Decl (VarDecl (_, _, _, vdi)) -> vdi.vdi_is_extern | _ -> false
+
+
 let is_const_expr_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
 

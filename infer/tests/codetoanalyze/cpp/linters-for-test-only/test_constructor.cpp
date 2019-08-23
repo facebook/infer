@@ -8,6 +8,8 @@ struct A {
   int a, b, c, d;
 };
 
+extern A a2;
+
 const A& f() {
   static A a;
   return a;
