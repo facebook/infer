@@ -81,5 +81,10 @@ let of_list x = v (Array.of_list x)
 let of_list_rev x = v (Array.of_list_rev x)
 let of_option x = v (Option.to_array x)
 let reduce_exn x ~f = Array.reduce_exn (a x) ~f
+
+let unzip x =
+  let y, z = Array.unzip (a x) in
+  (v y, v z)
+
 let to_list x = Array.to_list (a x)
 let to_array = a

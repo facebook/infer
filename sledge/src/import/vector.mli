@@ -175,7 +175,9 @@ val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 (* val random_element_exn : ?random_state:Base.Random.State.t -> 'a t -> 'a *)
 (* val zip : 'a t -> 'b t -> ('a * 'b) t option *)
 (* val zip_exn : 'a t -> 'b t -> ('a * 'b) t *)
-(* val unzip : ('a * 'b) t -> 'a t * 'b t *)
+
+val unzip : ('a * 'b) t -> 'a t * 'b t
+
 (* val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t *)
 (* val last : 'a t -> 'a *)
 
