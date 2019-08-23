@@ -34,7 +34,6 @@ and 'a call =
   ; areturn: Var.t option
   ; return: jump
   ; throw: jump option
-  ; ignore_result: bool
   ; mutable recursive: bool
   ; loc: Loc.t }
 
@@ -82,16 +81,7 @@ let sexp_of_term = function
           {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}]
   | Iswitch {ptr; tbl; loc} ->
       sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump vector; loc: Loc.t}]
-  | Call
-      { callee
-      ; typ
-      ; args
-      ; areturn
-      ; return
-      ; throw
-      ; ignore_result
-      ; recursive
-      ; loc } ->
+  | Call {callee; typ; args; areturn; return; throw; recursive; loc} ->
       sexp_ctor "Call"
         [%sexp
           { callee: Exp.t
@@ -100,7 +90,6 @@ let sexp_of_term = function
           ; areturn: Var.t option
           ; return: jump
           ; throw: jump option
-          ; ignore_result: bool
           ; recursive: bool
           ; loc: Loc.t }]
   | Return {exp; loc} ->
@@ -334,7 +323,7 @@ module Term = struct
 
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let call ~func ~typ ~args ~areturn ~return ~throw ~ignore_result ~loc =
+  let call ~func ~typ ~args ~areturn ~return ~throw ~loc =
     Call
       { callee= func
       ; typ
@@ -342,7 +331,6 @@ module Term = struct
       ; areturn
       ; return
       ; throw
-      ; ignore_result
       ; recursive= false
       ; loc }
     |> check invariant

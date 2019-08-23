@@ -52,7 +52,6 @@ and 'a call =
   ; areturn: Var.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
-  ; ignore_result: bool  (** Drop return value when invoking return. *)
   ; mutable recursive: bool
         (** Holds unless [callee] is definitely not recursive. *)
   ; loc: Loc.t }
@@ -157,7 +156,6 @@ module Term : sig
     -> areturn:Var.t option
     -> return:jump
     -> throw:jump option
-    -> ignore_result:bool
     -> loc:Loc.t
     -> term
 

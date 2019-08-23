@@ -927,7 +927,7 @@ let xlate_instr :
             let areturn = xlate_name_opt instr in
             let return = Llair.Jump.mk lbl in
             Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw:None
-              ~ignore_result:false ~loc
+              ~loc
           in
           continue (fun (insts, term) ->
               let cmnd = Vector.of_list insts in
@@ -988,15 +988,8 @@ let xlate_instr :
           let return, blocks = xlate_jump x instr return_blk loc [] in
           let throw, blocks = xlate_jump x instr unwind_blk loc blocks in
           let throw = Some throw in
-          let ignore_result =
-            match typ with
-            | Pointer {elt= Function {return= Some _}} ->
-                Option.is_none (Llvm.use_begin instr)
-            | _ -> false
-          in
           emit_term
-            (Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw
-               ~ignore_result ~loc)
+            (Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw ~loc)
             ~blocks )
   | Ret ->
       let exp =
