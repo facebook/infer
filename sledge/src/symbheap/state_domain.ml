@@ -66,8 +66,7 @@ let garbage_collect (q : t) ~wrt =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-type from_call =
-  {subst: Var.Subst.t; frame: Sh.t; actuals_to_formals: (Exp.t * Var.t) list}
+type from_call = {subst: Var.Subst.t; frame: Sh.t}
 [@@deriving compare, equal, sexp]
 
 (** Express formula in terms of formals instead of actuals, and enter scope
@@ -90,7 +89,7 @@ let jump actuals formals ?temps q =
   in
   ( Option.fold ~f:(Fn.flip Sh.exists) temps
       ~init:(and_eqs formals actuals q')
-  , {subst= freshen_locals; frame= Sh.emp; actuals_to_formals= []} )
+  , {subst= freshen_locals; frame= Sh.emp} )
   |>
   [%Trace.retn fun {pf} (q', {subst}) ->
     pf "@[<hv>subst: %a@ q': %a@]" Var.Subst.pp subst Sh.pp q']
@@ -116,8 +115,8 @@ let call ~summaries actuals formals locals globals q =
   in
   let q'' = and_eqs formals actuals q' in
   ( if not summaries then
-    let q'', subst = (Sh.extend_us locals q'', freshen_locals) in
-    (q'', {subst; frame= Sh.emp; actuals_to_formals= []})
+    let q'' = Sh.extend_us locals q'' in
+    (q'', {subst= freshen_locals; frame= Sh.emp})
   else
     let formals_set = Var.Set.of_list formals in
     (* Add the formals here to do garbage collection and then get rid of
@@ -134,11 +133,8 @@ let call ~summaries actuals formals locals globals q =
         (Solver.infer_frame pre xs foot)
         ~message:"Solver couldn't infer frame of a garbage-collected pre"
     in
-    let q'', subst =
-      (Sh.extend_us locals (and_eqs formals actuals foot), freshen_locals)
-    in
-    (q'', {subst; frame; actuals_to_formals= List.zip_exn actuals formals})
-  )
+    let q'' = Sh.extend_us locals (and_eqs formals actuals foot) in
+    (q'', {subst= freshen_locals; frame}) )
   |>
   [%Trace.retn fun {pf} (q', {subst; frame}) ->
     pf "@[<v>subst: %a@ frame: %a@ q': %a@]" Var.Subst.pp subst pp frame pp
