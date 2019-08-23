@@ -56,7 +56,7 @@ and parse_imports ~from_file imports_files =
   List.fold_right ~f:parse_one_import_file ~init:([], []) imports_files
 
 
-let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
+let parse_ctl_file linters_def_file channel : ALIssues.linter list =
   match CTLParserHelper.parse_al_file linters_def_file channel with
   | Some
       { import_files= imports
@@ -68,20 +68,20 @@ let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
         collect_all_macros_and_paths ~from_file:linters_def_file imports curr_file_macros
           curr_file_paths
       in
-      let macros_map = CFrontend_errors.build_macros_map macros in
-      let paths_map = CFrontend_errors.build_paths_map paths in
+      let macros_map = ALIssues.build_macros_map macros in
+      let paths_map = ALIssues.build_paths_map paths in
       L.(debug Linters Medium) "#### Start Expanding checkers #####@\n" ;
-      let exp_checkers = CFrontend_errors.expand_checkers macros_map paths_map parsed_checkers in
+      let exp_checkers = ALIssues.expand_checkers macros_map paths_map parsed_checkers in
       L.(debug Linters Medium) "#### Checkers Expanded #####@\n" ;
       if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers ;
-      CFrontend_errors.create_parsed_linters linters_def_file exp_checkers
+      ALIssues.create_parsed_linters linters_def_file exp_checkers
   | None ->
       L.(debug Linters Medium) "No linters found.@\n" ;
       []
 
 
 (** Parse the files with linters definitions, and return a list of linters *)
-let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
+let parse_ctl_files linters_def_files : ALIssues.linter list =
   let collect_parsed_linters linters_def_file linters =
     L.(debug Linters Medium) "Loading linters rules from %s@\n" linters_def_file ;
     let in_channel = In_channel.create linters_def_file in
@@ -246,7 +246,7 @@ let rec do_frontend_checks_stmt linters (context : CLintersContext.context)
         () ) ;
     do_frontend_checks_stmt linters context map_active stmt
   in
-  CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
+  ALIssues.invoke_set_of_checkers_on_node linters context an ;
   (* The map should be visited when we enter the node before visiting children *)
   let map_active = Tableaux.update_linter_context_map linters an map_act in
   let stmt_context_list =
@@ -328,7 +328,7 @@ and do_frontend_checks_decl linters (context : CLintersContext.context)
     | BlockDecl _
     | ObjCMethodDecl _ ->
         let context' = CLintersContext.update_current_method context decl in
-        CFrontend_errors.invoke_set_of_checkers_on_node linters context' an ;
+        ALIssues.invoke_set_of_checkers_on_node linters context' an ;
         (* We need to visit explicitly nodes reachable via Parameters transitions
       because they won't be visited during the evaluation of the formula *)
         do_frontend_checks_via_transition linters context' map_active an CTL.Parameters ;
@@ -339,22 +339,22 @@ and do_frontend_checks_decl linters (context : CLintersContext.context)
             () ) ;
         call_tableaux linters context' an map_active
     | ObjCImplementationDecl (_, _, decls, _, _) | ObjCInterfaceDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
+        ALIssues.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_class= Some decl} in
         List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
         call_tableaux linters context' an map_active
     | ObjCCategoryImplDecl (_, _, decls, _, _) | ObjCCategoryDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
+        ALIssues.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_category= Some decl} in
         List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
         call_tableaux linters context' an map_active
     | ObjCProtocolDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
+        ALIssues.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_protocol= Some decl} in
         List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
         call_tableaux linters context' an map_active
     | _ ->
-        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
+        ALIssues.invoke_set_of_checkers_on_node linters context an ;
         ( match Clang_ast_proj.get_decl_context_tuple decl with
         | Some (decls, _) ->
             List.iter ~f:(do_frontend_checks_decl linters context map_active) decls
@@ -381,7 +381,7 @@ let linters_files =
 
 
 let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_context) ast =
-  CFrontend_errors.issue_log := IssueLog.empty ;
+  ALIssues.issue_log := IssueLog.empty ;
   L.(debug Capture Quiet)
     "Loading the following linters files: %a@\n"
     (Pp.comma_seq Format.pp_print_string)
@@ -389,15 +389,15 @@ let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_conte
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file ;
   let parsed_linters =
     let parsed_linters = parse_ctl_files linters_files in
-    CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
+    ALIssues.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
   in
   let source_file = trans_unit_ctx.CFrontend_config.source_file in
   L.(debug Linters Medium)
-    "Start linting file %a with rules: @\n%a@\n" SourceFile.pp source_file
-    CFrontend_errors.pp_linters parsed_linters ;
+    "Start linting file %a with rules: @\n%a@\n" SourceFile.pp source_file ALIssues.pp_linters
+    parsed_linters ;
   if Config.print_active_checkers then
     L.progress "Linting file %a, active linters: @\n%a@\n" SourceFile.pp source_file
-      CFrontend_errors.pp_linters parsed_linters ;
+      ALIssues.pp_linters parsed_linters ;
   Tableaux.init_global_nodes_valuation () ;
   match ast with
   | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _) ->
@@ -405,10 +405,9 @@ let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_conte
       let allowed_decls = List.filter ~f:(Tableaux.is_decl_allowed context) decl_list in
       (* We analyze the top level and then all the allowed declarations *)
       let active_map : Tableaux.context_linter_map = Tableaux.init_active_map parsed_linters in
-      CFrontend_errors.invoke_set_of_checkers_on_node parsed_linters context
-        (Ctl_parser_types.Decl ast) ;
+      ALIssues.invoke_set_of_checkers_on_node parsed_linters context (Ctl_parser_types.Decl ast) ;
       List.iter ~f:(do_frontend_checks_decl parsed_linters context active_map) allowed_decls ;
-      IssueLog.store !CFrontend_errors.issue_log ~dir:Config.lint_issues_dir_name ~file:source_file ;
+      IssueLog.store !ALIssues.issue_log ~dir:Config.lint_issues_dir_name ~file:source_file ;
       L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
       CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file
       (*if CFrontend_config.tableaux_evaluation then (

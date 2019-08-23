@@ -98,7 +98,7 @@ let run_clang_frontend ast_source =
   L.(debug Capture Quiet) "Clang frontend action is %s@\n" Config.clang_frontend_action_string ;
   L.(debug Capture Medium)
     "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
-  if Config.linters then CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl ;
+  if Config.linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
   if Config.export_changed_functions then (
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
     let process_fn = AstToRangeMap.process_ast ast_decl (Tenv.create ()) source_file in

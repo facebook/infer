@@ -64,8 +64,8 @@ let is_in_formula phi = match phi with CTL.InNode _ -> true | _ -> false
 let init_active_map parsed_linters =
   List.fold
     ~f:(fun acc_map linter ->
-      let not_inf = not (is_in_formula linter.CFrontend_errors.condition) in
-      ClosureHashtbl.add linter.CFrontend_errors.condition not_inf acc_map )
+      let not_inf = not (is_in_formula linter.ALIssues.condition) in
+      ClosureHashtbl.add linter.ALIssues.condition not_inf acc_map )
     ~init:ClosureHashtbl.empty parsed_linters
 
 
@@ -76,7 +76,7 @@ let init_active_map parsed_linters =
    its subformulae *)
 let update_linter_context_map parsed_linters an linter_context_map =
   let do_one_linter acc_map linter =
-    let phi = linter.CFrontend_errors.condition in
+    let phi = linter.ALIssues.condition in
     match phi with
     | CTL.InNode (tl, _) -> (
       try
@@ -292,13 +292,13 @@ let rec is_state_only_formula phi =
     (i.e., it's in the analized file )*)
 let report_issue an lcxt linter (*npo_condition*) =
   let open Ctl_parser_types in
-  let open CFrontend_errors in
+  let open ALIssues in
   (*let name = Ctl_parser_types.ast_node_kind an in
   let pointer = Ctl_parser_types.ast_node_pointer an in
   L.(debug Linters Medium)
     "@\n@\n@\n  ***** In (%i, %s) Reporting because we found @\n%a@\n@\n@\n@\n" pointer name
     CTL.Debug.pp_formula linter.condition ;*)
-  let loc = CFrontend_checkers.location_from_an lcxt an in
+  let loc = ALUtils.location_from_an lcxt an in
   let should_report = match an with Decl dec -> is_decl_allowed lcxt dec | Stmt _ -> true in
   if should_report then
     fill_issue_desc_info_and_log lcxt ~witness:an ~current_node:an linter.issue_desc loc
@@ -321,7 +321,7 @@ let skip_evaluation_InNode_formula an phi =
 
 (* Build valuation, i.e. set of valid subformula for a pair (node, checker) *)
 let build_valuation parsed_linters an lcxt linter_map_context =
-  let open CFrontend_errors in
+  let open ALIssues in
   let node_pointer = Ctl_parser_types.ast_node_pointer an in
   (*L.(debug Linters Medium)
     "@\n@\n  ******** Tableaux called for node %i ******** @\n@\n" node_pointer ;*)

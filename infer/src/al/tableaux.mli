@@ -13,16 +13,13 @@ type context_linter_map = bool ClosureHashtbl.t
 
 val init_global_nodes_valuation : unit -> unit
 
-val init_active_map : CFrontend_errors.linter list -> bool ClosureHashtbl.t
+val init_active_map : ALIssues.linter list -> bool ClosureHashtbl.t
 
 val update_linter_context_map :
-     CFrontend_errors.linter list
-  -> Ctl_parser_types.ast_node
-  -> context_linter_map
-  -> context_linter_map
+  ALIssues.linter list -> Ctl_parser_types.ast_node -> context_linter_map -> context_linter_map
 
 val build_valuation :
-     CFrontend_errors.linter list
+     ALIssues.linter list
   -> Ctl_parser_types.ast_node
   -> CLintersContext.context
   -> context_linter_map

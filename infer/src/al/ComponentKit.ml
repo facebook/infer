@@ -158,7 +158,7 @@ let mutable_local_vars_advice context an =
                   ^ MF.monospaced_to_string named_decl_info.ni_name
                   ^ " should be const to avoid reassignment"
               ; suggestion= Some "Add a const (after the asterisk for pointer types)."
-              ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
+              ; loc= ALUtils.location_from_dinfo context decl_info }
       | _ ->
           None
     else None
@@ -194,7 +194,7 @@ let component_factory_function_advice context an =
                 Some
                   "Prefer subclassing CKCompositeComponent to static helper functions that return \
                    a CKComponent subclass."
-            ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
+            ; loc= ALUtils.location_from_dinfo context decl_info }
         else None
     | _ ->
         None
@@ -248,7 +248,7 @@ let component_with_unconventional_superclass_advice context an =
               ; mode= CIssue.On
               ; description= "Never Subclass Components"
               ; suggestion= Some "Instead, create a new subclass of CKCompositeComponent."
-              ; loc= CFrontend_checkers.location_from_decl context if_decl }
+              ; loc= ALUtils.location_from_decl context if_decl }
           else None
         else None
     | _ ->
@@ -307,7 +307,7 @@ let component_with_multiple_factory_methods_advice context an =
                 Some
                   "Instead, always expose all parameters in a single designated initializer and \
                    document which are optional."
-            ; loc= CFrontend_checkers.location_from_decl context meth_decl } )
+            ; loc= ALUtils.location_from_decl context meth_decl } )
           (IList.drop factory_methods 1)
     | _ ->
         assert false
@@ -383,7 +383,7 @@ let rec component_initializer_with_side_effects_advice_ (context : CLintersConte
               ; description= "No Side-effects"
               ; suggestion=
                   Some "Your +new method should not modify any global variables or global state."
-              ; loc= CFrontend_checkers.location_from_stmt context call_stmt }
+              ; loc= ALUtils.location_from_stmt context call_stmt }
         | _ ->
             None )
     | _ ->
@@ -452,10 +452,10 @@ let component_file_cyclomatic_complexity_info (context : CLintersContext.context
     match an with
     | Ctl_parser_types.Stmt stmt
       when Config.compute_analytics && is_cyclo_stmt stmt && is_ck_context context an ->
-        Some (CFrontend_checkers.location_from_stmt context stmt)
+        Some (ALUtils.location_from_stmt context stmt)
     | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _ as d)
       when Config.compute_analytics && context.is_ck_translation_unit ->
-        Some (CFrontend_checkers.location_from_decl context d)
+        Some (ALUtils.location_from_decl context d)
     | _ ->
         None
   in

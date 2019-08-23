@@ -9,6 +9,7 @@ open! IStd
 module L = Logging
 
 (* Helper functions *)
+
 let location_from_stmt lctx stmt =
   let info, _ = Clang_ast_proj.get_stmt_tuple stmt in
   CLocation.location_of_source_range lctx.CLintersContext.translation_unit_context.source_file

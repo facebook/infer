@@ -104,25 +104,25 @@ let stmt_checkers_list = List.map ~f:single_to_multi stmt_single_checkers_list
 let evaluate_place_holder context ph an =
   match ph with
   | "%ivar_name%" ->
-      MF.monospaced_to_string (CFrontend_checkers.ivar_name an)
+      MF.monospaced_to_string (ALUtils.ivar_name an)
   | "%decl_name%" ->
       MF.monospaced_to_string (Ctl_parser_types.ast_node_name an)
   | "%cxx_ref_captured_in_block%" ->
-      MF.monospaced_to_string (CFrontend_checkers.cxx_ref_captured_in_block an)
+      MF.monospaced_to_string (ALUtils.cxx_ref_captured_in_block an)
   | "%decl_ref_or_selector_name%" ->
-      MF.monospaced_to_string (CFrontend_checkers.decl_ref_or_selector_name an)
+      MF.monospaced_to_string (ALUtils.decl_ref_or_selector_name an)
   | "%receiver_method_call%" ->
-      MF.monospaced_to_string (CFrontend_checkers.receiver_method_call an)
+      MF.monospaced_to_string (ALUtils.receiver_method_call an)
   | "%iphoneos_target_sdk_version%" ->
-      MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version context an)
+      MF.monospaced_to_string (ALUtils.iphoneos_target_sdk_version context an)
   | "%available_ios_sdk%" ->
-      MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
+      MF.monospaced_to_string (ALUtils.available_ios_sdk an)
   | "%class_available_ios_sdk%" ->
-      MF.monospaced_to_string (CFrontend_checkers.class_available_ios_sdk an)
+      MF.monospaced_to_string (ALUtils.class_available_ios_sdk an)
   | "%type%" ->
       MF.monospaced_to_string (Ctl_parser_types.ast_node_type an)
   | "%class_name%" ->
-      CFrontend_checkers.class_name an
+      ALUtils.class_name an
   | "%child_type%" ->
       MF.monospaced_to_string (Ctl_parser_types.stmt_node_child_type an)
   | "%name%" ->
@@ -529,7 +529,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_typ
         | None ->
             ()
         | Some witness ->
-            let loc = CFrontend_checkers.location_from_an context witness in
+            let loc = ALUtils.location_from_an context witness in
             fill_issue_desc_info_and_log context ~witness ~current_node:an linter.issue_desc loc )
     parsed_linters
 
