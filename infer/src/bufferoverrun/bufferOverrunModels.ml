@@ -419,11 +419,20 @@ let eval_array_locs_length arr_locs mem =
     Dom.Val.of_itv ~traces length
 
 
+let load_size_alias id arr_locs mem =
+  match PowLoc.is_singleton_or_more arr_locs with
+  | IContainer.Singleton loc ->
+      Dom.Mem.load_size_alias id loc mem
+  | IContainer.Empty | IContainer.More ->
+      mem
+
+
 (* Java only *)
 let get_array_length array_exp =
   let exec _ ~ret:(ret_id, _) mem =
-    let result = eval_array_locs_length (Sem.eval_locs array_exp mem) mem in
-    model_by_value result ret_id mem
+    let arr_locs = Sem.eval_locs array_exp mem in
+    let result = eval_array_locs_length arr_locs mem in
+    model_by_value result ret_id mem |> load_size_alias ret_id arr_locs
   in
   {exec; check= no_check}
 
@@ -695,11 +704,7 @@ module StdVector = struct
     let exec model_env ~ret:(id, _) mem =
       let arr_locs = deref_of model_env elt_typ vec_arg mem in
       let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
-      match PowLoc.is_singleton_or_more arr_locs with
-      | IContainer.Singleton loc ->
-          Dom.Mem.load_size_alias id loc mem
-      | IContainer.Empty | IContainer.More ->
-          mem
+      load_size_alias id arr_locs mem
     in
     {exec; check= no_check}
 end
@@ -893,11 +898,7 @@ module Collection = struct
     let exec _ ~ret:(ret_id, _) mem =
       let result = eval_collection_length coll_exp mem in
       let mem = model_by_value result ret_id mem in
-      match PowLoc.is_singleton_or_more (eval_collection_internal_array_locs coll_exp mem) with
-      | IContainer.Singleton loc ->
-          Dom.Mem.load_size_alias ret_id loc mem
-      | IContainer.Empty | IContainer.More ->
-          mem
+      load_size_alias ret_id (eval_collection_internal_array_locs coll_exp mem) mem
     in
     {exec; check= no_check}
 
