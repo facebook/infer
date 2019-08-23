@@ -5,11 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 module L = Logging
 
-let process_ast ast tenv default_source_file f =
+let process_ast trans_unit_ctx ast tenv default_source_file f =
   let open Clang_ast_t in
   let mk_key decl = CType_decl.CProcname.from_decl ~tenv decl in
+  let call_f decl range =
+    CFrontend_errors.protect trans_unit_ctx
+      ~recover:(fun () -> ())
+      ~pp_context:(fun f () ->
+        F.fprintf f "%a: processing %s" SourceFile.pp default_source_file
+          (Clang_ast_j.string_of_decl decl) )
+      ~f:(fun () -> f (mk_key decl) range)
+  in
   let rec extract_location decl =
     match decl with
     | ObjCMethodDecl (di, _, _)
@@ -19,7 +28,7 @@ let process_ast ast tenv default_source_file f =
     | CXXConstructorDecl (di, _, _, _, _)
     | CXXDestructorDecl (di, _, _, _, _) ->
         let range = CLocation.location_of_decl_info default_source_file di in
-        f (mk_key decl) range
+        call_f decl range
     | _ -> (
       match Clang_ast_proj.get_decl_context_tuple decl with
       | Some (decls, _) ->

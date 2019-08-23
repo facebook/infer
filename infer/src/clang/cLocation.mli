@@ -14,7 +14,7 @@ val clang_to_sil_location : SourceFile.t -> Clang_ast_t.source_location -> Locat
 val should_translate_lib :
      SourceFile.t
   -> Clang_ast_t.source_range
-  -> CModule_type.decl_trans_context
+  -> CFrontend_config.decl_trans_context
   -> translate_when_used:bool
   -> bool
 

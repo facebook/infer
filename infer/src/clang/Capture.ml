@@ -101,8 +101,10 @@ let run_clang_frontend ast_source =
   if Config.linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
   if Config.export_changed_functions then (
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    let process_fn = AstToRangeMap.process_ast ast_decl (Tenv.create ()) source_file in
-    TestDeterminator.test_to_run_clang source_file ~process_ast_fn:process_fn
+    let process_ast_fn =
+      AstToRangeMap.process_ast trans_unit_ctx ast_decl (Tenv.create ()) source_file
+    in
+    TestDeterminator.test_to_run_clang source_file ~process_ast_fn
       ~changed_lines_file:Config.modified_lines ~test_samples_file:None ;
     TestDeterminator.emit_relevant_methods () ) ;
   if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;

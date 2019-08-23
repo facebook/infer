@@ -7,7 +7,11 @@
 
 open! IStd
 
-val test_to_run_java : string option -> string option -> string option -> unit
+val test_to_run_java :
+     changed_lines_file:string option
+  -> test_samples_file:string option
+  -> code_graph_file:string option
+  -> unit
 
 val test_to_run_clang :
      SourceFile.t

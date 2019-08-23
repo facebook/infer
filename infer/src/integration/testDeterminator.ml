@@ -283,7 +283,7 @@ let test_to_run_clang source_file ~process_ast_fn ~changed_lines_file ~test_samp
   relevant_tests := List.append test_to_run !relevant_tests
 
 
-let test_to_run_java changed_lines_file test_samples_file code_graph_file =
+let test_to_run_java ~changed_lines_file ~test_samples_file ~code_graph_file =
   L.(debug TestDeterminator Quiet) "***** Start Java Test Determinator *****@\n" ;
   if is_test_determinator_init () then ()
   else init_java changed_lines_file test_samples_file code_graph_file ;

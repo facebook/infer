@@ -12,34 +12,6 @@ module F = Format
 
 module L = Logging
 
-let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translation_unit_context) =
-  let log_and_recover ~print fmt =
-    recover () ;
-    incr CFrontend_config.procedures_failed ;
-    (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
-  in
-  try f () with
-  (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
-       catching the exception) unless `--keep-going` was passed. Print errors we should fix
-       (t21762295) to the console. *)
-  | CFrontend_errors.Unimplemented e ->
-      ClangLogging.log_caught_exception trans_unit_ctx "Unimplemented" e.position e.source_range
-        e.ast_node ;
-      log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" e.msg
-  | CFrontend_errors.IncorrectAssumption e ->
-      (* FIXME(t21762295): we do not expect this to happen but it does *)
-      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
-        e.source_range e.ast_node ;
-      log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
-  | exn ->
-      let trace = Backtrace.get () in
-      IExn.reraise_if exn ~f:(fun () ->
-          L.internal_error "%a: %a@\n%!" pp_context () Exn.pp exn ;
-          not Config.keep_going ) ;
-      log_and_recover ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn
-        (Backtrace.to_string trace)
-
-
 module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend = struct
   let model_exists procname =
     (not Config.biabduction_models_mode) && Summary.OnDisk.has_model procname
@@ -52,6 +24,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
     incr CFrontend_config.procedures_attempted ;
     let recover () =
+      incr CFrontend_config.procedures_failed ;
       Typ.Procname.Hash.remove cfg procname ;
       let method_kind = ms.CMethodSignature.method_kind in
       CMethod_trans.create_external_procdesc trans_unit_ctx cfg procname method_kind None
@@ -90,7 +63,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | exception Caml.Not_found ->
           ()
     in
-    protect ~f ~recover ~pp_context trans_unit_ctx
+    CFrontend_errors.protect ~f ~recover ~pp_context trans_unit_ctx
 
 
   let function_decl trans_unit_ctx tenv cfg func_decl block_data_opt =
@@ -446,9 +419,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           in
           let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
           List.iter ~f:translate no_method_decls ;
-          protect
+          CFrontend_errors.protect
             ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
-            ~recover:Fn.id
+            ~recover:(fun () -> ())
             ~pp_context:(fun fmt () ->
               F.fprintf fmt "Error adding types from decl '%a'"
                 (Pp.to_string ~f:Clang_ast_j.string_of_decl)

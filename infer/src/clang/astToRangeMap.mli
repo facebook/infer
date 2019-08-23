@@ -7,7 +7,8 @@
 open! IStd
 
 val process_ast :
-     Clang_ast_t.decl
+     CFrontend_config.translation_unit_context
+  -> Clang_ast_t.decl
   -> Tenv.t
   -> SourceFile.t
   -> (Typ.Procname.t -> Location.t * Location.t -> unit)

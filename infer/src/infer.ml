@@ -132,8 +132,8 @@ let () =
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
   ( if Config.test_determinator then (
-    TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
-      Config.method_decls_info ;
+    TestDeterminator.test_to_run_java ~changed_lines_file:Config.modified_lines
+      ~test_samples_file:Config.profiler_samples ~code_graph_file:Config.method_decls_info ;
     TestDeterminator.emit_tests_to_run () )
   else
     match Config.command with
