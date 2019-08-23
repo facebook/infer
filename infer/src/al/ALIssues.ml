@@ -499,7 +499,7 @@ let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CI
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
   try log_frontend_issue context.CLintersContext.current_method witness issue_desc'
-  with CFrontend_config.IncorrectAssumption e ->
+  with CFrontend_errors.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
     ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
       e.source_range e.ast_node

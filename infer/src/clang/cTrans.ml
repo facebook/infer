@@ -165,7 +165,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ei
       | None ->
           let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+          CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Clang_ast_proj.get_expr_tuple stmt returns None, stmt is %a"
             (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
             stmt
@@ -425,13 +425,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let instrs = [Sil.Store (exp, typ, zero_exp, sil_loc)] in
               mk_trans_result (exp, typ) {empty_control with instrs}
           | Tfun _ | Tvoid | Tarray _ | TVar _ ->
-              CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+              CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
                 "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
         in
         let res_trans = fill_typ_with_zero var_exp_typ in
         {res_trans with control= {res_trans.control with initd_exps= [fst var_exp_typ]}}
     | None ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "Retrieving var from non-InitListExpr parent"
 
 
@@ -534,7 +534,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             assert false )
       | _ as decl ->
           (* FIXME(t21762295): we do not expect this to happen but it does *)
-          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+          CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "di_parent_pointer should be always set for fields/ivars, but got %a"
             (Pp.option (Pp.to_string ~f:Clang_ast_j.string_of_decl))
             decl
@@ -807,7 +807,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
         method_deref_trans trans_state ~context decl_ref stmt_info decl_kind
     | _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "Decl ref expression %a with pointer %d still needs to be translated"
           (Pp.to_string ~f:Clang_ast_j.string_of_decl_kind)
           decl_kind decl_ref.Clang_ast_t.dr_decl_pointer
@@ -1593,7 +1593,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         if root_nodes <> [] then {op_res_trans with control= {op_res_trans.control with root_nodes}}
         else op_res_trans
     | _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "BinaryConditionalOperator not translated"
 
 
@@ -2200,7 +2200,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | [stmt] ->
         [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
     | _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "InitListExpression for var %a type %a with multiple init statements" Exp.pp var_exp
           (Typ.pp_full Pp.text) var_typ
 
@@ -2245,7 +2245,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Tint _ | Tfloat _ | Tptr _ ->
             initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | _ ->
-            CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+            CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
               "InitListExp for var %a of type %a" Exp.pp var_exp (Typ.pp Pp.text) var_typ
       in
       let res_trans =
@@ -2408,7 +2408,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       :: _ ->
         mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | decl :: _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "In DeclStmt found an unknown declaration type %s" (Clang_ast_j.string_of_decl decl)
     | [] ->
         assert false
@@ -2431,7 +2431,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some stmt ->
           instruction trans_state stmt
       | None ->
-          CFrontend_config.incorrect_assumption __POS__ source_range
+          CFrontend_errors.incorrect_assumption __POS__ source_range
             "Expected source expression for OpaqueValueExpr" )
 
 
@@ -2793,7 +2793,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Clang_ast_t.VarDecl (_, _, _, {vdi_init_expr}) ->
           init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
       | _ ->
-          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+          CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
     let translate_normal_capture ~is_by_ref ((pvar, typ) as pvar_typ)
@@ -2851,7 +2851,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             translate_normal_capture ~is_by_ref this_typ acc
           else acc
       | None, Some _ ->
-          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+          CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init with init, but no capture"
     in
     let lei_captures = CMethod_trans.get_captures_from_cpp_lambda lei_lambda_decl in
@@ -3200,12 +3200,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | NullStmt _, `FallThroughAttr _ ->
           no_op_trans trans_state.succ_nodes
       | _ ->
-          CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+          CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
             "attributedStmt [stmt] [attr] with:@\nstmt=%s@\nattr=%s@\n"
             (Clang_ast_j.string_of_stmt stmt)
             (Clang_ast_j.string_of_attribute attr) )
     | _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
           (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
           stmts
@@ -3223,7 +3223,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Some {control= {root_nodes= []}} | None ->
             mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= bn.break} )
     | None (* t21762295 *) ->
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
           "Break stmt without continuation: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
@@ -3240,7 +3240,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= bn.continue}
         )
     | None (* t21762295 *) ->
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+        CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
           "Continue stmt without continuation: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
@@ -3325,7 +3325,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   Config.debug_level_capture >= 1
                   ||
                   match e with
-                  | CFrontend_config.Unimplemented _ | CFrontend_config.IncorrectAssumption _ ->
+                  | CFrontend_errors.Unimplemented _ | CFrontend_errors.IncorrectAssumption _ ->
                       (* these are caught by default, do not print messages unless asked to do so *)
                       false
                   | _ ->
@@ -3609,7 +3609,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
     | CXXDependentScopeMemberExpr ({Clang_ast_t.si_source_range}, _, _) ->
-        CFrontend_config.unimplemented __POS__ si_source_range
+        CFrontend_errors.unimplemented __POS__ si_source_range
           ~ast_node:(Clang_ast_proj.get_stmt_kind_string instr)
           "Translation of templated code is unsupported: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
@@ -3618,7 +3618,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | WhileStmt ({Clang_ast_t.si_source_range}, _)
     | DoStmt ({Clang_ast_t.si_source_range}, _)
     | ObjCForCollectionStmt ({Clang_ast_t.si_source_range}, _) ->
-        CFrontend_config.incorrect_assumption __POS__ si_source_range "Unexpected shape for %a: %a"
+        CFrontend_errors.incorrect_assumption __POS__ si_source_range "Unexpected shape for %a: %a"
           (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
           instr
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)

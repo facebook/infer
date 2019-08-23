@@ -412,7 +412,7 @@ let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc 
     | Tptr (typ, _) ->
         typ
     | _ ->
-        CFrontend_config.incorrect_assumption __POS__ source_range
+        CFrontend_errors.incorrect_assumption __POS__ source_range
           "Expected pointer type but found type %a" (Typ.pp_full Pp.text) class_typ
   in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in

@@ -29,7 +29,7 @@ let method_signature_of_pointer tenv pointer =
         Some ms
     | None ->
         None
-  with CFrontend_config.Invalid_declaration -> None
+  with CFrontend_errors.Invalid_declaration -> None
 
 
 let get_method_name_from_clang tenv ms_opt =

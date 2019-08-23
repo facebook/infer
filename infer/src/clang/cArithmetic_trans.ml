@@ -59,7 +59,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
      but the translation of the argument expressions does not compute such
      offsets and instead passes the member pointer at type 'void'. *)
   | `PtrMemD | `PtrMemI ->
-      CFrontend_config.unimplemented __POS__ source_range
+      CFrontend_errors.unimplemented __POS__ source_range
         "Pointer-to-member constructs are unsupported. Got '%a'."
         (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_info)
         boi
@@ -106,7 +106,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `Assign ->
       (e1, [Sil.Store (e1, typ, e2, loc)])
   | `Cmp ->
-      CFrontend_config.unimplemented __POS__ source_range "C++20 spaceship operator <=>"
+      CFrontend_errors.unimplemented __POS__ source_range "C++20 spaceship operator <=>"
       (* C++20 spaceship operator <=>, TODO *)
   | `Comma ->
       (e2, []) (* C99 6.5.17-2 *)

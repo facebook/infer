@@ -50,7 +50,7 @@ module BuildMethodSignature = struct
         | _ ->
             None )
     | _ ->
-        raise CFrontend_config.Invalid_declaration
+        raise CFrontend_errors.Invalid_declaration
 
 
   let should_add_return_param return_type ~is_objc_method =
@@ -98,7 +98,7 @@ module BuildMethodSignature = struct
           let annot = CAst_utils.sil_annot_of_type qt in
           CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~annot
       | _ ->
-          raise CFrontend_config.Invalid_declaration
+          raise CFrontend_errors.Invalid_declaration
     in
     let params = List.map ~f:par_to_ms_par (CMethodProperties.get_param_decls method_decl) in
     let return_param =
@@ -614,7 +614,7 @@ and get_class_typename ?tenv method_decl_info =
   | Some class_decl ->
       get_record_typename ?tenv class_decl
   | None ->
-      CFrontend_config.incorrect_assumption __POS__ method_decl_info.Clang_ast_t.di_source_range
+      CFrontend_errors.incorrect_assumption __POS__ method_decl_info.Clang_ast_t.di_source_range
         "Expecting class declaration when getting the class typename"
 
 

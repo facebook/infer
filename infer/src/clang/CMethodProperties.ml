@@ -25,7 +25,7 @@ let get_method_kind meth_decl =
   | BlockDecl _ ->
       ClangMethodKind.BLOCK
   | _ ->
-      raise CFrontend_config.Invalid_declaration
+      raise CFrontend_errors.Invalid_declaration
 
 
 let rec is_inside_objc_class_method meth_decl =
@@ -55,7 +55,7 @@ let get_return_type method_decl =
   | ObjCMethodDecl (_, _, omdi) ->
       omdi.omdi_result_type
   | _ ->
-      raise CFrontend_config.Invalid_declaration
+      raise CFrontend_errors.Invalid_declaration
 
 
 let get_param_decls method_decl =
@@ -72,7 +72,7 @@ let get_param_decls method_decl =
   | BlockDecl (_, block_decl_info) ->
       block_decl_info.bdi_parameters
   | _ ->
-      raise CFrontend_config.Invalid_declaration
+      raise CFrontend_errors.Invalid_declaration
 
 
 let get_method_body method_decl =
@@ -89,7 +89,7 @@ let get_method_body method_decl =
   | BlockDecl (_, block_decl_info) ->
       block_decl_info.bdi_body
   | _ ->
-      raise CFrontend_config.Invalid_declaration
+      raise CFrontend_errors.Invalid_declaration
 
 
 let is_cpp_virtual method_decl =
@@ -161,7 +161,7 @@ let is_variadic method_decl =
   | BlockDecl (_, block_decl_info) ->
       block_decl_info.bdi_is_variadic
   | _ ->
-      raise CFrontend_config.Invalid_declaration
+      raise CFrontend_errors.Invalid_declaration
 
 
 let get_block_captured_variables method_decl =

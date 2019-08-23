@@ -110,7 +110,7 @@ let get_decl_opt decl_ptr_opt =
 let get_stmt stmt_ptr source_range =
   let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
   if Option.is_none stmt then
-    CFrontend_config.incorrect_assumption __POS__ source_range "stmt with pointer %d not found@\n"
+    CFrontend_errors.incorrect_assumption __POS__ source_range "stmt with pointer %d not found@\n"
       stmt_ptr ;
   stmt
 

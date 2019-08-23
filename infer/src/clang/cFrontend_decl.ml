@@ -22,11 +22,11 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx : CFrontend_config.translati
   (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
        catching the exception) unless `--keep-going` was passed. Print errors we should fix
        (t21762295) to the console. *)
-  | CFrontend_config.Unimplemented e ->
+  | CFrontend_errors.Unimplemented e ->
       ClangLogging.log_caught_exception trans_unit_ctx "Unimplemented" e.position e.source_range
         e.ast_node ;
       log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" e.msg
-  | CFrontend_config.IncorrectAssumption e ->
+  | CFrontend_errors.IncorrectAssumption e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
       ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
         e.source_range e.ast_node ;
@@ -122,7 +122,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               return_param_typ_opt outer_context_opt extra_instrs
       | None ->
           ()
-    with CFrontend_config.IncorrectAssumption e ->
+    with CFrontend_errors.IncorrectAssumption e ->
       ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
         e.source_range e.ast_node
 
@@ -170,7 +170,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ignore
               (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
                  ms [] [])
-    with CFrontend_config.IncorrectAssumption e ->
+    with CFrontend_errors.IncorrectAssumption e ->
       ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
         e.source_range e.ast_node
 

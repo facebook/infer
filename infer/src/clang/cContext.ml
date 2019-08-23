@@ -73,7 +73,7 @@ let get_curr_class_decl_ptr stmt_info curr_class =
   | ContextClsDeclPtr ptr ->
       ptr
   | _ ->
-      CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+      CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
         "current class is not ContextClsDeclPtr"
 
 
