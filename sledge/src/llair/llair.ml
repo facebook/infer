@@ -8,6 +8,7 @@
 (** Translation units *)
 
 type inst =
+  | Move of {reg_exps: (Var.t * Exp.t) vector; loc: Loc.t}
   | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
@@ -119,6 +120,10 @@ type t = {globals: Global.t vector; functions: functions}
 let pp_inst fs inst =
   let pf pp = Format.fprintf fs pp in
   match inst with
+  | Move {reg_exps; loc} ->
+      let regs, exps = Vector.unzip reg_exps in
+      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (Vector.pp ",@ " Var.pp) regs
+        (Vector.pp ",@ " Exp.pp) exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
       pf "@[<2>load %a@ %a@ %a;@]\t%a" Exp.pp len Var.pp reg Exp.pp ptr
         Loc.pp loc
@@ -218,6 +223,7 @@ module Inst = struct
   type t = inst [@@deriving sexp]
 
   let pp = pp_inst
+  let move ~reg_exps ~loc = Move {reg_exps; loc}
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
   let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
   let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
@@ -229,7 +235,8 @@ module Inst = struct
   let abort ~loc = Abort {loc}
 
   let loc = function
-    | Load {loc}
+    | Move {loc}
+     |Load {loc}
      |Store {loc}
      |Memset {loc}
      |Memcpy {loc}
@@ -242,6 +249,8 @@ module Inst = struct
 
   let union_locals inst vs =
     match inst with
+    | Move {reg_exps} ->
+        Vector.fold ~f:(fun vs (reg, _) -> Set.add vs reg) ~init:vs reg_exps
     | Load {reg} | Alloc {reg} | Nondet {reg= Some reg} -> Set.add vs reg
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
      |Nondet {reg= None}

@@ -30,6 +30,9 @@
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
+  | Move of {reg_exps: (Var.t * Exp.t) vector; loc: Loc.t}
+      (** Move each value [exp] into corresponding register [reg]. All of
+          the moves take effect simultaneously. *)
   | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
       (** Read a [len]-byte value from the contents of memory at address
           [ptr] into [reg]. *)
@@ -130,6 +133,7 @@ module Inst : sig
   type t = inst
 
   val pp : t pp
+  val move : reg_exps:(Var.t * Exp.t) vector -> loc:Loc.t -> inst
   val load : reg:Var.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst

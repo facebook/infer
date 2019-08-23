@@ -54,6 +54,25 @@ let assume pre cnd =
 let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
 let return pre formal exp = Sh.and_ (Exp.eq (Exp.var formal) exp) pre
 
+(* { emp }
+ *   rs := es
+ * { *ᵢ rᵢ=eᵢΘ }
+ *)
+let move_spec us reg_exps =
+  let xs = Var.Set.empty in
+  let foot = Sh.emp in
+  let ws, rs =
+    Vector.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
+      ~f:(fun (ws, rs) (reg, exp) ->
+        (Set.add ws reg, Set.union rs (Exp.fv exp)) )
+  in
+  let sub, ms, _ = assign ~ws ~rs ~us in
+  let post =
+    Vector.fold reg_exps ~init:Sh.emp ~f:(fun post (reg, exp) ->
+        Sh.and_ (Exp.eq (Exp.var reg) (Exp.rename sub exp)) post )
+  in
+  {xs; foot; sub; ms; post}
+
 (* { p-[b;m)->⟨l,α⟩ }
  *   load l r p
  * { r=αΘ * (p-[b;m)->⟨l,α⟩)Θ }
@@ -686,6 +705,7 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
   assert (Set.disjoint (Sh.fv pre) (Llair.Inst.locals inst)) ;
   let us = pre.us in
   match inst with
+  | Move {reg_exps; _} -> exec_spec pre (move_spec us reg_exps)
   | Load {reg; ptr; len; _} -> exec_spec pre (load_spec us reg ptr len)
   | Store {ptr; exp; len; _} -> exec_spec pre (store_spec us ptr exp len)
   | Memset {dst; byt; len; _} -> exec_spec pre (memset_spec us dst byt len)
