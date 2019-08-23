@@ -264,6 +264,7 @@ codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_not_Ok, 7, CONDITION_AL
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_not_Ok, 11, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_or_Ok, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_or_Ok, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/c/bufferoverrun/prune_alias.c, prune_int_by_pointer_Bad, 5, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 5 Size: 5]
 codetoanalyze/c/bufferoverrun/prune_alias.c, unknown_alias_Bad, 4, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: unknown1,Assignment,Array access: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/prune_alias.c, unknown_alias_Bad, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/prune_alias.c, unknown_alias_Good, 4, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: unknown1,Assignment,Array access: Offset: [-oo, +oo] Size: [0, +oo]]

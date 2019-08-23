@@ -377,3 +377,11 @@ void prune_linear_by_minmax(size_t s, size_t t) {
 void call_prune_linear_by_minmax_Good() {
   prune_linear_by_minmax(unknown_function(), unknown_function());
 }
+
+void prune_int_by_pointer_Bad(int* p) {
+  int* x = (int*)100;
+  if (x == p) {
+  }
+  int a[5];
+  a[5] = 0;
+}

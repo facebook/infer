@@ -288,7 +288,16 @@ module Val = struct
   let lift_prune2 :
       (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.t -> ArrayBlk.t -> ArrayBlk.t) -> t -> t -> t =
    fun f g x y ->
-    let itv = f x.itv y.itv in
+    let itv =
+      let pruned_itv = f x.itv y.itv in
+      if
+        Itv.is_bottom pruned_itv
+        && (not (Itv.is_bottom x.itv))
+        && Itv.is_bottom y.itv
+        && not (PowLoc.is_bottom (get_all_locs y))
+      then x.itv
+      else pruned_itv
+    in
     let itv_thresholds =
       Option.value_map (Itv.is_const y.itv) ~default:x.itv_thresholds ~f:(fun z ->
           x.itv_thresholds
