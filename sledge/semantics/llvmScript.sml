@@ -36,7 +36,7 @@ Datatype `
   reg = Reg string`;
 
 Datatype `
-  glob_var = GlobName string`;
+  glob_var = Glob_var string`;
 
 Datatype `
   fun_name = Fn string`;
