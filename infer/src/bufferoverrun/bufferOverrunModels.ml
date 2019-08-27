@@ -331,28 +331,10 @@ let strndup src_exp length_exp =
   {exec; check= no_check}
 
 
-let inferbo_min e1 e2 =
-  let exec {integer_type_widths} ~ret:(id, _) mem =
-    let i1 = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_itv in
-    let i2 = Sem.eval integer_type_widths e2 mem |> Dom.Val.get_itv in
-    let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
-    mem |> Dom.Mem.add_stack (Loc.of_id id) v
-  in
-  {exec; check= no_check}
-
-
 let set_size {integer_type_widths; location} array_v size_exp mem =
   let locs = Dom.Val.get_pow_loc array_v in
   let length = Sem.eval integer_type_widths size_exp mem in
   Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) locs mem
-
-
-let inferbo_set_size src_exp size_exp =
-  let exec ({integer_type_widths} as model) ~ret:_ mem =
-    let src_v = Sem.eval integer_type_widths src_exp mem in
-    set_size model src_v size_exp mem
-  and check = check_alloc_size ~can_be_zero:true size_exp in
-  {exec; check}
 
 
 let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
@@ -1020,9 +1002,7 @@ module Call = struct
     let std_array2 = mk_std_array () in
     let char_ptr = Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)) in
     make_dispatcher
-      [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
-      ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
-      ; -"__exit" <>--> bottom
+      [ -"__exit" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> CFArray.length

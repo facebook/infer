@@ -189,8 +189,6 @@ module Val = struct
     of_itv (Itv.set_lb_zero (Itv.of_int max_char))
 
 
-  let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
-
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
 
   let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv; sym= Relation.Sym.top}
@@ -697,7 +695,6 @@ module AliasTarget = struct
     | Empty of Loc.t
     | Size of Loc.t
     | Fgets of Loc.t
-    | Nullity of Loc.t
     | Top
   [@@deriving compare]
 
@@ -715,18 +712,14 @@ module AliasTarget = struct
         F.fprintf fmt "size(%a)" Loc.pp l
     | Fgets l ->
         F.fprintf fmt "fgets(%a)" Loc.pp l
-    | Nullity l ->
-        F.fprintf fmt "nullity(%a)" Loc.pp l
     | Top ->
         F.fprintf fmt "T"
 
 
   let fgets l = Fgets l
 
-  let nullity l = Nullity l
-
   let get_loc = function
-    | Simple l | SimplePlusA (l, _) | Empty l | Size l | Fgets l | Nullity l ->
+    | Simple l | SimplePlusA (l, _) | Empty l | Size l | Fgets l ->
         Some l
     | Top ->
         None
@@ -746,8 +739,6 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Size l)
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
-    | Nullity l ->
-        Option.map (f l) ~f:(fun l -> Nullity l)
     | Top ->
         Some Top
 
@@ -772,13 +763,7 @@ end
    "AliasTarget.Empty relation": For pruning vector.length with vector::empty() results, we adopt a
    specific relation between %r and v->elements, where %r=v.empty().  So, if %r!=0, v's array length
    ([v->elements->length]) is pruned by 0.  On the other hand, if %r==0, v's array length is pruned
-   by >=1.
-
-   "AliasTarget.Nullity relation": For pruning vector.length with vector::empty() results, we adopt
-   a specific relation between %r and i, where %r=v.empty() and i=v.length.  So, if %r!=0, i is
-   pruned by i=0.  On the other hand, if %r==0, i is pruned by i>=1.  This is similar to the
-   AliasTarget.Empty relation, but is used when there is a program variable [i] for the length of
-   the array. *)
+   by >=1. *)
 module AliasMap = struct
   module Key = struct
     type t = IdentKey of Ident.t | JavaTmp of Loc.t [@@deriving compare]
@@ -910,17 +895,6 @@ module Alias = struct
         lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, IntLit.neg i))) a
     | Exp.BinOp (Binop.MinusA _, Exp.Var id, Exp.Const (Const.Cint i)) ->
         lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, i))) a
-    | _ ->
-        a
-
-
-  let store_empty : Val.t -> Loc.t -> t -> t =
-   fun formal loc a ->
-    let a = lift_map (AliasMap.forget loc) a in
-    let locs = Val.get_all_locs formal in
-    match PowLoc.is_singleton_or_more locs with
-    | IContainer.Singleton loc ->
-        {a with ret= AliasRet.v (AliasTarget.nullity loc)}
     | _ ->
         a
 
@@ -1429,12 +1403,7 @@ module MemReach = struct
         Some (l, None)
     | Some (AliasTarget.SimplePlusA (l, i)) ->
         Some (l, Some i)
-    | Some
-        ( AliasTarget.Empty _
-        | AliasTarget.Size _
-        | AliasTarget.Fgets _
-        | AliasTarget.Nullity _
-        | AliasTarget.Top )
+    | Some (AliasTarget.Empty _ | AliasTarget.Size _ | AliasTarget.Fgets _ | AliasTarget.Top)
     | None ->
         None
 
@@ -1451,10 +1420,6 @@ module MemReach = struct
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
    fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
-
-
-  let store_empty_alias : Val.t -> Loc.t -> t -> t =
-   fun formal loc m -> {m with alias= Alias.store_empty formal loc m.alias}
 
 
   let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
@@ -1775,10 +1740,6 @@ module Mem = struct
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
    fun loc e -> map ~f:(MemReach.store_simple_alias loc e)
-
-
-  let store_empty_alias : Val.t -> Loc.t -> t -> t =
-   fun formal loc -> map ~f:(MemReach.store_empty_alias formal loc)
 
 
   let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
