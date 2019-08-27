@@ -770,9 +770,9 @@ end
    inside the if branch.
 
    "AliasTarget.Empty relation": For pruning vector.length with vector::empty() results, we adopt a
-   specific relation between %r and v, where %r=v.empty().  So, if %r!=0, v's array length
-   ([v.length]) is pruned by v.length=0.  On the other hand, if %r==0, v's array length is pruned by
-   v.length>=1.
+   specific relation between %r and v->elements, where %r=v.empty().  So, if %r!=0, v's array length
+   ([v->elements->length]) is pruned by 0.  On the other hand, if %r==0, v's array length is pruned
+   by >=1.
 
    "AliasTarget.Nullity relation": For pruning vector.length with vector::empty() results, we adopt
    a specific relation between %r and i, where %r=v.empty() and i=v.length.  So, if %r!=0, i is

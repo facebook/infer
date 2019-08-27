@@ -497,6 +497,14 @@ module CFArray = struct
 
 
   let at (array_exp, _) (index_exp, _) = at ?size:None array_exp index_exp
+
+  let length e =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval_arr integer_type_widths e mem in
+      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
+      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
+    in
+    {exec; check= no_check}
 end
 
 module Split = struct
@@ -576,13 +584,6 @@ module StdArray = struct
     in
     {exec; check= no_check}
 end
-
-let array_empty_exec ret_id array_v mem =
-  let traces = Dom.Val.get_traces array_v in
-  let size = ArrayBlk.sizeof (Dom.Val.get_array_blk array_v) in
-  let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
-  model_by_value empty ret_id mem
-
 
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
@@ -668,7 +669,10 @@ module StdVector = struct
     let exec model_env ~ret:(id, _) mem =
       let deref_of_vec = deref_of model_env elt_typ vec_arg mem in
       let array_v = Dom.Mem.find_set deref_of_vec mem in
-      let mem = array_empty_exec id array_v mem in
+      let traces = Dom.Val.get_traces array_v in
+      let size = ArrayBlk.sizeof (Dom.Val.get_array_blk array_v) in
+      let empty = Dom.Val.of_itv ~traces (Itv.of_bool (Itv.le_sem size Itv.zero)) in
+      let mem = model_by_value empty id mem in
       match PowLoc.is_singleton_or_more deref_of_vec with
       | IContainer.Singleton loc ->
           Dom.Mem.load_empty_alias id loc mem
@@ -710,76 +714,58 @@ module StdVector = struct
 end
 
 module StdBasicString = struct
-  (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr tgt src len =
-    let {exec= malloc_exec; check= malloc_check} = malloc ~can_be_zero:true len in
-    let exec model_env ~ret:((ret_id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
-      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
-      let mem = Dom.Mem.update_mem (Sem.eval_locs tgt mem) v mem in
-      let contents =
-        let src_locs = Sem.eval_locs src mem in
-        Dom.Mem.find_set src_locs mem
+  let constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt =
+    let exec ({pname; node_hash; integer_type_widths} as model_env) ~ret mem =
+      let mem =
+        Option.value_map len_opt ~default:mem ~f:(fun len ->
+            let {exec= malloc_exec} = malloc ~can_be_zero:true len in
+            malloc_exec model_env ~ret mem )
       in
-      Dom.Mem.update_mem (Dom.Val.get_all_locs v) contents mem
+      let tgt_locs = Sem.eval_locs tgt_exp mem in
+      let tgt_deref =
+        let allocsite =
+          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+            ~represents_multiple_values:false
+        in
+        PowLoc.singleton (Loc.of_allocsite allocsite)
+      in
+      let mem =
+        Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
+      in
+      let elem_locs = StdVector.append_fields ~vec_typ:tgt_typ ~elt_typ:char_typ tgt_deref in
+      match src with
+      | Exp.Const (Const.Cstr s) ->
+          BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
+      | _ ->
+          let v = Sem.eval integer_type_widths src mem in
+          Dom.Mem.update_mem elem_locs v mem
     in
     let check ({location; integer_type_widths} as model_env) mem cond_set =
-      let cond_set = malloc_check model_env mem cond_set in
-      BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
-        mem location cond_set
+      Option.value_map len_opt ~default:cond_set ~f:(fun len ->
+          let {check= malloc_check} = malloc ~can_be_zero:true len in
+          let cond_set = malloc_check model_env mem cond_set in
+          BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len
+            ~last_included:true mem location cond_set )
     in
     {exec; check}
 
 
+  (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
+  let constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src len =
+    constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt:(Some len)
+
+
   (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr_without_len tgt src =
-    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
-      match src with
-      | Exp.Const (Const.Cstr s) ->
-          let locs = Sem.eval_locs tgt mem in
-          BoUtils.Exec.decl_string model_env ~do_alloc:true locs s mem
-      | _ ->
-          let tgt_locs = Sem.eval_locs tgt mem in
-          let v = Sem.eval integer_type_widths src mem in
-          Dom.Mem.update_mem tgt_locs v mem
-    in
-    {exec; check= no_check}
+  let constructor_from_char_ptr_without_len char_typ (tgt_exp, tgt_typ) src =
+    constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt:None
 
 
   (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let copy_constructor tgt src =
-    let exec _ ~ret:_ mem =
-      let tgt_locs = Sem.eval_locs tgt mem in
-      let v = Dom.Mem.find_set (Sem.eval_locs src mem) mem in
-      Dom.Mem.update_mem tgt_locs v mem
-    in
-    {exec; check= no_check}
+  let copy_constructor = StdVector.constructor_copy
 
+  let empty = StdVector.empty
 
-  let empty e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let array_v = Sem.eval integer_type_widths e mem in
-      let mem = array_empty_exec ret_id array_v mem in
-      match e with
-      | Exp.Var id -> (
-        match Dom.Mem.find_simple_alias id mem with
-        | Some (l, None) ->
-            Dom.Mem.load_empty_alias ret_id l mem
-        | _ ->
-            mem )
-      | _ ->
-          mem
-    in
-    {exec; check= no_check}
-
-
-  let length e =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval_arr integer_type_widths e mem in
-      let length = Dom.Val.of_itv (ArrayBlk.sizeof (Dom.Val.get_array_blk v)) in
-      Dom.Mem.add_stack (Loc.of_id ret_id) length mem
-    in
-    {exec; check= no_check}
+  let length = StdVector.size
 end
 
 (** Java's integers are modeled with an indirection to a memory
@@ -1039,9 +1025,9 @@ module Call = struct
       ; -"__exit" <>--> bottom
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp $+...$--> CFArray.create_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
-      ; -"MCFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
-      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> StdBasicString.length
-      ; -"CFArrayGetCount" <>$ capt_exp $!--> StdBasicString.length
+      ; -"MCFArrayGetCount" <>$ capt_exp $!--> CFArray.length
+      ; -"CFDictionaryGetCount" <>$ capt_exp $!--> CFArray.length
+      ; -"CFArrayGetCount" <>$ capt_exp $!--> CFArray.length
       ; -"CFArrayGetValueAtIndex" <>$ capt_arg $+ capt_arg $!--> CFArray.at
       ; -"exit" <>--> bottom
       ; -"__cast" <>$ capt_exp $+ capt_exp $+...$--> cast
@@ -1102,17 +1088,29 @@ module Call = struct
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> no_model
-      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "basic_string" $ capt_arg
         $+ capt_exp_of_typ (-"std" &:: "basic_string")
         $--> StdBasicString.copy_constructor
-      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp $+ capt_exp_of_prim_typ char_ptr
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "basic_string" $ capt_arg $+ capt_exp_of_prim_typ char_ptr
         $--> StdBasicString.constructor_from_char_ptr_without_len
-      ; -"std" &:: "basic_string" &:: "basic_string" $ capt_exp $+ capt_exp_of_prim_typ char_ptr
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "basic_string" $ capt_arg $+ capt_exp_of_prim_typ char_ptr
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
         $--> StdBasicString.constructor_from_char_ptr
-      ; -"std" &:: "basic_string" &:: "empty" $ capt_exp $--> StdBasicString.empty
-      ; -"std" &:: "basic_string" &:: "length" $ capt_exp $--> StdBasicString.length
-      ; -"std" &:: "basic_string" &:: "size" $ capt_exp $--> StdBasicString.length
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "empty" $ capt_arg $--> StdBasicString.empty
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "length" $ capt_arg $--> StdBasicString.length
+      ; -"std" &:: "basic_string"
+        < capt_typ `T
+        &+...>:: "size" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" &:: "compare" &--> by_value Dom.Val.Itv.top
       ; +PatternMatch.implements_lang "String"
         &:: "equals"
