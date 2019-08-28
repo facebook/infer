@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-(* Make sure we cannot create new issue types other than by calling [from_string]. This is because
+(* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
 module Unsafe : sig
   type t = private
@@ -19,10 +19,10 @@ module Unsafe : sig
 
   val equal : t -> t -> bool
 
-  val from_string :
+  val register_from_string :
     ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
 
-  val from_cost_string :
+  val register_from_cost_string :
        ?enabled:bool
     -> ?is_on_cold_start:bool
     -> kind:CostKind.t
@@ -59,7 +59,7 @@ end = struct
 
   let set_enabled issue b = issue.enabled <- b
 
-  (** avoid creating new issue types. The idea is that there are three types of issue types:
+  (** Avoid creating new issue types. The idea is that there are three types of issue types:
         1. Statically pre-defined issue types, namely the ones in this module
 
         2. Dynamically created ones, eg from custom errors defined in the models, or defined by the
@@ -69,7 +69,7 @@ end = struct
         2., but issues of type 2. have not yet been defined. Thus, we record only there [enabled]
         status definitely. The [hum]an-readable description can be updated when we encounter the
         definition of the issue type, eg in AL. *)
-  let from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file unique_id =
+  let register_from_string ?(enabled = true) ?hum:hum0 ?doc_url ?linters_def_file unique_id =
     let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
     let issue = {unique_id; enabled; hum; doc_url; linters_def_file} in
     try
@@ -86,12 +86,13 @@ end = struct
 
 
   (** cost issues are already registered below.*)
-  let from_cost_string ?(enabled = true) ?(is_on_cold_start = false) ~(kind : CostKind.t) s =
+  let register_from_cost_string ?(enabled = true) ?(is_on_cold_start = false) ~(kind : CostKind.t)
+      s =
     let issue_type_base = Format.asprintf s (CostKind.to_issue_string kind) in
     let issue_type =
       if is_on_cold_start then issue_type_base ^ "_COLD_START" else issue_type_base
     in
-    from_string ~enabled issue_type
+    register_from_string ~enabled issue_type
 
 
   let all_issues () = IssueSet.elements !all_issues
@@ -102,370 +103,392 @@ include Unsafe
 (** pretty print a localised string *)
 let pp fmt t = Format.pp_print_string fmt t.unique_id
 
-let abduction_case_not_implemented = from_string "Abduction_case_not_implemented"
+let abduction_case_not_implemented = register_from_string "Abduction_case_not_implemented"
 
-let analysis_stops = from_string ~enabled:false "ANALYSIS_STOPS"
+let analysis_stops = register_from_string ~enabled:false "ANALYSIS_STOPS"
 
-let array_of_pointsto = from_string "Array_of_pointsto"
+let array_of_pointsto = register_from_string "Array_of_pointsto"
 
-let array_out_of_bounds_l1 = from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L1"
+let array_out_of_bounds_l1 = register_from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L1"
 
-let array_out_of_bounds_l2 = from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L2"
+let array_out_of_bounds_l2 = register_from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L2"
 
-let array_out_of_bounds_l3 = from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L3"
+let array_out_of_bounds_l3 = register_from_string ~enabled:false "ARRAY_OUT_OF_BOUNDS_L3"
 
-let assert_failure = from_string "Assert_failure"
+let assert_failure = register_from_string "Assert_failure"
 
-let bad_footprint = from_string "Bad_footprint"
+let bad_footprint = register_from_string "Bad_footprint"
 
-let buffer_overrun_l1 = from_string "BUFFER_OVERRUN_L1"
+let buffer_overrun_l1 = register_from_string "BUFFER_OVERRUN_L1"
 
-let buffer_overrun_l2 = from_string "BUFFER_OVERRUN_L2"
+let buffer_overrun_l2 = register_from_string "BUFFER_OVERRUN_L2"
 
-let buffer_overrun_l3 = from_string "BUFFER_OVERRUN_L3"
+let buffer_overrun_l3 = register_from_string "BUFFER_OVERRUN_L3"
 
-let buffer_overrun_l4 = from_string ~enabled:false "BUFFER_OVERRUN_L4"
+let buffer_overrun_l4 = register_from_string ~enabled:false "BUFFER_OVERRUN_L4"
 
-let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
+let buffer_overrun_l5 = register_from_string ~enabled:false "BUFFER_OVERRUN_L5"
 
-let buffer_overrun_r2 = from_string "BUFFER_OVERRUN_R2"
+let buffer_overrun_r2 = register_from_string "BUFFER_OVERRUN_R2"
 
-let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
+let buffer_overrun_s2 = register_from_string "BUFFER_OVERRUN_S2"
 
-let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
+let buffer_overrun_u5 = register_from_string ~enabled:false "BUFFER_OVERRUN_U5"
 
-let cannot_star = from_string "Cannot_star"
+let cannot_star = register_from_string "Cannot_star"
 
-let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory"
+let checkers_allocates_memory =
+  register_from_string "CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory"
+
 
 let checkers_annotation_reachability_error =
-  from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR" ~hum:"Annotation Reachability Error"
+  register_from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+    ~hum:"Annotation Reachability Error"
 
 
 let checkers_calls_expensive_method =
-  from_string "CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called"
+  register_from_string "CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called"
 
 
 let checkers_expensive_overrides_unexpensive =
-  from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED" ~hum:"Expensive Overrides Unannotated"
+  register_from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
+    ~hum:"Expensive Overrides Unannotated"
 
 
 let checkers_fragment_retain_view =
-  from_string "CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
+  register_from_string "CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
 
 
-let checkers_immutable_cast = from_string "CHECKERS_IMMUTABLE_CAST"
+let checkers_immutable_cast = register_from_string "CHECKERS_IMMUTABLE_CAST"
 
-let checkers_printf_args = from_string "CHECKERS_PRINTF_ARGS"
+let checkers_printf_args = register_from_string "CHECKERS_PRINTF_ARGS"
 
-let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
+let class_cast_exception = register_from_string ~enabled:false "CLASS_CAST_EXCEPTION"
 
-let class_load = from_string "CLASS_LOAD"
+let class_load = register_from_string "CLASS_LOAD"
 
-let codequery = from_string "Codequery"
+let codequery = register_from_string "Codequery"
 
-let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"
+let comparing_floats_for_equality = register_from_string "COMPARING_FLOAT_FOR_EQUALITY"
 
-let component_factory_function = from_string "COMPONENT_FACTORY_FUNCTION"
+let component_factory_function = register_from_string "COMPONENT_FACTORY_FUNCTION"
 
-let component_file_cyclomatic_complexity = from_string "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
+let component_file_cyclomatic_complexity =
+  register_from_string "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
 
-let component_file_line_count = from_string "COMPONENT_FILE_LINE_COUNT"
 
-let component_initializer_with_side_effects = from_string "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
+let component_file_line_count = register_from_string "COMPONENT_FILE_LINE_COUNT"
 
-let component_with_multiple_factory_methods = from_string "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
+let component_initializer_with_side_effects =
+  register_from_string "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
+
+
+let component_with_multiple_factory_methods =
+  register_from_string "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
+
 
 let component_with_unconventional_superclass =
-  from_string "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"
+  register_from_string "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"
 
 
-let condition_always_false = from_string ~enabled:false "CONDITION_ALWAYS_FALSE"
+let condition_always_false = register_from_string ~enabled:false "CONDITION_ALWAYS_FALSE"
 
-let condition_always_true = from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
+let condition_always_true = register_from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
 
-let create_intent_from_uri = from_string "CREATE_INTENT_FROM_URI"
+let create_intent_from_uri = register_from_string "CREATE_INTENT_FROM_URI"
 
-let cross_site_scripting = from_string "CROSS_SITE_SCRIPTING"
+let cross_site_scripting = register_from_string "CROSS_SITE_SCRIPTING"
 
-let dangling_pointer_dereference = from_string ~enabled:false "DANGLING_POINTER_DEREFERENCE"
+let dangling_pointer_dereference =
+  register_from_string ~enabled:false "DANGLING_POINTER_DEREFERENCE"
 
-let dead_store = from_string "DEAD_STORE"
 
-let deadlock = from_string "DEADLOCK"
+let dead_store = register_from_string "DEAD_STORE"
 
-let deallocate_stack_variable = from_string "DEALLOCATE_STACK_VARIABLE"
+let deadlock = register_from_string "DEADLOCK"
 
-let deallocate_static_memory = from_string "DEALLOCATE_STATIC_MEMORY"
+let deallocate_stack_variable = register_from_string "DEALLOCATE_STACK_VARIABLE"
 
-let deallocation_mismatch = from_string "DEALLOCATION_MISMATCH"
+let deallocate_static_memory = register_from_string "DEALLOCATE_STATIC_MEMORY"
 
-let divide_by_zero = from_string ~enabled:false "DIVIDE_BY_ZERO"
+let deallocation_mismatch = register_from_string "DEALLOCATION_MISMATCH"
 
-let do_not_report = from_string "DO_NOT_REPORT"
+let divide_by_zero = register_from_string ~enabled:false "DIVIDE_BY_ZERO"
 
-let empty_vector_access = from_string "EMPTY_VECTOR_ACCESS"
+let do_not_report = register_from_string "DO_NOT_REPORT"
+
+let empty_vector_access = register_from_string "EMPTY_VECTOR_ACCESS"
 
 let eradicate_condition_redundant =
-  from_string "ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant"
+  register_from_string "ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant"
 
 
 let eradicate_condition_redundant_nonnull =
-  from_string "ERADICATE_CONDITION_REDUNDANT_NONNULL" ~hum:"Condition Redundant Non-Null"
+  register_from_string "ERADICATE_CONDITION_REDUNDANT_NONNULL" ~hum:"Condition Redundant Non-Null"
 
 
 let eradicate_field_not_initialized =
-  from_string "ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized"
+  register_from_string "ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized"
 
 
 let eradicate_field_not_mutable =
-  from_string "ERADICATE_FIELD_NOT_MUTABLE" ~hum:"Field Not Mutable"
+  register_from_string "ERADICATE_FIELD_NOT_MUTABLE" ~hum:"Field Not Mutable"
 
 
 let eradicate_field_not_nullable =
-  from_string "ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
+  register_from_string "ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
 
 
 let eradicate_field_over_annotated =
-  from_string "ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated"
+  register_from_string "ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated"
 
 
 let eradicate_field_value_absent =
-  from_string "ERADICATE_FIELD_VALUE_ABSENT" ~hum:"Field Value Absent"
+  register_from_string "ERADICATE_FIELD_VALUE_ABSENT" ~hum:"Field Value Absent"
 
 
 let eradicate_inconsistent_subclass_parameter_annotation =
-  from_string "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
+  register_from_string "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
     ~hum:"Inconsistent Subclass Parameter Annotation"
 
 
 let eradicate_inconsistent_subclass_return_annotation =
-  from_string "ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
+  register_from_string "ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
     ~hum:"Inconsistent Subclass Return Annotation"
 
 
 let eradicate_nullable_dereference =
-  from_string "ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
+  register_from_string "ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
 
 
 let eradicate_parameter_not_nullable =
-  from_string "ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable"
+  register_from_string "ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable"
 
 
 let eradicate_parameter_value_absent =
-  from_string "ERADICATE_PARAMETER_VALUE_ABSENT" ~hum:"Parameter Value Absent"
+  register_from_string "ERADICATE_PARAMETER_VALUE_ABSENT" ~hum:"Parameter Value Absent"
 
 
 let eradicate_return_not_nullable =
-  from_string "ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable"
+  register_from_string "ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable"
 
 
 let eradicate_return_over_annotated =
-  from_string "ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated"
+  register_from_string "ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated"
 
 
 let eradicate_return_value_not_present =
-  from_string "ERADICATE_RETURN_VALUE_NOT_PRESENT" ~hum:"Return Value Not Present"
+  register_from_string "ERADICATE_RETURN_VALUE_NOT_PRESENT" ~hum:"Return Value Not Present"
 
 
 let eradicate_value_not_present =
-  from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
+  register_from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
 
 
 let expensive_cost_call ~kind ~is_on_cold_start =
-  from_cost_string ~enabled:false ~kind ~is_on_cold_start "EXPENSIVE_%s"
+  register_from_cost_string ~enabled:false ~kind ~is_on_cold_start "EXPENSIVE_%s"
 
 
-let exposed_insecure_intent_handling = from_string "EXPOSED_INSECURE_INTENT_HANDLING"
+let exposed_insecure_intent_handling = register_from_string "EXPOSED_INSECURE_INTENT_HANDLING"
 
-let failure_exe = from_string "Failure_exe"
+let failure_exe = register_from_string "Failure_exe"
 
-let field_not_null_checked = from_string "IVAR_NOT_NULL_CHECKED"
+let field_not_null_checked = register_from_string "IVAR_NOT_NULL_CHECKED"
 
 (* from AL default linters *)
 let _global_variable_initialized_with_function_or_method_call =
-  from_string ~enabled:false "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
+  register_from_string ~enabled:false "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
 
 
-let graphql_field_access = from_string "GRAPHQL_FIELD_ACCESS"
+let graphql_field_access = register_from_string "GRAPHQL_FIELD_ACCESS"
 
-let guardedby_violation_racerd = from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
+let guardedby_violation_racerd =
+  register_from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
 
-let inefficient_keyset_iterator = from_string "INEFFICIENT_KEYSET_ITERATOR"
 
-let inferbo_alloc_is_big = from_string "INFERBO_ALLOC_IS_BIG"
+let inefficient_keyset_iterator = register_from_string "INEFFICIENT_KEYSET_ITERATOR"
 
-let inferbo_alloc_is_negative = from_string "INFERBO_ALLOC_IS_NEGATIVE"
+let inferbo_alloc_is_big = register_from_string "INFERBO_ALLOC_IS_BIG"
 
-let inferbo_alloc_is_zero = from_string "INFERBO_ALLOC_IS_ZERO"
+let inferbo_alloc_is_negative = register_from_string "INFERBO_ALLOC_IS_NEGATIVE"
 
-let inferbo_alloc_may_be_big = from_string "INFERBO_ALLOC_MAY_BE_BIG"
+let inferbo_alloc_is_zero = register_from_string "INFERBO_ALLOC_IS_ZERO"
 
-let inferbo_alloc_may_be_negative = from_string "INFERBO_ALLOC_MAY_BE_NEGATIVE"
+let inferbo_alloc_may_be_big = register_from_string "INFERBO_ALLOC_MAY_BE_BIG"
 
-let infinite_cost_call ~kind = from_cost_string ~enabled:false "INFINITE_%s" ~kind
+let inferbo_alloc_may_be_negative = register_from_string "INFERBO_ALLOC_MAY_BE_NEGATIVE"
 
-let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
+let infinite_cost_call ~kind = register_from_cost_string ~enabled:false "INFINITE_%s" ~kind
 
-let insecure_intent_handling = from_string "INSECURE_INTENT_HANDLING"
+let inherently_dangerous_function = register_from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
-let integer_overflow_l1 = from_string "INTEGER_OVERFLOW_L1"
+let insecure_intent_handling = register_from_string "INSECURE_INTENT_HANDLING"
 
-let integer_overflow_l2 = from_string "INTEGER_OVERFLOW_L2"
+let integer_overflow_l1 = register_from_string "INTEGER_OVERFLOW_L1"
 
-let integer_overflow_l5 = from_string ~enabled:false "INTEGER_OVERFLOW_L5"
+let integer_overflow_l2 = register_from_string "INTEGER_OVERFLOW_L2"
 
-let integer_overflow_r2 = from_string "INTEGER_OVERFLOW_R2"
+let integer_overflow_l5 = register_from_string ~enabled:false "INTEGER_OVERFLOW_L5"
 
-let integer_overflow_u5 = from_string ~enabled:false "INTEGER_OVERFLOW_U5"
+let integer_overflow_r2 = register_from_string "INTEGER_OVERFLOW_R2"
 
-let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
+let integer_overflow_u5 = register_from_string ~enabled:false "INTEGER_OVERFLOW_U5"
 
-let internal_error = from_string "Internal_error"
+let interface_not_thread_safe = register_from_string "INTERFACE_NOT_THREAD_SAFE"
 
-let invariant_call = from_string "INVARIANT_CALL"
+let internal_error = register_from_string "Internal_error"
 
-let javascript_injection = from_string "JAVASCRIPT_INJECTION"
+let invariant_call = register_from_string "INVARIANT_CALL"
 
-let leak_after_array_abstraction = from_string "Leak_after_array_abstraction"
+let javascript_injection = register_from_string "JAVASCRIPT_INJECTION"
 
-let leak_in_footprint = from_string "Leak_in_footprint"
+let leak_after_array_abstraction = register_from_string "Leak_after_array_abstraction"
 
-let lock_consistency_violation = from_string "LOCK_CONSISTENCY_VIOLATION"
+let leak_in_footprint = register_from_string "Leak_in_footprint"
 
-let logging_private_data = from_string "LOGGING_PRIVATE_DATA"
+let lock_consistency_violation = register_from_string "LOCK_CONSISTENCY_VIOLATION"
 
-let expensive_loop_invariant_call = from_string "EXPENSIVE_LOOP_INVARIANT_CALL"
+let logging_private_data = register_from_string "LOGGING_PRIVATE_DATA"
 
-let memory_leak = from_string "MEMORY_LEAK"
+let expensive_loop_invariant_call = register_from_string "EXPENSIVE_LOOP_INVARIANT_CALL"
 
-let missing_fld = from_string "Missing_fld" ~hum:"Missing Field"
+let memory_leak = register_from_string "MEMORY_LEAK"
 
-let missing_required_prop = from_string "MISSING_REQUIRED_PROP"
+let missing_fld = register_from_string "Missing_fld" ~hum:"Missing Field"
+
+let missing_required_prop = register_from_string "MISSING_REQUIRED_PROP"
 
 let mutable_local_variable_in_component_file =
-  from_string "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
+  register_from_string "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
 
 
-let null_dereference = from_string "NULL_DEREFERENCE"
+let null_dereference = register_from_string "NULL_DEREFERENCE"
 
-let null_test_after_dereference = from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"
+let null_test_after_dereference = register_from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"
 
 let nullsafe_field_not_nullable =
-  from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
+  register_from_string "NULLSAFE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
 
 
 let nullsafe_nullable_dereference =
-  from_string "NULLSAFE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
+  register_from_string "NULLSAFE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference"
 
 
-let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
+let parameter_not_null_checked = register_from_string "PARAMETER_NOT_NULL_CHECKED"
 
-let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
+let pointer_size_mismatch = register_from_string "POINTER_SIZE_MISMATCH"
 
-let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
+let precondition_not_found = register_from_string "PRECONDITION_NOT_FOUND"
 
-let precondition_not_met = from_string "PRECONDITION_NOT_MET"
+let precondition_not_met = register_from_string "PRECONDITION_NOT_MET"
 
-let premature_nil_termination = from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
+let premature_nil_termination = register_from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
 
-let pure_function = from_string "PURE_FUNCTION"
+let pure_function = register_from_string "PURE_FUNCTION"
 
-let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
+let quandary_taint_error = register_from_string "QUANDARY_TAINT_ERROR"
 
-let registered_observer_being_deallocated = from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
+let registered_observer_being_deallocated =
+  register_from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
 
-let resource_leak = from_string "RESOURCE_LEAK"
 
-let retain_cycle = from_string ~enabled:true "RETAIN_CYCLE"
+let resource_leak = register_from_string "RESOURCE_LEAK"
 
-let return_expression_required = from_string "RETURN_EXPRESSION_REQUIRED"
+let retain_cycle = register_from_string ~enabled:true "RETAIN_CYCLE"
 
-let return_statement_missing = from_string "RETURN_STATEMENT_MISSING"
+let return_expression_required = register_from_string "RETURN_EXPRESSION_REQUIRED"
 
-let return_value_ignored = from_string ~enabled:false "RETURN_VALUE_IGNORED"
+let return_statement_missing = register_from_string "RETURN_STATEMENT_MISSING"
 
-let skip_function = from_string "SKIP_FUNCTION"
+let return_value_ignored = register_from_string ~enabled:false "RETURN_VALUE_IGNORED"
 
-let skip_pointer_dereference = from_string "SKIP_POINTER_DEREFERENCE"
+let skip_function = register_from_string "SKIP_FUNCTION"
 
-let shell_injection = from_string "SHELL_INJECTION"
+let skip_pointer_dereference = register_from_string "SKIP_POINTER_DEREFERENCE"
 
-let shell_injection_risk = from_string "SHELL_INJECTION_RISK"
+let shell_injection = register_from_string "SHELL_INJECTION"
 
-let sql_injection = from_string "SQL_INJECTION"
+let shell_injection_risk = register_from_string "SHELL_INJECTION_RISK"
 
-let sql_injection_risk = from_string "SQL_INJECTION_RISK"
+let sql_injection = register_from_string "SQL_INJECTION"
 
-let stack_variable_address_escape = from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
+let sql_injection_risk = register_from_string "SQL_INJECTION_RISK"
 
-let starvation = from_string "STARVATION" ~hum:"UI Thread Starvation"
+let stack_variable_address_escape =
+  register_from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
 
-let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
 
-let strict_mode_violation = from_string "STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation"
+let starvation = register_from_string "STARVATION" ~hum:"UI Thread Starvation"
+
+let static_initialization_order_fiasco = register_from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
+
+let strict_mode_violation =
+  register_from_string "STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation"
+
 
 let symexec_memory_error =
-  from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"
+  register_from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"
 
 
-let tainted_buffer_access = from_string "TAINTED_BUFFER_ACCESS"
+let tainted_buffer_access = register_from_string "TAINTED_BUFFER_ACCESS"
 
-let tainted_memory_allocation = from_string "TAINTED_MEMORY_ALLOCATION"
+let tainted_memory_allocation = register_from_string "TAINTED_MEMORY_ALLOCATION"
 
-let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
+let thread_safety_violation = register_from_string "THREAD_SAFETY_VIOLATION"
 
 let complexity_increase ~kind ~is_on_cold_start =
-  from_cost_string ~kind ~is_on_cold_start "%s_COMPLEXITY_INCREASE"
+  register_from_cost_string ~kind ~is_on_cold_start "%s_COMPLEXITY_INCREASE"
 
 
-let topl_error = from_string "TOPL_ERROR"
+let topl_error = register_from_string "TOPL_ERROR"
 
 let unary_minus_applied_to_unsigned_expression =
-  from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
+  register_from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
 
 
-let uninitialized_value = from_string "UNINITIALIZED_VALUE"
+let uninitialized_value = register_from_string "UNINITIALIZED_VALUE"
 
-let unknown_proc = from_string "Unknown_proc" ~hum:"Unknown Procedure"
+let unknown_proc = register_from_string "Unknown_proc" ~hum:"Unknown Procedure"
 
-let unreachable_code_after = from_string "UNREACHABLE_CODE"
+let unreachable_code_after = register_from_string "UNREACHABLE_CODE"
 
-let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
+let unsafe_guarded_by_access = register_from_string "UNSAFE_GUARDED_BY_ACCESS"
 
-let use_after_delete = from_string "USE_AFTER_DELETE"
+let use_after_delete = register_from_string "USE_AFTER_DELETE"
 
-let use_after_free = from_string "USE_AFTER_FREE"
+let use_after_free = register_from_string "USE_AFTER_FREE"
 
-let use_after_lifetime = from_string "USE_AFTER_LIFETIME"
+let use_after_lifetime = register_from_string "USE_AFTER_LIFETIME"
 
-let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
+let user_controlled_sql_risk = register_from_string "USER_CONTROLLED_SQL_RISK"
 
-let untrusted_buffer_access = from_string ~enabled:false "UNTRUSTED_BUFFER_ACCESS"
+let untrusted_buffer_access = register_from_string ~enabled:false "UNTRUSTED_BUFFER_ACCESS"
 
-let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
+let untrusted_deserialization = register_from_string "UNTRUSTED_DESERIALIZATION"
 
-let untrusted_deserialization_risk = from_string "UNTRUSTED_DESERIALIZATION_RISK"
+let untrusted_deserialization_risk = register_from_string "UNTRUSTED_DESERIALIZATION_RISK"
 
-let untrusted_environment_change_risk = from_string "UNTRUSTED_ENVIRONMENT_CHANGE_RISK"
+let untrusted_environment_change_risk = register_from_string "UNTRUSTED_ENVIRONMENT_CHANGE_RISK"
 
-let untrusted_file = from_string "UNTRUSTED_FILE"
+let untrusted_file = register_from_string "UNTRUSTED_FILE"
 
-let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
+let untrusted_file_risk = register_from_string "UNTRUSTED_FILE_RISK"
 
-let untrusted_heap_allocation = from_string ~enabled:false "UNTRUSTED_HEAP_ALLOCATION"
+let untrusted_heap_allocation = register_from_string ~enabled:false "UNTRUSTED_HEAP_ALLOCATION"
 
-let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
+let untrusted_intent_creation = register_from_string "UNTRUSTED_INTENT_CREATION"
 
-let untrusted_url_risk = from_string "UNTRUSTED_URL_RISK"
+let untrusted_url_risk = register_from_string "UNTRUSTED_URL_RISK"
 
-let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
+let untrusted_variable_length_array = register_from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 
-let vector_invalidation = from_string "VECTOR_INVALIDATION"
+let vector_invalidation = register_from_string "VECTOR_INVALIDATION"
 
-let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
+let wrong_argument_number =
+  register_from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
 
-let zero_cost_call ~kind = from_cost_string ~enabled:false ~kind "ZERO_%s"
+
+let zero_cost_call ~kind = register_from_cost_string ~enabled:false ~kind "ZERO_%s"
 
 (* register enabled cost issues *)
 let () =

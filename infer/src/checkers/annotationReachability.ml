@@ -346,7 +346,7 @@ module CxxAnnotationSpecs = struct
             (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
         in
         let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
-        IssueType.from_string spec_name ~doc_url ~linters_def_file
+        IssueType.register_from_string spec_name ~doc_url ~linters_def_file
       in
       Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
     in

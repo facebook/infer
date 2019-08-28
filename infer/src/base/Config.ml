@@ -1345,7 +1345,7 @@ and () =
     let (_ : string list ref) =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
-          let issue = IssueType.from_string issue_id in
+          let issue = IssueType.register_from_string issue_id in
           IssueType.set_enabled issue b ; issue_id )
         ?default ~meta:"issue_type"
         ~default_to_string:(fun _ -> "")

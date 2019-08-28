@@ -24,9 +24,16 @@ val all_issues : unit -> t list
 val pp : Format.formatter -> t -> unit
 (** pretty print a localised string *)
 
-val from_string :
+val register_from_string :
   ?enabled:bool -> ?hum:string -> ?doc_url:string -> ?linters_def_file:string -> string -> t
-(** create from an ordinary string *)
+(** Create a new issue and register it in the list of all issues.
+    NOTE: if the issue with the same string id is already registered,
+          overrides `hum`, `doc_url`, and `linters_def_file`, but DOES NOT override
+          `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues
+          from the config, when we don't know all params yet.
+          Thus, the human-readable description can be updated when we encounter the
+          definition of the issue type, eg in AL. 
+  *)
 
 val set_enabled : t -> bool -> unit
 

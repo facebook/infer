@@ -238,7 +238,7 @@ let recognize_exception exn =
       ; severity= None
       ; category= Nocat }
   | Custom_error (error_msg, desc) ->
-      { name= IssueType.from_string error_msg
+      { name= IssueType.register_from_string error_msg
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
@@ -365,7 +365,7 @@ let recognize_exception exn =
       ; category= Nocat }
   | Java_runtime_exception (exn_name, _, desc) ->
       let exn_str = Typ.Name.name exn_name in
-      { name= IssueType.from_string exn_str
+      { name= IssueType.register_from_string exn_str
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_user
