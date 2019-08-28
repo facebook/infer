@@ -152,6 +152,7 @@ DIRECT_TESTS += \
   java_hoistingExpensive \
   java_inefficientKeysetIterator \
   java_infer \
+  java_litho \
   java_performance \
   java_purity \
   java_quandary \
