@@ -297,10 +297,20 @@ let xlate_name_opt : Llvm.llvalue -> Var.t option =
   | Void -> None
   | _ -> Some (xlate_name instr)
 
-let memo_value : (Llvm.llvalue, Exp.t) Hashtbl.t = Hashtbl.Poly.create ()
+let memo_value : (bool * Llvm.llvalue, Exp.t) Hashtbl.t =
+  Hashtbl.Poly.create ()
 
 let memo_global : (Llvm.llvalue, Global.t) Hashtbl.t =
   Hashtbl.Poly.create ()
+
+let should_inline : Llvm.llvalue -> bool =
+ fun llv ->
+  match Llvm.use_begin llv with
+  | Some use -> (
+    match Llvm.use_succ use with
+    | Some _ -> false (* do not inline if >= 2 uses *)
+    | None -> true )
+  | None -> true
 
 module Llvalue = struct
   type t = Llvm.llvalue
@@ -339,7 +349,7 @@ let rec xlate_intrinsic_exp : string -> (x -> Llvm.llvalue -> Exp.t) option
           xlate_llvm_eh_typeid_for x src arg )
   | _ -> None
 
-and xlate_value : x -> Llvm.llvalue -> Exp.t =
+and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
  fun x llv ->
   let xlate_value_ llv =
     match Llvm.classify_value llv with
@@ -347,8 +357,8 @@ and xlate_value : x -> Llvm.llvalue -> Exp.t =
         let func = Llvm.operand llv (Llvm.num_arg_operands llv) in
         let fname = Llvm.value_name func in
         match xlate_intrinsic_exp fname with
-        | Some intrinsic -> intrinsic x llv
-        | None -> Exp.var (xlate_name llv) )
+        | Some intrinsic when inline || should_inline llv -> intrinsic x llv
+        | _ -> Exp.var (xlate_name llv) )
     | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
      |Argument ->
         Exp.var (xlate_name llv)
@@ -396,8 +406,9 @@ and xlate_value : x -> Llvm.llvalue -> Exp.t =
           | Add | FAdd | Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem
           | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp
           | Select | GetElementPtr | ExtractElement | InsertElement
-          | ExtractValue | InsertValue | ShuffleVector ) as opcode ) ->
-        xlate_opcode x llv opcode
+          | ShuffleVector | ExtractValue | InsertValue ) as opcode ) ->
+        if inline || should_inline llv then xlate_opcode x llv opcode
+        else Exp.var (xlate_name llv)
     | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
     | GlobalIFunc -> todo "ifuncs: %a" pp_llvalue llv ()
     | Instruction (CatchPad | CleanupPad | CatchSwitch) ->
@@ -409,7 +420,7 @@ and xlate_value : x -> Llvm.llvalue -> Exp.t =
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
-  Hashtbl.find_or_add memo_value llv ~default:(fun () ->
+  Hashtbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
       ;
       xlate_value_ llv
@@ -780,6 +791,14 @@ let xlate_instr :
   in
   let name = find_name instr in
   let loc = find_loc instr in
+  let inline_or_move xlate =
+    if should_inline instr then nop ()
+    else
+      let reg = xlate_name instr in
+      let exp = xlate instr in
+      let reg_exps = Vector.of_array [|(reg, exp)|] in
+      emit_inst (Llair.Inst.move ~reg_exps ~loc)
+  in
   let opcode = Llvm.instr_opcode instr in
   match opcode with
   | Load ->
@@ -837,101 +856,105 @@ let xlate_instr :
         emit_inst (Llair.Inst.nondet ~reg ~msg:fname ~loc)
       in
       (* intrinsics *)
-      match String.split fname ~on:'.' with
-      | _ when Option.is_some (xlate_intrinsic_exp fname) -> nop ()
-      | ["__llair_throw"] ->
-          let exc = xlate_value x (Llvm.operand instr 0) in
-          emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
-      | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
-          let reg = xlate_name instr in
-          let num_operand = Llvm.operand instr 0 in
-          let num =
-            Exp.convert ~dst:Typ.siz
-              (xlate_value x num_operand)
-              ~src:(xlate_type x (Llvm.type_of num_operand))
-          in
-          let len = Exp.integer (Z.of_int 1) Typ.siz in
-          emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
-      | ["_Znwm" (* operator new(size_t num) *)]
-       |[ "_ZnwmSt11align_val_t"
-          (* operator new(unsigned long, std::align_val_t) *) ] ->
-          let reg = xlate_name instr in
-          let num = xlate_value x (Llvm.operand instr 0) in
-          let llt = Llvm.type_of instr in
-          let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
-          emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
-      | ["_ZdlPv" (* operator delete(void* ptr) *)]
-       |[ "_ZdlPvSt11align_val_t"
-          (* operator delete(void* ptr, std::align_val_t) *) ]
-       |[ "_ZdlPvmSt11align_val_t"
-          (* operator delete(void* ptr, unsigned long, std::align_val_t) *)
-         ]
-       |["free" (* void free(void* ptr) *)] ->
-          let ptr = xlate_value x (Llvm.operand instr 0) in
-          emit_inst (Llair.Inst.free ~ptr ~loc)
-      | "llvm" :: "memset" :: _ ->
-          let dst = xlate_value x (Llvm.operand instr 0) in
-          let byt = xlate_value x (Llvm.operand instr 1) in
-          let len = xlate_value x (Llvm.operand instr 2) in
-          emit_inst (Llair.Inst.memset ~dst ~byt ~len ~loc)
-      | "llvm" :: "memcpy" :: _ ->
-          let dst = xlate_value x (Llvm.operand instr 0) in
-          let src = xlate_value x (Llvm.operand instr 1) in
-          let len = xlate_value x (Llvm.operand instr 2) in
-          emit_inst (Llair.Inst.memcpy ~dst ~src ~len ~loc)
-      | "llvm" :: "memmove" :: _ ->
-          let dst = xlate_value x (Llvm.operand instr 0) in
-          let src = xlate_value x (Llvm.operand instr 1) in
-          let len = xlate_value x (Llvm.operand instr 2) in
-          emit_inst (Llair.Inst.memmov ~dst ~src ~len ~loc)
-      | ["abort"] | ["llvm"; "trap"] -> emit_inst (Llair.Inst.abort ~loc)
-      (* dropped / handled elsewhere *)
-      | ["llvm"; "dbg"; ("declare" | "value")]
-       |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
-          nop ()
-      (* unimplemented *)
-      | ["llvm"; ("stacksave" | "stackrestore")] ->
-          skip "dynamic stack deallocation"
-      | "llvm" :: "coro" :: _ -> todo "coroutines:@ %a" pp_llvalue instr ()
-      | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
-          todo "statepoints:@ %a" pp_llvalue instr ()
-      | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
-          skip "variadic function intrinsic"
-      | "llvm" :: _ -> skip "intrinsic"
-      | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
-          skip "inline asm"
-      (* general function call that may not throw *)
-      | _ ->
-          let func = xlate_func_name x llfunc in
-          let typ = xlate_type x (Llvm.type_of llfunc) in
-          let lbl = name ^ ".ret" in
-          let call =
-            let args =
-              let num_args =
-                if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-                  Llvm.num_arg_operands instr
-                else
-                  let fname = Llvm.value_name llfunc in
-                  ( match Hash_set.strict_add ignored_callees fname with
-                  | Ok () when not (Llvm.is_declaration llfunc) ->
-                      warn
-                        "ignoring variable arguments to variadic function: \
-                         %a"
-                        Exp.pp func ()
-                  | _ -> () ) ;
-                  Array.length (Llvm.param_types (Llvm.element_type lltyp))
-              in
-              List.rev_init num_args ~f:(fun i ->
-                  xlate_value x (Llvm.operand instr i) )
+      match xlate_intrinsic_exp fname with
+      | Some intrinsic -> inline_or_move (intrinsic x)
+      | None -> (
+        match String.split fname ~on:'.' with
+        | ["__llair_throw"] ->
+            let exc = xlate_value x (Llvm.operand instr 0) in
+            emit_term ~prefix:(pop loc) (Llair.Term.throw ~exc ~loc)
+        | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
+            let reg = xlate_name instr in
+            let num_operand = Llvm.operand instr 0 in
+            let num =
+              Exp.convert ~dst:Typ.siz
+                (xlate_value x num_operand)
+                ~src:(xlate_type x (Llvm.type_of num_operand))
             in
-            let areturn = xlate_name_opt instr in
-            let return = Llair.Jump.mk lbl in
-            Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw:None
-              ~loc
-          in
-          continue (fun (insts, term) ->
-              let cmnd = Vector.of_list insts in
-              ([], call, [Llair.Block.mk ~lbl ~cmnd ~term]) ) )
+            let len = Exp.integer (Z.of_int 1) Typ.siz in
+            emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
+        | ["_Znwm" (* operator new(size_t num) *)]
+         |[ "_ZnwmSt11align_val_t"
+            (* operator new(unsigned long, std::align_val_t) *) ] ->
+            let reg = xlate_name instr in
+            let num = xlate_value x (Llvm.operand instr 0) in
+            let llt = Llvm.type_of instr in
+            let len = Exp.integer (Z.of_int (size_of x llt)) Typ.siz in
+            emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
+        | ["_ZdlPv" (* operator delete(void* ptr) *)]
+         |[ "_ZdlPvSt11align_val_t"
+            (* operator delete(void* ptr, std::align_val_t) *) ]
+         |[ "_ZdlPvmSt11align_val_t"
+            (* operator delete(void* ptr, unsigned long, std::align_val_t) *)
+           ]
+         |["free" (* void free(void* ptr) *)] ->
+            let ptr = xlate_value x (Llvm.operand instr 0) in
+            emit_inst (Llair.Inst.free ~ptr ~loc)
+        | "llvm" :: "memset" :: _ ->
+            let dst = xlate_value x (Llvm.operand instr 0) in
+            let byt = xlate_value x (Llvm.operand instr 1) in
+            let len = xlate_value x (Llvm.operand instr 2) in
+            emit_inst (Llair.Inst.memset ~dst ~byt ~len ~loc)
+        | "llvm" :: "memcpy" :: _ ->
+            let dst = xlate_value x (Llvm.operand instr 0) in
+            let src = xlate_value x (Llvm.operand instr 1) in
+            let len = xlate_value x (Llvm.operand instr 2) in
+            emit_inst (Llair.Inst.memcpy ~dst ~src ~len ~loc)
+        | "llvm" :: "memmove" :: _ ->
+            let dst = xlate_value x (Llvm.operand instr 0) in
+            let src = xlate_value x (Llvm.operand instr 1) in
+            let len = xlate_value x (Llvm.operand instr 2) in
+            emit_inst (Llair.Inst.memmov ~dst ~src ~len ~loc)
+        | ["abort"] | ["llvm"; "trap"] -> emit_inst (Llair.Inst.abort ~loc)
+        (* dropped / handled elsewhere *)
+        | ["llvm"; "dbg"; ("declare" | "value")]
+         |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
+            nop ()
+        (* unimplemented *)
+        | ["llvm"; ("stacksave" | "stackrestore")] ->
+            skip "dynamic stack deallocation"
+        | "llvm" :: "coro" :: _ ->
+            todo "coroutines:@ %a" pp_llvalue instr ()
+        | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
+            todo "statepoints:@ %a" pp_llvalue instr ()
+        | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
+            skip "variadic function intrinsic"
+        | "llvm" :: _ -> skip "intrinsic"
+        | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
+            skip "inline asm"
+        (* general function call that may not throw *)
+        | _ ->
+            let func = xlate_func_name x llfunc in
+            let typ = xlate_type x (Llvm.type_of llfunc) in
+            let lbl = name ^ ".ret" in
+            let call =
+              let args =
+                let num_args =
+                  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
+                    Llvm.num_arg_operands instr
+                  else
+                    let fname = Llvm.value_name llfunc in
+                    ( match Hash_set.strict_add ignored_callees fname with
+                    | Ok () when not (Llvm.is_declaration llfunc) ->
+                        warn
+                          "ignoring variable arguments to variadic \
+                           function: %a"
+                          Exp.pp func ()
+                    | _ -> () ) ;
+                    Array.length
+                      (Llvm.param_types (Llvm.element_type lltyp))
+                in
+                List.rev_init num_args ~f:(fun i ->
+                    xlate_value x (Llvm.operand instr i) )
+              in
+              let areturn = xlate_name_opt instr in
+              let return = Llair.Jump.mk lbl in
+              Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw:None
+                ~loc
+            in
+            continue (fun (insts, term) ->
+                let cmnd = Vector.of_list insts in
+                ([], call, [Llair.Block.mk ~lbl ~cmnd ~term]) ) ) )
   | Invoke -> (
       let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
       let lltyp = Llvm.type_of llfunc in
@@ -1162,7 +1185,7 @@ let xlate_instr :
    |Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
    |GetElementPtr | ExtractElement | InsertElement | ShuffleVector
    |ExtractValue | InsertValue ->
-      nop ()
+      inline_or_move (xlate_value ~inline:true x)
   | VAArg ->
       let reg = xlate_name_opt instr in
       warn "variadic function argument: %a" Loc.pp loc () ;
