@@ -186,7 +186,7 @@ module type PPUniqRankSet = sig
   (** in case an element with the same rank is present both in [lhs] and [rhs], keep the one from
      [lhs] in [union_prefer_left lhs rhs] *)
 
-  val pp : F.formatter -> t -> unit
+  val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 
 module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t

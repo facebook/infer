@@ -233,7 +233,7 @@ module type PPUniqRankSet = sig
 
   val union_prefer_left : t -> t -> t
 
-  val pp : F.formatter -> t -> unit
+  val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 
 module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type elt = Val.t = struct
@@ -273,7 +273,10 @@ module MakePPUniqRankSet (Val : PrintableRankedType) : PPUniqRankSet with type e
       m
 
 
-  let pp = Map.pp
+  let pp ?(print_rank = false) fmt map =
+    if print_rank then Map.pp fmt map
+    else pp_collection ~pp_item:Val.pp fmt (Map.bindings map |> List.map ~f:snd)
+
 
   let singleton value = add Map.empty value
 
