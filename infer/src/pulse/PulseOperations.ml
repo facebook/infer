@@ -98,7 +98,7 @@ module Closures = struct
     let astate =
       Memory.set_cell closure_addr
         (fake_capture_edges, Attributes.singleton (Closure pname))
-        astate
+        location astate
     in
     (astate, (closure_addr, (* TODO: trace *) []))
 end
@@ -178,7 +178,7 @@ let action_of_address location = InterprocAction.Immediate {imm= (); location}
 let write_access location addr_trace_ref access addr_trace_obj astate =
   let action = action_of_address location in
   check_addr_access action addr_trace_ref astate
-  >>| Memory.add_edge (fst addr_trace_ref) access addr_trace_obj
+  >>| Memory.add_edge (fst addr_trace_ref) access addr_trace_obj location
 
 
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
@@ -237,7 +237,7 @@ let shallow_copy location addr_hist astate =
         cell
   in
   let copy = AbstractAddress.mk_fresh () in
-  (Memory.set_cell copy cell astate, copy)
+  (Memory.set_cell copy cell location astate, copy)
 
 
 let check_address_escape escape_location proc_desc address history astate =

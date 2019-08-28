@@ -45,7 +45,8 @@ module Memory : sig
 
   val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
 
-  val add_edge : AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> t -> t
+  val add_edge :
+    AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> Location.t -> t -> t
 
   val check_valid :
        unit PulseDomain.InterprocAction.t
@@ -57,7 +58,7 @@ module Memory : sig
 
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> PulseDomain.AddrTracePair.t option
 
-  val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> t -> t
+  val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> Location.t -> t -> t
 
   val invalidate :
        AbstractAddress.t * PulseDomain.ValueHistory.t

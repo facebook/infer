@@ -178,6 +178,8 @@ module InterprocAction = struct
     | ViaCall of {action: 'a t; f: call_event; location: Location.t}
   [@@deriving compare]
 
+  let dummy = Immediate {imm= (); location= Location.dummy}
+
   let rec get_immediate = function
     | Immediate {imm; _} ->
         imm
@@ -246,7 +248,7 @@ module Attribute = struct
   type t =
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
-    | WrittenTo
+    | WrittenTo of unit InterprocAction.t
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
@@ -259,7 +261,7 @@ module Attribute = struct
 
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
 
-  let address_is_written_to_rank = Variants.to_rank WrittenTo
+  let written_to_rank = Variants.to_rank (WrittenTo InterprocAction.dummy)
 
   let address_of_stack_variable_rank =
     let pname = Typ.Procname.from_string_c_fun "" in
@@ -274,9 +276,7 @@ module Attribute = struct
          {action= Immediate {imm= Invalidation.Nullptr; location= Location.dummy}; history= []})
 
 
-  let must_be_valid_rank =
-    Variants.to_rank (MustBeValid (Immediate {imm= (); location= Location.dummy}))
-
+  let must_be_valid_rank = Variants.to_rank (MustBeValid InterprocAction.dummy)
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
@@ -288,8 +288,11 @@ module Attribute = struct
           (InterprocAction.pp (fun _ () -> ()))
           action Location.pp
           (InterprocAction.to_outer_location action)
-    | WrittenTo ->
-        F.fprintf f "written"
+    | WrittenTo action ->
+        F.fprintf f "WrittenTo (written by %a @ %a)"
+          (InterprocAction.pp (fun _ () -> ()))
+          action Location.pp
+          (InterprocAction.to_outer_location action)
     | AddressOfCppTemporary (var, history) ->
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, history, location) ->
@@ -317,6 +320,13 @@ module Attributes = struct
            action )
 
 
+  let get_written_to attrs =
+    Set.find_rank attrs Attribute.written_to_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.WrittenTo action) = attr in
+           action )
+
+
   let get_closure_proc_name attrs =
     Set.find_rank attrs Attribute.closure_rank
     |> Option.map ~f:(fun attr ->
@@ -336,7 +346,7 @@ module Attributes = struct
 
 
   let is_modified attrs =
-    Option.is_some (Set.find_rank attrs Attribute.address_is_written_to_rank)
+    Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 

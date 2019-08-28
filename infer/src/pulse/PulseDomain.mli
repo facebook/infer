@@ -83,7 +83,7 @@ module Attribute : sig
   type t =
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
-    | WrittenTo
+    | WrittenTo of unit InterprocAction.t
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
@@ -95,6 +95,8 @@ module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
   val get_must_be_valid : t -> unit InterprocAction.t option
+
+  val get_written_to : t -> unit InterprocAction.t option
 
   val get_address_of_stack_variable : t -> (Var.t * ValueHistory.t * Location.t) option
 

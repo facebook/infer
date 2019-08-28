@@ -168,10 +168,12 @@ module Memory = struct
     if phys_equal new_pre pre then astate else {astate with pre= new_pre}
 
 
-  let add_edge addr access new_addr_trace astate =
+  let add_edge addr access new_addr_trace loc astate =
     map_post_heap astate ~f:(fun heap ->
         BaseMemory.add_edge addr access new_addr_trace heap
-        |> BaseMemory.add_attributes addr (Attributes.singleton WrittenTo) )
+        |> BaseMemory.add_attributes addr
+             (Attributes.singleton
+                (WrittenTo (PulseDomain.InterprocAction.Immediate {imm= (); location= loc}))) )
 
 
   let find_edge_opt address access astate =
@@ -220,10 +222,12 @@ module Memory = struct
 
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 
-  let set_cell addr cell astate =
+  let set_cell addr cell loc astate =
     map_post_heap astate ~f:(fun heap ->
         BaseMemory.set_cell addr cell heap
-        |> BaseMemory.add_attributes addr (Attributes.singleton WrittenTo) )
+        |> BaseMemory.add_attributes addr
+             (Attributes.singleton
+                (WrittenTo (PulseDomain.InterprocAction.Immediate {imm= (); location= loc}))) )
 
 
   module Edges = BaseMemory.Edges
@@ -582,7 +586,7 @@ module PrePost = struct
                 {action= trace.action; f= Call proc_name; location}
           ; history= trace.history }
     | MustBeValid _
-    | WrittenTo
+    | WrittenTo _
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
     | Closure _
@@ -617,8 +621,23 @@ module PrePost = struct
           (fun _ _ post_cell -> Some post_cell)
           post_edges_minus_pre translated_post_edges
       in
+      let written_to =
+        (let open Option.Monad_infix in
+        PulseDomain.Memory.find_opt addr_caller heap
+        >>= fun (_edges, attrs) ->
+        PulseDomain.Attributes.get_written_to attrs
+        >>| fun callee_action ->
+        PulseDomain.Attribute.WrittenTo
+          (PulseDomain.InterprocAction.ViaCall
+             {action= callee_action; f= Call callee_proc_name; location= call_loc}))
+        |> Option.value
+             ~default:
+               (PulseDomain.Attribute.WrittenTo
+                  (PulseDomain.InterprocAction.Immediate {imm= (); location= call_loc}))
+      in
       PulseDomain.Memory.set_edges addr_caller edges_post_caller heap
-      |> PulseDomain.Memory.add_attributes addr_caller (PulseDomain.Attributes.singleton WrittenTo)
+      |> PulseDomain.Memory.add_attributes addr_caller
+           (PulseDomain.Attributes.singleton written_to)
     in
     let caller_post = Domain.make (call_state.astate.post :> base_domain).stack heap in
     {call_state with subst; astate= {call_state.astate with post= caller_post}}
