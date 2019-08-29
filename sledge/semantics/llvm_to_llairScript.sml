@@ -344,7 +344,7 @@ Definition generate_move_blocks_list_def:
       (used_names, new_blocks :: new_blocks2))
 End
 
-(* Givel an association list of labels and phi-block pairs, remove the phi's,
+(* Given an association list of labels and phi-block pairs, remove the phi's,
  * by generating an extra block along each control flow edge that does the move
  * corresponding to the relevant phis. *)
 Definition remove_phis_def:

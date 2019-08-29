@@ -11,393 +11,95 @@ open HolKernel boolLib bossLib Parse;
 open pairTheory listTheory rich_listTheory arithmeticTheory wordsTheory;
 open pred_setTheory finite_mapTheory;
 open logrootTheory numposrepTheory;
-open settingsTheory llvmTheory;
+open settingsTheory miscTheory llvmTheory memory_modelTheory;
 
 new_theory "llvm_prop";
 
 numLib.prefer_num();
 
-(* ----- Theorems about list library functions ----- *)
-(* Could be upstreamed to HOL *)
-
-Theorem dropWhile_map:
-  ∀P f l. dropWhile P (map f l) = map f (dropWhile (P o f) l)
-Proof
-  Induct_on `l` >> rw []
-QED
-
-Theorem dropWhile_prop:
-  ∀P l x. x < length l - length (dropWhile P l) ⇒ P (el x l)
-Proof
-  Induct_on `l` >> rw [] >>
-  Cases_on `x` >> fs []
-QED
-
-Theorem dropWhile_rev_take:
-  ∀P n l x.
-    let len = length (dropWhile P (reverse (take n l))) in
-      x + len < n ∧ n ≤ length l ⇒ P (el (x + len) l)
-Proof
-  rw [] >>
-  `P (el ((n - 1 - x - length (dropWhile P (reverse (take n l))))) (reverse (take n l)))`
-  by (irule dropWhile_prop >> simp [LENGTH_REVERSE]) >>
-  rfs [EL_REVERSE, EL_TAKE, PRE_SUB1]
-QED
-
-Theorem take_replicate:
-  ∀m n x. take m (replicate n x) = replicate (min m n) x
-Proof
-  Induct_on `n` >> rw [TAKE_def, MIN_DEF] >> fs [] >>
-  Cases_on `m` >> rw []
-QED
-
-Theorem length_take_less_eq:
-  ∀n l. length (take n l) ≤ n
-Proof
-  Induct_on `l` >> rw [TAKE_def] >>
-  Cases_on `n` >> fs []
-QED
-
-Theorem flat_drop:
-  ∀n m ls. flat (drop m ls) = drop (length (flat (take m ls))) (flat ls)
-Proof
-  Induct_on `ls` >> rw [DROP_def, DROP_APPEND] >>
-  irule (GSYM DROP_LENGTH_TOO_LONG) >> simp []
-QED
-
-Theorem take_is_prefix:
-  ∀n l. take n l ≼ l
-Proof
-  Induct_on `l` >> rw [TAKE_def]
-QED
-
-Theorem sum_prefix:
-  ∀l1 l2. l1 ≼ l2 ⇒ sum l1 ≤ sum l2
-Proof
-  Induct >> rw [] >> Cases_on `l2` >> fs []
-QED
-
-Theorem flookup_fdiff:
-  ∀m s k.
-    flookup (fdiff m s) k =
-      if k ∈ s then None else flookup m k
-Proof
-  rw [FDIFF_def, FLOOKUP_DRESTRICT] >> fs []
-QED
-
-(* ----- Theorems about log ----- *)
-
-(* Could be upstreamed to HOL *)
-Theorem mul_div_bound:
-  ∀m n. n ≠ 0 ⇒ m - (n - 1) ≤ n * (m DIV n) ∧ n * (m DIV n) ≤ m
-Proof
-  rw [] >>
-  `0 < n` by decide_tac >>
-  drule DIVISION >> disch_then (qspec_then `m` mp_tac) >>
-  decide_tac
-QED
-
-Theorem exp_log_bound:
-  ∀b n. 1 < b ∧ n ≠ 0 ⇒ n DIV b + 1 ≤ b ** (log b n) ∧ b ** (log b n) ≤ n
-Proof
-  rw [] >> `0 < n` by decide_tac >>
-  drule LOG >> disch_then drule >> rw [] >>
-  fs [ADD1, EXP_ADD] >>
-  simp [DECIDE ``∀x y. x + 1 ≤ y ⇔ x < y``] >>
-  `∃x. b = Suc x` by intLib.COOPER_TAC >>
-  `b * (n DIV b) < b * b ** log b n` suffices_by metis_tac [LESS_MULT_MONO] >>
-  pop_assum kall_tac >>
-  `b ≠ 0` by decide_tac >>
-  drule mul_div_bound >> disch_then (qspec_then `n` mp_tac) >>
-  decide_tac
-QED
-
-Theorem log_base_power:
-  ∀n b. 1 < b ⇒ log b (b ** n) = n
-Proof
-  Induct >> rw [EXP, LOG_1] >>
-  Cases_on `n` >> rw [LOG_BASE] >>
-  first_x_assum drule >> rw [] >>
-  simp [Once EXP, LOG_MULT]
-QED
-
-Theorem log_change_base_power:
-  ∀m n b. 1 < b ∧ m ≠ 0 ∧ n ≠ 0 ⇒ log (b ** n) m = log b m DIV n
-Proof
-  rw [] >> irule LOG_UNIQUE >>
-  rw [ADD1, EXP_MUL, LEFT_ADD_DISTRIB] >>
-  qmatch_goalsub_abbrev_tac `x DIV _` >>
-  drule mul_div_bound >> disch_then (qspec_then `x` mp_tac) >> rw []
-  >- (
-    irule LESS_LESS_EQ_TRANS >>
-    qexists_tac `b ** (x+1)` >> rw [] >>
-    unabbrev_all_tac >>
-    simp [EXP_ADD] >>
-    `b * (m DIV b + 1) ≤ b * b ** log b m`
-    by metis_tac [exp_log_bound, LESS_MONO_MULT, MULT_COMM] >>
-    `m < b * (m DIV b + 1)` suffices_by decide_tac >>
-    simp [LEFT_ADD_DISTRIB] >>
-    `b ≠ 0` by decide_tac >>
-    `m - (b - 1) ≤ b * (m DIV b)` by metis_tac [mul_div_bound] >>
-    fs [])
-  >- (
-    irule LESS_EQ_TRANS >>
-    qexists_tac `b ** (log b m)` >> rw [] >>
-    unabbrev_all_tac >>
-    metis_tac [exp_log_bound])
-QED
-
-(* ----- Theorems about word stuff ----- *)
-
-Theorem l2n_padding:
-  ∀ws n. l2n 256 (ws ++ map w2n (replicate n 0w)) = l2n 256 ws
-Proof
-  Induct >> rw [l2n_def] >>
-  Induct_on `n` >> rw [l2n_def]
-QED
-
-Theorem l2n_0:
-  ∀l b. b ≠ 0 ∧ every ($> b)  l⇒ (l2n b l = 0 ⇔ every ($= 0) l)
-Proof
-  Induct >> rw [l2n_def] >>
-  eq_tac >> rw []
-QED
-
-Theorem mod_n2l:
-  ∀d n. 0 < d ⇒ map (\x. x MOD d) (n2l d n) = n2l d n
-Proof
-  rw [] >> drule n2l_BOUND >> disch_then (qspec_then `n` mp_tac) >>
-  qspec_tac (`n2l d n`, `l`) >>
-  Induct >> rw []
-QED
-
 (* ----- Theorems about converting between values and byte lists ----- *)
 
-Theorem le_write_w_length:
-  ∀l x. length (le_write_w l w) = l
+Theorem value_type_is_fc:
+  ∀t v. value_type t v ⇒ first_class_type t
 Proof
-  rw [le_write_w_def]
+  ho_match_mp_tac value_type_ind >> rw [first_class_type_def] >>
+  fs [LIST_REL_EL_EQN, EVERY_EL]
 QED
 
-Theorem v2b_size:
-  ∀t v. value_type t v ⇒ length (value_to_bytes v) = sizeof t
+Theorem sizeof_type_to_shape:
+  ∀t. first_class_type t ⇒ sizeof (type_to_shape t) = sizeof t
+Proof
+  recInduct type_to_shape_ind >>
+  rw [type_to_shape_def, memory_modelTheory.sizeof_def, llvmTheory.sizeof_def,
+      first_class_type_def, EVERY_MEM] >>
+    qid_spec_tac `vs` >> Induct_on `ts` >> rw [] >> fs []
+QED
+
+Theorem value_type_to_shape:
+  ∀t v.
+    value_type t v ⇒
+    ∀s.
+    value_shape (\n t x. n = fst (unconvert_value x) ∧ value_type t (FlatV x)) (type_to_shape t) v
 Proof
   ho_match_mp_tac value_type_ind >>
-  rw [value_to_bytes_def, sizeof_def]
-  >- metis_tac [le_write_w_length]
-  >- metis_tac [le_write_w_length]
-  >- metis_tac [le_write_w_length]
-  >- (Induct_on `vs` >> rw [ADD1] >> fs [])
-  >- (
-    pop_assum mp_tac >>
-    qid_spec_tac `vs` >> qid_spec_tac `ts` >>
-    ho_match_mp_tac LIST_REL_ind >> rw [])
+  rw [memory_modelTheory.sizeof_def, llvmTheory.sizeof_def, type_to_shape_def,
+      unconvert_value_def, value_shape_def] >>
+  fs [value_shapes_list_rel, LIST_REL_CONJ, ETA_THM, EVERY2_MAP] >>
+  metis_tac [value_type_rules]
 QED
 
-Theorem b2v_size:
-  (∀t bs. first_class_type t ∧ sizeof t ≤ length bs ⇒
-    ∃v. bytes_to_value t bs = (v, drop (sizeof t) bs)) ∧
-  (∀n t bs. first_class_type t ∧ n * sizeof t ≤ length bs ⇒
-    ∃vs. read_array n t bs = (vs, drop (n * sizeof t) bs)) ∧
-  (∀ts bs. every first_class_type ts ∧ sum (map sizeof ts) ≤ length bs ⇒
-    ∃vs. read_str ts bs = (vs, drop (sum (map sizeof ts)) bs))
+Theorem llvm_v2b_size:
+  ∀t v. value_type t v ⇒ length (llvm_value_to_bytes v) = sizeof t
 Proof
-  ho_match_mp_tac bytes_to_value_ind >>
-  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >>
-  fs [first_class_type_def]
-  >- (simp [PAIR_MAP] >> metis_tac [SND])
-  >- (
-    pairarg_tac >> rw [] >> pairarg_tac >> rw [] >>
-    fs [ADD1] >> rw [] >> fs [DROP_DROP_T, LEFT_ADD_DISTRIB])
-  >- fs [DROP_DROP_T, LEFT_ADD_DISTRIB]
+  rw [llvm_value_to_bytes_def] >>
+  drule value_type_to_shape >> rw [] >>
+  drule value_type_is_fc >> rw [] >>
+  drule sizeof_type_to_shape >>
+  disch_then (mp_tac o GSYM) >> rw [] >>
+  irule v2b_size >> rw [] >>
+  qmatch_assum_abbrev_tac `value_shape f _ _` >>
+  qexists_tac `f` >> rw [] >>
+  unabbrev_all_tac >> fs []
 QED
 
-Theorem b2v_smaller:
+Theorem b2llvm_v_size:
+  ∀t bs. first_class_type t ∧ sizeof t ≤ length bs ⇒
+    ∃v. bytes_to_llvm_value t bs = (v, drop (sizeof t) bs)
+Proof
+  rw [bytes_to_llvm_value_def] >>
+  drule sizeof_type_to_shape >> disch_then (mp_tac o GSYM) >> rw [] >>
+  fs [PAIR_MAP] >>
+  metis_tac [SND, b2v_size]
+QED
+
+Theorem b2llvm_v_smaller:
    ∀t bs. first_class_type t ∧ sizeof t ≤ length bs ⇒
-    length (snd (bytes_to_value t bs)) = length bs - sizeof t
+    length (snd (bytes_to_llvm_value t bs)) = length bs - sizeof t
 Proof
-  rw [] >> imp_res_tac b2v_size >>
-  Cases_on `bytes_to_value t bs` >> fs []
+  rw [bytes_to_llvm_value_def] >>
+  metis_tac [b2v_smaller, sizeof_type_to_shape]
 QED
 
-Theorem b2v_append:
-  (∀t bs. first_class_type t ∧ sizeof t ≤ length bs ⇒
-    bytes_to_value t (bs ++ bs') = (I ## (λx. x ++ bs')) (bytes_to_value t bs)) ∧
-  (∀n t bs. first_class_type t ∧ n * sizeof t ≤ length bs ⇒
-    ∃vs. read_array n t (bs ++ bs') = (I ## (λx. x ++ bs')) (read_array n t bs)) ∧
-  (∀ts bs. every first_class_type ts ∧ sum (map sizeof ts) ≤ length bs ⇒
-    ∃vs. read_str ts (bs ++ bs') = (I ## (λx. x ++ bs')) (read_str ts bs))
+Theorem b2llvm_v_append:
+  ∀t bs bs'. first_class_type t ∧ sizeof t ≤ length bs ⇒
+    bytes_to_llvm_value t (bs ++ bs') = (I ## (λx. x ++ bs')) (bytes_to_llvm_value t bs)
 Proof
-  ho_match_mp_tac bytes_to_value_ind >>
-  rw [sizeof_def, bytes_to_value_def, le_read_w_def] >>
-  fs [first_class_type_def, TAKE_APPEND, DROP_APPEND,
-      DECIDE ``!x y. x ≤ y ⇒ x - y = 0n``, ETA_THM]
-  >- (simp [PAIR_MAP] >> metis_tac [SND])
-  >- (simp [PAIR_MAP] >> metis_tac [SND])
-  >- (
-    rpt (pairarg_tac >> simp []) >> fs [ADD1] >>
-    BasicProvers.VAR_EQ_TAC >> fs [LEFT_ADD_DISTRIB] >>
-    first_x_assum irule >>
-    `sizeof t ≤ length bs` by decide_tac >>
-    imp_res_tac b2v_smaller >> rfs [])
-  >- (
-    rpt (pairarg_tac >> simp []) >> fs [ADD1] >>
-    BasicProvers.VAR_EQ_TAC >> fs [LEFT_ADD_DISTRIB] >>
-    first_x_assum irule >>
-    `sizeof t ≤ length bs` by decide_tac >>
-    imp_res_tac b2v_smaller >> rfs [])
+  rw [bytes_to_llvm_value_def] >>
+  drule sizeof_type_to_shape >> disch_then (mp_tac o GSYM) >> rw [] >> fs [] >>
+  rw [PAIR_MAP, b2v_append]
 QED
 
-Theorem le_read_write:
-  ∀n w bs.
-    n ≠ 0 ∧ dimword (:'a) ≤ 256 ** n ⇒ le_read_w n (le_write_w n (w :'a word) ⧺ bs) = (w, bs)
+Theorem b2v_llvm_v2b:
+  ∀v t bs. value_type t v ⇒ bytes_to_llvm_value t (llvm_value_to_bytes v ++ bs) = (v, bs)
 Proof
-  rw [le_read_w_def, le_write_w_length]
-  >- (
-    `take n (le_write_w n w ⧺ bs) = le_write_w n w`
-    by metis_tac [le_write_w_length, TAKE_LENGTH_APPEND] >>
-    simp [le_write_w_def, w2l_def, l2w_def] >>
-    Cases_on `w` >> simp [] >> fs [l2n_padding, TAKE_APPEND, take_replicate] >>
-    simp [MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF, mod_n2l] >>
-    rename1 `n2l 256 m` >>
-    `length (n2l 256 m) ≤ n`
-    by (
-      rw [LENGTH_n2l] >>
-      `256 = 2 ** 8` by EVAL_TAC >>
-      ASM_REWRITE_TAC [] >> simp [log_change_base_power, GSYM LESS_EQ] >>
-      `n2w m ≠ 0w` by simp [] >>
-      drule LOG2_w2n_lt >> rw [] >> fs [bitTheory.LOG2_def, dimword_def] >>
-      `8 * (log 2 m DIV 8) ≤ log 2 m` by metis_tac [mul_div_bound, EVAL ``8 ≠ 0n``] >>
-      `LOG 2 (2 ** dimindex (:'a)) ≤ LOG 2 (256 ** n)` by simp [LOG_LE_MONO] >>
-      pop_assum mp_tac >>
-      `256 = 2 ** 8` by EVAL_TAC >>
-      ASM_REWRITE_TAC [EXP_MUL] >> simp [log_base_power]) >>
-    simp [mod_n2l, l2n_n2l, TAKE_LENGTH_TOO_LONG])
-  >- metis_tac [le_write_w_length, DROP_LENGTH_APPEND]
-QED
-
-Theorem le_write_read:
-  ∀n w bs bs'.
-    256 ** n ≤ dimword (:'a) ∧
-    n ≤ length bs ∧
-    le_read_w n bs = (w:'a word, bs')
-    ⇒
-    le_write_w n w ++ bs' = bs
-Proof
-  rw [le_read_w_def] >>
-  qmatch_goalsub_abbrev_tac `l2w _ l` >>
-  `le_write_w n (l2w 256 l) = take n bs` suffices_by metis_tac [TAKE_DROP] >>
-  simp [le_write_w_def, w2l_l2w] >>
-  `l2n 256 l < 256 ** n`
-  by (
-    `n ≤ length bs` by decide_tac >>
-    metis_tac [l2n_lt, LENGTH_TAKE, LENGTH_MAP, EVAL ``0n < 256``]) >>
-  fs [] >>
-  `every ($> 256) l`
-  by (
-    simp [EVERY_MAP, Abbr `l`] >> irule EVERY_TAKE >> simp [] >>
-    rpt (pop_assum kall_tac) >>
-    Induct_on `bs` >> rw [] >>
-    Cases_on `h` >> fs []) >>
-  rw [n2l_l2n]
-  >- (
-    rw [TAKE_def, take_replicate] >>
-    Cases_on `n` >> fs [] >>
-    rfs [l2n_0] >> unabbrev_all_tac >> fs [EVERY_MAP] >>
-    ONCE_REWRITE_TAC [GSYM REPLICATE] >>
-    qmatch_goalsub_abbrev_tac `take n _` >>
-    qpat_assum `¬(_ < _)` mp_tac >>
-    qpat_assum `every (\x. 0 = w2n x) _` mp_tac >>
-    rpt (pop_assum kall_tac) >>
-    qid_spec_tac `bs` >>
-    Induct_on `n` >> rw [] >>
-    Cases_on `bs` >> rw [] >> fs [] >>
-    Cases_on `h` >> fs [] >>
-    first_x_assum irule >> rw [] >>
-    irule MONO_EVERY >>
-    qexists_tac `(λx. 0 = w2n x)` >> rw []) >>
-  fs [MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF] >>
-  `exists (\y. 0 ≠ y) l`
-  by (
-    fs [l2n_eq_0, combinTheory.o_DEF] >> fs [EXISTS_MEM, EVERY_MEM] >>
-    qexists_tac `x` >> rfs [MOD_MOD, GREATER_DEF]) >>
-  simp [LOG_l2n_dropWhile] >>
-  `length (dropWhile ($= 0) (reverse l)) ≠ 0`
-  by (
-    Cases_on `l` >> fs [dropWhile_eq_nil, combinTheory.o_DEF, EXISTS_REVERSE]) >>
-  `0 < length (dropWhile ($= 0) (reverse l))` by decide_tac >>
-  fs [SUC_PRE] >>
-  `map n2w l = take n bs`
-  by (simp [Abbr `l`, MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF, n2w_w2n]) >>
-  simp [TAKE_TAKE_MIN] >>
-  `length l = n` by simp [Abbr `l`] >>
-  `length (dropWhile ($= 0) (reverse l)) ≤ n`
-  by metis_tac [LESS_EQ_TRANS, LENGTH_dropWhile_LESS_EQ, LENGTH_REVERSE] >>
-  rw [MIN_DEF] >> fs []
-  >- (
-    simp [TAKE_APPEND, TAKE_TAKE_MIN, MIN_DEF, take_replicate] >>
-    `replicate (length l − length (dropWhile ($= 0) (reverse l))) 0w =
-     take (length l − (length (dropWhile ($= 0) (reverse l)))) (drop (length (dropWhile ($= 0) (reverse l))) bs)`
-    suffices_by (rw [] >> irule take_drop_partition >> simp []) >>
-    rw [LIST_EQ_REWRITE, EL_REPLICATE, EL_TAKE, EL_DROP] >>
-   `length (dropWhile ($= 0) (reverse l)) =
-     length (dropWhile (λx. 0 = w2n x) (reverse (take (length l) bs)))`
-    by (
-      `reverse l = reverse (take (length l) (map w2n bs))` by metis_tac [] >>
-      ONCE_ASM_REWRITE_TAC [] >>
-      qpat_x_assum `Abbrev (l = _)` kall_tac >>
-      simp [GSYM MAP_TAKE, GSYM MAP_REVERSE, dropWhile_map, combinTheory.o_DEF]) >>
-    fs [] >>
-    `x + length (dropWhile (λx. 0 = w2n x) (reverse (take (length l) bs))) < length l` by decide_tac >>
-    drule (SIMP_RULE std_ss [LET_THM] dropWhile_rev_take) >>
-    rw [] >>
-    REWRITE_TAC [GSYM w2n_11, word_0_n2w] >>
-    simp [])
-  >- rw [TAKE_APPEND, TAKE_TAKE]
-QED
-
-Theorem b2v_v2b:
-  ∀v t bs. value_type t v ⇒ bytes_to_value t (value_to_bytes v ++ bs) = (v, bs)
-Proof
-  gen_tac >> completeInduct_on `v_size v` >>
-  rw [] >>
-  pop_assum mp_tac >> simp [value_type_cases] >>
-  rw [] >>
-  rw [bytes_to_value_def, value_to_bytes_def, le_read_write]
-  >- wordsLib.WORD_DECIDE_TAC
-  >- (
-    qmatch_abbrev_tac `_ x = _` >>
-    `x = (vs, bs)` suffices_by (simp [PAIR_MAP] >> metis_tac [PAIR_EQ, FST, SND]) >>
-    unabbrev_all_tac >>
-    qid_spec_tac `bs` >> Induct_on `vs` >> simp [bytes_to_value_def] >>
-    rw [] >> fs [v_size_def] >>
-    pairarg_tac >> fs [] >>
-    pairarg_tac >> fs [] >>
-    rename1 `value_type t v1` >>
-    first_x_assum (qspec_then `v_size v1` mp_tac) >> simp [] >>
-    disch_then (qspec_then `v1` mp_tac) >> simp [] >>
-    disch_then (qspec_then `t` mp_tac) >> simp [] >>
-    qmatch_assum_abbrev_tac `bytes_to_value _ (_ ++ bs1 ++ _) = _` >>
-    disch_then (qspec_then `bs1++bs` mp_tac) >> simp [] >>
-    unabbrev_all_tac >> strip_tac >> fs [] >>
-    first_x_assum (qspec_then `bs` mp_tac) >> rw [])
-  >- (
-    qmatch_abbrev_tac `_ x = _` >>
-    `x = (vs, bs)` suffices_by (simp [PAIR_MAP] >> metis_tac [PAIR_EQ, FST, SND]) >>
-    unabbrev_all_tac >>
-    pop_assum mp_tac >>
-    qid_spec_tac `bs` >> qid_spec_tac `ts` >> Induct_on `vs` >> simp [bytes_to_value_def] >>
-    rw [] >> fs [v_size_def, bytes_to_value_def] >>
-    pairarg_tac >> fs [] >>
-    pairarg_tac >> fs [] >>
-    rename1 `value_type t v1` >>
-    first_x_assum (qspec_then `v_size v1` mp_tac) >> simp [] >>
-    disch_then (qspec_then `v1` mp_tac) >> simp [] >>
-    disch_then (qspec_then `t` mp_tac) >> simp [] >>
-    qmatch_assum_abbrev_tac `bytes_to_value _ (_ ++ bs1 ++ _) = _` >>
-    disch_then (qspec_then `bs1++bs` mp_tac) >> simp [] >>
-    unabbrev_all_tac >> strip_tac >> fs [] >>
-    first_x_assum drule >> metis_tac [PAIR_EQ])
+  rw [bytes_to_llvm_value_def, llvm_value_to_bytes_def] >>
+  drule value_type_to_shape >> rw [] >>
+  qmatch_assum_abbrev_tac `value_shape f _ _` >>
+  irule b2v_v2b >>
+  qexists_tac `f` >> rw [] >>
+  unabbrev_all_tac >> fs [] >>
+  fs [unconvert_value_def, convert_value_def, value_type_cases] >>
+  wordsLib.WORD_DECIDE_TAC
 QED
 
 (* ----- Theorems about insert/extract value and get_offset ----- *)
@@ -482,7 +184,7 @@ Theorem offset_size_leq:
     ⇒
     n ≤ sizeof t
 Proof
-  recInduct get_offset_ind >> rw [get_offset_def, sizeof_def, indices_in_range_def] >>
+  recInduct get_offset_ind >> rw [get_offset_def, llvmTheory.sizeof_def, indices_in_range_def] >>
   BasicProvers.EVERY_CASE_TAC >> fs [] >> rw [] >> rfs []
   >- (
     `x + i * sizeof t ≤ (i + 1) * sizeof t` by decide_tac >>
@@ -493,13 +195,6 @@ Proof
   by rw [GSYM SNOC_EL_TAKE, EL_MAP] >>
   `take (Suc i) (map sizeof ts) ≼ (map sizeof ts)` by rw [take_is_prefix] >>
   drule sum_prefix >> rw [SUM_APPEND]
-QED
-
-Theorem value_type_is_fc:
-  ∀t v. value_type t v ⇒ first_class_type t
-Proof
-  ho_match_mp_tac value_type_ind >> rw [first_class_type_def] >>
-  fs [LIST_REL_EL_EQN, EVERY_EL]
 QED
 
 Theorem extract_type_fc:
@@ -517,7 +212,7 @@ Theorem extract_offset_size:
     sizeof t' ≤ sizeof t - n
 Proof
   recInduct get_offset_ind >> rw [get_offset_def, extract_type_def] >>
-  BasicProvers.EVERY_CASE_TAC >> fs [sizeof_def] >> rfs [] >> rw [ETA_THM]
+  BasicProvers.EVERY_CASE_TAC >> fs [llvmTheory.sizeof_def] >> rfs [] >> rw [ETA_THM]
   >- (
     `sizeof t ≤ (v1  − i) * sizeof t` suffices_by decide_tac  >>
     `1 ≤ v1 - i` by decide_tac >>
@@ -529,6 +224,12 @@ Proof
   Induct_on `ts` >> rw [TAKE_def, EL_CONS, PRE_SUB1]
 QED
 
+Theorem llvm_value_to_bytes_agg:
+  ∀vs. llvm_value_to_bytes (AggV vs) = flat (map llvm_value_to_bytes vs)
+Proof
+  Induct >> rw [] >> fs [llvm_value_to_bytes_def, value_to_bytes_def]
+QED
+
 Theorem read_from_offset_extract:
   ∀t indices n v t'.
     indices_in_range t indices ∧
@@ -536,55 +237,55 @@ Theorem read_from_offset_extract:
     value_type t v ∧
     extract_type t indices = Some t'
     ⇒
-    extract_value v indices = Some (fst (bytes_to_value t' (drop n (value_to_bytes v))))
+    extract_value v indices = Some (fst (bytes_to_llvm_value t' (drop n (llvm_value_to_bytes v))))
 Proof
   recInduct get_offset_ind >>
   rw [extract_value_def, get_offset_def, extract_type_def, indices_in_range_def] >>
   simp [DROP_0]
-  >- metis_tac [APPEND_NIL, FST, b2v_v2b] >>
+  >- metis_tac [APPEND_NIL, FST, b2v_llvm_v2b] >>
   qpat_x_assum `value_type _ _` mp_tac >>
   simp [Once value_type_cases] >> rw [] >> simp [extract_value_def] >>
   qpat_x_assum `_ = Some n` mp_tac >> CASE_TAC >> rw [] >> rfs [] >>
-  simp [value_to_bytes_def]
+  simp [llvm_value_to_bytes_agg]
   >- (
     `value_type t (el i vs)` by metis_tac [EVERY_EL] >>
     first_x_assum drule >>
     rw [] >> simp [GSYM DROP_DROP_T, ETA_THM] >>
-    `i * sizeof t = length (flat (take i (map value_to_bytes vs)))`
+    `i * sizeof t = length (flat (take i (map llvm_value_to_bytes vs)))`
     by (
       simp [LENGTH_FLAT, MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF] >>
-      `map (λx. length (value_to_bytes x)) vs = replicate (length vs) (sizeof t)`
+      `map (λx. length (llvm_value_to_bytes x)) vs = replicate (length vs) (sizeof t)`
       by (
         qpat_x_assum `every _ _` mp_tac >> rpt (pop_assum kall_tac) >>
-        Induct_on `vs` >> rw [v2b_size]) >>
+        Induct_on `vs` >> rw [llvm_v2b_size]) >>
       rw [take_replicate, MIN_DEF]) >>
     rw [GSYM flat_drop, GSYM MAP_DROP] >>
     drule DROP_CONS_EL >> simp [DROP_APPEND] >> disch_then kall_tac >>
     `first_class_type t'` by metis_tac [value_type_is_fc, extract_type_fc] >>
-    `sizeof t' ≤ length (drop x (value_to_bytes (el i vs)))`
-    by (simp [LENGTH_DROP] >> drule v2b_size >> rw [] >> metis_tac [extract_offset_size]) >>
-    simp [b2v_append])
+    `sizeof t' ≤ length (drop x (llvm_value_to_bytes (el i vs)))`
+    by (simp [LENGTH_DROP] >> drule llvm_v2b_size >> rw [] >> metis_tac [extract_offset_size]) >>
+    simp [b2llvm_v_append])
   >- metis_tac [LIST_REL_LENGTH]
   >- (
     `value_type (el i ts) (el i vs)` by metis_tac [LIST_REL_EL_EQN] >>
     first_x_assum drule >>
     rw [] >> simp [GSYM DROP_DROP_T, ETA_THM] >>
-    `sum (map sizeof (take i ts)) = length (flat (take i (map value_to_bytes vs)))`
+    `sum (map sizeof (take i ts)) = length (flat (take i (map llvm_value_to_bytes vs)))`
     by (
       simp [LENGTH_FLAT, MAP_TAKE, MAP_MAP_o, combinTheory.o_DEF] >>
-      `map sizeof ts = map (\x. length (value_to_bytes x)) vs`
+      `map sizeof ts = map (\x. length (llvm_value_to_bytes x)) vs`
       by (
         qpat_x_assum `list_rel _ _ _` mp_tac >> rpt (pop_assum kall_tac) >>
         qid_spec_tac `ts` >>
-        Induct_on `vs` >> rw [] >> rw [v2b_size]) >>
+        Induct_on `vs` >> rw [] >> rw [llvm_v2b_size]) >>
       rw []) >>
     rw [GSYM flat_drop, GSYM MAP_DROP] >>
     `i < length vs` by metis_tac [LIST_REL_LENGTH] >>
     drule DROP_CONS_EL >> simp [DROP_APPEND] >> disch_then kall_tac >>
     `first_class_type t'` by metis_tac [value_type_is_fc, extract_type_fc] >>
-    `sizeof t' ≤ length (drop x (value_to_bytes (el i vs)))`
-    by (simp [LENGTH_DROP] >> drule v2b_size >> rw [] >> metis_tac [extract_offset_size]) >>
-    simp [b2v_append])
+    `sizeof t' ≤ length (drop x (llvm_value_to_bytes (el i vs)))`
+    by (simp [LENGTH_DROP] >> drule llvm_v2b_size >> rw [] >> metis_tac [extract_offset_size]) >>
+    simp [b2llvm_v_append])
 QED
 
 (* ----- Theorems about the step function ----- *)
@@ -615,53 +316,28 @@ Proof
       globals_ok_def, stack_ok_def, heap_ok_def, EVERY_EL, frame_ok_def]
 QED
 
-Theorem flookup_set_bytes:
-  ∀poison bytes n h n'.
-    flookup (set_bytes poison bytes n h) (A n') =
-      if n ≤ n' ∧ n' < n + length bytes then
-        Some (poison, el (n' - n) bytes)
-      else
-        flookup h (A n')
-Proof
-  Induct_on `bytes` >> rw [set_bytes_def, EL_CONS, PRE_SUB1] >>
-  fs [ADD1, FLOOKUP_UPDATE] >>
-  `n = n'` by decide_tac >>
-  rw []
-QED
-
 Theorem allocate_invariant:
-  ∀p s1 v1 t v2 s2.
-    state_invariant p s1 ∧ allocate s1 v1 t (v2,s2) ⇒ state_invariant p s2
+  ∀p s1 v1 t v2 h2.
+    state_invariant p s1 ∧ allocate s1.heap v1 t (v2,h2) ⇒ state_invariant p (s1 with heap := h2)
 Proof
-  rw [allocate_cases, state_invariant_def, ip_ok_def, heap_ok_def,
-      globals_ok_def, stack_ok_def] >>
-  rw [] >> fs []
+  rw [state_invariant_def, ip_ok_def, globals_ok_def, stack_ok_def]
+  >- metis_tac [allocate_heap_ok]
+  >- (fs [is_allocated_def] >> metis_tac [allocate_unchanged, SUBSET_DEF])
   >- (
-    fs [allocations_ok_def] >> rpt gen_tac >> disch_tac >> fs [is_free_def] >> rw [] >>
-    metis_tac [INTER_COMM])
-  >- (
-    rw [flookup_set_bytes]
-    >- rw [RIGHT_AND_OVER_OR, EXISTS_OR_THM, interval_to_set_def] >>
-    eq_tac >> rw [] >> fs [interval_to_set_def] >>
-    metis_tac [])
-  >- (fs [is_allocated_def] >> metis_tac [])
-  >- (fs [EVERY_EL, frame_ok_def] >> rw [] >> metis_tac [])
+    fs [EVERY_EL, frame_ok_def, allocate_unchanged] >> rw [] >>
+    metis_tac [allocate_unchanged, SUBSET_DEF])
 QED
 
 Theorem set_bytes_invariant:
   ∀s poison bytes n prog b.
-    state_invariant prog s ∧ is_allocated (b, n, n + length bytes) s.allocations
+    state_invariant prog s ∧ is_allocated (Interval b n (n + length bytes)) s.heap
     ⇒
     state_invariant prog (s with heap := set_bytes poison bytes n s.heap)
 Proof
   rw [state_invariant_def]
-  >- (fs [allocations_ok_def] >> rw [] >> metis_tac [])
-  >- (
-    fs [heap_ok_def, flookup_set_bytes] >> rw [] >>
-    fs [is_allocated_def, interval_to_set_def, SUBSET_DEF] >>
-    metis_tac [LESS_EQ_REFL, DECIDE ``!x y. x < x + SUC y``])
-  >- (fs [globals_ok_def] >> metis_tac [])
-  >- (fs [stack_ok_def, EVERY_EL, frame_ok_def])
+  >- metis_tac [set_bytes_heap_ok]
+  >- (fs [globals_ok_def, is_allocated_def, set_bytes_unchanged] >> metis_tac [])
+  >- (fs [stack_ok_def, EVERY_EL, frame_ok_def, set_bytes_unchanged])
 QED
 
 Theorem step_instr_invariant:
@@ -676,8 +352,10 @@ Proof
     >- (
       fs [stack_ok_def] >> rfs [EVERY_EL, frame_ok_def] >>
       first_x_assum (qspec_then `0` mp_tac) >> simp [])
-    >- (fs [deallocate_def, allocations_ok_def] >> rw [] >> metis_tac [])
     >- (
+      fs [heap_ok_def, deallocate_def, allocations_ok_def] >> rw []
+      >- metis_tac []
+      >- metis_tac [] >>
       fs [deallocate_def, heap_ok_def] >> rw [flookup_fdiff] >>
       eq_tac >> rw []
       >- metis_tac [optionTheory.NOT_IS_SOME_EQ_NONE]
@@ -686,7 +364,7 @@ Proof
     >- (
       fs [globals_ok_def, deallocate_def] >> rw [] >>
       first_x_assum drule >> rw [] >> fs [is_allocated_def] >>
-      qexists_tac `b2` >> rw [] >> CCONTR_TAC >> fs [])
+      qexists_tac `b2` >> rw [] >> CCONTR_TAC >> fs [interval_freeable_def])
     >- (
       fs [stack_ok_def, EVERY_MEM, frame_ok_def, deallocate_def] >> rfs [] >>
       rw []
@@ -702,8 +380,6 @@ Proof
       rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
       qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
       last_x_assum drule >> disch_then drule >> fs [])
-    >- (fs [allocations_ok_def] >> metis_tac [])
-    >- (fs [heap_ok_def] >> metis_tac [])
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- ( (* Br *)
@@ -712,8 +388,6 @@ Proof
       rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
       qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
       last_x_assum drule >> disch_then drule >> fs [])
-    >- (fs [allocations_ok_def] >> metis_tac [])
-    >- (fs [heap_ok_def] >> metis_tac [])
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- (
@@ -752,7 +426,6 @@ Proof
   >- ( (* Call *)
     rw [state_invariant_def]
     >- (fs [prog_ok_def, ip_ok_def] >> metis_tac [NOT_NIL_EQ_LENGTH_NOT_0])
-    >- (fs [state_invariant_def, allocations_ok_def] >> metis_tac [])
     >- (fs [state_invariant_def, heap_ok_def] >> metis_tac [])
     >- (fs [state_invariant_def, globals_ok_def] >> metis_tac [])
     >- (

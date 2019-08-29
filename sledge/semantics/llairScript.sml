@@ -8,7 +8,7 @@
 (* A mini-LLAIR model, based on the files in sledge/src/llair *)
 
 open HolKernel boolLib bossLib Parse;
-open settingsTheory;
+open settingsTheory memory_modelTheory;
 
 new_theory "llair";
 
@@ -120,24 +120,18 @@ End
 
 (* ----- Semantic states ----- *)
 
-(* TODO Given the similarities with LLVM, consider moving some definitions into
- * a common predecessor theory *)
-
-Datatype:
-  addr = A num
-End
-
 (* These are the values that can be stored in registers. The implementation uses
  * integers with a bit-width to represent numbers, and keeps locations and sizes
  * separate.
  *)
 Datatype:
-  v =
+  flat_v =
   | LocV num
   | SizeV num
   | IntV int num
-  | AggV (v list)
 End
+
+Type v = ``:flat_v reg_v``
 
 Datatype:
   pc = <| l : label; i : num |>
@@ -153,15 +147,7 @@ Datatype:
        globals : var |-> word64;
        locals : var |-> v;
        stack : frame list;
-       (* The set of allocated ranges.
-        * The llvm model had a bool to indicate whether the range is free-able
-        * or not, since the memory that the globals is in should never be freed.
-        * llair does not currently catch this error, so we won't either. If
-        * llair wants to catch the error in the future, then we can adapt the
-        * semantics. *)
-       allocations : (num # num) set;
-       (* A byte addressed heap *)
-       heap : addr |-> word8 |>
+       heap : unit heap |>
 End
 
 (* ----- Semantic transitions ----- *)

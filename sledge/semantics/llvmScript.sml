@@ -9,7 +9,7 @@
  * are relevant for the LLVM -> LLAIR translation, especially exceptions. *)
 
 open HolKernel boolLib bossLib Parse;
-open settingsTheory;
+open settingsTheory memory_modelTheory;
 
 new_theory "llvm";
 
@@ -137,19 +137,16 @@ End
 (* ----- Semantic states ----- *)
 
 Datatype:
-  addr = A num
-End
-
-Datatype:
-  v =
+  flat_v =
   | W1V word1
   | W8V word8
   | W32V word32
   | W64V word64
-  | AggV (v list)
   | PtrV word64
   | UndefV
 End
+
+Type v = ``:flat_v reg_v``
 
 Datatype:
   pv = <| poison : bool; value : v |>
@@ -170,11 +167,7 @@ Datatype:
        globals : glob_var |-> (num # word64);
        locals : reg |-> pv;
        stack : frame list;
-       (* The set of allocated ranges. The bool indicates whether the range is
-        * free-able or not *)
-       allocations : (bool # num # num) set;
-       (* A byte addressed heap, with a poison tag *)
-       heap : addr |-> bool # word8 |>
+       heap : bool heap |>
 End
 
 (* ----- Things about types ----- *)
@@ -217,11 +210,11 @@ Definition indices_ok_def:
 End
 
 Inductive value_type:
-  (value_type (IntT W1) (W1V w1)) ∧
-  (value_type (IntT W8) (W8V w8)) ∧
-  (value_type (IntT W32) (W32V w32)) ∧
-  (value_type (IntT W64) (W64V w64)) ∧
-  (value_type (PtrT _) (PtrV w64)) ∧
+  (value_type (IntT W1) (FlatV (W1V w1))) ∧
+  (value_type (IntT W8) (FlatV (W8V w8))) ∧
+  (value_type (IntT W32) (FlatV (W32V w32))) ∧
+  (value_type (IntT W64) (FlatV (W64V w64))) ∧
+  (value_type (PtrT _) (FlatV (PtrV w64))) ∧
   (every (value_type t) vs ∧ length vs = n ∧ first_class_type t
    ⇒
    value_type (ArrT n t) (AggV vs)) ∧
@@ -230,30 +223,19 @@ Inductive value_type:
    value_type (StrT ts) (AggV vs))
 End
 
-(* ----- Semantic transitions ----- *)
-
-Definition w64_cast_def:
-  (w64_cast w (IntT W1) = Some (W1V (w2w w))) ∧
-  (w64_cast w (IntT W8) = Some (W8V (w2w w))) ∧
-  (w64_cast w (IntT W32) = Some (W32V (w2w w))) ∧
-  (w64_cast w (IntT W64) = Some (W64V w)) ∧
-  (w64_cast _ _ = None)
-End
-
-Definition cast_w64_def:
-  (cast_w64 (W1V w) = Some (w2w w)) ∧
-  (cast_w64 (W8V w) = Some (w2w w)) ∧
-  (cast_w64 (W32V w) = Some (w2w w)) ∧
-  (cast_w64 (W64V w) = Some w) ∧
-  (cast_w64 _ = None)
-End
-
-Definition cast_num_def:
-  cast_num v = option_map w2n (cast_w64 v)
-End
-
-Definition bool_to_v_def:
-  bool_to_v b = if b then W1V 1w else W1V 0w
+Definition extract_type_def:
+  (extract_type t [] = Some t) ∧
+  (extract_type (ArrT n t) (i::idx) =
+    if i < n then
+      extract_type t idx
+    else
+      None) ∧
+  (extract_type (StrT ts) (i::idx) =
+    if i < length ts then
+      extract_type (el i ts) idx
+    else
+      None) ∧
+  (extract_type _ _ = None)
 End
 
 (* Calculate the offset given by a list of indices *)
@@ -273,26 +255,52 @@ Definition get_offset_def:
   (get_offset _ _ = Some 0)
 End
 
+(* ----- Semantic transitions ----- *)
+
+Definition w64_cast_def:
+  (w64_cast w (IntT W1) = Some (FlatV (W1V (w2w w)))) ∧
+  (w64_cast w (IntT W8) = Some (FlatV (W8V (w2w w)))) ∧
+  (w64_cast w (IntT W32) = Some (FlatV (W32V (w2w w)))) ∧
+  (w64_cast w (IntT W64) = Some (FlatV (W64V w))) ∧
+  (w64_cast _ _ = None)
+End
+
+Definition cast_w64_def:
+  (cast_w64 (FlatV (W1V w)) = Some (w2w w)) ∧
+  (cast_w64 (FlatV (W8V w)) = Some (w2w w)) ∧
+  (cast_w64 (FlatV (W32V w)) = Some (w2w w)) ∧
+  (cast_w64 (FlatV (W64V w)) = Some w) ∧
+  (cast_w64 _ = None)
+End
+
+Definition cast_num_def:
+  cast_num v = option_map w2n (cast_w64 v)
+End
+
+Definition bool_to_v_def:
+  bool_to_v b = if b then FlatV (W1V 1w) else FlatV (W1V 0w)
+End
+
 Definition eval_const_def:
-  (eval_const g (IntC W1 i) = W1V (i2w i)) ∧
-  (eval_const g (IntC W8 i) = W8V (i2w i)) ∧
-  (eval_const g (IntC W32 i) = W32V (i2w i)) ∧
-  (eval_const g (IntC W64 i) = W64V (i2w i)) ∧
+  (eval_const g (IntC W1 i) = FlatV (W1V (i2w i))) ∧
+  (eval_const g (IntC W8 i) = FlatV (W8V (i2w i))) ∧
+  (eval_const g (IntC W32 i) = FlatV (W32V (i2w i))) ∧
+  (eval_const g (IntC W64 i) = FlatV (W64V (i2w i))) ∧
   (eval_const g (StrC tconsts) = AggV (map (eval_const g) (map snd tconsts))) ∧
   (eval_const g (ArrC tconsts) = AggV (map (eval_const g) (map snd tconsts))) ∧
   (eval_const g (GepC ty ptr (t, idx) indices) =
     case (eval_const g ptr, cast_num (eval_const g idx)) of
-    | (PtrV w, Some n) =>
+    | (FlatV (PtrV w), Some n) =>
       let ns = map (λ(t,ci). case cast_num (eval_const g ci) of None => 0 | Some n => n) indices in
         (case get_offset ty ns of
-         | None => UndefV
-         | Some off => PtrV (n2w (w2n w + sizeof ty * n + off)))
-    | _ => UndefV) ∧
+         | None => FlatV UndefV
+         | Some off => FlatV (PtrV (n2w (w2n w + sizeof ty * n + off))))
+    | _ => FlatV UndefV) ∧
   (eval_const g (GlobalC var) =
     case flookup g var of
-    | None => PtrV 0w
-    | Some (s,w) => PtrV w) ∧
-  (eval_const g UndefC = UndefV)
+    | None => FlatV (PtrV 0w)
+    | Some (s,w) => FlatV (PtrV w)) ∧
+  (eval_const g UndefC = FlatV UndefV)
 Termination
   WF_REL_TAC `measure (const_size o snd)` >> rw [listTheory.MEM_MAP] >>
   TRY
@@ -306,140 +314,64 @@ End
 Definition eval_def:
   (eval s (Variable v) =
     case flookup s.locals v of
-    | None => <| poison := F; value := W1V 0w |>
+    | None => <| poison := F; value := FlatV (W1V 0w) |>
     | Some v => v) ∧
   (eval s (Constant c) = <| poison := F; value := eval_const s.globals c |>)
 End
 
 Definition v2n_def:
-  (v2n (W1V b) = Some (if T then 1 else 0)) ∧
-  (v2n (W8V w8) = Some (w2n w8)) ∧
-  (v2n (W32V w32) = Some (w2n w32)) ∧
-  (v2n (W64V w64) = Some (w2n w64)) ∧
+  (v2n (FlatV (W1V b)) = Some (if T then 1 else 0)) ∧
+  (v2n (FlatV (W8V w8)) = Some (w2n w8)) ∧
+  (v2n (FlatV (W32V w32)) = Some (w2n w32)) ∧
+  (v2n (FlatV (W64V w64)) = Some (w2n w64)) ∧
   (v2n _ = None)
 End
 
-Definition interval_to_set_def:
-  interval_to_set (_, start,stop) =
-    { n | start ≤ n ∧ n < stop }
-End
-
-Definition interval_ok_def:
-  interval_ok ((_:bool), i1, i2) ⇔
-    i1 ≤ i2 ∧ i2 < 2 ** 64
-End
-
-Definition is_allocated_def:
-  is_allocated b1 allocs ⇔
-    interval_ok b1 ∧
-    ∃b2. b2 ∈ allocs ∧ fst b1 = fst b2 ∧ interval_to_set b1 ⊆ interval_to_set b2
-End
-
-Definition is_free_def:
-  is_free b1 allocs ⇔
-    interval_ok b1 ∧
-    ∀b2. b2 ∈ allocs ⇒ interval_to_set b1 ∩ interval_to_set b2 = ∅
-End
-
-Definition get_bytes_def:
-  get_bytes h (_, start, stop) =
-    map
-      (λoff.
-        case flookup h (A (start + off)) of
-        | None => (F, 0w)
-        | Some w => w)
-      (count_list (stop - start))
-End
-
-Definition set_bytes_def:
-  (set_bytes p [] n h = h) ∧
-  (set_bytes p (b::bs) n h =
-    set_bytes p bs (Suc n) (h |+ (A n, (p, b))))
-End
-
-(* Allocate a free chunk of memory, and write non-deterministic bytes into it *)
-Inductive allocate:
-  v2n v.value = Some m ∧
-   b = (T, w2n w, w2n w + m * len) ∧
-   is_free b s.allocations ∧
-   length bytes = m * len
-   ⇒
-   allocate s v len
-     (<| poison := v.poison; value := PtrV w |>,
-         s with <| allocations := { b } ∪ s.allocations;
-                   heap := set_bytes v.poison bytes (w2n w) s.heap |>)
-End
-
-Definition deallocate_def:
-  deallocate addrs allocs h =
-    let to_remove = { (T, n, stop) | A n ∈ set addrs ∧ (T, n, stop) ∈ allocs } in
-      (allocs DIFF to_remove, fdiff h (image A (bigunion (image interval_to_set to_remove))))
-End
-
-(* Read len bytes from the list of bytes, and convert it into a word value,
- * little-endian encoding *)
-Definition le_read_w_def:
-  le_read_w len (bs : word8 list) =
-    if length bs < len then
-      (l2w 256 (map w2n bs), [])
-    else
-      (l2w 256 (map w2n (take len bs)), drop len bs)
-End
-
-(* Return len bytes that are the little-endian encoding of the argument word *)
-Definition le_write_w_def:
-  le_write_w len w =
-    let (l : word8 list) = map n2w (w2l 256 w) in
-      take len (l ++ replicate (len - length l) 0w)
-End
-
-Definition bytes_to_value_def:
-  (bytes_to_value (IntT W1) (b::bs) = (W1V (w2w b), bs)) ∧
-  (bytes_to_value (IntT W8) (b::bs) = (W8V b, bs)) ∧
-  (bytes_to_value (IntT W32) bs = (W32V ## I) (le_read_w 4 bs)) ∧
-  (bytes_to_value (IntT W64) bs = (W64V ## I) (le_read_w 8 bs)) ∧
-  (bytes_to_value (PtrT _) bs = (PtrV ## I) (le_read_w 8 bs)) ∧
-  (bytes_to_value (ArrT n t) bs = (AggV ## I) (read_array n t bs)) ∧
-  (bytes_to_value (StrT ts) bs = (AggV ## I) (read_str ts bs)) ∧
-  (read_array 0 t bs = ([], bs)) ∧
-  (read_array (Suc n) t bs =
-    let (v, bs) = bytes_to_value t bs in
-    let (rest, bs) = read_array n t bs in
-      (v::rest, bs)) ∧
-  (read_str [] bs = ([], bs)) ∧
-  (read_str (t::ts) bs =
-    let (v, bs) = bytes_to_value t bs in
-    let (rest, bs) = read_str ts bs in
-      (v::rest, bs))
+Definition type_to_shape_def:
+  (type_to_shape (IntT s) = Flat (sizeof (IntT s)) (IntT s)) ∧
+  (type_to_shape (PtrT t) = Flat (sizeof (PtrT t)) (PtrT t)) ∧
+  (type_to_shape (ArrT n t) = Array (type_to_shape t) n) ∧
+  (type_to_shape (StrT ts) = Tuple (map type_to_shape ts))
 Termination
-  WF_REL_TAC `measure (λx. case x of
-                           | INL (t, bs) => ty_size t
-                           | INR (INL (n, t, bs)) => n + ty_size t
-                           | INR (INR (ts, bs)) => ty1_size ts)`
+  WF_REL_TAC `measure ty_size` >> rw [] >>
+  Induct_on `ts` >> rw [definition "ty_size_def"] >>
+  res_tac >> simp []
 End
 
-Definition value_to_bytes_def:
-  (value_to_bytes (W1V w) = [w2w w]) ∧
-  (value_to_bytes (W8V w) = [w]) ∧
-  (value_to_bytes (W32V w) = le_write_w 4 w) ∧
-  (value_to_bytes (W64V w) = le_write_w 8 w) ∧
-  (value_to_bytes (PtrV n) = le_write_w 8 n) ∧
-  (value_to_bytes (AggV vs) = flat (map value_to_bytes vs))
-Termination
-  WF_REL_TAC `measure v_size` >>
-  Induct >> rw [definition "v_size_def"] >>
-  TRY (first_x_assum drule) >>
-  decide_tac
+Definition convert_value_def:
+  (convert_value (IntT W1) w = W1V (w2w w)) ∧
+  (convert_value (IntT W8) w = W8V (w2w w)) ∧
+  (convert_value (IntT W32) w = W32V (w2w w)) ∧
+  (convert_value (IntT W64) w = W64V w) ∧
+  (convert_value (PtrT _) w = PtrV w)
+End
+
+Definition bytes_to_llvm_value_def:
+  bytes_to_llvm_value t bs =
+    (bytes_to_value (λn t w. convert_value t w) (type_to_shape t) bs)
+End
+
+Definition unconvert_value_def:
+  (unconvert_value (W1V w) = (1, w2w w)) ∧
+  (unconvert_value (W8V w) = (1, w2w w)) ∧
+  (unconvert_value (W32V w) = (4, w2w w)) ∧
+  (unconvert_value (W64V w) = (8, w)) ∧
+  (unconvert_value (PtrV w) = (8, w))
+End
+
+Definition llvm_value_to_bytes_def:
+  llvm_value_to_bytes v =
+    value_to_bytes unconvert_value v
 End
 
 Definition do_sub_def:
   do_sub (nuw:bool) (nsw:bool) (v1:pv) (v2:pv) =
     let (diff, u_overflow, s_overflow) =
       case (v1.value, v2.value) of
-      | (W1V w1, W1V w2) => (W1V ## I) (add_with_carry (w1, ¬w2, T))
-      | (W8V w1, W8V w2) => (W8V ## I) (add_with_carry (w1, ¬w2, T))
-      | (W32V w1, W32V w2) => (W32V ## I) (add_with_carry (w1, ¬w2, T))
-      | (W64V w1, W64V w2) => (W64V ## I) (add_with_carry (w1, ¬w2, T))
+      | (FlatV (W1V w1), FlatV (W1V w2)) => (FlatV o W1V ## I) (add_with_carry (w1, ¬w2, T))
+      | (FlatV (W8V w1), FlatV (W8V w2)) => (FlatV o W8V ## I) (add_with_carry (w1, ¬w2, T))
+      | (FlatV (W32V w1), FlatV (W32V w2)) => (FlatV o W32V ## I) (add_with_carry (w1, ¬w2, T))
+      | (FlatV (W64V w1), FlatV (W64V w2)) => (FlatV o W64V ## I) (add_with_carry (w1, ¬w2, T))
     in
     let p = ((nuw ∧ u_overflow) ∨ (nsw ∧ s_overflow) ∨ v1.poison ∨ v2.poison) in
       <| poison := p; value := diff |>
@@ -456,31 +388,16 @@ Definition do_icmp_def:
     <| poison := (v1.poison ∨ v2.poison);
        value := bool_to_v (
          case (v1.value, v2.value) of
-         | (W1V w1, W1V w2) => (get_comp c) w1 w2
-         | (W8V w1, W8V w2) => (get_comp c) w1 w2
-         | (W32V w1, W32V w2) => (get_comp c) w1 w2
-         | (W64V w1, W64V w2) => (get_comp c) w1 w2
-         | (PtrV w1, PtrV w2) => (get_comp c) w1 w2) |>
+         | (FlatV (W1V w1), FlatV (W1V w2)) => (get_comp c) w1 w2
+         | (FlatV (W8V w1), FlatV (W8V w2)) => (get_comp c) w1 w2
+         | (FlatV (W32V w1), FlatV (W32V w2)) => (get_comp c) w1 w2
+         | (FlatV (W64V w1), FlatV (W64V w2)) => (get_comp c) w1 w2
+         | (FlatV (PtrV w1), FlatV (PtrV w2)) => (get_comp c) w1 w2) |>
 End
 
 Definition do_phi_def:
   do_phi from_l s (Phi id _ entries) =
     option_map (λarg. (id, eval s arg)) (alookup entries from_l)
-End
-
-Definition extract_type_def:
-  (extract_type t [] = Some t) ∧
-  (extract_type (ArrT n t) (i::idx) =
-    if i < n then
-      extract_type t idx
-    else
-      None) ∧
-  (extract_type (StrT ts) (i::idx) =
-    if i < length ts then
-      extract_type (el i ts) idx
-    else
-      None) ∧
-  (extract_type _ _ = None)
 End
 
 Definition extract_value_def:
@@ -519,7 +436,7 @@ End
 Inductive step_instr:
 
   (s.stack = fr::st ∧
-   deallocate fr.stack_allocs s.allocations s.heap = (new_allocs, new_h)
+   deallocate fr.stack_allocs s.heap = new_h
    ⇒
    step_instr prog s
      (Ret (t, a))
@@ -528,7 +445,6 @@ Inductive step_instr:
           globals := s.globals;
           locals := fr.saved_locals;
           stack := st;
-          allocations := new_allocs;
           heap := new_h |>)) ∧
 
 (* Do the phi assignments in parallel. The manual says "For the purposes of the
@@ -542,7 +458,7 @@ Inductive step_instr:
  * %r2 = phi [%r1, %l]
  * %r1 = phi [0, %l]
  *)
-  (eval s a = <| poison := p; value := W1V tf |> ∧
+  (eval s a = <| poison := p; value := FlatV (W1V tf) |> ∧
    l = Some (if tf = 1w then l1 else l2) ∧
    alookup prog s.ip.f = Some d ∧
    alookup d.blocks l = Some <| h := Head phis None; body := b |> ∧
@@ -579,27 +495,29 @@ Inductive step_instr:
      (inc_pc (update_result r
                 <| poison := (v1.poison ∨ v2.poison); value := result |> s))) ∧
 
-  (allocate s (eval s a1) (sizeof t) (v2, s2)
+  (eval s a1 = v ∧
+   v2n v.value = Some n ∧
+   allocate s.heap (n * sizeof t) v.poison (v2, new_h)
    ⇒
    step_instr prog s
      (Alloca r t (t1, a1))
-     (inc_pc (update_result r v2 s2))) ∧
+     (inc_pc (update_result r v2 (s with heap := new_h)))) ∧
 
-  (eval s a1 = <| poison := p1; value := PtrV w |> ∧
-   interval = (freeable, w2n w, w2n w + sizeof t) ∧
-   is_allocated interval s.allocations ∧
+  (eval s a1 = <| poison := p1; value := FlatV (PtrV w) |> ∧
+   interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧
+   is_allocated interval s.heap ∧
    pbytes = get_bytes s.heap interval
    ⇒
    step_instr prog s
      (Load r t (t1, a1))
      (inc_pc (update_result r <| poison := (T ∈ set (map fst pbytes));
-                                 value := fst (bytes_to_value t (map snd pbytes)) |>
+                                 value := fst (bytes_to_llvm_value t (map snd pbytes)) |>
                             s))) ∧
 
-  (eval s a2 = <| poison := p2; value := PtrV w |> ∧
-   interval = (freeable, w2n w, w2n w + sizeof t) ∧
-   is_allocated interval s.allocations ∧
-   bytes = value_to_bytes (eval s a1).value ∧
+  (eval s a2 = <| poison := p2; value := FlatV (PtrV w) |> ∧
+   interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧
+   is_allocated interval s.heap ∧
+   bytes = llvm_value_to_bytes (eval s a1).value ∧
    length bytes = sizeof t
    ⇒
    step_instr prog s
@@ -607,7 +525,7 @@ Inductive step_instr:
      (inc_pc (s with heap := set_bytes p2 bytes (w2n w) s.heap))) ∧
 
   (map (eval s o snd) tindices = i1::indices ∧
-   (eval s a1).value = PtrV w1 ∧
+   (eval s a1).value = FlatV (PtrV w1) ∧
    cast_num i1.value = Some n ∧
    map (λx. cast_num x.value) indices = map Some ns ∧
    get_offset t1 ns = Some off
@@ -616,11 +534,11 @@ Inductive step_instr:
     (Gep r t ((PtrT t1), a1) tindices)
     (inc_pc (update_result r
                <| poison := (v1.poison ∨ i1.poison ∨ exists (λv. v.poison) indices);
-                  value := PtrV (n2w (w2n w1 + sizeof t1 * n + off)) |>
+                  value := FlatV (PtrV (n2w (w2n w1 + sizeof t1 * n + off))) |>
                s))) ∧
 
   (eval s a1 = v1 ∧
-   v1.value = PtrV w ∧
+   v1.value = FlatV (PtrV w) ∧
    w64_cast w t = Some int_v
    ⇒
    step_instr prog s
@@ -632,7 +550,7 @@ Inductive step_instr:
    ⇒
    step_instr prog s
     (Inttoptr r (t1, a1) t)
-    (inc_pc (update_result r <| poison := v1.poison; value := PtrV w |> s))) ∧
+    (inc_pc (update_result r <| poison := v1.poison; value := FlatV (PtrV w) |> s))) ∧
 
   (step_instr prog s
     (Icmp r c t a1 a2)
@@ -645,7 +563,6 @@ Inductive step_instr:
      <| ip := <| f := fname; b := None; i := 0 |>;
         locals := alist_to_fmap (zip (map snd d.params, map (eval s o snd) targs));
         globals := s.globals;
-        allocations:= s.allocations;
         stack :=
           <| ret := s.ip with i := s.ip.i + 1;
              saved_locals := s.locals;
@@ -682,29 +599,13 @@ End
 
 (* ----- Invariants on state ----- *)
 
-(* The allocations are of intervals that don't overlap *)
-Definition allocations_ok_def:
-  allocations_ok s ⇔
-    ∀i1 i2.
-      i1 ∈ s.allocations ∧ i2 ∈ s.allocations
-      ⇒
-      interval_ok i1 ∧ interval_ok i2 ∧
-      (interval_to_set i1 ∩ interval_to_set i2 ≠ ∅ ⇒ i1 = i2)
-End
-
-(* The heap maps exactly the address in the allocations *)
-Definition heap_ok_def:
-  heap_ok s ⇔
-    ∀n. flookup s.heap (A n) ≠ None ⇔ ∃i. i ∈ s.allocations ∧ n ∈ interval_to_set i
-End
-
 (* All global variables are allocated in non-freeable memory *)
 Definition globals_ok_def:
   globals_ok s ⇔
     ∀g n w.
       flookup s.globals g = Some (n, w)
       ⇒
-      is_allocated (F, w2n w, w2n w + n) s.allocations
+      is_allocated (Interval F (w2n w) (w2n w + n)) s.heap
 End
 
 (* Instruction pointer points to an instruction *)
@@ -733,7 +634,7 @@ End
 Definition frame_ok_def:
   frame_ok p s f ⇔
     ip_ok p f.ret ∧
-    every (λn. ∃start stop. n = A start ∧ (T, start, stop) ∈ s.allocations) f.stack_allocs
+    every (λn. ∃start stop. n = A start ∧ Interval T start stop ∈ s.heap.allocations) f.stack_allocs
 End
 
 (* The frames are all of, and no two stack allocations have the same address *)
@@ -745,7 +646,7 @@ End
 
 Definition state_invariant_def:
   state_invariant p s ⇔
-    ip_ok p s.ip ∧ allocations_ok s ∧ heap_ok s ∧ globals_ok s ∧ stack_ok p s
+    ip_ok p s.ip ∧ heap_ok s.heap ∧ globals_ok s ∧ stack_ok p s
 End
 
 (* ----- Initial state ----- *)
@@ -758,19 +659,19 @@ Definition is_init_state_def:
     s.ip.i = 0 ∧
     s.locals = fempty ∧
     s.stack = [] ∧
-    allocations_ok s ∧
     globals_ok s ∧
-    heap_ok s ∧
+    heap_ok s.heap ∧
     fdom s.globals = fdom global_init ∧
+    s.heap.valid_addresses =  { A n | n < dimword (:64) } ∧
     (* The initial allocations for globals are not freeable *)
-    s.allocations ⊆ { (F, start, stop) | T } ∧
+    s.heap.allocations ⊆ { Interval F start stop | T } ∧
     (* The heap starts with the initial values of the globals written to their
      * addresses *)
     ∀g w t v n.
       flookup s.globals g = Some (n, w) ∧ flookup global_init g = Some (t,v) ⇒
       ∃bytes.
-        get_bytes s.heap (F, w2n w, w2n w + sizeof t) = map (λb. (F,b)) bytes ∧
-        bytes_to_value t bytes = (v, [])
+        get_bytes s.heap (Interval F (w2n w) (w2n w + sizeof t)) = map (λb. (F,b)) bytes ∧
+        bytes_to_llvm_value t bytes = (v, [])
 End
 
 export_theory();
