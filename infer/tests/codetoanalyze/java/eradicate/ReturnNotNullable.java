@@ -27,28 +27,96 @@ public class ReturnNotNullable {
     return null;
   }
 
-  String returnNull() {
+  // ------------------------------------------------------------
+  // Converting different things to not annotated types.
+  // By default, (not annotated type is treated as non nullable).
+
+  String nullToNotAnnotatedIsBad() {
     return null;
   }
 
-  String returnNullable(@Nullable String s) {
+  String nullableToNotAnnotatedIsBad(@Nullable String s) {
+    return s;
+  }
+
+  String notAnnotatedToNotAnnotatedIsOK(String s) {
+    return s;
+  }
+
+  String nonNullToNotAnnotatedIsOK(@Nonnull String s) {
+    return s;
+  }
+
+  String constantToNotAnnotatedIsOK() {
+    return "abc";
+  }
+
+  // ------------------------------------------------------------
+  // Converting different things to @Nonnull.
+  // (Should be the same as converting to not annotated).
+
+  @Nonnull
+  String nullToNonnullIsBad() {
+    return null;
+  }
+
+  @Nonnull
+  String nullableToNonnullIsBad(@Nullable String s) {
     return s;
   }
 
   @Nonnull
-  String returnNonnull() {
+  String notAnnotatedToNonnullIsOK(String s) {
+    return s;
+  }
+
+  @Nonnull
+  String nonNullToNonnullIsOK(@Nonnull String s) {
+    return s;
+  }
+
+  @Nonnull
+  String constantToNonNullIsOK() {
     return "abc";
   }
 
+  // ------------------------------------------------------------
+  // Converting different things to @Nullable.
+  // This is either
+  // 1. OK when inferred and annotated return types are both nullable, or
+  // 2. Leads to ERADICATE_RETURN_OVER_ANNOTATED when inferred return type
+  //    is not nullable, but function is still annotated with @Nullable.
+  //    This often happens when the API author decides to return @Nullable
+  //    (anticipating future change) even though the current implementation returns non-null.
+  //    Because of this the warning is currently turned off by default and is recommended
+  //    to use only in specific scenarious, like code migrations.
+
   @Nullable
-  String returnNullOK() {
+  String nullToNullableIsOK() {
     return null;
   }
 
   @Nullable
-  String returnNullableOK(@Nullable String s) {
+  String nullableToNullableIsOK(@Nullable String s) {
     return s;
   }
+
+  @Nullable
+  String notAnnotatedNullableIsOverannotated(String s) {
+    return s;
+  }
+
+  @Nullable
+  String nonNullToNullableIsOverannotated(@Nonnull String s) {
+    return s;
+  }
+
+  @Nullable
+  String constantToNullableIsOverannotated() {
+    return "abc";
+  }
+
+  // -------------------------------------------------------
 
   String throwException(@Nullable Exception e, boolean bad) throws Exception {
     if (bad) {
@@ -59,14 +127,14 @@ public class ReturnNotNullable {
 
   @Nullable
   String redundantEq() {
-    String s = returnNonnull();
+    String s = constantToNonNullIsOK();
     int n = s == null ? 0 : s.length();
     return s;
   }
 
   @Nullable
   String redundantNeq() {
-    String s = returnNonnull();
+    String s = constantToNonNullIsOK();
     int n = s != null ? 0 : s.length();
     return s;
   }
@@ -85,7 +153,7 @@ public class ReturnNotNullable {
 
   Object tryWithResourcesReturnNullable(String path) throws IOException {
     try (BufferedReader br = nn(new BufferedReader(new FileReader(path)))) {
-      return returnNullOK();
+      return nullToNullableIsOK();
     }
   }
 

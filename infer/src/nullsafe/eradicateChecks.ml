@@ -301,7 +301,6 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
          annotated_signature.params
   in
   let ret_annotated_present = Annotations.ia_is_present ret_ia in
-  let ret_annotated_nonnull = Annotations.ia_is_nonnull ret_ia in
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
@@ -316,8 +315,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
       let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
       let origin_descr = TypeAnnotation.descr_origin final_ta in
       let return_not_nullable =
-        final_nullable && (not ret_annotated_nullable) && (not ret_implicitly_nullable)
-        && not ret_annotated_nonnull
+        final_nullable && (not ret_annotated_nullable) && not ret_implicitly_nullable
       in
       let return_value_not_present =
         Config.eradicate_optional_present && (not final_present) && ret_annotated_present
