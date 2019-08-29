@@ -191,13 +191,15 @@ public class ReturnNotNullable {
     return cls.getResource(name);
   }
 
-  @DefinitelyNotNullable
-  Object definitelyDoesNotReturnNull() {
+  @SomeAnnotationEndingWithNullable
+  Object ensureWeDontConfuseSuchAnnotationsWithNullable() {
+    // No warnings expected
     return new Object();
   }
 
-  void callsnotnullableMethod() {
-    definitelyDoesNotReturnNull().toString();
+  void testSomeAnnotationEndingWithNullable() {
+    // No warnings expected
+    ensureWeDontConfuseSuchAnnotationsWithNullable().toString();
   }
 
   static class ConditionalAssignment {

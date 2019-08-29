@@ -7,4 +7,5 @@
 
 package codetoanalyze.java.eradicate;
 
-@interface DefinitelyNotNullable {}
+// Test annotation to ensure Infer does not confuse it with @Nullable
+@interface SomeAnnotationEndingWithNullable {}
