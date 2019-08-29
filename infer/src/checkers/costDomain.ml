@@ -7,7 +7,14 @@
 
 open! IStd
 module F = Format
-module BasicCost = Polynomials.NonNegativePolynomial
+
+module BasicCost = struct
+  include Polynomials.NonNegativePolynomial
+
+  (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
+     demarshalling failure of cost analysis results in running infer-reportdiff. *)
+  let version = 1
+end
 
 (**
   Module to simulate a record 

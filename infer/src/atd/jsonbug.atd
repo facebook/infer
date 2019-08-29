@@ -63,7 +63,9 @@ type hum_info = {
 
 
 type cost_info = {
+  polynomial_version : int;
   polynomial : string;
+  ?degree : int option;
   hum : hum_info;
 }
 

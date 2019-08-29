@@ -54,7 +54,7 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
 
 
 module CostsSummary = struct
-  module DegreeMap = Caml.Map.Make (Polynomials.Degree)
+  module DegreeMap = Caml.Map.Make (Int)
 
   type 'a count = {top: 'a; zero: 'a; degrees: 'a DegreeMap.t}
 
@@ -63,6 +63,7 @@ module CostsSummary = struct
   type previous_current = {previous: int; current: int}
 
   let count costs =
+    let incr = function None -> Some 1 | Some x -> Some (x + 1) in
     let count_aux t (e : CostDomain.BasicCost.t) =
       match CostDomain.BasicCost.degree e with
       | None ->
@@ -72,16 +73,27 @@ module CostsSummary = struct
           assert (Polynomials.Degree.is_zero d) ;
           {t with zero= t.zero + 1}
       | Some d ->
-          let degrees =
-            DegreeMap.update d (function None -> Some 1 | Some x -> Some (x + 1)) t.degrees
-          in
+          let degrees = DegreeMap.update (Polynomials.Degree.encode_to_int d) incr t.degrees in
+          {t with degrees}
+    in
+    let count_aux_degree t (degree : int option) =
+      match degree with
+      | None ->
+          {t with top= t.top + 1}
+      | Some d when Int.equal d 0 ->
+          {t with zero= t.zero + 1}
+      | Some d ->
+          let degrees = DegreeMap.update d incr t.degrees in
           {t with degrees}
     in
     List.fold ~init
       ~f:(fun acc (v : Jsonbug_t.cost_item) ->
         CostIssues.CostKindMap.fold
           (fun _ CostIssues.{extract_cost_f} acc ->
-            count_aux acc (CostDomain.BasicCost.decode (extract_cost_f v).Jsonbug_t.polynomial) )
+            let {Jsonbug_t.polynomial_version; polynomial; degree} = extract_cost_f v in
+            if Int.equal polynomial_version CostDomain.BasicCost.version then
+              count_aux acc (CostDomain.BasicCost.decode polynomial)
+            else count_aux_degree acc degree )
           CostIssues.enabled_cost_map acc )
       costs
 
@@ -113,10 +125,8 @@ module CostsSummary = struct
     let json_degrees =
       DegreeMap.bindings paired_counts.degrees
       |> List.map ~f:(fun (key, {current; previous}) ->
-             `Assoc
-               [ ("degree", `Int (Polynomials.Degree.encode_to_int key))
-               ; ("current", `Int current)
-               ; ("previous", `Int previous) ] )
+             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)]
+         )
     in
     let create_assoc current previous =
       `Assoc [("current", `Int current); ("previous", `Int previous)]
@@ -139,8 +149,66 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} cost_info
-    ~delta ~prev_cost ~curr_cost =
+module CostItem = struct
+  type t =
+    { cost_item: Jsonbug_t.cost_item
+    ; polynomial: Polynomials.NonNegativePolynomial.t option
+    ; degree_with_term: Polynomials.NonNegativePolynomial.degree_with_term option
+    ; degree: int option }
+
+  let lift ~f_poly ~f_deg {polynomial; degree} =
+    match polynomial with None -> f_deg degree | Some p -> f_poly p
+
+
+  let is_top = lift ~f_poly:CostDomain.BasicCost.is_top ~f_deg:Option.is_none
+
+  (* NOTE: incorrect when using [f_deg] *)
+  let is_zero = lift ~f_poly:CostDomain.BasicCost.is_zero ~f_deg:(fun _ -> false)
+
+  (* NOTE: incorrect when using [f_deg] *)
+  let is_one = lift ~f_poly:CostDomain.BasicCost.is_one ~f_deg:(fun _ -> false)
+
+  let compare_by_degree {polynomial= p1; degree= d1} {polynomial= p2; degree= d2} =
+    match (p1, p2) with
+    | Some p1, Some p2 ->
+        CostDomain.BasicCost.compare_by_degree p1 p2
+    | _, _ -> (
+      match (d1, d2) with
+      | None, None ->
+          0
+      | None, Some _ ->
+          1
+      | Some _, None ->
+          -1
+      | Some d1, Some d2 ->
+          d1 - d2 )
+
+
+  let pp_degree ~only_bigO fmt {degree_with_term; degree} =
+    match (degree_with_term, degree) with
+    | None, None ->
+        Format.pp_print_string fmt "Top"
+    | None, Some d ->
+        Format.pp_print_int fmt d
+    | Some degree_with_term, _ ->
+        CostDomain.BasicCost.pp_degree ~only_bigO fmt degree_with_term
+
+
+  let pp_cost_msg fmt ({polynomial} as curr_item) =
+    let pp_cost fmt =
+      match polynomial with
+      | None ->
+          Format.fprintf fmt "NA"
+      | Some p ->
+          CostDomain.BasicCost.pp_hum fmt p
+    in
+    Format.fprintf fmt "Cost is %t (degree is %a)" pp_cost (pp_degree ~only_bigO:false) curr_item
+end
+
+let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infinite_issue} ~delta
+    ~prev_item
+    ~curr_item:( {CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as
+               curr_item ) =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let class_name =
@@ -153,17 +221,11 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
   let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
-    if CostDomain.BasicCost.is_top curr_cost then infinite_issue
-    else if CostDomain.BasicCost.is_zero curr_cost then zero_issue
+    if CostItem.is_top curr_item then infinite_issue
+    else if CostItem.is_zero curr_item then zero_issue
     else
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
       complexity_increase_issue ~is_on_cold_start
-  in
-  let curr_degree_with_term = CostDomain.BasicCost.get_degree_with_term curr_cost in
-  let curr_cost_msg fmt () =
-    Format.fprintf fmt "Cost is %a (degree is %a)" CostDomain.BasicCost.pp_hum curr_cost
-      (CostDomain.BasicCost.pp_degree ~only_bigO:false)
-      curr_degree_with_term
   in
   if (not Config.filtering) || issue_type.IssueType.enabled then
     let qualifier =
@@ -175,7 +237,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
             Format.fprintf fmt "increased"
       in
       let pp_extra_msg fmt () =
-        if Config.developer_mode then curr_cost_msg fmt ()
+        if Config.developer_mode then CostItem.pp_cost_msg fmt curr_item
         else
           Format.fprintf fmt
             "Please make sure this is an expected change. You can inspect the trace to understand \
@@ -187,7 +249,6 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
            regressions in this phase."
         else ""
       in
-      let prev_degree_with_term = CostDomain.BasicCost.get_degree_with_term prev_cost in
       let msg =
         (* Java Only *)
         if String.equal method_name Typ.Procname.Java.constructor_method_name then "constructor"
@@ -200,26 +261,28 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
         msg
         (MarkupFormatter.wrap_bold pp_delta)
         delta
-        (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
-        prev_degree_with_term
-        (MarkupFormatter.wrap_monospaced (CostDomain.BasicCost.pp_degree ~only_bigO:true))
-        curr_degree_with_term cold_start_msg pp_extra_msg ()
+        (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
+        prev_item
+        (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
+        curr_item cold_start_msg pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
     let trace =
       let polynomial_traces =
         match curr_degree_with_term with
-        | Below (_, degree_term) ->
+        | None ->
+            []
+        | Some (Below (_, degree_term)) ->
             Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
             |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
-        | Above traces ->
+        | Some (Above traces) ->
             [("", Polynomials.TopTraces.make_err_trace traces)]
       in
       let curr_cost_trace =
         [ Errlog.make_trace_element 0
             {Location.line; col= column; file= source_file}
-            (Format.asprintf "Updated %a" curr_cost_msg ())
+            (Format.asprintf "Updated %a" CostItem.pp_cost_msg curr_item)
             [] ]
       in
       ("", curr_cost_trace) :: polynomial_traces |> Errlog.concat_traces
@@ -260,34 +323,28 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
     match data with
     | `Both (current, previous) ->
         let max_degree_polynomial l =
-          let max =
-            List.max_elt l ~compare:(fun (_, c1) (_, c2) ->
-                CostDomain.BasicCost.compare_by_degree c1 c2 )
-          in
+          let max = List.max_elt l ~compare:CostItem.compare_by_degree in
           Option.value_exn max
         in
-        let curr_cost_info, curr_cost = max_degree_polynomial current in
-        let _, prev_cost = max_degree_polynomial previous in
-        if
-          Config.filtering
-          && (CostDomain.BasicCost.is_one curr_cost || CostDomain.BasicCost.is_one prev_cost)
-        then
+        let curr_item = max_degree_polynomial current in
+        let prev_item = max_degree_polynomial previous in
+        if Config.filtering && (CostItem.is_one curr_item || CostItem.is_one prev_item) then
           (* transitions to/from zero costs are obvious, no need to flag them *)
           (left, both, right)
         else
-          let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
+          let cmp = CostItem.compare_by_degree curr_item prev_item in
           let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
           if cmp > 0 then
             (* introduced *)
             let left' =
-              issue_of_cost kind issue_spec curr_cost_info ~delta:`Increased ~prev_cost ~curr_cost
+              issue_of_cost kind issue_spec ~delta:`Increased ~prev_item ~curr_item
               |> concat_opt left
             in
             (left', both, right)
           else if cmp < 0 then
             (* fixed *)
             let right' =
-              issue_of_cost kind issue_spec curr_cost_info ~delta:`Decreased ~prev_cost ~curr_cost
+              issue_of_cost kind issue_spec ~delta:`Decreased ~prev_item ~curr_item
               |> concat_opt right
             in
             (left, both, right')
@@ -298,11 +355,20 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
         (* costs available only on one of the two reports are discarded, since no comparison can be made *)
         (left, both, right)
   in
-  let key_func (cost_info, _) = cost_info.Jsonbug_t.hash in
+  let key_func {CostItem.cost_item} = cost_item.Jsonbug_t.hash in
   let to_map = to_map key_func in
   let decoded_costs costs ~extract_cost_f =
     List.map costs ~f:(fun c ->
-        (c, CostDomain.BasicCost.decode (extract_cost_f c).Jsonbug_t.polynomial) )
+        let cost_info = extract_cost_f c in
+        let polynomial, degree_with_term =
+          if Int.equal cost_info.Jsonbug_t.polynomial_version CostDomain.BasicCost.version then
+            let polynomial = CostDomain.BasicCost.decode cost_info.Jsonbug_t.polynomial in
+            let degree_with_term = CostDomain.BasicCost.get_degree_with_term polynomial in
+            (Some polynomial, Some degree_with_term)
+          else (None, None)
+        in
+        let degree = cost_info.Jsonbug_t.degree in
+        {CostItem.cost_item= c; polynomial; degree_with_term; degree} )
   in
   let get_current_costs = decoded_costs current_costs in
   let get_previous_costs = decoded_costs previous_costs in
