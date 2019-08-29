@@ -339,20 +339,6 @@ let set_size {integer_type_widths; location} array_v size_exp mem =
 
 let model_by_value value id mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
-(** Given a string of length n, return itv [-1, n_u-1]. *)
-let range_itv_mone exp mem =
-  eval_string_len exp mem |> BufferOverrunDomain.Val.get_itv |> Itv.set_lb_zero |> Itv.decr
-
-
-let indexOf exp =
-  let exec _ ~ret:(ret_id, _) mem =
-    (* if not found, indexOf returns -1. *)
-    let v = range_itv_mone exp mem |> Dom.Val.of_itv in
-    model_by_value v ret_id mem
-  in
-  {exec; check= no_check}
-
-
 let cast exp size_exp =
   let exec {integer_type_widths} ~ret:(ret_id, _) mem =
     let v = Sem.eval integer_type_widths exp mem in
@@ -567,6 +553,19 @@ module StdArray = struct
     {exec; check= no_check}
 end
 
+module ArrObjCommon = struct
+  let deref_of {integer_type_widths} exp ~fn mem =
+    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ~fn
+
+
+  let eval_size model_env exp ~fn mem = eval_array_locs_length (deref_of model_env exp ~fn mem) mem
+
+  let size_exec exp ~fn model_env ~ret:(id, _) mem =
+    let arr_locs = deref_of model_env exp ~fn mem in
+    let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
+    load_size_alias id arr_locs mem
+end
+
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
     Loc.append_field loc ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
@@ -576,9 +575,9 @@ module StdVector = struct
     PowLoc.append_field locs ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
 
 
-  let deref_of {integer_type_widths} elt_typ (vec_exp, vec_typ) mem =
-    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths vec_exp mem)
-    |> append_fields ~vec_typ ~elt_typ
+  let deref_of model_env elt_typ (vec_exp, vec_typ) mem =
+    let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
+    ArrObjCommon.deref_of model_env vec_exp ~fn mem
 
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
@@ -686,11 +685,9 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let size elt_typ vec_arg =
-    let exec model_env ~ret:(id, _) mem =
-      let arr_locs = deref_of model_env elt_typ vec_arg mem in
-      let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
-      load_size_alias id arr_locs mem
+  let size elt_typ (vec_exp, vec_typ) =
+    let exec =
+      ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
     in
     {exec; check= no_check}
 end
@@ -982,6 +979,76 @@ module Collection = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
+module JavaString = struct
+  let fn = BufferOverrunField.java_collection_internal_array
+
+  let deref_of = ArrObjCommon.deref_of ~fn
+
+  let get_char_range s =
+    let min_max =
+      String.fold s ~init:None ~f:(fun acc c ->
+          let i = Char.to_int c in
+          match acc with None -> Some (i, i) | Some (lb, ub) -> Some (min lb i, max ub i) )
+    in
+    match min_max with None -> Itv.bot | Some (min, max) -> Itv.(join (of_int min) (of_int max))
+
+
+  let get_length_and_elem model_env exp mem =
+    match exp with
+    | Exp.Const (Const.Cstr s) ->
+        (Dom.Val.of_int (String.length s), Dom.Val.of_itv (get_char_range s))
+    | _ ->
+        let arr_locs = deref_of model_env exp mem in
+        let length = eval_array_locs_length arr_locs mem in
+        let elem =
+          let arr_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
+          Dom.Mem.find_set arr_locs mem
+        in
+        (length, elem)
+
+
+  let concat exp1 exp2 =
+    let exec ({pname; node_hash} as model_env) ~ret:(id, _) mem =
+      let length_v, elem =
+        let length1, elem1 = get_length_and_elem model_env exp1 mem in
+        let length2, elem2 = get_length_and_elem model_env exp2 mem in
+        (Dom.Val.plus_a length1 length2, Dom.Val.join elem1 elem2)
+      in
+      let length, traces = (Dom.Val.get_itv length_v, Dom.Val.get_traces length_v) in
+      let arr_loc =
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values:false
+        |> Loc.of_allocsite
+      in
+      let elem_alloc =
+        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+          ~represents_multiple_values:true
+      in
+      Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem
+      |> Dom.Mem.add_heap (Loc.append_field arr_loc ~fn)
+           (Dom.Val.of_java_array_alloc elem_alloc ~length ~traces)
+      |> Dom.Mem.add_heap (Loc.of_allocsite elem_alloc) elem
+    in
+    {exec; check= no_check}
+
+
+  let length exp = {exec= ArrObjCommon.size_exec exp ~fn; check= no_check}
+
+  (** Given a string of length n, return itv [-1, n_u-1]. *)
+  let range_itv_mone model_env exp mem =
+    ArrObjCommon.eval_size model_env exp ~fn mem
+    |> BufferOverrunDomain.Val.get_itv |> Itv.set_lb_zero |> Itv.decr
+
+
+  let indexOf exp =
+    let exec model_env ~ret:(ret_id, _) mem =
+      (* if not found, indexOf returns -1. *)
+      let v = range_itv_mone model_env exp mem |> Dom.Val.of_itv in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+end
+
 module Preconditions = struct
   let check_argument exp =
     let exec {integer_type_widths} ~ret:_ mem = Sem.Prune.prune integer_type_widths exp mem in
@@ -1038,15 +1105,17 @@ module Call = struct
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
-      ; +PatternMatch.implements_lang "CharSequence" &:: "length" <>$ capt_exp $!--> strlen
+      ; +PatternMatch.implements_lang "CharSequence"
+        &:: "length" <>$ capt_exp $!--> JavaString.length
       ; -"strlen" <>$ capt_exp $!--> strlen
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; +PatternMatch.implements_lang "String"
-        &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> strcat
-      ; +PatternMatch.implements_lang "String" &:: "indexOf" <>$ capt_exp $+ any_arg $--> indexOf
+        &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
+      ; +PatternMatch.implements_lang "String"
+        &:: "indexOf" <>$ capt_exp $+ any_arg $--> JavaString.indexOf
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"snprintf" <>--> snprintf
