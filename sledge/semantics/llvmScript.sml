@@ -497,11 +497,12 @@ Inductive step_instr:
 
   (eval s a1 = v ∧
    v2n v.value = Some n ∧
-   allocate s.heap (n * sizeof t) v.poison (v2, new_h)
+   allocate s.heap (n * sizeof t) v.poison (n2, new_h)
    ⇒
    step_instr prog s
      (Alloca r t (t1, a1))
-     (inc_pc (update_result r v2 (s with heap := new_h)))) ∧
+     (inc_pc (update_result r <| poison := v.poison; value := FlatV (PtrV (n2w n2)) |>
+                (s with heap := new_h)))) ∧
 
   (eval s a1 = <| poison := p1; value := FlatV (PtrV w) |> ∧
    interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧

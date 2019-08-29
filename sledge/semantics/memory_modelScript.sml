@@ -153,7 +153,6 @@ Definition get_bytes_def:
     map
       (λoff.
         case flookup h.memory (A (start + off)) of
-        | None => (F, 0w)
         | Some w => w)
       (count_list (stop - start))
 End
@@ -170,7 +169,7 @@ Inductive allocate:
    is_free b h ∧
    length bytes = size
    ⇒
-   allocate h size tag (w, set_bytes tag bytes p
+   allocate h size tag (p, set_bytes tag bytes p
                            <| memory := h.memory;
                               allocations := { b } ∪ h.allocations;
                               valid_addresses := h.valid_addresses |>)
