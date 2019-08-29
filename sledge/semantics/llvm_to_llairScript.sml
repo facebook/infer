@@ -230,13 +230,13 @@ Definition classify_instr_def:
 End
 
 (* Translate a list of instructions into an block. f is the name of the function
- * that the instructions are in, live_out is the set of variables that are live
- * on exit of the instructions, emap is a mapping of registers to expressions
- * that compute the value that should have been in the expression.
+ * that the instructions are in, reg_to_keep is the set of variables that we
+ * want to keep assignments to (e.g., because of sharing in the expression
+ * structure. * emap is a mapping of registers to expressions that compute the
+ * value that should have been in the expression.
  *
  * This tries to build large expressions, and omits intermediate assignments
- * wherever possible. However, if a register is live on the exit to the block,
- * we can't omit the assignment to it.
+ * wherever possible.
  * For example:
  * r2 = sub r0 r1
  * r3 = sub r2 r1
@@ -245,27 +245,26 @@ End
  * becomes
  * r4 = sub (sub (sub r0 r1) r1) r0
  *
- * if r4 is the only register live at the exit of the block
+ * if r4 is the only register listed as needing to be kept.
  *
- * TODO: make this more aggressive and build expressions across blocks
  *)
 Definition translate_instrs_def:
-  (translate_instrs f live_out emap [] = <| cmnd := []; term := Unreachable |>) ∧
-  (translate_instrs f live_out emap (i :: is) =
+  (translate_instrs f emap reg_to_keep [] = (<| cmnd := []; term := Unreachable |>, emap)) ∧
+  (translate_instrs f emap reg_to_keep (i :: is) =
     case classify_instr i of
     | Exp r t =>
       let x = translate_reg r t in
       let e = translate_instr_to_exp emap i in
-        if r ∈ live_out then
-          let b = translate_instrs f live_out (emap |+ (r, Var x)) is in
-            b with cmnd := Move [(x, e)] :: b.cmnd
+        if r ∈ reg_to_keep then
+          let (b, emap') = translate_instrs f (emap |+ (r, Var x)) reg_to_keep is in
+            (b with cmnd := Move [(x, e)] :: b.cmnd, emap')
         else
-          translate_instrs f live_out (emap |+ (r, e)) is
+          translate_instrs f (emap |+ (r, e)) reg_to_keep is
     | Non_exp =>
-        let b = translate_instrs f live_out emap is in
-          b with cmnd := translate_instr_to_inst emap i :: b.cmnd
+        let (b, emap') = translate_instrs f emap reg_to_keep is in
+          (b with cmnd := translate_instr_to_inst emap i :: b.cmnd, emap')
     | Term =>
-        <| cmnd := []; term := translate_instr_to_term f emap i |>
+        (<| cmnd := []; term := translate_instr_to_term f emap i |>, emap)
     (* TODO *)
     | Call => ARB)
 End
@@ -294,9 +293,11 @@ Definition translate_header_def:
 End
 
 Definition translate_block_def:
-  translate_block f entry_n live_out (l, b) =
-    (Lab_name f (the (option_map dest_label l) entry_n),
-     (translate_header f entry_n b.h, translate_instrs f live_out fempty b.body))
+  translate_block f entry_n emap regs_to_keep (l, b) =
+    let (b', emap') = translate_instrs f emap regs_to_keep b.body in
+      ((Lab_name f (the (option_map dest_label l) entry_n),
+       (translate_header f entry_n b.h, b')),
+       emap')
 End
 
 (* Given a label and phi node, get the assignment for that incoming label. It's
@@ -359,12 +360,25 @@ Definition translate_def_def:
   translate_def (Lab f) d =
     let used_names = ARB in
     let entry_name = gen_name used_names "entry" in
-    let bs = map (translate_block f entry_name UNIV) d.blocks in
+    (* TODO *)
+    let regs_to_keep = UNIV in
+    (* We thread a mapping from register names to expressions through. This
+     * works assuming that the blocks are in a good ordering, which must exist
+     * because the LLVM is in SSA form, and so each definition must dominate all
+     * uses.
+     * *)
+    let (bs, emap) =
+      foldl
+        (λ(bs, emap) b.
+          let (b', emap') = translate_block f entry_name emap regs_to_keep b in
+            (b'::bs, emap'))
+        ([], fempty) d.blocks
+    in
       <| params := map translate_param d.params;
         (* TODO: calculate these from the produced llair, and not the llvm *)
         locals := ARB;
         entry := Lab_name f entry_name;
-        cfg := remove_phis f used_names bs;
+        cfg := remove_phis f used_names (reverse bs);
         freturn := ARB;
         fthrow := ARB |>
 End
