@@ -274,6 +274,12 @@ public class ArrayListTest {
 
     }
   }
+
+  void linear(int i, ArrayList<Integer> a) {
+    while (a.size() >= i) {
+      a.remove(0);
+    }
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {

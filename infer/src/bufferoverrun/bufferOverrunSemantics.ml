@@ -31,8 +31,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
     match (Mem.find_alias x1 m, Mem.find_alias x2 m) with
     | Some x1', Some x2' ->
         AliasTarget.equal x1' x2'
-        && Option.value_map (AliasTarget.get_loc x1') ~default:false ~f:(fun l ->
-               not (Mem.is_rep_multi_loc l m) )
+        && PowLoc.for_all (fun l -> not (Mem.is_rep_multi_loc l m)) (AliasTarget.get_locs x1')
     | _, _ ->
         false )
   | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _) ->
@@ -562,14 +561,16 @@ module Prune = struct
 
   let prune_size_alias =
     let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
-      Option.value_map (Mem.find_size_alias x mem) ~default:astate ~f:(fun lv ->
+      Option.value_map (Mem.find_size_alias x mem) ~default:astate ~f:(fun (lv, java_tmp) ->
           let array_v = Mem.find lv mem in
           let size = Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv in
           let rhs = eval integer_type_widths e mem in
           let size' = val_prune size rhs in
           let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in
           let pruning_exp = make_pruning_exp ~lhs:size' ~rhs in
-          update_mem_in_prune lv array_v' ~pruning_exp astate )
+          let astate = update_mem_in_prune lv array_v' ~pruning_exp astate in
+          Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
+              update_mem_in_prune java_tmp size' ~pruning_exp astate ) )
     in
     gen_prune_alias_functions ~prune_alias_core
 
