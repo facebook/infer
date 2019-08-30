@@ -24,7 +24,7 @@ module ItvRange = struct
    fun ~loop_head_loc ~lb ~ub ->
     Bound.plus_u ub Bound.one
     |> Bound.plus_u (Bound.neg lb)
-    |> Bound.simplify_bound_ends_from_paths
+    |> Bound.simplify_min_one |> Bound.simplify_bound_ends_from_paths
     |> Bounds.NonNegativeBound.of_loop_bound loop_head_loc
 
 

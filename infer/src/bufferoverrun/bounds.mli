@@ -112,6 +112,8 @@ module Bound : sig
 
   val simplify_bound_ends_from_paths : t -> t
 
+  val simplify_min_one : t -> t
+
   val is_same_symbol : t -> t -> Symb.SymbolPath.t option
 
   val exists_str : f:(string -> bool) -> t -> bool

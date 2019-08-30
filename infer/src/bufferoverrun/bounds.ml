@@ -1052,6 +1052,15 @@ module Bound = struct
 
   let subst_ub x eval_sym = subst ~subst_pos:Symb.BoundEnd.UpperBound x eval_sym
 
+  (* When a positive bound is expected, min(1,x) can be simplified to 1. *)
+  let simplify_min_one b =
+    match b with
+    | MinMax (c, Plus, Min, d, _x) when Z.(equal c zero) && Z.(equal d one) ->
+        Linear (d, SymLinear.zero)
+    | _ ->
+        b
+
+
   let simplify_bound_ends_from_paths x =
     match x with
     | MInf | PInf | MinMax _ ->
