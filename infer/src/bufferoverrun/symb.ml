@@ -322,8 +322,17 @@ module Symbol = struct
 
   let path = function OneValue {path} | BoundEnd {path} -> path
 
-  let assert_bound_end s be =
-    match s with OneValue _ -> () | BoundEnd {bound_end} -> assert (BoundEnd.equal be bound_end)
+  (* NOTE: This may not be satisfied in the cost checker for simplifying its results. *)
+  let check_bound_end s be =
+    if Config.bo_debug >= 3 then
+      match s with
+      | OneValue _ ->
+          ()
+      | BoundEnd {bound_end} ->
+          if not (BoundEnd.equal be bound_end) then
+            L.d_printfln_escaped
+              "Mismatch of symbol's boundend and its position: %a is in a place for %s." pp s
+              (BoundEnd.to_string be)
 
 
   let exists_str ~f = function OneValue {path} | BoundEnd {path} -> SymbolPath.exists_str ~f path

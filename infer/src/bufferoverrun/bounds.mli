@@ -86,9 +86,9 @@ module Bound : sig
 
   val is_const : t -> Z.t sexp_option
 
-  val plus_l : t -> t -> t
+  val plus_l : weak:bool -> t -> t -> t
 
-  val plus_u : t -> t -> t
+  val plus_u : weak:bool -> t -> t -> t
 
   val mult_const_l : Ints.NonZeroInt.t -> t -> t
 

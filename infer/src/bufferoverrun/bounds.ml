@@ -150,16 +150,22 @@ module SymLinear = struct
    fun x -> match get_mone_symbol_opt x with Some _ -> true | None -> false
 
 
-  let is_one_symbol_of : Symb.Symbol.t -> t -> bool =
-   fun s x -> Option.exists (get_one_symbol_opt x) ~f:(fun s' -> Symb.Symbol.equal s s')
+  let is_one_symbol_of_common get_symbol_opt ?(weak = false) s x =
+    Option.exists (get_symbol_opt x) ~f:(fun s' ->
+        (if weak then Symb.Symbol.paths_equal else Symb.Symbol.equal) s s' )
 
 
-  let is_mone_symbol_of : Symb.Symbol.t -> t -> bool =
-   fun s x -> Option.exists (get_mone_symbol_opt x) ~f:(fun s' -> Symb.Symbol.equal s s')
+  let is_one_symbol_of : ?weak:bool -> Symb.Symbol.t -> t -> bool =
+    is_one_symbol_of_common get_one_symbol_opt
 
 
-  let is_signed_one_symbol_of : Sign.t -> Symb.Symbol.t -> t -> bool =
-   fun sign s x -> match sign with Plus -> is_one_symbol_of s x | Minus -> is_mone_symbol_of s x
+  let is_mone_symbol_of : ?weak:bool -> Symb.Symbol.t -> t -> bool =
+    is_one_symbol_of_common get_mone_symbol_opt
+
+
+  let is_signed_one_symbol_of : weak:bool -> Sign.t -> Symb.Symbol.t -> t -> bool =
+   fun ~weak sign s x ->
+    match sign with Plus -> is_one_symbol_of ~weak s x | Minus -> is_mone_symbol_of ~weak s x
 
 
   let get_symbols : t -> Symb.SymbolSet.t =
@@ -797,8 +803,8 @@ module Bound = struct
    fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
 
 
-  let plus_exact : otherwise:(t -> t -> t) -> t -> t -> t =
-   fun ~otherwise x y ->
+  let plus_exact : weak:bool -> otherwise:(t -> t -> t) -> t -> t -> t =
+   fun ~weak ~otherwise x y ->
     if is_zero x then y
     else if is_zero y then x
     else
@@ -811,14 +817,14 @@ module Bound = struct
           mk_MinMax (Z.(c1 + c2), sign, min_max, d1, x1)
       | MinMax (c1, sign, min_max, d, x1), Linear (c2, x2)
       | Linear (c2, x2), MinMax (c1, sign, min_max, d, x1)
-        when SymLinear.is_signed_one_symbol_of (Sign.neg sign) x1 x2 ->
+        when SymLinear.is_signed_one_symbol_of ~weak (Sign.neg sign) x1 x2 ->
           let c = Sign.eval_big_int sign Z.(c1 + c2) d in
           mk_MinMax (c, Sign.neg sign, MinMax.neg min_max, d, x1)
       | _ ->
           otherwise x y
 
 
-  let plus_l : t -> t -> t =
+  let plus_l : weak:bool -> t -> t -> t =
     plus_exact ~otherwise:(fun x y ->
         match (x, y) with
         | MinMax (c1, Plus, Max, d1, _), Linear (c2, x2)
@@ -831,7 +837,7 @@ module Bound = struct
             MInf )
 
 
-  let plus_u : t -> t -> t =
+  let plus_u : weak:bool -> t -> t -> t =
     plus_exact ~otherwise:(fun x y ->
         match (x, y) with
         | MinMax (c1, Plus, Min, d1, _), Linear (c2, x2)
@@ -844,7 +850,12 @@ module Bound = struct
             PInf )
 
 
-  let plus = function Symb.BoundEnd.LowerBound -> plus_l | Symb.BoundEnd.UpperBound -> plus_u
+  let plus = function
+    | Symb.BoundEnd.LowerBound ->
+        plus_l ~weak:false
+    | Symb.BoundEnd.UpperBound ->
+        plus_u ~weak:false
+
 
   let mult_const : Symb.BoundEnd.t -> NonZeroInt.t -> t -> t =
    fun bound_end n x ->

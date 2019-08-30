@@ -22,8 +22,8 @@ module ItvRange = struct
 
   let of_bounds : loop_head_loc:Location.t -> lb:Bound.t -> ub:Bound.t -> t =
    fun ~loop_head_loc ~lb ~ub ->
-    Bound.plus_u ub Bound.one
-    |> Bound.plus_u (Bound.neg lb)
+    Bound.plus_u ~weak:true ub Bound.one
+    |> Bound.plus_u ~weak:true (Bound.neg lb)
     |> Bound.simplify_min_one |> Bound.simplify_bound_ends_from_paths
     |> Bounds.NonNegativeBound.of_loop_bound loop_head_loc
 
@@ -193,7 +193,9 @@ module ItvPure = struct
 
   let lnot : t -> Boolean.t = fun x -> to_bool x |> Boolean.not_
 
-  let plus : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.plus_l l1 l2, Bound.plus_u u1 u2)
+  let plus : t -> t -> t =
+   fun (l1, u1) (l2, u2) -> (Bound.plus_l ~weak:false l1 l2, Bound.plus_u ~weak:false u1 u2)
+
 
   let minus : t -> t -> t = fun i1 i2 -> plus i1 (neg i2)
 

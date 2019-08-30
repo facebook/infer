@@ -458,7 +458,7 @@ let mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem 
   let eval_sym ~mode s bound_end =
     let sympath = Symb.Symbol.path s in
     let itv, _ = eval_sympath ~mode params sympath caller_mem in
-    Symb.Symbol.assert_bound_end s bound_end ;
+    Symb.Symbol.check_bound_end s bound_end ;
     Itv.get_bound itv bound_end
   in
   let trace_of_sym s =

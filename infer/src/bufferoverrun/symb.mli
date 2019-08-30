@@ -110,7 +110,7 @@ module Symbol : sig
 
   val path : t -> SymbolPath.t
 
-  val assert_bound_end : t -> BoundEnd.t -> unit
+  val check_bound_end : t -> BoundEnd.t -> unit
 
   type make_t = unsigned:bool -> ?boolean:bool -> SymbolPath.t -> t
 
