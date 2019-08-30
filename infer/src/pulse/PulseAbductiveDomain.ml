@@ -293,7 +293,7 @@ module PrePost = struct
   let filter_for_summary astate =
     let post_stack =
       BaseStack.filter
-        (fun var _ -> not (is_local var astate))
+        (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
         (astate.post :> PulseDomain.t).stack
     in
     (* deregister empty edges in pre *)

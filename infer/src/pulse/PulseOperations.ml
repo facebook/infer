@@ -303,7 +303,7 @@ let remove_vars vars location astate =
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =
-              if PulseAbductiveDomain.is_local var astate then
+              if Var.appears_in_source_code var && PulseAbductiveDomain.is_local var astate then
                 mark_address_of_stack_variable history var location address astate
               else astate
             in
