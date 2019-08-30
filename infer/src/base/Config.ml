@@ -3276,16 +3276,11 @@ let clang_frontend_action_string =
     ((if capture then ["translating"] else []) @ if linters then ["linting"] else [])
 
 
-let dynamic_dispatch =
-  CLOpt.mk_bool ~long:"dynamic-dispatch" ~default:biabduction
-    "Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as \
-     a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the \
-     JVM semantics and creates procedure descriptions during symbolic execution using the type \
-     information found in the abstract state"
-    ~in_help:InferCommand.[(Analyze, manual_java)]
-
-
-let dynamic_dispatch = !dynamic_dispatch
+(* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as
+   a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the
+   JVM semantics and creates procedure descriptions during symbolic execution using the type
+   information found in the abstract state *)
+let dynamic_dispatch = biabduction
 
 let specs_library = !specs_library
 
