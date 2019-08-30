@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# E2E test involving the interesting_paths_filter function
-
 TESTS_DIR = ../..
 
 MODIFIED_FILES_FILE = changed_files.txt
