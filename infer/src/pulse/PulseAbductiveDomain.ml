@@ -296,14 +296,14 @@ module PrePost = struct
         (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
         (astate.post :> PulseDomain.t).stack
     in
-    (* deregister empty edges in pre *)
-    let pre_heap =
-      BaseMemory.filter_heap
-        (fun _addr edges -> not (BaseMemory.Edges.is_empty edges))
-        (astate.pre :> base_domain).heap
+    (* deregister empty edges *)
+    let deregister_empty heap =
+      BaseMemory.filter_heap (fun _addr edges -> not (BaseMemory.Edges.is_empty edges)) heap
     in
+    let pre_heap = deregister_empty (astate.pre :> base_domain).heap in
+    let post_heap = deregister_empty (astate.post :> base_domain).heap in
     { pre= InvertedDomain.update astate.pre ~heap:pre_heap
-    ; post= Domain.update ~stack:post_stack astate.post }
+    ; post= Domain.update ~stack:post_stack ~heap:post_heap astate.post }
 
 
   let add_out_of_scope_attribute addr pvar location history heap typ =
