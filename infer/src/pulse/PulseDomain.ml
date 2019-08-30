@@ -418,6 +418,8 @@ module Memory : sig
 
   type edges = AddrTracePair.t Edges.t
 
+  val pp_edges : F.formatter -> edges -> unit
+
   type cell = edges * Attributes.t
 
   type t
@@ -474,17 +476,15 @@ end = struct
 
   type edges = AddrTracePair.t Edges.t [@@deriving compare]
 
+  let pp_edges = Edges.pp ~pp_value:AddrTracePair.pp
+
   type cell = edges * Attributes.t
 
   module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
 
   type t = edges Graph.t * Attributes.t Graph.t
 
-  let pp =
-    Pp.pair
-      ~fst:(Graph.pp ~pp_value:(Edges.pp ~pp_value:AddrTracePair.pp))
-      ~snd:(Graph.pp ~pp_value:Attributes.pp)
-
+  let pp = Pp.pair ~fst:(Graph.pp ~pp_value:pp_edges) ~snd:(Graph.pp ~pp_value:Attributes.pp)
 
   let register_address addr memory =
     if Graph.mem addr (fst memory) then memory

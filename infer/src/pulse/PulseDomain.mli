@@ -145,6 +145,8 @@ module Memory : sig
 
   type edges = AddrTracePair.t Edges.t
 
+  val pp_edges : F.formatter -> edges -> unit [@@warning "-32"]
+
   type cell = edges * Attributes.t
 
   type t
