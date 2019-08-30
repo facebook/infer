@@ -261,7 +261,7 @@ OPTIONS
 
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
-           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
            --write-dotty, --write-html) (Conversely: --no-debug | -G)       
     See also infer-analyze(1), infer-capture(1), infer-compile(1),
