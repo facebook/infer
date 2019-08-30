@@ -12,3 +12,6 @@ open! IStd
 
 val main : changed_files:SourceFile.Set.t option -> unit
 (** Given a name of the Makefile to use for multicore analysis, analyze the captured code *)
+
+val invalidate_changed_procedures : SourceFile.Set.t option -> unit
+(** Invalidate specs files for procedures that have changed. Used for incremental analysis. *)

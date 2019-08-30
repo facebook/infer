@@ -5,20 +5,23 @@ digraph callgraph {
   N5 [ label = "void Test.main(java.lang.String[])", flag = true ];
 
   N0 [ label = "Object.<init>()", flag = false ];
-  N0 -> N6 ;
+  N0 -> N7 ;
   N0 -> N1 ;
 
-  N7 [ label = "void PrintStream.println(String)", flag = false ];
-  N7 -> N2 ;
+  N7 [ label = "Unchanged.<init>()", flag = false ];
 
-  N6 [ label = "Unchanged.<init>()", flag = false ];
+  N6 [ label = "void Test.newMethod(int)", flag = true ];
 
   N4 [ label = "void Test.complexityIncrease(int)", flag = true ];
   N4 -> N5 ;
 
   N2 [ label = "void Unchanged.orderN(int)", flag = false ];
+  N2 -> N6 ;
   N2 -> N4 ;
   N2 -> N3 ;
+
+  N8 [ label = "void PrintStream.println(String)", flag = false ];
+  N8 -> N2 ;
 
   N3 [ label = "void Test.complexityDecrease(int)", flag = true ];
   N3 -> N5 ;

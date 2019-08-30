@@ -142,29 +142,38 @@ let analyze source_files_to_analyze =
 
 
 let invalidate_changed_procedures changed_files =
-  L.progress "Incremental analysis: invalidating procedures that have been changed@." ;
-  let reverse_callgraph = CallGraph.create CallGraph.default_initial_capacity in
-  ReverseAnalysisCallGraph.build reverse_callgraph ;
-  let total_nodes = CallGraph.n_procs reverse_callgraph in
-  SourceFile.Set.iter
-    (fun sf ->
-      SourceFiles.proc_names_of_source sf
-      |> List.iter ~f:(CallGraph.flag_reachable reverse_callgraph) )
-    changed_files ;
-  if Config.debug_level_analysis > 0 then
-    CallGraph.to_dotty reverse_callgraph "reverse_analysis_callgraph.dot" ;
-  let invalidated_nodes =
-    CallGraph.fold_flagged reverse_callgraph
-      ~f:(fun node acc -> SpecsFiles.delete node.pname ; acc + 1)
-      0
-  in
-  L.progress
-    "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were invalidated @."
-    total_nodes invalidated_nodes ;
-  ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
-  ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
-  (* save some memory *)
-  CallGraph.reset reverse_callgraph
+  if Config.incremental_analysis then (
+    let changed_files =
+      match changed_files with
+      | Some cf ->
+          cf
+      | None ->
+          L.die InternalError "Incremental analysis enabled without specifying changed files"
+    in
+    L.progress "Incremental analysis: invalidating procedures that have been changed@." ;
+    let reverse_callgraph = CallGraph.create CallGraph.default_initial_capacity in
+    ReverseAnalysisCallGraph.build reverse_callgraph ;
+    let total_nodes = CallGraph.n_procs reverse_callgraph in
+    SourceFile.Set.iter
+      (fun sf ->
+        SourceFiles.proc_names_of_source sf
+        |> List.iter ~f:(CallGraph.flag_reachable reverse_callgraph) )
+      changed_files ;
+    if Config.debug_level_analysis > 0 then
+      CallGraph.to_dotty reverse_callgraph "reverse_analysis_callgraph.dot" ;
+    let invalidated_nodes =
+      CallGraph.fold_flagged reverse_callgraph
+        ~f:(fun node acc -> SpecsFiles.delete node.pname ; acc + 1)
+        0
+    in
+    L.progress
+      "Incremental analysis: %d nodes in reverse analysis call graph, %d of which were \
+       invalidated @."
+      total_nodes invalidated_nodes ;
+    ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
+    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
+    (* save some memory *)
+    CallGraph.reset reverse_callgraph )
 
 
 let main ~changed_files =
@@ -173,13 +182,7 @@ let main ~changed_files =
     L.progress "Invalidating procedures to be reanalyzed@." ;
     Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
     L.progress "Done@." )
-  else if Config.incremental_analysis then
-    match changed_files with
-    | Some cf ->
-        invalidate_changed_procedures cf
-    | None ->
-        L.die InternalError "Incremental analysis enabled without specifying changed files"
-  else DB.Results_dir.clean_specs_dir () ;
+  else if not Config.incremental_analysis then DB.Results_dir.clean_specs_dir () ;
   let source_files = get_source_files_to_analyze ~changed_files in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;

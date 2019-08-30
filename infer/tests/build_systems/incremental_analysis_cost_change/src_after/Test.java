@@ -7,6 +7,10 @@
 
 class Test {
 
+  public static void newMethod(int n) {
+    Unchanged.orderN(n);
+  }
+
   public static void complexityDecrease(int n) {
     Unchanged.orderN(n);
   }
