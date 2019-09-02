@@ -433,11 +433,11 @@ module Val = struct
       let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
       TraceSet.singleton location trace
     in
-    let itv_val ~boolean =
+    let itv_val ~non_int =
       let l = Loc.of_path path in
       let traces = traces_of_loc l in
       let unsigned = Typ.is_unsigned_int typ in
-      of_itv ~traces (Itv.of_normal_path ~unsigned ~boolean path)
+      of_itv ~traces (Itv.of_normal_path ~unsigned ~non_int path)
     in
     let ptr_to_c_array_alloc deref_path size =
       let allocsite = Allocsite.make_symbol deref_path in
@@ -450,10 +450,10 @@ module Val = struct
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
-    | Tint IBool ->
-        itv_val ~boolean:true
-    | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
-        itv_val ~boolean:false
+    | Tint IBool | Tfloat _ | Tfun _ | TVar _ ->
+        itv_val ~non_int:true
+    | Tint _ | Tvoid ->
+        itv_val ~non_int:false
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -503,7 +503,7 @@ module Val = struct
           let length = Itv.of_length_path ~is_void:false path in
           of_java_array_alloc allocsite ~length ~traces
       | Some JavaInteger ->
-          itv_val ~boolean:false
+          itv_val ~non_int:false
       | None ->
           let l = Loc.of_path path in
           let traces = traces_of_loc l in
@@ -623,7 +623,7 @@ module MemPure = struct
         match filter_loc loc with
         | Some loop_head_loc ->
             let itv = Val.get_itv v in
-            if Itv.has_only_boolean_symbols itv then acc
+            if Itv.has_only_non_int_symbols itv then acc
             else
               Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial
               |> Polynomials.NonNegativePolynomial.mult acc

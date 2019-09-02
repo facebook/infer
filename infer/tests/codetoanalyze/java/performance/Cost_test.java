@@ -152,4 +152,22 @@ public class Cost_test {
       }
     }
   }
+
+  // Cost should not include the symbol of f.
+  void ignore_float_symbols_constant(float f) {
+    for (; f < (float) 1.0; ) {
+      if (rand()) {
+        f = (float) 1.0;
+      }
+    }
+  }
+
+  // Cost should not include the symbol of d.
+  void ignore_double_symbols_constant(double d) {
+    for (; d < (double) 1.0; ) {
+      if (rand()) {
+        d = 1.0;
+      }
+    }
+  }
 }

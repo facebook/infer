@@ -416,9 +416,9 @@ module ItvPure = struct
    fun (l, u) -> SymbolSet.union (Bound.get_symbols l) (Bound.get_symbols u)
 
 
-  let has_only_boolean_symbols x =
+  let has_only_non_int_symbols x =
     let symbols = get_symbols x in
-    (not (SymbolSet.is_empty symbols)) && SymbolSet.for_all Symb.Symbol.is_boolean symbols
+    (not (SymbolSet.is_empty symbols)) && SymbolSet.for_all Symb.Symbol.is_non_int symbols
 
 
   let make_positive : t -> t =
@@ -440,7 +440,7 @@ module ItvPure = struct
       (b, b)
 
 
-  let of_normal_path ~unsigned ?boolean = of_path (Bound.of_normal_path ~unsigned ?boolean)
+  let of_normal_path ~unsigned ?non_int = of_path (Bound.of_normal_path ~unsigned ?non_int)
 
   let of_offset_path ~is_void = of_path (Bound.of_offset_path ~is_void)
 
@@ -673,8 +673,8 @@ let max_of_ikind integer_type_widths ikind =
   NonBottom (ItvPure.max_of_ikind integer_type_widths ikind)
 
 
-let of_normal_path ~unsigned ?boolean path =
-  NonBottom (ItvPure.of_normal_path ~unsigned ?boolean path)
+let of_normal_path ~unsigned ?non_int path =
+  NonBottom (ItvPure.of_normal_path ~unsigned ?non_int path)
 
 
 let of_offset_path ~is_void path = NonBottom (ItvPure.of_offset_path ~is_void path)
@@ -687,4 +687,4 @@ let is_offset_path_of path = bind1_gen ~bot:false (ItvPure.is_offset_path_of pat
 
 let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of path)
 
-let has_only_boolean_symbols = bind1bool ItvPure.has_only_boolean_symbols
+let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols

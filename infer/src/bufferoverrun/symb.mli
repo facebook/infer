@@ -100,7 +100,7 @@ module Symbol : sig
 
   val is_unsigned : t -> bool
 
-  val is_boolean : t -> bool
+  val is_non_int : t -> bool
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 
@@ -112,7 +112,7 @@ module Symbol : sig
 
   val check_bound_end : t -> BoundEnd.t -> unit
 
-  type make_t = unsigned:bool -> ?boolean:bool -> SymbolPath.t -> t
+  type make_t = unsigned:bool -> ?non_int:bool -> SymbolPath.t -> t
 
   val make_onevalue : make_t
 
