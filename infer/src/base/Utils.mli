@@ -136,3 +136,6 @@ val yojson_lookup :
 
 val timeit : f:(unit -> 'a) -> 'a * int
 (** Returns the execution time of [f] in milliseconds together with its result *)
+
+val do_in_dir : dir:string -> f:(unit -> 'a) -> 'a
+(** executes [f] after cding into [dir] and then restores original cwd *)

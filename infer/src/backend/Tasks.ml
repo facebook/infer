@@ -6,24 +6,12 @@
  *)
 
 open! IStd
-module L = Logging
 
 type 'a doer = 'a -> unit
 
 type 'a task_generator = 'a ProcessPool.task_generator
 
-let fork_protect ~f x =
-  (* this is needed whenever a new process is started *)
-  BackendStats.reset () ;
-  Epilogues.reset () ;
-  EventLogger.prepare () ;
-  L.reset_formatters () ;
-  ResultsDatabase.new_database_connection () ;
-  (* get different streams of random numbers in each fork, in particular to lessen contention in
-     `Filename.mk_temp` *)
-  Random.self_init () ;
-  f x
-
+let fork_protect ~f x = BackendStats.reset () ; ForkUtils.protect ~f x
 
 module Runner = struct
   type ('work, 'final) t = ('work, 'final) ProcessPool.t

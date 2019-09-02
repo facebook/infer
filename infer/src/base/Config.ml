@@ -2269,6 +2269,11 @@ and sqlite_vfs =
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
 
+and sqlite_write_daemon =
+  CLOpt.mk_bool ~default:false "Route all DB writes through a daemon process"
+    ~long:"sqlite-write-daemon"
+
+
 and stats_report =
   CLOpt.mk_path_opt ~long:"stats-report" ~meta:"file"
     "Write a report of the analysis results to a file"
@@ -3175,6 +3180,8 @@ and spec_abs_level = !spec_abs_level
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
+
+and sqlite_write_daemon = !sqlite_write_daemon
 
 and starvation = !starvation
 

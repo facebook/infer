@@ -24,16 +24,10 @@ let shell = "sh"
 
 type server = {input: In_channel.t; output: Out_channel.t}
 
-(* Unix socket paths have a historical length limit of ~100 chars (!?*@&*$).  However, this applies
-   to the argument passed in the system call to create the socket.  Thus a workaround is to cd into
-   the parent dir of the socket and then create it, hence this function. *)
-let in_results_dir ~f =
-  let cwd = Unix.getcwd () in
-  let () = Unix.chdir results_dir in
-  let res = f () in
-  let () = Unix.chdir cwd in
-  res
-
+(** Unix socket *paths* have a historical length limit of ~100 chars (!?*@&*$).  However, this only applies
+    to the argument passed in the system call to create the socket, not to the actual path.  
+    Thus a workaround is to cd into the parent dir of the socket and then use it, hence this function. *)
+let in_results_dir ~f = Utils.do_in_dir ~dir:results_dir ~f
 
 let fail_on response_line = L.die InternalError "Unexpected server response: %s" response_line
 

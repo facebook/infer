@@ -398,3 +398,9 @@ let timeit ~f =
   let ret_val = f () in
   let duration_ms = Mtime_clock.count start_time |> Mtime.Span.to_ms |> int_of_float in
   (ret_val, duration_ms)
+
+
+let do_in_dir ~dir ~f =
+  let cwd = Unix.getcwd () in
+  Unix.chdir dir ;
+  try_finally_swallow_timeout ~f ~finally:(fun () -> Unix.chdir cwd)

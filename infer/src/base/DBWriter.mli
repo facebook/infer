@@ -31,3 +31,7 @@ val merge_dbs : infer_out_src:string -> unit
 
 val canonicalize : unit -> unit
 (** put the database on disk in deterministic form *)
+
+val start : unit -> unit
+
+val stop : unit -> unit

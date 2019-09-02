@@ -6,6 +6,8 @@
  *)
 
 open! IStd
+module L = Logging
+module F = Format
 
 module Implementation = struct
   let attribute_replace_statement =
@@ -170,6 +172,27 @@ module Command = struct
     | MarkAllSourceFilesStale
     | MergeDBs of {infer_out_src: string}
     | Vacuum
+    | Handshake
+    | Terminate
+
+  let to_string = function
+    | ReplaceAttributes _ ->
+        "ReplaceAttributes"
+    | AddSourceFile _ ->
+        "AddSourceFile"
+    | MarkAllSourceFilesStale ->
+        "MarkAllSourceFilesStale"
+    | MergeDBs _ ->
+        "MergeDBs"
+    | Vacuum ->
+        "Vacuum"
+    | Handshake ->
+        "Handshake"
+    | Terminate ->
+        "Terminate"
+
+
+  let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
 
   let execute = function
     | ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees} ->
@@ -183,9 +206,108 @@ module Command = struct
         Implementation.merge_dbs ~infer_out_src
     | Vacuum ->
         Implementation.canonicalize ()
+    | Handshake ->
+        ()
+    | Terminate ->
+        ()
 end
 
-let perform cmd = Command.execute cmd
+type response = Ack
+
+module Server = struct
+  (* General comment about socket/channel destruction: closing the in_channel associated with the socket 
+     will close the file descriptor too, so closing also the out_channel sometimes throws an exception.
+     That's why in all code below only the input channel is ever closed. *)
+
+  let socket_name = "sqlite_write_socket"
+
+  let socket_addr = Unix.ADDR_UNIX socket_name
+
+  let socket_domain = Unix.domain_of_sockaddr socket_addr
+
+  (** Unix socket *paths* have a historical length limit of ~100 chars (!?*@&*$).  However, this only applies
+      to the argument passed in the system call to create the socket, not to the actual path.  
+      Thus a workaround is to cd into the parent dir of the socket and then use it, hence this function. *)
+  let in_results_dir ~f = Utils.do_in_dir ~dir:Config.toplevel_results_dir ~f
+
+  let rec server_loop socket =
+    let client_sock, _client = Unix.accept socket in
+    let in_channel = Unix.in_channel_of_descr client_sock
+    and out_channel = Unix.out_channel_of_descr client_sock in
+    let command : Command.t = Marshal.from_channel in_channel in
+    L.debug Analysis Verbose "Sqlite write daemon: received command %a@." Command.pp command ;
+    Command.execute command ;
+    Marshal.to_channel out_channel Ack [] ;
+    Out_channel.flush out_channel ;
+    In_channel.close in_channel ;
+    L.debug Analysis Verbose "Sqlite write daemon: closing connection@." ;
+    match command with
+    | Terminate ->
+        L.debug Analysis Quiet "Sqlite write daemon: terminating@." ;
+        ()
+    | _ ->
+        server_loop socket
+
+
+  let socket_exists () = in_results_dir ~f:(fun () -> Sys.file_exists_exn socket_name)
+
+  let server () =
+    L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
+    if socket_exists () then L.die InternalError "Sqlite write daemon: socket already exists@." ;
+    let socket = Unix.socket ~domain:socket_domain ~kind:Unix.SOCK_STREAM ~protocol:0 in
+    in_results_dir ~f:(fun () -> Unix.bind socket ~addr:socket_addr) ;
+    (* [backlog] is (supposedly) the length of the queue for pending connections ;
+       there are no rules about the implied behaviour though.  Here use optimistically
+       the number of workers, though even that is a guess. *)
+    Unix.listen socket ~backlog:Config.jobs ;
+    L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
+    let shutdown () = in_results_dir ~f:(fun () -> Unix.close socket ; Unix.remove socket_name) in
+    Utils.try_finally_swallow_timeout ~f:(fun () -> server_loop socket) ~finally:shutdown
+
+
+  let send cmd =
+    let in_channel, out_channel = in_results_dir ~f:(fun () -> Unix.open_connection socket_addr) in
+    Marshal.to_channel out_channel cmd [] ;
+    Out_channel.flush out_channel ;
+    let (Ack : response) = Marshal.from_channel in_channel in
+    In_channel.close in_channel
+
+
+  let rec retry ~pred ~timeout count =
+    if count < 0 then false
+    else if pred () then true
+    else (
+      Unix.nanosleep timeout |> ignore ;
+      retry ~pred ~timeout (count - 1) )
+
+
+  let start () =
+    match Unix.fork () with
+    | `In_the_child ->
+        ForkUtils.protect ~f:server () ; L.exit 0
+    | `In_the_parent _child_pid ->
+        (* wait for socket to appear, try 5 times, with a 0.1 sec timeout each time ;
+           choice of numbers is completely arbitrary *)
+        if not (retry ~pred:socket_exists ~timeout:0.1 5) then
+          L.die InternalError "Sqlite write daemon never started@." ;
+        send Command.Handshake
+end
+
+let server_running = ref false
+
+let perform cmd = if !server_running then Server.send cmd else Command.execute cmd
+
+let start () =
+  if not !server_running then (
+    Server.start () ;
+    server_running := true )
+
+
+let stop () =
+  if !server_running then (
+    Server.send Command.Terminate ;
+    server_running := false )
+
 
 let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
   Command.ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees}

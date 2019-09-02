@@ -652,6 +652,8 @@ val sqlite_lock_timeout : int
 
 val sqlite_vfs : string option
 
+val sqlite_write_daemon : bool
+
 val starvation : bool
 
 val starvation_skip_analysis : Yojson.Basic.t
