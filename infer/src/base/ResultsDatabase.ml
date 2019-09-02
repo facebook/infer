@@ -93,6 +93,7 @@ let register_statement =
       | None ->
           L.(die InternalError) "database not initialized"
       | Some (stmt, db) ->
+          Sqlite3.reset stmt |> SqliteUtils.check_result_code db ~log:"reset prepared statement" ;
           Sqlite3.clear_bindings stmt
           |> SqliteUtils.check_result_code db ~log:"clear bindings of prepared statement" ;
           (stmt, db)
@@ -104,7 +105,6 @@ let with_registered_statement get_stmt ~f =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"sql op" ())) ;
   let stmt, db = get_stmt () in
   let result = f db stmt in
-  Sqlite3.reset stmt |> SqliteUtils.check_result_code db ~log:"reset prepared statement" ;
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   result
 
