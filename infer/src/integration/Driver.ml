@@ -76,7 +76,7 @@ let register_perf_stats_report stats_type =
    get rid of non-deterministic outputs.*)
 let clean_results_dir () =
   let cache_capture = Config.(flavors || genrule_mode) in
-  if cache_capture then ResultsDatabase.db_canonicalize () ;
+  if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)

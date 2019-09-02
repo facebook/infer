@@ -13,7 +13,7 @@ module L = Logging
 let merge_global_tenvs infer_deps_file =
   let time0 = Mtime_clock.counter () in
   let global_tenv = Tenv.create () in
-  let merge infer_out_src =
+  let merge ~infer_out_src =
     let global_tenv_path =
       infer_out_src ^/ Config.global_tenv_filename |> DB.filename_from_string
     in

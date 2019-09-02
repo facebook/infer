@@ -154,9 +154,4 @@ end
 
 include UnsafeDatabaseRef
 
-let db_canonicalize () =
-  let db = get_database () in
-  SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
-
-
 let () = Epilogues.register_late ~f:db_close ~description:"closing database connection"

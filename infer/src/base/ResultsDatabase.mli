@@ -22,9 +22,6 @@ val get_database : unit -> Sqlite3.db
 val new_database_connection : unit -> unit
 (** Closes the previous connection to the database (if any), and opens a new one. Needed after calls to fork(2). *)
 
-val db_canonicalize : unit -> unit
-(** put the database on disk in deterministic form *)
-
 val db_close : unit -> unit
 (** close the current connection to the database *)
 

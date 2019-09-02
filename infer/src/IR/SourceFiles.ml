@@ -8,13 +8,6 @@ open! IStd
 module F = Format
 module L = Logging
 
-let store_statement =
-  ResultsDatabase.register_statement
-    {|
-  INSERT OR REPLACE INTO source_files
-  VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured) |}
-
-
 let select_existing_statement =
   ResultsDatabase.register_statement
     "SELECT type_environment, procedure_names FROM source_files WHERE source_file = :source AND \
@@ -65,26 +58,11 @@ let add source_file cfg tenv integer_type_widths =
      sure that all attributes were written to disk (but not necessarily flushed) *)
   SqliteUtils.with_transaction (ResultsDatabase.get_database ()) ~f:(fun () ->
       Cfg.store source_file cfg ) ;
-  ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
-      SourceFile.SQLite.serialize source_file
-      |> Sqlite3.bind store_stmt 1
-      (* :source *)
-      |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
-      Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 2
-      (* :tenv *)
-      |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-      Typ.IntegerWidths.SQLite.serialize integer_type_widths
-      |> Sqlite3.bind store_stmt 3
-      (* :integer_type_widths *)
-      |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
-      Typ.Procname.SQLiteList.serialize proc_names
-      |> Sqlite3.bind store_stmt 4
-      (* :proc_names *)
-      |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
-      Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
-      (* :freshly_captured *)
-      |> SqliteUtils.check_result_code db ~log:"store freshness" ;
-      SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
+  DBWriter.add_source_file
+    ~source_file:(SourceFile.SQLite.serialize source_file)
+    ~tenv:(Tenv.SQLite.serialize tenv)
+    ~integer_type_widths:(Typ.IntegerWidths.SQLite.serialize integer_type_widths)
+    ~proc_names:(Typ.Procname.SQLiteList.serialize proc_names)
 
 
 let get_all ~filter () =
@@ -159,14 +137,7 @@ let is_freshly_captured source =
       |> Option.value_map ~default:false ~f:deserialize_freshly_captured )
 
 
-let mark_all_stale_statement =
-  ResultsDatabase.register_statement "UPDATE source_files SET freshly_captured = 0"
-
-
-let mark_all_stale () =
-  ResultsDatabase.with_registered_statement mark_all_stale_statement ~f:(fun db stmt ->
-      SqliteUtils.result_unit db ~finalize:false ~log:"mark_all_stale" stmt )
-
+let mark_all_stale () = DBWriter.mark_all_source_files_stale ()
 
 let select_all_source_files_statement =
   ResultsDatabase.register_statement
