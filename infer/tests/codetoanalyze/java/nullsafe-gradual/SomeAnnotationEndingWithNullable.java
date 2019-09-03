@@ -4,12 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-package codetoanalyze.java.eradicate;
 
-import javax.annotation.Nullable;
+package codetoanalyze.java.nullsafe_gradual;
 
-@GeneratedGraphQL
-public interface ServerSideDeserializer {
-
-  public @Nullable Object nullableGetter();
-}
+// Test annotation to ensure Infer does not confuse it with @Nullable
+@interface SomeAnnotationEndingWithNullable {}

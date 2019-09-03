@@ -147,7 +147,8 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_classloads \
-  java_eradicate \
+  java_nullsafe-default \
+  java_nullsafe-gradual \
   java_hoisting \
   java_hoistingExpensive \
   java_inefficientKeysetIterator \

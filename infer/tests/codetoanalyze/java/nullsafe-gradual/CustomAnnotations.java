@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package codetoanalyze.java.eradicate;
+package codetoanalyze.java.nullsafe_gradual;
 
 import android.text.TextUtils;
 import com.facebook.infer.annotation.FalseOnNull;

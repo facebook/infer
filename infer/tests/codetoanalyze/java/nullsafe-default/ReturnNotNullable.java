@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package codetoanalyze.java.eradicate;
+package codetoanalyze.java.nullsafe_default;
 
 import com.google.common.base.Optional;
 import java.io.BufferedReader;

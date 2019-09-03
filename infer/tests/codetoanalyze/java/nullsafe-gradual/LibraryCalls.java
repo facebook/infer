@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package codetoanalyze.java.eradicate;
+package codetoanalyze.java.nullsafe_gradual;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;

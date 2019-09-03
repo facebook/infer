@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package codetoanalyze.java.eradicate;
+package codetoanalyze.java.nullsafe_default;
 
 import android.annotation.SuppressLint;
 import com.google.common.collect.ImmutableList;
