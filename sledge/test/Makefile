@@ -120,7 +120,7 @@ cleanbc:
 
 # remove result files
 cleanout:
-	@find -L * -name "*.out" -or -name '*.err' \
+	@find -L * -name "*.out" -or -name '*.err' -or -name '*.llair' \
 	 | xargs rm -f
 
 clean: cleanbc cleanout
