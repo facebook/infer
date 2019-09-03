@@ -542,23 +542,21 @@ and get_template_info tenv (fdi : Clang_ast_t.function_decl_info) =
 and mk_c_function ?tenv name function_decl_info_opt parameters =
   let file =
     match function_decl_info_opt with
-    | Some (decl_info, function_decl_info) -> (
-      match function_decl_info.Clang_ast_t.fdi_storage_class with
-      | Some "static"
-      (* when we model static functions, we cannot take the file into account to
-     create a mangled name because the file of the model is different to the real file,
-     thus the model won't work *)
-        when not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name))
-        ->
-          let file_opt =
-            (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
-            |> Option.map ~f:SourceFile.from_abs_path
-          in
-          let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
-          Option.value_map ~f:file_to_hex ~default:"" file_opt
-      | _ ->
-          "" )
-    | None ->
+    (* when we model static functions, we cannot take the file into account to
+            create a mangled name because the file of the model is different to the real file,
+            thus the model won't work *)
+    | Some (decl_info, function_decl_info)
+      when function_decl_info.Clang_ast_t.fdi_is_static
+           && not
+                (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name))
+      ->
+        let file_opt =
+          (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
+          |> Option.map ~f:SourceFile.from_abs_path
+        in
+        let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
+        Option.value_map ~f:file_to_hex ~default:"" file_opt
+    | _ ->
         ""
   in
   let mangled_opt, is_cpp =
