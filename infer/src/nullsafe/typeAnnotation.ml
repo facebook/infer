@@ -9,19 +9,13 @@ open! IStd
 
 (** Module to represent annotations on types. *)
 
-module AnnotationsMap = Caml.Map.Make (struct
-  type t = AnnotatedSignature.annotation [@@deriving compare]
-end)
-
-type t = {map: bool AnnotationsMap.t; origin: TypeOrigin.t} [@@deriving compare]
+type t = {is_nullable: bool; origin: TypeOrigin.t} [@@deriving compare]
 
 let equal = [%compare.equal: t]
 
-let is_nullable ta = try AnnotationsMap.find Nullable ta.map with Caml.Not_found -> false
+let is_nullable ta = ta.is_nullable
 
-let set_nullable b ta =
-  if Bool.equal (is_nullable ta) b then ta else {ta with map= AnnotationsMap.add Nullable b ta.map}
-
+let set_nullable b ta = if Bool.equal (is_nullable ta) b then ta else {ta with is_nullable= b}
 
 let descr_origin ta =
   let descr_opt = TypeOrigin.get_description ta.origin in
@@ -56,10 +50,7 @@ let origin_is_fun_library ta =
       false
 
 
-let const_nullable b origin =
-  let ta = {origin; map= AnnotationsMap.empty} in
-  set_nullable b ta
-
+let const_nullable is_nullable origin = {origin; is_nullable}
 
 let with_origin ta o = {ta with origin= o}
 

@@ -35,7 +35,7 @@ let get_modelled_annotated_signature proc_attributes =
   let lookup_models_nullable ann_sig =
     try
       let mark = Hashtbl.find annotated_table_nullable proc_id in
-      AnnotatedSignature.mark proc_name AnnotatedSignature.Nullable ann_sig mark
+      AnnotatedSignature.mark_nullability proc_name ann_sig mark
     with Caml.Not_found -> ann_sig
   in
   annotated_signature |> lookup_models_nullable

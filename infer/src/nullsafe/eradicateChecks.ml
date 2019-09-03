@@ -18,8 +18,7 @@ let get_field_annotation tenv fn typ =
       let ia' =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
-        if not Config.eradicate then AnnotatedSignature.mk_ia AnnotatedSignature.Nullable ia
-        else ia
+        if not Config.eradicate then AnnotatedSignature.mk_ia_nullable ia else ia
       in
       Some (t, ia')
 

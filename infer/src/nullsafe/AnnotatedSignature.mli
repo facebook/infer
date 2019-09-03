@@ -14,19 +14,17 @@ type t =
   ; params: (Mangled.t * Annot.Item.t * Typ.t) list  (** Annotated parameters. *) }
 [@@deriving compare]
 
-type annotation = Nullable [@@deriving compare]
-
 val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
 (** Check if the given parameter has an annotation in the given signature *)
 
-val mark : Typ.Procname.t -> annotation -> t -> bool * bool list -> t
-(** Mark the annotated signature with the given annotation map. *)
+val mark_nullability : Typ.Procname.t -> t -> bool * bool list -> t
+(** Mark the annotated signature with the given nullability of the ret value and given nullability of the params ). *)
 
 val get : ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
 
-val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
-(** Add the annotation to the item_annotation. *)
+val mk_ia_nullable : Annot.Item.t -> Annot.Item.t
+(** Add the nullable annotation to the item_annotation, if not already present. *)
 
 val pp : Typ.Procname.t -> Format.formatter -> t -> unit
 (** Pretty print a method signature with annotations. *)
