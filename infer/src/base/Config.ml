@@ -1407,10 +1407,6 @@ and eradicate_field_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-field-over-annotated" "Field over-annotated warnings"
 
 
-and eradicate_optional_present =
-  CLOpt.mk_bool ~long:"eradicate-optional-present" "Check for @Present annotations"
-
-
 and eradicate_return_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
 
@@ -2863,8 +2859,6 @@ and eradicate_condition_redundant = !eradicate_condition_redundant
 and eradicate_field_not_mutable = !eradicate_field_not_mutable
 
 and eradicate_field_over_annotated = !eradicate_field_over_annotated
-
-and eradicate_optional_present = !eradicate_optional_present
 
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
 

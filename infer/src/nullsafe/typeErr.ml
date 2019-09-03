@@ -63,8 +63,7 @@ type origin_descr = string * Location.t option * AnnotatedSignature.t option
 let compare_origin_descr _ _ = 0
 
 type parameter_not_nullable =
-  AnnotatedSignature.annotation
-  * string
+  string
   * (* description *)
     int
   * (* parameter number *)
@@ -81,13 +80,12 @@ type err_instance =
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
   | Field_not_mutable of Typ.Fieldname.t * origin_descr
-  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Fieldname.t * origin_descr
+  | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
   | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool
-  | Call_receiver_annotation_inconsistent of
-      AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
+  | Call_receiver_annotation_inconsistent of string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Procname.t * origin_descr
+  | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
   | Return_over_annotated of Typ.Procname.t
 [@@deriving compare]
 
@@ -106,18 +104,18 @@ module H = Hashtbl.Make (struct
         Hashtbl.hash (2, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
     | Field_not_mutable (fn, _) ->
         Hashtbl.hash (3, string_hash (Typ.Fieldname.to_string fn))
-    | Field_annotation_inconsistent (ann, fn, _) ->
-        Hashtbl.hash (4, ann, string_hash (Typ.Fieldname.to_string fn))
+    | Field_annotation_inconsistent (fn, _) ->
+        Hashtbl.hash (4, string_hash (Typ.Fieldname.to_string fn))
     | Field_over_annotated (fn, pn) ->
         Hashtbl.hash (5, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
     | Null_field_access (so, fn, _, _) ->
         Hashtbl.hash (6, string_opt_hash so, string_hash (Typ.Fieldname.to_string fn))
-    | Call_receiver_annotation_inconsistent (ann, so, pn, _) ->
-        Hashtbl.hash (7, ann, string_opt_hash so, Typ.Procname.hash pn)
-    | Parameter_annotation_inconsistent (ann, s, n, pn, _, _) ->
-        Hashtbl.hash (8, ann, string_hash s, n, Typ.Procname.hash pn)
-    | Return_annotation_inconsistent (ann, pn, _) ->
-        Hashtbl.hash (9, ann, Typ.Procname.hash pn)
+    | Call_receiver_annotation_inconsistent (so, pn, _) ->
+        Hashtbl.hash (7, string_opt_hash so, Typ.Procname.hash pn)
+    | Parameter_annotation_inconsistent (s, n, pn, _, _) ->
+        Hashtbl.hash (8, string_hash s, n, Typ.Procname.hash pn)
+    | Return_annotation_inconsistent (pn, _) ->
+        Hashtbl.hash (9, Typ.Procname.hash pn)
     | Return_over_annotated pn ->
         Hashtbl.hash (10, Typ.Procname.hash pn)
     | Inconsistent_subclass_return_annotation (pn, opn) ->
@@ -235,7 +233,7 @@ module Severity = struct
 
   let err_instance_get_severity tenv err_instance : Exceptions.severity option =
     match err_instance with
-    | Call_receiver_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, origin_descr)
+    | Call_receiver_annotation_inconsistent (_, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->
         origin_descr_get_severity tenv origin_descr
     | _ ->
@@ -260,7 +258,6 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
   let pname = Procdesc.get_proc_name pdesc in
   let nullable_annotation = "@Nullable" in
   let mutable_annotation = "@Mutable" in
-  let present_annotation = "@Present" in
   let kind, description, field_name =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
@@ -294,21 +291,12 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             (Typ.Fieldname.to_simplified_string fn)
             MF.pp_monospaced mutable_annotation origin_description
         , None )
-    | Field_annotation_inconsistent (ann, fn, (origin_description, _, _)) ->
+    | Field_annotation_inconsistent (fn, (origin_description, _, _)) ->
         let kind_s, description =
-          match ann with
-          | AnnotatedSignature.Nullable ->
-              ( IssueType.eradicate_field_not_nullable
-              , Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
-                  (Typ.Fieldname.to_simplified_string fn)
-                  MF.pp_monospaced nullable_annotation origin_description )
-          | AnnotatedSignature.Present ->
-              ( IssueType.eradicate_field_value_absent
-              , Format.asprintf
-                  "Field %a is assigned a possibly absent value but is declared %a. %s"
-                  MF.pp_monospaced
-                  (Typ.Fieldname.to_simplified_string fn)
-                  MF.pp_monospaced present_annotation origin_description )
+          ( IssueType.eradicate_field_not_nullable
+          , Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
+              (Typ.Fieldname.to_simplified_string fn)
+              MF.pp_monospaced nullable_annotation origin_description )
         in
         (kind_s, description, None)
     | Field_over_annotated (fn, pn) ->
@@ -336,60 +324,34 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             (Typ.Fieldname.to_simplified_string fn)
             origin_description
         , None )
-    | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, _, _)) ->
+    | Call_receiver_annotation_inconsistent (s_opt, pn, (origin_description, _, _)) ->
         let kind_s, description =
-          match ann with
-          | AnnotatedSignature.Nullable ->
-              ( IssueType.eradicate_nullable_dereference
-              , Format.asprintf
-                  "The value of %a in the call to %a is nullable and is not locally checked for \
-                   null. %s"
-                  MF.pp_monospaced (Option.value s_opt ~default:"") MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
-                  origin_description )
-          | AnnotatedSignature.Present ->
-              ( IssueType.eradicate_value_not_present
-              , Format.asprintf "The value of %a in the call to %a is not %a. %s" MF.pp_monospaced
-                  (Option.value s_opt ~default:"") MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced present_annotation origin_description )
+          ( IssueType.eradicate_nullable_dereference
+          , Format.asprintf
+              "The value of %a in the call to %a is nullable and is not locally checked for null. \
+               %s"
+              MF.pp_monospaced (Option.value s_opt ~default:"") MF.pp_monospaced
+              (Typ.Procname.to_simplified_string pn)
+              origin_description )
         in
         (kind_s, description, None)
-    | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, _, _)) ->
+    | Parameter_annotation_inconsistent (s, n, pn, _, (origin_desc, _, _)) ->
         let kind_s, description =
-          match ann with
-          | AnnotatedSignature.Nullable ->
-              ( IssueType.eradicate_parameter_not_nullable
-              , Format.asprintf
-                  "%a needs a non-null value in parameter %d but argument %a can be null. %s"
-                  MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string ~withclass:true pn)
-                  n MF.pp_monospaced s origin_desc )
-          | AnnotatedSignature.Present ->
-              ( IssueType.eradicate_parameter_value_absent
-              , Format.asprintf
-                  "%a needs a present value in parameter %d but argument %a can be absent. %s"
-                  MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string ~withclass:true pn)
-                  n MF.pp_monospaced s origin_desc )
+          ( IssueType.eradicate_parameter_not_nullable
+          , Format.asprintf
+              "%a needs a non-null value in parameter %d but argument %a can be null. %s"
+              MF.pp_monospaced
+              (Typ.Procname.to_simplified_string ~withclass:true pn)
+              n MF.pp_monospaced s origin_desc )
         in
         (kind_s, description, None)
-    | Return_annotation_inconsistent (ann, pn, (origin_description, _, _)) ->
+    | Return_annotation_inconsistent (pn, (origin_description, _, _)) ->
         let kind_s, description =
-          match ann with
-          | AnnotatedSignature.Nullable ->
-              ( IssueType.eradicate_return_not_nullable
-              , Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
-                  MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced nullable_annotation origin_description )
-          | AnnotatedSignature.Present ->
-              ( IssueType.eradicate_return_value_not_present
-              , Format.asprintf
-                  "Method %a may return an absent value but it is annotated with %a. %s"
-                  MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced present_annotation origin_description )
+          ( IssueType.eradicate_return_not_nullable
+          , Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
+              MF.pp_monospaced
+              (Typ.Procname.to_simplified_string pn)
+              MF.pp_monospaced nullable_annotation origin_description )
         in
         (kind_s, description, None)
     | Return_over_annotated pn ->

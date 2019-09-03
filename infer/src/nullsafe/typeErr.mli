@@ -35,8 +35,7 @@ type origin_descr = string * Location.t option * AnnotatedSignature.t option
 (* callee signature *)
 
 type parameter_not_nullable =
-  AnnotatedSignature.annotation
-  * string
+  string
   * (* description *)
     int
   * (* parameter number *)
@@ -52,13 +51,12 @@ type err_instance =
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
   | Field_not_mutable of Typ.Fieldname.t * origin_descr
-  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Fieldname.t * origin_descr
+  | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
   | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool
-  | Call_receiver_annotation_inconsistent of
-      AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
+  | Call_receiver_annotation_inconsistent of string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Procname.t * origin_descr
+  | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
   | Return_over_annotated of Typ.Procname.t
 
 val node_reset_forall : Procdesc.Node.t -> unit

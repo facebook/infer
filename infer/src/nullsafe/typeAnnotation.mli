@@ -11,7 +11,7 @@ open! IStd
 
 type t [@@deriving compare]
 
-val const : AnnotatedSignature.annotation -> bool -> TypeOrigin.t -> t
+val const_nullable : bool -> TypeOrigin.t -> t
 
 val descr_origin : t -> TypeErr.origin_descr
 (** Human-readable description of the origin of a nullable value. *)
@@ -20,13 +20,13 @@ val from_item_annotation : Annot.Item.t -> TypeOrigin.t -> t
 
 val get_origin : t -> TypeOrigin.t
 
-val get_value : AnnotatedSignature.annotation -> t -> bool
+val is_nullable : t -> bool
 
 val join : t -> t -> t option
 
 val origin_is_fun_library : t -> bool
 
-val set_value : AnnotatedSignature.annotation -> bool -> t -> t
+val set_nullable : bool -> t -> t
 
 val to_string : t -> string
 

@@ -182,16 +182,6 @@ let check_argument_list =
     ) ]
 
 
-let optional_get_list : ((_ * bool list) * _) list =
-  [ ((o, []), "Optional.get():java.lang.Object")
-  ; ((o, []), "com.google.common.base.Optional.get():java.lang.Object") ]
-
-
-let optional_isPresent_list : ((_ * bool list) * _) list =
-  [ ((o, []), "Optional.isPresent():boolean")
-  ; ((o, []), "com.google.common.base.Optional.isPresent():boolean") ]
-
-
 (** Models for boolean functions that return true on null. *)
 let true_on_null_list : ((_ * bool list) * _) list =
   [ (n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")
@@ -581,13 +571,6 @@ let annotated_list_nullable =
     ; (ng, "java.util.concurrent.atomic.AtomicReference.get():java.lang.Object") ]
 
 
-(** Models for @Present annotations *)
-let annotated_list_present =
-  [ ((n, [o]), "Optional.of(java.lang.Object):Optional")
-  ; ( (n, [o])
-    , "com.google.common.base.Optional.of(java.lang.Object):com.google.common.base.Optional" ) ]
-
-
 (** Models for methods that do not return *)
 let noreturn_list = [((o, [o]), "java.lang.System.exit(int):void")]
 
@@ -603,8 +586,6 @@ let this_file = Filename.basename __FILE__
 
 let annotated_table_nullable = mk_table annotated_list_nullable
 
-let annotated_table_present = mk_table annotated_list_present
-
 let check_not_null_table, check_not_null_parameter_table =
   (mk_table check_not_null_list, mk_table check_not_null_parameter_list)
 
@@ -616,10 +597,6 @@ let check_argument_table = mk_table check_argument_list
 let containsKey_table = mk_table containsKey_list
 
 let mapPut_table = mk_table mapPut_list
-
-let optional_get_table = mk_table optional_get_list
-
-let optional_isPresent_table = mk_table optional_isPresent_list
 
 let noreturn_table = mk_table noreturn_list
 

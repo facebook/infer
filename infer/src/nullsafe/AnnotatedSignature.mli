@@ -14,7 +14,7 @@ type t =
   ; params: (Mangled.t * Annot.Item.t * Typ.t) list  (** Annotated parameters. *) }
 [@@deriving compare]
 
-type annotation = Nullable | Present [@@deriving compare]
+type annotation = Nullable [@@deriving compare]
 
 val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
 (** Check if the given parameter has an annotation in the given signature *)

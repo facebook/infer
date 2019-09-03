@@ -243,10 +243,6 @@ let eradicate_field_over_annotated =
   register_from_string "ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated"
 
 
-let eradicate_field_value_absent =
-  register_from_string "ERADICATE_FIELD_VALUE_ABSENT" ~hum:"Field Value Absent"
-
-
 let eradicate_inconsistent_subclass_parameter_annotation =
   register_from_string "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
     ~hum:"Inconsistent Subclass Parameter Annotation"
@@ -265,24 +261,12 @@ let eradicate_parameter_not_nullable =
   register_from_string "ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable"
 
 
-let eradicate_parameter_value_absent =
-  register_from_string "ERADICATE_PARAMETER_VALUE_ABSENT" ~hum:"Parameter Value Absent"
-
-
 let eradicate_return_not_nullable =
   register_from_string "ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable"
 
 
 let eradicate_return_over_annotated =
   register_from_string "ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated"
-
-
-let eradicate_return_value_not_present =
-  register_from_string "ERADICATE_RETURN_VALUE_NOT_PRESENT" ~hum:"Return Value Not Present"
-
-
-let eradicate_value_not_present =
-  register_from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
 
 
 let expensive_cost_call ~kind ~is_on_cold_start =

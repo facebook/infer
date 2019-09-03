@@ -13,8 +13,6 @@ module DExp = DecompiledExp
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
-  let procname_optional_isPresent = Models.is_optional_isPresent
-
   let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
 
   let procname_is_false_on_null tenv pn =
@@ -44,8 +42,7 @@ module ComplexExpressions = struct
 
   (** Recognize *all* the procedures treated specially in conditionals *)
   let procname_used_in_condition pn =
-    procname_optional_isPresent pn || procname_instanceof pn || procname_containsKey pn
-    || BuiltinDecl.is_declared pn
+    procname_instanceof pn || procname_containsKey pn || BuiltinDecl.is_declared pn
 
 
   exception Not_handled
@@ -118,7 +115,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
   | _ when Exp.is_null_literal e ->
       let typ, ta, locs = tr_default in
       if PatternMatch.type_is_class typ then
-        (typ, TypeAnnotation.const AnnotatedSignature.Nullable true (TypeOrigin.Const loc), locs)
+        (typ, TypeAnnotation.const_nullable true (TypeOrigin.Const loc), locs)
       else (typ, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), locs)
   | Exp.Lvar pvar -> (
     match TypeState.lookup_pvar pvar typestate with
@@ -137,13 +134,13 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
         typestate e1 tr_default loc
   | Exp.Const _ ->
       let typ, _, locs = tr_default in
-      (typ, TypeAnnotation.const AnnotatedSignature.Nullable false (TypeOrigin.Const loc), locs)
+      (typ, TypeAnnotation.const_nullable false (TypeOrigin.Const loc), locs)
   | Exp.Lfield (exp, fn, typ) ->
       let _, _, locs = tr_default in
       let _, ta, locs' =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate exp
-          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, locs)
+          (typ, TypeAnnotation.const_nullable false TypeOrigin.ONone, locs)
           loc
       in
       let exp_origin = TypeAnnotation.get_origin ta in
@@ -407,7 +404,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
     typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
       typestate1 exp1
-      (typ1, TypeAnnotation.const AnnotatedSignature.Nullable false origin1, [loc1])
+      (typ1, TypeAnnotation.const_nullable false origin1, [loc1])
       loc1
   in
   (* check if there are errors in exp1 *)
@@ -461,7 +458,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
     ->
       TypeState.add_id id
-        (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New, [loc])
+        (typ, TypeAnnotation.const_nullable false TypeOrigin.New, [loc])
         typestate
       (* new never returns null *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
@@ -475,7 +472,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let _, ta, _ =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
           typestate array_exp
-          (t, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
+          (t, TypeAnnotation.const_nullable false TypeOrigin.ONone, [loc])
           loc
       in
       if checks.eradicate then
@@ -484,9 +481,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           (Typ.Fieldname.Java.from_string "length")
           ta loc false ;
       TypeState.add_id id
-        ( Typ.mk (Tint Typ.IInt)
-        , TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New
-        , [loc] )
+        (Typ.mk (Tint Typ.IInt), TypeAnnotation.const_nullable false TypeOrigin.New, [loc])
         typestate
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
@@ -550,7 +545,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | Some (t, ta, _) ->
               let should_report =
                 Config.eradicate_condition_redundant
-                && (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta))
+                && (not (TypeAnnotation.is_nullable ta))
                 && not (TypeAnnotation.origin_is_fun_library ta)
               in
               ( if checks.eradicate && should_report then
@@ -560,7 +555,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                      (true, EradicateChecks.explain_expr tenv node cond, false))
                   (Some instr_ref) loc curr_pdesc ) ;
               TypeState.add pvar
-                (t, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
+                (t, TypeAnnotation.const_nullable false TypeOrigin.ONone, [loc])
                 typestate''
           | None ->
               typestate'
@@ -592,18 +587,20 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       (* Handle Preconditions.checkState for &&-separated conditions x!=null. *)
       let do_preconditions_check_state typestate' =
-        let handle_pvar ann b typestate1 pvar =
+        let handle_pvar b typestate1 pvar =
           (* handle the annotation flag for pvar *)
           match TypeState.lookup_pvar pvar typestate1 with
           | Some (t, _, _) ->
-              TypeState.add pvar (t, TypeAnnotation.const ann b TypeOrigin.ONone, [loc]) typestate1
+              TypeState.add pvar
+                (t, TypeAnnotation.const_nullable b TypeOrigin.ONone, [loc])
+                typestate1
           | None ->
               typestate1
         in
         let res_typestate = ref typestate' in
-        let set_flag pvar ann b =
+        let set_nullable_flag pvar b =
           (* set the annotation flag for pvar *)
-          res_typestate := pvar_apply loc (handle_pvar ann b) !res_typestate pvar
+          res_typestate := pvar_apply loc (handle_pvar b) !res_typestate pvar
         in
         let handle_negated_condition cond_node =
           let do_instr instr =
@@ -611,7 +608,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
               match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
               | Exp.Lvar pvar', _ ->
-                  set_flag pvar' AnnotatedSignature.Nullable false
+                  set_nullable_flag pvar' false
               | _ ->
                   ()
             in
@@ -627,13 +624,6 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           in
           Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node)
         in
-        let handle_optional_isPresent node' e =
-          match convert_complex_exp_to_pvar node' false e typestate' loc with
-          | Exp.Lvar pvar', _ ->
-              set_flag pvar' AnnotatedSignature.Present true
-          | _ ->
-              ()
-        in
         match call_params with
         | ((_, Exp.Lvar pvar), _) :: _ -> (
             (* temporary variable for the value of the boolean condition *)
@@ -647,19 +637,6 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                   (Procdesc.Node.get_preds boolean_assignment_node) ;
                 !res_typestate
             | None ->
-                ( match Errdesc.find_program_variable_assignment curr_node pvar with
-                | None ->
-                    ()
-                | Some (node', id) ->
-                    let () =
-                      match Errdesc.find_normal_variable_funcall node' id with
-                      | Some (Exp.Const (Const.Cfun pn), [e], _, _)
-                        when ComplexExpressions.procname_optional_isPresent pn ->
-                          handle_optional_isPresent node' e
-                      | _ ->
-                          ()
-                    in
-                    () ) ;
                 !res_typestate )
         | _ ->
             typestate'
@@ -712,14 +689,14 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           let _, ta2, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
-              (t2, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [])
+              (t2, TypeAnnotation.const_nullable false TypeOrigin.ONone, [])
               loc
           in
           let formal = (s1, ta1, t1) in
           let actual = (orig_e2, ta2) in
           let num = i + 1 in
           let formal_is_propagates_nullable = Annotations.ia_is_propagates_nullable ia1 in
-          let actual_is_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable ta2 in
+          let actual_is_nullable = TypeAnnotation.is_nullable ta2 in
           let propagates_nullable = formal_is_propagates_nullable && actual_is_nullable in
           EradicateChecks.{num; formal; actual; propagates_nullable}
         in
@@ -733,14 +710,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                 let resolved_ret' =
                   let ret_ta, ret_typ = resolved_ret in
                   let ret_ta' =
-                    let actual_nullable =
-                      TypeAnnotation.get_value AnnotatedSignature.Nullable actual_ta
-                    in
-                    let old_nullable =
-                      TypeAnnotation.get_value AnnotatedSignature.Nullable ret_ta
-                    in
-                    let new_nullable = old_nullable || actual_nullable in
-                    TypeAnnotation.set_value AnnotatedSignature.Nullable new_nullable ret_ta
+                    let is_actual_nullable = TypeAnnotation.is_nullable actual_ta in
+                    let is_old_nullable = TypeAnnotation.is_nullable ret_ta in
+                    let is_new_nullable = is_old_nullable || is_actual_nullable in
+                    TypeAnnotation.set_nullable is_new_nullable ret_ta
                   in
                   (ret_ta', ret_typ)
                 in
@@ -834,10 +807,6 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let from_instanceof e : Exp.t option =
           from_call ComplexExpressions.procname_instanceof e
         in
-        (* check if the expression is coming from Optional.isPresent *)
-        let from_optional_isPresent e : Exp.t option =
-          from_call ComplexExpressions.procname_optional_isPresent e
-        in
         (* check if the expression is coming from a procedure returning false on null *)
         let from_is_false_on_null e : Exp.t option =
           from_call (ComplexExpressions.procname_is_false_on_null tenv) e
@@ -882,13 +851,13 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | None ->
               (typestate, e, EradicateChecks.From_condition)
         in
-        let set_flag e' ann b typestate2 =
+        let set_nullable_flag e' b typestate2 =
           (* add constraint on e' for annotation ann *)
           let handle_pvar typestate' pvar =
             match TypeState.lookup_pvar pvar typestate' with
             | Some (t, ta1, locs) ->
-                if TypeAnnotation.get_value ann ta1 <> b then
-                  let ta2 = TypeAnnotation.set_value ann b ta1 in
+                if TypeAnnotation.is_nullable ta1 <> b then
+                  let ta2 = TypeAnnotation.set_nullable b ta1 in
                   TypeState.add pvar (t, ta2, locs) typestate'
                 else typestate'
             | None ->
@@ -922,8 +891,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             match from_call with
             | EradicateChecks.From_is_true_on_null ->
                 (* if f returns true on null, then false branch implies != null *)
-                if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
-                  set_flag e' AnnotatedSignature.Nullable false typestate2
+                if TypeAnnotation.is_nullable ta then set_nullable_flag e' false typestate2
                 else typestate2
             | _ ->
                 typestate2 )
@@ -937,16 +905,12 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                   (* (e1 instanceof C) implies (e1 != null) *)
                   (typestate, e1, EradicateChecks.From_instanceof)
               | None -> (
-                match from_optional_isPresent e with
+                match from_is_false_on_null e with
                 | Some e1 ->
-                    (typestate, e1, EradicateChecks.From_optional_isPresent)
-                | None -> (
-                  match from_is_false_on_null e with
-                  | Some e1 ->
-                      (typestate, e1, EradicateChecks.From_is_false_on_null)
-                  | None ->
-                      if Option.is_some (from_containsKey e) then handle_containsKey e
-                      else (typestate, e, EradicateChecks.From_condition) ) )
+                    (typestate, e1, EradicateChecks.From_is_false_on_null)
+                | None ->
+                    if Option.is_some (from_containsKey e) then handle_containsKey e
+                    else (typestate, e, EradicateChecks.From_condition) )
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let typ, ta, _ =
@@ -956,18 +920,13 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc node e' typ ta
                 true_branch from_call idenv linereader loc instr_ref ;
             match from_call with
-            | EradicateChecks.From_optional_isPresent ->
-                if not (TypeAnnotation.get_value AnnotatedSignature.Present ta) then
-                  set_flag e' AnnotatedSignature.Present true typestate2
-                else typestate2
             | EradicateChecks.From_is_true_on_null ->
                 typestate2
             | EradicateChecks.From_condition
             | EradicateChecks.From_containsKey
             | EradicateChecks.From_instanceof
             | EradicateChecks.From_is_false_on_null ->
-                if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
-                  set_flag e' AnnotatedSignature.Nullable false typestate2
+                if TypeAnnotation.is_nullable ta then set_nullable_flag e' false typestate2
                 else typestate2 )
         | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
             check_condition node' (Exp.BinOp (Binop.Ne, e1, e2))

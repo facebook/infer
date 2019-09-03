@@ -39,7 +39,7 @@ let is_virtual = function (p, _, _) :: _ when Mangled.is_this p -> true | _ -> f
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname ta loc :
     unit =
-  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
+  if TypeAnnotation.is_nullable ta then
     let origin_descr = TypeAnnotation.descr_origin ta in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
@@ -49,7 +49,7 @@ let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref e
 (** Check an access to an array *)
 let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref array_exp fname ta
     loc indexed =
-  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
+  if TypeAnnotation.is_nullable ta then
     let origin_descr = TypeAnnotation.descr_origin ta in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
@@ -62,7 +62,6 @@ type from_call =
   | From_instanceof  (** x instanceof C *)
   | From_is_false_on_null  (** returns false on null *)
   | From_is_true_on_null  (** returns true on null *)
-  | From_optional_isPresent  (** x.isPresent *)
   | From_containsKey  (** x.containsKey *)
 [@@deriving compare]
 
@@ -117,7 +116,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
   let is_temp = Idenv.exp_is_temp idenv e in
   let nonnull = is_fun_nonnull ta in
   let should_report =
-    (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta))
+    (not (TypeAnnotation.is_nullable ta))
     && (Config.eradicate_condition_redundant || nonnull)
     && true_branch && ((not is_temp) || nonnull) && PatternMatch.type_is_class typ
     && (not (from_try_with_resources ()))
@@ -147,12 +146,12 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
   let t_lhs, ta_lhs, _ =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
-      (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
+      (typ, TypeAnnotation.const_nullable false TypeOrigin.ONone, [loc])
       loc
   in
   let _, ta_rhs, _ =
     typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
-      (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
+      (typ, TypeAnnotation.const_nullable false TypeOrigin.ONone, [loc])
       loc
   in
   let field_is_injector_readwrite () =
@@ -168,18 +167,11 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
   in
   let should_report_nullable =
     (not (AndroidFramework.is_destroy_method curr_pname))
-    && (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs))
-    && TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs
-    && PatternMatch.type_is_class t_lhs
+    && (not (TypeAnnotation.is_nullable ta_lhs))
+    && TypeAnnotation.is_nullable ta_rhs && PatternMatch.type_is_class t_lhs
     && (not (Typ.Fieldname.Java.is_outer_instance fname))
     && (not (field_is_injector_readwrite ()))
     && not (field_is_in_cleanup_context ())
-  in
-  let should_report_absent =
-    Config.eradicate_optional_present
-    && TypeAnnotation.get_value AnnotatedSignature.Present ta_lhs
-    && (not (TypeAnnotation.get_value AnnotatedSignature.Present ta_rhs))
-    && not (Typ.Fieldname.Java.is_outer_instance fname)
   in
   let should_report_mutable =
     let field_is_mutable () =
@@ -194,13 +186,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
            true )
     && not (field_is_mutable ())
   in
-  ( if should_report_nullable || should_report_absent then
-    let ann =
-      if should_report_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
-    in
+  ( if should_report_nullable then
     let origin_descr = TypeAnnotation.descr_origin ta_rhs in
     report_error tenv find_canonical_duplicate
-      (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr))
+      (TypeErr.Field_annotation_inconsistent (fname, origin_descr))
       (Some instr_ref) loc curr_pdesc ) ;
   if should_report_mutable then
     let origin_descr = TypeAnnotation.descr_origin ta_rhs in
@@ -253,7 +242,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
             in
             let may_be_nullable_in_final_typestate () =
               final_type_annotation_with true (Lazy.force final_constructor_typestates) (fun ta ->
-                  TypeAnnotation.get_value AnnotatedSignature.Nullable ta )
+                  TypeAnnotation.is_nullable ta )
             in
             let should_check_field_initialization =
               let in_current_class =
@@ -300,7 +289,6 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
          ~f:(fun (_, ia, _) -> Annotations.ia_is_propagates_nullable ia)
          annotated_signature.params
   in
-  let ret_annotated_present = Annotations.ia_is_present ret_ia in
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
@@ -311,25 +299,18 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
              false ->
       ()
   | Some (_, final_ta, _) ->
-      let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
-      let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
+      let is_final_nullable = TypeAnnotation.is_nullable final_ta in
       let origin_descr = TypeAnnotation.descr_origin final_ta in
       let return_not_nullable =
-        final_nullable && (not ret_annotated_nullable) && not ret_implicitly_nullable
-      in
-      let return_value_not_present =
-        Config.eradicate_optional_present && (not final_present) && ret_annotated_present
+        is_final_nullable && (not ret_annotated_nullable) && not ret_implicitly_nullable
       in
       let return_over_annotated =
-        (not final_nullable) && ret_annotated_nullable && Config.eradicate_return_over_annotated
+        (not is_final_nullable) && ret_annotated_nullable && Config.eradicate_return_over_annotated
       in
-      ( if return_not_nullable || return_value_not_present then
-        let ann =
-          if return_not_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
-        in
+      if return_not_nullable then
         report_error tenv find_canonical_duplicate
-          (TypeErr.Return_annotation_inconsistent (ann, curr_pname, origin_descr))
-          None loc curr_pdesc ) ;
+          (TypeErr.Return_annotation_inconsistent (curr_pname, origin_descr))
+          None loc curr_pdesc ;
       if return_over_annotated then
         report_error tenv find_canonical_duplicate (TypeErr.Return_over_annotated curr_pname) None
           loc curr_pdesc
@@ -344,23 +325,15 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
   | ((original_this_e, this_e), typ) :: _ ->
       let _, this_ta, _ =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
-          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [])
+          (typ, TypeAnnotation.const_nullable false TypeOrigin.ONone, [])
           loc
       in
-      let null_method_call = TypeAnnotation.get_value AnnotatedSignature.Nullable this_ta in
-      let optional_get_on_absent =
-        Config.eradicate_optional_present
-        && Models.is_optional_get callee_pname
-        && not (TypeAnnotation.get_value AnnotatedSignature.Present this_ta)
-      in
-      if null_method_call || optional_get_on_absent then
-        let ann =
-          if null_method_call then AnnotatedSignature.Nullable else AnnotatedSignature.Present
-        in
+      let null_method_call = TypeAnnotation.is_nullable this_ta in
+      if null_method_call then
         let descr = explain_expr tenv node original_this_e in
         let origin_descr = TypeAnnotation.descr_origin this_ta in
         report_error tenv find_canonical_duplicate
-          (TypeErr.Call_receiver_annotation_inconsistent (ann, descr, callee_pname, origin_descr))
+          (TypeErr.Call_receiver_annotation_inconsistent (descr, callee_pname, origin_descr))
           (Some instr_ref) loc curr_pdesc
   | [] ->
       ()
@@ -376,8 +349,9 @@ type resolved_param =
 let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes
     resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
-  let check {num= param_num; formal= s1, ta1, t1; actual= orig_e2, ta2} =
-    let report ann =
+  let check {num= param_num; formal= s1, annotation_formal, t1; actual= orig_e2, annotation_actual}
+      =
+    let report () =
       let description =
         match explain_expr tenv node orig_e2 with
         | Some descr ->
@@ -385,27 +359,17 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
         | None ->
             "formal parameter " ^ Mangled.to_string s1
       in
-      let origin_descr = TypeAnnotation.descr_origin ta2 in
+      let origin_descr = TypeAnnotation.descr_origin annotation_actual in
       let callee_loc = callee_attributes.ProcAttributes.loc in
       report_error tenv find_canonical_duplicate
         (TypeErr.Parameter_annotation_inconsistent
-           (ann, description, param_num, callee_pname, callee_loc, origin_descr))
+           (description, param_num, callee_pname, callee_loc, origin_descr))
         (Some instr_ref) loc curr_pdesc
     in
-    let check_ann ann =
-      let b1 = TypeAnnotation.get_value ann ta1 in
-      let b2 = TypeAnnotation.get_value ann ta2 in
-      match (ann, b1, b2) with
-      | AnnotatedSignature.Nullable, false, true ->
-          report ann
-      | AnnotatedSignature.Present, true, false ->
-          report ann
-      | _ ->
-          ()
-    in
-    if PatternMatch.type_is_class t1 then (
-      check_ann AnnotatedSignature.Nullable ;
-      if Config.eradicate_optional_present then check_ann AnnotatedSignature.Present )
+    if PatternMatch.type_is_class t1 then
+      let is_nullable_formal = TypeAnnotation.is_nullable annotation_formal in
+      let is_nullable_actual = TypeAnnotation.is_nullable annotation_actual in
+      if (not is_nullable_formal) && is_nullable_actual then report ()
   in
   let should_check_parameters =
     match callee_pname with

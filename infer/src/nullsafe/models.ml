@@ -38,13 +38,7 @@ let get_modelled_annotated_signature proc_attributes =
       AnnotatedSignature.mark proc_name AnnotatedSignature.Nullable ann_sig mark
     with Caml.Not_found -> ann_sig
   in
-  let lookup_models_present ann_sig =
-    try
-      let mark = Hashtbl.find annotated_table_present proc_id in
-      AnnotatedSignature.mark proc_name AnnotatedSignature.Present ann_sig mark
-    with Caml.Not_found -> ann_sig
-  in
-  annotated_signature |> lookup_models_nullable |> lookup_models_present
+  annotated_signature |> lookup_models_nullable
 
 
 (** Return true when the procedure has been modelled for nullable. *)
@@ -79,12 +73,6 @@ let is_check_argument proc_name =
 
 (** Check if the procedure does not return. *)
 let is_noreturn proc_name = table_has_procedure noreturn_table proc_name
-
-(** Check if the procedure is Optional.get(). *)
-let is_optional_get proc_name = table_has_procedure optional_get_table proc_name
-
-(** Check if the procedure is Optional.isPresent(). *)
-let is_optional_isPresent proc_name = table_has_procedure optional_isPresent_table proc_name
 
 (** Check if the procedure returns true on null. *)
 let is_true_on_null proc_name = table_has_procedure true_on_null_table proc_name

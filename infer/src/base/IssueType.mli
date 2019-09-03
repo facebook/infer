@@ -32,7 +32,7 @@ val register_from_string :
           `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues
           from the config, when we don't know all params yet.
           Thus, the human-readable description can be updated when we encounter the
-          definition of the issue type, eg in AL. 
+          definition of the issue type, eg in AL.
   *)
 
 val set_enabled : t -> bool -> unit
@@ -152,8 +152,6 @@ val eradicate_field_not_nullable : t
 
 val eradicate_field_over_annotated : t
 
-val eradicate_field_value_absent : t
-
 val eradicate_inconsistent_subclass_parameter_annotation : t
 
 val eradicate_inconsistent_subclass_return_annotation : t
@@ -162,15 +160,9 @@ val eradicate_nullable_dereference : t
 
 val eradicate_parameter_not_nullable : t
 
-val eradicate_parameter_value_absent : t
-
 val eradicate_return_not_nullable : t
 
 val eradicate_return_over_annotated : t
-
-val eradicate_return_value_not_present : t
-
-val eradicate_value_not_present : t
 
 val expensive_cost_call : kind:CostKind.t -> is_on_cold_start:bool -> t
 

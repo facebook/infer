@@ -8,7 +8,6 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = \
   --eradicate-only \
   --eradicate-return-over-annotated \
-  --eradicate-optional-present \
   --eradicate-condition-redundant \
   --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests

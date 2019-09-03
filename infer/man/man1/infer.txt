@@ -379,18 +379,14 @@ OPTIONS
              ERADICATE_FIELD_NOT_MUTABLE (enabled by default),
              ERADICATE_FIELD_NOT_NULLABLE (enabled by default),
              ERADICATE_FIELD_OVER_ANNOTATED (enabled by default),
-             ERADICATE_FIELD_VALUE_ABSENT (enabled by default),
              ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION (enabled
            by default),
              ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION (enabled by
            default),
              ERADICATE_NULLABLE_DEREFERENCE (enabled by default),
              ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
-             ERADICATE_PARAMETER_VALUE_ABSENT (enabled by default),
              ERADICATE_RETURN_NOT_NULLABLE (enabled by default),
              ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
-             ERADICATE_RETURN_VALUE_NOT_PRESENT (enabled by default),
-             ERADICATE_VALUE_NOT_PRESENT (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_COLD_START (enabled by
            default),

@@ -14,8 +14,6 @@ val this_file : string
 
 val annotated_table_nullable : model_table_t
 
-val annotated_table_present : model_table_t
-
 val check_not_null_table : model_table_t
 
 val check_not_null_parameter_table : (string, int) Caml.Hashtbl.t
@@ -27,10 +25,6 @@ val check_argument_table : model_table_t
 val containsKey_table : model_table_t
 
 val mapPut_table : model_table_t
-
-val optional_get_table : model_table_t
-
-val optional_isPresent_table : model_table_t
 
 val noreturn_table : model_table_t
 

@@ -11,15 +11,9 @@ module L = Logging
 type t = {ret: Annot.Item.t * Typ.t; params: (Mangled.t * Annot.Item.t * Typ.t) list}
 [@@deriving compare]
 
-type annotation = Nullable | Present [@@deriving compare]
+type annotation = Nullable [@@deriving compare]
 
-let ia_is ann ia =
-  match ann with
-  | Nullable ->
-      Annotations.ia_is_nullable ia
-  | Present ->
-      Annotations.ia_is_present ia
-
+let ia_is ann ia = match ann with Nullable -> Annotations.ia_is_nullable ia
 
 let get proc_attributes : t =
   let method_annotation = proc_attributes.ProcAttributes.method_annotation in
@@ -64,12 +58,7 @@ let pp proc_name fmt annotated_signature =
 
 let mk_ann_str s = {Annot.class_name= s; parameters= []}
 
-let mk_ann = function
-  | Nullable ->
-      mk_ann_str Annotations.nullable
-  | Present ->
-      mk_ann_str Annotations.present
-
+let mk_ann = function Nullable -> mk_ann_str Annotations.nullable
 
 let mk_ia ann ia = if ia_is ann ia then ia else (mk_ann ann, true) :: ia
 

@@ -25,8 +25,6 @@ val nonnull : string
 
 val performance_critical : string
 
-val present : string
-
 val prop : string
 
 val for_non_ui_thread : string
@@ -82,8 +80,6 @@ val ia_is_mutable : Annot.Item.t -> bool
 val ia_is_nonnull : Annot.Item.t -> bool
 
 val ia_is_nullable : Annot.Item.t -> bool
-
-val ia_is_present : Annot.Item.t -> bool
 
 val ia_is_true_on_null : Annot.Item.t -> bool
 
