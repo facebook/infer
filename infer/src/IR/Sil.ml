@@ -40,24 +40,17 @@ type instr =
   (* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire
      `Load` instruction may be eliminated by copy-propagation. *)
-  | Load of Ident.t * Exp.t * Typ.t * Location.t
+  | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
-
-          [x = *lexp:typ] where
-
-          - [lexp] is an expression denoting a heap address
-
-          - [typ] is the root type of [lexp]. *)
-  | Store of Exp.t * Typ.t * Exp.t * Location.t
+      [x = *exp:root_typ] where
+        [exp] is an expression denoting a heap address
+        [root_typ] is the root type of [exp]. *)
+  | Store of {e1: Exp.t; root_typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
-
-          [*lexp1:typ = exp2] where
-
-          - [lexp1] is an expression denoting a heap address
-
-          - [typ] is the root type of [lexp1]
-
-          - [exp2] is the expression whose value is stored. *)
+      [*exp1:root_typ = exp2] where
+        [exp1] is an expression denoting a heap address
+        [root_typ] is the root type of [exp1]
+        [exp2] is the expression whose value is stored. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
@@ -350,7 +343,7 @@ let location_of_instr_metadata = function
 
 (** Get the location of the instruction *)
 let location_of_instr = function
-  | Load (_, _, _, loc) | Store (_, _, _, loc) | Prune (_, loc, _, _) | Call (_, _, _, loc, _) ->
+  | Load {loc} | Store {loc} | Prune (_, loc, _, _) | Call (_, _, _, loc, _) ->
       loc
   | Metadata metadata ->
       location_of_instr_metadata metadata
@@ -371,9 +364,9 @@ let exps_of_instr_metadata = function
 
 (** get the expressions occurring in the instruction *)
 let exps_of_instr = function
-  | Load (id, e, _, _) ->
+  | Load {id; e} ->
       [Exp.Var id; e]
-  | Store (e1, _, e2, _) ->
+  | Store {e1; e2} ->
       [e1; e2]
   | Prune (cond, _, _, _) ->
       [cond]
@@ -419,11 +412,11 @@ let pp_instr ~print_types pe0 f instr =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
   color_wrapper pe0 f instr ~f:(fun pe f instr ->
       match instr with
-      | Load (id, e, t, loc) ->
+      | Load {id; e; root_typ; loc} ->
           F.fprintf f "%a=*%a:%a [%a]" Ident.pp id (pp_exp_printenv ~print_types pe) e (pp_typ pe0)
-            t Location.pp loc
-      | Store (e1, t, e2, loc) ->
-          F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) t
+            root_typ Location.pp loc
+      | Store {e1; root_typ; e2; loc} ->
+          F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) root_typ
             (pp_exp_printenv ~print_types pe) e2 Location.pp loc
       | Prune (cond, loc, true_branch, _) ->
           F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv ~print_types pe) cond true_branch
@@ -1274,16 +1267,16 @@ let instr_sub_ids ~sub_id_binders f instr =
     match exp_sub_ids f (Var id) with Var id' when not (Ident.equal id id') -> id' | _ -> id
   in
   match instr with
-  | Load (id, rhs_exp, typ, loc) ->
+  | Load {id; e= rhs_exp; root_typ; loc} ->
       let id' = if sub_id_binders then sub_id id else id in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
-      else Load (id', rhs_exp', typ, loc)
-  | Store (lhs_exp, typ, rhs_exp, loc) ->
+      else Load {id= id'; e= rhs_exp'; root_typ; loc}
+  | Store {e1= lhs_exp; root_typ; e2= rhs_exp; loc} ->
       let lhs_exp' = exp_sub_ids f lhs_exp in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp then instr
-      else Store (lhs_exp', typ, rhs_exp', loc)
+      else Store {e1= lhs_exp'; root_typ; e2= rhs_exp'; loc}
   | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
       let ret_id' =
         if sub_id_binders then

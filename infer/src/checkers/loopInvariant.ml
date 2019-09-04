@@ -52,9 +52,9 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
   | IContainer.Singleton node ->
       Procdesc.Node.get_instrs node
       |> Instrs.exists ~f:(function
-           | Sil.Load (id, exp_rhs, _, _) when equals_var id && is_exp_invariant exp_rhs ->
+           | Sil.Load {id; e= exp_rhs} when equals_var id && is_exp_invariant exp_rhs ->
                true
-           | Sil.Store (exp_lhs, _, exp_rhs, _)
+           | Sil.Store {e1= exp_lhs; e2= exp_rhs}
              when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
                true
            | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
@@ -82,12 +82,12 @@ let get_vars_in_loop loop_nodes =
       |> Instrs.fold
            ~f:(fun acc instr ->
              match instr with
-             | Sil.Load (id, exp_rhs, _, _) ->
+             | Sil.Load {id; e= exp_rhs} ->
                  Var.get_all_vars_in_exp exp_rhs
                  |> Sequence.fold
                       ~init:(VarsInLoop.add (Var.of_id id) acc)
                       ~f:(fun acc var -> VarsInLoop.add var acc)
-             | Sil.Store (exp_lhs, _, exp_rhs, _) ->
+             | Sil.Store {e1= exp_lhs; e2= exp_rhs} ->
                  Var.get_all_vars_in_exp exp_rhs
                  |> Sequence.append (Var.get_all_vars_in_exp exp_lhs)
                  |> Sequence.fold ~init:acc ~f:(fun acc var -> VarsInLoop.add var acc)
@@ -133,10 +133,10 @@ let get_ptr_vars_in_defn_path node loop_head var =
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
              match instr with
-             | Sil.Load (id, exp_rhs, typ, _)
+             | Sil.Load {id; e= exp_rhs; root_typ= typ}
                when Var.equal var (Var.of_id id) && is_non_primitive typ ->
                  invalidate_exp exp_rhs acc
-             | Sil.Store (Exp.Lvar pvar, typ, exp_rhs, _)
+             | Sil.Store {e1= Exp.Lvar pvar; root_typ= typ; e2= exp_rhs}
                when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
                  invalidate_exp exp_rhs acc
              | _ ->

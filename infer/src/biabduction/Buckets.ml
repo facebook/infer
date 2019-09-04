@@ -75,7 +75,7 @@ let check_access access_opt de_opt =
           List.exists ~f:(fun (formal_name, _) -> Mangled.equal name formal_name) formals
       in
       let process_formal_letref = function
-        | Sil.Load (id, Exp.Lvar pvar, _, _) ->
+        | Sil.Load {id; e= Exp.Lvar pvar} ->
             let is_java_this = Language.curr_language_is Java && Pvar.is_this pvar in
             if (not is_java_this) && is_formal pvar then Some id else None
         | _ ->
@@ -113,7 +113,7 @@ let check_access access_opt de_opt =
       let filter = function
         | Sil.Call _ ->
             true
-        | Sil.Store (_, _, e, _) ->
+        | Sil.Store {e2= e} ->
             exp_is_null e
         | _ ->
             false

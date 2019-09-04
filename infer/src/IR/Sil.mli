@@ -38,16 +38,16 @@ type instr =
   (* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire
      `Load` instruction may be eliminated by copy-propagation. *)
-  | Load of Ident.t * Exp.t * Typ.t * Location.t
+  | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
-      [x = *lexp:typ] where
-        [lexp] is an expression denoting a heap address
-        [typ] is the root type of [lexp]. *)
-  | Store of Exp.t * Typ.t * Exp.t * Location.t
+      [x = *exp:root_typ] where
+        [exp] is an expression denoting a heap address
+        [root_typ] is the root type of [exp]. *)
+  | Store of {e1: Exp.t; root_typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
-      [*lexp1:typ = exp2] where
-        [lexp1] is an expression denoting a heap address
-        [typ] is the root type of [lexp1]
+      [*exp1:root_typ = exp2] where
+        [exp1] is an expression denoting a heap address
+        [root_typ] is the root type of [exp1]
         [exp2] is the expression whose value is stored. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)

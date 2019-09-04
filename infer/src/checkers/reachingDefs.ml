@@ -37,16 +37,16 @@ module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct
         astate
     in
     match instr with
-    | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
+    | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
-    | Sil.Load (id, _, _, _) | Sil.Call ((id, _), _, _, _, _) ->
+    | Sil.Load {id} | Sil.Call ((id, _), _, _, _, _) ->
         strong_update_def astate (Var.of_id id)
     (* only strong update for assigning to a pvar *)
-    | Sil.Store (Lvar pvar, _, _, _) ->
+    | Sil.Store {e1= Lvar pvar} ->
         strong_update_def astate (Var.of_pvar pvar)
     (* by default use weak update *)
-    | Sil.Store (exp_lhs, _, _, _) ->
+    | Sil.Store {e1= exp_lhs} ->
         let vars = Var.get_all_vars_in_exp exp_lhs in
         Sequence.fold ~init:astate ~f:weak_update_def vars
     | _ ->

@@ -162,7 +162,7 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
   let initializes_array instrs =
     instrs
     |> Instrs.find_map ~f:(function
-         | Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) when Pvar.equal ivar iv ->
+         | Sil.Store {e1= Exp.Lvar iv; e2= Exp.Var t2} when Pvar.equal ivar iv ->
              Some t2
          | _ ->
              None )
@@ -179,7 +179,7 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
     let nvar_type_name nvar =
       instrs
       |> Instrs.find_map ~f:(function
-           | Sil.Load (nv, e, t, _) when Ident.equal nv nvar ->
+           | Sil.Load {id= nv; e; root_typ= t} when Ident.equal nv nvar ->
                Some (e, t)
            | _ ->
                None )
@@ -192,10 +192,10 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
     let added_nvar array_nvar =
       instrs
       |> Instrs.find_map ~f:(function
-           | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _)
+           | Sil.Store {e1= Exp.Lindex (Exp.Var iv, _); e2= Exp.Var nvar}
              when Ident.equal iv array_nvar ->
                Some (nvar_type_name nvar)
-           | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _)
+           | Sil.Store {e1= Exp.Lindex (Exp.Var iv, _); e2= Exp.Const c}
              when Ident.equal iv array_nvar ->
                Some (Some (java_get_const_type_name c))
            | _ ->
@@ -205,7 +205,7 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
     let array_nvar =
       instrs
       |> Instrs.find_map ~f:(function
-           | Sil.Load (nv, Exp.Lvar iv, _, _) when Pvar.equal iv ivar ->
+           | Sil.Load {id= nv; e= Exp.Lvar iv} when Pvar.equal iv ivar ->
                Some nv
            | _ ->
                None )
@@ -291,7 +291,7 @@ let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) :
 (** Get the vararg values by looking for array assignments to the pvar. *)
 let java_get_vararg_values node pvar idenv =
   let values_of_instr acc = function
-    | Sil.Store (Exp.Lindex (array_exp, _), _, content_exp, _)
+    | Sil.Store {e1= Exp.Lindex (array_exp, _); e2= content_exp}
       when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
         (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
         content_exp :: acc
@@ -390,10 +390,10 @@ let lookup_attributes tenv proc_name =
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Store (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
+    | Sil.Store {e1= Exp.Lfield (Exp.Var lhs, fld, _); e2= rhs}
       when Exp.is_null_literal rhs && Ident.Set.mem lhs this_ids ->
         (Typ.Fieldname.Set.add fld nullified_flds, this_ids)
-    | Sil.Load (id, rhs, _, _) when Exp.is_this rhs ->
+    | Sil.Load {id; e= rhs} when Exp.is_this rhs ->
         (nullified_flds, Ident.Set.add id this_ids)
     | _ ->
         (nullified_flds, this_ids)

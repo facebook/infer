@@ -119,7 +119,9 @@ let pure_exp e : Exp.t * Sil.instr list =
   let pairs = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) es in
   let subst = List.map ~f:(function e, id -> (e, Exp.Var id)) pairs in
   let e' = Sil.exp_replace_exp subst e in
-  let mk_load (e, id) = Sil.Load (id, e, ToplUtils.any_type, sourcefile_location ()) in
+  let mk_load (e, id) =
+    Sil.Load {id; e; root_typ= ToplUtils.any_type; loc= sourcefile_location ()}
+  in
   let loads = List.map ~f:mk_load pairs in
   (e', loads)
 
@@ -166,8 +168,9 @@ let stmt_node instrs : node_generator =
 
 let sil_assign lhs rhs =
   let tempvar = Ident.create_fresh Ident.knormal in
-  [ Sil.Load (tempvar, rhs, ToplUtils.any_type, sourcefile_location ())
-  ; Sil.Store (lhs, ToplUtils.any_type, Exp.Var tempvar, sourcefile_location ()) ]
+  [ Sil.Load {id= tempvar; e= rhs; root_typ= ToplUtils.any_type; loc= sourcefile_location ()}
+  ; Sil.Store
+      {e1= lhs; root_typ= ToplUtils.any_type; e2= Exp.Var tempvar; loc= sourcefile_location ()} ]
 
 
 let assign lhs rhs : node_generator = stmt_node (sil_assign lhs rhs)
@@ -247,10 +250,10 @@ let generate_execute_state automaton proc_name =
       let arg_action i pattern = step (ToplUtils.static_var (ToplName.saved_arg i)) pattern in
       stmt_node
         [ Sil.Store
-            ( ToplUtils.static_var ToplName.state
-            , Typ.mk (Tint IInt)
-            , Exp.int (IntLit.of_int transition.target)
-            , sourcefile_location () ) ]
+            { e1= ToplUtils.static_var ToplName.state
+            ; root_typ= Typ.mk (Tint IInt)
+            ; e2= Exp.int (IntLit.of_int transition.target)
+            ; loc= sourcefile_location () } ]
       :: step (ToplUtils.static_var ToplName.retval) transition.label.ToplAst.return
       :: Option.value_map ~default:[] ~f:(List.mapi ~f:arg_action)
            transition.label.ToplAst.arguments

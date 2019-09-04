@@ -10,7 +10,7 @@ module CFG = ProcCfg.Normal
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 
 let find_loaded_pvar id = function
-  | Sil.Load (lhs_id, Exp.Lvar rhs_pvar, _, _) when Ident.equal lhs_id id ->
+  | Sil.Load {id= lhs_id; e= Exp.Lvar rhs_pvar} when Ident.equal lhs_id id ->
       Some rhs_pvar
   | _ ->
       None
@@ -38,7 +38,7 @@ let find_first_arg_pvar node ~fun_name ~class_name_f =
   if Instrs.count instrs >= 4 then
     let instr_arr = Instrs.get_underlying_not_reversed instrs in
     match instr_arr.(3) with
-    | Sil.Store (Exp.Lvar _, _, Exp.Var rhs_id, _) ->
+    | Sil.Store {e1= Exp.Lvar _; e2= Exp.Var rhs_id} ->
         find_first_arg_id ~fun_name ~class_name_f ~lhs_f:(Ident.equal rhs_id) instr_arr.(2)
         |> Option.bind ~f:(fun arg_id -> find_loaded_pvar arg_id instr_arr.(0))
     | _ ->

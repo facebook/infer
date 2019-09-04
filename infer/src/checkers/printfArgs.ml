@@ -127,7 +127,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
     match nvar with
     | Exp.Var nid ->
         Instrs.find_map instrs ~f:(function
-          | Sil.Load (id, Exp.Lvar iv, _, _) when Ident.equal id nid ->
+          | Sil.Load {id; e= Exp.Lvar iv} when Ident.equal id nid ->
               Some iv
           | _ ->
               None )

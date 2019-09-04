@@ -221,7 +221,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            let pvar = Pvar.mk formal procname in
            let id = Ident.create_fresh Ident.knormal in
            ( (Exp.Var id, typ) :: forwarded_params
-           , Sil.Load (id, Exp.Lvar pvar, typ, sil_loc) :: forwarded_init_exps ) )
+           , Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; loc= sil_loc} :: forwarded_init_exps )
+       )
 
 
   let create_call_instr trans_state (return_type : Typ.t) function_sil params_sil sil_loc
@@ -290,7 +291,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   (** Given a captured var, return the instruction to assign it to a temp *)
   let assign_captured_var loc (cvar, typ) =
     let id = Ident.create_fresh Ident.knormal in
-    let instr = Sil.Load (id, Exp.Lvar cvar, typ, loc) in
+    let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; loc} in
     ((Exp.Var id, cvar, typ), instr)
 
 
@@ -422,7 +423,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               |> mk_trans_result exp_typ
           | Tint _ | Tfloat _ | Tptr _ ->
               let zero_exp = Exp.zero_of_type_exn typ in
-              let instrs = [Sil.Store (exp, typ, zero_exp, sil_loc)] in
+              let instrs = [Sil.Store {e1= exp; root_typ= typ; e2= zero_exp; loc= sil_loc}] in
               mk_trans_result (exp, typ) {empty_control with instrs}
           | Tfun _ | Tvoid | Tarray _ | TVar _ ->
               CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -554,7 +555,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let exp, deref_instrs =
       if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
-        let deref_instr = Sil.Load (id, field_exp, field_typ, sil_loc) in
+        let deref_instr = Sil.Load {id; e= field_exp; root_typ= field_typ; loc= sil_loc} in
         (Exp.Var id, [deref_instr])
       else (field_exp, [])
     in
@@ -604,7 +605,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              calling a method with null *)
           when decl_kind <> `CXXConstructor ->
             let no_id = Ident.create_none () in
-            let extra_instrs = [Sil.Load (no_id, exp, typ, sil_loc)] in
+            let extra_instrs = [Sil.Load {id= no_id; e= exp; root_typ= typ; loc= sil_loc}] in
             (return, extra_instrs)
         | MemberOrIvar {return= (_, {Typ.desc= Tptr _}) as return} ->
             (return, [])
@@ -972,7 +973,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 (* assignment.  *)
                 (* As no node is created here ids are passed to the parent *)
                 let id = Ident.create_fresh Ident.knormal in
-                let res_instr = Sil.Load (id, exp1, typ1, sil_loc) in
+                let res_instr = Sil.Load {id; e= exp1; root_typ= typ1; loc= sil_loc} in
                 ([res_instr], Exp.Var id)
               else ([], exp_op)
             in
@@ -1503,7 +1504,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             e'
       in
       let temp_var = Exp.Lvar pvar in
-      let set_temp_var = [Sil.Store (temp_var, var_typ, e', sil_loc)] in
+      let set_temp_var = [Sil.Store {e1= temp_var; root_typ= var_typ; e2= e'; loc= sil_loc}] in
       let temp_return = (temp_var, var_typ) in
       let tmp_var_res_trans =
         mk_trans_result temp_return {empty_control with instrs= set_temp_var}
@@ -1552,7 +1553,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           do_branch false exp2 var_typ res_trans_cond.control.leaf_nodes join_node pvar
         in
         let id = Ident.create_fresh Ident.knormal in
-        let instrs = [Sil.Load (id, Exp.Lvar pvar, var_typ, sil_loc)] in
+        let instrs = [Sil.Load {id; e= Exp.Lvar pvar; root_typ= var_typ; loc= sil_loc}] in
         mk_trans_result (Exp.Var id, typ)
           { root_nodes= res_trans_cond.control.root_nodes
           ; leaf_nodes= [join_node]
@@ -2320,7 +2321,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           then None
           else
             let sil_e1', ie_typ = res_trans_ie.return in
-            Some {empty_control with instrs= [Sil.Store (var_exp, ie_typ, sil_e1', sil_loc)]}
+            Some
+              { empty_control with
+                instrs= [Sil.Store {e1= var_exp; root_typ= ie_typ; e2= sil_e1'; loc= sil_loc}] }
         in
         let pre_init_opt =
           match var_exp with
@@ -2612,7 +2615,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let name = CFrontend_config.return_param in
                 let pvar = Pvar.mk (Mangled.from_string name) procname in
                 let id = Ident.create_fresh Ident.knormal in
-                let instr = Sil.Load (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
+                let instr =
+                  Sil.Load {id; e= Exp.Lvar pvar; root_typ= ret_param_typ; loc= sil_loc}
+                in
                 let ret_typ =
                   match ret_param_typ.desc with Typ.Tptr (t, _) -> t | _ -> assert false
                 in
@@ -2628,7 +2633,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
             else
               let sil_expr, _ = res_trans_stmt.return in
-              [Sil.Store (ret_exp, ret_type, sil_expr, sil_loc)]
+              [Sil.Store {e1= ret_exp; root_typ= ret_type; e2= sil_expr; loc= sil_loc}]
           in
           let instrs = var_instrs @ res_trans_stmt.control.instrs @ ret_instrs in
           let ret_node = mk_ret_node instrs in

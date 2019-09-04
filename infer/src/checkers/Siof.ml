@@ -139,7 +139,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr astate {ProcData.summary} _ (instr : Sil.instr) =
     match instr with
-    | Store (Lvar global, Typ.{desc= Tptr _}, Lvar _, loc)
+    | Store {e1= Lvar global; root_typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}
       when (Option.equal Typ.Procname.equal)
              (Pvar.get_initializer_pname global)
              (Some (Summary.get_proc_name summary)) ->
@@ -151,8 +151,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            The heuristic is limited to the case where the access sets the global being initialized
            in the current variable initializer function. *)
         add_globals astate loc (GlobalVarSet.singleton global)
-    | Load (_, exp, _, loc) (* dereference -> add all the dangerous variables *)
-    | Store (_, _, exp, loc) (* except in the case above, consider all reads as dangerous *)
+    | Load {e= exp; loc} (* dereference -> add all the dangerous variables *)
+    | Store {e2= exp; loc} (* except in the case above, consider all reads as dangerous *)
     | Prune (exp, loc, _, _) ->
         get_globals summary exp |> add_globals astate loc
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->

@@ -180,10 +180,10 @@ module TransferFunctions = struct
    fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}}
        node instr ->
     match instr with
-    | Load (id, _, _, _) when Ident.is_none id ->
+    | Load {id} when Ident.is_none id ->
         mem
-    | Load (id, Exp.Lvar pvar, _, location) when Pvar.is_compile_constant pvar || Pvar.is_ice pvar
-      -> (
+    | Load {id; e= Exp.Lvar pvar; loc= location}
+      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar -> (
       match Pvar.get_initializer_pname pvar with
       | Some callee_pname -> (
         match get_proc_summary_and_formals callee_pname with
@@ -198,10 +198,10 @@ module TransferFunctions = struct
           L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
-    | Load (id, exp, typ, _) ->
+    | Load {id; e= exp; root_typ= typ} ->
         let represents_multiple_values = is_array_access_exp exp in
         BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
-    | Store (exp1, _, Const (Const.Cstr s), location) ->
+    | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
         let locs = Sem.eval_locs exp1 mem in
         let model_env =
           let pname = Summary.get_proc_name summary in
@@ -210,7 +210,7 @@ module TransferFunctions = struct
         in
         let do_alloc = not (Sem.is_stack_exp exp1 mem) in
         BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
-    | Store (exp1, typ, exp2, location) ->
+    | Store {e1= exp1; root_typ= typ; e2= exp2; loc= location} ->
         let locs = Sem.eval_locs exp1 mem in
         let v =
           Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs

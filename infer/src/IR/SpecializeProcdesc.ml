@@ -63,28 +63,31 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
   in
   let convert_instr = function
     | Sil.Load
-        ( id
-        , (Exp.Lvar origin_pvar as origin_exp)
-        , {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
-        , loc ) ->
+        { id
+        ; e= Exp.Lvar origin_pvar as origin_exp
+        ; root_typ= {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
+        ; loc } ->
         let specialized_typname =
           try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions
           with Caml.Not_found -> origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
-        Some (Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc))
-    | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc)
+        Some
+          (Sil.Load {id; e= convert_exp origin_exp; root_typ= mk_ptr_typ specialized_typname; loc})
+    | Sil.Load
+        {id; e= Exp.Var origin_id as origin_exp; root_typ= {Typ.desc= Tstruct _} as origin_typ; loc}
       ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
         in
-        Some (Sil.Load (id, convert_exp origin_exp, updated_typ, loc))
-    | Sil.Load (id, origin_exp, origin_typ, loc) ->
-        Some (Sil.Load (id, convert_exp origin_exp, origin_typ, loc))
-    | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; loc})
+    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; loc} ->
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; loc})
+    | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
-          Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
+          Sil.Store
+            {e1= convert_exp assignee_exp; root_typ= origin_typ; e2= convert_exp origin_exp; loc}
         in
         Some set_instr
     | Sil.Call
@@ -203,7 +206,9 @@ let with_block_args_instrs resolved_pdesc substitutions =
         List.map extra_formals ~f:(fun (var, typ) ->
             let id = Ident.create_fresh_specialized_with_blocks Ident.knormal in
             let pvar = Pvar.mk var resolved_pname in
-            (Var.of_id id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
+            ( Var.of_id id
+            , (Exp.Var id, pvar, typ)
+            , Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; loc} ) )
         |> List.unzip3
       in
       let remove_temps_instr = Sil.Metadata (ExitScope (dead_vars, loc)) in
@@ -215,24 +220,26 @@ let with_block_args_instrs resolved_pdesc substitutions =
       (call_instr :: instrs, id_map)
     in
     match instr with
-    | Sil.Load (id, Exp.Lvar block_param, _, _)
+    | Sil.Load {id; e= Exp.Lvar block_param}
       when Mangled.Map.mem (Pvar.get_name block_param) substitutions ->
         let id_map = Ident.Map.add id (Pvar.get_name block_param) id_map in
         (* we don't need the load the block param instruction anymore *)
         (instrs, id_map)
-    | Sil.Load (id, origin_exp, origin_typ, loc) ->
-        (Sil.Load (id, convert_exp origin_exp, origin_typ, loc) :: instrs, id_map)
-    | Sil.Store (assignee_exp, origin_typ, Exp.Var id, loc) when Ident.Map.mem id id_map ->
+    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; loc} ->
+        (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; loc} :: instrs, id_map)
+    | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= Exp.Var id; loc}
+      when Ident.Map.mem id id_map ->
         let block_param = Ident.Map.find id id_map in
         let block_name, id_exp_typs, load_instrs, remove_temps_instr =
           get_block_name_and_load_captured_vars_instrs block_param loc
         in
         let closure = Exp.Closure {name= block_name; captured_vars= id_exp_typs} in
-        let instr = Sil.Store (assignee_exp, origin_typ, closure, loc) in
+        let instr = Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= closure; loc} in
         ((remove_temps_instr :: instr :: load_instrs) @ instrs, id_map)
-    | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
+    | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
-          Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
+          Sil.Store
+            {e1= convert_exp assignee_exp; root_typ= origin_typ; e2= convert_exp origin_exp; loc}
         in
         (set_instr :: instrs, id_map)
     | Sil.Call (return_ids, Exp.Var id, origin_args, loc, call_flags) -> (

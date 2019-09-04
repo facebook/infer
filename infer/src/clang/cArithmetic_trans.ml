@@ -40,7 +40,8 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
           Binop.BXor
     in
     let id = Ident.create_fresh Ident.knormal in
-    [Sil.Load (id, e1, typ, loc); Sil.Store (e1, typ, Exp.BinOp (bop, Exp.Var id, e2), loc)]
+    [ Sil.Load {id; e= e1; root_typ= typ; loc}
+    ; Sil.Store {e1; root_typ= typ; e2= Exp.BinOp (bop, Exp.Var id, e2); loc} ]
   in
   (e1, instrs)
 
@@ -104,7 +105,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `LOr ->
       (binop_exp Binop.LOr, [])
   | `Assign ->
-      (e1, [Sil.Store (e1, typ, e2, loc)])
+      (e1, [Sil.Store {e1; root_typ= typ; e2; loc}])
   | `Cmp ->
       CFrontend_errors.unimplemented __POS__ source_range "C++20 spaceship operator <=>"
       (* C++20 spaceship operator <=>, TODO *)
@@ -128,30 +129,30 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   match uoi.Clang_ast_t.uoi_kind with
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Load (id, e, typ, loc) in
+      let instr1 = Sil.Load {id; e; root_typ= typ; loc} in
       let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ) in
       let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
-      (Exp.Var id, [instr1; Sil.Store (e, typ, e_plus_1, loc)])
+      (Exp.Var id, [instr1; Sil.Store {e1= e; root_typ= typ; e2= e_plus_1; loc}])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Load (id, e, typ, loc) in
+      let instr1 = Sil.Load {id; e; root_typ= typ; loc} in
       let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ) in
       let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_plus_1
       in
-      (exp, [instr1; Sil.Store (e, typ, e_plus_1, loc)])
+      (exp, [instr1; Sil.Store {e1= e; root_typ= typ; e2= e_plus_1; loc}])
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Load (id, e, typ, loc) in
+      let instr1 = Sil.Load {id; e; root_typ= typ; loc} in
       let bop =
         if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ)
       in
       let e_minus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
-      (Exp.Var id, [instr1; Sil.Store (e, typ, e_minus_1, loc)])
+      (Exp.Var id, [instr1; Sil.Store {e1= e; root_typ= typ; e2= e_minus_1; loc}])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Load (id, e, typ, loc) in
+      let instr1 = Sil.Load {id; e; root_typ= typ; loc} in
       let bop =
         if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ)
       in
@@ -159,7 +160,7 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_minus_1
       in
-      (exp, [instr1; Sil.Store (e, typ, e_minus_1, loc)])
+      (exp, [instr1; Sil.Store {e1= e; root_typ= typ; e2= e_minus_1; loc}])
   | `Not ->
       (un_exp Unop.BNot, [])
   | `Minus ->

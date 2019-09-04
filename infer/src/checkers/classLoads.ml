@@ -99,11 +99,11 @@ let exec_instr summary tenv astate _ (instr : Sil.instr) =
   match instr with
   | Call (_, Const (Cfun callee), args, loc, _) ->
       exec_call summary tenv callee args loc astate
-  | Load (_, exp, _, loc) | Prune (exp, loc, _, _) ->
+  | Load {e= exp; loc} | Prune (exp, loc, _, _) ->
       (* NB the java frontend seems to always translate complex guards into a sequence of 
          instructions plus a prune on logical vars only.  So the below is only for completeness. *)
       add_loads_of_exp summary tenv loc exp astate
-  | Store (e1, _, e2, loc) ->
+  | Store {e1; e2; loc} ->
       add_loads_of_exp summary tenv loc e1 astate |> add_loads_of_exp summary tenv loc e2
   | _ ->
       astate

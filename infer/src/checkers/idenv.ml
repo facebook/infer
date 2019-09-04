@@ -14,7 +14,7 @@ type t = Exp.t Ident.Hash.t Lazy.t
 
 let create_ proc_desc =
   let map = Ident.Hash.create 1 in
-  let do_instr _ = function Sil.Load (id, e, _, _) -> Ident.Hash.add map id e | _ -> () in
+  let do_instr _ = function Sil.Load {id; e} -> Ident.Hash.add map id e | _ -> () in
   Procdesc.iter_instrs do_instr proc_desc ;
   map
 

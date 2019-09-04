@@ -104,7 +104,7 @@ let get_loc () =
 (** normalize the list of instructions by renaming let-bound ids *)
 let instrs_normalize instrs =
   let bound_ids =
-    let do_instr = function Sil.Load (id, _, _, _) -> Some id | _ -> None in
+    let do_instr = function Sil.Load {id} -> Some id | _ -> None in
     IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:do_instr instrs
   in
   let subst =

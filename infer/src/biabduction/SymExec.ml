@@ -1267,9 +1267,9 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
     ; exe_env }
   in
   match instr with
-  | Sil.Load (id, rhs_exp, typ, loc) ->
+  | Sil.Load {id; e= rhs_exp; root_typ= typ; loc} ->
       execute_load current_pname current_pdesc tenv id rhs_exp typ loc prop_ |> ret_old_path
-  | Sil.Store (lhs_exp, typ, rhs_exp, loc) ->
+  | Sil.Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
       execute_store current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_ |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
@@ -1763,7 +1763,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
-    let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
+    let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; root_typ= typ; loc} in
     try instrs exe_env tenv summary (Instrs.singleton load_instr) result
     with e when SymOp.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;

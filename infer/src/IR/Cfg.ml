@@ -71,20 +71,29 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
   in
   let do_instr instr =
     match (instr, etl) with
-    | Sil.Load (_, Exp.Lfield (Exp.Var _, fn, ft), bt, _), [(* getter for fields *) (e1, _)] ->
-        let instr' = Sil.Load (ret_id, Exp.Lfield (e1, fn, ft), bt, loc_call) in
-        found instr instr'
-    | Sil.Load (_, Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _), [] when Pvar.is_global pvar ->
-        (* getter for static fields *)
-        let instr' = Sil.Load (ret_id, Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, loc_call) in
-        found instr instr'
-    | Sil.Store (Exp.Lfield (_, fn, ft), bt, _, _), [(* setter for fields *) (e1, _); (e2, _)] ->
-        let instr' = Sil.Store (Exp.Lfield (e1, fn, ft), bt, e2, loc_call) in
-        found instr instr'
-    | Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _, _), [(e1, _)] when Pvar.is_global pvar
+    | Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); root_typ= bt}, [(* getter for fields *) (e1, _)]
       ->
+        let instr' =
+          Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); root_typ= bt; loc= loc_call}
+        in
+        found instr instr'
+    | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt}, [] when Pvar.is_global pvar
+      ->
+        (* getter for static fields *)
+        let instr' =
+          Sil.Load {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; loc= loc_call}
+        in
+        found instr instr'
+    | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ= bt}
+      , [(* setter for fields *) (e1, _); (e2, _)] ) ->
+        let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); root_typ= bt; e2; loc= loc_call} in
+        found instr instr'
+    | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt}, [(e1, _)]
+      when Pvar.is_global pvar ->
         (* setter for static fields *)
-        let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, e1, loc_call) in
+        let instr' =
+          Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; e2= e1; loc= loc_call}
+        in
         found instr instr'
     | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _
       when Int.equal (List.length etl') (List.length etl) ->

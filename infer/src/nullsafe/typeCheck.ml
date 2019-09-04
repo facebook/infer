@@ -421,14 +421,14 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               astate )
   | Sil.Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
       typestate
-  | Sil.Load (id, e, typ, loc) ->
+  | Sil.Load {id; e; root_typ= typ; loc} ->
       typecheck_expr_for_errors typestate e loc ;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
       TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc) typestate'
-  | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
+  | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
-  | Sil.Store (e1, typ, e2, loc) ->
+  | Sil.Store {e1; root_typ= typ; e2; loc} ->
       typecheck_expr_for_errors typestate e1 loc ;
       let e1', typestate1 = convert_complex_exp_to_pvar node true e1 typestate loc in
       let check_field_assign () =
@@ -944,8 +944,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             let found = ref None in
             let do_instr i =
               match i with
-              | Sil.Store (e, _, e', _) when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e')
-                ->
+              | Sil.Store {e1= e; e2= e'}
+                when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ ->
                   ()
@@ -1008,7 +1008,7 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
               false
         in
         if has_exceptions then typestates_exn := typestate :: !typestates_exn
-    | Sil.Store (Exp.Lvar pv, _, _, _)
+    | Sil.Store {e1= Exp.Lvar pv}
       when Pvar.is_return pv
            && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind
       ->

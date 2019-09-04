@@ -82,7 +82,11 @@ let get_active_transitions e_fun arg_ts =
 let set_transitions loc active_transitions =
   let store i b =
     let value = if b then Exp.one else Exp.zero in
-    Sil.Store (ToplUtils.static_var (ToplName.transition i), ToplUtils.topl_class_typ, value, loc)
+    Sil.Store
+      { e1= ToplUtils.static_var (ToplName.transition i)
+      ; root_typ= ToplUtils.topl_class_typ
+      ; e2= value
+      ; loc }
   in
   Array.mapi ~f:store active_transitions
 

@@ -19,7 +19,7 @@ let execute___builtin_va_arg {Builtin.summary; tenv; prop_; path; args; loc; exe
     Builtin.ret_typ =
   match args with
   | [(lexp3, typ3)] ->
-      let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
+      let instr' = Sil.Store {e1= lexp3; root_typ= typ3; e2= Exp.zero; loc} in
       SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton instr')
         [(prop_, path)]
   | _ ->
@@ -626,7 +626,8 @@ let execute___cxx_typeid ({Builtin.summary; tenv; prop_; args; loc; exe_env} as 
           in
           let typ_string = Typ.to_string typ in
           let set_instr =
-            Sil.Store (field_exp, Typ.mk Tvoid, Exp.Const (Const.Cstr typ_string), loc)
+            Sil.Store
+              {e1= field_exp; root_typ= Typ.mk Tvoid; e2= Exp.Const (Const.Cstr typ_string); loc}
           in
           SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) res
       | _ ->
@@ -763,7 +764,11 @@ let execute___infer_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_env
         raise (Exceptions.Wrong_argument_number __POS__)
   in
   let set_instr =
-    Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
+    Sil.Store
+      { e1= Exp.Lvar Sil.custom_error
+      ; root_typ= Typ.mk Tvoid
+      ; e2= Exp.Const (Const.Cstr error_str)
+      ; loc }
   in
   SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) [(prop_, path)]
 
@@ -779,7 +784,11 @@ let execute___assert_fail {Builtin.summary; tenv; prop_; path; args; loc; exe_en
         raise (Exceptions.Wrong_argument_number __POS__)
   in
   let set_instr =
-    Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
+    Sil.Store
+      { e1= Exp.Lvar Sil.custom_error
+      ; root_typ= Typ.mk Tvoid
+      ; e2= Exp.Const (Const.Cstr error_str)
+      ; loc }
   in
   SymExec.instrs ~mask_errors:true exe_env tenv summary (Instrs.singleton set_instr) [(prop_, path)]
 

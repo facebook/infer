@@ -157,7 +157,7 @@ module PulseTransferFunctions = struct
 
   let exec_instr (astate : Domain.t) {ProcData.summary} _cfg_node (instr : Sil.instr) =
     match instr with
-    | Load (lhs_id, rhs_exp, _typ, loc) ->
+    | Load {id= lhs_id; e= rhs_exp; loc} ->
         (* [lhs_id := *rhs_exp] *)
         let result =
           PulseOperations.eval_deref loc rhs_exp astate
@@ -165,7 +165,7 @@ module PulseTransferFunctions = struct
           PulseOperations.write_id lhs_id (rhs_addr, rhs_history) astate
         in
         [check_error summary result]
-    | Store (lhs_exp, _typ, rhs_exp, loc) ->
+    | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
         (* [*lhs_exp := rhs_exp] *)
         let event = ValueHistory.Assignment {location= loc} in
         let result =

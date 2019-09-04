@@ -91,7 +91,7 @@ module NullifyTransferFunctions = struct
   let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
     let astate' =
       match instr with
-      | Sil.Load (lhs_id, _, _, _) ->
+      | Sil.Load {id= lhs_id} ->
           (VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify)
       | Sil.Call ((id, _), _, actuals, _, {CallFlags.cf_assign_last_arg}) ->
           let active_defs = VarDomain.add (Var.of_id id) active_defs in
@@ -105,7 +105,7 @@ module NullifyTransferFunctions = struct
             else active_defs
           in
           (active_defs, to_nullify)
-      | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
+      | Sil.Store {e1= Exp.Lvar lhs_pvar} ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
       | Sil.Metadata (VariableLifetimeBegins (pvar, _, _)) ->
           (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)

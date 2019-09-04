@@ -284,11 +284,11 @@ let check_instr :
     -> PO.ConditionSet.checked_t =
  fun get_proc_summary pdesc tenv integer_type_widths node instr mem cond_set ->
   match instr with
-  | Sil.Load (_, exp, _, location) ->
+  | Sil.Load {e= exp; loc= location} ->
       cond_set
       |> check_expr_for_array_access integer_type_widths exp location mem
       |> check_expr_for_integer_overflow integer_type_widths exp location mem
-  | Sil.Store (lexp, _, rexp, location) ->
+  | Sil.Store {e1= lexp; e2= rexp; loc= location} ->
       cond_set
       |> check_expr_for_array_access integer_type_widths lexp location mem
       |> check_expr_for_integer_overflow integer_type_widths lexp location mem

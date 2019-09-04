@@ -91,8 +91,8 @@ let find_normal_variable_funcall (node : Procdesc.Node.t) (id : Ident.t) :
 (** Find a program variable assignment in the current node or predecessors. *)
 let find_program_variable_assignment node pvar : (Procdesc.Node.t * Ident.t) option =
   let find_instr node = function
-    | Sil.Store (Exp.Lvar pvar_, _, Exp.Var id, _) when Pvar.equal pvar pvar_ && Ident.is_normal id
-      ->
+    | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Var id}
+      when Pvar.equal pvar pvar_ && Ident.is_normal id ->
         Some (node, id)
     | _ ->
         None
@@ -123,7 +123,7 @@ let find_struct_by_value_assignment node pvar =
 (** Find a program variable assignment to id in the current node or predecessors. *)
 let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
   let find_instr node = function
-    | Sil.Load (id_, e, _, _) when Ident.equal id_ id ->
+    | Sil.Load {id= id_; e} when Ident.equal id_ id ->
         Some (node, e)
     | _ ->
         None
@@ -136,7 +136,7 @@ let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
 let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
   let find_instr n =
     let filter = function
-      | Sil.Store (Exp.Lvar pvar_, _, Exp.Const (Const.Cint i), _) when Pvar.equal pvar pvar_ ->
+      | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Const (Const.Cint i)} when Pvar.equal pvar pvar_ ->
           IntLit.iszero i <> true_branch
       | _ ->
           false
@@ -156,7 +156,7 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
     and return the expression dereferenced to initialize [id] *)
 let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t option =
   let find_declaration node = function
-    | Sil.Load (id0, e, _, _) when Ident.equal id id0 ->
+    | Sil.Load {id= id0; e} when Ident.equal id id0 ->
         if verbose then (
           L.d_str "find_normal_variable_load defining " ;
           Sil.d_exp e ;
@@ -184,7 +184,7 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
             List.map ~f:unNone args_dexpo
         in
         Some (DExp.Dretcall (fun_dexp, args_dexp, loc, call_flags))
-    | Sil.Store (Exp.Lvar pvar, _, Exp.Var id0, _)
+    | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Var id0}
       when Config.biabduction && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
         (* this case is a hack to make bucketing continue to work in the presence of copy
            propagation. previously, we would have code like:
@@ -528,7 +528,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           List.rev_filter ~f:(fun pvar -> not (Pvar.is_frontend_tmp pvar)) rev_nullify_pvars
         in
         value_str_from_pvars_vpath nullify_pvars_notmp vpath
-    | Some (Sil.Store (lexp, _, _, _)) when is_none vpath -> (
+    | Some (Sil.Store {e1= lexp}) when is_none vpath -> (
         if verbose then (
           L.d_str "explain_leak: current instruction Set for " ;
           Sil.d_exp lexp ;
@@ -940,13 +940,13 @@ let explain_access_ proc_name tenv ?(use_buckets = false) ?(outermost_array = fa
     prop loc =
   let find_exp_dereferenced () =
     match State.get_instr () with
-    | Some (Sil.Store (e, _, _, _)) ->
+    | Some (Sil.Store {e1= e}) ->
         if verbose then (
           L.d_str "explain_dereference Sil.Store " ;
           Sil.d_exp e ;
           L.d_ln () ) ;
         Some e
-    | Some (Sil.Load (_, e, _, _)) ->
+    | Some (Sil.Load {e}) ->
         if verbose then (
           L.d_str "explain_dereference Binop.Leteref " ;
           Sil.d_exp e ;

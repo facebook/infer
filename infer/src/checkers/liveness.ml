@@ -124,18 +124,18 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate _ _ = function
-    | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
+    | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
-    | Sil.Load (lhs_id, rhs_exp, _, _) ->
+    | Sil.Load {id= lhs_id; e= rhs_exp} ->
         Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
-    | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
+    | Sil.Store {e1= Lvar lhs_pvar; e2= rhs_exp} ->
         let astate' =
           if is_always_in_scope lhs_pvar then astate (* never kill globals *)
           else Domain.remove (Var.of_pvar lhs_pvar) astate
         in
         exp_add_live rhs_exp astate'
-    | Sil.Store (lhs_exp, _, rhs_exp, _) ->
+    | Sil.Store {e1= lhs_exp; e2= rhs_exp} ->
         exp_add_live lhs_exp astate |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
@@ -263,7 +263,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
     Reporting.log_error summary ~loc ~ltr IssueType.dead_store message
   in
   let report_dead_store live_vars captured_by_ref_vars = function
-    | Sil.Store (Lvar pvar, typ, rhs_exp, loc)
+    | Sil.Store {e1= Lvar pvar; root_typ= typ; e2= rhs_exp; loc}
       when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp)
       ->
         log_report pvar typ loc

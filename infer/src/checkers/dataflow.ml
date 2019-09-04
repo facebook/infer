@@ -52,7 +52,7 @@ let node_throws pdesc node (proc_throws : Typ.Procname.t -> throws) : throws =
       Pvar.equal pvar ret_pvar
     in
     match instr with
-    | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
+    | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)

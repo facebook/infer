@@ -65,7 +65,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   let find_vars_in_decl id loop_head _ = function
-    | Sil.Load (lhs_id, exp, _, _) when Ident.equal lhs_id id ->
+    | Sil.Load {id= lhs_id; e= exp} when Ident.equal lhs_id id ->
         collect_vars_in_exp exp loop_head |> Option.some
     | Sil.Call ((lhs_id, _), _, arg_list, _, _) when Ident.equal lhs_id id ->
         List.fold_left arg_list ~init:ControlDepSet.empty ~f:(fun deps (exp, _) ->
