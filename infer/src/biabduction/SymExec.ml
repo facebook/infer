@@ -1763,7 +1763,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
-    let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; root_typ= typ; loc} in
+    let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; root_typ= typ; typ; loc} in
     try instrs exe_env tenv summary (Instrs.singleton load_instr) result
     with e when SymOp.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;

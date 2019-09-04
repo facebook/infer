@@ -71,17 +71,18 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
   in
   let do_instr instr =
     match (instr, etl) with
-    | Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); root_typ= bt}, [(* getter for fields *) (e1, _)]
-      ->
+    | ( Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); root_typ= bt; typ}
+      , [(* getter for fields *) (e1, _)] ) ->
         let instr' =
-          Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); root_typ= bt; loc= loc_call}
+          Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); root_typ= bt; typ; loc= loc_call}
         in
         found instr instr'
-    | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt}, [] when Pvar.is_global pvar
-      ->
+    | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; typ}, []
+      when Pvar.is_global pvar ->
         (* getter for static fields *)
         let instr' =
-          Sil.Load {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; loc= loc_call}
+          Sil.Load
+            {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; typ; loc= loc_call}
         in
         found instr instr'
     | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ= bt}

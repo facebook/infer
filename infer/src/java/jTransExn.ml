@@ -33,7 +33,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
   let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
     let instr_get_ret_val =
-      Sil.Load {id= id_ret_val; e= Exp.Lvar ret_var; root_typ= ret_type; loc}
+      Sil.Load {id= id_ret_val; e= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; loc}
     in
     let instr_deactivate_exn =
       Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; e2= Exp.null; loc}

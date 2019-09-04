@@ -461,9 +461,9 @@ let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new)
 
 let builtin_get_array_length = Exp.Const (Const.Cfun BuiltinDecl.__get_array_length)
 
-let create_sil_deref exp typ loc =
+let create_sil_deref exp ~root_typ ~typ loc =
   let no_id = Ident.create_none () in
-  Sil.Load {id= no_id; e= exp; root_typ= typ; loc}
+  Sil.Load {id= no_id; e= exp; root_typ; typ; loc}
 
 
 (** translate an expression used as an r-value *)
@@ -474,7 +474,9 @@ let rec expression (context : JContext.t) pc expr =
   let type_of_expr = JTransType.expr_type context expr in
   let trans_var pvar =
     let id = Ident.create_fresh Ident.knormal in
-    let sil_instr = Sil.Load {id; e= Exp.Lvar pvar; root_typ= type_of_expr; loc} in
+    let sil_instr =
+      Sil.Load {id; e= Exp.Lvar pvar; root_typ= type_of_expr; typ= type_of_expr; loc}
+    in
     ([sil_instr], Exp.Var id, type_of_expr)
   in
   match expr with
@@ -501,7 +503,7 @@ let rec expression (context : JContext.t) pc expr =
           let array_typ_no_ptr =
             match type_of_ex.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> type_of_ex
           in
-          let deref = create_sil_deref sil_ex array_typ_no_ptr loc in
+          let deref = create_sil_deref sil_ex ~root_typ:array_typ_no_ptr ~typ:type_of_expr loc in
           let args = [(sil_ex, type_of_ex)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let ret_typ = Typ.mk (Tint IInt) in
@@ -546,10 +548,13 @@ let rec expression (context : JContext.t) pc expr =
       | JBir.ArrayLoad _ ->
           (* add an instruction that dereferences the array *)
           let array_typ = Typ.mk_array type_of_expr in
-          let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
+          let deref_array_instr =
+            create_sil_deref sil_ex1 ~root_typ:array_typ ~typ:type_of_expr loc
+          in
           let id = Ident.create_fresh Ident.knormal in
           let load_instr =
-            Sil.Load {id; e= Exp.Lindex (sil_ex1, sil_ex2); root_typ= type_of_expr; loc}
+            Sil.Load
+              {id; e= Exp.Lindex (sil_ex1, sil_ex2); root_typ= type_of_expr; typ= type_of_expr; loc}
           in
           let instrs = (instrs1 @ (deref_array_instr :: instrs2)) @ [load_instr] in
           (instrs, Exp.Var id, type_of_expr)
@@ -563,7 +568,9 @@ let rec expression (context : JContext.t) pc expr =
       let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
-      let lderef_instr = Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; loc} in
+      let lderef_instr =
+        Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; typ= type_of_expr; loc}
+      in
       (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
   | JBir.StaticField (cn, fs) ->
       let class_exp =
@@ -581,7 +588,9 @@ let rec expression (context : JContext.t) pc expr =
       else
         let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
         let tmp_id = Ident.create_fresh Ident.knormal in
-        let lderef_instr = Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; loc} in
+        let lderef_instr =
+          Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; typ= type_of_expr; loc}
+        in
         (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
 
 
@@ -636,7 +645,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
               let obj_typ_no_ptr =
                 match sil_obj_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_obj_type
               in
-              [create_sil_deref sil_obj_expr obj_typ_no_ptr loc]
+              [create_sil_deref sil_obj_expr ~root_typ:obj_typ_no_ptr ~typ:sil_obj_type loc]
           | _ ->
               []
         in
@@ -847,7 +856,7 @@ let instruction (context : JContext.t) pc instr : translation =
         , CallFlags.default )
     in
     let typ_no_ptr = match sil_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_type in
-    let deref_instr = create_sil_deref sil_expr typ_no_ptr loc in
+    let deref_instr = create_sil_deref sil_expr ~root_typ:typ_no_ptr ~typ:sil_type loc in
     let node_kind = Procdesc.Node.Stmt_node node_desc in
     Instr (create_node node_kind (instrs @ [deref_instr; instr]))
   in

@@ -120,7 +120,8 @@ let pure_exp e : Exp.t * Sil.instr list =
   let subst = List.map ~f:(function e, id -> (e, Exp.Var id)) pairs in
   let e' = Sil.exp_replace_exp subst e in
   let mk_load (e, id) =
-    Sil.Load {id; e; root_typ= ToplUtils.any_type; loc= sourcefile_location ()}
+    Sil.Load
+      {id; e; root_typ= ToplUtils.any_type; typ= ToplUtils.any_type; loc= sourcefile_location ()}
   in
   let loads = List.map ~f:mk_load pairs in
   (e', loads)
@@ -168,7 +169,12 @@ let stmt_node instrs : node_generator =
 
 let sil_assign lhs rhs =
   let tempvar = Ident.create_fresh Ident.knormal in
-  [ Sil.Load {id= tempvar; e= rhs; root_typ= ToplUtils.any_type; loc= sourcefile_location ()}
+  [ Sil.Load
+      { id= tempvar
+      ; e= rhs
+      ; root_typ= ToplUtils.any_type
+      ; typ= ToplUtils.any_type
+      ; loc= sourcefile_location () }
   ; Sil.Store
       {e1= lhs; root_typ= ToplUtils.any_type; e2= Exp.Var tempvar; loc= sourcefile_location ()} ]
 

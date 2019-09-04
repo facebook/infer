@@ -40,11 +40,16 @@ type instr =
   (* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire
      `Load` instruction may be eliminated by copy-propagation. *)
-  | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; loc: Location.t}
+  | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
-      [x = *exp:root_typ] where
+
+      [id = *exp:typ(root_typ)] where
         [exp] is an expression denoting a heap address
-        [root_typ] is the root type of [exp]. *)
+        [typ] is typ of [exp] and [id]
+        [root_typ] is the root type of [exp]
+
+          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          future, so please use [typ] instead. *)
   | Store of {e1: Exp.t; root_typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
       [*exp1:root_typ = exp2] where
@@ -412,9 +417,12 @@ let pp_instr ~print_types pe0 f instr =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
   color_wrapper pe0 f instr ~f:(fun pe f instr ->
       match instr with
-      | Load {id; e; root_typ; loc} ->
-          F.fprintf f "%a=*%a:%a [%a]" Ident.pp id (pp_exp_printenv ~print_types pe) e (pp_typ pe0)
-            root_typ Location.pp loc
+      | Load {id; e; root_typ; typ; loc} ->
+          let pp_root f =
+            if not (Typ.equal typ root_typ) then F.fprintf f "(root %a)" (pp_typ pe0) root_typ
+          in
+          F.fprintf f "%a=*%a:%a%t [%a]" Ident.pp id (pp_exp_printenv ~print_types pe) e
+            (pp_typ pe0) typ pp_root Location.pp loc
       | Store {e1; root_typ; e2; loc} ->
           F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) root_typ
             (pp_exp_printenv ~print_types pe) e2 Location.pp loc
@@ -1267,11 +1275,11 @@ let instr_sub_ids ~sub_id_binders f instr =
     match exp_sub_ids f (Var id) with Var id' when not (Ident.equal id id') -> id' | _ -> id
   in
   match instr with
-  | Load {id; e= rhs_exp; root_typ; loc} ->
+  | Load {id; e= rhs_exp; root_typ; typ; loc} ->
       let id' = if sub_id_binders then sub_id id else id in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
-      else Load {id= id'; e= rhs_exp'; root_typ; loc}
+      else Load {id= id'; e= rhs_exp'; root_typ; typ; loc}
   | Store {e1= lhs_exp; root_typ; e2= rhs_exp; loc} ->
       let lhs_exp' = exp_sub_ids f lhs_exp in
       let rhs_exp' = exp_sub_ids f rhs_exp in

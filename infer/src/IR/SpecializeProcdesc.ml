@@ -72,8 +72,8 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
           with Caml.Not_found -> origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
-        Some
-          (Sil.Load {id; e= convert_exp origin_exp; root_typ= mk_ptr_typ specialized_typname; loc})
+        let root_typ = mk_ptr_typ specialized_typname in
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ= root_typ; loc})
     | Sil.Load
         {id; e= Exp.Var origin_id as origin_exp; root_typ= {Typ.desc= Tstruct _} as origin_typ; loc}
       ->
@@ -81,9 +81,10 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
         in
-        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; loc})
-    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; loc} ->
-        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; loc})
+        Some
+          (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; typ= updated_typ; loc})
+    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; typ; loc} ->
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; typ; loc})
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
           Sil.Store
@@ -208,7 +209,7 @@ let with_block_args_instrs resolved_pdesc substitutions =
             let pvar = Pvar.mk var resolved_pname in
             ( Var.of_id id
             , (Exp.Var id, pvar, typ)
-            , Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; loc} ) )
+            , Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc} ) )
         |> List.unzip3
       in
       let remove_temps_instr = Sil.Metadata (ExitScope (dead_vars, loc)) in
@@ -225,8 +226,8 @@ let with_block_args_instrs resolved_pdesc substitutions =
         let id_map = Ident.Map.add id (Pvar.get_name block_param) id_map in
         (* we don't need the load the block param instruction anymore *)
         (instrs, id_map)
-    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; loc} ->
-        (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; loc} :: instrs, id_map)
+    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; typ; loc} ->
+        (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; typ; loc} :: instrs, id_map)
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= Exp.Var id; loc}
       when Ident.Map.mem id id_map ->
         let block_param = Ident.Map.find id id_map in
