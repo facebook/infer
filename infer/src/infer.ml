@@ -15,12 +15,17 @@ module L = Logging
 
 let run driver_mode =
   let open Driver in
-  run_prologue driver_mode ;
-  let changed_files = read_config_changed_files () in
-  InferAnalyze.invalidate_changed_procedures changed_files ;
-  capture driver_mode ~changed_files ;
-  analyze_and_report driver_mode ~changed_files ;
-  run_epilogue ()
+  if CLOpt.is_originator && Config.(sqlite_write_daemon && not (buck || genrule_mode)) then
+    DBWriter.start () ;
+  Utils.try_finally_swallow_timeout
+    ~f:(fun () ->
+      run_prologue driver_mode ;
+      let changed_files = read_config_changed_files () in
+      InferAnalyze.invalidate_changed_procedures changed_files ;
+      capture driver_mode ~changed_files ;
+      analyze_and_report driver_mode ~changed_files ;
+      run_epilogue () )
+    ~finally:(fun () -> if CLOpt.is_originator && Config.sqlite_write_daemon then DBWriter.stop ())
 
 
 let run driver_mode = ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode)

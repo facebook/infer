@@ -576,8 +576,7 @@ let run_prologue mode =
      mono-threaded execution. *)
     Unix.unsetenv "MAKEFLAGS" ;
     (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
-    Unix.putenv ~key:"NO_BUCKD" ~data:"1" ;
-    if Config.(sqlite_write_daemon && not (buck || genrule_mode)) then DBWriter.start () ) ;
+    Unix.putenv ~key:"NO_BUCKD" ~data:"1" ) ;
   ()
 
 
@@ -588,7 +587,6 @@ let run_prologue mode =
 let run_epilogue () =
   if CLOpt.is_originator then (
     if Config.developer_mode then StatsAggregator.generate_files () ;
-    if Config.sqlite_write_daemon then DBWriter.stop () ;
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
