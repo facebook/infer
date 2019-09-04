@@ -124,7 +124,7 @@ module SymbolPath = struct
 
   let rec pp_partial_paren ~paren fmt = function
     | Pvar pvar ->
-        Pvar.pp_value fmt pvar
+        if Config.bo_debug >= 3 then Pvar.pp_value fmt pvar else Pvar.pp_value_non_verbose fmt pvar
     | Deref (Deref_JavaPointer, p) when Config.bo_debug < 3 ->
         pp_partial_paren ~paren fmt p
     | Deref (Deref_ArrayIndex, p) ->

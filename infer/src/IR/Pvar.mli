@@ -118,6 +118,9 @@ val pp : Pp.env -> F.formatter -> t -> unit
 val pp_value : F.formatter -> t -> unit
 (** Pretty print a pvar which denotes a value, not an address *)
 
+val pp_value_non_verbose : F.formatter -> t -> unit
+(** Non-verbose version of pp_value *)
+
 val pp_translation_unit : F.formatter -> translation_unit -> unit
 
 val to_callee : Typ.Procname.t -> t -> t

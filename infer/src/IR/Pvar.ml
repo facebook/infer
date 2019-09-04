@@ -67,29 +67,36 @@ let get_declaring_function pv =
 
 let pp_translation_unit fmt = function None -> () | Some fname -> SourceFile.pp fmt fname
 
-let pp_ f pv =
+let pp_ ~verbose f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var _ ->
       Mangled.pp f name
   | Callee_var _ ->
-      F.fprintf f "%a|callee" Mangled.pp name
+      Mangled.pp f name ;
+      if verbose then F.pp_print_string f "|callee"
   | Abduced_retvar _ ->
-      F.fprintf f "%a|abducedRetvar" Mangled.pp name
+      Mangled.pp f name ;
+      if verbose then F.pp_print_string f "|abducedRetvar"
   | Abduced_ref_param (_, index, _) ->
-      F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
+      Mangled.pp f name ;
+      if verbose then F.fprintf f "|abducedRefParam%d" index
   | Global_var {translation_unit; is_constexpr; is_ice; is_pod} ->
-      F.fprintf f "#GB<%a%s%s%s>$%a" pp_translation_unit translation_unit
-        (if is_constexpr then "|const" else "")
-        (if is_ice then "|ice" else "")
-        (if not is_pod then "|!pod" else "")
-        Mangled.pp name
+      if verbose then
+        F.fprintf f "#GB<%a%s%s%s>$" pp_translation_unit translation_unit
+          (if is_constexpr then "|const" else "")
+          (if is_ice then "|ice" else "")
+          (if not is_pod then "|!pod" else "") ;
+      Mangled.pp f name
   | Seed_var ->
       F.fprintf f "old_%a" Mangled.pp name
 
 
 (** Pretty print a pvar which denotes a value, not an address *)
-let pp_value f pv = pp_ f pv
+let pp_value f pv = pp_ ~verbose:true f pv
+
+(** Non-verbose version of pp_value *)
+let pp_value_non_verbose f pv = pp_ ~verbose:false f pv
 
 (** Pretty print a program variable. *)
 let pp pe f pv =
