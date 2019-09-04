@@ -45,6 +45,9 @@ val is_global_var : Ctl_parser_types.ast_node -> bool
 val is_static_local_var : Ctl_parser_types.ast_node -> bool
 (** 'is_static_local_var an' is true iff an is a static local variable *)
 
+val is_static_var : Ctl_parser_types.ast_node -> bool
+(** 'is_static_var an' is true iff an is a static local variable *)
+
 val is_extern_var : Ctl_parser_types.ast_node -> bool
 (** 'is_extern_var an' is true iff an is a extern variable *)
 

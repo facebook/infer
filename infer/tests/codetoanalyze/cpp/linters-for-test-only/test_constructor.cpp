@@ -10,6 +10,8 @@ struct A {
 
 extern A a2;
 
+static A a3;
+
 const A& f() {
   static A a;
   return a;
