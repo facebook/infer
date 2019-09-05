@@ -8,6 +8,9 @@
 
 open! IStd
 
+val use_daemon : bool
+(** indicates that there should be a daemon running *)
+
 val replace_attributes :
      pname_str:string
   -> pname:Sqlite3.Data.t

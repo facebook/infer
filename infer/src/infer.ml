@@ -26,6 +26,14 @@ let run driver_mode =
 let run driver_mode = ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
 
 let setup () =
+  let db_start =
+    let already_started = ref false in
+    fun () ->
+      if (not !already_started) && CLOpt.is_originator && DBWriter.use_daemon then (
+        DBWriter.start () ;
+        Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
+        already_started := true )
+  in
   ( match Config.command with
   | Analyze ->
       ResultsDir.assert_results_dir "have you run capture before?"
@@ -49,18 +57,16 @@ let setup () =
       if
         CLOpt.is_originator && (not Config.continue_capture)
         && not Driver.(equal_mode driver_mode Analyze)
-      then SourceFiles.mark_all_stale ()
+      then ( db_start () ; SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
   | Events ->
       ResultsDir.assert_results_dir "have you run infer before?" ) ;
+  db_start () ;
   if CLOpt.is_originator then (
     RunState.add_run_to_sequence () ;
     RunState.store () ;
-    if Config.memcached then Memcached.start () ;
-    if Config.(sqlite_write_daemon && (not (buck || genrule_mode)) && jobs > 1) then (
-      DBWriter.start () ;
-      Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ) ) ;
+    if Config.memcached then Memcached.start () ) ;
   ()
 
 

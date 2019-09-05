@@ -293,21 +293,13 @@ module Server = struct
         send Command.Handshake
 end
 
-let server_running = ref false
+let use_daemon = Config.(sqlite_write_daemon && (not (buck || genrule_mode)) && jobs > 1)
 
-let perform cmd = if !server_running then Server.send cmd else Command.execute cmd
+let perform cmd = if use_daemon then Server.send cmd else Command.execute cmd
 
-let start () =
-  if not !server_running then (
-    Server.start () ;
-    server_running := true )
+let start () = Server.start ()
 
-
-let stop () =
-  if !server_running then (
-    Server.send Command.Terminate ;
-    server_running := false )
-
+let stop () = Server.send Command.Terminate
 
 let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
   Command.ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees}
