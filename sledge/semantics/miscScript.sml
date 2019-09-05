@@ -9,7 +9,8 @@
  * could be upstreamed to HOL, and should eventually. *)
 
 open HolKernel boolLib bossLib Parse;
-open listTheory rich_listTheory arithmeticTheory wordsTheory;
+open listTheory rich_listTheory arithmeticTheory integerTheory;
+open integer_wordTheory wordsTheory;
 open finite_mapTheory open logrootTheory numposrepTheory;
 open settingsTheory;
 
@@ -167,6 +168,77 @@ Proof
   rw [] >> drule n2l_BOUND >> disch_then (qspec_then `n` mp_tac) >>
   qspec_tac (`n2l d n`, `l`) >>
   Induct >> rw []
+QED
+
+Definition truncate_2comp_def:
+  truncate_2comp (i:int) size =
+    (i + 2 ** (size - 1)) % 2 ** size - 2 ** (size - 1)
+End
+
+Theorem truncate_2comp_i2w_w2i:
+  ∀i size. dimindex (:'a) = size ⇒ truncate_2comp i size = w2i (i2w i : 'a word)
+Proof
+  rw [truncate_2comp_def, w2i_def, word_msb_i2w, w2n_i2w] >>
+  qmatch_goalsub_abbrev_tac `(_ + s1) % s2` >>
+  `2 * s1 = s2` by rw [Abbr `s1`, Abbr `s2`, GSYM EXP, DIMINDEX_GT_0] >>
+  `0 ≠ s2 ∧ ¬(s2 < 0)` by rw [Abbr `s2`] >>
+  fs [MULT_MINUS_ONE, w2n_i2w] >>
+  fs [GSYM dimword_def, dimword_IS_TWICE_INT_MIN]
+  >- (
+    `-i % s2 = -((i + s1) % s2 - s1)` suffices_by intLib.COOPER_TAC >>
+    simp [] >>
+    irule INT_MOD_UNIQUE >>
+    simp [GSYM PULL_EXISTS] >>
+    conj_tac
+    >- (
+      simp [int_mod, INT_ADD_ASSOC,
+            intLib.COOPER_PROVE ``!x y (z:int). x - (y + z - a) = x - y - z + a``] >>
+      qexists_tac `-((i + s1) / s2)` >>
+      intLib.COOPER_TAC) >>
+    `&INT_MIN (:α) = s1` by (unabbrev_all_tac >> rw [INT_MIN_def]) >>
+    fs [INT_SUB_LE] >>
+    `0 ≤ (i + s1) % s2` by metis_tac [INT_MOD_BOUNDS] >>
+    strip_tac
+    >- (
+      `(i + s1) % s2 = (i % s2 + s1 % s2) % s2`
+      by (irule (GSYM INT_MOD_PLUS) >> rw []) >>
+      simp [] >>
+      `(i % s2 + s1 % s2) % s2 = (-1 * s2 + (i % s2 + s1 % s2)) % s2`
+      by (metis_tac [INT_MOD_ADD_MULTIPLES]) >>
+      simp [GSYM INT_NEG_MINUS1, INT_ADD_ASSOC] >>
+      `i % s2 < s2 ∧ s1 % s2 < s2 ∧ i % s2 ≤ s2` by metis_tac [INT_MOD_BOUNDS, INT_LT_IMP_LE] >>
+      `0 ≤ s1 ∧ s1 < s2 ∧ -s2 + i % s2 + s1 % s2 < s2` by intLib.COOPER_TAC >>
+      `0 ≤ -s2 + i % s2 + s1 % s2`
+      by (
+        `s2 = s1 + s1` by intLib.COOPER_TAC >>
+        fs [INT_LESS_MOD] >>
+        intLib.COOPER_TAC) >>
+      simp [INT_LESS_MOD] >>
+      intLib.COOPER_TAC)
+    >- intLib.COOPER_TAC)
+  >- (
+    `(i + s1) % s2 = i % s2 + s1` suffices_by intLib.COOPER_TAC >>
+    `(i + s1) % s2 = i % s2 + s1 % s2`
+    suffices_by (
+      rw [] >>
+      irule INT_LESS_MOD >> rw [] >>
+      intLib.COOPER_TAC) >>
+    `(i + s1) % s2 = (i % s2 + s1 % s2) % s2`
+    suffices_by (
+      fs [Abbr `s2`] >>
+      `s1 = &INT_MIN (:'a)` by intLib.COOPER_TAC >> rw [] >>
+      irule INT_LESS_MOD >> rw [] >>
+      fs [intLib.COOPER_PROVE ``!(x:int) y. ¬(x ≤ y) ⇔ y < x``] >> rw [] >>
+      full_simp_tac std_ss [GSYM INT_MUL] >>
+      qpat_abbrev_tac `s = &INT_MIN (:α)`
+      >- (
+        `2*s ≠ 0 ∧ ¬(2*s < 0) ∧ ¬(s < 0)`
+        by (unabbrev_all_tac >> rw []) >>
+        drule INT_MOD_BOUNDS >> simp [] >>
+        disch_then (qspec_then `i` mp_tac) >> simp [] >>
+        intLib.COOPER_TAC)
+      >- intLib.COOPER_TAC) >>
+    simp [INT_MOD_PLUS])
 QED
 
 export_theory ();

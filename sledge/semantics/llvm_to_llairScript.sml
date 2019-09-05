@@ -61,9 +61,16 @@ Definition translate_size_def:
   (translate_size W64 = 64)
 End
 
-(* TODO *)
 Definition translate_ty_def:
-  translate_ty = ARB : ty -> typ
+  (translate_ty (FunT t ts) = FunctionT (translate_ty t) (map translate_ty ts)) ∧
+  (translate_ty (IntT s) = IntegerT (translate_size s)) ∧
+  (translate_ty (PtrT t) = PointerT (translate_ty t)) ∧
+  (translate_ty (ArrT n t) = ArrayT (translate_ty t) n) ∧
+  (translate_ty (StrT ts) = TupleT (map translate_ty ts))
+Termination
+  WF_REL_TAC `measure ty_size` >> rw [] >>
+  Induct_on `ts` >> rw [ty_size_def] >>
+  res_tac >> decide_tac
 End
 
 Definition translate_glob_var_def:
@@ -96,10 +103,13 @@ Termination
 End
 
 Definition translate_arg_def:
-  (translate_arg emap (Constant c) t = translate_const c) ∧
-  (translate_arg emap (Variable r) t =
+  (translate_arg emap (Constant c) = translate_const c) ∧
+  (translate_arg emap (Variable r) =
     case flookup emap r of
-    | None => Var (translate_reg r t)
+    (* With the current strategy of threading the emap through the whole
+     * function, we should never get a None here.
+     *)
+    | None => Var (translate_reg r (IntT W64))
     | Some e => e)
 End
 
@@ -113,11 +123,11 @@ End
 (* TODO *)
 Definition translate_instr_to_exp_def:
   (translate_instr_to_exp emap (llvm$Sub _ _ _ ty a1 a2) =
-    llair$Sub (translate_ty ty) (translate_arg emap a1 ty) (translate_arg emap a2 ty)) ∧
+    llair$Sub (translate_ty ty) (translate_arg emap a1) (translate_arg emap a2)) ∧
   (translate_instr_to_exp emap (Extractvalue _ (t, a) cs) =
-    foldl (λe c. Select e (translate_const c)) (translate_arg emap a t) cs) ∧
+    foldl (λe c. Select e (translate_const c)) (translate_arg emap a) cs) ∧
   (translate_instr_to_exp emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
-    translate_updatevalue (translate_arg emap a1 t1) (translate_arg emap a2 t2) cs)
+    translate_updatevalue (translate_arg emap a1) (translate_arg emap a2) cs)
 End
 
 (* This translation of insertvalue to update and select is quadratic in the
@@ -170,15 +180,15 @@ End
 (* TODO *)
 Definition translate_instr_to_inst_def:
   (translate_instr_to_inst emap (llvm$Store (t1, a1) (t2, a2)) =
-    llair$Store (translate_arg emap a1 t1) (translate_arg emap a2 t2) (sizeof t2)) ∧
+    llair$Store (translate_arg emap a1) (translate_arg emap a2) (sizeof t2)) ∧
   (translate_instr_to_inst emap (Load r t (t1, a1)) =
-    Load (translate_reg r t1) (translate_arg emap a1 t1) (sizeof t))
+    Load (translate_reg r t) (translate_arg emap a1) (sizeof t))
 End
 
 (* TODO *)
 Definition translate_instr_to_term_def:
   translate_instr_to_term f emap (Br a l1 l2) =
-    Iswitch (translate_arg emap a (IntT W1)) [translate_label f l2; translate_label f l1]
+    Iswitch (translate_arg emap a) [translate_label f l2; translate_label f l1]
 End
 
 Datatype:
@@ -232,7 +242,9 @@ End
 (* Translate a list of instructions into an block. f is the name of the function
  * that the instructions are in, reg_to_keep is the set of variables that we
  * want to keep assignments to (e.g., because of sharing in the expression
- * structure. * emap is a mapping of registers to expressions that compute the
+ * structure.
+ *
+ * emap is a mapping of registers to expressions that compute the
  * value that should have been in the expression.
  *
  * This tries to build large expressions, and omits intermediate assignments
@@ -288,7 +300,8 @@ Definition translate_header_def:
     map
       (λ(r, t, largs).
         (translate_reg r t,
-         map (λ(l, arg). (translate_label_opt f entry l, translate_arg fempty arg t)) largs))
+        (* TODO: shouldn't use fempty here *)
+         map (λ(l, arg). (translate_label_opt f entry l, translate_arg fempty arg)) largs))
       (map dest_phi phis))
 End
 
@@ -357,7 +370,7 @@ Definition translate_param_def:
 End
 
 Definition translate_def_def:
-  translate_def (Lab f) d =
+  translate_def f d =
     let used_names = ARB in
     let entry_name = gen_name used_names "entry" in
     (* TODO *)
@@ -381,6 +394,16 @@ Definition translate_def_def:
         cfg := remove_phis f used_names (reverse bs);
         freturn := ARB;
         fthrow := ARB |>
+End
+
+Definition dest_fn_def:
+  dest_fn (Fn f) = f
+End
+
+Definition translate_prog_def:
+  translate_prog p =
+    <| globals := ARB;
+       functions := map (\(fname, d). (dest_fn fname, translate_def (dest_fn fname) d)) p |>
 End
 
 export_theory ();

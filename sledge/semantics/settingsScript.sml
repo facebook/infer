@@ -53,5 +53,7 @@ overload_on ("alookup", ``ALOOKUP``);
 overload_on ("filter", ``FILTER``);
 overload_on ("map2", ``list$MAP2``);
 overload_on ("foldl", ``FOLDL``);
+overload_on ("foldr", ``FOLDR``);
+overload_on ("option_rel", ``OPTREL``);
 
 export_theory ();

@@ -19,6 +19,7 @@ numLib.prefer_num ();
 Datatype:
   typ =
   | FunctionT typ (typ list)
+  (* How many bits the integer occupies *)
   | IntegerT num
   | PointerT typ
   | ArrayT typ num
@@ -121,13 +122,11 @@ End
 (* ----- Semantic states ----- *)
 
 (* These are the values that can be stored in registers. The implementation uses
- * integers with a bit-width to represent numbers, and keeps locations and sizes
- * separate.
+ * integers with a bit-width to represent numbers and pointers. Here we
+ * interpret the bit width b as meaning the int should be in the range [-2^(b-1),2^(b-1))
  *)
 Datatype:
   flat_v =
-  | LocV num
-  | SizeV num
   | IntV int num
 End
 
@@ -143,32 +142,26 @@ Datatype:
        globals : var |-> word64;
        locals : var |-> v;
        stack : frame list;
-       pointer_size : 'a itself;
        heap : unit heap |>
+End
+
+(* Assume that all pointers can fit in 64 bits *)
+Definition pointer_size_def:
+  pointer_size = 64
 End
 
 (* ----- Semantic transitions ----- *)
 
+(* The size of a type in bytes, rounded up *)
 Definition sizeof_def:
-  (sizeof (:'a) (IntegerT n) = n) ∧
-  (sizeof (:'a) (PointerT t) = dimindex (:'a)) ∧
-  (sizeof (:'a) (ArrayT t n) = n * sizeof (:'a) t) ∧
-  (sizeof (:'a) (TupleT ts) = sum (map (sizeof (:'a)) ts))
+  (sizeof (IntegerT n) = (n+7) DIV 8) ∧
+  (sizeof (PointerT t) = (pointer_size+7) DIV 8) ∧
+  (sizeof (ArrayT t n) = n * sizeof t) ∧
+  (sizeof (TupleT ts) = sum (map sizeof ts))
 Termination
-  WF_REL_TAC `measure (typ_size o snd)` >> simp [] >>
+  WF_REL_TAC `measure typ_size` >> simp [] >>
   Induct >> rw [definition "typ_size_def"] >> simp [] >>
   first_x_assum drule >> decide_tac
-End
-
-Definition type_to_shape_def:
-  (type_to_shape (:'a) (IntegerT n) = Flat (sizeof (:'a) (IntegerT n)) (IntegerT n)) ∧
-  (type_to_shape (:'a) (ArrayT t n) = Array (type_to_shape (:'a) t) n) ∧
-  (type_to_shape (:'a) (TupleT ts) = Tuple (map (type_to_shape (:'a)) ts))
-Termination
-  WF_REL_TAC `measure (typ_size o snd)` >>
-  rw [] >>
-  Induct_on `ts` >> rw [definition "typ_size_def"] >>
-  res_tac >> decide_tac
 End
 
 Definition first_class_type_def:
@@ -185,34 +178,53 @@ Termination
 End
 
 Inductive value_type:
-  (value_type (IntegerT n) (FlatV (IntV i n))) ∧
-  (value_type (PointerT _) (FlatV (LocV n))) ∧
-  (every (value_type t) vs ∧ length vs = n ∧ first_class_type t
+  (∀n i. value_type (IntegerT n) (FlatV (IntV i n))) ∧
+  (∀t vs n.
+   every (value_type t) vs ∧ length vs = n ∧ first_class_type t
    ⇒
    value_type (ArrayT t n) (AggV vs)) ∧
-  (list_rel value_type ts vs
+  (∀ts vs.
+   list_rel value_type ts vs
    ⇒
-   value_type (StrT ts) (AggV vs))
+   value_type (TupleT ts) (AggV vs))
 End
 
 Definition bool2v_def:
   bool2v b = FlatV (IntV (if b then 1 else 0) 1)
 End
 
-Definition int2unsigned_def:
-  int2unsigned (i:int) size =
+(* The integer, interpreted as 2's complement, fits in the given number of bits *)
+Definition ifits_def:
+  ifits (i:int) size ⇔
+    0 < size ∧ -(2 ** (size - 1)) ≤ i ∧ i < 2 ** (size - 1)
+End
+
+(* The natural number, interpreted as unsigned, fits in the given number of bits *)
+Definition nfits_def:
+  nfits (n:num) size ⇔
+    0 < size ∧ n < 2 ** size
+End
+
+(* Convert an integer to an unsigned number, following the 2's complement,
+ * assuming (ifits i size) *)
+Definition i2n_def:
+  i2n (IntV i size) : num =
     if i < 0 then
-      256 ** size + i
+      Num (2 ** size + i)
     else
-      i
+      Num i
 End
 
-Definition fits_def:
-  fits (i:int) size ⇔
-    0 < size ∧ 0 - (256 ** (size - 1)) ≤ i ∧ i < 256 ** (size - 1)
+(* Convert an unsigned number into the integer that it would be in 2's
+ * compliment with the given size, assuming (nfits n size) *)
+Definition n2i_def:
+  n2i n size =
+    if 2 ** (size - 1) ≤ n then
+      (IntV (&n - &(2 ** size)) size)
+    else
+      (IntV (&n) size)
 End
 
-(* TODO: We never create anything that is a SizeV *)
 Inductive eval_exp:
   (∀s v r.
    flookup s.locals v = Some r
@@ -222,17 +234,19 @@ Inductive eval_exp:
   (* TODO: Nondet I guess we need to know the type here *)
   (* TODO: Label *)
 
-  (∀s e1 e2 size byte.
-   eval_exp s e1 (FlatV (IntV byte 1)) ∧
-   eval_exp s e2 (FlatV (SizeV size))
+  (∀s e1 e2 n byte n_size.
+   eval_exp s e1 (FlatV (IntV byte 8)) ∧
+   (* This idiom means that e2 evaluates to a non-negative integer n, and is
+    * used throughout *)
+   eval_exp s e2 (FlatV (IntV (&n) n_size))
    ⇒
-   eval_exp s (Splat e1 e2) (AggV (replicate size (FlatV (IntV byte 1))))) ∧
+   eval_exp s (Splat e1 e2) (AggV (replicate n (FlatV (IntV byte 8))))) ∧
 
    (* TODO Question: What if size <> vals? *)
-  (∀s e1 e2 size vals.
+  (∀s e1 e2 l vals n_size.
    eval_exp s e1 (AggV vals) ∧
-   eval_exp s e2 (FlatV (SizeV size)) ∧
-   size = length vals
+   eval_exp s e2 (FlatV (IntV (&l) n_size)) ∧
+   l = length vals
    ⇒
    eval_exp s (Memory e1 e2) (AggV vals)) ∧
 
@@ -242,7 +256,7 @@ Inductive eval_exp:
    eval_exp s (Concat es) (AggV (flat vals))) ∧
 
   (∀s i size.
-   eval_exp s (Integer i (IntegerT size)) (FlatV (IntV i size))) ∧
+   eval_exp s (Integer i (IntegerT size)) (FlatV (IntV (truncate_2comp i size) size))) ∧
 
   (* TODO Question: Should the same integer with two different sizes be equal *)
   (∀s e1 e2 r1 r2.
@@ -254,136 +268,146 @@ Inductive eval_exp:
   (∀s e1 e2 i1 size1 i2 size2.
    eval_exp s e1 (FlatV (IntV i1 size1)) ∧
    eval_exp s e2 (FlatV (IntV i2 size2)) ∧
-   fits i1 size1 ∧
-   fits i2 size2
+   ifits i1 size1 ∧
+   ifits i2 size2
    ⇒
    eval_exp s (Lt e1 e2) (bool2v (i1 < i2))) ∧
 
-  (∀s e1 e2 i1 size1 i2 size2.
+  (∀s e1 e2 i1 i2 size1 size2.
    eval_exp s e1 (FlatV (IntV i1 size1)) ∧
    eval_exp s e2 (FlatV (IntV i2 size2)) ∧
-   fits i1 size1 ∧
-   fits i2 size2
+   ifits i1 size1 ∧
+   ifits i2 size2
    ⇒
-   eval_exp s (Ult e1 e2) (bool2v (int2unsigned i1 size1 < int2unsigned i2 size2))) ∧
+   eval_exp s (Ult e1 e2) (bool2v (i2n (IntV i1 size1) < i2n (IntV i2 size2)))) ∧
 
   (∀s size e1 e2 i1 i2.
    eval_exp s e1 (FlatV (IntV i1 size)) ∧
-   eval_exp s e2 (FlatV (IntV i2 size)) ∧
-   fits i1 size ∧
-   fits i2 size
+   eval_exp s e2 (FlatV (IntV i2 size))
    ⇒
-   eval_exp s (Sub (IntegerT size) e1 e2) (FlatV (IntV (i1 - i2) size))) ∧
+   eval_exp s (Sub (IntegerT size) e1 e2) (FlatV (IntV (truncate_2comp (i1 - i2) size) size))) ∧
 
   (∀s es vals.
    list_rel (eval_exp s) es vals
    ⇒
    eval_exp s (Record es) (AggV vals)) ∧
 
-  (∀s e1 e2 vals size.
+  (∀s e1 e2 vals idx idx_size.
    eval_exp s e1 (AggV vals) ∧
-   eval_exp s e2 (FlatV (SizeV size)) ∧
-   size < length vals
+   eval_exp s e2 (FlatV (IntV (&idx) idx_size)) ∧
+   idx < length vals
    ⇒
-   eval_exp s (Select e1 e2) (el size vals)) ∧
+   eval_exp s (Select e1 e2) (el idx vals)) ∧
 
-  (∀s e1 e2 e3 vals size r.
+  (∀s e1 e2 e3 vals r idx idx_size.
    eval_exp s e1 (AggV vals) ∧
-   eval_exp s e2 (FlatV (SizeV size)) ∧
+   eval_exp s e2 (FlatV (IntV (&idx) idx_size)) ∧
    eval_exp s e3 r ∧
-   size < length vals
+   idx < length vals
    ⇒
-   eval_exp s (Update e1 e2 e3) (AggV (list_update r size vals)))
+   eval_exp s (Update e1 e2 e3) (AggV (list_update r idx vals)))
 
+End
+
+(* BEGIN Functions to interface to the generic memory model *)
+Definition type_to_shape_def:
+  (type_to_shape (IntegerT n) = Flat (sizeof (IntegerT n)) (IntegerT n)) ∧
+  (type_to_shape (ArrayT t n) = Array (type_to_shape t) n) ∧
+  (type_to_shape (TupleT ts) = Tuple (map type_to_shape ts))
+Termination
+  WF_REL_TAC `measure typ_size` >>
+  rw [] >>
+  Induct_on `ts` >> rw [definition "typ_size_def"] >>
+  res_tac >> decide_tac
 End
 
 Definition convert_value_def:
-  (convert_value (IntegerT n) w = IntV (w2i w) n) ∧
-  (convert_value (PointerT t) w = LocV (w2n w))
+  convert_value (IntegerT size) n = IntV (&n) size
 End
 
 Definition bytes_to_llair_value_def:
-  bytes_to_llair_value (:'a) t bs =
-    (bytes_to_value (λn t (w:'a word). convert_value t w) (type_to_shape (:'a) t) bs)
+  bytes_to_llair_value t bs =
+    (bytes_to_value (λn t w. convert_value t w) (type_to_shape t) bs)
 End
 
 Definition unconvert_value_def:
-  (unconvert_value (:'a) (IntV i size) = (size, i2w i)) ∧
-  (unconvert_value (:'a) (LocV n) = (dimindex (:'a), n2w n))
+  unconvert_value (IntV i size) = ((size + 7) DIV 8, i2n (IntV i size))
 End
 
 Definition llair_value_to_bytes_def:
-  llair_value_to_bytes (:'a) v =
-    value_to_bytes (unconvert_value (:'a) : flat_v -> num # 'a word) v
+  llair_value_to_bytes v =
+    value_to_bytes unconvert_value v
 End
+(* END Functions to interface to the generic memory model *)
 
 Definition update_results_def:
   update_results xvs s = s with locals := s.locals |++ xvs
 End
 
 Inductive step_inst:
-  (∀s ves r.
-    eval_exp s e r
+  (∀s ves rs.
+    list_rel (eval_exp s) (map snd ves) rs
     ⇒
     step_inst s
     (Move ves)
-    (update_results (map (λ(v,e). (v, r)) ves) s)) ∧
+    (update_results (map (λ(v,r). (v, r)) (zip (map fst ves, rs))) s)) ∧
 
-  (∀(s:'a state) x t e size ptr freeable interval bytes.
-   eval_exp s e (FlatV (LocV ptr)) ∧
-   interval = Interval freeable ptr (ptr + size) ∧
+  (∀s x t e size ptr freeable interval bytes.
+   eval_exp s e (FlatV ptr) ∧
+   interval = Interval freeable (i2n ptr) (i2n ptr + size) ∧
    is_allocated interval s.heap ∧
    bytes = map snd (get_bytes s.heap interval)
    ⇒
    step_inst s
     (Load (Var_name x t) e size)
-    (update_results [(Var_name x t, fst (bytes_to_llair_value (:'a) t bytes))] s)) ∧
+    (update_results [(Var_name x t, fst (bytes_to_llair_value t bytes))] s)) ∧
 
   (∀s e1 e2 size ptr bytes freeable interval r.
-   eval_exp s e1 (FlatV (LocV ptr)) ∧
+   eval_exp s e1 (FlatV ptr) ∧
    eval_exp s e2 r ∧
-   interval = Interval freeable ptr (ptr + size) ∧
+   interval = Interval freeable (i2n ptr) (i2n ptr + size) ∧
    is_allocated interval s.heap ∧
-   bytes = llair_value_to_bytes (:'a) r ∧
+   bytes = llair_value_to_bytes r ∧
    length bytes = size
    ⇒
    step_inst s
      (Store e1 e2 size)
-     (s with heap := set_bytes () bytes ptr s.heap)) ∧
+     (s with heap := set_bytes () bytes (i2n ptr) s.heap)) ∧
 
   (* TODO memset *)
 
   (∀s e1 e2 e3 dest_ptr src_ptr size src_interval freeable1 freeable2 bytes.
-   eval_exp s e1 (FlatV (LocV dest_ptr)) ∧
-   eval_exp s e2 (FlatV (LocV src_ptr)) ∧
-   eval_exp s e3 (FlatV (SizeV size)) ∧
-   src_interval = Interval freeable1 src_ptr (src_ptr + size) ∧
+   eval_exp s e1 (FlatV dest_ptr) ∧
+   eval_exp s e2 (FlatV src_ptr) ∧
+   eval_exp s e3 (FlatV size) ∧
+   src_interval = Interval freeable1 (i2n src_ptr) (i2n src_ptr + i2n size) ∧
    is_allocated src_interval s.heap ∧
-   is_allocated (Interval freeable2 dest_ptr (dest_ptr + size)) s.heap ∧
+   is_allocated (Interval freeable2 (i2n dest_ptr) (i2n dest_ptr + i2n size)) s.heap ∧
    (* TODO Question: should we allow overlap? *)
    bytes = map snd (get_bytes s.heap src_interval)
    ⇒
    step_inst s
     (Memcpy e1 e2 e3)
-    (s with heap := set_bytes () bytes dest_ptr s.heap)) ∧
+    (s with heap := set_bytes () bytes (i2n dest_ptr) s.heap)) ∧
 
   (* TODO memmove *)
 
-  (∀s v e1 e2 n size ptr new_h.
-   eval_exp s e1 (FlatV (SizeV n)) ∧
-   eval_exp s e2 (FlatV (SizeV size)) ∧
-   allocate s.heap (n * size) () (ptr, new_h)
+  (∀s v e1 e2 n size ptr new_h size_size.
+   eval_exp s e1 (FlatV n) ∧
+   eval_exp s e2 (FlatV (IntV (&size) size_size)) ∧
+   allocate s.heap (i2n n * size) () (ptr, new_h) ∧
+   nfits ptr pointer_size
    ⇒
    step_inst s
      (Alloc v e1 e2)
-     (update_results [(v, FlatV (LocV ptr))] (s with heap := new_h))) ∧
+     (update_results [(v, FlatV (n2i ptr pointer_size))] (s with heap := new_h))) ∧
 
   (∀s e ptr.
-   eval_exp s e (FlatV (LocV ptr))
+   eval_exp s e (FlatV ptr)
    ⇒
    step_inst s
      (Free e)
-     (s with heap := deallocate [A ptr] s.heap)) ∧
+     (s with heap := deallocate [A (i2n ptr)] s.heap)) ∧
 
   (∀s x t nondet.
    value_type t nondet
@@ -396,22 +420,22 @@ End
 
 Inductive step_term:
 
-  (∀prog s e table default size fname bname bname'.
-   eval_exp s e (FlatV (SizeV size)) ∧
-   Lab_name fname bname = (case alookup table size of Some lab => lab | None => default) ∧
+  (∀prog s e table default idx fname bname bname' idx_size.
+   eval_exp s e (FlatV (IntV (&idx) idx_size)) ∧
+   Lab_name fname bname = (case alookup table idx of Some lab => lab | None => default) ∧
    s.bp = Lab_name fname bname'
    ⇒
    step_term prog s
      (Switch e table default)
      (s with bp := Lab_name fname bname)) ∧
 
-  (∀prog s e labs size.
-   eval_exp s e (FlatV (SizeV size)) ∧
-   size < length labs
+  (∀prog s e labs i idx idx_size.
+   eval_exp s e (FlatV (IntV (&idx) idx_size)) ∧
+   idx < length labs
    ⇒
    step_term prog s
      (Iswitch e labs)
-     (s with bp := el size labs)) ∧
+     (s with bp := el i labs)) ∧
 
   (∀prog s v fname bname es t ret1 ret2 vals f.
    alookup prog.functions fname = Some f ∧
@@ -428,7 +452,6 @@ Inductive step_term:
              exn_ret := ret2;
              ret_var := v;
              saved_locals := s.locals |> :: s.stack;
-        pointer_size := s.pointer_size;
         heap := s.heap |>) ∧
 
   (∀prog s e r top rest.
@@ -441,7 +464,6 @@ Inductive step_term:
         globals := s.globals;
         locals := top.saved_locals |+ (top.ret_var, r);
         stack := rest;
-        pointer_size := s.pointer_size;
         heap := s.heap |>)
 
   (* TODO Throw *)
@@ -452,12 +474,12 @@ End
  * instruction pointer and do a big-step evaluation for each block *)
 Inductive step_block:
 
-  (!prog s1 t s2.
+  (∀prog s1 t s2.
    step_term prog s1 t s2
    ⇒
    step_block prog s1 [] t s2) ∧
 
-  (!prog s1 i is t s2 s3.
+  (∀prog s1 i is t s2 s3.
    step_inst s1 i s2 ∧
    step_block prog s2 is t s3
    ⇒

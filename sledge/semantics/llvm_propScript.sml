@@ -98,7 +98,7 @@ Proof
   irule b2v_v2b >>
   qexists_tac `f` >> rw [] >>
   unabbrev_all_tac >> fs [] >>
-  fs [unconvert_value_def, convert_value_def, value_type_cases] >>
+  fs [unconvert_value_def, convert_value_def, value_type_cases, pointer_size_def] >>
   wordsLib.WORD_DECIDE_TAC
 QED
 
