@@ -15,17 +15,12 @@ module L = Logging
 
 let run driver_mode =
   let open Driver in
-  if CLOpt.is_originator && Config.(sqlite_write_daemon && not (buck || genrule_mode)) then
-    DBWriter.start () ;
-  Utils.try_finally_swallow_timeout
-    ~f:(fun () ->
-      run_prologue driver_mode ;
-      let changed_files = read_config_changed_files () in
-      InferAnalyze.invalidate_changed_procedures changed_files ;
-      capture driver_mode ~changed_files ;
-      analyze_and_report driver_mode ~changed_files ;
-      run_epilogue () )
-    ~finally:(fun () -> if CLOpt.is_originator && Config.sqlite_write_daemon then DBWriter.stop ())
+  run_prologue driver_mode ;
+  let changed_files = read_config_changed_files () in
+  InferAnalyze.invalidate_changed_procedures changed_files ;
+  capture driver_mode ~changed_files ;
+  analyze_and_report driver_mode ~changed_files ;
+  run_epilogue ()
 
 
 let run driver_mode = ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
@@ -62,7 +57,10 @@ let setup () =
   if CLOpt.is_originator then (
     RunState.add_run_to_sequence () ;
     RunState.store () ;
-    if Config.memcached then Memcached.start () ) ;
+    if Config.memcached then Memcached.start () ;
+    if Config.(sqlite_write_daemon && (not (buck || genrule_mode)) && jobs > 1) then (
+      DBWriter.start () ;
+      Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ) ) ;
   ()
 
 
