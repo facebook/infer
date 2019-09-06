@@ -114,6 +114,7 @@ DIRECT_TESTS += \
   objcpp_linters-for-test-only \
   objcpp_liveness \
   objcpp_nullable \
+	objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \
 
