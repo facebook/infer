@@ -198,7 +198,7 @@ module TransferFunctions = struct
           L.d_printfln_escaped "/!\\ Failed to get initializer name of global constant %a"
             (Pvar.pp Pp.text) pvar ;
           Dom.Mem.add_unknown id ~location mem )
-    | Load {id; e= exp; root_typ= typ} ->
+    | Load {id; e= exp; typ} ->
         let represents_multiple_values = is_array_access_exp exp in
         BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
     | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
@@ -210,7 +210,7 @@ module TransferFunctions = struct
         in
         let do_alloc = not (Sem.is_stack_exp exp1 mem) in
         BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
-    | Store {e1= exp1; root_typ= typ; e2= exp2; loc= location} ->
+    | Store {e1= exp1; typ; e2= exp2; loc= location} ->
         let locs = Sem.eval_locs exp1 mem in
         let v =
           Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs

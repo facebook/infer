@@ -36,7 +36,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate _ _ = function
-    | Sil.Store {root_typ= {desc= Tptr _}; e2= rhs_exp} ->
+    | Sil.Store {typ= {desc= Tptr _}; e2= rhs_exp} ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->
         let add_actual_by_ref astate_acc = function

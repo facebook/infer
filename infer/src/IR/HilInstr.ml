@@ -58,9 +58,9 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
         Instr (Assign (HilExp.AccessExpression.base (lhs_id, rhs_typ), rhs_hil_exp, loc))
   in
   match instr with
-  | Load {id= lhs_id; e= rhs_exp; root_typ= rhs_typ; loc} ->
+  | Load {id= lhs_id; e= rhs_exp; typ= rhs_typ; loc} ->
       analyze_id_assignment ~add_deref:true (Var.of_id lhs_id) rhs_exp rhs_typ loc
-  | Store {e1= Lvar lhs_pvar; root_typ= lhs_typ; e2= rhs_exp; loc}
+  | Store {e1= Lvar lhs_pvar; typ= lhs_typ; e2= rhs_exp; loc}
     when Pvar.is_ssa_frontend_tmp lhs_pvar ->
       (* do not need to add deref here as it is added implicitly in of_pvar by forgetting the & *)
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
@@ -72,7 +72,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
       , _ )
     when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
-  | Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
+  | Store {e1= lhs_exp; typ; e2= rhs_exp; loc} ->
       let lhs_access_expr =
         match HilExp.access_expr_of_exp ~include_array_indexes ~f_resolve_id lhs_exp typ with
         | Some access_expr ->

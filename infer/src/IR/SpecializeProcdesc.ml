@@ -83,8 +83,8 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         in
         Some
           (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; typ= updated_typ; loc})
-    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; typ; loc} ->
-        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; typ; loc})
+    | Sil.Load {id; e= origin_exp; root_typ; typ; loc} ->
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc})
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
           Sil.Store
@@ -230,8 +230,8 @@ let with_block_args_instrs resolved_pdesc substitutions =
         let id_map = Ident.Map.add id (Pvar.get_name block_param) id_map in
         (* we don't need the load the block param instruction anymore *)
         (instrs, id_map)
-    | Sil.Load {id; e= origin_exp; root_typ= origin_typ; typ; loc} ->
-        (Sil.Load {id; e= convert_exp origin_exp; root_typ= origin_typ; typ; loc} :: instrs, id_map)
+    | Sil.Load {id; e= origin_exp; root_typ; typ; loc} ->
+        (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc} :: instrs, id_map)
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= Exp.Var id; loc}
       when Ident.Map.mem id id_map ->
         let block_param = Ident.Map.find id id_map in

@@ -179,7 +179,7 @@ let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : s
     let nvar_type_name nvar =
       instrs
       |> Instrs.find_map ~f:(function
-           | Sil.Load {id= nv; e; root_typ= t} when Ident.equal nv nvar ->
+           | Sil.Load {id= nv; e; typ= t} when Ident.equal nv nvar ->
                Some (e, t)
            | _ ->
                None )

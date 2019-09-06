@@ -263,7 +263,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
     Reporting.log_error summary ~loc ~ltr IssueType.dead_store message
   in
   let report_dead_store live_vars captured_by_ref_vars = function
-    | Sil.Store {e1= Lvar pvar; root_typ= typ; e2= rhs_exp; loc}
+    | Sil.Store {e1= Lvar pvar; typ; e2= rhs_exp; loc}
       when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp)
       ->
         log_report pvar typ loc

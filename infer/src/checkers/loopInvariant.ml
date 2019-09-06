@@ -133,10 +133,10 @@ let get_ptr_vars_in_defn_path node loop_head var =
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
              match instr with
-             | Sil.Load {id; e= exp_rhs; root_typ= typ}
+             | Sil.Load {id; e= exp_rhs; typ}
                when Var.equal var (Var.of_id id) && is_non_primitive typ ->
                  invalidate_exp exp_rhs acc
-             | Sil.Store {e1= Exp.Lvar pvar; root_typ= typ; e2= exp_rhs}
+             | Sil.Store {e1= Exp.Lvar pvar; typ; e2= exp_rhs}
                when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
                  invalidate_exp exp_rhs acc
              | _ ->
