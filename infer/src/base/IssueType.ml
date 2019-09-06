@@ -442,6 +442,8 @@ let use_after_delete = register_from_string "USE_AFTER_DELETE"
 
 let use_after_free = register_from_string "USE_AFTER_FREE"
 
+let biabd_use_after_free = register_from_string "BIABD_USE_AFTER_FREE"
+
 let use_after_lifetime = register_from_string "USE_AFTER_LIFETIME"
 
 let user_controlled_sql_risk = register_from_string "USER_CONTROLLED_SQL_RISK"

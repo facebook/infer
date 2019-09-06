@@ -53,6 +53,8 @@ val assert_failure : t
 
 val bad_footprint : t
 
+val biabd_use_after_free : t
+
 val buffer_overrun_l1 : t
 
 val buffer_overrun_l2 : t

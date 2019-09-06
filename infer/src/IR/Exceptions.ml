@@ -43,6 +43,8 @@ exception Array_of_pointsto of L.ocaml_pos
 
 exception Bad_footprint of L.ocaml_pos
 
+exception Biabd_use_after_free of Localise.error_desc * L.ocaml_pos
+
 exception Cannot_star of L.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * L.ocaml_pos
@@ -128,8 +130,6 @@ exception Unknown_proc
 
 exception Unsafe_guarded_by_access of Localise.error_desc * L.ocaml_pos
 
-exception Use_after_free of Localise.error_desc * L.ocaml_pos
-
 exception Wrong_argument_number of L.ocaml_pos
 
 type t =
@@ -201,6 +201,13 @@ let recognize_exception exn =
       ; visibility= Exn_developer
       ; severity= None
       ; category= Nocat }
+  | Biabd_use_after_free (desc, ocaml_pos) ->
+      { name= IssueType.biabd_use_after_free
+      ; description= desc
+      ; ocaml_pos= Some ocaml_pos
+      ; visibility= Exn_user
+      ; severity= None
+      ; category= Prover }
   | Cannot_star ocaml_pos ->
       { name= IssueType.cannot_star
       ; description= Localise.no_desc
@@ -528,13 +535,6 @@ let recognize_exception exn =
       ; category= Nocat }
   | Unsafe_guarded_by_access (desc, ocaml_pos) ->
       { name= IssueType.unsafe_guarded_by_access
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= None
-      ; category= Prover }
-  | Use_after_free (desc, ocaml_pos) ->
-      { name= IssueType.use_after_free
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user

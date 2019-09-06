@@ -1359,7 +1359,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             | Dereference_error (Deref_freed _, desc, path_opt) ->
                 trace_call CR_not_met ;
                 extend_path path_opt None ;
-                raise (Exceptions.Use_after_free (desc, __POS__))
+                raise (Exceptions.Biabd_use_after_free (desc, __POS__))
             | Dereference_error (Deref_undef (_, _, pos), desc, path_opt) ->
                 trace_call CR_not_met ;
                 extend_path path_opt (Some pos) ;

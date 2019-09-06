@@ -152,7 +152,7 @@ let should_report (issue_kind : Exceptions.severity) issue_type error_desc eclas
           ; parameter_not_null_checked
           ; premature_nil_termination
           ; empty_vector_access
-          ; use_after_free ]
+          ; biabd_use_after_free ]
         in
         List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
       in

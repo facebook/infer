@@ -43,6 +43,8 @@ exception Array_out_of_bounds_l3 of Localise.error_desc * Logging.ocaml_pos
 
 exception Bad_footprint of Logging.ocaml_pos
 
+exception Biabd_use_after_free of Localise.error_desc * Logging.ocaml_pos
+
 exception Cannot_star of Logging.ocaml_pos
 
 exception Class_cast_exception of Localise.error_desc * Logging.ocaml_pos
@@ -133,8 +135,6 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Lo
 exception Unknown_proc
 
 exception Unsafe_guarded_by_access of Localise.error_desc * Logging.ocaml_pos
-
-exception Use_after_free of Localise.error_desc * Logging.ocaml_pos
 
 exception Wrong_argument_number of Logging.ocaml_pos
 

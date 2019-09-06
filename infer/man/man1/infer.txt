@@ -333,6 +333,7 @@ OPTIONS
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BIABD_USE_AFTER_FREE (enabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),
              BUFFER_OVERRUN_L2 (enabled by default),
              BUFFER_OVERRUN_L3 (enabled by default),
