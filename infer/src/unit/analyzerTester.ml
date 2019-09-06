@@ -73,7 +73,7 @@ module StructuredSil = struct
 
 
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
-    Cmd (Sil.Store {e1= lhs_exp; root_typ= rhs_typ; e2= rhs_exp; loc= dummy_loc})
+    Cmd (Sil.Store {e1= lhs_exp; root_typ= rhs_typ; typ= rhs_typ; e2= rhs_exp; loc= dummy_loc})
 
 
   let make_call ?(procname = dummy_procname) ?return:return_opt args =

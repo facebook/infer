@@ -50,12 +50,17 @@ type instr =
 
           The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
           future, so please use [typ] instead. *)
-  | Store of {e1: Exp.t; root_typ: Typ.t; e2: Exp.t; loc: Location.t}
+  | Store of {e1: Exp.t; root_typ: Typ.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
-      [*exp1:root_typ = exp2] where
+
+      [*exp1:typ(root_typ) = exp2] where
         [exp1] is an expression denoting a heap address
+        [typ] is typ of [*exp1] and [exp2]
         [root_typ] is the root type of [exp1]
-        [exp2] is the expression whose value is stored. *)
+        [exp2] is the expression whose value is stored.
+
+          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          future, so please use [typ] instead. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
@@ -415,17 +420,17 @@ let pp_instr_metadata pe f = function
 
 let pp_instr ~print_types pe0 f instr =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
+  let pp_root ~typ ~root_typ f =
+    if not (Typ.equal typ root_typ) then F.fprintf f "(root %a)" (pp_typ pe0) root_typ
+  in
   color_wrapper pe0 f instr ~f:(fun pe f instr ->
       match instr with
       | Load {id; e; root_typ; typ; loc} ->
-          let pp_root f =
-            if not (Typ.equal typ root_typ) then F.fprintf f "(root %a)" (pp_typ pe0) root_typ
-          in
           F.fprintf f "%a=*%a:%a%t [%a]" Ident.pp id (pp_exp_printenv ~print_types pe) e
-            (pp_typ pe0) typ pp_root Location.pp loc
-      | Store {e1; root_typ; e2; loc} ->
-          F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) root_typ
-            (pp_exp_printenv ~print_types pe) e2 Location.pp loc
+            (pp_typ pe0) typ (pp_root ~typ ~root_typ) Location.pp loc
+      | Store {e1; root_typ; typ; e2; loc} ->
+          F.fprintf f "*%a:%a%t=%a [%a]" (pp_exp_printenv ~print_types pe) e1 (pp_typ pe0) root_typ
+            (pp_root ~typ ~root_typ) (pp_exp_printenv ~print_types pe) e2 Location.pp loc
       | Prune (cond, loc, true_branch, _) ->
           F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv ~print_types pe) cond true_branch
             Location.pp loc
@@ -1280,11 +1285,11 @@ let instr_sub_ids ~sub_id_binders f instr =
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
       else Load {id= id'; e= rhs_exp'; root_typ; typ; loc}
-  | Store {e1= lhs_exp; root_typ; e2= rhs_exp; loc} ->
+  | Store {e1= lhs_exp; root_typ; typ; e2= rhs_exp; loc} ->
       let lhs_exp' = exp_sub_ids f lhs_exp in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp then instr
-      else Store {e1= lhs_exp'; root_typ; e2= rhs_exp'; loc}
+      else Store {e1= lhs_exp'; root_typ; typ; e2= rhs_exp'; loc}
   | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
       let ret_id' =
         if sub_id_binders then

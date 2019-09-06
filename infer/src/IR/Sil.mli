@@ -48,12 +48,17 @@ type instr =
 
           The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
           future, so please use [typ] instead. *)
-  | Store of {e1: Exp.t; root_typ: Typ.t; e2: Exp.t; loc: Location.t}
+  | Store of {e1: Exp.t; root_typ: Typ.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
-      [*exp1:root_typ = exp2] where
+
+      [*exp1:typ(root_typ) = exp2] where
         [exp1] is an expression denoting a heap address
+        [typ] is typ of [*exp1] and [exp2]
         [root_typ] is the root type of [exp1]
-        [exp2] is the expression whose value is stored. *)
+        [exp2] is the expression whose value is stored.
+
+          The [root_typ] is deprecated: it is broken in C/C++.  We are removing [root_typ] in the
+          future, so please use [typ] instead. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t

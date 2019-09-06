@@ -85,15 +85,15 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
             {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; typ; loc= loc_call}
         in
         found instr instr'
-    | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ= bt}
+    | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ; typ}
       , [(* setter for fields *) (e1, _); (e2, _)] ) ->
-        let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); root_typ= bt; e2; loc= loc_call} in
+        let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); root_typ; typ; e2; loc= loc_call} in
         found instr instr'
-    | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt}, [(e1, _)]
+    | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ}, [(e1, _)]
       when Pvar.is_global pvar ->
         (* setter for static fields *)
         let instr' =
-          Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ= bt; e2= e1; loc= loc_call}
+          Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ; e2= e1; loc= loc_call}
         in
         found instr instr'
     | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _

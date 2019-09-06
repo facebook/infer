@@ -85,6 +85,7 @@ let set_transitions loc active_transitions =
     Sil.Store
       { e1= ToplUtils.static_var (ToplName.transition i)
       ; root_typ= ToplUtils.topl_class_typ
+      ; typ= ToplUtils.topl_class_typ
       ; e2= value
       ; loc }
   in

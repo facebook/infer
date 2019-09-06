@@ -88,7 +88,11 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
           Sil.Store
-            {e1= convert_exp assignee_exp; root_typ= origin_typ; e2= convert_exp origin_exp; loc}
+            { e1= convert_exp assignee_exp
+            ; root_typ= origin_typ
+            ; typ= origin_typ
+            ; e2= convert_exp origin_exp
+            ; loc }
         in
         Some set_instr
     | Sil.Call
@@ -235,12 +239,18 @@ let with_block_args_instrs resolved_pdesc substitutions =
           get_block_name_and_load_captured_vars_instrs block_param loc
         in
         let closure = Exp.Closure {name= block_name; captured_vars= id_exp_typs} in
-        let instr = Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= closure; loc} in
+        let instr =
+          Sil.Store {e1= assignee_exp; root_typ= origin_typ; typ= origin_typ; e2= closure; loc}
+        in
         ((remove_temps_instr :: instr :: load_instrs) @ instrs, id_map)
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
           Sil.Store
-            {e1= convert_exp assignee_exp; root_typ= origin_typ; e2= convert_exp origin_exp; loc}
+            { e1= convert_exp assignee_exp
+            ; root_typ= origin_typ
+            ; typ= origin_typ
+            ; e2= convert_exp origin_exp
+            ; loc }
         in
         (set_instr :: instrs, id_map)
     | Sil.Call (return_ids, Exp.Var id, origin_args, loc, call_flags) -> (

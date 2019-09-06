@@ -176,7 +176,11 @@ let sil_assign lhs rhs =
       ; typ= ToplUtils.any_type
       ; loc= sourcefile_location () }
   ; Sil.Store
-      {e1= lhs; root_typ= ToplUtils.any_type; e2= Exp.Var tempvar; loc= sourcefile_location ()} ]
+      { e1= lhs
+      ; root_typ= ToplUtils.any_type
+      ; typ= ToplUtils.any_type
+      ; e2= Exp.Var tempvar
+      ; loc= sourcefile_location () } ]
 
 
 let assign lhs rhs : node_generator = stmt_node (sil_assign lhs rhs)
@@ -258,6 +262,7 @@ let generate_execute_state automaton proc_name =
         [ Sil.Store
             { e1= ToplUtils.static_var ToplName.state
             ; root_typ= Typ.mk (Tint IInt)
+            ; typ= Typ.mk (Tint IInt)
             ; e2= Exp.int (IntLit.of_int transition.target)
             ; loc= sourcefile_location () } ]
       :: step (ToplUtils.static_var ToplName.retval) transition.label.ToplAst.return

@@ -423,7 +423,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               |> mk_trans_result exp_typ
           | Tint _ | Tfloat _ | Tptr _ ->
               let zero_exp = Exp.zero_of_type_exn typ in
-              let instrs = [Sil.Store {e1= exp; root_typ= typ; e2= zero_exp; loc= sil_loc}] in
+              let instrs = [Sil.Store {e1= exp; root_typ= typ; typ; e2= zero_exp; loc= sil_loc}] in
               mk_trans_result (exp, typ) {empty_control with instrs}
           | Tfun _ | Tvoid | Tarray _ | TVar _ ->
               CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -1506,7 +1506,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             e'
       in
       let temp_var = Exp.Lvar pvar in
-      let set_temp_var = [Sil.Store {e1= temp_var; root_typ= var_typ; e2= e'; loc= sil_loc}] in
+      let set_temp_var =
+        [Sil.Store {e1= temp_var; root_typ= var_typ; typ= var_typ; e2= e'; loc= sil_loc}]
+      in
       let temp_return = (temp_var, var_typ) in
       let tmp_var_res_trans =
         mk_trans_result temp_return {empty_control with instrs= set_temp_var}
@@ -2327,7 +2329,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             let sil_e1', ie_typ = res_trans_ie.return in
             Some
               { empty_control with
-                instrs= [Sil.Store {e1= var_exp; root_typ= ie_typ; e2= sil_e1'; loc= sil_loc}] }
+                instrs=
+                  [ Sil.Store
+                      {e1= var_exp; root_typ= ie_typ; typ= ie_typ; e2= sil_e1'; loc= sil_loc} ] }
         in
         let pre_init_opt =
           match var_exp with
@@ -2642,7 +2646,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
             else
               let sil_expr, _ = res_trans_stmt.return in
-              [Sil.Store {e1= ret_exp; root_typ= ret_type; e2= sil_expr; loc= sil_loc}]
+              [ Sil.Store
+                  {e1= ret_exp; root_typ= ret_type; typ= ret_typ; e2= sil_expr; loc= sil_loc} ]
           in
           let instrs = var_instrs @ res_trans_stmt.control.instrs @ ret_instrs in
           let ret_node = mk_ret_node instrs in
