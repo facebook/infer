@@ -201,6 +201,23 @@ module TransferFunctions = struct
     | Load {id; e= exp; typ} ->
         let represents_multiple_values = is_array_access_exp exp in
         BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
+    | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}
+      when Language.curr_language_is Java ->
+        let pname = Summary.get_proc_name summary in
+        let node_hash = CFG.Node.hash node in
+        let model_env =
+          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+        in
+        let tgt_locs = Sem.eval_locs tgt_exp mem in
+        let tgt_deref =
+          let allocsite =
+            Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+              ~represents_multiple_values:false
+          in
+          PowLoc.singleton (Loc.of_allocsite allocsite)
+        in
+        Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Dom.TraceSet.bottom tgt_deref) mem
+        |> Models.JavaString.constructor_from_char_ptr model_env tgt_deref src
     | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
         let locs = Sem.eval_locs exp1 mem in
         let model_env =

@@ -168,14 +168,32 @@ module Exec = struct
         mem
 
 
-  let get_max_char s = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c))
+  let get_min_max_char s ~init_char =
+    let init_i = Char.to_int init_char in
+    String.fold s ~init:(init_i, init_i) ~f:(fun (min_acc, max_acc) c ->
+        let i = Char.to_int c in
+        (min min_acc i, max max_acc i) )
+
 
   let decl_string {pname; node_hash; location; integer_type_widths} ~do_alloc locs s mem =
     let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
     let offset = Itv.zero in
-    let size = Itv.of_int (String.length s + 1) in
+    let size =
+      let s_length =
+        if Language.curr_language_is Java then String.length s else String.length s + 1
+      in
+      Itv.of_int s_length
+    in
     let traces = Trace.Set.singleton location Trace.ArrayDeclaration in
-    let char_itv = Itv.join Itv.zero (Itv.of_int (get_max_char s)) in
+    let char_itv =
+      let itv =
+        if Int.equal (String.length s) 0 then Itv.bot
+        else
+          let min, max = get_min_max_char s ~init_char:s.[0] in
+          Itv.join (Itv.of_int min) (Itv.of_int max)
+      in
+      if Language.curr_language_is Java then itv else Itv.join Itv.zero itv
+    in
     let decl loc mem =
       (* It doesn't allocate if the character pointer is in stack, because they are already
          allocated at the entry of the function. *)

@@ -52,8 +52,10 @@ let modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
 
 (** Given a string of length n and an optional starting index i (0 by
    default), return itv [0, n_u-i_l] *)
-let string_len_range_itv exp ~from mem =
-  let itv = BufferOverrunModels.eval_string_len exp mem |> BufferOverrunDomain.Val.get_itv in
+let string_len_range_itv model_env exp ~from mem =
+  let itv =
+    BufferOverrunModels.JavaString.get_length model_env exp mem |> BufferOverrunDomain.Val.get_itv
+  in
   Option.value_map from ~default:itv ~f:(fun (start_exp, integer_type_widths) ->
       let start_itv =
         BufferOverrunSemantics.eval integer_type_widths start_exp mem
@@ -90,7 +92,7 @@ module JavaString = struct
 
   let substring exp begin_idx model_env ~ret:_ inferbo_mem =
     substring_aux ~begin_idx
-      ~end_v:(BufferOverrunModels.eval_string_len exp inferbo_mem)
+      ~end_v:(BufferOverrunModels.JavaString.get_length model_env exp inferbo_mem)
       model_env inferbo_mem
 
 
@@ -101,24 +103,29 @@ module JavaString = struct
 
 
   (** O(|m|) where m is the given string and |.| is the length function *)
-  let indexOf_char exp {location} ~ret:_ inferbo_mem =
-    let itv = string_len_range_itv exp ~from:None inferbo_mem in
+  let indexOf_char exp ({location} as model_env) ~ret:_ inferbo_mem =
+    let itv = string_len_range_itv model_env exp ~from:None inferbo_mem in
     of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location
 
 
   (** O(|m|-|n|) where m is the given string and n is the index to start searching from *)
-  let indexOf_char_starting_from exp start_exp {integer_type_widths; location} ~ret:_ inferbo_mem =
-    let itv = string_len_range_itv exp ~from:(Some (start_exp, integer_type_widths)) inferbo_mem in
+  let indexOf_char_starting_from exp start_exp ({integer_type_widths; location} as model_env)
+      ~ret:_ inferbo_mem =
+    let itv =
+      string_len_range_itv model_env exp ~from:(Some (start_exp, integer_type_widths)) inferbo_mem
+    in
     of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location
 
 
   (** O(|m|.|n|) where m and n are the given strings *)
-  let indexOf_str exp index_exp {location} ~ret:_ inferbo_mem =
+  let indexOf_str exp index_exp ({location} as model_env) ~ret:_ inferbo_mem =
     let itv =
-      BufferOverrunModels.eval_string_len exp inferbo_mem |> BufferOverrunDomain.Val.get_itv
+      BufferOverrunModels.JavaString.get_length model_env exp inferbo_mem
+      |> BufferOverrunDomain.Val.get_itv
     in
     let index_itv =
-      BufferOverrunModels.eval_string_len index_exp inferbo_mem |> BufferOverrunDomain.Val.get_itv
+      BufferOverrunModels.JavaString.get_length model_env index_exp inferbo_mem
+      |> BufferOverrunDomain.Val.get_itv
     in
     let n =
       of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf" location

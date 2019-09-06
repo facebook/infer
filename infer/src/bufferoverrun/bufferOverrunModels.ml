@@ -564,6 +564,40 @@ module ArrObjCommon = struct
     let arr_locs = deref_of model_env exp ~fn mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
     load_size_alias id arr_locs mem
+
+
+  let at arr_exp ~fn index_exp =
+    let exec ({pname; location} as model_env) ~ret:(id, _) mem =
+      let array_v =
+        let locs = deref_of model_env arr_exp ~fn mem in
+        if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
+        else Dom.Mem.find_set locs mem
+      in
+      Dom.Mem.add_stack (Loc.of_id id) array_v mem
+    and check ({location; integer_type_widths} as model_env) mem cond_set =
+      let idx = Sem.eval integer_type_widths index_exp mem in
+      let arr = Dom.Mem.find_set (deref_of model_env arr_exp ~fn mem) mem in
+      let relation = Dom.Mem.get_relation mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
+        ~last_included:false ~latest_prune location cond_set
+    in
+    {exec; check}
+
+
+  let copy_constructor model_env deref_of_tgt ~fn src_exp mem =
+    let deref_of_src = deref_of model_env src_exp ~fn mem in
+    Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set deref_of_src mem) mem
+
+
+  let constructor_from_char_ptr ({integer_type_widths} as model_env) tgt_deref ~fn src mem =
+    let elem_locs = PowLoc.append_field tgt_deref ~fn in
+    match src with
+    | Exp.Const (Const.Cstr s) ->
+        BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
+    | _ ->
+        let v = Sem.eval integer_type_widths src mem in
+        Dom.Mem.update_mem elem_locs v mem
 end
 
 module StdVector = struct
@@ -614,31 +648,16 @@ module StdVector = struct
         (Dom.Val.get_all_locs v, Dom.Val.get_traces v)
       in
       let deref_of_vec = append_fields vec_locs ~vec_typ ~elt_typ in
-      let deref_of_src = deref_of model_env elt_typ (src_exp, vec_typ) mem in
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
-      |> Dom.Mem.update_mem deref_of_vec (Dom.Mem.find_set deref_of_src mem)
+      |> ArrObjCommon.copy_constructor model_env deref_of_vec ~fn src_exp
     in
     {exec; check= no_check}
 
 
-  let at elt_typ vec_arg index_exp =
-    let exec ({pname; location} as model_env) ~ret:(id, _) mem =
-      let array_v =
-        let locs = deref_of model_env elt_typ vec_arg mem in
-        if PowLoc.is_bot locs then Dom.Val.unknown_from ~callee_pname:(Some pname) ~location
-        else Dom.Mem.find_set locs mem
-      in
-      Dom.Mem.add_stack (Loc.of_id id) array_v mem
-    and check ({location; integer_type_widths} as model_env) mem cond_set =
-      let idx = Sem.eval integer_type_widths index_exp mem in
-      let arr = Dom.Mem.find_set (deref_of model_env elt_typ vec_arg mem) mem in
-      let relation = Dom.Mem.get_relation mem in
-      let latest_prune = Dom.Mem.get_latest_prune mem in
-      BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp:None ~relation ~is_plus:true
-        ~last_included:false ~latest_prune location cond_set
-    in
-    {exec; check}
+  let at elt_typ (vec_exp, vec_typ) index_exp =
+    ArrObjCommon.at vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ) index_exp
 
 
   let set_size {location} locs new_size mem =
@@ -693,8 +712,8 @@ module StdVector = struct
 end
 
 module StdBasicString = struct
-  let constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt =
-    let exec ({pname; node_hash; integer_type_widths} as model_env) ~ret mem =
+  let constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt =
+    let exec ({pname; node_hash} as model_env) ~ret mem =
       let mem =
         Option.value_map len_opt ~default:mem ~f:(fun len ->
             let {exec= malloc_exec} = malloc ~can_be_zero:true len in
@@ -711,13 +730,8 @@ module StdBasicString = struct
       let mem =
         Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
       in
-      let elem_locs = StdVector.append_fields ~vec_typ:tgt_typ ~elt_typ:char_typ tgt_deref in
-      match src with
-      | Exp.Const (Const.Cstr s) ->
-          BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
-      | _ ->
-          let v = Sem.eval integer_type_widths src mem in
-          Dom.Mem.update_mem elem_locs v mem
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ:tgt_typ ~elt_typ:char_typ in
+      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref src ~fn mem
     in
     let check ({location; integer_type_widths} as model_env) mem cond_set =
       Option.value_map len_opt ~default:cond_set ~f:(fun len ->
@@ -730,13 +744,13 @@ module StdBasicString = struct
 
 
   (* The (4) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
-  let constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src len =
-    constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt:(Some len)
+  let constructor_from_char_ptr_with_len char_typ (tgt_exp, tgt_typ) src len =
+    constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt:(Some len)
 
 
   (* The (5) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
   let constructor_from_char_ptr_without_len char_typ (tgt_exp, tgt_typ) src =
-    constructor_from_char_ptr_common char_typ (tgt_exp, tgt_typ) src ~len_opt:None
+    constructor_from_char_ptr char_typ (tgt_exp, tgt_typ) src ~len_opt:None
 
 
   (* The (7) constructor in https://en.cppreference.com/w/cpp/string/basic_string/basic_string *)
@@ -1007,6 +1021,8 @@ module JavaString = struct
         (length, elem)
 
 
+  let get_length model_env exp mem = get_length_and_elem model_env exp mem |> fst
+
   let concat exp1 exp2 =
     let exec ({pname; node_hash} as model_env) ~ret:(id, _) mem =
       let length_v, elem =
@@ -1045,6 +1061,30 @@ module JavaString = struct
       (* if not found, indexOf returns -1. *)
       let v = range_itv_mone model_env exp mem |> Dom.Val.of_itv in
       model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+
+
+  let charAt string_exp idx = ArrObjCommon.at ~fn string_exp idx
+
+  let constructor_from_char_ptr model_env tgt_deref src mem =
+    ArrObjCommon.constructor_from_char_ptr model_env tgt_deref ~fn src mem
+
+
+  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(byte[]) *)
+  let constructor tgt_exp src =
+    let exec model_env ~ret:_ mem =
+      constructor_from_char_ptr model_env (Sem.eval_locs tgt_exp mem) src mem
+    in
+    {exec; check= no_check}
+
+
+  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(java.lang.String) *)
+  let copy_constructor vec_exp src_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
+      let vec_locs = Sem.eval integer_type_widths vec_exp mem |> Dom.Val.get_all_locs in
+      let deref_of_vec = PowLoc.append_field vec_locs ~fn in
+      ArrObjCommon.copy_constructor model_env deref_of_vec ~fn src_exp mem
     in
     {exec; check= no_check}
 end
@@ -1113,6 +1153,14 @@ module Call = struct
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; +PatternMatch.implements_lang "String"
+        &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
+      ; +PatternMatch.implements_lang "String"
+        &:: "<init>" <>$ capt_exp
+        $+ capt_exp_of_typ (+PatternMatch.implements_lang "String")
+        $--> JavaString.copy_constructor
+      ; +PatternMatch.implements_lang "String"
+        &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.constructor
+      ; +PatternMatch.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
       ; +PatternMatch.implements_lang "String"
         &:: "indexOf" <>$ capt_exp $+ any_arg $--> JavaString.indexOf
@@ -1150,7 +1198,7 @@ module Call = struct
         < capt_typ `T
         &+...>:: "basic_string" $ capt_arg $+ capt_exp_of_prim_typ char_ptr
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
-        $--> StdBasicString.constructor_from_char_ptr
+        $--> StdBasicString.constructor_from_char_ptr_with_len
       ; -"std" &:: "basic_string"
         < capt_typ `T
         &+...>:: "empty" $ capt_arg $--> StdBasicString.empty
