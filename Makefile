@@ -105,6 +105,7 @@ DIRECT_TESTS += \
   objc_liveness \
   objc_nullable \
   objc_performance \
+  objc_pulse \
   objc_quandary \
   objc_uninit \
   objcpp_errors \

@@ -1,0 +1,2 @@
+codetoanalyze/objc/pulse/use_after_free.m, PulseTest::use_after_free_simple_in_objc_method_bad:, 2, USE_AFTER_FREE, no_bucket, ERROR, [invalidation part of the trace starts here,memory was invalidated by call to `free()` here,use-after-lifetime part of the trace starts here,invalid access occurs here]
+codetoanalyze/objc/pulse/use_after_free.m, use_after_free_simple_bad, 2, USE_AFTER_FREE, no_bucket, ERROR, [invalidation part of the trace starts here,memory was invalidated by call to `free()` here,use-after-lifetime part of the trace starts here,invalid access occurs here]
