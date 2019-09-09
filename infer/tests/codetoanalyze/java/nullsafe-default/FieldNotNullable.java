@@ -16,27 +16,36 @@ import com.facebook.infer.annotation.Initializer;
 import javax.annotation.Nullable;
 
 /**
- * It is common in Android code to recycle the objects (e.g. views) by nullifying them in the
- * onDestroy() or onDestroyView() methods. This allows the GC to recycle it not waiting the outer
- * object to be freed. This is safe because the lifecycle of the object is over so those field are
- * not going to be accessed. so it is not necessary to annotate those fields with @Nullable.
+ * It is common in Android code to recycle objects (e.g. views) by nullifying them in the "cleanup"
+ * methods that are called after object lifecycle is over. This allows the GC to recycle without
+ * waiting for the outer object to be freed. This is safe because these fields are not going to be
+ * accessed after cleanup. So it is not necessary to annotate those fields with @Nullable.
  */
-class CanAssignNullInDestroyMethods extends Fragment {
+class CanAssignNullInCleanupMethods extends Fragment {
 
   String someObject = "";
 
   @Override
   public void onDestroyView() {
+    // onDestroyView is a special method: OK to nullify here
     someObject = null;
   }
 
   @Override
   public void onDestroy() {
+    // onDestroy is a special method: OK to nullify here
     someObject = null;
   }
 
-  public void assignNullDissalowedInAnyOtherMethod() {
-    someObject = null; // BAD: field not nullable
+  @Cleanup
+  public void assignNullInCleanupMethodIsOK() {
+    // The method is marked as cleanup.
+    // OK to nullify here.
+    someObject = null;
+  }
+
+  public void assignNullInAnyOtherMethodIsBAD() {
+    someObject = null; // BAD: field is not nullable
   }
 }
 
@@ -124,12 +133,6 @@ class TestInitializerBuilder {
     return new TestInitializer(this);
   }
 
-  @Cleanup
-  void testCleanup() {
-    this.required1 = null;
-    this.required2 = null;
-    this.optional = null;
-  }
 }
 
 class TestInitializer {
