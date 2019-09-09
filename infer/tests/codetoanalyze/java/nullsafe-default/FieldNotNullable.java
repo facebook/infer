@@ -10,7 +10,6 @@ package codetoanalyze.java.nullsafe_default;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.view.View;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Cleanup;
 import com.facebook.infer.annotation.Initializer;
@@ -24,13 +23,28 @@ abstract class A {
   }
 }
 
-class FragmentExample extends Fragment {
+/**
+ * It is common in Android code to recycle the objects (e.g. views) by nullifying them in the
+ * onDestroy() or onDestroyView() methods. This allows the GC to recycle it not waiting the outer
+ * object to be freed. This is safe because the lifecycle of the object is over so those field are
+ * not going to be accessed. so it is not necessary to annotate those fields with @Nullable.
+ */
+class CanAssignNullInDestroyMethods extends Fragment {
 
-  View view;
+  String someObject = "";
 
   @Override
   public void onDestroyView() {
-    view = null;
+    someObject = null;
+  }
+
+  @Override
+  public void onDestroy() {
+    someObject = null;
+  }
+
+  public void assignNullDissalowedInAnyOtherMethod() {
+    someObject = null; // BAD: field not nullable
   }
 }
 
