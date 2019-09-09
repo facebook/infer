@@ -10,7 +10,6 @@ package codetoanalyze.java.nullsafe_default;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.widget.EditText;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Initializer;
 import com.facebook.infer.annotation.SuppressViewNullability;
@@ -23,60 +22,61 @@ import javax.inject.Inject;
 
 public class FieldNotInitialized {
 
-  String a;
+  String notNullIsBAD; // BAD: need to initialize it
 
-  @Nullable String b;
+  @Nullable String nullableIsOK; // OK: will be init with null
 
-  @Nonnull String c; // Means: assume it will be initialized to a nonnull value somewhere else.
+  @Nonnull
+  String nonnullIsOK; // Means: assume it will be initialized to a nonnull value somewhere else.
 
-  @Inject String d; // Means: assume it will be initialized via dependency injection
+  @NonNull
+  String nonNullIsOK; // Means: assume it will be initialized to a nonnull value somewhere else.
 
-  @NonNull String e;
+  @Inject String injectIsOK; // Means: assume it will be initialized via dependency injection
 
-  @Bind EditText f; // Means: assume it will be initialized, and ignore null assignment
+  @Bind String bindIsOK; // Means: assume it will be initialized, and ignore null assignment
 
-  @SuppressViewNullability EditText g;
+  // Means: assume it will be initialized, and ignore null assignment
+  @SuppressViewNullability String suppressViewNullabilityIsOK;
 
-  //  Eradicate should only report one initialization error
   FieldNotInitialized() {}
 
   void testNullifyFields() {
-    f = null; // OK  the framework could write null into the field
-    g = null; // OK  the framework could write null into the field
+    bindIsOK = null; // OK: the framework could write null into the field
+    suppressViewNullabilityIsOK = null; // OK: the framework could write null into the field
+    nonnullIsOK = null; // BAD: can not nullify this
+    injectIsOK = null; // BAD: can not nullify this
   }
 
   class OnlyRead {
     Object o;
 
     OnlyRead() {
-      Object x = o; // not initialized
+      Object x = o; // BAD: we merely read this variable, but forgot to initialize
     }
   }
 
-  class WriteItself {
-    Object o;
+  class WriteItselfIsBAD {
+    Object ok;
+    Object bad;
 
-    WriteItself() {
-      o = o; // not initialized
+    WriteItselfIsBAD() {
+      ok = "";
+      bad = bad; // BAD: Can not initialize with itself
     }
   }
 
-  class Swap {
+  class InitializationOrder {
     Object o1;
     Object o2;
 
-    Swap() {
-      o1 = o2; // not initialized
+    InitializationOrder(int a) {
+      o1 = o2; // BAD: not initialized
       o2 = new Object();
     }
-  }
 
-  class SwapOK {
-    Object o1;
-    Object o2;
-
-    SwapOK() {
-      o1 = new Object();
+    InitializationOrder(double a) {
+      o1 = new Object(); // OK
       o2 = o1;
     }
   }
@@ -95,72 +95,88 @@ public class FieldNotInitialized {
     }
   }
 
-  class ConditionalFieldInit {
-    Object o1;
-    @Nullable Object o2 = null;
+  class ShouldInitializeInAllBranches {
+    Object f1;
+    Object f2;
+    Object f3;
+    Object f4;
+    Object f5;
 
-    public ConditionalFieldInit() {
-      if (o2 != null) {
-        o1 = new Object(); // Not always initialized
+    public ShouldInitializeInAllBranches(int a) {
+      f4 = new Object();
+      Object f5 = new Object(); // BAD: shadowing; not an initialization
+      if (a == 42) {
+        f1 = new Object();
+        f2 = new Object();
+      } else {
+        f3 = new Object();
+        if (a == 43) {
+          f1 = new Object();
+          // BAD: f2 is not initialized in this branch
+        } else {
+          f1 = new Object();
+          f2 = new Object();
+        }
       }
     }
   }
 
   class InitIfNull {
-    Object o;
+    Object good;
+    Object shouldBeGood_FIXME;
 
     public InitIfNull() {
-      if (o == null) o = new Object();
-    }
-  }
-
-  class InitIfNull2 {
-    Object o;
-
-    public InitIfNull2(Object x) {
-      if (o == null) o = x;
-    }
-  }
-
-  class InitIfNull3 {
-    Object o;
-
-    Object getNotNull() {
-      return new Object();
-    }
-
-    public InitIfNull3() {
-      if (o == null) o = getNotNull();
+      if (good == null) {
+        good = new Object();
+        // bad is considered to be initialized not in all branches.
+        // (which is bit weird: we know that good is always null by default)
+        // TODO(T53537343) teach nullsafe that all fields are initially null in constructor
+        shouldBeGood_FIXME = new Object();
+      }
     }
   }
 
   class InitCircular {
-    String s;
+    String bad;
+    String stillBad;
+    String good;
+
+    String knownNotNull = "";
 
     InitCircular() {
-      String tmp = s;
-      s = tmp; // s is not initialized: circular initialization
+      String tmp = bad;
+      bad = tmp; // BAD: circular initialization
+      stillBad = bad; // BAD: try to initialize from circularly initalized var
+
+      String tmp2 = knownNotNull;
+      good = tmp2; // OK
     }
   }
 
   class InitWithOtherClass {
     class OtherClass {
-      String s = "";
+      String nonNull = "";
+      @Nullable String nullable = "";
     }
 
-    String s;
+    String bad;
+    String good;
 
     InitWithOtherClass(OtherClass x) {
-      s = x.s;
+      bad = x.nullable; // BAD: might be null
+      good = x.nonNull; // OK: we know can not be null
     }
   }
 
-  class InitWithThisClass {
+  // Check that Infer does not confuse things
+  // in copy constuctors.
+  class InitWithTheSameClass {
+    String good;
+    String bad;
 
-    String s;
-
-    InitWithThisClass(InitWithThisClass x) {
-      s = x.s;
+    InitWithTheSameClass(InitWithTheSameClass x) {
+      good = x.good; // OK: this is not a circular initialization
+      bad = bad; // BAD: this is a circular initialization
     }
   }
 }
