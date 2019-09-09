@@ -9,6 +9,8 @@ package codetoanalyze.java.nullsafe_default;
 
 import android.support.annotation.NonNull;
 import android.widget.EditText;
+import com.facebook.infer.annotation.Assertions;
+import com.facebook.infer.annotation.Initializer;
 import com.facebook.infer.annotation.SuppressViewNullability;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -158,5 +160,65 @@ public class FieldNotInitialized {
     InitWithThisClass(InitWithThisClass x) {
       s = x.s;
     }
+  }
+}
+
+/**
+ * If a method is marked with @Initializer annotation, we essentially treat is as a constuctror: if
+ * a field is initialized in one of such methods, we assume this method will be called before using
+ * the field, so we don't consider it "not initialized" error. A popular usecase for that is a
+ * Builder pattern, when required fields are set not in the constuctor, but in corresponding
+ * setters, and then build() method checks in runtime that all fields are initialized.
+ */
+class TestInitializerAnnotation {
+  String initInConstructorIsOK;
+  String initInInitilizerMethod1IsOK;
+  String initInInitilizerMethod2IsOK;
+  String initInAnyOtherMethodIsBAD;
+  String initByNullableInInitializedMethodIsBAD;
+  String dontInitAtAllIsBAD;
+  @Nullable String dontInitOptionalIsOK;
+
+  TestInitializerAnnotation() {
+    initInConstructorIsOK = "";
+  }
+
+  @Initializer
+  void set1(String value) {
+    // OK: we assume set1() will be called before the class is actually used
+    this.initInInitilizerMethod1IsOK = value;
+  }
+
+  @Initializer
+  void set2(String value) {
+    // OK: we assume set2() will be called before the class is actually used
+    this.initInInitilizerMethod2IsOK = value;
+  }
+
+  void set3(String value) {
+    // BAD: though the field is initialized here, set3 is not marked as @Initialized
+    this.initInAnyOtherMethodIsBAD = value;
+  }
+
+  @Initializer
+  void set4(@Nullable String value) {
+    // BAD: method is marked as @Initializer, but the value can be null
+    this.initByNullableInInitializedMethodIsBAD = value;
+  }
+
+  // Example of a typical usecase:
+  // a build() method that is supposed to be called before the class is used.
+  Object build() {
+    // Fail hard if the required fields are not initialzed.
+    // Unfortunately, this will lead to "condition redundant" warnings, despite the fact
+    // that checking for this makes total sense.
+    // TODO(T53531699) don't issue "condition redundant" warning in this case.
+    Assertions.assertCondition(
+        initInInitilizerMethod1IsOK != null && initInInitilizerMethod2IsOK != null);
+
+    // ... do some stuff
+
+    // return some meaninful object
+    return "";
   }
 }
