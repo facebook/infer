@@ -15,14 +15,6 @@ import com.facebook.infer.annotation.Cleanup;
 import com.facebook.infer.annotation.Initializer;
 import javax.annotation.Nullable;
 
-abstract class A {
-  final String fld;
-
-  A(String s) {
-    this.fld = s;
-  }
-}
-
 /**
  * It is common in Android code to recycle the objects (e.g. views) by nullifying them in the
  * onDestroy() or onDestroyView() methods. This allows the GC to recycle it not waiting the outer
@@ -48,39 +40,38 @@ class CanAssignNullInDestroyMethods extends Fragment {
   }
 }
 
-public class FieldNotNullable extends A {
-  @Nullable String x;
-  String y;
-  String fld; // Shadow the field defined in A
-  String static_s = null; // Static initializer error
+public class FieldNotNullable {
+  @Nullable String nullable = "";
+  String notNullable = "";
 
-  FieldNotNullable(String s) {
-    super(s);
-    x = null;
-    y = s;
-    this.fld = s;
+  String initializeNonNullableWithNullIsBAD = null;
+  @Nullable String initializeNullableWithNullIsOK = null;
+
+  @Nullable
+  String getNullable() {
+    return "";
   }
 
-  void setXNull() {
-    x = null;
+  String getNotNullable() {
+    return "";
   }
 
-  void setXNullable(@Nullable String s) {
-    x = s;
+  void setNullableToNotNullableIsBAD(@Nullable String s) {
+    notNullable = null; // BAD
+    notNullable = s; // BAD
+    notNullable = getNullable(); // BAD (even though getNullable() does not really return null)
   }
 
-  void setYNull() {
-    y = null;
+  void setNullableToNullableIsOK(@Nullable String s) {
+    nullable = null; // OK
+    nullable = s; // OK
+    nullable = getNullable(); // OK
   }
 
-  void setYNullable(@Nullable String s) {
-    y = s;
-  }
-
-  FieldNotNullable(Integer n) {
-    super("");
-    this.fld = "";
-    y = x == null ? "abc" : "def";
+  void setNotNullableToNotNullableIsOK(String s) {
+    notNullable = "abc"; // OK
+    notNullable = s; // OK
+    notNullable = getNotNullable(); // OK
   }
 }
 
