@@ -7,8 +7,6 @@
 
 package codetoanalyze.java.nullsafe_default;
 
-import android.app.Activity;
-import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import com.facebook.infer.annotation.Cleanup;
 import javax.annotation.Nullable;
@@ -79,21 +77,6 @@ public class FieldNotNullable {
     notNullable = "abc"; // OK
     notNullable = s; // OK
     notNullable = getNotNullable(); // OK
-  }
-}
-
-class MixedInitializers extends Activity {
-
-  private String field1 = "1";
-  private String field2;
-  private String field3;
-
-  MixedInitializers() {
-    field2 = "2";
-  }
-
-  protected void onCreate(Bundle bundle) {
-    field3 = "3";
   }
 }
 

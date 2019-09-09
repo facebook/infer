@@ -7,6 +7,8 @@
 
 package codetoanalyze.java.nullsafe_default;
 
+import android.app.Activity;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.widget.EditText;
 import com.facebook.infer.annotation.Assertions;
@@ -159,6 +161,52 @@ public class FieldNotInitialized {
 
     InitWithThisClass(InitWithThisClass x) {
       s = x.s;
+    }
+  }
+}
+
+/**
+ * There is a predefined list of classes which have known methods that act like initializers. If a
+ * class extends such special class and initializes a field in such whitelisted method, we don't
+ * require initializing this field in constructor. (NOTE: To do the same in non whitelisted class
+ * one can use @Initializer annotation instead).
+ */
+class TestKnownInitializers {
+
+  // nullsafe knows that Activity.onCreate is a special initilizer.
+  class KnownInitializers extends Activity {
+
+    String initInConstructorIsOK;
+    String initInSpecialMethodIsOK;
+    String initInUnknownMethodIsBAD;
+
+    KnownInitializers() {
+      initInConstructorIsOK = "";
+    }
+
+    // onCreate is a special method
+    protected void onCreate(Bundle bundle) {
+      initInSpecialMethodIsOK = "";
+    }
+
+    protected void someOtherMethod(Bundle bundle) {
+      // BAD: This method is unknown (and does not have @Initializer annotation either).
+      initInUnknownMethodIsBAD = "";
+    }
+  }
+
+  abstract class FakeActivity {
+    abstract void onCreate(Bundle bundle);
+  }
+
+  class SimplyOnCreateWontDoATrick extends FakeActivity {
+    String initInUnknownMethodIsBAD;
+
+    // Though we use onCreate method, the class does not extend one of the known
+    // classes that are known to have such a property, so it does not count.
+    protected void onCreate(Bundle bundle) {
+      // BAD: This method is unknown (and does not have @Initializer annotation either).
+      initInUnknownMethodIsBAD = "";
     }
   }
 }
