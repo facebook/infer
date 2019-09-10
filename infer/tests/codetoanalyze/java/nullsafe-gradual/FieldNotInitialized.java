@@ -7,10 +7,8 @@
 
 package codetoanalyze.java.nullsafe_gradual;
 
-import android.support.annotation.NonNull;
 import android.widget.EditText;
 import com.facebook.infer.annotation.SuppressViewNullability;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
@@ -23,11 +21,7 @@ public class FieldNotInitialized {
 
   @Nullable String b;
 
-  @Nonnull String c; // Means: assume it will be initialized to a nonnull value somewhere else.
-
   @Inject String d; // Means: assume it will be initialized via dependency injection
-
-  @NonNull String e;
 
   @Bind EditText f; // Means: assume it will be initialized, and ignore null assignment
 

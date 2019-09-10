@@ -24,13 +24,11 @@ public class FieldNotInitialized {
 
   String notNullIsBAD; // BAD: need to initialize it
 
+  @Nonnull String nonnullIsBAD; // BAD: explicit annotation does not make it better
+
+  @NonNull String nonNullIsBAD; // BAD: explicit annotation does not make it better
+
   @Nullable String nullableIsOK; // OK: will be init with null
-
-  @Nonnull
-  String nonnullIsOK; // Means: assume it will be initialized to a nonnull value somewhere else.
-
-  @NonNull
-  String nonNullIsOK; // Means: assume it will be initialized to a nonnull value somewhere else.
 
   @Inject String injectIsOK; // Means: assume it will be initialized via dependency injection
 
@@ -44,7 +42,8 @@ public class FieldNotInitialized {
   void testNullifyFields() {
     bindIsOK = null; // OK: the framework could write null into the field
     suppressViewNullabilityIsOK = null; // OK: the framework could write null into the field
-    nonnullIsOK = null; // BAD: can not nullify this
+    nonnullIsBAD = null; // BAD: explicit annotation does not allow nullifying
+    nonNullIsBAD = null; // BAD: explicit annotation does not allow nullifying
     injectIsOK = null; // BAD: can not nullify this
   }
 

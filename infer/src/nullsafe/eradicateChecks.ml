@@ -211,7 +211,6 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
               match get_field_annotation tenv fn ts with None -> false | Some (_, ia) -> f ia
             in
             let nullable_annotated = annotated_with Annotations.ia_is_nullable in
-            let nonnull_annotated = annotated_with Annotations.ia_is_nonnull in
             let injector_readonly_annotated =
               annotated_with Annotations.ia_is_field_injector_readonly
             in
@@ -254,10 +253,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
             in
             if should_check_field_initialization then (
               (* Check if field is missing annotation. *)
-              if
-                (not (nullable_annotated || nonnull_annotated))
-                && not may_be_assigned_in_final_typestate
-              then
+              if (not nullable_annotated) && not may_be_assigned_in_final_typestate then
                 report_error tenv find_canonical_duplicate
                   (TypeErr.Field_not_initialized (fn, curr_pname))
                   None loc curr_pdesc ;
