@@ -450,7 +450,9 @@ module Val = struct
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
-    | Tint IBool | Tfloat _ | Tfun _ | TVar _ ->
+    | Tint (IBool | IChar | ISChar | IUChar) ->
+        itv_val ~non_int:(Language.curr_language_is Java)
+    | Tfloat _ | Tfun _ | TVar _ ->
         itv_val ~non_int:true
     | Tint _ | Tvoid ->
         itv_val ~non_int:false

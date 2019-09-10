@@ -170,4 +170,13 @@ public class Cost_test {
       }
     }
   }
+
+  // Cost should not include the symbol of c.
+  void ignore_character_symbols_constant(char c) {
+    for (; c < 'z'; ) {
+      if (rand()) {
+        c = 'a';
+      }
+    }
+  }
 }

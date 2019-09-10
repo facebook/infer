@@ -4,6 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <stdint.h>
+
 // Cost: 5
 int foo_OK() {
   int i, j;
@@ -147,3 +149,12 @@ void infinite() {
 }
 
 void call_infinite() { infinite(); }
+
+// Cost should not include the symbol of c.
+void ignore_character_symbols_constant_FP(char c) {
+  for (; c < 'z';) {
+    if (rand()) {
+      c = 'a';
+    }
+  }
+}
