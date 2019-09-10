@@ -377,7 +377,6 @@ OPTIONS
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
              ERADICATE_CONDITION_REDUNDANT_NONNULL (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
-             ERADICATE_FIELD_NOT_MUTABLE (enabled by default),
              ERADICATE_FIELD_NOT_NULLABLE (enabled by default),
              ERADICATE_FIELD_OVER_ANNOTATED (enabled by default),
              ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION (enabled
@@ -1297,10 +1296,6 @@ INTERNAL OPTIONS
        --eradicate-condition-redundant
            Activates: Condition redundant warnings (Conversely:
            --no-eradicate-condition-redundant)
-
-       --eradicate-field-not-mutable
-           Activates: Field not mutable warnings (Conversely:
-           --no-eradicate-field-not-mutable)
 
        --eradicate-field-over-annotated
            Activates: Field over-annotated warnings (Conversely:

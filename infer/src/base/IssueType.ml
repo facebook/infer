@@ -231,10 +231,6 @@ let eradicate_field_not_initialized =
   register_from_string "ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized"
 
 
-let eradicate_field_not_mutable =
-  register_from_string "ERADICATE_FIELD_NOT_MUTABLE" ~hum:"Field Not Mutable"
-
-
 let eradicate_field_not_nullable =
   register_from_string "ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
 

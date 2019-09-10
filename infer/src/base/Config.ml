@@ -1399,10 +1399,6 @@ and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
 
 
-and eradicate_field_not_mutable =
-  CLOpt.mk_bool ~long:"eradicate-field-not-mutable" "Field not mutable warnings"
-
-
 and eradicate_field_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-field-over-annotated" "Field over-annotated warnings"
 
@@ -2855,8 +2851,6 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 and eradicate = !eradicate
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
-
-and eradicate_field_not_mutable = !eradicate_field_not_mutable
 
 and eradicate_field_over_annotated = !eradicate_field_over_annotated
 

@@ -172,28 +172,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     && (not (field_is_injector_readwrite ()))
     && not (field_is_in_cleanup_context ())
   in
-  let should_report_mutable =
-    let field_is_mutable () =
-      match t_ia_opt with Some (_, ia) -> Annotations.ia_is_mutable ia | _ -> false
-    in
-    Config.eradicate_field_not_mutable
-    && (not (Typ.Procname.is_constructor curr_pname))
-    && ( match curr_pname with
-       | Typ.Procname.Java java_pname ->
-           not (Typ.Procname.Java.is_class_initializer java_pname)
-       | _ ->
-           true )
-    && not (field_is_mutable ())
-  in
-  ( if should_report_nullable then
+  if should_report_nullable then
     let origin_descr = TypeAnnotation.descr_origin ta_rhs in
     report_error tenv find_canonical_duplicate
       (TypeErr.Field_annotation_inconsistent (fname, origin_descr))
-      (Some instr_ref) loc curr_pdesc ) ;
-  if should_report_mutable then
-    let origin_descr = TypeAnnotation.descr_origin ta_rhs in
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Field_not_mutable (fname, origin_descr))
       (Some instr_ref) loc curr_pdesc
 
 

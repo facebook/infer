@@ -148,8 +148,6 @@ val eradicate_condition_redundant_nonnull : t
 
 val eradicate_field_not_initialized : t
 
-val eradicate_field_not_mutable : t
-
 val eradicate_field_not_nullable : t
 
 val eradicate_field_over_annotated : t

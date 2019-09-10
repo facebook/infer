@@ -50,7 +50,6 @@ type err_instance =
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Field_not_mutable of Typ.Fieldname.t * origin_descr
   | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
   | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool

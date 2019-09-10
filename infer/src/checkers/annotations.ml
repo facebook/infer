@@ -51,8 +51,6 @@ let inject_prop = "InjectProp"
 
 let inject_view = "InjectView"
 
-let mutable_ = "Mutable"
-
 let nonnull = "Nonnull"
 
 let no_allocation = "NoAllocation"
@@ -207,8 +205,6 @@ let ia_is_field_injector_readonly ia =
 let ia_is_field_injector_readwrite ia =
   List.exists ~f:(ia_ends_with ia) field_injector_readwrite_list
 
-
-let ia_is_mutable ia = ia_ends_with ia mutable_
 
 let ia_is_verify ia = ia_contains ia verify_annotation
 

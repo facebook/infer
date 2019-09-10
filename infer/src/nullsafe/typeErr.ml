@@ -79,7 +79,6 @@ type err_instance =
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Field_not_mutable of Typ.Fieldname.t * origin_descr
   | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
   | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool
@@ -102,27 +101,25 @@ module H = Hashtbl.Make (struct
         Hashtbl.hash (1, b, string_opt_hash so, nn)
     | Field_not_initialized (fn, pn) ->
         Hashtbl.hash (2, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
-    | Field_not_mutable (fn, _) ->
-        Hashtbl.hash (3, string_hash (Typ.Fieldname.to_string fn))
     | Field_annotation_inconsistent (fn, _) ->
-        Hashtbl.hash (4, string_hash (Typ.Fieldname.to_string fn))
+        Hashtbl.hash (3, string_hash (Typ.Fieldname.to_string fn))
     | Field_over_annotated (fn, pn) ->
-        Hashtbl.hash (5, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
+        Hashtbl.hash (4, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
     | Null_field_access (so, fn, _, _) ->
-        Hashtbl.hash (6, string_opt_hash so, string_hash (Typ.Fieldname.to_string fn))
+        Hashtbl.hash (5, string_opt_hash so, string_hash (Typ.Fieldname.to_string fn))
     | Call_receiver_annotation_inconsistent (so, pn, _) ->
-        Hashtbl.hash (7, string_opt_hash so, Typ.Procname.hash pn)
+        Hashtbl.hash (6, string_opt_hash so, Typ.Procname.hash pn)
     | Parameter_annotation_inconsistent (s, n, pn, _, _) ->
-        Hashtbl.hash (8, string_hash s, n, Typ.Procname.hash pn)
+        Hashtbl.hash (7, string_hash s, n, Typ.Procname.hash pn)
     | Return_annotation_inconsistent (pn, _) ->
-        Hashtbl.hash (9, Typ.Procname.hash pn)
+        Hashtbl.hash (8, Typ.Procname.hash pn)
     | Return_over_annotated pn ->
-        Hashtbl.hash (10, Typ.Procname.hash pn)
+        Hashtbl.hash (9, Typ.Procname.hash pn)
     | Inconsistent_subclass_return_annotation (pn, opn) ->
-        Hashtbl.hash (11, Typ.Procname.hash pn, Typ.Procname.hash opn)
+        Hashtbl.hash (10, Typ.Procname.hash pn, Typ.Procname.hash opn)
     | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
         let pn_hash = string_hash param_name in
-        Hashtbl.hash (12, pn_hash, pos, Typ.Procname.hash pn, Typ.Procname.hash opn)
+        Hashtbl.hash (11, pn_hash, pos, Typ.Procname.hash pn, Typ.Procname.hash opn)
 
 
   let hash (err_inst, instr_ref_opt) =
@@ -150,8 +147,6 @@ let get_forall = function
   | Condition_redundant _ ->
       true
   | Field_not_initialized _ ->
-      false
-  | Field_not_mutable _ ->
       false
   | Field_annotation_inconsistent _ ->
       false
@@ -257,7 +252,6 @@ type st_report_error =
 let report_error_now tenv (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
   let nullable_annotation = "@Nullable" in
-  let mutable_annotation = "@Mutable" in
   let kind, description, field_name =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
@@ -285,12 +279,6 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced nullable_annotation
         , Some fn )
-    | Field_not_mutable (fn, (origin_description, _, _)) ->
-        ( IssueType.eradicate_field_not_mutable
-        , Format.asprintf "Field %a is modified but is not declared %a. %s" MF.pp_monospaced
-            (Typ.Fieldname.to_simplified_string fn)
-            MF.pp_monospaced mutable_annotation origin_description
-        , None )
     | Field_annotation_inconsistent (fn, (origin_description, _, _)) ->
         let kind_s, description =
           ( IssueType.eradicate_field_not_nullable
