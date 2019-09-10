@@ -7,11 +7,13 @@
 
 package codetoanalyze.java.nullsafe_default;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Initializer;
+import com.facebook.infer.annotation.SuppressFieldNotInitialized;
 import com.facebook.infer.annotation.SuppressViewNullability;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,29 +24,44 @@ import javax.inject.Inject;
 
 public class FieldNotInitialized {
 
-  String notNullIsBAD; // BAD: need to initialize it
+  // different ways to suppress the error
+  class Suppression {
+    String notNullIsBAD; // BAD: need to initialize it
 
-  @Nonnull String nonnullIsBAD; // BAD: explicit annotation does not make it better
+    @Nonnull String nonnullIsBAD; // BAD: explicit annotation does not make it better
 
-  @NonNull String nonNullIsBAD; // BAD: explicit annotation does not make it better
+    @NonNull String nonNullIsBAD; // BAD: explicit annotation does not make it better
 
-  @Nullable String nullableIsOK; // OK: will be init with null
+    @Nullable String nullableIsOK; // OK: will be init with null
 
-  @Inject String injectIsOK; // Means: assume it will be initialized via dependency injection
+    @SuppressFieldNotInitialized String suppressAnnotationIsOK; // OK: explicitly suppressed
 
-  @Bind String bindIsOK; // Means: assume it will be initialized, and ignore null assignment
+    @SuppressLint("eradicate-field-not-initialized")
+    String suppressLintIsOK; // OK: explicitly suppressed on lint level
 
-  // Means: assume it will be initialized, and ignore null assignment
-  @SuppressViewNullability String suppressViewNullabilityIsOK;
+    @SuppressLint("some-irrelevant-linter")
+    String suppressWrongLintIsBAD; // BAD: this suppression is irrelevant
 
-  FieldNotInitialized() {}
+    @Inject String injectIsOK; // Means: assume it will be initialized via dependency injection
 
-  void testNullifyFields() {
-    bindIsOK = null; // OK: the framework could write null into the field
-    suppressViewNullabilityIsOK = null; // OK: the framework could write null into the field
-    nonnullIsBAD = null; // BAD: explicit annotation does not allow nullifying
-    nonNullIsBAD = null; // BAD: explicit annotation does not allow nullifying
-    injectIsOK = null; // BAD: can not nullify this
+    @Bind String bindIsOK; // Means: assume it will be initialized, and ignore null assignment
+
+    // Means: assume it will be initialized, and ignore null assignment
+    @SuppressViewNullability String suppressViewNullabilityIsOK;
+
+    Suppression() {}
+
+    // Ensure that some suppressions suppress only field not initialized
+    // and nothing else, but some suppress setting to null as well.
+    void testNullifyFields() {
+      bindIsOK = null; // OK: the framework could write null into the field
+      suppressViewNullabilityIsOK = null; // OK: the framework could write null into the field
+      nonnullIsBAD = null; // BAD: explicit nonnull annotation does not allow nullifying
+      nonNullIsBAD = null; // BAD: explicit nonnull annotation does not allow nullifying
+      injectIsOK = null; // BAD: inject suppressed only initialization issues
+      suppressAnnotationIsOK = null; // BAD: only initialization issue was suppressed
+      suppressLintIsOK = null; // BAD: only initialization issue was suppressed
+    }
   }
 
   class OnlyRead {
