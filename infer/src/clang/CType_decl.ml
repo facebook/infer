@@ -769,6 +769,8 @@ module CProcname = struct
               name_info.Clang_ast_t.ni_name
         in
         objc_method_procname decl_info method_name mdi []
+    | BlockDecl _ ->
+        Typ.Procname.Block (Typ.Procname.Block.make Config.anonymous_block_prefix [])
     | _ ->
         from_decl method_decl
 end

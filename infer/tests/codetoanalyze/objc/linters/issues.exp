@@ -18,7 +18,7 @@ codetoanalyze/objc/linters/atomic_prop.m, A::readP, 77, POINTER_TO_INTEGRAL_IMPL
 codetoanalyze/objc/linters/atomic_prop.m, A::readQ, 85, DIRECT_ATOMIC_PROPERTY_ACCESS, no_bucket, WARNING, []
 codetoanalyze/objc/linters/atomic_prop.m, A::readQ, 85, POINTER_TO_INTEGRAL_IMPLICIT_CAST, no_bucket, WARNING, []
 codetoanalyze/objc/linters/atomic_prop.m, A::writeQ, 81, DIRECT_ATOMIC_PROPERTY_ACCESS, no_bucket, WARNING, []
-codetoanalyze/objc/linters/atomic_prop.m, objc_block_1, 113, DIRECT_ATOMIC_PROPERTY_ACCESS, no_bucket, WARNING, []
+codetoanalyze/objc/linters/atomic_prop.m, objc_block, 113, DIRECT_ATOMIC_PROPERTY_ACCESS, no_bucket, WARNING, []
 codetoanalyze/objc/linters/badpointer.m, bad1, 15, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
 codetoanalyze/objc/linters/badpointer.m, bad10, 130, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
 codetoanalyze/objc/linters/badpointer.m, bad11, 139, BAD_POINTER_COMPARISON, no_bucket, WARNING, []
