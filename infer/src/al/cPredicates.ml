@@ -1592,3 +1592,20 @@ let is_in_source_file an path_re =
 
 let is_referencing_decl_from_source_file an path_re =
   source_file_matches (Ctl_parser_types.get_referenced_decl_source_file an) path_re
+
+
+let captured_var_of_type typ captured_var =
+  match captured_var.Clang_ast_t.bcv_variable with
+  | Some dr ->
+      let _, _, qt = CAst_utils.get_info_from_decl_ref dr in
+      type_ptr_equal_type qt.Clang_ast_t.qt_type_ptr (ALVar.alexp_to_string typ)
+  | _ ->
+      false
+
+
+let objc_block_is_capturing_var_of_type an typ =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.BlockDecl (_, bdi)) ->
+      List.exists ~f:(captured_var_of_type typ) bdi.bdi_captured_variables
+  | _ ->
+      false

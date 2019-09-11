@@ -1222,6 +1222,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_in_source_file an path_re
   | "is_referencing_decl_from_source_file", [path_re], an ->
       CPredicates.is_referencing_decl_from_source_file an path_re
+  | "objc_block_is_capturing_var_of_type", [typ], an ->
+      CPredicates.objc_block_is_capturing_var_of_type an typ
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 

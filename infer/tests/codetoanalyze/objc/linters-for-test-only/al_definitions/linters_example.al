@@ -877,3 +877,14 @@ DEFINE-CHECKER TEST_IS_OPTIONAL_METHOD = {
   SET message = "This is an optional method";
 
 };
+
+DEFINE-CHECKER IVAR_CAPTURED_IN_OBJC_BLOCK = {
+		SET report_when =
+ 			WHEN
+				objc_block_is_capturing_var_of_type("Ivars*")
+ 			HOLDS-IN-NODE BlockDecl;
+
+	  SET message = "Found ivar of a given type captured in block";
+    SET severity = "ERROR";
+		SET mode = "ON";
+	};

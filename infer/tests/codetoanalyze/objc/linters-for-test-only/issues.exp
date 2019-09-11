@@ -329,6 +329,7 @@ codetoanalyze/objc/linters-for-test-only/unavailable.m, FooClass::new, 12, TEST_
 codetoanalyze/objc/linters-for-test-only/unavailable.m, FooClass::new, 12, TEST_IS_OVERRIDING_METHOD, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/unavailable.m, FooClass::new, 12, TEST_UNAVAILABLE_ATTR, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/unavailable.m, FooClass::newWithFoo, 13, TEST_INSTANCE_TYPE, no_bucket, WARNING, []
+codetoanalyze/objc/linters-for-test-only/variables_captured_in_block.m, objc_block, 26, IVAR_CAPTURED_IN_OBJC_BLOCK, no_bucket, ERROR, []
 codetoanalyze/objc/linters-for-test-only/visibility.c, bar, 29, TEST_DEFAULT_VISIBILITY, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/visibility.c, bar, 30, TEST_DEFAULT_VISIBILITY, no_bucket, WARNING, []
 codetoanalyze/objc/linters-for-test-only/visibility.c, bar, 31, TEST_HIDDEN_VISIBILITY, no_bucket, WARNING, []
