@@ -618,8 +618,11 @@ module MemPure = struct
   let bot = empty
 
   let range :
-      filter_loc:(Loc.t -> LoopHeadLoc.t option) -> t -> Polynomials.NonNegativePolynomial.t =
-   fun ~filter_loc mem ->
+         filter_loc:(Loc.t -> LoopHeadLoc.t option)
+      -> node_id:ProcCfg.Normal.Node.id
+      -> t
+      -> Polynomials.NonNegativePolynomial.t =
+   fun ~filter_loc ~node_id mem ->
     fold
       (fun loc (_, v) acc ->
         match filter_loc loc with
@@ -627,8 +630,19 @@ module MemPure = struct
             let itv = Val.get_itv v in
             if Itv.has_only_non_int_symbols itv then acc
             else
-              Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial
-              |> Polynomials.NonNegativePolynomial.mult acc
+              let range1 = Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial in
+              if Polynomials.NonNegativePolynomial.is_top range1 then
+                L.d_printfln_escaped "Range of %a (loc:%a) became top at %a." Itv.pp itv Loc.pp loc
+                  ProcCfg.Normal.Node.pp_id node_id ;
+              let range = Polynomials.NonNegativePolynomial.mult acc range1 in
+              if
+                (not (Polynomials.NonNegativePolynomial.is_top acc))
+                && Polynomials.NonNegativePolynomial.is_top range
+              then
+                L.d_printfln_escaped "Multiplication of %a and %a (loc:%a) became top at %a."
+                  Polynomials.NonNegativePolynomial.pp acc Polynomials.NonNegativePolynomial.pp
+                  range1 Loc.pp loc ProcCfg.Normal.Node.pp_id node_id ;
+              range
         | None ->
             acc )
       mem Polynomials.NonNegativePolynomial.one
@@ -1609,8 +1623,11 @@ module MemReach = struct
 
 
   let range :
-      filter_loc:(Loc.t -> LoopHeadLoc.t option) -> t -> Polynomials.NonNegativePolynomial.t =
-   fun ~filter_loc {mem_pure} -> MemPure.range ~filter_loc mem_pure
+         filter_loc:(Loc.t -> LoopHeadLoc.t option)
+      -> node_id:ProcCfg.Normal.Node.id
+      -> t
+      -> Polynomials.NonNegativePolynomial.t =
+   fun ~filter_loc ~node_id {mem_pure} -> MemPure.range ~filter_loc ~node_id mem_pure
 
 
   let get_relation : t -> Relation.t = fun m -> m.relation

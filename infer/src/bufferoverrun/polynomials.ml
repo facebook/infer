@@ -121,6 +121,7 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
     | Symbolic symbol ->
         Bounds.Symbolic {degree_kind; symbol}
     | ValTop trace ->
+        Logging.d_printfln_escaped "subst(%a) became top." (S.pp ~hum:false) symbol ;
         Bounds.ValTop trace
 
 

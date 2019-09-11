@@ -82,7 +82,8 @@ module BoundMap = struct
                        unreachable returning cost 0 \n" ;
                     BasicCost.zero
                 | NonBottom mem ->
-                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map) mem
+                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map)
+                      ~node_id mem
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id BasicCost.pp
@@ -604,7 +605,13 @@ module InstrBasicCost = struct
       | More ->
           assert false
     in
-    get_instr_cost_record tenv extras instr_node instr
+    let cost = get_instr_cost_record tenv extras instr_node instr in
+    if BasicCost.is_top (CostDomain.get_operation_cost cost) then
+      Logging.d_printfln_escaped "Statement cost became top at %a (%a)." InstrCFG.Node.pp_id
+        (InstrCFG.Node.id instr_node)
+        (Sil.pp_instr ~print_types:false Pp.text)
+        instr ;
+    cost
 end
 
 let compute_errlog_extras cost =
@@ -653,6 +660,9 @@ module WorstCaseCost = struct
       let instr_cost_record = InstrBasicCost.get_instr_node_cost_record tenv extras instr_node in
       let node_id = InstrCFG.Node.underlying_node instr_node |> Node.id in
       let nb_exec = get_node_nb_exec node_id in
+      if BasicCost.is_top nb_exec then
+        Logging.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
+          node_id ;
       CostDomain.mult_by_scalar instr_cost_record nb_exec
     in
     let costs = CostDomain.plus costs node_cost in
