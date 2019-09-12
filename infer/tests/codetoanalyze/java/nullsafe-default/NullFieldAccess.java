@@ -10,49 +10,58 @@ package codetoanalyze.java.nullsafe_default;
 import javax.annotation.Nullable;
 
 public class NullFieldAccess {
-  class C {
-    int n;
-  }
 
   interface I {
-    @Nullable C c = null;
+    @Nullable Object nullable = new Object();
+    Object notNull = new Object();
   }
 
-  @Nullable C x;
-  C y;
-  static final @Nullable C z = null;
+  @Nullable Object nullable;
+  Object notNull;
+
+  static final @Nullable Object nullableStatic = new Object();
+  static final Object notNullStatic = new Object();
+
+  @Nullable Object[] nullableArray;
+  Object[] notNullArray;
 
   NullFieldAccess() {
-    y = new C();
+    nullable = new Object();
+    notNull = new Object();
+    nullableArray = new Object[1];
+    notNullArray = new Object[1];
   }
 
-  int useX() {
-    C c = x;
-    return c.n;
+  void testNonStaticFields() {
+    Object bad = nullable;
+    bad.toString(); // BAD: `bad` can be null
+
+    Object good = notNull;
+    good.toString(); // OK: `good` is not null
   }
 
-  int useY() {
-    C c = y;
-    return c.n;
+  void testStatic() {
+    Object bad = nullableStatic;
+    bad.toString(); // BAD: `bad` can be null
+
+    Object good = notNullStatic;
+    good.toString(); // OK: `good` is not null
   }
 
-  int useZ() {
-    C c = z;
-    return c.n;
+  void testInterface() {
+    Object bad = I.nullable;
+    bad.toString(); // BAD: `bad` can be null
+
+    Object good = I.notNull;
+    good.toString(); // OK: `good` is not null
   }
 
-  int useInterface(I i) {
-    C c = i.c;
-    return c.n;
+  void testArray() {
+    int i1 = nullableArray.length; // BAD: array can be null
+    Object o1 = nullableArray[0]; // BAD: array can be null
+
+    int i2 = notNullArray.length; // OK: arrays is not null
+    Object o2 = notNullArray[0]; // OK: array is not null
   }
 
-  @Nullable Object[] objects;
-
-  int arrayLength() {
-    return objects.length;
-  }
-
-  Object arrayAccess() {
-    return objects[0];
-  }
 }
