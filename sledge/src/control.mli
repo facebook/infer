@@ -12,4 +12,6 @@ type exec_opts =
   ; skip_throw: bool  (** Treat throw as unreachable *)
   ; function_summaries: bool  (** Use function summarisation *) }
 
-val exec_pgm : exec_opts -> Llair.t -> unit
+module Make (Dom : Domain_sig.Dom) : sig
+  val exec_pgm : exec_opts -> Llair.t -> unit
+end

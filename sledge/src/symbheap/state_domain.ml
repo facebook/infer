@@ -152,9 +152,9 @@ let resolve_callee lookup ptr _ =
   | Some callee_name -> lookup callee_name
   | None -> []
 
-type function_summary = {xs: Var.Set.t; foot: t; post: t}
+type summary = {xs: Var.Set.t; foot: t; post: t}
 
-let pp_function_summary fs {xs; foot; post} =
+let pp_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
@@ -184,10 +184,10 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   let current = Sh.extend_us xs post in
   ({xs; foot; post}, current)
   |>
-  [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_function_summary fs]
+  [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
 
 let apply_summary ({xs; foot; post} as fs) q =
-  [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_function_summary fs pp q]
+  [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_summary fs pp q]
   ;
   let xs_in_q = Set.inter xs q.Sh.us in
   let xs_in_fv_q = Set.inter xs (Sh.fv q) in

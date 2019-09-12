@@ -22,18 +22,17 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
-let invalid_access state pp access loc =
+let invalid_access fmt_thunk pp access loc =
   let rep fs =
     Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Loc.pp
       (loc access) pp access
   in
   Format.printf "@\n@[<v 2>%t@]@." rep ;
-  [%Trace.printf
-    "@\n@[<v 2>%t@;<1 2>@[{ %a@ }@]@]@." rep State_domain.pp state] ;
+  [%Trace.printf "@\n@[<v 2>%t@;<1 2>@[{ %t@ }@]@]@." rep fmt_thunk] ;
   Stop.on_invalid_access ()
 
-let invalid_access_inst state inst =
-  invalid_access state Llair.Inst.pp inst Llair.Inst.loc
+let invalid_access_inst fmt_thunk inst =
+  invalid_access fmt_thunk Llair.Inst.pp inst Llair.Inst.loc
 
-let invalid_access_term state term =
-  invalid_access state Llair.Term.pp term Llair.Term.loc
+let invalid_access_term fmt_thunk term =
+  invalid_access fmt_thunk Llair.Term.pp term Llair.Term.loc

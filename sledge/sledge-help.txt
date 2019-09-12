@@ -55,6 +55,8 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
                           output if <file> is `-`
   [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
+  [-unit-domain]          use unit domain (experimental, debugging purposes
+                          only)
   [-help]                 print this help text and exit
                           (alias: -?)
 
@@ -132,6 +134,8 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
+  [-unit-domain]          use unit domain (experimental, debugging purposes
+                          only)
   [-help]                 print this help text and exit
                           (alias: -?)
 
@@ -171,6 +175,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-skip-throw]          do not explore past throwing an exception
   [-trace <spec>]        enable debug tracing
+  [-unit-domain]         use unit domain (experimental, debugging purposes only)
   [-help]                print this help text and exit
                          (alias: -?)
 

@@ -13,6 +13,9 @@ open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
 
+module Sh_executor = Control.Make (Sh_domain)
+module Unit_executor = Control.Make (Unit_domain)
+
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
  fun x f -> x |> Command.Param.apply f
@@ -75,9 +78,15 @@ let analyze =
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
+  and unit_domain =
+    flag "unit-domain" no_arg
+      ~doc:"use unit domain (experimental, debugging purposes only)"
+  in
+  let exec =
+    if unit_domain then Unit_executor.exec_pgm else Sh_executor.exec_pgm
   in
   fun program () ->
-    Control.exec_pgm {bound; skip_throw; function_summaries} (program ())
+    exec {bound; skip_throw; function_summaries} (program ())
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in

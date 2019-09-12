@@ -9,8 +9,8 @@
 
 type t
 
-val project : t -> State_domain.t
 val pp : t pp
+val report_fmt_thunk : t -> Formatter.t -> unit
 val init : Global.t vector -> t
 val join : t -> t -> t
 val is_false : t -> bool
@@ -28,16 +28,16 @@ val exec_intrinsic :
   -> (t, unit) result option
 
 type from_call [@@deriving sexp_of]
+type summary
+
+val pp_summary : summary pp
 
 (* formals should include all the parameters of the summary. That is both
    formals and globals.*)
 val create_summary :
-     locals:Var.Set.t
-  -> formals:Var.Set.t
-  -> t
-  -> State_domain.function_summary * t
+  locals:Var.Set.t -> formals:Var.Set.t -> t -> summary * t
 
-val apply_summary : t -> State_domain.function_summary -> t option
+val apply_summary : t -> summary -> t option
 
 val call :
      summaries:bool

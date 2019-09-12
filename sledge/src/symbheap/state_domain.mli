@@ -38,10 +38,10 @@ val call :
   -> t
   -> t * from_call
 
-type function_summary = {xs: Var.Set.t; foot: t; post: t}
+type summary = {xs: Var.Set.t; foot: t; post: t}
 
-val pp_function_summary : Format.formatter -> function_summary -> unit
-val apply_summary : function_summary -> t -> t option
+val pp_summary : summary pp
+val apply_summary : summary -> t -> t option
 
 (* formals should include all the parameters of the summary. That is both
    formals and globals.*)
@@ -50,7 +50,7 @@ val create_summary :
   -> formals:Var.Set.t
   -> entry:t
   -> current:t
-  -> function_summary * t
+  -> summary * t
 
 val post : Var.Set.t -> t -> t
 val retn : Var.t list -> Var.t option -> from_call -> t -> t

@@ -10,12 +10,12 @@
 type t = State_domain.t * State_domain.t
 
 let embed q = (q, q)
-let project (_, curr) = curr
 
 let pp fs (entry, current) =
   Format.fprintf fs "@[<v 1> entry: %a@;current: %a@]" State_domain.pp entry
     State_domain.pp current
 
+let report_fmt_thunk (_, curr) fs = State_domain.pp fs curr
 let init globals = embed (State_domain.init globals)
 
 let join (entry_a, current_a) (entry_b, current_b) =
@@ -94,6 +94,10 @@ let dnf (entry, current) =
 
 let resolve_callee f e (_, current) =
   State_domain.resolve_callee f e current
+
+type summary = State_domain.summary
+
+let pp_summary = State_domain.pp_summary
 
 let create_summary ~locals ~formals (entry, current) =
   let fs, current =
