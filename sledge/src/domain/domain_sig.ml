@@ -7,7 +7,7 @@
 
 (** Abstract Domain *)
 module type Dom = sig
-  type t
+  type t [@@deriving equal, sexp_of]
 
   val pp : t pp
   val report_fmt_thunk : t -> Formatter.t -> unit

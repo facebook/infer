@@ -8,6 +8,7 @@
 /src/llair/dune
 /src/symbheap/dune
 /src/trace/dune
+/src/domain/dune
 /src/version.ml
 /test/*/*.bc
 /test/*/*.bc.err

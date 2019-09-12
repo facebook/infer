@@ -15,6 +15,7 @@ let pp_simp fs q =
   Sh.pp fs !q'
 
 let pp = pp_simp
+let report_fmt_thunk = Fn.flip pp
 
 let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
@@ -73,7 +74,7 @@ type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries actuals areturn formals locals globals q =
+let call ~summaries actuals areturn formals locals globals_vec q =
   [%Trace.call fun {pf} ->
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ q: %a@]"
@@ -95,9 +96,13 @@ let call ~summaries actuals areturn formals locals globals q =
     let q'' = Sh.extend_us locals q'' in
     (q'', {areturn; subst= freshen_locals; frame= Sh.emp})
   else
-    let formals_set = Var.Set.of_list formals in
     (* Add the formals here to do garbage collection and then get rid of
        them *)
+    let formals_set = Var.Set.of_list formals
+    and globals =
+      Var.Set.of_vector
+        (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
+    in
     let function_summary_pre =
       garbage_collect q'' ~wrt:(Set.union formals_set globals)
     in
@@ -118,7 +123,7 @@ let call ~summaries actuals areturn formals locals globals q =
       q']
 
 (** Leave scope of locals: existentially quantify locals. *)
-let post locals q =
+let post locals _ q =
   [%Trace.call fun {pf} ->
     pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Var.Set.pp locals Sh.pp q]
   ;
@@ -186,7 +191,7 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   |>
   [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
 
-let apply_summary ({xs; foot; post} as fs) q =
+let apply_summary q ({xs; foot; post} as fs) =
   [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_summary fs pp q]
   ;
   let xs_in_q = Set.inter xs q.Sh.us in

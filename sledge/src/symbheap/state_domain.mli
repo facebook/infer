@@ -7,41 +7,7 @@
 
 (** Abstract domain *)
 
-type t [@@deriving equal, sexp_of]
-
-val pp : t pp
-val init : Global.t vector -> t
-val join : t -> t -> t
-val is_false : t -> bool
-val exec_assume : t -> Exp.t -> t option
-val exec_kill : t -> Var.t -> t
-val exec_move : t -> Var.t -> Exp.t -> t
-val exec_inst : t -> Llair.inst -> (t, unit) result
-
-val exec_intrinsic :
-     skip_throw:bool
-  -> t
-  -> Var.t option
-  -> Var.t
-  -> Exp.t list
-  -> (t, unit) result option
-
-type from_call [@@deriving compare, equal, sexp]
-
-val call :
-     summaries:bool
-  -> Exp.t list
-  -> Var.t option
-  -> Var.t list
-  -> Var.Set.t
-  -> Var.Set.t
-  -> t
-  -> t * from_call
-
-type summary = {xs: Var.Set.t; foot: t; post: t}
-
-val pp_summary : summary pp
-val apply_summary : summary -> t -> t option
+include Domain_sig.Dom
 
 (* formals should include all the parameters of the summary. That is both
    formals and globals.*)
@@ -51,10 +17,3 @@ val create_summary :
   -> entry:t
   -> current:t
   -> summary * t
-
-val post : Var.Set.t -> t -> t
-val retn : Var.t list -> Var.t option -> from_call -> t -> t
-val dnf : t -> t list
-
-val resolve_callee :
-  (Var.t -> Llair.func list) -> Exp.t -> t -> Llair.func list

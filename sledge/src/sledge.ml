@@ -13,8 +13,8 @@ open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
 
-module Sh_executor = Control.Make (Sh_domain)
-module Unit_executor = Control.Make (Unit_domain)
+module Sh_executor = Control.Make (Domain.Relation.Make (State_domain))
+module Unit_executor = Control.Make (Domain.Unit)
 
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =

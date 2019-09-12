@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-let deps = ["import"; "llair_"; "domain"]
+let deps = ["import"; "llair_"]
 
 ;;
 Jbuild_plugin.V1.send
 @@ Format.sprintf {|
 (library
- (name symbheap)
+ (name domain)
  %s
  (libraries %s))
 |}
