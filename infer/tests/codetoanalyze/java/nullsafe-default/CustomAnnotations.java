@@ -16,54 +16,87 @@ import javax.annotation.Nullable;
 
 public class CustomAnnotations {
 
-  static class MyTextUtils {
+  // Example of API that benefits from annotating with @TrueOnNull and @FalseOnNull
+  static class AnnotatedTextUtils {
 
     @TrueOnNull
-    static boolean isEmpty(@Nullable java.lang.CharSequence s) {
+    static boolean isEmpty(@Nullable CharSequence s) {
       return s == null || s.equals("");
     }
 
     @FalseOnNull
-    static boolean isNotEmpty(@Nullable java.lang.CharSequence s) {
+    static boolean isNotEmpty(@Nullable CharSequence s) {
       return s != null && s.length() > 0;
     }
   }
 
-  class TestTextUtilsIsEmpty {
-    void textUtilsNotIsEmpty(@Nullable CharSequence s) {
+  // The same API, but not annotated
+  static class NotAnnotatedTextUtils {
+    static boolean isEmpty(@Nullable CharSequence s) {
+      return s == null || s.equals("");
+    }
+
+    static boolean isNotEmpty(@Nullable CharSequence s) {
+      return s != null && s.length() > 0;
+    }
+  }
+
+  class Test {
+    void testTrueOnNull(@Nullable CharSequence s) {
+      // Explicitly annotated
+      if (!AnnotatedTextUtils.isEmpty(s)) {
+        s.toString(); // OK: if we are here, we know that s is not null
+      }
+
+      // Not annotated
+      if (!NotAnnotatedTextUtils.isEmpty(s)) {
+        s.toString(); // BAD: the typecker does not know s can not be null
+      }
+
+      if (AnnotatedTextUtils.isEmpty(s)) {
+        s.toString(); // BAD: s can be null or an empty string
+      }
+    }
+
+    void testFalseOnNull(@Nullable CharSequence s) {
+      // Explicitly annotated
+      if (AnnotatedTextUtils.isNotEmpty(s)) {
+        s.toString(); // OK: if we are here, we know that `s` is not null
+      }
+
+      // Not annotated
+      if (NotAnnotatedTextUtils.isNotEmpty(s)) {
+        s.toString(); // BAD: the typecker does not know `s` can not be null
+      }
+
+      if (!AnnotatedTextUtils.isNotEmpty(s)) {
+        s.toString(); // BAD: `s` can be null or an empty string
+      }
+    }
+
+    void testModelledTrueOnNull(String s) {
+      // TextUtils.isEmpty is modelled as TrueOnNull
       if (!TextUtils.isEmpty(s)) {
-        s.toString(); // OK
+        s.toString(); // OK: if we are here, we know that `s` is not null
+      }
+
+      // Strings.isNullOrEmpty is modelled as TrueOnNull
+      if (!Strings.isNullOrEmpty(s)) {
+        s.toString(); // OK: if we are here, we know that `s` is not null
+      }
+
+      if (!NotAnnotatedTextUtils.isEmpty(s)) {
+        s.toString(); // BAD: the typechecker can not figure this out for not modelled class
       }
     }
 
-    void textUtilsIsEmpty(@Nullable CharSequence s) {
-      if (TextUtils.isEmpty(s)) {
-        s.toString(); // BAD
+    void testEarlyReturn(@Nullable CharSequence s1, @Nullable CharSequence s2) {
+      if (AnnotatedTextUtils.isEmpty(s1) || NotAnnotatedTextUtils.isEmpty(s2)) {
+        return;
       }
-    }
 
-    void myTextUtilsNotIsEmpty(@Nullable CharSequence s) {
-      if (!MyTextUtils.isEmpty(s)) {
-        s.toString(); // OK
-      }
-    }
-
-    void myTextUtilsIsEmpty(@Nullable CharSequence s) {
-      if (MyTextUtils.isEmpty(s)) {
-        s.toString(); // BAD
-      }
-    }
-
-    void myTextUtilsIsNotEmpty(@Nullable CharSequence s) {
-      if (MyTextUtils.isNotEmpty(s)) {
-        s.toString(); // OK
-      }
-    }
-
-    void myTextUtilsNotIsNotEmpty(@Nullable CharSequence s) {
-      if (!MyTextUtils.isNotEmpty(s)) {
-        s.toString(); // BAD
-      }
+      s1.toString(); // OK: if `s1` was null, we would no rech this point
+      s2.toString(); // BAD: typechecker can not figure this for not annotated class
     }
   }
 
@@ -123,18 +156,4 @@ public class CustomAnnotations {
     }
   }
 
-  class TestModeledTrueOnNull {
-
-    void testIsEmptyOrNullOk(@Nullable String string) {
-      if (!Strings.isNullOrEmpty(string)) {
-        string.contains("Infer");
-      }
-    }
-
-    void testIsEmptyOrNullBad(@Nullable String string) {
-      if (Strings.isNullOrEmpty(string)) {
-        string.contains("Infer");
-      }
-    }
-  }
 }
