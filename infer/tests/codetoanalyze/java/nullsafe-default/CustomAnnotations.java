@@ -103,56 +103,99 @@ public class CustomAnnotations {
   // Tests for the annotation @PropagatesNullable
   class TestPropagatesNullable {
 
-    // one parameter: means return null iff s is null
-    String m(@PropagatesNullable String s) {
-      return s;
+    class TestOneParameter {
+
+      // means return null iff s is null
+      String propagatesNullable(@PropagatesNullable String s) {
+        return s;
+      }
+
+      @Nullable
+      String nullable(@Nullable String s) {
+        return s;
+      }
+
+      void test(@Nullable String sNullable, String sNonnull) {
+        // null constant
+        propagatesNullable(null).length(); // BAD: will be NPE
+        nullable(null).length(); // BAD: result might be null
+
+        // nullable
+        propagatesNullable(sNullable).length(); // BAD: result can be null
+        nullable(sNullable).length(); // BAD: result can be null
+
+        // string literal
+        propagatesNullable("").length(); // OK: result can not be null
+        nullable("").length(); // BAD: typechecker can not figure out that this is safe
+
+        // nonnull
+        propagatesNullable(sNonnull).length(); // OK: result can not be null
+        nullable(sNonnull).length(); // BAD: typechecker can not figure out that this is safe
+
+        // flow sensitive nonnull FALSE POSITIVE
+        if (sNullable != null) {
+          // here we know that sNullable is not null, so it should be safe, but it is not the case
+          // TODO(T53770056) fix it.
+          propagatesNullable(sNullable).length();
+          nullable(sNullable).length();
+        }
+      }
+
+      // limitation: we currently cannot check the body, and just trust the annotation
+      String cannotCheckBody(@PropagatesNullable String s) {
+        return null; // nothing is reported here
+      }
+
+      void illustrateFalseNegativeAsCannotCheckBody() {
+        cannotCheckBody("").length(); // this is an NPE but is not found
+      }
     }
 
-    void mBad() {
-      m(null).length(); // bad: m returns null
+    class TestSecondParameter {
+      // means return null iff s2 is null
+      String propagatesNullable(@Nullable String s1, @PropagatesNullable String s2) {
+        return s2;
+      }
+
+      @Nullable
+      String nullable(@Nullable String s1, @Nullable String s2) {
+        return s2;
+      }
+
+      // Let's ensure that @PropagatesNullable applies only to the parameter
+      // that was annotated with it, and not to other params.
+      void test(@Nullable String sNullable, String sNonnull) {
+        // Both nullable
+        propagatesNullable(sNullable, sNullable).length(); // BAD: result can be null
+        nullable(sNullable, sNullable).length(); // BAD: result can be null
+
+        // First is nonnull, second is nullable
+        propagatesNullable(sNonnull, sNullable).length(); // BAD: result can be null
+        nullable(sNonnull, sNullable).length(); // BAD: result can be null
+
+        // First is nullable, second is nonnull
+        propagatesNullable(sNullable, sNonnull).length(); // OK: result can not be null
+        nullable(sNullable, sNonnull).length(); // BAD: typechecker can not figure this out
+
+        // Both nonnullable
+        propagatesNullable(sNonnull, sNonnull).length(); // OK: result can not be null
+        nullable(sNonnull, sNonnull).length(); // BAD: typechecker can not figure this out
+      }
     }
 
-    void mGood() {
-      m("").length();
-    }
+    class TestBothParams {
+      // both parameters are annotated:
+      // means return null iff either s1 or s2 is null
+      String propagatesNullable(@PropagatesNullable String s1, @PropagatesNullable String s2) {
+        return s1 == null ? s1 : s2;
+      }
 
-    // limitation: we currently cannot check the body, and just trust the annotation
-    String cannotCheckBody(@PropagatesNullable String s) {
-      return null; // nothing is reported here
-    }
-
-    void illustrateFalseNegativeAsCannotCheckBody() {
-      cannotCheckBody("").length(); // this is an NPE but is not found
-    }
-
-    // second parameter: means return null iff s2 is null
-    String m2(@Nullable String s1, @PropagatesNullable String s2) {
-      return s2;
-    }
-
-    void m2Bad() {
-      m2(null, null).length(); // bad: m2 returns null
-    }
-
-    void m2Good() {
-      m2(null, "").length();
-    }
-
-    // two parameters: means return null iff either s1 or s2 is null
-    String m12(@PropagatesNullable String s1, @PropagatesNullable String s2) {
-      return s1 == null ? s1 : s2;
-    }
-
-    void m12Bad1() {
-      m12(null, "").length(); // bad: m12 returns null
-    }
-
-    void m12Bad2() {
-      m12("", null).length(); // bad: m12 returns null
-    }
-
-    void m12Good() {
-      m12("", "").length();
+      void testBothParamsShouldBeNonnull(@Nullable String sNullable, String sNonnull) {
+        propagatesNullable(sNullable, sNullable).length(); // BAD: result can be null
+        propagatesNullable(sNonnull, sNullable).length(); // BAD: result can be null
+        propagatesNullable(sNullable, sNonnull).length(); // BAD: result can be null
+        propagatesNullable(sNonnull, sNonnull).length(); // OK: result can be null
+      }
     }
   }
 
