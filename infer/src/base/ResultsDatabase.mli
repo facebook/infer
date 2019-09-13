@@ -17,7 +17,14 @@ val schema_hum : string
 (**  some human-readable string describing the tables *)
 
 val get_database : unit -> Sqlite3.db
-(** The results database. You should always use this function to access the database, as the connection to it may change during the execution (see [new_database_connection]). *)
+(** The results database. You should always use this function to access the database, as the
+    connection to it may change during the execution (see [new_database_connection]). *)
+
+val create_procedures_table : Sqlite3.db -> unit
+(** create a procedures table in the database*)
+
+val create_source_files_table : Sqlite3.db -> unit
+(** create a source files table in the database*)
 
 val new_database_connection : unit -> unit
 (** Closes the previous connection to the database (if any), and opens a new one. Needed after calls to fork(2). *)

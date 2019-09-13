@@ -152,6 +152,14 @@ module Implementation = struct
   let canonicalize () =
     let db = ResultsDatabase.get_database () in
     SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
+
+
+  let reset_capture_tables () =
+    let db = ResultsDatabase.get_database () in
+    SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
+    ResultsDatabase.create_procedures_table db ;
+    SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
+    ResultsDatabase.create_source_files_table db
 end
 
 module Command = struct
@@ -172,6 +180,7 @@ module Command = struct
     | MarkAllSourceFilesStale
     | MergeDBs of {infer_out_src: string}
     | Vacuum
+    | ResetCaptureTables
     | Handshake
     | Terminate
 
@@ -186,6 +195,8 @@ module Command = struct
         "MergeDBs"
     | Vacuum ->
         "Vacuum"
+    | ResetCaptureTables ->
+        "ResetCaptureTables"
     | Handshake ->
         "Handshake"
     | Terminate ->
@@ -206,6 +217,8 @@ module Command = struct
         Implementation.merge_dbs ~infer_out_src
     | Vacuum ->
         Implementation.canonicalize ()
+    | ResetCaptureTables ->
+        Implementation.reset_capture_tables ()
     | Handshake ->
         ()
     | Terminate ->
@@ -315,3 +328,5 @@ let mark_all_source_files_stale () = perform Command.MarkAllSourceFilesStale
 let merge_dbs ~infer_out_src = Command.MergeDBs {infer_out_src} |> perform
 
 let canonicalize () = perform Command.Vacuum
+
+let reset_capture_tables () = perform Command.ResetCaptureTables
