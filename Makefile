@@ -47,6 +47,7 @@ BUILD_SYSTEMS_TESTS += \
   export_changed_functions \
   incremental_analysis_remove_file \
   incremental_analysis_change_procedure \
+  incremental_analysis_add_procedure \
 
 DIRECT_TESTS += \
   c_biabduction \
