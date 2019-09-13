@@ -173,7 +173,8 @@ let invalidate_changed_procedures changed_files =
     ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
     ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
     (* save some memory *)
-    CallGraph.reset reverse_callgraph )
+    CallGraph.reset reverse_callgraph ;
+    ResultsDir.delete_capture_and_results_data () )
 
 
 let main ~changed_files =
