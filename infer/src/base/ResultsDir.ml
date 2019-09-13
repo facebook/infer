@@ -34,6 +34,24 @@ let non_empty_directory_exists results_dir =
   Sys.is_directory results_dir = `Yes && not (Utils.directory_is_empty results_dir)
 
 
+let dirs_to_clean ~cache_capture =
+  let open Config in
+  let common_list =
+    [backend_stats_dir_name; classnames_dir_name; frontend_stats_dir_name; reporting_stats_dir_name]
+  in
+  if cache_capture then common_list
+  else captured_dir_name :: racerd_issues_dir_name :: starvation_issues_dir_name :: common_list
+
+
+let delete_capture_and_results_data () =
+  DBWriter.reset_capture_tables () ;
+  let dirs_to_delete =
+    List.map ~f:(Filename.concat Config.results_dir) (dirs_to_clean ~cache_capture:true)
+  in
+  List.iter ~f:Utils.rmtree dirs_to_delete ;
+  ()
+
+
 let remove_results_dir () =
   if non_empty_directory_exists Config.results_dir then (
     if not Config.force_delete_results_dir then

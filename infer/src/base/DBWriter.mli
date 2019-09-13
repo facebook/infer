@@ -35,7 +35,7 @@ val merge_dbs : infer_out_src:string -> unit
 val canonicalize : unit -> unit
 (** put the database on disk in deterministic form *)
 
-val reset_capture_tables : unit -> unit [@@warning "-32"]
+val reset_capture_tables : unit -> unit
 
 val start : unit -> unit
 

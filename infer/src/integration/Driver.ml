@@ -81,17 +81,7 @@ let clean_results_dir () =
   ResultsDatabase.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
   let should_delete_dir =
-    let dirs_to_delete =
-      let open Config in
-      let common_list =
-        [ backend_stats_dir_name
-        ; classnames_dir_name
-        ; frontend_stats_dir_name
-        ; reporting_stats_dir_name ]
-      in
-      if cache_capture then common_list
-      else captured_dir_name :: racerd_issues_dir_name :: starvation_issues_dir_name :: common_list
-    in
+    let dirs_to_delete = ResultsDir.dirs_to_clean ~cache_capture in
     List.mem ~equal:String.equal dirs_to_delete
   in
   let should_delete_file =

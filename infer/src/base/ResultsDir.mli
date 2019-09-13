@@ -15,3 +15,10 @@ val remove_results_dir : unit -> unit
 
 val create_results_dir : unit -> unit
 (** Create the results dir and sets up logging, the database, etc. *)
+
+val delete_capture_and_results_data : unit -> unit
+  [@@warning "-32"]
+(** delete capture and results data in the results directory *)
+
+val dirs_to_clean : cache_capture:bool -> string list
+(** directories in the results directory containing capture or results data *)
