@@ -127,12 +127,16 @@ module Allocsite = struct
 end
 
 module Loc = struct
+  type field_typ = Typ.t option
+
+  let compare_field_typ _ _ = 0
+
   include (* Enforce invariants on Field and StarField, see Symb.mli *) (
     struct
         type t =
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: Typ.t option}
+          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: field_typ}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 
@@ -173,7 +177,7 @@ module Loc = struct
         type t = private
           | Var of Var.t
           | Allocsite of Allocsite.t
-          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: Typ.t option}
+          | Field of {prefix: t; fn: Typ.Fieldname.t; typ: field_typ}
           | StarField of {prefix: t; last_field: Typ.Fieldname.t}
         [@@deriving compare]
 

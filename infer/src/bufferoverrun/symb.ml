@@ -27,12 +27,16 @@ module SymbolPath = struct
 
   let compare_deref_kind _ _ = 0
 
+  type field_typ = Typ.t option
+
+  let compare_field_typ _ _ = 0
+
   include (* Enforce invariants on Field and StarField *) (
     struct
         type partial =
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: Typ.t option}
+          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: field_typ}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
@@ -76,7 +80,7 @@ module SymbolPath = struct
         type partial = private
           | Pvar of Pvar.t
           | Deref of deref_kind * partial
-          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: Typ.t option}
+          | Field of {fn: Typ.Fieldname.t; prefix: partial; typ: field_typ}
           | Callsite of {ret_typ: Typ.t; cs: CallSite.t}
           | StarField of {last_field: Typ.Fieldname.t; prefix: partial}
         [@@deriving compare]
