@@ -296,8 +296,16 @@ OPTIONS
            Activates: Enable --siof and disable all other checkers
            (Conversely: --no-siof-only)
 
+       --sqlite-cache-size int
+           SQLite cache size in pages (if positive) or kB (if negative),
+           follows formal of corresponding SQLite PRAGMA.
+
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
+
+       --sqlite-page-size int
+           SQLite page size in bytes, must be a power of two between 512 and
+           65536.
 
        --no-starvation
            Deactivates: starvation analysis (Conversely: --starvation)

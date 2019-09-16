@@ -48,6 +48,8 @@ let create_source_files_table db =
 let create_db () =
   let temp_db = Filename.temp_file ~in_dir:Config.results_dir database_filename ".tmp" in
   let db = Sqlite3.db_open ~mutex:`FULL temp_db in
+  SqliteUtils.exec db ~log:"sqlite page size"
+    ~stmt:(Printf.sprintf "PRAGMA page_size=%d" Config.sqlite_page_size) ;
   create_procedures_table db ;
   create_source_files_table db ;
   (* This should be the default but better be sure, otherwise we cannot access the database concurrently. This has to happen before setting WAL mode. *)
@@ -148,6 +150,8 @@ end = struct
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
+    SqliteUtils.exec db ~log:"sqlite cache size"
+      ~stmt:(Printf.sprintf "PRAGMA cache_size=%i" Config.sqlite_cache_size) ;
     database := Some db ;
     List.iter ~f:(fun callback -> callback db) !new_db_callbacks
 end

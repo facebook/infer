@@ -644,6 +644,10 @@ val spec_abs_level : int
 
 val specs_library : string list
 
+val sqlite_cache_size : int
+
+val sqlite_page_size : int
+
 val sqlite_lock_timeout : int
 
 val sqlite_vfs : string option

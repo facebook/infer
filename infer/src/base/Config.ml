@@ -2236,6 +2236,21 @@ and specs_library =
   specs_library
 
 
+and sqlite_cache_size =
+  CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
+    ~in_help:
+      InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+    "SQLite cache size in pages (if positive) or kB (if negative), follows formal of \
+     corresponding SQLite PRAGMA."
+
+
+and sqlite_page_size =
+  CLOpt.mk_int ~long:"sqlite-page-size" ~default:32768
+    ~in_help:
+      InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+    "SQLite page size in bytes, must be a power of two between 512 and 65536."
+
+
 and sqlite_lock_timeout =
   (* some lame estimate: when the frontend writes CFGs to disk, it may take a few seconds to write
      one CFG and all the cores may be trying to write to the database at the same time. This means
@@ -3164,6 +3179,10 @@ and sources = !sources
 and sourcepath = !sourcepath
 
 and spec_abs_level = !spec_abs_level
+
+and sqlite_cache_size = !sqlite_cache_size
+
+and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
