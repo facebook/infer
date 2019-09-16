@@ -1,6 +1,0 @@
-{
-  "external-java-packages": [
-    "external."
-  ],
-  "nullsafe-strict-containers": true
-}
