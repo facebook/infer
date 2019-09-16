@@ -396,6 +396,8 @@ module Val = struct
     {x with traces}
 
 
+  let array_sizeof {arrayblk} = ArrayBlk.sizeof arrayblk
+
   let set_array_length : Location.t -> length:t -> t -> t =
    fun location ~length v ->
     { v with
@@ -705,32 +707,55 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
+  (* Relations between values of logical variables(registers) and program variables
+
+   "Simple relation": Since Sil distinguishes logical and program variables, we need a relation for
+     pruning values of program variables.  For example, a C statement "if(x){...}" is translated to
+     "%r=load(x); if(%r){...}" in Sil.  At the load statement, we record the alias between the
+     values of %r and x, then we can prune not only the value of %r, but also that of x inside the
+     if branch.
+
+   "Empty relation": For pruning vector.length with vector::empty() results, we adopt a specific
+     relation between %r and v->elements, where %r=v.empty().  So, if %r!=0, v's array length
+     ([v->elements->length]) is pruned by 0.  On the other hand, if %r==0, v's array length is
+     pruned by >=1.
+
+   "Size relation": This is for pruning vector's length.  When there is a function call,
+     %r=x.size(), the alias target for %r becomes AliasTarget.size {l=x.elements}.  The java_tmp
+     field is an additional slot for keeping one more alias of temporary variable in Java.  The i
+     field is to express "%r=x.size()+i", which is required to follow the semantics of `Array.add`
+     inside loops precisely. *)
   type t =
     | Simple of Loc.t
     | SimplePlusA of Loc.t * IntLit.t
     | Empty of Loc.t
-    | Size of {l: Loc.t; java_tmp: Loc.t option}
+    | Size of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Fgets of Loc.t
     | Top
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
 
-  let pp fmt = function
-    | Simple l ->
-        Loc.pp fmt l
-    | SimplePlusA (l, i) ->
-        if IntLit.isnegative i then F.fprintf fmt "%a-%a" Loc.pp l IntLit.pp (IntLit.neg i)
-        else F.fprintf fmt "%a+%a" Loc.pp l IntLit.pp i
-    | Empty l ->
-        F.fprintf fmt "empty(%a)" Loc.pp l
-    | Size {l; java_tmp} ->
-        F.fprintf fmt "size(%a)" Loc.pp l ;
-        Option.iter java_tmp ~f:(F.fprintf fmt "=%a" Loc.pp)
-    | Fgets l ->
-        F.fprintf fmt "fgets(%a)" Loc.pp l
-    | Top ->
-        F.fprintf fmt "T"
+  let pp =
+    let intlit_pp fmt i =
+      if IntLit.isnegative i then F.fprintf fmt "-%a" IntLit.pp (IntLit.neg i)
+      else F.fprintf fmt "+%a" IntLit.pp i
+    in
+    fun fmt -> function
+      | Simple l ->
+          Loc.pp fmt l
+      | SimplePlusA (l, i) ->
+          Loc.pp fmt l ; intlit_pp fmt i
+      | Empty l ->
+          F.fprintf fmt "empty(%a)" Loc.pp l
+      | Size {l; i; java_tmp} ->
+          F.fprintf fmt "size(%a)" Loc.pp l ;
+          if not (IntLit.iszero i) then intlit_pp fmt i ;
+          Option.iter java_tmp ~f:(F.fprintf fmt "=%a" Loc.pp)
+      | Fgets l ->
+          F.fprintf fmt "fgets(%a)" Loc.pp l
+      | Top ->
+          F.fprintf fmt "T"
 
 
   let fgets l = Fgets l
@@ -754,9 +779,9 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> SimplePlusA (l, i))
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
-    | Size {l; java_tmp} ->
+    | Size {l; i; java_tmp} ->
         let java_tmp = Option.value_map java_tmp ~default:None ~f in
-        Option.map (f l) ~f:(fun l -> Size {l; java_tmp})
+        Option.map (f l) ~f:(fun l -> Size {l; i; java_tmp})
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
     | Top ->
@@ -770,35 +795,26 @@ module AliasTarget = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let is_unknown x = PowLoc.exists Loc.is_unknown (get_locs x)
+
+  let incr_size_alias loc x =
+    match x with
+    | Size {l; i} when Loc.equal l loc ->
+        Size {l; i= IntLit.(add i minus_one); java_tmp= None}
+    | _ ->
+        x
 end
 
-(* Relations between values of logical variables(registers) and program variables
-
-   "AliasTarget.Simple relation": Since Sil distinguishes logical and program variables, we need a
-   relation for pruning values of program variables.  For example, a C statement "if(x){...}" is
-   translated to "%r=load(x); if(%r){...}" in Sil.  At the load statement, we record the alias
-   between the values of %r and x, then we can prune not only the value of %r, but also that of x
-   inside the if branch.
-
-   "AliasTarget.Empty relation": For pruning vector.length with vector::empty() results, we adopt a
-   specific relation between %r and v->elements, where %r=v.empty().  So, if %r!=0, v's array length
-   ([v->elements->length]) is pruned by 0.  On the other hand, if %r==0, v's array length is pruned
-   by >=1.
-
-   "AliasTarget.Size relation": This is for pruning vector's length.  When there is a function call,
-   %r=x.size(), the alias target for %r becomes AliasTarget.size {l=x.elements}.  The java_tmp field
-   is an additional slot for keeping one more alias of temporary variable in Java.  *)
 module AliasMap = struct
   module Key = struct
-    type t = IdentKey of Ident.t | JavaTmp of Loc.t [@@deriving compare]
+    type t = IdentKey of Ident.t | LocKey of Loc.t [@@deriving compare]
 
     let of_id id = IdentKey id
 
-    let of_java_tmp l = JavaTmp l
+    let of_loc l = LocKey l
 
-    let pp f = function IdentKey id -> Ident.pp f id | JavaTmp l -> Loc.pp f l
+    let pp f = function IdentKey id -> Ident.pp f id | LocKey l -> Loc.pp f l
 
-    let use_loc l = function JavaTmp l' -> Loc.equal l l' | IdentKey _ -> false
+    let use_loc l = function LocKey l' -> Loc.equal l l' | IdentKey _ -> false
   end
 
   include AbstractDomain.InvertedMap (Key) (AliasTarget)
@@ -832,11 +848,11 @@ module AliasMap = struct
 
   let find_id : Ident.t -> t -> AliasTarget.t option = fun id x -> find_opt (Key.of_id id) x
 
-  let find_java_tmp : Loc.t -> t -> AliasTarget.t option =
+  let find_loc : Loc.t -> t -> AliasTarget.t option =
    fun loc x ->
-    match find_opt (Key.of_java_tmp loc) x with
-    | Some (AliasTarget.Size {l}) ->
-        Some (AliasTarget.Size {l; java_tmp= Some loc})
+    match find_opt (Key.LocKey loc) x with
+    | Some (AliasTarget.Size a) ->
+        Some (AliasTarget.Size {a with java_tmp= Some loc})
     | _ as alias ->
         alias
 
@@ -848,7 +864,7 @@ module AliasMap = struct
       let tgt =
         match tgt with
         | AliasTarget.Simple loc when Language.curr_language_is Java ->
-            Option.value (find_java_tmp loc x) ~default:tgt
+            Option.value (find_loc loc x) ~default:tgt
         | _ ->
             tgt
       in
@@ -862,8 +878,22 @@ module AliasMap = struct
   let store : Loc.t -> Ident.t -> t -> t =
    fun l id x ->
     if Language.curr_language_is Java && Loc.is_frontend_tmp l then
-      Option.value_map (find_id id x) ~default:x ~f:(fun tgt -> add (Key.of_java_tmp l) tgt x)
+      Option.value_map (find_id id x) ~default:x ~f:(fun tgt -> add (Key.of_loc l) tgt x)
     else x
+
+
+  let add_zero_size_alias ~size ~arr x =
+    add (Key.of_loc size) (AliasTarget.Size {l= arr; i= IntLit.zero; java_tmp= None}) x
+
+
+  let incr_size_alias loc = map (AliasTarget.incr_size_alias loc)
+
+  let store_n ~prev loc id n x =
+    match find_id id prev with
+    | Some (AliasTarget.Size {l; i}) ->
+        add (Key.of_loc loc) (AliasTarget.Size {l; i= IntLit.add i n; java_tmp= None}) x
+    | _ ->
+        x
 end
 
 module AliasRet = struct
@@ -910,8 +940,8 @@ module Alias = struct
   let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc -> lift_map (AliasMap.load id loc)
 
   let store_simple : Loc.t -> Exp.t -> t -> t =
-   fun loc e a ->
-    let a = lift_map (AliasMap.forget loc) a in
+   fun loc e prev ->
+    let a = lift_map (AliasMap.forget loc) prev in
     match e with
     | Exp.Var l ->
         let a = lift_map (AliasMap.store loc l) a in
@@ -922,8 +952,10 @@ module Alias = struct
     | Exp.BinOp (Binop.PlusA _, Exp.Var id, Exp.Const (Const.Cint i))
     | Exp.BinOp (Binop.PlusA _, Exp.Const (Const.Cint i), Exp.Var id) ->
         lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, IntLit.neg i))) a
+        |> lift_map (AliasMap.store_n ~prev:prev.map loc id i)
     | Exp.BinOp (Binop.MinusA _, Exp.Var id, Exp.Const (Const.Cint i)) ->
         lift_map (AliasMap.load id (AliasTarget.SimplePlusA (loc, i))) a
+        |> lift_map (AliasMap.store_n ~prev:prev.map loc id (IntLit.neg i))
     | _ ->
         a
 
@@ -935,6 +967,25 @@ module Alias = struct
     | IContainer.Singleton loc ->
         load id (AliasTarget.fgets loc) a
     | _ ->
+        a
+
+
+  let incr_size_alias : PowLoc.t -> t -> t =
+    let incr_size_alias1 loc a = lift_map (AliasMap.incr_size_alias loc) a in
+    fun locs a -> PowLoc.fold incr_size_alias1 locs a
+
+
+  let add_empty_size_alias : Loc.t -> PowLoc.t -> t -> t =
+   fun loc arr_locs a ->
+    match PowLoc.is_singleton_or_more arr_locs with
+    | IContainer.Singleton arr_loc ->
+        lift_map (AliasMap.add_zero_size_alias ~size:loc ~arr:arr_loc) a
+    | More ->
+        (* NOTE: Keeping only one alias here is suboptimal, but current alias domain can keep one
+           alias for each ident, which will be extended later. *)
+        let arr_loc = PowLoc.min_elt arr_locs in
+        lift_map (AliasMap.add_zero_size_alias ~size:loc ~arr:arr_loc) a
+    | Empty ->
         a
 
 
@@ -1453,12 +1504,25 @@ module MemReach = struct
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
-   fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
+   fun loc e m ->
+    match e with
+    | Exp.Const (Const.Cint zero) when IntLit.iszero zero ->
+        let arr_locs =
+          let add_arr l v acc =
+            if Itv.is_zero (Val.array_sizeof v) then PowLoc.add l acc else acc
+          in
+          MemPure.fold add_arr m.mem_pure PowLoc.empty
+        in
+        {m with alias= Alias.add_empty_size_alias loc arr_locs m.alias}
+    | _ ->
+        {m with alias= Alias.store_simple loc e m.alias}
 
 
   let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
    fun id locs m -> {m with alias= Alias.fgets id locs m.alias}
 
+
+  let incr_size_alias locs m = {m with alias= Alias.incr_size_alias locs m.alias}
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
 
@@ -1772,7 +1836,7 @@ module Mem = struct
 
 
   let load_size_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc -> load_alias id (AliasTarget.Size {l= loc; java_tmp= None})
+   fun id loc -> load_alias id (AliasTarget.Size {l= loc; i= IntLit.zero; java_tmp= None})
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
@@ -1782,6 +1846,8 @@ module Mem = struct
   let fgets_alias : Ident.t -> PowLoc.t -> t -> t =
    fun id locs -> map ~f:(MemReach.fgets_alias id locs)
 
+
+  let incr_size_alias locs = map ~f:(MemReach.incr_size_alias locs)
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)
 

@@ -855,7 +855,14 @@ module Collection = struct
       mem
 
 
-  let add coll_id = {exec= change_size_by ~size_f:Itv.incr coll_id; check= no_check}
+  let add coll_id =
+    let exec {location} ~ret:_ mem =
+      let arr_locs = get_collection_internal_array_locs coll_id mem in
+      Dom.Mem.transform_mem ~f:(Dom.Val.transform_array_length location ~f:Itv.incr) arr_locs mem
+      |> Dom.Mem.incr_size_alias arr_locs
+    in
+    {exec; check= no_check}
+
 
   let singleton_collection =
     let exec env ~ret:((id, _) as ret) mem =

@@ -600,6 +600,8 @@ let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
 let is_const : t -> Z.t option = bind1zo ItvPure.is_const
 
+let is_zero = bind1bool ItvPure.is_zero
+
 let is_one = bind1bool ItvPure.is_one
 
 let is_mone = bind1bool ItvPure.is_mone

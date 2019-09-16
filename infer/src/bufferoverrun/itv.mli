@@ -147,6 +147,8 @@ val of_int_lit : IntLit.t -> t
 
 val is_const : t -> Z.t option
 
+val is_zero : t -> bool
+
 val is_one : t -> bool
 
 val is_mone : t -> bool
