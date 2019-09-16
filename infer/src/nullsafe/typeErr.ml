@@ -93,41 +93,7 @@ module H = Hashtbl.Make (struct
 
   let equal = [%compare.equal: t]
 
-  let err_instance_hash x =
-    let string_hash s = Hashtbl.hash s in
-    let string_opt_hash so = Hashtbl.hash so in
-    match x with
-    | Condition_redundant (b, so, nn) ->
-        Hashtbl.hash (1, b, string_opt_hash so, nn)
-    | Field_not_initialized (fn, pn) ->
-        Hashtbl.hash (2, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
-    | Field_annotation_inconsistent (fn, _) ->
-        Hashtbl.hash (3, string_hash (Typ.Fieldname.to_string fn))
-    | Field_over_annotated (fn, pn) ->
-        Hashtbl.hash (4, string_hash (Typ.Fieldname.to_string fn ^ Typ.Procname.to_string pn))
-    | Null_field_access (so, fn, _, _) ->
-        Hashtbl.hash (5, string_opt_hash so, string_hash (Typ.Fieldname.to_string fn))
-    | Call_receiver_annotation_inconsistent (so, pn, _) ->
-        Hashtbl.hash (6, string_opt_hash so, Typ.Procname.hash pn)
-    | Parameter_annotation_inconsistent (s, n, pn, _, _) ->
-        Hashtbl.hash (7, string_hash s, n, Typ.Procname.hash pn)
-    | Return_annotation_inconsistent (pn, _) ->
-        Hashtbl.hash (8, Typ.Procname.hash pn)
-    | Return_over_annotated pn ->
-        Hashtbl.hash (9, Typ.Procname.hash pn)
-    | Inconsistent_subclass_return_annotation (pn, opn) ->
-        Hashtbl.hash (10, Typ.Procname.hash pn, Typ.Procname.hash opn)
-    | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
-        let pn_hash = string_hash param_name in
-        Hashtbl.hash (11, pn_hash, pos, Typ.Procname.hash pn, Typ.Procname.hash opn)
-
-
-  let hash (err_inst, instr_ref_opt) =
-    let x =
-      match instr_ref_opt with None -> None | Some instr_ref -> Some (InstrRef.hash instr_ref)
-    in
-    let y = err_instance_hash err_inst in
-    Hashtbl.hash (x, y)
+  let hash = Hashtbl.hash
 end
 (* H *))
 
