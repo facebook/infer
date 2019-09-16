@@ -560,9 +560,6 @@ being the name of the struct, [None] means the parameter is of some other type. 
   val is_objc_block : t -> bool
   (** Return whether the procname is a block procname. *)
 
-  val hash : t -> int
-  (** Hash function for procname. *)
-
   val is_c_method : t -> bool
   (** Return true this is an Objective-C/C++ method name. *)
 
