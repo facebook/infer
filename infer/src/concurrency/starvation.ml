@@ -190,7 +190,9 @@ module ReportMap : sig
 
   val add_starvation : StarvationDomain.Event.severity_t -> report_add_t
 
-  val add_strict_mode_volation : report_add_t
+  val add_strict_mode_violation : report_add_t
+
+  val add_lockless_violation : report_add_t
 
   val log : IssueLog.t -> Tenv.t -> Procdesc.t -> t -> IssueLog.t
 end = struct
@@ -198,6 +200,7 @@ end = struct
     | Starvation of StarvationDomain.Event.severity_t
     | Deadlock of int
     | StrictModeViolation of int
+    | LocklessViolation of int
 
   type report_t = {problem: problem; pname: Typ.Procname.t; ltr: Errlog.loc_trace; message: string}
 
@@ -225,8 +228,13 @@ end = struct
     add loc report map
 
 
-  let add_strict_mode_volation pname loc ltr message (map : t) =
+  let add_strict_mode_violation pname loc ltr message (map : t) =
     let report = {problem= StrictModeViolation (-List.length ltr); pname; ltr; message} in
+    add loc report map
+
+
+  let add_lockless_violation pname loc ltr message (map : t) =
+    let report = {problem= LocklessViolation (-List.length ltr); pname; ltr; message} in
     add loc report map
 
 
@@ -240,6 +248,8 @@ end = struct
             IssueType.starvation
         | StrictModeViolation _ ->
             IssueType.strict_mode_violation
+        | LocklessViolation _ ->
+            IssueType.lockless_violation
       in
       if Reporting.is_suppressed tenv pdesc issue_type then issue_log
       else
@@ -274,6 +284,12 @@ end = struct
       | _ ->
           None
     in
+    let filter_map_lockless_violation = function
+      | {problem= LocklessViolation l} as r ->
+          Some (l, r)
+      | _ ->
+          None
+    in
     let compare_reports weight_compare (w, r) (w', r') =
       match weight_compare w w' with 0 -> String.compare r.message r'.message | result -> result
     in
@@ -281,7 +297,9 @@ end = struct
       let deadlocks = List.filter_map problems ~f:filter_map_deadlock in
       let starvations = List.filter_map problems ~f:filter_map_starvation in
       let strict_mode_violations = List.filter_map problems ~f:filter_map_strict_mode_violation in
+      let lockless_violations = List.filter_map problems ~f:filter_map_lockless_violation in
       log_reports (compare_reports Int.compare) loc deadlocks issue_log
+      |> log_reports (compare_reports Int.compare) loc lockless_violations
       |> log_reports (compare_reports StarvationDomain.Event.compare_severity_t) loc starvations
       |> log_reports (compare_reports Int.compare) loc strict_mode_violations
     in
@@ -343,6 +361,38 @@ let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
            else acc )
   in
   List.fold methods ~init ~f
+
+
+let report_lockless_violations (tenv, summary) {StarvationDomain.events} report_map =
+  let open StarvationDomain in
+  (* this is inneficient as it climbs the hierarchy potentially twice *)
+  let is_annotated_lockless tenv pname =
+    let check annot = Annotations.(ia_ends_with annot lockless) in
+    let check_attributes pname =
+      PatternMatch.check_class_attributes check tenv pname
+      || Annotations.pname_has_return_annot pname
+           ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes check
+    in
+    PatternMatch.override_exists check_attributes tenv pname
+  in
+  let pname = Summary.get_proc_name summary in
+  if not (is_annotated_lockless tenv pname) then report_map
+  else
+    let report_violation (event : Event.t) report_map =
+      match event.elem with
+      | LockAcquire _ ->
+          let error_message =
+            Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
+              (MF.monospaced_to_string Annotations.lockless)
+              Event.pp_human event
+          in
+          let loc = Event.get_loc event in
+          let ltr = Event.make_trace pname event in
+          ReportMap.add_lockless_violation pname loc ltr error_message report_map
+      | _ ->
+          report_map
+    in
+    EventDomain.fold report_violation events report_map
 
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
@@ -463,7 +513,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
             ui_explain
         in
         let ltr = trace @ ui_trace in
-        ReportMap.add_strict_mode_volation current_pname loc ltr error_message report_map
+        ReportMap.add_strict_mode_violation current_pname loc ltr error_message report_map
     | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
@@ -496,6 +546,7 @@ let reporting {Callbacks.procedures; source_file} =
       Payload.read_toplevel_procedure (Procdesc.get_proc_name proc_desc)
       |> Option.value_map ~default:issue_log ~f:(fun summary ->
              report_deadlocks env summary ReportMap.empty
+             |> report_lockless_violations env summary
              |> report_starvation env summary
              |> ReportMap.log issue_log tenv proc_desc )
     else issue_log

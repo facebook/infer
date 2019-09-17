@@ -51,6 +51,8 @@ let inject_prop = "InjectProp"
 
 let inject_view = "InjectView"
 
+let lockless = "Lockless"
+
 let nonnull = "Nonnull"
 
 let no_allocation = "NoAllocation"

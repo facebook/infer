@@ -216,6 +216,8 @@ val leak_after_array_abstraction : t
 
 val leak_in_footprint : t
 
+val lockless_violation : t
+
 val lock_consistency_violation : t
 
 val logging_private_data : t

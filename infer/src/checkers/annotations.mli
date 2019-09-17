@@ -17,6 +17,8 @@ val expensive : string
 
 val inject_prop : string
 
+val lockless : string
+
 val no_allocation : string
 
 val nullable : string

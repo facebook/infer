@@ -421,6 +421,7 @@ OPTIONS
              IVAR_NOT_NULL_CHECKED (enabled by default),
              Internal_error (enabled by default),
              JAVASCRIPT_INJECTION (enabled by default),
+             LOCKLESS_VIOLATION (enabled by default),
              LOCK_CONSISTENCY_VIOLATION (enabled by default),
              LOGGING_PRIVATE_DATA (enabled by default),
              Leak_after_array_abstraction (enabled by default),

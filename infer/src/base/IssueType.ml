@@ -328,6 +328,8 @@ let leak_in_footprint = register_from_string "Leak_in_footprint"
 
 let lock_consistency_violation = register_from_string "LOCK_CONSISTENCY_VIOLATION"
 
+let lockless_violation = register_from_string "LOCKLESS_VIOLATION"
+
 let logging_private_data = register_from_string "LOGGING_PRIVATE_DATA"
 
 let expensive_loop_invariant_call = register_from_string "EXPENSIVE_LOOP_INVARIANT_CALL"
