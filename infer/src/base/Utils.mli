@@ -139,3 +139,7 @@ val timeit : f:(unit -> 'a) -> 'a * int
 
 val do_in_dir : dir:string -> f:(unit -> 'a) -> 'a
 (** executes [f] after cding into [dir] and then restores original cwd *)
+
+val get_available_memory_MB : unit -> int option
+(** On Linux systems, return [Some x] where [MemAvailable x] is in [/proc/meminfo].
+    Returns [None] in all other cases. *)

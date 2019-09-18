@@ -173,47 +173,27 @@ let send_work_to_child pool slot =
          marshal_to_pipe down_pipe (Do x) )
 
 
-let proc_meminfo = "/proc/meminfo"
-
 (* this should not be called in any other arch than Linux *)
 let should_throttle =
-  Option.iter Config.oom_threshold ~f:(fun _threshold ->
-      match Sys.file_exists proc_meminfo with
-      | `Yes ->
-          ()
-      | _ ->
-          L.die UserError "Can't access %s even though oom detection was requested." proc_meminfo
-  ) ;
   let currently_throttled = ref false in
-  let get_available_memory_MB () =
-    let rec aux in_channel =
-      match In_channel.input_line in_channel with
-      | None ->
-          L.die UserError
-            "Cannot find available memory line in %s even though oom detection was requested."
-            proc_meminfo
-      | Some line -> (
-        try Scanf.sscanf line "MemAvailable: %u kB" (fun mem_kB -> mem_kB / 1024)
-        with Scanf.Scan_failure _ -> aux in_channel )
-    in
-    Utils.with_file_in proc_meminfo ~f:aux
-  in
   fun threshold ->
-    let available_memory = get_available_memory_MB () in
-    if available_memory < threshold then (
-      if not !currently_throttled then
-        L.user_warning
-          "Available memory (%d MB) is below configured threshold, throttling back scheduling \
-           analysis work.@."
-          available_memory ;
-      currently_throttled := true )
-    else (
-      if !currently_throttled then
-        L.user_warning
-          "Available memory (%d MB) exceeds configured threshold, resuming scheduling analysis \
-           work.@."
-          available_memory ;
-      currently_throttled := false ) ;
+    ( match Utils.get_available_memory_MB () with
+    | None ->
+        L.die UserError "Can't obtain available memory even though oom detection was requested.@."
+    | Some available_memory when available_memory < threshold ->
+        if not !currently_throttled then
+          L.user_warning
+            "Available memory (%d MB) is below configured threshold, throttling back scheduling \
+             analysis work.@."
+            available_memory ;
+        currently_throttled := true
+    | Some available_memory ->
+        if !currently_throttled then
+          L.user_warning
+            "Available memory (%d MB) exceeds configured threshold, resuming scheduling analysis \
+             work.@."
+            available_memory ;
+        currently_throttled := false ) ;
     !currently_throttled
 
 

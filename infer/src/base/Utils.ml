@@ -404,3 +404,17 @@ let do_in_dir ~dir ~f =
   let cwd = Unix.getcwd () in
   Unix.chdir dir ;
   try_finally_swallow_timeout ~f ~finally:(fun () -> Unix.chdir cwd)
+
+
+let get_available_memory_MB () =
+  let proc_meminfo = "/proc/meminfo" in
+  let rec scan_for_expected_output in_channel =
+    match In_channel.input_line in_channel with
+    | None ->
+        None
+    | Some line -> (
+      try Scanf.sscanf line "MemAvailable: %u kB" (fun mem_kB -> Some (mem_kB / 1024))
+      with Scanf.Scan_failure _ -> scan_for_expected_output in_channel )
+  in
+  if Sys.file_exists proc_meminfo <> `Yes then None
+  else with_file_in proc_meminfo ~f:scan_for_expected_output

@@ -90,8 +90,14 @@ let log_environment_info () =
     |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
     |> Option.value ~default:["<not set>"]
   in
-  L.environment_info "INFER_ARGS = %a" Pp.cli_args infer_args ;
-  L.environment_info "command line arguments: %a" Pp.cli_args (Array.to_list Sys.argv) ;
+  L.environment_info "INFER_ARGS = %a@\n" Pp.cli_args infer_args ;
+  L.environment_info "command line arguments: %a@\n" Pp.cli_args (Array.to_list Sys.argv) ;
+  ( match Utils.get_available_memory_MB () with
+  | None ->
+      L.environment_info "Could not retrieve available memory (possibly not on Linux)@\n"
+  | Some available_memory ->
+      L.environment_info "Available memory at startup: %d MB@\n" available_memory ;
+      ScubaLogging.log_count ~label:"startup_mem_avail_MB" ~value:available_memory ) ;
   print_active_checkers ()
 
 
