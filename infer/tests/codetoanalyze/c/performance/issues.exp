@@ -21,7 +21,7 @@ codetoanalyze/c/performance/compound_loop_guard.c, while_and_or, 3, INTEGER_OVER
 codetoanalyze/c/performance/cost_test.c, alias_OK, 5, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Binary operation: ([-oo, +oo] + 1):signed32]
 codetoanalyze/c/performance/cost_test.c, call_infinite, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Call to infinite,Unbounded loop,Loop at line 146, column 3]
 codetoanalyze/c/performance/cost_test.c, call_while_upto20_minus100_bad, 0, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 606, O(1), degree = 0]
-codetoanalyze/c/performance/cost_test.c, ignore_character_symbols_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop at line 155, column 3]
+codetoanalyze/c/performance/cost_test.c, ignore_character_symbols_constant_FP, 1, EXPENSIVE_EXECUTION_TIME, no_bucket, ERROR, [with estimated cost 4 + 4 ⋅ (122-min(97, c)), O((-c + 122)), degree = 1,{122-min(97, c)},Loop at line 155, column 3]
 codetoanalyze/c/performance/cost_test.c, infinite, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop at line 146, column 3]
 codetoanalyze/c/performance/cost_test.c, infinite, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([-oo, +oo] + [0, +oo]):signed32]
 codetoanalyze/c/performance/cost_test.c, infinite_FN, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([-oo, +oo] + [0, +oo]):signed32]

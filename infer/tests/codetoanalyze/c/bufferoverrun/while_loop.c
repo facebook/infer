@@ -58,3 +58,14 @@ void join_minmax_with_sum_signed_Good_FP(int x, int y) {
   }
   a[i] = 2;
 }
+
+void preciser_widen_Good(int x) {
+  int idx = 0;
+  int arr[10];
+  while (idx < 10) {
+    arr[idx] = 0;
+    if (unknown()) {
+      idx = x;
+    }
+  }
+}

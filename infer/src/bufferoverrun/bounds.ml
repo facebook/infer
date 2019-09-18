@@ -163,9 +163,9 @@ module SymLinear = struct
     is_one_symbol_of_common get_mone_symbol_opt
 
 
-  let is_signed_one_symbol_of : weak:bool -> Sign.t -> Symb.Symbol.t -> t -> bool =
-   fun ~weak sign s x ->
-    match sign with Plus -> is_one_symbol_of ~weak s x | Minus -> is_mone_symbol_of ~weak s x
+  let is_signed_one_symbol_of : ?weak:bool -> Sign.t -> Symb.Symbol.t -> t -> bool =
+   fun ?weak sign s x ->
+    match sign with Plus -> is_one_symbol_of ?weak s x | Minus -> is_mone_symbol_of ?weak s x
 
 
   let get_symbols : t -> Symb.SymbolSet.t =
@@ -770,6 +770,14 @@ module Bound = struct
     | MinMax (n1, Minus, Min, _, s1), Linear (n2, s2)
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
         y
+    | Linear (n1, s1), MinMax (n2, (Plus as sign1), Min, n3, _)
+    | Linear (n1, s1), MinMax (n2, (Minus as sign1), Max, n3, _)
+      when Z.equal n1 (Sign.eval_big_int sign1 n2 n3) && SymLinear.is_empty s1 ->
+        y
+    | Linear (n1, s1), MinMax (n2, (Plus as sign1), Min, _, s2)
+    | Linear (n1, s1), MinMax (n2, (Minus as sign1), Max, _, s2)
+      when Z.equal n1 n2 && SymLinear.is_signed_one_symbol_of sign1 s2 s1 ->
+        y
     | _ ->
         if le x y then x
         else
@@ -789,6 +797,14 @@ module Bound = struct
         y
     | MinMax (n1, Minus, Max, _, s1), Linear (n2, s2)
       when Z.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
+        y
+    | Linear (n1, s1), MinMax (n2, (Plus as sign1), Max, n3, _)
+    | Linear (n1, s1), MinMax (n2, (Minus as sign1), Min, n3, _)
+      when Z.equal n1 (Sign.eval_big_int sign1 n2 n3) && SymLinear.is_empty s1 ->
+        y
+    | Linear (n1, s1), MinMax (n2, (Plus as sign1), Max, _, s2)
+    | Linear (n1, s1), MinMax (n2, (Minus as sign1), Min, _, s2)
+      when Z.equal n1 n2 && SymLinear.is_signed_one_symbol_of sign1 s2 s1 ->
         y
     | _ ->
         if le y x then x

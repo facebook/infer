@@ -311,6 +311,6 @@ codetoanalyze/c/bufferoverrun/unrolling.c, call_do_two_times2_Good_FP, 0, BUFFER
 codetoanalyze/c/bufferoverrun/unrolling.c, call_do_two_times_Good_FP, 0, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Call,<Offset trace>,Parameter `n`,<Length trace>,Array declaration,Array access: Offset: [0, 4] Size: 1 by call to `do_two_times_Good` ]
 codetoanalyze/c/bufferoverrun/while_loop.c, diverge_on_narrowing, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/while_loop.c, join_minmax_with_sum_signed_Good_FP, 4, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([-oo, +oo] + 1):signed32]
-codetoanalyze/c/bufferoverrun/while_loop.c, join_minmax_with_sum_signed_Good_FP, 6, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Parameter `y`,<RHS trace>,Parameter `y`,Binary operation: (x + [-oo, +oo]):signed32]
+codetoanalyze/c/bufferoverrun/while_loop.c, join_minmax_with_sum_signed_Good_FP, 6, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Parameter `y`,<RHS trace>,Parameter `y`,Binary operation: (x + [min(0, y), max(0, y)]):signed32]
 codetoanalyze/c/bufferoverrun/while_loop.c, join_minmax_with_sum_signed_Good_FP, 12, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Offset trace>,Parameter `y`,<Length trace>,Assignment,Array declaration,Array access: Offset: [0, +oo] Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/while_loop.c, while_loop, 3, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Assignment,Array access: Offset: [0, 10] Size: 10]
