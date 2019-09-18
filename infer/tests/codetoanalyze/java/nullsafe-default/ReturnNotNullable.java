@@ -125,20 +125,6 @@ public class ReturnNotNullable {
     return "OK";
   }
 
-  @Nullable
-  String redundantEq() {
-    String s = constantToNonNullIsOK();
-    int n = s == null ? 0 : s.length();
-    return s;
-  }
-
-  @Nullable
-  String redundantNeq() {
-    String s = constantToNonNullIsOK();
-    int n = s != null ? 0 : s.length();
-    return s;
-  }
-
   @Nonnull
   BufferedReader nn(BufferedReader br) {
     return br;
