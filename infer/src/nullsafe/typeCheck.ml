@@ -531,7 +531,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let is_anonymous_inner_class_constructor =
         Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
       in
-      let do_return (ret_ta, ret_typ) loc' typestate' =
+      let do_return (ret_ta, NullsafeType.{typ= ret_typ}) loc' typestate' =
         let mk_return_range () = (ret_typ, ret_ta, [loc']) in
         let id = fst ret_id_typ in
         TypeState.add_id id (mk_return_range ()) typestate'
@@ -682,7 +682,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       let typestate_after_call, resolved_ret =
         let resolve_param i (sparam, cparam) =
-          let s1, ia1, t1 = sparam in
+          let s1, ia1, NullsafeType.{typ= t1} = sparam in
           let (orig_e2, e2), t2 = cparam in
           let ta1 = TypeAnnotation.from_item_annotation ia1 (TypeOrigin.Formal s1) in
           let _, ta2, _ =

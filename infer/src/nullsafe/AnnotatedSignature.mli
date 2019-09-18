@@ -10,8 +10,8 @@
 open! IStd
 
 type t =
-  { ret: Annot.Item.t * Typ.t  (** Annotated return type. *)
-  ; params: (Mangled.t * Annot.Item.t * Typ.t) list  (** Annotated parameters. *) }
+  { ret: Annot.Item.t * NullsafeType.t  (** Annotated return type. *)
+  ; params: (Mangled.t * Annot.Item.t * NullsafeType.t) list  (** Annotated parameters. *) }
 [@@deriving compare]
 
 val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool

@@ -178,7 +178,7 @@ module Severity = struct
 
   let this_type_get_severity tenv (signature : AnnotatedSignature.t) =
     match signature.params with
-    | (p, _, this_type) :: _ when Mangled.is_this p ->
+    | (p, _, NullsafeType.{typ= this_type}) :: _ when Mangled.is_this p ->
         Option.bind ~f:get_severity (PatternMatch.type_get_annotation tenv this_type)
     | _ ->
         None

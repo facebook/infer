@@ -33,7 +33,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
   let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
       annotated_signature linereader proc_loc : bool * TypeState.t option =
     let mk s = Pvar.mk s curr_pname in
-    let add_formal typestate (s, ia, typ) =
+    let add_formal typestate (s, ia, NullsafeType.{typ}) =
       let pvar = mk s in
       let ta =
         let origin = TypeOrigin.Formal s in
@@ -48,19 +48,20 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc :
         unit =
-      let _, ret_type = annotated_signature.AnnotatedSignature.ret in
+      let _, ret_nullsafe_type = annotated_signature.AnnotatedSignature.ret in
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt =
         match ret_range with Some (typ_found, _, _) -> Some typ_found | None -> None
       in
+      (* TODO(T54088319): model this in NullsafeType.nullability *)
       let ret_implicitly_nullable =
-        String.equal (PatternMatch.get_type_name ret_type) "java.lang.Void"
+        String.equal (PatternMatch.get_type_name ret_nullsafe_type.typ) "java.lang.Void"
       in
       State.set_node exit_node ;
       if checks.TypeCheck.check_ret_type <> [] then
         List.iter
-          ~f:(fun f -> f curr_pname curr_pdesc ret_type typ_found_opt loc)
+          ~f:(fun f -> f curr_pname curr_pdesc ret_nullsafe_type.typ typ_found_opt loc)
           checks.TypeCheck.check_ret_type ;
       if checks.TypeCheck.eradicate then
         EradicateChecks.check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range

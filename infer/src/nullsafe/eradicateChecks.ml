@@ -13,6 +13,7 @@ let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
   Typ.Struct.get_field_type_and_annotation ~lookup fn typ
 
+
 let report_error tenv = TypeErr.report_error tenv (EradicateCheckers.report_error tenv)
 
 let explain_expr tenv node e =
