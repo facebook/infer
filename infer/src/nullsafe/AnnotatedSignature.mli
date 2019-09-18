@@ -23,8 +23,5 @@ val mark_nullability : Typ.Procname.t -> t -> bool * bool list -> t
 val get : ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
 
-val mk_ia_nullable : Annot.Item.t -> Annot.Item.t
-(** Add the nullable annotation to the item_annotation, if not already present. *)
-
 val pp : Typ.Procname.t -> Format.formatter -> t -> unit
 (** Pretty print a method signature with annotations. *)

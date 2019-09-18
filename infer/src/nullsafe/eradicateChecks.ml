@@ -11,17 +11,7 @@ open! IStd
 
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
-  match Typ.Struct.get_field_type_and_annotation ~lookup fn typ with
-  | None ->
-      None
-  | Some (t, ia) ->
-      let ia' =
-        (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
-        (* outside of Eradicate in some other way *)
-        if not Config.eradicate then AnnotatedSignature.mk_ia_nullable ia else ia
-      in
-      Some (t, ia')
-
+  Typ.Struct.get_field_type_and_annotation ~lookup fn typ
 
 let report_error tenv = TypeErr.report_error tenv (EradicateCheckers.report_error tenv)
 
