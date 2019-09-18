@@ -219,7 +219,7 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
-  let dummy_var = Var.program "dummy" in
+  let dummy_var = Var.program ~global:() "dummy" in
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
   { name= Global.mk dummy_var dummy_ptr_typ Loc.none
   ; params= []
@@ -271,6 +271,20 @@ module Inst = struct
         vs
 
   let locals inst = union_locals inst Var.Set.empty
+
+  let fold_exps inst ~init ~f =
+    match inst with
+    | Move {reg_exps; loc= _} ->
+        Vector.fold reg_exps ~init ~f:(fun acc (_reg, exp) -> f acc exp)
+    | Load {reg= _; ptr; len; loc= _} -> f (f init ptr) len
+    | Store {ptr; exp; len; loc= _} -> f (f (f init ptr) exp) len
+    | Memset {dst; byt; len; loc= _} -> f (f (f init dst) byt) len
+    | Memcpy {dst; src; len; loc= _} | Memmov {dst; src; len; loc= _} ->
+        f (f (f init dst) src) len
+    | Alloc {reg= _; num; len; loc= _} -> f (f init num) len
+    | Free {ptr; loc= _} -> f init ptr
+    | Nondet {reg= _; msg= _; loc= _} -> init
+    | Abort {loc= _} -> init
 end
 
 (** Jumps *)

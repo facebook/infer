@@ -47,6 +47,9 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
 
   [-bound <int>]          stop execution exploration at depth <int>
   [-colors]               enable printing in colors
+  [-domain <string>]      select abstract domain; must be one of "sh" (default,
+                          symbolic heap domain), "globals" (used-globals
+                          domain), or "unit" (unit domain)
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -55,8 +58,6 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
                           output if <file> is `-`
   [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
-  [-unit-domain]          use unit domain (experimental, debugging purposes
-                          only)
   [-help]                 print this help text and exit
                           (alias: -?)
 
@@ -128,14 +129,15 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
   [-bound <int>]          stop execution exploration at depth <int>
   [-colors]               enable printing in colors
+  [-domain <string>]      select abstract domain; must be one of "sh" (default,
+                          symbolic heap domain), "globals" (used-globals
+                          domain), or "unit" (unit domain)
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
-  [-unit-domain]          use unit domain (experimental, debugging purposes
-                          only)
   [-help]                 print this help text and exit
                           (alias: -?)
 
@@ -171,11 +173,13 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 
   [-bound <int>]         stop execution exploration at depth <int>
   [-colors]              enable printing in colors
+  [-domain <string>]     select abstract domain; must be one of "sh" (default,
+                         symbolic heap domain), "globals" (used-globals domain),
+                         or "unit" (unit domain)
   [-function-summaries]  use function summaries (in development)
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-skip-throw]          do not explore past throwing an exception
   [-trace <spec>]        enable debug tracing
-  [-unit-domain]         use unit domain (experimental, debugging purposes only)
   [-help]                print this help text and exit
                          (alias: -?)
 

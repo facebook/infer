@@ -15,6 +15,7 @@ type 'a param = 'a Command.Param.t
 
 module Sh_executor = Control.Make (Domain.Relation.Make (State_domain))
 module Unit_executor = Control.Make (Domain.Unit)
+module Used_globals_executor = Control.Make (Domain.Used_globals)
 
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
@@ -78,12 +79,17 @@ let analyze =
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
-  and unit_domain =
-    flag "unit-domain" no_arg
-      ~doc:"use unit domain (experimental, debugging purposes only)"
-  in
-  let exec =
-    if unit_domain then Unit_executor.exec_pgm else Sh_executor.exec_pgm
+  and exec =
+    flag "domain"
+      (optional_with_default Sh_executor.exec_pgm
+         (Arg_type.of_alist_exn
+            [ ("sh", Sh_executor.exec_pgm)
+            ; ("globals", Used_globals_executor.exec_pgm)
+            ; ("unit", Unit_executor.exec_pgm) ]))
+      ~doc:
+        "<string> select abstract domain; must be one of \"sh\" (default, \
+         symbolic heap domain), \"globals\" (used-globals domain), or \
+         \"unit\" (unit domain)"
   in
   fun program () ->
     exec {bound; skip_throw; function_summaries} (program ())

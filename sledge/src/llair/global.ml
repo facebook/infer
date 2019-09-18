@@ -26,7 +26,8 @@ let pp_defn fs {var; init; typ; loc} =
 let invariant g =
   Invariant.invariant [%here] g [%sexp_of: t]
   @@ fun () ->
-  let {typ} = g in
-  assert (Typ.is_sized typ)
+  let {var; typ} = g in
+  assert (Typ.is_sized typ) ;
+  assert (Var.global var)
 
 let mk ?init var typ loc = {var; init; typ; loc} |> check invariant

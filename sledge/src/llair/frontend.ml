@@ -288,8 +288,7 @@ let xlate_float : Llvm.llvalue -> Exp.t =
   let data = suffix_after_last_space (Llvm.string_of_llvalue llv) in
   Exp.float data
 
-let xlate_name : Llvm.llvalue -> Var.t =
- fun llv -> Var.program (find_name llv)
+let xlate_name ?global llv = Var.program ?global (find_name llv)
 
 let xlate_name_opt : Llvm.llvalue -> Var.t option =
  fun instr ->
@@ -358,7 +357,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         let fname = Llvm.value_name func in
         match xlate_intrinsic_exp fname with
         | Some intrinsic when inline || should_inline llv -> intrinsic x llv
-        | _ -> Exp.var (xlate_name llv) )
+        | _ -> Exp.var (xlate_name ~global:() llv) )
     | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
      |Argument ->
         Exp.var (xlate_name llv)
@@ -604,7 +603,7 @@ and xlate_global : x -> Llvm.llvalue -> Global.t =
   Hashtbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
       ;
-      let g = xlate_name llg in
+      let g = xlate_name ~global:() llg in
       let llt = Llvm.type_of llg in
       let typ = xlate_type x llt in
       let loc = find_loc llg in
@@ -754,7 +753,7 @@ let pp_code fs (insts, term, blocks) =
 
 let rec xlate_func_name x llv =
   match Llvm.classify_value llv with
-  | Function -> Exp.var (xlate_name llv)
+  | Function -> Exp.var (xlate_name ~global:() llv)
   | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
   | Argument | Instruction _ -> xlate_value x llv
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)

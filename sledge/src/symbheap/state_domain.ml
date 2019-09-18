@@ -77,9 +77,12 @@ type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
 let call ~summaries actuals areturn formals locals globals_vec q =
   [%Trace.call fun {pf} ->
     pf
-      "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ q: %a@]"
+      "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
+       globals: {@[%a@]}@ q: %a@]"
       (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
-      (List.rev formals) Var.Set.pp locals pp q]
+      (List.rev formals) Var.Set.pp locals
+      (Vector.pp ",@ " Llair_.Global.pp)
+      globals_vec pp q]
   ;
   let q', freshen_locals =
     Sh.freshen q ~wrt:(Set.add_list formals locals)

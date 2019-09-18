@@ -124,6 +124,7 @@ module Inst : sig
   val abort : loc:Loc.t -> inst
   val loc : inst -> Loc.t
   val locals : inst -> Var.Set.t
+  val fold_exps : inst -> init:'a -> f:('a -> Exp.t -> 'a) -> 'a
 end
 
 module Jump : sig

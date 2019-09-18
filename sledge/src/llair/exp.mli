@@ -27,7 +27,8 @@ and t = private
       (** Iterated concatenation of a single byte *)
   | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
   | Concat of {args: t vector}  (** Byte-array concatenation *)
-  | Var of {id: int; name: string}  (** Local variable / virtual register *)
+  | Var of {id: int; name: string; global: bool}
+      (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
@@ -112,10 +113,11 @@ module Var : sig
   include Invariant.S with type t := t
 
   val of_exp : exp -> t option
-  val program : string -> t
+  val program : ?global:unit -> string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
   val id : t -> int
   val name : t -> string
+  val global : t -> bool
 
   module Subst : sig
     type t [@@deriving compare, equal, sexp]

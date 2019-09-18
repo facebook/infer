@@ -65,7 +65,7 @@ module rec T : sig
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
     (* nullary *)
-    | Var of {id: int; name: string}
+    | Var of {id: int; name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     (* curried application *)
@@ -130,7 +130,7 @@ and T0 : sig
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Var of {id: int; name: string}
+    | Var of {id: int; name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -174,7 +174,7 @@ end = struct
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Var of {id: int; name: string}
+    | Var of {id: int; name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -254,9 +254,11 @@ let rec pp ?is_x fs exp =
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match exp with
-    | Var {name; id= 0} as var ->
+    | Var {name; id= 0; global= true} as var ->
+        Trace.pp_styled (get_var_style var) "%@%s" fs name
+    | Var {name; id= 0; global= false} as var ->
         Trace.pp_styled (get_var_style var) "%%%s" fs name
-    | Var {name; id} as var ->
+    | Var {name; id; _} as var ->
         Trace.pp_styled (get_var_style var) "%%%s_%d" fs name id
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
@@ -460,7 +462,10 @@ let invariant ?(partial = false) e =
         assert_arity 0 ;
         assert (Z.numbits data <= bits) )
   | Integer _ -> assert false
-  | Var _ | Nondet _ | Label _ | Float _ -> assert_arity 0
+  | Var {id; global; _} ->
+      assert_arity 0 ;
+      assert ((not global) || id = 0)
+  | Nondet _ | Label _ | Float _ -> assert_arity 0
   | Convert {dst; src} ->
       ( match args with
       | [Integer {typ= Integer _ as typ}] -> assert (Typ.equal src typ)
@@ -567,16 +572,18 @@ module Var = struct
 
   let id = function Var {id} -> id | x -> violates invariant x
   let name = function Var {name} -> name | x -> violates invariant x
+  let global = function Var {global} -> global | x -> violates invariant x
 
   let of_exp = function
     | Var _ as v -> Some (v |> check invariant)
     | _ -> None
 
-  let program name = Var {id= 0; name} |> check invariant
+  let program ?global name =
+    Var {id= 0; name; global= Option.is_some global} |> check invariant
 
   let fresh name ~(wrt : Set.t) =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
-    let x' = Var {name; id= max + 1} in
+    let x' = Var {name; id= max + 1; global= false} in
     (x', Set.add wrt x')
 
   (** Variable renaming substitutions *)

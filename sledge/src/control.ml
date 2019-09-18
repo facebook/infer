@@ -443,7 +443,7 @@ module Make (Dom : Domain_sig.Dom) = struct
    fun opts pgm ->
     let entry_points = Config.find_list "entry-points" in
     List.find_map entry_points ~f:(fun name ->
-        Llair.Func.find pgm.functions (Var.program name) )
+        Llair.Func.find pgm.functions (Var.program ~global:() name) )
     |> function
     | Some {locals; params= []; entry} ->
         Some
