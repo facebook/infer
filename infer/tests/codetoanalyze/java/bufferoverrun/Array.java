@@ -100,4 +100,26 @@ class Array {
     x.add(0);
     this.iterate_collection_Bad(x);
   }
+
+  boolean b;
+
+  int zero_to_five() {
+    return b ? 0 : 5;
+  }
+
+  void prune_assign_exp_Good() {
+    int idx;
+    int[] arr = new int[5];
+    if ((idx = zero_to_five()) != 5) {
+      arr[idx] = 0;
+    }
+  }
+
+  void prune_assign_exp_Bad() {
+    int idx;
+    int[] arr = new int[3];
+    if ((idx = zero_to_five()) != 5) {
+      arr[idx] = 0;
+    }
+  }
 }
