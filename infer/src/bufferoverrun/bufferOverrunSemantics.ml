@@ -307,10 +307,10 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
   match exp with
   | Exp.Var id -> (
     match Mem.find_alias id mem with
-    | Some (AliasTarget.Simple loc) ->
+    | Some (AliasTarget.Simple {l= loc; i}) when IntLit.iszero i ->
         Mem.find loc mem
     | Some
-        ( AliasTarget.SimplePlusA _
+        ( AliasTarget.Simple _
         | AliasTarget.Size _
         | AliasTarget.Empty _
         | AliasTarget.Fgets _
@@ -498,7 +498,7 @@ module Prune = struct
     match e with
     | Exp.Var x -> (
       match Mem.find_alias x mem with
-      | Some (AliasTarget.Simple lv) ->
+      | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
           let v = Mem.find lv mem in
           let v' = Val.prune_ne_zero v in
           update_mem_in_prune lv v' astate
@@ -510,11 +510,11 @@ module Prune = struct
           let strlen_loc = Loc.of_c_strlen lv in
           let v' = Val.prune_ge_one (Mem.find strlen_loc mem) in
           update_mem_in_prune strlen_loc v' astate
-      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | Top) | None ->
+      | Some (AliasTarget.Simple _ | AliasTarget.Size _ | Top) | None ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias x mem with
-      | Some (AliasTarget.Simple lv) ->
+      | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
           let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
@@ -522,7 +522,7 @@ module Prune = struct
           let v = Mem.find lv mem in
           let v' = Val.prune_length_ge_one v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.SimplePlusA _ | AliasTarget.Size _ | AliasTarget.Fgets _ | Top) | None ->
+      | Some (AliasTarget.Simple _ | AliasTarget.Size _ | AliasTarget.Fgets _ | Top) | None ->
           astate )
     | _ ->
         astate
