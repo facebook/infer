@@ -34,7 +34,7 @@ class UnknownCallsTest {
     return 0;
   }
 
-  // Expected: Max(Math,min(...), InputStream.read(....)) but we get T
+  // Expected: linear to maxBytesToRead (= Math.min(...))
   public int read_max_cost(
       InputStream in, byte[] buffer, int byteOffset, int byteCount, ArrayList<Integer> list)
       throws IOException {

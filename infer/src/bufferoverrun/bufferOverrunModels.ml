@@ -1107,6 +1107,18 @@ let unmodifiable _ s =
   && List.exists ~f:(fun suffix -> String.is_suffix ~suffix s) ["Set"; "Collection"; "Map"; "List"]
 
 
+module InputStream = struct
+  (* https://docs.oracle.com/javase/7/docs/api/java/io/InputStream.html#read(byte[],%20int,%20int) *)
+  let read exp =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let max = Sem.eval integer_type_widths exp mem in
+      let traces = Dom.Val.get_traces max in
+      let v = Dom.Val.of_itv ~traces (Itv.set_lb Itv.Bound.mone (Dom.Val.get_itv max)) in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+end
+
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -1337,5 +1349,6 @@ module Call = struct
       ; +PatternMatch.implements_lang "Integer"
         &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
       ; +PatternMatch.implements_lang "Integer" &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
-      ]
+      ; +PatternMatch.implements_io "InputStream"
+        &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read ]
 end

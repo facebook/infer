@@ -161,6 +161,8 @@ val decr : t -> t
 
 val incr : t -> t
 
+val set_lb : Bound.t -> t -> t
+
 val set_lb_zero : t -> t
 
 val neg : t -> t

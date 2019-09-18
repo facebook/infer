@@ -4,8 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
 package codetoanalyze.java.performance;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Cost_test {
 
@@ -177,6 +179,15 @@ public class Cost_test {
       if (rand()) {
         c = 'a';
       }
+    }
+  }
+
+  void call_inputstream_read_linear(InputStream is) throws IOException {
+    int total = 0;
+    int r;
+    byte[] buf = new byte[20];
+    while (total < 100 && (r = is.read(buf, 0, 20)) != -1) {
+      total += r;
     }
   }
 }
