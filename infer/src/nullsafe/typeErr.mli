@@ -46,7 +46,7 @@ type parameter_not_nullable =
 
 (** Instance of an error *)
 type err_instance =
-  | Condition_redundant of (bool * string option * bool)
+  | Condition_redundant of (bool * string option)
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t

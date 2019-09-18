@@ -551,8 +551,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               ( if checks.eradicate && should_report then
                 let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
                 EradicateChecks.report_error tenv find_canonical_duplicate
-                  (TypeErr.Condition_redundant
-                     (true, EradicateChecks.explain_expr tenv node cond, false))
+                  (TypeErr.Condition_redundant (true, EradicateChecks.explain_expr tenv node cond))
                   (Some instr_ref) loc curr_pdesc ) ;
               TypeState.add pvar
                 (t, TypeAnnotation.const_nullable false TypeOrigin.ONone, [loc])

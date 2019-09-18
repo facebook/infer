@@ -75,7 +75,7 @@ type parameter_not_nullable =
 
 (** Instance of an error *)
 type err_instance =
-  | Condition_redundant of (bool * string option * bool)
+  | Condition_redundant of (bool * string option)
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
@@ -220,14 +220,10 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
   let nullable_annotation = "@Nullable" in
   let kind, description, field_name =
     match err_instance with
-    | Condition_redundant (b, s_opt, nonnull) ->
-        let name =
-          if nonnull then IssueType.eradicate_condition_redundant_nonnull
-          else IssueType.eradicate_condition_redundant
-        in
-        ( name
+    | Condition_redundant (is_always_true, s_opt) ->
+        ( IssueType.eradicate_condition_redundant
         , P.sprintf "The condition %s is always %b according to the existing annotations."
-            (Option.value s_opt ~default:"") b
+            (Option.value s_opt ~default:"") is_always_true
         , None )
     | Field_not_initialized (fn, pn) ->
         let constructor_name =

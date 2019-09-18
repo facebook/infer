@@ -144,8 +144,6 @@ val empty_vector_access : t
 
 val eradicate_condition_redundant : t
 
-val eradicate_condition_redundant_nonnull : t
-
 val eradicate_field_not_initialized : t
 
 val eradicate_field_not_nullable : t

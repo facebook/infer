@@ -223,7 +223,8 @@ let eradicate_condition_redundant =
   register_from_string "ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant"
 
 
-let eradicate_condition_redundant_nonnull =
+(* TODO(T54070503) remove condition redundant nonnull *)
+let _ =
   register_from_string "ERADICATE_CONDITION_REDUNDANT_NONNULL" ~hum:"Condition Redundant Non-Null"
 
 
