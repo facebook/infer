@@ -9,9 +9,22 @@ open! IStd
 
 (** Module for the checks called by Eradicate. *)
 
+(* TODO(T54088319) get rid of annotation_deprecated:
+  - move all usages related to nullability to nullsafe_type
+  - introduce "field flags" and move all other usages to this dedicated datatype
+  *)
+type field_type = {annotation_deprecated: Annot.Item.t; nullsafe_type: NullsafeType.t}
+
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
-  Typ.Struct.get_field_type_and_annotation ~lookup fn typ
+  let type_and_annotation_to_field_type (typ, annotation) =
+    { annotation_deprecated= annotation
+    ; nullsafe_type=
+        NullsafeType.{nullability= NullsafeType.nullability_of_annot_item annotation; typ} }
+  in
+  Option.map
+    (Typ.Struct.get_field_type_and_annotation ~lookup fn typ)
+    ~f:type_and_annotation_to_field_type
 
 
 let report_error tenv = TypeErr.report_error tenv (EradicateCheckers.report_error tenv)
@@ -121,7 +134,7 @@ let check_nonzero tenv find_canonical_duplicate =
 
 (** Check an assignment to a field. *)
 let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_ref typestate
-    exp_lhs exp_rhs typ loc fname t_ia_opt typecheck_expr : unit =
+    exp_lhs exp_rhs typ loc fname field_type_opt typecheck_expr : unit =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
   let t_lhs, ta_lhs, _ =
@@ -135,9 +148,9 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       loc
   in
   let field_is_injector_readwrite () =
-    match t_ia_opt with
-    | Some (_, ia) ->
-        Annotations.ia_is_field_injector_readwrite ia
+    match field_type_opt with
+    | Some {annotation_deprecated} ->
+        Annotations.ia_is_field_injector_readwrite annotation_deprecated
     | _ ->
         false
   in
@@ -171,7 +184,11 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
       | Some {fields} ->
           let do_field (fn, ft, _) =
             let annotated_with f =
-              match get_field_annotation tenv fn ts with None -> false | Some (_, ia) -> f ia
+              match get_field_annotation tenv fn ts with
+              | None ->
+                  false
+              | Some {annotation_deprecated} ->
+                  f annotation_deprecated
             in
             let nullable_annotated = annotated_with Annotations.ia_is_nullable in
             let injector_readonly_annotated =

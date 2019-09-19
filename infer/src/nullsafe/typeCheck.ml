@@ -146,9 +146,10 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       let exp_origin = TypeAnnotation.get_origin ta in
       let tr_new =
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some (t, ia) ->
-            ( t
-            , TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (exp_origin, fn, loc))
+        | Some EradicateChecks.{nullsafe_type; annotation_deprecated} ->
+            ( nullsafe_type.typ
+            , TypeAnnotation.from_item_annotation annotation_deprecated
+                (TypeOrigin.Field (exp_origin, fn, loc))
             , locs' )
         | None ->
             tr_default
@@ -225,10 +226,11 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           typestate
       | _ -> (
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some (t, ia) ->
+        | Some EradicateChecks.{nullsafe_type; annotation_deprecated} ->
             let range =
-              ( t
-              , TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (origin, fn, loc))
+              ( nullsafe_type.typ
+              , TypeAnnotation.from_item_annotation annotation_deprecated
+                  (TypeOrigin.Field (origin, fn, loc))
               , [loc] )
             in
             TypeState.add pvar range typestate
@@ -434,10 +436,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let check_field_assign () =
         match e1 with
         | Exp.Lfield (_, fn, f_typ) ->
-            let t_ia_opt = EradicateChecks.get_field_annotation tenv fn f_typ in
+            let field_type_opt = EradicateChecks.get_field_annotation tenv fn f_typ in
             if checks.eradicate then
               EradicateChecks.check_field_assignment tenv find_canonical_duplicate curr_pdesc node
-                instr_ref typestate1 e1' e2 typ loc fn t_ia_opt
+                instr_ref typestate1 e1' e2 typ loc fn field_type_opt
                 (typecheck_expr find_canonical_duplicate calls_this checks tenv)
         | _ ->
             ()
