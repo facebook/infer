@@ -12,17 +12,11 @@ let deps = ["import"; "llair_"; "symbheap"; "config"; "domain"]
 Jbuild_plugin.V1.send
 @@ Format.sprintf
      {|
-(rule
- (targets version.ml)
- (deps version.ml.in (universe))
- (action (run ../tools/gen_version.sh version.ml))
- (mode promote-until-clean))
-
 (executable
  (public_name sledge)
  (package sledge)
  %s
- (libraries shexp.process %s))
+ (libraries dune-build-info shexp.process %s))
 |}
      (flags `exe deps)
      (libraries deps)

@@ -195,7 +195,7 @@ let readme () =
    tracing."
 
 ;;
-Command.run ~version:Version.version ~build_info:""
+Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
      [ ("buck", Sledge_buck.main ~command ~analyze:(translate >*> analyze))
      ; ("llvm", llvm_grp); ("analyze", analyze_cmd)

@@ -9,3 +9,4 @@
 
 val debug : bool
 val version : string
+val build_info : string

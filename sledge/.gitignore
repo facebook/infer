@@ -1,15 +1,13 @@
 .merlin
-/bin/
 /llvm/
 /model/dune
-/src/dune
 /src/config/dune
+/src/domain/dune
+/src/dune
 /src/import/dune
 /src/llair/dune
 /src/symbheap/dune
 /src/trace/dune
-/src/domain/dune
-/src/version.ml
 /test/*/*.bc
 /test/*/*.bc.err
 /test/*/*.bc.out
