@@ -111,34 +111,54 @@ let mk_ia_nullable ia =
 
 let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia
 
-(* TODO(T54088319) Make this update NullsafeType.t as well*)
-let mark_nullability proc_name asig (b, bs) =
-  let ia, t = asig.ret in
-  let ret' = (mark_ia_nullability ia b, t) in
-  let mark_param (s, ia, t) x =
-    let ia' = if x then mk_ia_nullable ia else ia in
-    (s, ia', t)
+(* Override existing information about nullability for a given type and
+   set it to either nullable or nonnull *)
+let set_modelled_nullability_for_nullsafe_type nullsafe_type should_set_nullable =
+  let nullability =
+    if should_set_nullable then NullsafeType.Nullable ModelledNullable
+    else NullsafeType.Nonnull ModelledNonnull
   in
-  let params' =
+  NullsafeType.{nullsafe_type with nullability}
+
+
+let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullability) =
+  let set_modelled_nullability_for_param (mangled, original_annotation, original_nullsafe_type)
+      should_set_nullable =
+    let final_annotation =
+      if should_set_nullable then mk_ia_nullable original_annotation else original_annotation
+    in
+    ( mangled
+    , final_annotation
+    , set_modelled_nullability_for_nullsafe_type original_nullsafe_type should_set_nullable )
+  in
+  let final_params =
     let fail () =
       L.die InternalError
         "Annotation for procedure %s has wrong number of arguments.@\n  Annotated signature: %a"
         (Typ.Procname.to_unique_id proc_name)
         (pp proc_name) asig
     in
-    let rec combine l1 l2 =
-      match (l1, l2) with
-      | (p, ia, t) :: l1', l2' when Mangled.is_this p ->
-          (p, ia, t) :: combine l1' l2'
-      | (s, ia, t) :: l1', x :: l2' ->
-          mark_param (s, ia, t) x :: combine l1' l2'
-      | [], _ :: _ ->
-          fail ()
-      | _ :: _, [] ->
+    let rec model_param_nullability original_params params_nullability =
+      match (original_params, params_nullability) with
+      | (mangled, annotation, nullsafe_type) :: params_tail, nullability_tail
+        when Mangled.is_this mangled ->
+          (* Skip "this" param - there is no notion of "nullable this" *)
+          (mangled, annotation, nullsafe_type)
+          :: model_param_nullability params_tail nullability_tail
+      | param :: params_tail, should_set_nullable :: nullability_tail ->
+          set_modelled_nullability_for_param param should_set_nullable
+          :: model_param_nullability params_tail nullability_tail
+      | [], _ :: _ | _ :: _, [] ->
+          (* One list extausted before the other one *)
           fail ()
       | [], [] ->
           []
     in
-    combine asig.params bs
+    model_param_nullability asig.params params_nullability
   in
-  {ret= ret'; params= params'}
+  let original_ret_annotations, original_ret_nullsafe_type = asig.ret in
+  let final_ret_nullsafe_type =
+    set_modelled_nullability_for_nullsafe_type original_ret_nullsafe_type nullability_for_ret
+  in
+  let final_ret_annotation = mark_ia_nullability original_ret_annotations nullability_for_ret in
+  {ret= (final_ret_annotation, final_ret_nullsafe_type); params= final_params}

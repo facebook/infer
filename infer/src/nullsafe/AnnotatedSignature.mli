@@ -17,8 +17,8 @@ type t =
 val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
 (** Check if the given parameter has an annotation in the given signature *)
 
-val mark_nullability : Typ.Procname.t -> t -> bool * bool list -> t
-(** Mark the annotated signature with the given nullability of the ret value and given nullability of the params ). *)
+val set_modelled_nullability : Typ.Procname.t -> t -> bool * bool list -> t
+(** Override nullability for a function signature given its modelled nullability (for ret value and params) *)
 
 val get : ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
