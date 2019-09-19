@@ -12,7 +12,7 @@ type model_table_t = (string, bool * bool list) Caml.Hashtbl.t
 val this_file : string
 (** Name of this file. *)
 
-val annotated_table_nullable : model_table_t
+val annotated_table_nullability : model_table_t
 
 val check_not_null_table : model_table_t
 

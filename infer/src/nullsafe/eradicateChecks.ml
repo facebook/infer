@@ -332,8 +332,10 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
   let should_check_parameters =
     match callee_pname with
     | Typ.Procname.Java java_pname ->
+        (* TODO(T52947663) model is_external as unknown nullability and move the logic out of this check  *)
+        (* If method is external, we don't check it, unless it is explicitly modelled *)
         (not (Typ.Procname.Java.is_external java_pname))
-        || Models.is_modelled_nullable callee_pname
+        || Models.is_modelled_for_nullability callee_pname
     | _ ->
         false
   in

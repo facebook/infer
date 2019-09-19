@@ -56,7 +56,8 @@ let get_description origin =
       Some ("method parameter " ^ Mangled.to_string s, None, None)
   | Proc po ->
       let modelled_in =
-        if Models.is_modelled_nullable po.pname then " modelled in " ^ ModelTables.this_file
+        (* TODO(T54088319) don't calculate this info and propagate it from NullsafeType instead *)
+        if Models.is_modelled_for_nullability po.pname then " modelled in " ^ ModelTables.this_file
         else ""
       in
       let description =
