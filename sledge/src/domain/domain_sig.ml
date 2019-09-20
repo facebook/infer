@@ -39,6 +39,7 @@ module type Dom = sig
     -> t
     -> t * from_call
 
+  val recursion_beyond_bound : [`skip | `prune]
   val post : Var.Set.t -> from_call -> t -> t
   val retn : Var.t list -> Var.t option -> from_call -> t -> t
   val dnf : t -> t list

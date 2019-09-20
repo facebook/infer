@@ -67,6 +67,8 @@ module Make (State_domain : State_domain_sig) = struct
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
   [@@deriving sexp_of]
 
+  let recursion_beyond_bound = State_domain.recursion_beyond_bound
+
   let call ~summaries actuals areturn formals locals globals_vec
       (entry, current) =
     let globals =

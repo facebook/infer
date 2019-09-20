@@ -125,6 +125,8 @@ let call ~summaries actuals areturn formals locals globals_vec q =
     pf "@[<v>subst: %a@ frame: %a@ q': %a@]" Var.Subst.pp subst pp frame pp
       q']
 
+let recursion_beyond_bound = `prune
+
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals _ q =
   [%Trace.call fun {pf} ->

@@ -19,6 +19,7 @@ let init globals =
   empty
 
 let join = Set.union
+let recursion_beyond_bound = `skip
 let is_false _ = false
 let post _ _ state = state
 let retn _ _ from_call post = Set.union from_call post

@@ -246,7 +246,8 @@ module Make (Dom : Domain_sig.Dom) = struct
     let Llair.{callee; args; areturn; return; recursive} = call in
     let Llair.{name; params; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a" Var.pp name.var Var.pp return.dst.parent.name.var]
+      pf "%a from %a with state %a" Var.pp name.var Var.pp
+        return.dst.parent.name.var Dom.pp state]
     ;
     let dnf_states =
       if opts.function_summaries then Dom.dnf state else [state]
@@ -278,7 +279,10 @@ module Make (Dom : Domain_sig.Dom) = struct
                 with
               | Some stk ->
                   Work.add stk ~prev:block ~retreating:recursive state entry
-              | None -> Work.skip )
+              | None -> (
+                match Dom.recursion_beyond_bound with
+                | `skip -> Work.seq acc (exec_jump stk state block return)
+                | `prune -> Work.skip ) )
         | Some post -> Work.seq acc (exec_jump stk post block return) )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
@@ -293,7 +297,8 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
     let Llair.{name; params; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} -> pf "from %a" Var.pp name.var]
+    [%Trace.call fun {pf} ->
+      pf "from %a with pre_state %a" Var.pp name.var Dom.pp pre_state]
     ;
     ( match Stack.pop_return stk with
     | Some (from_call, retn_site, stk) ->
