@@ -2303,7 +2303,7 @@ and symops_per_iteration =
 and test_determinator =
   CLOpt.mk_bool ~long:"test-determinator" ~default:false
     "Run infer in Test Determinator mode. It is used together with the $(b,--modified-lines) and \
-     $(b,--test-profiler) flags, which speficy the relevant arguments."
+     $(b,--profiler-samples) flags, which specify the relevant arguments."
 
 
 and test_determinator_output =
@@ -2314,7 +2314,7 @@ and test_determinator_output =
 and export_changed_functions =
   CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
     ~default:false
-    "Make infer outout changed functions, similar to test-determinator. It is used together with \
+    "Make infer output changed functions, similar to test-determinator. It is used together with \
      the $(b,--modified-lines)."
 
 

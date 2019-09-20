@@ -1322,7 +1322,7 @@ INTERNAL OPTIONS
            nodes nearest the exit node are analyzed first
 
        --export-changed-functions
-           Activates: Make infer outout changed functions, similar to
+           Activates: Make infer output changed functions, similar to
            test-determinator. It is used together with the --modified-lines.
            (Conversely: --no-export-changed-functions)
 
@@ -1716,8 +1716,8 @@ INTERNAL OPTIONS
 
        --test-determinator
            Activates: Run infer in Test Determinator mode. It is used
-           together with the --modified-lines and --test-profiler flags,
-           which speficy the relevant arguments. (Conversely:
+           together with the --modified-lines and --profiler-samples flags,
+           which specify the relevant arguments. (Conversely:
            --no-test-determinator)
 
        --test-determinator-output path
