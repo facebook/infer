@@ -33,16 +33,14 @@ let exec_kill st _ = st
 let exec_move st _ rhs = used_globals ~init:st rhs
 
 let exec_inst st inst =
-  [%Trace.call fun {pf} -> pf "{%a} %a { ? }" pp st Llair.Inst.pp inst]
+  [%Trace.call fun {pf} -> pf "pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
   Ok
     (Llair.Inst.fold_exps inst ~init:st ~f:(fun acc e ->
          used_globals ~init:acc e ))
   |>
-  [%Trace.retn fun {pf} res ->
-    match res with
-    | Ok uses -> pf "new uses: %a" pp (Set.diff uses st)
-    | _ -> ()]
+  [%Trace.retn fun {pf} ->
+    Result.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 let exec_intrinsic ~skip_throw:_ st _ _ actuals =
   List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)
@@ -54,10 +52,11 @@ type from_call = t [@@deriving sexp_of]
 let call ~summaries:_ actuals _ _ _ _ st =
   (empty, List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a))
 
-let resolve_callee lookup ptr _ =
+let resolve_callee lookup ptr st =
+  let st = used_globals ~init:st ptr in
   match Var.of_exp ptr with
-  | Some callee_name -> lookup callee_name
-  | None -> []
+  | Some callee_name -> (lookup callee_name, st)
+  | None -> ([], st)
 
 (* A function summary is the set of global variables accessed by that
    function and its transitive callees *)

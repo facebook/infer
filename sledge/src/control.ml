@@ -391,32 +391,31 @@ module Make (Dom : Domain_sig.Dom) = struct
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
     | Call ({callee; args; areturn; return} as call) -> (
-      match
         let lookup name =
           Option.to_list (Llair.Func.find pgm.functions name)
         in
-        Dom.resolve_callee lookup callee state
-      with
-      | [] -> exec_skip_func stk state block areturn return
-      | callees ->
-          List.fold callees ~init:Work.skip ~f:(fun x callee ->
-              ( match
-                  Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
-                    areturn callee.name.var args
-                with
-              | Some (Error ()) ->
-                  Report.invalid_access_term
-                    (Dom.report_fmt_thunk state)
-                    block.term ;
-                  Work.skip
-              | Some (Ok state) when Dom.is_false state -> Work.skip
-              | Some (Ok state) -> exec_jump stk state block return
-              | None when Llair.Func.is_undefined callee ->
-                  exec_skip_func stk state block areturn return
-              | None ->
-                  exec_call opts stk state block {call with callee}
-                    pgm.globals )
-              |> Work.seq x ) )
+        let callees, state = Dom.resolve_callee lookup callee state in
+        match callees with
+        | [] -> exec_skip_func stk state block areturn return
+        | callees ->
+            List.fold callees ~init:Work.skip ~f:(fun x callee ->
+                ( match
+                    Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
+                      areturn callee.name.var args
+                  with
+                | Some (Error ()) ->
+                    Report.invalid_access_term
+                      (Dom.report_fmt_thunk state)
+                      block.term ;
+                    Work.skip
+                | Some (Ok state) when Dom.is_false state -> Work.skip
+                | Some (Ok state) -> exec_jump stk state block return
+                | None when Llair.Func.is_undefined callee ->
+                    exec_skip_func stk state block areturn return
+                | None ->
+                    exec_call opts stk state block {call with callee}
+                      pgm.globals )
+                |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp pgm.globals
     | Throw {exc} ->
         if opts.skip_throw then Work.skip

@@ -107,8 +107,9 @@ module Make (State_domain : State_domain_sig) = struct
   let dnf (entry, current) =
     List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
-  let resolve_callee f e (_, current) =
-    State_domain.resolve_callee f e current
+  let resolve_callee f e (entry, current) =
+    let callees, current = State_domain.resolve_callee f e current in
+    (callees, (entry, current))
 
   type summary = State_domain.summary
 
