@@ -99,14 +99,11 @@ let run_clang_frontend ast_source =
   L.(debug Capture Medium)
     "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
   if Config.linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
-  if Config.export_changed_functions then (
+  ( if Config.export_changed_functions then
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    let process_ast_fn =
-      AstToRangeMap.process_ast trans_unit_ctx ast_decl (Tenv.create ()) source_file
-    in
-    TestDeterminator.test_to_run_clang source_file ~process_ast_fn
-      ~changed_lines_file:Config.modified_lines ~test_samples_file:None ;
-    TestDeterminator.emit_relevant_methods () ) ;
+    let clang_range_map = AstToRangeMap.process_ast ast_decl source_file in
+    TestDeterminator.compute_and_emit_relevant_methods ~clang_range_map ~source_file
+      ~changed_lines_file:Config.modified_lines ) ;
   if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
   L.(debug Capture Medium)
     "End %s of AST file %a... OK!@\n" Config.clang_frontend_action_string pp_ast_filename

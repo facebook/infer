@@ -147,10 +147,10 @@ let () =
   if Config.debug_mode && CLOpt.is_originator then (
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
     L.progress "Execution ID %Ld@." Config.execution_id ) ;
-  ( if Config.test_determinator then (
-    TestDeterminator.test_to_run_java ~changed_lines_file:Config.modified_lines
-      ~test_samples_file:Config.profiler_samples ~code_graph_file:Config.method_decls_info ;
-    TestDeterminator.emit_tests_to_run () )
+  ( if Config.test_determinator then
+    TestDeterminator.compute_and_emit_test_to_run ~changed_lines_file:Config.modified_lines
+      ~test_samples_file:Config.profiler_samples ~code_graph_file:Config.method_decls_info
+      ?clang_range_map:None ?source_file:None
   else
     match Config.command with
     | Analyze ->

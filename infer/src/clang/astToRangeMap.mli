@@ -6,10 +6,4 @@
  *)
 open! IStd
 
-val process_ast :
-     CFrontend_config.translation_unit_context
-  -> Clang_ast_t.decl
-  -> Tenv.t
-  -> SourceFile.t
-  -> (Typ.Procname.t -> Location.t * Location.t -> unit)
-  -> unit
+val process_ast : Clang_ast_t.decl -> SourceFile.t -> (Location.t * Location.t) Typ.Procname.Map.t

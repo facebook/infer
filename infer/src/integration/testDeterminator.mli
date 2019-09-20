@@ -7,21 +7,16 @@
 
 open! IStd
 
-val test_to_run_java :
-     changed_lines_file:string option
-  -> test_samples_file:string option
+val compute_and_emit_test_to_run :
+     ?clang_range_map:(Location.t * Location.t) Typ.Procname.Map.t
+  -> ?source_file:SourceFile.t
   -> code_graph_file:string option
-  -> unit
-
-val test_to_run_clang :
-     SourceFile.t
-  -> process_ast_fn:((Typ.Procname.t -> Location.t * Location.t -> unit) -> unit)
   -> changed_lines_file:string option
   -> test_samples_file:string option
   -> unit
 
-val emit_tests_to_run : unit -> unit
-
-val emit_relevant_methods : unit -> unit
-
-val _get_relevant_test_to_run : unit -> string list
+val compute_and_emit_relevant_methods :
+     clang_range_map:(Location.t * Location.t) Typ.Procname.Map.t
+  -> source_file:SourceFile.t
+  -> changed_lines_file:string option
+  -> unit
