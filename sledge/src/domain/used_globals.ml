@@ -43,9 +43,20 @@ let exec_inst st inst =
   [%Trace.retn fun {pf} ->
     Result.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
-let exec_intrinsic ~skip_throw:_ st _ _ actuals =
-  List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)
-  |> fun res -> Some (Ok res)
+let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
+  let name = Var.name intrinsic in
+  if
+    List.exists
+      [ "malloc"; "aligned_alloc"; "calloc"; "posix_memalign"; "realloc"
+      ; "mallocx"; "rallocx"; "xallocx"; "sallocx"; "dallocx"; "sdallocx"
+      ; "nallocx"; "malloc_usable_size"; "mallctl"; "mallctlnametomib"
+      ; "mallctlbymib"; "malloc_stats_print"; "strlen"
+      ; "__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv" ]
+      ~f:(String.equal name)
+  then
+    List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)
+    |> fun res -> Some (Ok res)
+  else None
 
 type from_call = t [@@deriving sexp_of]
 
