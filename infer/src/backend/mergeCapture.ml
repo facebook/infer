@@ -7,28 +7,46 @@
 
 open! IStd
 module L = Logging
+module YB = Yojson.Basic
+module YBU = Yojson.Basic.Util
 
 (** Module to merge the results of capture for different buck targets. *)
 
 let merge_global_tenvs infer_deps_file =
   let time0 = Mtime_clock.counter () in
   let global_tenv = Tenv.create () in
-  let merge ~infer_out_src =
+  let merge infer_out_src =
     let global_tenv_path =
       infer_out_src ^/ Config.global_tenv_filename |> DB.filename_from_string
     in
     Tenv.read global_tenv_path
     |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
   in
-  MergeResults.iter_infer_deps infer_deps_file ~f:merge ;
+  Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge infer_deps_file ;
   Tenv.store_global global_tenv ;
   L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0)
+
+
+let merge_changed_functions_json infer_out_src =
+  let main_changed_fs_file = Config.results_dir ^/ Config.export_changed_functions_output in
+  let changed_fs_file = infer_out_src ^/ Config.export_changed_functions_output in
+  let main_json = try YB.from_file main_changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
+  let changed_json = try YB.from_file changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
+  let all_fs =
+    `List
+      (List.dedup_and_sort
+         ~compare:(fun s1 s2 ->
+           match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
+         (List.append main_json changed_json))
+  in
+  YB.to_file main_changed_fs_file all_fs
 
 
 let merge_changed_functions () =
   L.progress "Merging changed functions files...@." ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
-  MergeResults.merge_buck_changed_functions infer_deps_file ;
+  Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_changed_functions_json
+    infer_deps_file ;
   L.progress "Done merging changed functions files@."
 
 
@@ -36,7 +54,7 @@ let merge_captured_targets () =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
-  MergeResults.merge_buck_flavors_results infer_deps_file ;
+  DBWriter.merge ~infer_deps_file ;
   if Config.genrule_master_mode then merge_global_tenvs infer_deps_file ;
   L.progress "Merging captured Buck targets took %a@\n%!" Mtime.Span.pp (Mtime_clock.count time0)
 

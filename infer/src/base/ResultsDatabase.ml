@@ -12,8 +12,9 @@ let database_filename = "results.db"
 
 let database_fullpath = Config.results_dir ^/ database_filename
 
-let procedures_schema =
-  {|CREATE TABLE IF NOT EXISTS procedures
+let procedures_schema prefix =
+  Printf.sprintf
+    {|CREATE TABLE IF NOT EXISTS %sprocedures
   ( proc_name TEXT PRIMARY KEY
   , proc_name_hum TEXT
   , attr_kind INTEGER NOT NULL
@@ -22,27 +23,35 @@ let procedures_schema =
   , cfg BLOB
   , callees BLOB NOT NULL
   )|}
+    prefix
 
 
-let source_files_schema =
-  {|CREATE TABLE IF NOT EXISTS source_files
+let source_files_schema prefix =
+  Printf.sprintf
+    {|CREATE TABLE IF NOT EXISTS %ssource_files
   ( source_file TEXT PRIMARY KEY
   , type_environment BLOB NOT NULL
   , integer_type_widths BLOB
   , procedure_names BLOB NOT NULL
   , freshly_captured INT NOT NULL )|}
+    prefix
 
 
-let schema_hum = Printf.sprintf "%s;\n%s" procedures_schema source_files_schema
+let schema_hum = Printf.sprintf "%s;\n%s" (procedures_schema "") (source_files_schema "")
 
-let create_procedures_table db =
+let create_procedures_table ~prefix db =
   (* it would be nice to use "WITHOUT ROWID" here but ancient versions of sqlite do not support
      it *)
-  SqliteUtils.exec db ~log:"creating procedures table" ~stmt:procedures_schema
+  SqliteUtils.exec db ~log:"creating procedures table" ~stmt:(procedures_schema prefix)
 
 
-let create_source_files_table db =
-  SqliteUtils.exec db ~log:"creating source_files table" ~stmt:source_files_schema
+let create_source_files_table ~prefix db =
+  SqliteUtils.exec db ~log:"creating source_files table" ~stmt:(source_files_schema prefix)
+
+
+let create_tables ?(prefix = "") db =
+  create_procedures_table ~prefix db ;
+  create_source_files_table ~prefix db
 
 
 let create_db () =
@@ -50,8 +59,7 @@ let create_db () =
   let db = Sqlite3.db_open ~mutex:`FULL temp_db in
   SqliteUtils.exec db ~log:"sqlite page size"
     ~stmt:(Printf.sprintf "PRAGMA page_size=%d" Config.sqlite_page_size) ;
-  create_procedures_table db ;
-  create_source_files_table db ;
+  create_tables db ;
   (* This should be the default but better be sure, otherwise we cannot access the database concurrently. This has to happen before setting WAL mode. *)
   SqliteUtils.exec db ~log:"locking mode=NORMAL" ~stmt:"PRAGMA locking_mode=NORMAL" ;
   ( match Config.sqlite_vfs with

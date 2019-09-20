@@ -30,7 +30,7 @@ val add_source_file :
 
 val mark_all_source_files_stale : unit -> unit
 
-val merge_dbs : infer_out_src:string -> unit
+val merge : infer_deps_file:string -> unit
 
 val canonicalize : unit -> unit
 (** put the database on disk in deterministic form *)

@@ -418,3 +418,24 @@ let get_available_memory_MB () =
   in
   if Sys.file_exists proc_meminfo <> `Yes then None
   else with_file_in proc_meminfo ~f:scan_for_expected_output
+
+
+let iter_infer_deps ~project_root ~f infer_deps_file =
+  let buck_root = project_root ^/ "buck-out" in
+  let one_line line =
+    match String.split ~on:'\t' line with
+    | [_; _; target_results_dir] ->
+        let infer_out_src =
+          if Filename.is_relative target_results_dir then
+            Filename.dirname (buck_root ^/ target_results_dir)
+          else target_results_dir
+        in
+        f infer_out_src
+    | _ ->
+        Die.die InternalError "Couldn't parse deps file '%s', line: %s" infer_deps_file line
+  in
+  match read_file infer_deps_file with
+  | Ok lines ->
+      List.iter ~f:one_line lines
+  | Error error ->
+      Die.die InternalError "Couldn't read deps file '%s': %s" infer_deps_file error

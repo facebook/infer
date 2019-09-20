@@ -143,3 +143,7 @@ val do_in_dir : dir:string -> f:(unit -> 'a) -> 'a
 val get_available_memory_MB : unit -> int option
 (** On Linux systems, return [Some x] where [MemAvailable x] is in [/proc/meminfo].
     Returns [None] in all other cases. *)
+
+val iter_infer_deps : project_root:string -> f:(string -> unit) -> string -> unit
+(** Parse each line of the given infer_deps.txt file (split on tabs, assume 3 elements per line) 
+    and run [f] on the third element.  [project_root] is an argument to avoid dependency cycles. *)

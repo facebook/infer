@@ -108,11 +108,11 @@ module Implementation = struct
      NULL). All the rows that pass this filter are inserted/updated into the main table. *)
     Sqlite3.exec db
       {|
-        INSERT OR REPLACE INTO procedures
+        INSERT OR REPLACE INTO memdb.procedures
         SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees
         FROM (
           attached.procedures AS sub
-          LEFT OUTER JOIN procedures AS main
+          LEFT OUTER JOIN memdb.procedures AS main
           ON sub.proc_name = main.proc_name )
         WHERE
           main.attr_kind IS NULL
@@ -127,7 +127,7 @@ module Implementation = struct
     let db = ResultsDatabase.get_database () in
     Sqlite3.exec db
       {|
-        INSERT OR REPLACE INTO source_files
+        INSERT OR REPLACE INTO memdb.source_files
         SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
         FROM attached.source_files
       |}
@@ -135,7 +135,14 @@ module Implementation = struct
          ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
 
 
-  let merge_dbs ~infer_out_src =
+  let copy_to_main db =
+    Sqlite3.exec db {| INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures |}
+    |> SqliteUtils.check_result_code db ~log:"Copying procedures into main db" ;
+    Sqlite3.exec db {| INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files |}
+    |> SqliteUtils.check_result_code db ~log:"Copying source_files into main db"
+
+
+  let merge_db infer_out_src =
     let db_file = infer_out_src ^/ ResultsDatabase.database_filename in
     let main_db = ResultsDatabase.get_database () in
     Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
@@ -145,8 +152,18 @@ module Implementation = struct
     merge_source_files_table ~db_file ;
     Sqlite3.exec main_db "DETACH attached"
     |> SqliteUtils.check_result_code main_db
-         ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
-    ()
+         ~log:(Printf.sprintf "detaching database '%s'" db_file)
+
+
+  let merge infer_deps_file =
+    let main_db = ResultsDatabase.get_database () in
+    Sqlite3.exec main_db "ATTACH ':memory:' AS memdb"
+    |> SqliteUtils.check_result_code main_db ~log:"attaching memdb" ;
+    ResultsDatabase.create_tables ~prefix:"memdb." main_db ;
+    Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
+    copy_to_main main_db ;
+    Sqlite3.exec main_db "DETACH memdb"
+    |> SqliteUtils.check_result_code main_db ~log:"detaching memdb"
 
 
   let canonicalize () =
@@ -157,9 +174,8 @@ module Implementation = struct
   let reset_capture_tables () =
     let db = ResultsDatabase.get_database () in
     SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
-    ResultsDatabase.create_procedures_table db ;
     SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
-    ResultsDatabase.create_source_files_table db
+    ResultsDatabase.create_tables db
 end
 
 module Command = struct
@@ -178,7 +194,7 @@ module Command = struct
         ; integer_type_widths: Sqlite3.Data.t
         ; proc_names: Sqlite3.Data.t }
     | MarkAllSourceFilesStale
-    | MergeDBs of {infer_out_src: string}
+    | Merge of {infer_deps_file: string}
     | Vacuum
     | ResetCaptureTables
     | Handshake
@@ -191,8 +207,8 @@ module Command = struct
         "AddSourceFile"
     | MarkAllSourceFilesStale ->
         "MarkAllSourceFilesStale"
-    | MergeDBs _ ->
-        "MergeDBs"
+    | Merge _ ->
+        "Merge"
     | Vacuum ->
         "Vacuum"
     | ResetCaptureTables ->
@@ -213,8 +229,8 @@ module Command = struct
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
     | MarkAllSourceFilesStale ->
         Implementation.mark_all_source_files_stale ()
-    | MergeDBs {infer_out_src} ->
-        Implementation.merge_dbs ~infer_out_src
+    | Merge {infer_deps_file} ->
+        Implementation.merge infer_deps_file
     | Vacuum ->
         Implementation.canonicalize ()
     | ResetCaptureTables ->
@@ -325,7 +341,7 @@ let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
 
 let mark_all_source_files_stale () = perform Command.MarkAllSourceFilesStale
 
-let merge_dbs ~infer_out_src = Command.MergeDBs {infer_out_src} |> perform
+let merge ~infer_deps_file = Command.Merge {infer_deps_file} |> perform
 
 let canonicalize () = perform Command.Vacuum
 
