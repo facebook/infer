@@ -157,7 +157,8 @@ let emit_relevant_methods relevant_methods =
   YB.to_file outpath json
 
 
-let compute_and_emit_relevant_methods ~clang_range_map ~source_file ~changed_lines_file =
+let compute_and_emit_relevant_methods ~clang_range_map ~source_file =
+  let changed_lines_file = Config.modified_lines in
   let changed_lines_map = DiffLines.create_changed_lines_map changed_lines_file in
   let relevant_methods =
     compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map
@@ -166,8 +167,10 @@ let compute_and_emit_relevant_methods ~clang_range_map ~source_file ~changed_lin
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
-let test_to_run ?clang_range_map ?source_file ~code_graph_file ~changed_lines_file
-    ~test_samples_file =
+let test_to_run ?clang_range_map ?source_file () =
+  let test_samples_file = Config.profiler_samples in
+  let code_graph_file = Config.method_decls_info in
+  let changed_lines_file = Config.modified_lines in
   let changed_lines_map = DiffLines.create_changed_lines_map changed_lines_file in
   let affected_methods =
     match (clang_range_map, source_file) with
@@ -191,10 +194,6 @@ let emit_tests_to_run relevant_tests =
   YB.to_file outpath json
 
 
-let compute_and_emit_test_to_run ?clang_range_map ?source_file ~code_graph_file ~changed_lines_file
-    ~test_samples_file =
-  let relevant_tests =
-    test_to_run ?clang_range_map ~code_graph_file ?source_file ~changed_lines_file
-      ~test_samples_file
-  in
+let compute_and_emit_test_to_run ?clang_range_map ?source_file () =
+  let relevant_tests = test_to_run ?clang_range_map ?source_file () in
   emit_tests_to_run relevant_tests
