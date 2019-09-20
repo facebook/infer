@@ -37,7 +37,12 @@ let explain_expr tenv node e =
       None
 
 
-let is_virtual = function (p, _, _) :: _ when Mangled.is_this p -> true | _ -> false
+let is_virtual = function
+  | AnnotatedSignature.{mangled} :: _ when Mangled.is_this mangled ->
+      true
+  | _ ->
+      false
+
 
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname ta loc :
@@ -155,8 +160,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
         false
   in
   let field_is_in_cleanup_context () =
-    let ia, _ = (Models.get_modelled_annotated_signature curr_pattrs).AnnotatedSignature.ret in
-    Annotations.ia_is_cleanup ia
+    let AnnotatedSignature.{ret_annotation_deprecated} =
+      (Models.get_modelled_annotated_signature curr_pattrs).ret
+    in
+    Annotations.ia_is_cleanup ret_annotation_deprecated
   in
   let should_report_nullable =
     (not (AndroidFramework.is_destroy_method curr_pname))
@@ -256,12 +263,13 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
 (** Check the annotations when returning from a method. *)
 let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
     (annotated_signature : AnnotatedSignature.t) ret_implicitly_nullable loc : unit =
-  let ret_ia, _ = annotated_signature.ret in
+  let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let ret_annotated_nullable =
-    Annotations.ia_is_nullable ret_ia
+    Annotations.ia_is_nullable ret_annotation_deprecated
     || List.exists
-         ~f:(fun (_, ia, _) -> Annotations.ia_is_propagates_nullable ia)
+         ~f:(fun AnnotatedSignature.{param_annotation_deprecated} ->
+           Annotations.ia_is_propagates_nullable param_annotation_deprecated )
          annotated_signature.params
   in
   match ret_range with
@@ -369,20 +377,20 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
   let loc = Procdesc.Node.get_loc start_node in
   let check_return overriden_proc_name overriden_signature =
     let ret_is_nullable =
-      let ia, _ = annotated_signature.AnnotatedSignature.ret in
-      Annotations.ia_is_nullable ia
+      Annotations.ia_is_nullable
+        annotated_signature.AnnotatedSignature.ret.ret_annotation_deprecated
     and ret_overridden_nullable =
-      let overriden_ia, _ = overriden_signature.AnnotatedSignature.ret in
-      Annotations.ia_is_nullable overriden_ia
+      Annotations.ia_is_nullable
+        overriden_signature.AnnotatedSignature.ret.ret_annotation_deprecated
     in
     if ret_is_nullable && not ret_overridden_nullable then
       report_error tenv find_canonical_duplicate
         (TypeErr.Inconsistent_subclass_return_annotation (proc_name, overriden_proc_name))
         None loc proc_desc
   and check_params overriden_proc_name overriden_signature =
-    let compare pos current_param overriden_param : int =
-      let current_name, current_ia, _ = current_param in
-      let _, overriden_ia, _ = overriden_param in
+    let compare pos
+        AnnotatedSignature.{mangled= current_name; param_annotation_deprecated= current_ia}
+        AnnotatedSignature.{param_annotation_deprecated= overriden_ia} =
       let () =
         if (not (Annotations.ia_is_nullable current_ia)) && Annotations.ia_is_nullable overriden_ia
         then

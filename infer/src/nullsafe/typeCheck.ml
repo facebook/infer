@@ -19,8 +19,8 @@ module ComplexExpressions = struct
     match PatternMatch.lookup_attributes tenv pn with
     | Some proc_attributes ->
         let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
-        let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
-        Annotations.ia_is_false_on_null ret_ann
+        let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
+        Annotations.ia_is_false_on_null ret_annotation_deprecated
     | None ->
         false
 
@@ -30,8 +30,8 @@ module ComplexExpressions = struct
       match PatternMatch.lookup_attributes tenv pn with
       | Some proc_attributes ->
           let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
-          let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
-          Annotations.ia_is_true_on_null ret_ann
+          let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
+          Annotations.ia_is_true_on_null ret_annotation_deprecated
       | None ->
           false
     in
@@ -289,7 +289,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let is_parameter_field pvar =
           (* parameter.field *)
           let name = Pvar.get_name pvar in
-          let filter (s, _, _) = Mangled.equal s name in
+          let filter AnnotatedSignature.{mangled} = Mangled.equal mangled name in
           List.exists ~f:filter curr_annotated_signature.AnnotatedSignature.params
         in
         let is_static_field pvar =
@@ -684,19 +684,26 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       let typestate_after_call, resolved_ret =
         let resolve_param i (sparam, cparam) =
-          let s1, ia1, NullsafeType.{typ= t1} = sparam in
+          let AnnotatedSignature.{mangled; param_annotation_deprecated; param_nullsafe_type} =
+            sparam
+          in
           let (orig_e2, e2), t2 = cparam in
-          let ta1 = TypeAnnotation.from_item_annotation ia1 (TypeOrigin.Formal s1) in
+          let ta1 =
+            TypeAnnotation.from_item_annotation param_annotation_deprecated
+              (TypeOrigin.Formal mangled)
+          in
           let _, ta2, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
               (t2, TypeAnnotation.const_nullable false TypeOrigin.ONone, [])
               loc
           in
-          let formal = (s1, ta1, t1) in
+          let formal = (mangled, ta1, param_nullsafe_type.typ) in
           let actual = (orig_e2, ta2) in
           let num = i + 1 in
-          let formal_is_propagates_nullable = Annotations.ia_is_propagates_nullable ia1 in
+          let formal_is_propagates_nullable =
+            Annotations.ia_is_propagates_nullable param_annotation_deprecated
+          in
           let actual_is_nullable = TypeAnnotation.is_nullable ta2 in
           let propagates_nullable = formal_is_propagates_nullable && actual_is_nullable in
           EradicateChecks.{num; formal; actual; propagates_nullable}
@@ -727,7 +734,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           handle_params resolved_ret resolved_params
         in
         let resolved_ret_ =
-          let ret_ia, ret_typ = callee_annotated_signature.AnnotatedSignature.ret in
+          let ret = callee_annotated_signature.AnnotatedSignature.ret in
           let is_library = Summary.OnDisk.proc_is_library callee_attributes in
           let origin =
             TypeOrigin.Proc
@@ -736,8 +743,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               ; annotated_signature= callee_annotated_signature
               ; is_library }
           in
-          let ret_ta = TypeAnnotation.from_item_annotation ret_ia origin in
-          (ret_ta, ret_typ)
+          let ret_ta = TypeAnnotation.from_item_annotation ret.ret_annotation_deprecated origin in
+          (ret_ta, ret.ret_nullsafe_type)
         in
         let sig_len = List.length signature_params in
         let call_len = List.length call_params in
@@ -750,10 +757,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let call_slice = slice call_params in
         let sig_call_params =
           List.filter
-            ~f:(fun (sparam, _) ->
-              let s, _, _ = sparam in
+            ~f:(fun ((sparam : AnnotatedSignature.param_signature), _) ->
               let param_is_this =
-                Mangled.is_this s || String.is_prefix ~prefix:"this$" (Mangled.to_string s)
+                Mangled.is_this sparam.mangled
+                || String.is_prefix ~prefix:"this$" (Mangled.to_string sparam.mangled)
               in
               not param_is_this )
             (List.zip_exn sig_slice call_slice)

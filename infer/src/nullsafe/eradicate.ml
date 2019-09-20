@@ -32,14 +32,13 @@ end
 module MkCallback (Extension : ExtensionT) : CallBackT = struct
   let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
       annotated_signature linereader proc_loc : bool * TypeState.t option =
-    let mk s = Pvar.mk s curr_pname in
-    let add_formal typestate (s, ia, NullsafeType.{typ}) =
-      let pvar = mk s in
+    let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
+      let pvar = Pvar.mk param_signature.mangled curr_pname in
       let ta =
-        let origin = TypeOrigin.Formal s in
-        TypeAnnotation.from_item_annotation ia origin
+        let origin = TypeOrigin.Formal param_signature.mangled in
+        TypeAnnotation.from_item_annotation param_signature.param_annotation_deprecated origin
       in
-      TypeState.add pvar (typ, ta, []) typestate
+      TypeState.add pvar (param_signature.param_nullsafe_type.typ, ta, []) typestate
     in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty in
@@ -48,7 +47,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc :
         unit =
-      let _, ret_nullsafe_type = annotated_signature.AnnotatedSignature.ret in
+      let AnnotatedSignature.{ret_nullsafe_type} = annotated_signature.AnnotatedSignature.ret in
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt =
@@ -251,8 +250,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           (let is_initializer proc_attributes =
              PatternMatch.method_is_initializer tenv proc_attributes
              ||
-             let ia, _ =
+             let ia =
                (Models.get_modelled_annotated_signature proc_attributes).AnnotatedSignature.ret
+                 .ret_annotation_deprecated
              in
              Annotations.ia_is_initializer ia
            in

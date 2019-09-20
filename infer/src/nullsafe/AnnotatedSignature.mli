@@ -9,9 +9,15 @@
 
 open! IStd
 
-type t =
-  { ret: Annot.Item.t * NullsafeType.t  (** Annotated return type. *)
-  ; params: (Mangled.t * Annot.Item.t * NullsafeType.t) list  (** Annotated parameters. *) }
+type t = {ret: ret_signature; params: param_signature list} [@@deriving compare]
+
+and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_nullsafe_type: NullsafeType.t}
+[@@deriving compare]
+
+and param_signature =
+  { param_annotation_deprecated: Annot.Item.t
+  ; mangled: Mangled.t
+  ; param_nullsafe_type: NullsafeType.t }
 [@@deriving compare]
 
 val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool

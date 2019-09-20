@@ -15,8 +15,16 @@ module L = Logging
       b. Known param annotations
       c. Known method-level annotations.
 *)
-type t =
-  {ret: Annot.Item.t * NullsafeType.t; params: (Mangled.t * Annot.Item.t * NullsafeType.t) list}
+
+type t = {ret: ret_signature; params: param_signature list} [@@deriving compare]
+
+and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_nullsafe_type: NullsafeType.t}
+[@@deriving compare]
+
+and param_signature =
+  { param_annotation_deprecated: Annot.Item.t
+  ; mangled: Mangled.t
+  ; param_nullsafe_type: NullsafeType.t }
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
@@ -51,10 +59,11 @@ let extract_nullability return_annotation param_annotations =
 
 
 let get proc_attributes : t =
-  let method_annotation = proc_attributes.ProcAttributes.method_annotation in
+  let Annot.Method.{return= return_annotation; params= original_params_annotation} =
+    proc_attributes.ProcAttributes.method_annotation
+  in
   let formals = proc_attributes.ProcAttributes.formals in
   let ret_type = proc_attributes.ProcAttributes.ret_type in
-  let Annot.Method.{return; params} = method_annotation in
   (* zip formal params with annotation *)
   let params_with_annotations =
     let rec zip_params ial parl =
@@ -72,33 +81,40 @@ let get proc_attributes : t =
              this should never happen *)
           assert false
     in
-    List.rev (zip_params (List.rev params) (List.rev formals))
+    List.rev (zip_params (List.rev original_params_annotation) (List.rev formals))
   in
-  let _, param_annotations = List.unzip params_with_annotations in
-  let return_nullability, params_nullability = extract_nullability return param_annotations in
-  let ret = (return, NullsafeType.{nullability= return_nullability; typ= ret_type}) in
+  let _, final_params_annotation = List.unzip params_with_annotations in
+  let return_nullability, params_nullability =
+    extract_nullability return_annotation final_params_annotation
+  in
+  let ret =
+    { ret_annotation_deprecated= return_annotation
+    ; ret_nullsafe_type= NullsafeType.{nullability= return_nullability; typ= ret_type} }
+  in
   let params =
-    List.zip_exn params_with_annotations params_nullability
-    |> List.map ~f:(function ((mangled, typ), annot), nullability ->
-           (mangled, annot, NullsafeType.{nullability; typ}) )
+    List.map2_exn params_with_annotations params_nullability
+      ~f:(fun ((mangled, typ), param_annotation_deprecated) nullability ->
+        {param_annotation_deprecated; mangled; param_nullsafe_type= NullsafeType.{nullability; typ}}
+    )
   in
   {ret; params}
 
 
 let param_has_annot predicate pvar ann_sig =
   List.exists
-    ~f:(fun (param, param_annot, _) ->
-      Mangled.equal param (Pvar.get_name pvar) && predicate param_annot )
+    ~f:(fun {mangled; param_annotation_deprecated} ->
+      Mangled.equal mangled (Pvar.get_name pvar) && predicate param_annotation_deprecated )
     ann_sig.params
 
 
 let pp proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
-  let pp_annotated_param fmt (mangled, ia, nullsafe_type) =
-    F.fprintf fmt " %a%a %a" pp_ia ia NullsafeType.pp nullsafe_type Mangled.pp mangled
+  let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_nullsafe_type} =
+    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated NullsafeType.pp param_nullsafe_type
+      Mangled.pp mangled
   in
-  let ia, nullsafe_type = annotated_signature.ret in
-  F.fprintf fmt "%a%a %s (%a )" pp_ia ia NullsafeType.pp nullsafe_type
+  let {ret_annotation_deprecated; ret_nullsafe_type} = annotated_signature.ret in
+  F.fprintf fmt "%a%a %s (%a )" pp_ia ret_annotation_deprecated NullsafeType.pp ret_nullsafe_type
     (Typ.Procname.to_simplified_string proc_name)
     (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
@@ -122,14 +138,18 @@ let set_modelled_nullability_for_nullsafe_type nullsafe_type should_set_nullable
 
 
 let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullability) =
-  let set_modelled_nullability_for_param (mangled, original_annotation, original_nullsafe_type)
-      should_set_nullable =
-    let final_annotation =
-      if should_set_nullable then mk_ia_nullable original_annotation else original_annotation
-    in
-    ( mangled
-    , final_annotation
-    , set_modelled_nullability_for_nullsafe_type original_nullsafe_type should_set_nullable )
+  let set_modelled_nullability_for_param param should_set_nullable =
+    { param with
+      param_annotation_deprecated=
+        mark_ia_nullability param.param_annotation_deprecated should_set_nullable
+    ; param_nullsafe_type=
+        set_modelled_nullability_for_nullsafe_type param.param_nullsafe_type should_set_nullable }
+  in
+  let set_modelled_nullability_for_ret ret should_set_nullable =
+    { ret_annotation_deprecated=
+        mark_ia_nullability ret.ret_annotation_deprecated should_set_nullable
+    ; ret_nullsafe_type=
+        set_modelled_nullability_for_nullsafe_type ret.ret_nullsafe_type should_set_nullable }
   in
   let final_params =
     let fail () =
@@ -140,11 +160,9 @@ let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullabi
     in
     let rec model_param_nullability original_params params_nullability =
       match (original_params, params_nullability) with
-      | (mangled, annotation, nullsafe_type) :: params_tail, nullability_tail
-        when Mangled.is_this mangled ->
+      | param :: params_tail, nullability_tail when Mangled.is_this param.mangled ->
           (* Skip "this" param - there is no notion of "nullable this" *)
-          (mangled, annotation, nullsafe_type)
-          :: model_param_nullability params_tail nullability_tail
+          param :: model_param_nullability params_tail nullability_tail
       | param :: params_tail, should_set_nullable :: nullability_tail ->
           set_modelled_nullability_for_param param should_set_nullable
           :: model_param_nullability params_tail nullability_tail
@@ -156,9 +174,4 @@ let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullabi
     in
     model_param_nullability asig.params params_nullability
   in
-  let original_ret_annotations, original_ret_nullsafe_type = asig.ret in
-  let final_ret_nullsafe_type =
-    set_modelled_nullability_for_nullsafe_type original_ret_nullsafe_type nullability_for_ret
-  in
-  let final_ret_annotation = mark_ia_nullability original_ret_annotations nullability_for_ret in
-  {ret= (final_ret_annotation, final_ret_nullsafe_type); params= final_params}
+  {ret= set_modelled_nullability_for_ret asig.ret nullability_for_ret; params= final_params}
