@@ -125,9 +125,6 @@ let current_time f () =
     tm.Unix.tm_hour tm.Unix.tm_min
 
 
-(** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
-let elapsed_time fmt () = Mtime.Span.pp fmt (Mtime_clock.elapsed ())
-
 let option pp fmt = function
   | None ->
       F.pp_print_string fmt "[None]"

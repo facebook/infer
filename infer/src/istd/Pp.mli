@@ -91,9 +91,6 @@ val to_string : f:('a -> string) -> F.formatter -> 'a -> unit
 val current_time : F.formatter -> unit -> unit
 (** Print the current time and date in a format similar to the "date" command *)
 
-val elapsed_time : F.formatter -> unit -> unit
-(** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
-
 val pair :
      fst:(F.formatter -> 'a -> unit)
   -> snd:(F.formatter -> 'b -> unit)
