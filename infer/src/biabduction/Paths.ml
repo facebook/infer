@@ -439,7 +439,9 @@ end = struct
       | Pcall (_, pname, ExecSkipped (reason, loc_opt), _), Some curr_node ->
           let curr_loc = Procdesc.Node.get_loc curr_node in
           let descr =
-            Format.sprintf "Skipping %s: %s" (Typ.Procname.to_simplified_string pname) reason
+            Format.asprintf "Skipping %a: %s"
+              (Typ.Procname.pp_simplified_string ~withclass:false)
+              pname reason
           in
           let node_tags = [] in
           trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace ;
@@ -447,7 +449,9 @@ end = struct
             ~f:(fun loc ->
               if Typ.Procname.is_java pname && not (SourceFile.is_invalid loc.Location.file) then
                 let definition_descr =
-                  Format.sprintf "Definition of %s" (Typ.Procname.to_simplified_string pname)
+                  Format.asprintf "Definition of %a"
+                    (Typ.Procname.pp_simplified_string ~withclass:false)
+                    pname
                 in
                 trace := Errlog.make_trace_element (level + 1) loc definition_descr [] :: !trace )
             loc_opt
@@ -458,7 +462,11 @@ end = struct
               () (* omit join nodes from error traces *)
           | Procdesc.Node.Start_node ->
               let pname = Procdesc.Node.get_proc_name curr_node in
-              let descr = "start of procedure " ^ Typ.Procname.to_simplified_string pname in
+              let descr =
+                F.asprintf "start of procedure %a"
+                  (Typ.Procname.pp_simplified_string ~withclass:false)
+                  pname
+              in
               let node_tags = [Errlog.Procedure_start pname] in
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
           | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
@@ -485,7 +493,7 @@ end = struct
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
           | Procdesc.Node.Exit_node ->
               let pname = Procdesc.Node.get_proc_name curr_node in
-              let descr = "return from a call to " ^ Typ.Procname.to_string pname in
+              let descr = F.asprintf "return from a call to %a" Typ.Procname.pp pname in
               let node_tags = [Errlog.Procedure_end pname] in
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
           | _ ->

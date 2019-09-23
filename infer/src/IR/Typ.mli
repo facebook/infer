@@ -586,7 +586,10 @@ being the name of the struct, [None] means the parameter is of some other type. 
       initializer, None otherwise. *)
 
   val pp : Format.formatter -> t -> unit
-  (** Pretty print a proc name. *)
+  (** Pretty print a proc name for the user to see. *)
+
+  val to_string : t -> string
+  (** Convert a proc name into a string for the user to see. *)
 
   val describe : Format.formatter -> t -> unit
   (** to use in user messages *)
@@ -597,17 +600,20 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   val is_method_in_objc_protocol : t -> bool
 
-  val to_string : t -> string
-  (** Convert a proc name to a string for the user to see. *)
+  val pp_simplified_string : ?withclass:bool -> F.formatter -> t -> unit
+  (** Pretty print a proc name as an easy string for the user to see in an IDE. *)
 
   val to_simplified_string : ?withclass:bool -> t -> string
-  (** Convert a proc name into a easy string for the user to see in an IDE. *)
+  (** Convert a proc name into an easy string for the user to see in an IDE. *)
 
   val from_string_c_fun : string -> t
   (** Convert a string to a c function name. *)
 
   val hashable_name : t -> string
-  (** Print the procedure name in a format suitable for computing the bug hash *)
+  (** Convert the procedure name in a format suitable for computing the bug hash. *)
+
+  val pp_unique_id : F.formatter -> t -> unit
+  (** Print a proc name as a unique identifier. *)
 
   val to_unique_id : t -> string
   (** Convert a proc name into a unique identifier. *)

@@ -174,7 +174,7 @@ let pp_dotty fmt cycle =
           (Typ.to_string obj.rc_from.rc_node_typ)
           Typ.Fieldname.pp obj.rc_field.rc_field_name
     | Block (name, _) ->
-        Format.pp_print_string fmt (Typ.Procname.to_unique_id name)
+        Typ.Procname.pp_unique_id fmt name
   in
   let pp_dotty_field fmt element =
     match element with

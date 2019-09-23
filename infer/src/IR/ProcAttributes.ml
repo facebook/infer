@@ -170,7 +170,7 @@ let pp f
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
-  F.fprintf f "; proc_id= %s }@]" (Typ.Procname.to_unique_id proc_name)
+  F.fprintf f "; proc_id= %a }@]" Typ.Procname.pp_unique_id proc_name
 
 
 module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct

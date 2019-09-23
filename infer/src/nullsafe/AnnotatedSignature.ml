@@ -114,9 +114,9 @@ let pp proc_name fmt annotated_signature =
       Mangled.pp mangled
   in
   let {ret_annotation_deprecated; ret_nullsafe_type} = annotated_signature.ret in
-  F.fprintf fmt "%a%a %s (%a )" pp_ia ret_annotation_deprecated NullsafeType.pp ret_nullsafe_type
-    (Typ.Procname.to_simplified_string proc_name)
-    (Pp.comma_seq pp_annotated_param) annotated_signature.params
+  F.fprintf fmt "%a%a %a (%a )" pp_ia ret_annotation_deprecated NullsafeType.pp ret_nullsafe_type
+    (Typ.Procname.pp_simplified_string ~withclass:false)
+    proc_name (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
 
 let mk_ann_str s = {Annot.class_name= s; parameters= []}
@@ -154,9 +154,8 @@ let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullabi
   let final_params =
     let fail () =
       L.die InternalError
-        "Annotation for procedure %s has wrong number of arguments.@\n  Annotated signature: %a"
-        (Typ.Procname.to_unique_id proc_name)
-        (pp proc_name) asig
+        "Annotation for procedure %a has wrong number of arguments.@\n  Annotated signature: %a"
+        Typ.Procname.pp_unique_id proc_name (pp proc_name) asig
     in
     let rec model_param_nullability original_params params_nullability =
       match (original_params, params_nullability) with

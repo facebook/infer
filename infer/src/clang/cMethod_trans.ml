@@ -200,7 +200,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
     captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
-  let pname = Typ.Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes ms.CMethodSignature.attributes in
   let clang_method_kind = ms.CMethodSignature.method_kind in
   let is_cpp_nothrow = ms.CMethodSignature.is_cpp_nothrow in
@@ -233,7 +232,8 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
       get_const_params_indices ~shift:(List.length captured_mangled) all_params
     in
     let source_range = ms.CMethodSignature.loc in
-    L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname ;
+    L.(debug Capture Verbose)
+      "@\nCreating a new procdesc for function: '%a'@\n@." Typ.Procname.pp proc_name ;
     L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
     let loc_start =
       CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range

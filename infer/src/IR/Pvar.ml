@@ -38,7 +38,8 @@ type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving comp
 let get_name_of_local_with_procname var =
   match var.pv_kind with
   | Local_var pname ->
-      Mangled.from_string (Mangled.to_string var.pv_name ^ "_" ^ Typ.Procname.to_string pname)
+      Mangled.from_string
+        (F.asprintf "%s_%a" (Mangled.to_string var.pv_name) Typ.Procname.pp pname)
   | _ ->
       var.pv_name
 
@@ -247,12 +248,14 @@ let mk_tmp name pname =
 
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 let mk_abduced_ret (proc_name : Typ.Procname.t) (loc : Location.t) : t =
-  let name = Mangled.from_string ("$RET_" ^ Typ.Procname.to_unique_id proc_name) in
+  let name = Mangled.from_string (F.asprintf "$RET_%a" Typ.Procname.pp_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
 
 
 let mk_abduced_ref_param (proc_name : Typ.Procname.t) (index : int) (loc : Location.t) : t =
-  let name = Mangled.from_string ("$REF_PARAM_VAL_" ^ Typ.Procname.to_unique_id proc_name) in
+  let name =
+    Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Typ.Procname.pp_unique_id proc_name)
+  in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
 
 

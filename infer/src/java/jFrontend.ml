@@ -142,9 +142,7 @@ let create_icfg source_file linereader program tenv icfg cn node =
     JClasspath.set_callee_translated program proc_name ;
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
-      L.(debug Capture Verbose)
-        "Skipping method with a model: %s@."
-        (Typ.Procname.to_string proc_name)
+      L.debug Capture Verbose "Skipping method with a model: %a@." Typ.Procname.pp proc_name
     else
       try
         (* each procedure has different scope: start names from id 0 *)
