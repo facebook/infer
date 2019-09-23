@@ -22,17 +22,15 @@ let validate_decl_from_channel chan =
     Clang_ast_b.read_decl chan
 
 
+(**FIXME(T54413835): Make the perf stats in the frontend work when one runs more than one frontend action *)
 let register_perf_stats_report source_file =
   let stats_type =
-    match (Config.capture, Config.linters) with
-    | true, true ->
-        PerfStats.ClangFrontendLinters source_file
-    | true, false ->
-        PerfStats.ClangFrontend source_file
-    | false, true ->
-        PerfStats.ClangLinters source_file
-    | false, false ->
-        Logging.(die UserError) "Clang frontend should be run in capture and/or linters mode."
+    if Config.capture then PerfStats.ClangFrontend source_file
+    else if Config.linters then PerfStats.ClangLinters source_file
+    else if Config.process_clang_ast then PerfStats.ClangProcessAST source_file
+    else
+      Logging.(die UserError)
+        "Clang frontend should be run in capture, linters or process AST mode."
   in
   PerfStats.register_report_at_exit stats_type
 
@@ -95,15 +93,13 @@ let run_clang_frontend ast_source =
         Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
   in
   ClangPointers.populate_all_tables ast_decl ;
-  L.(debug Capture Quiet) "Clang frontend action is %s@\n" Config.clang_frontend_action_string ;
   L.(debug Capture Medium)
-    "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
+    "Start %s the AST of %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
   if Config.linters then AL.do_frontend_checks trans_unit_ctx ast_decl ;
-  if Config.export_changed_functions then
-    ProcessAST.export_changed_functions trans_unit_ctx ast_decl ;
+  if Config.process_clang_ast then ProcessAST.process_ast trans_unit_ctx ast_decl ;
   if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
   L.(debug Capture Medium)
-    "End %s of AST file %a... OK!@\n" Config.clang_frontend_action_string pp_ast_filename
+    "End %s the AST of file %a... OK!@\n" Config.clang_frontend_action_string pp_ast_filename
     ast_source ;
   print_elapsed ()
 

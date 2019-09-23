@@ -32,7 +32,7 @@ type stats_kind = Time of Mtime_clock.counter * Unix.process_times | Memory | Ti
 type stats_type =
   | ClangLinters of SourceFile.t
   | ClangFrontend of SourceFile.t
-  | ClangFrontendLinters of SourceFile.t
+  | ClangProcessAST of SourceFile.t
   | JavaFrontend of SourceFile.t
   | TotalFrontend
   | Backend of SourceFile.t
@@ -43,7 +43,7 @@ type stats_type =
 let source_file_of_stats_type = function
   | ClangLinters source_file
   | ClangFrontend source_file
-  | ClangFrontendLinters source_file
+  | ClangProcessAST source_file
   | JavaFrontend source_file
   | Backend source_file ->
       Some source_file
@@ -64,19 +64,9 @@ let relative_path_of_stats_type stats_type =
   in
   let dirname =
     match stats_type with
-    | ClangLinters _ ->
+    | ClangLinters _ | ClangFrontend _ | ClangProcessAST _ | JavaFrontend _ | TotalFrontend ->
         Config.frontend_stats_dir_name
-    | ClangFrontend _ ->
-        Config.frontend_stats_dir_name
-    | ClangFrontendLinters _ ->
-        Config.frontend_stats_dir_name
-    | JavaFrontend _ ->
-        Config.frontend_stats_dir_name
-    | TotalFrontend ->
-        Config.frontend_stats_dir_name
-    | Backend _ ->
-        Config.backend_stats_dir_name
-    | TotalBackend ->
+    | Backend _ | TotalBackend ->
         Config.backend_stats_dir_name
     | Reporting ->
         Config.reporting_stats_dir_name
@@ -91,8 +81,8 @@ let string_of_stats_type = function
       "linters"
   | ClangFrontend _ ->
       "clang_frontend"
-  | ClangFrontendLinters _ ->
-      "clang_frontend_and_linters"
+  | ClangProcessAST _ ->
+      "clang_process_ast"
   | JavaFrontend _ ->
       "java_frontend"
   | TotalFrontend ->

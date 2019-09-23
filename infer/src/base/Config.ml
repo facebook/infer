@@ -48,10 +48,6 @@ let equal_analyzer = [%compare.equal: analyzer]
 
 let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
 
-let clang_frontend_action_symbols =
-  [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
-
-
 let ml_bucket_symbols =
   [ ("all", `MLeak_all)
   ; ("cf", `MLeak_cf)
@@ -1027,13 +1023,6 @@ and clang_blacklisted_flags_with_arg =
 
 and clang_compilation_dbs = ref []
 
-and clang_frontend_action =
-  CLOpt.mk_symbol_opt ~long:"" ~deprecated:["-clang-frontend-action"]
-    ~in_help:InferCommand.[(Capture, manual_clang); (Run, manual_clang)]
-    (* doc only shows up in deprecation warnings *)
-    "use --capture and --linters instead" ~symbols:clang_frontend_action_symbols
-
-
 and clang_ignore_regex =
   CLOpt.mk_string_opt ~long:"clang-ignore-regex" ~meta:"dir_OCaml_regex"
     "The files in this regex will be ignored in the compilation process and an empty file will be \
@@ -1914,6 +1903,12 @@ and procedures_source_file =
      output of $(b,--procedures)"
 
 
+and process_clang_ast =
+  CLOpt.mk_bool ~long:"process-clang-ast"
+    ~default:true (* To be made false after this is deployed *)
+    "process the ast to emit some info about the file (Not available for Java)"
+
+
 and procs_csv =
   CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv" ~meta:"file"
     "Write statistics for each procedure in CSV format to a file"
@@ -2767,16 +2762,7 @@ and bufferoverrun = !bufferoverrun
 
 and call_graph_schedule = !call_graph_schedule
 
-and capture =
-  (* take `--clang-frontend-action` as the source of truth as long as that option exists *)
-  match !clang_frontend_action with
-  | Some (`Capture | `Lint_and_capture) ->
-      true
-  | Some `Lint ->
-      false
-  | None ->
-      !capture
-
+and capture = !capture
 
 and capture_blacklist = !capture_blacklist
 
@@ -2949,16 +2935,7 @@ and join_cond = !join_cond
 
 and linter = !linter
 
-and linters =
-  (* take `--clang-frontend-action` as the source of truth as long as that option exists *)
-  match !clang_frontend_action with
-  | Some (`Lint | `Lint_and_capture) ->
-      true
-  | Some `Capture ->
-      false
-  | None ->
-      !linters
-
+and linters = !linters
 
 and linters_def_file = !linters_def_file
 
@@ -3063,6 +3040,8 @@ and procedures_name = !procedures_name
 and[@warning "-32"] procedures_per_process = !procedures_per_process
 
 and procedures_source_file = !procedures_source_file
+
+and process_clang_ast = !process_clang_ast
 
 and progress_bar =
   if !progress_bar then
@@ -3286,8 +3265,10 @@ and xcpretty = !xcpretty
 let captured_dir = results_dir ^/ captured_dir_name
 
 let clang_frontend_action_string =
-  String.concat ~sep:" and "
-    ((if capture then ["translating"] else []) @ if linters then ["linting"] else [])
+  let text = if capture then ["translating"] else [] in
+  let text = if linters then "linting" :: text else text in
+  let text = if process_clang_ast then "processing" :: text else text in
+  String.concat ~sep:", " text
 
 
 (* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as

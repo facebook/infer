@@ -1552,6 +1552,10 @@ INTERNAL OPTIONS
            --per-procedure-parallelism. If 0 is specified, each file is
            divided into --jobs groups of procedures.
 
+       --no-process-clang-ast
+           Deactivates: process the ast to emit some info about the file (Not
+           available for Java) (Conversely: --process-clang-ast)
+
        --procs-csv file
            Write statistics for each procedure in CSV format to a file
 

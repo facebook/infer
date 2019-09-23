@@ -21,3 +21,7 @@ let export_changed_functions trans_unit_ctx ast_decl =
       ~f
   in
   call_f ()
+
+
+let process_ast trans_unit_ctx ast_decl =
+  if Config.export_changed_functions then export_changed_functions trans_unit_ctx ast_decl

@@ -16,7 +16,7 @@ type stats_kind = Time of Mtime_clock.counter * Unix.process_times | Memory | Ti
 type stats_type =
   | ClangLinters of SourceFile.t
   | ClangFrontend of SourceFile.t
-  | ClangFrontendLinters of SourceFile.t
+  | ClangProcessAST of SourceFile.t
   | JavaFrontend of SourceFile.t
   | TotalFrontend
   | Backend of SourceFile.t

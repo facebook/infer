@@ -6,5 +6,4 @@
  *)
 open! IStd
 
-val export_changed_functions :
-  CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> unit
+val process_ast : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> unit
