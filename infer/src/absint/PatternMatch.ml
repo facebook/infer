@@ -76,6 +76,8 @@ let implements_inject class_name = implements ("javax.inject." ^ class_name)
 
 let implements_io class_name = implements ("java.io." ^ class_name)
 
+let implements_nio class_name = implements ("java.nio." ^ class_name)
+
 let implements_map = implements "java.util.Map"
 
 let implements_set = implements "java.util.Set"

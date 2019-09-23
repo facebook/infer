@@ -30,10 +30,32 @@ module ItvThresholds = AbstractDomain.FiniteSet (struct
   let pp = pp_print
 end)
 
+(* ModeledRange represents how many times the interval value can be updated by modeled functions.
+   This domain is to support the case where there are mismatches between value of a control variable
+   and actual number of loop iterations.  For example,
+
+   [while((c = file_channel.read(buf)) != -1) { ... }]
+
+   the loop will iterates as the file size, but the control variable [c] does not have that value.
+   In these cases, it assigns a symbolic value of the file size to the modeled range of [c], then
+   which it is used when calculating the overall cost.  *)
+module ModeledRange = struct
+  include AbstractDomain.BottomLifted (struct
+    include Bounds.NonNegativeBound
+
+    let pp = pp ~hum:true
+  end)
+
+  let of_modeled_function pname location bound =
+    let pname = Typ.Procname.to_simplified_string pname in
+    NonBottom (Bounds.NonNegativeBound.of_modeled_function pname location bound)
+end
+
 module Val = struct
   type t =
     { itv: Itv.t
     ; itv_thresholds: ItvThresholds.t
+    ; modeled_range: ModeledRange.t
     ; sym: Relation.Sym.t
     ; powloc: PowLoc.t
     ; arrayblk: ArrayBlk.t
@@ -44,6 +66,7 @@ module Val = struct
   let bot : t =
     { itv= Itv.bot
     ; itv_thresholds= ItvThresholds.empty
+    ; modeled_range= ModeledRange.bottom
     ; sym= Relation.Sym.bot
     ; powloc= PowLoc.bot
     ; arrayblk= ArrayBlk.bot
@@ -60,12 +83,16 @@ module Val = struct
     let relation_sym_pp fmt sym =
       if Option.is_some Config.bo_relational_domain then F.fprintf fmt ", %a" Relation.Sym.pp sym
     in
+    let modeled_range_pp fmt range =
+      if not (ModeledRange.is_bottom range) then
+        F.fprintf fmt " (modeled_range:%a)" ModeledRange.pp range
+    in
     let trace_pp fmt traces =
       if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    F.fprintf fmt "(%a%a%a, %a, %a%a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
-      relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym
-      relation_sym_pp x.size_sym trace_pp x.traces
+    F.fprintf fmt "(%a%a%a%a, %a, %a%a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
+      relation_sym_pp x.sym modeled_range_pp x.modeled_range PowLoc.pp x.powloc ArrayBlk.pp
+      x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp x.traces
 
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
@@ -73,6 +100,7 @@ module Val = struct
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
     { itv= Itv.top
     ; itv_thresholds= ItvThresholds.empty
+    ; modeled_range= ModeledRange.bottom
     ; sym= Relation.Sym.top
     ; powloc= PowLoc.unknown
     ; arrayblk= ArrayBlk.unknown
@@ -86,6 +114,7 @@ module Val = struct
     else
       Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv
       && ItvThresholds.( <= ) ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
+      && ModeledRange.( <= ) ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
       && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
       && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
@@ -102,6 +131,8 @@ module Val = struct
             ~thresholds:(ItvThresholds.elements itv_thresholds)
             ~prev:prev.itv ~next:next.itv ~num_iters
       ; itv_thresholds
+      ; modeled_range=
+          ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
       ; sym= Relation.Sym.widen ~prev:prev.sym ~next:next.sym ~num_iters
       ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
@@ -116,6 +147,7 @@ module Val = struct
     else
       { itv= Itv.join x.itv y.itv
       ; itv_thresholds= ItvThresholds.join x.itv_thresholds y.itv_thresholds
+      ; modeled_range= ModeledRange.join x.modeled_range y.modeled_range
       ; sym= Relation.Sym.join x.sym y.sym
       ; powloc= PowLoc.join x.powloc y.powloc
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
@@ -125,6 +157,8 @@ module Val = struct
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
+
+  let get_modeled_range : t -> ModeledRange.t = fun x -> x.modeled_range
 
   let get_sym : t -> Relation.Sym.t = fun x -> x.sym
 
@@ -189,6 +223,8 @@ module Val = struct
     of_itv (Itv.set_lb_zero (Itv.of_int max_char))
 
 
+  let set_modeled_range range x = {x with modeled_range= range}
+
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
 
   let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv; sym= Relation.Sym.top}
@@ -199,6 +235,7 @@ module Val = struct
    fun f ?f_trace x y ->
     let itv = f x.itv y.itv in
     let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
+    let modeled_range = ModeledRange.join x.modeled_range y.modeled_range in
     let traces =
       match f_trace with
       | Some f_trace ->
@@ -212,7 +249,7 @@ module Val = struct
         | true, true | false, false ->
             TraceSet.join x.traces y.traces )
     in
-    {bot with itv; itv_thresholds; traces}
+    {bot with itv; itv_thresholds; modeled_range; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
@@ -632,7 +669,13 @@ module MemPure = struct
             let itv = Val.get_itv v in
             if Itv.has_only_non_int_symbols itv then acc
             else
-              let range1 = Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial in
+              let range1 =
+                match Val.get_modeled_range v with
+                | NonBottom range ->
+                    Polynomials.NonNegativePolynomial.of_non_negative_bound range
+                | Bottom ->
+                    Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial
+              in
               if Polynomials.NonNegativePolynomial.is_top range1 then
                 L.d_printfln_escaped "Range of %a (loc:%a) became top at %a." Itv.pp itv Loc.pp loc
                   ProcCfg.Normal.Node.pp_id node_id ;

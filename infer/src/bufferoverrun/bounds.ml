@@ -1132,6 +1132,8 @@ module BoundTrace = struct
 
   let compare t1 t2 = [%compare: int * t] (length t1, t1) (length t2, t2)
 
+  let join x y = if length x <= length y then x else y
+
   let rec pp f = function
     | Loop loc ->
         F.fprintf f "Loop (%a)" Location.pp loc
@@ -1161,6 +1163,16 @@ end
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
 module NonNegativeBound = struct
   type t = Bound.t * BoundTrace.t [@@deriving compare]
+
+  let ( <= ) ~lhs:(bound_lhs, _) ~rhs:(bound_rhs, _) = Bound.le bound_lhs bound_rhs
+
+  let join (bound_x, trace_x) (bound_y, trace_y) =
+    (Bound.overapprox_max bound_x bound_y, BoundTrace.join trace_x trace_y)
+
+
+  let widen ~prev:(bound_prev, trace_prev) ~next:(bound_next, trace_next) ~num_iters:_ =
+    (Bound.widen_u bound_prev bound_next, BoundTrace.join trace_prev trace_next)
+
 
   let make_err_trace (b, t) =
     let b = F.asprintf "{%a}" Bound.pp b in

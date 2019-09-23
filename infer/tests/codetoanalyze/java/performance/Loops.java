@@ -6,6 +6,10 @@
  */
 package codetoanalyze.java.performance;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+
 public class Loops {
 
   static int do_while_independent_of_p(int p) {
@@ -109,5 +113,18 @@ public class Loops {
 
   void charsequence_length_linear(CharSequence seq) {
     for (int i = 0; i < seq.length(); i++) {}
+  }
+
+  void modeled_range_linear(FileChannel fc, ByteBuffer bb) throws IOException {
+    int i;
+    int offset = 0;
+    do {
+      int numBytesRead = fc.read(bb, offset);
+      if (numBytesRead == -1) {
+        break;
+      }
+      i = bb.getInt();
+      offset += 8;
+    } while (i != 0);
   }
 }

@@ -132,6 +132,12 @@ type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
 module NonNegativeBound : sig
   type t [@@deriving compare]
 
+  val ( <= ) : lhs:t -> rhs:t -> bool
+
+  val join : t -> t -> t
+
+  val widen : prev:t -> next:t -> num_iters:int -> t
+
   val of_loop_bound : Location.t -> Bound.t -> t
 
   val of_modeled_function : string -> Location.t -> Bound.t -> t

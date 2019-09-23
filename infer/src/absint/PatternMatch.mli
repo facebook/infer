@@ -61,6 +61,9 @@ val implements_inject : string -> Tenv.t -> string -> bool
 val implements_io : string -> Tenv.t -> string -> bool
 (** Check whether class implements a Java IO *)
 
+val implements_nio : string -> Tenv.t -> string -> bool
+(** Check whether class implements a Java nio *)
+
 val implements_map : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Map *)
 

@@ -1119,6 +1119,36 @@ module InputStream = struct
     {exec; check= no_check}
 end
 
+module FileChannel = struct
+  (* https://docs.oracle.com/javase/7/docs/api/java/io/InputStream.html#read(byte[],%20int,%20int) *)
+  let read buf_exp =
+    let exec {pname; location} ~ret:(ret_id, ret_typ) mem =
+      let buf_locs = Sem.eval_locs buf_exp mem in
+      let buf_v = Dom.Mem.find_set buf_locs mem in
+      let range =
+        Symb.SymbolPath.of_callsite ~ret_typ (CallSite.make pname location)
+        |> Bounds.Bound.of_modeled_path Symb.Symbol.make_onevalue
+        |> Dom.ModeledRange.of_modeled_function pname location
+      in
+      let mem = Dom.Mem.add_heap_set buf_locs (Dom.Val.set_modeled_range range buf_v) mem in
+      let v =
+        Dom.Val.of_itv (Itv.set_lb Itv.Bound.mone Itv.nat) |> Dom.Val.set_modeled_range range
+      in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+end
+
+module ByteBuffer = struct
+  let get_int buf_exp =
+    let exec _ ~ret:(ret_id, _) mem =
+      let range = Dom.Mem.find_set (Sem.eval_locs buf_exp mem) mem |> Dom.Val.get_modeled_range in
+      let v = Dom.Val.of_itv Itv.nat |> Dom.Val.set_modeled_range range in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+end
+
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -1350,5 +1380,13 @@ module Call = struct
         &:: "intValue" <>$ capt_exp $--> JavaInteger.intValue
       ; +PatternMatch.implements_lang "Integer" &:: "valueOf" <>$ capt_exp $--> JavaInteger.valueOf
       ; +PatternMatch.implements_io "InputStream"
-        &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read ]
+        &:: "read" <>$ any_arg $+ any_arg $+ any_arg $+ capt_exp $--> InputStream.read
+      ; +PatternMatch.implements_nio "channels.FileChannel"
+        &:: "read" <>$ any_arg $+ capt_exp $+ any_arg $--> FileChannel.read
+      ; +PatternMatch.implements_nio "ByteBuffer" &:: "get" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.implements_nio "ByteBuffer"
+        &:: "getShort" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.implements_nio "ByteBuffer" &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
+      ; +PatternMatch.implements_nio "ByteBuffer"
+        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int ]
 end
