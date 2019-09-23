@@ -45,6 +45,8 @@ let rec pp_n c fmt n =
 
 let move_bol = "\r"
 
+let move_cursor_down n = Printf.sprintf "\027[%iB" n
+
 let move_cursor_up n = Printf.sprintf "\027[%iA" n
 
 let erase_eol = "\027[0K"
@@ -185,9 +187,10 @@ let tasks_done_reset task_bar =
 
 
 let finish = function
-  | MultiLine _ ->
+  | MultiLine _ as task_bar ->
+      refresh task_bar ;
       (* leave the progress bar displayed *)
-      Out_channel.output_string stderr "\n" ;
+      F.eprintf "%s%!" (move_cursor_down 1) ;
       ANSITerminal.erase Below ;
       Out_channel.flush stderr
   | NonInteractive | Quiet ->

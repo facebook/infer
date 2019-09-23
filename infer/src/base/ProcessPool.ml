@@ -42,8 +42,8 @@ type ('work, 'final) t =
 
 (** {2 Constants} *)
 
-(** refresh rate of the task bar (worst case: it also refreshes on children updates) 
-    this is now mandatory to allow checking for new work packets, when none were 
+(** refresh rate of the task bar (worst case: it also refreshes on children updates)
+    this is now mandatory to allow checking for new work packets, when none were
     previously available *)
 let refresh_timeout =
   let frames_per_second = 12 in
@@ -67,7 +67,7 @@ type worker_message =
       (** [(i, t, status)]: starting a task from slot [i], at start time [t], with description
           [status]. Watch out that [status] must not be too close in length to [buffer_size]. *)
   | Ready of int
-      (** Sent after finishing initializing or after finishing a given task. 
+      (** Sent after finishing initializing or after finishing a given task.
           When received by master, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
   | Crash of int  (** there was an error and the child is no longer receiving messages *)
 
@@ -95,8 +95,8 @@ let rec really_read ?(pos = 0) ~len fd ~buf =
     really_read ~pos:(pos + read) ~len:(len - read) fd ~buf
 
 
-(** return a list of all updates coming from workers. The first update is expected for up to the 
-    timeout [refresh_timeout].  After that, all already received updates are consumed but with zero timeout. 
+(** return a list of all updates coming from workers. The first update is expected for up to the
+    timeout [refresh_timeout].  After that, all already received updates are consumed but with zero timeout.
     If there is none left, return the list. *)
 let wait_for_updates pool buffer =
   let rec aux acc ~timeout =
@@ -221,8 +221,6 @@ let process_updates pool buffer =
            Unix.wait (`Pid pid) |> ignore ;
            killall pool ~slot "see backtrace above"
        | Ready slot ->
-           TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
-           TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
            ( match pool.children_states.(slot) with
            | Processing work ->
                pool.tasks.finished work
@@ -230,6 +228,8 @@ let process_updates pool buffer =
                ()
            | Idle ->
                L.die InternalError "Received a Ready message from an idle worker@." ) ;
+           TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
+           TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) "idle" ;
            pool.children_states.(slot) <- Idle ) ;
   (* try to schedule more work if there are idle workers *)
   if not (pool.tasks.is_empty ()) then
