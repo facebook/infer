@@ -150,6 +150,7 @@ OPTIONS
            (disabled by default),
              GRAPHQL_FIELD_ACCESS (enabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
+             IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
              INFERBO_ALLOC_IS_BIG (enabled by default),
              INFERBO_ALLOC_IS_NEGATIVE (enabled by default),

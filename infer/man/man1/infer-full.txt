@@ -401,6 +401,7 @@ OPTIONS
            (disabled by default),
              GRAPHQL_FIELD_ACCESS (enabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
+             IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
              INFERBO_ALLOC_IS_BIG (enabled by default),
              INFERBO_ALLOC_IS_NEGATIVE (enabled by default),
@@ -605,6 +606,14 @@ OPTIONS
        --immutable-cast-only
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)           See also infer-analyze(1).
+
+       --impurity
+           Activates: [EXPERIMENTAL] Impurity analysis (Conversely:
+           --no-impurity)           See also infer-analyze(1).
+
+       --impurity-only
+           Activates: Enable --impurity and disable all other checkers
+           (Conversely: --no-impurity-only)           See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
            Deactivates: Check for inefficient uses of keySet iterator that

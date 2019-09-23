@@ -836,3 +836,7 @@ module PrePost = struct
         (* apply the postcondition *)
         Ok (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state)
 end
+
+let extract_pre {pre} = (pre :> PulseDomain.t)
+
+let extract_post {post} = (post :> PulseDomain.t)

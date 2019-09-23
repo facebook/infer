@@ -141,6 +141,14 @@ OPTIONS
            Activates: Enable --immutable-cast and disable all other checkers
            (Conversely: --no-immutable-cast-only)
 
+       --impurity
+           Activates: [EXPERIMENTAL] Impurity analysis (Conversely:
+           --no-impurity)
+
+       --impurity-only
+           Activates: Enable --impurity and disable all other checkers
+           (Conversely: --no-impurity-only)
+
        --no-inefficient-keyset-iterator
            Deactivates: Check for inefficient uses of keySet iterator that
            access both the key and the value. (Conversely:

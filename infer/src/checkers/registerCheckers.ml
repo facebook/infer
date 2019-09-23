@@ -123,6 +123,11 @@ let all_checkers =
         ; (Cluster Starvation.reporting, Language.Java)
         ; (Procedure Starvation.analyze_procedure, Language.Clang)
         ; (Cluster Starvation.reporting, Language.Clang) ] }
+  ; { name= "impurity"
+    ; active= Config.impurity
+    ; callbacks=
+        [(Procedure Impurity.checker, Language.Clang); (Procedure Pulse.checker, Language.Clang)]
+    }
   ; { name= "purity"
     ; active= Config.purity || Config.loop_hoisting
     ; callbacks=

@@ -102,3 +102,7 @@ end
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller, just for convenience and
     keep its size down *)
+
+val extract_pre : PrePost.t -> PulseDomain.t
+
+val extract_post : PrePost.t -> PulseDomain.t

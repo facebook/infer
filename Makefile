@@ -62,6 +62,7 @@ DIRECT_TESTS += \
   cpp_conflicts \
   cpp_errors \
   cpp_frontend \
+  cpp_impurity \
   cpp_linters \
   cpp_linters-for-test-only \
   cpp_liveness \

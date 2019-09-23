@@ -96,6 +96,8 @@ module Attributes : sig
 
   val get_must_be_valid : t -> unit InterprocAction.t option
 
+  val get_invalid : t -> Invalidation.t Trace.t option
+
   val get_written_to : t -> unit InterprocAction.t option
 
   val get_address_of_stack_variable : t -> (Var.t * ValueHistory.t * Location.t) option

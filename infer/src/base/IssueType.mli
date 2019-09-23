@@ -174,6 +174,8 @@ val graphql_field_access : t
 
 val guardedby_violation_racerd : t
 
+val impure_function : t
+
 val inefficient_keyset_iterator : t
 
 val inferbo_alloc_is_big : t

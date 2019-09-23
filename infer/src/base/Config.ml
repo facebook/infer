@@ -27,6 +27,7 @@ type checkers =
   ; eradicate: bool ref
   ; fragment_retains_view: bool ref
   ; immutable_cast: bool ref
+  ; impurity: bool ref
   ; inefficient_keyset_iterator: bool ref
   ; linters: bool ref
   ; litho: bool ref
@@ -667,6 +668,7 @@ and { annotation_reachability
     ; eradicate
     ; fragment_retains_view
     ; immutable_cast
+    ; impurity
     ; inefficient_keyset_iterator
     ; linters
     ; litho
@@ -713,6 +715,7 @@ and { annotation_reachability
     mk_checker ~long:"immutable-cast" ~default:false
       "the detection of object cast from immutable type to mutable type. For instance, it will \
        detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
+  and impurity = mk_checker ~long:"impurity" ~default:false "[EXPERIMENTAL] Impurity analysis"
   and inefficient_keyset_iterator =
     mk_checker ~long:"inefficient-keyset-iterator" ~default:true
       "Check for inefficient uses of keySet iterator that access both the key and the value."
@@ -789,6 +792,7 @@ and { annotation_reachability
   ; eradicate
   ; fragment_retains_view
   ; immutable_cast
+  ; impurity
   ; inefficient_keyset_iterator
   ; linters
   ; litho
@@ -2904,6 +2908,8 @@ and hoisting_report_only_expensive = !hoisting_report_only_expensive
 and icfg_dotty_outfile = !icfg_dotty_outfile
 
 and immutable_cast = !immutable_cast
+
+and impurity = !impurity
 
 and inefficient_keyset_iterator = !inefficient_keyset_iterator
 

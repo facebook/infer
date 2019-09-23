@@ -396,6 +396,8 @@ val icfg_dotty_outfile : string option
 
 val immutable_cast : bool
 
+val impurity : bool
+
 val inefficient_keyset_iterator : bool
 
 val infer_is_clang : bool

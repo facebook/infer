@@ -193,6 +193,10 @@ let should_report pdesc =
       not
         ( Typ.Procname.Java.is_class_initializer java_pname
         || Typ.Procname.Java.is_access_method java_pname )
+  | Typ.Procname.ObjC_Cpp name ->
+      not
+        ( Typ.Procname.ObjC_Cpp.is_destructor name
+        || Typ.Procname.ObjC_Cpp.is_objc_constructor name.method_name )
   | _ ->
       true
 

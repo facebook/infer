@@ -287,6 +287,8 @@ let guardedby_violation_racerd =
   register_from_string "GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation"
 
 
+let impure_function = register_from_string "IMPURE_FUNCTION"
+
 let inefficient_keyset_iterator = register_from_string "INEFFICIENT_KEYSET_ITERATOR"
 
 let inferbo_alloc_is_big = register_from_string "INFERBO_ALLOC_IS_BIG"
