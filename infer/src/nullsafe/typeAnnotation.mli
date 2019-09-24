@@ -16,7 +16,7 @@ val const_nullable : bool -> TypeOrigin.t -> t
 val descr_origin : t -> TypeErr.origin_descr
 (** Human-readable description of the origin of a nullable value. *)
 
-val from_item_annotation : Annot.Item.t -> TypeOrigin.t -> t
+val from_nullsafe_type : NullsafeType.t -> TypeOrigin.t -> t
 
 val get_origin : t -> TypeOrigin.t
 

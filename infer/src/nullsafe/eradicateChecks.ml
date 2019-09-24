@@ -326,7 +326,7 @@ type resolved_param =
   { num: int
   ; formal: Mangled.t * TypeAnnotation.t * Typ.t
   ; actual: Exp.t * TypeAnnotation.t
-  ; propagates_nullable: bool }
+  ; is_formal_propagates_nullable: bool }
 
 (** Check the parameters of a call. *)
 let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes

@@ -36,7 +36,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let pvar = Pvar.mk param_signature.mangled curr_pname in
       let ta =
         let origin = TypeOrigin.Formal param_signature.mangled in
-        TypeAnnotation.from_item_annotation param_signature.param_annotation_deprecated origin
+        TypeAnnotation.from_nullsafe_type param_signature.param_nullsafe_type origin
       in
       TypeState.add pvar (param_signature.param_nullsafe_type.typ, ta, []) typestate
     in

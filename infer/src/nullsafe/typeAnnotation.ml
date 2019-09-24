@@ -54,4 +54,9 @@ let const_nullable is_nullable origin = {origin; is_nullable}
 
 let with_origin ta o = {ta with origin= o}
 
-let from_item_annotation ia origin = const_nullable (Annotations.ia_is_nullable ia) origin
+let from_nullsafe_type NullsafeType.{nullability} origin =
+  match nullability with
+  | Nullable _ ->
+      {origin; is_nullable= true}
+  | Nonnull _ ->
+      {origin; is_nullable= false}

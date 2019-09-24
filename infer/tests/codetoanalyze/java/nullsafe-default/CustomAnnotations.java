@@ -197,6 +197,53 @@ public class CustomAnnotations {
         propagatesNullable(sNonnull, sNonnull).length(); // OK: result can be null
       }
     }
+
+    // For convenience, we do not require to annotate return type with @Nullable,
+    // make sure it is respected.
+    class TestReturnValueAnnotationIsAutomaticallyInferred {
+
+      // Ensure that we do not warn with "return not nullable" even if we did not annotate the
+      // return with @Nullable
+
+      String notAnnotatingReturnWhenThereIsPropagatesNullableIsOK(@PropagatesNullable String s) {
+        return null; // OK: treat is as implicitly nullable
+      }
+
+      String notAnnotatingReturnWhenThereAreNoPropagatesNullableIsBAD(@Nullable String s) {
+        return null; // BAD: return not nullable
+      }
+
+      // Ensure that the behavior remains the same for explicitly and implicitly annotated functions
+
+      @Nullable
+      String annotatedReturn(@PropagatesNullable String s) {
+        return s;
+      }
+
+      String notAnnotatedReturn(@PropagatesNullable String s) {
+        return s;
+      }
+
+      // 1. Both versions equally catch non-legit usages
+
+      void annotated_dereferencingAfterPassingNullableIsBAD(@Nullable String s) {
+        annotatedReturn(s).toString(); // BAD: nullable dereference
+      }
+
+      void notAnnotated_dereferencingAfterPassingNullableIsBAD(@Nullable String s) {
+        notAnnotatedReturn(s).toString(); // BAD: nullable dereference
+      }
+
+      // 2. Both versions equally allow legit usages
+
+      void annotated_dereferencingAfterPassingNonnullIsOK(String s) {
+        annotatedReturn(s).toString(); // OK: inferred to be non-nullable
+      }
+
+      void notAnnotated_dereferencingAfterPassingNonnullIsOK(String s) {
+        notAnnotatedReturn(s).toString(); // OK: inferred to be non-nullable
+      }
+    }
   }
 
 }

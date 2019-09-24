@@ -146,9 +146,9 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       let exp_origin = TypeAnnotation.get_origin ta in
       let tr_new =
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{nullsafe_type; annotation_deprecated} ->
+        | Some EradicateChecks.{nullsafe_type} ->
             ( nullsafe_type.typ
-            , TypeAnnotation.from_item_annotation annotation_deprecated
+            , TypeAnnotation.from_nullsafe_type nullsafe_type
                 (TypeOrigin.Field (exp_origin, fn, loc))
             , locs' )
         | None ->
@@ -226,10 +226,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           typestate
       | _ -> (
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{nullsafe_type; annotation_deprecated} ->
+        | Some EradicateChecks.{nullsafe_type} ->
             let range =
               ( nullsafe_type.typ
-              , TypeAnnotation.from_item_annotation annotation_deprecated
+              , TypeAnnotation.from_nullsafe_type nullsafe_type
                   (TypeOrigin.Field (origin, fn, loc))
               , [loc] )
             in
@@ -533,7 +533,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let is_anonymous_inner_class_constructor =
         Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
       in
-      let do_return (ret_ta, NullsafeType.{typ= ret_typ}) loc' typestate' =
+      let do_return (ret_ta, ret_typ) loc' typestate' =
         let mk_return_range () = (ret_typ, ret_ta, [loc']) in
         let id = fst ret_id_typ in
         TypeState.add_id id (mk_return_range ()) typestate'
@@ -682,15 +682,14 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         | _ ->
             typestate'
       in
-      let typestate_after_call, resolved_ret =
+      let typestate_after_call, finally_resolved_ret =
         let resolve_param i (sparam, cparam) =
           let AnnotatedSignature.{mangled; param_annotation_deprecated; param_nullsafe_type} =
             sparam
           in
           let (orig_e2, e2), t2 = cparam in
           let ta1 =
-            TypeAnnotation.from_item_annotation param_annotation_deprecated
-              (TypeOrigin.Formal mangled)
+            TypeAnnotation.from_nullsafe_type param_nullsafe_type (TypeOrigin.Formal mangled)
           in
           let _, ta2, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
@@ -701,39 +700,37 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           let formal = (mangled, ta1, param_nullsafe_type.typ) in
           let actual = (orig_e2, ta2) in
           let num = i + 1 in
-          let formal_is_propagates_nullable =
+          let is_formal_propagates_nullable =
             Annotations.ia_is_propagates_nullable param_annotation_deprecated
           in
-          let actual_is_nullable = TypeAnnotation.is_nullable ta2 in
-          let propagates_nullable = formal_is_propagates_nullable && actual_is_nullable in
-          EradicateChecks.{num; formal; actual; propagates_nullable}
+          EradicateChecks.{num; formal; actual; is_formal_propagates_nullable}
         in
-        (* Apply a function that operates on annotations *)
-        let apply_annotation_transformer resolved_ret
+        (* If the function has @PropagatesNullable params, and inferred type for each of
+           corresponding actual param is non-nullable, inferred type for the whole result
+           can be strengthened to non-nullable as well.
+         *)
+        let clarify_ret_by_propagates_nullable ret
             (resolved_params : EradicateChecks.resolved_param list) =
-          let rec handle_params resolved_ret params =
-            match (params : EradicateChecks.resolved_param list) with
-            | param :: params' when param.propagates_nullable ->
-                let _, actual_ta = param.actual in
-                let resolved_ret' =
-                  let ret_ta, ret_typ = resolved_ret in
-                  let ret_ta' =
-                    let is_actual_nullable = TypeAnnotation.is_nullable actual_ta in
-                    let is_old_nullable = TypeAnnotation.is_nullable ret_ta in
-                    let is_new_nullable = is_old_nullable || is_actual_nullable in
-                    TypeAnnotation.set_nullable is_new_nullable ret_ta
-                  in
-                  (ret_ta', ret_typ)
-                in
-                handle_params resolved_ret' params'
-            | _ :: params' ->
-                handle_params resolved_ret params'
-            | [] ->
-                resolved_ret
+          let propagates_nullable_params =
+            List.filter resolved_params ~f:(fun (param : EradicateChecks.resolved_param) ->
+                param.is_formal_propagates_nullable )
           in
-          handle_params resolved_ret resolved_params
+          if List.is_empty propagates_nullable_params then ret
+          else if
+            List.for_all propagates_nullable_params
+              ~f:(fun EradicateChecks.{actual= _, inferred_nullability_actual} ->
+                not (TypeAnnotation.is_nullable inferred_nullability_actual) )
+          then
+            (* All params' inferred types are non-nullable.
+              Strengten the result to be non-nullable as well! *)
+            let ret_type_annotation, ret_typ = ret in
+            (TypeAnnotation.set_nullable false ret_type_annotation, ret_typ)
+          else
+            (* At least one param's inferred type is nullable, can not strengthen the result *)
+            ret
         in
-        let resolved_ret_ =
+        (* Infer nullability of function call result based on its signature *)
+        let preliminary_resolved_ret =
           let ret = callee_annotated_signature.AnnotatedSignature.ret in
           let is_library = Summary.OnDisk.proc_is_library callee_attributes in
           let origin =
@@ -743,8 +740,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               ; annotated_signature= callee_annotated_signature
               ; is_library }
           in
-          let ret_ta = TypeAnnotation.from_item_annotation ret.ret_annotation_deprecated origin in
-          (ret_ta, ret.ret_nullsafe_type)
+          let ret_ta = TypeAnnotation.from_nullsafe_type ret.ret_nullsafe_type origin in
+          (ret_ta, ret.ret_nullsafe_type.typ)
         in
         let sig_len = List.length signature_params in
         let call_len = List.length call_params in
@@ -766,7 +763,11 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             (List.zip_exn sig_slice call_slice)
         in
         let resolved_params = List.mapi ~f:resolve_param sig_call_params in
-        let resolved_ret = apply_annotation_transformer resolved_ret_ resolved_params in
+        (* Clarify function call result nullability based on params annotated with @PropagatesNullable
+           and inferred nullability of those params *)
+        let ret_respecting_propagates_nullable =
+          clarify_ret_by_propagates_nullable preliminary_resolved_ret resolved_params
+        in
         let typestate_after_call =
           if not is_anonymous_inner_class_constructor then (
             if cflags.CallFlags.cf_virtual && checks.eradicate then
@@ -792,9 +793,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             else typestate1 )
           else typestate1
         in
-        (typestate_after_call, resolved_ret)
+        (typestate_after_call, ret_respecting_propagates_nullable)
       in
-      do_return resolved_ret loc typestate_after_call
+      do_return finally_resolved_ret loc typestate_after_call
   | Sil.Call _ ->
       typestate
   | Sil.Prune (cond, loc, true_branch, _) ->
