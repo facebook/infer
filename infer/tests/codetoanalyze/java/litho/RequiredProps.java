@@ -27,6 +27,14 @@ enum ResType {
   boolean optional() default false;
 }
 
+@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Retention(RetentionPolicy.CLASS)
+@interface TreeProp {
+  ResType resType() default ResType.NONE;
+
+  boolean optional() default false;
+}
+
 class MyComponent extends Component {
   @Prop Object prop1; // implicitly non-optional
 
@@ -62,6 +70,29 @@ class MyComponent extends Component {
 
     public MyComponent build() {
       return mMyComponent;
+    }
+  }
+}
+
+class MyTreeComponent extends Component {
+  @TreeProp Object prop1; // implicitly non-optional
+
+  Object nonProp;
+
+  public Builder create() {
+    return new Builder();
+  }
+
+  static class Builder extends Component.Builder {
+    MyTreeComponent mMyTreeComponent;
+
+    public Builder prop1(Object o) {
+      this.mMyTreeComponent.prop1 = o;
+      return this;
+    }
+
+    public MyTreeComponent build() {
+      return mMyTreeComponent;
     }
   }
 }
@@ -215,5 +246,14 @@ public class RequiredProps {
 
   public void buildPropResMissingBad() {
     mResPropComponent.create().build();
+  }
+
+  public class NonRequiredTreeProps {
+
+    public MyTreeComponent mMyTreeComponent;
+
+    public MyTreeComponent buildWithoutOk() {
+      return mMyTreeComponent.create().build();
+    }
   }
 }

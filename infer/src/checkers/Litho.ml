@@ -94,8 +94,8 @@ module RequiredProps = struct
   let get_required_props typename tenv =
     let is_required annot_list =
       List.exists
-        ~f:(fun ({Annot.class_name; parameters}, _) ->
-          String.is_suffix class_name ~suffix:Annotations.prop
+        ~f:(fun (({Annot.parameters} as annot), _) ->
+          Annotations.annot_ends_with annot Annotations.prop
           && (* Don't count as required if it's @Prop(optional = true) *)
              not (List.exists ~f:(fun annot_string -> String.equal annot_string "true") parameters)
           )
