@@ -117,7 +117,16 @@ let get_annot_ending ({class_name} : Annot.t) =
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
-let annot_ends_with annot ann_name = String.equal ann_name (get_annot_ending annot)
+let annot_ends_with ({class_name} : Annot.t) ann_name =
+  String.is_suffix class_name ~suffix:ann_name
+  &&
+  (* here, [class_name] ends with [ann_name] but it could be that it's just a suffix 
+     of the last dot-component of [class_name], eg [class_name="x.y.z.a.bcd"] and 
+     [ann_name="cd"]; in that case we want to fail the check, so we check that the 
+     character just before the match is indeed a dot (or there is no dot at all). *)
+  let dot_pos = String.(length class_name - length ann_name - 1) in
+  Int.is_negative dot_pos || Char.equal '.' class_name.[dot_pos]
+
 
 let class_name_matches s ((annot : Annot.t), _) = String.equal s annot.class_name
 
