@@ -262,18 +262,40 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
         ()
 
 
+let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_pdesc
+    (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
+  if
+    not
+      (NullsafeRules.passes_assignment_rule ~lhs:ret_signature.ret_nullsafe_type.nullability
+         ~rhs:ret_inferred_nullability)
+  then
+    report_error tenv find_canonical_duplicate
+      (TypeErr.Return_annotation_inconsistent
+         (curr_pname, InferredNullability.descr_origin ret_inferred_nullability))
+      None loc curr_pdesc
+
+
+(* TODO(T54308240) Consolidate return over annotated checks in NullsafeRules *)
+let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
+    (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
+  (* TODO(T54308240) this needs to be changed when we introduce Unknown nullability *)
+  let is_ret_inferred_nonnull = not (InferredNullability.is_nullable ret_inferred_nullability) in
+  let is_ret_annotated_nullable =
+    match ret_signature.ret_nullsafe_type.nullability with
+    | NullsafeType.Nonnull _ ->
+        false
+    | NullsafeType.Nullable _ ->
+        true
+  in
+  if is_ret_inferred_nonnull && is_ret_annotated_nullable then
+    report_error tenv find_canonical_duplicate (TypeErr.Return_over_annotated curr_pname) None loc
+      curr_pdesc
+
+
 (** Check the annotations when returning from a method. *)
 let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
     (annotated_signature : AnnotatedSignature.t) ret_implicitly_nullable loc : unit =
-  let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
-  let ret_annotated_nullable =
-    Annotations.ia_is_nullable ret_annotation_deprecated
-    || List.exists
-         ~f:(fun AnnotatedSignature.{param_annotation_deprecated} ->
-           Annotations.ia_is_propagates_nullable param_annotation_deprecated )
-         annotated_signature.params
-  in
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
@@ -283,22 +305,14 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
          | _ ->
              false ->
       ()
-  | Some (_, final_inferred_nullability, _) ->
-      let is_final_nullable = InferredNullability.is_nullable final_inferred_nullability in
-      let origin_descr = InferredNullability.descr_origin final_inferred_nullability in
-      let return_not_nullable =
-        is_final_nullable && (not ret_annotated_nullable) && not ret_implicitly_nullable
-      in
-      let return_over_annotated =
-        (not is_final_nullable) && ret_annotated_nullable && Config.eradicate_return_over_annotated
-      in
-      if return_not_nullable then
-        report_error tenv find_canonical_duplicate
-          (TypeErr.Return_annotation_inconsistent (curr_pname, origin_descr))
-          None loc curr_pdesc ;
-      if return_over_annotated then
-        report_error tenv find_canonical_duplicate (TypeErr.Return_over_annotated curr_pname) None
-          loc curr_pdesc
+  | Some (_, ret_inferred_nullability, _) ->
+      (* TODO(T54308240) Model ret_implicitly_nullable in NullsafeType.t *)
+      if not ret_implicitly_nullable then
+        check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_pdesc
+          annotated_signature.ret ret_inferred_nullability ;
+      if Config.eradicate_return_over_annotated then
+        check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
+          annotated_signature.ret ret_inferred_nullability
   | None ->
       ()
 
