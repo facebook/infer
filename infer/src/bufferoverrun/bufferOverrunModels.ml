@@ -880,9 +880,11 @@ module Collection = struct
     {exec= change_size_by ~size_f:(Itv.plus zero_one) coll_id; check= no_check}
 
 
+  (* The return value is set by [set_itv_updated_by_addition] in order to be sure that it can be
+     used as a control variable value in the cost checker. *)
   let size coll_exp =
     let exec _ ~ret:(ret_id, _) mem =
-      let result = eval_collection_length coll_exp mem in
+      let result = eval_collection_length coll_exp mem |> Dom.Val.set_itv_updated_by_addition in
       let mem = model_by_value result ret_id mem in
       load_size_alias ret_id (eval_collection_internal_array_locs coll_exp mem) mem
     in
@@ -910,11 +912,16 @@ module Collection = struct
     {exec; check}
 
 
+  (* The return value is set by [set_itv_updated_by_addition] in order to be sure that it can be
+     used as a control variable value in the cost checker. *)
   let hasNext iterator =
     let exec _ ~ret:(ret_id, _) mem =
       (* Set the size of the iterator to be [0, size], so that range
          will be size of the collection. *)
-      let collection_size = eval_collection_length iterator mem |> Dom.Val.get_iterator_itv in
+      let collection_size =
+        eval_collection_length iterator mem
+        |> Dom.Val.get_iterator_itv |> Dom.Val.set_itv_updated_by_addition
+      in
       model_by_value collection_size ret_id mem
     in
     {exec; check= no_check}

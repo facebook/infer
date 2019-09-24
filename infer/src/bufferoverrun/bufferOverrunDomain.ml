@@ -30,6 +30,39 @@ module ItvThresholds = AbstractDomain.FiniteSet (struct
   let pp = pp_print
 end)
 
+module ItvUpdatedBy = struct
+  type t = Addition | Multiplication | Top
+
+  let ( <= ) ~lhs ~rhs =
+    match (lhs, rhs) with
+    | Addition, _ ->
+        true
+    | _, Addition ->
+        false
+    | Multiplication, _ ->
+        true
+    | _, Multiplication ->
+        false
+    | Top, Top ->
+        true
+
+
+  let join x y = if ( <= ) ~lhs:x ~rhs:y then y else x
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp fmt = function
+    | Addition ->
+        F.pp_print_string fmt "+"
+    | Multiplication ->
+        F.pp_print_string fmt "*"
+    | Top ->
+        F.pp_print_string fmt "?"
+
+
+  let bottom = Addition
+end
+
 (* ModeledRange represents how many times the interval value can be updated by modeled functions.
    This domain is to support the case where there are mismatches between value of a control variable
    and actual number of loop iterations.  For example,
@@ -55,6 +88,7 @@ module Val = struct
   type t =
     { itv: Itv.t
     ; itv_thresholds: ItvThresholds.t
+    ; itv_updated_by: ItvUpdatedBy.t
     ; modeled_range: ModeledRange.t
     ; sym: Relation.Sym.t
     ; powloc: PowLoc.t
@@ -66,6 +100,7 @@ module Val = struct
   let bot : t =
     { itv= Itv.bot
     ; itv_thresholds= ItvThresholds.empty
+    ; itv_updated_by= ItvUpdatedBy.bottom
     ; modeled_range= ModeledRange.bottom
     ; sym= Relation.Sym.bot
     ; powloc= PowLoc.bot
@@ -80,6 +115,9 @@ module Val = struct
       if Config.bo_debug >= 3 && not (ItvThresholds.is_empty itv_thresholds) then
         F.fprintf fmt " (thresholds:%a)" ItvThresholds.pp itv_thresholds
     in
+    let itv_updated_by_pp fmt itv_updated_by =
+      if Config.bo_debug >= 3 then F.fprintf fmt "(updated by %a)" ItvUpdatedBy.pp itv_updated_by
+    in
     let relation_sym_pp fmt sym =
       if Option.is_some Config.bo_relational_domain then F.fprintf fmt ", %a" Relation.Sym.pp sym
     in
@@ -90,9 +128,10 @@ module Val = struct
     let trace_pp fmt traces =
       if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    F.fprintf fmt "(%a%a%a%a, %a, %a%a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
-      relation_sym_pp x.sym modeled_range_pp x.modeled_range PowLoc.pp x.powloc ArrayBlk.pp
-      x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp x.traces
+    F.fprintf fmt "(%a%a%a%a%a, %a, %a%a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
+      relation_sym_pp x.sym itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range
+      PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp
+      x.size_sym trace_pp x.traces
 
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
@@ -100,6 +139,7 @@ module Val = struct
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
     { itv= Itv.top
     ; itv_thresholds= ItvThresholds.empty
+    ; itv_updated_by= ItvUpdatedBy.Top
     ; modeled_range= ModeledRange.bottom
     ; sym= Relation.Sym.top
     ; powloc= PowLoc.unknown
@@ -114,6 +154,7 @@ module Val = struct
     else
       Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv
       && ItvThresholds.( <= ) ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
+      && ItvUpdatedBy.( <= ) ~lhs:lhs.itv_updated_by ~rhs:rhs.itv_updated_by
       && ModeledRange.( <= ) ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
       && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
       && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
@@ -131,6 +172,8 @@ module Val = struct
             ~thresholds:(ItvThresholds.elements itv_thresholds)
             ~prev:prev.itv ~next:next.itv ~num_iters
       ; itv_thresholds
+      ; itv_updated_by=
+          ItvUpdatedBy.widen ~prev:prev.itv_updated_by ~next:next.itv_updated_by ~num_iters
       ; modeled_range=
           ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
       ; sym= Relation.Sym.widen ~prev:prev.sym ~next:next.sym ~num_iters
@@ -147,6 +190,7 @@ module Val = struct
     else
       { itv= Itv.join x.itv y.itv
       ; itv_thresholds= ItvThresholds.join x.itv_thresholds y.itv_thresholds
+      ; itv_updated_by= ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by
       ; modeled_range= ModeledRange.join x.modeled_range y.modeled_range
       ; sym= Relation.Sym.join x.sym y.sym
       ; powloc= PowLoc.join x.powloc y.powloc
@@ -157,6 +201,8 @@ module Val = struct
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
+
+  let get_itv_updated_by : t -> ItvUpdatedBy.t = fun x -> x.itv_updated_by
 
   let get_modeled_range : t -> ModeledRange.t = fun x -> x.modeled_range
 
@@ -223,6 +269,14 @@ module Val = struct
     of_itv (Itv.set_lb_zero (Itv.of_int max_char))
 
 
+  let set_itv_updated_by itv_updated_by x = {x with itv_updated_by}
+
+  let set_itv_updated_by_addition = set_itv_updated_by ItvUpdatedBy.Addition
+
+  let set_itv_updated_by_multiplication = set_itv_updated_by ItvUpdatedBy.Multiplication
+
+  let set_itv_updated_by_unknown = set_itv_updated_by ItvUpdatedBy.Top
+
   let set_modeled_range range x = {x with modeled_range= range}
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
@@ -235,6 +289,7 @@ module Val = struct
    fun f ?f_trace x y ->
     let itv = f x.itv y.itv in
     let itv_thresholds = ItvThresholds.join x.itv_thresholds y.itv_thresholds in
+    let itv_updated_by = ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by in
     let modeled_range = ModeledRange.join x.modeled_range y.modeled_range in
     let traces =
       match f_trace with
@@ -249,7 +304,7 @@ module Val = struct
         | true, true | false, false ->
             TraceSet.join x.traces y.traces )
     in
-    {bot with itv; itv_thresholds; modeled_range; traces}
+    {bot with itv; itv_thresholds; itv_updated_by; modeled_range; traces}
 
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> t =
@@ -490,11 +545,13 @@ module Val = struct
       (if is_java then ", is_java" else "") ;
     match typ.Typ.desc with
     | Tint (IBool | IChar | ISChar | IUChar) ->
-        itv_val ~non_int:(Language.curr_language_is Java)
+        let v = itv_val ~non_int:(Language.curr_language_is Java) in
+        if Language.curr_language_is Java then set_itv_updated_by_unknown v
+        else set_itv_updated_by_addition v
     | Tfloat _ | Tfun _ | TVar _ ->
-        itv_val ~non_int:true
+        itv_val ~non_int:true |> set_itv_updated_by_unknown
     | Tint _ | Tvoid ->
-        itv_val ~non_int:false
+        itv_val ~non_int:false |> set_itv_updated_by_addition
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -665,29 +722,35 @@ module MemPure = struct
     fold
       (fun loc (_, v) acc ->
         match filter_loc loc with
-        | Some loop_head_loc ->
-            let itv = Val.get_itv v in
-            if Itv.has_only_non_int_symbols itv then acc
-            else
-              let range1 =
-                match Val.get_modeled_range v with
-                | NonBottom range ->
-                    Polynomials.NonNegativePolynomial.of_non_negative_bound range
-                | Bottom ->
-                    Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial
-              in
-              if Polynomials.NonNegativePolynomial.is_top range1 then
-                L.d_printfln_escaped "Range of %a (loc:%a) became top at %a." Itv.pp itv Loc.pp loc
-                  ProcCfg.Normal.Node.pp_id node_id ;
-              let range = Polynomials.NonNegativePolynomial.mult acc range1 in
-              if
-                (not (Polynomials.NonNegativePolynomial.is_top acc))
-                && Polynomials.NonNegativePolynomial.is_top range
-              then
-                L.d_printfln_escaped "Multiplication of %a and %a (loc:%a) became top at %a."
-                  Polynomials.NonNegativePolynomial.pp acc Polynomials.NonNegativePolynomial.pp
-                  range1 Loc.pp loc ProcCfg.Normal.Node.pp_id node_id ;
-              range
+        | Some loop_head_loc -> (
+            let itv_updated_by = Val.get_itv_updated_by v in
+            match itv_updated_by with
+            | Addition | Multiplication ->
+                (* TODO take range of multiplied one with log scale *)
+                let itv = Val.get_itv v in
+                if Itv.has_only_non_int_symbols itv then acc
+                else
+                  let range1 =
+                    match Val.get_modeled_range v with
+                    | NonBottom range ->
+                        Polynomials.NonNegativePolynomial.of_non_negative_bound range
+                    | Bottom ->
+                        Itv.range loop_head_loc itv |> Itv.ItvRange.to_top_lifted_polynomial
+                  in
+                  if Polynomials.NonNegativePolynomial.is_top range1 then
+                    L.d_printfln_escaped "Range of %a (loc:%a) became top at %a." Itv.pp itv Loc.pp
+                      loc ProcCfg.Normal.Node.pp_id node_id ;
+                  let range = Polynomials.NonNegativePolynomial.mult acc range1 in
+                  if
+                    (not (Polynomials.NonNegativePolynomial.is_top acc))
+                    && Polynomials.NonNegativePolynomial.is_top range
+                  then
+                    L.d_printfln_escaped "Multiplication of %a and %a (loc:%a) became top at %a."
+                      Polynomials.NonNegativePolynomial.pp acc Polynomials.NonNegativePolynomial.pp
+                      range1 Loc.pp loc ProcCfg.Normal.Node.pp_id node_id ;
+                  range
+            | Top ->
+                acc )
         | None ->
             acc )
       mem Polynomials.NonNegativePolynomial.one

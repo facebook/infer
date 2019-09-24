@@ -156,8 +156,15 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         if Mem.is_stack_loc loc mem then Mem.find loc mem else Val.of_loc loc
     | Exp.UnOp (uop, e, _) ->
         eval_unop integer_type_widths uop e mem
-    | Exp.BinOp (bop, e1, e2) ->
-        eval_binop integer_type_widths bop e1 e2 mem
+    | Exp.BinOp (bop, e1, e2) -> (
+        let v = eval_binop integer_type_widths bop e1 e2 mem in
+        match bop with
+        | Binop.(PlusA _ | MinusA _ | MinusPP) ->
+            Val.set_itv_updated_by_addition v
+        | Binop.(Mult _ | Div | Mod | Shiftlt | Shiftrt | BAnd | BXor | BOr) ->
+            Val.set_itv_updated_by_multiplication v
+        | Binop.(PlusPI | MinusPI | Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr) ->
+            Val.set_itv_updated_by_unknown v )
     | Exp.Const c ->
         eval_const integer_type_widths c
     | Exp.Cast (t, e) ->
@@ -563,7 +570,10 @@ module Prune = struct
     let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
       Option.value_map (Mem.find_size_alias x mem) ~default:astate ~f:(fun (lv, java_tmp) ->
           let array_v = Mem.find lv mem in
-          let size = Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv in
+          let size =
+            Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv
+            |> Val.set_itv_updated_by_addition
+          in
           let rhs = eval integer_type_widths e mem in
           let size' = val_prune size rhs in
           let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in

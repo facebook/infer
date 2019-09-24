@@ -280,6 +280,24 @@ public class ArrayListTest {
       a.remove(0);
     }
   }
+
+  class Elt {
+    boolean b;
+
+    public boolean get_boolean() {
+      return b;
+    }
+  }
+
+  ArrayList<Elt> arr = new ArrayList();
+
+  void boolean_control_var_linear() {
+    for (int i = 0; i < arr.size(); i++) {
+      if (!arr.get(i).get_boolean()) {
+        break;
+      }
+    }
+  }
 }
 
 class LexicographicComparator implements java.util.Comparator<Person> {
