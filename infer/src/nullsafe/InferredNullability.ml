@@ -7,8 +7,6 @@
 
 open! IStd
 
-(** Module to represent annotations on types. *)
-
 type t = {is_nullable: bool; origin: TypeOrigin.t} [@@deriving compare]
 
 let equal = [%compare.equal: t]
@@ -50,7 +48,7 @@ let origin_is_fun_library ta =
       false
 
 
-let const_nullable is_nullable origin = {origin; is_nullable}
+let create ~is_nullable origin = {origin; is_nullable}
 
 let with_origin ta o = {ta with origin= o}
 

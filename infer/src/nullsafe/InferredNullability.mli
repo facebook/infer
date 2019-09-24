@@ -1,0 +1,60 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+open! IStd
+
+(** Module to represent nullability of expressions inferred during
+   flow-sensitive symbolic execution.
+   NOTE: This module is complementaty to {!NullsafeType.nullability}.
+         {!NullsafeType} contains info about _formal_ nullability
+         (what does the code say about nullability of a given type, according to
+         explicit annotations and implicit agreements (e.g. models)).
+         In contrast, InferredNullability represents what Nullsafe thinks about such and such
+         expression according to its type inference rules.
+   *)
+
+type t [@@deriving compare]
+
+val create : is_nullable:bool -> TypeOrigin.t -> t
+
+val descr_origin : t -> TypeErr.origin_descr
+(** Human-readable description of the origin of a value.
+  (How did nullsafe infer the nullability )
+ *)
+
+val from_nullsafe_type : NullsafeType.t -> TypeOrigin.t -> t
+(** Convert formal type to inferred nullability.
+  (e.g. to infer nullability of `o` in `Object o = someFunction();`
+   based on `someFunction()` formal return type.
+ *)
+
+val get_origin : t -> TypeOrigin.t
+(** The simple explanation of how was nullability inferred.  *)
+
+val is_nullable : t -> bool
+
+val join : t -> t -> t option
+(** This is what happens with nullability when we join two flows in CFG,
+    e.g.
+    {[
+      if(something) {
+        a = e1;
+      } else {
+        a = e2;
+      }
+      // what is nullability of `a` at this point?
+    ]}
+  *)
+
+val origin_is_fun_library : t -> bool
+
+val set_nullable : bool -> t -> t
+
+val to_string : t -> string
+
+val with_origin : t -> TypeOrigin.t -> t
+(** Leave the same nullability, but change the origin *)

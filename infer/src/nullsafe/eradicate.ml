@@ -34,11 +34,13 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       annotated_signature linereader proc_loc : bool * TypeState.t option =
     let add_formal typestate (param_signature : AnnotatedSignature.param_signature) =
       let pvar = Pvar.mk param_signature.mangled curr_pname in
-      let ta =
+      let inferred_nullability =
         let origin = TypeOrigin.Formal param_signature.mangled in
-        TypeAnnotation.from_nullsafe_type param_signature.param_nullsafe_type origin
+        InferredNullability.from_nullsafe_type param_signature.param_nullsafe_type origin
       in
-      TypeState.add pvar (param_signature.param_nullsafe_type.typ, ta, []) typestate
+      TypeState.add pvar
+        (param_signature.param_nullsafe_type.typ, inferred_nullability, [])
+        typestate
     in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty in

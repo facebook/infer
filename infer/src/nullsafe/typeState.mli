@@ -12,7 +12,7 @@ open! IStd
 (** Typestate *)
 type t
 
-type range = Typ.t * TypeAnnotation.t * Location.t list
+type range = Typ.t * InferredNullability.t * Location.t list
 
 val add_id : Ident.t -> range -> t -> t
 
