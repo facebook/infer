@@ -129,6 +129,21 @@ class ResPropComponent extends Component {
       return this;
     }
 
+    public Builder propDip(Object o) {
+      this.mResPropComponent.prop = o;
+      return this;
+    }
+
+    public Builder propPx(Object o) {
+      this.mResPropComponent.prop = o;
+      return this;
+    }
+
+    public Builder propSp(Object o) {
+      this.mResPropComponent.prop = o;
+      return this;
+    }
+
     public ResPropComponent build() {
       return mResPropComponent;
     }
@@ -242,6 +257,18 @@ public class RequiredProps {
 
   public void buildPropResWithAttrOk() {
     mResPropComponent.create().propAttr(new Object()).build();
+  }
+
+  public void buildPropResWithDipOk() {
+    mResPropComponent.create().propDip(new Object()).build();
+  }
+
+  public void buildPropResWithPxOk() {
+    mResPropComponent.create().propPx(new Object()).build();
+  }
+
+  public void buildPropResWithSpOk() {
+    mResPropComponent.create().propSp(new Object()).build();
   }
 
   public void buildPropResMissingBad() {

@@ -140,13 +140,16 @@ module RequiredProps = struct
     && Procdesc.get_access proc_desc <> PredSymb.Private
 
 
+  let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
+
   let has_prop prop_set prop =
     String.Set.mem prop_set prop
-    (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), or myPropRes().
+    (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
        Our annotation parameter parsing is too primitive to identify resType, so just assume
-       that all @Prop's can be set any of these 3 ways. *)
-    || String.Set.mem prop_set (prop ^ "Attr")
-    || String.Set.mem prop_set (prop ^ "Res")
+       that all @Prop's can be set any of these 6 ways. *)
+    || String.Set.exists prop_set ~f:(fun el ->
+           String.chop_prefix el ~prefix:prop
+           |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
 
 
   let report astate tenv summary =
