@@ -326,7 +326,7 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
 
 type resolved_param =
   { num: int
-  ; formal: Mangled.t * InferredNullability.t * Typ.t
+  ; formal: AnnotatedSignature.param_signature
   ; actual: Exp.t * InferredNullability.t
   ; is_formal_propagates_nullable: bool }
 
@@ -334,15 +334,14 @@ type resolved_param =
 let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes
     resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
-  let check
-      {num= param_num; formal= s1, nullability_formal, t1; actual= orig_e2, nullability_actual} =
+  let check {num= param_num; formal; actual= orig_e2, nullability_actual} =
     let report () =
       let description =
         match explain_expr tenv node orig_e2 with
         | Some descr ->
             descr
         | None ->
-            "formal parameter " ^ Mangled.to_string s1
+            "formal parameter " ^ Mangled.to_string formal.mangled
       in
       let origin_descr = InferredNullability.descr_origin nullability_actual in
       let callee_loc = callee_attributes.ProcAttributes.loc in
@@ -351,10 +350,12 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
            (description, param_num, callee_pname, callee_loc, origin_descr))
         (Some instr_ref) loc curr_pdesc
     in
-    if PatternMatch.type_is_class t1 then
-      let is_nullable_formal = InferredNullability.is_nullable nullability_formal in
-      let is_nullable_actual = InferredNullability.is_nullable nullability_actual in
-      if (not is_nullable_formal) && is_nullable_actual then report ()
+    if PatternMatch.type_is_class formal.param_nullsafe_type.typ then
+      if
+        not
+          (NullsafeRules.passes_assignment_rule ~lhs:formal.param_nullsafe_type.nullability
+             ~rhs:nullability_actual)
+      then report ()
   in
   let should_check_parameters =
     match callee_pname with

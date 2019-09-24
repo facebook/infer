@@ -688,26 +688,20 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       let typestate_after_call, finally_resolved_ret =
         let resolve_param i (formal_param, actual_param) =
-          let AnnotatedSignature.{mangled; param_annotation_deprecated; param_nullsafe_type} =
-            formal_param
-          in
           let (orig_e2, e2), t2 = actual_param in
-          let inferred_nullability_formal =
-            InferredNullability.from_nullsafe_type param_nullsafe_type (TypeOrigin.Formal mangled)
-          in
           let _, inferred_nullability_actual, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
               (t2, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [])
               loc
           in
-          let formal = (mangled, inferred_nullability_formal, param_nullsafe_type.typ) in
           let actual = (orig_e2, inferred_nullability_actual) in
           let num = i + 1 in
           let is_formal_propagates_nullable =
-            Annotations.ia_is_propagates_nullable param_annotation_deprecated
+            Annotations.ia_is_propagates_nullable
+              formal_param.AnnotatedSignature.param_annotation_deprecated
           in
-          EradicateChecks.{num; formal; actual; is_formal_propagates_nullable}
+          EradicateChecks.{num; formal= formal_param; actual; is_formal_propagates_nullable}
         in
         (* If the function has @PropagatesNullable params, and inferred type for each of
            corresponding actual param is non-nullable, inferred type for the whole result
