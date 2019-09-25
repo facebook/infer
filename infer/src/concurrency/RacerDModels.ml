@@ -286,7 +286,12 @@ let is_thread_safe item_annot =
         Annotations.annot_ends_with annot annot_string
         || String.equal annot.class_name annot_string )
       threadsafe_annotations
-    && match annot.Annot.parameters with ["false"] -> false | _ -> true
+    &&
+    match annot.Annot.parameters with
+    | [Annot.{name= Some "enableChecks"; value= "false"}] ->
+        false
+    | _ ->
+        true
   in
   List.exists ~f item_annot
 
@@ -295,7 +300,12 @@ let is_thread_safe item_annot =
 let is_assumed_thread_safe item_annot =
   let f (annot, _) =
     Annotations.annot_ends_with annot Annotations.thread_safe
-    && match annot.Annot.parameters with ["false"] -> true | _ -> false
+    &&
+    match annot.Annot.parameters with
+    | [Annot.{name= Some "enableChecks"; value= "false"}] ->
+        true
+    | _ ->
+        false
   in
   List.exists ~f item_annot
 

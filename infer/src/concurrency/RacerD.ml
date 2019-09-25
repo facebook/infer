@@ -937,7 +937,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} 
     Typ.Fieldname.equal f field_name
     && List.exists a ~f:(fun ((annot : Annot.t), _) ->
            Annotations.annot_ends_with annot Annotations.guarded_by
-           && match annot.parameters with [param] -> not (is_uitthread param) | _ -> false )
+           && match annot.parameters with [param] -> not (is_uitthread param.value) | _ -> false )
   in
   (not snapshot.lock)
   && RacerDDomain.TraceElem.is_write snapshot.access

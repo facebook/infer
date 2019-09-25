@@ -11,7 +11,9 @@ open! IStd
 
 module F = Format
 
-type parameters = string list
+type parameter = {name: string option; value: string}
+
+type parameters = parameter list
 
 (** Type to represent one @Annotation. *)
 type t =

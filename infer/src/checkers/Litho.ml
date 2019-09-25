@@ -97,8 +97,13 @@ module RequiredProps = struct
         ~f:(fun (({Annot.parameters} as annot), _) ->
           Annotations.annot_ends_with annot Annotations.prop
           && (* Don't count as required if it's @Prop(optional = true) *)
-             not (List.exists ~f:(fun annot_string -> String.equal annot_string "true") parameters)
-          )
+             not
+               (List.exists
+                  ~f:(fun Annot.{name; value} ->
+                    Option.value_map name ~default:false ~f:(fun name ->
+                        String.equal "optional" name )
+                    && String.equal value "true" )
+                  parameters) )
         annot_list
     in
     match Tenv.lookup tenv typename with

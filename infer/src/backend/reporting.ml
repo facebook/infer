@@ -126,10 +126,10 @@ let is_suppressed ?(field_name = None) tenv proc_desc kind =
   let annotation_matches (a : Annot.t) =
     let normalize str = Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
     let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
-    let normalized_equal s1 s2 = String.equal (normalize s1) (normalize s2) in
+    let normalized_equal s1 a2 = String.equal (normalize s1) (normalize a2.Annot.value) in
     let is_parameter_suppressed () =
       String.is_suffix a.class_name ~suffix:Annotations.suppress_lint
-      && List.mem ~equal:normalized_equal a.parameters kind.IssueType.unique_id
+      && List.exists ~f:(normalized_equal kind.IssueType.unique_id) a.parameters
     in
     let is_annotation_suppressed () =
       String.is_suffix
