@@ -12,11 +12,10 @@ module ClassLoad = struct
   include String
 
   let describe = pp
-
-  let pp_call = ExplicitTrace.default_pp_call
 end
 
-module Event = ExplicitTrace.MakeTraceElemModuloLocation (ClassLoad)
+module Event =
+  ExplicitTrace.MakeTraceElemModuloLocation (ClassLoad) (ExplicitTrace.DefaultCallPrinter)
 include Event.FiniteSet
 
 let add ({Event.trace} as x) astate =

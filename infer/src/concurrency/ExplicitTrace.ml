@@ -8,10 +8,6 @@ open! IStd
 module F = Format
 module MF = MarkupFormatter
 
-let default_pp_call fmt callsite =
-  F.fprintf fmt "Method call: %a" (MF.wrap_monospaced Typ.Procname.pp) (CallSite.pname callsite)
-
-
 module type FiniteSet = sig
   include AbstractDomain.FiniteSetS
 
@@ -22,8 +18,15 @@ module type Element = sig
   include PrettyPrintable.PrintableOrderedType
 
   val describe : Format.formatter -> t -> unit
+end
 
-  val pp_call : Format.formatter -> CallSite.t -> unit
+module type CallPrinter = PrettyPrintable.PrintableType with type t = CallSite.t
+
+module DefaultCallPrinter : CallPrinter = struct
+  type t = CallSite.t
+
+  let pp fmt callsite =
+    F.fprintf fmt "Method call: %a" (MF.wrap_monospaced Typ.Procname.pp) (CallSite.pname callsite)
 end
 
 type 'a comparator = 'a -> Location.t -> 'a -> Location.t -> int
@@ -54,8 +57,10 @@ module type TraceElem = sig
   module FiniteSet : FiniteSet with type elt = t
 end
 
-module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type elem_t = Elem.t) :
-  TraceElem with type elem_t = Elem.t = struct
+module MakeTraceElemWithComparator
+    (Elem : Element)
+    (CallPrinter : CallPrinter)
+    (Comp : Comparator with type elem_t = Elem.t) : TraceElem with type elem_t = Elem.t = struct
   type elem_t = Elem.t
 
   module T = struct
@@ -66,8 +71,6 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
     let pp fmt {elem} = Elem.pp fmt elem
 
     let describe fmt {elem} = Elem.describe fmt elem
-
-    let pp_call = Elem.pp_call
   end
 
   include T
@@ -84,7 +87,7 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
   let make_loc_trace ?(nesting = 0) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
-          let descr = F.asprintf "%a" pp_call callsite in
+          let descr = F.asprintf "%a" CallPrinter.pp callsite in
           let call = Errlog.make_trace_element ns (CallSite.loc callsite) descr [] in
           (call :: tr, ns + 1) )
     in
@@ -102,22 +105,24 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
   end
 end
 
-module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
+module MakeTraceElem (Elem : Element) (CallPrinter : CallPrinter) :
+  TraceElem with type elem_t = Elem.t = struct
   module Comp = struct
     type elem_t = Elem.t
 
     let comparator elem loc elem' loc' = [%compare: Elem.t * Location.t] (elem, loc) (elem', loc')
   end
 
-  include MakeTraceElemWithComparator (Elem) (Comp)
+  include MakeTraceElemWithComparator (Elem) (CallPrinter) (Comp)
 end
 
-module MakeTraceElemModuloLocation (Elem : Element) : TraceElem with type elem_t = Elem.t = struct
+module MakeTraceElemModuloLocation (Elem : Element) (CallPrinter : CallPrinter) :
+  TraceElem with type elem_t = Elem.t = struct
   module Comp = struct
     type elem_t = Elem.t
 
     let comparator elem _loc elem' _loc' = Elem.compare elem elem'
   end
 
-  include MakeTraceElemWithComparator (Elem) (Comp)
+  include MakeTraceElemWithComparator (Elem) (CallPrinter) (Comp)
 end

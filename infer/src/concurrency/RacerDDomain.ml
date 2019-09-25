@@ -109,16 +109,19 @@ module Access = struct
           (MF.monospaced_to_string (Typ.Procname.get_method pname))
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
+end
 
+module CallPrinter = struct
+  type t = CallSite.t
 
-  let pp_call fmt cs = F.fprintf fmt "call to %a" Typ.Procname.pp (CallSite.pname cs)
+  let pp fmt cs = F.fprintf fmt "call to %a" Typ.Procname.pp (CallSite.pname cs)
 end
 
 module TraceElem = struct
   (** This choice means the comparator is insensitive to the location access. 
       This preserves correctness only if the overlying comparator (AccessSnapshot) 
       takes into account the characteristics of the access (eg lock status). *)
-  include ExplicitTrace.MakeTraceElemModuloLocation (Access)
+  include ExplicitTrace.MakeTraceElemModuloLocation (Access) (CallPrinter)
 
   let is_write {elem} = Access.is_write elem
 

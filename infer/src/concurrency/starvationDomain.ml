@@ -57,8 +57,6 @@ module Lock = struct
     F.fprintf fmt "%a%a" (MF.wrap_monospaced pp) lock pp_owner lock
 
 
-  let pp_call = ExplicitTrace.default_pp_call
-
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 end
 
@@ -96,12 +94,9 @@ module Event = struct
           F.pp_print_string fmt msg
       | StrictModeCall msg ->
           F.pp_print_string fmt msg
-
-
-    let pp_call = ExplicitTrace.default_pp_call
   end
 
-  include ExplicitTrace.MakeTraceElem (EventElement)
+  include ExplicitTrace.MakeTraceElem (EventElement) (ExplicitTrace.DefaultCallPrinter)
 
   let make_acquire lock loc = make (LockAcquire lock) loc
 
@@ -140,11 +135,9 @@ module Order = struct
 
 
     let describe fmt {first} = Lock.pp_locks fmt first
-
-    let pp_call = ExplicitTrace.default_pp_call
   end
 
-  include ExplicitTrace.MakeTraceElem (OrderElement)
+  include ExplicitTrace.MakeTraceElem (OrderElement) (ExplicitTrace.DefaultCallPrinter)
 
   let may_deadlock {elem= {first; eventually}} {elem= {first= first'; eventually= eventually'}} =
     match (eventually.elem, eventually'.elem) with
@@ -207,11 +200,9 @@ module UIThreadExplanationDomain = struct
     include String
 
     let describe = pp
-
-    let pp_call = ExplicitTrace.default_pp_call
   end
 
-  include ExplicitTrace.MakeTraceElem (StringElement)
+  include ExplicitTrace.MakeTraceElem (StringElement) (ExplicitTrace.DefaultCallPrinter)
 
   let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
 

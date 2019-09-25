@@ -7,8 +7,6 @@
 
 open! IStd
 
-val default_pp_call : Format.formatter -> CallSite.t -> unit
-
 (** A powerset domain of traces, with bottom = empty and join = union *)
 module type FiniteSet = sig
   include AbstractDomain.FiniteSetS
@@ -22,9 +20,12 @@ module type Element = sig
 
   val describe : Format.formatter -> t -> unit
   (** Pretty printer used for trace construction; [pp] is used for debug output. *)
-
-  val pp_call : Format.formatter -> CallSite.t -> unit
 end
+
+module type CallPrinter = PrettyPrintable.PrintableType with type t = CallSite.t
+
+(** Printer which outputs "Method call: <monospaced procname>" *)
+module DefaultCallPrinter : CallPrinter
 
 module type TraceElem = sig
   type elem_t
@@ -52,7 +53,9 @@ module type TraceElem = sig
 end
 
 (* The [compare] function produced ignores traces but *not* locations *)
-module MakeTraceElem (Elem : Element) : TraceElem with type elem_t = Elem.t
+module MakeTraceElem (Elem : Element) (CallPrinter : CallPrinter) :
+  TraceElem with type elem_t = Elem.t
 
 (* The [compare] function produced ignores traces *and* locations -- it is just [Elem.compare] *)
-module MakeTraceElemModuloLocation (Elem : Element) : TraceElem with type elem_t = Elem.t
+module MakeTraceElemModuloLocation (Elem : Element) (CallPrinter : CallPrinter) :
+  TraceElem with type elem_t = Elem.t
