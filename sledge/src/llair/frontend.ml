@@ -357,7 +357,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         let fname = Llvm.value_name func in
         match xlate_intrinsic_exp fname with
         | Some intrinsic when inline || should_inline llv -> intrinsic x llv
-        | _ -> Exp.var (xlate_name ~global:() llv) )
+        | _ -> Exp.var (xlate_name llv) )
     | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
      |Argument ->
         Exp.var (xlate_name llv)
