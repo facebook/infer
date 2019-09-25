@@ -384,7 +384,7 @@ let report_lockless_violations (tenv, summary) {StarvationDomain.events} report_
           let error_message =
             Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
               (MF.monospaced_to_string Annotations.lockless)
-              Event.pp_human event
+              Event.describe event
           in
           let loc = Event.get_loc event in
           let ltr = Event.make_trace pname event in
@@ -420,7 +420,7 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
             Format.asprintf
               "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in \
                reverse orders."
-              pname_pp current_pname pname_pp endpoint_pname Lock.pp_human lock1 Lock.pp_human
+              pname_pp current_pname pname_pp endpoint_pname Lock.describe lock1 Lock.describe
               lock2
           in
           let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
@@ -490,7 +490,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     | MayBlock (_, sev) ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %a), and may block; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp_human event
+            current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
         in
         let loc = Event.get_loc event in
         let trace = Event.make_trace current_pname event in
@@ -504,7 +504,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread (because %a), and may violate Strict Mode; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp_human event
+            current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
         in
         let loc = Event.get_loc event in
         let trace = Event.make_trace current_pname event in

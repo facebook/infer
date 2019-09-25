@@ -21,7 +21,7 @@ end
 module type Element = sig
   include PrettyPrintable.PrintableOrderedType
 
-  val pp_human : Format.formatter -> t -> unit
+  val describe : Format.formatter -> t -> unit
 
   val pp_call : Format.formatter -> CallSite.t -> unit
 end
@@ -65,7 +65,7 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
 
     let pp fmt {elem} = Elem.pp fmt elem
 
-    let pp_human fmt {elem} = Elem.pp_human fmt elem
+    let describe fmt {elem} = Elem.describe fmt elem
 
     let pp_call = Elem.pp_call
   end
@@ -88,7 +88,7 @@ module MakeTraceElemWithComparator (Elem : Element) (Comp : Comparator with type
           let call = Errlog.make_trace_element ns (CallSite.loc callsite) descr [] in
           (call :: tr, ns + 1) )
     in
-    let endpoint_descr = F.asprintf "%a" Elem.pp_human e.elem in
+    let endpoint_descr = F.asprintf "%a" Elem.describe e.elem in
     let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
     List.rev (endpoint :: call_trace)
 

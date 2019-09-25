@@ -98,7 +98,7 @@ module Access = struct
 
   let mono_lang_pp = MF.wrap_monospaced pp_exp
 
-  let pp_human fmt = function
+  let describe fmt = function
     | Read {exp} | Write {exp} ->
         F.fprintf fmt "access to %a" mono_lang_pp exp
     | ContainerRead {exp; pname} ->

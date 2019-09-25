@@ -20,7 +20,7 @@ end
 module type Element = sig
   include PrettyPrintable.PrintableOrderedType
 
-  val pp_human : Format.formatter -> t -> unit
+  val describe : Format.formatter -> t -> unit
   (** Pretty printer used for trace construction; [pp] is used for debug output. *)
 
   val pp_call : Format.formatter -> CallSite.t -> unit
@@ -32,7 +32,7 @@ module type TraceElem = sig
   (** An [elem] which occured at [loc], after the chain of steps (usually calls) in [trace]. *)
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
-  (** Both [pp] and [pp_human] simply call the same function on the trace element. *)
+  (** Both [pp] and [describe] simply call the same function on the trace element. *)
   include Element with type t := t
 
   val make : elem_t -> Location.t -> t

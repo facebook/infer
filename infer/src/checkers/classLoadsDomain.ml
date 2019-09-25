@@ -11,7 +11,7 @@ module L = Logging
 module ClassLoad = struct
   include String
 
-  let pp_human = pp
+  let describe = pp
 
   let pp_call = ExplicitTrace.default_pp_call
 end

@@ -50,7 +50,7 @@ module Lock = struct
         None
 
 
-  let pp_human fmt lock =
+  let describe fmt lock =
     let pp_owner fmt lock =
       owner_class lock |> Option.iter ~f:(F.fprintf fmt " in %a" (MF.wrap_monospaced Typ.Name.pp))
     in
@@ -59,7 +59,7 @@ module Lock = struct
 
   let pp_call = ExplicitTrace.default_pp_call
 
-  let pp_locks fmt lock = F.fprintf fmt " locks %a" pp_human lock
+  let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 end
 
 module Event = struct
@@ -88,7 +88,7 @@ module Event = struct
           F.fprintf fmt "StrictModeCall(%s)" msg
 
 
-    let pp_human fmt elem =
+    let describe fmt elem =
       match elem with
       | LockAcquire lock ->
           Lock.pp_locks fmt lock
@@ -139,7 +139,7 @@ module Order = struct
       F.fprintf fmt "{first= %a; eventually= %a}" Lock.pp first Event.pp eventually
 
 
-    let pp_human fmt {first} = Lock.pp_locks fmt first
+    let describe fmt {first} = Lock.pp_locks fmt first
 
     let pp_call = ExplicitTrace.default_pp_call
   end
@@ -206,7 +206,7 @@ module UIThreadExplanationDomain = struct
   module StringElement = struct
     include String
 
-    let pp_human = pp
+    let describe = pp
 
     let pp_call = ExplicitTrace.default_pp_call
   end
