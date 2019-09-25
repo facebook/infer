@@ -97,6 +97,7 @@ module Var : sig
     val empty : t
     val of_option : var option -> t
     val of_list : var list -> t
+    val union_list : t list -> t
     val of_vector : var vector -> t
   end
 

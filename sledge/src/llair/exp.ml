@@ -527,6 +527,7 @@ module Var = struct
     let empty = Set.empty (module T)
     let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
+    let union_list = Set.union_list (module T)
     let of_vector = Set.of_vector (module T)
   end
 

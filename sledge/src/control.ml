@@ -9,7 +9,12 @@
 
     The analysis' semantics of control flow. *)
 
-type exec_opts = {bound: int; skip_throw: bool; function_summaries: bool}
+type exec_opts =
+  { bound: int
+  ; skip_throw: bool
+  ; function_summaries: bool
+  ; globals: [`Per_function of Var.Set.t Var.Map.t | `Declared of Var.Set.t]
+  }
 
 module Make (Dom : Domain_sig.Dom) = struct
   module Stack : sig
@@ -237,6 +242,23 @@ module Make (Dom : Domain_sig.Dom) = struct
       | None -> [%Trace.info "queue empty"] ; ()
   end
 
+  let used_globals : exec_opts -> Var.var -> Var.Set.t =
+   fun opts fn ->
+    [%Trace.call fun {pf} -> pf "%a" Var.pp fn]
+    ;
+    ( match opts.globals with
+    | `Declared set -> set
+    | `Per_function map -> (
+      match Map.find map fn with
+      | Some gs -> gs
+      | None ->
+          fail
+            "main analysis reached function %a that was not reached by \
+             used-globals pre-analysis "
+            Var.pp fn () ) )
+    |>
+    [%Trace.retn fun {pf} r -> pf "%a" Var.Set.pp r]
+
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
@@ -253,7 +275,8 @@ module Make (Dom : Domain_sig.Dom) = struct
       if opts.function_summaries then Dom.dnf state else [state]
     in
     let domain_call =
-      Dom.call args areturn params (Set.add_option freturn locals) globals
+      Dom.call ~globals args areturn params
+        ~locals:(Set.add_option freturn locals)
     in
     List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
         match
@@ -295,40 +318,44 @@ module Make (Dom : Domain_sig.Dom) = struct
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
 
-  let exec_return ~opts stk pre_state (block : Llair.block) exp globals =
+  let exec_return ~opts stk pre_state (block : Llair.block) exp =
     let Llair.{name; params; freturn; locals} = block.parent in
     [%Trace.call fun {pf} ->
       pf "from %a with pre_state %a" Var.pp name.var Dom.pp pre_state]
     ;
+    let summarize post_state =
+      if opts.function_summaries then (
+        let globals = used_globals opts name.var in
+        let function_summary, post_state =
+          Dom.create_summary ~locals post_state
+            ~formals:(Set.union (Var.Set.of_list params) globals)
+        in
+        Hashtbl.add_multi summary_table ~key:name.var ~data:function_summary ;
+        pp_st () ;
+        post_state )
+      else post_state
+    in
+    let exit_state =
+      match (freturn, exp) with
+      | Some freturn, Some return_val ->
+          Dom.exec_move pre_state freturn return_val
+      | None, None -> pre_state
+      | _ -> violates Llair.Func.invariant block.parent
+    in
     ( match Stack.pop_return stk with
     | Some (from_call, retn_site, stk) ->
-        let exit_state =
-          match (freturn, exp) with
-          | Some freturn, Some return_val ->
-              Dom.exec_move pre_state freturn return_val
-          | None, None -> pre_state
-          | _ -> violates Llair.Func.invariant block.parent
-        in
-        let post_state = Dom.post locals from_call exit_state in
-        let post_state =
-          if opts.function_summaries then (
-            let globals =
-              Var.Set.of_vector
-                (Vector.map globals ~f:(fun (g : Global.t) -> g.var))
-            in
-            let function_summary, post_state =
-              Dom.create_summary ~locals post_state
-                ~formals:(Set.union (Var.Set.of_list params) globals)
-            in
-            Hashtbl.add_multi summary_table ~key:name.var
-              ~data:function_summary ;
-            pp_st () ;
-            post_state )
-          else post_state
-        in
+        let post_state = summarize (Dom.post locals from_call exit_state) in
         let retn_state = Dom.retn params freturn from_call post_state in
         exec_jump stk retn_state block retn_site
-    | None -> Work.skip )
+    | None ->
+        (* Create and store a function summary for main *)
+        if
+          opts.function_summaries
+          && List.exists
+               (Config.find_list "entry-points")
+               ~f:(String.equal (Var.name name.var))
+        then summarize exit_state |> (ignore : Dom.t -> unit) ;
+        Work.skip )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
@@ -419,9 +446,9 @@ module Make (Dom : Domain_sig.Dom) = struct
                     exec_skip_func stk state block areturn return
                 | None ->
                     exec_call opts stk state block {call with callee}
-                      pgm.globals )
+                      (used_globals opts callee.name.var) )
                 |> Work.seq x ) )
-    | Return {exp} -> exec_return ~opts stk state block exp pgm.globals
+    | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->
         if opts.skip_throw then Work.skip
         else exec_throw stk state block exc
@@ -449,12 +476,13 @@ module Make (Dom : Domain_sig.Dom) = struct
     List.find_map entry_points ~f:(fun name ->
         Llair.Func.find pgm.functions (Var.program ~global:() name) )
     |> function
-    | Some {locals; params= []; entry} ->
+    | Some {name= {var}; locals; params= []; entry} ->
         Some
           (Work.init
              (fst
-                (Dom.call ~summaries:opts.function_summaries [] None []
-                   locals pgm.globals (Dom.init pgm.globals)))
+                (Dom.call ~summaries:opts.function_summaries
+                   ~globals:(used_globals opts var) [] None [] ~locals
+                   (Dom.init pgm.globals)))
              entry)
     | _ -> None
 
@@ -467,4 +495,10 @@ module Make (Dom : Domain_sig.Dom) = struct
     | None -> fail "no applicable harness" () )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
+
+  let compute_summaries opts pgm : Dom.summary list Var.Map.t =
+    assert opts.function_summaries ;
+    exec_pgm opts pgm ;
+    Hashtbl.fold summary_table ~init:Var.Map.empty ~f:(fun ~key ~data map ->
+        match data with [] -> map | _ -> Map.set map ~key ~data )
 end

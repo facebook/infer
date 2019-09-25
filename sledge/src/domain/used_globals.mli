@@ -7,4 +7,4 @@
 
 (** Used-globals abstract domain *)
 
-include Domain_sig.Dom
+include Domain_sig.Dom with type summary = Var.Set.t

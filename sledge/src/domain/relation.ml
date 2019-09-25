@@ -69,26 +69,22 @@ module Make (State_domain : State_domain_sig) = struct
 
   let recursion_beyond_bound = State_domain.recursion_beyond_bound
 
-  let call ~summaries actuals areturn formals locals globals_vec
+  let call ~summaries ~globals actuals areturn formals ~locals
       (entry, current) =
-    let globals =
-      Var.Set.of_vector
-        (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
-    in
-    ([%Trace.call fun {pf} ->
-       pf
-         "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
-          globals: {@[%a@]}@ current: %a@]"
-         (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
-         (List.rev formals) Var.Set.pp locals Var.Set.pp globals
-         State_domain.pp current]
+    [%Trace.call fun {pf} ->
+      pf
+        "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
+         globals: {@[%a@]}@ current: %a@]"
+        (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
+        (List.rev formals) Var.Set.pp locals Var.Set.pp globals
+        State_domain.pp current]
     ;
     let caller_current, state_from_call =
-      State_domain.call ~summaries actuals areturn formals locals
-        globals_vec current
+      State_domain.call ~summaries ~globals actuals areturn formals ~locals
+        current
     in
     ( (caller_current, caller_current)
-    , {state_from_call; caller_entry= entry} ))
+    , {state_from_call; caller_entry= entry} )
     |>
     [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 

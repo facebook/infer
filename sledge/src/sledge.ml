@@ -68,6 +68,22 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.t))
     file
 
+let used_globals pgm preanalyze =
+  if preanalyze then
+    let summary_table =
+      Used_globals_executor.compute_summaries
+        { bound= 1
+        ; skip_throw= false
+        ; function_summaries= true
+        ; globals= `Declared Var.Set.empty }
+        pgm
+    in
+    `Per_function (Map.map summary_table ~f:Var.Set.union_list)
+  else
+    `Declared
+      (Vector.fold pgm.globals ~init:Var.Set.empty ~f:(fun acc g ->
+           Set.add acc g.var ))
+
 let analyze =
   let%map_open bound =
     flag "bound"
@@ -79,6 +95,9 @@ let analyze =
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
+  and preanalyze_globals =
+    flag "preanalyze-globals" no_arg
+      ~doc:"pre-analyze global variables used by each function"
   and exec =
     flag "domain"
       (optional_with_default Sh_executor.exec_pgm
@@ -92,7 +111,9 @@ let analyze =
          \"unit\" (unit domain)"
   in
   fun program () ->
-    exec {bound; skip_throw; function_summaries} (program ())
+    let pgm = program () in
+    let globals = used_globals pgm preanalyze_globals in
+    exec {bound; skip_throw; function_summaries; globals} pgm
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in

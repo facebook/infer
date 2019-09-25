@@ -74,15 +74,13 @@ type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries actuals areturn formals locals globals_vec q =
+let call ~summaries ~globals actuals areturn formals ~locals q =
   [%Trace.call fun {pf} ->
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
        globals: {@[%a@]}@ q: %a@]"
       (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
-      (List.rev formals) Var.Set.pp locals
-      (Vector.pp ",@ " Llair_.Global.pp)
-      globals_vec pp q]
+      (List.rev formals) Var.Set.pp locals Var.Set.pp globals pp q]
   ;
   let q', freshen_locals =
     Sh.freshen q ~wrt:(Set.add_list formals locals)
@@ -101,11 +99,7 @@ let call ~summaries actuals areturn formals locals globals_vec q =
   else
     (* Add the formals here to do garbage collection and then get rid of
        them *)
-    let formals_set = Var.Set.of_list formals
-    and globals =
-      Var.Set.of_vector
-        (Vector.map globals_vec ~f:(fun (g : Global.t) -> g.var))
-    in
+    let formals_set = Var.Set.of_list formals in
     let function_summary_pre =
       garbage_collect q'' ~wrt:(Set.union formals_set globals)
     in

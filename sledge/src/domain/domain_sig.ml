@@ -31,11 +31,11 @@ module type Dom = sig
 
   val call :
        summaries:bool
+    -> globals:Var.Set.t
     -> Exp.t list
     -> Var.t option
     -> Var.t list
-    -> Var.Set.t
-    -> Global.t vector
+    -> locals:Var.Set.t
     -> t
     -> t * from_call
 
