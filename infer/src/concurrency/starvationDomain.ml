@@ -60,6 +60,8 @@ module Lock = struct
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 end
 
+module LockEvent = ExplicitTrace.MakeTraceElem (Lock) (ExplicitTrace.DefaultCallPrinter)
+
 module Event = struct
   type severity_t = Low | Medium | High [@@deriving compare]
 
@@ -163,7 +165,7 @@ module Order = struct
 end
 
 module OrderDomain = Order.FiniteSet
-module LockStack = AbstractDomain.StackDomain (Event)
+module LockStack = AbstractDomain.StackDomain (LockEvent)
 
 module LockState = struct
   include AbstractDomain.InvertedMap (Lock) (LockStack)
@@ -176,7 +178,8 @@ module LockState = struct
         false
 
 
-  let acquire map lock_id lock_event =
+  let acquire loc map lock_id =
+    let lock_event = LockEvent.make lock_id loc in
     let current_value = try find lock_id map with Caml.Not_found -> LockStack.top in
     let new_value = LockStack.push lock_event current_value in
     add lock_id new_value map
@@ -314,13 +317,9 @@ let should_skip tenv_opt event lock_state =
 let add_order_pairs tenv_opt lock_state event acc =
   if should_skip tenv_opt event lock_state then acc
   else
-    let add_first_and_eventually acc f =
-      match f.Event.elem with
-      | LockAcquire first ->
-          let elem = Order.make {first; eventually= event} f.Event.loc in
-          OrderDomain.add elem acc
-      | _ ->
-          acc
+    let add_first_and_eventually acc ({elem= first; loc} : LockEvent.t) =
+      let new_elem = Order.make {first; eventually= event} loc in
+      OrderDomain.add new_elem acc
     in
     LockState.fold_over_events add_first_and_eventually lock_state acc
 
@@ -332,7 +331,7 @@ let acquire tenv ({lock_state; events; order} as astate) loc locks =
   ; order=
       List.fold new_events ~init:order ~f:(fun acc e ->
           OrderDomain.union acc (add_order_pairs (Some tenv) lock_state e order) )
-  ; lock_state= List.fold2_exn locks new_events ~init:lock_state ~f:LockState.acquire }
+  ; lock_state= List.fold locks ~init:lock_state ~f:(LockState.acquire loc) }
 
 
 let make_call_with_event tenv_opt new_event astate =
