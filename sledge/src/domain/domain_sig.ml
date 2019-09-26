@@ -12,7 +12,7 @@ module type Dom = sig
   val pp : t pp
   val report_fmt_thunk : t -> Formatter.t -> unit
   val init : Global.t vector -> t
-  val join : t -> t -> t
+  val join : t -> t -> t option
   val is_false : t -> bool
   val exec_assume : t -> Exp.t -> t option
   val exec_kill : t -> Var.t -> t

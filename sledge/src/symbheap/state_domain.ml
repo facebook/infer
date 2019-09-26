@@ -25,7 +25,7 @@ let init globals =
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )
 
-let join = Sh.or_
+let join l r = Some (Sh.or_ l r)
 let is_false = Sh.is_false
 let exec_assume = Exec.assume
 let exec_kill = Exec.kill

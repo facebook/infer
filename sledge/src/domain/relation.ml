@@ -32,8 +32,10 @@ module Make (State_domain : State_domain_sig) = struct
   let init globals = embed (State_domain.init globals)
 
   let join (entry_a, current_a) (entry_b, current_b) =
-    assert (State_domain.equal entry_b entry_a) ;
-    (entry_a, State_domain.join current_a current_b)
+    if State_domain.equal entry_b entry_a then
+      State_domain.join current_a current_b
+      >>= fun curr -> Some (entry_a, curr)
+    else None
 
   let is_false (_, curr) = State_domain.is_false curr
 

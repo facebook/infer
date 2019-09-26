@@ -232,9 +232,15 @@ module Make (Dom : Domain_sig.Dom) = struct
       match Fheap.pop pq0 with
       | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
         match Map.find_and_remove ws dst with
-        | Some (state :: states, ws) ->
+        | Some (q :: qs, ws) ->
             let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
-            let qs, depths = List.fold ~f:join ~init:state states in
+            let skipped, (qs, depths) =
+              List.fold qs ~init:([], q) ~f:(fun (skipped, joined) curr ->
+                  match join curr joined with
+                  | Some joined, depths -> (skipped, (joined, depths))
+                  | None, _ -> (curr :: skipped, joined) )
+            in
+            let ws = Map.add_exn ws ~key:dst ~data:skipped in
             run ~f (f stk qs dst depths (pq, ws, bnd))
         | _ ->
             [%Trace.info "done: %a" Edge.pp edge] ;

@@ -18,7 +18,7 @@ let init globals =
     "pgm globals: {%a}" (Vector.pp ", " Llair_.Global.pp) globals] ;
   empty
 
-let join = Set.union
+let join l r = Some (Set.union l r)
 let recursion_beyond_bound = `skip
 let is_false _ = false
 let post _ _ state = state
