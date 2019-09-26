@@ -409,7 +409,13 @@ module PowLoc = struct
   type eval_locpath = Symb.SymbolPath.partial -> t
 
   let subst_loc l (eval_locpath : eval_locpath) =
-    match Loc.get_param_path l with None -> singleton l | Some path -> eval_locpath path
+    match Loc.get_param_path l with
+    | None ->
+        singleton l
+    | Some path when Language.curr_language_is Java && Symb.SymbolPath.is_global_partial path ->
+        singleton l
+    | Some path ->
+        eval_locpath path
 
 
   let subst x (eval_locpath : eval_locpath) =

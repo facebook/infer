@@ -190,4 +190,16 @@ public class Cost_test {
       total += r;
     }
   }
+
+  static int global;
+
+  int get_global() {
+    return global;
+  }
+
+  /* It instantiates the return value of `get_global` (= `global`, the value of which is unknown) to
+  the `global` symbol, instead of top, in order to avoid useless top-cost results.  */
+  void loop_on_unknown_global_linear() {
+    for (int i = 0; i < get_global(); i++) {}
+  }
 }

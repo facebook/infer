@@ -89,6 +89,8 @@ module SymbolPath : sig
   val is_void_ptr_path : t -> bool
 
   val is_cpp_vector_elem : partial -> bool
+
+  val is_global_partial : partial -> bool
 end
 
 module Symbol : sig
@@ -101,6 +103,8 @@ module Symbol : sig
   val is_unsigned : t -> bool
 
   val is_non_int : t -> bool
+
+  val is_global : t -> bool
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 

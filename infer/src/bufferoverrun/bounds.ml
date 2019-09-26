@@ -978,11 +978,14 @@ module Bound = struct
     in
     fun ~subst_pos x eval_sym ->
       let get s bound_position =
-        match eval_sym s bound_position with
-        | NonBottom x when Symb.Symbol.is_unsigned s ->
-            NonBottom (approx_max subst_pos x zero)
-        | x ->
-            x
+        if Language.curr_language_is Java && Symb.Symbol.is_global s then
+          NonBottom (of_sym (SymLinear.singleton_one s))
+        else
+          match eval_sym s bound_position with
+          | NonBottom x when Symb.Symbol.is_unsigned s ->
+              NonBottom (approx_max subst_pos x zero)
+          | x ->
+              x
       in
       let get_mult_const s coeff =
         let bound_position =

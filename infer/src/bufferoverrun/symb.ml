@@ -249,6 +249,18 @@ module SymbolPath = struct
         BufferOverrunField.is_cpp_vector_elem fn
     | _ ->
         false
+
+
+  let rec is_global_partial = function
+    | Pvar pvar ->
+        Pvar.is_global pvar
+    | Deref (_, x) | Field {prefix= x} | StarField {prefix= x} ->
+        is_global_partial x
+    | Callsite _ ->
+        false
+
+
+  let is_global = function Normal p | Offset {p} | Length {p} | Modeled p -> is_global_partial p
 end
 
 module Symbol = struct
@@ -325,6 +337,11 @@ module Symbol = struct
   let is_unsigned : t -> bool = function OneValue {unsigned} | BoundEnd {unsigned} -> unsigned
 
   let is_non_int : t -> bool = function OneValue {non_int} | BoundEnd {non_int} -> non_int
+
+  let is_global : t -> bool = function
+    | OneValue {path} | BoundEnd {path} ->
+        SymbolPath.is_global path
+
 
   let path = function OneValue {path} | BoundEnd {path} -> path
 
