@@ -520,7 +520,8 @@ type extras_WorstCaseCost =
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
   let eval_sym =
-    BufferOverrunSemantics.mk_eval_sym integer_type_widths callee_formals params inferbo_caller_mem
+    BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals params
+      inferbo_caller_mem
   in
   BasicCost.subst callee_pname loc callee_cost eval_sym
 

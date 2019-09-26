@@ -6,6 +6,7 @@
  */
 import com.google.common.base.Objects;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -38,5 +39,28 @@ class ListTest {
   void asList_linear(String[] array) {
     List<String> list = Arrays.asList(array);
     for (String el : list) {}
+  }
+
+  boolean unknown_bool;
+
+  List<Integer> two_lists(List<Integer> l1, List<Integer> l2) {
+    List<Integer> l;
+    if (unknown_bool) {
+      l = l1;
+    } else {
+      l = l2;
+    }
+    return l;
+  }
+
+  void iterate_elements_linear(List<Integer> l) {
+    Iterator iterator = l.iterator();
+    while (iterator.hasNext()) {
+      iterator.next();
+    }
+  }
+
+  void call_iterate_elements_linear(List<Integer> l1, List<Integer> l2) {
+    iterate_elements_linear(two_lists(l1, l2));
   }
 }

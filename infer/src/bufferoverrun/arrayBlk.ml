@@ -290,13 +290,15 @@ let make_java : Allocsite.t -> length:Itv.t -> t =
  fun a ~length -> singleton a (ArrInfo.make_java ~length)
 
 
-let join_itv : f:(ArrInfo.t -> Itv.t) -> t -> Itv.t =
- fun ~f a -> fold (fun _ arr -> Itv.join (f arr)) a Itv.bot
+let join_itv : cost_mode:bool -> f:(ArrInfo.t -> Itv.t) -> t -> Itv.t =
+ fun ~cost_mode ~f a ->
+  let join, init = if cost_mode then (Itv.plus, Itv.zero) else (Itv.join, Itv.bot) in
+  fold (fun _ arr -> join (f arr)) a init
 
 
-let offsetof = join_itv ~f:ArrInfo.offsetof
+let offsetof ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.offsetof
 
-let sizeof = join_itv ~f:ArrInfo.sizeof
+let sizeof ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.sizeof
 
 let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 

@@ -382,12 +382,20 @@ end
 
    EvalPOReachability: This is similar to [EvalPOCond], but it returns the bottom location, instead
    of the unknown location, when a location to substitute is not found.  This is used when
-   substituting reachabilities of proof obligations. *)
-type eval_mode = EvalNormal | EvalPOCond | EvalPOReachability
+   substituting reachabilities of proof obligations.
+
+   EvalCost: This is similar to [EvalNormal], but it is designed to be used in substitutions of
+   the cost results, avoiding precision loss by joining of symbolic values.  Normal join of two
+   different symbolic values, [s1] and [s2], becomes top due to the limitation of our domain.  On
+   the other hand, in this mode, it returns an upperbound [s1+s2] for the case, because the cost
+   values only care about the upperbounds. *)
+type eval_mode = EvalNormal | EvalPOCond | EvalPOReachability | EvalCost
+
+let is_cost_mode = function EvalCost -> true | _ -> false
 
 let eval_sympath_modeled_partial ~mode p =
   match (mode, p) with
-  | EvalNormal, Symb.SymbolPath.Callsite _ ->
+  | (EvalNormal | EvalCost), Symb.SymbolPath.Callsite _ ->
       Itv.of_modeled_path p |> Val.of_itv
   | _, _ ->
       (* We only have modeled modeled function calls created in costModels. *)
@@ -403,7 +411,7 @@ let rec eval_sympath_partial ~mode params p mem =
       Val.Itv.top )
   | Symb.SymbolPath.Callsite {cs} -> (
     match mode with
-    | EvalNormal ->
+    | EvalNormal | EvalCost ->
         L.d_printfln_escaped "Symbol for %a is not expected to be in parameters." Typ.Procname.pp
           (CallSite.pname cs) ;
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
@@ -434,7 +442,7 @@ and eval_locpath ~mode params p mem =
     match mode with
     | EvalPOReachability ->
         res
-    | EvalNormal | EvalPOCond ->
+    | EvalNormal | EvalPOCond | EvalCost ->
         L.d_printfln_escaped "Location value for %a is not found." Symb.SymbolPath.pp_partial p ;
         PowLoc.unknown )
   else res
@@ -450,13 +458,14 @@ let eval_sympath ~mode params sympath mem =
       (Val.get_itv v, Val.get_traces v)
   | Symb.SymbolPath.Offset {p} ->
       let v = eval_sympath_partial ~mode params p mem in
-      (ArrayBlk.offsetof (Val.get_array_blk v), Val.get_traces v)
+      (ArrayBlk.offsetof ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
   | Symb.SymbolPath.Length {p} ->
       let v = eval_sympath_partial ~mode params p mem in
-      (ArrayBlk.sizeof (Val.get_array_blk v), Val.get_traces v)
+      (ArrayBlk.sizeof ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
 
 
-let mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem =
+let mk_eval_sym_trace integer_type_widths (callee_formals : (Pvar.t * Typ.t) list)
+    (actual_exps : (Exp.t * Typ.t) list) caller_mem =
   let params =
     let actuals = List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps in
     ParamBindings.make callee_formals actuals
@@ -476,12 +485,14 @@ let mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem 
   fun ~mode -> {eval_sym= eval_sym ~mode; trace_of_sym; eval_locpath= eval_locpath ~mode}
 
 
-let mk_eval_sym integer_type_widths callee_pdesc actual_exps caller_mem =
+let mk_eval_sym_mode ~mode integer_type_widths callee_formals actual_exps caller_mem =
   let eval_sym_trace =
-    mk_eval_sym_trace integer_type_widths callee_pdesc actual_exps caller_mem ~mode:EvalNormal
+    mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem ~mode
   in
   eval_sym_trace.eval_sym
 
+
+let mk_eval_sym_cost = mk_eval_sym_mode ~mode:EvalCost
 
 let get_sym_f integer_type_widths mem e = Val.get_sym (eval integer_type_widths e mem)
 
