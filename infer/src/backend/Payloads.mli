@@ -20,7 +20,6 @@ include
       ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
       ; class_loads: ClassLoadsDomain.summary option
       ; cost: CostDomain.summary option
-      ; impurity: ImpurityDomain.t option
       ; lab_resource_leaks: ResourceLeakDomain.summary option
       ; litho: LithoDomain.t option
       ; pulse: PulseSummary.t option

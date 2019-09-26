@@ -34,6 +34,4 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem sexp_list
   -> Errlog.loc_trace_elem sexp_list
 
-val pp : Format.formatter -> t -> unit
-
 val join : t -> t -> t

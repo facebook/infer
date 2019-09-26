@@ -29,17 +29,6 @@ let is_pure {modified_globals; modified_params} =
   ModifiedVarSet.is_empty modified_globals && ModifiedVarSet.is_empty modified_params
 
 
-let pp fmt ({modified_globals; modified_params} as astate) =
-  if is_pure astate then F.fprintf fmt "@\n pure @\n"
-  else if ModifiedVarSet.is_empty modified_params then
-    F.fprintf fmt "@\n impure, modified globals :%a @\n" ModifiedVarSet.pp modified_globals
-  else if ModifiedVarSet.is_empty modified_globals then
-    F.fprintf fmt "@\n impure, modified params :%a @\n" ModifiedVarSet.pp modified_params
-  else
-    F.fprintf fmt "@\n impure, modified params :%a, modified globals :%a @\n" ModifiedVarSet.pp
-      modified_params ModifiedVarSet.pp modified_globals
-
-
 let pure = {modified_params= ModifiedVarSet.empty; modified_globals= ModifiedVarSet.empty}
 
 let join astate1 astate2 =

@@ -15,7 +15,6 @@ type t =
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
   ; class_loads: ClassLoadsDomain.summary option
   ; cost: CostDomain.summary option
-  ; impurity: ImpurityDomain.t option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho: LithoDomain.t option
   ; pulse: PulseSummary.t option
@@ -44,7 +43,6 @@ let fields =
     ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
     ~class_loads:(fun f -> mk f "ClassLoads" ClassLoadsDomain.pp_summary)
     ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
-    ~impurity:(fun f -> mk f "Impurity" ImpurityDomain.pp)
     ~litho:(fun f -> mk f "Litho" LithoDomain.pp)
     ~pulse:(fun f -> mk f "Pulse" PulseSummary.pp)
     ~purity:(fun f -> mk f "Purity" PurityDomain.pp_summary)
@@ -70,7 +68,6 @@ let empty =
   ; buffer_overrun_checker= None
   ; class_loads= None
   ; cost= None
-  ; impurity= None
   ; lab_resource_leaks= None
   ; litho= None
   ; pulse= None

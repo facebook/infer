@@ -16,12 +16,6 @@ let debug fmt = L.(debug Analysis Verbose fmt)
 (* An impurity analysis that relies on pulse to determine how the state
    changes *)
 
-module Payload = SummaryPayload.Make (struct
-  type t = ImpurityDomain.t
-
-  let field = Payloads.Fields.impurity
-end)
-
 let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractAddress.t list option =
   match
     List.fold2 ~init:(Some [])
@@ -146,8 +140,7 @@ let checker ({Callbacks.summary} as callback) : Summary.t =
             let modified = extract_impurity (Summary.get_proc_desc summary) pre_post in
             ImpurityDomain.join acc modified )
       in
-      report_errors summary modified ;
-      Payload.update_summary modified summary
+      report_errors summary modified ; summary
   | None ->
       debug "@\n\n[WARNING] Couldn't find any Pulse summary to extract impurity information." ;
       summary
