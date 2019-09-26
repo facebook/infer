@@ -682,8 +682,7 @@ and get_struct_methods struct_decl tenv =
       | CXXConstructorDecl _
       | CXXConversionDecl _
       | CXXDestructorDecl _
-      | ObjCMethodDecl _
-      | BlockDecl _ ->
+      | ObjCMethodDecl _ ->
           Some (procname_from_decl ~tenv decl)
       | _ ->
           None )

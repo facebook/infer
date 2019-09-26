@@ -10,7 +10,7 @@ CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS)
 INFER_OPTIONS =
 
 SOURCES = \
-  $(wildcard */*.mm) \
+  $(wildcard *.mm) $(wildcard */*.mm) \
 
 include $(TESTS_DIR)/clang-frontend.make
 include $(TESTS_DIR)/objc.make
