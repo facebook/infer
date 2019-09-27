@@ -20,7 +20,7 @@ Definition inc_pc_def:
 End
 
 (* The set of program counters the given instruction and starting point can
- * immediately reach, withing a function *)
+ * immediately reach, within a function *)
 Definition next_ips_def:
   (next_ips (Ret _) ip = {}) ∧
   (next_ips (Br _ l1 l2) ip =

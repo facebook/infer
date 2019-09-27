@@ -483,9 +483,6 @@ QED
 
 
 (* ----- A bigger-step semantics ----- *)
-Definition stuck_def:
-  stuck p s1 ⇔ ¬get_instr p s1.ip Exit ∧ ¬∃l s2. step p s1 l s2
-End
 
 Definition last_step_def:
   last_step p s1 l s2 ⇔
@@ -510,15 +507,6 @@ Inductive multi_step:
    multi_step p s2 ls s3
    ⇒
    multi_step p s1 (l::ls) s3)
-End
-
-Inductive observation_prefixes:
-  (∀l. observation_prefixes (Complete, l) (Complete, filter (\x. x ≠ Tau) l)) ∧
-  (∀l. observation_prefixes (Stuck, l) (Stuck, filter (\x. x ≠ Tau) l)) ∧
-  (∀l1 l2 x.
-    l2 ≼ l1 ∧ (l2 = l1 ⇒ x = Partial)
-    ⇒
-    observation_prefixes (x, l1) (Partial, filter (\x. x ≠ Tau) l2))
 End
 
 Definition multi_step_sem_def:

@@ -178,15 +178,6 @@ Datatype:
        heap : bool heap |>
 End
 
-(* Labels for the transitions to make externally observable behaviours apparent.
- * For now, we'll consider this to be writes to global variables.
- * *)
-Datatype:
-  obs =
-  | Tau
-  | W glob_var (word8 list)
-End
-
 (* ----- Things about types ----- *)
 
 (* Given a number n that fits into pointer_size number of bytes, create the
@@ -669,13 +660,6 @@ Inductive step:
   step_instr p s i l s'
   ⇒
   step p s l s'
-End
-
-Datatype:
-  trace_type =
-  | Stuck
-  | Complete
-  | Partial
 End
 
 Definition get_observation_def:

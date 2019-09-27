@@ -94,6 +94,7 @@ Datatype:
   | Return exp
   | Throw exp
   | Unreachable
+  | Exit
 End
 
 Datatype:
@@ -116,7 +117,7 @@ Datatype:
 End
 
 Datatype:
-  llair = <| globals : global list; functions : (string, func) alist |>
+  llair = <| glob_init : global list; functions : (string, func) alist |>
 End
 
 (* ----- Semantic states ----- *)
@@ -139,10 +140,11 @@ End
 Datatype:
   state =
     <| bp : label; (* Pointer to the next block to execute *)
-       globals : var |-> word64;
+       glob_addrs : var |-> num;
        locals : var |-> v;
        stack : frame list;
-       heap : unit heap |>
+       heap : unit heap;
+       status : trace_type |>
 End
 
 (* Assume that all pointers can fit in 64 bits *)
@@ -344,12 +346,17 @@ Definition update_results_def:
   update_results xvs s = s with locals := s.locals |++ xvs
 End
 
+Inductive get_obs:
+  (∀s ptr bytes x. flookup s.glob_addrs x = Some ptr ⇒ get_obs s ptr bytes (W x bytes)) ∧
+  (∀s ptr bytes. ptr ∉ FRANGE s.glob_addrs ⇒ get_obs s ptr bytes Tau)
+End
+
 Inductive step_inst:
   (∀s ves rs.
     list_rel (eval_exp s) (map snd ves) rs
     ⇒
     step_inst s
-    (Move ves)
+    (Move ves) Tau
     (update_results (map (λ(v,r). (v, r)) (zip (map fst ves, rs))) s)) ∧
 
   (∀s x t e size ptr freeable interval bytes.
@@ -359,19 +366,20 @@ Inductive step_inst:
    bytes = map snd (get_bytes s.heap interval)
    ⇒
    step_inst s
-    (Load (Var_name x t) e size)
+    (Load (Var_name x t) e size) Tau
     (update_results [(Var_name x t, fst (bytes_to_llair_value t bytes))] s)) ∧
 
-  (∀s e1 e2 size ptr bytes freeable interval r.
+  (∀s e1 e2 size ptr bytes freeable interval r obs.
    eval_exp s e1 (FlatV ptr) ∧
    eval_exp s e2 r ∧
    interval = Interval freeable (i2n ptr) (i2n ptr + size) ∧
    is_allocated interval s.heap ∧
    bytes = llair_value_to_bytes r ∧
-   length bytes = size
+   length bytes = size ∧
+   get_obs s (i2n ptr) bytes obs
    ⇒
    step_inst s
-     (Store e1 e2 size)
+     (Store e1 e2 size) obs
      (s with heap := set_bytes () bytes (i2n ptr) s.heap)) ∧
 
   (* TODO memset *)
@@ -387,7 +395,7 @@ Inductive step_inst:
    bytes = map snd (get_bytes s.heap src_interval)
    ⇒
    step_inst s
-    (Memcpy e1 e2 e3)
+    (Memcpy e1 e2 e3) Tau
     (s with heap := set_bytes () bytes (i2n dest_ptr) s.heap)) ∧
 
   (* TODO memmove *)
@@ -399,21 +407,21 @@ Inductive step_inst:
    nfits ptr pointer_size
    ⇒
    step_inst s
-     (Alloc v e1 e2)
+     (Alloc v e1 e2) Tau
      (update_results [(v, FlatV (n2i ptr pointer_size))] (s with heap := new_h))) ∧
 
   (∀s e ptr.
    eval_exp s e (FlatV ptr)
    ⇒
    step_inst s
-     (Free e)
+     (Free e) Tau
      (s with heap := deallocate [A (i2n ptr)] s.heap)) ∧
 
   (∀s x t nondet.
    value_type t nondet
    ⇒
    step_inst s
-     (NondetI (Var_name x t))
+     (NondetI (Var_name x t)) Tau
      (update_results [(Var_name x t, nondet)] s))
 
 End
@@ -445,7 +453,7 @@ Inductive step_term:
    step_term prog s
      (Call v (Lab_name fname bname) es t ret1 ret2)
      <| bp := Lab_name fname bname;
-        globals := s.globals;
+        glob_addrs := s.glob_addrs;
         locals := alist_to_fmap (zip (f.params, vals));
         stack :=
           <| ret := ret1;
@@ -461,11 +469,12 @@ Inductive step_term:
    step_term prog s
      (Return e)
      <| bp := top.ret;
-        globals := s.globals;
+        glob_addrs := s.glob_addrs;
         locals := top.saved_locals |+ (top.ret_var, r);
         stack := rest;
-        heap := s.heap |>)
+        heap := s.heap |>) ∧
 
+  (∀prog s. step_term prog s Exit (s with status := Complete))
   (* TODO Throw *)
 
 End
@@ -477,24 +486,46 @@ Inductive step_block:
   (∀prog s1 t s2.
    step_term prog s1 t s2
    ⇒
-   step_block prog s1 [] t s2) ∧
+   step_block prog s1 [] [] t s2) ∧
 
-  (∀prog s1 i is t s2 s3.
-   step_inst s1 i s2 ∧
-   step_block prog s2 is t s3
+
+  (∀prog s1 i1 i2 l1 is t s2.
+   step_inst s1 i1 l1 s2 ∧
+   (¬?l2 s3. step_inst s2 i2 l2 s3)
    ⇒
-   step_block prog s1 (i::is) t s3)
+   step_block prog s1 (i1::i2::is) [l1] t (s2 with status := Stuck)) ∧
+
+  (∀prog s1 i l is ls t s2 s3.
+   step_inst s1 i l s2 ∧
+   step_block prog s2 is ls t s3
+   ⇒
+   step_block prog s1 (i::is) (l::ls) t s3)
 
 End
 
+Inductive get_block:
+  ∀prog bp fname bname f b.
+    bp = Lab_name fname bname ∧
+    alookup prog.functions fname = Some f ∧
+    alookup f.cfg bp = Some b
+    ⇒
+    get_block prog bp b
+End
+
 Inductive step:
-  (∀prog s fname bname f b s'.
-   s.bp = Lab_name fname bname ∧
-   alookup prog.functions fname = Some f ∧
-   alookup f.cfg s.bp = Some b ∧
-   step_block prog s b.cmnd b.term s'
-   ⇒
-   step prog s s')
+  ∀prog s b ls s'.
+    get_block prog s.bp b ∧
+    step_block prog s b.cmnd ls b.term s' ∧
+    s.status = Partial
+    ⇒
+    step prog s ls s'
+End
+
+Definition sem_def:
+  sem p s1 =
+    { l1 | ∃path l2. l1 ∈ observation_prefixes ((last path).status, flat l2) ∧
+           toList (labels path) = Some l2 ∧
+           finite path ∧ okpath (step p) path ∧ first path = s1 }
 End
 
 export_theory ();

@@ -180,7 +180,7 @@ End
 (* TODO *)
 Definition translate_instr_to_inst_def:
   (translate_instr_to_inst emap (llvm$Store (t1, a1) (t2, a2)) =
-    llair$Store (translate_arg emap a1) (translate_arg emap a2) (sizeof t2)) ∧
+    llair$Store (translate_arg emap a2) (translate_arg emap a1) (sizeof t1)) ∧
   (translate_instr_to_inst emap (Load r t (t1, a1)) =
     Load (translate_reg r t) (translate_arg emap a1) (sizeof t))
 End
@@ -402,7 +402,7 @@ End
 
 Definition translate_prog_def:
   translate_prog p =
-    <| globals := ARB;
+    <| glob_init := ARB;
        functions := map (\(fname, d). (dest_fn fname, translate_def (dest_fn fname) d)) p |>
 End
 

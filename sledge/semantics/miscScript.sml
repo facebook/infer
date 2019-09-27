@@ -10,13 +10,38 @@
 
 open HolKernel boolLib bossLib Parse;
 open listTheory rich_listTheory arithmeticTheory integerTheory llistTheory pathTheory;
-open integer_wordTheory wordsTheory;
+open integer_wordTheory wordsTheory pred_setTheory;
 open finite_mapTheory open logrootTheory numposrepTheory;
 open settingsTheory;
 
 new_theory "misc";
 
 numLib.prefer_num ();
+
+(* Labels for the transitions to make externally observable behaviours apparent.
+ * For now, we'll consider this to be writes to global variables.
+ * *)
+Datatype:
+  obs =
+  | Tau
+  | W 'a (word8 list)
+End
+
+Datatype:
+  trace_type =
+  | Stuck
+  | Complete
+  | Partial
+End
+
+Inductive observation_prefixes:
+  (∀l. observation_prefixes (Complete, l) (Complete, filter (\x. x ≠ Tau) l)) ∧
+  (∀l. observation_prefixes (Stuck, l) (Stuck, filter (\x. x ≠ Tau) l)) ∧
+  (∀l1 l2 x.
+    l2 ≼ l1 ∧ (l2 = l1 ⇒ x = Partial)
+    ⇒
+    observation_prefixes (x, l1) (Partial, filter (\x. x ≠ Tau) l2))
+End
 
 (* ----- Theorems about list library functions ----- *)
 
@@ -83,6 +108,19 @@ Theorem flookup_fdiff:
       if k ∈ s then None else flookup m k
 Proof
   rw [FDIFF_def, FLOOKUP_DRESTRICT] >> fs []
+QED
+
+Theorem inj_map_prefix_iff:
+  ∀f l1 l2. INJ f (set l1 ∪ set l2) UNIV ⇒ (map f l1 ≼ map f l2 ⇔ l1 ≼ l2)
+Proof
+  Induct_on `l1` >> rw [] >>
+  Cases_on `l2` >> rw [] >>
+  `INJ f (set l1 ∪ set t) UNIV`
+  by (
+    irule INJ_SUBSET >> qexists_tac `(h INSERT set l1) ∪ (set (h'::t))` >>
+    simp [SUBSET_DEF] >> fs [] >>
+    metis_tac []) >>
+  fs [INJ_IFF] >> metis_tac []
 QED
 
 (* ----- Theorems about log ----- *)
@@ -251,6 +289,18 @@ Proof
   metis_tac []
 QED
 
+Theorem lmap_fromList:
+  !f l. LMAP f (fromList l) = fromList (map f l)
+Proof
+  Induct_on `l` >> rw []
+QED
+
+Theorem fromList_11[simp]:
+  !l1 l2. fromList l1 = fromList l2 ⇔ l1 = l2
+Proof
+  Induct >> rw [] >>
+  Cases_on `l2` >> fs []
+QED
 
 (* ----- Theorems about labelled transition system paths ----- *)
 

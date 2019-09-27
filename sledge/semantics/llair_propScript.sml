@@ -8,7 +8,7 @@
 (* Properties of the llair model *)
 
 open HolKernel boolLib bossLib Parse;
-open arithmeticTheory integerTheory integer_wordTheory wordsTheory;
+open arithmeticTheory integerTheory integer_wordTheory wordsTheory listTheory;
 open settingsTheory miscTheory llairTheory;
 
 new_theory "llair_prop";
@@ -136,6 +136,22 @@ Proof
       BasicProvers.EVERY_CASE_TAC >> fs [word_msb_n2w_numeric] >>
       rfs []) >>
     rw [w2i_n2w_pos])
+QED
+
+Theorem eval_exp_ignores_lem:
+  ∀s1 e v. eval_exp s1 e v ⇒ ∀s2. s1.locals = s2.locals ⇒ eval_exp s2 e v
+Proof
+  ho_match_mp_tac eval_exp_ind >>
+  rw [] >> simp [Once eval_exp_cases] >>
+  TRY (qexists_tac `vals` >> rw [] >> fs [LIST_REL_EL_EQN] >> NO_TAC) >>
+  TRY (fs [LIST_REL_EL_EQN] >> NO_TAC) >>
+  metis_tac []
+QED
+
+Theorem eval_exp_ignores:
+  ∀s1 e v s2. s1.locals = s2.locals ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
+Proof
+  metis_tac [eval_exp_ignores_lem]
 QED
 
 export_theory ();

@@ -7,7 +7,7 @@ all: $(DEFAULT_TARGETS)
 
 HOLHEAP = heap
 EXTRA_CLEANS = heap
-OBJNAMES = wordsLib.uo intLib.uo stringLib.uo integer_wordLib.uo finite_mapLib.uo alistLib.uo
+OBJNAMES = wordsLib.uo intLib.uo stringLib.uo integer_wordLib.uo finite_mapLib.uo alistLib.uo pathTheory.uo
 DEPS = $(patsubst %,$(dprot $(SIGOBJ)/%),$(OBJNAMES))
 $(HOLHEAP): $(DEPS)
 	$(protect $(HOLDIR)/bin/buildheap) -o $@ $(OBJNAMES)
