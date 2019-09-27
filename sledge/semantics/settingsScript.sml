@@ -56,5 +56,8 @@ overload_on ("foldl", ``FOLDL``);
 overload_on ("foldr", ``FOLDR``);
 overload_on ("option_rel", ``OPTREL``);
 overload_on ("front", ``FRONT``);
+overload_on ("Inl", ``INL``);
+overload_on ("Inr", ``INR``);
+overload_on ("mem", ``MEM``);
 
 export_theory ();

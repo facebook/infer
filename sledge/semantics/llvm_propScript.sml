@@ -293,19 +293,20 @@ QED
 Theorem get_instr_func:
   ∀p ip i1 i2. get_instr p ip i1 ∧ get_instr p ip i2 ⇒ i1 = i2
 Proof
-  rw [get_instr_cases] >>
-  metis_tac [optionTheory.SOME_11]
+  rw [get_instr_cases] >> fs [] >> rw [] >> fs [] >> rw [] >> fs []
 QED
 
 Theorem inc_pc_invariant:
-  ∀p s i. prog_ok p ∧ get_instr p s.ip i ∧ ¬terminator i ∧ state_invariant p s ⇒ state_invariant p (inc_pc s)
+  ∀p s i. prog_ok p ∧ get_instr p s.ip (Inl i) ∧ ¬terminator i ∧ state_invariant p s ⇒ state_invariant p (inc_pc s)
 Proof
   rw [state_invariant_def, inc_pc_def, allocations_ok_def, globals_ok_def,
-      stack_ok_def, frame_ok_def, heap_ok_def, EVERY_EL, ip_ok_def]
+      stack_ok_def, frame_ok_def, heap_ok_def, EVERY_EL, ip_ok_def, inc_bip_def,
+      METIS_PROVE [] ``x ∨ y ⇔ ~x ⇒ y``]
   >- (
     qexists_tac `dec` >> qexists_tac `block'` >> rw [] >>
     fs [prog_ok_def, get_instr_cases] >> res_tac >> rw [] >>
-    `s.ip.i ≠ length block'.body - 1` suffices_by decide_tac >>
+    Cases_on `s.ip.i` >> fs [] >> rw [] >> fs [inc_bip_def] >>
+    `idx ≠ length block'.body - 1` suffices_by decide_tac >>
     CCONTR_TAC >> fs [] >> rfs [LAST_EL, PRE_SUB1]) >>
   metis_tac []
 QED
@@ -327,7 +328,8 @@ Theorem allocate_invariant:
   ∀p s1 v1 t v2 h2.
     state_invariant p s1 ∧ allocate s1.heap v1 t (v2,h2) ⇒ state_invariant p (s1 with heap := h2)
 Proof
-  rw [state_invariant_def, ip_ok_def, globals_ok_def, stack_ok_def]
+  rw [state_invariant_def, ip_ok_def, globals_ok_def, stack_ok_def,
+      METIS_PROVE [] ``x ∨ y ⇔ ~x ⇒ y``]
   >- metis_tac [allocate_heap_ok]
   >- (fs [is_allocated_def] >> metis_tac [allocate_unchanged, SUBSET_DEF])
   >- (
@@ -347,9 +349,15 @@ Proof
   >- (fs [stack_ok_def, EVERY_EL, frame_ok_def, set_bytes_unchanged])
 QED
 
+Triviality not_none_eq:
+  !x. x ≠ None ⇔ ?y. x = Some y
+Proof
+  Cases >> rw []
+QED
+
 Theorem step_instr_invariant:
   ∀i l s2.
-    step_instr p s1 i l s2 ⇒ prog_ok p ∧ get_instr p s1.ip i ∧ state_invariant p s1
+    step_instr p s1 i l s2 ⇒ prog_ok p ∧ get_instr p s1.ip (Inl i) ∧ state_invariant p s1
     ⇒
     state_invariant p s2
 Proof
@@ -384,17 +392,39 @@ Proof
   >- ( (* Br *)
     fs [state_invariant_def] >> rw []
     >- (
-      rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
+      rw [ip_ok_def] >> fs [prog_ok_def] >>
       qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
-      last_x_assum drule >> disch_then drule >> fs [])
+      fs [get_instr_cases] >>
+      last_x_assum drule >> disch_then drule >> fs [] >> rw [] >>
+      `terminator (el idx b.body)` by metis_tac [terminator_def] >>
+      `last b.body = el idx b.body`
+      by (
+        Cases_on `idx = PRE (length b.body)` >> fs [EL_PRE_LENGTH] >>
+        `Suc idx < length b.body` by decide_tac >>
+        drule mem_el_front >> rw [] >> fs [EVERY_MEM] >>
+        metis_tac []) >>
+      qpat_x_assum `Br _ _ _ = _` (assume_tac o GSYM) >> fs [] >>
+      fs [instr_to_labs_def, not_none_eq] >>
+      metis_tac [])
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- ( (* Br *)
     fs [state_invariant_def] >> rw []
     >- (
-      rw [ip_ok_def] >> fs [prog_ok_def, NOT_NIL_EQ_LENGTH_NOT_0] >>
+      rw [ip_ok_def] >> fs [prog_ok_def] >>
       qpat_x_assum `alookup _ (Fn "main") = _` kall_tac >>
-      last_x_assum drule >> disch_then drule >> fs [])
+      fs [get_instr_cases] >>
+      last_x_assum drule >> disch_then drule >> fs [] >> rw [] >>
+      `terminator (el idx b.body)` by metis_tac [terminator_def] >>
+      `last b.body = el idx b.body`
+      by (
+        Cases_on `idx = PRE (length b.body)` >> fs [EL_PRE_LENGTH] >>
+        `Suc idx < length b.body` by decide_tac >>
+        drule mem_el_front >> rw [] >> fs [EVERY_MEM] >>
+        metis_tac []) >>
+      qpat_x_assum `Br _ _ _ = _` (assume_tac o GSYM) >> fs [] >>
+      fs [instr_to_labs_def, not_none_eq] >>
+      metis_tac [])
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- (
@@ -438,21 +468,40 @@ Proof
     >- (
       fs [state_invariant_def, stack_ok_def] >> rw []
       >- (
-        rw [frame_ok_def] >> fs [ip_ok_def, prog_ok_def] >>
+        rw [frame_ok_def] >> fs [ip_ok_def, prog_ok_def, inc_bip_def] >>
         last_x_assum drule >> disch_then drule >> rw [] >>
         CCONTR_TAC >> fs [] >> rfs [LAST_EL] >>
-        Cases_on `length block'.body = s1.ip.i + 1` >> fs [PRE_SUB1] >>
+        Cases_on `length block'.body = idx + 1` >> fs [PRE_SUB1] >>
         fs [get_instr_cases] >>
         metis_tac [terminator_def])
       >- (fs [EVERY_MEM, frame_ok_def] >> metis_tac [])))
 QED
 
-Theorem exit_no_step:
-  !p s1. get_instr p s1.ip Exit ⇒ ¬?l s2. step p s1 l s2
+Theorem step_invariant:
+  ∀p s1 l s2.
+    prog_ok p ∧ step p s1 l s2 ∧ state_invariant p s1
+    ⇒
+    state_invariant p s2
 Proof
-  rw [step_cases, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
-  `i = Exit` by metis_tac [get_instr_func] >>
-  rw [step_instr_cases]
+  rw [step_cases]
+  >- metis_tac [step_instr_invariant] >>
+  fs [get_instr_cases, inc_pc_def, inc_bip_def, state_invariant_def] >>
+  rw []
+  >- (
+    fs [ip_ok_def, prog_ok_def] >>
+    metis_tac [NOT_NIL_EQ_LENGTH_NOT_0])
+  >- (fs [globals_ok_def] >> metis_tac [])
+  >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac [])
+QED
+
+Theorem exit_no_step:
+  !p s1. get_instr p s1.ip (Inl Exit) ⇒ ¬?l s2. step p s1 l s2
+Proof
+  rw [step_cases, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``]
+  >- (
+    `i = Exit` by metis_tac [get_instr_func, sumTheory.INL_11] >>
+    rw [step_instr_cases]) >>
+  metis_tac [get_instr_func, sumTheory.sum_distinct]
 QED
 
 Definition is_call_def:
@@ -461,13 +510,17 @@ Definition is_call_def:
 End
 
 Theorem step_same_block:
-  ∀p s1 l s2 i.
-    get_instr p s1.ip i ∧ step_instr p s1 i l s2 ∧ ¬terminator i ∧ ~is_call i⇒
+  ∀p s1 l s2.
+    get_instr p s1.ip i ∧ step p s1 l s2 ∧
+    (∀i'. i = Inl i' ⇒ ¬terminator i' ∧ ¬is_call i') ⇒
     s1.ip.f = s2.ip.f ∧
     s1.ip.b = s2.ip.b ∧
-    s2.ip.i = s1.ip.i + 1
+    s2.ip.i = inc_bip s1.ip.i
 Proof
-  rw [step_instr_cases] >>
+  simp [step_cases] >>
+  rpt gen_tac >> disch_tac >> fs [inc_pc_def] >>
+  `i = Inl i'` by metis_tac [get_instr_func] >>
+  fs [step_instr_cases] >> rfs [] >>
   fs [terminator_def, is_call_def, inc_pc_def, update_result_def]
 QED
 
@@ -488,10 +541,13 @@ Definition last_step_def:
   last_step p s1 l s2 ⇔
    ∃i.
      step p s1 l s2 ∧ get_instr p s1.ip i ∧
-     (terminator i ∨ is_call i ∨ ¬∃l s3. step p s2 l s3)
+     ((∃x. i = Inr x) ∨
+      (∃i'. i = Inl i' ∧ (terminator i' ∨ is_call i')) ∨
+      ¬∃l s3. step p s2 l s3)
 End
 
-(* Run all of the instructions up-to-and-including the next Call or terminator
+(* Run all of the instructions up-to-and-including the next Call or terminator.
+ * Stop after the phis too.
  * *)
 Inductive multi_step:
 
@@ -502,7 +558,7 @@ Inductive multi_step:
 
   (∀p s1 s2 s3 i l ls.
    step p s1 l s2 ∧
-   get_instr p s1.ip i ∧
+   get_instr p s1.ip (Inl i) ∧
    ¬(terminator i ∨ is_call i) ∧
    multi_step p s2 ls s3
    ⇒
@@ -598,7 +654,10 @@ Definition instrs_left_def:
     | Some d =>
       case alookup d.blocks s.ip.b of
       | None => 0
-      | Some b => length b.body - s.ip.i
+      | Some b =>
+        case s.ip.i of
+        | Phi_ip _ => length b.body + 1
+        | Offset idx => length b.body - idx
 End
 
 Theorem extend_step_path:
@@ -635,8 +694,8 @@ Proof
       fs [finite_length] >>
       qexists_tac `n` >> rw []
       >- (
-        rw [last_step_def] >> fs [step_cases] >>
-        metis_tac []) >>
+        qpat_x_assum `step _ _ _ _` mp_tac >>
+        rw [last_step_def, step_cases] >> metis_tac []) >>
       `length (plink p' (pcons (last p') l (stopped_at s))) = Some (n + Suc 1 - 1)`
       by metis_tac [length_plink, alt_length_thm, optionTheory.OPTION_MAP_DEF] >>
       rw []
@@ -668,11 +727,10 @@ Proof
     pop_assum mp_tac >> simp [] >>
     `?i. get_instr p s2.ip i` by metis_tac [get_instr_cases, step_cases] >>
     disch_then (qspec_then `i` mp_tac) >> simp [] >>
-    pop_assum mp_tac >> pop_assum mp_tac >> simp [Once step_cases] >>
-    rw [] >>
-    `i' = i` by metis_tac [get_instr_func] >> rw [] >>
     drule step_same_block >> disch_then drule >> simp [] >>
-    rw [] >> fs [step_cases, get_instr_cases]) >>
+    pop_assum mp_tac >> pop_assum mp_tac >> simp [Once step_cases] >>
+    rw [] >> fs [get_instr_cases, inc_bip_def] >> rw [] >> fs [] >>
+    rw [inc_bip_def] >> fs []) >>
  `last path = first path1`
   by (
     unabbrev_all_tac >> simp [Once unfold_thm] >>

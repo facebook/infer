@@ -69,6 +69,21 @@ Datatype:
 End
 
 Datatype:
+  phi = Phi reg ty ((label option, arg) alist)
+End
+
+(*
+ * The Exit instruction below models a system/libc call to exit the program. The
+ * semantics needs some way to tell the difference between normally terminated
+ * programs and stuck states, and this lets it do that. From a C++ perspective,
+ * a program could call this directly, in which case it's good to model, or it
+ * might simply return from main and then the code in libc that called main will
+ * call exit. However, adding special handling for main in the semantics will
+ * cruft things up a bit, and it's not very satisfying, because it's not really
+ * an LLVM concept.
+ *)
+
+Datatype:
   instr =
   (* Terminators *)
   | Ret targ
@@ -94,10 +109,6 @@ Datatype:
   | Cxa_begin_catch reg arg
   | Cxa_end_catch
   | Cxa_get_exception_ptr reg arg
-End
-
-Datatype:
-  phi = Phi reg ty ((label option, arg) alist)
 End
 
 Datatype:
@@ -160,8 +171,17 @@ Datatype:
   pv = <| poison : bool; value : v |>
 End
 
+(* Instruction pointer into a block. Phi_ip indicates to do the phi instruction,
+ * coming from the given label. Offset points to a normal (non-phi) instruction.
+ * *)
 Datatype:
-  pc = <| f : fun_name; b : label option; i : num |>
+  bip =
+  | Phi_ip (label option)
+  | Offset num
+End
+
+Datatype:
+  pc = <| f : fun_name; b : label option; i : bip |>
 End
 
 Datatype:
@@ -461,8 +481,13 @@ Definition update_result_def:
   update_result x v s = s with locals := s.locals |+ (x, v)
 End
 
+Definition inc_bip_def:
+  (inc_bip (Phi_ip _) = Offset 0) ∧
+  (inc_bip (Offset i) = Offset (i + 1))
+End
+
 Definition inc_pc_def:
-  inc_pc s = s with ip := (s.ip with i := s.ip.i + 1)
+  inc_pc s = s with ip := (s.ip with i := inc_bip s.ip.i)
 End
 
 Inductive get_obs:
@@ -488,27 +513,12 @@ Inductive step_instr:
           stack := st;
           heap := new_h |>)) ∧
 
-(* Do the phi assignments in parallel. The manual says "For the purposes of the
- * SSA form, the use of each incoming value is deemed to occur on the edge from
- * the corresponding predecessor block to the current block (but after any
- * definition of an 'invoke' instruction's return value on the same edge)".
- * So treat these two as equivalent
- * %r1 = phi [0, %l]
- * %r2 = phi [%r1, %l]
- * and
- * %r2 = phi [%r1, %l]
- * %r1 = phi [0, %l]
- *)
   (eval s a = Some <| poison := p; value := FlatV (W1V tf) |> ∧
-   l = Some (if tf = 1w then l1 else l2) ∧
-   alookup prog s.ip.f = Some d ∧
-   alookup d.blocks l = Some <| h := Head phis None; body := b |> ∧
-   map (do_phi l s) phis = map Some updates
+   l = Some (if tf = 1w then l1 else l2)
    ⇒
    step_instr prog s
      (Br a l1 l2) Tau
-     (s with <| ip := <| f := s.ip.f; b := l; i := 0 |>;
-                locals := s.locals |++ updates |>)) ∧
+     (s with ip := <| f := s.ip.f; b := l; i := Phi_ip s.ip.b |>)) ∧
 
   (* TODO *)
   (step_instr prog s (Invoke r t a args l1 l2) Tau s) ∧
@@ -623,11 +633,12 @@ Inductive step_instr:
    ⇒
    step_instr prog s
      (Call r t fname targs) Tau
-     <| ip := <| f := fname; b := None; i := 0 |>;
+     (* Jump to the entry block of the function which has no phis *)
+     <| ip := <| f := fname; b := None; i := Offset 0 |>;
         locals := alist_to_fmap (zip (map snd d.params, vs));
         globals := s.globals;
         stack :=
-          <| ret := s.ip with i := s.ip.i + 1;
+          <| ret := s.ip with i := inc_bip s.ip.i;
              saved_locals := s.locals;
              result_var := r;
              stack_allocs := [] |> :: s.stack;
@@ -647,24 +658,49 @@ Inductive step_instr:
 End
 
 Inductive get_instr:
-  (∀prog ip.
-   alookup prog ip.f = Some d ∧
-   alookup d.blocks ip.b = Some b ∧
-   ip.i < length b.body
-   ⇒
-   get_instr prog ip (el ip.i b.body))
+ (∀prog ip.
+  alookup prog ip.f = Some d ∧
+  alookup d.blocks ip.b = Some b ∧
+  ip.i = Offset idx ∧
+  idx < length b.body
+  ⇒
+  get_instr prog ip (Inl (el idx b.body))) ∧
+ (∀prog ip.
+  alookup prog ip.f = Some d ∧
+  alookup d.blocks ip.b = Some b ∧
+  ip.i = Phi_ip from_l ∧
+  b.h = Head phis landing
+  ⇒
+  get_instr prog ip (Inr (from_l, phis)))
 End
 
 Inductive step:
-  get_instr p s.ip i ∧
+ (get_instr p s.ip (Inl i) ∧
   step_instr p s i l s'
   ⇒
-  step p s l s'
+  step p s l s') ∧
+
+(* Do the phi assignments in parallel. The manual says "For the purposes of the
+ * SSA form, the use of each incoming value is deemed to occur on the edge from
+ * the corresponding predecessor block to the current block (but after any
+ * definition of an 'invoke' instruction's return value on the same edge)".
+ * So treat these two as equivalent
+ * %r1 = phi [0, %l]
+ * %r2 = phi [%r1, %l]
+ * and
+ * %r2 = phi [%r1, %l]
+ * %r1 = phi [0, %l]
+ *)
+ (get_instr p s.ip (Inr (from_l, phis)) ∧
+  map (do_phi from_l s) phis = map Some updates
+  ⇒
+  step p s Tau (inc_pc (s with locals := locals |++ updates)))
+
 End
 
 Definition get_observation_def:
   get_observation prog last_s =
-    if get_instr prog last_s.ip Exit then
+    if get_instr prog last_s.ip (Inl Exit) then
       Complete
     else if ∃s l. step prog last_s l s then
       Partial
@@ -695,20 +731,39 @@ End
 (* Instruction pointer points to an instruction *)
 Definition ip_ok_def:
   ip_ok p ip ⇔
-    ∃dec block. alookup p ip.f = Some dec ∧ alookup dec.blocks ip.b = Some block ∧ ip.i < length block.body
+    ∃dec block.
+      alookup p ip.f = Some dec ∧ alookup dec.blocks ip.b = Some block ∧
+      ((∃idx. ip.i = Offset idx ∧ idx < length block.body) ∨
+       (∃from_l. ip.i = Phi_ip from_l ∧ block.h ≠ Entry ∧ alookup dec.blocks from_l ≠ None))
+End
+
+Definition instr_to_labs_def:
+  (instr_to_labs (Br _ l1 l2) = [l1; l2]) ∧
+  (instr_to_labs _ = [])
 End
 
 Definition prog_ok_def:
   prog_ok p ⇔
-    ((* All blocks end with terminators *)
+    ((* All blocks end with terminators and terminators only appear at the end.
+      * All labels mentioned in instructions actually exist *)
      ∀fname dec bname block.
        alookup p fname = Some dec ∧
        alookup dec.blocks bname = Some block
        ⇒
-       block.body ≠ [] ∧ terminator (last block.body)) ∧
+       block.body ≠ [] ∧ terminator (last block.body) ∧
+       every (λi. ¬terminator i) (front block.body) ∧
+       every (λlab. alookup dec.blocks (Some lab) ≠ None)
+             (instr_to_labs (last block.body)) ∧
+       (∀phis lands. block.h = Head phis lands ⇒
+         every (λx. case x of Phi _ _ l => every (λ(lab, _). alookup dec.blocks lab ≠ None) l) phis)) ∧
     ((* All functions have an entry block *)
      ∀fname dec.
-       alookup p fname = Some dec ⇒ ∃block. alookup dec.blocks None = Some block) ∧
+       alookup p fname = Some dec ⇒
+       ∃block. alookup dec.blocks None = Some block ∧ block.h = Entry) ∧
+    ((* All non-entry blocks have a proper header *)
+     ∀fname dec l b.
+       alookup p fname = Some dec ∧ alookup dec.blocks (Some l) = Some b ⇒
+       b.h ≠ Entry) ∧
      (* There is a main function *)
      ∃dec. alookup p (Fn "main") = Some dec
 End
@@ -740,7 +795,7 @@ Definition is_init_state_def:
   is_init_state s (global_init : glob_var |-> ty # v) ⇔
     s.ip.f = Fn "main" ∧
     s.ip.b = None ∧
-    s.ip.i = 0 ∧
+    s.ip.i = Offset 0 ∧
     s.locals = fempty ∧
     s.stack = [] ∧
     globals_ok s ∧

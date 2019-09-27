@@ -123,6 +123,19 @@ Proof
   fs [INJ_IFF] >> metis_tac []
 QED
 
+Theorem is_prefix_subset:
+  ∀l1 l2. l1 ≼ l2 ⇒ set l1 ⊆ set l2
+Proof
+  Induct_on `l1` >> rw [] >>
+  Cases_on `l2` >> fs [SUBSET_DEF]
+QED
+
+Theorem mem_el_front:
+  ∀n l. Suc n < length l ⇒ mem (el n l) (front l)
+Proof
+  Induct >> rw [] >> Cases_on `l` >> fs [FRONT_DEF] >> rw [] >> fs []
+QED
+
 (* ----- Theorems about log ----- *)
 
 Theorem mul_div_bound:
