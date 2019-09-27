@@ -284,15 +284,11 @@ let check_address_escape escape_location proc_desc address history astate =
 
 
 let mark_address_of_cpp_temporary history variable address astate =
-  Memory.add_attributes address
-    (Attributes.singleton (AddressOfCppTemporary (variable, history)))
-    astate
+  Memory.add_attribute address (AddressOfCppTemporary (variable, history)) astate
 
 
 let mark_address_of_stack_variable history variable location address astate =
-  Memory.add_attributes address
-    (Attributes.singleton (AddressOfStackVariable (variable, history, location)))
-    astate
+  Memory.add_attribute address (AddressOfStackVariable (variable, history, location)) astate
 
 
 let remove_vars vars location astate =

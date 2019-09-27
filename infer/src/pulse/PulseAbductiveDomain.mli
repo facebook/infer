@@ -6,7 +6,7 @@
  *)
 open! IStd
 module AbstractAddress = PulseDomain.AbstractAddress
-module Attributes = PulseDomain.Attributes
+module Attribute = PulseDomain.Attribute
 
 (* layer on top of {!PulseDomain} to propagate operations on the current state to the pre-condition
    when necessary
@@ -43,7 +43,7 @@ module Memory : sig
   module Access = PulseDomain.Memory.Access
   module Edges = PulseDomain.Memory.Edges
 
-  val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
+  val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
   val add_edge :
     AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> Location.t -> t -> t

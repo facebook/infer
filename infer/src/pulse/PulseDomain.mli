@@ -177,7 +177,7 @@ module Memory : sig
 
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
 
-  val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
+  val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
   val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
 

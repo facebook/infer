@@ -458,7 +458,7 @@ module Memory : sig
 
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
 
-  val add_attributes : AbstractAddress.t -> Attributes.t -> t -> t
+  val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
   val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
 
@@ -511,18 +511,13 @@ end = struct
     Graph.find_opt addr (fst memory) >>= Edges.find_opt access
 
 
-  let add_attributes addr attrs memory =
-    if Attributes.is_empty attrs then memory
-    else
-      let old_attrs = Graph.find_opt addr (snd memory) |> Option.value ~default:Attributes.empty in
-      if phys_equal old_attrs attrs || Attributes.is_subset attrs ~of_:old_attrs then memory
-      else
-        let new_attrs = Attributes.union_prefer_left attrs old_attrs in
+  let add_attribute addr attribute memory =
+    match Graph.find_opt addr (snd memory) with
+    | None ->
+        (fst memory, Graph.add addr (Attributes.singleton attribute) (snd memory))
+    | Some old_attrs ->
+        let new_attrs = Attributes.add old_attrs attribute in
         (fst memory, Graph.add addr new_attrs (snd memory))
-
-
-  let add_attribute address attribute memory =
-    add_attributes address (Attributes.singleton attribute) memory
 
 
   let invalidate (address, history) invalidation memory =
