@@ -166,9 +166,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     Annotations.ia_is_cleanup ret_annotation_deprecated
   in
   let should_report_nullable =
-    (not (AndroidFramework.is_destroy_method curr_pname))
-    && (not (InferredNullability.is_nullable inferred_nullability_lhs))
-    && InferredNullability.is_nullable inferred_nullability_rhs
+    (not
+       (NullsafeRules.passes_assignment_rule_for_inferred_nullability ~lhs:inferred_nullability_lhs
+          ~rhs:inferred_nullability_rhs))
+    && (not (AndroidFramework.is_destroy_method curr_pname))
     && PatternMatch.type_is_class t_lhs
     && (not (Typ.Fieldname.Java.is_outer_instance fname))
     && (not (field_is_injector_readwrite ()))
@@ -266,8 +267,8 @@ let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   if
     not
-      (NullsafeRules.passes_assignment_rule ~lhs:ret_signature.ret_annotated_type.nullability
-         ~rhs:ret_inferred_nullability)
+      (NullsafeRules.passes_assignment_rule_for_annotated_nullability
+         ~lhs:ret_signature.ret_annotated_type.nullability ~rhs:ret_inferred_nullability)
   then
     report_error tenv find_canonical_duplicate
       (TypeErr.Return_annotation_inconsistent
@@ -367,8 +368,8 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
       if
         not
-          (NullsafeRules.passes_assignment_rule ~lhs:formal.param_annotated_type.nullability
-             ~rhs:nullability_actual)
+          (NullsafeRules.passes_assignment_rule_for_annotated_nullability
+             ~lhs:formal.param_annotated_type.nullability ~rhs:nullability_actual)
       then report ()
   in
   let should_check_parameters =
