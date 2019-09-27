@@ -188,7 +188,7 @@ End
 (* TODO *)
 Definition translate_instr_to_term_def:
   translate_instr_to_term f emap (Br a l1 l2) =
-    Iswitch (translate_arg emap a) [translate_label f l2; translate_label f l1]
+    Switch (translate_arg emap a) [(0, translate_label f l2)] (translate_label f l1)
 End
 
 Datatype:
@@ -219,6 +219,7 @@ Definition classify_instr_def:
   (classify_instr (Br _ _ _) = Term) ∧
   (classify_instr (Invoke _ _ _ _ _ _) = Term) ∧
   (classify_instr Unreachable = Term) ∧
+  (classify_instr Exit = Term) ∧
   (classify_instr (Load _ _ _) = Non_exp) ∧
   (classify_instr (Store _ _) = Non_exp) ∧
   (classify_instr (Cxa_throw _ _ _) = Non_exp) ∧

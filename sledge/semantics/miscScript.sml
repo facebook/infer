@@ -35,12 +35,12 @@ Datatype:
 End
 
 Inductive observation_prefixes:
-  (∀l. observation_prefixes (Complete, l) (Complete, filter (\x. x ≠ Tau) l)) ∧
-  (∀l. observation_prefixes (Stuck, l) (Stuck, filter (\x. x ≠ Tau) l)) ∧
+  (∀l. observation_prefixes (Complete, l) (Complete, filter ($≠ Tau) l)) ∧
+  (∀l. observation_prefixes (Stuck, l) (Stuck, filter ($≠ Tau) l)) ∧
   (∀l1 l2 x.
     l2 ≼ l1 ∧ (l2 = l1 ⇒ x = Partial)
     ⇒
-    observation_prefixes (x, l1) (Partial, filter (\x. x ≠ Tau) l2))
+    observation_prefixes (x, l1) (Partial, filter ($≠ Tau) l2))
 End
 
 (* ----- Theorems about list library functions ----- *)
@@ -643,6 +643,19 @@ Proof
     rw [] >>
     qexists_tac `Suc m` >> rw [opt_funpow_alt]) >>
   metis_tac [unfold_finite_funpow, opt_funpow_def]
+QED
+
+(* ----- pred_set theorems ----- *)
+
+Theorem drestrict_union_eq:
+  !m1 m2 s1 s2.
+    DRESTRICT m1 (s1 ∪ s2) = DRESTRICT m2 (s1 ∪ s2)
+    ⇔
+    DRESTRICT m1 s1 = DRESTRICT m2 s1 ∧
+    DRESTRICT m1 s2 = DRESTRICT m2 s2
+Proof
+  rw [DRESTRICT_EQ_DRESTRICT_SAME] >> eq_tac >> rw [] >> fs [EXTENSION] >>
+  metis_tac []
 QED
 
 export_theory ();

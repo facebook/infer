@@ -514,7 +514,7 @@ Inductive step_instr:
           heap := new_h |>)) ∧
 
   (eval s a = Some <| poison := p; value := FlatV (W1V tf) |> ∧
-   l = Some (if tf = 1w then l1 else l2)
+   l = Some (if tf = 0w then l2 else l1)
    ⇒
    step_instr prog s
      (Br a l1 l2) Tau
@@ -713,7 +713,7 @@ End
  * *)
 Definition sem_def:
   sem p s1 =
-    { (get_observation p (last path), filter (\x. x ≠ Tau) l)  | (path, l) |
+    { (get_observation p (last path), filter ($≠ Tau) l)  | (path, l) |
       toList (labels path) = Some l ∧ finite path ∧ okpath (step p) path ∧ first path = s1 }
 End
 

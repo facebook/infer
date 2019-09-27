@@ -799,7 +799,7 @@ Theorem find_path_prefix:
     obs ∈ observation_prefixes (get_observation p (last path), l1)
     ⇒
     ∃n l2. n ∈ PL path ∧ toList (labels (take n path)) = Some l2 ∧
-      obs = (get_observation p (last (take n path)), filter (\x. x ≠ Tau) l2)
+      obs = (get_observation p (last (take n path)), filter ($≠ Tau) l2)
 Proof
   ho_match_mp_tac finite_okpath_ind >> rw [toList_THM]
   >- fs [observation_prefixes_cases, get_observation_def, IN_DEF] >>
@@ -825,7 +825,7 @@ Proof
     metis_tac [exit_no_step]) >>
   rename1 `short_l ≼ long_l` >>
   rfs [] >>
-  `(Partial, filter (\x. x ≠ Tau) short_l) ∈ observation_prefixes (get_observation p (last path),long_l)`
+  `(Partial, filter ($≠ Tau) short_l) ∈ observation_prefixes (get_observation p (last path),long_l)`
   by (simp [observation_prefixes_cases, IN_DEF] >> metis_tac []) >>
   first_x_assum drule >> strip_tac >>
   qexists_tac `Suc n` >> simp [toList_THM] >> rw [] >> rfs [last_take]
@@ -848,7 +848,7 @@ Proof
     `?n short_l.
       n ∈ PL s_path ∧
       toList (labels (take n s_path)) = Some short_l ∧
-      x = (get_observation p (last (take n s_path)), filter (\x. x ≠ Tau) short_l)`
+      x = (get_observation p (last (take n s_path)), filter ($≠ Tau) short_l)`
     by metis_tac [find_path_prefix] >>
     qexists_tac `take n s_path` >> rw [])
   >- (

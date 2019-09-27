@@ -85,7 +85,7 @@ End
 Datatype:
   term =
   (* Args: key, branch table, default exp *)
-  | Switch exp ((num # label) list) label
+  | Switch exp ((int # label) list) label
   (* Args: int to switch on, jump table *)
   | Iswitch exp (label list)
   (* Args:  result reg, function to call, arguments, return type of callee,
@@ -428,10 +428,9 @@ End
 
 Inductive step_term:
 
-  (∀prog s e table default idx fname bname bname' idx_size.
-   eval_exp s e (FlatV (IntV (&idx) idx_size)) ∧
-   Lab_name fname bname = (case alookup table idx of Some lab => lab | None => default) ∧
-   s.bp = Lab_name fname bname'
+  (∀prog s e table default idx fname bname idx_size.
+   eval_exp s e (FlatV (IntV idx idx_size)) ∧
+   Lab_name fname bname = (case alookup table idx of Some lab => lab | None => default)
    ⇒
    step_term prog s
      (Switch e table default)
