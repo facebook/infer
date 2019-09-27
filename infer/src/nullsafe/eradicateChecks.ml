@@ -9,23 +9,6 @@ open! IStd
 
 (** Module for the checks called by Eradicate. *)
 
-(* TODO(T54088319) get rid of annotation_deprecated:
-  - introduce "field flags" and move all other usages to this dedicated datatype
-  *)
-type field_type = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
-
-let get_field_annotation tenv fn typ =
-  let lookup = Tenv.lookup tenv in
-  let type_and_annotation_to_field_type (typ, annotation) =
-    { annotation_deprecated= annotation
-    ; annotated_type=
-        AnnotatedType.{nullability= AnnotatedNullability.of_annot_item annotation; typ} }
-  in
-  Option.map
-    (Typ.Struct.get_field_type_and_annotation ~lookup fn typ)
-    ~f:type_and_annotation_to_field_type
-
-
 let report_error tenv = TypeErr.report_error tenv (EradicateCheckers.report_error tenv)
 
 let explain_expr tenv node e =
@@ -138,7 +121,7 @@ let check_nonzero tenv find_canonical_duplicate =
 
 (** Check an assignment to a field. *)
 let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_ref typestate
-    exp_lhs exp_rhs typ loc fname field_type_opt typecheck_expr : unit =
+    exp_lhs exp_rhs typ loc fname annotated_field_opt typecheck_expr : unit =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
   let t_lhs, inferred_nullability_lhs, _ =
@@ -152,8 +135,8 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       loc
   in
   let field_is_injector_readwrite () =
-    match field_type_opt with
-    | Some {annotation_deprecated} ->
+    match annotated_field_opt with
+    | Some AnnotatedField.{annotation_deprecated} ->
         Annotations.ia_is_field_injector_readwrite annotation_deprecated
     | _ ->
         false
@@ -181,7 +164,7 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       (Some instr_ref) loc curr_pdesc
 
 
-let is_nullable {annotated_type} =
+let is_nullable AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       true
@@ -189,7 +172,7 @@ let is_nullable {annotated_type} =
       false
 
 
-let is_nonnull {annotated_type} =
+let is_nonnull AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       false
@@ -223,7 +206,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let do_field (fn, ft, _) =
-            let annotated_field = get_field_annotation tenv fn ts in
+            let annotated_field = AnnotatedField.get tenv fn ts in
             let is_injector_readonly_annotated =
               match annotated_field with
               | None ->

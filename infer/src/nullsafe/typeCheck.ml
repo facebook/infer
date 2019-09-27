@@ -145,8 +145,8 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       in
       let exp_origin = InferredNullability.get_origin inferred_nullability in
       let tr_new =
-        match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{annotated_type} ->
+        match AnnotatedField.get tenv fn typ with
+        | Some AnnotatedField.{annotated_type} ->
             ( annotated_type.typ
             , InferredNullability.of_annotated_nullability annotated_type.nullability
                 (TypeOrigin.Field (exp_origin, fn, loc))
@@ -225,8 +225,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       | Some _ when not is_assignment ->
           typestate
       | _ -> (
-        match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{annotated_type} ->
+        match AnnotatedField.get tenv fn typ with
+        | Some AnnotatedField.{annotated_type} ->
             let range =
               ( annotated_type.typ
               , InferredNullability.of_annotated_nullability annotated_type.nullability
@@ -438,7 +438,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let check_field_assign () =
         match e1 with
         | Exp.Lfield (_, fn, f_typ) ->
-            let field_type_opt = EradicateChecks.get_field_annotation tenv fn f_typ in
+            let field_type_opt = AnnotatedField.get tenv fn f_typ in
             if checks.eradicate then
               EradicateChecks.check_field_assignment tenv find_canonical_duplicate curr_pdesc node
                 instr_ref typestate1 e1' e2 typ loc fn field_type_opt
