@@ -81,13 +81,13 @@ end
 
 module Attribute : sig
   type t =
-    | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit InterprocAction.t
-    | WrittenTo of unit InterprocAction.t
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
+    | Invalid of Invalidation.t Trace.t
+    | MustBeValid of unit InterprocAction.t
     | StdVectorReserve
+    | WrittenTo of unit InterprocAction.t
   [@@deriving compare]
 end
 

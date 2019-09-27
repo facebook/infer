@@ -242,17 +242,23 @@ module Trace = struct
     @@ errlog
 end
 
-(** Purposefully declared before [AbstractAddress] to avoid attributes depending on
-    addresses. Otherwise they become a pain to handle when comparing memory states. *)
 module Attribute = struct
+  (** Make sure we don't depend on [AbstractAddress] to avoid attributes depending on
+      addresses. Otherwise they become a pain to handle when comparing memory states. *)
+  include struct
+    [@@@warning "-60"]
+
+    module AbstractAddress = struct end
+  end
+
   type t =
-    | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit InterprocAction.t
-    | WrittenTo of unit InterprocAction.t
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
+    | Invalid of Invalidation.t Trace.t
+    | MustBeValid of unit InterprocAction.t
     | StdVectorReserve
+    | WrittenTo of unit InterprocAction.t
   [@@deriving compare, variants]
 
   let equal = [%compare.equal: t]
@@ -281,6 +287,12 @@ module Attribute = struct
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let pp f = function
+    | AddressOfCppTemporary (var, history) ->
+        F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
+    | AddressOfStackVariable (var, history, location) ->
+        F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
+    | Closure pname ->
+        Typ.Procname.pp f pname
     | Invalid invalidation ->
         (Trace.pp Invalidation.pp) f invalidation
     | MustBeValid action ->
@@ -288,19 +300,13 @@ module Attribute = struct
           (InterprocAction.pp (fun _ () -> ()))
           action Location.pp
           (InterprocAction.to_outer_location action)
+    | StdVectorReserve ->
+        F.pp_print_string f "std::vector::reserve()"
     | WrittenTo action ->
         F.fprintf f "WrittenTo (written by %a @ %a)"
           (InterprocAction.pp (fun _ () -> ()))
           action Location.pp
           (InterprocAction.to_outer_location action)
-    | AddressOfCppTemporary (var, history) ->
-        F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
-    | AddressOfStackVariable (var, history, location) ->
-        F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
-    | Closure pname ->
-        Typ.Procname.pp f pname
-    | StdVectorReserve ->
-        F.pp_print_string f "std::vector::reserve()"
 end
 
 module Attributes = struct
