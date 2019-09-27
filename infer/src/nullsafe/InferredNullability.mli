@@ -9,8 +9,8 @@ open! IStd
 
 (** Module to represent nullability of expressions inferred during
    flow-sensitive symbolic execution.
-   NOTE: This module is complementaty to {!NullsafeType.nullability}.
-         {!NullsafeType} contains info about _formal_ nullability
+   NOTE: This is complementaty to {!InferredNullability.t}.
+         {!InferredNullability} contains info about _formal_ nullability
          (what does the code say about nullability of a given type, according to
          explicit annotations and implicit agreements (e.g. models)).
          In contrast, InferredNullability represents what Nullsafe thinks about such and such
@@ -26,10 +26,10 @@ val descr_origin : t -> TypeErr.origin_descr
   (How did nullsafe infer the nullability )
  *)
 
-val from_nullsafe_type : NullsafeType.t -> TypeOrigin.t -> t
+val of_annotated_nullability : AnnotatedNullability.t -> TypeOrigin.t -> t
 (** Convert formal type to inferred nullability.
-  (e.g. to infer nullability of `o` in `Object o = someFunction();`
-   based on `someFunction()` formal return type.
+  (e.g. to infer nullability of {[o]} in {[Object o = someFunction();]}
+   based on {[someFunction()]} formal return type.
  *)
 
 val get_origin : t -> TypeOrigin.t

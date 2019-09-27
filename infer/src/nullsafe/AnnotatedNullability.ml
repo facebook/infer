@@ -17,7 +17,7 @@ module F = Format
 *)
 
 (* TODO(T52947663) add notion of unknown nullability *)
-type nullability = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
+type t = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
 
 and nullable_origin =
   | AnnotatedNullable  (** The type is expicitly annotated with @Nullable in the code *)
@@ -36,9 +36,7 @@ and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 
-type t = {nullability: nullability; typ: Typ.t} [@@deriving compare]
-
-let pp fmt {nullability; typ} =
+let pp fmt t =
   let string_of_nullable_origin nullable_origin =
     match nullable_origin with
     | AnnotatedNullable ->
@@ -59,17 +57,14 @@ let pp fmt {nullability; typ} =
     | ModelledNonnull ->
         "model"
   in
-  let pp_nullability fmt nullability =
-    match nullability with
-    | Nullable nullable_origin ->
-        F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin nullable_origin)
-    | Nonnull nonnull_origin ->
-        F.fprintf fmt "Nonnull[%s]" (string_of_nonnull_origin nonnull_origin)
-  in
-  F.fprintf fmt "%a %a" pp_nullability nullability (Typ.pp_full Pp.text) typ
+  match t with
+  | Nullable nullable_origin ->
+      F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin nullable_origin)
+  | Nonnull nonnull_origin ->
+      F.fprintf fmt "Nonnull[%s]" (string_of_nonnull_origin nonnull_origin)
 
 
-let nullability_of_annot_item ia =
+let of_annot_item ia =
   if Annotations.ia_is_nullable ia then
     let nullable_origin =
       if Annotations.ia_is_propagates_nullable ia then AnnotatedPropagatesNullable

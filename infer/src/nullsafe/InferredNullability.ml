@@ -52,9 +52,9 @@ let create ~is_nullable origin = {origin; is_nullable}
 
 let with_origin ta o = {ta with origin= o}
 
-let from_nullsafe_type NullsafeType.{nullability} origin =
-  match nullability with
-  | Nullable _ ->
+let of_annotated_nullability annotated_nullability origin =
+  match annotated_nullability with
+  | AnnotatedNullability.Nullable _ ->
       {origin; is_nullable= true}
-  | Nonnull _ ->
+  | AnnotatedNullability.Nonnull _ ->
       {origin; is_nullable= false}

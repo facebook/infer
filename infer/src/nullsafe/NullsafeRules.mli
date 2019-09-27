@@ -18,7 +18,7 @@ open! IStd
   this module instead of doing things on their own.
   *)
 
-val passes_assignment_rule : lhs:NullsafeType.nullability -> rhs:InferredNullability.t -> bool
+val passes_assignment_rule : lhs:AnnotatedNullability.t -> rhs:InferredNullability.t -> bool
 (** Assignment rule: No expression of nullable type is ever assigned to a location
     of non-nullable type.
   *)

@@ -10,17 +10,17 @@ open! IStd
 (** Module for the checks called by Eradicate. *)
 
 (* TODO(T54088319) get rid of annotation_deprecated:
-  - move all usages related to nullability to nullsafe_type
+  - move all usages related to nullability to AnnotatedNullability.
   - introduce "field flags" and move all other usages to this dedicated datatype
   *)
-type field_type = {annotation_deprecated: Annot.Item.t; nullsafe_type: NullsafeType.t}
+type field_type = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
 
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
   let type_and_annotation_to_field_type (typ, annotation) =
     { annotation_deprecated= annotation
-    ; nullsafe_type=
-        NullsafeType.{nullability= NullsafeType.nullability_of_annot_item annotation; typ} }
+    ; annotated_type=
+        AnnotatedType.{nullability= AnnotatedNullability.of_annot_item annotation; typ} }
   in
   Option.map
     (Typ.Struct.get_field_type_and_annotation ~lookup fn typ)
@@ -266,7 +266,7 @@ let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   if
     not
-      (NullsafeRules.passes_assignment_rule ~lhs:ret_signature.ret_nullsafe_type.nullability
+      (NullsafeRules.passes_assignment_rule ~lhs:ret_signature.ret_annotated_type.nullability
          ~rhs:ret_inferred_nullability)
   then
     report_error tenv find_canonical_duplicate
@@ -281,10 +281,10 @@ let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname cur
   (* TODO(T54308240) this needs to be changed when we introduce Unknown nullability *)
   let is_ret_inferred_nonnull = not (InferredNullability.is_nullable ret_inferred_nullability) in
   let is_ret_annotated_nullable =
-    match ret_signature.ret_nullsafe_type.nullability with
-    | NullsafeType.Nonnull _ ->
+    match ret_signature.ret_annotated_type.nullability with
+    | AnnotatedNullability.Nonnull _ ->
         false
-    | NullsafeType.Nullable _ ->
+    | AnnotatedNullability.Nullable _ ->
         true
   in
   if is_ret_inferred_nonnull && is_ret_annotated_nullable then
@@ -306,7 +306,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
              false ->
       ()
   | Some (_, ret_inferred_nullability, _) ->
-      (* TODO(T54308240) Model ret_implicitly_nullable in NullsafeType.t *)
+      (* TODO(T54308240) Model ret_implicitly_nullable in AnnotatedNullability *)
       if not ret_implicitly_nullable then
         check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_pdesc
           annotated_signature.ret ret_inferred_nullability ;
@@ -364,10 +364,10 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
            (description, param_num, callee_pname, callee_loc, origin_descr))
         (Some instr_ref) loc curr_pdesc
     in
-    if PatternMatch.type_is_class formal.param_nullsafe_type.typ then
+    if PatternMatch.type_is_class formal.param_annotated_type.typ then
       if
         not
-          (NullsafeRules.passes_assignment_rule ~lhs:formal.param_nullsafe_type.nullability
+          (NullsafeRules.passes_assignment_rule ~lhs:formal.param_annotated_type.nullability
              ~rhs:nullability_actual)
       then report ()
   in

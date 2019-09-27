@@ -7,12 +7,19 @@
 
 open! IStd
 
-(** Representation of a type in Java program, but with added information about its nullability.
-    Nullability information might come either from explicit annotations, or from other sources,
-    including conventions about defaults.
+(** Nullability of a type in Java program (e.g. in a function or field declaration).
+    It might come from explicit annotations (or lack of annotation), or from other sources,
+    including conventions about defaults, models, or the mode nullsafe runs in.
+    NOTE: This is complementary to {!InferredNullability.t}.
+          {!InferredNullability} contains info about _actual_ nullability
+          (what did nullsafe infer according to its flow-sensitive rules.).
+          In contrast, AnnotatedNullability represents _formal_ type as it appears
+          in the program code.
+    NOTE: Nullsafe disregards user-provided annotations for local types, so
+          annotated nullability applies only for types declared at methods and field level.
 *)
 
-type nullability = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
+type t = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
 
 and nullable_origin =
   | AnnotatedNullable  (** The type is expicitly annotated with @Nullable in the code *)
@@ -31,12 +38,10 @@ and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 
-type t = {nullability: nullability; typ: Typ.t} [@@deriving compare]
-
-val pp : Format.formatter -> t -> unit
-
-val nullability_of_annot_item : Annot.Item.t -> nullability
+val of_annot_item : Annot.Item.t -> t
 (** Converts the information from the annotation to nullability.
     NOTE: it does not take into account models etc., so this is intended to be used
     as a helper function for more high-level annotation processing.
  *)
+
+val pp : Format.formatter -> t -> unit

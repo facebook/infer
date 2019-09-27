@@ -146,9 +146,9 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       let exp_origin = InferredNullability.get_origin inferred_nullability in
       let tr_new =
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{nullsafe_type} ->
-            ( nullsafe_type.typ
-            , InferredNullability.from_nullsafe_type nullsafe_type
+        | Some EradicateChecks.{annotated_type} ->
+            ( annotated_type.typ
+            , InferredNullability.of_annotated_nullability annotated_type.nullability
                 (TypeOrigin.Field (exp_origin, fn, loc))
             , locs' )
         | None ->
@@ -226,10 +226,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           typestate
       | _ -> (
         match EradicateChecks.get_field_annotation tenv fn typ with
-        | Some EradicateChecks.{nullsafe_type} ->
+        | Some EradicateChecks.{annotated_type} ->
             let range =
-              ( nullsafe_type.typ
-              , InferredNullability.from_nullsafe_type nullsafe_type
+              ( annotated_type.typ
+              , InferredNullability.of_annotated_nullability annotated_type.nullability
                   (TypeOrigin.Field (origin, fn, loc))
               , [loc] )
             in
@@ -739,9 +739,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               ; is_library }
           in
           let ret_inferred_nullability =
-            InferredNullability.from_nullsafe_type ret.ret_nullsafe_type origin
+            InferredNullability.of_annotated_nullability ret.ret_annotated_type.nullability origin
           in
-          (ret_inferred_nullability, ret.ret_nullsafe_type.typ)
+          (ret_inferred_nullability, ret.ret_annotated_type.typ)
         in
         let sig_len = List.length signature_params in
         let call_len = List.length call_params in

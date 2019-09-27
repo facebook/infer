@@ -7,11 +7,11 @@
 
 open! IStd
 
-let is_nonnull nullsafe_nullability =
-  match nullsafe_nullability with
-  | NullsafeType.Nullable _ ->
+let is_nonnull annotated_nullability =
+  match annotated_nullability with
+  | AnnotatedNullability.Nullable _ ->
       false
-  | NullsafeType.Nonnull _ ->
+  | AnnotatedNullability.Nonnull _ ->
       true
 
 

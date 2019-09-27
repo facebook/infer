@@ -36,10 +36,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let pvar = Pvar.mk param_signature.mangled curr_pname in
       let inferred_nullability =
         let origin = TypeOrigin.Formal param_signature.mangled in
-        InferredNullability.from_nullsafe_type param_signature.param_nullsafe_type origin
+        InferredNullability.of_annotated_nullability
+          param_signature.param_annotated_type.nullability origin
       in
       TypeState.add pvar
-        (param_signature.param_nullsafe_type.typ, inferred_nullability, [])
+        (param_signature.param_annotated_type.typ, inferred_nullability, [])
         typestate
     in
     let get_initial_typestate () =
@@ -49,20 +50,20 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc :
         unit =
-      let AnnotatedSignature.{ret_nullsafe_type} = annotated_signature.AnnotatedSignature.ret in
+      let AnnotatedSignature.{ret_annotated_type} = annotated_signature.AnnotatedSignature.ret in
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt =
         match ret_range with Some (typ_found, _, _) -> Some typ_found | None -> None
       in
-      (* TODO(T54088319): model this in NullsafeType.nullability *)
+      (* TODO(T54088319): model this in AnnotatedNullability *)
       let ret_implicitly_nullable =
-        String.equal (PatternMatch.get_type_name ret_nullsafe_type.typ) "java.lang.Void"
+        String.equal (PatternMatch.get_type_name ret_annotated_type.typ) "java.lang.Void"
       in
       State.set_node exit_node ;
       if checks.TypeCheck.check_ret_type <> [] then
         List.iter
-          ~f:(fun f -> f curr_pname curr_pdesc ret_nullsafe_type.typ typ_found_opt loc)
+          ~f:(fun f -> f curr_pname curr_pdesc ret_annotated_type.typ typ_found_opt loc)
           checks.TypeCheck.check_ret_type ;
       if checks.TypeCheck.eradicate then
         EradicateChecks.check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range

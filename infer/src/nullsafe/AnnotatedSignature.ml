@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 
 (* TODO(T54088319) remove Annot.Item.t from t:
-   1. For everything dealing with nullability, use info from NullsafeType instead.
+   1. For everything dealing with nullability, use info from AnnotatedNullability instead.
    2. For other annotations guiding Nullsafe behavior, introduce corresponding datatypes:
       a. Known ret value annotations (if any)
       b. Known param annotations
@@ -18,25 +18,25 @@ module L = Logging
 
 type t = {ret: ret_signature; params: param_signature list} [@@deriving compare]
 
-and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_nullsafe_type: NullsafeType.t}
+and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_annotated_type: AnnotatedType.t}
 [@@deriving compare]
 
 and param_signature =
   { param_annotation_deprecated: Annot.Item.t
   ; mangled: Mangled.t
-  ; param_nullsafe_type: NullsafeType.t }
+  ; param_annotated_type: AnnotatedType.t }
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
 let nullability_for_return ia ~has_propagates_nullable_in_param =
-  let nullability = NullsafeType.nullability_of_annot_item ia in
+  let nullability = AnnotatedNullability.of_annot_item ia in
   (* if any param is annotated with propagates nullable, then the result is nullable *)
   match nullability with
-  | NullsafeType.Nullable _ ->
+  | AnnotatedNullability.Nullable _ ->
       nullability (* We already know it is nullable - lets not overwrite the origin *)
   | _ when has_propagates_nullable_in_param ->
       (* if any params is propagates nullable, the return type can be only nullable *)
-      NullsafeType.Nullable NullsafeType.HasPropagatesNullableInParam
+      AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
   | _ ->
       nullability
 
@@ -44,10 +44,10 @@ let nullability_for_return ia ~has_propagates_nullable_in_param =
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
 let extract_nullability return_annotation param_annotations =
-  let params_nullability = List.map param_annotations ~f:NullsafeType.nullability_of_annot_item in
+  let params_nullability = List.map param_annotations ~f:AnnotatedNullability.of_annot_item in
   let has_propagates_nullable_in_param =
     List.exists params_nullability ~f:(function
-      | NullsafeType.Nullable NullsafeType.AnnotatedPropagatesNullable ->
+      | AnnotatedNullability.Nullable AnnotatedNullability.AnnotatedPropagatesNullable ->
           true
       | _ ->
           false )
@@ -89,13 +89,14 @@ let get proc_attributes : t =
   in
   let ret =
     { ret_annotation_deprecated= return_annotation
-    ; ret_nullsafe_type= NullsafeType.{nullability= return_nullability; typ= ret_type} }
+    ; ret_annotated_type= AnnotatedType.{nullability= return_nullability; typ= ret_type} }
   in
   let params =
     List.map2_exn params_with_annotations params_nullability
       ~f:(fun ((mangled, typ), param_annotation_deprecated) nullability ->
-        {param_annotation_deprecated; mangled; param_nullsafe_type= NullsafeType.{nullability; typ}}
-    )
+        { param_annotation_deprecated
+        ; mangled
+        ; param_annotated_type= AnnotatedType.{nullability; typ} } )
   in
   {ret; params}
 
@@ -109,12 +110,12 @@ let param_has_annot predicate pvar ann_sig =
 
 let pp proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
-  let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_nullsafe_type} =
-    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated NullsafeType.pp param_nullsafe_type
-      Mangled.pp mangled
+  let pp_annotated_param fmt {mangled; param_annotation_deprecated; param_annotated_type} =
+    F.fprintf fmt " %a%a %a" pp_ia param_annotation_deprecated AnnotatedType.pp
+      param_annotated_type Mangled.pp mangled
   in
-  let {ret_annotation_deprecated; ret_nullsafe_type} = annotated_signature.ret in
-  F.fprintf fmt "%a%a %a (%a )" pp_ia ret_annotation_deprecated NullsafeType.pp ret_nullsafe_type
+  let {ret_annotation_deprecated; ret_annotated_type} = annotated_signature.ret in
+  F.fprintf fmt "%a%a %a (%a )" pp_ia ret_annotation_deprecated AnnotatedType.pp ret_annotated_type
     (Typ.Procname.pp_simplified_string ~withclass:false)
     proc_name (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
@@ -129,12 +130,12 @@ let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia
 
 (* Override existing information about nullability for a given type and
    set it to either nullable or nonnull *)
-let set_modelled_nullability_for_nullsafe_type nullsafe_type should_set_nullable =
+let set_modelled_nullability_for_annotated_type annotated_type should_set_nullable =
   let nullability =
-    if should_set_nullable then NullsafeType.Nullable ModelledNullable
-    else NullsafeType.Nonnull ModelledNonnull
+    if should_set_nullable then AnnotatedNullability.Nullable ModelledNullable
+    else AnnotatedNullability.Nonnull ModelledNonnull
   in
-  NullsafeType.{nullsafe_type with nullability}
+  AnnotatedType.{annotated_type with nullability}
 
 
 let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullability) =
@@ -142,14 +143,15 @@ let set_modelled_nullability proc_name asig (nullability_for_ret, params_nullabi
     { param with
       param_annotation_deprecated=
         mark_ia_nullability param.param_annotation_deprecated should_set_nullable
-    ; param_nullsafe_type=
-        set_modelled_nullability_for_nullsafe_type param.param_nullsafe_type should_set_nullable }
+    ; param_annotated_type=
+        set_modelled_nullability_for_annotated_type param.param_annotated_type should_set_nullable
+    }
   in
   let set_modelled_nullability_for_ret ret should_set_nullable =
     { ret_annotation_deprecated=
         mark_ia_nullability ret.ret_annotation_deprecated should_set_nullable
-    ; ret_nullsafe_type=
-        set_modelled_nullability_for_nullsafe_type ret.ret_nullsafe_type should_set_nullable }
+    ; ret_annotated_type=
+        set_modelled_nullability_for_annotated_type ret.ret_annotated_type should_set_nullable }
   in
   let final_params =
     let fail () =
