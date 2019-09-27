@@ -97,7 +97,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
   in
   let is_temp = Idenv.exp_is_temp idenv e in
   let should_report =
-    (not (InferredNullability.is_nullable inferred_nullability))
+    InferredNullability.is_nonnull inferred_nullability
     && Config.eradicate_condition_redundant && true_branch && (not is_temp)
     && PatternMatch.type_is_class typ
     && (not (from_try_with_resources ()))
@@ -126,12 +126,14 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
   let t_lhs, inferred_nullability_lhs, _ =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
-      (typ, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [loc])
+      (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+      (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
       loc
   in
   let _, inferred_nullability_rhs, _ =
     typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
-      (typ, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [loc])
+      (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+      (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
       loc
   in
   let field_is_injector_readwrite () =
@@ -261,8 +263,8 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
             let is_field_assigned_to_nonnull_in_all_constructors () =
               predicate_holds_for_all_typestates
                 (Lazy.force typestates_for_all_constructors_incl_current) field_name
-                ~predicate:(fun (_, nullability, _) ->
-                  not (InferredNullability.is_nullable nullability) )
+                ~predicate:(fun (_, nullability, _) -> InferredNullability.is_nonnull nullability
+              )
             in
             let should_check_field_initialization =
               let in_current_class =
@@ -317,8 +319,7 @@ let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_
 (* TODO(T54308240) Consolidate return over annotated checks in NullsafeRules *)
 let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
-  (* TODO(T54308240) this needs to be changed when we introduce Unknown nullability *)
-  let is_ret_inferred_nonnull = not (InferredNullability.is_nullable ret_inferred_nullability) in
+  let is_ret_inferred_nonnull = InferredNullability.is_nonnull ret_inferred_nullability in
   let is_ret_annotated_nullable =
     match ret_signature.ret_annotated_type.nullability with
     | AnnotatedNullability.Nonnull _ ->
@@ -363,7 +364,8 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
   | ((original_this_e, this_e), typ) :: _ ->
       let _, this_inferred_nullability, _ =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
-          (typ, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [])
+          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+          (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [])
           loc
       in
       let null_method_call = InferredNullability.is_nullable this_inferred_nullability in

@@ -19,7 +19,15 @@ open! IStd
 
 type t [@@deriving compare]
 
-val create : is_nullable:bool -> TypeOrigin.t -> t
+val create_nullable : TypeOrigin.t -> t
+
+val create_nonnull : TypeOrigin.t -> t
+
+val is_nullable : t -> bool
+
+val is_nonnull : t -> bool
+
+val set_nonnull : t -> t
 
 val descr_origin : t -> TypeErr.origin_descr
 (** Human-readable description of the origin of a value.
@@ -35,8 +43,6 @@ val of_annotated_nullability : AnnotatedNullability.t -> TypeOrigin.t -> t
 val get_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred.  *)
 
-val is_nullable : t -> bool
-
 val join : t -> t -> t option
 (** This is what happens with nullability when we join two flows in CFG,
     e.g.
@@ -51,8 +57,6 @@ val join : t -> t -> t option
   *)
 
 val origin_is_fun_library : t -> bool
-
-val set_nullable : bool -> t -> t
 
 val to_string : t -> string
 

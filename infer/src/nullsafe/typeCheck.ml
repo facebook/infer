@@ -115,7 +115,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
   | _ when Exp.is_null_literal e ->
       let typ, inferred_nullability, locs = tr_default in
       if PatternMatch.type_is_class typ then
-        (typ, InferredNullability.create ~is_nullable:true (TypeOrigin.Const loc), locs)
+        (typ, InferredNullability.create_nullable (TypeOrigin.Const loc), locs)
       else (typ, InferredNullability.with_origin inferred_nullability (TypeOrigin.Const loc), locs)
   | Exp.Lvar pvar -> (
     match TypeState.lookup_pvar pvar typestate with
@@ -134,13 +134,14 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
         typestate e1 tr_default loc
   | Exp.Const _ ->
       let typ, _, locs = tr_default in
-      (typ, InferredNullability.create ~is_nullable:false (TypeOrigin.Const loc), locs)
+      (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc), locs)
   | Exp.Lfield (exp, fn, typ) ->
       let _, _, locs = tr_default in
       let _, inferred_nullability, locs' =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate exp
-          (typ, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, locs)
+          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+          (typ, InferredNullability.create_nonnull TypeOrigin.ONone, locs)
           loc
       in
       let exp_origin = InferredNullability.get_origin inferred_nullability in
@@ -408,7 +409,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
     typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
       typestate1 exp1
-      (typ1, InferredNullability.create ~is_nullable:false origin1, [loc1])
+      (typ1, InferredNullability.create_nonnull origin1, [loc1])
       loc1
   in
   (* check if there are errors in exp1 *)
@@ -461,9 +462,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
     ->
-      TypeState.add_id id
-        (typ, InferredNullability.create ~is_nullable:false TypeOrigin.New, [loc])
-        typestate
+      TypeState.add_id id (typ, InferredNullability.create_nonnull TypeOrigin.New, [loc]) typestate
       (* new never returns null *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
@@ -476,7 +475,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let _, ta, _ =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
           typestate array_exp
-          (t, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [loc])
+          (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+          (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
           loc
       in
       if checks.eradicate then
@@ -485,9 +485,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           (Typ.Fieldname.Java.from_string "length")
           ta loc false ;
       TypeState.add_id id
-        ( Typ.mk (Tint Typ.IInt)
-        , InferredNullability.create ~is_nullable:false TypeOrigin.New
-        , [loc] )
+        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New, [loc])
         typestate
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
@@ -551,7 +549,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | Some (t, nullability, _) ->
               let should_report =
                 Config.eradicate_condition_redundant
-                && (not (InferredNullability.is_nullable nullability))
+                && InferredNullability.is_nonnull nullability
                 && not (InferredNullability.origin_is_fun_library nullability)
               in
               ( if checks.eradicate && should_report then
@@ -560,7 +558,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                   (TypeErr.Condition_redundant (true, EradicateChecks.explain_expr tenv node cond))
                   (Some instr_ref) loc curr_pdesc ) ;
               TypeState.add pvar
-                (t, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [loc])
+                (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+                (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
                 typestate''
           | None ->
               typestate'
@@ -592,20 +591,21 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       (* Handle Preconditions.checkState for &&-separated conditions x!=null. *)
       let do_preconditions_check_state typestate' =
-        let handle_pvar is_nullable typestate1 pvar =
+        let set_nonnull_to_pvar typestate1 pvar =
           (* handle the annotation flag for pvar *)
           match TypeState.lookup_pvar pvar typestate1 with
           | Some (t, _, _) ->
               TypeState.add pvar
-                (t, InferredNullability.create ~is_nullable TypeOrigin.ONone, [loc])
+                (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+                (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
                 typestate1
           | None ->
               typestate1
         in
         let res_typestate = ref typestate' in
-        let set_nullable_flag pvar b =
-          (* set the annotation flag for pvar *)
-          res_typestate := pvar_apply loc (handle_pvar b) !res_typestate pvar
+        let set_nonnull pvar =
+          (* set nullability for pvar *)
+          res_typestate := pvar_apply loc set_nonnull_to_pvar !res_typestate pvar
         in
         let handle_negated_condition cond_node =
           let do_instr instr =
@@ -613,7 +613,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
               match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
               | Exp.Lvar pvar', _ ->
-                  set_nullable_flag pvar' false
+                  set_nonnull pvar'
               | _ ->
                   ()
             in
@@ -692,7 +692,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           let _, inferred_nullability_actual, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
-              (t2, InferredNullability.create ~is_nullable:false TypeOrigin.ONone, [])
+              (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
+              (t2, InferredNullability.create_nonnull TypeOrigin.ONone, [])
               loc
           in
           let actual = (orig_e2, inferred_nullability_actual) in
@@ -717,12 +718,12 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           else if
             List.for_all propagates_nullable_params
               ~f:(fun EradicateChecks.{actual= _, inferred_nullability_actual} ->
-                not (InferredNullability.is_nullable inferred_nullability_actual) )
+                InferredNullability.is_nonnull inferred_nullability_actual )
           then
             (* All params' inferred types are non-nullable.
               Strengten the result to be non-nullable as well! *)
             let ret_type_annotation, ret_typ = ret in
-            (InferredNullability.set_nullable false ret_type_annotation, ret_typ)
+            (InferredNullability.set_nonnull ret_type_annotation, ret_typ)
           else
             (* At least one param's inferred type is nullable, can not strengthen the result *)
             ret
@@ -860,15 +861,12 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | None ->
               (typestate, e, EradicateChecks.From_condition)
         in
-        let set_nullable_flag e' should_set_nullable typestate2 =
-          (* add constraint on e' for annotation a given nullability *)
+        let set_nonnull e' typestate2 =
           let handle_pvar typestate' pvar =
             match TypeState.lookup_pvar pvar typestate' with
             | Some (t, current_nullability, locs) ->
-                if InferredNullability.is_nullable current_nullability <> should_set_nullable then
-                  let new_nullability =
-                    InferredNullability.set_nullable should_set_nullable current_nullability
-                  in
+                if not (InferredNullability.is_nonnull current_nullability) then
+                  let new_nullability = InferredNullability.set_nonnull current_nullability in
                   TypeState.add pvar (t, new_nullability, locs) typestate'
                 else typestate'
             | None ->
@@ -903,8 +901,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             match from_call with
             | EradicateChecks.From_is_true_on_null ->
                 (* if f returns true on null, then false branch implies != null *)
-                if InferredNullability.is_nullable inferred_nullability then
-                  set_nullable_flag e' false typestate2
+                if not (InferredNullability.is_nonnull inferred_nullability) then
+                  set_nonnull e' typestate2
                 else typestate2
             | _ ->
                 typestate2 )
@@ -939,8 +937,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             | EradicateChecks.From_containsKey
             | EradicateChecks.From_instanceof
             | EradicateChecks.From_is_false_on_null ->
-                if InferredNullability.is_nullable inferred_nullability then
-                  set_nullable_flag e' false typestate2
+                if not (InferredNullability.is_nonnull inferred_nullability) then
+                  set_nonnull e' typestate2
                 else typestate2 )
         | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
             check_condition node' (Exp.BinOp (Binop.Ne, e1, e2))
