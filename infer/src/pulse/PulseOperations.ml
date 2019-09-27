@@ -127,8 +127,6 @@ let eval location exp0 astate =
     | Lindex (exp', exp_index) ->
         eval exp_index astate
         >>= fun (astate, addr_trace_index) ->
-        check_addr_access action addr_trace_index astate
-        >>= fun astate ->
         eval exp' astate
         >>= fun (astate, addr_trace) ->
         check_addr_access action addr_trace astate
