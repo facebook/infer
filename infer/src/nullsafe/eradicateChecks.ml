@@ -182,6 +182,38 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       (Some instr_ref) loc curr_pdesc
 
 
+let is_nullable {annotated_type} =
+  match annotated_type.nullability with
+  | AnnotatedNullability.Nullable _ ->
+      true
+  | AnnotatedNullability.Nonnull _ ->
+      false
+
+
+let is_nonnull {annotated_type} =
+  match annotated_type.nullability with
+  | AnnotatedNullability.Nullable _ ->
+      false
+  | AnnotatedNullability.Nonnull _ ->
+      true
+
+
+(* Do we have evidence that the field is annotated as nullable? *)
+let is_field_annotated_as_nullable annotated_field_opt =
+  (* If the field is not present, we optimistically assume it is not nullable.
+    TODO(T54687014) investigate if this leads to unsoundness issues in practice
+  *)
+  Option.exists annotated_field_opt ~f:is_nullable
+
+
+(* Do we have evidence that the field is annotated as non-nullable? *)
+let is_field_annotated_as_nonnull annotated_field_opt =
+  (* If the field is not present, we optimistically assume it is not nullable.
+    TODO(T54687014) investigate if this leads to unsoundness issues in practice
+  *)
+  Option.exists annotated_field_opt ~f:is_nonnull
+
+
 (** Check that nonnullable fields are initialized in constructors. *)
 let check_constructor_initialization tenv find_canonical_duplicate curr_pname curr_pdesc start_node
     final_initializer_typestates final_constructor_typestates loc : unit =
@@ -192,16 +224,13 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let do_field (fn, ft, _) =
-            let annotated_with f =
-              match get_field_annotation tenv fn ts with
+            let annotated_field = get_field_annotation tenv fn ts in
+            let is_injector_readonly_annotated =
+              match annotated_field with
               | None ->
                   false
               | Some {annotation_deprecated} ->
-                  f annotation_deprecated
-            in
-            let nullable_annotated = annotated_with Annotations.ia_is_nullable in
-            let injector_readonly_annotated =
-              annotated_with Annotations.ia_is_field_injector_readonly
+                  Annotations.ia_is_field_injector_readonly annotation_deprecated
             in
             let final_type_annotation_with unknown list f =
               let filter_range_opt = function Some (_, ta, _) -> f ta | None -> unknown in
@@ -237,19 +266,23 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
                 let fld_cname = Typ.Fieldname.Java.get_class fn in
                 String.equal (Typ.Name.name name) fld_cname
               in
-              (not injector_readonly_annotated) && PatternMatch.type_is_class ft
-              && in_current_class
+              (not is_injector_readonly_annotated)
+              && PatternMatch.type_is_class ft && in_current_class
               && not (Typ.Fieldname.Java.is_outer_instance fn)
             in
             if should_check_field_initialization then (
-              (* Check if field is missing annotation. *)
-              if (not nullable_annotated) && not may_be_assigned_in_final_typestate then
+              (* Check if non-null field is not initialized. *)
+              if
+                is_field_annotated_as_nonnull annotated_field
+                && not may_be_assigned_in_final_typestate
+              then
                 report_error tenv find_canonical_duplicate
                   (TypeErr.Field_not_initialized (fn, curr_pname))
                   None loc curr_pdesc ;
               (* Check if field is over-annotated. *)
               if
-                Config.eradicate_field_over_annotated && nullable_annotated
+                Config.eradicate_field_over_annotated
+                && is_field_annotated_as_nullable annotated_field
                 && not (may_be_nullable_in_final_typestate ())
               then
                 report_error tenv find_canonical_duplicate
