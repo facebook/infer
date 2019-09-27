@@ -9,9 +9,9 @@
 
 open HolKernel boolLib bossLib Parse;
 open pairTheory listTheory rich_listTheory arithmeticTheory wordsTheory;
-open pred_setTheory finite_mapTheory;
+open pred_setTheory finite_mapTheory relationTheory llistTheory pathTheory;
 open logrootTheory numposrepTheory;
-open settingsTheory miscTheory llvmTheory memory_modelTheory;
+open settingsTheory miscTheory memory_modelTheory llvmTheory;
 
 new_theory "llvm_prop";
 
@@ -290,23 +290,30 @@ QED
 
 (* ----- Theorems about the step function ----- *)
 
+Theorem get_instr_func:
+  ∀p ip i1 i2. get_instr p ip i1 ∧ get_instr p ip i2 ⇒ i1 = i2
+Proof
+  rw [get_instr_cases] >>
+  metis_tac [optionTheory.SOME_11]
+QED
+
 Theorem inc_pc_invariant:
-  ∀p s i. prog_ok p ∧ next_instr p s i ∧ ¬terminator i ∧ state_invariant p s ⇒ state_invariant p (inc_pc s)
+  ∀p s i. prog_ok p ∧ get_instr p s.ip i ∧ ¬terminator i ∧ state_invariant p s ⇒ state_invariant p (inc_pc s)
 Proof
   rw [state_invariant_def, inc_pc_def, allocations_ok_def, globals_ok_def,
       stack_ok_def, frame_ok_def, heap_ok_def, EVERY_EL, ip_ok_def]
   >- (
     qexists_tac `dec` >> qexists_tac `block'` >> rw [] >>
-    fs [prog_ok_def, next_instr_cases] >> res_tac >> rw [] >>
+    fs [prog_ok_def, get_instr_cases] >> res_tac >> rw [] >>
     `s.ip.i ≠ length block'.body - 1` suffices_by decide_tac >>
     CCONTR_TAC >> fs [] >> rfs [LAST_EL, PRE_SUB1]) >>
   metis_tac []
 QED
 
-Theorem next_instr_update:
-  ∀p s i r v. next_instr p (update_result r v s) i <=> next_instr p s i
+Theorem get_instr_update:
+  ∀p s i r v. get_instr p (update_result r v s).ip i <=> get_instr p s.ip i
 Proof
-  rw [next_instr_cases, update_result_def]
+  rw [get_instr_cases, update_result_def]
 QED
 
 Theorem update_invariant:
@@ -341,8 +348,8 @@ Proof
 QED
 
 Theorem step_instr_invariant:
-  ∀i s2.
-    step_instr p s1 i s2 ⇒ prog_ok p ∧ next_instr p s1 i ∧ state_invariant p s1
+  ∀i l s2.
+    step_instr p s1 i l s2 ⇒ prog_ok p ∧ get_instr p s1.ip i ∧ state_invariant p s1
     ⇒
     state_invariant p s2
 Proof
@@ -391,37 +398,37 @@ Proof
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]>>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant]>>
     metis_tac [terminator_def])
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- ( (* Allocation *)
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant]
     >- metis_tac [allocate_invariant]
-    >- (fs [next_instr_cases, allocate_cases] >> metis_tac [terminator_def]))
+    >- (fs [get_instr_cases, allocate_cases] >> metis_tac [terminator_def]))
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
-    fs [next_instr_cases] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
+    fs [get_instr_cases] >>
     metis_tac [terminator_def])
   >- ( (* Store *)
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant]
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant]
     >- (irule set_bytes_invariant >> rw [] >> metis_tac [])
-    >- (fs [next_instr_cases] >> metis_tac [terminator_def]))
+    >- (fs [get_instr_cases] >> metis_tac [terminator_def]))
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- (
-    irule inc_pc_invariant >> rw [next_instr_update, update_invariant] >>
+    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
   >- ( (* Call *)
     rw [state_invariant_def]
@@ -435,9 +442,33 @@ Proof
         last_x_assum drule >> disch_then drule >> rw [] >>
         CCONTR_TAC >> fs [] >> rfs [LAST_EL] >>
         Cases_on `length block'.body = s1.ip.i + 1` >> fs [PRE_SUB1] >>
-        fs [next_instr_cases] >>
+        fs [get_instr_cases] >>
         metis_tac [terminator_def])
       >- (fs [EVERY_MEM, frame_ok_def] >> metis_tac [])))
+QED
+
+Theorem exit_no_step:
+  !p s1. get_instr p s1.ip Exit ⇒ ¬?l s2. step p s1 l s2
+Proof
+  rw [step_cases, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
+  `i = Exit` by metis_tac [get_instr_func] >>
+  rw [step_instr_cases]
+QED
+
+Definition is_call_def:
+  (is_call (Call _ _ _ _) ⇔ T) ∧
+  (is_call _ ⇔ F)
+End
+
+Theorem step_same_block:
+  ∀p s1 l s2 i.
+    get_instr p s1.ip i ∧ step_instr p s1 i l s2 ∧ ¬terminator i ∧ ~is_call i⇒
+    s1.ip.f = s2.ip.f ∧
+    s1.ip.b = s2.ip.b ∧
+    s2.ip.i = s1.ip.i + 1
+Proof
+  rw [step_instr_cases] >>
+  fs [terminator_def, is_call_def, inc_pc_def, update_result_def]
 QED
 
 (* ----- Initial state is ok ----- *)
@@ -448,6 +479,392 @@ Proof
   rw [is_init_state_def, state_invariant_def]
   >- (rw [ip_ok_def] >> fs [prog_ok_def] >> metis_tac [NOT_NIL_EQ_LENGTH_NOT_0])
   >- rw [stack_ok_def]
+QED
+
+
+(* ----- A bigger-step semantics ----- *)
+Definition stuck_def:
+  stuck p s1 ⇔ ¬get_instr p s1.ip Exit ∧ ¬∃l s2. step p s1 l s2
+End
+
+Definition last_step_def:
+  last_step p s1 l s2 ⇔
+   ∃i.
+     step p s1 l s2 ∧ get_instr p s1.ip i ∧
+     (terminator i ∨ is_call i ∨ ¬∃l s3. step p s2 l s3)
+End
+
+(* Run all of the instructions up-to-and-including the next Call or terminator
+ * *)
+Inductive multi_step:
+
+  (∀p s1 s2 l.
+   last_step p s1 l s2
+   ⇒
+   multi_step p s1 [l] s2) ∧
+
+  (∀p s1 s2 s3 i l ls.
+   step p s1 l s2 ∧
+   get_instr p s1.ip i ∧
+   ¬(terminator i ∨ is_call i) ∧
+   multi_step p s2 ls s3
+   ⇒
+   multi_step p s1 (l::ls) s3)
+End
+
+Inductive observation_prefixes:
+  (∀l. observation_prefixes (Complete, l) (Complete, filter (\x. x ≠ Tau) l)) ∧
+  (∀l. observation_prefixes (Stuck, l) (Stuck, filter (\x. x ≠ Tau) l)) ∧
+  (∀l1 l2 x.
+    l2 ≼ l1 ∧ (l2 = l1 ⇒ x = Partial)
+    ⇒
+    observation_prefixes (x, l1) (Partial, filter (\x. x ≠ Tau) l2))
+End
+
+Definition multi_step_sem_def:
+  multi_step_sem p s1 =
+    { l1 | ∃path l2. l1 ∈ observation_prefixes (get_observation p (last path), flat l2) ∧
+           toList (labels path) = Some l2 ∧
+           finite path ∧ okpath (multi_step p) path ∧ first path = s1 }
+End
+
+Theorem multi_step_to_step_path:
+  ∀p s1 l s2.
+    multi_step p s1 l s2 ⇒
+      ∃path.
+        finite path ∧ okpath (step p) path ∧ first path = s1 ∧ last path = s2 ∧
+        toList (labels path) = Some l
+Proof
+  ho_match_mp_tac multi_step_ind >> conj_tac
+  >- (rw [] >> qexists_tac `pcons s1 l (stopped_at s2)` >> fs [toList_THM, last_step_def]) >>
+  rw [] >>
+  qexists_tac `pcons s1 l path` >> rw [toList_THM] >>
+  `LFINITE (labels path)` by metis_tac [finite_labels] >>
+  drule LFINITE_toList >> rw [] >> rw []
+QED
+
+Theorem expand_multi_step_path:
+  ∀path. okpath (multi_step prog) path ∧ finite path ⇒
+    !l. toList (labels path) = Some l ⇒
+    ∃path'.
+      toList (labels path') = Some (flat l) ∧ finite path' ∧
+      okpath (step prog) path' ∧ first path' = first path ∧ last path' = last path
+Proof
+  ho_match_mp_tac finite_okpath_ind >> rw []
+  >- (qexists_tac `stopped_at x` >> fs [toList_THM] >> rw []) >>
+  fs [toList_THM] >> rw [] >>
+  first_x_assum drule >> rw [] >>
+  drule multi_step_to_step_path >> rw [] >>
+  qexists_tac `plink path'' path'` >> rw [] >>
+  simp [toList_THM, labels_plink] >>
+  `LFINITE (LAPPEND (labels path'') (labels path'))` by metis_tac [LFINITE_APPEND, finite_labels] >>
+  drule LFINITE_toList >> rw [] >> drule toList_LAPPEND_APPEND >> rw []
+QED
+
+Theorem contract_step_path:
+  ∀path. okpath (step prog) path ∧ finite path ⇒
+    ∀l1 l s. last_step prog (last path) l s ∧
+      toList (labels path) = Some l1
+    ⇒
+    ∃path' l2.
+      toList (labels path') = Some l2 ∧
+      flat l2 = l1 ++ [l] ∧
+      finite path' ∧
+      okpath (multi_step prog) path' ∧ first path' = first path ∧ last path' = s
+Proof
+  ho_match_mp_tac finite_okpath_ind >> rw []
+  >- (
+    qexists_tac `pcons x [l] (stopped_at s)` >> fs [] >> simp [toList_THM] >>
+    simp [Once multi_step_cases] >>
+    fs [toList_THM]) >>
+  fs [toList_THM] >>
+  first_x_assum drule >> disch_then drule >> rw [] >>
+  Cases_on `last_step prog x r (first path)`
+  >- (
+    qexists_tac `pcons x [r] path'` >> simp [] >>
+    simp [Once multi_step_cases, toList_THM])
+  >- (
+    qpat_x_assum `okpath (multi_step _) _` mp_tac >>
+    simp [Once okpath_cases] >> rw [] >> fs [toList_THM] >> rw [] >> fs [] >>
+    qexists_tac `pcons x (r::r') p` >> fs [toList_THM] >> rw [Once multi_step_cases] >>
+    disj2_tac >> qexists_tac `first path` >> rw [] >> fs [last_step_def] >> rfs [] >>
+    fs [step_cases, get_instr_cases] >>
+    metis_tac [])
+QED
+
+Definition get_next_step_def:
+  get_next_step p s1 =
+    some (s2, l). step p s1 l s2 ∧ ¬last_step p s1 l s2
+End
+
+Triviality finite_plink_trivial:
+  ∀path. finite path ⇒ path = plink path (stopped_at (last path))
+Proof
+  ho_match_mp_tac finite_path_ind >> rw []
+QED
+
+Definition instrs_left_def:
+  instrs_left prog s =
+    case alookup prog s.ip.f of
+    | None => 0
+    | Some d =>
+      case alookup d.blocks s.ip.b of
+      | None => 0
+      | Some b => length b.body - s.ip.i
+End
+
+Theorem extend_step_path:
+  ∀path.
+    okpath (step p) path ∧ finite path
+    ⇒
+    (∀s. path = stopped_at s ⇒ ∃s' l. step p s l s') ⇒
+    ?path' l s n. finite path' ∧ okpath (step p) path' ∧ last_step p (last path') l s ∧
+      length path = Some (Suc n) ∧ n ∈ PL (pconcat path' l (stopped_at s)) ∧
+      path = take n (pconcat path' l (stopped_at s))
+Proof
+  rw [] >>
+  Cases_on `get_next_step p (last path) = None ∧ ∀s. path ≠ stopped_at s`
+  >- (
+    fs [get_next_step_def, optionTheory.some_def, FORALL_PROD, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
+    Cases_on `?l2 s2. step p (last path) l2 s2` >> fs []
+    >- (
+      first_x_assum drule >> rw [] >>
+      qexists_tac `path` >> qexists_tac `l2` >> qexists_tac `s2` >> rw [] >>
+      fs [finite_length] >>
+      qexists_tac `n - 1` >>
+      `n ≠ 0` by metis_tac [length_never_zero] >>
+      rw [PL_def] >>
+      `length (pconcat path l2 (stopped_at s2)) = Some (n + 1)`
+      by metis_tac [length_pconcat, alt_length_thm] >>
+      rw [take_pconcat]
+      >- metis_tac [take_all] >>
+      fs [PL_def] >> rfs [])
+    >- (
+      drule finite_path_end_cases >>
+      rw [] >> fs [] >> rfs [] >>
+      qexists_tac `p'` >> rw [] >>
+      qexists_tac `l` >> qexists_tac `s` >> rw [] >>
+      fs [finite_length] >>
+      qexists_tac `n` >> rw []
+      >- (
+        rw [last_step_def] >> fs [step_cases] >>
+        metis_tac []) >>
+      `length (plink p' (pcons (last p') l (stopped_at s))) = Some (n + Suc 1 - 1)`
+      by metis_tac [length_plink, alt_length_thm, optionTheory.OPTION_MAP_DEF] >>
+      rw []
+      >- (
+        rw [PL_def] >> fs [finite_length] >>
+        `length (pconcat p' l (stopped_at s)) = Some (n + 1)`
+        by metis_tac [length_pconcat, alt_length_thm] >>
+        fs [])
+      >- (
+        rw [take_pconcat]
+        >- (fs [PL_def, finite_length] >> rfs []) >>
+        metis_tac [finite_length, pconcat_to_plink_finite]))) >>
+  qexists_tac `plink path (unfold I (get_next_step p) (last path))` >> rw [] >>
+  qmatch_goalsub_abbrev_tac `finite path1` >>
+  `∃m. length path = Some (Suc m)`
+  by (fs [finite_length] >> Cases_on `n` >> fs [length_never_zero]) >>
+  simp [GSYM PULL_EXISTS] >>
+  conj_asm1_tac
+  >- (
+    simp [Abbr `path1`] >> irule unfold_finite >>
+    WF_REL_TAC `measure (instrs_left p)` >>
+    rpt gen_tac >>
+    simp [instrs_left_def, get_next_step_def, optionTheory.some_def, EXISTS_PROD] >>
+    qmatch_goalsub_abbrev_tac `@x. P x` >> rw [] >>
+    `?x. P x` by (fs [Abbr `P`, EXISTS_PROD] >> metis_tac []) >>
+    `P (@x. P x)` by metis_tac [SELECT_THM] >>
+    qunabbrev_tac `P` >> pop_assum mp_tac >> simp [] >>
+    simp [last_step_def] >> rw [] >>
+    pop_assum mp_tac >> simp [] >>
+    `?i. get_instr p s2.ip i` by metis_tac [get_instr_cases, step_cases] >>
+    disch_then (qspec_then `i` mp_tac) >> simp [] >>
+    pop_assum mp_tac >> pop_assum mp_tac >> simp [Once step_cases] >>
+    rw [] >>
+    `i' = i` by metis_tac [get_instr_func] >> rw [] >>
+    drule step_same_block >> disch_then drule >> simp [] >>
+    rw [] >> fs [step_cases, get_instr_cases]) >>
+ `last path = first path1`
+  by (
+    unabbrev_all_tac >> simp [Once unfold_thm] >>
+    CASE_TAC >> rw [] >> split_pair_case_tac >> rw []) >>
+  simp [last_plink] >>
+  conj_asm1_tac
+  >- (
+    unabbrev_all_tac >>
+    irule okpath_unfold >> rw [] >>
+    qexists_tac `\x.T` >> rw [get_next_step_def] >>
+    fs [optionTheory.some_def] >>
+    pairarg_tac >> fs [] >>
+    qmatch_assum_abbrev_tac `(@x. P x) = _` >>
+    `P (@x. P x)`
+    by (
+      simp [SELECT_THM] >>
+      unabbrev_all_tac >> fs [EXISTS_PROD] >>
+      metis_tac []) >>
+    rfs [] >>
+    unabbrev_all_tac >> fs []) >>
+  `?n. length path1 = Some n` by fs [finite_length] >>
+  `n ≠ 0` by metis_tac [length_never_zero] >>
+  `length (plink path path1) = Some (Suc m + n - 1)` by metis_tac [length_plink] >>
+  simp [take_pconcat, PL_def, finite_pconcat, length_plink] >>
+  `!l s. length (pconcat (plink path path1) l (stopped_at s)) = Some ((Suc m + n − 1) + 1)`
+  by metis_tac [length_pconcat, alt_length_thm] >>
+  rw [GSYM PULL_EXISTS]
+  >- (
+    unabbrev_all_tac >> drule unfold_last >>
+    qmatch_goalsub_abbrev_tac `last_step _ (last path1) _ _` >>
+    simp [get_next_step_def, optionTheory.some_def, FORALL_PROD] >>
+    rw [METIS_PROVE [] ``~x ∨ y ⇔ (~y ⇒ ~x)``] >> CCONTR_TAC >>
+    Cases_on `1 ∈ PL path1`
+    >- (
+      fs [] >> pairarg_tac >> fs [] >> rw [] >>
+      qmatch_assum_abbrev_tac `(@x. P x) = _` >>
+      `P (@x. P x)`
+      by (
+        simp [SELECT_THM] >>
+        unabbrev_all_tac >> fs [EXISTS_PROD] >>
+        metis_tac []) >>
+      fs [Abbr `P`] >> pairarg_tac >> fs [] >> rw [] >>
+      fs [last_step_def] >> rfs  [] >>
+      `?i. get_instr p x.ip i` by (fs [step_cases] >> metis_tac []) >>
+      metis_tac []) >>
+    `n = 1` by (rfs [PL_def, finite_length] >> decide_tac) >> rw [] >>
+    qspec_then `path1` strip_assume_tac path_cases
+    >- (
+      unabbrev_all_tac >> fs [] >> rw [] >>
+      fs [Once unfold_thm] >>
+      Cases_on `get_next_step p (last path)` >> simp [] >> fs [] >> rw [] >>
+      fs [get_next_step_def, optionTheory.some_def, FORALL_PROD] >>
+      split_pair_case_tac >> fs []) >>
+    fs [alt_length_thm, length_never_zero])
+  >- (
+    rw [take_plink]
+    >-  (imp_res_tac take_all >> fs []) >>
+    metis_tac [finite_plink_trivial])
+QED
+
+Theorem find_path_prefix:
+  ∀path.
+     okpath (step p) path ∧ finite path
+    ⇒
+    !obs l1. toList (labels path) = Some l1 ∧
+    obs ∈ observation_prefixes (get_observation p (last path), l1)
+    ⇒
+    ∃n l2. n ∈ PL path ∧ toList (labels (take n path)) = Some l2 ∧
+      obs = (get_observation p (last (take n path)), filter (\x. x ≠ Tau) l2)
+Proof
+  ho_match_mp_tac finite_okpath_ind >> rw [toList_THM]
+  >- fs [observation_prefixes_cases, get_observation_def, IN_DEF] >>
+  `?s ls. obs = (s, ls)` by metis_tac [pairTheory.pair_CASES] >>
+  fs [] >>
+  `∃l. length path = Some l ∧ l ≠ 0` by metis_tac [finite_length, length_never_zero] >>
+  `take (l-1) path = path` by metis_tac [take_all] >>
+  Cases_on `s` >> fs []
+  >- (
+    qexists_tac `l` >> rw [toList_THM] >>
+    Cases_on `l` >> fs [toList_THM] >>
+    fs [observation_prefixes_cases, IN_DEF, PL_def])
+  >- (
+    qexists_tac `l` >> rw [toList_THM] >>
+    Cases_on `l` >> fs [toList_THM] >>
+    fs [observation_prefixes_cases, IN_DEF, PL_def]) >>
+  qpat_x_assum `(Partial, _) ∈ _` mp_tac >>
+  simp [observation_prefixes_cases, Once IN_DEF] >> rw [] >>
+  rename1 `short_l ≼ first_l::long_l` >>
+  Cases_on `short_l` >> fs []
+  >- (
+    qexists_tac `0` >> rw [toList_THM, get_observation_def] >>
+    metis_tac [exit_no_step]) >>
+  rename1 `short_l ≼ long_l` >>
+  rfs [] >>
+  `(Partial, filter (\x. x ≠ Tau) short_l) ∈ observation_prefixes (get_observation p (last path),long_l)`
+  by (simp [observation_prefixes_cases, IN_DEF] >> metis_tac []) >>
+  first_x_assum drule >> strip_tac >>
+  qexists_tac `Suc n` >> simp [toList_THM] >> rw [] >> rfs [last_take]
+QED
+
+Triviality is_prefix_lem:
+  ∀l1 l2 l3. l1 ≼ l2 ⇒ l1 ≼ l2 ++ l3
+Proof
+  Induct >> rw [] >> fs [] >>
+  Cases_on `l2` >> fs []
+QED
+
+Theorem big_sem_equiv:
+  !p s1. multi_step_sem p s1 = sem p s1
+Proof
+  rw [multi_step_sem_def, sem_def, EXTENSION] >> eq_tac >> rw []
+  >- (
+    drule expand_multi_step_path >> rw [] >>
+    rename [`toList (labels m_path) = Some m_l`, `toList (labels s_path) = Some (flat m_l)`] >>
+    `?n short_l.
+      n ∈ PL s_path ∧
+      toList (labels (take n s_path)) = Some short_l ∧
+      x = (get_observation p (last (take n s_path)), filter (\x. x ≠ Tau) short_l)`
+    by metis_tac [find_path_prefix] >>
+    qexists_tac `take n s_path` >> rw [])
+  >- (
+    Cases_on `¬∀s. path = stopped_at s ⇒ ∃s' l. step p s l s'`
+    >- (
+      fs [] >> rw [] >> fs [toList_THM] >> rw [] >>
+      qexists_tac `stopped_at s` >> rw [toList_THM] >>
+      rw [observation_prefixes_cases, IN_DEF, get_observation_def]) >>
+    drule extend_step_path >> disch_then drule >>
+    impl_tac >> rw []
+    >- metis_tac [] >>
+    rename1 `last_step _ (last s_ext_path) last_l last_s` >>
+    `?s_ext_l. toList (labels s_ext_path) = Some s_ext_l` by metis_tac [LFINITE_toList, finite_labels] >>
+    qabbrev_tac `orig_path = take n (pconcat s_ext_path last_l (stopped_at last_s))` >>
+    drule contract_step_path >> simp [] >> disch_then drule >> rw [] >>
+    rename [`toList (labels m_path) = Some m_l`,
+            `toList (labels s_ext_path) = Some s_ext_l`,
+            `first m_path = first s_ext_path`,
+            `okpath (multi_step _) m_path`] >>
+    qexists_tac `m_path` >> rw [] >>
+    TRY (rw [Abbr `orig_path`] >> NO_TAC) >>
+    rfs [last_take, take_pconcat] >>
+    Cases_on `length s_ext_path = Some n`
+    >- (
+      rfs [PL_def] >> fs [] >>
+      rw [observation_prefixes_cases, IN_DEF] >> rw [] >>
+      unabbrev_all_tac >> rw [last_pconcat] >> fs [] >>
+      drule toList_LAPPEND_APPEND >> rw [toList_THM] >>
+      Cases_on `get_observation p (last m_path)` >> simp [] >>
+      qexists_tac `s_ext_l ++ [last_l]` >> rw []) >>
+    fs [PL_def, finite_pconcat] >> rfs [] >>
+    `?m. length s_ext_path = Some m` by metis_tac [finite_length] >>
+    `length s_ext_path = Some m` by metis_tac [finite_length] >>
+    `length (pconcat s_ext_path last_l (stopped_at (last m_path))) = Some (m + 1)`
+    by metis_tac [length_pconcat, alt_length_thm] >>
+    fs [] >>
+    `n < m` by decide_tac >> fs [] >> rw [] >>
+    `n ∈ PL s_ext_path` by rw [PL_def] >>
+    Cases_on `get_observation p (last orig_path) = Partial`
+    >- (
+      rw [observation_prefixes_cases, IN_DEF] >> rw [] >>
+      unabbrev_all_tac >> fs [] >>
+      `LTAKE n (labels s_ext_path) = Some l` by metis_tac [LTAKE_labels] >>
+      fs [toList_some] >> rfs [] >>
+      Cases_on `m` >> fs [length_labels] >>
+      qexists_tac `l` >> rw [] >> rfs []
+      >- (
+        irule is_prefix_lem >>
+        `n ≤ length s_ext_l` by decide_tac >>
+        fs [ltake_fromList2] >>
+        rw [take_is_prefix])
+      >- (drule LTAKE_LENGTH >> rw [])) >>
+    `¬∃l s. step p (last orig_path) l s`
+    by (fs [get_observation_def] >> BasicProvers.EVERY_CASE_TAC >> fs [] >> metis_tac [exit_no_step]) >>
+    unabbrev_all_tac >> rfs [last_take] >>
+    fs [okpath_pointwise] >>
+    Cases_on `Suc n ∈ PL s_ext_path` >> rw []
+    >- (last_x_assum (qspec_then `n` mp_tac) >> rw []) >>
+    `n = m - 1` by (fs [PL_def] >> rfs []) >>
+    rw [] >>
+    `el (m - 1) s_ext_path = last s_ext_path` by metis_tac [take_all, last_take] >>
+    fs [last_step_def])
 QED
 
 export_theory ();

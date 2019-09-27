@@ -55,5 +55,6 @@ overload_on ("map2", ``list$MAP2``);
 overload_on ("foldl", ``FOLDL``);
 overload_on ("foldr", ``FOLDR``);
 overload_on ("option_rel", ``OPTREL``);
+overload_on ("front", ``FRONT``);
 
 export_theory ();

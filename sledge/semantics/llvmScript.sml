@@ -9,6 +9,7 @@
  * are relevant for the LLVM -> LLAIR translation, especially exceptions. *)
 
 open HolKernel boolLib bossLib Parse;
+open llistTheory pathTheory;
 open settingsTheory memory_modelTheory;
 
 new_theory "llvm";
@@ -74,6 +75,7 @@ Datatype:
   | Br arg label label
   | Invoke reg ty arg (targ list) label label
   | Unreachable
+  | Exit
   (* Non-terminators *)
   | Sub reg bool bool ty arg arg
   | Extractvalue reg targ (const list)
@@ -131,6 +133,7 @@ Definition terminator_def:
   (terminator (Br _ _ _) ⇔ T) ∧
   (terminator (Invoke _ _ _ _ _ _) ⇔ T) ∧
   (terminator Unreachable ⇔ T) ∧
+  (terminator Exit ⇔ T) ∧
   (terminator _ ⇔ F)
 End
 
@@ -173,6 +176,15 @@ Datatype:
        locals : reg |-> pv;
        stack : frame list;
        heap : bool heap |>
+End
+
+(* Labels for the transitions to make externally observable behaviours apparent.
+ * For now, we'll consider this to be writes to global variables.
+ * *)
+Datatype:
+  obs =
+  | Tau
+  | W glob_var (word8 list)
 End
 
 (* ----- Things about types ----- *)
@@ -462,6 +474,11 @@ Definition inc_pc_def:
   inc_pc s = s with ip := (s.ip with i := s.ip.i + 1)
 End
 
+Inductive get_obs:
+  (flookup s.globals x = Some (n, w) ⇒ get_obs s w bytes (W x bytes)) ∧
+  ((∀n. (n, w) ∉ FRANGE s.globals) ⇒ get_obs s w bytes Tau)
+End
+
 (* NB, the semantics tracks the poison values, but not much thought has been put
  * into getting it exactly right, so we don't have much confidence that it is
  * exactly right. We also are currently ignoring the undefined value. *)
@@ -472,7 +489,7 @@ Inductive step_instr:
    eval s a = Some v
    ⇒
    step_instr prog s
-     (Ret (t, a))
+     (Ret (t, a)) Tau
      (update_result fr.result_var v
        <| ip := fr.ret;
           globals := s.globals;
@@ -498,19 +515,19 @@ Inductive step_instr:
    map (do_phi l s) phis = map Some updates
    ⇒
    step_instr prog s
-     (Br a l1 l2)
+     (Br a l1 l2) Tau
      (s with <| ip := <| f := s.ip.f; b := l; i := 0 |>;
                 locals := s.locals |++ updates |>)) ∧
 
   (* TODO *)
-  (step_instr prog s (Invoke r t a args l1 l2) s) ∧
+  (step_instr prog s (Invoke r t a args l1 l2) Tau s) ∧
 
   (eval s a1 = Some v1 ∧
    eval s a2 = Some v2 ∧
    do_sub nuw nsw v1 v2 t = Some v3
    ⇒
    step_instr prog s
-     (Sub r nuw nsw t a1 a2)
+     (Sub r nuw nsw t a1 a2) Tau
      (inc_pc (update_result r v3 s))) ∧
 
   (eval s a = Some v ∧
@@ -520,7 +537,7 @@ Inductive step_instr:
    extract_value v.value ns = Some result
    ⇒
    step_instr prog s
-     (Extractvalue r (t, a) const_indices)
+     (Extractvalue r (t, a) const_indices) Tau
      (inc_pc (update_result r <| poison := v.poison; value := result |> s))) ∧
 
   (eval s a1 = Some v1 ∧
@@ -531,7 +548,7 @@ Inductive step_instr:
    insert_value v1.value v2.value ns = Some result
    ⇒
    step_instr prog s
-     (Insertvalue r (t1, a1) (t2, a2) const_indices)
+     (Insertvalue r (t1, a1) (t2, a2) const_indices) Tau
      (inc_pc (update_result r
                 <| poison := (v1.poison ∨ v2.poison); value := result |> s))) ∧
 
@@ -543,7 +560,7 @@ Inductive step_instr:
    mk_ptr n2 = Some ptr
    ⇒
    step_instr prog s
-     (Alloca r t (t1, a1))
+     (Alloca r t (t1, a1)) Tau
      (inc_pc (update_result r <| poison := v.poison; value := ptr |>
                 (s with heap := new_h)))) ∧
 
@@ -553,20 +570,21 @@ Inductive step_instr:
    pbytes = get_bytes s.heap interval
    ⇒
    step_instr prog s
-     (Load r t (t1, a1))
+     (Load r t (t1, a1)) Tau
      (inc_pc (update_result r <| poison := (T ∈ set (map fst pbytes));
                                  value := fst (bytes_to_llvm_value t (map snd pbytes)) |>
                             s))) ∧
 
   (eval s a2 = Some <| poison := p2; value := FlatV (PtrV w) |> ∧
    eval s a1 = Some v1 ∧
-   interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧
+   interval = Interval freeable (w2n w) (w2n w + sizeof t1) ∧
    is_allocated interval s.heap ∧
    bytes = llvm_value_to_bytes v1.value ∧
-   length bytes = sizeof t
+   length bytes = sizeof t1 ∧
+   get_obs s w bytes obs
    ⇒
    step_instr prog s
-     (Store (t1, a1) (t2, a2))
+     (Store (t1, a1) (t2, a2)) obs
      (inc_pc (s with heap := set_bytes p2 bytes (w2n w) s.heap))) ∧
 
   (map (eval s o snd) tindices = map Some (i1::indices) ∧
@@ -579,7 +597,7 @@ Inductive step_instr:
    mk_ptr (w2n w1 + sizeof t1 * i + off) = Some ptr
    ⇒
    step_instr prog s
-    (Gep r t ((PtrT t1), a1) tindices)
+    (Gep r t ((PtrT t1), a1) tindices) Tau
     (inc_pc (update_result r
                <| poison := (v1.poison ∨ i1.poison ∨ exists (λv. v.poison) indices);
                   value := ptr |>
@@ -590,7 +608,7 @@ Inductive step_instr:
    w64_cast w t = Some int_v
    ⇒
    step_instr prog s
-    (Ptrtoint r (t1, a1) t)
+    (Ptrtoint r (t1, a1) t) Tau
     (inc_pc (update_result r <| poison := v1.poison; value := int_v |> s))) ∧
 
   (eval s a1 = Some v1 ∧
@@ -598,7 +616,7 @@ Inductive step_instr:
    mk_ptr n = Some ptr
    ⇒
    step_instr prog s
-    (Inttoptr r (t1, a1) t)
+    (Inttoptr r (t1, a1) t) Tau
     (inc_pc (update_result r <| poison := v1.poison; value := ptr |> s))) ∧
 
   (eval s a1 = Some v1 ∧
@@ -606,14 +624,14 @@ Inductive step_instr:
    do_icmp c v1 v2 = Some v3
    ⇒
    step_instr prog s
-    (Icmp r c t a1 a2)
+    (Icmp r c t a1 a2) Tau
     (inc_pc (update_result r v3 s))) ∧
 
   (alookup prog fname = Some d ∧
    map (eval s o snd) targs = map Some vs
    ⇒
    step_instr prog s
-     (Call r t fname targs)
+     (Call r t fname targs) Tau
      <| ip := <| f := fname; b := None; i := 0 |>;
         locals := alist_to_fmap (zip (map snd d.params, vs));
         globals := s.globals;
@@ -622,33 +640,61 @@ Inductive step_instr:
              saved_locals := s.locals;
              result_var := r;
              stack_allocs := [] |> :: s.stack;
-        heap := s.heap |>) ∧
+        heap := s.heap |>)(* ∧
 
   (* TODO *)
-  (step_instr prog s (Cxa_allocate_exn r a) s) ∧
+  (step_instr prog s (Cxa_allocate_exn r a) Tau s) ∧
   (* TODO *)
-  (step_instr prog s (Cxa_throw a1 a2 a3) s) ∧
+  (step_instr prog s (Cxa_throw a1 a2 a3) Tau s) ∧
   (* TODO *)
-  (step_instr prog s (Cxa_begin_catch r a) s) ∧
+  (step_instr prog s (Cxa_begin_catch r a) Tau s) ∧
   (* TODO *)
-  (step_instr prog s (Cxa_end_catch) s) ∧
+  (step_instr prog s (Cxa_end_catch) Tau s) ∧
   (* TODO *)
-  (step_instr prog s (Cxa_get_exception_ptr r a) s)
+  (step_instr prog s (Cxa_get_exception_ptr r a) Tau s)
+  *)
 End
 
-Inductive next_instr:
-  alookup p s.ip.f = Some d ∧
-  alookup d.blocks s.ip.b = Some b ∧
-  s.ip.i < length b.body
-  ⇒
-  next_instr p s (el s.ip.i b.body)
+Inductive get_instr:
+  (∀prog ip.
+   alookup prog ip.f = Some d ∧
+   alookup d.blocks ip.b = Some b ∧
+   ip.i < length b.body
+   ⇒
+   get_instr prog ip (el ip.i b.body))
 End
 
 Inductive step:
-  next_instr p s i ∧
-  step_instr p s i s'
+  get_instr p s.ip i ∧
+  step_instr p s i l s'
   ⇒
-  step p s s'
+  step p s l s'
+End
+
+Datatype:
+  trace_type =
+  | Stuck
+  | Complete
+  | Partial
+End
+
+Definition get_observation_def:
+  get_observation prog last_s =
+    if get_instr prog last_s.ip Exit then
+      Complete
+    else if ∃s l. step prog last_s l s then
+      Partial
+    else
+      Stuck
+End
+
+(* The semantics of a program will be the finite traces of stores to global
+ * variables.
+ * *)
+Definition sem_def:
+  sem p s1 =
+    { (get_observation p (last path), filter (\x. x ≠ Tau) l)  | (path, l) |
+      toList (labels path) = Some l ∧ finite path ∧ okpath (step p) path ∧ first path = s1 }
 End
 
 (* ----- Invariants on state ----- *)
