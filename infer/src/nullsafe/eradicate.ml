@@ -153,17 +153,17 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           (* if 'this(...)' is called, no need to check initialization *)
           && checks.TypeCheck.eradicate
         then (
-          let final_initializer_typestates_lazy =
+          let typestates_for_curr_constructor_and_all_initializer_methods =
             Initializers.final_initializer_typestates_lazy tenv curr_pname curr_pdesc
               get_procs_in_file typecheck_proc
           in
-          let final_constructor_typestates_lazy =
+          let typestates_for_all_constructors_incl_current =
             Initializers.final_constructor_typestates_lazy tenv curr_pname get_procs_in_file
               typecheck_proc
           in
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
-            curr_pdesc start_node final_initializer_typestates_lazy
-            final_constructor_typestates_lazy proc_loc ;
+            curr_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
+            ~typestates_for_all_constructors_incl_current proc_loc ;
           if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate )
       in
       match typestate_opt with None -> () | Some typestate -> do_typestate typestate

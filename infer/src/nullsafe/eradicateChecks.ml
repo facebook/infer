@@ -196,17 +196,40 @@ let is_field_annotated_as_nonnull annotated_field_opt =
   Option.exists annotated_field_opt ~f:is_nonnull
 
 
-(** Check that nonnullable fields are initialized in constructors. *)
-let check_constructor_initialization tenv find_canonical_duplicate curr_pname curr_pdesc start_node
-    final_initializer_typestates final_constructor_typestates loc : unit =
+let lookup_field_in_typestate pname field_name typestate =
+  let pvar = Pvar.mk (Mangled.from_string (Typ.Fieldname.to_string field_name)) pname in
+  TypeState.lookup_pvar pvar typestate
+
+
+(* Given a predicate over field name, look ups the field and returns a predicate
+  over this field value in a typestate, or true if there is no such a field in typestate *)
+let convert_predicate predicate_over_field_name field_name (pname, typestate) =
+  let range_for_field = lookup_field_in_typestate pname field_name typestate in
+  Option.exists range_for_field ~f:predicate_over_field_name
+
+
+(* Given a list of typestates, does a given predicate about the field hold for at least one of them? *)
+let predicate_holds_for_some_typestate typestate_list field_name ~predicate =
+  List.exists typestate_list ~f:(convert_predicate predicate field_name)
+
+
+(* Given a list of typestates, does a given predicate about the field hold for all of them? *)
+let predicate_holds_for_all_typestates typestate_list field_name ~predicate =
+  List.for_all typestate_list ~f:(convert_predicate predicate field_name)
+
+
+(** Check field initialization for a given constructor *)
+let check_constructor_initialization tenv find_canonical_duplicate curr_constructor_pname
+    curr_constructor_pdesc start_node ~typestates_for_curr_constructor_and_all_initializer_methods
+    ~typestates_for_all_constructors_incl_current loc : unit =
   State.set_node start_node ;
-  if Typ.Procname.is_constructor curr_pname then
-    match PatternMatch.get_this_type (Procdesc.get_attributes curr_pdesc) with
+  if Typ.Procname.is_constructor curr_constructor_pname then
+    match PatternMatch.get_this_type (Procdesc.get_attributes curr_constructor_pdesc) with
     | Some {desc= Tptr (({desc= Tstruct name} as ts), _)} -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          let do_field (fn, ft, _) =
-            let annotated_field = AnnotatedField.get tenv fn ts in
+          let do_field (field_name, field_type, _) =
+            let annotated_field = AnnotatedField.get tenv field_name ts in
             let is_injector_readonly_annotated =
               match annotated_field with
               | None ->
@@ -214,62 +237,62 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
               | Some {annotation_deprecated} ->
                   Annotations.ia_is_field_injector_readonly annotation_deprecated
             in
-            let final_type_annotation_with unknown list f =
-              let filter_range_opt = function Some (_, ta, _) -> f ta | None -> unknown in
-              List.exists
-                ~f:(function
-                  | pname, typestate ->
-                      let pvar =
-                        Pvar.mk (Mangled.from_string (Typ.Fieldname.to_string fn)) pname
-                      in
-                      filter_range_opt (TypeState.lookup_pvar pvar typestate) )
-                list
-            in
-            let may_be_assigned_in_final_typestate =
-              let origin_is_initialized = function
+            let is_initialized_in_either_constructor_or_initializer =
+              let is_initialized = function
                 | TypeOrigin.Undef ->
+                    (* Special case: not really an initialization *)
                     false
                 | TypeOrigin.Field (TypeOrigin.Formal name, _, _) ->
+                    (* Exclude circular initialization *)
                     let circular = Mangled.is_this name in
                     not circular
                 | _ ->
+                    (* Found in typestate, hence the field was initialized *)
                     true
               in
-              final_type_annotation_with false (Lazy.force final_initializer_typestates)
-                (fun nullability ->
-                  origin_is_initialized (InferredNullability.get_origin nullability) )
+              predicate_holds_for_some_typestate
+                (Lazy.force typestates_for_curr_constructor_and_all_initializer_methods) field_name
+                ~predicate:(fun (_, nullability, _) ->
+                  is_initialized (InferredNullability.get_origin nullability) )
             in
-            let may_be_nullable_in_final_typestate () =
-              final_type_annotation_with true (Lazy.force final_constructor_typestates) (fun ta ->
-                  InferredNullability.is_nullable ta )
+            (* TODO(T54584721) This check is completely independent of the current constuctor we check.
+               This check should be moved out of this function. Until it is done,
+               we issue one over-annotated warning per constructor, which does not make a lot of sense. *)
+            let is_field_assigned_to_nonnull_in_all_constructors () =
+              predicate_holds_for_all_typestates
+                (Lazy.force typestates_for_all_constructors_incl_current) field_name
+                ~predicate:(fun (_, nullability, _) ->
+                  not (InferredNullability.is_nullable nullability) )
             in
             let should_check_field_initialization =
               let in_current_class =
-                let fld_cname = Typ.Fieldname.Java.get_class fn in
+                let fld_cname = Typ.Fieldname.Java.get_class field_name in
                 String.equal (Typ.Name.name name) fld_cname
               in
               (not is_injector_readonly_annotated)
-              && PatternMatch.type_is_class ft && in_current_class
-              && not (Typ.Fieldname.Java.is_outer_instance fn)
+              (* primitive types can not be null so initialization check is not needed *)
+              && PatternMatch.type_is_class field_type
+              && in_current_class
+              && not (Typ.Fieldname.Java.is_outer_instance field_name)
             in
             if should_check_field_initialization then (
               (* Check if non-null field is not initialized. *)
               if
                 is_field_annotated_as_nonnull annotated_field
-                && not may_be_assigned_in_final_typestate
+                && not is_initialized_in_either_constructor_or_initializer
               then
                 report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_not_initialized (fn, curr_pname))
-                  None loc curr_pdesc ;
+                  (TypeErr.Field_not_initialized (field_name, curr_constructor_pname))
+                  None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
               if
                 Config.eradicate_field_over_annotated
                 && is_field_annotated_as_nullable annotated_field
-                && not (may_be_nullable_in_final_typestate ())
+                && is_field_assigned_to_nonnull_in_all_constructors ()
               then
                 report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_over_annotated (fn, curr_pname))
-                  None loc curr_pdesc )
+                  (TypeErr.Field_over_annotated (field_name, curr_constructor_pname))
+                  None loc curr_constructor_pdesc )
           in
           List.iter ~f:do_field fields
       | None ->
