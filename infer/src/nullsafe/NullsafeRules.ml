@@ -50,3 +50,20 @@ let passes_assignment_rule_for_inferred_nullability ~lhs ~rhs =
   let lhs_nullability = nullability_of_inferred_nullability lhs in
   let rhs_nullability = nullability_of_inferred_nullability rhs in
   is_subtype ~subtype:rhs_nullability ~supertype:lhs_nullability
+
+
+type type_role = Param | Ret
+
+let passes_inheritance_rule type_role ~base ~overridden =
+  let base_nullability = nullability_of_annotated_nullability base in
+  let overridden_nullability = nullability_of_annotated_nullability overridden in
+  let subtype, supertype =
+    match type_role with
+    | Ret ->
+        (* covariance for ret *)
+        (overridden_nullability, base_nullability)
+    | Param ->
+        (* contravariance for param *)
+        (base_nullability, overridden_nullability)
+  in
+  is_subtype ~subtype ~supertype

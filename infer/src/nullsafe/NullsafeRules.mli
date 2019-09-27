@@ -32,3 +32,21 @@ val passes_assignment_rule_for_annotated_nullability :
 val passes_assignment_rule_for_inferred_nullability :
   lhs:InferredNullability.t -> rhs:InferredNullability.t -> bool
 (** Variant of assignment rule where lhs nullability is inferred (e.g. might differ from formal nullability of a corresponding type) *)
+
+(*******************************************************************************************
+ *** Inheritance rule **********************************************************************
+  *)
+
+type type_role = Param | Ret
+
+val passes_inheritance_rule :
+  type_role -> base:AnnotatedNullability.t -> overridden:AnnotatedNullability.t -> bool
+(** Inheritance rule:
+  a) Return type for an overridden method is covariant:
+       overridden method is allowed to narrow down the return value to a subtype of the one from the
+       base method; this means it is OK to make the return value non-null when it was nullable in the base)
+  b) Parameter type for an overridden method is contravariant.
+       It is OK for a derived method to accept nullable in the params even if the base does not accept nullable.
+  NOTE: Rule a) is based on Java covariance rule for the return type.
+        In contrast, rule b) is nullsafe specific as Java does not support type contravariance for method params.
+ *)

@@ -10,7 +10,6 @@ open! IStd
 (** Module for the checks called by Eradicate. *)
 
 (* TODO(T54088319) get rid of annotation_deprecated:
-  - move all usages related to nullability to AnnotatedNullability.
   - introduce "field flags" and move all other usages to this dedicated datatype
   *)
 type field_type = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
@@ -420,57 +419,103 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
     List.iter ~f:check resolved_params
 
 
-(** Checks if the annotations are consistent with the inherited class or with the
+let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~base_proc_name
+    ~overridden_proc_name ~overridden_proc_desc ~base_nullability ~overridden_nullability =
+  if
+    not
+      (NullsafeRules.passes_inheritance_rule NullsafeRules.Ret ~base:base_nullability
+         ~overridden:overridden_nullability)
+  then
+    report_error tenv find_canonical_duplicate
+      (TypeErr.Inconsistent_subclass_return_annotation (overridden_proc_name, base_proc_name))
+      None loc overridden_proc_desc
+
+
+let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~overridden_param_name
+    ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~param_position ~base_nullability
+    ~overridden_nullability =
+  if
+    not
+      (NullsafeRules.passes_inheritance_rule NullsafeRules.Param ~base:base_nullability
+         ~overridden:overridden_nullability)
+  then
+    report_error tenv find_canonical_duplicate
+      (TypeErr.Inconsistent_subclass_parameter_annotation
+         ( Mangled.to_string overridden_param_name
+         , param_position
+         , overridden_proc_name
+         , base_proc_name ))
+      None loc overridden_proc_desc
+
+
+let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~base_proc_name
+    ~overridden_proc_name ~overridden_proc_desc ~base_signature ~overridden_signature =
+  let base_params = base_signature.AnnotatedSignature.params in
+  let overridden_params = overridden_signature.AnnotatedSignature.params in
+  let zipped_params = List.zip base_params overridden_params in
+  match zipped_params with
+  | Ok base_and_overridden_params ->
+      let should_index_from_zero = is_virtual base_params in
+      (* Check the rule for each pair of base and overridden param *)
+      List.iteri base_and_overridden_params
+        ~f:(fun index
+           ( AnnotatedSignature.{param_annotated_type= {nullability= base_nullability}}
+           , AnnotatedSignature.
+               { mangled= overridden_param_name
+               ; param_annotated_type= {nullability= overridden_nullability} } )
+           ->
+          check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~overridden_param_name
+            ~base_proc_name ~overridden_proc_name ~overridden_proc_desc
+            ~param_position:(if should_index_from_zero then index else index + 1)
+            ~base_nullability ~overridden_nullability )
+  | Unequal_lengths ->
+      (* Skip checking.
+      TODO (T5280249): investigate why argument lists can be of different length. *)
+      ()
+
+
+(* Check both params and return values for complying for co- and contravariance *)
+let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~base_proc_name
+    ~overridden_proc_name ~overridden_proc_desc ~base_signature ~overridden_signature =
+  (* Check params *)
+  check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~base_proc_name
+    ~overridden_proc_name ~overridden_proc_desc ~base_signature ~overridden_signature ;
+  (* Check return value *)
+  match base_proc_name with
+  (* TODO model this as unknown nullability and get rid of that check *)
+  | Typ.Procname.Java java_pname when not (Typ.Procname.Java.is_external java_pname) ->
+      (* Check if return value is consistent with the base *)
+      let base_nullability =
+        base_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+      in
+      let overridden_nullability =
+        overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+      in
+      check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~base_proc_name
+        ~overridden_proc_name ~overridden_proc_desc ~base_nullability ~overridden_nullability
+  | _ ->
+      (* the analysis should not report return type inconsistencies with external code *)
+      ()
+
+
+(** Checks if the annotations are consistent with the derived classes and with the
     implemented interfaces *)
 let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_desc
     annotated_signature =
   let start_node = Procdesc.get_start_node proc_desc in
   let loc = Procdesc.Node.get_loc start_node in
-  let check_return overriden_proc_name overriden_signature =
-    let ret_is_nullable =
-      Annotations.ia_is_nullable
-        annotated_signature.AnnotatedSignature.ret.ret_annotation_deprecated
-    and ret_overridden_nullable =
-      Annotations.ia_is_nullable
-        overriden_signature.AnnotatedSignature.ret.ret_annotation_deprecated
-    in
-    if ret_is_nullable && not ret_overridden_nullable then
-      report_error tenv find_canonical_duplicate
-        (TypeErr.Inconsistent_subclass_return_annotation (proc_name, overriden_proc_name))
-        None loc proc_desc
-  and check_params overriden_proc_name overriden_signature =
-    let compare pos
-        AnnotatedSignature.{mangled= current_name; param_annotation_deprecated= current_ia}
-        AnnotatedSignature.{param_annotation_deprecated= overriden_ia} =
-      let () =
-        if (not (Annotations.ia_is_nullable current_ia)) && Annotations.ia_is_nullable overriden_ia
-        then
-          report_error tenv find_canonical_duplicate
-            (TypeErr.Inconsistent_subclass_parameter_annotation
-               (Mangled.to_string current_name, pos, proc_name, overriden_proc_name))
-            None loc proc_desc
-      in
-      pos + 1
-    in
-    (* TODO (#5280249): investigate why argument lists can be of different length *)
-    let current_params = annotated_signature.AnnotatedSignature.params
-    and overridden_params = overriden_signature.AnnotatedSignature.params in
-    let initial_pos = if is_virtual current_params then 0 else 1 in
-    if Int.equal (List.length current_params) (List.length overridden_params) then
-      ignore (List.fold2_exn ~f:compare ~init:initial_pos current_params overridden_params)
-  in
-  let check overriden_proc_name =
-    match PatternMatch.lookup_attributes tenv overriden_proc_name with
-    | Some attributes -> (
-        let overridden_signature = Models.get_modelled_annotated_signature attributes in
-        check_params overriden_proc_name overridden_signature ;
-        (* the analysis should not report return type inconsistencies with external code *)
-        match overriden_proc_name with
-        | Typ.Procname.Java java_pname when not (Typ.Procname.Java.is_external java_pname) ->
-            check_return overriden_proc_name overridden_signature
-        | _ ->
-            () )
+  let check_if_base_signature_matches_current base_proc_name =
+    match PatternMatch.lookup_attributes tenv base_proc_name with
+    | Some base_attributes ->
+        let base_signature = Models.get_modelled_annotated_signature base_attributes in
+        check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~base_proc_name
+          ~overridden_proc_name:proc_name ~overridden_proc_desc:proc_desc ~base_signature
+          ~overridden_signature:annotated_signature
     | None ->
+        (* Could not find the attributes - optimistically skipping the check *)
+        (* TODO(T54687014) ensure this is not an issue in practice *)
         ()
   in
-  PatternMatch.override_iter check tenv proc_name
+  (* Iterate over all methods the current method overrides and see the current
+     method is compatible with all of them *)
+  PatternMatch.override_iter check_if_base_signature_matches_current tenv proc_name

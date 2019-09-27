@@ -9,11 +9,10 @@ module F = Format
 module L = Logging
 
 (* TODO(T54088319) remove Annot.Item.t from t:
-   1. For everything dealing with nullability, use info from AnnotatedNullability instead.
-   2. For other annotations guiding Nullsafe behavior, introduce corresponding datatypes:
-      a. Known ret value annotations (if any)
-      b. Known param annotations
-      c. Known method-level annotations.
+  For all helper annotations guiding Nullsafe behavior, introduce corresponding datatypes:
+    a. Known ret value annotations (if any)
+    b. Known param annotations
+    c. Known method-level annotations.
 *)
 
 type t = {ret: ret_signature; params: param_signature list} [@@deriving compare]
