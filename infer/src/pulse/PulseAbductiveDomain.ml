@@ -621,12 +621,8 @@ module PrePost = struct
         Attributes.get_written_to attrs
         >>| fun callee_action ->
         Attribute.WrittenTo
-          (PulseDomain.InterprocAction.ViaCall
-             {action= callee_action; f= Call callee_proc_name; location= call_loc}))
-        |> Option.value
-             ~default:
-               (Attribute.WrittenTo
-                  (PulseDomain.InterprocAction.Immediate {imm= (); location= call_loc}))
+          (ViaCall {action= callee_action; f= Call callee_proc_name; location= call_loc}))
+        |> Option.value ~default:(Attribute.WrittenTo (Immediate {imm= (); location= call_loc}))
       in
       BaseMemory.set_edges addr_caller edges_post_caller heap
       |> BaseMemory.add_attribute addr_caller written_to
