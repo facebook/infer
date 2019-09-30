@@ -388,7 +388,7 @@ end = struct
     incr next_fresh ; l
 
 
-  let pp = F.pp_print_int
+  let pp f l = F.fprintf f "v%d" l
 
   let init () = next_fresh := 1
 
