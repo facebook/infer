@@ -13,6 +13,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
+import java.util.List;
 
 enum ResType {
   SOME,
@@ -25,6 +27,8 @@ enum ResType {
   ResType resType() default ResType.NONE;
 
   boolean optional() default false;
+
+  String varArg() default "";
 }
 
 @Target({ElementType.PARAMETER, ElementType.FIELD})
@@ -45,6 +49,7 @@ class MyComponent extends Component {
   Object prop3; // explicitly non-optional
 
   Object nonProp;
+
 
   public Builder create() {
     return new Builder();
@@ -150,10 +155,77 @@ class ResPropComponent extends Component {
   }
 }
 
+/** varArg test */
+class VarArgPropComponent extends Component {
+
+  @Prop(varArg = "prop")
+  List<Object> props;
+
+  public Builder create() {
+    return new Builder();
+  }
+
+  static class Builder extends Component.Builder {
+
+    VarArgPropComponent mVarArgPropComponent;
+
+    public Builder prop(Object prop) {
+      if (prop == null) {
+        return this;
+      }
+      if (this.mVarArgPropComponent.props == null) {
+        this.mVarArgPropComponent.props = new ArrayList<Object>();
+      }
+      this.mVarArgPropComponent.props.add(prop);
+      return this;
+    }
+
+    public Builder propAttr(Object prop) {
+      if (prop == null) {
+        return this;
+      }
+      if (this.mVarArgPropComponent.props == null) {
+        this.mVarArgPropComponent.props = new ArrayList<Object>();
+      }
+      this.mVarArgPropComponent.props.add(prop);
+      return this;
+    }
+
+    public Builder propsAttr(List<Object> props) {
+      if (props == null) {
+        return this;
+      }
+      if (this.mVarArgPropComponent.props == null || this.mVarArgPropComponent.props.isEmpty()) {
+        this.mVarArgPropComponent.props = props;
+      } else {
+        this.mVarArgPropComponent.props.addAll(props);
+      }
+      return this;
+    }
+
+    public Builder props(List<Object> props) {
+      if (props == null) {
+        return this;
+      }
+      if (this.mVarArgPropComponent.props == null || this.mVarArgPropComponent.props.isEmpty()) {
+        this.mVarArgPropComponent.props = props;
+      } else {
+        this.mVarArgPropComponent.props.addAll(props);
+      }
+      return this;
+    }
+
+    public VarArgPropComponent build() {
+      return mVarArgPropComponent;
+    }
+  }
+}
+
 public class RequiredProps {
 
   public MyComponent mMyComponent;
   public ResPropComponent mResPropComponent;
+  public VarArgPropComponent mVarArgPropComponent;
 
   public MyComponent buildWithAllOk() {
     return mMyComponent
@@ -273,6 +345,26 @@ public class RequiredProps {
 
   public void buildPropResMissingBad() {
     mResPropComponent.create().build();
+  }
+
+  public void buildPropVarArgNormalOk() {
+    mVarArgPropComponent.create().props(new ArrayList<Object>()).build();
+  }
+
+  public void buildPropVarArgElementOk() {
+    mVarArgPropComponent.create().prop(new Object()).build();
+  }
+
+  public void buildPropVarArgAttrElementOk() {
+    mVarArgPropComponent.create().propAttr(new Object()).build();
+  }
+
+  public void buildPropVarArgNormalAttrElementOk() {
+    mVarArgPropComponent.create().propsAttr(new ArrayList<Object>()).build();
+  }
+
+  public void buildPropVarArgMissingBad() {
+    mVarArgPropComponent.create().build();
   }
 
   public class NonRequiredTreeProps {

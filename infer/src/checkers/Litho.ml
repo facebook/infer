@@ -91,6 +91,10 @@ module GraphQLGetters = struct
 end
 
 module RequiredProps = struct
+  (* VarProp is only for props that have a varArg parameter like
+     @Prop(varArg = "var_prop") whereas Prop is for everything except. *)
+  type required_prop = Prop of string | VarProp of {prop: string; var_prop: string}
+
   let get_required_props typename tenv =
     let is_required annot_list =
       List.exists
@@ -106,19 +110,47 @@ module RequiredProps = struct
                   parameters) )
         annot_list
     in
+    let get_var_args annot_list =
+      List.fold ~init:None
+        ~f:(fun acc (({Annot.parameters} as annot), _) ->
+          if Annotations.annot_ends_with annot Annotations.prop then
+            (* Pick up the parameter for varArg if it has the form
+               @Prop(varArg = myProp). *)
+            List.fold ~init:acc
+              ~f:(fun acc Annot.{name; value} ->
+                if Option.value_map name ~default:false ~f:(fun name -> String.equal "varArg" name)
+                then Some value
+                else acc )
+              parameters
+          else acc )
+        annot_list
+    in
     match Tenv.lookup tenv typename with
     | Some {fields} ->
         List.filter_map
           ~f:(fun (fieldname, _, annot) ->
-            if is_required annot then Some (Typ.Fieldname.Java.get_field fieldname) else None )
+            if is_required annot then
+              let prop = Typ.Fieldname.Java.get_field fieldname in
+              let var_prop_opt = get_var_args annot in
+              Some
+                (Option.value_map var_prop_opt ~default:(Prop prop) ~f:(fun var_prop ->
+                     VarProp {var_prop; prop} ))
+            else None )
           fields
     | None ->
         []
 
 
-  let report_missing_required_prop summary prop_string parent_typename loc =
+  let report_missing_required_prop summary prop parent_typename loc =
     let message =
-      F.asprintf "@Prop %s is required for component %s, but is not set before the call to build()"
+      let prop_string =
+        match prop with
+        | Prop prop ->
+            F.asprintf "@Prop %s" prop
+        | VarProp {var_prop; prop} ->
+            F.asprintf "Either @Prop %s or @Prop(varArg = %s)" prop var_prop
+      in
+      F.asprintf "%s is required for component %s, but is not set before the call to build()"
         prop_string (Typ.Name.name parent_typename)
     in
     let ltr = [Errlog.make_trace_element 0 loc message []] in
@@ -148,13 +180,22 @@ module RequiredProps = struct
   let suffixes = String.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
 
   let has_prop prop_set prop =
-    String.Set.mem prop_set prop
-    (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
-       Our annotation parameter parsing is too primitive to identify resType, so just assume
-       that all @Prop's can be set any of these 6 ways. *)
-    || String.Set.exists prop_set ~f:(fun el ->
-           String.chop_prefix el ~prefix:prop
-           |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
+    let check prop =
+      String.Set.mem prop_set prop
+      || (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
+           Our annotation parameter parsing is too primitive to identify resType, so just assume
+           that all @Prop's can be set any of these 6 ways. *)
+         String.Set.exists prop_set ~f:(fun el ->
+             String.chop_prefix el ~prefix:prop
+             |> Option.exists ~f:(fun suffix -> String.Set.mem suffixes suffix) )
+    in
+    match prop with
+    | Prop prop ->
+        check prop
+    | VarProp {var_prop; prop} ->
+        (* @Prop(varArg = myProp) List <?> myPropList can also be set
+         via myPropList() or myProp().*)
+        check var_prop || check prop
 
 
   let report astate tenv summary =
