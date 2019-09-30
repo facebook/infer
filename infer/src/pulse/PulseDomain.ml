@@ -21,7 +21,7 @@ let pp_call_event_config ~verbose fmt =
   let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
   function
   | Call proc_name ->
-      F.fprintf fmt "`%a()`" pp_proc_name proc_name
+      F.fprintf fmt "`%a`" pp_proc_name proc_name
   | Model model ->
       F.fprintf fmt "`%s` (modelled)" model
   | SkippedKnownCall proc_name ->
