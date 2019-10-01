@@ -411,7 +411,11 @@ module Val = struct
 
   let prune_ge_one : t -> t = lift_prune1 Itv.prune_ge_one
 
-  let prune_length_eq_zero : t -> t = lift_prune_length1 Itv.prune_eq_zero
+  let prune_length_eq : t -> Itv.t -> t =
+   fun x y -> lift_prune_length1 (fun x -> Itv.prune_eq x y) x
+
+
+  let prune_length_eq_zero : t -> t = fun x -> prune_length_eq x Itv.zero
 
   let prune_length_ge_one : t -> t = lift_prune_length1 Itv.prune_ge_one
 
@@ -842,28 +846,27 @@ module AliasTarget = struct
 
   let equal = [%compare.equal: t]
 
-  let pp =
-    let intlit_pp fmt i =
-      if IntLit.isnegative i then F.fprintf fmt "-%a" IntLit.pp (IntLit.neg i)
-      else F.fprintf fmt "+%a" IntLit.pp i
+  let pp_with_key pp_key =
+    let pp_intlit fmt i =
+      if not (IntLit.iszero i) then
+        if IntLit.isnegative i then F.fprintf fmt "-%a" IntLit.pp (IntLit.neg i)
+        else F.fprintf fmt "+%a" IntLit.pp i
     in
-    let java_tmp_pp fmt java_tmp = Option.iter java_tmp ~f:(F.fprintf fmt "=%a" Loc.pp) in
+    let pp_java_tmp fmt java_tmp = Option.iter java_tmp ~f:(F.fprintf fmt "=%a" Loc.pp) in
     fun fmt -> function
       | Simple {l; i; java_tmp} ->
-          Loc.pp fmt l ;
-          if not (IntLit.iszero i) then intlit_pp fmt i ;
-          java_tmp_pp fmt java_tmp
+          F.fprintf fmt "%t%a=%a%a" pp_key pp_java_tmp java_tmp Loc.pp l pp_intlit i
       | Empty l ->
-          F.fprintf fmt "empty(%a)" Loc.pp l
+          F.fprintf fmt "%t=empty(%a)" pp_key Loc.pp l
       | Size {l; i; java_tmp} ->
-          F.fprintf fmt "size(%a)" Loc.pp l ;
-          if not (IntLit.iszero i) then intlit_pp fmt i ;
-          java_tmp_pp fmt java_tmp
+          F.fprintf fmt "%t%a=size(%a)%a" pp_key pp_java_tmp java_tmp Loc.pp l pp_intlit i
       | Fgets l ->
-          F.fprintf fmt "fgets(%a)" Loc.pp l
+          F.fprintf fmt "%t=fgets(%a)" pp_key Loc.pp l
       | Top ->
-          F.fprintf fmt "T"
+          F.fprintf fmt "%t=?" pp_key
 
+
+  let pp = pp_with_key (fun fmt -> F.pp_print_string fmt "_")
 
   let fgets l = Fgets l
 
@@ -948,7 +951,7 @@ module AliasMap = struct
    fun fmt x ->
     if not (is_empty x) then
       let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Key.pp k AliasTarget.pp v in
+      let pp1 fmt (k, v) = AliasTarget.pp_with_key (fun fmt -> Key.pp fmt k) fmt v in
       F.pp_print_list ~pp_sep pp1 fmt (bindings x)
 
 
@@ -1591,7 +1594,7 @@ module MemReach = struct
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_id k m.alias
+  let find_alias_id : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_id k m.alias
 
   let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k m ->
@@ -1922,8 +1925,8 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
-  let find_alias : Ident.t -> _ t0 -> AliasTarget.t option =
-   fun k -> f_lift_default ~default:None (MemReach.find_alias k)
+  let find_alias_id : Ident.t -> _ t0 -> AliasTarget.t option =
+   fun k -> f_lift_default ~default:None (MemReach.find_alias_id k)
 
 
   let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =

@@ -378,15 +378,6 @@ let infer_print e =
   {exec; check= no_check}
 
 
-let eval_array_locs_length arr_locs mem =
-  if PowLoc.is_empty arr_locs then Dom.Val.Itv.top
-  else
-    let arr = Dom.Mem.find_set arr_locs mem in
-    let traces = Dom.Val.get_traces arr in
-    let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
-    Dom.Val.of_itv ~traces length
-
-
 let load_size_alias id arr_locs mem =
   match PowLoc.is_singleton_or_more arr_locs with
   | IContainer.Singleton loc ->
@@ -399,7 +390,7 @@ let load_size_alias id arr_locs mem =
 let get_array_length array_exp =
   let exec _ ~ret:(ret_id, _) mem =
     let arr_locs = Sem.eval_locs array_exp mem in
-    let result = eval_array_locs_length arr_locs mem in
+    let result = Sem.eval_array_locs_length arr_locs mem in
     model_by_value result ret_id mem |> load_size_alias ret_id arr_locs
   in
   {exec; check= no_check}
@@ -558,11 +549,13 @@ module ArrObjCommon = struct
     Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ~fn
 
 
-  let eval_size model_env exp ~fn mem = eval_array_locs_length (deref_of model_env exp ~fn mem) mem
+  let eval_size model_env exp ~fn mem =
+    Sem.eval_array_locs_length (deref_of model_env exp ~fn mem) mem
+
 
   let size_exec exp ~fn model_env ~ret:(id, _) mem =
     let arr_locs = deref_of model_env exp ~fn mem in
-    let mem = Dom.Mem.add_stack (Loc.of_id id) (eval_array_locs_length arr_locs mem) mem in
+    let mem = Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_array_locs_length arr_locs mem) mem in
     load_size_alias id arr_locs mem
 
 
@@ -694,7 +687,9 @@ module StdVector = struct
     let exec model_env ~ret:_ mem =
       let arr_locs = deref_of model_env elt_typ vec_arg mem in
       let mem =
-        let new_size = Dom.Val.plus_a (eval_array_locs_length arr_locs mem) (Dom.Val.of_int 1) in
+        let new_size =
+          Dom.Val.plus_a (Sem.eval_array_locs_length arr_locs mem) (Dom.Val.of_int 1)
+        in
         set_size model_env arr_locs new_size mem
       in
       let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
@@ -845,7 +840,7 @@ module Collection = struct
 
   let eval_collection_length coll_exp mem =
     let arr_locs = eval_collection_internal_array_locs coll_exp mem in
-    eval_array_locs_length arr_locs mem
+    Sem.eval_array_locs_length arr_locs mem
 
 
   let change_size_by ~size_f coll_id {location} ~ret:_ mem =
@@ -1027,7 +1022,7 @@ module JavaString = struct
         (Dom.Val.of_int (String.length s), Dom.Val.of_itv (get_char_range s))
     | _ ->
         let arr_locs = deref_of model_env exp mem in
-        let length = eval_array_locs_length arr_locs mem in
+        let length = Sem.eval_array_locs_length arr_locs mem in
         let elem =
           let arr_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
           Dom.Mem.find_set arr_locs mem

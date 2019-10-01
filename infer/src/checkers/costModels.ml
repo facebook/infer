@@ -17,7 +17,7 @@ end
 
 module Array : S = struct
   let length arr_exp inferbo_mem =
-    BufferOverrunModels.eval_array_locs_length
+    BufferOverrunSemantics.eval_array_locs_length
       (BufferOverrunSemantics.eval_locs arr_exp inferbo_mem)
       inferbo_mem
 end

@@ -28,7 +28,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
  fun e1 e2 m ->
   match (e1, e2) with
   | Exp.Var x1, Exp.Var x2 -> (
-    match (Mem.find_alias x1 m, Mem.find_alias x2 m) with
+    match (Mem.find_alias_id x1 m, Mem.find_alias_id x2 m) with
     | Some x1', Some x2' ->
         AliasTarget.equal x1' x2'
         && PowLoc.for_all (fun l -> not (Mem.is_rep_multi_loc l m)) (AliasTarget.get_locs x1')
@@ -313,7 +313,7 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id -> (
-    match Mem.find_alias id mem with
+    match Mem.find_alias_id id mem with
     | Some (AliasTarget.Simple {l= loc; i}) when IntLit.iszero i ->
         Mem.find loc mem
     | Some
@@ -502,6 +502,15 @@ let get_offset_sym_f integer_type_widths mem e =
 
 let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
 
+let eval_array_locs_length arr_locs mem =
+  if PowLoc.is_empty arr_locs then Val.Itv.top
+  else
+    let arr = Mem.find_set arr_locs mem in
+    let traces = Val.get_traces arr in
+    let length = Val.get_array_blk arr |> ArrayBlk.sizeof in
+    Val.of_itv ~traces length
+
+
 module Prune = struct
   type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
 
@@ -515,7 +524,7 @@ module Prune = struct
    fun e ({mem} as astate) ->
     match e with
     | Exp.Var x -> (
-      match Mem.find_alias x mem with
+      match Mem.find_alias_id x mem with
       | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
           let v = Mem.find lv mem in
           let v' = Val.prune_ne_zero v in
@@ -531,7 +540,7 @@ module Prune = struct
       | Some (AliasTarget.Simple _ | AliasTarget.Size _ | Top) | None ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
-      match Mem.find_alias x mem with
+      match Mem.find_alias_id x mem with
       | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
           let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
