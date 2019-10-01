@@ -136,6 +136,13 @@ Proof
   Induct >> rw [] >> Cases_on `l` >> fs [FRONT_DEF] >> rw [] >> fs []
 QED
 
+Theorem last_take[simp]:
+  ∀n l. n < length l ⇒ last (take (Suc n) l) = el n l
+Proof
+  Induct >> rw [] >> Cases_on `l` >> rw [] >> fs [LAST_DEF] >>
+  rw [] >> fs []
+QED
+
 (* ----- Theorems about log ----- *)
 
 Theorem mul_div_bound:

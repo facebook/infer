@@ -5,15 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* Proofs about a shallowly embedded concept of live variables *)
+(* Define SSA form and the concept of variable liveness, and then show how SSA
+ * simplifies it *)
 
 open HolKernel boolLib bossLib Parse;
-open pred_setTheory;
+open pred_setTheory listTheory rich_listTheory;
 open settingsTheory miscTheory llvmTheory llvm_propTheory;
 
-new_theory "llvm_live";
+new_theory "llvm_ssa";
 
 numLib.prefer_num ();
+
+(* ----- Static paths through a program *)
 
 Definition inc_pc_def:
   inc_pc ip = ip with i := inc_bip ip.i
@@ -28,6 +31,7 @@ Definition instr_next_ips_def:
   (instr_next_ips (Invoke _ _ _ _ l1 l2) ip =
     { <| f := ip.f; b := Some l; i := Phi_ip ip.b |> | l | l ∈ {l1; l2} }) ∧
   (instr_next_ips Unreachable ip = {}) ∧
+  (instr_next_ips Exit ip = {}) ∧
   (instr_next_ips (Sub _ _ _ _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Extractvalue _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Insertvalue _ _ _ _) ip = { inc_pc ip }) ∧
@@ -75,6 +79,37 @@ Inductive good_path:
     ⇒
     good_path prog (ip1::ip2::path))
 End
+
+Theorem next_ips_same_func:
+  ∀prog ip1 ip2. ip2 ∈ next_ips prog ip1 ⇒ ip1.f = ip2.f
+Proof
+  rw [next_ips_cases, IN_DEF, get_instr_cases, inc_pc_def, inc_bip_def] >> rw [] >>
+  Cases_on `el idx b.body` >> fs [instr_next_ips_def, inc_pc_def, inc_bip_def]
+QED
+
+Theorem good_path_same_func:
+  ∀prog path. good_path prog path ⇒ ∀ip1 ip2. mem ip1 path ∧ mem ip2 path ⇒ ip1.f = ip2.f
+Proof
+  ho_match_mp_tac good_path_ind >> rw [] >>
+  metis_tac [next_ips_same_func]
+QED
+
+Theorem good_path_prefix:
+  ∀prog path path'. good_path prog path ∧ path' ≼ path ⇒ good_path prog path'
+Proof
+  Induct_on `path'` >> rw []
+  >- simp [Once good_path_cases] >>
+  pop_assum mp_tac >> CASE_TAC >> rw [] >>
+  qpat_x_assum `good_path _ _` mp_tac >>
+  simp [Once good_path_cases] >> rw [] >> fs []
+  >- (simp [Once good_path_cases] >> metis_tac []) >>
+  first_x_assum drule >> rw [] >>
+  simp [Once good_path_cases] >>
+  Cases_on `path'` >> fs [next_ips_cases, IN_DEF] >>
+  metis_tac []
+QED
+
+(* ----- Helper functions to get registers out of instructions ----- *)
 
 Definition arg_to_regs_def:
   (arg_to_regs (Constant _) = {}) ∧
@@ -169,6 +204,160 @@ Inductive assigns:
     assigns prog ip r)
 End
 
+(* ----- SSA form ----- *)
+
+Definition entry_ip_def:
+  entry_ip fname = <| f := fname; b := None; i := Offset 0 |>
+End
+
+Definition reachable_def:
+  reachable prog ip ⇔
+    ∃path. good_path prog (entry_ip ip.f :: path) ∧ last (entry_ip ip.f :: path) = ip
+End
+
+(* To get to ip2 from the entry, you must go through ip1 *)
+Definition dominates_def:
+  dominates prog ip1 ip2 ⇔
+    ∀path.
+      good_path prog (entry_ip ip2.f :: path) ∧
+      last (entry_ip ip2.f :: path) = ip2 ⇒
+      mem ip1 (front (entry_ip ip2.f :: path))
+End
+
+Definition is_ssa_def:
+  is_ssa prog ⇔
+    (* Operate function by function *)
+    (∀fname.
+      (* No register is assigned in two different instructions *)
+      (∀r ip1 ip2.
+        r ∈ assigns prog ip1 ∧ r ∈ assigns prog ip2 ∧ ip1.f = fname ∧ ip2.f = fname
+        ⇒
+        ip1 = ip2)) ∧
+    (* Each use is dominated by its assignment *)
+    (∀ip1 r. r ∈ uses prog ip1 ⇒ ∃ip2. r ∈ assigns prog ip2 ∧ dominates prog ip2 ip1)
+End
+
+Theorem dominates_trans:
+  ∀prog ip1 ip2 ip3.
+    dominates prog ip1 ip2 ∧ dominates prog ip2 ip3 ⇒ dominates prog ip1 ip3
+Proof
+  rw [dominates_def] >> simp [FRONT_DEF] >> rw []
+  >- (first_x_assum (qspec_then `[]` mp_tac) >> rw []) >>
+  first_x_assum drule >> rw [] >>
+  qpat_x_assum `mem _ (front _)` mp_tac >>
+  simp [Once MEM_EL] >> rw [] >> fs [EL_FRONT] >>
+  first_x_assum (qspec_then `take n path` mp_tac) >> simp [LAST_DEF] >>
+  rw [] >> fs [entry_ip_def]
+  >- (fs [Once good_path_cases] >> rw [] >> fs [next_ips_cases, IN_DEF]) >>
+  rfs [EL_CONS] >>
+  `?m. n = Suc m` by (Cases_on `n` >> rw []) >>
+  rw [] >> rfs [] >>
+  `(el m path).f = ip3.f`
+  by (
+    irule good_path_same_func >>
+    qexists_tac `<| f:= ip3.f; b := NONE; i := Offset 0|> :: path` >>
+    qexists_tac `prog` >>
+    conj_tac >- rw [EL_MEM] >>
+    metis_tac [MEM_LAST]) >>
+  fs [] >> qpat_x_assum `_ ⇒ _` mp_tac >> impl_tac
+  >- (
+    irule good_path_prefix >> HINT_EXISTS_TAC >> rw [] >>
+    metis_tac [take_is_prefix]) >>
+  rw [] >> drule MEM_FRONT >> rw [] >>
+  fs [MEM_EL, LENGTH_FRONT] >> rfs [EL_TAKE] >> rw [] >>
+  disj2_tac >> qexists_tac `n'` >> rw [] >>
+  irule (GSYM EL_FRONT) >>
+  rw [NULL_EQ, LENGTH_FRONT]
+QED
+
+Theorem dominates_unreachable:
+  ∀prog ip1 ip2. ¬reachable prog ip2 ⇒ dominates prog ip1 ip2
+Proof
+  rw [dominates_def, reachable_def] >>
+  metis_tac []
+QED
+
+Theorem dominates_antisym_lem:
+  ∀prog ip1 ip2. dominates prog ip1 ip2 ∧ dominates prog ip2 ip1 ⇒ ¬reachable prog ip1
+Proof
+  rw [dominates_def, reachable_def] >> CCONTR_TAC >> fs [] >>
+  Cases_on `ip1 = entry_ip ip1.f` >> fs []
+  >- (
+    first_x_assum (qspec_then `[]` mp_tac) >> rw [] >>
+    fs [Once good_path_cases, IN_DEF, next_ips_cases] >>
+    metis_tac []) >>
+  `path ≠ []` by (Cases_on `path` >> fs []) >>
+  `(OLEAST n. n < length path ∧ el n path = ip1) ≠ None`
+  by (
+    rw [whileTheory.OLEAST_EQ_NONE] >>
+    qexists_tac `PRE (length path)` >> rw [] >>
+    fs [LAST_DEF, LAST_EL] >>
+    Cases_on `path` >> fs []) >>
+  qabbrev_tac `path1 = splitAtPki (\n ip. ip = ip1) (\x y. x) path` >>
+  first_x_assum (qspec_then `path1 ++ [ip1]` mp_tac) >>
+  simp [] >>
+  conj_asm1_tac >> rw []
+  >- (
+    irule good_path_prefix >>
+    HINT_EXISTS_TAC >> rw [] >>
+    unabbrev_all_tac >> rw [splitAtPki_EQN] >>
+    CASE_TAC >> rw [] >>
+    fs [whileTheory.OLEAST_EQ_SOME] >>
+    rw [GSYM SNOC_APPEND, SNOC_EL_TAKE] >>
+    metis_tac [take_is_prefix])
+  >- rw [LAST_DEF] >>
+  simp [GSYM SNOC_APPEND, FRONT_SNOC, FRONT_DEF] >>
+  CCONTR_TAC >> fs [MEM_EL]
+  >- (
+    first_x_assum (qspec_then `[]` mp_tac) >>
+    fs [entry_ip_def, Once good_path_cases, IN_DEF, next_ips_cases] >>
+    metis_tac []) >>
+  rw [] >>
+  rename [`n1 < length _`, `last _ = el n path`] >>
+  first_x_assum (qspec_then `take (Suc n1) path1` mp_tac) >> rw []
+  >- (
+    irule good_path_prefix >> HINT_EXISTS_TAC >> rw [entry_ip_def]
+    >- (
+      irule good_path_same_func >>
+      qexists_tac `entry_ip (el n path).f::(path1 ++ [el n path])` >>
+      qexists_tac `prog` >> rw [EL_MEM]) >>
+    metis_tac [IS_PREFIX_APPEND3, take_is_prefix, IS_PREFIX_TRANS])
+  >- (rw [LAST_DEF] >> fs []) >>
+  rw [METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
+  simp [EL_FRONT] >>
+  rename [`n2 < Suc _`] >>
+  Cases_on `¬(0 < n2)` >> rw [EL_CONS]
+  >- (
+    fs [entry_ip_def] >>
+    `(el n path).f = (el n1 path1).f` suffices_by metis_tac [] >>
+    irule good_path_same_func >>
+    qexists_tac `<|f := (el n path).f; b := None; i := Offset 0|> ::(path1 ++ [el n path])` >>
+    qexists_tac `prog` >>
+    rw [EL_MEM]) >>
+  fs [EL_TAKE, Abbr `path1`, splitAtPki_EQN] >>
+  CASE_TAC >> rw [] >> fs []
+  >- metis_tac [] >>
+  fs [whileTheory.OLEAST_EQ_SOME] >>
+  rfs [LENGTH_TAKE] >>
+  `PRE n2 < x` by decide_tac >>
+  first_x_assum drule >>
+  rw [EL_TAKE]
+QED
+
+Theorem dominates_antisym:
+  ∀prog ip1 ip2. reachable prog ip1 ∧ dominates prog ip1 ip2 ⇒ ¬dominates prog ip2 ip1
+Proof
+  metis_tac [dominates_antisym_lem]
+QED
+
+Theorem dominates_irrefl:
+  ∀prog ip. reachable prog ip ⇒ ¬dominates prog ip ip
+Proof
+  metis_tac [dominates_antisym]
+QED
+
+(* ----- Liveness ----- *)
+
 Definition live_def:
   live prog ip =
     { r | ∃path.
@@ -177,21 +366,19 @@ Definition live_def:
             ∀ip2. ip2 ∈ set (front (ip::path)) ⇒ r ∉ assigns prog ip2 }
 End
 
-(*
 Theorem get_instr_live:
   ∀prog ip instr.
     get_instr prog ip instr
     ⇒
-    uses instr ⊆ live prog ip
+    uses prog ip ⊆ live prog ip
 Proof
   rw [live_def, SUBSET_DEF] >>
   qexists_tac `[]` >> rw [Once good_path_cases] >>
   qexists_tac `instr` >> simp [] >> metis_tac [IN_DEF]
 QED
-*)
 
 Triviality set_rw:
-  !s P. (!x. x ∈ s ⇔ P x) ⇔ s = P
+  ∀s P. (∀x. x ∈ s ⇔ P x) ⇔ s = P
 Proof
   rw [] >> eq_tac >> rw [IN_DEF] >> metis_tac []
 QED
