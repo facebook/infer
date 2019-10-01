@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "infer"
-version: "0.16.0"
+version: "0.17.0"
 synopsis: "A static analyzer for Java, C, C++, and Objective-C"
 maintainer: "the infer team"
 authors: "Facebook"
@@ -36,7 +36,6 @@ depends: [
   "bin_prot" {= "v0.12.0"}
   "biniou" {= "1.2.0"}
   "camlidl" {= "1.05"}
-  "camlp4" {= "4.07+1"}
   "camlzip" {= "1.08"}
   "cmdliner" {= "1.0.4"}
   "conf-autoconf" {= "0.1"}
@@ -53,13 +52,14 @@ depends: [
   "cppo" {= "1.6.6"}
   "ctypes" {= "0.14.0"}
   "dune" {= "1.10.0"}
+  "dune-configurator" {= "1.0.0"}
   "easy-format" {= "1.3.1"}
   "elina" {= "1.1"}
   "extlib" {= "1.7.5"}
   "fieldslib" {= "v0.12.0"}
   "integers" {= "0.2.2"}
   "jane-street-headers" {= "v0.12.0"}
-  "javalib" {= "3.1"}
+  "javalib" {= "3.1.1"}
   "jbuilder" {= "transition"}
   "jst-config" {= "v0.12.0"}
   "menhir" {= "20190626"}
@@ -111,7 +111,7 @@ depends: [
   "ppxlib" {= "0.8.0"}
   "re" {= "1.9.0"}
   "result" {= "1.4"}
-  "sawja" {= "1.5.6"}
+  "sawja" {= "1.5.7"}
   "seq" {= "base"}
   "sexplib" {= "v0.12.0"}
   "sexplib0" {= "v0.12.0"}

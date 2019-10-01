@@ -34,7 +34,7 @@ depends: [
   "ctypes" {>="0.9.2"}
   "dune" {build & >="1.0"}
   "elina" {>="1.1"}
-  "javalib" {>="3.1"}
+  "javalib" {>="3.1.1"}
   "mtime"
   "ocaml" {>="4.06.0"}
   "ocamlfind" {build}
@@ -43,7 +43,7 @@ depends: [
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
   "ppx_fields_conv" {>="v0.12.0" & < "v0.13"}
-  "sawja" {>="1.5.4"}
+  "sawja" {>="1.5.7"}
   "sqlite3"
   "utop" {with-test}
   "xmlm" {>="1.2.0"}

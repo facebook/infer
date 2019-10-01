@@ -1087,6 +1087,10 @@ let instruction (context : JContext.t) pc instr : translation =
             trans_virtual_call cn I_Virtual
         | JBir.InterfaceCall cn ->
             trans_virtual_call cn I_Interface )
+    | InvokeDynamic (var_opt, _bm, _ms, _args) ->
+        let _var = match var_opt with None -> assert false | Some var -> var in
+        raise (Frontend_error "InvokeDynamic not expected here")
+        (* We will not get any invokedynamic in the current setting *)
     | InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
         let instrs, sil_obj_expr, sil_obj_type = expression context pc obj in
         let callee_procname, call_instrs =
@@ -1266,19 +1270,19 @@ let instruction (context : JContext.t) pc instr : translation =
     | Nop ->
         Skip
     | Formula _ ->
-        (* Sawja formulas are not generated with the current used 
+        (* Sawja formulas are not generated with the current used
            flags '~formula:false' *)
         Skip
     | Check _ ->
-        (* Infer only considers 3 kinds of runtime error exceptions 
+        (* Infer only considers 3 kinds of runtime error exceptions
            currently: NullPointer, ArrayBound, Cast. And only when
            Config.tracing=true. *)
         Skip
     | MayInit _ ->
-        (* Infer ignores Sawja MayInit instruction. This instruction 
-           makes explicit the implicit Java mechanism of class static 
-           initialization (the first time the VM encounters a class, 
-           it runs code about it). This may remove inter-procedural 
+        (* Infer ignores Sawja MayInit instruction. This instruction
+           makes explicit the implicit Java mechanism of class static
+           initialization (the first time the VM encounters a class,
+           it runs code about it). This may remove inter-procedural
            edges in Infer analyses *)
         Skip
   with Frontend_error s ->
