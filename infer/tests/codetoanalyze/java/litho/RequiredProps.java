@@ -9,35 +9,11 @@ package codetoanalyze.java.litho;
 
 import com.facebook.litho.Column;
 import com.facebook.litho.Component;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.facebook.litho.annotations.Prop;
+import com.facebook.litho.annotations.ResType;
+import com.facebook.litho.annotations.TreeProp;
 import java.util.ArrayList;
 import java.util.List;
-
-enum ResType {
-  SOME,
-  NONE
-}
-
-@Target({ElementType.PARAMETER, ElementType.FIELD})
-@Retention(RetentionPolicy.CLASS)
-@interface Prop {
-  ResType resType() default ResType.NONE;
-
-  boolean optional() default false;
-
-  String varArg() default "";
-}
-
-@Target({ElementType.PARAMETER, ElementType.FIELD})
-@Retention(RetentionPolicy.CLASS)
-@interface TreeProp {
-  ResType resType() default ResType.NONE;
-
-  boolean optional() default false;
-}
 
 class MyComponent extends Component {
   @Prop Object prop1; // implicitly non-optional
@@ -227,7 +203,7 @@ public class RequiredProps {
   public ResPropComponent mResPropComponent;
   public VarArgPropComponent mVarArgPropComponent;
 
-  public MyComponent buildWithAllOk() {
+  public Component buildWithAllOk() {
     return mMyComponent
         .create()
         .prop1(new Object())
@@ -237,17 +213,17 @@ public class RequiredProps {
   }
 
   // prop 2 is optional
-  public MyComponent buildWithout2Ok() {
+  public Component buildWithout2Ok() {
     return mMyComponent.create().prop1(new Object()).prop3(new Object()).build();
   }
 
   // prop 1 is required
-  public MyComponent buildWithout1Bad() {
+  public Component buildWithout1Bad() {
     return mMyComponent.create().prop2(new Object()).prop3(new Object()).build();
   }
 
   // prop3 is required
-  public MyComponent buildWithout3Bad() {
+  public Component buildWithout3Bad() {
     return mMyComponent.create().prop1(new Object()).prop2(new Object()).build();
   }
 
@@ -259,19 +235,19 @@ public class RequiredProps {
     return builder.prop3(new Object());
   }
 
-  public MyComponent setProp1InCalleeOk() {
+  public Component setProp1InCalleeOk() {
     return setProp1(mMyComponent.create().prop2(new Object())).prop3(new Object()).build();
   }
 
-  public MyComponent setProp3InCalleeOk() {
+  public Component setProp3InCalleeOk() {
     return setProp3(mMyComponent.create().prop1(new Object()).prop2(new Object())).build();
   }
 
-  public MyComponent setProp3InCalleeButForgetProp1Bad() {
+  public Component setProp3InCalleeButForgetProp1Bad() {
     return setProp3(mMyComponent.create()).prop2(new Object()).build();
   }
 
-  public MyComponent setRequiredOnOneBranchBad(boolean b) {
+  public Component setRequiredOnOneBranchBad(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder = builder.prop1(new Object());
@@ -279,7 +255,7 @@ public class RequiredProps {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
-  public MyComponent FP_setRequiredOnBothBranchesOk(boolean b) {
+  public Component FP_setRequiredOnBothBranchesOk(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder = builder.prop1(new Object());
@@ -295,13 +271,18 @@ public class RequiredProps {
   }
 
   // shouldn't report here; prop 1 passed
-  public MyComponent callBuildSuffixWithRequiredOk() {
+  public Component callBuildSuffixWithRequiredOk() {
     return buildSuffix(mMyComponent.create().prop1(new Object()));
   }
 
   // should report here; forgot prop 1
-  public MyComponent callBuildSuffixWithoutRequiredBad() {
+  public Component callBuildSuffixWithoutRequiredBad() {
     return buildSuffix(mMyComponent.create());
+  }
+
+  public Object generalTypeWithout2Ok() {
+    Component.Builder builder = mMyComponent.create().prop1(new Object()).prop3(new Object());
+    return builder.build();
   }
 
   public Object generalTypeForgot3Bad() {
@@ -314,9 +295,15 @@ public class RequiredProps {
 
   public void buildWithColumnChildBad() {
     Column.Builder builder = Column.create();
-    MyComponent.Builder childBuilder = mMyComponent.create().prop1(new Object());
+    Component.Builder childBuilder = mMyComponent.create().prop1(new Object());
     // forgot prop 3, and builder.child() will invoke build() on childBuilder
     builder.child(childBuilder);
+  }
+
+  public Component buildWithColumnChildOk() {
+    return Column.create()
+        .child(mMyComponent.create().prop1(new Object()).prop3(new Object()))
+        .build();
   }
 
   public void buildPropResWithNormalOk() {
