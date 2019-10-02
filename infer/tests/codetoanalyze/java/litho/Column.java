@@ -41,5 +41,10 @@ public class Column extends Component {
     public Column build() {
       return mColumn;
     }
+
+    @Override
+    public Builder getThis() {
+      return this;
+    }
   }
 }

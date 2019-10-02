@@ -31,7 +31,7 @@ class MyComponent extends Component {
     return new Builder();
   }
 
-  static class Builder extends Component.Builder {
+  static class Builder extends Component.Builder<Builder> {
     MyComponent mMyComponent;
 
     public Builder prop1(Object o) {
@@ -52,6 +52,11 @@ class MyComponent extends Component {
     public MyComponent build() {
       return mMyComponent;
     }
+
+    @Override
+    public Builder getThis() {
+      return this;
+    }
   }
 }
 
@@ -64,7 +69,7 @@ class MyTreeComponent extends Component {
     return new Builder();
   }
 
-  static class Builder extends Component.Builder {
+  static class Builder extends Component.Builder<Builder> {
     MyTreeComponent mMyTreeComponent;
 
     public Builder prop1(Object o) {
@@ -74,6 +79,11 @@ class MyTreeComponent extends Component {
 
     public MyTreeComponent build() {
       return mMyTreeComponent;
+    }
+
+    @Override
+    public Builder getThis() {
+      return this;
     }
   }
 }
@@ -91,7 +101,7 @@ class ResPropComponent extends Component {
     return new Builder();
   }
 
-  static class Builder extends Component.Builder {
+  static class Builder extends Component.Builder<Builder> {
 
     ResPropComponent mResPropComponent;
 
@@ -128,6 +138,11 @@ class ResPropComponent extends Component {
     public ResPropComponent build() {
       return mResPropComponent;
     }
+
+    @Override
+    public Builder getThis() {
+      return this;
+    }
   }
 }
 
@@ -141,7 +156,7 @@ class VarArgPropComponent extends Component {
     return new Builder();
   }
 
-  static class Builder extends Component.Builder {
+  static class Builder extends Component.Builder<Builder> {
 
     VarArgPropComponent mVarArgPropComponent;
 
@@ -194,6 +209,11 @@ class VarArgPropComponent extends Component {
     public VarArgPropComponent build() {
       return mVarArgPropComponent;
     }
+
+    @Override
+    public Builder getThis() {
+      return this;
+    }
   }
 }
 
@@ -225,6 +245,15 @@ public class RequiredProps {
   // prop3 is required
   public Component buildWithout3Bad() {
     return mMyComponent.create().prop1(new Object()).prop2(new Object()).build();
+  }
+
+  public Component buildWithCommonPropOk() {
+    return mMyComponent
+        .create()
+        .prop1(new Object())
+        .commonProp(new Object())
+        .prop3(new Object())
+        .build();
   }
 
   private static MyComponent.Builder setProp1(MyComponent.Builder builder) {
