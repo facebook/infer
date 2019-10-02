@@ -49,4 +49,28 @@ class ArrayListTest {
     }
     int j = a.get(b.size() + 1);
   }
+
+  boolean unknown_bool;
+
+  void add_in_loop_by_param2_ok(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (int i = 0; i < b.size(); i++) {
+      if (unknown_bool) {
+        a.add(0);
+      }
+    } // a.size should be [0, b.size]
+    if (a.size() > 0) {
+      int j = b.get(a.size() - 1);
+    }
+  }
+
+  void add_in_loop_by_param2_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (int i = 0; i < b.size(); i++) {
+      if (unknown_bool) {
+        a.add(0);
+      }
+    } // a.size should be [0, b.size]
+    int j = b.get(a.size());
+  }
 }

@@ -556,7 +556,8 @@ module Prune = struct
 
 
   let gen_prune_alias_functions ~prune_alias_core integer_type_widths comp x e astate =
-    let val_prune =
+    (* [val_prune_eq] is applied when the alias type is [AliasTarget.Eq]. *)
+    let val_prune_eq =
       match comp with
       | Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge ->
           Val.prune_comp comp
@@ -567,19 +568,37 @@ module Prune = struct
       | _ ->
           assert false
     in
+    (* [val_prune_le] is applied when the alias type is [AliasTarget.Le]. *)
+    let val_prune_le =
+      match comp with
+      | Binop.Lt ->
+          (* when [alias_target <= alias_key < e], prune [alias_target] with [alias_target < e] *)
+          Some (Val.prune_comp comp)
+      | Binop.Le | Binop.Eq ->
+          (* when [alias_target <= alias_key = e] or [alias_target <= alias_key <= e], prune
+             [alias_target] with [alias_target <= e] *)
+          Some (Val.prune_comp Binop.Le)
+      | Binop.Ne | Binop.Gt | Binop.Ge ->
+          (* when [alias_target <= alias_key != e], [alias_target <= alias_key > e] or [alias_target
+             <= alias_key >= e], no prune *)
+          None
+      | _ ->
+          assert false
+    in
     let make_pruning_exp = PruningExp.make comp in
-    prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e astate
+    prune_alias_core ~val_prune_eq ~val_prune_le ~make_pruning_exp integer_type_widths x e astate
 
 
   let prune_simple_alias =
-    let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
+    let prune_alias_core ~val_prune_eq ~val_prune_le:_ ~make_pruning_exp integer_type_widths x e
+        ({mem} as astate) =
       Option.value_map (Mem.find_simple_alias x mem) ~default:astate ~f:(fun (lv, opt_i) ->
           let lhs = Mem.find lv mem in
           let rhs =
             let v' = eval integer_type_widths e mem in
             Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
           in
-          let v = val_prune lhs rhs in
+          let v = val_prune_eq lhs rhs in
           let pruning_exp = make_pruning_exp ~lhs ~rhs in
           update_mem_in_prune lv v ~pruning_exp astate )
     in
@@ -587,20 +606,36 @@ module Prune = struct
 
 
   let prune_size_alias =
-    let prune_alias_core ~val_prune ~make_pruning_exp integer_type_widths x e ({mem} as astate) =
-      Option.value_map (Mem.find_size_alias x mem) ~default:astate ~f:(fun (lv, java_tmp) ->
+    let prune_alias_core ~val_prune_eq ~val_prune_le ~make_pruning_exp integer_type_widths x e
+        ({mem} as astate) =
+      Option.value_map (Mem.find_size_alias x mem) ~default:astate
+        ~f:(fun (alias_typ, lv, java_tmp) ->
           let array_v = Mem.find lv mem in
           let size =
             Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv
             |> Val.set_itv_updated_by_addition
           in
           let rhs = eval integer_type_widths e mem in
-          let size' = val_prune size rhs in
-          let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in
-          let pruning_exp = make_pruning_exp ~lhs:size' ~rhs in
-          let astate = update_mem_in_prune lv array_v' ~pruning_exp astate in
-          Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
-              update_mem_in_prune java_tmp size' ~pruning_exp astate ) )
+          let prune_target val_prune astate =
+            let size' = val_prune size rhs in
+            let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in
+            let pruning_exp = make_pruning_exp ~lhs:size' ~rhs in
+            (update_mem_in_prune lv array_v' ~pruning_exp astate, size', pruning_exp)
+          in
+          match alias_typ with
+          | AliasTarget.Eq ->
+              let astate, size', pruning_exp = prune_target val_prune_eq astate in
+              Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
+                  update_mem_in_prune java_tmp size' ~pruning_exp astate )
+          | AliasTarget.Le ->
+              let astate =
+                Option.value_map val_prune_le ~default:astate ~f:(fun val_prune_le ->
+                    prune_target val_prune_le astate |> fun (astate, _, _) -> astate )
+              in
+              Option.value_map java_tmp ~default:astate ~f:(fun java_tmp ->
+                  let v = val_prune_eq (Mem.find java_tmp mem) rhs in
+                  let pruning_exp = make_pruning_exp ~lhs:v ~rhs in
+                  update_mem_in_prune java_tmp v ~pruning_exp astate ) )
     in
     gen_prune_alias_functions ~prune_alias_core
 

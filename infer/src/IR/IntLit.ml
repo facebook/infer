@@ -148,6 +148,8 @@ let shift_right intlit1 {i= i2} =
       lift1 (fun i -> Z.shift_right i i2) intlit1
 
 
+let min i1 i2 = if leq i1 i2 then i1 else i2
+
 let pp f intlit = if isnull intlit then F.pp_print_string f "null" else Z.pp_print f intlit.i
 
 let to_string i = F.asprintf "%a" pp i

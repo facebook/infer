@@ -817,6 +817,19 @@ module MemPure = struct
 end
 
 module AliasTarget = struct
+  (* [Eq]: The value of alias target is exactly the same to the alias key.
+
+     [Le]: The value of alias target is less than or equal to the alias key.  For example, if there
+     is an alias between [%r] and [size(x)+i] with the [Le] type, which means [size(x)+i <= %r]. *)
+  type alias_typ = Eq | Le [@@deriving compare]
+
+  let alias_typ_pp fmt = function
+    | Eq ->
+        F.pp_print_string fmt "="
+    | Le ->
+        F.pp_print_string fmt ">="
+
+
   (* Relations between values of logical variables(registers) and program variables
 
    "Simple relation": Since Sil distinguishes logical and program variables, we need a relation for
@@ -839,7 +852,7 @@ module AliasTarget = struct
   type t =
     | Simple of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Empty of Loc.t
-    | Size of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
+    | Size of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Fgets of Loc.t
     | Top
   [@@deriving compare]
@@ -858,8 +871,9 @@ module AliasTarget = struct
           F.fprintf fmt "%t%a=%a%a" pp_key pp_java_tmp java_tmp Loc.pp l pp_intlit i
       | Empty l ->
           F.fprintf fmt "%t=empty(%a)" pp_key Loc.pp l
-      | Size {l; i; java_tmp} ->
-          F.fprintf fmt "%t%a=size(%a)%a" pp_key pp_java_tmp java_tmp Loc.pp l pp_intlit i
+      | Size {alias_typ; l; i; java_tmp} ->
+          F.fprintf fmt "%t%a%asize(%a)%a" pp_key pp_java_tmp java_tmp alias_typ_pp alias_typ
+            Loc.pp l pp_intlit i
       | Fgets l ->
           F.fprintf fmt "%t=fgets(%a)" pp_key Loc.pp l
       | Top ->
@@ -888,27 +902,60 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Simple {l; i; java_tmp})
     | Empty l ->
         Option.map (f l) ~f:(fun l -> Empty l)
-    | Size {l; i; java_tmp} ->
+    | Size {alias_typ; l; i; java_tmp} ->
         let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> Size {l; i; java_tmp})
+        Option.map (f l) ~f:(fun l -> Size {alias_typ; l; i; java_tmp})
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
     | Top ->
         Some Top
 
 
-  let ( <= ) ~lhs ~rhs = equal lhs rhs
+  let ( <= ) ~lhs ~rhs =
+    equal lhs rhs
+    ||
+    match (lhs, rhs) with
+    | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
+      , Size {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} ) ->
+        (* (a=size(l)+2) <= (a>=size(l)+1)  *)
+        (* (a>=size(l)+2) <= (a>=size(l)+1)  *)
+        Loc.equal l1 l2 && IntLit.geq i1 i2 && Option.equal Loc.equal java_tmp1 java_tmp2
+    | _, _ ->
+        false
 
-  let join x y = if equal x y then x else Top
 
-  let widen ~prev ~next ~num_iters:_ = join prev next
+  let join x y =
+    if equal x y then x
+    else
+      match (x, y) with
+      | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
+        , Size {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
+        when Loc.equal l1 l2 && Option.equal Loc.equal java_tmp1 java_tmp2 ->
+          (* (a=size(l)+1) join (a=size(l)+2) is (a>=size(l)+1) *)
+          (* (a=size(l)+1) join (a>=size(l)+2) is (a>=size(l)+1) *)
+          Size {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
+      | _, _ ->
+          Top
+
+
+  let widen ~prev ~next ~num_iters:_ =
+    if equal prev next then prev
+    else
+      match (prev, next) with
+      | Size {alias_typ= Eq}, Size {alias_typ= _} ->
+          join prev next
+      | Size {alias_typ= Le; i= i1}, Size {alias_typ= _; i= i2} when IntLit.eq i1 i2 ->
+          join prev next
+      | _, _ ->
+          Top
+
 
   let is_unknown x = PowLoc.exists Loc.is_unknown (get_locs x)
 
   let incr_size_alias loc x =
     match x with
-    | Size {l; i} when Loc.equal l loc ->
-        Size {l; i= IntLit.(add i minus_one); java_tmp= None}
+    | Size {alias_typ; l; i} when Loc.equal l loc ->
+        Size {alias_typ; l; i= IntLit.(add i minus_one); java_tmp= None}
     | _ ->
         x
 end
@@ -1001,15 +1048,17 @@ module AliasMap = struct
 
 
   let add_zero_size_alias ~size ~arr x =
-    add (Key.of_loc size) (AliasTarget.Size {l= arr; i= IntLit.zero; java_tmp= None}) x
+    add (Key.of_loc size)
+      (AliasTarget.Size {alias_typ= Eq; l= arr; i= IntLit.zero; java_tmp= None})
+      x
 
 
   let incr_size_alias loc = map (AliasTarget.incr_size_alias loc)
 
   let store_n ~prev loc id n x =
     match find_id id prev with
-    | Some (AliasTarget.Size {l; i}) ->
-        add (Key.of_loc loc) (AliasTarget.Size {l; i= IntLit.add i n; java_tmp= None}) x
+    | Some (AliasTarget.Size {alias_typ; l; i}) ->
+        add (Key.of_loc loc) (AliasTarget.Size {alias_typ; l; i= IntLit.add i n; java_tmp= None}) x
     | _ ->
         x
 end
@@ -1096,7 +1145,8 @@ module Alias = struct
 
 
   let add_empty_size_alias : Loc.t -> PowLoc.t -> t -> t =
-   fun loc arr_locs a ->
+   fun loc arr_locs prev ->
+    let a = lift_map (AliasMap.forget loc) prev in
     match PowLoc.is_singleton_or_more arr_locs with
     | IContainer.Singleton arr_loc ->
         lift_map (AliasMap.add_zero_size_alias ~size:loc ~arr:arr_loc) a
@@ -1606,11 +1656,11 @@ module MemReach = struct
         None
 
 
-  let find_size_alias : Ident.t -> _ t0 -> (Loc.t * Loc.t option) option =
+  let find_size_alias : Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * Loc.t option) option =
    fun k m ->
     match Alias.find_id k m.alias with
-    | Some (AliasTarget.Size {l; java_tmp}) ->
-        Some (l, java_tmp)
+    | Some (AliasTarget.Size {alias_typ; l; java_tmp}) ->
+        Some (alias_typ, l, java_tmp)
     | _ ->
         None
 
@@ -1933,7 +1983,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
-  let find_size_alias : Ident.t -> _ t0 -> (Loc.t * Loc.t option) option =
+  let find_size_alias : Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * Loc.t option) option =
    fun k -> f_lift_default ~default:None (MemReach.find_size_alias k)
 
 
@@ -1954,7 +2004,8 @@ module Mem = struct
 
 
   let load_size_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc -> load_alias id (AliasTarget.Size {l= loc; i= IntLit.zero; java_tmp= None})
+   fun id loc ->
+    load_alias id (AliasTarget.Size {alias_typ= Eq; l= loc; i= IntLit.zero; java_tmp= None})
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
