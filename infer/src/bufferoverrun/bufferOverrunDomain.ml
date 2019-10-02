@@ -1939,18 +1939,71 @@ module MemReach = struct
 end
 
 module Mem = struct
-  include AbstractDomain.BottomLifted (MemReach)
-
-  type 'has_oenv t0 = 'has_oenv MemReach.t0 AbstractDomain.Types.bottom_lifted
+  type 'has_oenv t0 = Bottom | ExcRaised | NonBottom of 'has_oenv MemReach.t0
 
   type no_oenv_t = GOption.none t0
 
+  type t = GOption.some t0
+
   let bot : t = Bottom
+
+  let exc_raised : t = ExcRaised
+
+  let is_exc_raised = function ExcRaised -> true | _ -> false
+
+  let ( <= ) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      match (lhs, rhs) with
+      | Bottom, _ ->
+          true
+      | _, Bottom ->
+          false
+      | ExcRaised, _ ->
+          true
+      | _, ExcRaised ->
+          false
+      | NonBottom lhs, NonBottom rhs ->
+          MemReach.( <= ) ~lhs ~rhs
+
+
+  let join x y =
+    if phys_equal x y then x
+    else
+      match (x, y) with
+      | Bottom, m | m, Bottom ->
+          m
+      | ExcRaised, m | m, ExcRaised ->
+          m
+      | NonBottom m1, NonBottom m2 ->
+          PhysEqual.optim2 ~res:(NonBottom (MemReach.join m1 m2)) x y
+
+
+  let widen ~prev:prev0 ~next:next0 ~num_iters =
+    if phys_equal prev0 next0 then prev0
+    else
+      match (prev0, next0) with
+      | Bottom, m | m, Bottom ->
+          m
+      | ExcRaised, m | m, ExcRaised ->
+          m
+      | NonBottom prev, NonBottom next ->
+          PhysEqual.optim2 ~res:(NonBottom (MemReach.widen ~prev ~next ~num_iters)) prev0 next0
+
+
+  let map ~f x =
+    match x with
+    | Bottom | ExcRaised ->
+        x
+    | NonBottom m ->
+        let m' = f m in
+        if phys_equal m' m then x else NonBottom m'
+
 
   let init : OndemandEnv.t -> t = fun oenv -> NonBottom (MemReach.init oenv)
 
   let f_lift_default : default:'a -> ('h MemReach.t0 -> 'a) -> 'h t0 -> 'a =
-   fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
+   fun ~default f m -> match m with Bottom | ExcRaised -> default | NonBottom m' -> f m'
 
 
   let is_stack_loc : Loc.t -> _ t0 -> bool =
@@ -2065,8 +2118,8 @@ module Mem = struct
 
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
    fun e -> function
-    | Bottom ->
-        (Bottom, PrunePairs.empty)
+    | (Bottom | ExcRaised) as x ->
+        (x, PrunePairs.empty)
     | NonBottom m ->
         let m, prune_pairs = MemReach.apply_latest_prune e m in
         (NonBottom m, prune_pairs)
@@ -2128,13 +2181,18 @@ module Mem = struct
   let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:no_oenv_t -> t =
    fun subst_map ~caller ~callee ->
     match callee with
-    | Bottom ->
+    | Bottom | ExcRaised ->
         caller
     | NonBottom callee ->
         map ~f:(fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
 
 
-  let unset_oenv = function Bottom -> Bottom | NonBottom m -> NonBottom (MemReach.unset_oenv m)
+  let unset_oenv = function
+    | (Bottom | ExcRaised) as x ->
+        x
+    | NonBottom m ->
+        NonBottom (MemReach.unset_oenv m)
+
 
   let set_first_idx_of_null loc idx = map ~f:(MemReach.set_first_idx_of_null loc idx)
 
@@ -2147,5 +2205,12 @@ module Mem = struct
     PowLoc.fold get_c_strlen' locs Val.bot
 
 
-  let pp f m = AbstractDomain.BottomLiftedUtils.pp ~pp:MemReach.pp f m
+  let pp f m =
+    match m with
+    | Bottom ->
+        F.pp_print_string f SpecialChars.up_tack
+    | ExcRaised ->
+        F.pp_print_string f (SpecialChars.up_tack ^ " by exception")
+    | NonBottom m ->
+        MemReach.pp f m
 end

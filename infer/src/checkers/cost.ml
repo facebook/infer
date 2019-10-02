@@ -81,6 +81,8 @@ module BoundMap = struct
                        [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                        unreachable returning cost 0 \n" ;
                     BasicCost.zero
+                | ExcRaised ->
+                    BasicCost.one
                 | NonBottom mem ->
                     BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map)
                       ~node_id mem

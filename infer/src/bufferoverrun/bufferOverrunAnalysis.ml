@@ -70,12 +70,17 @@ module TransferFunctions = struct
         if Dom.LatestPrune.is_top latest_prune' then mem
         else Dom.Mem.set_latest_prune latest_prune' mem
     | Error `SubstBottom ->
-        Dom.Mem.bottom
+        Dom.Mem.bot
     | Error `SubstFail ->
         mem
 
 
-  let instantiate_mem_reachable (ret_id, _) callee_formals callee_pname ~callee_exit_mem
+  let symbolic_pname_value pname typ location mem =
+    let path = CallSite.make pname location |> Symb.SymbolPath.of_callsite ~ret_typ:typ in
+    Dom.Mem.find (Loc.of_allocsite (Allocsite.make_symbol path)) mem
+
+
+  let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
       List.fold callee_formals ~init:PowLoc.bot ~f:(fun acc (formal, _) ->
@@ -115,7 +120,9 @@ module TransferFunctions = struct
       | Some callee_pdesc when Procdesc.has_added_return_param callee_pdesc ->
           Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname))
       | _ ->
-          Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
+          if Language.curr_language_is Java && Dom.Mem.is_exc_raised callee_exit_mem then
+            symbolic_pname_value callee_pname ret_typ location mem
+          else Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
     in
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
@@ -201,6 +208,8 @@ module TransferFunctions = struct
     | Load {id; e= exp; typ} ->
         let represents_multiple_values = is_array_access_exp exp in
         BoUtils.Exec.load_locs ~represents_multiple_values id typ (Sem.eval_locs exp mem) mem
+    | Store {e2= Exn _} when Language.curr_language_is Java ->
+        Dom.Mem.exc_raised
     | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}
       when Language.curr_language_is Java ->
         let pname = Summary.get_proc_name summary in
@@ -280,10 +289,7 @@ module TransferFunctions = struct
               if is_external callee_pname then (
                 L.(debug BufferOverrun Verbose)
                   "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
-                let callsite = CallSite.make callee_pname location in
-                let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
-                let loc = Loc.of_allocsite (Allocsite.make_symbol path) in
-                let v = Dom.Mem.find loc mem in
+                let v = symbolic_pname_value callee_pname ret_typ location mem in
                 Dom.Mem.add_stack (Loc.of_id id) v mem )
               else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->

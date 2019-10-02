@@ -345,7 +345,7 @@ let check_instrs :
   match state with
   | _ when Instrs.is_empty instrs ->
       checks
-  | {AbstractInterpreter.State.pre= Bottom} ->
+  | {AbstractInterpreter.State.pre= Bottom | ExcRaised} ->
       checks
   | {AbstractInterpreter.State.pre= NonBottom _ as pre; post} ->
       if Instrs.nth_exists instrs 1 then
@@ -353,7 +353,7 @@ let check_instrs :
       let instr = Instrs.nth_exn instrs 0 in
       let checks =
         match post with
-        | Bottom ->
+        | Bottom | ExcRaised ->
             add_unreachable_code cfg node instr Instrs.empty checks
         | NonBottom _ ->
             checks

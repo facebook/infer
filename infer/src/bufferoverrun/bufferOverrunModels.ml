@@ -364,7 +364,7 @@ let by_risky_value_from lib_fun =
 
 
 let bottom =
-  let exec _model_env ~ret:_ _mem = Bottom in
+  let exec _model_env ~ret:_ _mem = Dom.Mem.bot in
   {exec; check= no_check}
 
 

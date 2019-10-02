@@ -63,4 +63,26 @@ class UnknownCallsTest {
       list.get(i).hashCode();
     }
   }
+
+  int throw_exception() {
+    throw new IllegalStateException();
+  }
+
+  void call_throw_exception_linear() {
+    for (int i = 0; i < throw_exception(); i++) {}
+  }
+
+  boolean unknown_bool;
+
+  int may_throw_exception() {
+    if (unknown_bool) {
+      throw new IllegalStateException();
+    } else {
+      return 10;
+    }
+  }
+
+  void call_may_throw_exception_constant() {
+    for (int i = 0; i < may_throw_exception(); i++) {}
+  }
 }
