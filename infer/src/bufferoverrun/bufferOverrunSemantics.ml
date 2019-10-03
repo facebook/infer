@@ -317,11 +317,8 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
     | Some (AliasTarget.Simple {l= loc; i}) when IntLit.iszero i ->
         Mem.find loc mem
     | Some
-        ( AliasTarget.Simple _
-        | AliasTarget.Size _
-        | AliasTarget.Empty _
-        | AliasTarget.Fgets _
-        | Top )
+        AliasTarget.(
+          Simple _ | Size _ | Empty _ | Fgets _ | IteratorOffset _ | IteratorHasNext _ | Top)
     | None ->
         Val.bot )
   | Exp.Lvar pvar ->
@@ -514,10 +511,29 @@ let eval_array_locs_length arr_locs mem =
 module Prune = struct
   type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
 
+  let collection_length_of_iterator loc mem =
+    let arr_locs =
+      Mem.find loc mem |> Val.get_all_locs
+      |> PowLoc.append_field ~fn:BufferOverrunField.java_collection_internal_array
+    in
+    eval_array_locs_length arr_locs mem
+
+
   let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown) {prune_pairs; mem} =
     let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
     let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
     {prune_pairs; mem}
+
+
+  let prune_has_next ~true_branch iterator ({mem} as astate) =
+    match Mem.find_alias_loc iterator mem with
+    | Some (IteratorOffset {l= arr_loc; i}) when IntLit.(eq i zero) ->
+        let length = collection_length_of_iterator iterator mem |> Val.get_itv in
+        let v = Mem.find arr_loc mem in
+        let v' = (if true_branch then Val.prune_length_lt else Val.prune_length_eq) v length in
+        update_mem_in_prune arr_loc v' astate
+    | _ ->
+        astate
 
 
   let prune_unop : Exp.t -> t -> t =
@@ -537,7 +553,9 @@ module Prune = struct
           let strlen_loc = Loc.of_c_strlen lv in
           let v' = Val.prune_ge_one (Mem.find strlen_loc mem) in
           update_mem_in_prune strlen_loc v' astate
-      | Some (AliasTarget.Simple _ | AliasTarget.Size _ | Top) | None ->
+      | Some (IteratorHasNext {l= iterator}) ->
+          prune_has_next ~true_branch:true iterator astate
+      | Some AliasTarget.(Simple _ | Size _ | IteratorOffset _ | Top) | None ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias_id x mem with
@@ -549,7 +567,9 @@ module Prune = struct
           let v = Mem.find lv mem in
           let v' = Val.prune_length_ge_one v in
           update_mem_in_prune lv v' astate
-      | Some (AliasTarget.Simple _ | AliasTarget.Size _ | AliasTarget.Fgets _ | Top) | None ->
+      | Some (IteratorHasNext {l= iterator}) ->
+          prune_has_next ~true_branch:false iterator astate
+      | Some AliasTarget.(Simple _ | Size _ | Fgets _ | IteratorOffset _ | Top) | None ->
           astate )
     | _ ->
         astate

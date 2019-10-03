@@ -656,6 +656,8 @@ let prune_ge_one : t -> t = bind1 ItvPure.prune_ge_one
 
 let prune_comp : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_comp comp)
 
+let prune_lt : t -> t -> t = lift2 ItvPure.prune_lt
+
 let prune_eq : t -> t -> t = bind2 ItvPure.prune_eq
 
 let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne

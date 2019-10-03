@@ -73,4 +73,49 @@ class ArrayListTest {
     } // a.size should be [0, b.size]
     int j = b.get(a.size());
   }
+
+  void add_in_loop_iterator_ok(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (Integer i : b) {
+      a.add(i);
+    }
+    int j = a.get(b.size() - 1);
+  }
+
+  void add_in_loop_iterator_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (Integer i : b) {
+      a.add(i);
+    }
+    int j = a.get(b.size() + 1);
+  }
+
+  void remove_in_loop_iterator_good_FP(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (Integer i : b) {
+      a.add(i);
+    }
+    for (Integer i : b) {
+      a.remove(i);
+    }
+    /* a.size should be 0, but it is analyzed to [-oo, b.size] for now.
+    - array smashing: It abstracts all members as one abstract value, so cannot precisely analyze
+      the set of members in the array.
+    - imprecise remove model: Even with the array smashing, it should have been able to analyze
+      as [0, b.size], if the semantics of the model was preciser. */
+    if (a.size() < 0) {
+      int j = b.get(b.size());
+    }
+  }
+
+  void remove_in_loop_iterator_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    for (Integer i : b) {
+      a.add(i);
+    }
+    for (Integer i : b) {
+      a.remove(i);
+    } // a.size should be 0
+    int j = a.get(0);
+  }
 }

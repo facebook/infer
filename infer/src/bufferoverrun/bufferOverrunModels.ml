@@ -889,7 +889,7 @@ module Collection = struct
   let iterator coll_exp =
     let exec {integer_type_widths} ~ret:(ret_id, _) mem =
       let itr = Sem.eval integer_type_widths coll_exp mem in
-      model_by_value itr ret_id mem
+      model_by_value itr ret_id mem |> Dom.Mem.add_iterator_offset_alias ret_id
     in
     {exec; check= no_check}
 
@@ -918,6 +918,7 @@ module Collection = struct
         |> Dom.Val.get_iterator_itv |> Dom.Val.set_itv_updated_by_addition
       in
       model_by_value collection_size ret_id mem
+      |> Dom.Mem.add_iterator_has_next_alias ret_id iterator
     in
     {exec; check= no_check}
 
@@ -927,6 +928,7 @@ module Collection = struct
       let traces = Sem.eval integer_type_widths iterator mem |> Dom.Val.get_traces in
       let locs = eval_collection_internal_array_locs iterator mem in
       model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
+      |> Dom.Mem.incr_iterator_offset_alias iterator
     in
     {exec; check= no_check}
 

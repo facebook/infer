@@ -411,6 +411,10 @@ module Val = struct
 
   let prune_ge_one : t -> t = lift_prune1 Itv.prune_ge_one
 
+  let prune_length_lt : t -> Itv.t -> t =
+   fun x y -> lift_prune_length1 (fun x -> Itv.prune_lt x y) x
+
+
   let prune_length_eq : t -> Itv.t -> t =
    fun x y -> lift_prune_length1 (fun x -> Itv.prune_eq x y) x
 
@@ -833,27 +837,36 @@ module AliasTarget = struct
   (* Relations between values of logical variables(registers) and program variables
 
    "Simple relation": Since Sil distinguishes logical and program variables, we need a relation for
-     pruning values of program variables.  For example, a C statement "if(x){...}" is translated to
-     "%r=load(x); if(%r){...}" in Sil.  At the load statement, we record the alias between the
-     values of %r and x, then we can prune not only the value of %r, but also that of x inside the
-     if branch.  The java_tmp field is an additional slot for keeping one more alias of temporary
-     variable in Java.  The i field is to express "%r=load(x)+i".
+     pruning values of program variables.  For example, a C statement [if(x){...}] is translated to
+     [%r=load(x); if(%r){...}] in Sil.  At the load statement, we record the alias between the
+     values of [%r] and [x], then we can prune not only the value of [%r], but also that of [x]
+     inside the if branch.  The [java_tmp] field is an additional slot for keeping one more alias of
+     temporary variable in Java.  The [i] field is to express [%r=load(x)+i].
 
-   "Empty relation": For pruning vector.length with vector::empty() results, we adopt a specific
-     relation between %r and v->elements, where %r=v.empty().  So, if %r!=0, v's array length
-     ([v->elements->length]) is pruned by 0.  On the other hand, if %r==0, v's array length is
-     pruned by >=1.
+   "Empty relation": For pruning [vector.length] with [vector::empty()] results, we adopt a specific
+     relation between [%r] and [v->elements], where [%r=v.empty()].  So, if [%r!=0], [v]'s array
+     length ([v->elements->length]) is pruned by [=0].  On the other hand, if [%r==0], [v]'s array
+     length is pruned by [>=1].
 
    "Size relation": This is for pruning vector's length.  When there is a function call,
-     %r=x.size(), the alias target for %r becomes AliasTarget.size {l=x.elements}.  The java_tmp
-     field is an additional slot for keeping one more alias of temporary variable in Java.  The i
-     field is to express "%r=x.size()+i", which is required to follow the semantics of `Array.add`
-     inside loops precisely. *)
+     [%r=x.size()], the alias target for [%r] becomes [AliasTarget.size {l=x.elements}].  The
+     [java_tmp] field is an additional slot for keeping one more alias of temporary variable in
+     Java.  The [i] field is to express [%r=x.size()+i], which is required to follow the semantics
+     of [Array.add] inside loops precisely.
+
+   "Iterator offset relation": This is for tracking a relation between an iterator offset and a
+     length of array.  If [%r] has an alias to [IteratorOffset {l; i}], which means that [%r's
+     iterator offset] is same to [length(l)+i].
+
+   "HasNext relation": This is for tracking return values of the [hasNext] function.  If [%r] has an
+     alias to [HasNext {l}], which means that [%r] is a [hasNext] results of the iterator [l].  *)
   type t =
     | Simple of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Empty of Loc.t
     | Size of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Fgets of Loc.t
+    | IteratorOffset of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
+    | IteratorHasNext of {l: Loc.t; java_tmp: Loc.t option}
     | Top
   [@@deriving compare]
 
@@ -876,6 +889,11 @@ module AliasTarget = struct
             Loc.pp l pp_intlit i
       | Fgets l ->
           F.fprintf fmt "%t=fgets(%a)" pp_key Loc.pp l
+      | IteratorOffset {l; i; java_tmp} ->
+          F.fprintf fmt "iterator offset(%t%a)=length(%a)%a" pp_key pp_java_tmp java_tmp Loc.pp l
+            pp_intlit i
+      | IteratorHasNext {l; java_tmp} ->
+          F.fprintf fmt "%t%a=hasNext(%a)" pp_key pp_java_tmp java_tmp Loc.pp l
       | Top ->
           F.fprintf fmt "%t=?" pp_key
 
@@ -885,9 +903,17 @@ module AliasTarget = struct
   let fgets l = Fgets l
 
   let get_locs = function
-    | Simple {l; java_tmp= Some tmp} | Size {l; java_tmp= Some tmp} ->
+    | Simple {l; java_tmp= Some tmp}
+    | Size {l; java_tmp= Some tmp}
+    | IteratorOffset {l; java_tmp= Some tmp}
+    | IteratorHasNext {l; java_tmp= Some tmp} ->
         PowLoc.singleton l |> PowLoc.add tmp
-    | Simple {l; java_tmp= None} | Size {l; java_tmp= None} | Empty l | Fgets l ->
+    | Simple {l; java_tmp= None}
+    | Size {l; java_tmp= None}
+    | Empty l
+    | Fgets l
+    | IteratorOffset {l; java_tmp= None}
+    | IteratorHasNext {l; java_tmp= None} ->
         PowLoc.singleton l
     | Top ->
         PowLoc.empty
@@ -907,6 +933,12 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Size {alias_typ; l; i; java_tmp})
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
+    | IteratorOffset {l; i; java_tmp} ->
+        let java_tmp = Option.bind java_tmp ~f in
+        Option.map (f l) ~f:(fun l -> IteratorOffset {l; i; java_tmp})
+    | IteratorHasNext {l; java_tmp} ->
+        let java_tmp = Option.bind java_tmp ~f in
+        Option.map (f l) ~f:(fun l -> IteratorHasNext {l; java_tmp})
     | Top ->
         Some Top
 
@@ -956,6 +988,8 @@ module AliasTarget = struct
     match x with
     | Size {alias_typ; l; i} when Loc.equal l loc ->
         Size {alias_typ; l; i= IntLit.(add i minus_one); java_tmp= None}
+    | IteratorOffset {l; i; java_tmp} when Loc.equal l loc ->
+        IteratorOffset {l; i= IntLit.(add i minus_one); java_tmp}
     | _ ->
         x
 end
@@ -1009,6 +1043,10 @@ module AliasMap = struct
     match find_opt (Key.LocKey loc) x with
     | Some (AliasTarget.Size a) ->
         Some (AliasTarget.Size {a with java_tmp= Some loc})
+    | Some (AliasTarget.IteratorOffset a) ->
+        Some (AliasTarget.IteratorOffset {a with java_tmp= Some loc})
+    | Some (AliasTarget.IteratorHasNext a) ->
+        Some (AliasTarget.IteratorHasNext {a with java_tmp= Some loc})
     | _ as alias ->
         alias
 
@@ -1061,6 +1099,30 @@ module AliasMap = struct
         add (Key.of_loc loc) (AliasTarget.Size {alias_typ; l; i= IntLit.add i n; java_tmp= None}) x
     | _ ->
         x
+
+
+  let add_iterator_offset_alias id arr x =
+    add (Key.of_id id) (AliasTarget.IteratorOffset {l= arr; i= IntLit.zero; java_tmp= None}) x
+
+
+  let incr_iterator_offset_alias id x =
+    match find_opt (Key.of_id id) x with
+    | Some (AliasTarget.IteratorOffset ({i; java_tmp} as tgt)) ->
+        let i = IntLit.(add i one) in
+        let x = add (Key.of_id id) (AliasTarget.IteratorOffset {tgt with i}) x in
+        Option.value_map java_tmp ~default:x ~f:(fun java_tmp ->
+            add (Key.of_loc java_tmp) (AliasTarget.IteratorOffset {tgt with i; java_tmp= None}) x
+        )
+    | _ ->
+        x
+
+
+  let add_iterator_has_next_alias ~ret_id ~iterator x =
+    match find_opt (Key.of_id iterator) x with
+    | Some (AliasTarget.IteratorOffset {java_tmp= Some java_tmp}) ->
+        add (Key.of_id ret_id) (AliasTarget.IteratorHasNext {l= java_tmp; java_tmp= None}) x
+    | _ ->
+        x
 end
 
 module AliasRet = struct
@@ -1101,6 +1163,8 @@ module Alias = struct
   let bind_map : (AliasMap.t -> 'a) -> t -> 'a = fun f a -> f a.map
 
   let find_id : Ident.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find_id x)
+
+  let find_loc : Loc.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find_loc x)
 
   let find_ret : t -> AliasTarget.t option = fun x -> AliasRet.get x.ret
 
@@ -1157,6 +1221,28 @@ module Alias = struct
         lift_map (AliasMap.add_zero_size_alias ~size:loc ~arr:arr_loc) a
     | Empty ->
         a
+
+
+  let add_iterator_offset_alias : Ident.t -> PowLoc.t -> t -> t =
+   fun id arr_locs a ->
+    match PowLoc.is_singleton_or_more arr_locs with
+    | IContainer.Singleton arr_loc ->
+        lift_map (AliasMap.add_iterator_offset_alias id arr_loc) a
+    | More ->
+        (* NOTE: Keeping only one alias here is suboptimal, but current alias domain can keep one
+           alias for each ident, which will be extended later. *)
+        let arr_loc = PowLoc.min_elt arr_locs in
+        lift_map (AliasMap.add_iterator_offset_alias id arr_loc) a
+    | Empty ->
+        a
+
+
+  let incr_iterator_offset_alias : Ident.t -> t -> t =
+   fun id a -> lift_map (AliasMap.incr_iterator_offset_alias id) a
+
+
+  let add_iterator_has_next_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t =
+   fun ~ret_id ~iterator a -> lift_map (AliasMap.add_iterator_has_next_alias ~ret_id ~iterator) a
 
 
   let remove_temp : Ident.t -> t -> t =
@@ -1646,12 +1732,14 @@ module MemReach = struct
 
   let find_alias_id : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_id k m.alias
 
+  let find_alias_loc : Loc.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_loc k m.alias
+
   let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k m ->
     match Alias.find_id k m.alias with
     | Some (AliasTarget.Simple {l; i}) ->
         Some (l, if IntLit.iszero i then None else Some i)
-    | Some (AliasTarget.Empty _ | AliasTarget.Size _ | AliasTarget.Fgets _ | AliasTarget.Top)
+    | Some AliasTarget.(Empty _ | Size _ | Fgets _ | IteratorOffset _ | IteratorHasNext _ | Top)
     | None ->
         None
 
@@ -1691,6 +1779,20 @@ module MemReach = struct
 
 
   let incr_size_alias locs m = {m with alias= Alias.incr_size_alias locs m.alias}
+
+  let add_iterator_offset_alias id m =
+    let arr_locs =
+      let add_arr l v acc = if Itv.is_zero (Val.array_sizeof v) then PowLoc.add l acc else acc in
+      MemPure.fold add_arr m.mem_pure PowLoc.empty
+    in
+    {m with alias= Alias.add_iterator_offset_alias id arr_locs m.alias}
+
+
+  let incr_iterator_offset_alias id m = {m with alias= Alias.incr_iterator_offset_alias id m.alias}
+
+  let add_iterator_has_next_alias ~ret_id ~iterator m =
+    {m with alias= Alias.add_iterator_has_next_alias ~ret_id ~iterator m.alias}
+
 
   let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
 
@@ -2032,6 +2134,10 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_alias_id k)
 
 
+  let find_alias_loc : Loc.t -> _ t0 -> AliasTarget.t option =
+   fun k -> f_lift_default ~default:None (MemReach.find_alias_loc k)
+
+
   let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
@@ -2070,6 +2176,24 @@ module Mem = struct
 
 
   let incr_size_alias locs = map ~f:(MemReach.incr_size_alias locs)
+
+  let add_iterator_offset_alias : Ident.t -> t -> t =
+   fun id -> map ~f:(MemReach.add_iterator_offset_alias id)
+
+
+  let incr_iterator_offset_alias : Exp.t -> t -> t =
+   fun iterator m ->
+    match iterator with Exp.Var id -> map ~f:(MemReach.incr_iterator_offset_alias id) m | _ -> m
+
+
+  let add_iterator_has_next_alias : Ident.t -> Exp.t -> t -> t =
+   fun ret_id iterator m ->
+    match iterator with
+    | Exp.Var iterator ->
+        map ~f:(MemReach.add_iterator_has_next_alias ~ret_id ~iterator) m
+    | _ ->
+        m
+
 
   let add_stack_loc : Loc.t -> t -> t = fun k -> map ~f:(MemReach.add_stack_loc k)
 
