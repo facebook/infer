@@ -56,6 +56,17 @@ val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
 val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 
+type file_lock =
+  { file: string
+  ; oc: Pervasives.out_channel
+  ; fd: Core.Unix.File_descr.t
+  ; lock: unit -> unit
+  ; unlock: unit -> unit }
+
+val create_file_lock : unit -> file_lock
+
+val with_file_lock : file_lock:file_lock -> f:(unit -> 'a) -> 'a
+
 val with_intermediate_temp_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid write-write races *)
 

@@ -191,6 +191,26 @@ let with_file_out file ~f =
   try_finally_swallow_timeout ~f ~finally
 
 
+type file_lock =
+  { file: string
+  ; oc: Pervasives.out_channel
+  ; fd: Core.Unix.File_descr.t
+  ; lock: unit -> unit
+  ; unlock: unit -> unit }
+
+let create_file_lock () =
+  let file, oc = Core.Filename.open_temp_file "infer" "" in
+  let fd = Core.Unix.openfile ~mode:[IStd.Unix.O_WRONLY] file in
+  let lock () = Core.Unix.lockf fd ~mode:IStd.Unix.F_LOCK ~len:IStd.Int64.zero in
+  let unlock () = Core.Unix.lockf fd ~mode:IStd.Unix.F_ULOCK ~len:IStd.Int64.zero in
+  {file; oc; fd; lock; unlock}
+
+
+let with_file_lock ~file_lock:{file; oc; fd} ~f =
+  let finally () = Core.Unix.close fd ; Out_channel.close oc ; Core.Unix.remove file in
+  try_finally_swallow_timeout ~f ~finally
+
+
 let with_intermediate_temp_file_out file ~f =
   let temp_filename, temp_oc =
     Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" ""
