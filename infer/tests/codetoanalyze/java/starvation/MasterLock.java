@@ -29,7 +29,7 @@ class MasterLock {
 
   // both methods hold the master lock so cannot interleave
   // and thus cannot deadlock
-  void FP_oneWayOk() {
+  void oneWayOk() {
     synchronized (master) {
       synchronized (x) {
         synchronized (y) {
@@ -38,7 +38,7 @@ class MasterLock {
     }
   }
 
-  void FP_theOtherWayOk() {
+  void theOtherWayOk() {
     synchronized (master) {
       synchronized (y) {
         synchronized (x) {

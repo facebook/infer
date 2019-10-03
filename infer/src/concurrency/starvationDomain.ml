@@ -47,8 +47,6 @@ module Lock = struct
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 end
 
-module LockEvent = ExplicitTrace.MakeTraceElem (Lock) (ExplicitTrace.DefaultCallPrinter)
-
 module Event = struct
   type severity_t = Low | Medium | High [@@deriving compare]
 
@@ -57,132 +55,254 @@ module Event = struct
     F.pp_print_string fmt msg
 
 
-  type event_t =
-    | LockAcquire of Lock.t
-    | MayBlock of (string * severity_t)
-    | StrictModeCall of string
+  type t = LockAcquire of Lock.t | MayBlock of (string * severity_t) | StrictModeCall of string
   [@@deriving compare]
 
-  module EventElement = struct
-    type t = event_t [@@deriving compare]
-
-    let pp fmt = function
-      | LockAcquire lock ->
-          F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
-      | MayBlock (msg, sev) ->
-          F.fprintf fmt "MayBlock(%s, %a)" msg pp_severity sev
-      | StrictModeCall msg ->
-          F.fprintf fmt "StrictModeCall(%s)" msg
+  let pp fmt = function
+    | LockAcquire lock ->
+        F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
+    | MayBlock (msg, sev) ->
+        F.fprintf fmt "MayBlock(%s, %a)" msg pp_severity sev
+    | StrictModeCall msg ->
+        F.fprintf fmt "StrictModeCall(%s)" msg
 
 
-    let describe fmt elem =
-      match elem with
-      | LockAcquire lock ->
-          Lock.pp_locks fmt lock
-      | MayBlock (msg, _) ->
-          F.pp_print_string fmt msg
-      | StrictModeCall msg ->
-          F.pp_print_string fmt msg
-  end
+  let describe fmt elem =
+    match elem with
+    | LockAcquire lock ->
+        Lock.pp_locks fmt lock
+    | MayBlock (msg, _) ->
+        F.pp_print_string fmt msg
+    | StrictModeCall msg ->
+        F.pp_print_string fmt msg
 
-  include ExplicitTrace.MakeTraceElem (EventElement) (ExplicitTrace.DefaultCallPrinter)
 
-  let make_acquire lock loc = make (LockAcquire lock) loc
+  let make_acquire lock = LockAcquire lock
 
   let make_call_descr callee = F.asprintf "calls %a" pname_pp callee
 
-  let make_blocking_call callee sev loc =
+  let make_blocking_call callee sev =
     let descr = make_call_descr callee in
-    make (MayBlock (descr, sev)) loc
+    MayBlock (descr, sev)
 
 
-  let make_strict_mode_call callee loc =
+  let make_strict_mode_call callee =
     let descr = make_call_descr callee in
-    make (StrictModeCall descr) loc
-
-
-  let make_trace ?(header = "") pname elem =
-    let trace = make_loc_trace elem in
-    let trace_descr = F.asprintf "%s%a" header pname_pp pname in
-    let start_loc = get_loc elem in
-    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
-    header_step :: trace
+    StrictModeCall descr
 end
 
-module EventDomain = Event.FiniteSet
+(** A lock acquisition with source location and procname in which it occurs.
+    The location & procname are *ignored* for comparisons, and are only for reporting. *)
+module Acquisition = struct
+  type t =
+    {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Typ.Procname.t [@compare.ignore]}
+  [@@deriving compare]
 
-module Order = struct
-  type order_t = {first: Lock.t; eventually: Event.t} [@@deriving compare]
+  let pp fmt {lock} = Lock.pp_locks fmt lock
 
-  module OrderElement = struct
-    type t = order_t
+  let make ~procname ~loc lock = {lock; loc; procname}
 
-    let compare = compare_order_t
+  let compare_loc {loc= loc1} {loc= loc2} = Location.compare loc1 loc2
 
-    let pp fmt {first; eventually} =
-      F.fprintf fmt "{first= %a; eventually= %a}" Lock.pp first Event.pp eventually
-
-
-    let describe fmt {first} = Lock.pp_locks fmt first
-  end
-
-  include ExplicitTrace.MakeTraceElem (OrderElement) (ExplicitTrace.DefaultCallPrinter)
-
-  let may_deadlock {elem= {first; eventually}} {elem= {first= first'; eventually= eventually'}} =
-    match (eventually.elem, eventually'.elem) with
-    | LockAcquire e, LockAcquire e' ->
-        Lock.equal first e' && Lock.equal first' e
-    | _, _ ->
-        false
-
-
-  let make_loc_trace ?(nesting = 0) ({elem= {eventually}} as order) =
-    let first_trace = make_loc_trace ~nesting order in
-    let first_nesting = List.length first_trace in
-    let eventually_trace = Event.make_loc_trace ~nesting:first_nesting eventually in
-    first_trace @ eventually_trace
-
-
-  let make_trace ?(header = "") pname elem =
-    let trace = make_loc_trace elem in
-    let trace_descr = F.asprintf "%s%a" header pname_pp pname in
-    let start_loc = get_loc elem in
-    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
-    header_step :: trace
+  let make_trace_step acquisition =
+    let description = F.asprintf "%a" pp acquisition in
+    Errlog.make_trace_element 0 acquisition.loc description []
 end
 
-module OrderDomain = Order.FiniteSet
-module LockStack = AbstractDomain.StackDomain (LockEvent)
+(** Set of acquisitions; due to order over acquisitions, each lock appears at most once. *)
+module Acquisitions = struct
+  include PrettyPrintable.MakePPSet (Acquisition)
 
-module LockState = struct
+  (* use the fact that location/procname are ignored in comparisons *)
+  let lock_is_held lock acquisitions =
+    mem {lock; loc= Location.dummy; procname= Typ.Procname.Linters_dummy_method} acquisitions
+end
+
+module LockState : sig
+  include AbstractDomain.WithTop
+
+  val acquire : procname:Typ.Procname.t -> loc:Location.t -> Lock.t -> t -> t
+
+  val release : Lock.t -> t -> t
+
+  val is_lock_taken : Event.t -> t -> bool
+
+  val get_acquisitions : t -> Acquisitions.t
+end = struct
+  module LockStack = AbstractDomain.StackDomain (Acquisition)
   include AbstractDomain.InvertedMap (Lock) (LockStack)
 
-  let is_taken lock_event map =
-    match lock_event.Event.elem with
-    | Event.LockAcquire lock -> (
-      try not (find lock map |> LockStack.is_top) with Caml.Not_found -> false )
+  let get_stack lock map = find_opt lock map |> Option.value ~default:LockStack.top
+
+  let is_lock_taken event map =
+    match event with
+    | Event.LockAcquire lock ->
+        not (LockStack.is_top (get_stack lock map))
     | _ ->
         false
 
 
-  let acquire loc map lock_id =
-    let lock_event = LockEvent.make lock_id loc in
-    let current_value = try find lock_id map with Caml.Not_found -> LockStack.top in
-    let new_value = LockStack.push lock_event current_value in
-    add lock_id new_value map
+  let acquire ~procname ~loc lock map =
+    let acquisition = Acquisition.make ~procname ~loc lock in
+    let current_value = get_stack lock map in
+    let new_value = LockStack.push acquisition current_value in
+    add lock new_value map
 
 
-  let release lock_id map =
-    let current_value = try find lock_id map with Caml.Not_found -> LockStack.top in
+  let release lock map =
+    let current_value = get_stack lock map in
     if LockStack.is_top current_value then map
     else
       let new_value = LockStack.pop current_value in
-      if LockStack.is_top new_value then remove lock_id map else add lock_id new_value map
+      if LockStack.is_top new_value then remove lock map else add lock new_value map
 
 
-  let fold_over_events f map init =
-    let ff _ lock_state acc = List.fold lock_state ~init:acc ~f in
-    fold ff map init
+  (* FIXME - this should be a O(1) operation by moving it into the lock-state and updating in tandem, 
+     so as to increase sharing between critical pairs. *)
+  let get_acquisitions map =
+    fold
+      (fun _lock lock_stack init ->
+        List.fold lock_stack ~init ~f:(fun acc acquisition -> Acquisitions.add acquisition acc) )
+      map Acquisitions.empty
+end
+
+module CriticalPairElement = struct
+  type t = {acquisitions: Acquisitions.t; event: Event.t} [@@deriving compare]
+
+  let pp fmt {acquisitions; event} =
+    F.fprintf fmt "{acquisitions= %a; event= %a}" Acquisitions.pp acquisitions Event.pp event
+
+
+  let describe = pp
+end
+
+module CriticalPair = struct
+  include ExplicitTrace.MakeTraceElem (CriticalPairElement) (ExplicitTrace.DefaultCallPrinter)
+
+  let make ~loc acquisitions event = make {acquisitions; event} loc
+
+  let is_blocking_call {elem= {event}} = match event with LockAcquire _ -> true | _ -> false
+
+  let get_final_acquire {elem= {event}} =
+    match event with LockAcquire lock -> Some lock | _ -> None
+
+
+  let may_deadlock ({elem= pair1} as t1 : t) ({elem= pair2} as t2 : t) =
+    Option.both (get_final_acquire t1) (get_final_acquire t2)
+    |> Option.exists ~f:(fun (lock1, lock2) ->
+           (not (Lock.equal lock1 lock2))
+           && Acquisitions.lock_is_held lock2 pair1.acquisitions
+           && Acquisitions.lock_is_held lock1 pair2.acquisitions
+           && Acquisitions.inter pair1.acquisitions pair2.acquisitions |> Acquisitions.is_empty )
+
+
+  let with_callsite t existing_acquisitions call_site =
+    let f ({acquisitions} as elem : CriticalPairElement.t) =
+      {elem with acquisitions= Acquisitions.union existing_acquisitions acquisitions}
+    in
+    let new_t = map ~f t in
+    with_callsite new_t call_site
+
+
+  let get_earliest_lock_or_call_loc ~procname ({elem= {acquisitions}} as t) =
+    let initial_loc = get_loc t in
+    Acquisitions.fold
+      (fun {procname= acq_procname; loc= acq_loc} acc ->
+        if
+          Typ.Procname.equal procname acq_procname
+          && Int.is_negative (Location.compare acq_loc acc)
+        then acq_loc
+        else acc )
+      acquisitions initial_loc
+
+
+  let make_trace ?(header = "") ?(include_acquisitions = true) top_pname
+      {elem= {acquisitions; event}; trace; loc} =
+    let acquisitions_map =
+      if include_acquisitions then
+        Acquisitions.fold
+          (fun ({procname} as acq : Acquisition.t) acc ->
+            Typ.Procname.Map.update procname
+              (function None -> Some [acq] | Some acqs -> Some (acq :: acqs))
+              acc )
+          acquisitions Typ.Procname.Map.empty
+      else Typ.Procname.Map.empty
+    in
+    let header_step =
+      let description = F.asprintf "%s%a" header pname_pp top_pname in
+      let loc = Location.dummy in
+      Errlog.make_trace_element 0 loc description []
+    in
+    (* construct the trace segment starting at [call_site] and ending at next call *)
+    let make_call_stack_step fake_first_call call_site =
+      let procname = CallSite.pname call_site in
+      let trace =
+        Typ.Procname.Map.find_opt procname acquisitions_map
+        |> Option.value ~default:[]
+        (* many acquisitions can be on same line (eg, std::lock) so use stable sort 
+           to produce a deterministic trace *)
+        |> List.stable_sort ~compare:Acquisition.compare_loc
+        |> List.map ~f:Acquisition.make_trace_step
+      in
+      if CallSite.equal call_site fake_first_call then trace
+      else
+        let descr = F.asprintf "%a" ExplicitTrace.DefaultCallPrinter.pp call_site in
+        let call_step = Errlog.make_trace_element 0 (CallSite.loc call_site) descr [] in
+        call_step :: trace
+    in
+    (* construct a call stack trace with the lock acquisitions interleaved *)
+    let call_stack =
+      (* fake outermost call so as to include acquisitions in the top level caller *)
+      let fake_first_call = CallSite.make top_pname Location.dummy in
+      List.map (fake_first_call :: trace) ~f:(make_call_stack_step fake_first_call)
+    in
+    let endpoint_step =
+      let endpoint_descr = F.asprintf "%a" Event.describe event in
+      Errlog.make_trace_element 0 loc endpoint_descr []
+    in
+    List.concat (([header_step] :: call_stack) @ [[endpoint_step]])
+end
+
+let is_recursive_lock event tenv =
+  let is_class_and_recursive_lock = function
+    | {Typ.desc= Tptr ({desc= Tstruct name}, _)} | {desc= Tstruct name} ->
+        ConcurrencyModels.is_recursive_lock_type name
+    | typ ->
+        L.debug Analysis Verbose "Asked if non-struct type %a is a recursive lock type.@."
+          (Typ.pp_full Pp.text) typ ;
+        true
+  in
+  match event with
+  | Event.LockAcquire lock_path ->
+      AccessPath.get_typ lock_path tenv |> Option.exists ~f:is_class_and_recursive_lock
+  | _ ->
+      false
+
+
+(** skip adding an order pair [(_, event)] if  
+  - we have no tenv, or,
+  - [event] is not a lock event, or,
+  - we do not hold the lock, or,
+  - the lock is not recursive. *)
+let should_skip tenv_opt event lock_state =
+  Option.exists tenv_opt ~f:(fun tenv ->
+      LockState.is_lock_taken event lock_state && is_recursive_lock event tenv )
+
+
+module CriticalPairs = struct
+  include CriticalPair.FiniteSet
+
+  let with_callsite astate tenv_opt lock_state call_site =
+    let existing_acquisitions = LockState.get_acquisitions lock_state in
+    fold
+      (fun ({elem= {event}} as critical_pair : CriticalPair.t) acc ->
+        if should_skip tenv_opt event lock_state then acc
+        else
+          let new_pair =
+            CriticalPair.with_callsite critical_pair existing_acquisitions call_site
+          in
+          add new_pair acc )
+      astate empty
 end
 
 module UIThreadExplanationDomain = struct
@@ -231,110 +351,81 @@ module GuardToLockMap = struct
 end
 
 type t =
-  { events: EventDomain.t
-  ; guard_map: GuardToLockMap.t
+  { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
-  ; order: OrderDomain.t
+  ; critical_pairs: CriticalPairs.t
   ; ui: UIThreadDomain.t }
 
 let bottom =
-  { events= EventDomain.empty
-  ; guard_map= GuardToLockMap.empty
-  ; lock_state= LockState.empty
-  ; order= OrderDomain.empty
+  { guard_map= GuardToLockMap.empty
+  ; lock_state= LockState.top
+  ; critical_pairs= CriticalPairs.empty
   ; ui= UIThreadDomain.bottom }
 
 
-let is_bottom {events; guard_map; lock_state; order; ui} =
-  EventDomain.is_empty events && GuardToLockMap.is_empty guard_map && OrderDomain.is_empty order
-  && LockState.is_empty lock_state && UIThreadDomain.is_bottom ui
+let is_bottom {guard_map; lock_state; critical_pairs; ui} =
+  GuardToLockMap.is_empty guard_map && LockState.is_top lock_state
+  && CriticalPairs.is_empty critical_pairs
+  && UIThreadDomain.is_bottom ui
 
 
-let pp fmt {events; guard_map; lock_state; order; ui} =
-  F.fprintf fmt "{events= %a; guard_map= %a; lock_state= %a;  order= %a; ui= %a}" EventDomain.pp
-    events GuardToLockMap.pp guard_map LockState.pp lock_state OrderDomain.pp order
-    UIThreadDomain.pp ui
+let pp fmt {guard_map; lock_state; critical_pairs; ui} =
+  F.fprintf fmt "{guard_map= %a; lock_state= %a; critical_pairs= %a; ui= %a}" GuardToLockMap.pp
+    guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs UIThreadDomain.pp ui
 
 
 let join lhs rhs =
-  { events= EventDomain.join lhs.events rhs.events
-  ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
+  { guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
-  ; order= OrderDomain.join lhs.order rhs.order
+  ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
   ; ui= UIThreadDomain.join lhs.ui rhs.ui }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
 
 let ( <= ) ~lhs ~rhs =
-  EventDomain.( <= ) ~lhs:lhs.events ~rhs:rhs.events
-  && GuardToLockMap.( <= ) ~lhs:lhs.guard_map ~rhs:rhs.guard_map
-  && OrderDomain.( <= ) ~lhs:lhs.order ~rhs:rhs.order
+  GuardToLockMap.( <= ) ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.( <= ) ~lhs:lhs.lock_state ~rhs:rhs.lock_state
+  && CriticalPairs.( <= ) ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
   && UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
 
 
-let is_recursive_lock event tenv =
-  let is_class_and_recursive_lock = function
-    | {Typ.desc= Tptr ({desc= Tstruct name}, _)} | {desc= Tstruct name} ->
-        ConcurrencyModels.is_recursive_lock_type name
-    | typ ->
-        L.debug Analysis Verbose "Asked if non-struct type %a is a recursive lock type.@."
-          (Typ.pp_full Pp.text) typ ;
-        true
-  in
-  match event with
-  | {Event.elem= LockAcquire lock_path} ->
-      AccessPath.get_typ lock_path tenv |> Option.exists ~f:is_class_and_recursive_lock
-  | _ ->
-      false
-
-
-(** skip adding an order pair [(_, event)] if  
-  - we have no tenv, or,
-  - [event] is not a lock event, or,
-  - we do not hold the lock, or,
-  - the lock is not recursive. *)
-let should_skip tenv_opt event lock_state =
-  Option.exists tenv_opt ~f:(fun tenv ->
-      LockState.is_taken event lock_state && is_recursive_lock event tenv )
-
-
 (* for every lock b held locally, add a pair (b, event) *)
-let add_order_pairs tenv_opt lock_state event acc =
+let add_critical_pair tenv_opt lock_state event ~loc acc =
   if should_skip tenv_opt event lock_state then acc
   else
-    let add_first_and_eventually acc ({elem= first; loc} : LockEvent.t) =
-      let new_elem = Order.make {first; eventually= event} loc in
-      OrderDomain.add new_elem acc
-    in
-    LockState.fold_over_events add_first_and_eventually lock_state acc
+    (* FIXME we should not do this repeatedly in the fold below *)
+    let acquisitions = LockState.get_acquisitions lock_state in
+    let critical_pair = CriticalPair.make ~loc acquisitions event in
+    CriticalPairs.add critical_pair acc
 
 
-let acquire tenv ({lock_state; events; order} as astate) loc locks =
-  let new_events = List.map locks ~f:(fun lock -> Event.make_acquire lock loc) in
+let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
   { astate with
-    events= List.fold new_events ~init:events ~f:(fun acc e -> EventDomain.add e acc)
-  ; order=
-      List.fold new_events ~init:order ~f:(fun acc e ->
-          OrderDomain.union acc (add_order_pairs (Some tenv) lock_state e order) )
-  ; lock_state= List.fold locks ~init:lock_state ~f:(LockState.acquire loc) }
+    (* FIXME do one fold not two *)
+    critical_pairs=
+      List.fold locks ~init:critical_pairs ~f:(fun acc lock ->
+          let event = Event.make_acquire lock in
+          add_critical_pair (Some tenv) lock_state event ~loc acc )
+  ; lock_state=
+      List.fold locks ~init:lock_state ~f:(fun acc lock ->
+          LockState.acquire ~procname ~loc lock acc ) }
 
 
-let make_call_with_event tenv_opt new_event astate =
+let make_call_with_event tenv_opt new_event ~loc astate =
   { astate with
-    events= EventDomain.add new_event astate.events
-  ; order= add_order_pairs tenv_opt astate.lock_state new_event astate.order }
+    critical_pairs=
+      add_critical_pair tenv_opt astate.lock_state new_event ~loc astate.critical_pairs }
 
 
-let blocking_call callee sev loc astate =
-  let new_event = Event.make_blocking_call callee sev loc in
-  make_call_with_event None new_event astate
+let blocking_call ~callee sev ~loc astate =
+  let new_event = Event.make_blocking_call callee sev in
+  make_call_with_event None new_event ~loc astate
 
 
-let strict_mode_call callee loc astate =
-  let new_event = Event.make_strict_mode_call callee loc in
-  make_call_with_event None new_event astate
+let strict_mode_call ~callee ~loc astate =
+  let new_event = Event.make_strict_mode_call callee in
+  make_call_with_event None new_event ~loc astate
 
 
 let release ({lock_state} as astate) locks =
@@ -342,27 +433,19 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let integrate_summary tenv ({lock_state; events; order; ui} as astate) callee_pname loc
-    callee_summary =
-  let callsite = CallSite.make callee_pname loc in
-  let callee_order = OrderDomain.with_callsite callee_summary.order callsite in
+let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; ui} as astate) ~callee
+    ~loc ~callee_summary =
+  let callsite = CallSite.make callee loc in
+  let critical_pairs' =
+    CriticalPairs.with_callsite callee_summary.critical_pairs (Some tenv) lock_state callsite
+  in
   let callee_ui = UIThreadDomain.with_callsite callee_summary.ui callsite in
-  let should_keep event = should_skip (Some tenv) event lock_state |> not in
-  let filtered_order =
-    OrderDomain.filter (fun {elem= {eventually}} -> should_keep eventually) callee_order
-  in
-  let callee_events = EventDomain.with_callsite callee_summary.events callsite in
-  let filtered_events = EventDomain.filter should_keep callee_events in
-  let order' =
-    EventDomain.fold (add_order_pairs (Some tenv) lock_state) filtered_events filtered_order
-  in
   { astate with
-    events= EventDomain.join events filtered_events
-  ; order= OrderDomain.join order order'
+    critical_pairs= CriticalPairs.join critical_pairs critical_pairs'
   ; ui= UIThreadDomain.join ui callee_ui }
 
 
-let set_on_ui_thread ({ui} as astate) loc explain =
+let set_on_ui_thread ({ui} as astate) ~loc explain =
   let ui =
     UIThreadDomain.join ui
       (AbstractDomain.Types.NonBottom (UIThreadExplanationDomain.make explain loc))
@@ -370,9 +453,9 @@ let set_on_ui_thread ({ui} as astate) loc explain =
   {astate with ui}
 
 
-let add_guard tenv astate guard lock ~acquire_now loc =
+let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
   let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
-  if acquire_now then acquire tenv astate loc [lock] else astate
+  if acquire_now then acquire tenv astate ~procname ~loc [lock] else astate
 
 
 let remove_guard astate guard =
@@ -389,10 +472,14 @@ let unlock_guard astate guard =
          FlatLock.get lock_opt |> Option.to_list |> release astate )
 
 
-let lock_guard tenv astate guard loc =
+let lock_guard ~procname ~loc tenv astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         FlatLock.get lock_opt |> Option.to_list |> acquire tenv astate loc )
+         FlatLock.get lock_opt |> Option.to_list |> acquire tenv astate ~procname ~loc )
+
+
+let filter_blocking_calls ({critical_pairs} as astate) =
+  {astate with critical_pairs= CriticalPairs.filter CriticalPair.is_blocking_call critical_pairs}
 
 
 type summary = t

@@ -8,58 +8,67 @@
 open! IStd
 module F = Format
 
-(** Abstraction of a path that represents a lock, special-casing equality and comparisons
+(** Abstraction of a path that represents a lock, special-casing comparison
     to work over type, base variable modulo this and access list *)
 module Lock : sig
-  include ExplicitTrace.Element with type t = AccessPath.t
+  include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
 
   val owner_class : t -> Typ.name option
   (** Class of the root variable of the path representing the lock *)
 
-  val equal : t -> t -> bool
-
   val pp_locks : F.formatter -> t -> unit
+
+  val describe : F.formatter -> t -> unit
 end
 
-(** Represents the existence of a program path from the current method to the eventual acquisition
-    of a lock or a blocking call.  Equality/comparison disregards the call trace but includes
-    location. *)
 module Event : sig
   type severity_t = Low | Medium | High [@@deriving compare]
 
-  type event_t =
-    | LockAcquire of Lock.t
-    | MayBlock of (string * severity_t)
-    | StrictModeCall of string
+  type t = LockAcquire of Lock.t | MayBlock of (string * severity_t) | StrictModeCall of string
   [@@deriving compare]
 
-  include ExplicitTrace.TraceElem with type elem_t = event_t
-
-  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
+  val describe : F.formatter -> t -> unit
 end
-
-module EventDomain : ExplicitTrace.FiniteSet with type elt = Event.t
-
-(** Represents the existence of a program path to the [first] lock being taken in the current
-  method or, transitively, a callee *in the same class*, and, which continues (to potentially
-  another class) until the [eventually] event, schematically -->first-->eventually.
-  It is guaranteed that during the second part of the trace (first-->eventually) the lock [first]
-  is not released.  *)
-module Order : sig
-  type order_t = private {first: Lock.t; eventually: Event.t}
-
-  include ExplicitTrace.TraceElem with type elem_t = order_t
-
-  val may_deadlock : t -> t -> bool
-  (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
-      variable name at the root of each path. *)
-
-  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
-end
-
-module OrderDomain : ExplicitTrace.FiniteSet with type elt = Order.t
 
 module LockState : AbstractDomain.WithTop
+
+(** A set of lock acquisitions with source locations and procnames. *)
+module Acquisitions : sig
+  type t
+
+  val lock_is_held : Lock.t -> t -> bool
+  (** is the given lock in the set *)
+end
+
+(** An event and the currently-held locks at the time it occurred. *)
+module CriticalPairElement : sig
+  type t = private {acquisitions: Acquisitions.t; event: Event.t}
+end
+
+(** A [CriticalPairElement] equipped with a call stack. 
+    The intuition is that if we have a critical pair `(locks, event)` in the summary 
+    of a method then there is a trace of that method where `event` occurs, and right 
+    before it occurs the locks held are exactly `locks` (no over/under approximation).
+    We call it "critical" because the information here alone determines deadlock conditions. 
+*)
+module CriticalPair : sig
+  type t = private {elem: CriticalPairElement.t; loc: Location.t; trace: CallSite.t list}
+
+  include PrettyPrintable.PrintableOrderedType with type t := t
+
+  val get_loc : t -> Location.t
+  (** outermost callsite location *)
+
+  val get_earliest_lock_or_call_loc : procname:Typ.Procname.t -> t -> Location.t
+  (** outermost callsite location OR lock acquisition *)
+
+  val may_deadlock : t -> t -> bool
+
+  val make_trace :
+    ?header:string -> ?include_acquisitions:bool -> Typ.Procname.t -> t -> Errlog.loc_trace
+end
+
+module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
 module UIThreadExplanationDomain : sig
   include ExplicitTrace.TraceElem with type elem_t = string
@@ -74,32 +83,39 @@ module UIThreadDomain :
 module GuardToLockMap : AbstractDomain.WithTop
 
 type t =
-  { events: EventDomain.t
-  ; guard_map: GuardToLockMap.t
+  { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
-  ; order: OrderDomain.t
+  ; critical_pairs: CriticalPairs.t
   ; ui: UIThreadDomain.t }
 
 include AbstractDomain.WithBottom with type t := t
 
-val acquire : Tenv.t -> t -> Location.t -> Lock.t list -> t
+val acquire : Tenv.t -> t -> procname:Typ.Procname.t -> loc:Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
 
 val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
-val blocking_call : Typ.Procname.t -> Event.severity_t -> Location.t -> t -> t
+val blocking_call : callee:Typ.Procname.t -> Event.severity_t -> loc:Location.t -> t -> t
 
-val strict_mode_call : Typ.Procname.t -> Location.t -> t -> t
+val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 
-val set_on_ui_thread : t -> Location.t -> string -> t
+val set_on_ui_thread : t -> loc:Location.t -> string -> t
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
-val add_guard : Tenv.t -> t -> HilExp.t -> Lock.t -> acquire_now:bool -> Location.t -> t
+val add_guard :
+     acquire_now:bool
+  -> procname:Typ.Procname.t
+  -> loc:Location.t
+  -> Tenv.t
+  -> t
+  -> HilExp.t
+  -> Lock.t
+  -> t
 (** Install a mapping from the guard expression to the lock provided, and optionally lock it. *)
 
-val lock_guard : Tenv.t -> t -> HilExp.t -> Location.t -> t
+val lock_guard : procname:Typ.Procname.t -> loc:Location.t -> Tenv.t -> t -> HilExp.t -> t
 (** Acquire the lock the guard was constructed with. *)
 
 val remove_guard : t -> HilExp.t -> t
@@ -112,4 +128,12 @@ type summary = t
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : Tenv.t -> t -> Typ.Procname.t -> Location.t -> summary -> t
+val integrate_summary :
+     Tenv.t
+  -> caller_summary:t
+  -> callee:Typ.Procname.t
+  -> loc:Location.t
+  -> callee_summary:summary
+  -> t
+
+val filter_blocking_calls : t -> t

@@ -75,14 +75,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           None
     in
-    let is_java = Summary.get_proc_name summary |> Typ.Procname.is_java in
+    let procname = Summary.get_proc_name summary in
+    let is_java = Typ.Procname.is_java procname in
     let do_lock locks loc astate =
-      List.filter_map ~f:get_lock_path locks |> Domain.acquire tenv astate loc
+      List.filter_map ~f:get_lock_path locks |> Domain.acquire tenv astate ~procname ~loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
       Payload.read ~caller_summary:summary ~callee_pname:callee
-      |> Option.value_map ~default:astate ~f:(Domain.integrate_summary tenv astate callee loc)
+      |> Option.value_map ~default:astate ~f:(fun callee_summary ->
+             Domain.integrate_summary tenv ~caller_summary:astate ~callee_summary ~callee ~loc )
     in
     match instr with
     | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
@@ -94,11 +96,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Lock locks ->
           do_lock locks loc astate
       | GuardLock guard ->
-          Domain.lock_guard tenv astate guard loc
+          Domain.lock_guard tenv astate guard ~procname ~loc
       | GuardConstruct {guard; lock; acquire_now} -> (
         match get_lock_path lock with
         | Some lock_path ->
-            Domain.add_guard tenv astate guard lock_path ~acquire_now loc
+            Domain.add_guard tenv astate guard lock_path ~acquire_now ~procname ~loc
         | None ->
             log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
             astate )
@@ -116,17 +118,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_ui_thread_model callee ->
           let explanation = F.asprintf "it calls %a" pname_pp callee in
-          Domain.set_on_ui_thread astate loc explanation
-      | NoEffect when is_java && StarvationModels.is_strict_mode_violation tenv callee actuals ->
-          Domain.strict_mode_call callee loc astate
-      | NoEffect ->
-          if is_java then
-            may_block tenv callee actuals
-            |> Option.map ~f:(fun sev -> Domain.blocking_call callee sev loc astate)
-            |> IOption.value_default_f ~f:(fun () -> do_call callee loc astate)
-          else
-            (* in C++/Obj C we only care about deadlocks, not starvation errors *)
+          Domain.set_on_ui_thread astate ~loc explanation
+      | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
+          Domain.strict_mode_call ~callee ~loc astate
+      | NoEffect when is_java -> (
+        match may_block tenv callee actuals with
+        | Some sev ->
+            Domain.blocking_call ~callee sev ~loc astate
+        | None ->
             do_call callee loc astate )
+      | NoEffect ->
+          (* in C++/Obj C we only care about deadlocks, not starvation errors *)
+          do_call callee loc astate )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
@@ -136,10 +139,9 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.N
 
 let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_desc = Summary.get_proc_desc summary in
-  let open StarvationDomain in
-  let pname = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env pname in
-  if StarvationModels.should_skip_analysis tenv pname [] then summary
+  let procname = Procdesc.get_proc_name proc_desc in
+  let tenv = Exe_env.get_tenv exe_env procname in
+  if StarvationModels.should_skip_analysis tenv procname [] then summary
   else
     let formals = FormalMap.make proc_desc in
     let proc_data = ProcData.make summary tenv formals in
@@ -148,7 +150,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.bottom
       else
         let lock =
-          match pname with
+          match procname with
           | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
               (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
               Typ.Procname.Java.get_class_type_name java_pname
@@ -156,22 +158,15 @@ let analyze_procedure {Callbacks.exe_env; summary} =
           | _ ->
               FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
         in
-        StarvationDomain.acquire tenv StarvationDomain.bottom loc (Option.to_list lock)
+        StarvationDomain.acquire tenv StarvationDomain.bottom ~procname ~loc (Option.to_list lock)
     in
     let initial =
       ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
         tenv proc_desc
-      |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
+      |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial ~loc)
     in
     let filter_blocks =
-      if is_nonblocking tenv proc_desc then fun ({events; order} as astate) ->
-        { astate with
-          events= EventDomain.filter (function {elem= MayBlock _} -> false | _ -> true) events
-        ; order=
-            OrderDomain.filter
-              (function {elem= {eventually= {elem= MayBlock _}}} -> false | _ -> true)
-              order }
-      else Fn.id
+      if is_nonblocking tenv proc_desc then StarvationDomain.filter_blocking_calls else Fn.id
     in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:filter_blocks
@@ -313,29 +308,28 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   (not Config.deduplicate)
   ||
   let open StarvationDomain in
-  match (current_elem.Order.elem.first, current_elem.Order.elem.eventually.elem) with
-  | _, (MayBlock _ | StrictModeCall _) ->
+  match (endpoint_elem.CriticalPair.elem.event, current_elem.CriticalPair.elem.event) with
+  | _, (MayBlock _ | StrictModeCall _) | (MayBlock _ | StrictModeCall _), _ ->
       (* should never happen *)
-      L.die InternalError "Deadlock cannot occur without two lock events: %a" Order.pp current_elem
-  | ((Var.LogicalVar _, _), []), _ ->
+      L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
+        current_elem
+  | LockAcquire ((Var.LogicalVar _, _), []), _ ->
       (* first elem is a class object (see [lock_of_class]), so always report because the
-         reverse ordering on the events will not occur *)
+         reverse ordering on the events will not occur -- FIXME WHY? *)
       true
-  | ((Var.LogicalVar _, _), _ :: _), _ | _, LockAcquire ((Var.LogicalVar _, _), _) ->
+  | LockAcquire ((Var.LogicalVar _, _), _ :: _), _ | _, LockAcquire ((Var.LogicalVar _, _), _) ->
       (* first elem has an ident root, but has a non-empty access path, which means we are
          not filtering out local variables (see [exec_instr]), or,
          second elem has an ident root, which should not happen if we are filtering locals *)
-      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." Order.pp
+      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." CriticalPair.pp
         current_elem
-  | ((_, typ1), _), LockAcquire ((_, typ2), _) ->
+  | LockAcquire ((_, typ1), _), LockAcquire ((_, typ2), _) ->
       (* use string comparison on types as a stable order to decide whether to report a deadlock *)
       let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
       c < 0
       || Int.equal 0 c
          && (* same class, so choose depending on location *)
-            Location.compare current_elem.Order.elem.eventually.Event.loc
-              endpoint_elem.Order.elem.eventually.Event.loc
-            < 0
+            Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
 
 
 let should_report pdesc =
@@ -368,7 +362,7 @@ let fold_reportable_summaries (tenv, current_summary) clazz ~init ~f =
   List.fold methods ~init ~f
 
 
-let report_lockless_violations (tenv, summary) {StarvationDomain.events} report_map =
+let report_lockless_violations (tenv, summary) StarvationDomain.{critical_pairs} report_map =
   let open StarvationDomain in
   (* this is inneficient as it climbs the hierarchy potentially twice *)
   let is_annotated_lockless tenv pname =
@@ -383,43 +377,45 @@ let report_lockless_violations (tenv, summary) {StarvationDomain.events} report_
   let pname = Summary.get_proc_name summary in
   if not (is_annotated_lockless tenv pname) then report_map
   else
-    let report_violation (event : Event.t) report_map =
-      match event.elem with
+    let report_violation ({elem= {event}} as critical_pair : CriticalPair.t) report_map =
+      match event with
       | LockAcquire _ ->
           let error_message =
             Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
               (MF.monospaced_to_string Annotations.lockless)
               Event.describe event
           in
-          let loc = Event.get_loc event in
-          let ltr = Event.make_trace pname event in
+          let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname critical_pair in
+          let ltr = CriticalPair.make_trace pname critical_pair in
           ReportMap.add_lockless_violation pname loc ltr error_message report_map
       | _ ->
           report_map
     in
-    EventDomain.fold report_violation events report_map
+    CriticalPairs.fold report_violation critical_pairs report_map
 
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
-         Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
-         this will fail when (a) the lock is of class type (ie as used in static sync methods), because
-         then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
-         inner class but this is no longer obvious in the path, because of nested-class path normalisation.
-         The net effect of the above issues is that we will only see these locks in conflicting pairs
-         once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks env {StarvationDomain.order; ui} report_map' =
+    Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
+    this will fail when (a) the lock is of class type (ie as used in static sync methods), because
+    then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
+    inner class but this is no longer obvious in the path, because of nested-class path normalisation.
+    The net effect of the above issues is that we will only see these locks in conflicting pairs
+    once, as opposed to twice with all other deadlock pairs. *)
+let report_deadlocks env StarvationDomain.{critical_pairs; ui} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
       not
-        ( Order.may_deadlock current_elem elem
+        ( CriticalPair.may_deadlock current_elem elem
         && should_report_deadlock_on_current_proc current_elem elem )
     then report_map
     else
-      let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
-      match (current_elem.Order.elem.eventually.elem, elem.Order.elem.eventually.elem) with
+      let () =
+        debug "Possible deadlock:@.%a@.%a@." CriticalPair.pp current_elem CriticalPair.pp elem
+      in
+      match (current_elem.CriticalPair.elem.event, elem.CriticalPair.elem.event) with
       | LockAcquire lock1, LockAcquire lock2 ->
           let error_message =
             Format.asprintf
@@ -428,25 +424,30 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
               pname_pp current_pname pname_pp endpoint_pname Lock.describe lock1 Lock.describe
               lock2
           in
-          let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
-          let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
+          let first_trace =
+            CriticalPair.make_trace ~header:"[Trace 1] " current_pname current_elem
+          in
+          let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " endpoint_pname elem in
           let ltr = first_trace @ second_trace in
-          let loc = Order.get_loc current_elem in
+          let loc =
+            CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname current_elem
+          in
           ReportMap.add_deadlock current_pname loc ltr error_message report_map
       | _, _ ->
           report_map
   in
   let report_on_current_elem elem report_map =
-    match elem.Order.elem.eventually.elem with
+    match elem.CriticalPair.elem.event with
     | MayBlock _ | StrictModeCall _ ->
         report_map
-    | LockAcquire endpoint_lock when Lock.equal endpoint_lock elem.Order.elem.first ->
+    | LockAcquire endpoint_lock
+      when Acquisitions.lock_is_held endpoint_lock elem.CriticalPair.elem.acquisitions ->
         let error_message =
           Format.asprintf "Potential self deadlock. %a%a twice." pname_pp current_pname
             Lock.pp_locks endpoint_lock
         in
-        let ltr = Order.make_trace ~header:"In method " current_pname elem in
-        let loc = Order.get_loc elem in
+        let ltr = CriticalPair.make_trace ~header:"In method " current_pname elem in
+        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname elem in
         ReportMap.add_deadlock current_pname loc ltr error_message report_map
     | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
@@ -455,50 +456,59 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
                    and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc (endpoint_pname, {order= endp_order; ui= endp_ui}) ->
+                 ~f:(fun acc
+                    (endpoint_pname, {critical_pairs= endp_critical_pairs; ui= endp_ui})
+                    ->
                    if UIThreadDomain.is_bottom ui || UIThreadDomain.is_bottom endp_ui then
-                     OrderDomain.fold (report_endpoint_elem elem endpoint_pname) endp_order acc
+                     CriticalPairs.fold
+                       (report_endpoint_elem elem endpoint_pname)
+                       endp_critical_pairs acc
                    else acc ) )
   in
-  OrderDomain.fold report_on_current_elem order report_map'
+  CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 
-let report_starvation env {StarvationDomain.events; ui} report_map' =
+let report_starvation env {StarvationDomain.critical_pairs; ui} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
   let report_remote_block ui_explain event current_lock endpoint_pname endpoint_elem report_map =
-    let lock = endpoint_elem.Order.elem.first in
-    match endpoint_elem.Order.elem.eventually.elem with
-    | MayBlock (block_descr, sev) when Lock.equal current_lock lock ->
+    let acquisitions = endpoint_elem.CriticalPair.elem.acquisitions in
+    match endpoint_elem.CriticalPair.elem.event with
+    | MayBlock (block_descr, sev) when Acquisitions.lock_is_held current_lock acquisitions ->
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread (because %a) and%a, which may be held by another thread \
              which %s."
-            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_locks lock
-            block_descr
+            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_locks
+            current_lock block_descr
         in
-        let first_trace = Event.make_trace ~header:"[Trace 1] " current_pname event in
-        let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem in
+        let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " current_pname event in
+        let second_trace =
+          CriticalPair.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem
+        in
         let ui_trace =
           UIThreadExplanationDomain.make_trace ~header:"[Trace 1 on UI thread] " current_pname
             ui_explain
         in
         let ltr = first_trace @ second_trace @ ui_trace in
-        let loc = Event.get_loc event in
+        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname event in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
     | _ ->
         report_map
   in
-  let report_on_current_elem ui_explain event report_map =
-    match event.Event.elem with
+  let report_on_current_elem ui_explain (critical_pair : CriticalPair.t) report_map =
+    let event = critical_pair.elem.event in
+    match event with
     | MayBlock (_, sev) ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %a), and may block; %a." pname_pp
             current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
         in
-        let loc = Event.get_loc event in
-        let trace = Event.make_trace current_pname event in
+        let loc = CriticalPair.get_loc critical_pair in
+        let trace =
+          CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
+        in
         let ui_trace =
           UIThreadExplanationDomain.make_trace ~header:"[Trace on UI thread] " current_pname
             ui_explain
@@ -511,8 +521,10 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
             "Method %a runs on UI thread (because %a), and may violate Strict Mode; %a." pname_pp
             current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
         in
-        let loc = Event.get_loc event in
-        let trace = Event.make_trace current_pname event in
+        let loc = CriticalPair.get_loc critical_pair in
+        let trace =
+          CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
+        in
         let ui_trace =
           UIThreadExplanationDomain.make_trace ~header:"[Trace on UI thread] " current_pname
             ui_explain
@@ -526,12 +538,12 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
                  and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc (endpoint_pname, {order; ui}) ->
+                 ~f:(fun acc (endpoint_pname, {critical_pairs; ui}) ->
                    (* skip methods on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_bottom ui then
-                     OrderDomain.fold
-                       (report_remote_block ui_explain event endpoint_lock endpoint_pname)
-                       order acc
+                     CriticalPairs.fold
+                       (report_remote_block ui_explain critical_pair endpoint_lock endpoint_pname)
+                       critical_pairs acc
                    else acc ) )
   in
   (* do not report starvation/strict mode warnings on constructors, keep that for callers *)
@@ -541,7 +553,7 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     | AbstractDomain.Types.Bottom ->
         report_map'
     | AbstractDomain.Types.NonBottom ui_explain ->
-        EventDomain.fold (report_on_current_elem ui_explain) events report_map'
+        CriticalPairs.fold (report_on_current_elem ui_explain) critical_pairs report_map'
 
 
 let reporting {Callbacks.procedures; source_file} =
