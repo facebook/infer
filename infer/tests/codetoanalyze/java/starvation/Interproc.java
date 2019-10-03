@@ -36,7 +36,7 @@ class Interproc {
 }
 
 class InterprocA {
-  synchronized void interproc1Bad(Interproc c) {
+  synchronized void FN_interproc1Bad(Interproc c) {
     interproc2Bad(c);
   }
 

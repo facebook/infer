@@ -27,19 +27,6 @@ module Lock = struct
 
   let equal = [%compare.equal: t]
 
-  let equal_modulo_base (((root, typ), aclist) as l) (((root', typ'), aclist') as l') =
-    phys_equal l l'
-    ||
-    match (root, root') with
-    | Var.LogicalVar _, Var.LogicalVar _ ->
-        (* only class objects are supposed to appear as idents *)
-        equal l l'
-    | Var.ProgramVar _, Var.ProgramVar _ ->
-        [%compare.equal: Typ.t * AccessPath.access list] (typ, aclist) (typ', aclist')
-    | _, _ ->
-        false
-
-
   let pp = AccessPath.pp
 
   let owner_class ((_, {Typ.desc}), _) =
@@ -144,7 +131,7 @@ module Order = struct
   let may_deadlock {elem= {first; eventually}} {elem= {first= first'; eventually= eventually'}} =
     match (eventually.elem, eventually'.elem) with
     | LockAcquire e, LockAcquire e' ->
-        Lock.equal_modulo_base first e' && Lock.equal_modulo_base first' e
+        Lock.equal first e' && Lock.equal first' e
     | _, _ ->
         false
 

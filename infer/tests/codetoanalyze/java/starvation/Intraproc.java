@@ -31,7 +31,7 @@ class Intraproc {
 }
 
 class IntraprocA {
-  void intraBad(Intraproc o) {
+  void FN_intraBad(Intraproc o) {
     synchronized (this) {
       synchronized (o) {
       }
