@@ -242,6 +242,7 @@ let report_siof summary trace gname loc =
     Reporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco description
   in
   let reportable_paths = SiofTrace.get_reportable_sink_paths trace ~trace_of_pname in
+  (* FIXME(T54950303) replace use of filtering with deduplicate *)
   if Config.filtering then List.hd reportable_paths |> Option.iter ~f:report_one_path
   else List.iter ~f:report_one_path reportable_paths
 

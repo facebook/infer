@@ -73,6 +73,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_conflicting_report summary report_location =
+    (* FIXME(T54950303) replace use of filtering with deduplicate *)
     if not Config.filtering then false
     else
       Errlog.fold

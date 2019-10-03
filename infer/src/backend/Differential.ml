@@ -19,6 +19,7 @@ module LocListSet = struct
 end
 
 let is_duplicate_report end_locs reported_ends =
+  (* FIXME(T54950303) replace use of filtering with deduplicate *)
   Config.filtering && LocListSet.mem reported_ends end_locs
 
 

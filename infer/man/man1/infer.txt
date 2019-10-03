@@ -296,6 +296,11 @@ OPTIONS
            infer-events(1), infer-report(1), infer-reportdiff(1), and
            infer-run(1).
 
+       --no-deduplicate
+           Deactivates: Apply issue-specific deduplication during analysis
+           and/or reporting. (Conversely: --deduplicate)           See also infer-analyze(1), infer-report(1), and
+           infer-reportdiff(1).
+
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,

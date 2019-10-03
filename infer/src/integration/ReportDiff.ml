@@ -21,6 +21,7 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
     let unfiltered_diff =
       Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
     in
+    (* FIXME(T54950303) replace use of filtering with deduplicate *)
     if Config.filtering then
       let file_renamings =
         match Config.file_renamings with

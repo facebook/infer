@@ -38,6 +38,7 @@ type t_ignore_duplicates = t =
      de-duplicating. *)
 let sort_filter_issues issues =
   let issues' =
+    (* FIXME(T54950303) replace use of filtering with deduplicate *)
     let compare = if Config.filtering then compare_t_ignore_duplicates else compare in
     List.dedup_and_sort ~compare issues
   in

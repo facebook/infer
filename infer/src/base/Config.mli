@@ -312,6 +312,8 @@ val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t
 
+val deduplicate : bool
+
 val debug_exceptions : bool
 
 val debug_level_analysis : int

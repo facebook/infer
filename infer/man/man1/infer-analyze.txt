@@ -96,6 +96,10 @@ OPTIONS
            Debug level for the linters. See --debug-level for accepted
            values.
 
+       --no-deduplicate
+           Deactivates: Apply issue-specific deduplication during analysis
+           and/or reporting. (Conversely: --deduplicate)
+
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,

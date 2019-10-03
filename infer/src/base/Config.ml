@@ -1136,6 +1136,7 @@ and custom_symbols =
 
 and ( biabduction_models_mode
     , bo_debug
+    , deduplicate
     , developer_mode
     , debug
     , debug_exceptions
@@ -1168,6 +1169,12 @@ and ( biabduction_models_mode
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
+  and deduplicate =
+    CLOpt.mk_bool ~long:"deduplicate" ~default:true
+      ~in_help:
+        InferCommand.
+          [(Analyze, manual_generic); (Report, manual_generic); (ReportDiff, manual_generic)]
+      "Apply issue-specific deduplication during analysis and/or reporting."
   and debug_level_analysis =
     CLOpt.mk_int ~long:"debug-level-analysis" ~default:0 ~in_help:all_generic_manuals
       "Debug level for the analysis. See $(b,--debug-level) for accepted values."
@@ -1248,10 +1255,10 @@ and ( biabduction_models_mode
   and debug_exceptions =
     CLOpt.mk_bool_group ~long:"debug-exceptions"
       "Generate lightweight debugging information: just print the internal exceptions during \
-       analysis (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), \
-       $(b,--reports-include-ml-loc))"
+       analysis (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--no-deduplicate), \
+       $(b,--print-buckets), $(b,--reports-include-ml-loc))"
       [developer_mode; print_buckets; reports_include_ml_loc]
-      [filtering; keep_going]
+      [filtering; keep_going; deduplicate]
   and default_linters =
     CLOpt.mk_bool ~long:"default-linters"
       ~in_help:InferCommand.[(Capture, manual_clang_linters)]
@@ -1285,6 +1292,7 @@ and ( biabduction_models_mode
   in
   ( biabduction_models_mode
   , bo_debug
+  , deduplicate
   , developer_mode
   , debug
   , debug_exceptions
@@ -2836,6 +2844,8 @@ and debug_level_test_determinator = !debug_level_test_determinator
 and debug_exceptions = !debug_exceptions
 
 and debug_mode = !debug
+
+and deduplicate = !deduplicate
 
 and default_linters = !default_linters
 

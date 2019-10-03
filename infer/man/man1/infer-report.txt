@@ -60,6 +60,10 @@ OPTIONS
            Debug level for the linters. See --debug-level for accepted
            values.
 
+       --no-deduplicate
+           Deactivates: Apply issue-specific deduplication during analysis
+           and/or reporting. (Conversely: --deduplicate)
+
        --differential-filter-files string
            Specify the file containing the list of source files for which a
            differential report is desired. Source files should be specified

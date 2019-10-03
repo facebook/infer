@@ -1000,7 +1000,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
       ({reported_sites; reported_writes; reported_reads; reported_unannotated_calls}, _) =
     let pname = Procdesc.get_proc_name procdesc in
     let call_site = CallSite.make pname (TraceElem.get_loc snapshot.access) in
-    if Config.filtering then
+    if Config.deduplicate then
       CallSite.Set.mem call_site reported_sites
       ||
       match snapshot.access.TraceElem.elem with
@@ -1013,7 +1013,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     else false
   in
   let update_reported ({snapshot; procdesc} : reported_access) reported =
-    if Config.filtering then
+    if Config.deduplicate then
       let pname = Procdesc.get_proc_name procdesc in
       let call_site = CallSite.make pname (TraceElem.get_loc snapshot.access) in
       let reported_sites = CallSite.Set.add call_site reported.reported_sites in

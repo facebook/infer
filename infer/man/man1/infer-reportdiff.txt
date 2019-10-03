@@ -51,6 +51,10 @@ OPTIONS
            Debug level for the linters. See --debug-level for accepted
            values.
 
+       --no-deduplicate
+           Deactivates: Apply issue-specific deduplication during analysis
+           and/or reporting. (Conversely: --deduplicate)
+
        --file-renamings path
            JSON with a list of file renamings to use while computing
            differential reports
