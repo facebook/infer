@@ -1,3 +1,5 @@
+.llvm_build
+.llvm_install
 .merlin
 /llvm/
 /model/dune

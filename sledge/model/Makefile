@@ -10,7 +10,7 @@ CLANG_ARGS?=-g $(OPT_ARGS)
 # select llvm and clang
 SWITCH?=$(shell opam switch show)
 ROOT?=..
-LLVM=$(ROOT)/llvm/_install/$(SWITCH)
+LLVM=$(ROOT)/.llvm_install/$(SWITCH)
 
 LIBCXXABI=$(ROOT)/llvm/projects/libcxxabi
 

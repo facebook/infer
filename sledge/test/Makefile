@@ -21,7 +21,7 @@ SLEDGE=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_EXE)
 DIFF?=diff
 
 # configure the non-host llvm and clang
-export PATH := $(CURDIR)/../llvm/_install/sledge/bin:$(PATH)
+export PATH := $(CURDIR)/../.llvm_install/sledge/bin:$(PATH)
 
 default: test
 
