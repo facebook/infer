@@ -261,15 +261,18 @@ end = struct
       }
     in
     let log_reports compare loc reports issue_log =
-      match reports with
-      | [] ->
-          issue_log
-      | [(_, report)] ->
-          log_report ~issue_log loc report
-      | reports ->
-          List.max_elt ~compare reports
-          |> Option.fold ~init:issue_log ~f:(fun acc (_, rep) ->
-                 mk_deduped_report rep |> log_report ~issue_log:acc loc )
+      if Config.deduplicate then
+        match reports with
+        | [] ->
+            issue_log
+        | [(_, report)] ->
+            log_report ~issue_log loc report
+        | reports ->
+            List.max_elt ~compare reports
+            |> Option.fold ~init:issue_log ~f:(fun acc (_, rep) ->
+                   mk_deduped_report rep |> log_report ~issue_log:acc loc )
+      else
+        List.fold reports ~init:issue_log ~f:(fun acc (_, rep) -> log_report ~issue_log:acc loc rep)
     in
     let filter_map_deadlock = function {problem= Deadlock l} as r -> Some (l, r) | _ -> None in
     let filter_map_starvation = function
@@ -307,6 +310,8 @@ end = struct
 end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
+  (not Config.deduplicate)
+  ||
   let open StarvationDomain in
   match (current_elem.Order.elem.first, current_elem.Order.elem.eventually.elem) with
   | _, (MayBlock _ | StrictModeCall _) ->
