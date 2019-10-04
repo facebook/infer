@@ -42,9 +42,7 @@ public class ArrayListTest {
     list.add(4, 666);
   }
 
-  // We can set the size of the list to 10.  The reason of FP is that the widened [i] value at the
-  // second loop is failed to be narrowed precisely.
-  public void arraylist_add_in_loop_FP() {
+  public void arraylist_add_in_loop() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     for (int i = 0; i < 10; ++i) {
       list.add(i);
@@ -152,10 +150,7 @@ public class ArrayListTest {
     list.get(1);
   }
 
-  // we can't set the size of the list to 10 because it depends on how
-  // many times the loop is executed. Should be fixed once we have
-  // relational domain working.
-  public void arraylist_remove_in_loop_Good_FP() {
+  public void arraylist_remove_in_loop_Good() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     for (int i = 0; i < 10; ++i) {
       list.add(i);

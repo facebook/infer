@@ -356,60 +356,88 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
         L.(die InternalError) "Could not compute the pre of a node"
 
 
-  let rec exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing
+  (* [WidenThenNarrow] mode is to narrow the outermost loops eagerly, so that over-approximated
+     widened values do not flow to the following code.
+
+     Problem: There are two phases for finding a fixpoint, widening and narrowing.  First, it finds
+     a fixpoint with widening, in function level.  After that, it finds a fixpoint with narrowing.
+     A problem is that sometimes an overly-approximated, imprecise, values by widening are flowed to
+     the following loops.  They are hard to narrow in the narrowing phase because there is a cycle
+     preventing it.
+
+     To mitigate the problem, it tries to do narrowing, in loop level, right after it found a
+     fixpoint of a loop.  Thus, it narrows before the widened values are flowed to the following
+     loops.  In order to guarantee the termination of the analysis, this eager narrowing is applied
+     only to the outermost loops.  *)
+  type mode = Widen | WidenThenNarrow | Narrow
+
+  let is_narrowing_of = function Widen | WidenThenNarrow -> false | Narrow -> true
+
+  let rec exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head ~mode
       ~is_first_visit rest =
+    let is_narrowing = is_narrowing_of mode in
     match exec_wto_node ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
     | inv_map, ReachedFixPoint ->
         if is_narrowing && is_first_visit then
-          exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest
+          exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest
         else inv_map
     | inv_map, DidNotReachFixPoint ->
-        exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest
+        exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest
 
 
-  and exec_wto_rest ~pp_instr cfg proc_data inv_map head ~is_narrowing rest =
-    let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map rest in
-    exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing
+  and exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest =
+    let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map rest in
+    exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~mode
       ~is_first_visit:false rest
 
 
-  and exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map
+  and exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map
       (partition : CFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
         inv_map
     | Node {node; next} ->
         let inv_map =
-          exec_wto_node ~pp_instr cfg proc_data ~is_narrowing inv_map node ~is_loop_head:false
+          exec_wto_node ~pp_instr cfg proc_data ~is_narrowing:(is_narrowing_of mode) inv_map node
+            ~is_loop_head:false
           |> fst
         in
-        exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
     | Component {head; rest; next} ->
         let inv_map =
-          exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~is_narrowing
-            ~is_first_visit:true rest
+          match mode with
+          | Widen | Narrow ->
+              exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode
+                ~is_first_visit:true rest
+          | WidenThenNarrow ->
+              let inv_map =
+                exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false
+                  ~mode:Widen ~is_first_visit:true rest
+              in
+              exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false
+                ~mode:Narrow ~is_first_visit:true rest
         in
-        exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
 
 
   let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial =
     let wto = CFG.wto cfg in
-    let exec_cfg ~is_narrowing inv_map =
+    let exec_cfg ~mode inv_map =
       match wto with
       | Empty ->
           inv_map (* empty cfg *)
       | Node {node= start_node; next} as wto ->
           if Config.write_html then debug_wto wto start_node ;
           let inv_map, _did_not_reach_fix_point =
-            exec_node ~pp_instr proc_data start_node ~is_loop_head:false ~is_narrowing initial
-              inv_map
+            exec_node ~pp_instr proc_data start_node ~is_loop_head:false
+              ~is_narrowing:(is_narrowing_of mode) initial inv_map
           in
-          exec_wto_partition ~pp_instr cfg proc_data ~is_narrowing inv_map next
+          exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
       | Component _ ->
           L.(die InternalError) "Did not expect the start node to be part of a loop"
     in
-    let inv_map = exec_cfg ~is_narrowing:false InvariantMap.empty in
-    if do_narrowing then exec_cfg ~is_narrowing:true inv_map else inv_map
+    if do_narrowing then exec_cfg ~mode:WidenThenNarrow InvariantMap.empty |> exec_cfg ~mode:Narrow
+    else exec_cfg ~mode:Widen InvariantMap.empty
 
 
   let exec_cfg ?(do_narrowing = false) = exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing
