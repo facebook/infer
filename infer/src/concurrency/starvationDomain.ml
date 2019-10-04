@@ -107,6 +107,9 @@ module Acquisition = struct
   let make_trace_step acquisition =
     let description = F.asprintf "%a" pp acquisition in
     Errlog.make_trace_element 0 acquisition.loc description []
+
+
+  let make_dummy lock = {lock; loc= Location.dummy; procname= Typ.Procname.Linters_dummy_method}
 end
 
 (** Set of acquisitions; due to order over acquisitions, each lock appears at most once. *)
@@ -114,8 +117,7 @@ module Acquisitions = struct
   include PrettyPrintable.MakePPSet (Acquisition)
 
   (* use the fact that location/procname are ignored in comparisons *)
-  let lock_is_held lock acquisitions =
-    mem {lock; loc= Location.dummy; procname= Typ.Procname.Linters_dummy_method} acquisitions
+  let lock_is_held lock acquisitions = mem (Acquisition.make_dummy lock) acquisitions
 end
 
 module LockState : sig
@@ -130,40 +132,74 @@ module LockState : sig
   val get_acquisitions : t -> Acquisitions.t
 end = struct
   module LockStack = AbstractDomain.StackDomain (Acquisition)
-  include AbstractDomain.InvertedMap (Lock) (LockStack)
+  module Map = AbstractDomain.InvertedMap (Lock) (LockStack)
 
-  let get_stack lock map = find_opt lock map |> Option.value ~default:LockStack.top
+  (* [acquisitions] has the currently held locks, so as to avoid a linear fold in [get_acquisitions]. 
+     This should also increase sharing across returned values from [get_acquisitions]. *)
+  type t = {map: Map.t; acquisitions: Acquisitions.t}
 
-  let is_lock_taken event map =
+  let get_acquisitions {acquisitions} = acquisitions
+
+  let pp fmt {map; acquisitions} =
+    F.fprintf fmt "{map= %a; acquisitions= %a}" Map.pp map Acquisitions.pp acquisitions
+
+
+  let join lhs rhs =
+    let map = Map.join lhs.map rhs.map in
+    let acquisitions = Acquisitions.inter lhs.acquisitions rhs.acquisitions in
+    {map; acquisitions}
+
+
+  let widen ~prev ~next ~num_iters =
+    let map = Map.widen ~prev:prev.map ~next:next.map ~num_iters in
+    let acquisitions = Acquisitions.inter prev.acquisitions next.acquisitions in
+    {map; acquisitions}
+
+
+  let ( <= ) ~lhs ~rhs = Map.( <= ) ~lhs:lhs.map ~rhs:rhs.map
+
+  let top = {map= Map.top; acquisitions= Acquisitions.empty}
+
+  let is_top {map} = Map.is_top map
+
+  let is_lock_taken event {acquisitions} =
     match event with
     | Event.LockAcquire lock ->
-        not (LockStack.is_top (get_stack lock map))
+        Acquisitions.mem (Acquisition.make_dummy lock) acquisitions
     | _ ->
         false
 
 
-  let acquire ~procname ~loc lock map =
+  let get_stack lock map = Map.find_opt lock map |> Option.value ~default:LockStack.top
+
+  let acquire ~procname ~loc lock {map; acquisitions} =
     let acquisition = Acquisition.make ~procname ~loc lock in
     let current_value = get_stack lock map in
     let new_value = LockStack.push acquisition current_value in
-    add lock new_value map
+    let map = Map.add lock new_value map in
+    let acquisitions =
+      (* add new acquisition only if lock was not held before *)
+      if LockStack.is_top current_value then Acquisitions.add acquisition acquisitions
+      else acquisitions
+    in
+    {map; acquisitions}
 
 
-  let release lock map =
+  let release lock ({map; acquisitions} as astate) =
     let current_value = get_stack lock map in
-    if LockStack.is_top current_value then map
+    if LockStack.is_top current_value then (* lock was not held *) astate
     else
       let new_value = LockStack.pop current_value in
-      if LockStack.is_top new_value then remove lock map else add lock new_value map
-
-
-  (* FIXME - this should be a O(1) operation by moving it into the lock-state and updating in tandem, 
-     so as to increase sharing between critical pairs. *)
-  let get_acquisitions map =
-    fold
-      (fun _lock lock_stack init ->
-        List.fold lock_stack ~init ~f:(fun acc acquisition -> Acquisitions.add acquisition acc) )
-      map Acquisitions.empty
+      if LockStack.is_top new_value then
+        (* lock is now not held *)
+        let map = Map.remove lock map in
+        let acquisition = Acquisition.make_dummy lock in
+        let acquisitions = Acquisitions.remove acquisition acquisitions in
+        {map; acquisitions}
+      else
+        (* lock is still held as it was acquired more than once *)
+        let map = Map.add lock new_value map in
+        {map; acquisitions}
 end
 
 module CriticalPairElement = struct
