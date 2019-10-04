@@ -131,8 +131,14 @@ module LockState : sig
 
   val get_acquisitions : t -> Acquisitions.t
 end = struct
-  module LockStack = AbstractDomain.StackDomain (Acquisition)
-  module Map = AbstractDomain.InvertedMap (Lock) (LockStack)
+  (* abstraction limit for lock counts *)
+  let max_lock_depth_allowed = 5
+
+  module LockCount = AbstractDomain.DownwardIntDomain (struct
+    let max = max_lock_depth_allowed
+  end)
+
+  module Map = AbstractDomain.InvertedMap (Lock) (LockCount)
 
   (* [acquisitions] has the currently held locks, so as to avoid a linear fold in [get_acquisitions]. 
      This should also increase sharing across returned values from [get_acquisitions]. *)
@@ -170,36 +176,51 @@ end = struct
         false
 
 
-  let get_stack lock map = Map.find_opt lock map |> Option.value ~default:LockStack.top
-
   let acquire ~procname ~loc lock {map; acquisitions} =
-    let acquisition = Acquisition.make ~procname ~loc lock in
-    let current_value = get_stack lock map in
-    let new_value = LockStack.push acquisition current_value in
-    let map = Map.add lock new_value map in
+    let should_add_acquisition = ref false in
+    let map =
+      Map.update lock
+        (function
+          | None ->
+              (* lock was not already held, so add it to [acquisitions] *)
+              should_add_acquisition := true ;
+              Some LockCount.(increment top)
+          | Some count ->
+              Some (LockCount.increment count) )
+        map
+    in
     let acquisitions =
-      (* add new acquisition only if lock was not held before *)
-      if LockStack.is_top current_value then Acquisitions.add acquisition acquisitions
+      if !should_add_acquisition then
+        let acquisition = Acquisition.make ~procname ~loc lock in
+        Acquisitions.add acquisition acquisitions
       else acquisitions
     in
     {map; acquisitions}
 
 
-  let release lock ({map; acquisitions} as astate) =
-    let current_value = get_stack lock map in
-    if LockStack.is_top current_value then (* lock was not held *) astate
-    else
-      let new_value = LockStack.pop current_value in
-      if LockStack.is_top new_value then
-        (* lock is now not held *)
-        let map = Map.remove lock map in
+  let release lock {map; acquisitions} =
+    let should_remove_acquisition = ref false in
+    let map =
+      Map.update lock
+        (function
+          | None ->
+              None
+          | Some count ->
+              let new_count = LockCount.decrement count in
+              if LockCount.is_top new_count then (
+                (* lock was held, but now it is not, so remove from [aqcuisitions] *)
+                should_remove_acquisition := true ;
+                None )
+              else Some new_count )
+        map
+    in
+    let acquisitions =
+      if !should_remove_acquisition then
         let acquisition = Acquisition.make_dummy lock in
-        let acquisitions = Acquisitions.remove acquisition acquisitions in
-        {map; acquisitions}
-      else
-        (* lock is still held as it was acquired more than once *)
-        let map = Map.add lock new_value map in
-        {map; acquisitions}
+        Acquisitions.remove acquisition acquisitions
+      else acquisitions
+    in
+    {map; acquisitions}
 end
 
 module CriticalPairElement = struct

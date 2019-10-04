@@ -258,7 +258,7 @@ module type MaxCount = sig
 end
 
 (** Domain keeping a non-negative count with a bounded maximum value. The count can be only
-    incremented and decremented *)
+    incremented and decremented. *)
 module CountDomain (MaxCount : MaxCount) : sig
   include WithBottom with type t = private int
 
@@ -275,15 +275,18 @@ module CountDomain (MaxCount : MaxCount) : sig
   (** capped sum of two states *)
 end
 
-(** Domain whose members are stacks of elements (lists, last pushed is head of the list),
-    partially ordered by the prefix relation ([c;b;a] <= [b;a]), and whose join computes the
-    longest common prefix (so [c;b;a] join [f;g;b;c;a] = [a]), so the top element is the empty
-    stack. *)
-module StackDomain (Element : PrettyPrintable.PrintableOrderedType) : sig
-  include WithTop with type t = Element.t list
+(** Domain keeping a non-negative count with a bounded maximum value. 
+    [join] is minimum and [top] is zero. *)
+module DownwardIntDomain (MaxCount : MaxCount) : sig
+  (** top is zero *)
+  include WithTop with type t = private int
 
-  val push : Element.t -> t -> t
+  (** bottom is the provided maximum *)
+  include WithBottom with type t := t
 
-  val pop : t -> t
-  (** throws exception on empty/top *)
+  val increment : t -> t
+  (** bump the count by one if this won't cross the maximum *)
+
+  val decrement : t -> t
+  (** decrease the count by one if it is greater than 0 *)
 end

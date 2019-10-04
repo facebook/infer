@@ -632,46 +632,29 @@ module CountDomain (MaxCount : MaxCount) = struct
   let pp = Int.pp
 end
 
-module StackDomain (Element : PrettyPrintable.PrintableOrderedType) = struct
-  type t = Element.t list
+module DownwardIntDomain (MaxCount : MaxCount) = struct
+  type t = int
 
-  let push = List.cons
-
-  let pop = List.tl_exn
-
-  let is_top = List.is_empty
-
-  let top = []
-
-  let pp fmt x = Pp.semicolon_seq Element.pp fmt x
-
-  (* is (rev rhs) a prefix of (rev lhs)? *)
-  let ( <= ) ~lhs ~rhs =
-    let rec aux lhs rhs =
-      match (lhs, rhs) with
-      | _, [] ->
-          true
-      | [], _ ->
-          false
-      | x :: _, y :: _ when not (Int.equal 0 (Element.compare x y)) ->
-          false
-      | _ :: xs, _ :: ys ->
-          aux xs ys
-    in
-    phys_equal lhs rhs || aux (List.rev lhs) (List.rev rhs)
+  let bottom =
+    assert (MaxCount.max > 0) ;
+    MaxCount.max
 
 
-  (* compute (rev (longest common prefix)) *)
-  let join lhs rhs =
-    let rec aux acc a b =
-      match (a, b) with
-      | x :: xs, y :: ys when Int.equal 0 (Element.compare x y) ->
-          aux (x :: acc) xs ys
-      | _, _ ->
-          acc
-    in
-    if phys_equal lhs rhs then lhs else aux [] (List.rev lhs) (List.rev rhs)
+  let top = 0
 
+  let is_top = Int.equal top
+
+  let is_bottom = Int.equal bottom
+
+  let ( <= ) ~lhs ~rhs = lhs >= rhs
+
+  let join astate1 astate2 = Int.min astate1 astate2
 
   let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let increment astate = if is_bottom astate then astate else astate + 1
+
+  let decrement astate = if is_top astate then astate else astate - 1
+
+  let pp = Int.pp
 end
