@@ -376,22 +376,10 @@ let if_pred_evalopt ~pred ~f x =
   IOption.if_none_evalopt x ~f:(fun () -> if pred () then Some (f ()) else None)
 
 
-(* assume that methods annotated with @MainThread, @UiThread,
-   and any string starting with "On" always run on the UI thread.
-   We do the latter because there are too many to precisely list. *)
-let is_uithread annots =
-  let f (annot, _) =
-    let ending = Annotations.get_annot_ending annot in
-    String.equal ending Annotations.mainthread
-    || String.equal ending Annotations.ui_thread
-    || String.is_prefix ~prefix:"On" ending
-  in
-  List.exists annots ~f
-
-
 let mono_pname = MF.wrap_monospaced Typ.Procname.pp
 
 let runs_on_ui_thread ~attrs_of_pname tenv proc_desc =
+  let is_uithread = Annotations.ia_is_uithread_equivalent in
   let pname = Procdesc.get_proc_name proc_desc in
   if
     is_method_or_override_annotated ~attrs_of_pname Annotations.ia_is_worker_thread pname tenv

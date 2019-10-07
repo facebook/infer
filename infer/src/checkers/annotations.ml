@@ -67,6 +67,16 @@ let notnull = "NotNull"
 
 let not_thread_safe = "NotThreadSafe"
 
+let on_bind = "OnBind"
+
+let on_event = "OnEvent"
+
+let on_mount = "OnMount"
+
+let on_unbind = "OnUnbind"
+
+let on_unmount = "OnUnmount"
+
 let performance_critical = "PerformanceCritical"
 
 let prop = "Prop"
@@ -109,10 +119,6 @@ let ma_has_annotation_with ({return; params} : Annot.Method.t) (predicate : Anno
     =
   let has_annot a = ia_has_annotation_with a predicate in
   has_annot return || List.exists ~f:has_annot params
-
-
-let get_annot_ending ({class_name} : Annot.t) =
-  String.rsplit2 class_name ~on:'.' |> Option.value_map ~default:class_name ~f:snd
 
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
@@ -232,3 +238,8 @@ let ia_is_suppress_lint ia = ia_ends_with ia suppress_lint
 let ia_is_thread_confined ia = ia_ends_with ia thread_confined
 
 let ia_is_worker_thread ia = ia_ends_with ia worker_thread
+
+(* methods annotated with the annotations below always run on the UI thread. *)
+let ia_is_uithread_equivalent =
+  let annotations = [mainthread; ui_thread; on_bind; on_event; on_mount; on_unbind; on_unmount] in
+  fun ia -> List.exists annotations ~f:(ia_ends_with ia)

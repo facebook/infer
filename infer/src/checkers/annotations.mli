@@ -51,9 +51,6 @@ val visibleForTesting : string
 
 val generated_graphql : string
 
-val get_annot_ending : Annot.t -> string
-(** get the '.'-last component of an annotation *)
-
 val annot_ends_with : Annot.t -> string -> bool
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -114,6 +111,8 @@ val ia_is_thrift_service : Annot.Item.t -> bool
 val ia_is_volatile : Annot.Item.t -> bool
 
 val ia_is_worker_thread : Annot.Item.t -> bool
+
+val ia_is_uithread_equivalent : Annot.Item.t -> bool
 
 val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
 (** get the list of annotations on the return value of [pdesc] *)

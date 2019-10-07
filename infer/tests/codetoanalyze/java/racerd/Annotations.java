@@ -440,7 +440,7 @@ class ExtendsClassOnUiThread extends AllMethodsOnUiThread {
   }
 }
 
-// All annotations that start with "On" are assumed to be on the main thread
+// NOT All annotations that start with "On" are on the main thread
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
 @interface OnXYZ {}
@@ -450,7 +450,7 @@ class WeirdAnnotation {
   int f;
 
   @OnXYZ
-  void fooOk() {
+  void fooBad() {
     f = 0;
   }
 }
