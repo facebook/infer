@@ -23,10 +23,6 @@ type qset = (t, comparator_witness) Qset.t
 and t = private
   | Add of {args: qset; typ: Typ.t}  (** Addition *)
   | Mul of {args: qset; typ: Typ.t}  (** Multiplication *)
-  | Splat of {byt: t; siz: t}
-      (** Iterated concatenation of a single byte *)
-  | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
-  | Concat of {args: t vector}  (** Byte-array concatenation *)
   | Reg of {name: string; global: bool}
       (** Local variable / virtual register *)
   | Nondet of {msg: string}
@@ -121,8 +117,6 @@ val reg : Reg.t -> t
 val nondet : string -> t
 val label : parent:string -> name:string -> t
 val null : t
-val splat : byt:t -> siz:t -> t
-val memory : siz:t -> arr:t -> t
 val bool : bool -> t
 val integer : Z.t -> Typ.t -> t
 val float : string -> t

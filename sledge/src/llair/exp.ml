@@ -53,10 +53,6 @@ module rec T : sig
     (* nary: arithmetic, numeric and pointer *)
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
-    (* pointer and memory constants and operations *)
-    | Splat of {byt: t; siz: t}
-    | Memory of {siz: t; arr: t}
-    | Concat of {args: t vector}
     (* nullary *)
     | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
@@ -119,9 +115,6 @@ and T0 : sig
   type t =
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
-    | Splat of {byt: t; siz: t}
-    | Memory of {siz: t; arr: t}
-    | Concat of {args: t vector}
     | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
@@ -163,9 +156,6 @@ end = struct
   type t =
     | Add of {args: qset; typ: Typ.t}
     | Mul of {args: qset; typ: Typ.t}
-    | Splat of {byt: t; siz: t}
-    | Memory of {siz: t; arr: t}
-    | Concat of {args: t vector}
     | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
@@ -245,9 +235,6 @@ let rec pp fs exp =
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
-    | Splat {byt; siz} -> pf "%a^%a" pp byt pp siz
-    | Memory {siz; arr} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | Concat {args} -> pf "%a" (Vector.pp "@,^" pp) args
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
     | Eq -> pf "="
@@ -459,15 +446,6 @@ let invariant ?(partial = false) e =
       | Some typ, Some typ' -> assert (Typ.castable typ typ')
       | _ -> assert true )
     | _ -> assert_arity 2 )
-  | Concat {args} -> assert (Vector.length args <> 1)
-  | Splat {byt; siz} -> (
-      assert (Option.exists ~f:(Typ.convertible Typ.byt) (typ_of byt)) ;
-      assert (Option.exists ~f:(Typ.convertible Typ.siz) (typ_of siz)) ;
-      match siz with
-      | Integer {data} -> assert (not (Z.equal Z.zero data))
-      | _ -> () )
-  | Memory {siz} ->
-      assert (Option.for_all ~f:(Typ.convertible Typ.siz) (typ_of siz))
   | Ord | Uno | Select -> assert_arity 2
   | Conditional | Update -> assert_arity 3
   | Record -> assert (partial || not (List.is_empty args))
@@ -560,13 +538,10 @@ let fold_exps e ~init ~f =
   let fold_exps_ fold_exps_ e z =
     let z =
       match e with
-      | App {op= x; arg= y}
-       |Splat {byt= x; siz= y}
-       |Memory {siz= x; arr= y} ->
-          fold_exps_ y (fold_exps_ x z)
+      | App {op= x; arg= y} -> fold_exps_ y (fold_exps_ x z)
       | Add {args} | Mul {args} ->
           Qset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z)
-      | Concat {args} | Struct_rec {elts= args} ->
+      | Struct_rec {elts= args} ->
           Vector.fold args ~init:z ~f:(fun z elt -> fold_exps_ elt z)
       | _ -> z
     in
@@ -1004,11 +979,9 @@ let simp_ashr x y =
 
 let iter e ~f =
   match e with
-  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
-    ->
-      f x ; f y
+  | App {op= x; arg= y} -> f x ; f y
   | Add {args} | Mul {args} -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Concat {args} | Struct_rec {elts= args} -> Vector.iter ~f args
+  | Struct_rec {elts= args} -> Vector.iter ~f args
   | _ -> ()
 
 let is_subexp ~sub ~sup =
@@ -1074,39 +1047,6 @@ let check1 op typ x =
 let check2 op typ x y =
   type_check2 x y typ ;
   op typ x y |> check invariant
-
-let simp_memory siz arr = Memory {siz; arr}
-
-let memory ~siz ~arr =
-  type_check siz Typ.siz ;
-  simp_memory siz arr |> check invariant
-
-let simp_concat xs =
-  if Vector.length xs = 1 then Vector.get xs 0
-  else
-    let args =
-      if Vector.for_all xs ~f:(function Concat _ -> false | _ -> true)
-      then xs
-      else
-        Vector.concat
-          (Vector.fold_right xs ~init:[] ~f:(fun x s ->
-               match x with
-               | Concat {args} -> args :: s
-               | x -> Vector.of_array [|x|] :: s ))
-    in
-    Concat {args}
-
-let concat xs = simp_concat (Vector.of_array xs) |> check invariant
-
-let simp_splat byt siz =
-  match siz with
-  | Integer {data} when Z.equal Z.zero data -> concat [||]
-  | _ -> Splat {byt; siz}
-
-let splat ~byt ~siz =
-  type_check byt Typ.byt ;
-  type_check siz Typ.siz ;
-  simp_splat byt siz |> check invariant
 
 let eq = app2 Eq
 let dq = app2 Dq

@@ -1257,9 +1257,6 @@ let rec of_exp (e : Exp.t) =
   match e with
   | Add {args; typ} -> Add {args= of_exps args; typ}
   | Mul {args; typ} -> Mul {args= of_exps args; typ}
-  | Splat {byt; siz} -> Splat {byt= of_exp byt; siz= of_exp siz}
-  | Memory {siz; arr} -> Memory {siz= of_exp siz; arr= of_exp arr}
-  | Concat {args} -> Concat {args= Vector.map ~f:of_exp args}
   | Reg {name} -> Var {id= 0; name}
   | Nondet {msg} -> Nondet {msg}
   | Label {parent; name} -> Label {parent; name}
