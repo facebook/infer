@@ -443,7 +443,7 @@ module Func = struct
 
   let find functions name = Map.find functions name
 
-  let mk ~(name : Global.t) ~params ~entry ~cfg =
+  let mk ~(name : Global.t) ~params ~freturn ~fthrow ~entry ~cfg =
     let locals =
       let locals_cmnd locals cmnd =
         Vector.fold_right ~f:Inst.union_locals cmnd ~init:locals
@@ -454,15 +454,6 @@ module Func = struct
       let init = locals_block Var.Set.empty entry in
       Vector.fold ~f:locals_block cfg ~init
     in
-    let wrt = Set.add_list params locals in
-    let freturn, wrt =
-      match name.typ with
-      | Pointer {elt= Function {return= Some _; _}} ->
-          let freturn, wrt = Var.fresh "freturn" ~wrt in
-          (Some freturn, wrt)
-      | _ -> (None, wrt)
-    in
-    let fthrow, _ = Var.fresh "fthrow" ~wrt in
     let func = {name; params; freturn; fthrow; locals; entry; cfg} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
@@ -484,12 +475,12 @@ module Func = struct
     Vector.iter cfg ~f:resolve_parent_and_jumps ;
     func |> check invariant
 
-  let mk_undefined ~name ~params =
+  let mk_undefined ~name ~params ~freturn ~fthrow =
     let entry =
       Block.mk ~lbl:"" ~cmnd:Vector.empty ~term:Term.unreachable
     in
     let cfg = Vector.empty in
-    mk ~name ~entry ~params ~cfg
+    mk ~name ~entry ~params ~freturn ~fthrow ~cfg
 end
 
 (** Derived meta-data *)

@@ -185,11 +185,18 @@ module Func : sig
   val mk :
        name:Global.t
     -> params:Var.t list
+    -> freturn:Var.t option
+    -> fthrow:Var.t
     -> entry:block
     -> cfg:block vector
     -> func
 
-  val mk_undefined : name:Global.t -> params:Var.t list -> t
+  val mk_undefined :
+       name:Global.t
+    -> params:Var.t list
+    -> freturn:Var.t option
+    -> fthrow:Var.t
+    -> t
 
   val find : functions -> string -> func option
   (** Look up a function of the given name in the given functions. *)

@@ -1242,6 +1242,13 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
       (fun rev_args param -> xlate_name param :: rev_args)
       [] llf
   in
+  let freturn =
+    match name.typ with
+    | Pointer {elt= Function {return= Some _; _}} ->
+        Some (Var.program "freturn")
+    | _ -> None
+  in
+  let fthrow = Var.program "fthrow" in
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function llf entry_blk in
@@ -1263,10 +1270,10 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Llair.Func.mk ~name ~params ~entry ~cfg
+      Llair.Func.mk ~name ~params ~freturn ~fthrow ~entry ~cfg
   | At_end _ ->
       report_undefined llf name ;
-      Llair.Func.mk_undefined ~name ~params )
+      Llair.Func.mk_undefined ~name ~params ~freturn ~fthrow )
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
 
