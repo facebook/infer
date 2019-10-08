@@ -998,8 +998,7 @@ let simp_xor x y =
 let simp_shl x y =
   match (x, y) with
   (* i shl j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.sign j >= 0 ->
       integer (Z.shift_left i (Z.to_int j)) typ
   (* e shl 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
@@ -1008,8 +1007,7 @@ let simp_shl x y =
 let simp_lshr x y =
   match (x, y) with
   (* i lshr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.sign j >= 0 ->
       integer (Z.shift_right_trunc i (Z.to_int j)) typ
   (* e lshr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
@@ -1018,8 +1016,7 @@ let simp_lshr x y =
 let simp_ashr x y =
   match (x, y) with
   (* i ashr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
+  | Integer {data= i; typ}, Integer {data= j} when Z.sign j >= 0 ->
       integer (Z.shift_right i (Z.to_int j)) typ
   (* e ashr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
