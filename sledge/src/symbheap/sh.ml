@@ -380,9 +380,20 @@ let rec pure (e : Term.t) =
   [%Trace.call fun {pf} -> pf "%a" Term.pp e]
   ;
   let us = Term.fv e in
+  let eq_false b =
+    let cong = Equality.and_eq b (Term.bool false) Equality.true_ in
+    {emp with us; cong; pure= [e]}
+  in
   ( match e with
   | Integer {data; typ= Integer {bits= 1}} ->
       if Z.is_false data then false_ us else emp
+  (* ¬b ==> false = b *)
+  | App {op= App {op= Xor; arg= Integer {data; typ= Integer {bits= 1}}}; arg}
+    when Z.is_true data ->
+      eq_false arg
+  | App {op= App {op= Xor; arg}; arg= Integer {data; typ= Integer {bits= 1}}}
+    when Z.is_true data ->
+      eq_false arg
   | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)
   | App {op= App {op= Or; arg= e1}; arg= e2} -> or_ (pure e1) (pure e2)
   | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}

@@ -990,8 +990,6 @@ let rec simp_not (typ : Typ.t) term =
       simp_cond cnd (simp_not typ thn) (simp_not typ els)
   (* ¬false ==> true ¬true ==> false *)
   | Integer {data}, Integer {bits= 1} -> bool (Z.is_false data)
-  (* ¬b ==> false = b *)
-  | b, Integer {bits= 1} -> App {op= App {op= Eq; arg= bool false}; arg= b}
   (* ¬e ==> true xor e *)
   | e, _ ->
       App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}

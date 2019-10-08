@@ -894,8 +894,6 @@ let rec simp_not (typ : Typ.t) exp =
       simp_cond cnd (simp_not typ thn) (simp_not typ els)
   (* ¬false ==> true ¬true ==> false *)
   | Integer {data}, Integer {bits= 1} -> bool (Z.is_false data)
-  (* ¬b ==> false = b *)
-  | b, Integer {bits= 1} -> App {op= App {op= Eq; arg= bool false}; arg= b}
   (* ¬e ==> true xor e *)
   | e, _ ->
       App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
@@ -938,11 +936,6 @@ let simp_xor x y =
   | Integer {data= i; typ}, Integer {data= j} ->
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.blogxor ~bits i j) typ
-  (* true xor b ==> ¬b *)
-  | Integer {data; typ= Integer {bits= 1}}, b
-   |b, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_true data ->
-      simp_not Typ.bool b
   | _ -> App {op= App {op= Xor; arg= x}; arg= y}
 
 let simp_shl x y =
