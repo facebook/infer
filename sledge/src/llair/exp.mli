@@ -27,7 +27,7 @@ and t = private
       (** Iterated concatenation of a single byte *)
   | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
   | Concat of {args: t vector}  (** Byte-array concatenation *)
-  | Reg of {id: int; name: string; global: bool}
+  | Reg of {name: string; global: bool}
       (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous register with arbitrary value, representing

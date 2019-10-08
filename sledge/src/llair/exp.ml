@@ -58,7 +58,7 @@ module rec T : sig
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
     (* nullary *)
-    | Reg of {id: int; name: string; global: bool}
+    | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     (* curried application *)
@@ -122,7 +122,7 @@ and T0 : sig
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Reg of {id: int; name: string; global: bool}
+    | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -166,7 +166,7 @@ end = struct
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Reg of {id: int; name: string; global: bool}
+    | Reg of {name: string; global: bool}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -233,24 +233,15 @@ let uncurry =
   in
   uncurry_ []
 
-let rec pp ?is_x fs exp =
-  let get_reg_style reg =
-    match is_x with
-    | None -> `None
-    | Some is_x -> if not (is_x reg) then `Bold else `Cyan
-  in
+let rec pp fs exp =
   let pp_ pp fs exp =
     let pf fmt =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match exp with
-    | Reg {name; id= 0; global= true} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%@%s" fs name
-    | Reg {name; id= 0; global= false} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%%%s" fs name
-    | Reg {name; id; _} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%%%s_%d" fs name id
+    | Reg {name; global= true} -> pf "%@%s" name
+    | Reg {name; global= false} -> pf "%%%s" name
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
@@ -350,9 +341,7 @@ and pp_record fs elts =
 
 type exp = t
 
-let pp_t = pp ?is_x:None
-let pp_full = pp
-let pp = pp_t
+let pp_exp = pp
 
 (** Invariant *)
 
@@ -451,9 +440,7 @@ let invariant ?(partial = false) e =
         assert_arity 0 ;
         assert (Z.numbits data <= bits) )
   | Integer _ -> assert false
-  | Reg {id; global; _} ->
-      assert_arity 0 ;
-      assert ((not global) || id = 0)
+  | Reg _ -> assert_arity 0
   | Nondet _ | Label _ | Float _ -> assert_arity 0
   | Convert {dst; src} ->
       ( match args with
@@ -511,8 +498,7 @@ module Reg = struct
 
     type t = Set.M(T).t [@@deriving compare, equal, sexp]
 
-    let pp_full ?is_x vs = Set.pp (pp_full ?is_x) vs
-    let pp = pp_full ?is_x:None
+    let pp = Set.pp pp_exp
     let empty = Set.empty (module T)
     let of_list = Set.of_list (module T)
     let union_list = Set.union_list (module T)
@@ -567,7 +553,7 @@ module Reg = struct
     | _ -> None
 
   let program ?global name =
-    Reg {id= 0; name; global= Option.is_some global} |> check invariant
+    Reg {name; global= Option.is_some global} |> check invariant
 end
 
 let fold_exps e ~init ~f =

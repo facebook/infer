@@ -505,7 +505,7 @@ module Var = struct
 
   let of_reg (r : Reg.t) =
     match (r :> Exp.t) with
-    | Reg {id; name} -> Var {id; name}
+    | Reg {name} -> Var {id= 0; name}
     | _ -> violates Reg.invariant r
 
   module Set = struct
@@ -1260,7 +1260,7 @@ let rec of_exp (e : Exp.t) =
   | Splat {byt; siz} -> Splat {byt= of_exp byt; siz= of_exp siz}
   | Memory {siz; arr} -> Memory {siz= of_exp siz; arr= of_exp arr}
   | Concat {args} -> Concat {args= Vector.map ~f:of_exp args}
-  | Reg {id; name} -> Var {id; name}
+  | Reg {name} -> Var {id= 0; name}
   | Nondet {msg} -> Nondet {msg}
   | Label {parent; name} -> Label {parent; name}
   | App {op; arg} -> App {op= of_exp op; arg= of_exp arg}
