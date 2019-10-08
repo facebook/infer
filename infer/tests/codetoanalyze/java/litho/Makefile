@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --litho-only --debug-exceptions
+INFER_OPTIONS =   --litho-graphql-field-access-only  --litho-required-props --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

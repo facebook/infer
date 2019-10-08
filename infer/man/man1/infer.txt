@@ -710,13 +710,23 @@ OPTIONS
            in JSON format to stdout (Conversely:
            --no-linters-validate-syntax-only)           See also infer-capture(1).
 
-       --litho
-           Activates: Experimental checkers supporting the Litho framework
-           (Conversely: --no-litho)           See also infer-analyze(1).
+       --litho-graphql-field-access
+           Activates: [EXPERIMENTAL] GraphQL field access check for Litho
+           (Conversely: --no-litho-graphql-field-access)           See also infer-analyze(1).
 
-       --litho-only
-           Activates: Enable --litho and disable all other checkers
-           (Conversely: --no-litho-only)           See also infer-analyze(1).
+       --litho-graphql-field-access-only
+           Activates: Enable --litho-graphql-field-access and disable all
+           other checkers (Conversely: --no-litho-graphql-field-access-only)       
+    See also infer-analyze(1).
+
+       --litho-required-props
+           Activates: [EXPERIMENTAL] Required Prop check for Litho
+           (Conversely: --no-litho-required-props)           See also infer-analyze(1).
+
+       --litho-required-props-only
+           Activates: Enable --litho-required-props and disable all other
+           checkers (Conversely: --no-litho-required-props-only)       
+    See also infer-analyze(1).
 
        --no-liveness
            Deactivates: the detection of dead stores and unused variables

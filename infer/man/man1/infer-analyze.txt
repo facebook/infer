@@ -176,13 +176,21 @@ OPTIONS
            Activates: Enable --linters and disable all other checkers
            (Conversely: --no-linters-only)
 
-       --litho
-           Activates: Experimental checkers supporting the Litho framework
-           (Conversely: --no-litho)
+       --litho-graphql-field-access
+           Activates: [EXPERIMENTAL] GraphQL field access check for Litho
+           (Conversely: --no-litho-graphql-field-access)
 
-       --litho-only
-           Activates: Enable --litho and disable all other checkers
-           (Conversely: --no-litho-only)
+       --litho-graphql-field-access-only
+           Activates: Enable --litho-graphql-field-access and disable all
+           other checkers (Conversely: --no-litho-graphql-field-access-only)
+
+       --litho-required-props
+           Activates: [EXPERIMENTAL] Required Prop check for Litho
+           (Conversely: --no-litho-required-props)
+
+       --litho-required-props-only
+           Activates: Enable --litho-required-props and disable all other
+           checkers (Conversely: --no-litho-required-props-only)
 
        --no-liveness
            Deactivates: the detection of dead stores and unused variables
