@@ -385,13 +385,12 @@ let rec pure (e : Term.t) =
     {emp with us; cong; pure= [e]}
   in
   ( match e with
-  | Integer {data; typ= Integer {bits= 1}} ->
-      if Z.is_false data then false_ us else emp
+  | Integer {data; typ= _} -> if Z.is_false data then false_ us else emp
   (* ¬b ==> false = b *)
-  | App {op= App {op= Xor; arg= Integer {data; typ= Integer {bits= 1}}}; arg}
+  | App {op= App {op= Xor; arg= Integer {data; typ= _}}; arg}
     when Z.is_true data ->
       eq_false arg
-  | App {op= App {op= Xor; arg}; arg= Integer {data; typ= Integer {bits= 1}}}
+  | App {op= App {op= Xor; arg}; arg= Integer {data; typ= _}}
     when Z.is_true data ->
       eq_false arg
   | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)

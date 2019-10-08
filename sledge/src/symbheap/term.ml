@@ -276,13 +276,11 @@ let rec pp ?is_x fs term =
     | And -> pf "&&"
     | Or -> pf "||"
     | Xor -> pf "xor"
-    | App
-        {op= App {op= Xor; arg}; arg= Integer {data; typ= Integer {bits= 1}}}
-      when Z.is_true data ->
+    | App {op= App {op= Xor; arg}; arg= Integer {data}} when Z.is_true data
+      ->
         pf "¬%a" pp arg
-    | App
-        {op= App {op= Xor; arg= Integer {data; typ= Integer {bits= 1}}}; arg}
-      when Z.is_true data ->
+    | App {op= App {op= Xor; arg= Integer {data}}; arg} when Z.is_true data
+      ->
         pf "¬%a" pp arg
     | Shl -> pf "shl"
     | Lshr -> pf "lshr"
@@ -860,9 +858,9 @@ let simp_sub typ x y =
 let simp_cond cnd thn els =
   match cnd with
   (* ¬(true ? t : e) ==> t *)
-  | Integer {data; typ= Integer {bits= 1}} when Z.is_true data -> thn
+  | Integer {data} when Z.is_true data -> thn
   (* ¬(false ? t : e) ==> e *)
-  | Integer {data; typ= Integer {bits= 1}} when Z.is_false data -> els
+  | Integer {data} when Z.is_false data -> els
   | _ ->
       App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
 
@@ -871,13 +869,9 @@ let rec simp_and x y =
   (* i && j *)
   | Integer {data= i; typ}, Integer {data= j} -> integer (Z.logand i j) typ
   (* e && true ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_true data ->
-      e
+  | (Integer {data}, e | e, Integer {data}) when Z.is_true data -> e
   (* e && false ==> 0 *)
-  | (Integer {data; typ= Integer {bits= 1}} as f), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as f)
+  | ((Integer {data} as f), _ | _, (Integer {data} as f))
     when Z.is_false data ->
       f
   (* e && (c ? t : f) ==> (c ? e && t : e && f) *)
@@ -893,15 +887,11 @@ let rec simp_or x y =
   (* i || j *)
   | Integer {data= i; typ}, Integer {data= j} -> integer (Z.logor i j) typ
   (* e || true ==> true *)
-  | (Integer {data; typ= Integer {bits= 1}} as t), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as t)
+  | ((Integer {data} as t), _ | _, (Integer {data} as t))
     when Z.is_true data ->
       t
   (* e || false ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_false data ->
-      e
+  | (Integer {data}, e | e, Integer {data}) when Z.is_false data -> e
   (* e || (c ? t : f) ==> (c ? e || t : e || f) *)
   | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
    |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
@@ -911,46 +901,45 @@ let rec simp_or x y =
   | _ -> App {op= App {op= Or; arg= x}; arg= y}
 
 let rec simp_not (typ : Typ.t) term =
-  match (term, typ) with
+  match term with
   (* ¬(x = y) ==> x ≠ y *)
-  | App {op= App {op= Eq; arg= x}; arg= y}, _ -> simp_dq x y
+  | App {op= App {op= Eq; arg= x}; arg= y} -> simp_dq x y
   (* ¬(x ≠ y) ==> x = y *)
-  | App {op= App {op= Dq; arg= x}; arg= y}, _ -> simp_eq x y
+  | App {op= App {op= Dq; arg= x}; arg= y} -> simp_eq x y
   (* ¬(x > y) ==> x <= y *)
-  | App {op= App {op= Gt; arg= x}; arg= y}, _ -> simp_le x y
+  | App {op= App {op= Gt; arg= x}; arg= y} -> simp_le x y
   (* ¬(x >= y) ==> x < y *)
-  | App {op= App {op= Ge; arg= x}; arg= y}, _ -> simp_lt x y
+  | App {op= App {op= Ge; arg= x}; arg= y} -> simp_lt x y
   (* ¬(x < y) ==> x >= y *)
-  | App {op= App {op= Lt; arg= x}; arg= y}, _ -> simp_ge x y
+  | App {op= App {op= Lt; arg= x}; arg= y} -> simp_ge x y
   (* ¬(x <= y) ==> x > y *)
-  | App {op= App {op= Le; arg= x}; arg= y}, _ -> simp_gt x y
+  | App {op= App {op= Le; arg= x}; arg= y} -> simp_gt x y
   (* ¬(x u> y) ==> x u<= y *)
-  | App {op= App {op= Ugt; arg= x}; arg= y}, _ -> simp_ule x y
+  | App {op= App {op= Ugt; arg= x}; arg= y} -> simp_ule x y
   (* ¬(x u>= y) ==> x u< y *)
-  | App {op= App {op= Uge; arg= x}; arg= y}, _ -> simp_ult x y
+  | App {op= App {op= Uge; arg= x}; arg= y} -> simp_ult x y
   (* ¬(x u< y) ==> x u>= y *)
-  | App {op= App {op= Ult; arg= x}; arg= y}, _ -> simp_uge x y
+  | App {op= App {op= Ult; arg= x}; arg= y} -> simp_uge x y
   (* ¬(x u<= y) ==> x u> y *)
-  | App {op= App {op= Ule; arg= x}; arg= y}, _ -> simp_ugt x y
+  | App {op= App {op= Ule; arg= x}; arg= y} -> simp_ugt x y
   (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | App {op= App {op= Ord; arg= x}; arg= y}, _ -> simp_uno x y
+  | App {op= App {op= Ord; arg= x}; arg= y} -> simp_uno x y
   (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | App {op= App {op= Uno; arg= x}; arg= y}, _ -> simp_ord x y
+  | App {op= App {op= Uno; arg= x}; arg= y} -> simp_ord x y
   (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
-  | App {op= App {op= And; arg= x}; arg= y}, Integer {bits= 1} ->
+  | App {op= App {op= And; arg= x}; arg= y} ->
       simp_or (simp_not typ x) (simp_not typ y)
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
-  | App {op= App {op= Or; arg= x}; arg= y}, Integer {bits= 1} ->
+  | App {op= App {op= Or; arg= x}; arg= y} ->
       simp_and (simp_not typ x) (simp_not typ y)
   (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
-  | ( App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-    , Integer {bits= 1} ) ->
+  | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
+    ->
       simp_cond cnd (simp_not typ thn) (simp_not typ els)
-  (* ¬false ==> true ¬true ==> false *)
-  | Integer {data}, Integer {bits= 1} -> bool (Z.is_false data)
+  (* ¬i ==> -i-1 *)
+  | Integer {data; typ} -> integer (Z.lognot data) typ
   (* ¬e ==> true xor e *)
-  | e, _ ->
-      App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
+  | e -> App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
 
 and simp_eq x y =
   match (x, y) with
@@ -1297,13 +1286,8 @@ let rename sub e =
 
 (** Query *)
 
-let is_true = function
-  | Integer {data; typ= Integer {bits= 1}} -> Z.is_true data
-  | _ -> false
-
-let is_false = function
-  | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
-  | _ -> false
+let is_true = function Integer {data} -> Z.is_true data | _ -> false
+let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
 let rec is_constant e =
   let is_constant_bin x y = is_constant x && is_constant y in
