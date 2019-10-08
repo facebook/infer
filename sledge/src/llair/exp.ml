@@ -11,13 +11,6 @@
 module Z = struct
   include Z
 
-  (* the signed 1-bit integers are -1 and 0 *)
-  let true_ = Z.minus_one
-  let false_ = Z.zero
-  let of_bool = function true -> true_ | false -> false_
-  let is_true = Z.equal true_
-  let is_false = Z.equal false_
-
   (** Interpret as a bounded integer with specified signedness and width. *)
   let clamp ~signed bits z =
     if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits

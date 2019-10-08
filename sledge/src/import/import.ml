@@ -310,5 +310,12 @@ module Z = struct
     | Sexp.Atom s -> Z.of_string s
     | _ -> assert false
 
+  (* the signed 1-bit integers are -1 and 0 *)
+  let true_ = Z.minus_one
+  let false_ = Z.zero
+  let of_bool = function true -> true_ | false -> false_
+  let is_true = Z.equal true_
+  let is_false = Z.equal false_
+
   include Z
 end

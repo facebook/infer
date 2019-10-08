@@ -250,4 +250,9 @@ module Z : sig
   val t_of_sexp : Sexp.t -> t
   val sexp_of_t : t -> Sexp.t
   val pp : t pp
+  val true_ : t
+  val false_ : t
+  val of_bool : bool -> t
+  val is_true : t -> bool
+  val is_false : t -> bool
 end

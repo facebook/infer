@@ -134,7 +134,7 @@ let fv q = fv_union Var.Set.empty q
 let invariant_pure = function
   | Exp.Integer {data; typ} ->
       assert (Typ.equal Typ.bool typ) ;
-      assert (not (Z.equal Z.zero data))
+      assert (not (Z.is_false data))
   | _ -> assert true
 
 let invariant_seg _ = ()
@@ -381,7 +381,7 @@ let rec pure (e : Exp.t) =
   let us = Exp.fv e in
   ( match e with
   | Integer {data; typ= Integer {bits= 1}} ->
-      if Z.equal Z.zero data then false_ us else emp
+      if Z.is_false data then false_ us else emp
   | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)
   | App {op= App {op= Or; arg= e1}; arg= e2} -> or_ (pure e1) (pure e2)
   | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
