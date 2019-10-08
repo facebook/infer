@@ -10,10 +10,10 @@
 include Domain_sig.Dom
 
 (* formals should include all the parameters of the summary. That is both
-   formals and globals.*)
+   formals and globals. *)
 val create_summary :
-     locals:Var.Set.t
-  -> formals:Var.Set.t
+     locals:Reg.Set.t
+  -> formals:Reg.Set.t
   -> entry:t
   -> current:t
   -> summary * t

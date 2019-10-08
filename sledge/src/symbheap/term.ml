@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Expressions *)
+(** Terms *)
 
 (** Z wrapped to treat bounded and unsigned operations *)
 module Z = struct
@@ -58,7 +58,7 @@ module rec T : sig
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
     (* nullary *)
-    | Reg of {id: int; name: string; global: bool}
+    | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     (* curried application *)
@@ -103,7 +103,7 @@ module rec T : sig
   [@@deriving compare, equal, hash, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
-     non-coefficient, so Integer exps must compare higher than any valid
+     non-coefficient, so Integer terms must compare higher than any valid
      monomial *)
 
   type comparator_witness
@@ -123,7 +123,7 @@ and T0 : sig
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Reg of {id: int; name: string; global: bool}
+    | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -167,7 +167,7 @@ end = struct
     | Splat of {byt: t; siz: t}
     | Memory of {siz: t; arr: t}
     | Concat of {args: t vector}
-    | Reg of {id: int; name: string; global: bool}
+    | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | App of {op: t; arg: t}
@@ -235,24 +235,22 @@ let uncurry =
   in
   uncurry_ []
 
-let rec pp ?is_x fs exp =
-  let get_reg_style reg =
+let rec pp ?is_x fs term =
+  let get_var_style var =
     match is_x with
     | None -> `None
-    | Some is_x -> if not (is_x reg) then `Bold else `Cyan
+    | Some is_x -> if not (is_x var) then `Bold else `Cyan
   in
-  let pp_ pp fs exp =
+  let pp_ pp fs term =
     let pf fmt =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
-    match exp with
-    | Reg {name; id= 0; global= true} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%@%s" fs name
-    | Reg {name; id= 0; global= false} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%%%s" fs name
-    | Reg {name; id; _} as reg ->
-        Trace.pp_styled (get_reg_style reg) "%%%s_%d" fs name id
+    match term with
+    | Var {name; id= 0} as var ->
+        Trace.pp_styled (get_var_style var) "%%%s" fs name
+    | Var {name; id} as var ->
+        Trace.pp_styled (get_var_style var) "%%%s_%d" fs name id
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
@@ -325,14 +323,14 @@ let rec pp ?is_x fs exp =
         pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
     | Record -> pf "{_}"
     | App {op; arg} -> (
-      match uncurry exp with
+      match uncurry term with
       | Record, elts -> pf "{%a}" pp_record elts
       | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
   in
-  fix_flip pp_ (fun _ _ -> ()) fs exp
+  fix_flip pp_ (fun _ _ -> ()) fs term
 
 and pp_record fs elts =
   [%Trace.fprintf
@@ -350,7 +348,7 @@ and pp_record fs elts =
             Format.fprintf fs "@[<h>%a@]" (List.pp ",@ " pp) elts )
       elts]
 
-type exp = t
+type term = t
 
 let pp_t = pp ?is_x:None
 let pp_full = pp
@@ -387,7 +385,7 @@ let type_check e typ =
 
 let type_check2 e f typ = type_check e typ ; type_check f typ
 
-(* an indeterminate (factor of a monomial) is any non-Add/Mul/Integer exp *)
+(* an indeterminate (factor of a monomial) is any non-Add/Mul/Integer term *)
 let rec assert_indeterminate = function
   | App {op} -> assert_indeterminate op
   | Integer _ | Add _ | Mul _ -> assert false
@@ -455,10 +453,7 @@ let invariant ?(partial = false) e =
         assert_arity 0 ;
         assert (Z.numbits data <= bits) )
   | Integer _ -> assert false
-  | Reg {id; global; _} ->
-      assert_arity 0 ;
-      assert ((not global) || id = 0)
-  | Nondet _ | Label _ | Float _ -> assert_arity 0
+  | Var _ | Nondet _ | Label _ | Float _ -> assert_arity 0
   | Convert {dst; src} ->
       ( match args with
       | [Integer {typ= Integer _ as typ}] -> assert (Typ.equal src typ)
@@ -492,21 +487,26 @@ let invariant ?(partial = false) e =
       assert (not (Vector.is_empty elts)) ;
       assert_arity 0
 
-let bits_of_int exp =
-  match exp with
+let bits_of_int term =
+  match term with
   | Integer {typ} -> (
     match Typ.prim_bit_size_of typ with
     | Some bits -> bits
-    | None -> violates invariant exp )
+    | None -> violates invariant term )
   | _ -> fail "bits_of_int" ()
 
-(** Registers are the expressions constructed by [Reg] *)
-module Reg = struct
+(** Variables are the terms constructed by [Var] *)
+module Var = struct
   include T
 
   let pp = pp
 
-  type reg = t
+  type var = t
+
+  let of_reg (r : Reg.t) =
+    match (r :> Exp.t) with
+    | Reg {id; name} -> Var {id; name}
+    | _ -> violates Reg.invariant r
 
   module Set = struct
     include (
@@ -520,8 +520,8 @@ module Reg = struct
     let empty = Set.empty (module T)
     let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
-    let union_list = Set.union_list (module T)
     let of_vector = Set.of_vector (module T)
+    let of_regs = Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
   end
 
   module Map = struct
@@ -553,7 +553,7 @@ module Reg = struct
       if !@status = 0 then demangled else None
 
   let pp_demangled fs = function
-    | Reg {name} -> (
+    | Var {name} -> (
       match demangle name with
       | Some demangled when not (String.equal name demangled) ->
           Format.fprintf fs "“%s”" demangled
@@ -562,25 +562,23 @@ module Reg = struct
 
   let invariant x =
     Invariant.invariant [%here] x [%sexp_of: t]
-    @@ fun () -> match x with Reg _ -> invariant x | _ -> assert false
+    @@ fun () -> match x with Var _ -> invariant x | _ -> assert false
 
-  let id = function Reg {id} -> id | x -> violates invariant x
-  let name = function Reg {name} -> name | x -> violates invariant x
-  let global = function Reg {global} -> global | x -> violates invariant x
+  let id = function Var {id} -> id | x -> violates invariant x
+  let name = function Var {name} -> name | x -> violates invariant x
 
-  let of_exp = function
-    | Reg _ as x -> Some (x |> check invariant)
+  let of_term = function
+    | Var _ as v -> Some (v |> check invariant)
     | _ -> None
 
-  let program ?global name =
-    Reg {id= 0; name; global= Option.is_some global} |> check invariant
+  let program name = Var {id= 0; name} |> check invariant
 
   let fresh name ~(wrt : Set.t) =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
-    let x' = Reg {name; id= max + 1; global= false} in
+    let x' = Var {name; id= max + 1} in
     (x', Set.add wrt x')
 
-  (** Register renaming substitutions *)
+  (** Variable renaming substitutions *)
   module Subst = struct
     type t = T.t Map.M(T).t [@@deriving compare, equal, sexp]
 
@@ -655,35 +653,35 @@ module Reg = struct
   end
 end
 
-let fold_exps e ~init ~f =
-  let fold_exps_ fold_exps_ e z =
+let fold_terms e ~init ~f =
+  let fold_terms_ fold_terms_ e z =
     let z =
       match e with
       | App {op= x; arg= y}
        |Splat {byt= x; siz= y}
        |Memory {siz= x; arr= y} ->
-          fold_exps_ y (fold_exps_ x z)
+          fold_terms_ y (fold_terms_ x z)
       | Add {args} | Mul {args} ->
-          Qset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z)
+          Qset.fold args ~init:z ~f:(fun arg _ z -> fold_terms_ arg z)
       | Concat {args} | Struct_rec {elts= args} ->
-          Vector.fold args ~init:z ~f:(fun z elt -> fold_exps_ elt z)
+          Vector.fold args ~init:z ~f:(fun z elt -> fold_terms_ elt z)
       | _ -> z
     in
     f z e
   in
-  fix fold_exps_ (fun _ z -> z) e init
+  fix fold_terms_ (fun _ z -> z) e init
 
-let iter_exps e ~f = fold_exps e ~init:() ~f:(fun () e -> f e)
+let iter_terms e ~f = fold_terms e ~init:() ~f:(fun () e -> f e)
 
-let fold_regs e ~init ~f =
-  fold_exps e ~init ~f:(fun z -> function
-    | Reg _ as x -> f z (x :> Reg.t) | _ -> z )
+let fold_vars e ~init ~f =
+  fold_terms e ~init ~f:(fun z -> function
+    | Var _ as v -> f z (v :> Var.t) | _ -> z )
 
-let fv e = fold_regs e ~f:Set.add ~init:Reg.Set.empty
+let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 
 (** Construct *)
 
-let reg x = x
+let var x = x
 let nondet msg = Nondet {msg} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer data typ = Integer {data; typ} |> check invariant
@@ -763,7 +761,7 @@ let sum_mul_const const sum =
   if Q.equal Q.one const then sum
   else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
 
-let rec sum_to_exp typ sum =
+let rec sum_to_term typ sum =
   match Qset.length sum with
   | 0 -> zero typ
   | 1 -> (
@@ -789,7 +787,7 @@ and simp_div x y =
   | e, Integer {data} when Z.equal Z.one data -> e
   (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
   | Add {typ; args}, Integer {data} ->
-      sum_to_exp typ (sum_mul_const Q.(inv (of_z data)) args)
+      sum_to_term typ (sum_mul_const Q.(inv (of_z data)) args)
   | _ -> App {op= App {op= Div; arg= x}; arg= y}
 
 let simp_udiv x y =
@@ -829,27 +827,27 @@ let simp_urem x y =
 module Sum = struct
   let empty = empty_qset
 
-  let add coeff exp sum =
+  let add coeff term sum =
     assert (not (Q.equal Q.zero coeff)) ;
-    match exp with
+    match term with
     | Integer {data} when Z.equal Z.zero data -> sum
     | Integer {data; typ} ->
         Qset.add sum (integer Z.one typ) Q.(coeff * of_z data)
-    | _ -> Qset.add sum exp coeff
+    | _ -> Qset.add sum term coeff
 
-  let singleton ?(coeff = Q.one) exp = add coeff exp empty
+  let singleton ?(coeff = Q.one) term = add coeff term empty
 
   let map sum ~f =
     Qset.fold sum ~init:empty ~f:(fun e c sum -> add c (f e) sum)
 
   let mul_const = sum_mul_const
-  let to_exp = sum_to_exp
+  let to_term = sum_to_term
 end
 
 let rec simp_add_ typ es poly =
-  (* (coeff × exp) + poly *)
-  let f exp coeff poly =
-    match (exp, poly) with
+  (* (coeff × term) + poly *)
+  let f term coeff poly =
+    match (term, poly) with
     (* (0 × e) + s ==> 0 (optim) *)
     | _ when Q.equal Q.zero coeff -> poly
     (* (c × 0) + s ==> s (optim) *)
@@ -860,9 +858,9 @@ let rec simp_add_ typ es poly =
     (* (c × ∑ᵢ cᵢ × Xᵢ) + s ==> (∑ᵢ (c × cᵢ) × Xᵢ) + s *)
     | Add {args}, _ -> simp_add_ typ (Sum.mul_const coeff args) poly
     (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ cᵢ × Xᵢ *)
-    | _, Add {args} -> Sum.to_exp typ (Sum.add coeff exp args)
+    | _, Add {args} -> Sum.to_term typ (Sum.add coeff term args)
     (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
-    | _ -> Sum.to_exp typ (Sum.add coeff exp (Sum.singleton poly))
+    | _ -> Sum.to_term typ (Sum.add coeff term (Sum.singleton poly))
   in
   Qset.fold ~f es ~init:poly
 
@@ -875,11 +873,11 @@ let simp_add2 typ e f = simp_add_ typ (Sum.singleton e) f
 module Prod = struct
   let empty = empty_qset
 
-  let add exp prod =
-    assert (match exp with Integer _ -> false | _ -> true) ;
-    Qset.add prod exp Q.one
+  let add term prod =
+    assert (match term with Integer _ -> false | _ -> true) ;
+    Qset.add prod term Q.one
 
-  let singleton exp = add exp empty
+  let singleton term = add term empty
   let union = Qset.union
 end
 
@@ -894,16 +892,16 @@ let rec simp_mul2 typ e f =
   | _, Integer {data} when Z.equal Z.zero data -> f
   (* c × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ c × cᵤ × ∏ⱼ yᵤⱼ *)
   | Integer {data}, Add {args} | Add {args}, Integer {data} ->
-      Sum.to_exp typ (Sum.mul_const (Q.of_z data) args)
+      Sum.to_term typ (Sum.mul_const (Q.of_z data) args)
   (* c₁ × x₁ ==> ∑ᵢ₌₁ cᵢ × xᵢ *)
   | Integer {data= c}, x | x, Integer {data= c} ->
-      Sum.to_exp typ (Sum.singleton ~coeff:(Q.of_z c) x)
+      Sum.to_term typ (Sum.singleton ~coeff:(Q.of_z c) x)
   (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==> ∏ⱼ₌₀ⁿ xⱼ *)
   | Mul {args= xs1}, Mul {args= xs2} -> Mul {typ; args= Prod.union xs1 xs2}
   (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ × ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
   | (Mul {args= prod} as m), Add {args= sum}
    |Add {args= sum}, (Mul {args= prod} as m) ->
-      Sum.to_exp typ
+      Sum.to_term typ
         (Sum.map sum ~f:(function
           | Mul {args} -> Mul {typ; args= Prod.union prod args}
           | Integer _ as c -> simp_mul2 typ c m
@@ -918,15 +916,15 @@ let rec simp_mul2 typ e f =
   | _ -> Mul {args= Prod.add e (Prod.singleton f); typ}
 
 let simp_mul typ es =
-  (* (bas ^ pwr) × exp *)
-  let rec mul_pwr bas pwr exp =
-    if Q.equal Q.zero pwr then exp
-    else mul_pwr bas Q.(pwr - one) (simp_mul2 typ bas exp)
+  (* (bas ^ pwr) × term *)
+  let rec mul_pwr bas pwr term =
+    if Q.equal Q.zero pwr then term
+    else mul_pwr bas Q.(pwr - one) (simp_mul2 typ bas term)
   in
   let one = one typ in
-  Qset.fold es ~init:one ~f:(fun bas pwr exp ->
-      if Q.sign pwr >= 0 then mul_pwr bas pwr exp
-      else simp_div exp (mul_pwr bas (Q.neg pwr) one) )
+  Qset.fold es ~init:one ~f:(fun bas pwr term ->
+      if Q.sign pwr >= 0 then mul_pwr bas pwr term
+      else simp_div term (mul_pwr bas (Q.neg pwr) one) )
 
 let simp_negate typ x = simp_mul2 typ (minus_one typ) x
 
@@ -996,8 +994,8 @@ let rec simp_or x y =
   | _ when equal x y -> x
   | _ -> App {op= App {op= Or; arg= x}; arg= y}
 
-let rec simp_not (typ : Typ.t) exp =
-  match (exp, typ) with
+let rec simp_not (typ : Typ.t) term =
+  match (term, typ) with
   (* ¬(x = y) ==> x ≠ y *)
   | App {op= App {op= Eq; arg= x}; arg= y}, _ -> simp_dq x y
   (* ¬(x ≠ y) ==> x = y *)
@@ -1137,10 +1135,10 @@ let fold e ~init:s ~f =
       Vector.fold ~f:(fun s e -> f e s) args ~init:s
   | _ -> s
 
-let is_subexp ~sub ~sup =
+let is_subterm ~sub ~sup =
   With_return.with_return
   @@ fun {return} ->
-  iter_exps sup ~f:(fun e -> if equal sub e then return true) ;
+  iter_terms sup ~f:(fun e -> if equal sub e then return true) ;
   false
 
 let app1 ?(partial = false) op arg =
@@ -1172,7 +1170,7 @@ let app1 ?(partial = false) op arg =
   | _ -> App {op; arg} )
   |> check (invariant ~partial)
   |> check (fun e ->
-         (* every App subexp of output appears in input *)
+         (* every App subterm of output appears in input *)
          match op with
          | App {op= Eq | Dq | Xor} -> ()
          | _ -> (
@@ -1183,10 +1181,11 @@ let app1 ?(partial = false) op arg =
                  | App {op= Eq | Dq} -> ()
                  | App _ as a ->
                      assert (
-                       is_subexp ~sub:a ~sup:op || is_subexp ~sub:a ~sup:arg
+                       is_subterm ~sub:a ~sup:op
+                       || is_subterm ~sub:a ~sup:arg
                        || Trace.fail
-                            "simplifying %a %a@ yields %a@ with new subexp \
-                             %a"
+                            "simplifying %a %a@ yields %a@ with new \
+                             subterm %a"
                             pp op pp arg pp e pp a )
                  | _ -> () ) ) )
 
@@ -1290,8 +1289,58 @@ let struct_rec key =
          forcing the recursive thunks also updates this value. *)
       Struct_rec {elts}
 
-let convert ?(signed = false) ~dst ~src exp =
-  app1 (Convert {signed; dst; src}) exp
+let convert ?(signed = false) ~dst ~src term =
+  app1 (Convert {signed; dst; src}) term
+
+let rec of_exp (e : Exp.t) =
+  let of_exps exps =
+    Qset.fold exps ~init:empty_qset ~f:(fun e q ts ->
+        Qset.add ts (of_exp e) q )
+  in
+  match e with
+  | Add {args; typ} -> Add {args= of_exps args; typ}
+  | Mul {args; typ} -> Mul {args= of_exps args; typ}
+  | Splat {byt; siz} -> Splat {byt= of_exp byt; siz= of_exp siz}
+  | Memory {siz; arr} -> Memory {siz= of_exp siz; arr= of_exp arr}
+  | Concat {args} -> Concat {args= Vector.map ~f:of_exp args}
+  | Reg {id; name} -> Var {id; name}
+  | Nondet {msg} -> Nondet {msg}
+  | Label {parent; name} -> Label {parent; name}
+  | App {op; arg} -> App {op= of_exp op; arg= of_exp arg}
+  | Eq -> Eq
+  | Dq -> Dq
+  | Gt -> Gt
+  | Ge -> Ge
+  | Lt -> Lt
+  | Le -> Le
+  | Ugt -> Ugt
+  | Uge -> Uge
+  | Ult -> Ult
+  | Ule -> Ule
+  | Ord -> Ord
+  | Uno -> Uno
+  | Div -> Div
+  | Udiv -> Udiv
+  | Rem -> Rem
+  | Urem -> Urem
+  | And -> And
+  | Or -> Or
+  | Xor -> Xor
+  | Shl -> Shl
+  | Lshr -> Lshr
+  | Ashr -> Ashr
+  | Conditional -> Conditional
+  | Record -> Record
+  | Select -> Select
+  | Update -> Update
+  | Struct_rec {elts} ->
+      Staged.unstage
+        (struct_rec (module Exp))
+        ~id:e
+        (Vector.map elts ~f:(fun e -> lazy (of_exp e)))
+  | Convert {signed; dst; src} -> Convert {signed; dst; src}
+  | Integer {data; typ} -> Integer {data; typ}
+  | Float {data} -> Float {data}
 
 let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
@@ -1331,7 +1380,7 @@ let map e ~f =
 let rename sub e =
   let rec rename_ sub e =
     match e with
-    | Reg _ -> Reg.Subst.apply sub e
+    | Var _ -> Var.Subst.apply sub e
     | _ -> map ~f:(rename_ sub) e
   in
   rename_ sub e |> check (invariant ~partial:true)
@@ -1349,7 +1398,7 @@ let is_false = function
 let rec is_constant e =
   let is_constant_bin x y = is_constant x && is_constant y in
   match e with
-  | Reg _ | Nondet _ -> false
+  | Var _ | Nondet _ -> false
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       is_constant_bin x y
@@ -1373,7 +1422,7 @@ let solve e f =
       let ord = compare e f in
       match (is_constant e, is_constant f) with
       | true, true when ord <> 0 -> None
-      (* orient equation to discretionarily prefer exp that is constant or
+      (* orient equation to discretionarily prefer term that is constant or
          compares smaller as class representative *)
       | true, false -> Some (Map.add_exn s ~key:f ~data:e)
       | false, true -> Some (Map.add_exn s ~key:e ~data:f)
@@ -1394,7 +1443,7 @@ let solve e f =
       match sub typ e f with
       | Add {args} ->
           let c, q = Qset.min_elt_exn args in
-          let n = Sum.to_exp typ (Qset.remove args c) in
+          let n = Sum.to_term typ (Qset.remove args c) in
           let d = rational (Q.neg q) typ in
           let r = div n d in
           Some (Map.add_exn s ~key:c ~data:r)
@@ -1413,4 +1462,4 @@ let solve e f =
   solve_ e f empty_map
   |>
   [%Trace.retn fun {pf} ->
-    function Some s -> pf "%a" Reg.Subst.pp s | None -> pf "false"]
+    function Some s -> pf "%a" Var.Subst.pp s | None -> pf "false"]

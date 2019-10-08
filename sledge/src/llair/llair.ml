@@ -10,15 +10,15 @@
 [@@@warning "+9"]
 
 type inst =
-  | Move of {reg_exps: (Var.t * Exp.t) vector; loc: Loc.t}
-  | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
+  | Move of {reg_exps: (Reg.t * Exp.t) vector; loc: Loc.t}
+  | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-  | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Reg.t; num: Exp.t; len: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
-  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+  | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
   | Abort of {loc: Loc.t}
 [@@deriving sexp]
 
@@ -31,7 +31,7 @@ and 'a call =
   { callee: 'a
   ; typ: Typ.t
   ; args: Exp.t list
-  ; areturn: Var.t option
+  ; areturn: Reg.t option
   ; return: jump
   ; throw: jump option
   ; mutable recursive: bool
@@ -57,10 +57,10 @@ and cfg = block vector
 (* [entry] is not part of [cfg] since it cannot be jumped to, only called. *)
 and func =
   { name: Global.t
-  ; params: Var.t list
-  ; freturn: Var.t option
-  ; fthrow: Var.t
-  ; locals: Var.Set.t
+  ; params: Reg.t list
+  ; freturn: Reg.t option
+  ; fthrow: Reg.t
+  ; locals: Reg.Set.t
   ; entry: block
   ; cfg: cfg }
 
@@ -87,7 +87,7 @@ let sexp_of_term = function
           { callee: Exp.t
           ; typ: Typ.t
           ; args: Exp.t list
-          ; areturn: Var.t option
+          ; areturn: Reg.t option
           ; return: jump
           ; throw: jump option
           ; recursive: bool
@@ -102,7 +102,7 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
     { lbl: label
     ; cmnd: cmnd
     ; term: term
-    ; parent: Var.t = parent.name.var
+    ; parent: Reg.t = parent.name.reg
     ; sort_index: int }]
 
 let sexp_of_cfg v = [%sexp_of: block vector] v
@@ -110,10 +110,10 @@ let sexp_of_cfg v = [%sexp_of: block vector] v
 let sexp_of_func {name; params; freturn; fthrow; locals; entry; cfg} =
   [%sexp
     { name: Global.t
-    ; params: Var.t list
-    ; freturn: Var.t option
-    ; fthrow: Var.t
-    ; locals: Var.Set.t
+    ; params: Reg.t list
+    ; freturn: Reg.t option
+    ; fthrow: Reg.t
+    ; locals: Reg.Set.t
     ; entry: block
     ; cfg: cfg }]
 
@@ -131,10 +131,10 @@ let pp_inst fs inst =
   match inst with
   | Move {reg_exps; loc} ->
       let regs, exps = Vector.unzip reg_exps in
-      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (Vector.pp ",@ " Var.pp) regs
+      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (Vector.pp ",@ " Reg.pp) regs
         (Vector.pp ",@ " Exp.pp) exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
-      pf "@[<2>%a@ := load %a@ %a;@]\t%a" Var.pp reg Exp.pp len Exp.pp ptr
+      pf "@[<2>%a@ := load %a@ %a;@]\t%a" Reg.pp reg Exp.pp len Exp.pp ptr
         Loc.pp loc
   | Store {ptr; exp; len; loc} ->
       pf "@[<2>store %a@ %a@ %a;@]\t%a" Exp.pp len Exp.pp ptr Exp.pp exp
@@ -149,19 +149,19 @@ let pp_inst fs inst =
       pf "@[<2>memmov %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
         Loc.pp loc
   | Alloc {reg; num; len; loc} ->
-      pf "@[<2>%a@ := alloc [%a x %a];@]\t%a" Var.pp reg Exp.pp num Exp.pp
+      pf "@[<2>%a@ := alloc [%a x %a];@]\t%a" Reg.pp reg Exp.pp num Exp.pp
         len Loc.pp loc
   | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
   | Nondet {reg; msg; loc} ->
       pf "@[<2>%anondet \"%s\";@]\t%a"
-        (Option.pp "%a := " Var.pp)
+        (Option.pp "%a := " Reg.pp)
         reg msg Loc.pp loc
   | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
 
 let pp_args pp_arg fs args =
   Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
 
-let pp_param fs var = Var.pp fs var
+let pp_param fs reg = Reg.pp fs reg
 
 let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]"
@@ -190,7 +190,7 @@ let pp_term fs term =
         tbl Loc.pp loc
   | Call {callee; args; areturn; return; throw; recursive; loc; _} ->
       pf "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
-        (Option.pp "%a := " Var.pp)
+        (Option.pp "%a := " Reg.pp)
         areturn
         (if recursive then "↑" else "")
         Exp.pp callee (pp_args Exp.pp) args pp_jump return
@@ -219,13 +219,13 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
-  let dummy_var = Var.program ~global:() "dummy" in
+  let dummy_reg = Reg.program ~global:() "dummy" in
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
-  { name= Global.mk dummy_var dummy_ptr_typ Loc.none
+  { name= Global.mk dummy_reg dummy_ptr_typ Loc.none
   ; params= []
   ; freturn= None
-  ; fthrow= dummy_var
-  ; locals= Var.Set.empty
+  ; fthrow= dummy_reg
+  ; locals= Reg.Set.empty
   ; entry= dummy_block
   ; cfg= Vector.empty }
 
@@ -270,7 +270,7 @@ module Inst = struct
      |Abort _ ->
         vs
 
-  let locals inst = union_locals inst Var.Set.empty
+  let locals inst = union_locals inst Reg.Set.empty
 
   let fold_exps inst ~init ~f =
     match inst with
@@ -408,7 +408,7 @@ module Func = struct
       ( match name.typ with
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
-      (Option.pp " %a := " Var.pp)
+      (Option.pp " %a := " Reg.pp)
       freturn Global.pp name (pp_args pp_param) params
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
@@ -451,7 +451,7 @@ module Func = struct
       let locals_block locals block =
         locals_cmnd (Term.union_locals block.term locals) block.cmnd
       in
-      let init = locals_block Var.Set.empty entry in
+      let init = locals_block Reg.Set.empty entry in
       Vector.fold ~f:locals_block cfg ~init
     in
     let func = {name; params; freturn; fthrow; locals; entry; cfg} in
@@ -509,17 +509,17 @@ module Block_label = struct
 end
 
 module BlockQ = Hash_queue.Make (Block_label)
-module FuncQ = Hash_queue.Make (Var)
+module FuncQ = Hash_queue.Make (Reg)
 
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
     Map.iter functions ~f:(fun func ->
-        FuncQ.enqueue_back_exn roots func.name.var func ) ;
+        FuncQ.enqueue_back_exn roots func.name.reg func ) ;
     Map.iter functions ~f:(fun func ->
         Func.fold_term func ~init:() ~f:(fun () -> function
           | Call {callee; _} -> (
-            match Var.of_exp callee with
+            match Reg.of_exp callee with
             | Some callee ->
                 FuncQ.remove roots callee |> (ignore : [> ] -> unit)
             | None -> () )
@@ -543,7 +543,7 @@ let set_derived_metadata functions =
         | Iswitch {tbl; _} -> Vector.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
-                Var.of_exp callee >>| Var.name >>= Func.find functions
+                Reg.of_exp callee >>| Reg.name >>= Func.find functions
               with
             | Some func ->
                 if Set.mem ancestors func.entry then call.recursive <- true
@@ -575,7 +575,7 @@ let set_derived_metadata functions =
     List.fold functions
       ~init:(Map.empty (module String))
       ~f:(fun m func ->
-        Map.add_exn m ~key:(Var.name func.name.var) ~data:func )
+        Map.add_exn m ~key:(Reg.name func.name.reg) ~data:func )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
@@ -589,7 +589,7 @@ let invariant pgm =
   assert (
     not
       (Vector.contains_dup pgm.globals ~compare:(fun g1 g2 ->
-           Var.compare g1.Global.var g2.Global.var )) )
+           Reg.compare g1.Global.reg g2.Global.reg )) )
 
 let mk ~globals ~functions =
   { globals= Vector.of_list_rev globals

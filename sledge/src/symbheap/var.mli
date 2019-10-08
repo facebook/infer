@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Used-globals abstract domain *)
+(** Variables *)
 
-include Domain_sig.Dom with type summary = Reg.Set.t
+include module type of Term.Var

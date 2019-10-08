@@ -7,4 +7,4 @@
 
 (** Variables *)
 
-include module type of Exp.Var
+include Term.Var

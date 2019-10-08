@@ -75,14 +75,14 @@ let used_globals pgm preanalyze =
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
-        ; globals= `Declared Var.Set.empty }
+        ; globals= `Declared Reg.Set.empty }
         pgm
     in
-    `Per_function (Map.map summary_table ~f:Var.Set.union_list)
+    `Per_function (Map.map summary_table ~f:Reg.Set.union_list)
   else
     `Declared
-      (Vector.fold pgm.globals ~init:Var.Set.empty ~f:(fun acc g ->
-           Set.add acc g.var ))
+      (Vector.fold pgm.globals ~init:Reg.Set.empty ~f:(fun acc g ->
+           Set.add acc g.reg ))
 
 let analyze =
   let%map_open bound =

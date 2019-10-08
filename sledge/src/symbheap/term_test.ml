@@ -9,48 +9,50 @@ let%test_module _ =
   ( module struct
     (* let () = Trace.init ~margin:68 ~config:all () *)
     let () = Trace.init ~margin:68 ~config:none ()
-    let pp = Format.printf "@\n%a@." Exp.pp
+    let pp = Format.printf "@\n%a@." Term.pp
     let char = Typ.integer ~bits:8
-    let ( ! ) i = Exp.integer (Z.of_int i) char
-    let ( + ) = Exp.add char
-    let ( - ) = Exp.sub char
-    let ( * ) = Exp.mul char
-    let ( = ) = Exp.eq
-    let ( != ) = Exp.dq
-    let ( > ) = Exp.gt
-    let ( >= ) = Exp.ge
-    let ( < ) = Exp.lt
-    let ( <= ) = Exp.le
-    let ( && ) = Exp.and_
-    let ( || ) = Exp.or_
-    let ( ~~ ) = Exp.not_ Typ.bool
+    let ( ! ) i = Term.integer (Z.of_int i) char
+    let ( + ) = Term.add char
+    let ( - ) = Term.sub char
+    let ( * ) = Term.mul char
+    let ( = ) = Term.eq
+    let ( != ) = Term.dq
+    let ( > ) = Term.gt
+    let ( >= ) = Term.ge
+    let ( < ) = Term.lt
+    let ( <= ) = Term.le
+    let ( && ) = Term.and_
+    let ( || ) = Term.or_
+    let ( ~~ ) = Term.not_ Typ.bool
     let wrt = Var.Set.empty
     let y_, wrt = Var.fresh "y" ~wrt
     let z_, _ = Var.fresh "z" ~wrt
-    let y = Exp.var y_
-    let z = Exp.var z_
+    let y = Term.var y_
+    let z = Term.var z_
 
     let%test "booleans distinct" =
-      Exp.is_false
-        (Exp.eq
-           (Exp.integer Z.minus_one Typ.bool)
-           (Exp.integer Z.zero Typ.bool))
+      Term.is_false
+        (Term.eq
+           (Term.integer Z.minus_one Typ.bool)
+           (Term.integer Z.zero Typ.bool))
 
     let%test "unsigned booleans distinct" =
-      Exp.is_false
-        (Exp.eq (Exp.integer Z.one Typ.bool) (Exp.integer Z.zero Typ.bool))
+      Term.is_false
+        (Term.eq
+           (Term.integer Z.one Typ.bool)
+           (Term.integer Z.zero Typ.bool))
 
     let%test "boolean overflow" =
-      Exp.is_true
-        (Exp.eq
-           (Exp.integer Z.minus_one Typ.bool)
-           (Exp.integer Z.one Typ.bool))
+      Term.is_true
+        (Term.eq
+           (Term.integer Z.minus_one Typ.bool)
+           (Term.integer Z.one Typ.bool))
 
     let%test "unsigned boolean overflow" =
-      Exp.is_true
-        (Exp.uge
-           (Exp.integer Z.minus_one Typ.bool)
-           (Exp.integer Z.one Typ.bool))
+      Term.is_true
+        (Term.uge
+           (Term.integer Z.minus_one Typ.bool)
+           (Term.integer Z.one Typ.bool))
 
     let%expect_test _ =
       pp (!42 + !13) ;
@@ -176,19 +178,19 @@ let%test_module _ =
       [%expect {| 0 |}]
 
     let%expect_test _ =
-      pp (!3 * y = z = Exp.bool true) ;
+      pp (!3 * y = z = Term.bool true) ;
       [%expect {| ((3 × %y_1) = %z_2) |}]
 
     let%expect_test _ =
-      pp (Exp.bool true = (!3 * y = z)) ;
+      pp (Term.bool true = (!3 * y = z)) ;
       [%expect {| ((3 × %y_1) = %z_2) |}]
 
     let%expect_test _ =
-      pp (!3 * y = z = Exp.bool false) ;
+      pp (!3 * y = z = Term.bool false) ;
       [%expect {| ((3 × %y_1) ≠ %z_2) |}]
 
     let%expect_test _ =
-      pp (Exp.bool false = (!3 * y = z)) ;
+      pp (Term.bool false = (!3 * y = z)) ;
       [%expect {| ((3 × %y_1) ≠ %z_2) |}]
 
     let%expect_test _ =
@@ -208,11 +210,11 @@ let%test_module _ =
       [%expect {| ((-3 × %y_1 + 4) = %y_1) |}]
 
     let%expect_test _ =
-      pp (Exp.sub Typ.bool (Exp.bool true) (z = !4)) ;
+      pp (Term.sub Typ.bool (Term.bool true) (z = !4)) ;
       [%expect {| (-1 × (%z_2 = 4) + -1) |}]
 
     let%expect_test _ =
-      pp (Exp.add Typ.bool (Exp.bool true) (z = !4) = (z = !4)) ;
+      pp (Term.add Typ.bool (Term.bool true) (z = !4) = (z = !4)) ;
       [%expect {| (((%z_2 = 4) + -1) = (%z_2 = 4)) |}]
 
     let%expect_test _ =
@@ -244,9 +246,9 @@ let%test_module _ =
       [%expect {| ((%y_1 < 2) && (%z_2 ≥ 3)) |}]
 
     let%expect_test _ =
-      pp Exp.(eq z null) ;
-      pp Exp.(eq null z) ;
-      pp Exp.(dq (eq null z) (bool false)) ;
+      pp Term.(eq z null) ;
+      pp Term.(eq null z) ;
+      pp Term.(dq (eq null z) (bool false)) ;
       [%expect
         {|
         (%z_2 = null)

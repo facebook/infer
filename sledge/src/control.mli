@@ -11,11 +11,11 @@ type exec_opts =
   { bound: int  (** Loop/recursion unrolling bound *)
   ; skip_throw: bool  (** Treat throw as unreachable *)
   ; function_summaries: bool  (** Use function summarisation *)
-  ; globals: [`Per_function of Var.Set.t Var.Map.t | `Declared of Var.Set.t]
+  ; globals: [`Per_function of Reg.Set.t Reg.Map.t | `Declared of Reg.Set.t]
         (** Either a per-function used-globals map or a program-wide set *)
   }
 
 module Make (Dom : Domain_sig.Dom) : sig
   val exec_pgm : exec_opts -> Llair.t -> unit
-  val compute_summaries : exec_opts -> Llair.t -> Dom.summary list Var.Map.t
+  val compute_summaries : exec_opts -> Llair.t -> Dom.summary list Reg.Map.t
 end

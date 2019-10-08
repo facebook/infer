@@ -7,9 +7,9 @@
 
 (** Symbolic Execution *)
 
-val assume : Sh.t -> Exp.t -> Sh.t option
+val assume : Sh.t -> Term.t -> Sh.t option
 val kill : Sh.t -> Var.t -> Sh.t
-val move : Sh.t -> Var.t -> Exp.t -> Sh.t
+val move : Sh.t -> Var.t -> Term.t -> Sh.t
 val inst : Sh.t -> Llair.inst -> (Sh.t, unit) result
 
 val intrinsic :
@@ -17,5 +17,5 @@ val intrinsic :
   -> Sh.t
   -> Var.t option
   -> Var.t
-  -> Exp.t list
+  -> Term.t list
   -> (Sh.t, unit) result option

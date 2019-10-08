@@ -16,8 +16,8 @@ let unknown_call call =
       (fun fs (call : Llair.Term.t) ->
         match call with
         | Call {callee} -> (
-          match Var.of_exp callee with
-          | Some var -> Var.pp_demangled fs var
+          match Reg.of_exp callee with
+          | Some reg -> Reg.pp_demangled fs reg
           | None -> Exp.pp fs callee )
         | _ -> () )
       call Llair.Term.pp call]

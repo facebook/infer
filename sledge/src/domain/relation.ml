@@ -12,8 +12,8 @@ module type State_domain_sig = sig
   include Domain_sig.Dom
 
   val create_summary :
-       locals:Var.Set.t
-    -> formals:Var.Set.t
+       locals:Reg.Set.t
+    -> formals:Reg.Set.t
     -> entry:t
     -> current:t
     -> summary * t
@@ -77,8 +77,8 @@ module Make (State_domain : State_domain_sig) = struct
       pf
         "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
          globals: {@[%a@]}@ current: %a@]"
-        (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Var.pp)
-        (List.rev formals) Var.Set.pp locals Var.Set.pp globals
+        (List.pp ",@ " Exp.pp) (List.rev actuals) (List.pp ",@ " Reg.pp)
+        (List.rev formals) Reg.Set.pp locals Reg.Set.pp globals
         State_domain.pp current]
     ;
     let caller_current, state_from_call =
@@ -91,7 +91,7 @@ module Make (State_domain : State_domain_sig) = struct
     [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
   let post locals {state_from_call; caller_entry} (_, current) =
-    [%Trace.call fun {pf} -> pf "locals: %a" Var.Set.pp locals]
+    [%Trace.call fun {pf} -> pf "locals: %a" Reg.Set.pp locals]
     ;
     (caller_entry, State_domain.post locals state_from_call current)
     |>

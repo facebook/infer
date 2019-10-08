@@ -13,7 +13,7 @@ type exec_opts =
   { bound: int
   ; skip_throw: bool
   ; function_summaries: bool
-  ; globals: [`Per_function of Var.Set.t Var.Map.t | `Declared of Var.Set.t]
+  ; globals: [`Per_function of Reg.Set.t Reg.Map.t | `Declared of Reg.Set.t]
   }
 
 module Make (Dom : Domain_sig.Dom) = struct
@@ -31,15 +31,15 @@ module Make (Dom : Domain_sig.Dom) = struct
     val pop_throw :
          t
       -> init:'a
-      -> unwind:(Var.t list -> Var.Set.t -> Dom.from_call -> 'a -> 'a)
+      -> unwind:(Reg.t list -> Reg.Set.t -> Dom.from_call -> 'a -> 'a)
       -> (Dom.from_call * Llair.jump * t * 'a) option
   end = struct
     type t =
       | Return of
           { recursive: bool  (** return from a possibly-recursive call *)
           ; dst: Llair.Jump.t
-          ; params: Var.t list
-          ; locals: Var.Set.t
+          ; params: Reg.t list
+          ; locals: Reg.Set.t
           ; from_call: Dom.from_call
           ; stk: t }
       | Throw of Llair.Jump.t * t
@@ -248,9 +248,9 @@ module Make (Dom : Domain_sig.Dom) = struct
       | None -> [%Trace.info "queue empty"] ; ()
   end
 
-  let used_globals : exec_opts -> Var.var -> Var.Set.t =
+  let used_globals : exec_opts -> Reg.reg -> Reg.Set.t =
    fun opts fn ->
-    [%Trace.call fun {pf} -> pf "%a" Var.pp fn]
+    [%Trace.call fun {pf} -> pf "%a" Reg.pp fn]
     ;
     ( match opts.globals with
     | `Declared set -> set
@@ -261,21 +261,21 @@ module Make (Dom : Domain_sig.Dom) = struct
           fail
             "main analysis reached function %a that was not reached by \
              used-globals pre-analysis "
-            Var.pp fn () ) )
+            Reg.pp fn () ) )
     |>
-    [%Trace.retn fun {pf} r -> pf "%a" Var.Set.pp r]
+    [%Trace.retn fun {pf} r -> pf "%a" Reg.Set.pp r]
 
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
-  let summary_table = Hashtbl.create (module Var)
+  let summary_table = Hashtbl.create (module Reg)
 
   let exec_call opts stk state block call globals =
     let Llair.{callee; args; areturn; return; recursive} = call in
     let Llair.{name; params; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a with state %a" Var.pp name.var Var.pp
-        return.dst.parent.name.var Dom.pp state]
+      pf "%a from %a with state %a" Reg.pp name.reg Reg.pp
+        return.dst.parent.name.reg Dom.pp state]
     ;
     let dnf_states =
       if opts.function_summaries then Dom.dnf state else [state]
@@ -290,7 +290,7 @@ module Make (Dom : Domain_sig.Dom) = struct
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
-              Hashtbl.find summary_table name.var
+              Hashtbl.find summary_table name.reg
               >>= List.find_map ~f:(Dom.apply_summary state)
             in
             [%Trace.info
@@ -320,23 +320,23 @@ module Make (Dom : Domain_sig.Dom) = struct
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
           Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
-              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Var.pp key
+              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Reg.pp key
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
 
   let exec_return ~opts stk pre_state (block : Llair.block) exp =
     let Llair.{name; params; freturn; locals} = block.parent in
     [%Trace.call fun {pf} ->
-      pf "from %a with pre_state %a" Var.pp name.var Dom.pp pre_state]
+      pf "from %a with pre_state %a" Reg.pp name.reg Dom.pp pre_state]
     ;
     let summarize post_state =
       if opts.function_summaries then (
-        let globals = used_globals opts name.var in
+        let globals = used_globals opts name.reg in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
-            ~formals:(Set.union (Var.Set.of_list params) globals)
+            ~formals:(Set.union (Reg.Set.of_list params) globals)
         in
-        Hashtbl.add_multi summary_table ~key:name.var ~data:function_summary ;
+        Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;
         post_state )
       else post_state
@@ -359,7 +359,7 @@ module Make (Dom : Domain_sig.Dom) = struct
           opts.function_summaries
           && List.exists
                (Config.find_list "entry-points")
-               ~f:(String.equal (Var.name name.var))
+               ~f:(String.equal (Reg.name name.reg))
         then summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
@@ -367,7 +367,7 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let exec_throw stk pre_state (block : Llair.block) exc =
     let func = block.parent in
-    [%Trace.call fun {pf} -> pf "from %a" Var.pp func.name.var]
+    [%Trace.call fun {pf} -> pf "from %a" Reg.pp func.name.reg]
     ;
     let unwind params scope from_call state =
       Dom.retn params (Some func.fthrow) from_call
@@ -390,7 +390,7 @@ module Make (Dom : Domain_sig.Dom) = struct
          Stack.t
       -> Dom.t
       -> Llair.block
-      -> Var.t option
+      -> Reg.t option
       -> Llair.jump
       -> Work.x =
    fun stk state block areturn return ->
@@ -423,7 +423,7 @@ module Make (Dom : Domain_sig.Dom) = struct
               Dom.exec_assume state
                 (Exp.eq ptr
                    (Exp.label
-                      ~parent:(Var.name jump.dst.parent.name.var)
+                      ~parent:(Reg.name jump.dst.parent.name.reg)
                       ~name:jump.dst.lbl))
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
@@ -439,7 +439,7 @@ module Make (Dom : Domain_sig.Dom) = struct
             List.fold callees ~init:Work.skip ~f:(fun x callee ->
                 ( match
                     Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
-                      areturn callee.name.var args
+                      areturn callee.name.reg args
                   with
                 | Some (Error ()) ->
                     Report.invalid_access_term
@@ -452,7 +452,7 @@ module Make (Dom : Domain_sig.Dom) = struct
                     exec_skip_func stk state block areturn return
                 | None ->
                     exec_call opts stk state block {call with callee}
-                      (used_globals opts callee.name.var) )
+                      (used_globals opts callee.name.reg) )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->
@@ -481,12 +481,12 @@ module Make (Dom : Domain_sig.Dom) = struct
     let entry_points = Config.find_list "entry-points" in
     List.find_map ~f:(Llair.Func.find pgm.functions) entry_points
     |> function
-    | Some {name= {var}; locals; params= []; entry} ->
+    | Some {name= {reg}; locals; params= []; entry} ->
         Some
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
-                   ~globals:(used_globals opts var) [] None [] ~locals
+                   ~globals:(used_globals opts reg) [] None [] ~locals
                    (Dom.init pgm.globals)))
              entry)
     | _ -> None
@@ -501,9 +501,9 @@ module Make (Dom : Domain_sig.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let compute_summaries opts pgm : Dom.summary list Var.Map.t =
+  let compute_summaries opts pgm : Dom.summary list Reg.Map.t =
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
-    Hashtbl.fold summary_table ~init:Var.Map.empty ~f:(fun ~key ~data map ->
+    Hashtbl.fold summary_table ~init:Reg.Map.empty ~f:(fun ~key ~data map ->
         match data with [] -> map | _ -> Map.set map ~key ~data )
 end

@@ -7,11 +7,11 @@
 
 (** Used-globals abstract domain *)
 
-type t = Var.Set.t [@@deriving equal, sexp_of]
+type t = Reg.Set.t [@@deriving equal, sexp_of]
 
-let pp = Set.pp Var.pp
+let pp = Set.pp Reg.pp
 let report_fmt_thunk = Fn.flip pp
-let empty = Var.Set.empty
+let empty = Reg.Set.empty
 
 let init globals =
   [%Trace.info
@@ -24,10 +24,10 @@ let is_false _ = false
 let post _ _ state = state
 let retn _ _ from_call post = Set.union from_call post
 let dnf t = [t]
-let add_if_global gs v = if Var.global v then Set.add gs v else gs
+let add_if_global gs v = if Reg.global v then Set.add gs v else gs
 
 let used_globals ?(init = empty) exp =
-  Exp.fold_vars exp ~init ~f:add_if_global
+  Exp.fold_regs exp ~init ~f:add_if_global
 
 let exec_assume st exp = Some (used_globals ~init:st exp)
 let exec_kill st _ = st
@@ -44,7 +44,7 @@ let exec_inst st inst =
     Result.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
-  let name = Var.name intrinsic in
+  let name = Reg.name intrinsic in
   if
     List.exists
       [ "malloc"; "aligned_alloc"; "calloc"; "posix_memalign"; "realloc"
@@ -66,11 +66,11 @@ let call ~summaries:_ ~globals:_ actuals _ _ ~locals:_ st =
 
 let resolve_callee lookup ptr st =
   let st = used_globals ~init:st ptr in
-  match Var.of_exp ptr with
-  | Some callee -> (lookup (Var.name callee), st)
+  match Reg.of_exp ptr with
+  | Some callee -> (lookup (Reg.name callee), st)
   | None -> ([], st)
 
-(* A function summary is the set of global variables accessed by that
+(* A function summary is the set of global registers accessed by that
    function and its transitive callees *)
 type summary = t
 

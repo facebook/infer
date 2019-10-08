@@ -18,12 +18,12 @@ let%test_module _ =
     let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
     let i8 = Typ.integer ~bits:8
     let i64 = Typ.integer ~bits:64
-    let ( ! ) i = Exp.integer (Z.of_int i) Typ.siz
-    let ( + ) = Exp.add Typ.siz
-    let ( - ) = Exp.sub Typ.siz
-    let ( * ) = Exp.mul Typ.siz
-    let f = Exp.convert ~dst:i64 ~src:i8
-    let g = Exp.rem
+    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
+    let ( + ) = Term.add Typ.siz
+    let ( - ) = Term.sub Typ.siz
+    let ( * ) = Term.mul Typ.siz
+    let f = Term.convert ~dst:i64 ~src:i8
+    let g = Term.rem
     let wrt = Var.Set.empty
     let t_, wrt = Var.fresh "t" ~wrt
     let u_, wrt = Var.fresh "u" ~wrt
@@ -32,13 +32,13 @@ let%test_module _ =
     let x_, wrt = Var.fresh "x" ~wrt
     let y_, wrt = Var.fresh "y" ~wrt
     let z_, _ = Var.fresh "z" ~wrt
-    let t = Exp.var t_
-    let u = Exp.var u_
-    let v = Exp.var v_
-    let w = Exp.var w_
-    let x = Exp.var x_
-    let y = Exp.var y_
-    let z = Exp.var z_
+    let t = Term.var t_
+    let u = Term.var u_
+    let v = Term.var v_
+    let w = Term.var w_
+    let x = Term.var x_
+    let y = Term.var y_
+    let z = Term.var z_
     let f1 = of_eqs [(!0, !1)]
 
     let%test _ = is_false f1
@@ -212,9 +212,9 @@ let%test_module _ =
       %v_3 = %w_4 = %x_5 = %y_6 = %z_7 |}]
 
     let%expect_test _ =
-      printf (List.pp " , " Exp.pp) (Equality.class_of r7 t) ;
-      printf (List.pp " , " Exp.pp) (Equality.class_of r7 x) ;
-      printf (List.pp " , " Exp.pp) (Equality.class_of r7 z) ;
+      printf (List.pp " , " Term.pp) (Equality.class_of r7 t) ;
+      printf (List.pp " , " Term.pp) (Equality.class_of r7 x) ;
+      printf (List.pp " , " Term.pp) (Equality.class_of r7 z) ;
       [%expect
         {|
         %t_1
@@ -235,7 +235,7 @@ let%test_module _ =
       {sat= true;
        rep= [[%w_4 ↦ %v_3]; [%x_5 ↦ %v_3]; [%y_6 ↦ %v_3]; [%z_7 ↦ %v_3]]} |}]
 
-    let%test _ = normalize r7' w |> Exp.equal v
+    let%test _ = normalize r7' w |> Term.equal v
 
     let%test _ =
       entails_eq (of_eqs [(g w x, g y z); (x, z)]) (g w x) (g w z)
@@ -275,10 +275,10 @@ let%test_module _ =
     let%expect_test _ =
       pp_classes r10 ;
       pp r10 ;
-      Format.printf "@.%a@." Exp.pp (z - (x + !8)) ;
-      Format.printf "@.%a@." Exp.pp (normalize r10 (z - (x + !8))) ;
-      Format.printf "@.%a@." Exp.pp (x + !8 - z) ;
-      Format.printf "@.%a@." Exp.pp (normalize r10 (x + !8 - z)) ;
+      Format.printf "@.%a@." Term.pp (z - (x + !8)) ;
+      Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + !8))) ;
+      Format.printf "@.%a@." Term.pp (x + !8 - z) ;
+      Format.printf "@.%a@." Term.pp (normalize r10 (x + !8 - z)) ;
       [%expect
         {|
       (%z_7 + -16) = %x_5
@@ -308,7 +308,7 @@ let%test_module _ =
 
     let%expect_test _ = pp_classes r12 ; [%expect {| (%z_7 + -16) = %x_5 |}]
 
-    let r13 = of_eqs [(Exp.eq x !2, y); (Exp.dq x !2, z); (y, z)]
+    let r13 = of_eqs [(Term.eq x !2, y); (Term.dq x !2, z); (y, z)]
 
     let%expect_test _ =
       pp r13 ;
@@ -319,15 +319,15 @@ let%test_module _ =
 
     let%test _ = not (is_false r13) (* incomplete *)
 
-    let a = Exp.dq x !0
+    let a = Term.dq x !0
     let r14 = of_eqs [(a, a); (x, !1)]
 
     let%expect_test _ =
       pp r14 ; [%expect {| {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
-    let%test _ = entails_eq r14 a (Exp.bool true)
+    let%test _ = entails_eq r14 a (Term.bool true)
 
-    let b = Exp.dq y !0
+    let b = Term.dq y !0
     let r14 = of_eqs [(a, b); (x, !1)]
 
     let%expect_test _ =
@@ -336,10 +336,10 @@ let%test_module _ =
         {|
           {sat= true; rep= [[%x_5 ↦ 1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
 
-    let%test _ = entails_eq r14 a (Exp.bool true)
-    let%test _ = entails_eq r14 b (Exp.bool true)
+    let%test _ = entails_eq r14 a (Term.bool true)
+    let%test _ = entails_eq r14 b (Term.bool true)
 
-    let b = Exp.convert ~dst:i64 ~src:i8 (Exp.dq x !0)
+    let b = Term.convert ~dst:i64 ~src:i8 (Term.dq x !0)
     let r15 = of_eqs [(b, b); (x, !1)]
 
     let%expect_test _ =

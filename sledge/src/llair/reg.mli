@@ -7,4 +7,4 @@
 
 (** Variables *)
 
-include Exp.Var
+include module type of Exp.Reg

@@ -22,10 +22,10 @@ let%test_module _ =
       Solver.infer_frame p (Var.Set.of_list xs) q
       |> fun r -> assert (Option.is_some r)
 
-    let ( ! ) i = Exp.integer (Z.of_int i) Typ.siz
-    let ( + ) = Exp.add Typ.ptr
-    let ( - ) = Exp.sub Typ.siz
-    let ( * ) = Exp.mul Typ.siz
+    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
+    let ( + ) = Term.add Typ.ptr
+    let ( - ) = Term.sub Typ.siz
+    let ( * ) = Term.mul Typ.siz
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let a2_, wrt = Var.fresh "a" ~wrt
@@ -36,15 +36,15 @@ let%test_module _ =
     let l2_, wrt = Var.fresh "l" ~wrt
     let m_, wrt = Var.fresh "m" ~wrt
     let n_, _ = Var.fresh "n" ~wrt
-    let a = Exp.var a_
-    let a2 = Exp.var a2_
-    let a3 = Exp.var a3_
-    let b = Exp.var b_
-    let k = Exp.var k_
-    let l = Exp.var l_
-    let l2 = Exp.var l2_
-    let m = Exp.var m_
-    let n = Exp.var n_
+    let a = Term.var a_
+    let a2 = Term.var a2_
+    let a3 = Term.var a3_
+    let b = Term.var b_
+    let k = Term.var k_
+    let l = Term.var l_
+    let l2 = Term.var l2_
+    let m = Term.var m_
+    let n = Term.var n_
 
     let%expect_test _ =
       check_frame Sh.emp [] Sh.emp ;
@@ -61,7 +61,7 @@ let%test_module _ =
         ) infer_frame:   false |}]
 
     let%expect_test _ =
-      check_frame Sh.emp [n_; m_] (Sh.and_ (Exp.eq m n) Sh.emp) ;
+      check_frame Sh.emp [n_; m_] (Sh.and_ (Term.eq m n) Sh.emp) ;
       [%expect
         {|
         ( infer_frame:   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
@@ -93,7 +93,7 @@ let%test_module _ =
       let seg1 = Sh.seg {loc= l; bas= b; len= !10; siz= !10; arr= a} in
       let minued = Sh.star common seg1 in
       let subtrahend =
-        Sh.and_ (Exp.eq m n)
+        Sh.and_ (Term.eq m n)
           (Sh.exists
              (Var.Set.of_list [m_])
              (Sh.extend_us (Var.Set.of_list [m_]) common))
@@ -235,7 +235,7 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.and_
-           Exp.(or_ (or_ (eq n !0) (eq n !1)) (eq n !2))
+           Term.(or_ (or_ (eq n !0) (eq n !1)) (eq n !2))
            seg_split_symbolically)
         [m_; a_]
         (Sh.seg {loc= l; bas= l; len= m; siz= m; arr= a}) ;
@@ -272,7 +272,7 @@ let%test_module _ =
     (* Incompleteness: equivalent to above but using ≤ instead of ∨ *)
     let%expect_test _ =
       infer_frame
-        (Sh.and_ (Exp.le n !2) seg_split_symbolically)
+        (Sh.and_ (Term.le n !2) seg_split_symbolically)
         [m_; a_]
         (Sh.seg {loc= l; bas= l; len= m; siz= m; arr= a}) ;
       [%expect

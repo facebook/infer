@@ -9,14 +9,14 @@
 
 [@@@warning "+9"]
 
-type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
+type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; arr: Term.t}
 [@@deriving compare, equal, sexp]
 
 type starjunction =
   { us: Var.Set.t
   ; xs: Var.Set.t
   ; cong: Equality.t
-  ; pure: Exp.t list
+  ; pure: Term.t list
   ; heap: seg list
   ; djns: disjunction list }
 [@@deriving compare, equal, sexp]
@@ -29,12 +29,12 @@ let map_seg {loc; bas; len; siz; arr} ~f =
   {loc= f loc; bas= f bas; len= f len; siz= f siz; arr= f arr}
 
 let pp_seg ?is_x fs {loc; bas; len; siz; arr} =
-  let exp_pp = Exp.pp_full ?is_x in
-  Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" exp_pp loc
+  let term_pp = Term.pp_full ?is_x in
+  Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" term_pp loc
     (fun fs (bas, len) ->
-      if (not (Exp.equal loc bas)) || not (Exp.equal len siz) then
-        Format.fprintf fs " %a, %a " exp_pp bas exp_pp len )
-    (bas, len) exp_pp (Exp.memory ~siz ~arr)
+      if (not (Term.equal loc bas)) || not (Term.equal len siz) then
+        Format.fprintf fs " %a, %a " term_pp bas term_pp len )
+    (bas, len) term_pp (Term.memory ~siz ~arr)
 
 let pp_seg_norm cong fs seg =
   pp_seg fs (map_seg seg ~f:(Equality.normalize cong))
@@ -46,7 +46,7 @@ let pp_us ?(pre = ("" : _ fmt)) fs us =
 let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
   let all_xs = Set.union all_xs xs in
-  let is_x var = Set.mem all_xs (Option.value_exn (Var.of_exp var)) in
+  let is_x var = Set.mem all_xs (Option.value_exn (Var.of_term var)) in
   pp_us fs us ;
   let xs_i_vs, xs_d_vs = Set.inter_diff vs xs in
   if not (Set.is_empty xs_i_vs) then (
@@ -57,15 +57,15 @@ let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
   let first = Equality.is_true cong in
   if not first then Format.fprintf fs "  " ;
   Equality.pp_classes ~is_x fs cong ;
-  let pure_exps =
+  let pure_terms =
     List.filter_map pure ~f:(fun e ->
         let e' = Equality.normalize cong e in
-        if Exp.is_true e' then None else Some e' )
+        if Term.is_true e' then None else Some e' )
   in
   List.pp
     ~pre:(if first then "  " else "@ @<2>∧ ")
-    "@ @<2>∧ " (Exp.pp_full ~is_x) fs pure_exps ;
-  let first = first && List.is_empty pure_exps in
+    "@ @<2>∧ " (Term.pp_full ~is_x) fs pure_terms ;
+  let first = first && List.is_empty pure_terms in
   if List.is_empty heap then
     Format.fprintf fs
       ( if first then if List.is_empty djns then "  emp" else ""
@@ -78,11 +78,12 @@ let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
          (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
            let b_o = function
-             | Exp.App {op= App {op= Add _; arg}; arg= Integer {data; _}} ->
+             | Term.App {op= App {op= Add _; arg}; arg= Integer {data; _}}
+               ->
                  (arg, data)
              | e -> (e, Z.zero)
            in
-           [%compare: Exp.t * (Exp.t * Z.t)]
+           [%compare: Term.t * (Term.t * Z.t)]
              (s1.bas, b_o s1.loc)
              (s2.bas, b_o s2.loc) )) ;
   let first = first && List.is_empty heap in
@@ -105,34 +106,34 @@ and pp_djn vs all_xs fs = function
 let pp = pp Var.Set.empty Var.Set.empty
 let pp_djn = pp_djn Var.Set.empty Var.Set.empty
 
-let fold_exps_seg {loc; bas; len; siz; arr} ~init ~f =
-  let f b z = Exp.fold_exps b ~init:z ~f in
+let fold_terms_seg {loc; bas; len; siz; arr} ~init ~f =
+  let f b z = Term.fold_terms b ~init:z ~f in
   f loc (f bas (f len (f siz (f arr init))))
 
 let fold_vars_seg seg ~init ~f =
-  fold_exps_seg seg ~init ~f:(fun init -> Exp.fold_vars ~f ~init)
+  fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
 let fv_seg seg = fold_vars_seg seg ~f:Set.add ~init:Var.Set.empty
 
-let fold_exps fold_exps {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
-  Equality.fold_exps ~init cong ~f
+let fold_terms fold_terms {us= _; xs= _; cong; pure; heap; djns} ~init ~f =
+  Equality.fold_terms ~init cong ~f
   |> fun init ->
-  List.fold ~init pure ~f:(fun init -> Exp.fold_exps ~f ~init)
+  List.fold ~init pure ~f:(fun init -> Term.fold_terms ~f ~init)
   |> fun init ->
-  List.fold ~init heap ~f:(fun init -> fold_exps_seg ~f ~init)
+  List.fold ~init heap ~f:(fun init -> fold_terms_seg ~f ~init)
   |> fun init ->
-  List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_exps)
+  List.fold ~init djns ~f:(fun init -> List.fold ~init ~f:fold_terms)
 
 let rec fv_union init q =
   Set.diff
-    (fold_exps fv_union q ~init ~f:(fun init ->
-         Exp.fold_vars ~f:Set.add ~init ))
+    (fold_terms fv_union q ~init ~f:(fun init ->
+         Term.fold_vars ~f:Set.add ~init ))
     q.xs
 
 let fv q = fv_union Var.Set.empty q
 
 let invariant_pure = function
-  | Exp.Integer {data; typ} ->
+  | Term.Integer {data; typ} ->
       assert (Typ.equal Typ.bool typ) ;
       assert (not (Z.is_false data))
   | _ -> assert true
@@ -186,11 +187,11 @@ let rec simplify {us; xs; cong; pure; heap; djns} =
 (** Quantification and Vocabulary *)
 
 let rename_seg sub ({loc; bas; len; siz; arr} as h) =
-  let loc = Exp.rename sub loc in
-  let bas = Exp.rename sub bas in
-  let len = Exp.rename sub len in
-  let siz = Exp.rename sub siz in
-  let arr = Exp.rename sub arr in
+  let loc = Term.rename sub loc in
+  let bas = Term.rename sub bas in
+  let len = Term.rename sub len in
+  let siz = Term.rename sub siz in
+  let arr = Term.rename sub arr in
   ( if
     loc == h.loc && bas == h.bas && len == h.len && siz == h.siz
     && arr == h.arr
@@ -203,7 +204,7 @@ let rename_seg sub ({loc; bas; len; siz; arr} as h) =
     invariant *)
 let rec apply_subst sub ({us= _; xs= _; cong; pure; heap; djns} as q) =
   let cong = Equality.rename cong sub in
-  let pure = List.map_preserving_phys_equal pure ~f:(Exp.rename sub) in
+  let pure = List.map_preserving_phys_equal pure ~f:(Term.rename sub) in
   let heap = List.map_preserving_phys_equal heap ~f:(rename_seg sub) in
   let djns =
     List.map_preserving_phys_equal djns ~f:(fun d ->
@@ -375,10 +376,10 @@ let or_ q1 q2 =
     invariant q ;
     assert (Set.equal q.us (Set.union q1.us q2.us))]
 
-let rec pure (e : Exp.t) =
-  [%Trace.call fun {pf} -> pf "%a" Exp.pp e]
+let rec pure (e : Term.t) =
+  [%Trace.call fun {pf} -> pf "%a" Term.pp e]
   ;
-  let us = Exp.fv e in
+  let us = Term.fv e in
   ( match e with
   | Integer {data; typ= Integer {bits= 1}} ->
       if Z.is_false data then false_ us else emp
@@ -388,7 +389,7 @@ let rec pure (e : Exp.t) =
     ->
       or_
         (star (pure cnd) (pure thn))
-        (star (pure (Exp.not_ Typ.bool cnd)) (pure els))
+        (star (pure (Term.not_ Typ.bool cnd)) (pure els))
   | App {op= App {op= Eq; arg= e1}; arg= e2} ->
       let cong = Equality.(and_eq e1 e2 true_) in
       if Equality.is_false cong then false_ us
@@ -401,7 +402,7 @@ let and_ e q = star (pure e) q
 
 let seg pt =
   let us = fv_seg pt in
-  if Exp.equal Exp.null pt.loc then false_ us
+  if Term.equal Term.null pt.loc then false_ us
   else {emp with us; heap= [pt]} |> check invariant
 
 (** Update *)
@@ -423,9 +424,10 @@ let is_emp = function
 let is_false = function
   | {djns= [[]]; _} -> true
   | {cong; pure; heap; _} ->
-      List.exists pure ~f:(fun b -> Exp.is_false (Equality.normalize cong b))
+      List.exists pure ~f:(fun b ->
+          Term.is_false (Equality.normalize cong b) )
       || List.exists heap ~f:(fun seg ->
-             Equality.entails_eq cong seg.loc Exp.null )
+             Equality.entails_eq cong seg.loc Term.null )
 
 let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   let heap = emp.heap in

@@ -5,15 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Expressions
+(** Terms
 
-    Pure (heap-independent) expressions are complex arithmetic,
-    bitwise-logical, etc. operations over literal values and registers.
+    Pure (heap-independent) terms are complex arithmetic, bitwise-logical,
+    etc. operations over literal values and variables.
 
-    Expressions for operations that are uninterpreted in the analyzer are
+    Terms for operations that are uninterpreted in the analyzer are
     represented in curried form, where [App] is an application of a function
     symbol to an argument. This is done to simplify the definition of
-    'subexpression' and make it explicit. The specific constructor functions
+    'subterm' and make it explicit. The specific constructor functions
     indicate and check the expected arity of the function symbols. *)
 
 type comparator_witness
@@ -27,10 +27,9 @@ and t = private
       (** Iterated concatenation of a single byte *)
   | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
   | Concat of {args: t vector}  (** Byte-array concatenation *)
-  | Reg of {id: int; name: string; global: bool}
-      (** Local variable / virtual register *)
+  | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
-      (** Anonymous register with arbitrary value, representing
+      (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
@@ -75,34 +74,34 @@ and t = private
 
 val comparator : (t, comparator_witness) Comparator.t
 
-type exp = t
+type term = t
 
-val pp_full : ?is_x:(exp -> bool) -> t pp
+val pp_full : ?is_x:(term -> bool) -> t pp
 val pp : t pp
 val invariant : ?partial:bool -> t -> unit
 
-(** Exp.Reg is re-exported as Reg *)
-module Reg : sig
-  type t = private exp [@@deriving compare, equal, hash, sexp]
-  type reg = t
+(** Term.Var is re-exported as Var *)
+module Var : sig
+  type t = private term [@@deriving compare, equal, hash, sexp]
+  type var = t
 
   include Comparator.S with type t := t
 
   module Set : sig
-    type t = (reg, comparator_witness) Set.t
+    type t = (var, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
-    val pp_full : ?is_x:(exp -> bool) -> t pp
+    val pp_full : ?is_x:(term -> bool) -> t pp
     val pp : t pp
     val empty : t
-    val of_option : reg option -> t
-    val of_list : reg list -> t
-    val of_vector : reg vector -> t
-    val union_list : t list -> t
+    val of_option : var option -> t
+    val of_list : var list -> t
+    val of_vector : var vector -> t
+    val of_regs : Reg.Set.t -> t
   end
 
   module Map : sig
-    type 'a t = (reg, 'a, comparator_witness) Map.t
+    type 'a t = (var, 'a, comparator_witness) Map.t
     [@@deriving compare, equal, sexp]
 
     val empty : 'a t
@@ -113,12 +112,12 @@ module Reg : sig
 
   include Invariant.S with type t := t
 
-  val of_exp : exp -> t option
-  val program : ?global:unit -> string -> t
+  val of_reg : Reg.t -> t
+  val of_term : term -> t option
+  val program : string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
   val id : t -> int
   val name : t -> string
-  val global : t -> bool
 
   module Subst : sig
     type t [@@deriving compare, equal, sexp]
@@ -126,7 +125,7 @@ module Reg : sig
     val pp : t pp
     val empty : t
     val freshen : Set.t -> wrt:Set.t -> t
-    val extend : t -> replace:reg -> with_:reg -> t
+    val extend : t -> replace:var -> with_:var -> t
     val invert : t -> t
     val exclude : t -> Set.t -> t
     val restrict : t -> Set.t -> t
@@ -140,7 +139,8 @@ end
 
 (** Construct *)
 
-val reg : Reg.t -> t
+val of_exp : Exp.t -> t
+val var : Var.t -> t
 val nondet : string -> t
 val label : parent:string -> name:string -> t
 val null : t
@@ -200,18 +200,18 @@ val size_of : Typ.t -> t option
 (** Access *)
 
 val iter : t -> f:(t -> unit) -> unit
-val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
-val fold_exps : t -> init:'a -> f:('a -> t -> 'a) -> 'a
+val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
+val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
 
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
-val rename : Reg.Subst.t -> t -> t
+val rename : Var.Subst.t -> t -> t
 
 (** Query *)
 
-val fv : t -> Reg.Set.t
+val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
 val typ : t -> Typ.t option

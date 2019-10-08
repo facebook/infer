@@ -13,13 +13,13 @@ let%test_module _ =
     let pp = Format.printf "@\n%a@." Sh.pp
     let pp_djn = Format.printf "@\n%a@." Sh.pp_djn
     let ( ~$ ) = Var.Set.of_list
-    let ( ! ) i = Exp.integer (Z.of_int i) Typ.siz
-    let ( = ) = Exp.eq
+    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
+    let ( = ) = Term.eq
     let wrt = Var.Set.empty
     let x_, wrt = Var.fresh "x" ~wrt
     let y_, _ = Var.fresh "y" ~wrt
-    let x = Exp.var x_
-    let y = Exp.var y_
+    let x = Term.var x_
+    let y = Term.var y_
 
     let%expect_test _ =
       let p = Sh.(exists ~$[x_] (extend_us ~$[x_] emp)) in

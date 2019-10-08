@@ -10,10 +10,10 @@
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
-  | Move of {reg_exps: (Var.t * Exp.t) vector; loc: Loc.t}
+  | Move of {reg_exps: (Reg.t * Exp.t) vector; loc: Loc.t}
       (** Move each value [exp] into corresponding register [reg]. All of
           the moves take effect simultaneously. *)
-  | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
+  | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
       (** Read a [len]-byte value from the contents of memory at address
           [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
@@ -25,12 +25,12 @@ type inst = private
           if ranges overlap. *)
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
       (** Copy [len] bytes starting from address [src] to [dst]. *)
-  | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Reg.t; num: Exp.t; len: Exp.t; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
   | Free of {ptr: Exp.t; loc: Loc.t}
       (** Deallocate the previously allocated block at address [ptr]. *)
-  | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+  | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
   | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
@@ -49,7 +49,7 @@ and 'a call =
   { callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
   ; args: Exp.t list  (** Stack of arguments, first-arg-last. *)
-  ; areturn: Var.t option  (** Register to receive return value. *)
+  ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
   ; mutable recursive: bool
@@ -89,10 +89,10 @@ and cfg
     parameters are the function parameters. *)
 and func = private
   { name: Global.t
-  ; params: Var.t list  (** Formal parameters, first-param-last stack *)
-  ; freturn: Var.t option
-  ; fthrow: Var.t
-  ; locals: Var.Set.t  (** Local variables *)
+  ; params: Reg.t list  (** Formal parameters, first-param-last stack *)
+  ; freturn: Reg.t option
+  ; fthrow: Reg.t
+  ; locals: Reg.Set.t  (** Local registers *)
   ; entry: block
   ; cfg: cfg }
 
@@ -112,18 +112,18 @@ module Inst : sig
   type t = inst
 
   val pp : t pp
-  val move : reg_exps:(Var.t * Exp.t) vector -> loc:Loc.t -> inst
-  val load : reg:Var.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val move : reg_exps:(Reg.t * Exp.t) vector -> loc:Loc.t -> inst
+  val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val alloc : reg:Reg.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
-  val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
+  val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
   val abort : loc:Loc.t -> inst
   val loc : inst -> Loc.t
-  val locals : inst -> Var.Set.t
+  val locals : inst -> Reg.Set.t
   val fold_exps : inst -> init:'a -> f:('a -> Exp.t -> 'a) -> 'a
 end
 
@@ -154,7 +154,7 @@ module Term : sig
        func:Exp.t
     -> typ:Typ.t
     -> args:Exp.t list
-    -> areturn:Var.t option
+    -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
     -> loc:Loc.t
@@ -184,18 +184,18 @@ module Func : sig
 
   val mk :
        name:Global.t
-    -> params:Var.t list
-    -> freturn:Var.t option
-    -> fthrow:Var.t
+    -> params:Reg.t list
+    -> freturn:Reg.t option
+    -> fthrow:Reg.t
     -> entry:block
     -> cfg:block vector
     -> func
 
   val mk_undefined :
        name:Global.t
-    -> params:Var.t list
-    -> freturn:Var.t option
-    -> fthrow:Var.t
+    -> params:Reg.t list
+    -> freturn:Reg.t option
+    -> fthrow:Reg.t
     -> t
 
   val find : functions -> string -> func option

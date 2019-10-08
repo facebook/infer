@@ -11,13 +11,13 @@
     size [siz], contained in an enclosing allocation-block starting at [bas]
     of length [len]. Byte-array expressions are either [Var]iables or
     [Splat] vectors. *)
-type seg = {loc: Exp.t; bas: Exp.t; len: Exp.t; siz: Exp.t; arr: Exp.t}
+type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; arr: Term.t}
 
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
   ; cong: Equality.t  (** congruence induced by rest of formula *)
-  ; pure: Exp.t list  (** conjunction of pure boolean constraints *)
+  ; pure: Term.t list  (** conjunction of pure boolean constraints *)
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
 
@@ -25,7 +25,7 @@ and disjunction = starjunction list
 
 type t = starjunction [@@deriving equal, compare, sexp]
 
-val pp_seg : ?is_x:(Exp.t -> bool) -> seg pp
+val pp_seg : ?is_x:(Term.t -> bool) -> seg pp
 val pp_seg_norm : Equality.t -> seg pp
 val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
@@ -53,10 +53,10 @@ val or_ : t -> t -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
-val pure : Exp.t -> t
+val pure : Term.t -> t
 (** Atomic pure boolean constraint formula. *)
 
-val and_ : Exp.t -> t -> t
+val and_ : Term.t -> t -> t
 (** Conjoin a boolean constraint to a formula. *)
 
 val and_cong : Equality.t -> t -> t
@@ -65,7 +65,7 @@ val and_cong : Equality.t -> t -> t
 
 (** Update *)
 
-val with_pure : Exp.t list -> t -> t
+val with_pure : Term.t list -> t -> t
 (** [with_pure pure q] is [{q with pure}], which assumes that [q.pure] and
     [pure] are defined in the same vocabulary, induce the same congruence,
     etc. It can essentially only be used when [pure] is logically equivalent

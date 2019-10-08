@@ -15,15 +15,15 @@ module type Dom = sig
   val join : t -> t -> t option
   val is_false : t -> bool
   val exec_assume : t -> Exp.t -> t option
-  val exec_kill : t -> Var.t -> t
-  val exec_move : t -> Var.t -> Exp.t -> t
+  val exec_kill : t -> Reg.t -> t
+  val exec_move : t -> Reg.t -> Exp.t -> t
   val exec_inst : t -> Llair.inst -> (t, unit) result
 
   val exec_intrinsic :
        skip_throw:bool
     -> t
-    -> Var.t option
-    -> Var.t
+    -> Reg.t option
+    -> Reg.t
     -> Exp.t list
     -> (t, unit) result option
 
@@ -31,17 +31,17 @@ module type Dom = sig
 
   val call :
        summaries:bool
-    -> globals:Var.Set.t
+    -> globals:Reg.Set.t
     -> Exp.t list
-    -> Var.t option
-    -> Var.t list
-    -> locals:Var.Set.t
+    -> Reg.t option
+    -> Reg.t list
+    -> locals:Reg.Set.t
     -> t
     -> t * from_call
 
   val recursion_beyond_bound : [`skip | `prune]
-  val post : Var.Set.t -> from_call -> t -> t
-  val retn : Var.t list -> Var.t option -> from_call -> t -> t
+  val post : Reg.Set.t -> from_call -> t -> t
+  val retn : Reg.t list -> Reg.t option -> from_call -> t -> t
   val dnf : t -> t list
 
   val resolve_callee :
@@ -52,7 +52,7 @@ module type Dom = sig
   val pp_summary : summary pp
 
   val create_summary :
-    locals:Var.Set.t -> formals:Var.Set.t -> t -> summary * t
+    locals:Reg.Set.t -> formals:Reg.Set.t -> t -> summary * t
 
   val apply_summary : t -> summary -> t option
 end

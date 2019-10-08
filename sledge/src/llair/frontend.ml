@@ -288,9 +288,10 @@ let xlate_float : Llvm.llvalue -> Exp.t =
   let data = suffix_after_last_space (Llvm.string_of_llvalue llv) in
   Exp.float data
 
-let xlate_name ?global llv = Var.program ?global (find_name llv)
+let xlate_name ?global : Llvm.llvalue -> Reg.t =
+ fun llv -> Reg.program ?global (find_name llv)
 
-let xlate_name_opt : Llvm.llvalue -> Var.t option =
+let xlate_name_opt : Llvm.llvalue -> Reg.t option =
  fun instr ->
   match Llvm.classify_type (Llvm.type_of instr) with
   | Void -> None
@@ -357,11 +358,11 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         let fname = Llvm.value_name func in
         match xlate_intrinsic_exp fname with
         | Some intrinsic when inline || should_inline llv -> intrinsic x llv
-        | _ -> Exp.var (xlate_name llv) )
+        | _ -> Exp.reg (xlate_name llv) )
     | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
      |Argument ->
-        Exp.var (xlate_name llv)
-    | Function | GlobalVariable -> Exp.var (xlate_global x llv).var
+        Exp.reg (xlate_name llv)
+    | Function | GlobalVariable -> Exp.reg (xlate_global x llv).reg
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> xlate_int x llv
     | ConstantFP -> xlate_float llv
@@ -407,7 +408,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
           | Select | GetElementPtr | ExtractElement | InsertElement
           | ShuffleVector | ExtractValue | InsertValue ) as opcode ) ->
         if inline || should_inline llv then xlate_opcode x llv opcode
-        else Exp.var (xlate_name llv)
+        else Exp.reg (xlate_name llv)
     | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
     | GlobalIFunc -> todo "ifuncs: %a" pp_llvalue llv ()
     | Instruction (CatchPad | CleanupPad | CatchSwitch) ->
@@ -630,15 +631,15 @@ type pop_thunk = Loc.t -> Llair.inst list
 let pop_stack_frame_of_function :
     Llvm.llvalue -> Llvm.llbasicblock -> pop_thunk =
  fun func entry_blk ->
-  let append_stack_vars blk vars =
+  let append_stack_regs blk regs =
     Llvm.fold_right_instrs
-      (fun instr vars ->
+      (fun instr regs ->
         match Llvm.instr_opcode instr with
-        | Alloca -> xlate_name instr :: vars
-        | _ -> vars )
-      blk vars
+        | Alloca -> xlate_name instr :: regs
+        | _ -> regs )
+      blk regs
   in
-  let entry_vars = append_stack_vars entry_blk [] in
+  let entry_regs = append_stack_regs entry_blk [] in
   Llvm.iter_blocks
     (fun blk ->
       if not (Poly.equal entry_blk blk) then
@@ -652,8 +653,8 @@ let pop_stack_frame_of_function :
           blk )
     func ;
   let pop retn_loc =
-    List.map entry_vars ~f:(fun var ->
-        Llair.Inst.free ~ptr:(Exp.var var) ~loc:retn_loc )
+    List.map entry_regs ~f:(fun reg ->
+        Llair.Inst.free ~ptr:(Exp.reg reg) ~loc:retn_loc )
   in
   pop
 
@@ -690,7 +691,7 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
     the PHIs of [dst] translated to a move. *)
 let xlate_jump :
        x
-    -> ?reg_exps:(Var.var * Exp.t) list
+    -> ?reg_exps:(Reg.reg * Exp.t) list
     -> Llvm.llvalue
     -> Llvm.llbasicblock
     -> Loc.t
@@ -753,7 +754,7 @@ let pp_code fs (insts, term, blocks) =
 
 let rec xlate_func_name x llv =
   match Llvm.classify_value llv with
-  | Function -> Exp.var (xlate_name ~global:() llv)
+  | Function -> Exp.reg (xlate_name ~global:() llv)
   | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
   | Argument | Instruction _ -> xlate_value x llv
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
@@ -1076,8 +1077,8 @@ let xlate_instr :
          passing a value for the selector which the handler code tests to
          e.g. either cleanup or rethrow. *)
       let i32, tip, cxa_exception = landingpad_typs x instr in
-      let exc = Exp.var (Var.program (find_name instr ^ ".exc")) in
-      let ti = Var.program (name ^ ".ti") in
+      let exc = Exp.reg (Reg.program (find_name instr ^ ".exc")) in
+      let ti = Reg.program (name ^ ".ti") in
       (* std::type_info* ti = ((__cxa_exception* )exc - 1)->exceptionType *)
       let load_ti =
         let typ = cxa_exception in
@@ -1093,7 +1094,7 @@ let xlate_instr :
         let len = Exp.integer (Z.of_int (size_of x typ)) Typ.siz in
         Llair.Inst.load ~reg:ti ~ptr ~len ~loc
       in
-      let ti = Exp.var ti in
+      let ti = Exp.reg ti in
       let typeid = xlate_llvm_eh_typeid_for x tip ti in
       let lbl = name ^ ".unwind" in
       let param = xlate_name instr in
@@ -1245,10 +1246,10 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   let freturn =
     match name.typ with
     | Pointer {elt= Function {return= Some _; _}} ->
-        Some (Var.program "freturn")
+        Some (Reg.program "freturn")
     | _ -> None
   in
-  let fthrow = Var.program "fthrow" in
+  let fthrow = Reg.program "fthrow" in
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function llf entry_blk in
