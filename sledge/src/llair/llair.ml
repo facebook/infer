@@ -219,8 +219,8 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
-  let dummy_reg = Reg.program ~global:() "dummy" in
   let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
+  let dummy_reg = Reg.program ~global:() dummy_ptr_typ "dummy" in
   { name= Global.mk dummy_reg dummy_ptr_typ Loc.none
   ; params= []
   ; freturn= None

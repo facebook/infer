@@ -21,29 +21,12 @@ module Z = struct
   let clamp_bop ~signed bits op x y =
     clamp ~signed bits (op (clamp ~signed bits x) (clamp ~signed bits y))
 
-  let beq ~bits x y = clamp_cmp ~signed:true bits Z.equal x y
-  let bleq ~bits x y = clamp_cmp ~signed:true bits Z.leq x y
-  let bgeq ~bits x y = clamp_cmp ~signed:true bits Z.geq x y
-  let blt ~bits x y = clamp_cmp ~signed:true bits Z.lt x y
-  let bgt ~bits x y = clamp_cmp ~signed:true bits Z.gt x y
   let buleq ~bits x y = clamp_cmp ~signed:false bits Z.leq x y
   let bugeq ~bits x y = clamp_cmp ~signed:false bits Z.geq x y
   let bult ~bits x y = clamp_cmp ~signed:false bits Z.lt x y
   let bugt ~bits x y = clamp_cmp ~signed:false bits Z.gt x y
-  let bsub ~bits x y = clamp_bop ~signed:true bits Z.sub x y
-  let bmul ~bits x y = clamp_bop ~signed:true bits Z.mul x y
-  let bdiv ~bits x y = clamp_bop ~signed:true bits Z.div x y
-  let brem ~bits x y = clamp_bop ~signed:true bits Z.rem x y
   let budiv ~bits x y = clamp_bop ~signed:false bits Z.div x y
   let burem ~bits x y = clamp_bop ~signed:false bits Z.rem x y
-  let blogand ~bits x y = clamp_bop ~signed:true bits Z.logand x y
-  let blogor ~bits x y = clamp_bop ~signed:true bits Z.logor x y
-  let blogxor ~bits x y = clamp_bop ~signed:true bits Z.logxor x y
-  let bshift_left ~bits z i = Z.shift_left (clamp bits ~signed:true z) i
-  let bshift_right ~bits z i = Z.shift_right (clamp bits ~signed:true z) i
-
-  let bshift_right_trunc ~bits z i =
-    Z.shift_right_trunc (clamp bits ~signed:true z) i
 end
 
 module rec T : sig
@@ -488,14 +471,6 @@ let invariant ?(partial = false) e =
       assert (not (Vector.is_empty elts)) ;
       assert_arity 0
 
-let bits_of_int term =
-  match term with
-  | Integer {typ} -> (
-    match Typ.prim_bit_size_of typ with
-    | Some bits -> bits
-    | None -> violates invariant term )
-  | _ -> fail "bits_of_int" ()
-
 (** Variables are the terms constructed by [Var] *)
 module Var = struct
   include T
@@ -665,8 +640,7 @@ let simp_convert signed (dst : Typ.t) src arg =
 
 let simp_gt x y =
   match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bgt ~bits i j)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.gt i j)
   | _ -> App {op= App {op= Gt; arg= x}; arg= y}
 
 let simp_ugt x y =
@@ -677,8 +651,7 @@ let simp_ugt x y =
 
 let simp_ge x y =
   match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bgeq ~bits i j)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.geq i j)
   | _ -> App {op= App {op= Ge; arg= x}; arg= y}
 
 let simp_uge x y =
@@ -689,8 +662,7 @@ let simp_uge x y =
 
 let simp_lt x y =
   match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.blt ~bits i j)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
   | _ -> App {op= App {op= Lt; arg= x}; arg= y}
 
 let simp_ult x y =
@@ -701,8 +673,7 @@ let simp_ult x y =
 
 let simp_le x y =
   match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bleq ~bits i j)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
   | _ -> App {op= App {op= Le; arg= x}; arg= y}
 
 let simp_ule x y =
@@ -729,18 +700,13 @@ let rec sum_to_term typ sum =
     | _ -> Add {typ; args= sum} )
   | _ -> Add {typ; args= sum}
 
-and rational Q.{num; den} typ =
-  let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-  simp_div
-    (integer (Z.clamp ~signed:true bits num) typ)
-    (integer (Z.clamp ~signed:true bits den) typ)
+and rational Q.{num; den} typ = simp_div (integer num typ) (integer den typ)
 
 and simp_div x y =
   match (x, y) with
   (* i / j *)
   | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.bdiv ~bits i j) typ
+      integer (Z.div i j) typ
   (* e / 1 ==> e *)
   | e, Integer {data} when Z.equal Z.one data -> e
   (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
@@ -762,8 +728,7 @@ let simp_rem x y =
   match (x, y) with
   (* i % j *)
   | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.brem ~bits i j) typ
+      integer (Z.rem i j) typ
   (* e % 1 ==> 0 *)
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
   | _ -> App {op= App {op= Rem; arg= x}; arg= y}
@@ -842,8 +807,7 @@ end
 let rec simp_mul2 typ e f =
   match (e, f) with
   (* c₁ × c₂ ==> c₁×c₂ *)
-  | Integer {data= i}, Integer {data= j} ->
-      integer (Z.bmul ~bits:(bits_of_int e) i j) typ
+  | Integer {data= i}, Integer {data= j} -> integer (Z.mul i j) typ
   (* 0 × f ==> 0 *)
   | Integer {data}, _ when Z.equal Z.zero data -> e
   (* e × 0 ==> 0 *)
@@ -889,9 +853,7 @@ let simp_negate typ x = simp_mul2 typ (minus_one typ) x
 let simp_sub typ x y =
   match (x, y) with
   (* i - j *)
-  | Integer {data= i}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.bsub ~bits i j) typ
+  | Integer {data= i}, Integer {data= j} -> integer (Z.sub i j) typ
   (* x - y ==> x + (-1 * y) *)
   | _ -> simp_add2 typ x (simp_negate typ y)
 
@@ -907,9 +869,7 @@ let simp_cond cnd thn els =
 let rec simp_and x y =
   match (x, y) with
   (* i && j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogand ~bits i j) typ
+  | Integer {data= i; typ}, Integer {data= j} -> integer (Z.logand i j) typ
   (* e && true ==> e *)
   | Integer {data; typ= Integer {bits= 1}}, e
    |e, Integer {data; typ= Integer {bits= 1}}
@@ -931,9 +891,7 @@ let rec simp_and x y =
 let rec simp_or x y =
   match (x, y) with
   (* i || j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogor ~bits i j) typ
+  | Integer {data= i; typ}, Integer {data= j} -> integer (Z.logor i j) typ
   (* e || true ==> true *)
   | (Integer {data; typ= Integer {bits= 1}} as t), _
    |_, (Integer {data; typ= Integer {bits= 1}} as t)
@@ -996,10 +954,8 @@ let rec simp_not (typ : Typ.t) term =
 
 and simp_eq x y =
   match (x, y) with
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      (* i = j *)
-      bool (Z.beq ~bits i j)
+  (* i = j *)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
   (* b = false ==> ¬b *)
   | b, Integer {data} when Z.is_false data && is_boolean b ->
       simp_not Typ.bool b
@@ -1031,9 +987,7 @@ and simp_dq x y =
 let simp_xor x y =
   match (x, y) with
   (* i xor j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogxor ~bits i j) typ
+  | Integer {data= i; typ}, Integer {data= j} -> integer (Z.logxor i j) typ
   (* true xor b ==> ¬b *)
   | Integer {data}, b when Z.is_true data && is_boolean b ->
       simp_not Typ.bool b
@@ -1046,7 +1000,7 @@ let simp_shl x y =
   (* i shl j *)
   | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_left ~bits i (Z.to_int j)) typ
+      integer (Z.shift_left i (Z.to_int j)) typ
   (* e shl 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> App {op= App {op= Shl; arg= x}; arg= y}
@@ -1056,7 +1010,7 @@ let simp_lshr x y =
   (* i lshr j *)
   | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_right_trunc ~bits i (Z.to_int j)) typ
+      integer (Z.shift_right_trunc i (Z.to_int j)) typ
   (* e lshr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> App {op= App {op= Lshr; arg= x}; arg= y}
@@ -1066,7 +1020,7 @@ let simp_ashr x y =
   (* i ashr j *)
   | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
     when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_right ~bits i (Z.to_int j)) typ
+      integer (Z.shift_right i (Z.to_int j)) typ
   (* e ashr 0 ==> e *)
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> App {op= App {op= Ashr; arg= x}; arg= y}
@@ -1251,51 +1205,55 @@ let convert ?(signed = false) ~dst ~src term =
   app1 (Convert {signed; dst; src}) term
 
 let rec of_exp (e : Exp.t) =
-  let of_exps exps =
-    Qset.fold exps ~init:empty_qset ~f:(fun e q ts ->
-        Qset.add ts (of_exp e) q )
-  in
   match e with
-  | Add {args; typ} -> Add {args= of_exps args; typ}
-  | Mul {args; typ} -> Mul {args= of_exps args; typ}
-  | Reg {name} -> Var {id= 0; name}
-  | Nondet {msg} -> Nondet {msg}
-  | Label {parent; name} -> Label {parent; name}
-  | App {op; arg} -> App {op= of_exp op; arg= of_exp arg}
-  | Eq -> Eq
-  | Dq -> Dq
-  | Gt -> Gt
-  | Ge -> Ge
-  | Lt -> Lt
-  | Le -> Le
-  | Ugt -> Ugt
-  | Uge -> Uge
-  | Ult -> Ult
-  | Ule -> Ule
-  | Ord -> Ord
-  | Uno -> Uno
-  | Div -> Div
-  | Udiv -> Udiv
-  | Rem -> Rem
-  | Urem -> Urem
-  | And -> And
-  | Or -> Or
-  | Xor -> Xor
-  | Shl -> Shl
-  | Lshr -> Lshr
-  | Ashr -> Ashr
-  | Conditional -> Conditional
-  | Record -> Record
-  | Select -> Select
-  | Update -> Update
-  | Struct_rec {elts} ->
+  | Reg {name} -> var (Var {id= 0; name})
+  | Nondet {msg} -> nondet msg
+  | Label {parent; name} -> label ~parent ~name
+  | Integer {data; typ= Integer {bits} as typ} ->
+      integer (Z.signed_extract data 0 bits) typ
+  | Integer {data; typ} -> integer data typ
+  | Float {data} -> float data
+  | Ap1 (Convert {dst; signed}, src, arg) ->
+      convert ~signed ~dst ~src (of_exp arg)
+  | Ap1 (Select idx, _, arg) ->
+      select ~rcd:(of_exp arg) ~idx:(integer (Z.of_int idx) Typ.siz)
+  | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
+  | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
+  | Ap2 (Gt, _, x, y) -> gt (of_exp x) (of_exp y)
+  | Ap2 (Ge, _, x, y) -> ge (of_exp x) (of_exp y)
+  | Ap2 (Lt, _, x, y) -> lt (of_exp x) (of_exp y)
+  | Ap2 (Le, _, x, y) -> le (of_exp x) (of_exp y)
+  | Ap2 (Ugt, _, x, y) -> ugt (of_exp x) (of_exp y)
+  | Ap2 (Uge, _, x, y) -> uge (of_exp x) (of_exp y)
+  | Ap2 (Ult, _, x, y) -> ult (of_exp x) (of_exp y)
+  | Ap2 (Ule, _, x, y) -> ule (of_exp x) (of_exp y)
+  | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
+  | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
+  | Ap2 (Add, typ, x, y) -> add typ (of_exp x) (of_exp y)
+  | Ap2 (Sub, typ, x, y) -> sub typ (of_exp x) (of_exp y)
+  | Ap2 (Mul, typ, x, y) -> mul typ (of_exp x) (of_exp y)
+  | Ap2 (Div, _, x, y) -> div (of_exp x) (of_exp y)
+  | Ap2 (Rem, _, x, y) -> rem (of_exp x) (of_exp y)
+  | Ap2 (Udiv, _, x, y) -> udiv (of_exp x) (of_exp y)
+  | Ap2 (Urem, _, x, y) -> urem (of_exp x) (of_exp y)
+  | Ap2 (And, _, x, y) -> and_ (of_exp x) (of_exp y)
+  | Ap2 (Or, _, x, y) -> or_ (of_exp x) (of_exp y)
+  | Ap2 (Xor, _, x, y) -> xor (of_exp x) (of_exp y)
+  | Ap2 (Shl, _, x, y) -> shl (of_exp x) (of_exp y)
+  | Ap2 (Lshr, _, x, y) -> lshr (of_exp x) (of_exp y)
+  | Ap2 (Ashr, _, x, y) -> ashr (of_exp x) (of_exp y)
+  | Ap2 (Update idx, _, rcd, elt) ->
+      update ~rcd:(of_exp rcd) ~elt:(of_exp elt)
+        ~idx:(integer (Z.of_int idx) Typ.siz)
+  | Ap3 (Conditional, _, cnd, thn, els) ->
+      conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
+  | ApN (Record, _, elts) ->
+      record (Vector.to_list (Vector.map ~f:of_exp elts))
+  | ApN (Struct_rec, _, elts) ->
       Staged.unstage
         (struct_rec (module Exp))
         ~id:e
         (Vector.map elts ~f:(fun e -> lazy (of_exp e)))
-  | Convert {signed; dst; src} -> Convert {signed; dst; src}
-  | Integer {data; typ} -> Integer {data; typ}
-  | Float {data} -> Float {data}
 
 let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->

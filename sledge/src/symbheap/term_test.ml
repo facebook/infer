@@ -44,9 +44,10 @@ let%test_module _ =
 
     let%test "boolean overflow" =
       Term.is_true
-        (Term.eq
-           (Term.integer Z.minus_one Typ.bool)
-           (Term.integer Z.one Typ.bool))
+        (Term.of_exp
+           (Exp.eq Typ.bool
+              (Exp.integer Typ.bool Z.minus_one)
+              (Exp.integer Typ.bool Z.one)))
 
     let%test "unsigned boolean overflow" =
       Term.is_true

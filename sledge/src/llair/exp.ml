@@ -7,221 +7,124 @@
 
 (** Expressions *)
 
-(** Z wrapped to treat bounded and unsigned operations *)
-module Z = struct
-  include Z
+module T = struct
+  module T0 = struct
+    type op1 =
+      (* conversion *)
+      | Convert of {dst: Typ.t; signed: bool}
+      (* array/struct operations *)
+      | Select of int
+    [@@deriving compare, equal, hash, sexp]
 
-  (** Interpret as a bounded integer with specified signedness and width. *)
-  let clamp ~signed bits z =
-    if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits
+    type op2 =
+      (* comparison *)
+      | Eq
+      | Dq
+      | Gt
+      | Ge
+      | Lt
+      | Le
+      | Ugt
+      | Uge
+      | Ult
+      | Ule
+      | Ord
+      | Uno
+      (* arithmetic, numeric and pointer *)
+      | Add
+      | Sub
+      | Mul
+      | Div
+      | Rem
+      | Udiv
+      | Urem
+      (* boolean / bitwise *)
+      | And
+      | Or
+      | Xor
+      | Shl
+      | Lshr
+      | Ashr
+      (* array/struct operations *)
+      | Update of int
+    [@@deriving compare, equal, hash, sexp]
 
-  let clamp_cmp ~signed bits op x y =
-    op (clamp ~signed bits x) (clamp ~signed bits y)
+    type op3 = (* if-then-else *)
+      | Conditional
+    [@@deriving compare, equal, hash, sexp]
 
-  let clamp_bop ~signed bits op x y =
-    clamp ~signed bits (op (clamp ~signed bits x) (clamp ~signed bits y))
+    type opN =
+      (* array/struct constants *)
+      | Record
+      | Struct_rec  (** NOTE: may be cyclic *)
+    [@@deriving compare, equal, hash, sexp]
 
-  let beq ~bits x y = clamp_cmp ~signed:true bits Z.equal x y
-  let bleq ~bits x y = clamp_cmp ~signed:true bits Z.leq x y
-  let bgeq ~bits x y = clamp_cmp ~signed:true bits Z.geq x y
-  let blt ~bits x y = clamp_cmp ~signed:true bits Z.lt x y
-  let bgt ~bits x y = clamp_cmp ~signed:true bits Z.gt x y
-  let buleq ~bits x y = clamp_cmp ~signed:false bits Z.leq x y
-  let bugeq ~bits x y = clamp_cmp ~signed:false bits Z.geq x y
-  let bult ~bits x y = clamp_cmp ~signed:false bits Z.lt x y
-  let bugt ~bits x y = clamp_cmp ~signed:false bits Z.gt x y
-  let bsub ~bits x y = clamp_bop ~signed:true bits Z.sub x y
-  let bmul ~bits x y = clamp_bop ~signed:true bits Z.mul x y
-  let bdiv ~bits x y = clamp_bop ~signed:true bits Z.div x y
-  let brem ~bits x y = clamp_bop ~signed:true bits Z.rem x y
-  let budiv ~bits x y = clamp_bop ~signed:false bits Z.div x y
-  let burem ~bits x y = clamp_bop ~signed:false bits Z.rem x y
-  let blogand ~bits x y = clamp_bop ~signed:true bits Z.logand x y
-  let blogor ~bits x y = clamp_bop ~signed:true bits Z.logor x y
-  let blogxor ~bits x y = clamp_bop ~signed:true bits Z.logxor x y
-  let bshift_left ~bits z i = Z.shift_left (clamp bits ~signed:true z) i
-  let bshift_right ~bits z i = Z.shift_right (clamp bits ~signed:true z) i
+    type t =
+      | Reg of {name: string; typ: Typ.t; global: bool}
+      | Nondet of {msg: string; typ: Typ.t}
+      | Label of {parent: string; name: string}
+      | Integer of {data: Z.t; typ: Typ.t}
+      | Float of {data: string; typ: Typ.t}
+      | Ap1 of op1 * Typ.t * t
+      | Ap2 of op2 * Typ.t * t * t
+      | Ap3 of op3 * Typ.t * t * t * t
+      | ApN of opN * Typ.t * t vector
+    [@@deriving compare, equal, hash, sexp]
+  end
 
-  let bshift_right_trunc ~bits z i =
-    Z.shift_right_trunc (clamp bits ~signed:true z) i
+  include T0
+  include Comparator.Make (T0)
 end
-
-module rec T : sig
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type t =
-    (* nary: arithmetic, numeric and pointer *)
-    | Add of {args: qset; typ: Typ.t}
-    | Mul of {args: qset; typ: Typ.t}
-    (* nullary *)
-    | Reg of {name: string; global: bool}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
-    (* curried application *)
-    | App of {op: t; arg: t}
-    (* binary: comparison *)
-    | Eq
-    | Dq
-    | Gt
-    | Ge
-    | Lt
-    | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
-    | Ord
-    | Uno
-    (* binary: arithmetic, numeric and pointer *)
-    | Div
-    | Udiv
-    | Rem
-    | Urem
-    (* binary: boolean / bitwise *)
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    (* ternary: conditional *)
-    | Conditional
-    (* array/struct constants and operations *)
-    | Record
-    | Select
-    | Update
-    | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
-    (* unary: conversion *)
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-    (* numeric constants *)
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
-  [@@deriving compare, equal, hash, sexp]
-
-  (* Note: invariant requires Qset.min_elt to return a non-coefficient, so
-     Integer exps must compare higher than any valid monomial *)
-
-  type comparator_witness
-
-  val comparator : (t, comparator_witness) Comparator.t
-end = struct
-  include T0 include Comparator.Make (T0)
-end
-
-(* auxiliary definition for safe recursive module initialization *)
-and T0 : sig
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type t =
-    | Add of {args: qset; typ: Typ.t}
-    | Mul of {args: qset; typ: Typ.t}
-    | Reg of {name: string; global: bool}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
-    | App of {op: t; arg: t}
-    | Eq
-    | Dq
-    | Gt
-    | Ge
-    | Lt
-    | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
-    | Ord
-    | Uno
-    | Div
-    | Udiv
-    | Rem
-    | Urem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Conditional
-    | Record
-    | Select
-    | Update
-    | Struct_rec of {elts: t vector}
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
-  [@@deriving compare, equal, hash, sexp]
-end = struct
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
-
-  type t =
-    | Add of {args: qset; typ: Typ.t}
-    | Mul of {args: qset; typ: Typ.t}
-    | Reg of {name: string; global: bool}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
-    | App of {op: t; arg: t}
-    | Eq
-    | Dq
-    | Gt
-    | Ge
-    | Lt
-    | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
-    | Ord
-    | Uno
-    | Div
-    | Udiv
-    | Rem
-    | Urem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Conditional
-    | Record
-    | Select
-    | Update
-    | Struct_rec of {elts: t vector}
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string}
-  [@@deriving compare, equal, hash, sexp]
-end
-
-(* suppress spurious "Warning 60: unused module T0." *)
-type _t = T0.t
 
 include T
-
-let empty_qset = Qset.empty (module T)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
     match e with
-    | Struct_rec _ ->
+    | ApN (Struct_rec, _, _) ->
         if List.mem ~equal:( == ) seen e then f bot e
         else f (fix_f (e :: seen)) e
     | _ -> f (fix_f seen) e
   in
   let rec fix_f_seen_nil e =
-    match e with Struct_rec _ -> f (fix_f [e]) e | _ -> f fix_f_seen_nil e
+    match e with
+    | ApN (Struct_rec, _, _) -> f (fix_f [e]) e
+    | _ -> f fix_f_seen_nil e
   in
   fix_f_seen_nil e
 
 let fix_flip (f : ('z -> t -> 'a as 'f) -> 'f) (bot : 'f) (z : 'z) (e : t) =
   fix (fun f' e z -> f (fun z e -> f' e z) z e) (fun e z -> bot z e) e z
 
-let uncurry =
-  let rec uncurry_ acc_args = function
-    | App {op; arg} -> uncurry_ (arg :: acc_args) op
-    | op -> (op, acc_args)
-  in
-  uncurry_ []
+let pp_op2 fs op =
+  let pf fmt = Format.fprintf fs fmt in
+  match op with
+  | Eq -> pf "="
+  | Dq -> pf "@<1>≠"
+  | Gt -> pf ">"
+  | Ge -> pf "@<1>≥"
+  | Lt -> pf "<"
+  | Le -> pf "@<1>≤"
+  | Ugt -> pf "u>"
+  | Uge -> pf "@<2>u≥"
+  | Ult -> pf "u<"
+  | Ule -> pf "@<2>u≤"
+  | Ord -> pf "ord"
+  | Uno -> pf "uno"
+  | Add -> pf "+"
+  | Sub -> pf "-"
+  | Mul -> pf "@<1>×"
+  | Div -> pf "/"
+  | Udiv -> pf "udiv"
+  | Rem -> pf "rem"
+  | Urem -> pf "urem"
+  | And -> pf "&&"
+  | Or -> pf "||"
+  | Xor -> pf "xor"
+  | Shl -> pf "shl"
+  | Lshr -> pf "lshr"
+  | Ashr -> pf "ashr"
+  | Update idx -> pf "[_|%i→_]" idx
 
 let rec pp fs exp =
   let pp_ pp fs exp =
@@ -237,76 +140,22 @@ let rec pp fs exp =
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
-    | Eq -> pf "="
-    | Dq -> pf "@<1>≠"
-    | Gt -> pf ">"
-    | Ge -> pf "@<1>≥"
-    | Lt -> pf "<"
-    | Le -> pf "@<1>≤"
-    | Ugt -> pf "u>"
-    | Uge -> pf "@<2>u≥"
-    | Ult -> pf "u<"
-    | Ule -> pf "@<2>u≤"
-    | Ord -> pf "ord"
-    | Uno -> pf "uno"
-    | Add {args} ->
-        let pp_poly_term fs (monomial, coefficient) =
-          match monomial with
-          | Integer {data} when Z.equal Z.one data -> Q.pp fs coefficient
-          | _ when Q.equal Q.one coefficient -> pp fs monomial
-          | _ ->
-              Format.fprintf fs "%a @<1>× %a" Q.pp coefficient pp monomial
-        in
-        pf "(%a)" (Qset.pp "@ + " pp_poly_term) args
-    | Mul {args} ->
-        let pp_mono_term fs (factor, exponent) =
-          if Q.equal Q.one exponent then pp fs factor
-          else Format.fprintf fs "%a^%a" pp factor Q.pp exponent
-        in
-        pf "(%a)" (Qset.pp "@ @<2>× " pp_mono_term) args
-    | Div -> pf "/"
-    | Udiv -> pf "udiv"
-    | Rem -> pf "rem"
-    | Urem -> pf "urem"
-    | And -> pf "&&"
-    | Or -> pf "||"
-    | Xor -> pf "xor"
-    | App
-        {op= App {op= Xor; arg}; arg= Integer {data; typ= Integer {bits= 1}}}
-      when Z.is_true data ->
-        pf "¬%a" pp arg
-    | App
-        {op= App {op= Xor; arg= Integer {data; typ= Integer {bits= 1}}}; arg}
-      when Z.is_true data ->
-        pf "¬%a" pp arg
-    | Shl -> pf "shl"
-    | Lshr -> pf "lshr"
-    | Ashr -> pf "ashr"
-    | Conditional -> pf "(_?_:_)"
-    | App {op= Conditional; arg= cnd} -> pf "(%a@ ? _:_)" pp cnd
-    | App {op= App {op= Conditional; arg= cnd}; arg= thn} ->
-        pf "(%a@ ? %a@ : _)" pp cnd pp thn
-    | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-      ->
+    | Ap1 (Convert {dst; signed}, src, arg) ->
+        pf "((%a)(%s%a)@ %a)" Typ.pp dst
+          (if signed then "u" else "")
+          Typ.pp src pp arg
+    | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
+    | Ap2 (Update idx, _, rcd, elt) ->
+        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+    | Ap2 (Xor, Integer {bits= 1}, Integer {data}, x) when Z.is_true data ->
+        pf "¬%a" pp x
+    | Ap2 (Xor, Integer {bits= 1}, x, Integer {data}) when Z.is_true data ->
+        pf "¬%a" pp x
+    | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
+    | Ap3 (Conditional, _, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | Select -> pf "_[_]"
-    | App {op= Select; arg= rcd} -> pf "%a[_]" pp rcd
-    | App {op= App {op= Select; arg= rcd}; arg= idx} ->
-        pf "%a[%a]" pp rcd pp idx
-    | Update -> pf "[_|_→_]"
-    | App {op= Update; arg= rcd} -> pf "[%a@ @[| _→_@]]" pp rcd
-    | App {op= App {op= Update; arg= rcd}; arg= elt} ->
-        pf "[%a@ @[| _→ %a@]]" pp rcd pp elt
-    | App {op= App {op= App {op= Update; arg= rcd}; arg= elt}; arg= idx} ->
-        pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
-    | Record -> pf "{_}"
-    | App {op; arg} -> (
-      match uncurry exp with
-      | Record, elts -> pf "{%a}" pp_record elts
-      | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
-      | _ -> pf "(%a@ %a)" pp op pp arg )
-    | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
-    | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
+    | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
+    | ApN (Struct_rec, _, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
   in
   fix_flip pp_ (fun _ _ -> ()) fs exp
 
@@ -314,16 +163,15 @@ and pp_record fs elts =
   [%Trace.fprintf
     fs "%a"
       (fun fs elts ->
-        let elta = Array.of_list elts in
         match
-          String.init (Array.length elta) ~f:(fun i ->
-              match elta.(i) with
+          String.init (Vector.length elts) ~f:(fun i ->
+              match Vector.get elts i with
               | Integer {data} -> Char.of_int_exn (Z.to_int data)
               | _ -> raise (Invalid_argument "not a string") )
         with
         | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
         | exception _ ->
-            Format.fprintf fs "@[<h>%a@]" (List.pp ",@ " pp) elts )
+            Format.fprintf fs "@[<h>%a@]" (Vector.pp ",@ " pp) elts )
       elts]
 
 type exp = t
@@ -332,134 +180,96 @@ let pp_exp = pp
 
 (** Invariant *)
 
-let rec typ_of = function
-  | Add {typ} | Mul {typ} | Integer {typ} | App {op= Convert {dst= typ}} ->
-      Some typ
-  | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule}}
-    ->
-      Some Typ.bool
-  | App
-      { op=
-          App
-            { op=
-                Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr
-            ; arg= x }
-      ; arg= y } -> (
-    match typ_of x with Some _ as t -> t | None -> typ_of y )
-  | App {op= App {op= App {op= Conditional}; arg= thn}; arg= els} -> (
-    match typ_of thn with Some _ as t -> t | None -> typ_of els )
-  | _ -> None
+let valid_idx idx elts = 0 <= idx && idx < Vector.length elts
 
-let type_check e typ =
-  assert (
-    Option.for_all ~f:(Typ.castable typ) (typ_of e)
-    || fail "%a@ : %a not <:@ %a" pp e Typ.pp
-         (Option.value_exn (typ_of e))
-         Typ.pp typ )
-
-let type_check2 e f typ = type_check e typ ; type_check f typ
-
-(* an indeterminate (factor of a monomial) is any non-Add/Mul/Integer exp *)
-let rec assert_indeterminate = function
-  | App {op} -> assert_indeterminate op
-  | Integer _ | Add _ | Mul _ -> assert false
-  | _ -> assert true
-
-(* a monomial is a power product of factors, e.g.
- *     ∏ᵢ xᵢ^nᵢ
- * for (non-constant) indeterminants xᵢ and positive integer exponents nᵢ
- *)
-let assert_monomial add_typ mono =
-  match mono with
-  | Mul {typ; args} ->
-      assert (Typ.castable add_typ typ) ;
-      assert (Option.is_some (Typ.prim_bit_size_of typ)) ;
-      Qset.iter args ~f:(fun factor exponent ->
-          assert (Q.sign exponent > 0) ;
-          assert_indeterminate factor |> Fn.id )
-  | _ -> assert_indeterminate mono |> Fn.id
-
-(* a polynomial term is a monomial multiplied by a non-zero coefficient
- *     c × ∏ᵢ xᵢ
- *)
-let assert_poly_term add_typ mono coeff =
-  assert (not (Q.equal Q.zero coeff)) ;
-  match mono with
-  | Integer {data} -> assert (Z.equal Z.one data)
-  | Mul {args} ->
-      ( match Qset.min_elt args with
-      | None | Some (Integer _, _) -> assert false
-      | Some (_, n) -> assert (Qset.length args > 1 || not (Q.equal Q.one n))
-      ) ;
-      assert_monomial add_typ mono |> Fn.id
-  | _ -> assert_monomial add_typ mono |> Fn.id
-
-(* a polynomial is a linear combination of monomials, e.g.
- *     ∑ᵢ cᵢ × ∏ⱼ xᵢⱼ
- * for non-zero constant coefficients cᵢ
- * and monomials ∏ⱼ xᵢⱼ, one of which may be the empty product 1
- *)
-let assert_polynomial poly =
-  match poly with
-  | Add {typ; args} ->
-      ( match Qset.min_elt args with
-      | None -> assert false
-      | Some (Integer _, _) -> assert false
-      | Some (_, k) -> assert (Qset.length args > 1 || not (Q.equal Q.one k))
-      ) ;
-      Qset.iter args ~f:(fun m c -> assert_poly_term typ m c |> Fn.id)
-  | _ -> assert false
-
-let invariant ?(partial = false) e =
-  Invariant.invariant [%here] e [%sexp_of: t]
+let rec invariant exp =
+  Invariant.invariant [%here] exp [%sexp_of: t]
   @@ fun () ->
-  let op, args = uncurry e in
-  let assert_arity arity =
-    let nargs = List.length args in
-    assert (nargs = arity || (partial && nargs < arity))
-  in
-  match op with
-  | App _ -> fail "uncurry cannot return App" ()
-  | Integer {data; typ= (Integer _ | Pointer _) as typ} -> (
-    match Typ.prim_bit_size_of typ with
-    | None -> assert false
-    | Some bits ->
-        assert_arity 0 ;
-        assert (Z.numbits data <= bits) )
-  | Integer _ -> assert false
-  | Reg _ -> assert_arity 0
-  | Nondet _ | Label _ | Float _ -> assert_arity 0
-  | Convert {dst; src} ->
-      ( match args with
-      | [Integer {typ= Integer _ as typ}] -> assert (Typ.equal src typ)
-      | [arg] ->
-          assert (Option.for_all ~f:(Typ.convertible src) (typ_of arg))
-      | _ -> assert_arity 1 ) ;
-      assert (Typ.convertible src dst)
-  | Add _ -> assert_polynomial e |> Fn.id
-  | Mul {typ} -> assert_monomial typ e |> Fn.id
-  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Div | Udiv | Rem
-   |Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
-    match args with
-    | [x; y] -> (
-      match (typ_of x, typ_of y) with
-      | Some typ, Some typ' -> assert (Typ.castable typ typ')
-      | _ -> assert true )
-    | _ -> assert_arity 2 )
-  | Ord | Uno | Select -> assert_arity 2
-  | Conditional | Update -> assert_arity 3
-  | Record -> assert (partial || not (List.is_empty args))
-  | Struct_rec {elts} ->
-      assert (not (Vector.is_empty elts)) ;
-      assert_arity 0
-
-let bits_of_int exp =
   match exp with
-  | Integer {typ} -> (
-    match Typ.prim_bit_size_of typ with
-    | Some bits -> bits
-    | None -> violates invariant exp )
-  | _ -> fail "bits_of_int" ()
+  | Reg {typ} | Nondet {typ} -> assert (Typ.is_sized typ)
+  | Integer {data; typ} -> (
+    match typ with
+    | Integer {bits} -> assert (Z.numbits data <= bits)
+    | Pointer _ -> assert (Z.equal Z.zero data)
+    | _ -> assert false )
+  | Float {typ} -> (
+    match typ with Float _ -> assert true | _ -> assert false )
+  | Label _ -> assert true
+  | Ap1 (Convert {dst}, src, arg) ->
+      assert (Typ.convertible dst src) ;
+      assert (Typ.equal src (typ_of arg))
+  | Ap1 (Select idx, typ, rcd) -> (
+      assert (Typ.equal typ (typ_of rcd)) ;
+      match typ with
+      | Array _ -> assert true
+      | Tuple {elts} | Struct {elts} -> assert (valid_idx idx elts)
+      | _ -> assert false )
+  | Ap2 (Update idx, typ, rcd, elt) -> (
+      assert (Typ.equal typ (typ_of rcd)) ;
+      match typ with
+      | Tuple {elts} | Struct {elts} ->
+          assert (valid_idx idx elts) ;
+          assert (Typ.equal (Vector.get elts idx) (typ_of elt))
+      | Array {elt= typ_elt} -> assert (Typ.equal typ_elt (typ_of elt))
+      | _ -> assert false )
+  | Ap2 (op, typ, x, y) -> (
+    match (op, typ) with
+    | (Eq | Dq | Gt | Ge | Lt | Le), (Integer _ | Float _ | Pointer _)
+     |(Ugt | Uge | Ult | Ule), (Integer _ | Pointer _)
+     |(Ord | Uno), Float _
+     |(Add | Sub), (Integer _ | Float _ | Pointer _)
+     |(Mul | Div | Rem), (Integer _ | Float _)
+     |(Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr), Integer _ ->
+        let typ_x = typ_of x and typ_y = typ_of y in
+        assert (Typ.equal typ typ_x) ;
+        assert (Typ.equal typ_x typ_y)
+    | _ -> assert false )
+  | Ap3 (Conditional, typ, cnd, thn, els) ->
+      assert (Typ.is_sized typ) ;
+      assert (Typ.equal Typ.bool (typ_of cnd)) ;
+      assert (Typ.equal typ (typ_of thn)) ;
+      assert (Typ.equal typ (typ_of els))
+  | ApN ((Record | Struct_rec), typ, args) -> (
+    match typ with
+    | Array {elt} ->
+        assert (
+          Vector.for_all args ~f:(fun arg -> Typ.equal elt (typ_of arg)) )
+    | Tuple {elts} | Struct {elts} ->
+        assert (Vector.length elts = Vector.length args) ;
+        assert (
+          Vector.for_all2_exn elts args ~f:(fun typ arg ->
+              Typ.equal typ (typ_of arg) ) )
+    | _ -> assert false )
+
+(** Type query *)
+
+and typ_of exp =
+  match exp with
+  | Reg {typ} | Nondet {typ} | Integer {typ} | Float {typ} -> typ
+  | Label _ -> Typ.ptr
+  | Ap1 (Convert {dst}, _, _) -> dst
+  | Ap1 (Select idx, typ, _) -> (
+    match typ with
+    | Array {elt} -> elt
+    | Tuple {elts} | Struct {elts} -> Vector.get elts idx
+    | _ -> violates invariant exp )
+  | Ap2
+      ( (Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Ord | Uno)
+      , _
+      , _
+      , _ ) ->
+      Typ.bool
+  | Ap2
+      ( ( Add | Sub | Mul | Div | Rem | Udiv | Urem | And | Or | Xor | Shl
+        | Lshr | Ashr | Update _ )
+      , typ
+      , _
+      , _ )
+   |Ap3 (Conditional, typ, _, _, _)
+   |ApN ((Record | Struct_rec), typ, _) ->
+      typ
+
+let typ = typ_of
 
 (** Registers are the expressions constructed by [Reg] *)
 module Reg = struct
@@ -530,26 +340,26 @@ module Reg = struct
     | Reg _ as x -> Some (x |> check invariant)
     | _ -> None
 
-  let program ?global name =
-    Reg {name; global= Option.is_some global} |> check invariant
+  let program ?global typ name =
+    Reg {name; typ; global= Option.is_some global} |> check invariant
 end
+
+(** Access *)
 
 let fold_exps e ~init ~f =
   let fold_exps_ fold_exps_ e z =
     let z =
       match e with
-      | App {op= x; arg= y} -> fold_exps_ y (fold_exps_ x z)
-      | Add {args} | Mul {args} ->
-          Qset.fold args ~init:z ~f:(fun arg _ z -> fold_exps_ arg z)
-      | Struct_rec {elts= args} ->
-          Vector.fold args ~init:z ~f:(fun z elt -> fold_exps_ elt z)
+      | Ap1 (_, _, x) -> fold_exps_ x z
+      | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
+      | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
+      | ApN (_, _, xs) ->
+          Vector.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
       | _ -> z
     in
     f z e
   in
   fix fold_exps_ (fun _ z -> z) e init
-
-let iter_exps e ~f = fold_exps e ~init:() ~f:(fun () e -> f e)
 
 let fold_regs e ~init ~f =
   fold_exps e ~init ~f:(fun z -> function
@@ -558,526 +368,58 @@ let fold_regs e ~init ~f =
 (** Construct *)
 
 let reg x = x
-let nondet msg = Nondet {msg} |> check invariant
+let nondet typ msg = Nondet {msg; typ} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
-let integer data typ = Integer {data; typ} |> check invariant
-let null = integer Z.zero Typ.ptr
-let bool b = integer (Z.of_bool b) Typ.bool
-let float data = Float {data} |> check invariant
+let integer typ data = Integer {data; typ} |> check invariant
+let null = integer Typ.ptr Z.zero
+let bool b = integer Typ.bool (Z.of_bool b)
+let float typ data = Float {data; typ} |> check invariant
 
-let zero (typ : Typ.t) =
-  match typ with Float _ -> float "0" | _ -> integer Z.zero typ
+let convert ~dst ?(signed = false) ~src exp =
+  ( if Typ.castable dst src then exp
+  else Ap1 (Convert {dst; signed}, src, exp) )
+  |> check invariant
 
-let minus_one (typ : Typ.t) =
-  match typ with Float _ -> float "-1" | _ -> integer Z.minus_one typ
+let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
+let eq typ x y = Ap2 (Eq, typ, x, y) |> check invariant
+let dq typ x y = Ap2 (Dq, typ, x, y) |> check invariant
+let gt typ x y = Ap2 (Gt, typ, x, y) |> check invariant
+let ge typ x y = Ap2 (Ge, typ, x, y) |> check invariant
+let lt typ x y = Ap2 (Lt, typ, x, y) |> check invariant
+let le typ x y = Ap2 (Le, typ, x, y) |> check invariant
+let ugt typ x y = Ap2 (Ugt, typ, x, y) |> check invariant
+let uge typ x y = Ap2 (Uge, typ, x, y) |> check invariant
+let ult typ x y = Ap2 (Ult, typ, x, y) |> check invariant
+let ule typ x y = Ap2 (Ule, typ, x, y) |> check invariant
+let ord typ x y = Ap2 (Ord, typ, x, y) |> check invariant
+let uno typ x y = Ap2 (Uno, typ, x, y) |> check invariant
+let add typ x y = Ap2 (Add, typ, x, y) |> check invariant
+let sub typ x y = Ap2 (Sub, typ, x, y) |> check invariant
+let mul typ x y = Ap2 (Mul, typ, x, y) |> check invariant
+let div typ x y = Ap2 (Div, typ, x, y) |> check invariant
+let rem typ x y = Ap2 (Rem, typ, x, y) |> check invariant
+let udiv typ x y = Ap2 (Udiv, typ, x, y) |> check invariant
+let urem typ x y = Ap2 (Urem, typ, x, y) |> check invariant
+let and_ typ x y = Ap2 (And, typ, x, y) |> check invariant
+let or_ typ x y = Ap2 (Or, typ, x, y) |> check invariant
+let xor typ x y = Ap2 (Xor, typ, x, y) |> check invariant
+let shl typ x y = Ap2 (Shl, typ, x, y) |> check invariant
+let lshr typ x y = Ap2 (Lshr, typ, x, y) |> check invariant
+let ashr typ x y = Ap2 (Ashr, typ, x, y) |> check invariant
 
-let simp_convert signed (dst : Typ.t) src arg =
-  match (dst, arg) with
-  | _ when Typ.castable dst src -> arg
-  | Integer {bits= m}, Integer {data; typ= Integer {bits= n}} ->
-      integer (Z.clamp ~signed (min m n) data) dst
-  | _ -> App {op= Convert {signed; dst; src}; arg}
+let update typ ~rcd idx ~elt =
+  Ap2 (Update idx, typ, rcd, elt) |> check invariant
 
-let simp_gt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bgt ~bits i j)
-  | _ -> App {op= App {op= Gt; arg= x}; arg= y}
+let conditional typ ~cnd ~thn ~els =
+  Ap3 (Conditional, typ, cnd, thn, els) |> check invariant
 
-let simp_ugt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bugt ~bits i j)
-  | _ -> App {op= App {op= Ugt; arg= x}; arg= y}
-
-let simp_ge x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bgeq ~bits i j)
-  | _ -> App {op= App {op= Ge; arg= x}; arg= y}
-
-let simp_uge x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bugeq ~bits i j)
-  | _ -> App {op= App {op= Uge; arg= x}; arg= y}
-
-let simp_lt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.blt ~bits i j)
-  | _ -> App {op= App {op= Lt; arg= x}; arg= y}
-
-let simp_ult x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bult ~bits i j)
-  | _ -> App {op= App {op= Ult; arg= x}; arg= y}
-
-let simp_le x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bleq ~bits i j)
-  | _ -> App {op= App {op= Le; arg= x}; arg= y}
-
-let simp_ule x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.buleq ~bits i j)
-  | _ -> App {op= App {op= Ule; arg= x}; arg= y}
-
-let simp_ord x y = App {op= App {op= Ord; arg= x}; arg= y}
-let simp_uno x y = App {op= App {op= Uno; arg= x}; arg= y}
-
-let sum_mul_const const sum =
-  assert (not (Q.equal Q.zero const)) ;
-  if Q.equal Q.one const then sum
-  else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
-
-let rec sum_to_exp typ sum =
-  match Qset.length sum with
-  | 0 -> zero typ
-  | 1 -> (
-    match Qset.min_elt sum with
-    | Some (Integer _, q) -> rational q typ
-    | Some (arg, q) when Q.equal Q.one q -> arg
-    | _ -> Add {typ; args= sum} )
-  | _ -> Add {typ; args= sum}
-
-and rational Q.{num; den} typ =
-  let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-  simp_div
-    (integer (Z.clamp ~signed:true bits num) typ)
-    (integer (Z.clamp ~signed:true bits den) typ)
-
-and simp_div x y =
-  match (x, y) with
-  (* i / j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.bdiv ~bits i j) typ
-  (* e / 1 ==> e *)
-  | e, Integer {data} when Z.equal Z.one data -> e
-  (* (∑ᵢ cᵢ × Xᵢ) / z ==> ∑ᵢ cᵢ/z × Xᵢ *)
-  | Add {typ; args}, Integer {data} ->
-      sum_to_exp typ (sum_mul_const Q.(inv (of_z data)) args)
-  | _ -> App {op= App {op= Div; arg= x}; arg= y}
-
-let simp_udiv x y =
-  match (x, y) with
-  (* i u/ j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.budiv ~bits i j) typ
-  (* e u/ 1 ==> e *)
-  | e, Integer {data} when Z.equal Z.one data -> e
-  | _ -> App {op= App {op= Udiv; arg= x}; arg= y}
-
-let simp_rem x y =
-  match (x, y) with
-  (* i % j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.brem ~bits i j) typ
-  (* e % 1 ==> 0 *)
-  | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
-  | _ -> App {op= App {op= Rem; arg= x}; arg= y}
-
-let simp_urem x y =
-  match (x, y) with
-  (* i u% j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.burem ~bits i j) typ
-  (* e u% 1 ==> 0 *)
-  | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
-  | _ -> App {op= App {op= Urem; arg= x}; arg= y}
-
-(* Sums of polynomial terms represented by multisets. A sum ∑ᵢ cᵢ × Xᵢ of
-   monomials Xᵢ with coefficients cᵢ is represented by a multiset where the
-   elements are Xᵢ with multiplicities cᵢ. A constant is treated as the
-   coefficient of the empty monomial, which is the unit of multiplication 1. *)
-module Sum = struct
-  let empty = empty_qset
-
-  let add coeff exp sum =
-    assert (not (Q.equal Q.zero coeff)) ;
-    match exp with
-    | Integer {data} when Z.equal Z.zero data -> sum
-    | Integer {data; typ} ->
-        Qset.add sum (integer Z.one typ) Q.(coeff * of_z data)
-    | _ -> Qset.add sum exp coeff
-
-  let singleton ?(coeff = Q.one) exp = add coeff exp empty
-
-  let map sum ~f =
-    Qset.fold sum ~init:empty ~f:(fun e c sum -> add c (f e) sum)
-
-  let mul_const = sum_mul_const
-  let to_exp = sum_to_exp
-end
-
-let rec simp_add_ typ es poly =
-  (* (coeff × exp) + poly *)
-  let f exp coeff poly =
-    match (exp, poly) with
-    (* (0 × e) + s ==> 0 (optim) *)
-    | _ when Q.equal Q.zero coeff -> poly
-    (* (c × 0) + s ==> s (optim) *)
-    | Integer {data}, _ when Z.equal Z.zero data -> poly
-    (* (c × cᵢ) + cⱼ ==> c×cᵢ+cⱼ *)
-    | Integer {data= i}, Integer {data= j} ->
-        rational Q.((coeff * of_z i) + of_z j) typ
-    (* (c × ∑ᵢ cᵢ × Xᵢ) + s ==> (∑ᵢ (c × cᵢ) × Xᵢ) + s *)
-    | Add {args}, _ -> simp_add_ typ (Sum.mul_const coeff args) poly
-    (* (c₀ × X₀) + (∑ᵢ₌₁ⁿ cᵢ × Xᵢ) ==> ∑ᵢ₌₀ⁿ cᵢ × Xᵢ *)
-    | _, Add {args} -> Sum.to_exp typ (Sum.add coeff exp args)
-    (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
-    | _ -> Sum.to_exp typ (Sum.add coeff exp (Sum.singleton poly))
-  in
-  Qset.fold ~f es ~init:poly
-
-let simp_add typ es = simp_add_ typ es (zero typ)
-let simp_add2 typ e f = simp_add_ typ (Sum.singleton e) f
-
-(* Products of indeterminants represented by multisets. A product ∏ᵢ xᵢ^nᵢ
-   of indeterminates xᵢ is represented by a multiset where the elements are
-   xᵢ and the multiplicities are the exponents nᵢ. *)
-module Prod = struct
-  let empty = empty_qset
-
-  let add exp prod =
-    assert (match exp with Integer _ -> false | _ -> true) ;
-    Qset.add prod exp Q.one
-
-  let singleton exp = add exp empty
-  let union = Qset.union
-end
-
-let rec simp_mul2 typ e f =
-  match (e, f) with
-  (* c₁ × c₂ ==> c₁×c₂ *)
-  | Integer {data= i}, Integer {data= j} ->
-      integer (Z.bmul ~bits:(bits_of_int e) i j) typ
-  (* 0 × f ==> 0 *)
-  | Integer {data}, _ when Z.equal Z.zero data -> e
-  (* e × 0 ==> 0 *)
-  | _, Integer {data} when Z.equal Z.zero data -> f
-  (* c × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ c × cᵤ × ∏ⱼ yᵤⱼ *)
-  | Integer {data}, Add {args} | Add {args}, Integer {data} ->
-      Sum.to_exp typ (Sum.mul_const (Q.of_z data) args)
-  (* c₁ × x₁ ==> ∑ᵢ₌₁ cᵢ × xᵢ *)
-  | Integer {data= c}, x | x, Integer {data= c} ->
-      Sum.to_exp typ (Sum.singleton ~coeff:(Q.of_z c) x)
-  (* (∏ᵤ₌₀ⁱ xᵤ) × (∏ᵥ₌ᵢ₊₁ⁿ xᵥ) ==> ∏ⱼ₌₀ⁿ xⱼ *)
-  | Mul {args= xs1}, Mul {args= xs2} -> Mul {typ; args= Prod.union xs1 xs2}
-  (* (∏ᵢ xᵢ) × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ cᵤ × ∏ᵢ xᵢ × ∏ⱼ yᵤⱼ *)
-  | (Mul {args= prod} as m), Add {args= sum}
-   |Add {args= sum}, (Mul {args= prod} as m) ->
-      Sum.to_exp typ
-        (Sum.map sum ~f:(function
-          | Mul {args} -> Mul {typ; args= Prod.union prod args}
-          | Integer _ as c -> simp_mul2 typ c m
-          | mono -> Mul {typ; args= Prod.add mono prod} ))
-  (* x₀ × (∏ᵢ₌₁ⁿ xᵢ) ==> ∏ᵢ₌₀ⁿ xᵢ *)
-  | Mul {args= xs1}, x | x, Mul {args= xs1} ->
-      Mul {typ; args= Prod.add x xs1}
-  (* e × (∑ᵤ cᵤ × ∏ⱼ yᵤⱼ) ==> ∑ᵤ e × cᵤ × ∏ⱼ yᵤⱼ *)
-  | Add {args}, e | e, Add {args} ->
-      simp_add typ (Sum.map ~f:(fun m -> simp_mul2 typ e m) args)
-  (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
-  | _ -> Mul {args= Prod.add e (Prod.singleton f); typ}
-
-let simp_negate typ x = simp_mul2 typ (minus_one typ) x
-
-let simp_sub typ x y =
-  match (x, y) with
-  (* i - j *)
-  | Integer {data= i}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.bsub ~bits i j) typ
-  (* x - y ==> x + (-1 * y) *)
-  | _ -> simp_add2 typ x (simp_negate typ y)
-
-let simp_cond cnd thn els =
-  match cnd with
-  (* ¬(true ? t : e) ==> t *)
-  | Integer {data; typ= Integer {bits= 1}} when Z.is_true data -> thn
-  (* ¬(false ? t : e) ==> e *)
-  | Integer {data; typ= Integer {bits= 1}} when Z.is_false data -> els
-  | _ ->
-      App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-
-let rec simp_and x y =
-  match (x, y) with
-  (* i && j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogand ~bits i j) typ
-  (* e && true ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_true data ->
-      e
-  (* e && false ==> 0 *)
-  | (Integer {data; typ= Integer {bits= 1}} as f), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as f)
-    when Z.is_false data ->
-      f
-  (* e && (c ? t : f) ==> (c ? e && t : e && f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
-      simp_cond c (simp_and e t) (simp_and e f)
-  (* e && e ==> e *)
-  | _ when equal x y -> x
-  | _ -> App {op= App {op= And; arg= x}; arg= y}
-
-let rec simp_or x y =
-  match (x, y) with
-  (* i || j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogor ~bits i j) typ
-  (* e || true ==> true *)
-  | (Integer {data; typ= Integer {bits= 1}} as t), _
-   |_, (Integer {data; typ= Integer {bits= 1}} as t)
-    when Z.is_true data ->
-      t
-  (* e || false ==> e *)
-  | Integer {data; typ= Integer {bits= 1}}, e
-   |e, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_false data ->
-      e
-  (* e || (c ? t : f) ==> (c ? e || t : e || f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
-      simp_cond c (simp_or e t) (simp_or e f)
-  (* e || e ==> e *)
-  | _ when equal x y -> x
-  | _ -> App {op= App {op= Or; arg= x}; arg= y}
-
-let rec simp_not (typ : Typ.t) exp =
-  match (exp, typ) with
-  (* ¬(x = y) ==> x ≠ y *)
-  | App {op= App {op= Eq; arg= x}; arg= y}, _ -> simp_dq x y
-  (* ¬(x ≠ y) ==> x = y *)
-  | App {op= App {op= Dq; arg= x}; arg= y}, _ -> simp_eq x y
-  (* ¬(x > y) ==> x <= y *)
-  | App {op= App {op= Gt; arg= x}; arg= y}, _ -> simp_le x y
-  (* ¬(x >= y) ==> x < y *)
-  | App {op= App {op= Ge; arg= x}; arg= y}, _ -> simp_lt x y
-  (* ¬(x < y) ==> x >= y *)
-  | App {op= App {op= Lt; arg= x}; arg= y}, _ -> simp_ge x y
-  (* ¬(x <= y) ==> x > y *)
-  | App {op= App {op= Le; arg= x}; arg= y}, _ -> simp_gt x y
-  (* ¬(x u> y) ==> x u<= y *)
-  | App {op= App {op= Ugt; arg= x}; arg= y}, _ -> simp_ule x y
-  (* ¬(x u>= y) ==> x u< y *)
-  | App {op= App {op= Uge; arg= x}; arg= y}, _ -> simp_ult x y
-  (* ¬(x u< y) ==> x u>= y *)
-  | App {op= App {op= Ult; arg= x}; arg= y}, _ -> simp_uge x y
-  (* ¬(x u<= y) ==> x u> y *)
-  | App {op= App {op= Ule; arg= x}; arg= y}, _ -> simp_ugt x y
-  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | App {op= App {op= Ord; arg= x}; arg= y}, _ -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | App {op= App {op= Uno; arg= x}; arg= y}, _ -> simp_ord x y
-  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
-  | App {op= App {op= And; arg= x}; arg= y}, Integer {bits= 1} ->
-      simp_or (simp_not typ x) (simp_not typ y)
-  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
-  | App {op= App {op= Or; arg= x}; arg= y}, Integer {bits= 1} ->
-      simp_and (simp_not typ x) (simp_not typ y)
-  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
-  | ( App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-    , Integer {bits= 1} ) ->
-      simp_cond cnd (simp_not typ thn) (simp_not typ els)
-  (* ¬false ==> true ¬true ==> false *)
-  | Integer {data}, Integer {bits= 1} -> bool (Z.is_false data)
-  (* ¬e ==> true xor e *)
-  | e, _ ->
-      App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
-
-and simp_eq x y =
-  match (x, y) with
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      (* i = j *)
-      bool (Z.beq ~bits i j)
-  | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b ->
-      if Z.is_false data then (* b = false ==> ¬b *)
-        simp_not Typ.bool b
-      else (* b = true ==> b *)
-        b
-  (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
-      simp_cond c (simp_eq e t) (simp_eq e f)
-  (* e = e ==> true *)
-  | x, y when equal x y -> bool true
-  | x, y -> App {op= App {op= Eq; arg= x}; arg= y}
-
-and simp_dq x y =
-  match (x, y) with
-  (* e ≠ (c ? t : f) ==> (c ? e ≠ t : e ≠ f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
-      simp_cond c (simp_dq e t) (simp_dq e f)
-  | _ -> (
-    match simp_eq x y with
-    | App {op= App {op= Eq; arg= x}; arg= y} ->
-        App {op= App {op= Dq; arg= x}; arg= y}
-    | b -> simp_not Typ.bool b )
-
-let simp_xor x y =
-  match (x, y) with
-  (* i xor j *)
-  | Integer {data= i; typ}, Integer {data= j} ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.blogxor ~bits i j) typ
-  | _ -> App {op= App {op= Xor; arg= x}; arg= y}
-
-let simp_shl x y =
-  match (x, y) with
-  (* i shl j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_left ~bits i (Z.to_int j)) typ
-  (* e shl 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> App {op= App {op= Shl; arg= x}; arg= y}
-
-let simp_lshr x y =
-  match (x, y) with
-  (* i lshr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_right_trunc ~bits i (Z.to_int j)) typ
-  (* e lshr 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> App {op= App {op= Lshr; arg= x}; arg= y}
-
-let simp_ashr x y =
-  match (x, y) with
-  (* i ashr j *)
-  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j}
-    when Z.sign j >= 0 && Z.lt j (Z.of_int bits) ->
-      integer (Z.bshift_right ~bits i (Z.to_int j)) typ
-  (* e ashr 0 ==> e *)
-  | e, Integer {data} when Z.equal Z.zero data -> e
-  | _ -> App {op= App {op= Ashr; arg= x}; arg= y}
-
-(** Access *)
-
-let iter e ~f =
-  match e with
-  | App {op= x; arg= y} -> f x ; f y
-  | Add {args} | Mul {args} -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Struct_rec {elts= args} -> Vector.iter ~f args
-  | _ -> ()
-
-let is_subexp ~sub ~sup =
-  With_return.with_return
-  @@ fun {return} ->
-  iter_exps sup ~f:(fun e -> if equal sub e then return true) ;
-  false
-
-let app1 ?(partial = false) op arg =
-  ( match (op, arg) with
-  | App {op= Eq; arg= x}, y -> simp_eq x y
-  | App {op= Dq; arg= x}, y -> simp_dq x y
-  | App {op= Gt; arg= x}, y -> simp_gt x y
-  | App {op= Ge; arg= x}, y -> simp_ge x y
-  | App {op= Lt; arg= x}, y -> simp_lt x y
-  | App {op= Le; arg= x}, y -> simp_le x y
-  | App {op= Ugt; arg= x}, y -> simp_ugt x y
-  | App {op= Uge; arg= x}, y -> simp_uge x y
-  | App {op= Ult; arg= x}, y -> simp_ult x y
-  | App {op= Ule; arg= x}, y -> simp_ule x y
-  | App {op= Ord; arg= x}, y -> simp_ord x y
-  | App {op= Uno; arg= x}, y -> simp_uno x y
-  | App {op= Div; arg= x}, y -> simp_div x y
-  | App {op= Udiv; arg= x}, y -> simp_udiv x y
-  | App {op= Rem; arg= x}, y -> simp_rem x y
-  | App {op= Urem; arg= x}, y -> simp_urem x y
-  | App {op= And; arg= x}, y -> simp_and x y
-  | App {op= Or; arg= x}, y -> simp_or x y
-  | App {op= Xor; arg= x}, y -> simp_xor x y
-  | App {op= Shl; arg= x}, y -> simp_shl x y
-  | App {op= Lshr; arg= x}, y -> simp_lshr x y
-  | App {op= Ashr; arg= x}, y -> simp_ashr x y
-  | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
-  | Convert {signed; dst; src}, x -> simp_convert signed dst src x
-  | _ -> App {op; arg} )
-  |> check (invariant ~partial)
-  |> check (fun e ->
-         (* every App subexp of output appears in input *)
-         match op with
-         | App {op= Eq | Dq | Xor} -> ()
-         | _ -> (
-           match e with
-           | App {op= App {op= App {op= Conditional}}} -> ()
-           | _ ->
-               iter e ~f:(function
-                 | App {op= Eq | Dq} -> ()
-                 | App _ as a ->
-                     assert (
-                       is_subexp ~sub:a ~sup:op || is_subexp ~sub:a ~sup:arg
-                       || Trace.fail
-                            "simplifying %a %a@ yields %a@ with new subexp \
-                             %a"
-                            pp op pp arg pp e pp a )
-                 | _ -> () ) ) )
-
-let app2 op x y = app1 (app1 ~partial:true op x) y
-let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
-
-let check1 op typ x =
-  type_check x typ ;
-  op typ x |> check invariant
-
-let check2 op typ x y =
-  type_check2 x y typ ;
-  op typ x y |> check invariant
-
-let eq = app2 Eq
-let dq = app2 Dq
-let gt = app2 Gt
-let ge = app2 Ge
-let lt = app2 Lt
-let le = app2 Le
-let ugt = app2 Ugt
-let uge = app2 Uge
-let ult = app2 Ult
-let ule = app2 Ule
-let ord = app2 Ord
-let uno = app2 Uno
-let neg = check1 simp_negate
-let add = check2 simp_add2
-let sub = check2 simp_sub
-let mul = check2 simp_mul2
-let div = app2 Div
-let udiv = app2 Udiv
-let rem = app2 Rem
-let urem = app2 Urem
-let and_ = app2 And
-let or_ = app2 Or
-let xor = app2 Xor
-let not_ = check1 simp_not
-let shl = app2 Shl
-let lshr = app2 Lshr
-let ashr = app2 Ashr
-let conditional ~cnd ~thn ~els = app3 Conditional cnd thn els
-let record elts = List.fold ~f:app1 ~init:Record elts
-let select ~rcd ~idx = app2 Select rcd idx
-let update ~rcd ~elt ~idx = app3 Update rcd elt idx
+let record typ elts = ApN (Record, typ, elts) |> check invariant
 
 let struct_rec key =
   let memo_id = Hashtbl.create key in
   let dummy = null in
   Staged.stage
-  @@ fun ~id elt_thks ->
+  @@ fun ~id typ elt_thks ->
   match Hashtbl.find memo_id id with
   | None ->
       (* Add placeholder to prevent computing [elts] in calls to
@@ -1086,17 +428,14 @@ let struct_rec key =
       let elts = Vector.of_array elta in
       Hashtbl.set memo_id ~key:id ~data:elts ;
       Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      Struct_rec {elts} |> check invariant
+      ApN (Struct_rec, typ, elts) |> check invariant
   | Some elts ->
       (* Do not check invariant as invariant will be checked above after the
          thunks are forced, before which invariant-checking may spuriously
          fail. Note that it is important that the value constructed here
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
-      Struct_rec {elts}
-
-let convert ?(signed = false) ~dst ~src exp =
-  app1 (Convert {signed; dst; src}) exp
+      ApN (Struct_rec, typ, elts)
 
 (** Query *)
 

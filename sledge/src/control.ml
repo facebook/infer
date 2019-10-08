@@ -406,14 +406,16 @@ module Make (Dom : Domain_sig.Dom) = struct
     | Switch {key; tbl; els} ->
         Vector.fold tbl
           ~f:(fun x (case, jump) ->
-            match Dom.exec_assume state (Exp.eq key case) with
+            match Dom.exec_assume state (Exp.eq (Exp.typ key) key case) with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
           ~init:
             ( match
                 Dom.exec_assume state
                   (Vector.fold tbl ~init:(Exp.bool true)
-                     ~f:(fun b (case, _) -> Exp.and_ (Exp.dq key case) b))
+                     ~f:(fun b (case, _) ->
+                       Exp.and_ Typ.bool (Exp.dq (Exp.typ key) key case) b
+                   ))
               with
             | Some state -> exec_jump stk state block els
             | None -> Work.skip )
@@ -421,7 +423,7 @@ module Make (Dom : Domain_sig.Dom) = struct
         Vector.fold tbl ~init:Work.skip ~f:(fun x (jump : Llair.jump) ->
             match
               Dom.exec_assume state
-                (Exp.eq ptr
+                (Exp.eq Typ.ptr ptr
                    (Exp.label
                       ~parent:(Reg.name jump.dst.parent.name.reg)
                       ~name:jump.dst.lbl))
