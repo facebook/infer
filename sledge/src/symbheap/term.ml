@@ -375,6 +375,7 @@ let rec typ_of = function
   | _ -> None
 
 let typ = typ_of
+let is_boolean e = Option.exists ~f:(Typ.equal Typ.bool) (typ_of e)
 
 let type_check e typ =
   assert (
@@ -1001,12 +1002,14 @@ and simp_eq x y =
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       (* i = j *)
       bool (Z.beq ~bits i j)
-  | b, Integer {data; typ= Integer {bits= 1}}
-   |Integer {data; typ= Integer {bits= 1}}, b ->
-      if Z.is_false data then (* b = false ==> ¬b *)
-        simp_not Typ.bool b
-      else (* b = true ==> b *)
-        b
+  (* b = false ==> ¬b *)
+  | b, Integer {data} when Z.is_false data && is_boolean b ->
+      simp_not Typ.bool b
+  | Integer {data}, b when Z.is_false data && is_boolean b ->
+      simp_not Typ.bool b
+  (* b = true ==> b *)
+  | b, Integer {data} when Z.is_true data && is_boolean b -> b
+  | Integer {data}, b when Z.is_true data && is_boolean b -> b
   (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
   | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
    |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
@@ -1034,9 +1037,9 @@ let simp_xor x y =
       let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
       integer (Z.blogxor ~bits i j) typ
   (* true xor b ==> ¬b *)
-  | Integer {data; typ= Integer {bits= 1}}, b
-   |b, Integer {data; typ= Integer {bits= 1}}
-    when Z.is_true data ->
+  | Integer {data}, b when Z.is_true data && is_boolean b ->
+      simp_not Typ.bool b
+  | b, Integer {data} when Z.is_true data && is_boolean b ->
       simp_not Typ.bool b
   | _ -> App {op= App {op= Xor; arg= x}; arg= y}
 
