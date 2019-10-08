@@ -13,7 +13,7 @@ open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
 
-module Sh_executor = Control.Make (Domain.Relation.Make (State_domain))
+module Sh_executor = Control.Make (Domain.Relation.Make (Sh_domain))
 module Unit_executor = Control.Make (Domain.Unit)
 module Used_globals_executor = Control.Make (Domain.Used_globals)
 
