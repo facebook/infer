@@ -58,7 +58,7 @@ let get_required_props typename tenv =
       []
 
 
-let report_missing_required_prop summary prop parent_typename loc =
+let report_missing_required_prop summary prop parent_typename loc call_chain =
   let message =
     let prop_string =
       match prop with
@@ -70,7 +70,12 @@ let report_missing_required_prop summary prop parent_typename loc =
     F.asprintf "%s is required for component %s, but is not set before the call to build()"
       prop_string (Typ.Name.name parent_typename)
   in
-  let ltr = [Errlog.make_trace_element 0 loc message []] in
+  let ltr =
+    Errlog.make_trace_element 0 loc message []
+    :: List.map call_chain ~f:(fun Domain.MethodCall.{procname; location} ->
+           let call_msg = F.asprintf "calls %a" Typ.Procname.pp procname in
+           Errlog.make_trace_element 0 location call_msg [] )
+  in
   Reporting.log_error summary ~loc ~ltr IssueType.missing_required_prop message
 
 
@@ -78,8 +83,8 @@ let report_missing_required_prop summary prop parent_typename loc =
      the Litho framework (i.e., is client code) *)
 let find_client_component_type call_chain =
   List.find_map
-    ~f:(fun pname ->
-      match pname with
+    ~f:(fun Domain.MethodCall.{procname} ->
+      match procname with
       | Typ.Procname.Java java_pname ->
           Typ.Name.Java.get_outer_class (Typ.Procname.Java.get_class_type_name java_pname)
       | _ ->
@@ -131,19 +136,25 @@ module LithoContext = struct
     let check_required_prop_chain _ call_chain =
       let rev_chain = List.rev call_chain in
       match rev_chain with
-      | pname :: _ when LithoFramework.is_component_build_method pname tenv -> (
+      | Domain.MethodCall.{procname} :: _
+        when LithoFramework.is_component_build_method procname tenv -> (
         (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder
                part from the typename, then look at the fields of MyComponent to figure out which
                ones are annotated with @Prop *)
         match find_client_component_type call_chain with
         | Some parent_typename ->
             let required_props = get_required_props parent_typename tenv in
-            let prop_set = List.map ~f:Typ.Procname.get_method call_chain |> String.Set.of_list in
+            let prop_set =
+              List.map
+                ~f:(fun Domain.MethodCall.{procname} -> Typ.Procname.get_method procname)
+                call_chain
+              |> String.Set.of_list
+            in
             List.iter
               ~f:(fun required_prop ->
                 if not (has_prop prop_set required_prop) then
                   report_missing_required_prop summary required_prop parent_typename
-                    (Summary.get_loc summary) )
+                    (Summary.get_loc summary) call_chain )
               required_props
         | _ ->
             () )

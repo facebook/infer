@@ -43,7 +43,10 @@ module LithoContext = struct
   let report astate _tenv summary =
     let report_graphql_getter access_path call_chain =
       let call_strings =
-        List.map ~f:(Typ.Procname.to_simplified_string ~withclass:false) call_chain
+        List.map
+          ~f:(fun Domain.MethodCall.{procname} ->
+            Typ.Procname.to_simplified_string ~withclass:false procname )
+          call_chain
       in
       let call_string = String.concat ~sep:"." call_strings in
       let message = F.asprintf "%a.%s" AccessPath.pp access_path call_string in

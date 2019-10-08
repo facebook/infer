@@ -103,7 +103,7 @@ struct
         , Direct (Typ.Procname.Java java_callee_procname as callee_pname)
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
-        , _ ) ->
+        , location ) ->
         let domain_summary = Payload.read ~caller_summary:summary ~callee_pname in
         let receiver =
           Domain.LocalAccessPath.make
@@ -122,7 +122,7 @@ struct
           let return_calls =
             ( try Domain.find return_access_path astate
               with Caml.Not_found -> Domain.CallSet.empty )
-            |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_pname)
+            |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_pname location)
           in
           Domain.add return_access_path return_calls astate
         else

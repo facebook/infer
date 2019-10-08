@@ -19,11 +19,12 @@ module LocalAccessPath : sig
   val pp : F.formatter -> t -> unit
 end
 
-(** Called procedure + its receiver *)
+(** Called procedure & location + its receiver *)
 module MethodCall : sig
-  type t = private {receiver: LocalAccessPath.t; procname: Typ.Procname.t} [@@deriving compare]
+  type t = private {receiver: LocalAccessPath.t; procname: Typ.Procname.t; location: Location.t}
+  [@@deriving compare]
 
-  val make : LocalAccessPath.t -> Typ.Procname.t -> t
+  val make : LocalAccessPath.t -> Typ.Procname.t -> Location.t -> t
 
   val pp : F.formatter -> t -> unit
 end
@@ -36,5 +37,5 @@ val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> t -> t
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the
     original access path is retained; otherwise, the new one is used *)
 
-val iter_call_chains : f:(AccessPath.t -> Typ.Procname.t list -> unit) -> t -> unit
+val iter_call_chains : f:(AccessPath.t -> MethodCall.t list -> unit) -> t -> unit
 (** Apply [f] to each maximal call chain encoded in [t] *)

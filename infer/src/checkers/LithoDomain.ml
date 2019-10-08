@@ -27,9 +27,10 @@ module LocalAccessPath = struct
 end
 
 module MethodCall = struct
-  type t = {receiver: LocalAccessPath.t; procname: Typ.Procname.t} [@@deriving compare]
+  type t = {receiver: LocalAccessPath.t; procname: Typ.Procname.t; location: Location.t}
+  [@@deriving compare]
 
-  let make receiver procname = {receiver; procname}
+  let make receiver procname location = {receiver; procname; location}
 
   let pp fmt {receiver; procname} =
     F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
@@ -50,11 +51,11 @@ let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
       in
       let call_set' =
         CallSet.fold
-          (fun ({procname} as call) call_set_acc ->
+          (fun ({procname; location} as call) call_set_acc ->
             let receiver =
               match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
             in
-            CallSet.add {receiver; procname} call_set_acc )
+            CallSet.add {receiver; procname; location} call_set_acc )
           call_set CallSet.empty
       in
       add access_path' call_set' acc )
@@ -65,12 +66,12 @@ let substitute ~(f_sub : LocalAccessPath.t -> LocalAccessPath.t option) astate =
     maximal chain. For example, if the domain encodes the chains foo().bar().goo() and foo().baz(),
     [f] will be called once on foo().bar().goo() and once on foo().baz() *)
 let iter_call_chains_with_suffix ~f call_suffix astate =
-  let rec unroll_call_ ({receiver; procname} : MethodCall.t) (acc, visited) =
+  let rec unroll_call_ ({receiver; procname} as call : MethodCall.t) (acc, visited) =
     let is_cycle (call : MethodCall.t) =
       (* detect direct cycles and cycles due to mutual recursion *)
       LocalAccessPath.equal call.receiver receiver || Typ.Procname.Set.mem call.procname visited
     in
-    let acc' = procname :: acc in
+    let acc' = call :: acc in
     let visited' = Typ.Procname.Set.add procname visited in
     try
       let calls' = find receiver astate in
