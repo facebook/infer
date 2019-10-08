@@ -65,6 +65,14 @@
   [a m];
 }
 
+// no bug
+- (void)call_m:(Unavailable_api_allowed_cases*)a
+    API_AVAILABLE(ios(10), macosx(10.13)) {
+  int x = 1;
+  [a m];
+  x = 3;
+}
+
 // bug
 - (void)with_responds_to_selector_in_else:(Unavailable_api_allowed_cases*)a {
   if ([a respondsToSelector:@selector(m)]) {

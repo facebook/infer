@@ -1145,20 +1145,24 @@ let iphoneos_target_sdk_version_greater_or_equal (cxt : CLintersContext.context)
 
 let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
   let config_iphoneos_target_sdk_version = iphoneos_target_sdk_version_by_path cxt in
-  let allowed_os_versions =
-    match
-      (config_iphoneos_target_sdk_version, (cxt.if_context : CLintersContext.if_context option))
-    with
-    | Some iphoneos_target_sdk_version, Some if_context ->
-        iphoneos_target_sdk_version :: if_context.ios_version_guard
-    | Some iphoneos_target_sdk_version, None ->
-        [iphoneos_target_sdk_version]
-    | _ ->
-        []
+  let available_attr_ios_sdk_current_method =
+    match cxt.current_method with
+    | Some decl ->
+        get_available_attr_ios_sdk (Decl decl)
+    | None ->
+        None
   in
-  let max_allowed_version_opt = List.max_elt allowed_os_versions ~compare:Utils.compare_versions in
+  let ios_version_guard =
+    match cxt.if_context with Some if_context -> if_context.ios_version_guard | None -> []
+  in
+  let allowed_os_versions =
+    Option.to_list config_iphoneos_target_sdk_version
+    @ ios_version_guard
+    @ Option.to_list available_attr_ios_sdk_current_method
+  in
+  let max_allowed_version = List.max_elt allowed_os_versions ~compare:Utils.compare_versions in
   let available_attr_ios_sdk = get_available_attr_ios_sdk an in
-  match (available_attr_ios_sdk, max_allowed_version_opt) with
+  match (available_attr_ios_sdk, max_allowed_version) with
   | Some available_attr_ios_sdk, Some max_allowed_version ->
       Utils.compare_versions available_attr_ios_sdk max_allowed_version > 0
   | _ ->
