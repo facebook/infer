@@ -67,7 +67,7 @@ let call ~summaries:_ ~globals:_ actuals _ _ ~locals:_ st =
 let resolve_callee lookup ptr st =
   let st = used_globals ~init:st ptr in
   match Var.of_exp ptr with
-  | Some callee_name -> (lookup callee_name, st)
+  | Some callee -> (lookup (Var.name callee), st)
   | None -> ([], st)
 
 (* A function summary is the set of global variables accessed by that

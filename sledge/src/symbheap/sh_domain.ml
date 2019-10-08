@@ -151,10 +151,10 @@ let retn formals freturn {areturn; subst; frame} q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-let resolve_callee lookup ptr st =
+let resolve_callee lookup ptr q =
   match Var.of_exp ptr with
-  | Some callee_name -> (lookup callee_name, st)
-  | None -> ([], st)
+  | Some callee -> (lookup (Var.name callee), q)
+  | None -> ([], q)
 
 type summary = {xs: Var.Set.t; foot: t; post: t}
 

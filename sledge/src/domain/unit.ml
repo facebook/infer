@@ -28,9 +28,9 @@ let post _ _ () = ()
 let retn _ _ _ _ = ()
 let dnf () = [()]
 
-let resolve_callee lookup ptr () =
+let resolve_callee lookup ptr _ =
   match Var.of_exp ptr with
-  | Some callee_name -> (lookup callee_name, ())
+  | Some callee -> (lookup (Var.name callee), ())
   | None -> ([], ())
 
 type summary = unit

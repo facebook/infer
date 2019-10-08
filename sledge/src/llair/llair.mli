@@ -191,7 +191,7 @@ module Func : sig
 
   val mk_undefined : name:Global.t -> params:Var.t list -> t
 
-  val find : functions -> Var.t -> func option
+  val find : functions -> string -> func option
   (** Look up a function of the given name in the given functions. *)
 
   val is_undefined : func -> bool

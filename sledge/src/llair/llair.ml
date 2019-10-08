@@ -121,7 +121,7 @@ let sexp_of_func {name; params; freturn; fthrow; locals; entry; cfg} =
 let compare_block x y = Int.compare x.sort_index y.sort_index
 let equal_block x y = Int.equal x.sort_index y.sort_index
 
-type functions = func Var.Map.t [@@deriving sexp_of]
+type functions = func Map.M(String).t [@@deriving sexp_of]
 
 type t = {globals: Global.t vector; functions: functions}
 [@@deriving sexp_of]
@@ -551,7 +551,9 @@ let set_derived_metadata functions =
             jump els
         | Iswitch {tbl; _} -> Vector.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
-            ( match Var.of_exp callee >>= Func.find functions with
+            ( match
+                Var.of_exp callee >>| Var.name >>= Func.find functions
+              with
             | Some func ->
                 if Set.mem ancestors func.entry then call.recursive <- true
                 else visit ancestors func func.entry
@@ -579,8 +581,10 @@ let set_derived_metadata functions =
           (Vector.to_array cfg) )
   in
   let functions =
-    List.fold functions ~init:Var.Map.empty ~f:(fun m func ->
-        Map.add_exn m ~key:func.name.var ~data:func )
+    List.fold functions
+      ~init:(Map.empty (module String))
+      ~f:(fun m func ->
+        Map.add_exn m ~key:(Var.name func.name.var) ~data:func )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in

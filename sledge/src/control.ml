@@ -479,8 +479,7 @@ module Make (Dom : Domain_sig.Dom) = struct
   let harness : exec_opts -> Llair.t -> (int -> Work.t) option =
    fun opts pgm ->
     let entry_points = Config.find_list "entry-points" in
-    List.find_map entry_points ~f:(fun name ->
-        Llair.Func.find pgm.functions (Var.program ~global:() name) )
+    List.find_map ~f:(Llair.Func.find pgm.functions) entry_points
     |> function
     | Some {name= {var}; locals; params= []; entry} ->
         Some

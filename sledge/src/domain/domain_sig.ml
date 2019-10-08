@@ -45,7 +45,7 @@ module type Dom = sig
   val dnf : t -> t list
 
   val resolve_callee :
-    (Var.t -> Llair.func list) -> Exp.t -> t -> Llair.func list * t
+    (string -> Llair.func list) -> Exp.t -> t -> Llair.func list * t
 
   type summary
 
