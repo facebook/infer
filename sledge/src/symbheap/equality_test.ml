@@ -112,24 +112,6 @@ let%test_module _ =
     let%test _ = entails_eq r2 (f y) y
     let%test _ = entails_eq r2 (f x) (f z)
     let%test _ = entails_eq r2 (g x y) (g z y)
-
-    let%test _ =
-      entails_eq
-        (rename r2 Var.Subst.(extend empty ~replace:x_ ~with_:w_))
-        w z
-
-    let%test _ =
-      r2 == rename r2 Var.Subst.(extend empty ~replace:w_ ~with_:x_)
-
-    let%test _ =
-      entails_eq
-        (rename r2
-           Var.Subst.(
-             empty
-             |> extend ~replace:x_ ~with_:v_
-             |> extend ~replace:y_ ~with_:w_))
-        v w
-
     let%test _ = difference (or_ r1 r2) x z |> Poly.equal None
 
     let r3 = of_eqs [(g y z, w); (v, w); (g y w, t); (x, v); (x, u); (u, z)]

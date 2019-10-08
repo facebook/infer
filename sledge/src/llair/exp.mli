@@ -77,9 +77,7 @@ val comparator : (t, comparator_witness) Comparator.t
 
 type exp = t
 
-val pp_full : ?is_x:(exp -> bool) -> t pp
 val pp : t pp
-val invariant : ?partial:bool -> t -> unit
 
 (** Exp.Reg is re-exported as Reg *)
 module Reg : sig
@@ -92,10 +90,8 @@ module Reg : sig
     type t = (reg, comparator_witness) Set.t
     [@@deriving compare, equal, sexp]
 
-    val pp_full : ?is_x:(exp -> bool) -> t pp
     val pp : t pp
     val empty : t
-    val of_option : reg option -> t
     val of_list : reg list -> t
     val of_vector : reg vector -> t
     val union_list : t list -> t
@@ -115,27 +111,8 @@ module Reg : sig
 
   val of_exp : exp -> t option
   val program : ?global:unit -> string -> t
-  val fresh : string -> wrt:Set.t -> t * Set.t
-  val id : t -> int
   val name : t -> string
   val global : t -> bool
-
-  module Subst : sig
-    type t [@@deriving compare, equal, sexp]
-
-    val pp : t pp
-    val empty : t
-    val freshen : Set.t -> wrt:Set.t -> t
-    val extend : t -> replace:reg -> with_:reg -> t
-    val invert : t -> t
-    val exclude : t -> Set.t -> t
-    val restrict : t -> Set.t -> t
-    val is_empty : t -> bool
-    val domain : t -> Set.t
-    val range : t -> Set.t
-    val apply_set : t -> Set.t -> Set.t
-    val close_set : t -> Set.t -> Set.t
-  end
 end
 
 (** Construct *)
@@ -146,10 +123,8 @@ val label : parent:string -> name:string -> t
 val null : t
 val splat : byt:t -> siz:t -> t
 val memory : siz:t -> arr:t -> t
-val concat : t array -> t
 val bool : bool -> t
 val integer : Z.t -> Typ.t -> t
-val rational : Q.t -> Typ.t -> t
 val float : string -> t
 val eq : t -> t -> t
 val dq : t -> t -> t
@@ -195,25 +170,9 @@ val struct_rec :
     stack overflow. *)
 
 val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
-val size_of : Typ.t -> t option
-
-(** Access *)
-
-val iter : t -> f:(t -> unit) -> unit
 val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
-val fold_exps : t -> init:'a -> f:('a -> t -> 'a) -> 'a
-val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
-
-(** Transform *)
-
-val map : t -> f:(t -> t) -> t
-val rename : Reg.Subst.t -> t -> t
 
 (** Query *)
 
-val fv : t -> Reg.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
-val typ : t -> Typ.t option
-val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
-val solve : t -> t -> (t, t, comparator_witness) Map.t option

@@ -102,9 +102,8 @@ module rec T : sig
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
 
-  (* Note: solve (and invariant) requires Qset.min_elt to return a
-     non-coefficient, so Integer exps must compare higher than any valid
-     monomial *)
+  (* Note: invariant requires Qset.min_elt to return a non-coefficient, so
+     Integer exps must compare higher than any valid monomial *)
 
   type comparator_witness
 
@@ -209,7 +208,6 @@ type _t = T0.t
 
 include T
 
-let empty_map = Map.empty (module T)
 let empty_qset = Qset.empty (module T)
 
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
@@ -376,8 +374,6 @@ let rec typ_of = function
     match typ_of thn with Some _ as t -> t | None -> typ_of els )
   | _ -> None
 
-let typ = typ_of
-
 let type_check e typ =
   assert (
     Option.for_all ~f:(Typ.castable typ) (typ_of e)
@@ -518,7 +514,6 @@ module Reg = struct
     let pp_full ?is_x vs = Set.pp (pp_full ?is_x) vs
     let pp = pp_full ?is_x:None
     let empty = Set.empty (module T)
-    let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
     let union_list = Set.union_list (module T)
     let of_vector = Set.of_vector (module T)
@@ -564,7 +559,6 @@ module Reg = struct
     Invariant.invariant [%here] x [%sexp_of: t]
     @@ fun () -> match x with Reg _ -> invariant x | _ -> assert false
 
-  let id = function Reg {id} -> id | x -> violates invariant x
   let name = function Reg {name} -> name | x -> violates invariant x
   let global = function Reg {global} -> global | x -> violates invariant x
 
@@ -574,85 +568,6 @@ module Reg = struct
 
   let program ?global name =
     Reg {id= 0; name; global= Option.is_some global} |> check invariant
-
-  let fresh name ~(wrt : Set.t) =
-    let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
-    let x' = Reg {name; id= max + 1; global= false} in
-    (x', Set.add wrt x')
-
-  (** Register renaming substitutions *)
-  module Subst = struct
-    type t = T.t Map.M(T).t [@@deriving compare, equal, sexp]
-
-    let invariant s =
-      Invariant.invariant [%here] s [%sexp_of: t]
-      @@ fun () ->
-      let domain, range =
-        Map.fold s ~init:(Set.empty, Set.empty)
-          ~f:(fun ~key ~data (domain, range) ->
-            assert (not (Set.mem range data)) ;
-            (Set.add domain key, Set.add range data) )
-      in
-      assert (Set.disjoint domain range)
-
-    let pp fs s =
-      Format.fprintf fs "@[<1>[%a]@]"
-        (List.pp ",@ " (fun fs (k, v) ->
-             Format.fprintf fs "@[[%a ↦ %a]@]" pp_t k pp_t v ))
-        (Map.to_alist s)
-
-    let empty = empty_map
-    let is_empty = Map.is_empty
-
-    let freshen vs ~wrt =
-      let xs = Set.inter wrt vs in
-      let wrt = Set.union wrt vs in
-      Set.fold xs ~init:(empty, wrt) ~f:(fun (sub, wrt) x ->
-          let x', wrt = fresh (name x) ~wrt in
-          let sub = Map.add_exn sub ~key:x ~data:x' in
-          (sub, wrt) )
-      |> fst |> check invariant
-
-    let extend sub ~replace ~with_ =
-      ( match Map.add sub ~key:replace ~data:with_ with
-      | `Duplicate -> sub
-      | `Ok sub ->
-          Map.map_preserving_phys_equal sub ~f:(fun v ->
-              if T.equal v replace then with_ else v ) )
-      |> check invariant
-
-    let invert sub =
-      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
-          Map.add_exn sub' ~key:data ~data:key )
-      |> check invariant
-
-    let exclude sub vs =
-      Set.fold vs ~init:sub ~f:Map.remove |> check invariant
-
-    let restrict sub vs =
-      Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
-
-    let domain sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
-          Set.add domain key )
-
-    let range sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
-          Set.add range data )
-
-    let apply sub v = try Map.find_exn sub v with Caml.Not_found -> v
-
-    let apply_set sub vs =
-      Map.fold sub ~init:vs ~f:(fun ~key ~data vs ->
-          let vs' = Set.remove vs key in
-          if Set.to_tree vs' == Set.to_tree vs then vs
-          else (
-            assert (not (Set.equal vs' vs)) ;
-            Set.add vs' data ) )
-
-    let close_set sub vs =
-      Map.fold sub ~init:vs ~f:(fun ~key:_ ~data vs -> Set.add vs data)
-  end
 end
 
 let fold_exps e ~init ~f =
@@ -679,8 +594,6 @@ let fold_regs e ~init ~f =
   fold_exps e ~init ~f:(fun z -> function
     | Reg _ as x -> f z (x :> Reg.t) | _ -> z )
 
-let fv e = fold_regs e ~f:Set.add ~init:Reg.Set.empty
-
 (** Construct *)
 
 let reg x = x
@@ -693,9 +606,6 @@ let float data = Float {data} |> check invariant
 
 let zero (typ : Typ.t) =
   match typ with Float _ -> float "0" | _ -> integer Z.zero typ
-
-let one (typ : Typ.t) =
-  match typ with Float _ -> float "1" | _ -> integer Z.one typ
 
 let minus_one (typ : Typ.t) =
   match typ with Float _ -> float "-1" | _ -> integer Z.minus_one typ
@@ -917,17 +827,6 @@ let rec simp_mul2 typ e f =
   (* x₁ × x₂ ==> ∏ᵢ₌₁² xᵢ *)
   | _ -> Mul {args= Prod.add e (Prod.singleton f); typ}
 
-let simp_mul typ es =
-  (* (bas ^ pwr) × exp *)
-  let rec mul_pwr bas pwr exp =
-    if Q.equal Q.zero pwr then exp
-    else mul_pwr bas Q.(pwr - one) (simp_mul2 typ bas exp)
-  in
-  let one = one typ in
-  Qset.fold es ~init:one ~f:(fun bas pwr exp ->
-      if Q.sign pwr >= 0 then mul_pwr bas pwr exp
-      else simp_div exp (mul_pwr bas (Q.neg pwr) one) )
-
 let simp_negate typ x = simp_mul2 typ (minus_one typ) x
 
 let simp_sub typ x y =
@@ -1126,17 +1025,6 @@ let iter e ~f =
   | Concat {args} | Struct_rec {elts= args} -> Vector.iter ~f args
   | _ -> ()
 
-let fold e ~init:s ~f =
-  match e with
-  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
-    ->
-      f y (f x s)
-  | Add {args} | Mul {args} ->
-      Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Concat {args} | Struct_rec {elts= args} ->
-      Vector.fold ~f:(fun s e -> f e s) args ~init:s
-  | _ -> s
-
 let is_subexp ~sub ~sup =
   With_return.with_return
   @@ fun {return} ->
@@ -1192,8 +1080,6 @@ let app1 ?(partial = false) op arg =
 
 let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
-let addN typ args = simp_add typ args |> check invariant
-let mulN typ args = simp_mul typ args |> check invariant
 
 let check1 op typ x =
   type_check x typ ;
@@ -1293,49 +1179,6 @@ let struct_rec key =
 let convert ?(signed = false) ~dst ~src exp =
   app1 (Convert {signed; dst; src}) exp
 
-let size_of t =
-  Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
-      if n % 8 = 0 then Some (integer (Z.of_int (n / 8)) Typ.siz) else None
-  )
-
-(** Transform *)
-
-let map e ~f =
-  let map_ : (t -> t) -> t -> t =
-   fun map_ e ->
-    let map_bin mk ~f x y =
-      let x' = f x in
-      let y' = f y in
-      if x' == x && y' == y then e else mk x' y'
-    in
-    let map_vector mk ~f args =
-      let args' = Vector.map_preserving_phys_equal ~f args in
-      if args' == args then e else mk args'
-    in
-    let map_qset mk typ ~f args =
-      let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
-      if args' == args then e else mk typ args'
-    in
-    match e with
-    | App {op; arg} -> map_bin (app1 ~partial:true) ~f op arg
-    | Add {args; typ} -> map_qset addN typ ~f args
-    | Mul {args; typ} -> map_qset mulN typ ~f args
-    | Splat {byt; siz} -> map_bin simp_splat ~f byt siz
-    | Memory {siz; arr} -> map_bin simp_memory ~f siz arr
-    | Concat {args} -> map_vector simp_concat ~f args
-    | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
-    | _ -> e
-  in
-  fix map_ (fun e -> e) e
-
-let rename sub e =
-  let rec rename_ sub e =
-    match e with
-    | Reg _ -> Reg.Subst.apply sub e
-    | _ -> map ~f:(rename_ sub) e
-  in
-  rename_ sub e |> check (invariant ~partial:true)
-
 (** Query *)
 
 let is_true = function
@@ -1345,72 +1188,3 @@ let is_true = function
 let is_false = function
   | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
   | _ -> false
-
-let rec is_constant e =
-  let is_constant_bin x y = is_constant x && is_constant y in
-  match e with
-  | Reg _ | Nondet _ -> false
-  | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
-    ->
-      is_constant_bin x y
-  | Add {args} | Mul {args} ->
-      Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | Concat {args} | Struct_rec {elts= args} ->
-      Vector.for_all ~f:is_constant args
-  | _ -> true
-
-let classify = function
-  | Add _ | Mul _ -> `Interpreted
-  | App {op= Eq | Dq | App {op= Eq | Dq}} -> `Simplified
-  | App _ -> `Uninterpreted
-  | _ -> `Atomic
-
-let solve e f =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
-  ;
-  let rec solve_ e f s =
-    let solve_uninterp e f =
-      let ord = compare e f in
-      match (is_constant e, is_constant f) with
-      | true, true when ord <> 0 -> None
-      (* orient equation to discretionarily prefer exp that is constant or
-         compares smaller as class representative *)
-      | true, false -> Some (Map.add_exn s ~key:f ~data:e)
-      | false, true -> Some (Map.add_exn s ~key:e ~data:f)
-      | _ ->
-          let key, data = if ord > 0 then (e, f) else (f, e) in
-          Some (Map.add_exn s ~key ~data)
-    in
-    let concat_size args =
-      Vector.fold_until args ~init:(integer Z.zero Typ.siz)
-        ~f:(fun sum -> function
-          | Memory {siz} -> Continue (add Typ.siz siz sum) | _ -> Stop None
-          )
-        ~finish:(fun _ -> None)
-    in
-    match (e, f) with
-    | (Add {typ} | Mul {typ} | Integer {typ}), _
-     |_, (Add {typ} | Mul {typ} | Integer {typ}) -> (
-      match sub typ e f with
-      | Add {args} ->
-          let c, q = Qset.min_elt_exn args in
-          let n = Sum.to_exp typ (Qset.remove args c) in
-          let d = rational (Q.neg q) typ in
-          let r = div n d in
-          Some (Map.add_exn s ~key:c ~data:r)
-      | e_f -> solve_uninterp e_f (zero typ) )
-    | Concat {args= ms}, Concat {args= ns} -> (
-      match (concat_size ms, concat_size ns) with
-      | Some p, Some q -> solve_uninterp e f >>= solve_ p q
-      | _ -> solve_uninterp e f )
-    | Memory {siz= m}, Concat {args= ns} | Concat {args= ns}, Memory {siz= m}
-      -> (
-      match concat_size ns with
-      | Some p -> solve_uninterp e f >>= solve_ p m
-      | _ -> solve_uninterp e f )
-    | _ -> solve_uninterp e f
-  in
-  solve_ e f empty_map
-  |>
-  [%Trace.retn fun {pf} ->
-    function Some s -> pf "%a" Reg.Subst.pp s | None -> pf "false"]

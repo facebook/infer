@@ -531,34 +531,7 @@ module Var = struct
         with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) Map.t )
 
     type 'v t = 'v Map.M(T).t [@@deriving compare, equal, sexp]
-
-    let empty = Map.empty (module T)
   end
-
-  let demangle =
-    let open Ctypes in
-    let cxa_demangle =
-      (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
-      Foreign.foreign "__cxa_demangle"
-        ( string @-> ptr char @-> ptr size_t @-> ptr int
-        @-> returning string_opt )
-    in
-    let null_ptr_char = from_voidp char null in
-    let null_ptr_size_t = from_voidp size_t null in
-    let status = allocate int 0 in
-    fun mangled ->
-      let demangled =
-        cxa_demangle mangled null_ptr_char null_ptr_size_t status
-      in
-      if !@status = 0 then demangled else None
-
-  let pp_demangled fs = function
-    | Var {name} -> (
-      match demangle name with
-      | Some demangled when not (String.equal name demangled) ->
-          Format.fprintf fs "“%s”" demangled
-      | _ -> () )
-    | _ -> ()
 
   let invariant x =
     Invariant.invariant [%here] x [%sexp_of: t]
@@ -570,8 +543,6 @@ module Var = struct
   let of_term = function
     | Var _ as v -> Some (v |> check invariant)
     | _ -> None
-
-  let program name = Var {id= 0; name} |> check invariant
 
   let fresh name ~(wrt : Set.t) =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
@@ -611,21 +582,10 @@ module Var = struct
           (sub, wrt) )
       |> fst |> check invariant
 
-    let extend sub ~replace ~with_ =
-      ( match Map.add sub ~key:replace ~data:with_ with
-      | `Duplicate -> sub
-      | `Ok sub ->
-          Map.map_preserving_phys_equal sub ~f:(fun v ->
-              if T.equal v replace then with_ else v ) )
-      |> check invariant
-
     let invert sub =
       Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
           Map.add_exn sub' ~key:data ~data:key )
       |> check invariant
-
-    let exclude sub vs =
-      Set.fold vs ~init:sub ~f:Map.remove |> check invariant
 
     let restrict sub vs =
       Map.filter_keys ~f:(Set.mem vs) sub |> check invariant
@@ -647,9 +607,6 @@ module Var = struct
           else (
             assert (not (Set.equal vs' vs)) ;
             Set.add vs' data ) )
-
-    let close_set sub vs =
-      Map.fold sub ~init:vs ~f:(fun ~key:_ ~data vs -> Set.add vs data)
   end
 end
 

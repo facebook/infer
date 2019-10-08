@@ -100,23 +100,13 @@ module Var : sig
     val of_regs : Reg.Set.t -> t
   end
 
-  module Map : sig
-    type 'a t = (var, 'a, comparator_witness) Map.t
-    [@@deriving compare, equal, sexp]
-
-    val empty : 'a t
-  end
-
   val pp : t pp
-  val pp_demangled : t pp
 
   include Invariant.S with type t := t
 
   val of_reg : Reg.t -> t
   val of_term : term -> t option
-  val program : string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
-  val id : t -> int
   val name : t -> string
 
   module Subst : sig
@@ -125,15 +115,12 @@ module Var : sig
     val pp : t pp
     val empty : t
     val freshen : Set.t -> wrt:Set.t -> t
-    val extend : t -> replace:var -> with_:var -> t
     val invert : t -> t
-    val exclude : t -> Set.t -> t
     val restrict : t -> Set.t -> t
     val is_empty : t -> bool
     val domain : t -> Set.t
     val range : t -> Set.t
     val apply_set : t -> Set.t -> Set.t
-    val close_set : t -> Set.t -> Set.t
   end
 end
 
@@ -182,18 +169,6 @@ val conditional : cnd:t -> thn:t -> els:t -> t
 val record : t list -> t
 val select : rcd:t -> idx:t -> t
 val update : rcd:t -> elt:t -> idx:t -> t
-
-val struct_rec :
-     (module Hashtbl.Key with type t = 'id)
-  -> (id:'id -> t lazy_t vector -> t) Staged.t
-(** [struct_rec Id id element_thunks] constructs a possibly-cyclic [Struct]
-    value. Cycles are detected using [Id]. The caller of [struct_rec Id]
-    must ensure that a single unstaging of [struct_rec Id] is used for each
-    complete cyclic value. Also, the caller must ensure that recursive calls
-    to [struct_rec Id] provide [id] values that uniquely identify at least
-    one point on each cycle. Failure to obey these requirements will lead to
-    stack overflow. *)
-
 val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option
 
