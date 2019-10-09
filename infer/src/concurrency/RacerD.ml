@@ -724,12 +724,11 @@ type reported_access =
   { threads: RacerDDomain.ThreadsDomain.t
   ; snapshot: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
-  ; procdesc: Procdesc.t }
+  ; procname: Typ.Procname.t }
 
 let report_thread_safety_violation ~issue_log ~make_description ~report_kind
-    ({threads; snapshot; tenv; procdesc} : reported_access) =
+    ({threads; snapshot; tenv; procname= pname} : reported_access) =
   let open RacerDDomain in
-  let pname = Procdesc.get_proc_name procdesc in
   let access = snapshot.access in
   let final_pname = List.last access.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
   let final_sink_site = CallSite.make final_pname access.loc in
@@ -784,9 +783,8 @@ let make_guardedby_violation_description pname final_sink_site initial_sink_site
 
 let make_read_write_race_description ~read_is_sync (conflict : reported_access) pname
     final_sink_site initial_sink_site final_sink =
-  let pp_conflict fmt {procdesc} =
-    F.pp_print_string fmt
-      (Typ.Procname.to_simplified_string ~withclass:true (Procdesc.get_proc_name procdesc))
+  let pp_conflict fmt {procname} =
+    F.pp_print_string fmt (Typ.Procname.to_simplified_string ~withclass:true procname)
   in
   let conflicts_description =
     Format.asprintf "Potentially races with%s write in method %a"
@@ -924,7 +922,7 @@ let should_report_on_proc tenv procdesc =
       false
 
 
-let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} : reported_access)
+let should_report_guardedby_violation classname_str ({snapshot; tenv; procname} : reported_access)
     =
   let is_uitthread param =
     match String.lowercase param with
@@ -941,7 +939,7 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} 
   in
   (not snapshot.lock)
   && RacerDDomain.TraceElem.is_write snapshot.access
-  && Procdesc.get_proc_name procdesc |> Typ.Procname.is_java
+  && Typ.Procname.is_java procname
   &&
   (* restrict check to access paths of length one *)
   match
@@ -996,9 +994,8 @@ let should_report_guardedby_violation classname_str ({snapshot; tenv; procdesc} 
 let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportMap.t) =
   let open RacerDDomain in
   let open RacerDModels in
-  let is_duplicate_report ({snapshot; procdesc} : reported_access)
+  let is_duplicate_report ({snapshot; procname= pname} : reported_access)
       ({reported_sites; reported_writes; reported_reads; reported_unannotated_calls}, _) =
-    let pname = Procdesc.get_proc_name procdesc in
     let call_site = CallSite.make pname (TraceElem.get_loc snapshot.access) in
     if Config.deduplicate then
       CallSite.Set.mem call_site reported_sites
@@ -1012,9 +1009,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
           Typ.Procname.Set.mem pname reported_unannotated_calls
     else false
   in
-  let update_reported ({snapshot; procdesc} : reported_access) reported =
+  let update_reported ({snapshot; procname= pname} : reported_access) reported =
     if Config.deduplicate then
-      let pname = Procdesc.get_proc_name procdesc in
       let call_site = CallSite.make pname (TraceElem.get_loc snapshot.access) in
       let reported_sites = CallSite.Set.add call_site reported.reported_sites in
       match snapshot.access.TraceElem.elem with
@@ -1049,8 +1045,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
       in
       (update_reported reported_access reported_acc, issue_log)
   in
-  let report_unsafe_access accesses acc ({snapshot; threads; tenv; procdesc} as reported_access) =
-    let pname = Procdesc.get_proc_name procdesc in
+  let report_unsafe_access accesses acc
+      ({snapshot; threads; tenv; procname= pname} as reported_access) =
     match snapshot.access.elem with
     | Access.InterfaceCall reported_pname
       when AccessSnapshot.is_unprotected snapshot
@@ -1158,14 +1154,14 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
    that x.f.g may point to during execution *)
 let make_results_table file_env =
   let open RacerDDomain in
-  let aggregate_post tenv procdesc acc {threads; accesses} =
+  let aggregate_post tenv procname acc {threads; accesses} =
     AccessDomain.fold
-      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procdesc} acc)
+      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
       accesses acc
   in
   List.fold file_env ~init:ReportMap.empty ~f:(fun acc (tenv, summary) ->
       Payload.read_toplevel_procedure (Summary.get_proc_name summary)
-      |> Option.fold ~init:acc ~f:(aggregate_post tenv (Summary.get_proc_desc summary)) )
+      |> Option.fold ~init:acc ~f:(aggregate_post tenv (Summary.get_proc_name summary)) )
 
 
 (* aggregate all of the procedures in the file env by their declaring
