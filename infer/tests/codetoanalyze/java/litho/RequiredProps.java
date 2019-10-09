@@ -9,217 +9,13 @@ package codetoanalyze.java.litho;
 
 import com.facebook.litho.Column;
 import com.facebook.litho.Component;
-import com.facebook.litho.annotations.Prop;
-import com.facebook.litho.annotations.ResType;
-import com.facebook.litho.annotations.TreeProp;
+import com.facebook.litho.MyLithoComponent;
 import java.util.ArrayList;
-import java.util.List;
-
-class MyComponent extends Component {
-  @Prop Object prop1; // implicitly non-optional
-
-  @Prop(optional = true)
-  Object prop2; // explicitly optional
-
-  @Prop(optional = false)
-  Object prop3; // explicitly non-optional
-
-  Object nonProp;
-
-
-  public Builder create() {
-    return new Builder();
-  }
-
-  static class Builder extends Component.Builder<Builder> {
-    MyComponent mMyComponent;
-
-    public Builder prop1(Object o) {
-      this.mMyComponent.prop1 = o;
-      return this;
-    }
-
-    public Builder prop2(Object o) {
-      this.mMyComponent.prop2 = o;
-      return this;
-    }
-
-    public Builder prop3(Object o) {
-      this.mMyComponent.prop3 = o;
-      return this;
-    }
-
-    public MyComponent build() {
-      return mMyComponent;
-    }
-
-    @Override
-    public Builder getThis() {
-      return this;
-    }
-  }
-}
-
-class MyTreeComponent extends Component {
-  @TreeProp Object prop1; // implicitly non-optional
-
-  Object nonProp;
-
-  public Builder create() {
-    return new Builder();
-  }
-
-  static class Builder extends Component.Builder<Builder> {
-    MyTreeComponent mMyTreeComponent;
-
-    public Builder prop1(Object o) {
-      this.mMyTreeComponent.prop1 = o;
-      return this;
-    }
-
-    public MyTreeComponent build() {
-      return mMyTreeComponent;
-    }
-
-    @Override
-    public Builder getThis() {
-      return this;
-    }
-  }
-}
-
-/**
- * using @Prop(resType = ..) allows you to set the Prop with any of .propname, .propnameRes, or
- * .propnameAttr
- */
-class ResPropComponent extends Component {
-
-  @Prop(resType = ResType.SOME)
-  Object prop; // implicitly non-optional with resType
-
-  public Builder create() {
-    return new Builder();
-  }
-
-  static class Builder extends Component.Builder<Builder> {
-
-    ResPropComponent mResPropComponent;
-
-    public Builder prop(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public Builder propRes(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public Builder propAttr(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public Builder propDip(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public Builder propPx(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public Builder propSp(Object o) {
-      this.mResPropComponent.prop = o;
-      return this;
-    }
-
-    public ResPropComponent build() {
-      return mResPropComponent;
-    }
-
-    @Override
-    public Builder getThis() {
-      return this;
-    }
-  }
-}
-
-/** varArg test */
-class VarArgPropComponent extends Component {
-
-  @Prop(varArg = "prop")
-  List<Object> props;
-
-  public Builder create() {
-    return new Builder();
-  }
-
-  static class Builder extends Component.Builder<Builder> {
-
-    VarArgPropComponent mVarArgPropComponent;
-
-    public Builder prop(Object prop) {
-      if (prop == null) {
-        return this;
-      }
-      if (this.mVarArgPropComponent.props == null) {
-        this.mVarArgPropComponent.props = new ArrayList<Object>();
-      }
-      this.mVarArgPropComponent.props.add(prop);
-      return this;
-    }
-
-    public Builder propAttr(Object prop) {
-      if (prop == null) {
-        return this;
-      }
-      if (this.mVarArgPropComponent.props == null) {
-        this.mVarArgPropComponent.props = new ArrayList<Object>();
-      }
-      this.mVarArgPropComponent.props.add(prop);
-      return this;
-    }
-
-    public Builder propsAttr(List<Object> props) {
-      if (props == null) {
-        return this;
-      }
-      if (this.mVarArgPropComponent.props == null || this.mVarArgPropComponent.props.isEmpty()) {
-        this.mVarArgPropComponent.props = props;
-      } else {
-        this.mVarArgPropComponent.props.addAll(props);
-      }
-      return this;
-    }
-
-    public Builder props(List<Object> props) {
-      if (props == null) {
-        return this;
-      }
-      if (this.mVarArgPropComponent.props == null || this.mVarArgPropComponent.props.isEmpty()) {
-        this.mVarArgPropComponent.props = props;
-      } else {
-        this.mVarArgPropComponent.props.addAll(props);
-      }
-      return this;
-    }
-
-    public VarArgPropComponent build() {
-      return mVarArgPropComponent;
-    }
-
-    @Override
-    public Builder getThis() {
-      return this;
-    }
-  }
-}
 
 public class RequiredProps {
 
   public MyComponent mMyComponent;
+  public MyLithoComponent mMyLithoComponent;
   public ResPropComponent mResPropComponent;
   public VarArgPropComponent mVarArgPropComponent;
 
@@ -381,6 +177,27 @@ public class RequiredProps {
 
   public void buildPropVarArgMissingBad() {
     mVarArgPropComponent.create().build();
+  }
+
+  // can't track MyLithoComponent.build() because it is on litho, hence we miss the error
+  public Component buildPropLithoMissingBothBad_FN() {
+    return mMyLithoComponent.create().build();
+  }
+
+  // we pick up Component.build() rather than
+  // MyLithoComponent.build(). Hence, we can't detect that it has
+  // missing props at all.
+  public void buildPropLithoMissingOneBad_FN() {
+    Column.create()
+        .child(mMyLithoComponent.create().prop1(new Object()).commonProp(new Object()))
+        .build();
+  }
+
+  // We can't track prop1 and prop2 because they are on litho
+  public Component buildPropLithoOK_FP() {
+    Component.Builder layoutBuilder =
+        mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
+    return layoutBuilder.build();
   }
 
   public class NonRequiredTreeProps {
