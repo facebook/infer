@@ -13,8 +13,6 @@ let equal = [%compare.equal: t]
 
 let get_nullability {nullability} = nullability
 
-let is_nullable {nullability} = match nullability with Nullable -> true | Nonnull -> false
-
 let is_nonnull {nullability} = match nullability with Nullable -> false | Nonnull -> true
 
 let set_nonnull t = {t with nullability= Nullability.Nonnull}

@@ -9,6 +9,13 @@ open! IStd
 
 let passes_assignment_rule ~lhs ~rhs = Nullability.is_subtype ~subtype:rhs ~supertype:lhs
 
+let passes_dereference_rule = function
+  | Nullability.Nullable ->
+      false
+  | Nullability.Nonnull ->
+      true
+
+
 type type_role = Param | Ret
 
 let passes_inheritance_rule type_role ~base ~overridden =

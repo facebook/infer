@@ -23,6 +23,10 @@ val passes_assignment_rule : lhs:Nullability.t -> rhs:Nullability.t -> bool
     of non-nullable type.
  *)
 
+val passes_dereference_rule : Nullability.t -> bool
+(** Dereference rule: an object can be dereferenced only when it is not nullable (or believed to be so).
+ *)
+
 type type_role = Param | Ret
 
 val passes_inheritance_rule : type_role -> base:Nullability.t -> overridden:Nullability.t -> bool

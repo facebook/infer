@@ -29,7 +29,11 @@ let is_virtual = function
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname
     inferred_nullability loc : unit =
-  if InferredNullability.is_nullable inferred_nullability then
+  if
+    not
+      (NullsafeRules.passes_dereference_rule
+         (InferredNullability.get_nullability inferred_nullability))
+  then
     let origin_descr = InferredNullability.descr_origin inferred_nullability in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
@@ -39,7 +43,11 @@ let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref e
 (** Check an access to an array *)
 let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref array_exp fname
     inferred_nullability loc indexed =
-  if InferredNullability.is_nullable inferred_nullability then
+  if
+    not
+      (NullsafeRules.passes_dereference_rule
+         (InferredNullability.get_nullability inferred_nullability))
+  then
     let origin_descr = InferredNullability.descr_origin inferred_nullability in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
@@ -368,8 +376,8 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
           (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [])
           loc
       in
-      let null_method_call = InferredNullability.is_nullable this_inferred_nullability in
-      if null_method_call then
+      let this_nullability = InferredNullability.get_nullability this_inferred_nullability in
+      if not (NullsafeRules.passes_dereference_rule this_nullability) then
         let descr = explain_expr tenv node original_this_e in
         let origin_descr = InferredNullability.descr_origin this_inferred_nullability in
         report_error tenv find_canonical_duplicate
