@@ -64,6 +64,8 @@ and t = private
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
+  | Extract of {unsigned: bool; bits: int}
+      (** Interpret integer argument with given signedness and bitwidth. *)
   | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
       (** Convert between specified types, possibly with loss of
           information. If [src] is an [Integer] type, then [unsigned]
@@ -174,6 +176,7 @@ val conditional : cnd:t -> thn:t -> els:t -> t
 val record : t list -> t
 val select : rcd:t -> idx:t -> t
 val update : rcd:t -> elt:t -> idx:t -> t
+val extract : ?unsigned:bool -> bits:int -> t -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option
 

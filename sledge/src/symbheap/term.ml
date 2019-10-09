@@ -12,22 +12,22 @@ module Z = struct
   include Z
 
   (** Interpret as a bounded integer with specified signedness and width. *)
-  let extract ~signed bits z =
-    if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits
+  let extract ?(unsigned = false) bits z =
+    if unsigned then Z.extract z 0 bits else Z.signed_extract z 0 bits
 
-  let extract_cmp ~signed bits op x y =
-    op (extract ~signed bits x) (extract ~signed bits y)
+  let extract_cmp ~unsigned bits op x y =
+    op (extract ~unsigned bits x) (extract ~unsigned bits y)
 
-  let extract_bop ~signed bits op x y =
-    extract ~signed bits
-      (op (extract ~signed bits x) (extract ~signed bits y))
+  let extract_bop ~unsigned bits op x y =
+    extract ~unsigned bits
+      (op (extract ~unsigned bits x) (extract ~unsigned bits y))
 
-  let buleq ~bits x y = extract_cmp ~signed:false bits Z.leq x y
-  let bugeq ~bits x y = extract_cmp ~signed:false bits Z.geq x y
-  let bult ~bits x y = extract_cmp ~signed:false bits Z.lt x y
-  let bugt ~bits x y = extract_cmp ~signed:false bits Z.gt x y
-  let budiv ~bits x y = extract_bop ~signed:false bits Z.div x y
-  let burem ~bits x y = extract_bop ~signed:false bits Z.rem x y
+  let buleq ~bits x y = extract_cmp ~unsigned:true bits Z.leq x y
+  let bugeq ~bits x y = extract_cmp ~unsigned:true bits Z.geq x y
+  let bult ~bits x y = extract_cmp ~unsigned:true bits Z.lt x y
+  let bugt ~bits x y = extract_cmp ~unsigned:true bits Z.gt x y
+  let budiv ~bits x y = extract_bop ~unsigned:true bits Z.div x y
+  let burem ~bits x y = extract_bop ~unsigned:true bits Z.rem x y
 end
 
 module rec T : sig
@@ -80,6 +80,7 @@ module rec T : sig
     | Update
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* unary: conversion *)
+    | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     (* numeric constants *)
     | Integer of {data: Z.t; typ: Typ.t}
@@ -138,6 +139,7 @@ and T0 : sig
     | Select
     | Update
     | Struct_rec of {elts: t vector}
+    | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
@@ -182,6 +184,7 @@ end = struct
     | Select
     | Update
     | Struct_rec of {elts: t vector}
+    | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
@@ -310,6 +313,8 @@ let rec pp ?is_x fs term =
       | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
+    | Extract {unsigned; bits} ->
+        pf "(%s%i)" (if unsigned then "u" else "i") bits
     | Convert {unsigned= true; dst; src= Integer {bits}} ->
         pf "(%a)(u%i)" Typ.pp dst bits
     | Convert {unsigned= true; dst= Integer {bits}; src} ->
@@ -441,6 +446,7 @@ let invariant ?(partial = false) e =
         assert (Z.numbits data <= bits) )
   | Integer _ -> assert false
   | Var _ | Nondet _ | Label _ | Float _ -> assert_arity 0
+  | Extract _ -> assert_arity 1
   | Convert {dst; src} ->
       ( match args with
       | [Integer {typ= Integer _ as typ}] -> assert (Typ.equal src typ)
@@ -634,12 +640,18 @@ let one (typ : Typ.t) =
 let minus_one (typ : Typ.t) =
   match typ with Float _ -> float "-1" | _ -> integer Z.minus_one typ
 
+let simp_extract ~unsigned bits arg =
+  match arg with
+  | Integer {data} ->
+      integer (Z.extract ~unsigned bits data) (Typ.integer ~bits)
+  | _ -> App {op= Extract {unsigned; bits}; arg}
+
 let simp_convert ~unsigned dst src arg =
   if (not unsigned) && Typ.castable dst src then arg
   else
     match (dst, src, arg) with
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
-        integer (Z.extract ~signed:(not unsigned) (min m n) data) dst
+        integer (Z.extract ~unsigned (min m n) data) dst
     | _ -> App {op= Convert {unsigned; dst; src}; arg}
 
 let simp_gt x y =
@@ -1070,6 +1082,7 @@ let app1 ?(partial = false) op arg =
   | App {op= Lshr; arg= x}, y -> simp_lshr x y
   | App {op= Ashr; arg= x}, y -> simp_ashr x y
   | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
+  | Extract {unsigned; bits}, x -> simp_extract ~unsigned bits x
   | Convert {unsigned; dst; src}, x -> simp_convert ~unsigned dst src x
   | _ -> App {op; arg} )
   |> check (invariant ~partial)
@@ -1192,6 +1205,9 @@ let struct_rec key =
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
       Struct_rec {elts}
+
+let extract ?(unsigned = false) ~bits term =
+  app1 (Extract {unsigned; bits}) term
 
 let convert ?(unsigned = false) ~dst ~src term =
   app1 (Convert {unsigned; dst; src}) term
