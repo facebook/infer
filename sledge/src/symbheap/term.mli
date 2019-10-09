@@ -31,6 +31,8 @@ type op1 =
 [@@deriving compare, equal, hash, sexp]
 
 type op2 =
+  | Splat  (** Iterated concatenation of a single byte *)
+  | Memory  (** Size-tagged byte-array *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)
   | Lt  (** Less-than test *)
@@ -55,9 +57,6 @@ type qset = (t, comparator_witness) Qset.t
 and t = private
   | Add of qset  (** Addition *)
   | Mul of qset  (** Multiplication *)
-  | Splat of {byt: t; siz: t}
-      (** Iterated concatenation of a single byte *)
-  | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
   | Concat of {args: t vector}  (** Byte-array concatenation *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
