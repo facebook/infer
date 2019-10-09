@@ -81,12 +81,20 @@ type err_instance =
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
   | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
-  | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool
-  | Call_receiver_annotation_inconsistent of string option * Typ.Procname.t * origin_descr
+  | Nullable_dereference of
+      { nullable_object_descr: string option
+      ; dereference_type: dereference_type
+      ; origin_descr: origin_descr }
   | Parameter_annotation_inconsistent of parameter_not_nullable
   | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
   | Return_over_annotated of Typ.Procname.t
 [@@deriving compare]
+
+and dereference_type =
+  | MethodCall of Typ.Procname.t
+  | AccessToField of Typ.Fieldname.t
+  | AccessByIndex of {index_desc: string}
+  | ArrayLengthAccess
 
 module H = Hashtbl.Make (struct
   type t = err_instance * InstrRef.t option [@@deriving compare]
@@ -122,9 +130,7 @@ let get_forall = function
       false
   | Inconsistent_subclass_parameter_annotation _ ->
       false
-  | Null_field_access _ ->
-      false
-  | Call_receiver_annotation_inconsistent _ ->
+  | Nullable_dereference _ ->
       false
   | Parameter_annotation_inconsistent _ ->
       false
@@ -196,8 +202,7 @@ module Severity = struct
 
   let err_instance_get_severity tenv err_instance : Exceptions.severity option =
     match err_instance with
-    | Call_receiver_annotation_inconsistent (_, _, origin_descr)
-    | Null_field_access (_, _, origin_descr, _) ->
+    | Nullable_dereference {origin_descr} ->
         origin_descr_get_severity tenv origin_descr
     | _ ->
         None
@@ -267,26 +272,43 @@ let report_error_now tenv (st_report_error : st_report_error) err_instance loc p
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced nullable_annotation
         , Some fn )
-    | Null_field_access (s_opt, fn, (origin_description, _, _), indexed) ->
-        let at_index = if indexed then "element at index" else "field" in
-        ( IssueType.eradicate_nullable_dereference
-        , Format.asprintf
-            "Object %a is nullable and is not locally checked for null when accessing %s %a. %s"
-            MF.pp_monospaced (Option.value s_opt ~default:"") at_index MF.pp_monospaced
-            (Typ.Fieldname.to_simplified_string fn)
-            origin_description
-        , None )
-    | Call_receiver_annotation_inconsistent (s_opt, pn, (origin_description, _, _)) ->
-        let kind_s, description =
-          ( IssueType.eradicate_nullable_dereference
-          , Format.asprintf
-              "The value of %a in the call to %a is nullable and is not locally checked for null. \
-               %s"
-              MF.pp_monospaced (Option.value s_opt ~default:"") MF.pp_monospaced
-              (Typ.Procname.to_simplified_string pn)
-              origin_description )
+    | Nullable_dereference {nullable_object_descr; dereference_type; origin_descr= origin_str, _, _}
+      ->
+        let nullable_object_descr =
+          match dereference_type with
+          | MethodCall _ | AccessToField _ -> (
+            match nullable_object_descr with
+            | None ->
+                "Object"
+            (* Just describe an object itself *)
+            | Some descr ->
+                MF.monospaced_to_string descr )
+          | ArrayLengthAccess | AccessByIndex _ -> (
+            (* In Java, those operations can be applied only to arrays *)
+            match nullable_object_descr with
+            | None ->
+                "Array"
+            | Some descr ->
+                Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
         in
-        (kind_s, description, None)
+        let action_descr =
+          match dereference_type with
+          | MethodCall method_name ->
+              Format.sprintf "calling %s"
+                (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
+          | AccessToField field_name ->
+              Format.sprintf "accessing field %s"
+                (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
+          | AccessByIndex {index_desc} ->
+              Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
+          | ArrayLengthAccess ->
+              "accessing its length"
+        in
+        let description =
+          Format.sprintf "%s is nullable and is not locally checked for null when %s. %s"
+            nullable_object_descr action_descr origin_str
+        in
+        (IssueType.eradicate_nullable_dereference, description, None)
     | Parameter_annotation_inconsistent (s, n, pn, _, (origin_desc, _, _)) ->
         let kind_s, description =
           ( IssueType.eradicate_parameter_not_nullable

@@ -135,7 +135,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
   | Exp.Const _ ->
       let typ, _, locs = tr_default in
       (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc), locs)
-  | Exp.Lfield (exp, fn, typ) ->
+  | Exp.Lfield (exp, field_name, typ) ->
       let _, _, locs = tr_default in
       let _, inferred_nullability, locs' =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
@@ -146,31 +146,32 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       in
       let exp_origin = InferredNullability.get_origin inferred_nullability in
       let tr_new =
-        match AnnotatedField.get tenv fn typ with
+        match AnnotatedField.get tenv field_name typ with
         | Some AnnotatedField.{annotated_type} ->
             ( annotated_type.typ
             , InferredNullability.of_annotated_nullability annotated_type.nullability
-                (TypeOrigin.Field (exp_origin, fn, loc))
+                (TypeOrigin.Field (exp_origin, field_name, loc))
             , locs' )
         | None ->
             tr_default
       in
       if checks.eradicate then
-        EradicateChecks.check_field_access tenv find_canonical_duplicate curr_pdesc node instr_ref
-          exp fn inferred_nullability loc ;
+        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
+          instr_ref exp (TypeErr.AccessToField field_name) inferred_nullability loc ;
       tr_new
   | Exp.Lindex (array_exp, index_exp) ->
-      let _, ta, _ =
+      let _, inferred_nullability, _ =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate array_exp tr_default loc
       in
-      let index =
+      let index_desc =
         match EradicateChecks.explain_expr tenv node index_exp with Some s -> s | None -> "?"
       in
-      let fname = Typ.Fieldname.Java.from_string index in
       if checks.eradicate then
-        EradicateChecks.check_array_access tenv find_canonical_duplicate curr_pdesc node instr_ref
-          array_exp fname ta loc true ;
+        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
+          instr_ref array_exp
+          (TypeErr.AccessByIndex {index_desc})
+          inferred_nullability loc ;
       tr_default
   | _ ->
       tr_default
@@ -480,10 +481,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           loc
       in
       if checks.eradicate then
-        EradicateChecks.check_array_access tenv find_canonical_duplicate curr_pdesc node instr_ref
-          array_exp
-          (Typ.Fieldname.Java.from_string "length")
-          ta loc false ;
+        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
+          instr_ref array_exp TypeErr.ArrayLengthAccess ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New, [loc])
         typestate

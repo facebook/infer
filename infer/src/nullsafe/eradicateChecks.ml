@@ -26,32 +26,19 @@ let is_virtual = function
       false
 
 
-(** Check an access (read or write) to a field. *)
-let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname
-    inferred_nullability loc : unit =
+let check_object_dereference tenv find_canonical_duplicate curr_pname node instr_ref object_exp
+    dereference_type inferred_nullability loc =
   if
     not
       (NullsafeRules.passes_dereference_rule
          (InferredNullability.get_nullability inferred_nullability))
   then
     let origin_descr = InferredNullability.descr_origin inferred_nullability in
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
-      (Some instr_ref) loc curr_pname
-
-
-(** Check an access to an array *)
-let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref array_exp fname
-    inferred_nullability loc indexed =
-  if
-    not
-      (NullsafeRules.passes_dereference_rule
-         (InferredNullability.get_nullability inferred_nullability))
-  then
-    let origin_descr = InferredNullability.descr_origin inferred_nullability in
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
-      (Some instr_ref) loc curr_pname
+    let nullable_object_descr = explain_expr tenv node object_exp in
+    let type_error =
+      TypeErr.Nullable_dereference {nullable_object_descr; dereference_type; origin_descr}
+    in
+    report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname
 
 
 (** Where the condition is coming from *)
@@ -376,13 +363,8 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
           (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [])
           loc
       in
-      let this_nullability = InferredNullability.get_nullability this_inferred_nullability in
-      if not (NullsafeRules.passes_dereference_rule this_nullability) then
-        let descr = explain_expr tenv node original_this_e in
-        let origin_descr = InferredNullability.descr_origin this_inferred_nullability in
-        report_error tenv find_canonical_duplicate
-          (TypeErr.Call_receiver_annotation_inconsistent (descr, callee_pname, origin_descr))
-          (Some instr_ref) loc curr_pdesc
+      check_object_dereference tenv find_canonical_duplicate curr_pdesc node instr_ref
+        original_this_e (TypeErr.MethodCall callee_pname) this_inferred_nullability loc
   | [] ->
       ()
 

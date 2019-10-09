@@ -52,11 +52,20 @@ type err_instance =
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
   | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
   | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
-  | Null_field_access of string option * Typ.Fieldname.t * origin_descr * bool
-  | Call_receiver_annotation_inconsistent of string option * Typ.Procname.t * origin_descr
+  | Nullable_dereference of
+      { nullable_object_descr: string option
+      ; dereference_type: dereference_type
+      ; origin_descr: origin_descr }
   | Parameter_annotation_inconsistent of parameter_not_nullable
   | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
   | Return_over_annotated of Typ.Procname.t
+[@@deriving compare]
+
+and dereference_type =
+  | MethodCall of Typ.Procname.t  (** nullable_object.some_method() *)
+  | AccessToField of Typ.Fieldname.t  (** nullable_object.some_field *)
+  | AccessByIndex of {index_desc: string}  (** nullable_array[some_index] *)
+  | ArrayLengthAccess  (** nullable_array.length *)
 
 val node_reset_forall : Procdesc.Node.t -> unit
 
