@@ -54,7 +54,9 @@ type op2 =
 type op3 = Conditional  (** If-then-else *)
 [@@deriving compare, equal, hash, sexp]
 
-type opN = Concat  (** Byte-array concatenation *)
+type opN =
+  | Concat  (** Byte-array concatenation *)
+  | Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
 type qset = (t, comparator_witness) Qset.t
@@ -72,9 +74,6 @@ and t = private
   | Ap2 of op2 * t * t
   | Ap3 of op3 * t * t * t
   | ApN of opN * t vector
-  | App of {op: t; arg: t}
-      (** Application of function symbol to argument, curried *)
-  | Record  (** Record (array / struct) constant *)
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
@@ -90,7 +89,7 @@ type term = t
 
 val pp_full : ?is_x:(term -> bool) -> t pp
 val pp : t pp
-val invariant : ?partial:bool -> t -> unit
+val invariant : t -> unit
 
 (** Term.Var is re-exported as Var *)
 module Var : sig
@@ -174,7 +173,7 @@ val shl : t -> t -> t
 val lshr : t -> t -> t
 val ashr : t -> t -> t
 val conditional : cnd:t -> thn:t -> els:t -> t
-val record : t list -> t
+val record : t vector -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 val extract : ?unsigned:bool -> bits:int -> t -> t
