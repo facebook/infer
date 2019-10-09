@@ -7,6 +7,8 @@
 
 (** Terms *)
 
+[@@@warning "+9"]
+
 module Z = struct
   include Z
 
@@ -19,63 +21,48 @@ module rec T : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type op1 =
-    (* conversion *)
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
-    (* array/struct *)
     | Select of int
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
-    (* memory *)
-    | Splat
-    | Memory
-    (* comparison *)
     | Eq
     | Dq
     | Lt
     | Le
     | Ord
     | Uno
-    (* arithmetic *)
     | Div
     | Rem
-    (* boolean / bitwise *)
     | And
     | Or
     | Xor
     | Shl
     | Lshr
     | Ashr
-    (* array/struct *)
+    | Splat
+    | Memory
     | Update of int
   [@@deriving compare, equal, hash, sexp]
 
-  type op3 = (* if-then-else *)
-    | Conditional
-  [@@deriving compare, equal, hash, sexp]
-
+  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
   type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
   type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
-    (* nary arithmetic *)
     | Add of qset
     | Mul of qset
-    (* nullary *)
     | Var of {id: int; name: string}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
-    (* application *)
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
-    (* recursive application *)
     | RecN of recN * t vector  (** NOTE: cyclic *)
-    (* numeric constants *)
     | Integer of {data: Z.t}
     | Float of {data: string}
+    | Nondet of {msg: string}
+    | Label of {parent: string; name: string}
   [@@deriving compare, equal, hash, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -100,8 +87,6 @@ and T0 : sig
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
-    | Splat
-    | Memory
     | Eq
     | Dq
     | Lt
@@ -116,6 +101,8 @@ and T0 : sig
     | Shl
     | Lshr
     | Ashr
+    | Splat
+    | Memory
     | Update of int
   [@@deriving compare, equal, hash, sexp]
 
@@ -127,8 +114,6 @@ and T0 : sig
     | Add of qset
     | Mul of qset
     | Var of {id: int; name: string}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
@@ -136,6 +121,8 @@ and T0 : sig
     | RecN of recN * t vector
     | Integer of {data: Z.t}
     | Float of {data: string}
+    | Nondet of {msg: string}
+    | Label of {parent: string; name: string}
   [@@deriving compare, equal, hash, sexp]
 end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
@@ -147,8 +134,6 @@ end = struct
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
-    | Splat
-    | Memory
     | Eq
     | Dq
     | Lt
@@ -163,6 +148,8 @@ end = struct
     | Shl
     | Lshr
     | Ashr
+    | Splat
+    | Memory
     | Update of int
   [@@deriving compare, equal, hash, sexp]
 
@@ -174,8 +161,6 @@ end = struct
     | Add of qset
     | Mul of qset
     | Var of {id: int; name: string}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
@@ -183,6 +168,8 @@ end = struct
     | RecN of recN * t vector
     | Integer of {data: Z.t}
     | Float of {data: string}
+    | Nondet of {msg: string}
+    | Label of {parent: string; name: string}
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -226,13 +213,18 @@ let rec pp ?is_x fs term =
         Trace.pp_styled (get_var_style var) "%%%s" fs name
     | Var {name; id} as var ->
         Trace.pp_styled (get_var_style var) "%%%s_%d" fs name id
-    | Nondet {msg} -> pf "nondet \"%s\"" msg
-    | Label {name} -> pf "%s" name
-    | Ap2 (Splat, byt, siz) -> pf "%a^%a" pp byt pp siz
-    | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
+    | Nondet {msg} -> pf "nondet \"%s\"" msg
+    | Label {name} -> pf "%s" name
+    | Ap1 (Extract {unsigned; bits}, arg) ->
+        pf "(%s%i)@ %a" (if unsigned then "u" else "i") bits pp arg
+    | Ap1 (Convert {dst; unsigned= true; src= Integer {bits}}, arg) ->
+        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Convert {unsigned= true; dst= Integer {bits}; src}, arg) ->
+        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
+    | Ap1 (Convert {dst; src}, arg) ->
+        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
     | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
@@ -266,21 +258,17 @@ let rec pp ?is_x fs term =
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
+    | Ap2 (Splat, byt, siz) -> pf "%a^%a" pp byt pp siz
+    | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
+    | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
+    | ApN (Record, elts) -> pf "{%a}" pp_record elts
+    | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | ApN (Record, elts) -> pf "{%a}" pp_record elts
-    | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
-    | Ap1 (Extract {unsigned; bits}, arg) ->
-        pf "(%s%i)@ %a" (if unsigned then "u" else "i") bits pp arg
-    | Ap1 (Convert {dst; unsigned= true; src= Integer {bits}}, arg) ->
-        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
-    | Ap1 (Convert {unsigned= true; dst= Integer {bits}; src}, arg) ->
-        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
-    | Ap1 (Convert {dst; src}, arg) ->
-        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
   in
   fix_flip pp_ (fun _ _ -> ()) fs term
+  [@@warning "-9"]
 
 and pp_record fs elts =
   [%Trace.fprintf
@@ -356,28 +344,15 @@ let invariant e =
   Invariant.invariant [%here] e [%sexp_of: t]
   @@ fun () ->
   match e with
-  | Var _ | Nondet _ | Label _ | Integer _ | Float _ -> ()
-  | Ap1 (Extract _, _) -> ()
-  | Ap1 (Convert {dst; src}, _) -> assert (Typ.convertible src dst)
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
-  | Ap2
-      ( ( Eq | Dq | Lt | Le | Ord | Uno | Div | Rem | And | Or | Xor | Shl
-        | Lshr | Ashr )
-      , _
-      , _ ) ->
-      ()
-  | ApN (Concat, args) -> assert (Vector.length args <> 1)
-  | Ap2 (Splat, _, siz) -> (
-    match siz with
-    | Integer {data} -> assert (not (Z.equal Z.zero data))
-    | _ -> () )
-  | Ap2 (Memory, _, _) -> ()
-  | Ap1 (Select _, _) -> ()
-  | Ap3 (Conditional, _, _, _) -> ()
-  | Ap2 (Update _, _, _) -> ()
+  | Ap2 (Splat, _, Integer {data}) -> assert (not (Z.equal Z.zero data))
+  | ApN (Concat, mems) -> assert (Vector.length mems <> 1)
   | ApN (Record, elts) | RecN (Record, elts) ->
       assert (not (Vector.is_empty elts))
+  | Ap1 (Convert {dst; src}, _) -> assert (Typ.convertible src dst)
+  | _ -> ()
+  [@@warning "-9"]
 
 (** Variables are the terms constructed by [Var] *)
 module Var = struct
@@ -415,8 +390,8 @@ module Var = struct
     Invariant.invariant [%here] x [%sexp_of: t]
     @@ fun () -> match x with Var _ -> invariant x | _ -> assert false
 
-  let id = function Var {id} -> id | x -> violates invariant x
-  let name = function Var {name} -> name | x -> violates invariant x
+  let id = function Var v -> v.id | x -> violates invariant x
+  let name = function Var v -> v.name | x -> violates invariant x
 
   let of_term = function
     | Var _ as v -> Some (v |> check invariant)
@@ -490,34 +465,14 @@ module Var = struct
   end
 end
 
-let fold_terms e ~init ~f =
-  let fold_terms_ fold_terms_ e s =
-    let s =
-      match e with
-      | Ap1 (_, x) -> fold_terms_ x s
-      | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
-      | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
-      | ApN (_, xs) | RecN (_, xs) ->
-          Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
-      | Add args | Mul args ->
-          Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
-      | _ -> s
-    in
-    f s e
-  in
-  fix fold_terms_ (fun _ s -> s) e init
-
-let fold_vars e ~init ~f =
-  fold_terms e ~init ~f:(fun z -> function
-    | Var _ as v -> f z (v :> Var.t) | _ -> z )
-
-let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
-
 (** Construct *)
 
+(* variables *)
+
 let var x = x
-let nondet msg = Nondet {msg} |> check invariant
-let label ~parent ~name = Label {parent; name} |> check invariant
+
+(* constants *)
+
 let integer data = Integer {data} |> check invariant
 let null = integer Z.zero
 let zero = integer Z.zero
@@ -527,6 +482,10 @@ let bool b = integer (Z.of_bool b)
 let true_ = bool true
 let false_ = bool false
 let float data = Float {data} |> check invariant
+let nondet msg = Nondet {msg} |> check invariant
+let label ~parent ~name = Label {parent; name} |> check invariant
+
+(* type conversions *)
 
 let simp_extract ~unsigned bits arg =
   match arg with
@@ -541,47 +500,7 @@ let simp_convert ~unsigned dst src arg =
         integer (Z.extract ~unsigned (min m n) data)
     | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
 
-let simp_record elts = ApN (Record, elts)
-let simp_select idx rcd = Ap1 (Select idx, rcd)
-let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
-
-let simp_concat xs =
-  if Vector.length xs = 1 then Vector.get xs 0
-  else
-    let args =
-      if
-        Vector.for_all xs ~f:(function
-          | ApN (Concat, _) -> false
-          | _ -> true )
-      then xs
-      else
-        Vector.concat
-          (Vector.fold_right xs ~init:[] ~f:(fun x s ->
-               match x with
-               | ApN (Concat, args) -> args :: s
-               | x -> Vector.of_array [|x|] :: s ))
-    in
-    ApN (Concat, args)
-
-let simp_splat byt siz =
-  match siz with
-  | Integer {data} when Z.equal Z.zero data -> simp_concat Vector.empty
-  | _ -> Ap2 (Splat, byt, siz)
-
-let simp_memory siz arr = Ap2 (Memory, siz, arr)
-
-let simp_lt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
-  | _ -> Ap2 (Lt, x, y)
-
-let simp_le x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
-  | _ -> Ap2 (Le, x, y)
-
-let simp_ord x y = Ap2 (Ord, x, y)
-let simp_uno x y = Ap2 (Uno, x, y)
+(* arithmetic *)
 
 let sum_mul_const const sum =
   assert (not (Q.equal Q.zero const)) ;
@@ -731,6 +650,8 @@ let simp_sub x y =
   (* x - y ==> x + (-1 * y) *)
   | _ -> simp_add2 x (simp_negate y)
 
+(* if-then-else *)
+
 let simp_cond cnd thn els =
   match cnd with
   (* ¬(true ? t : e) ==> t *)
@@ -738,6 +659,17 @@ let simp_cond cnd thn els =
   (* ¬(false ? t : e) ==> e *)
   | Integer {data} when Z.is_false data -> els
   | _ -> Ap3 (Conditional, cnd, thn, els)
+
+(* boolean / bitwise *)
+
+let rec is_boolean = function
+  | Ap1 ((Extract {bits= 1; _} | Convert {dst= Integer {bits= 1; _}; _}), _)
+   |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
+      true
+  | Ap2 ((Div | Rem | And | Or | Xor | Shl | Lshr | Ashr), x, y)
+   |Ap3 (Conditional, _, x, y) ->
+      is_boolean x || is_boolean y
+  | _ -> false
 
 let rec simp_and x y =
   match (x, y) with
@@ -773,42 +705,22 @@ let rec simp_or x y =
   | _ when equal x y -> x
   | _ -> Ap2 (Or, x, y)
 
-let rec is_boolean = function
-  | Ap1 ((Extract {bits= 1} | Convert {dst= Integer {bits= 1}}), _)
-   |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
-      true
-  | Ap2 ((Div | Rem | And | Or | Xor | Shl | Lshr | Ashr), x, y)
-   |Ap3 (Conditional, _, x, y) ->
-      is_boolean x || is_boolean y
-  | _ -> false
+(* comparison *)
 
-let rec simp_not term =
-  match term with
-  (* ¬(x = y) ==> x ≠ y *)
-  | Ap2 (Eq, x, y) -> simp_dq x y
-  (* ¬(x ≠ y) ==> x = y *)
-  | Ap2 (Dq, x, y) -> simp_eq x y
-  (* ¬(x < y) ==> y <= x *)
-  | Ap2 (Lt, x, y) -> simp_le y x
-  (* ¬(x <= y) ==> y < x *)
-  | Ap2 (Le, x, y) -> simp_lt y x
-  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | Ap2 (Ord, x, y) -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | Ap2 (Uno, x, y) -> simp_ord x y
-  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
-  | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
-  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
-  | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
-  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
-  | Ap3 (Conditional, cnd, thn, els) ->
-      simp_cond cnd (simp_not thn) (simp_not els)
-  (* ¬i ==> -i-1 *)
-  | Integer {data} -> integer (Z.lognot data)
-  (* ¬e ==> true xor e *)
-  | e -> Ap2 (Xor, true_, e)
+let simp_lt x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
+  | _ -> Ap2 (Lt, x, y)
 
-and simp_eq x y =
+let simp_le x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
+  | _ -> Ap2 (Le, x, y)
+
+let simp_ord x y = Ap2 (Ord, x, y)
+let simp_uno x y = Ap2 (Uno, x, y)
+
+let rec simp_eq x y =
   match (x, y) with
   (* i = j *)
   | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
@@ -834,6 +746,35 @@ and simp_dq x y =
     match simp_eq x y with
     | Ap2 (Eq, x, y) -> Ap2 (Dq, x, y)
     | b -> simp_not b )
+
+(* negation-normal form *)
+and simp_not term =
+  match term with
+  (* ¬(x = y) ==> x ≠ y *)
+  | Ap2 (Eq, x, y) -> simp_dq x y
+  (* ¬(x ≠ y) ==> x = y *)
+  | Ap2 (Dq, x, y) -> simp_eq x y
+  (* ¬(x < y) ==> y <= x *)
+  | Ap2 (Lt, x, y) -> simp_le y x
+  (* ¬(x <= y) ==> y < x *)
+  | Ap2 (Le, x, y) -> simp_lt y x
+  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
+  | Ap2 (Ord, x, y) -> simp_uno x y
+  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
+  | Ap2 (Uno, x, y) -> simp_ord x y
+  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
+  | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
+  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
+  | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
+  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
+  | Ap3 (Conditional, cnd, thn, els) ->
+      simp_cond cnd (simp_not thn) (simp_not els)
+  (* ¬i ==> -i-1 *)
+  | Integer {data} -> integer (Z.lognot data)
+  (* ¬e ==> true xor e *)
+  | e -> Ap2 (Xor, true_, e)
+
+(* bitwise *)
 
 let simp_xor x y =
   match (x, y) with
@@ -871,26 +812,62 @@ let simp_ashr x y =
   | e, Integer {data} when Z.equal Z.zero data -> e
   | _ -> Ap2 (Ashr, x, y)
 
-(** Access *)
+(* memory *)
 
-let iter e ~f =
-  match e with
-  | Ap1 (_, x) -> f x
-  | Ap2 (_, x, y) -> f x ; f y
-  | Ap3 (_, x, y, z) -> f x ; f y ; f z
-  | ApN (_, xs) | RecN (_, xs) -> Vector.iter ~f xs
-  | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | _ -> ()
+let simp_concat xs =
+  if Vector.length xs = 1 then Vector.get xs 0
+  else
+    let args =
+      if
+        Vector.for_all xs ~f:(function
+          | ApN (Concat, _) -> false
+          | _ -> true )
+      then xs
+      else
+        Vector.concat
+          (Vector.fold_right xs ~init:[] ~f:(fun x s ->
+               match x with
+               | ApN (Concat, args) -> args :: s
+               | x -> Vector.of_array [|x|] :: s ))
+    in
+    ApN (Concat, args)
 
-let fold e ~init:s ~f =
-  match e with
-  | Ap1 (_, x) -> f x s
-  | Ap2 (_, x, y) -> f y (f x s)
-  | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) | RecN (_, xs) ->
-      Vector.fold ~f:(fun s x -> f x s) xs ~init:s
-  | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | _ -> s
+let simp_splat byt siz =
+  match siz with
+  | Integer {data} when Z.equal Z.zero data -> simp_concat Vector.empty
+  | _ -> Ap2 (Splat, byt, siz)
+
+let simp_memory siz arr = Ap2 (Memory, siz, arr)
+
+(* records *)
+
+let simp_record elts = ApN (Record, elts)
+let simp_select idx rcd = Ap1 (Select idx, rcd)
+let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
+
+let rec_app key =
+  let memo_id = Hashtbl.create key in
+  let dummy = null in
+  Staged.stage
+  @@ fun ~id op elt_thks ->
+  match Hashtbl.find memo_id id with
+  | None ->
+      (* Add placeholder to prevent computing [elts] in calls to [rec_app]
+         from [elt_thks] for recursive occurrences of [id]. *)
+      let elta = Array.create ~len:(Vector.length elt_thks) dummy in
+      let elts = Vector.of_array elta in
+      Hashtbl.set memo_id ~key:id ~data:elts ;
+      Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
+      RecN (op, elts) |> check invariant
+  | Some elts ->
+      (* Do not check invariant as invariant will be checked above after the
+         thunks are forced, before which invariant-checking may spuriously
+         fail. Note that it is important that the value constructed here
+         shares the array in the memo table, so that the update after
+         forcing the recursive thunks also updates this value. *)
+      RecN (op, elts)
+
+(* dispatching for normalization and invariant checking *)
 
 let norm1 op x =
   ( match op with
@@ -927,62 +904,42 @@ let normN op xs =
   (match op with Concat -> simp_concat xs | Record -> simp_record xs)
   |> check invariant
 
-let addN args = simp_add args |> check invariant
-let mulN args = simp_mul args |> check invariant
-let concat xs = normN Concat (Vector.of_array xs)
-let splat ~byt ~siz = norm2 Splat byt siz
-let memory ~siz ~arr = norm2 Memory siz arr
-let eq = norm2 Eq
-let dq = norm2 Dq
-let lt = norm2 Lt
-let le = norm2 Le
-let ord = norm2 Ord
-let uno = norm2 Uno
-let neg = simp_negate
-let add = simp_add2
-let sub = simp_sub
-let mul = simp_mul2
-let div = norm2 Div
-let rem = norm2 Rem
-let and_ = norm2 And
-let or_ = norm2 Or
-let xor = norm2 Xor
-let not_ = simp_not
-let shl = norm2 Shl
-let lshr = norm2 Lshr
-let ashr = norm2 Ashr
-let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
-let record elts = normN Record elts
-let select ~rcd ~idx = norm1 (Select idx) rcd
-let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
-
-let rec_app key =
-  let memo_id = Hashtbl.create key in
-  let dummy = null in
-  Staged.stage
-  @@ fun ~id op elt_thks ->
-  match Hashtbl.find memo_id id with
-  | None ->
-      (* Add placeholder to prevent computing [elts] in calls to [rec_app]
-         from [elt_thks] for recursive occurrences of [id]. *)
-      let elta = Array.create ~len:(Vector.length elt_thks) dummy in
-      let elts = Vector.of_array elta in
-      Hashtbl.set memo_id ~key:id ~data:elts ;
-      Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      RecN (op, elts) |> check invariant
-  | Some elts ->
-      (* Do not check invariant as invariant will be checked above after the
-         thunks are forced, before which invariant-checking may spuriously
-         fail. Note that it is important that the value constructed here
-         shares the array in the memo table, so that the update after
-         forcing the recursive thunks also updates this value. *)
-      RecN (op, elts)
+(* exposed interface *)
 
 let extract ?(unsigned = false) ~bits term =
   norm1 (Extract {unsigned; bits}) term
 
 let convert ?(unsigned = false) ~dst ~src term =
   norm1 (Convert {unsigned; dst; src}) term
+
+let eq = norm2 Eq
+let dq = norm2 Dq
+let lt = norm2 Lt
+let le = norm2 Le
+let ord = norm2 Ord
+let uno = norm2 Uno
+let neg e = simp_negate e |> check invariant
+let add e f = simp_add2 e f |> check invariant
+let addN args = simp_add args |> check invariant
+let sub e f = simp_sub e f |> check invariant
+let mul e f = simp_mul2 e f |> check invariant
+let mulN args = simp_mul args |> check invariant
+let div = norm2 Div
+let rem = norm2 Rem
+let and_ = norm2 And
+let or_ = norm2 Or
+let not_ e = simp_not e |> check invariant
+let xor = norm2 Xor
+let shl = norm2 Shl
+let lshr = norm2 Lshr
+let ashr = norm2 Ashr
+let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
+let splat ~byt ~siz = norm2 Splat byt siz
+let memory ~siz ~arr = norm2 Memory siz arr
+let concat xs = normN Concat (Vector.of_array xs)
+let record elts = normN Record elts
+let select ~rcd ~idx = norm1 (Select idx) rcd
+let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 
 let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
@@ -1062,8 +1019,51 @@ let rename sub e =
     | Var _ as v -> Some (Var.Subst.apply sub v)
     | _ -> None )
 
+(** Traverse *)
+
+let iter e ~f =
+  match e with
+  | Ap1 (_, x) -> f x
+  | Ap2 (_, x, y) -> f x ; f y
+  | Ap3 (_, x, y, z) -> f x ; f y ; f z
+  | ApN (_, xs) | RecN (_, xs) -> Vector.iter ~f xs
+  | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
+  | _ -> ()
+
+let fold e ~init:s ~f =
+  match e with
+  | Ap1 (_, x) -> f x s
+  | Ap2 (_, x, y) -> f y (f x s)
+  | Ap3 (_, x, y, z) -> f z (f y (f x s))
+  | ApN (_, xs) | RecN (_, xs) ->
+      Vector.fold ~f:(fun s x -> f x s) xs ~init:s
+  | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
+  | _ -> s
+
+let fold_terms e ~init ~f =
+  let fold_terms_ fold_terms_ e s =
+    let s =
+      match e with
+      | Ap1 (_, x) -> fold_terms_ x s
+      | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
+      | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
+      | ApN (_, xs) | RecN (_, xs) ->
+          Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
+      | Add args | Mul args ->
+          Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
+      | _ -> s
+    in
+    f s e
+  in
+  fix fold_terms_ (fun _ s -> s) e init
+
+let fold_vars e ~init ~f =
+  fold_terms e ~init ~f:(fun z -> function
+    | Var _ as v -> f z (v :> Var.t) | _ -> z )
+
 (** Query *)
 
+let fv e = fold_vars e ~f:Set.add ~init:Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
@@ -1082,7 +1082,7 @@ let classify = function
   | Add _ | Mul _ -> `Interpreted
   | Ap2 ((Eq | Dq), _, _) -> `Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> `Uninterpreted
-  | RecN _ | Var _ | Nondet _ | Label _ | Integer _ | Float _ -> `Atomic
+  | RecN _ | Var _ | Integer _ | Float _ | Nondet _ | Label _ -> `Atomic
 
 let solve e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]

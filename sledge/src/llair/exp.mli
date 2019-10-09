@@ -125,13 +125,21 @@ end
 
 (** Construct *)
 
+(* registers *)
 val reg : Reg.t -> t
+
+(* constants *)
 val nondet : Typ.t -> string -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t
 val integer : Typ.t -> Z.t -> t
 val float : Typ.t -> string -> t
+
+(* type conversions *)
+val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
+
+(* comparisons *)
 val eq : Typ.t -> t -> t -> t
 val dq : Typ.t -> t -> t -> t
 val gt : Typ.t -> t -> t -> t
@@ -144,6 +152,8 @@ val ult : Typ.t -> t -> t -> t
 val ule : Typ.t -> t -> t -> t
 val ord : Typ.t -> t -> t -> t
 val uno : Typ.t -> t -> t -> t
+
+(* arithmetic *)
 val add : Typ.t -> t -> t -> t
 val sub : Typ.t -> t -> t -> t
 val mul : Typ.t -> t -> t -> t
@@ -151,13 +161,21 @@ val div : Typ.t -> t -> t -> t
 val rem : Typ.t -> t -> t -> t
 val udiv : Typ.t -> t -> t -> t
 val urem : Typ.t -> t -> t -> t
+
+(* boolean / bitwise *)
 val and_ : Typ.t -> t -> t -> t
 val or_ : Typ.t -> t -> t -> t
+
+(* bitwise *)
 val xor : Typ.t -> t -> t -> t
 val shl : Typ.t -> t -> t -> t
 val lshr : Typ.t -> t -> t -> t
 val ashr : Typ.t -> t -> t -> t
+
+(* if-then-else *)
 val conditional : Typ.t -> cnd:t -> thn:t -> els:t -> t
+
+(* records (struct / array values) *)
 val record : Typ.t -> t vector -> t
 val select : Typ.t -> t -> int -> t
 val update : Typ.t -> rcd:t -> int -> elt:t -> t
@@ -173,15 +191,13 @@ val struct_rec :
     one point on each cycle. Failure to obey these requirements will lead to
     stack overflow. *)
 
-val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
-
-(** Access *)
+(** Traverse *)
 
 val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
 
 (** Query *)
 
 val term : t -> Term.t
+val typ : t -> Typ.t
 val is_true : t -> bool
 val is_false : t -> bool
-val typ : t -> Typ.t

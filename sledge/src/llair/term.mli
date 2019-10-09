@@ -8,13 +8,7 @@
 (** Terms
 
     Pure (heap-independent) terms are complex arithmetic, bitwise-logical,
-    etc. operations over literal values and variables.
-
-    Terms for operations that are uninterpreted in the analyzer are
-    represented in curried form, where [App] is an application of a function
-    symbol to an argument. This is done to simplify the definition of
-    'subterm' and make it explicit. The specific constructor functions
-    indicate and check the expected arity of the function symbols. *)
+    etc. operations over literal values and variables. *)
 
 type comparator_witness
 
@@ -32,8 +26,6 @@ type op1 =
 [@@deriving compare, equal, hash, sexp]
 
 type op2 =
-  | Splat  (** Iterated concatenation of a single byte *)
-  | Memory  (** Size-tagged byte-array *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)
   | Lt  (** Less-than test *)
@@ -48,6 +40,8 @@ type op2 =
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
+  | Splat  (** Iterated concatenation of a single byte *)
+  | Memory  (** Size-tagged byte-array *)
   | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -59,41 +53,37 @@ type opN =
   | Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
-type recN =
-  | Record
-      (** Record constant that may recursively refer to itself
-          (transitively) from its args. NOTE: represented by cyclic values. *)
+type recN = Record  (** Recursive record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
-  | Add of qset  (** Addition *)
-  | Mul of qset  (** Multiplication *)
+  | Add of qset  (** Sum of terms with rational coefficients *)
+  | Mul of qset  (** Product of terms with rational exponents *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
+  | Ap1 of op1 * t  (** Unary application *)
+  | Ap2 of op2 * t * t  (** Binary application *)
+  | Ap3 of op3 * t * t * t  (** Ternary application *)
+  | ApN of opN * t vector  (** N-ary application *)
+  | RecN of recN * t vector
+      (** Recursive n-ary application, may recursively refer to itself
+          (transitively) from its args. NOTE: represented by cyclic values. *)
+  | Integer of {data: Z.t}  (** Integer constant *)
+  | Float of {data: string}  (** Floating-point constant *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
-  | Ap1 of op1 * t
-  | Ap2 of op2 * t * t
-  | Ap3 of op3 * t * t * t
-  | ApN of opN * t vector
-  | RecN of recN * t vector
-  | Integer of {data: Z.t}
-      (** Integer constant, or if [typ] is a [Pointer], null pointer value
-          that never refers to an object *)
-  | Float of {data: string}  (** Floating-point constant *)
 [@@deriving compare, equal, hash, sexp]
 
 val comparator : (t, comparator_witness) Comparator.t
-
-type term = t
-
-val pp_full : ?is_x:(term -> bool) -> t pp
+val pp_full : ?is_x:(t -> bool) -> t pp
 val pp : t pp
 val invariant : t -> unit
+
+type term = t
 
 (** Term.Var is re-exported as Var *)
 module Var : sig
@@ -140,64 +130,85 @@ end
 
 (** Construct *)
 
+(* variables *)
 val var : Var.t -> t
+
+(* constants *)
 val nondet : string -> t
 val label : parent:string -> name:string -> t
+val null : t
+val bool : bool -> t
 val true_ : t
 val false_ : t
-val null : t
+val integer : Z.t -> t
 val zero : t
 val one : t
 val minus_one : t
-val splat : byt:t -> siz:t -> t
-val memory : siz:t -> arr:t -> t
-val concat : t array -> t
-val bool : bool -> t
-val integer : Z.t -> t
 val rational : Q.t -> t
 val float : string -> t
+
+(* type conversions *)
+val extract : ?unsigned:bool -> bits:int -> t -> t
+val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
+
+(* comparisons *)
 val eq : t -> t -> t
 val dq : t -> t -> t
 val lt : t -> t -> t
 val le : t -> t -> t
 val ord : t -> t -> t
 val uno : t -> t -> t
+
+(* arithmetic *)
 val neg : t -> t
 val add : t -> t -> t
 val sub : t -> t -> t
 val mul : t -> t -> t
 val div : t -> t -> t
 val rem : t -> t -> t
+
+(* boolean / bitwise *)
 val and_ : t -> t -> t
 val or_ : t -> t -> t
-val xor : t -> t -> t
 val not_ : t -> t
+
+(* bitwise *)
+val xor : t -> t -> t
 val shl : t -> t -> t
 val lshr : t -> t -> t
 val ashr : t -> t -> t
+
+(* if-then-else *)
 val conditional : cnd:t -> thn:t -> els:t -> t
+
+(* memory contents *)
+val splat : byt:t -> siz:t -> t
+val memory : siz:t -> arr:t -> t
+val concat : t array -> t
+
+(* records (struct / array values) *)
 val record : t vector -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
-val extract : ?unsigned:bool -> bits:int -> t -> t
-val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
-val size_of : Typ.t -> t option
 
+(* recursive n-ary application *)
 val rec_app :
      (module Hashtbl.Key with type t = 'id)
   -> (id:'id -> recN -> t lazy_t vector -> t) Staged.t
 
-(** Access *)
-
-val iter : t -> f:(t -> unit) -> unit
-val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
-val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
-val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
+val size_of : Typ.t -> t option
 
 (** Transform *)
 
 val map : t -> f:(t -> t) -> t
 val rename : Var.Subst.t -> t -> t
+
+(** Traverse *)
+
+val iter : t -> f:(t -> unit) -> unit
+val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
+val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
+val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
 
 (** Query *)
 

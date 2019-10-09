@@ -248,7 +248,7 @@ module Make (Dom : Domain_sig.Dom) = struct
       | None -> [%Trace.info "queue empty"] ; ()
   end
 
-  let used_globals : exec_opts -> Reg.reg -> Reg.Set.t =
+  let used_globals : exec_opts -> Reg.t -> Reg.Set.t =
    fun opts fn ->
     [%Trace.call fun {pf} -> pf "%a" Reg.pp fn]
     ;

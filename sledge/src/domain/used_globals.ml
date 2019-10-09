@@ -14,8 +14,7 @@ let report_fmt_thunk = Fn.flip pp
 let empty = Reg.Set.empty
 
 let init globals =
-  [%Trace.info
-    "pgm globals: {%a}" (Vector.pp ", " Llair_.Global.pp) globals] ;
+  [%Trace.info "pgm globals: {%a}" (Vector.pp ", " Global.pp) globals] ;
   empty
 
 let join l r = Some (Set.union l r)

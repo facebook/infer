@@ -186,10 +186,6 @@ and pp_record fs elts =
       elts]
   [@@warning "-9"]
 
-type exp = t
-
-let pp_exp = pp
-
 (** Invariant *)
 
 let valid_idx idx elts = 0 <= idx && idx < Vector.length elts
@@ -288,6 +284,10 @@ and typ_of exp =
 
 let typ = typ_of
 
+type exp = t
+
+let pp_exp = pp
+
 (** Registers are the expressions constructed by [Reg] *)
 module Reg = struct
   include T
@@ -371,30 +371,13 @@ module Reg = struct
     |> check invariant
 end
 
-(** Access *)
-
-let fold_exps e ~init ~f =
-  let fold_exps_ fold_exps_ e z =
-    let z =
-      match e.desc with
-      | Ap1 (_, _, x) -> fold_exps_ x z
-      | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
-      | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
-      | ApN (_, _, xs) ->
-          Vector.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
-      | _ -> z
-    in
-    f z e
-  in
-  fix fold_exps_ (fun _ z -> z) e init
-
-let fold_regs e ~init ~f =
-  fold_exps e ~init ~f:(fun z x ->
-      match x.desc with Reg _ -> f z (x :> Reg.t) | _ -> z )
-
 (** Construct *)
 
+(* registers *)
+
 let reg x = x
+
+(* constants *)
 
 let nondet typ msg =
   {desc= Nondet {msg; typ}; term= Term.nondet msg} |> check invariant
@@ -412,6 +395,8 @@ let bool b = integer Typ.bool (Z.of_bool b)
 let float typ data =
   {desc= Float {data; typ}; term= Term.float data} |> check invariant
 
+(* type conversions *)
+
 let convert ?(unsigned = false) ~dst ~src exp =
   ( if (not unsigned) && Typ.equal dst src then exp
   else
@@ -419,9 +404,7 @@ let convert ?(unsigned = false) ~dst ~src exp =
     ; term= Term.convert ~unsigned ~dst ~src exp.term } )
   |> check invariant
 
-let select typ rcd idx =
-  {desc= Ap1 (Select idx, typ, rcd); term= Term.select ~rcd:rcd.term ~idx}
-  |> check invariant
+(* comparisons *)
 
 let unsigned typ op x y =
   let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
@@ -477,6 +460,8 @@ let uno typ x y =
   {desc= Ap2 (Uno, typ, x, y); term= Term.uno x.term y.term}
   |> check invariant
 
+(* arithmetic *)
+
 let add typ x y =
   {desc= Ap2 (Add, typ, x, y); term= Term.add x.term y.term}
   |> check invariant
@@ -505,6 +490,8 @@ let urem typ x y =
   {desc= Ap2 (Urem, typ, x, y); term= unsigned typ Term.rem x.term y.term}
   |> check invariant
 
+(* boolean / bitwise *)
+
 let and_ typ x y =
   {desc= Ap2 (And, typ, x, y); term= Term.and_ x.term y.term}
   |> check invariant
@@ -512,6 +499,8 @@ let and_ typ x y =
 let or_ typ x y =
   {desc= Ap2 (Or, typ, x, y); term= Term.or_ x.term y.term}
   |> check invariant
+
+(* bitwise *)
 
 let xor typ x y =
   {desc= Ap2 (Xor, typ, x, y); term= Term.xor x.term y.term}
@@ -529,19 +518,27 @@ let ashr typ x y =
   {desc= Ap2 (Ashr, typ, x, y); term= Term.ashr x.term y.term}
   |> check invariant
 
-let update typ ~rcd idx ~elt =
-  { desc= Ap2 (Update idx, typ, rcd, elt)
-  ; term= Term.update ~rcd:rcd.term ~idx ~elt:elt.term }
-  |> check invariant
+(* if-then-else *)
 
 let conditional typ ~cnd ~thn ~els =
   { desc= Ap3 (Conditional, typ, cnd, thn, els)
   ; term= Term.conditional ~cnd:cnd.term ~thn:thn.term ~els:els.term }
   |> check invariant
 
+(* records (struct / array values) *)
+
 let record typ elts =
   { desc= ApN (Record, typ, elts)
   ; term= Term.record (Vector.map ~f:(fun elt -> elt.term) elts) }
+  |> check invariant
+
+let select typ rcd idx =
+  {desc= Ap1 (Select idx, typ, rcd); term= Term.select ~rcd:rcd.term ~idx}
+  |> check invariant
+
+let update typ ~rcd idx ~elt =
+  { desc= Ap2 (Update idx, typ, rcd, elt)
+  ; term= Term.update ~rcd:rcd.term ~idx ~elt:elt.term }
   |> check invariant
 
 let struct_rec key =
@@ -568,6 +565,27 @@ let struct_rec key =
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
       {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
+
+(** Traverse *)
+
+let fold_exps e ~init ~f =
+  let fold_exps_ fold_exps_ e z =
+    let z =
+      match e.desc with
+      | Ap1 (_, _, x) -> fold_exps_ x z
+      | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
+      | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
+      | ApN (_, _, xs) ->
+          Vector.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
+      | _ -> z
+    in
+    f z e
+  in
+  fix fold_exps_ (fun _ z -> z) e init
+
+let fold_regs e ~init ~f =
+  fold_exps e ~init ~f:(fun z x ->
+      match x.desc with Reg _ -> f z (x :> Reg.t) | _ -> z )
 
 (** Query *)
 

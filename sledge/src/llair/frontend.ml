@@ -714,7 +714,7 @@ let exception_typs =
     the PHIs of [dst] translated to a move. *)
 let xlate_jump :
        x
-    -> ?reg_exps:(Reg.reg * Exp.t) list
+    -> ?reg_exps:(Reg.t * Exp.t) list
     -> Llvm.llvalue
     -> Llvm.llbasicblock
     -> Loc.t
@@ -859,7 +859,7 @@ let xlate_instr :
         | ConstantExpr -> (
           match Llvm.constexpr_opcode maybe_llfunc with
           | BitCast -> Llvm.operand maybe_llfunc 0
-          | IntToPtr -> todo "maybe handle calls with inttoptr" ()
+          | IntToPtr -> todo "calls with inttoptr" ()
           | _ ->
               fail "Unknown value in a call instruction %a" pp_llvalue
                 maybe_llfunc () )
