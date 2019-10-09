@@ -28,6 +28,7 @@ type op1 =
           integer. If [src] is a [Float] type and [dst] is an [Integer]
           type, then [unsigned] indidates that the result should be the
           nearest non-negative value. *)
+  | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, hash, sexp]
 
 type op2 =
@@ -73,7 +74,6 @@ and t = private
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
   | Record  (** Record (array / struct) constant *)
-  | Select  (** Select an index from a record *)
   | Update  (** Constant record with updated index *)
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
@@ -175,7 +175,7 @@ val lshr : t -> t -> t
 val ashr : t -> t -> t
 val conditional : cnd:t -> thn:t -> els:t -> t
 val record : t list -> t
-val select : rcd:t -> idx:t -> t
+val select : rcd:t -> idx:int -> t
 val update : rcd:t -> elt:t -> idx:t -> t
 val extract : ?unsigned:bool -> bits:int -> t -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t

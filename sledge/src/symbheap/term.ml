@@ -22,6 +22,8 @@ module rec T : sig
     (* conversion *)
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    (* array/struct *)
+    | Select of int
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
@@ -70,7 +72,6 @@ module rec T : sig
     | App of {op: t; arg: t}
     (* array/struct constants and operations *)
     | Record
-    | Select
     | Update
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* numeric constants *)
@@ -96,6 +97,7 @@ and T0 : sig
   type op1 =
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    | Select of int
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
@@ -132,7 +134,6 @@ and T0 : sig
     | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
-    | Select
     | Update
     | Struct_rec of {elts: t vector}
     | Integer of {data: Z.t}
@@ -144,6 +145,7 @@ end = struct
   type op1 =
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    | Select of int
   [@@deriving compare, equal, hash, sexp]
 
   type op2 =
@@ -180,7 +182,6 @@ end = struct
     | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
-    | Select
     | Update
     | Struct_rec of {elts: t vector}
     | Integer of {data: Z.t}
@@ -275,10 +276,7 @@ let rec pp ?is_x fs term =
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | Select -> pf "_[_]"
-    | App {op= Select; arg= rcd} -> pf "%a[_]" pp rcd
-    | App {op= App {op= Select; arg= rcd}; arg= idx} ->
-        pf "%a[%a]" pp rcd pp idx
+    | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
     | Update -> pf "[_|_→_]"
     | App {op= Update; arg= rcd} -> pf "[%a@ @[| _→_@]]" pp rcd
     | App {op= App {op= Update; arg= rcd}; arg= elt} ->
@@ -289,7 +287,6 @@ let rec pp ?is_x fs term =
     | App {op; arg} -> (
       match uncurry term with
       | Record, elts -> pf "{%a}" pp_record elts
-      | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Ap1 (Extract {unsigned; bits}, arg) ->
@@ -403,7 +400,7 @@ let invariant ?(partial = false) e =
     | Integer {data} -> assert (not (Z.equal Z.zero data))
     | _ -> () )
   | Ap2 (Memory, _, _) -> assert true
-  | Select -> assert_arity 2
+  | Ap1 (Select _, _) -> assert true
   | Ap3 (Conditional, _, _, _) -> assert true
   | Update -> assert_arity 3
   | Record -> assert (partial || not (List.is_empty args))
@@ -581,6 +578,8 @@ let simp_convert ~unsigned dst src arg =
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
         integer (Z.extract ~unsigned (min m n) data)
     | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
+
+let simp_select idx rcd = Ap1 (Select idx, rcd)
 
 let simp_concat xs =
   if Vector.length xs = 1 then Vector.get xs 0
@@ -942,7 +941,8 @@ let is_subterm ~sub ~sup =
 let norm1 op x =
   ( match op with
   | Extract {unsigned; bits} -> simp_extract ~unsigned bits x
-  | Convert {unsigned; dst; src} -> simp_convert ~unsigned dst src x )
+  | Convert {unsigned; dst; src} -> simp_convert ~unsigned dst src x
+  | Select idx -> simp_select idx x )
   |> check invariant
 
 let norm2 op x y =
@@ -986,7 +986,6 @@ let app1 ?(partial = false) op arg =
                       op pp arg pp e pp a )
            | _ -> () ) )
 
-let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
 let addN args = simp_add args |> check invariant
 let mulN args = simp_mul args |> check invariant
@@ -1014,7 +1013,7 @@ let lshr = norm2 Lshr
 let ashr = norm2 Ashr
 let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let record elts = List.fold ~f:app1 ~init:Record elts
-let select ~rcd ~idx = app2 Select rcd idx
+let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~elt ~idx = app3 Update rcd elt idx
 
 let struct_rec key =
@@ -1066,8 +1065,7 @@ let rec of_exp (e : Exp.t) =
   | Float {data} -> float data
   | Ap1 (Convert {unsigned; dst}, src, arg) ->
       convert ~unsigned ~dst ~src (of_exp arg)
-  | Ap1 (Select idx, _, arg) ->
-      select ~rcd:(of_exp arg) ~idx:(integer (Z.of_int idx))
+  | Ap1 (Select idx, _, arg) -> select ~rcd:(of_exp arg) ~idx
   | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
   | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
   | Ap2 (Lt, _, x, y) | Ap2 (Gt, _, y, x) -> lt (of_exp x) (of_exp y)
