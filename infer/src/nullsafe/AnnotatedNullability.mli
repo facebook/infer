@@ -38,6 +38,8 @@ and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 
+val get_nullability : t -> Nullability.t
+
 val of_annot_item : Annot.Item.t -> t
 (** Converts the information from the annotation to nullability.
     NOTE: it does not take into account models etc., so this is intended to be used

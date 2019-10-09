@@ -151,8 +151,9 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
   in
   let should_report_nullable =
     (not
-       (NullsafeRules.passes_assignment_rule_for_inferred_nullability ~lhs:inferred_nullability_lhs
-          ~rhs:inferred_nullability_rhs))
+       (NullsafeRules.passes_assignment_rule
+          ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
+          ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)))
     && (not (AndroidFramework.is_destroy_method curr_pname))
     && PatternMatch.type_is_class t_lhs
     && (not (Typ.Fieldname.Java.is_outer_instance fname))
@@ -305,11 +306,10 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
 
 let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_pdesc
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
-  if
-    not
-      (NullsafeRules.passes_assignment_rule_for_annotated_nullability
-         ~lhs:ret_signature.ret_annotated_type.nullability ~rhs:ret_inferred_nullability)
-  then
+  (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
+  let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
+  let rhs = InferredNullability.get_nullability ret_inferred_nullability in
+  if not (NullsafeRules.passes_assignment_rule ~lhs ~rhs) then
     report_error tenv find_canonical_duplicate
       (TypeErr.Return_annotation_inconsistent
          (curr_pname, InferredNullability.descr_origin ret_inferred_nullability))
@@ -406,11 +406,11 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
         (Some instr_ref) loc curr_pdesc
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
-      if
-        not
-          (NullsafeRules.passes_assignment_rule_for_annotated_nullability
-             ~lhs:formal.param_annotated_type.nullability ~rhs:nullability_actual)
-      then report ()
+      (* Passing a param to a function is essentially an assignment the actual param value
+      to the formal param *)
+      let lhs = AnnotatedNullability.get_nullability formal.param_annotated_type.nullability in
+      let rhs = InferredNullability.get_nullability nullability_actual in
+      if not (NullsafeRules.passes_assignment_rule ~lhs ~rhs) then report ()
   in
   let should_check_parameters =
     match callee_pname with
@@ -467,15 +467,17 @@ let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~base_pr
       (* Check the rule for each pair of base and overridden param *)
       List.iteri base_and_overridden_params
         ~f:(fun index
-           ( AnnotatedSignature.{param_annotated_type= {nullability= base_nullability}}
+           ( AnnotatedSignature.{param_annotated_type= {nullability= annotated_nullability_base}}
            , AnnotatedSignature.
                { mangled= overridden_param_name
-               ; param_annotated_type= {nullability= overridden_nullability} } )
+               ; param_annotated_type= {nullability= annotated_nullability_overridden} } )
            ->
           check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~overridden_param_name
             ~base_proc_name ~overridden_proc_name ~overridden_proc_desc
             ~param_position:(if should_index_from_zero then index else index + 1)
-            ~base_nullability ~overridden_nullability )
+            ~base_nullability:(AnnotatedNullability.get_nullability annotated_nullability_base)
+            ~overridden_nullability:
+              (AnnotatedNullability.get_nullability annotated_nullability_overridden) )
   | Unequal_lengths ->
       (* Skip checking.
       TODO (T5280249): investigate why argument lists can be of different length. *)
@@ -494,10 +496,12 @@ let check_inheritance_rule_for_signature find_canonical_duplicate tenv loc ~base
   | Typ.Procname.Java java_pname when not (Typ.Procname.Java.is_external java_pname) ->
       (* Check if return value is consistent with the base *)
       let base_nullability =
-        base_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+        AnnotatedNullability.get_nullability
+          base_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
       in
       let overridden_nullability =
-        overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
+        AnnotatedNullability.get_nullability
+          overridden_signature.AnnotatedSignature.ret.ret_annotated_type.nullability
       in
       check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~base_proc_name
         ~overridden_proc_name ~overridden_proc_desc ~base_nullability ~overridden_nullability

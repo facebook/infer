@@ -18,29 +18,14 @@ open! IStd
   this module instead of doing things on their own.
   *)
 
-(*******************************************************************************************
- *** Assignment rule **********************************************************************
-
-Assignment rule: No expression of nullable type is ever assigned to a location
-of non-nullable type.
+val passes_assignment_rule : lhs:Nullability.t -> rhs:Nullability.t -> bool
+(** Assignment rule: No expression of nullable type is ever assigned to a location
+    of non-nullable type.
  *)
-
-val passes_assignment_rule_for_annotated_nullability :
-  lhs:AnnotatedNullability.t -> rhs:InferredNullability.t -> bool
-(** Variant of assignment rule where lhs nullability is fully determined by its formal Nullsafe type *)
-
-val passes_assignment_rule_for_inferred_nullability :
-  lhs:InferredNullability.t -> rhs:InferredNullability.t -> bool
-(** Variant of assignment rule where lhs nullability is inferred (e.g. might differ from formal nullability of a corresponding type) *)
-
-(*******************************************************************************************
- *** Inheritance rule **********************************************************************
-  *)
 
 type type_role = Param | Ret
 
-val passes_inheritance_rule :
-  type_role -> base:AnnotatedNullability.t -> overridden:AnnotatedNullability.t -> bool
+val passes_inheritance_rule : type_role -> base:Nullability.t -> overridden:Nullability.t -> bool
 (** Inheritance rule:
   a) Return type for an overridden method is covariant:
        overridden method is allowed to narrow down the return value to a subtype of the one from the

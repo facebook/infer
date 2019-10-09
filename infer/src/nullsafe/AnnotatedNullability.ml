@@ -36,6 +36,13 @@ and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 
+let get_nullability = function
+  | Nullable _ ->
+      Nullability.Nullable
+  | Nonnull _ ->
+      Nullability.Nonnull
+
+
 let pp fmt t =
   let string_of_nullable_origin nullable_origin =
     match nullable_origin with

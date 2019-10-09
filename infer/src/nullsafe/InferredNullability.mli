@@ -19,6 +19,8 @@ open! IStd
 
 type t [@@deriving compare]
 
+val get_nullability : t -> Nullability.t
+
 val create_nullable : TypeOrigin.t -> t
 
 val create_nonnull : TypeOrigin.t -> t

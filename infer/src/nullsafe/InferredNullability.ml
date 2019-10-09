@@ -7,15 +7,17 @@
 
 open! IStd
 
-type t = {is_nullable: bool; origin: TypeOrigin.t} [@@deriving compare]
+type t = {nullability: Nullability.t; origin: TypeOrigin.t} [@@deriving compare]
 
 let equal = [%compare.equal: t]
 
-let is_nullable t = t.is_nullable
+let get_nullability {nullability} = nullability
 
-let is_nonnull t = not t.is_nullable
+let is_nullable {nullability} = match nullability with Nullable -> true | Nonnull -> false
 
-let set_nonnull t = {t with is_nullable= false}
+let is_nonnull {nullability} = match nullability with Nullable -> false | Nonnull -> true
+
+let set_nonnull t = {t with nullability= Nullability.Nonnull}
 
 let descr_origin t =
   let descr_opt = TypeOrigin.get_description t.origin in
@@ -26,18 +28,33 @@ let descr_origin t =
       ("(Origin: " ^ str ^ ")", loc_opt, sig_opt)
 
 
-let to_string t = if is_nullable t then " @Nullable" else ""
+let to_string {nullability} = Printf.sprintf "[%s]" (Nullability.to_string nullability)
 
-let join ta1 ta2 =
-  let nul1, nul2 = (is_nullable ta1, is_nullable ta2) in
-  let choose_left = match (nul1, nul2) with false, true -> false | _ -> true in
-  let ta_chosen, ta_other = if choose_left then (ta1, ta2) else (ta2, ta1) in
-  let origin =
-    if Bool.equal nul1 nul2 then TypeOrigin.join ta_chosen.origin ta_other.origin
-    else ta_chosen.origin
+let join t1 t2 =
+  let joined_nullability = Nullability.join t1.nullability t2.nullability in
+  let is_equal_to_t1 = Nullability.equal t1.nullability joined_nullability in
+  let is_equal_to_t2 = Nullability.equal t2.nullability joined_nullability in
+  (* Origin complements nullability information. It is the best effort to explain how was the nullability inferred.
+     If nullability is fully determined by one of the arguments, origin should be get from this argument.
+     Otherwise we apply heuristics to choose origin either from t1 or t2.
+    *)
+  let joined_origin =
+    match (is_equal_to_t1, is_equal_to_t2) with
+    | true, false ->
+        (* Nullability was fully determined by t1. *)
+        t1.origin
+    | false, true ->
+        (* Nullability was fully determined by t2 *)
+        t2.origin
+    | false, false | true, true ->
+        (* Nullability is not fully determined by neither t1 nor t2
+           Let TypeOrigin logic to decide what to prefer in this case.
+         *)
+        TypeOrigin.join t1.origin t2.origin
   in
-  let ta' = {ta_chosen with origin} in
-  if equal ta' ta1 then None else Some ta'
+  let result = {nullability= joined_nullability; origin= joined_origin} in
+  (* TODO: make the result return non optional value *)
+  if equal result t1 then None else Some result
 
 
 let get_origin t = t.origin
@@ -50,15 +67,15 @@ let origin_is_fun_library t =
       false
 
 
-let create_nullable origin = {origin; is_nullable= true}
+let create_nullable origin = {origin; nullability= Nullability.Nullable}
 
-let create_nonnull origin = {origin; is_nullable= false}
+let create_nonnull origin = {origin; nullability= Nullability.Nonnull}
 
 let with_origin t o = {t with origin= o}
 
 let of_annotated_nullability annotated_nullability origin =
   match annotated_nullability with
   | AnnotatedNullability.Nullable _ ->
-      {origin; is_nullable= true}
+      {origin; nullability= Nullability.Nullable}
   | AnnotatedNullability.Nonnull _ ->
-      {origin; is_nullable= false}
+      {origin; nullability= Nullability.Nonnull}
