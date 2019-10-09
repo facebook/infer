@@ -51,12 +51,13 @@ module rec T : sig
     | Conditional
   [@@deriving compare, equal, hash, sexp]
 
+  type opN = (* memory *)
+    | Concat [@@deriving compare, equal, hash, sexp]
+
   type t =
     (* nary arithmetic *)
     | Add of qset
     | Mul of qset
-    (* pointer and memory constants and operations *)
-    | Concat of {args: t vector}
     (* nullary *)
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
@@ -65,6 +66,7 @@ module rec T : sig
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
+    | ApN of opN * t vector
     | App of {op: t; arg: t}
     (* array/struct constants and operations *)
     | Record
@@ -116,17 +118,18 @@ and T0 : sig
   [@@deriving compare, equal, hash, sexp]
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+  type opN = Concat [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
     | Mul of qset
-    | Concat of {args: t vector}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
+    | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
     | Select
@@ -163,17 +166,18 @@ end = struct
   [@@deriving compare, equal, hash, sexp]
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+  type opN = Concat [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
     | Mul of qset
-    | Concat of {args: t vector}
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
+    | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
     | Select
@@ -235,7 +239,7 @@ let rec pp ?is_x fs term =
     | Label {name} -> pf "%s" name
     | Ap2 (Splat, byt, siz) -> pf "%a^%a" pp byt pp siz
     | Ap2 (Memory, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | Concat {args} -> pf "%a" (Vector.pp "@,^" pp) args
+    | ApN (Concat, args) -> pf "%a" (Vector.pp "@,^" pp) args
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
@@ -393,7 +397,7 @@ let invariant ?(partial = false) e =
       , _
       , _ ) ->
       assert true
-  | Concat {args} -> assert (Vector.length args <> 1)
+  | ApN (Concat, args) -> assert (Vector.length args <> 1)
   | Ap2 (Splat, _, siz) -> (
     match siz with
     | Integer {data} -> assert (not (Z.equal Z.zero data))
@@ -529,10 +533,12 @@ let fold_terms e ~init ~f =
       | Ap1 (_, x) -> fold_terms_ x s
       | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
       | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
+      | ApN (_, xs) ->
+          Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
       | App {op= x; arg= y} -> fold_terms_ y (fold_terms_ x s)
       | Add args | Mul args ->
           Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
-      | Concat {args} | Struct_rec {elts= args} ->
+      | Struct_rec {elts= args} ->
           Vector.fold args ~init:s ~f:(fun s elt -> fold_terms_ elt s)
       | _ -> s
     in
@@ -580,16 +586,19 @@ let simp_concat xs =
   if Vector.length xs = 1 then Vector.get xs 0
   else
     let args =
-      if Vector.for_all xs ~f:(function Concat _ -> false | _ -> true)
+      if
+        Vector.for_all xs ~f:(function
+          | ApN (Concat, _) -> false
+          | _ -> true )
       then xs
       else
         Vector.concat
           (Vector.fold_right xs ~init:[] ~f:(fun x s ->
                match x with
-               | Concat {args} -> args :: s
+               | ApN (Concat, args) -> args :: s
                | x -> Vector.of_array [|x|] :: s ))
     in
-    Concat {args}
+    ApN (Concat, args)
 
 let simp_splat byt siz =
   match siz with
@@ -906,9 +915,10 @@ let iter e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x ; f y
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
+  | ApN (_, xs) -> Vector.iter ~f xs
   | App {op= x; arg= y} -> f x ; f y
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Concat {args} | Struct_rec {elts= args} -> Vector.iter ~f args
+  | Struct_rec {elts= args} -> Vector.iter ~f args
   | _ -> ()
 
 let fold e ~init:s ~f =
@@ -916,9 +926,10 @@ let fold e ~init:s ~f =
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
+  | ApN (_, xs) -> Vector.fold ~f:(fun s x -> f x s) xs ~init:s
   | App {op= x; arg= y} -> f y (f x s)
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Concat {args} | Struct_rec {elts= args} ->
+  | Struct_rec {elts= args} ->
       Vector.fold ~f:(fun s e -> f e s) args ~init:s
   | _ -> s
 
@@ -957,6 +968,9 @@ let norm2 op x y =
 let norm3 op x y z =
   (match op with Conditional -> simp_cond x y z) |> check invariant
 
+let normN op xs =
+  (match op with Concat -> simp_concat xs) |> check invariant
+
 let app1 ?(partial = false) op arg =
   App {op; arg}
   |> check (invariant ~partial)
@@ -976,7 +990,7 @@ let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
 let addN args = simp_add args |> check invariant
 let mulN args = simp_mul args |> check invariant
-let concat xs = simp_concat (Vector.of_array xs) |> check invariant
+let concat xs = normN Concat (Vector.of_array xs)
 let splat ~byt ~siz = norm2 Splat byt siz
 let memory ~siz ~arr = norm2 Memory siz arr
 let eq = norm2 Eq
@@ -1108,28 +1122,22 @@ let map e ~f =
       let z' = f z in
       if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
     in
-    let map_bin mk ~f x y =
-      let x' = f x in
-      let y' = f y in
-      if x' == x && y' == y then e else mk x' y'
-    in
-    let map_vector mk ~f args =
-      let args' = Vector.map_preserving_phys_equal ~f args in
-      if args' == args then e else mk args'
+    let mapN op ~f xs =
+      let xs' = Vector.map_preserving_phys_equal ~f xs in
+      if xs' == xs then e else normN op xs'
     in
     let map_qset mk ~f args =
       let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
       if args' == args then e else mk args'
     in
     match e with
-    | App {op; arg} -> map_bin (app1 ~partial:true) ~f op arg
     | Add args -> map_qset addN ~f args
     | Mul args -> map_qset mulN ~f args
-    | Concat {args} -> map_vector simp_concat ~f args
     | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
     | Ap1 (op, x) -> map1 op ~f x
     | Ap2 (op, x, y) -> map2 op ~f x y
     | Ap3 (op, x, y, z) -> map3 op ~f x y z
+    | ApN (op, xs) -> mapN op ~f xs
     | _ -> e
   in
   fix map_ (fun e -> e) e
@@ -1153,17 +1161,17 @@ let rec is_constant e =
   | Ap1 (_, x) -> is_constant x
   | Ap2 (_, x, y) -> is_constant x && is_constant y
   | Ap3 (_, x, y, z) -> is_constant x && is_constant y && is_constant z
+  | ApN (_, xs) -> Vector.for_all ~f:is_constant xs
   | App {op= x; arg= y} -> is_constant x && is_constant y
   | Add args | Mul args ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | Concat {args} | Struct_rec {elts= args} ->
-      Vector.for_all ~f:is_constant args
+  | Struct_rec {elts= args} -> Vector.for_all ~f:is_constant args
   | _ -> true
 
 let classify = function
   | Add _ | Mul _ -> `Interpreted
   | Ap2 ((Eq | Dq), _, _) -> `Simplified
-  | Ap1 _ | Ap2 _ | Ap3 _ | App _ -> `Uninterpreted
+  | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> `Uninterpreted
   | _ -> `Atomic
 
 let solve e f =
@@ -1199,12 +1207,12 @@ let solve e f =
           let r = div n d in
           Some (Map.add_exn s ~key:c ~data:r)
       | e_f -> solve_uninterp e_f zero )
-    | Concat {args= ms}, Concat {args= ns} -> (
+    | ApN (Concat, ms), ApN (Concat, ns) -> (
       match (concat_size ms, concat_size ns) with
       | Some p, Some q -> solve_uninterp e f >>= solve_ p q
       | _ -> solve_uninterp e f )
-    | Ap2 (Memory, m, _), Concat {args= ns}
-     |Concat {args= ns}, Ap2 (Memory, m, _) -> (
+    | Ap2 (Memory, m, _), ApN (Concat, ns)
+     |ApN (Concat, ns), Ap2 (Memory, m, _) -> (
       match concat_size ns with
       | Some p -> solve_uninterp e f >>= solve_ p m
       | _ -> solve_uninterp e f )

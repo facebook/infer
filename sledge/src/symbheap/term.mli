@@ -52,12 +52,14 @@ type op2 =
 type op3 = Conditional  (** If-then-else *)
 [@@deriving compare, equal, hash, sexp]
 
+type opN = Concat  (** Byte-array concatenation *)
+[@@deriving compare, equal, hash, sexp]
+
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
   | Add of qset  (** Addition *)
   | Mul of qset  (** Multiplication *)
-  | Concat of {args: t vector}  (** Byte-array concatenation *)
   | Var of {id: int; name: string}  (** Local variable / virtual register *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
@@ -67,6 +69,7 @@ and t = private
   | Ap1 of op1 * t
   | Ap2 of op2 * t * t
   | Ap3 of op3 * t * t * t
+  | ApN of opN * t vector
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
   | Record  (** Record (array / struct) constant *)
