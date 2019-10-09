@@ -512,11 +512,11 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let initial =
       let threads =
         if
-          runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes tenv proc_desc
+          runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes tenv proc_name
           |> Option.is_some
           || is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf
-        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_desc tenv
+        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv
         then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
@@ -1054,8 +1054,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     match snapshot.access.elem with
     | Access.InterfaceCall reported_pname
       when AccessSnapshot.is_unprotected snapshot
-           && ThreadsDomain.is_any threads
-           && is_marked_thread_safe procdesc tenv ->
+           && ThreadsDomain.is_any threads && is_marked_thread_safe pname tenv ->
         (* un-annotated interface call + no lock in method marked thread-safe. warn *)
         report_unannotated_interface_violation ~acc reported_pname reported_access
     | Access.InterfaceCall _ ->

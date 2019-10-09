@@ -9,6 +9,8 @@ open! IStd
 module L = Logging
 open ConcurrencyModels
 
+let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
+
 module AnnotationAliases = struct
   let of_json = function
     | `List aliases ->
@@ -154,10 +156,7 @@ let should_skip =
       false
 
 
-let has_return_annot predicate pn =
-  Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
-    predicate
-
+let has_return_annot predicate pn = Annotations.pname_has_return_annot pn ~attrs_of_pname predicate
 
 let is_functional pname =
   let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
@@ -263,10 +262,11 @@ let is_box = function
 
 
 (* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
-                 run on the same thread. For the moment we won't warn on accesses resulting from use of such
-                 methods at all. In future we should account for races between these methods and methods from
-                 completely different classes that don't necessarily run on the same thread as the confined
-                 object. *)
+  run on the same thread. For the moment we won't warn on accesses resulting from use of such
+  methods at all. In future we should account for races between these methods and methods from
+  completely different classes that don't necessarily run on the same thread as the confined
+  object. *)
+(* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
 let is_thread_confined_method tenv pdesc =
   Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_confined
   || PatternMatch.check_current_class_attributes Annotations.ia_is_thread_confined tenv
@@ -310,6 +310,7 @@ let is_assumed_thread_safe item_annot =
   List.exists ~f item_annot
 
 
+(* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
 let pdesc_is_assumed_thread_safe pdesc tenv =
   is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc)
   || PatternMatch.check_current_class_attributes is_assumed_thread_safe tenv
@@ -339,28 +340,22 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
   get_current_class_and_annotated_superclasses is_thread_safe tenv pname
 
 
-let is_thread_safe_class pname tenv =
-  (not
-     ((* current class not marked thread-safe *)
-      PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
-  &&
-  (* current class or superclass is marked thread-safe *)
-  match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (_, thread_safe_annotated_classes) ->
-      not (List.is_empty thread_safe_annotated_classes)
+let is_thread_safe_method pname tenv =
+  match find_override_or_superclass_annotated ~attrs_of_pname is_thread_safe tenv pname with
+  | Some (DirectlyAnnotated | Override _) ->
+      true
   | _ ->
       false
 
 
-let is_thread_safe_method pname tenv =
-  find_method_or_override_annotated ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
-    is_thread_safe pname tenv
-  |> Option.is_some
-
-
-let is_marked_thread_safe pdesc tenv =
-  let pname = Procdesc.get_proc_name pdesc in
-  is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
+let is_marked_thread_safe pname tenv =
+  ((* current class not marked [@NotThreadSafe] *)
+   (* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
+   not
+     (PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
+  && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname is_thread_safe tenv
+       pname
+     |> Option.is_some
 
 
 let is_safe_access (access : 'a HilExp.Access.t) prefix_exp tenv =
@@ -415,6 +410,7 @@ let should_flag_interface_call tenv exps call_flags pname =
       && (not (is_builder_function java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
       thread-safe (would be unreasonable to ask everyone to annotate them) *)
+      (* FIXME use ConcurrencyModels.find_override_or_superclass_annotated for the two cases below *)
       && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
       && (not (has_return_annot thread_safe_or_thread_confined pname))
       && receiver_is_not_safe exps tenv
@@ -427,6 +423,7 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
   let is_threadsafe_collection pn tenv =
     match pn with
     | Typ.Procname.Java java_pname ->
+        (* FIXME use get_class_type_name *)
         let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
         let aux tn _ =
           match Typ.Name.name tn with

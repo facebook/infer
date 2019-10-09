@@ -42,7 +42,7 @@ val is_thread_safe_method : Typ.Procname.t -> Tenv.t -> bool
     is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
     as an alias of @ThreadSafe in a .inferconfig file. *)
 
-val is_marked_thread_safe : Procdesc.t -> Tenv.t -> bool
+val is_marked_thread_safe : Typ.Procname.t -> Tenv.t -> bool
 
 val is_safe_access : 'a HilExp.Access.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** check if an access to a field is thread-confined, or whether the field is volatile *)

@@ -329,15 +329,18 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
   List.iter ~f:do_node nodes ; List.rev !res
 
 
-let override_find ?(check_current_type = true) f tenv proc_name =
+let is_override_of proc_name =
   let method_name = Typ.Procname.get_method proc_name in
   let parameter_length = List.length (Typ.Procname.get_parameters proc_name) in
-  let is_override pname =
-    (not (Typ.Procname.is_constructor pname))
-    && String.equal (Typ.Procname.get_method pname) method_name
-    (* TODO (T32979782): match parameter types, taking subtyping and type erasure into account *)
-    && Int.equal (List.length (Typ.Procname.get_parameters pname)) parameter_length
-  in
+  Staged.stage (fun pname ->
+      (not (Typ.Procname.is_constructor pname))
+      && String.equal (Typ.Procname.get_method pname) method_name
+      (* TODO (T32979782): match parameter types, taking subtyping and type erasure into account *)
+      && Int.equal (List.length (Typ.Procname.get_parameters pname)) parameter_length )
+
+
+let override_find ?(check_current_type = true) f tenv proc_name =
+  let is_override = Staged.unstage (is_override_of proc_name) in
   let rec find_super_type super_class_name =
     Tenv.lookup tenv super_class_name
     |> Option.bind ~f:(fun {Typ.Struct.methods; supers} ->

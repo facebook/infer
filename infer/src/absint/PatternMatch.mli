@@ -105,14 +105,6 @@ val proc_calls :
   -> (Typ.Procname.t * ProcAttributes.t) list
 (** Return the callees that satisfy [filter]. *)
 
-val override_find :
-     ?check_current_type:bool
-  -> (Typ.Procname.t -> bool)
-  -> Tenv.t
-  -> Typ.Procname.t
-  -> Typ.Procname.t option
-(** Return a method which overrides [procname] and satisfies [f] (including [procname] itself when [check_current_type] is true, which it is by default). *)
-
 val override_exists :
   ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 (** Return true if applying the given predicate to an override of [procname] (including [procname] itself when [check_current_type] is true, which it is by default) returns true. *)
@@ -155,3 +147,5 @@ val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Pro
 val find_superclasses_with_attributes :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Name.t -> Typ.Name.t list
 (** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
+
+val is_override_of : Typ.Procname.t -> (Typ.Procname.t -> bool) Staged.t

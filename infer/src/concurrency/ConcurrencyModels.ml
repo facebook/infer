@@ -312,21 +312,6 @@ let get_current_class_and_annotated_superclasses is_annot tenv pname =
       None
 
 
-let is_class_or_superclasses_annotated is_annot tenv pname =
-  get_current_class_and_annotated_superclasses is_annot tenv pname
-  |> Option.exists ~f:(fun (_, annotated) -> not (List.is_empty annotated))
-
-
-let find_method_or_override_annotated ~attrs_of_pname is_annot pname tenv =
-  PatternMatch.override_find
-    (fun pn -> Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot)
-    tenv pname
-
-
-let is_method_or_override_annotated ~attrs_of_pname is_annot pname tenv =
-  find_method_or_override_annotated ~attrs_of_pname is_annot pname tenv |> Option.is_some
-
-
 let ui_matcher_records =
   let open MethodMatcher in
   let fragment_methods =
@@ -372,52 +357,65 @@ let is_ui_method =
   fun tenv pname -> MethodMatcher.of_list matchers tenv pname []
 
 
-let if_pred_evalopt ~pred ~f x =
-  IOption.if_none_evalopt x ~f:(fun () -> if pred () then Some (f ()) else None)
+type annotation_trail = DirectlyAnnotated | Override of Typ.Procname.t | SuperClass of Typ.name
+
+let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_name =
+  let is_annotated pn = Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot in
+  let is_override = Staged.unstage (PatternMatch.is_override_of proc_name) in
+  let rec find_override_or_superclass_aux class_name =
+    match Tenv.lookup tenv class_name with
+    | None ->
+        None
+    | Some tstruct when Annotations.struct_typ_has_annot tstruct is_annot ->
+        Some (SuperClass class_name)
+    | Some (tstruct : Typ.Struct.t) -> (
+      match
+        List.find_map tstruct.methods ~f:(fun pn ->
+            if is_override pn && is_annotated pn then Some (Override pn) else None )
+      with
+      | Some _ as result ->
+          result
+      | None ->
+          List.find_map tstruct.supers ~f:find_override_or_superclass_aux )
+  in
+  if is_annotated proc_name then Some DirectlyAnnotated
+  else Typ.Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
 let mono_pname = MF.wrap_monospaced Typ.Procname.pp
 
-let runs_on_ui_thread ~attrs_of_pname tenv proc_desc =
+let runs_on_ui_thread ~attrs_of_pname tenv pname =
   let is_uithread = Annotations.ia_is_uithread_equivalent in
-  let pname = Procdesc.get_proc_name proc_desc in
+  let describe ~procname fmt = function
+    | DirectlyAnnotated ->
+        F.fprintf fmt "%a is annotated %a" mono_pname procname MF.pp_monospaced
+          Annotations.ui_thread
+    | Override override_pname ->
+        F.fprintf fmt "class %a overrides %a, which is annotated %a" mono_pname procname mono_pname
+          override_pname MF.pp_monospaced Annotations.ui_thread
+    | SuperClass class_name -> (
+      match Typ.Procname.get_class_type_name procname with
+      | None ->
+          L.die InternalError "Cannot get class of method %a@." Typ.Procname.pp procname
+      | Some current_class ->
+          let pp_extends fmt current_class =
+            if Typ.Name.equal current_class class_name then ()
+            else F.fprintf fmt " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) class_name
+          in
+          F.fprintf fmt "class %s%a is annotated %a"
+            (MF.monospaced_to_string (Typ.Name.name current_class))
+            pp_extends current_class MF.pp_monospaced Annotations.ui_thread )
+  in
   if
-    is_method_or_override_annotated ~attrs_of_pname Annotations.ia_is_worker_thread pname tenv
-    || is_class_or_superclasses_annotated Annotations.ia_is_worker_thread tenv pname
+    find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_worker_thread tenv
+      pname
+    |> Option.is_some
   then None
+  else if is_ui_method tenv pname then
+    Some (F.asprintf "%a is a standard UI-thread method" mono_pname pname)
   else
-    None
-    |> if_pred_evalopt
-         ~pred:(fun () -> is_ui_method tenv pname)
-         ~f:(fun () -> F.asprintf "%a is a standard UI-thread method" mono_pname pname)
-    |> if_pred_evalopt
-         ~pred:(fun () -> Annotations.pdesc_has_return_annot proc_desc is_uithread)
-         ~f:(fun () ->
-           F.asprintf "%a is annotated %s" mono_pname pname
-             (MF.monospaced_to_string Annotations.ui_thread) )
-    |> IOption.if_none_evalopt ~f:(fun () ->
-           find_method_or_override_annotated ~attrs_of_pname is_uithread pname tenv
-           |> Option.map ~f:(fun override_pname ->
-                  F.asprintf "class %a overrides %a, which is annotated %s" mono_pname pname
-                    mono_pname override_pname
-                    (MF.monospaced_to_string Annotations.ui_thread) ) )
-    |> IOption.if_none_evalopt ~f:(fun () ->
-           get_current_class_and_annotated_superclasses is_uithread tenv pname
-           |> Option.bind ~f:(function
-                | current_class, (super_class :: _ as super_classes) ->
-                    let middle =
-                      if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
-                      else
-                        F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp)
-                          super_class
-                    in
-                    Some
-                      (F.asprintf "class %s%s is annotated %s"
-                         (MF.monospaced_to_string (Typ.Name.name current_class))
-                         middle
-                         (MF.monospaced_to_string Annotations.ui_thread))
-                | _ ->
-                    None ) )
+    find_override_or_superclass_annotated ~attrs_of_pname is_uithread tenv pname
+    |> Option.map ~f:(fun trail -> F.asprintf "%a" (describe ~procname:pname) trail)
 
 
 let cpp_lock_types_matcher = Clang.lock_types_matcher

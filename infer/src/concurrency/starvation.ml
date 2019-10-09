@@ -162,7 +162,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     let initial =
       ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
-        tenv proc_desc
+        tenv procname
       |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial ~loc)
     in
     let filter_blocks =
