@@ -162,28 +162,12 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       (Some instr_ref) loc curr_pdesc
 
 
-let is_nullable AnnotatedField.{annotated_type} =
-  match annotated_type.nullability with
-  | AnnotatedNullability.Nullable _ ->
-      true
-  | AnnotatedNullability.Nonnull _ ->
-      false
-
-
 let is_nonnull AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       false
   | AnnotatedNullability.Nonnull _ ->
       true
-
-
-(* Do we have evidence that the field is annotated as nullable? *)
-let is_field_annotated_as_nullable annotated_field_opt =
-  (* If the field is not present, we optimistically assume it is not nullable.
-    TODO(T54687014) investigate if this leads to unsoundness issues in practice
-  *)
-  Option.exists annotated_field_opt ~f:is_nullable
 
 
 (* Do we have evidence that the field is annotated as non-nullable? *)
@@ -211,9 +195,29 @@ let predicate_holds_for_some_typestate typestate_list field_name ~predicate =
   List.exists typestate_list ~f:(convert_predicate predicate field_name)
 
 
-(* Given a list of typestates, does a given predicate about the field hold for all of them? *)
-let predicate_holds_for_all_typestates typestate_list field_name ~predicate =
-  List.for_all typestate_list ~f:(convert_predicate predicate field_name)
+(* Given the typestate and the field, what is the upper bound of field nullability in this typestate?
+ *)
+let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
+  let range_for_field = lookup_field_in_typestate proc_name field_name typestate in
+  match range_for_field with
+  | None ->
+      (* There is no information about the field type in typestate (field was not assigned in all paths).
+       It gives the most generic upper bound.
+     *)
+      Nullability.top
+  (* We were able to lookup the field. Its nullability gives precise upper bound. *)
+  | Some (_, inferred_nullability, _) ->
+      InferredNullability.get_nullability inferred_nullability
+
+
+(* Given the list of typestates (each corresponding to the final result of executing of some function),
+   and the field, what is the upper bound of field nullability joined over all typestates?
+ *)
+let get_nullability_upper_bound field_name typestate_list =
+  (* Join upper bounds for all typestates in the list *)
+  List.fold typestate_list ~init:Nullability.Nonnull ~f:(fun acc (proc_name, typestate) ->
+      Nullability.join acc
+        (get_nullability_upper_bound_for_typestate proc_name field_name typestate) )
 
 
 (** Check field initialization for a given constructor *)
@@ -256,11 +260,9 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
             (* TODO(T54584721) This check is completely independent of the current constuctor we check.
                This check should be moved out of this function. Until it is done,
                we issue one over-annotated warning per constructor, which does not make a lot of sense. *)
-            let is_field_assigned_to_nonnull_in_all_constructors () =
-              predicate_holds_for_all_typestates
-                (Lazy.force typestates_for_all_constructors_incl_current) field_name
-                ~predicate:(fun (_, nullability, _) -> InferredNullability.is_nonnull nullability
-              )
+            let field_nullability_upper_bound_over_all_typestates () =
+              get_nullability_upper_bound field_name
+                (Lazy.force typestates_for_all_constructors_incl_current)
             in
             let should_check_field_initialization =
               let in_current_class =
@@ -283,14 +285,21 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                   (TypeErr.Field_not_initialized (field_name, curr_constructor_pname))
                   None loc curr_constructor_pdesc ;
               (* Check if field is over-annotated. *)
-              if
-                Config.eradicate_field_over_annotated
-                && is_field_annotated_as_nullable annotated_field
-                && is_field_assigned_to_nonnull_in_all_constructors ()
-              then
-                report_error tenv find_canonical_duplicate
-                  (TypeErr.Field_over_annotated (field_name, curr_constructor_pname))
-                  None loc curr_constructor_pdesc )
+              match annotated_field with
+              | None ->
+                  ()
+              | Some annotated_field ->
+                  if
+                    Config.eradicate_field_over_annotated
+                    && NullsafeRules.is_overannotated
+                         ~lhs:
+                           (AnnotatedNullability.get_nullability
+                              annotated_field.annotated_type.nullability)
+                         ~rhs_upper_bound:(field_nullability_upper_bound_over_all_typestates ())
+                  then
+                    report_error tenv find_canonical_duplicate
+                      (TypeErr.Field_over_annotated (field_name, curr_constructor_pname))
+                      None loc curr_constructor_pdesc )
           in
           List.iter ~f:do_field fields
       | None ->
@@ -311,18 +320,16 @@ let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_
       None loc curr_pdesc
 
 
-(* TODO(T54308240) Consolidate return over annotated checks in NullsafeRules *)
 let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
-  let is_ret_inferred_nonnull = InferredNullability.is_nonnull ret_inferred_nullability in
-  let is_ret_annotated_nullable =
-    match ret_signature.ret_annotated_type.nullability with
-    | AnnotatedNullability.Nonnull _ ->
-        false
-    | AnnotatedNullability.Nullable _ ->
-        true
-  in
-  if is_ret_inferred_nonnull && is_ret_annotated_nullable then
+  (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
+  let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
+  (* In our CFG implementation, there is only one place where we return from a function
+     (all execution flow joins are already made), hence inferreed nullability of returns gives us
+     correct upper bound.
+    *)
+  let rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
+  if NullsafeRules.is_overannotated ~lhs ~rhs_upper_bound then
     report_error tenv find_canonical_duplicate (TypeErr.Return_over_annotated curr_pname) None loc
       curr_pdesc
 

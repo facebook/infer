@@ -39,3 +39,19 @@ val passes_inheritance_rule : type_role -> base:Nullability.t -> overridden:Null
   NOTE: Rule a) is based on Java covariance rule for the return type.
         In contrast, rule b) is nullsafe specific as Java does not support type contravariance for method params.
  *)
+
+val is_overannotated : lhs:Nullability.t -> rhs_upper_bound:Nullability.t -> bool
+(** Check if a type in signature (e.g. return value) can be made more specific.
+   If an upper bound of `rhs_i` over ALL assignents `lhs = rhs_i` that exist in the program
+   is a _strict_ subtype of lhs, `lhs`'s type can be narrowed to be that upper bound.
+   NOTE: This rule is complementatary to assignment rule.
+         While assignment rule checks a single assignment `lhs = rhs`, this rule
+         checks checks ALL assignments to `lhs` in the program.
+   NOTE: Violation of this rule is not a type violation, hence it should never be surfaced as error:
+         `lhs`'s type can be intentionally made broad by code author
+         (e.g. to anticipate future changes in the implementation).
+         Additional heuristits are required to correctly surface overannotated rule to the user.
+         This rule is useful for some scenarios, especially for nullability code conversions
+         when it is expected that some signatures were annotated with @Nullable defensively, so
+         surfacing such cases can improve API and make migration smooth.
+ *)

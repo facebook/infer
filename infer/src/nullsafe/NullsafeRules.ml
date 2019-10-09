@@ -29,3 +29,7 @@ let passes_inheritance_rule type_role ~base ~overridden =
         (base, overridden)
   in
   Nullability.is_subtype ~subtype ~supertype
+
+
+let is_overannotated ~lhs ~rhs_upper_bound =
+  Nullability.is_strict_subtype ~subtype:rhs_upper_bound ~supertype:lhs

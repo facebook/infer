@@ -24,9 +24,15 @@ type t =
           occuring in real-world programs. *)
 [@@deriving compare, equal]
 
+val top : t
+(** The most generic type. *)
+
 val is_subtype : subtype:t -> supertype:t -> bool
 (** A is a subtype of B, if all values of A can be represented in B.
     Subtype relation is reflexive: everything is a subtype of itself. *)
+
+val is_strict_subtype : subtype:t -> supertype:t -> bool
+(** The same as subtype, but non-reflexive version. *)
 
 val join : t -> t -> t
 (** Unique upper bound over two types: the most precise type that is a supertype of both.

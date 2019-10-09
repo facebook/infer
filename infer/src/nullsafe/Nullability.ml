@@ -15,10 +15,16 @@ type t =
           occuring in real-world programs. *)
 [@@deriving compare, equal]
 
+let top = Nullable
+
 let join x y =
   match (x, y) with Nullable, _ | _, Nullable -> Nullable | Nonnull, Nonnull -> Nonnull
 
 
 let is_subtype ~subtype ~supertype = equal (join subtype supertype) supertype
+
+let is_strict_subtype ~subtype ~supertype =
+  is_subtype ~subtype ~supertype && not (equal subtype supertype)
+
 
 let to_string = function Nullable -> "Nullable" | Nonnull -> "Nonnull"
