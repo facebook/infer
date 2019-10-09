@@ -28,6 +28,6 @@ let invariant g =
   @@ fun () ->
   let {reg; typ} = g in
   assert (Typ.is_sized typ) ;
-  assert (Reg.global reg)
+  assert (Var.global (Reg.var reg))
 
 let mk ?init reg typ loc = {reg; init; typ; loc} |> check invariant

@@ -209,6 +209,8 @@ let rec pp ?is_x fs term =
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match term with
+    | Var {name; id= -1} as var ->
+        Trace.pp_styled (get_var_style var) "%@%s" fs name
     | Var {name; id= 0} as var ->
         Trace.pp_styled (get_var_style var) "%%%s" fs name
     | Var {name; id} as var ->
@@ -392,12 +394,14 @@ module Var = struct
 
   let id = function Var v -> v.id | x -> violates invariant x
   let name = function Var v -> v.name | x -> violates invariant x
+  let global = function Var v -> v.id = -1 | x -> violates invariant x
 
   let of_term = function
     | Var _ as v -> Some (v |> check invariant)
     | _ -> None
 
-  let program name = Var {name; id= 0}
+  let program ?global name =
+    Var {name; id= (if Option.is_some global then -1 else 0)}
 
   let fresh name ~(wrt : Set.t) =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in

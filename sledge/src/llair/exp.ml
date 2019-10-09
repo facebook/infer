@@ -64,7 +64,7 @@ module T = struct
     type t = {desc: desc; term: Term.t}
 
     and desc =
-      | Reg of {name: string; typ: Typ.t; global: bool}
+      | Reg of {name: string; typ: Typ.t}
       | Nondet of {msg: string; typ: Typ.t}
       | Label of {parent: string; name: string}
       | Integer of {data: Z.t; typ: Typ.t}
@@ -139,8 +139,10 @@ let rec pp fs exp =
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match exp.desc with
-    | Reg {name; global= true} -> pf "%@%s" name
-    | Reg {name; global= false} -> pf "%%%s" name
+    | Reg {name} -> (
+      match Var.of_term exp.term with
+      | Some v when Var.global v -> pf "%@%s" name
+      | _ -> pf "%%%s" name )
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
@@ -359,15 +361,11 @@ module Reg = struct
   let name r =
     match r.desc with Reg x -> x.name | _ -> violates invariant r
 
-  let global r =
-    match r.desc with Reg x -> x.global | _ -> violates invariant r
-
   let of_exp e =
     match e.desc with Reg _ -> Some (e |> check invariant) | _ -> None
 
   let program ?global typ name =
-    { desc= Reg {name; typ; global= Option.is_some global}
-    ; term= Term.var (Var.program name) }
+    {desc= Reg {name; typ}; term= Term.var (Var.program ?global name)}
     |> check invariant
 end
 

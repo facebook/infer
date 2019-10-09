@@ -64,7 +64,7 @@ type opN =
 type t = private {desc: desc; term: Term.t}
 
 and desc = private
-  | Reg of {name: string; typ: Typ.t; global: bool}  (** Virtual register *)
+  | Reg of {name: string; typ: Typ.t}  (** Virtual register *)
   | Nondet of {msg: string; typ: Typ.t}
       (** Anonymous register with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
@@ -120,7 +120,6 @@ module Reg : sig
   val program : ?global:unit -> Typ.t -> string -> t
   val var : t -> Var.t
   val name : t -> string
-  val global : t -> bool
 end
 
 (** Construct *)
