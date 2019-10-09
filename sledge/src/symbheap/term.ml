@@ -18,6 +18,12 @@ end
 module rec T : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
+  type op1 =
+    (* conversion *)
+    | Extract of {unsigned: bool; bits: int}
+    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+  [@@deriving compare, equal, hash, sexp]
+
   type t =
     (* nary: arithmetic, numeric and pointer *)
     | Add of qset
@@ -30,7 +36,8 @@ module rec T : sig
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
-    (* curried application *)
+    (* application *)
+    | Ap1 of op1 * t
     | App of {op: t; arg: t}
     (* binary: comparison *)
     | Eq
@@ -56,9 +63,6 @@ module rec T : sig
     | Select
     | Update
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
-    (* unary: conversion *)
-    | Extract of {unsigned: bool; bits: int}
-    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     (* numeric constants *)
     | Integer of {data: Z.t}
     | Float of {data: string}
@@ -79,42 +83,10 @@ end
 and T0 : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
-  type t =
-    | Add of qset
-    | Mul of qset
-    | Splat of {byt: t; siz: t}
-    | Memory of {siz: t; arr: t}
-    | Concat of {args: t vector}
-    | Var of {id: int; name: string}
-    | Nondet of {msg: string}
-    | Label of {parent: string; name: string}
-    | App of {op: t; arg: t}
-    | Eq
-    | Dq
-    | Lt
-    | Le
-    | Ord
-    | Uno
-    | Div
-    | Rem
-    | And
-    | Or
-    | Xor
-    | Shl
-    | Lshr
-    | Ashr
-    | Conditional
-    | Record
-    | Select
-    | Update
-    | Struct_rec of {elts: t vector}
+  type op1 =
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
-    | Integer of {data: Z.t}
-    | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
-end = struct
-  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
@@ -125,6 +97,7 @@ end = struct
     | Var of {id: int; name: string}
     | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | Ap1 of op1 * t
     | App of {op: t; arg: t}
     | Eq
     | Dq
@@ -145,8 +118,47 @@ end = struct
     | Select
     | Update
     | Struct_rec of {elts: t vector}
+    | Integer of {data: Z.t}
+    | Float of {data: string}
+  [@@deriving compare, equal, hash, sexp]
+end = struct
+  type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
+
+  type op1 =
     | Extract of {unsigned: bool; bits: int}
     | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+  [@@deriving compare, equal, hash, sexp]
+
+  type t =
+    | Add of qset
+    | Mul of qset
+    | Splat of {byt: t; siz: t}
+    | Memory of {siz: t; arr: t}
+    | Concat of {args: t vector}
+    | Var of {id: int; name: string}
+    | Nondet of {msg: string}
+    | Label of {parent: string; name: string}
+    | Ap1 of op1 * t
+    | App of {op: t; arg: t}
+    | Eq
+    | Dq
+    | Lt
+    | Le
+    | Ord
+    | Uno
+    | Div
+    | Rem
+    | And
+    | Or
+    | Xor
+    | Shl
+    | Lshr
+    | Ashr
+    | Conditional
+    | Record
+    | Select
+    | Update
+    | Struct_rec of {elts: t vector}
     | Integer of {data: Z.t}
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
@@ -265,13 +277,14 @@ let rec pp ?is_x fs term =
       | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
-    | Extract {unsigned; bits} ->
-        pf "(%s%i)" (if unsigned then "u" else "i") bits
-    | Convert {unsigned= true; dst; src= Integer {bits}} ->
-        pf "(%a)(u%i)" Typ.pp dst bits
-    | Convert {unsigned= true; dst= Integer {bits}; src} ->
-        pf "(u%i)(%a)" bits Typ.pp src
-    | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
+    | Ap1 (Extract {unsigned; bits}, arg) ->
+        pf "(%s%i)@ %a" (if unsigned then "u" else "i") bits pp arg
+    | Ap1 (Convert {dst; unsigned= true; src= Integer {bits}}, arg) ->
+        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Convert {unsigned= true; dst= Integer {bits}; src}, arg) ->
+        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
+    | Ap1 (Convert {dst; src}, arg) ->
+        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
   in
   fix_flip pp_ (fun _ _ -> ()) fs term
 
@@ -359,10 +372,8 @@ let invariant ?(partial = false) e =
   | App _ -> fail "uncurry cannot return App" ()
   | Integer _ -> assert_arity 0
   | Var _ | Nondet _ | Label _ | Float _ -> assert_arity 0
-  | Extract _ -> assert_arity 1
-  | Convert {dst; src} ->
-      assert_arity 1 ;
-      assert (Typ.convertible src dst)
+  | Ap1 (Extract _, _) -> assert true
+  | Ap1 (Convert {dst; src}, _) -> assert (Typ.convertible src dst)
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
   | Eq | Dq | Lt | Le | Div | Rem | And | Or | Xor | Shl | Lshr | Ashr ->
@@ -499,6 +510,7 @@ let fold_terms e ~init ~f =
   let fold_terms_ fold_terms_ e z =
     let z =
       match e with
+      | Ap1 (_, x) -> fold_terms_ x z
       | App {op= x; arg= y}
        |Splat {byt= x; siz= y}
        |Memory {siz= x; arr= y} ->
@@ -539,7 +551,7 @@ let float data = Float {data} |> check invariant
 let simp_extract ~unsigned bits arg =
   match arg with
   | Integer {data} -> integer (Z.extract ~unsigned bits data)
-  | _ -> App {op= Extract {unsigned; bits}; arg}
+  | _ -> Ap1 (Extract {unsigned; bits}, arg)
 
 let simp_convert ~unsigned dst src arg =
   if (not unsigned) && Typ.castable dst src then arg
@@ -547,7 +559,7 @@ let simp_convert ~unsigned dst src arg =
     match (dst, src, arg) with
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
         integer (Z.extract ~unsigned (min m n) data)
-    | _ -> App {op= Convert {unsigned; dst; src}; arg}
+    | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
 
 let simp_lt x y =
   match (x, y) with
@@ -757,7 +769,7 @@ let rec simp_or x y =
 
 let rec is_boolean = function
   | App {op= App {op= Eq | Dq | Lt | Le}}
-   |App {op= Convert {dst= Integer {bits= 1}}} ->
+   |Ap1 ((Extract {bits= 1} | Convert {dst= Integer {bits= 1}}), _) ->
       true
   | App
       { op= App {op= Div | Rem | And | Or | Xor | Shl | Lshr | Ashr; arg= x}
@@ -865,6 +877,7 @@ let simp_ashr x y =
 
 let iter e ~f =
   match e with
+  | Ap1 (_, x) -> f x
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       f x ; f y
@@ -874,6 +887,7 @@ let iter e ~f =
 
 let fold e ~init:s ~f =
   match e with
+  | Ap1 (_, x) -> f x s
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       f y (f x s)
@@ -887,6 +901,12 @@ let is_subterm ~sub ~sup =
   @@ fun {return} ->
   iter_terms sup ~f:(fun e -> if equal sub e then return true) ;
   false
+
+let norm1 op x =
+  ( match op with
+  | Extract {unsigned; bits} -> simp_extract ~unsigned bits x
+  | Convert {unsigned; dst; src} -> simp_convert ~unsigned dst src x )
+  |> check invariant
 
 let app1 ?(partial = false) op arg =
   ( match (op, arg) with
@@ -905,8 +925,6 @@ let app1 ?(partial = false) op arg =
   | App {op= Lshr; arg= x}, y -> simp_lshr x y
   | App {op= Ashr; arg= x}, y -> simp_ashr x y
   | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
-  | Extract {unsigned; bits}, x -> simp_extract ~unsigned bits x
-  | Convert {unsigned; dst; src}, x -> simp_convert ~unsigned dst src x
   | _ -> App {op; arg} )
   |> check (invariant ~partial)
   |> check (fun e ->
@@ -1006,10 +1024,10 @@ let struct_rec key =
       Struct_rec {elts}
 
 let extract ?(unsigned = false) ~bits term =
-  app1 (Extract {unsigned; bits}) term
+  norm1 (Extract {unsigned; bits}) term
 
 let convert ?(unsigned = false) ~dst ~src term =
-  app1 (Convert {unsigned; dst; src}) term
+  norm1 (Convert {unsigned; dst; src}) term
 
 let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
@@ -1073,6 +1091,10 @@ let rec of_exp (e : Exp.t) =
 let map e ~f =
   let map_ : (t -> t) -> t -> t =
    fun map_ e ->
+    let map1 op ~f x =
+      let x' = f x in
+      if x' == x then e else norm1 op x'
+    in
     let map_bin mk ~f x y =
       let x' = f x in
       let y' = f y in
@@ -1094,6 +1116,7 @@ let map e ~f =
     | Memory {siz; arr} -> map_bin simp_memory ~f siz arr
     | Concat {args} -> map_vector simp_concat ~f args
     | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
+    | Ap1 (op, x) -> map1 op ~f x
     | _ -> e
   in
   fix map_ (fun e -> e) e
@@ -1115,6 +1138,7 @@ let rec is_constant e =
   let is_constant_bin x y = is_constant x && is_constant y in
   match e with
   | Var _ | Nondet _ -> false
+  | Ap1 (_, x) -> is_constant x
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       is_constant_bin x y
@@ -1127,7 +1151,7 @@ let rec is_constant e =
 let classify = function
   | Add _ | Mul _ -> `Interpreted
   | App {op= Eq | Dq | App {op= Eq | Dq}} -> `Simplified
-  | App _ -> `Uninterpreted
+  | Ap1 _ | App _ -> `Uninterpreted
   | _ -> `Atomic
 
 let solve e f =

@@ -18,6 +18,18 @@
 
 type comparator_witness
 
+type op1 =
+  | Extract of {unsigned: bool; bits: int}
+      (** Interpret integer argument with given signedness and bitwidth. *)
+  | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+      (** Convert between specified types, possibly with loss of
+          information. If [src] is an [Integer] type, then [unsigned]
+          indicates that the argument should be interpreted as an [unsigned]
+          integer. If [src] is a [Float] type and [dst] is an [Integer]
+          type, then [unsigned] indidates that the result should be the
+          nearest non-negative value. *)
+[@@deriving compare, equal, hash, sexp]
+
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
@@ -33,6 +45,7 @@ and t = private
           non-deterministic approximation of value described by [msg] *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
+  | Ap1 of op1 * t
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
   | Eq  (** Equal test *)
@@ -56,15 +69,6 @@ and t = private
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
-  | Extract of {unsigned: bool; bits: int}
-      (** Interpret integer argument with given signedness and bitwidth. *)
-  | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
-      (** Convert between specified types, possibly with loss of
-          information. If [src] is an [Integer] type, then [unsigned]
-          indicates that the argument should be interpreted as an [unsigned]
-          integer. If [src] is a [Float] type and [dst] is an [Integer]
-          type, then [unsigned] indidates that the result should be the
-          nearest non-negative value. *)
   | Integer of {data: Z.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)
