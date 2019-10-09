@@ -7,27 +7,12 @@
 
 (** Terms *)
 
-(** Z wrapped to treat bounded and unsigned operations *)
 module Z = struct
   include Z
 
   (** Interpret as a bounded integer with specified signedness and width. *)
   let extract ?(unsigned = false) bits z =
     if unsigned then Z.extract z 0 bits else Z.signed_extract z 0 bits
-
-  let extract_cmp ~unsigned bits op x y =
-    op (extract ~unsigned bits x) (extract ~unsigned bits y)
-
-  let extract_bop ~unsigned bits op x y =
-    extract ~unsigned bits
-      (op (extract ~unsigned bits x) (extract ~unsigned bits y))
-
-  let buleq ~bits x y = extract_cmp ~unsigned:true bits Z.leq x y
-  let bugeq ~bits x y = extract_cmp ~unsigned:true bits Z.geq x y
-  let bult ~bits x y = extract_cmp ~unsigned:true bits Z.lt x y
-  let bugt ~bits x y = extract_cmp ~unsigned:true bits Z.gt x y
-  let budiv ~bits x y = extract_bop ~unsigned:true bits Z.div x y
-  let burem ~bits x y = extract_bop ~unsigned:true bits Z.rem x y
 end
 
 module rec T : sig
@@ -54,17 +39,11 @@ module rec T : sig
     | Ge
     | Lt
     | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
     | Ord
     | Uno
     (* binary: arithmetic, numeric and pointer *)
     | Div
-    | Udiv
     | Rem
-    | Urem
     (* binary: boolean / bitwise *)
     | And
     | Or
@@ -118,16 +97,10 @@ and T0 : sig
     | Ge
     | Lt
     | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
     | Ord
     | Uno
     | Div
-    | Udiv
     | Rem
-    | Urem
     | And
     | Or
     | Xor
@@ -163,16 +136,10 @@ end = struct
     | Ge
     | Lt
     | Le
-    | Ugt
-    | Uge
-    | Ult
-    | Ule
     | Ord
     | Uno
     | Div
-    | Udiv
     | Rem
-    | Urem
     | And
     | Or
     | Xor
@@ -252,10 +219,6 @@ let rec pp ?is_x fs term =
     | Ge -> pf "@<1>≥"
     | Lt -> pf "<"
     | Le -> pf "@<1>≤"
-    | Ugt -> pf "u>"
-    | Uge -> pf "@<2>u≥"
-    | Ult -> pf "u<"
-    | Ule -> pf "@<2>u≤"
     | Ord -> pf "ord"
     | Uno -> pf "uno"
     | Add {args} ->
@@ -274,9 +237,7 @@ let rec pp ?is_x fs term =
         in
         pf "(%a)" (Qset.pp "@ @<2>× " pp_mono_term) args
     | Div -> pf "/"
-    | Udiv -> pf "udiv"
     | Rem -> pf "rem"
-    | Urem -> pf "urem"
     | And -> pf "&&"
     | Or -> pf "||"
     | Xor -> pf "xor"
@@ -350,15 +311,9 @@ let pp = pp_t
 let rec typ_of = function
   | Add {typ} | Mul {typ} | Integer {typ} | App {op= Convert {dst= typ}} ->
       Some typ
-  | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule}}
-    ->
-      Some Typ.bool
+  | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le}} -> Some Typ.bool
   | App
-      { op=
-          App
-            { op=
-                Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr
-            ; arg= x }
+      { op= App {op= Div | Rem | And | Or | Xor | Shl | Lshr | Ashr; arg= x}
       ; arg= y } -> (
     match typ_of x with Some _ as t -> t | None -> typ_of y )
   | App {op= App {op= App {op= Conditional}; arg= thn}; arg= els} -> (
@@ -456,8 +411,8 @@ let invariant ?(partial = false) e =
       assert (Typ.convertible src dst)
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul {typ} -> assert_monomial typ e |> Fn.id
-  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Div | Udiv | Rem
-   |Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
+  | Eq | Dq | Gt | Ge | Lt | Le | Div | Rem | And | Or | Xor | Shl | Lshr
+   |Ashr -> (
     match args with
     | [x; y] -> (
       match (typ_of x, typ_of y) with
@@ -659,44 +614,20 @@ let simp_gt x y =
   | Integer {data= i}, Integer {data= j} -> bool (Z.gt i j)
   | _ -> App {op= App {op= Gt; arg= x}; arg= y}
 
-let simp_ugt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bugt ~bits i j)
-  | _ -> App {op= App {op= Ugt; arg= x}; arg= y}
-
 let simp_ge x y =
   match (x, y) with
   | Integer {data= i}, Integer {data= j} -> bool (Z.geq i j)
   | _ -> App {op= App {op= Ge; arg= x}; arg= y}
-
-let simp_uge x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bugeq ~bits i j)
-  | _ -> App {op= App {op= Uge; arg= x}; arg= y}
 
 let simp_lt x y =
   match (x, y) with
   | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
   | _ -> App {op= App {op= Lt; arg= x}; arg= y}
 
-let simp_ult x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.bult ~bits i j)
-  | _ -> App {op= App {op= Ult; arg= x}; arg= y}
-
 let simp_le x y =
   match (x, y) with
   | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
   | _ -> App {op= App {op= Le; arg= x}; arg= y}
-
-let simp_ule x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
-      bool (Z.buleq ~bits i j)
-  | _ -> App {op= App {op= Ule; arg= x}; arg= y}
 
 let simp_ord x y = App {op= App {op= Ord; arg= x}; arg= y}
 let simp_uno x y = App {op= App {op= Uno; arg= x}; arg= y}
@@ -730,16 +661,6 @@ and simp_div x y =
       sum_to_term typ (sum_mul_const Q.(inv (of_z data)) args)
   | _ -> App {op= App {op= Div; arg= x}; arg= y}
 
-let simp_udiv x y =
-  match (x, y) with
-  (* i u/ j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.budiv ~bits i j) typ
-  (* e u/ 1 ==> e *)
-  | e, Integer {data} when Z.equal Z.one data -> e
-  | _ -> App {op= App {op= Udiv; arg= x}; arg= y}
-
 let simp_rem x y =
   match (x, y) with
   (* i % j *)
@@ -748,16 +669,6 @@ let simp_rem x y =
   (* e % 1 ==> 0 *)
   | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
   | _ -> App {op= App {op= Rem; arg= x}; arg= y}
-
-let simp_urem x y =
-  match (x, y) with
-  (* i u% j *)
-  | Integer {data= i; typ}, Integer {data= j} when not (Z.equal Z.zero j) ->
-      let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-      integer (Z.burem ~bits i j) typ
-  (* e u% 1 ==> 0 *)
-  | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
-  | _ -> App {op= App {op= Urem; arg= x}; arg= y}
 
 (* Sums of polynomial terms represented by multisets. A sum ∑ᵢ cᵢ × Xᵢ of
    monomials Xᵢ with coefficients cᵢ is represented by a multiset where the
@@ -932,14 +843,6 @@ let rec simp_not (typ : Typ.t) term =
   | App {op= App {op= Lt; arg= x}; arg= y} -> simp_ge x y
   (* ¬(x <= y) ==> x > y *)
   | App {op= App {op= Le; arg= x}; arg= y} -> simp_gt x y
-  (* ¬(x u> y) ==> x u<= y *)
-  | App {op= App {op= Ugt; arg= x}; arg= y} -> simp_ule x y
-  (* ¬(x u>= y) ==> x u< y *)
-  | App {op= App {op= Uge; arg= x}; arg= y} -> simp_ult x y
-  (* ¬(x u< y) ==> x u>= y *)
-  | App {op= App {op= Ult; arg= x}; arg= y} -> simp_uge x y
-  (* ¬(x u<= y) ==> x u> y *)
-  | App {op= App {op= Ule; arg= x}; arg= y} -> simp_ugt x y
   (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
   | App {op= App {op= Ord; arg= x}; arg= y} -> simp_uno x y
   (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
@@ -1065,16 +968,10 @@ let app1 ?(partial = false) op arg =
   | App {op= Ge; arg= x}, y -> simp_ge x y
   | App {op= Lt; arg= x}, y -> simp_lt x y
   | App {op= Le; arg= x}, y -> simp_le x y
-  | App {op= Ugt; arg= x}, y -> simp_ugt x y
-  | App {op= Uge; arg= x}, y -> simp_uge x y
-  | App {op= Ult; arg= x}, y -> simp_ult x y
-  | App {op= Ule; arg= x}, y -> simp_ule x y
   | App {op= Ord; arg= x}, y -> simp_ord x y
   | App {op= Uno; arg= x}, y -> simp_uno x y
   | App {op= Div; arg= x}, y -> simp_div x y
-  | App {op= Udiv; arg= x}, y -> simp_udiv x y
   | App {op= Rem; arg= x}, y -> simp_rem x y
-  | App {op= Urem; arg= x}, y -> simp_urem x y
   | App {op= And; arg= x}, y -> simp_and x y
   | App {op= Or; arg= x}, y -> simp_or x y
   | App {op= Xor; arg= x}, y -> simp_xor x y
@@ -1158,10 +1055,6 @@ let gt = app2 Gt
 let ge = app2 Ge
 let lt = app2 Lt
 let le = app2 Le
-let ugt = app2 Ugt
-let uge = app2 Uge
-let ult = app2 Ult
-let ule = app2 Ule
 let ord = app2 Ord
 let uno = app2 Uno
 let neg = check1 simp_negate
@@ -1169,9 +1062,7 @@ let add = check2 simp_add2
 let sub = check2 simp_sub
 let mul = check2 simp_mul2
 let div = app2 Div
-let udiv = app2 Udiv
 let rem = app2 Rem
-let urem = app2 Urem
 let and_ = app2 And
 let or_ = app2 Or
 let xor = app2 Xor
@@ -1213,6 +1104,14 @@ let convert ?(unsigned = false) ~dst ~src term =
   app1 (Convert {unsigned; dst; src}) term
 
 let rec of_exp (e : Exp.t) =
+  let unsigned op typ x y =
+    match Typ.prim_bit_size_of typ with
+    | Some bits ->
+        op
+          (extract ~unsigned:true ~bits (of_exp x))
+          (extract ~unsigned:true ~bits (of_exp y))
+    | None -> violates Exp.invariant e
+  in
   match e with
   | Reg {name} -> var (Var {id= 0; name})
   | Nondet {msg} -> nondet msg
@@ -1231,10 +1130,10 @@ let rec of_exp (e : Exp.t) =
   | Ap2 (Ge, _, x, y) -> ge (of_exp x) (of_exp y)
   | Ap2 (Lt, _, x, y) -> lt (of_exp x) (of_exp y)
   | Ap2 (Le, _, x, y) -> le (of_exp x) (of_exp y)
-  | Ap2 (Ugt, _, x, y) -> ugt (of_exp x) (of_exp y)
-  | Ap2 (Uge, _, x, y) -> uge (of_exp x) (of_exp y)
-  | Ap2 (Ult, _, x, y) -> ult (of_exp x) (of_exp y)
-  | Ap2 (Ule, _, x, y) -> ule (of_exp x) (of_exp y)
+  | Ap2 (Ugt, typ, x, y) -> unsigned gt typ x y
+  | Ap2 (Uge, typ, x, y) -> unsigned ge typ x y
+  | Ap2 (Ult, typ, x, y) -> unsigned lt typ x y
+  | Ap2 (Ule, typ, x, y) -> unsigned le typ x y
   | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
   | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
   | Ap2 (Add, typ, x, y) -> add typ (of_exp x) (of_exp y)
@@ -1242,8 +1141,8 @@ let rec of_exp (e : Exp.t) =
   | Ap2 (Mul, typ, x, y) -> mul typ (of_exp x) (of_exp y)
   | Ap2 (Div, _, x, y) -> div (of_exp x) (of_exp y)
   | Ap2 (Rem, _, x, y) -> rem (of_exp x) (of_exp y)
-  | Ap2 (Udiv, _, x, y) -> udiv (of_exp x) (of_exp y)
-  | Ap2 (Urem, _, x, y) -> urem (of_exp x) (of_exp y)
+  | Ap2 (Udiv, typ, x, y) -> unsigned div typ x y
+  | Ap2 (Urem, typ, x, y) -> unsigned rem typ x y
   | Ap2 (And, _, x, y) -> and_ (of_exp x) (of_exp y)
   | Ap2 (Or, _, x, y) -> or_ (of_exp x) (of_exp y)
   | Ap2 (Xor, _, x, y) -> xor (of_exp x) (of_exp y)

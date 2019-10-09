@@ -41,16 +41,10 @@ and t = private
   | Ge  (** Greater-than-or-equal test *)
   | Lt  (** Less-than test *)
   | Le  (** Less-than-or-equal test *)
-  | Ugt  (** Unsigned greater-than test *)
-  | Uge  (** Unsigned greater-than-or-equal test *)
-  | Ult  (** Unsigned less-than test *)
-  | Ule  (** Unsigned less-than-or-equal test *)
   | Ord  (** Ordered test (neither arg is nan) *)
   | Uno  (** Unordered test (some arg is nan) *)
   | Div  (** Division *)
-  | Udiv  (** Unsigned division *)
   | Rem  (** Remainder of division *)
-  | Urem  (** Remainder of unsigned division *)
   | And  (** Conjunction, boolean or bitwise *)
   | Or  (** Disjunction, boolean or bitwise *)
   | Xor  (** Exclusive-or, bitwise *)
@@ -151,10 +145,6 @@ val gt : t -> t -> t
 val ge : t -> t -> t
 val lt : t -> t -> t
 val le : t -> t -> t
-val ugt : t -> t -> t
-val uge : t -> t -> t
-val ult : t -> t -> t
-val ule : t -> t -> t
 val ord : t -> t -> t
 val uno : t -> t -> t
 val neg : Typ.t -> t -> t
@@ -162,9 +152,7 @@ val add : Typ.t -> t -> t -> t
 val sub : Typ.t -> t -> t -> t
 val mul : Typ.t -> t -> t -> t
 val div : t -> t -> t
-val udiv : t -> t -> t
 val rem : t -> t -> t
-val urem : t -> t -> t
 val and_ : t -> t -> t
 val or_ : t -> t -> t
 val xor : t -> t -> t
