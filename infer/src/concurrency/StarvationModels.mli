@@ -6,9 +6,13 @@
  *)
 
 open! IStd
+module F = Format
 
-val may_block :
-  Tenv.t -> Typ.Procname.t -> HilExp.t list -> StarvationDomain.Event.severity_t option
+type severity = Low | Medium | High [@@deriving compare]
+
+val pp_severity : F.formatter -> severity -> unit
+
+val may_block : Tenv.t -> Typ.Procname.t -> HilExp.t list -> severity option
 (** is the method call potentially blocking, given the actuals passed? *)
 
 val is_strict_mode_violation : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool

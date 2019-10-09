@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 
 (** effect of call plus Hil expressions being un/locked, if known *)
 type lock_effect =

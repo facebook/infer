@@ -48,21 +48,17 @@ module Lock = struct
 end
 
 module Event = struct
-  type severity_t = Low | Medium | High [@@deriving compare]
-
-  let pp_severity fmt sev =
-    let msg = match sev with Low -> "Low" | Medium -> "Medium" | High -> "High" in
-    F.pp_print_string fmt msg
-
-
-  type t = LockAcquire of Lock.t | MayBlock of (string * severity_t) | StrictModeCall of string
+  type t =
+    | LockAcquire of Lock.t
+    | MayBlock of (string * StarvationModels.severity)
+    | StrictModeCall of string
   [@@deriving compare]
 
   let pp fmt = function
     | LockAcquire lock ->
         F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
     | MayBlock (msg, sev) ->
-        F.fprintf fmt "MayBlock(%s, %a)" msg pp_severity sev
+        F.fprintf fmt "MayBlock(%s, %a)" msg StarvationModels.pp_severity sev
     | StrictModeCall msg ->
         F.fprintf fmt "StrictModeCall(%s)" msg
 

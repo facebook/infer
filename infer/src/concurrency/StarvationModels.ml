@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 let is_synchronized_library_call =
   let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
@@ -89,9 +90,15 @@ let empty_or_excessive_timeout actuals =
       false
 
 
+type severity = Low | Medium | High [@@deriving compare]
+
+let pp_severity fmt sev =
+  let msg = match sev with Low -> "Low" | Medium -> "Medium" | High -> "High" in
+  F.pp_print_string fmt msg
+
+
 let standard_matchers =
   let open MethodMatcher in
-  let open StarvationDomain.Event in
   let high_sev =
     [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
     ; { default with

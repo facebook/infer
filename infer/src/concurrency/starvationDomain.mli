@@ -22,9 +22,10 @@ module Lock : sig
 end
 
 module Event : sig
-  type severity_t = Low | Medium | High [@@deriving compare]
-
-  type t = LockAcquire of Lock.t | MayBlock of (string * severity_t) | StrictModeCall of string
+  type t =
+    | LockAcquire of Lock.t
+    | MayBlock of (string * StarvationModels.severity)
+    | StrictModeCall of string
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
@@ -96,7 +97,7 @@ val acquire : Tenv.t -> t -> procname:Typ.Procname.t -> loc:Location.t -> Lock.t
 val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
-val blocking_call : callee:Typ.Procname.t -> Event.severity_t -> loc:Location.t -> t -> t
+val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 

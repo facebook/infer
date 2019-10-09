@@ -183,7 +183,7 @@ module ReportMap : sig
 
   val add_deadlock : report_add_t
 
-  val add_starvation : StarvationDomain.Event.severity_t -> report_add_t
+  val add_starvation : StarvationModels.severity -> report_add_t
 
   val add_strict_mode_violation : report_add_t
 
@@ -192,7 +192,7 @@ module ReportMap : sig
   val log : IssueLog.t -> Tenv.t -> Procdesc.t -> t -> IssueLog.t
 end = struct
   type problem =
-    | Starvation of StarvationDomain.Event.severity_t
+    | Starvation of StarvationModels.severity
     | Deadlock of int
     | StrictModeViolation of int
     | LocklessViolation of int
@@ -298,7 +298,7 @@ end = struct
       let lockless_violations = List.filter_map problems ~f:filter_map_lockless_violation in
       log_reports (compare_reports Int.compare) loc deadlocks issue_log
       |> log_reports (compare_reports Int.compare) loc lockless_violations
-      |> log_reports (compare_reports StarvationDomain.Event.compare_severity_t) loc starvations
+      |> log_reports (compare_reports StarvationModels.compare_severity) loc starvations
       |> log_reports (compare_reports Int.compare) loc strict_mode_violations
     in
     LocMap.fold log_location map start_issue_log
