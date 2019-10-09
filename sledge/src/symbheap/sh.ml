@@ -389,8 +389,7 @@ let rec pure (e : Term.t) =
   | Ap2 (Xor, arg, Integer {data}) when Z.is_true data -> eq_false arg
   | Ap2 (And, e1, e2) -> star (pure e1) (pure e2)
   | Ap2 (Or, e1, e2) -> or_ (pure e1) (pure e2)
-  | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-    ->
+  | Ap3 (Conditional, cnd, thn, els) ->
       or_
         (star (pure cnd) (pure thn))
         (star (pure (Term.not_ cnd)) (pure els))

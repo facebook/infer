@@ -44,8 +44,12 @@ module rec T : sig
     | Ashr
   [@@deriving compare, equal, hash, sexp]
 
+  type op3 = (* if-then-else *)
+    | Conditional
+  [@@deriving compare, equal, hash, sexp]
+
   type t =
-    (* nary: arithmetic, numeric and pointer *)
+    (* nary arithmetic *)
     | Add of qset
     | Mul of qset
     (* pointer and memory constants and operations *)
@@ -59,9 +63,8 @@ module rec T : sig
     (* application *)
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
+    | Ap3 of op3 * t * t * t
     | App of {op: t; arg: t}
-    (* ternary: conditional *)
-    | Conditional
     (* array/struct constants and operations *)
     | Record
     | Select
@@ -109,6 +112,8 @@ and T0 : sig
     | Ashr
   [@@deriving compare, equal, hash, sexp]
 
+  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+
   type t =
     | Add of qset
     | Mul of qset
@@ -120,8 +125,8 @@ and T0 : sig
     | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
+    | Ap3 of op3 * t * t * t
     | App of {op: t; arg: t}
-    | Conditional
     | Record
     | Select
     | Update
@@ -154,6 +159,8 @@ end = struct
     | Ashr
   [@@deriving compare, equal, hash, sexp]
 
+  type op3 = Conditional [@@deriving compare, equal, hash, sexp]
+
   type t =
     | Add of qset
     | Mul of qset
@@ -165,8 +172,8 @@ end = struct
     | Label of {parent: string; name: string}
     | Ap1 of op1 * t
     | Ap2 of op2 * t * t
+    | Ap3 of op3 * t * t * t
     | App of {op: t; arg: t}
-    | Conditional
     | Record
     | Select
     | Update
@@ -261,12 +268,7 @@ let rec pp ?is_x fs term =
     | Ap2 (Shl, x, y) -> pf "(%a@ shl %a)" pp x pp y
     | Ap2 (Lshr, x, y) -> pf "(%a@ lshr %a)" pp x pp y
     | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
-    | Conditional -> pf "(_?_:_)"
-    | App {op= Conditional; arg= cnd} -> pf "(%a@ ? _:_)" pp cnd
-    | App {op= App {op= Conditional; arg= cnd}; arg= thn} ->
-        pf "(%a@ ? %a@ : _)" pp cnd pp thn
-    | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-      ->
+    | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
     | Select -> pf "_[_]"
     | App {op= Select; arg= rcd} -> pf "%a[_]" pp rcd
@@ -397,7 +399,8 @@ let invariant ?(partial = false) e =
     | _ -> () )
   | Memory _ -> assert true
   | Select -> assert_arity 2
-  | Conditional | Update -> assert_arity 3
+  | Ap3 (Conditional, _, _, _) -> assert true
+  | Update -> assert_arity 3
   | Record -> assert (partial || not (List.is_empty args))
   | Struct_rec {elts} ->
       assert (not (Vector.is_empty elts)) ;
@@ -519,24 +522,25 @@ module Var = struct
 end
 
 let fold_terms e ~init ~f =
-  let fold_terms_ fold_terms_ e z =
-    let z =
+  let fold_terms_ fold_terms_ e s =
+    let s =
       match e with
-      | Ap1 (_, x) -> fold_terms_ x z
-      | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x z)
+      | Ap1 (_, x) -> fold_terms_ x s
+      | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
+      | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
       | App {op= x; arg= y}
        |Splat {byt= x; siz= y}
        |Memory {siz= x; arr= y} ->
-          fold_terms_ y (fold_terms_ x z)
+          fold_terms_ y (fold_terms_ x s)
       | Add args | Mul args ->
-          Qset.fold args ~init:z ~f:(fun arg _ z -> fold_terms_ arg z)
+          Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
       | Concat {args} | Struct_rec {elts= args} ->
-          Vector.fold args ~init:z ~f:(fun z elt -> fold_terms_ elt z)
-      | _ -> z
+          Vector.fold args ~init:s ~f:(fun s elt -> fold_terms_ elt s)
+      | _ -> s
     in
-    f z e
+    f s e
   in
-  fix fold_terms_ (fun _ z -> z) e init
+  fix fold_terms_ (fun _ s -> s) e init
 
 let iter_terms e ~f = fold_terms e ~init:() ~f:(fun () e -> f e)
 
@@ -741,8 +745,7 @@ let simp_cond cnd thn els =
   | Integer {data} when Z.is_true data -> thn
   (* ¬(false ? t : e) ==> e *)
   | Integer {data} when Z.is_false data -> els
-  | _ ->
-      App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
+  | _ -> Ap3 (Conditional, cnd, thn, els)
 
 let rec simp_and x y =
   match (x, y) with
@@ -755,8 +758,7 @@ let rec simp_and x y =
     when Z.is_false data ->
       f
   (* e && (c ? t : f) ==> (c ? e && t : e && f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
       simp_cond c (simp_and e t) (simp_and e f)
   (* e && e ==> e *)
   | _ when equal x y -> x
@@ -773,8 +775,7 @@ let rec simp_or x y =
   (* e || false ==> e *)
   | (Integer {data}, e | e, Integer {data}) when Z.is_false data -> e
   (* e || (c ? t : f) ==> (c ? e || t : e || f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
       simp_cond c (simp_or e t) (simp_or e f)
   (* e || e ==> e *)
   | _ when equal x y -> x
@@ -785,7 +786,7 @@ let rec is_boolean = function
    |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
       true
   | Ap2 ((Div | Rem | And | Or | Xor | Shl | Lshr | Ashr), x, y)
-   |App {op= App {op= App {op= Conditional}; arg= x}; arg= y} ->
+   |Ap3 (Conditional, _, x, y) ->
       is_boolean x || is_boolean y
   | _ -> false
 
@@ -808,8 +809,7 @@ let rec simp_not term =
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
   | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
   (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
-  | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
-    ->
+  | Ap3 (Conditional, cnd, thn, els) ->
       simp_cond cnd (simp_not thn) (simp_not els)
   (* ¬i ==> -i-1 *)
   | Integer {data} -> integer (Z.lognot data)
@@ -827,8 +827,7 @@ and simp_eq x y =
   | b, Integer {data} when Z.is_true data && is_boolean b -> b
   | Integer {data}, b when Z.is_true data && is_boolean b -> b
   (* e = (c ? t : f) ==> (c ? e = t : e = f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
       simp_cond c (simp_eq e t) (simp_eq e f)
   (* e = e ==> true *)
   | x, y when equal x y -> bool true
@@ -837,8 +836,7 @@ and simp_eq x y =
 and simp_dq x y =
   match (x, y) with
   (* e ≠ (c ? t : f) ==> (c ? e ≠ t : e ≠ f) *)
-  | e, App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}
-   |App {op= App {op= App {op= Conditional; arg= c}; arg= t}; arg= f}, e ->
+  | e, Ap3 (Conditional, c, t, f) | Ap3 (Conditional, c, t, f), e ->
       simp_cond c (simp_dq e t) (simp_dq e f)
   | _ -> (
     match simp_eq x y with
@@ -887,6 +885,7 @@ let iter e ~f =
   match e with
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x ; f y
+  | Ap3 (_, x, y, z) -> f x ; f y ; f z
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       f x ; f y
@@ -898,6 +897,7 @@ let fold e ~init:s ~f =
   match e with
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
+  | Ap3 (_, x, y, z) -> f z (f y (f x s))
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
       f y (f x s)
@@ -936,25 +936,23 @@ let norm2 op x y =
   | Ashr -> simp_ashr x y )
   |> check invariant
 
+let norm3 op x y z =
+  (match op with Conditional -> simp_cond x y z) |> check invariant
+
 let app1 ?(partial = false) op arg =
-  ( match (op, arg) with
-  | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
-  | _ -> App {op; arg} )
+  App {op; arg}
   |> check (invariant ~partial)
   |> check (fun e ->
          (* every App subterm of output appears in input *)
-         match e with
-         | App {op= App {op= App {op= Conditional}}} -> ()
-         | _ ->
-             iter e ~f:(function
-               | App _ as a ->
-                   assert (
-                     is_subterm ~sub:a ~sup:op
-                     || is_subterm ~sub:a ~sup:arg
-                     || Trace.fail
-                          "simplifying %a %a@ yields %a@ with new subterm %a"
-                          pp op pp arg pp e pp a )
-               | _ -> () ) )
+         iter e ~f:(function
+           | App _ as a ->
+               assert (
+                 is_subterm ~sub:a ~sup:op
+                 || is_subterm ~sub:a ~sup:arg
+                 || Trace.fail
+                      "simplifying %a %a@ yields %a@ with new subterm %a" pp
+                      op pp arg pp e pp a )
+           | _ -> () ) )
 
 let app2 op x y = app1 (app1 ~partial:true op x) y
 let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
@@ -1005,7 +1003,7 @@ let not_ = simp_not
 let shl = norm2 Shl
 let lshr = norm2 Lshr
 let ashr = norm2 Ashr
-let conditional ~cnd ~thn ~els = app3 Conditional cnd thn els
+let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let record elts = List.fold ~f:app1 ~init:Record elts
 let select ~rcd ~idx = app2 Select rcd idx
 let update ~rcd ~elt ~idx = app3 Update rcd elt idx
@@ -1109,6 +1107,12 @@ let map e ~f =
       let y' = f y in
       if x' == x && y' == y then e else norm2 op x' y'
     in
+    let map3 op ~f x y z =
+      let x' = f x in
+      let y' = f y in
+      let z' = f z in
+      if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
+    in
     let map_bin mk ~f x y =
       let x' = f x in
       let y' = f y in
@@ -1132,6 +1136,7 @@ let map e ~f =
     | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
     | Ap1 (op, x) -> map1 op ~f x
     | Ap2 (op, x, y) -> map2 op ~f x y
+    | Ap3 (op, x, y, z) -> map3 op ~f x y z
     | _ -> e
   in
   fix map_ (fun e -> e) e
@@ -1150,14 +1155,14 @@ let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
 let rec is_constant e =
-  let is_constant_bin x y = is_constant x && is_constant y in
   match e with
   | Var _ | Nondet _ -> false
   | Ap1 (_, x) -> is_constant x
-  | Ap2 (_, x, y) -> is_constant_bin x y
+  | Ap2 (_, x, y) -> is_constant x && is_constant y
+  | Ap3 (_, x, y, z) -> is_constant x && is_constant y && is_constant z
   | App {op= x; arg= y} | Splat {byt= x; siz= y} | Memory {siz= x; arr= y}
     ->
-      is_constant_bin x y
+      is_constant x && is_constant y
   | Add args | Mul args ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
   | Concat {args} | Struct_rec {elts= args} ->
@@ -1167,7 +1172,7 @@ let rec is_constant e =
 let classify = function
   | Add _ | Mul _ -> `Interpreted
   | Ap2 ((Eq | Dq), _, _) -> `Simplified
-  | Ap1 _ | Ap2 _ | App _ -> `Uninterpreted
+  | Ap1 _ | Ap2 _ | Ap3 _ | App _ -> `Uninterpreted
   | _ -> `Atomic
 
 let solve e f =

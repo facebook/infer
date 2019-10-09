@@ -47,6 +47,9 @@ type op2 =
   | Ashr  (** Arithmetic shift right, bitwise *)
 [@@deriving compare, equal, hash, sexp]
 
+type op3 = Conditional  (** If-then-else *)
+[@@deriving compare, equal, hash, sexp]
+
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
@@ -64,9 +67,9 @@ and t = private
       (** Address of named code block within parent function *)
   | Ap1 of op1 * t
   | Ap2 of op2 * t * t
+  | Ap3 of op3 * t * t * t
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | Conditional  (** If-then-else *)
   | Record  (** Record (array / struct) constant *)
   | Select  (** Select an index from a record *)
   | Update  (** Constant record with updated index *)
