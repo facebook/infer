@@ -721,6 +721,16 @@ module Call = struct
           None
 
 
+  let merge_dispatchers :
+      ('context, 'f) dispatcher -> ('context, 'f) dispatcher -> ('context, 'f) dispatcher =
+   fun dispatcher1 dispatcher2 context procname args ->
+    match dispatcher1 context procname args with
+    | Some _ as r ->
+        r
+    | None ->
+        dispatcher2 context procname args
+
+
   (* Function args *)
 
   let no_marker_checker _markers = true

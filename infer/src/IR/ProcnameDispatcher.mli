@@ -228,6 +228,10 @@ module Call : sig
     Common
     with type ('context, 'f) dispatcher = 'context -> Typ.Procname.t -> FuncArg.t list -> 'f option
 
+  val merge_dispatchers :
+    ('context, 'f) dispatcher -> ('context, 'f) dispatcher -> ('context, 'f) dispatcher
+  (** Merges two dispatchers into a dispatcher *)
+
   type ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 
   type ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg

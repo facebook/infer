@@ -165,6 +165,10 @@ DIRECT_TESTS += \
   java_topl \
   java_tracing \
 
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += java_fb-performance
+endif
+
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
