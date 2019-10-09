@@ -61,7 +61,7 @@ let single_existential_occurrence xs term =
   with Multiple_existential_occurrences -> Many
 
 let special_cases xs = function
-  | Term.App {op= App {op= Eq; arg= Var _}; arg= Var _} as e ->
+  | Term.Ap2 (Eq, Var _, Var _) as e ->
       if Set.is_subset (Term.fv e) ~of_:xs then Term.true_ else e
   | e -> e
 

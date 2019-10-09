@@ -131,8 +131,7 @@ let%test_module _ =
              [%x_5 ↦ %t_1];
              [%z_7 ↦ %t_1];
              [(%y_6 rem %v_3) ↦ %t_1];
-             [(%y_6 rem %z_7) ↦ %t_1];
-             [(rem %y_6) ↦ ]]} |}]
+             [(%y_6 rem %z_7) ↦ %t_1]]} |}]
 
     let%test _ = entails_eq r3 t z
     let%test _ = entails_eq r3 x z

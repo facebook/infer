@@ -385,18 +385,16 @@ let rec pure (e : Term.t) =
   ( match e with
   | Integer {data} -> if Z.is_false data then false_ us else emp
   (* ¬b ==> false = b *)
-  | App {op= App {op= Xor; arg= Integer {data}}; arg} when Z.is_true data ->
-      eq_false arg
-  | App {op= App {op= Xor; arg}; arg= Integer {data}} when Z.is_true data ->
-      eq_false arg
-  | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)
-  | App {op= App {op= Or; arg= e1}; arg= e2} -> or_ (pure e1) (pure e2)
+  | Ap2 (Xor, Integer {data}, arg) when Z.is_true data -> eq_false arg
+  | Ap2 (Xor, arg, Integer {data}) when Z.is_true data -> eq_false arg
+  | Ap2 (And, e1, e2) -> star (pure e1) (pure e2)
+  | Ap2 (Or, e1, e2) -> or_ (pure e1) (pure e2)
   | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
     ->
       or_
         (star (pure cnd) (pure thn))
         (star (pure (Term.not_ cnd)) (pure els))
-  | App {op= App {op= Eq; arg= e1}; arg= e2} ->
+  | Ap2 (Eq, e1, e2) ->
       let cong = Equality.(and_eq e1 e2 true_) in
       if Equality.is_false cong then false_ us
       else {emp with us; cong; pure= [e]}

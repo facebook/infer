@@ -30,6 +30,23 @@ type op1 =
           nearest non-negative value. *)
 [@@deriving compare, equal, hash, sexp]
 
+type op2 =
+  | Eq  (** Equal test *)
+  | Dq  (** Disequal test *)
+  | Lt  (** Less-than test *)
+  | Le  (** Less-than-or-equal test *)
+  | Ord  (** Ordered test (neither arg is nan) *)
+  | Uno  (** Unordered test (some arg is nan) *)
+  | Div  (** Division *)
+  | Rem  (** Remainder of division *)
+  | And  (** Conjunction, boolean or bitwise *)
+  | Or  (** Disjunction, boolean or bitwise *)
+  | Xor  (** Exclusive-or, bitwise *)
+  | Shl  (** Shift left, bitwise *)
+  | Lshr  (** Logical shift right, bitwise *)
+  | Ashr  (** Arithmetic shift right, bitwise *)
+[@@deriving compare, equal, hash, sexp]
+
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
@@ -46,22 +63,9 @@ and t = private
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Ap1 of op1 * t
+  | Ap2 of op2 * t * t
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
-  | Eq  (** Equal test *)
-  | Dq  (** Disequal test *)
-  | Lt  (** Less-than test *)
-  | Le  (** Less-than-or-equal test *)
-  | Ord  (** Ordered test (neither arg is nan) *)
-  | Uno  (** Unordered test (some arg is nan) *)
-  | Div  (** Division *)
-  | Rem  (** Remainder of division *)
-  | And  (** Conjunction, boolean or bitwise *)
-  | Or  (** Disjunction, boolean or bitwise *)
-  | Xor  (** Exclusive-or, bitwise *)
-  | Shl  (** Shift left, bitwise *)
-  | Lshr  (** Logical shift right, bitwise *)
-  | Ashr  (** Arithmetic shift right, bitwise *)
   | Conditional  (** If-then-else *)
   | Record  (** Record (array / struct) constant *)
   | Select  (** Select an index from a record *)
