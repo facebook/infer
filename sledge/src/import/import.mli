@@ -30,6 +30,7 @@ include module type of (
 (* undeprecate *)
 
 external ( == ) : 'a -> 'a -> bool = "%eq"
+external ( != ) : 'a -> 'a -> bool = "%noteq"
 
 include module type of Stdio
 module Command = Core.Command

@@ -86,8 +86,8 @@ val init : int -> f:(int -> 'a) -> 'a t
 (* val append : 'a t -> 'a t -> 'a t *)
 
 val concat : 'a t list -> 'a t
+val copy : 'a t -> 'a t
 
-(* val copy : 'a t -> 'a t *)
 (* val sub : ('a t, 'a t) Base__Blit_intf.sub *)
 (* val subo : ('a t, 'a t) Base__Blit_intf.subo *)
 
@@ -153,6 +153,7 @@ val of_list_rev : 'a list -> 'a t
 (* val of_list_map : 'a list -> f:('a -> 'b) -> 'b t *)
 (* val of_list_rev_map : 'a list -> f:('a -> 'b) -> 'b t *)
 
+val map_inplace : 'a t -> f:('a -> 'a) -> unit
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 
 (* val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b *)

@@ -29,6 +29,7 @@ include (
 
 (* undeprecate *)
 external ( == ) : 'a -> 'a -> bool = "%eq"
+external ( != ) : 'a -> 'a -> bool = "%noteq"
 
 include Stdio
 module Command = Core.Command

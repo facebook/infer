@@ -1046,50 +1046,76 @@ let of_exp e =
 (** Transform *)
 
 let map e ~f =
-  let map_ : (t -> t) -> t -> t =
-   fun map_ e ->
-    let map1 op ~f x =
-      let x' = f x in
-      if x' == x then e else norm1 op x'
-    in
-    let map2 op ~f x y =
-      let x' = f x in
-      let y' = f y in
-      if x' == x && y' == y then e else norm2 op x' y'
-    in
-    let map3 op ~f x y z =
-      let x' = f x in
-      let y' = f y in
-      let z' = f z in
-      if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
-    in
-    let mapN op ~f xs =
-      let xs' = Vector.map_preserving_phys_equal ~f xs in
-      if xs' == xs then e else normN op xs'
-    in
-    let map_qset mk ~f args =
-      let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
-      if args' == args then e else mk args'
-    in
-    match e with
-    | Add args -> map_qset addN ~f args
-    | Mul args -> map_qset mulN ~f args
-    | Ap1 (op, x) -> map1 op ~f x
-    | Ap2 (op, x, y) -> map2 op ~f x y
-    | Ap3 (op, x, y, z) -> map3 op ~f x y z
-    | ApN (op, xs) -> mapN op ~f xs
-    | RecN (op, xs) -> RecN (op, Vector.map ~f:map_ xs)
-    | _ -> e
+  let map1 op ~f x =
+    let x' = f x in
+    if x' == x then e else norm1 op x'
   in
-  fix map_ (fun e -> e) e
+  let map2 op ~f x y =
+    let x' = f x in
+    let y' = f y in
+    if x' == x && y' == y then e else norm2 op x' y'
+  in
+  let map3 op ~f x y z =
+    let x' = f x in
+    let y' = f y in
+    let z' = f z in
+    if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
+  in
+  let mapN mk ~f xs =
+    let xs' = Vector.map_preserving_phys_equal ~f xs in
+    if xs' == xs then e else mk xs'
+  in
+  let map_qset mk ~f args =
+    let args' = Qset.map ~f:(fun arg q -> (f arg, q)) args in
+    if args' == args then e else mk args'
+  in
+  match e with
+  | Add args -> map_qset addN ~f args
+  | Mul args -> map_qset mulN ~f args
+  | Ap1 (op, x) -> map1 op ~f x
+  | Ap2 (op, x, y) -> map2 op ~f x y
+  | Ap3 (op, x, y, z) -> map3 op ~f x y z
+  | ApN (op, xs) -> mapN (normN op) ~f xs
+  | RecN (_, xs) ->
+      assert (
+        xs == Vector.map_preserving_phys_equal ~f xs
+        || fail "Term.map does not support updating subterms of RecN." ) ;
+      e
+  | _ -> e
+
+(** Pre-order transformation that preserves cycles. Each subterm [x] from
+    root to leaves is presented to [f]. If [f x = Some x'] then the subterms
+    of [x] are not traversed and [x] is transformed to [x']. Otherwise
+    traversal proceeds to the subterms of [x], followed by rebuilding the
+    term structure on the transformed subterms. Cycles (through terms
+    involving [RecN]) are preserved. *)
+let map_rec_pre ~f e =
+  let rec map_rec_pre_f memo e =
+    match f e with
+    | Some e' -> e'
+    | None -> (
+      match e with
+      | RecN (op, xs) -> (
+        match List.Assoc.find ~equal:( == ) memo e with
+        | None ->
+            let xs' = Vector.copy xs in
+            let e' = RecN (op, xs') in
+            let memo = List.Assoc.add ~equal:( == ) memo e e' in
+            let changed = ref false in
+            Vector.map_inplace xs' ~f:(fun x ->
+                let x' = map_rec_pre_f memo x in
+                if x' != x then changed := true ;
+                x' ) ;
+            if !changed then e' else e
+        | Some e' -> e' )
+      | _ -> map ~f:(map_rec_pre_f memo) e )
+  in
+  map_rec_pre_f [] e
 
 let rename sub e =
-  let rec rename_ sub e =
-    match e with
-    | Var _ -> Var.Subst.apply sub e
-    | _ -> map ~f:(rename_ sub) e
-  in
-  rename_ sub e |> check invariant
+  map_rec_pre e ~f:(function
+    | Var _ as v -> Some (Var.Subst.apply sub v)
+    | _ -> None )
 
 (** Query *)
 
