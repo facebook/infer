@@ -12,21 +12,22 @@ module Z = struct
   include Z
 
   (** Interpret as a bounded integer with specified signedness and width. *)
-  let clamp ~signed bits z =
+  let extract ~signed bits z =
     if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits
 
-  let clamp_cmp ~signed bits op x y =
-    op (clamp ~signed bits x) (clamp ~signed bits y)
+  let extract_cmp ~signed bits op x y =
+    op (extract ~signed bits x) (extract ~signed bits y)
 
-  let clamp_bop ~signed bits op x y =
-    clamp ~signed bits (op (clamp ~signed bits x) (clamp ~signed bits y))
+  let extract_bop ~signed bits op x y =
+    extract ~signed bits
+      (op (extract ~signed bits x) (extract ~signed bits y))
 
-  let buleq ~bits x y = clamp_cmp ~signed:false bits Z.leq x y
-  let bugeq ~bits x y = clamp_cmp ~signed:false bits Z.geq x y
-  let bult ~bits x y = clamp_cmp ~signed:false bits Z.lt x y
-  let bugt ~bits x y = clamp_cmp ~signed:false bits Z.gt x y
-  let budiv ~bits x y = clamp_bop ~signed:false bits Z.div x y
-  let burem ~bits x y = clamp_bop ~signed:false bits Z.rem x y
+  let buleq ~bits x y = extract_cmp ~signed:false bits Z.leq x y
+  let bugeq ~bits x y = extract_cmp ~signed:false bits Z.geq x y
+  let bult ~bits x y = extract_cmp ~signed:false bits Z.lt x y
+  let bugt ~bits x y = extract_cmp ~signed:false bits Z.gt x y
+  let budiv ~bits x y = extract_bop ~signed:false bits Z.div x y
+  let burem ~bits x y = extract_bop ~signed:false bits Z.rem x y
 end
 
 module rec T : sig
@@ -638,7 +639,7 @@ let simp_convert ~unsigned dst src arg =
   else
     match (dst, src, arg) with
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
-        integer (Z.clamp ~signed:(not unsigned) (min m n) data) dst
+        integer (Z.extract ~signed:(not unsigned) (min m n) data) dst
     | _ -> App {op= Convert {unsigned; dst; src}; arg}
 
 let simp_gt x y =
