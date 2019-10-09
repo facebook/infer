@@ -11,8 +11,14 @@
     bitwise-logical, etc. operations over literal values and registers. *)
 
 type op1 =
-  | Convert of {dst: Typ.t; signed: bool}
-      (** Convert between specified types, possibly with loss of information *)
+  | Convert of {unsigned: bool; dst: Typ.t}
+      (** Convert between specified types, possibly with loss of
+          information. In [Ap1 (Convert {unsigned; dst}, src, arg)], if
+          [src] is an [Integer] type, then [unsigned] indicates that [arg]
+          should be interpreted as an [unsigned] integer. If [src] is a
+          [Float] type and [dst] is an [Integer] type, then [unsigned]
+          indidates that the result should be the nearest non-negative
+          value. *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -164,7 +170,7 @@ val struct_rec :
     one point on each cycle. Failure to obey these requirements will lead to
     stack overflow. *)
 
-val convert : dst:Typ.t -> ?signed:bool -> src:Typ.t -> t -> t
+val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 
 (** Access *)
 

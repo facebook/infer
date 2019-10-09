@@ -321,14 +321,17 @@ let%test_module _ =
     let%test _ = entails_eq r14 a (Term.bool true)
     let%test _ = entails_eq r14 b (Term.bool true)
 
-    let b = Term.convert ~dst:i64 ~src:i8 (Term.dq x !0)
+    let b = Term.dq x !0
     let r15 = of_eqs [(b, b); (x, !1)]
 
     let%expect_test _ =
-      pp r15 ;
-      [%expect
-        {|
-          {sat= true; rep= [[%x_5 ↦ 1]; [((i64)(i8) (%x_5 ≠ 0)) ↦ ]]} |}]
+      pp r15 ; [%expect {|
+          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
-    let%test _ = entails_eq r15 b !1
+    let%test _ = entails_eq r15 b (Term.convert ~dst:Typ.bool ~src:i64 !1)
+
+    let%test _ =
+      entails_eq r15
+        (Term.convert ~dst:i64 ~unsigned:true ~src:Typ.bool b)
+        !1
   end )

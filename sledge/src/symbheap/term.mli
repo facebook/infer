@@ -64,8 +64,13 @@ and t = private
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
-  | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
-      (** Convert between specified types, possibly with loss of information *)
+  | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+      (** Convert between specified types, possibly with loss of
+          information. If [src] is an [Integer] type, then [unsigned]
+          indicates that the argument should be interpreted as an [unsigned]
+          integer. If [src] is a [Float] type and [dst] is an [Integer]
+          type, then [unsigned] indidates that the result should be the
+          nearest non-negative value. *)
   | Integer of {data: Z.t; typ: Typ.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)
@@ -169,7 +174,7 @@ val conditional : cnd:t -> thn:t -> els:t -> t
 val record : t list -> t
 val select : rcd:t -> idx:t -> t
 val update : rcd:t -> elt:t -> idx:t -> t
-val convert : ?signed:bool -> dst:Typ.t -> src:Typ.t -> t -> t
+val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option
 
 (** Access *)

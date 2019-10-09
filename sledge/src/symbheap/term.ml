@@ -79,7 +79,7 @@ module rec T : sig
     | Update
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* unary: conversion *)
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     (* numeric constants *)
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
@@ -137,7 +137,7 @@ and T0 : sig
     | Select
     | Update
     | Struct_rec of {elts: t vector}
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
@@ -181,7 +181,7 @@ end = struct
     | Select
     | Update
     | Struct_rec of {elts: t vector}
-    | Convert of {signed: bool; dst: Typ.t; src: Typ.t}
+    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
@@ -309,6 +309,10 @@ let rec pp ?is_x fs term =
       | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
       | _ -> pf "(%a@ %a)" pp op pp arg )
     | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
+    | Convert {unsigned= true; dst; src= Integer {bits}} ->
+        pf "(%a)(u%i)" Typ.pp dst bits
+    | Convert {unsigned= true; dst= Integer {bits}; src} ->
+        pf "(u%i)(%a)" bits Typ.pp src
     | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
   in
   fix_flip pp_ (fun _ _ -> ()) fs term
@@ -629,12 +633,13 @@ let one (typ : Typ.t) =
 let minus_one (typ : Typ.t) =
   match typ with Float _ -> float "-1" | _ -> integer Z.minus_one typ
 
-let simp_convert signed (dst : Typ.t) src arg =
-  match (dst, arg) with
-  | _ when Typ.castable dst src -> arg
-  | Integer {bits= m}, Integer {data; typ= Integer {bits= n}} ->
-      integer (Z.clamp ~signed (min m n) data) dst
-  | _ -> App {op= Convert {signed; dst; src}; arg}
+let simp_convert ~unsigned dst src arg =
+  if (not unsigned) && Typ.castable dst src then arg
+  else
+    match (dst, src, arg) with
+    | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
+        integer (Z.clamp ~signed:(not unsigned) (min m n) data) dst
+    | _ -> App {op= Convert {unsigned; dst; src}; arg}
 
 let simp_gt x y =
   match (x, y) with
@@ -1064,7 +1069,7 @@ let app1 ?(partial = false) op arg =
   | App {op= Lshr; arg= x}, y -> simp_lshr x y
   | App {op= Ashr; arg= x}, y -> simp_ashr x y
   | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
-  | Convert {signed; dst; src}, x -> simp_convert signed dst src x
+  | Convert {unsigned; dst; src}, x -> simp_convert ~unsigned dst src x
   | _ -> App {op; arg} )
   |> check (invariant ~partial)
   |> check (fun e ->
@@ -1187,8 +1192,8 @@ let struct_rec key =
          forcing the recursive thunks also updates this value. *)
       Struct_rec {elts}
 
-let convert ?(signed = false) ~dst ~src term =
-  app1 (Convert {signed; dst; src}) term
+let convert ?(unsigned = false) ~dst ~src term =
+  app1 (Convert {unsigned; dst; src}) term
 
 let rec of_exp (e : Exp.t) =
   match e with
@@ -1199,8 +1204,8 @@ let rec of_exp (e : Exp.t) =
       integer (Z.signed_extract data 0 bits) typ
   | Integer {data; typ} -> integer data typ
   | Float {data} -> float data
-  | Ap1 (Convert {dst; signed}, src, arg) ->
-      convert ~signed ~dst ~src (of_exp arg)
+  | Ap1 (Convert {unsigned; dst}, src, arg) ->
+      convert ~unsigned ~dst ~src (of_exp arg)
   | Ap1 (Select idx, _, arg) ->
       select ~rcd:(of_exp arg) ~idx:(integer (Z.of_int idx) Typ.siz)
   | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)

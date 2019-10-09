@@ -450,12 +450,12 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
         todo "vector operations: %a" pp_llvalue llv () )
   in
   let cast () = xlate_rand 0 in
-  let convert signed =
+  let convert ?unsigned () =
     let dst = Lazy.force typ in
     let rand = Llvm.operand llv 0 in
     let src = xlate_type x (Llvm.type_of rand) in
     let arg = xlate_value x rand in
-    Exp.convert ~dst ~signed ~src arg
+    Exp.convert ?unsigned ~dst ~src arg
   in
   let binary mk =
     Lazy.force check_vector ;
@@ -467,10 +467,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
   in
   ( match opcode with
   | AddrSpaceCast | BitCast -> cast ()
-  | Trunc | ZExt | FPToUI | UIToFP | FPTrunc | FPExt | PtrToInt | IntToPtr
-    ->
-      convert false
-  | SExt | FPToSI | SIToFP -> convert true
+  | Trunc | ZExt | FPToUI | UIToFP | PtrToInt | IntToPtr ->
+      convert ~unsigned:true ()
+  | SExt | FPTrunc | FPExt | FPToSI | SIToFP -> convert ()
   | ICmp -> (
     match Option.value_exn (Llvm.icmp_predicate llv) with
     | Eq -> binary Exp.eq
@@ -891,8 +890,8 @@ let xlate_instr :
             let num_operand = Llvm.operand instr 0 in
             let num =
               Exp.convert ~dst:Typ.siz
-                (xlate_value x num_operand)
                 ~src:(xlate_type x (Llvm.type_of num_operand))
+                (xlate_value x num_operand)
             in
             let len = Exp.integer Typ.siz (Z.of_int 1) in
             emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)

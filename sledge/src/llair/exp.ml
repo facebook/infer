@@ -11,7 +11,7 @@ module T = struct
   module T0 = struct
     type op1 =
       (* conversion *)
-      | Convert of {dst: Typ.t; signed: bool}
+      | Convert of {unsigned: bool; dst: Typ.t}
       (* array/struct operations *)
       | Select of int
     [@@deriving compare, equal, hash, sexp]
@@ -140,10 +140,12 @@ let rec pp fs exp =
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
-    | Ap1 (Convert {dst; signed}, src, arg) ->
-        pf "((%a)(%s%a)@ %a)" Typ.pp dst
-          (if signed then "u" else "")
-          Typ.pp src pp arg
+    | Ap1 (Convert {dst; unsigned= true}, Integer {bits}, arg) ->
+        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Convert {dst= Integer {bits}; unsigned= true}, src, arg) ->
+        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
+    | Ap1 (Convert {dst}, src, arg) ->
+        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
@@ -375,9 +377,9 @@ let null = integer Typ.ptr Z.zero
 let bool b = integer Typ.bool (Z.of_bool b)
 let float typ data = Float {data; typ} |> check invariant
 
-let convert ~dst ?(signed = false) ~src exp =
-  ( if Typ.castable dst src then exp
-  else Ap1 (Convert {dst; signed}, src, exp) )
+let convert ?(unsigned = false) ~dst ~src exp =
+  ( if (not unsigned) && Typ.equal dst src then exp
+  else Ap1 (Convert {unsigned; dst}, src, exp) )
   |> check invariant
 
 let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
