@@ -179,22 +179,17 @@ public class RequiredProps {
     mVarArgPropComponent.create().build();
   }
 
-  // can't track MyLithoComponent.build() because it is on litho, hence we miss the error
-  public Component buildPropLithoMissingBothBad_FN() {
+  public Component buildPropLithoMissingBothBad() {
     return mMyLithoComponent.create().build();
   }
 
-  // we pick up Component.build() rather than
-  // MyLithoComponent.build(). Hence, we can't detect that it has
-  // missing props at all.
-  public void buildPropLithoMissingOneBad_FN() {
+  public void buildPropLithoMissingOneBad() {
     Column.create()
         .child(mMyLithoComponent.create().prop1(new Object()).commonProp(new Object()))
         .build();
   }
 
-  // We can't track prop1 and prop2 because they are on litho
-  public Component buildPropLithoOK_FP() {
+  public Component buildPropLithoOK() {
     Component.Builder layoutBuilder =
         mMyLithoComponent.create().prop1(new Object()).prop2(new Object());
     return layoutBuilder.build();

@@ -118,9 +118,21 @@ module LithoContext = struct
 
   let check_callee ~callee_pname ~tenv _ = LithoFramework.is_component_builder callee_pname tenv
 
-  let satisfies_heuristic ~callee_pname ~caller_pname =
-    (* don't track Litho client -> Litho framework calls; we want to use the summaries *)
-    not (LithoFramework.is_function callee_pname && not (LithoFramework.is_function caller_pname))
+  let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
+    (* If the method is build() itself or doesn't contain a build() in
+       its summary, we want to track it in the domain. *)
+    LithoFramework.is_component_build_method callee_pname tenv
+    ||
+    (* check if build() exists in callees *)
+    let build_exists_in_callees =
+      Option.value_map callee_summary_opt ~default:[] ~f:Domain.bindings
+      |> List.exists ~f:(fun (_, call_set) ->
+             LithoDomain.CallSet.exists
+               (fun LithoDomain.MethodCall.{procname} ->
+                 LithoFramework.is_component_build_method procname tenv )
+               call_set )
+    in
+    not build_exists_in_callees
 
 
   let field = Payloads.Fields.litho_required_props

@@ -53,7 +53,8 @@ module type LithoContext = sig
 
   val check_callee : callee_pname:Typ.Procname.t -> tenv:Tenv.t -> t option -> bool
 
-  val satisfies_heuristic : callee_pname:Typ.Procname.t -> caller_pname:Typ.Procname.t -> bool
+  val satisfies_heuristic :
+    callee_pname:Typ.Procname.t -> callee_summary_opt:t option -> Tenv.t -> bool
 
   val should_report : Procdesc.t -> Tenv.t -> bool
 
@@ -104,19 +105,19 @@ struct
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , location ) ->
-        let domain_summary = Payload.read ~caller_summary:summary ~callee_pname in
+        let callee_summary_opt = Payload.read ~caller_summary:summary ~callee_pname in
         let receiver =
           Domain.LocalAccessPath.make
             (HilExp.AccessExpression.to_access_path receiver_ae)
             caller_pname
         in
         if
-          ( LithoContext.check_callee ~callee_pname ~tenv domain_summary
+          ( LithoContext.check_callee ~callee_pname ~tenv callee_summary_opt
           || (* track callee in order to report respective errors *)
              Domain.mem receiver astate
              (* track anything called on a receiver we're already tracking *) )
           && (not (Typ.Procname.Java.is_static java_callee_procname))
-          && LithoContext.satisfies_heuristic ~callee_pname ~caller_pname
+          && LithoContext.satisfies_heuristic ~callee_pname ~callee_summary_opt tenv
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
           let return_calls =
@@ -127,10 +128,12 @@ struct
           Domain.add return_access_path return_calls astate
         else
           (* treat it like a normal call *)
-          apply_callee_summary domain_summary caller_pname return_base actuals astate
+          apply_callee_summary callee_summary_opt caller_pname return_base actuals astate
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let callee_summary = Payload.read ~caller_summary:summary ~callee_pname:callee_procname in
-        apply_callee_summary callee_summary caller_pname ret_id_typ actuals astate
+        let callee_summary_opt =
+          Payload.read ~caller_summary:summary ~callee_pname:callee_procname
+        in
+        apply_callee_summary callee_summary_opt caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;

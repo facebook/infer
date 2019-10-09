@@ -32,7 +32,7 @@ module LithoContext = struct
 
   let check_callee ~callee_pname ~tenv:_ = is_graphql_function callee_pname
 
-  let satisfies_heuristic ~callee_pname:_ ~caller_pname:_ = true
+  let satisfies_heuristic ~callee_pname:_ ~callee_summary_opt:_ _ = true
 
   let field = Payloads.Fields.litho_graphql_field_access
 
