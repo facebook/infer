@@ -21,8 +21,8 @@ type comparator_witness
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
-  | Add of {args: qset}  (** Addition *)
-  | Mul of {args: qset}  (** Multiplication *)
+  | Add of qset  (** Addition *)
+  | Mul of qset  (** Multiplication *)
   | Splat of {byt: t; siz: t}
       (** Iterated concatenation of a single byte *)
   | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
