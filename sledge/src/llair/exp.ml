@@ -191,7 +191,10 @@ let rec invariant exp =
   | Reg {typ} | Nondet {typ} -> assert (Typ.is_sized typ)
   | Integer {data; typ} -> (
     match typ with
-    | Integer {bits} -> assert (Z.numbits data <= bits)
+    | Integer {bits} ->
+        (* data in −(2^(bits − 1)) to 2^(bits − 1) − 1 *)
+        let n = Z.shift_left Z.one (bits - 1) in
+        assert (Z.(Compare.(neg n <= data && data < n)))
     | Pointer _ -> assert (Z.equal Z.zero data)
     | _ -> assert false )
   | Float {typ} -> (

@@ -47,14 +47,16 @@ let%test_module _ =
         (Term.of_exp
            (Exp.eq Typ.bool
               (Exp.integer Typ.bool Z.minus_one)
-              (Exp.integer Typ.bool Z.one)))
+              (Exp.convert ~dst:Typ.bool ~src:Typ.siz
+                 (Exp.integer Typ.siz Z.one))))
 
     let%test "unsigned boolean overflow" =
       Term.is_true
         (Term.of_exp
            (Exp.uge Typ.bool
               (Exp.integer Typ.bool Z.minus_one)
-              (Exp.integer Typ.bool Z.one)))
+              (Exp.convert ~dst:Typ.bool ~src:Typ.siz
+                 (Exp.integer Typ.siz Z.one))))
 
     let%expect_test _ =
       pp (!42 + !13) ;
