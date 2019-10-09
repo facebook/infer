@@ -387,11 +387,6 @@ module Var = struct
 
   type var = t
 
-  let of_reg (r : Reg.t) =
-    match (r :> Exp.t) with
-    | Reg {name} -> Var {id= 0; name}
-    | _ -> violates Reg.invariant r
-
   module Set = struct
     include (
       Set :
@@ -405,7 +400,6 @@ module Var = struct
     let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
     let of_vector = Set.of_vector (module T)
-    let of_regs = Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
   end
 
   module Map = struct
@@ -427,6 +421,8 @@ module Var = struct
   let of_term = function
     | Var _ as v -> Some (v |> check invariant)
     | _ -> None
+
+  let program name = Var {name; id= 0}
 
   let fresh name ~(wrt : Set.t) =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
@@ -991,57 +987,6 @@ let convert ?(unsigned = false) ~dst ~src term =
 let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
       if n % 8 = 0 then Some (integer (Z.of_int (n / 8))) else None )
-
-let of_exp e =
-  let rec_app = Staged.unstage (rec_app (module Exp)) in
-  let rec of_exp e =
-    let unsigned op typ x y =
-      match Typ.prim_bit_size_of typ with
-      | Some bits ->
-          op
-            (extract ~unsigned:true ~bits (of_exp x))
-            (extract ~unsigned:true ~bits (of_exp y))
-      | None -> violates Exp.invariant e
-    in
-    match e with
-    | Reg {name} -> var (Var {id= 0; name})
-    | Nondet {msg} -> nondet msg
-    | Label {parent; name} -> label ~parent ~name
-    | Integer {data} -> integer data
-    | Float {data} -> float data
-    | Ap1 (Convert {unsigned; dst}, src, arg) ->
-        convert ~unsigned ~dst ~src (of_exp arg)
-    | Ap1 (Select idx, _, arg) -> select ~rcd:(of_exp arg) ~idx
-    | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
-    | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
-    | Ap2 (Lt, _, x, y) | Ap2 (Gt, _, y, x) -> lt (of_exp x) (of_exp y)
-    | Ap2 (Le, _, x, y) | Ap2 (Ge, _, y, x) -> le (of_exp x) (of_exp y)
-    | Ap2 (Ult, typ, x, y) | Ap2 (Ugt, typ, y, x) -> unsigned lt typ x y
-    | Ap2 (Ule, typ, x, y) | Ap2 (Uge, typ, y, x) -> unsigned le typ x y
-    | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
-    | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
-    | Ap2 (Add, _, x, y) -> add (of_exp x) (of_exp y)
-    | Ap2 (Sub, _, x, y) -> sub (of_exp x) (of_exp y)
-    | Ap2 (Mul, _, x, y) -> mul (of_exp x) (of_exp y)
-    | Ap2 (Div, _, x, y) -> div (of_exp x) (of_exp y)
-    | Ap2 (Rem, _, x, y) -> rem (of_exp x) (of_exp y)
-    | Ap2 (Udiv, typ, x, y) -> unsigned div typ x y
-    | Ap2 (Urem, typ, x, y) -> unsigned rem typ x y
-    | Ap2 (And, _, x, y) -> and_ (of_exp x) (of_exp y)
-    | Ap2 (Or, _, x, y) -> or_ (of_exp x) (of_exp y)
-    | Ap2 (Xor, _, x, y) -> xor (of_exp x) (of_exp y)
-    | Ap2 (Shl, _, x, y) -> shl (of_exp x) (of_exp y)
-    | Ap2 (Lshr, _, x, y) -> lshr (of_exp x) (of_exp y)
-    | Ap2 (Ashr, _, x, y) -> ashr (of_exp x) (of_exp y)
-    | Ap2 (Update idx, _, rcd, elt) ->
-        update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
-    | Ap3 (Conditional, _, cnd, thn, els) ->
-        conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
-    | ApN (Record, _, elts) -> record (Vector.map ~f:of_exp elts)
-    | ApN (Struct_rec, _, elts) ->
-        rec_app ~id:e Record (Vector.map ~f:(fun e -> lazy (of_exp e)) elts)
-  in
-  of_exp e
 
 (** Transform *)
 

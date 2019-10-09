@@ -7,6 +7,8 @@
 
 (** Expressions *)
 
+[@@@warning "+9"]
+
 module T = struct
   module T0 = struct
     type op1 =
@@ -59,7 +61,9 @@ module T = struct
       | Struct_rec  (** NOTE: may be cyclic *)
     [@@deriving compare, equal, hash, sexp]
 
-    type t =
+    type t = {desc: desc; term: Term.t}
+
+    and desc =
       | Reg of {name: string; typ: Typ.t; global: bool}
       | Nondet of {msg: string; typ: Typ.t}
       | Label of {parent: string; name: string}
@@ -78,16 +82,18 @@ end
 
 include T
 
+let term e = e.term
+
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
-    match e with
+    match e.desc with
     | ApN (Struct_rec, _, _) ->
         if List.mem ~equal:( == ) seen e then f bot e
         else f (fix_f (e :: seen)) e
     | _ -> f (fix_f seen) e
   in
   let rec fix_f_seen_nil e =
-    match e with
+    match e.desc with
     | ApN (Struct_rec, _, _) -> f (fix_f [e]) e
     | _ -> f fix_f_seen_nil e
   in
@@ -132,7 +138,7 @@ let rec pp fs exp =
       Format.pp_open_box fs 2 ;
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
-    match exp with
+    match exp.desc with
     | Reg {name; global= true} -> pf "%@%s" name
     | Reg {name; global= false} -> pf "%%%s" name
     | Nondet {msg} -> pf "nondet \"%s\"" msg
@@ -149,9 +155,11 @@ let rec pp fs exp =
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | Ap2 (Xor, Integer {bits= 1}, Integer {data}, x) when Z.is_true data ->
+    | Ap2 (Xor, Integer {bits= 1}, {desc= Integer {data}}, x)
+      when Z.is_true data ->
         pf "¬%a" pp x
-    | Ap2 (Xor, Integer {bits= 1}, x, Integer {data}) when Z.is_true data ->
+    | Ap2 (Xor, Integer {bits= 1}, x, {desc= Integer {data}})
+      when Z.is_true data ->
         pf "¬%a" pp x
     | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
     | Ap3 (Conditional, _, cnd, thn, els) ->
@@ -160,6 +168,7 @@ let rec pp fs exp =
     | ApN (Struct_rec, _, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
   in
   fix_flip pp_ (fun _ _ -> ()) fs exp
+  [@@warning "-9"]
 
 and pp_record fs elts =
   [%Trace.fprintf
@@ -167,7 +176,7 @@ and pp_record fs elts =
       (fun fs elts ->
         match
           String.init (Vector.length elts) ~f:(fun i ->
-              match Vector.get elts i with
+              match (Vector.get elts i).desc with
               | Integer {data} -> Char.of_int_exn (Z.to_int data)
               | _ -> raise (Invalid_argument "not a string") )
         with
@@ -175,6 +184,7 @@ and pp_record fs elts =
         | exception _ ->
             Format.fprintf fs "@[<h>%a@]" (Vector.pp ",@ " pp) elts )
       elts]
+  [@@warning "-9"]
 
 type exp = t
 
@@ -187,7 +197,7 @@ let valid_idx idx elts = 0 <= idx && idx < Vector.length elts
 let rec invariant exp =
   Invariant.invariant [%here] exp [%sexp_of: t]
   @@ fun () ->
-  match exp with
+  match exp.desc with
   | Reg {typ} | Nondet {typ} -> assert (Typ.is_sized typ)
   | Integer {data; typ} -> (
     match typ with
@@ -245,11 +255,12 @@ let rec invariant exp =
           Vector.for_all2_exn elts args ~f:(fun typ arg ->
               Typ.equal typ (typ_of arg) ) )
     | _ -> assert false )
+  [@@warning "-9"]
 
 (** Type query *)
 
 and typ_of exp =
-  match exp with
+  match exp.desc with
   | Reg {typ} | Nondet {typ} | Integer {typ} | Float {typ} -> typ
   | Label _ -> Typ.ptr
   | Ap1 (Convert {dst}, _, _) -> dst
@@ -273,6 +284,7 @@ and typ_of exp =
    |Ap3 (Conditional, typ, _, _, _)
    |ApN ((Record | Struct_rec), typ, _) ->
       typ
+  [@@warning "-9"]
 
 let typ = typ_of
 
@@ -283,6 +295,9 @@ module Reg = struct
   let pp = pp
 
   type reg = t
+
+  let var r =
+    match Var.of_term r.term with Some v -> v | _ -> violates invariant r
 
   module Set = struct
     include (
@@ -295,7 +310,7 @@ module Reg = struct
     let empty = Set.empty (module T)
     let of_list = Set.of_list (module T)
     let union_list = Set.union_list (module T)
-    let of_vector = Set.of_vector (module T)
+    let vars = Set.fold ~init:Var.Set.empty ~f:(fun s r -> add s (var r))
   end
 
   module Map = struct
@@ -326,27 +341,34 @@ module Reg = struct
       in
       if !@status = 0 then demangled else None
 
-  let pp_demangled fs = function
+  let pp_demangled fs e =
+    match e.desc with
     | Reg {name} -> (
       match demangle name with
       | Some demangled when not (String.equal name demangled) ->
           Format.fprintf fs "“%s”" demangled
       | _ -> () )
     | _ -> ()
+    [@@warning "-9"]
 
   let invariant x =
     Invariant.invariant [%here] x [%sexp_of: t]
-    @@ fun () -> match x with Reg _ -> invariant x | _ -> assert false
+    @@ fun () ->
+    match x.desc with Reg _ -> invariant x | _ -> assert false
 
-  let name = function Reg {name} -> name | x -> violates invariant x
-  let global = function Reg {global} -> global | x -> violates invariant x
+  let name r =
+    match r.desc with Reg x -> x.name | _ -> violates invariant r
 
-  let of_exp = function
-    | Reg _ as x -> Some (x |> check invariant)
-    | _ -> None
+  let global r =
+    match r.desc with Reg x -> x.global | _ -> violates invariant r
+
+  let of_exp e =
+    match e.desc with Reg _ -> Some (e |> check invariant) | _ -> None
 
   let program ?global typ name =
-    Reg {name; typ; global= Option.is_some global} |> check invariant
+    { desc= Reg {name; typ; global= Option.is_some global}
+    ; term= Term.var (Var.program name) }
+    |> check invariant
 end
 
 (** Access *)
@@ -354,7 +376,7 @@ end
 let fold_exps e ~init ~f =
   let fold_exps_ fold_exps_ e z =
     let z =
-      match e with
+      match e.desc with
       | Ap1 (_, _, x) -> fold_exps_ x z
       | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
       | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
@@ -367,87 +389,194 @@ let fold_exps e ~init ~f =
   fix fold_exps_ (fun _ z -> z) e init
 
 let fold_regs e ~init ~f =
-  fold_exps e ~init ~f:(fun z -> function
-    | Reg _ as x -> f z (x :> Reg.t) | _ -> z )
+  fold_exps e ~init ~f:(fun z x ->
+      match x.desc with Reg _ -> f z (x :> Reg.t) | _ -> z )
 
 (** Construct *)
 
 let reg x = x
-let nondet typ msg = Nondet {msg; typ} |> check invariant
-let label ~parent ~name = Label {parent; name} |> check invariant
-let integer typ data = Integer {data; typ} |> check invariant
+
+let nondet typ msg =
+  {desc= Nondet {msg; typ}; term= Term.nondet msg} |> check invariant
+
+let label ~parent ~name =
+  {desc= Label {parent; name}; term= Term.label ~parent ~name}
+  |> check invariant
+
+let integer typ data =
+  {desc= Integer {data; typ}; term= Term.integer data} |> check invariant
+
 let null = integer Typ.ptr Z.zero
 let bool b = integer Typ.bool (Z.of_bool b)
-let float typ data = Float {data; typ} |> check invariant
+
+let float typ data =
+  {desc= Float {data; typ}; term= Term.float data} |> check invariant
 
 let convert ?(unsigned = false) ~dst ~src exp =
   ( if (not unsigned) && Typ.equal dst src then exp
-  else Ap1 (Convert {unsigned; dst}, src, exp) )
+  else
+    { desc= Ap1 (Convert {unsigned; dst}, src, exp)
+    ; term= Term.convert ~unsigned ~dst ~src exp.term } )
   |> check invariant
 
-let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
-let eq typ x y = Ap2 (Eq, typ, x, y) |> check invariant
-let dq typ x y = Ap2 (Dq, typ, x, y) |> check invariant
-let gt typ x y = Ap2 (Gt, typ, x, y) |> check invariant
-let ge typ x y = Ap2 (Ge, typ, x, y) |> check invariant
-let lt typ x y = Ap2 (Lt, typ, x, y) |> check invariant
-let le typ x y = Ap2 (Le, typ, x, y) |> check invariant
-let ugt typ x y = Ap2 (Ugt, typ, x, y) |> check invariant
-let uge typ x y = Ap2 (Uge, typ, x, y) |> check invariant
-let ult typ x y = Ap2 (Ult, typ, x, y) |> check invariant
-let ule typ x y = Ap2 (Ule, typ, x, y) |> check invariant
-let ord typ x y = Ap2 (Ord, typ, x, y) |> check invariant
-let uno typ x y = Ap2 (Uno, typ, x, y) |> check invariant
-let add typ x y = Ap2 (Add, typ, x, y) |> check invariant
-let sub typ x y = Ap2 (Sub, typ, x, y) |> check invariant
-let mul typ x y = Ap2 (Mul, typ, x, y) |> check invariant
-let div typ x y = Ap2 (Div, typ, x, y) |> check invariant
-let rem typ x y = Ap2 (Rem, typ, x, y) |> check invariant
-let udiv typ x y = Ap2 (Udiv, typ, x, y) |> check invariant
-let urem typ x y = Ap2 (Urem, typ, x, y) |> check invariant
-let and_ typ x y = Ap2 (And, typ, x, y) |> check invariant
-let or_ typ x y = Ap2 (Or, typ, x, y) |> check invariant
-let xor typ x y = Ap2 (Xor, typ, x, y) |> check invariant
-let shl typ x y = Ap2 (Shl, typ, x, y) |> check invariant
-let lshr typ x y = Ap2 (Lshr, typ, x, y) |> check invariant
-let ashr typ x y = Ap2 (Ashr, typ, x, y) |> check invariant
+let select typ rcd idx =
+  {desc= Ap1 (Select idx, typ, rcd); term= Term.select ~rcd:rcd.term ~idx}
+  |> check invariant
+
+let unsigned typ op x y =
+  let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
+  op
+    (Term.extract ~unsigned:true ~bits x)
+    (Term.extract ~unsigned:true ~bits y)
+
+let eq typ x y =
+  {desc= Ap2 (Eq, typ, x, y); term= Term.eq x.term y.term}
+  |> check invariant
+
+let dq typ x y =
+  {desc= Ap2 (Dq, typ, x, y); term= Term.dq x.term y.term}
+  |> check invariant
+
+let gt typ x y =
+  {desc= Ap2 (Gt, typ, x, y); term= Term.lt y.term x.term}
+  |> check invariant
+
+let ge typ x y =
+  {desc= Ap2 (Ge, typ, x, y); term= Term.le y.term x.term}
+  |> check invariant
+
+let lt typ x y =
+  {desc= Ap2 (Lt, typ, x, y); term= Term.lt x.term y.term}
+  |> check invariant
+
+let le typ x y =
+  {desc= Ap2 (Le, typ, x, y); term= Term.le x.term y.term}
+  |> check invariant
+
+let ugt typ x y =
+  {desc= Ap2 (Ugt, typ, x, y); term= unsigned typ Term.lt y.term x.term}
+  |> check invariant
+
+let uge typ x y =
+  {desc= Ap2 (Uge, typ, x, y); term= unsigned typ Term.le y.term x.term}
+  |> check invariant
+
+let ult typ x y =
+  {desc= Ap2 (Ult, typ, x, y); term= unsigned typ Term.lt x.term y.term}
+  |> check invariant
+
+let ule typ x y =
+  {desc= Ap2 (Ule, typ, x, y); term= unsigned typ Term.le x.term y.term}
+  |> check invariant
+
+let ord typ x y =
+  {desc= Ap2 (Ord, typ, x, y); term= Term.ord x.term y.term}
+  |> check invariant
+
+let uno typ x y =
+  {desc= Ap2 (Uno, typ, x, y); term= Term.uno x.term y.term}
+  |> check invariant
+
+let add typ x y =
+  {desc= Ap2 (Add, typ, x, y); term= Term.add x.term y.term}
+  |> check invariant
+
+let sub typ x y =
+  {desc= Ap2 (Sub, typ, x, y); term= Term.sub x.term y.term}
+  |> check invariant
+
+let mul typ x y =
+  {desc= Ap2 (Mul, typ, x, y); term= Term.mul x.term y.term}
+  |> check invariant
+
+let div typ x y =
+  {desc= Ap2 (Div, typ, x, y); term= Term.div x.term y.term}
+  |> check invariant
+
+let rem typ x y =
+  {desc= Ap2 (Rem, typ, x, y); term= Term.rem x.term y.term}
+  |> check invariant
+
+let udiv typ x y =
+  {desc= Ap2 (Udiv, typ, x, y); term= unsigned typ Term.div x.term y.term}
+  |> check invariant
+
+let urem typ x y =
+  {desc= Ap2 (Urem, typ, x, y); term= unsigned typ Term.rem x.term y.term}
+  |> check invariant
+
+let and_ typ x y =
+  {desc= Ap2 (And, typ, x, y); term= Term.and_ x.term y.term}
+  |> check invariant
+
+let or_ typ x y =
+  {desc= Ap2 (Or, typ, x, y); term= Term.or_ x.term y.term}
+  |> check invariant
+
+let xor typ x y =
+  {desc= Ap2 (Xor, typ, x, y); term= Term.xor x.term y.term}
+  |> check invariant
+
+let shl typ x y =
+  {desc= Ap2 (Shl, typ, x, y); term= Term.shl x.term y.term}
+  |> check invariant
+
+let lshr typ x y =
+  {desc= Ap2 (Lshr, typ, x, y); term= Term.lshr x.term y.term}
+  |> check invariant
+
+let ashr typ x y =
+  {desc= Ap2 (Ashr, typ, x, y); term= Term.ashr x.term y.term}
+  |> check invariant
 
 let update typ ~rcd idx ~elt =
-  Ap2 (Update idx, typ, rcd, elt) |> check invariant
+  { desc= Ap2 (Update idx, typ, rcd, elt)
+  ; term= Term.update ~rcd:rcd.term ~idx ~elt:elt.term }
+  |> check invariant
 
 let conditional typ ~cnd ~thn ~els =
-  Ap3 (Conditional, typ, cnd, thn, els) |> check invariant
+  { desc= Ap3 (Conditional, typ, cnd, thn, els)
+  ; term= Term.conditional ~cnd:cnd.term ~thn:thn.term ~els:els.term }
+  |> check invariant
 
-let record typ elts = ApN (Record, typ, elts) |> check invariant
+let record typ elts =
+  { desc= ApN (Record, typ, elts)
+  ; term= Term.record (Vector.map ~f:(fun elt -> elt.term) elts) }
+  |> check invariant
 
 let struct_rec key =
   let memo_id = Hashtbl.create key in
-  let dummy = null in
+  let rec_app = (Staged.unstage (Term.rec_app key)) Term.Record in
   Staged.stage
   @@ fun ~id typ elt_thks ->
   match Hashtbl.find memo_id id with
   | None ->
       (* Add placeholder to prevent computing [elts] in calls to
          [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
-      let elta = Array.create ~len:(Vector.length elt_thks) dummy in
+      let elta = Array.create ~len:(Vector.length elt_thks) null in
       let elts = Vector.of_array elta in
       Hashtbl.set memo_id ~key:id ~data:elts ;
+      let term =
+        rec_app ~id (Vector.map ~f:(fun elt -> lazy elt.term) elts)
+      in
       Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      ApN (Struct_rec, typ, elts) |> check invariant
+      {desc= ApN (Struct_rec, typ, elts); term} |> check invariant
   | Some elts ->
       (* Do not check invariant as invariant will be checked above after the
          thunks are forced, before which invariant-checking may spuriously
          fail. Note that it is important that the value constructed here
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
-      ApN (Struct_rec, typ, elts)
+      {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
 
 (** Query *)
 
-let is_true = function
+let is_true e =
+  match e.desc with
   | Integer {data; typ= Integer {bits= 1}} -> Z.is_true data
   | _ -> false
 
-let is_false = function
+let is_false e =
+  match e.desc with
   | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
   | _ -> false

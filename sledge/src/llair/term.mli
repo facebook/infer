@@ -112,15 +112,14 @@ module Var : sig
     val of_option : var option -> t
     val of_list : var list -> t
     val of_vector : var vector -> t
-    val of_regs : Reg.Set.t -> t
   end
 
   val pp : t pp
 
   include Invariant.S with type t := t
 
-  val of_reg : Reg.t -> t
   val of_term : term -> t option
+  val program : string -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
   val name : t -> string
 
@@ -183,7 +182,10 @@ val update : rcd:t -> idx:int -> elt:t -> t
 val extract : ?unsigned:bool -> bits:int -> t -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option
-val of_exp : Exp.t -> t
+
+val rec_app :
+     (module Hashtbl.Key with type t = 'id)
+  -> (id:'id -> recN -> t lazy_t vector -> t) Staged.t
 
 (** Access *)
 

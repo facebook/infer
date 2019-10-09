@@ -61,7 +61,9 @@ type opN =
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
 [@@deriving compare, equal, hash, sexp]
 
-type t =
+type t = private {desc: desc; term: Term.t}
+
+and desc = private
   | Reg of {name: string; typ: Typ.t; global: bool}  (** Virtual register *)
   | Nondet of {msg: string; typ: Typ.t}
       (** Anonymous register with arbitrary value, representing
@@ -98,8 +100,8 @@ module Reg : sig
     val pp : t pp
     val empty : t
     val of_list : reg list -> t
-    val of_vector : reg vector -> t
     val union_list : t list -> t
+    val vars : t -> Var.Set.t
   end
 
   module Map : sig
@@ -116,6 +118,7 @@ module Reg : sig
 
   val of_exp : exp -> t option
   val program : ?global:unit -> Typ.t -> string -> t
+  val var : t -> Var.t
   val name : t -> string
   val global : t -> bool
 end
@@ -178,6 +181,7 @@ val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
 
 (** Query *)
 
+val term : t -> Term.t
 val is_true : t -> bool
 val is_false : t -> bool
 val typ : t -> Typ.t

@@ -703,38 +703,33 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
  fun pre inst ->
   [%Trace.info
     "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
-  assert (
-    Set.disjoint (Sh.fv pre) (Var.Set.of_regs (Llair.Inst.locals inst)) ) ;
+  assert (Set.disjoint (Sh.fv pre) (Reg.Set.vars (Llair.Inst.locals inst))) ;
   let us = pre.us in
   match inst with
   | Move {reg_exps; _} ->
       exec_spec pre
         (move_spec us
-           (Vector.map reg_exps ~f:(fun (r, e) ->
-                (Var.of_reg r, Term.of_exp e) )))
+           (Vector.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
   | Load {reg; ptr; len; _} ->
       exec_spec pre
-        (load_spec us (Var.of_reg reg) (Term.of_exp ptr) (Term.of_exp len))
+        (load_spec us (Reg.var reg) (Exp.term ptr) (Exp.term len))
   | Store {ptr; exp; len; _} ->
       exec_spec pre
-        (store_spec us (Term.of_exp ptr) (Term.of_exp exp) (Term.of_exp len))
+        (store_spec us (Exp.term ptr) (Exp.term exp) (Exp.term len))
   | Memset {dst; byt; len; _} ->
       exec_spec pre
-        (memset_spec us (Term.of_exp dst) (Term.of_exp byt)
-           (Term.of_exp len))
+        (memset_spec us (Exp.term dst) (Exp.term byt) (Exp.term len))
   | Memcpy {dst; src; len; _} ->
       exec_specs pre
-        (memcpy_specs us (Term.of_exp dst) (Term.of_exp src)
-           (Term.of_exp len))
+        (memcpy_specs us (Exp.term dst) (Exp.term src) (Exp.term len))
   | Memmov {dst; src; len; _} ->
       exec_specs pre
-        (memmov_specs us (Term.of_exp dst) (Term.of_exp src)
-           (Term.of_exp len))
+        (memmov_specs us (Exp.term dst) (Exp.term src) (Exp.term len))
   | Alloc {reg; num; len; _} ->
       exec_spec pre
-        (alloc_spec us (Var.of_reg reg) (Term.of_exp num) (Term.of_exp len))
-  | Free {ptr; _} -> exec_spec pre (free_spec us (Term.of_exp ptr))
-  | Nondet {reg= Some reg; _} -> Ok (kill pre (Var.of_reg reg))
+        (alloc_spec us (Reg.var reg) (Exp.term num) (Exp.term len))
+  | Free {ptr; _} -> exec_spec pre (free_spec us (Exp.term ptr))
+  | Nondet {reg= Some reg; _} -> Ok (kill pre (Reg.var reg))
   | Nondet {reg= None; _} -> Ok pre
   | Abort _ -> Error ()
 
