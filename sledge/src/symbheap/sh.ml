@@ -78,12 +78,12 @@ let rec pp vs all_xs fs {us; xs; cong; pure; heap; djns} =
          (List.map ~f:(map_seg ~f:(Equality.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
            let b_o = function
-             | Term.App {op= App {op= Add _; arg}; arg= Integer {data; _}}
-               ->
-                 (arg, data)
-             | e -> (e, Z.zero)
+             | Term.Add poly as sum ->
+                 let const = Qset.count poly Term.one in
+                 (Term.sub sum (Term.rational const), const)
+             | e -> (e, Q.zero)
            in
-           [%compare: Term.t * (Term.t * Z.t)]
+           [%compare: Term.t * (Term.t * Q.t)]
              (s1.bas, b_o s1.loc)
              (s2.bas, b_o s2.loc) )) ;
   let first = first && List.is_empty heap in
