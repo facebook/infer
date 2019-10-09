@@ -9,22 +9,6 @@ open! IStd
 module BasicCost = CostDomain.BasicCost
 open BufferOverrunUtils.ModelEnv
 
-module type S = sig
-  val length : Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
-end
-
-module Array : S = struct
-  let length arr_exp inferbo_mem =
-    BufferOverrunSemantics.eval_array_locs_length
-      (BufferOverrunSemantics.eval_locs arr_exp inferbo_mem)
-      inferbo_mem
-end
-
-module Collection : S = struct
-  let length coll_exp inferbo_mem =
-    BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
-end
-
 let linear exp ~of_function {integer_type_widths; location} ~ret:_ inferbo_mem =
   let itv =
     BufferOverrunSemantics.eval integer_type_widths exp inferbo_mem
@@ -40,7 +24,7 @@ let modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
   CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
-module BoundsOf (Container : S) = struct
+module BoundsOf (Container : CostUtils.S) = struct
   let of_length exp {location} ~ret:_ mem ~of_function ~degree_kind =
     let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
     CostUtils.of_itv ~itv ~degree_kind ~of_function location
@@ -118,8 +102,8 @@ module JavaString = struct
     BasicCost.mult n m
 end
 
-module BoundsOfCollection = BoundsOf (Collection)
-module BoundsOfArray = BoundsOf (Array)
+module BoundsOfCollection = BoundsOf (CostUtils.Collection)
+module BoundsOfArray = BoundsOf (CostUtils.Array)
 
 module Call = struct
   let dispatch : (Tenv.t, CostUtils.model) ProcnameDispatcher.Call.dispatcher =

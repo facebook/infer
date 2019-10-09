@@ -32,3 +32,20 @@ let string_len_range_itv model_env exp ~from mem =
       in
       Itv.minus itv start_itv )
   |> Itv.set_lb_zero
+
+
+module type S = sig
+  val length : Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+end
+
+module Array : S = struct
+  let length arr_exp inferbo_mem =
+    BufferOverrunSemantics.eval_array_locs_length
+      (BufferOverrunSemantics.eval_locs arr_exp inferbo_mem)
+      inferbo_mem
+end
+
+module Collection : S = struct
+  let length coll_exp inferbo_mem =
+    BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
+end
