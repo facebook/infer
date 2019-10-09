@@ -16,8 +16,6 @@ let%test_module _ =
     let ( * ) = Term.mul
     let ( = ) = Term.eq
     let ( != ) = Term.dq
-    let ( > ) = Term.gt
-    let ( >= ) = Term.ge
     let ( < ) = Term.lt
     let ( <= ) = Term.le
     let ( && ) = Term.and_
@@ -235,12 +233,12 @@ let%test_module _ =
       [%expect {| ((13 × %z_2 + -42) = (3 × %y_1 + 13 × %z_2)) |}]
 
     let%expect_test _ =
-      pp ~~(y > !2 && z <= !3) ;
-      [%expect {| ((%y_1 ≤ 2) || (%z_2 > 3)) |}]
+      pp ~~(!2 < y && z <= !3) ;
+      [%expect {| ((%y_1 ≤ 2) || (3 < %z_2)) |}]
 
     let%expect_test _ =
-      pp ~~(y >= !2 || z < !3) ;
-      [%expect {| ((%y_1 < 2) && (%z_2 ≥ 3)) |}]
+      pp ~~(!2 <= y || z < !3) ;
+      [%expect {| ((%y_1 < 2) && (3 ≤ %z_2)) |}]
 
     let%expect_test _ =
       pp Term.(eq z null) ;

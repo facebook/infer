@@ -35,8 +35,6 @@ module rec T : sig
     (* binary: comparison *)
     | Eq
     | Dq
-    | Gt
-    | Ge
     | Lt
     | Le
     | Ord
@@ -93,8 +91,6 @@ and T0 : sig
     | App of {op: t; arg: t}
     | Eq
     | Dq
-    | Gt
-    | Ge
     | Lt
     | Le
     | Ord
@@ -132,8 +128,6 @@ end = struct
     | App of {op: t; arg: t}
     | Eq
     | Dq
-    | Gt
-    | Ge
     | Lt
     | Le
     | Ord
@@ -214,8 +208,6 @@ let rec pp ?is_x fs term =
     | Float {data} -> pf "%s" data
     | Eq -> pf "="
     | Dq -> pf "@<1>≠"
-    | Gt -> pf ">"
-    | Ge -> pf "@<1>≥"
     | Lt -> pf "<"
     | Le -> pf "@<1>≤"
     | Ord -> pf "ord"
@@ -373,8 +365,7 @@ let invariant ?(partial = false) e =
       assert (Typ.convertible src dst)
   | Add _ -> assert_polynomial e |> Fn.id
   | Mul _ -> assert_monomial e |> Fn.id
-  | Eq | Dq | Gt | Ge | Lt | Le | Div | Rem | And | Or | Xor | Shl | Lshr
-   |Ashr ->
+  | Eq | Dq | Lt | Le | Div | Rem | And | Or | Xor | Shl | Lshr | Ashr ->
       assert_arity 2
   | Concat {args} -> assert (Vector.length args <> 1)
   | Splat {siz} -> (
@@ -557,16 +548,6 @@ let simp_convert ~unsigned dst src arg =
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
         integer (Z.extract ~unsigned (min m n) data)
     | _ -> App {op= Convert {unsigned; dst; src}; arg}
-
-let simp_gt x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.gt i j)
-  | _ -> App {op= App {op= Gt; arg= x}; arg= y}
-
-let simp_ge x y =
-  match (x, y) with
-  | Integer {data= i}, Integer {data= j} -> bool (Z.geq i j)
-  | _ -> App {op= App {op= Ge; arg= x}; arg= y}
 
 let simp_lt x y =
   match (x, y) with
@@ -776,7 +757,7 @@ let rec simp_or x y =
   | _ -> App {op= App {op= Or; arg= x}; arg= y}
 
 let rec is_boolean = function
-  | App {op= App {op= Eq | Dq | Gt | Ge | Lt | Le}}
+  | App {op= App {op= Eq | Dq | Lt | Le}}
    |App {op= Convert {dst= Integer {bits= 1}}} ->
       true
   | App
@@ -792,14 +773,10 @@ let rec simp_not term =
   | App {op= App {op= Eq; arg= x}; arg= y} -> simp_dq x y
   (* ¬(x ≠ y) ==> x = y *)
   | App {op= App {op= Dq; arg= x}; arg= y} -> simp_eq x y
-  (* ¬(x > y) ==> x <= y *)
-  | App {op= App {op= Gt; arg= x}; arg= y} -> simp_le x y
-  (* ¬(x >= y) ==> x < y *)
-  | App {op= App {op= Ge; arg= x}; arg= y} -> simp_lt x y
-  (* ¬(x < y) ==> x >= y *)
-  | App {op= App {op= Lt; arg= x}; arg= y} -> simp_ge x y
-  (* ¬(x <= y) ==> x > y *)
-  | App {op= App {op= Le; arg= x}; arg= y} -> simp_gt x y
+  (* ¬(x < y) ==> y <= x *)
+  | App {op= App {op= Lt; arg= x}; arg= y} -> simp_le y x
+  (* ¬(x <= y) ==> y < x *)
+  | App {op= App {op= Le; arg= x}; arg= y} -> simp_lt y x
   (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
   | App {op= App {op= Ord; arg= x}; arg= y} -> simp_uno x y
   (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
@@ -917,8 +894,6 @@ let app1 ?(partial = false) op arg =
   ( match (op, arg) with
   | App {op= Eq; arg= x}, y -> simp_eq x y
   | App {op= Dq; arg= x}, y -> simp_dq x y
-  | App {op= Gt; arg= x}, y -> simp_gt x y
-  | App {op= Ge; arg= x}, y -> simp_ge x y
   | App {op= Lt; arg= x}, y -> simp_lt x y
   | App {op= Le; arg= x}, y -> simp_le x y
   | App {op= Ord; arg= x}, y -> simp_ord x y
@@ -988,8 +963,6 @@ let simp_splat byt siz =
 let splat ~byt ~siz = simp_splat byt siz |> check invariant
 let eq = app2 Eq
 let dq = app2 Dq
-let gt = app2 Gt
-let ge = app2 Ge
 let lt = app2 Lt
 let le = app2 Le
 let ord = app2 Ord
@@ -1065,14 +1038,10 @@ let rec of_exp (e : Exp.t) =
       select ~rcd:(of_exp arg) ~idx:(integer (Z.of_int idx))
   | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
   | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
-  | Ap2 (Gt, _, x, y) -> gt (of_exp x) (of_exp y)
-  | Ap2 (Ge, _, x, y) -> ge (of_exp x) (of_exp y)
-  | Ap2 (Lt, _, x, y) -> lt (of_exp x) (of_exp y)
-  | Ap2 (Le, _, x, y) -> le (of_exp x) (of_exp y)
-  | Ap2 (Ugt, typ, x, y) -> unsigned gt typ x y
-  | Ap2 (Uge, typ, x, y) -> unsigned ge typ x y
-  | Ap2 (Ult, typ, x, y) -> unsigned lt typ x y
-  | Ap2 (Ule, typ, x, y) -> unsigned le typ x y
+  | Ap2 (Lt, _, x, y) | Ap2 (Gt, _, y, x) -> lt (of_exp x) (of_exp y)
+  | Ap2 (Le, _, x, y) | Ap2 (Ge, _, y, x) -> le (of_exp x) (of_exp y)
+  | Ap2 (Ult, typ, x, y) | Ap2 (Ugt, typ, y, x) -> unsigned lt typ x y
+  | Ap2 (Ule, typ, x, y) | Ap2 (Uge, typ, y, x) -> unsigned le typ x y
   | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
   | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
   | Ap2 (Add, _, x, y) -> add (of_exp x) (of_exp y)

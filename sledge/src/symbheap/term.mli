@@ -37,8 +37,6 @@ and t = private
       (** Application of function symbol to argument, curried *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)
-  | Gt  (** Greater-than test *)
-  | Ge  (** Greater-than-or-equal test *)
   | Lt  (** Less-than test *)
   | Le  (** Less-than-or-equal test *)
   | Ord  (** Ordered test (neither arg is nan) *)
@@ -145,8 +143,6 @@ val rational : Q.t -> t
 val float : string -> t
 val eq : t -> t -> t
 val dq : t -> t -> t
-val gt : t -> t -> t
-val ge : t -> t -> t
 val lt : t -> t -> t
 val le : t -> t -> t
 val ord : t -> t -> t
