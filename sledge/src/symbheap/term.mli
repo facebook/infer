@@ -48,6 +48,7 @@ type op2 =
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
+  | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
 type op3 = Conditional  (** If-then-else *)
@@ -74,7 +75,6 @@ and t = private
   | App of {op: t; arg: t}
       (** Application of function symbol to argument, curried *)
   | Record  (** Record (array / struct) constant *)
-  | Update  (** Constant record with updated index *)
   | Struct_rec of {elts: t vector}
       (** Struct constant that may recursively refer to itself
           (transitively) from [elts]. NOTE: represented by cyclic values. *)
@@ -176,7 +176,7 @@ val ashr : t -> t -> t
 val conditional : cnd:t -> thn:t -> els:t -> t
 val record : t list -> t
 val select : rcd:t -> idx:int -> t
-val update : rcd:t -> elt:t -> idx:t -> t
+val update : rcd:t -> idx:int -> elt:t -> t
 val extract : ?unsigned:bool -> bits:int -> t -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option

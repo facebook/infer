@@ -47,6 +47,8 @@ module rec T : sig
     | Shl
     | Lshr
     | Ashr
+    (* array/struct *)
+    | Update of int
   [@@deriving compare, equal, hash, sexp]
 
   type op3 = (* if-then-else *)
@@ -72,7 +74,6 @@ module rec T : sig
     | App of {op: t; arg: t}
     (* array/struct constants and operations *)
     | Record
-    | Update
     | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
     (* numeric constants *)
     | Integer of {data: Z.t}
@@ -117,6 +118,7 @@ and T0 : sig
     | Shl
     | Lshr
     | Ashr
+    | Update of int
   [@@deriving compare, equal, hash, sexp]
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
@@ -134,7 +136,6 @@ and T0 : sig
     | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
-    | Update
     | Struct_rec of {elts: t vector}
     | Integer of {data: Z.t}
     | Float of {data: string}
@@ -165,6 +166,7 @@ end = struct
     | Shl
     | Lshr
     | Ashr
+    | Update of int
   [@@deriving compare, equal, hash, sexp]
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
@@ -182,7 +184,6 @@ end = struct
     | ApN of opN * t vector
     | App of {op: t; arg: t}
     | Record
-    | Update
     | Struct_rec of {elts: t vector}
     | Integer of {data: Z.t}
     | Float of {data: string}
@@ -277,12 +278,8 @@ let rec pp ?is_x fs term =
     | Ap3 (Conditional, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
     | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
-    | Update -> pf "[_|_→_]"
-    | App {op= Update; arg= rcd} -> pf "[%a@ @[| _→_@]]" pp rcd
-    | App {op= App {op= Update; arg= rcd}; arg= elt} ->
-        pf "[%a@ @[| _→ %a@]]" pp rcd pp elt
-    | App {op= App {op= App {op= Update; arg= rcd}; arg= elt}; arg= idx} ->
-        pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
+    | Ap2 (Update idx, rcd, elt) ->
+        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Record -> pf "{_}"
     | App {op; arg} -> (
       match uncurry term with
@@ -402,7 +399,7 @@ let invariant ?(partial = false) e =
   | Ap2 (Memory, _, _) -> assert true
   | Ap1 (Select _, _) -> assert true
   | Ap3 (Conditional, _, _, _) -> assert true
-  | Update -> assert_arity 3
+  | Ap2 (Update _, _, _) -> assert true
   | Record -> assert (partial || not (List.is_empty args))
   | Struct_rec {elts} ->
       assert (not (Vector.is_empty elts)) ;
@@ -580,6 +577,7 @@ let simp_convert ~unsigned dst src arg =
     | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
 
 let simp_select idx rcd = Ap1 (Select idx, rcd)
+let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
 
 let simp_concat xs =
   if Vector.length xs = 1 then Vector.get xs 0
@@ -962,7 +960,8 @@ let norm2 op x y =
   | Xor -> simp_xor x y
   | Shl -> simp_shl x y
   | Lshr -> simp_lshr x y
-  | Ashr -> simp_ashr x y )
+  | Ashr -> simp_ashr x y
+  | Update idx -> simp_update idx x y )
   |> check invariant
 
 let norm3 op x y z =
@@ -986,7 +985,6 @@ let app1 ?(partial = false) op arg =
                       op pp arg pp e pp a )
            | _ -> () ) )
 
-let app3 op x y z = app1 (app1 ~partial:true (app1 ~partial:true op x) y) z
 let addN args = simp_add args |> check invariant
 let mulN args = simp_mul args |> check invariant
 let concat xs = normN Concat (Vector.of_array xs)
@@ -1014,7 +1012,7 @@ let ashr = norm2 Ashr
 let conditional ~cnd ~thn ~els = norm3 Conditional cnd thn els
 let record elts = List.fold ~f:app1 ~init:Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
-let update ~rcd ~elt ~idx = app3 Update rcd elt idx
+let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 
 let struct_rec key =
   let memo_id = Hashtbl.create key in
@@ -1088,8 +1086,7 @@ let rec of_exp (e : Exp.t) =
   | Ap2 (Lshr, _, x, y) -> lshr (of_exp x) (of_exp y)
   | Ap2 (Ashr, _, x, y) -> ashr (of_exp x) (of_exp y)
   | Ap2 (Update idx, _, rcd, elt) ->
-      update ~rcd:(of_exp rcd) ~elt:(of_exp elt)
-        ~idx:(integer (Z.of_int idx))
+      update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
   | Ap3 (Conditional, _, cnd, thn, els) ->
       conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
   | ApN (Record, _, elts) ->
