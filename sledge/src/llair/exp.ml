@@ -389,6 +389,8 @@ let integer typ data =
 
 let null = integer Typ.ptr Z.zero
 let bool b = integer Typ.bool (Z.of_bool b)
+let true_ = bool true
+let false_ = bool false
 
 let float typ data =
   {desc= Float {data; typ}; term= Term.float data} |> check invariant

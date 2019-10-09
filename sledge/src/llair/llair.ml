@@ -324,11 +324,11 @@ module Term = struct
     | Throw _ | Unreachable -> assert true
 
   let goto ~dst ~loc =
-    Switch {key= Exp.bool false; tbl= Vector.empty; els= dst; loc}
+    Switch {key= Exp.false_; tbl= Vector.empty; els= dst; loc}
     |> check invariant
 
   let branch ~key ~nzero ~zero ~loc =
-    let tbl = Vector.of_array [|(Exp.bool false, zero)|] in
+    let tbl = Vector.of_array [|(Exp.false_, zero)|] in
     let els = nzero in
     Switch {key; tbl; els; loc} |> check invariant
 

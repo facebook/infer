@@ -484,7 +484,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | Ule -> binary Exp.ule )
   | FCmp -> (
     match Llvm.fcmp_predicate llv with
-    | None | Some False -> binary (fun _ _ _ -> Exp.bool false)
+    | None | Some False -> binary (fun _ _ _ -> Exp.false_)
     | Some Oeq -> binary Exp.eq
     | Some Ogt -> binary Exp.gt
     | Some Oge -> binary Exp.ge
@@ -499,7 +499,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | Some Ult -> unordered_or Exp.lt
     | Some Ule -> unordered_or Exp.le
     | Some Une -> unordered_or Exp.dq
-    | Some True -> binary (fun _ _ _ -> Exp.bool true) )
+    | Some True -> binary (fun _ _ _ -> Exp.true_) )
   | Add | FAdd -> binary Exp.add
   | Sub | FSub -> binary Exp.sub
   | Mul | FMul -> binary Exp.mul

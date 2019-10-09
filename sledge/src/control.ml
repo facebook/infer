@@ -412,8 +412,7 @@ module Make (Dom : Domain_sig.Dom) = struct
           ~init:
             ( match
                 Dom.exec_assume state
-                  (Vector.fold tbl ~init:(Exp.bool true)
-                     ~f:(fun b (case, _) ->
+                  (Vector.fold tbl ~init:Exp.true_ ~f:(fun b (case, _) ->
                        Exp.and_ Typ.bool (Exp.dq (Exp.typ key) key case) b
                    ))
               with

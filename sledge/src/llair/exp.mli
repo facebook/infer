@@ -132,6 +132,8 @@ val nondet : Typ.t -> string -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t
+val true_ : t
+val false_ : t
 val integer : Typ.t -> Z.t -> t
 val float : Typ.t -> string -> t
 
