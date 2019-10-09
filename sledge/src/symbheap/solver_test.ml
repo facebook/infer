@@ -22,10 +22,10 @@ let%test_module _ =
       Solver.infer_frame p (Var.Set.of_list xs) q
       |> fun r -> assert (Option.is_some r)
 
-    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
-    let ( + ) = Term.add Typ.ptr
-    let ( - ) = Term.sub Typ.siz
-    let ( * ) = Term.mul Typ.siz
+    let ( ! ) i = Term.integer (Z.of_int i)
+    let ( + ) = Term.add
+    let ( - ) = Term.sub
+    let ( * ) = Term.mul
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let a2_, wrt = Var.fresh "a" ~wrt

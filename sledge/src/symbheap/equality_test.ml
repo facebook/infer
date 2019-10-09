@@ -18,10 +18,10 @@ let%test_module _ =
     let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
     let i8 = Typ.integer ~bits:8
     let i64 = Typ.integer ~bits:64
-    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
-    let ( + ) = Term.add Typ.siz
-    let ( - ) = Term.sub Typ.siz
-    let ( * ) = Term.mul Typ.siz
+    let ( ! ) i = Term.integer (Z.of_int i)
+    let ( + ) = Term.add
+    let ( - ) = Term.sub
+    let ( * ) = Term.mul
     let f = Term.convert ~dst:i64 ~src:i8
     let g = Term.rem
     let wrt = Var.Set.empty
@@ -307,7 +307,7 @@ let%test_module _ =
     let%expect_test _ =
       pp r14 ; [%expect {| {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
-    let%test _ = entails_eq r14 a (Term.bool true)
+    let%test _ = entails_eq r14 a Term.true_
 
     let b = Term.dq y !0
     let r14 = of_eqs [(a, b); (x, !1)]
@@ -318,8 +318,8 @@ let%test_module _ =
         {|
           {sat= true; rep= [[%x_5 ↦ 1]; [(%y_6 ≠ 0) ↦ -1]]} |}]
 
-    let%test _ = entails_eq r14 a (Term.bool true)
-    let%test _ = entails_eq r14 b (Term.bool true)
+    let%test _ = entails_eq r14 a Term.true_
+    let%test _ = entails_eq r14 b Term.true_
 
     let b = Term.dq x !0
     let r15 = of_eqs [(b, b); (x, !1)]

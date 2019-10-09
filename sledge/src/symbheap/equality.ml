@@ -233,11 +233,8 @@ let difference r a b =
   let b = canon r b in
   ( if Term.equal a b then Some Z.zero
   else
-    match (Term.typ a, Term.typ b) with
-    | Some typ, _ | _, Some typ -> (
-      match normalize r (Term.sub typ a b) with
-      | Integer {data} -> Some data
-      | _ -> None )
+    match normalize r (Term.sub a b) with
+    | Integer {data} -> Some data
     | _ -> None )
   |>
   [%Trace.retn fun {pf} ->

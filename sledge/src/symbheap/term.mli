@@ -21,8 +21,8 @@ type comparator_witness
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
-  | Add of {args: qset; typ: Typ.t}  (** Addition *)
-  | Mul of {args: qset; typ: Typ.t}  (** Multiplication *)
+  | Add of {args: qset}  (** Addition *)
+  | Mul of {args: qset}  (** Multiplication *)
   | Splat of {byt: t; siz: t}
       (** Iterated concatenation of a single byte *)
   | Memory of {siz: t; arr: t}  (** Size-tagged byte-array *)
@@ -67,7 +67,7 @@ and t = private
           integer. If [src] is a [Float] type and [dst] is an [Integer]
           type, then [unsigned] indidates that the result should be the
           nearest non-negative value. *)
-  | Integer of {data: Z.t; typ: Typ.t}
+  | Integer of {data: Z.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)
   | Float of {data: string}  (** Floating-point constant *)
@@ -127,17 +127,21 @@ end
 
 (** Construct *)
 
-val of_exp : Exp.t -> t
 val var : Var.t -> t
 val nondet : string -> t
 val label : parent:string -> name:string -> t
+val true_ : t
+val false_ : t
 val null : t
+val zero : t
+val one : t
+val minus_one : t
 val splat : byt:t -> siz:t -> t
 val memory : siz:t -> arr:t -> t
 val concat : t array -> t
 val bool : bool -> t
-val integer : Z.t -> Typ.t -> t
-val rational : Q.t -> Typ.t -> t
+val integer : Z.t -> t
+val rational : Q.t -> t
 val float : string -> t
 val eq : t -> t -> t
 val dq : t -> t -> t
@@ -147,16 +151,16 @@ val lt : t -> t -> t
 val le : t -> t -> t
 val ord : t -> t -> t
 val uno : t -> t -> t
-val neg : Typ.t -> t -> t
-val add : Typ.t -> t -> t -> t
-val sub : Typ.t -> t -> t -> t
-val mul : Typ.t -> t -> t -> t
+val neg : t -> t
+val add : t -> t -> t
+val sub : t -> t -> t
+val mul : t -> t -> t
 val div : t -> t -> t
 val rem : t -> t -> t
 val and_ : t -> t -> t
 val or_ : t -> t -> t
 val xor : t -> t -> t
-val not_ : Typ.t -> t -> t
+val not_ : t -> t
 val shl : t -> t -> t
 val lshr : t -> t -> t
 val ashr : t -> t -> t
@@ -167,6 +171,7 @@ val update : rcd:t -> elt:t -> idx:t -> t
 val extract : ?unsigned:bool -> bits:int -> t -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 val size_of : Typ.t -> t option
+val of_exp : Exp.t -> t
 
 (** Access *)
 
@@ -185,6 +190,5 @@ val rename : Var.Subst.t -> t -> t
 val fv : t -> Var.Set.t
 val is_true : t -> bool
 val is_false : t -> bool
-val typ : t -> Typ.t option
 val classify : t -> [> `Atomic | `Interpreted | `Simplified | `Uninterpreted]
 val solve : t -> t -> (t, t, comparator_witness) Map.t option

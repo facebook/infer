@@ -133,9 +133,7 @@ let rec fv_union init q =
 let fv q = fv_union Var.Set.empty q
 
 let invariant_pure = function
-  | Term.Integer {data; typ} ->
-      assert (Typ.equal Typ.bool typ) ;
-      assert (not (Z.is_false data))
+  | Term.Integer {data} -> assert (not (Z.is_false data))
   | _ -> assert true
 
 let invariant_seg _ = ()
@@ -381,17 +379,15 @@ let rec pure (e : Term.t) =
   ;
   let us = Term.fv e in
   let eq_false b =
-    let cong = Equality.and_eq b (Term.bool false) Equality.true_ in
+    let cong = Equality.and_eq b Term.false_ Equality.true_ in
     {emp with us; cong; pure= [e]}
   in
   ( match e with
-  | Integer {data; typ= _} -> if Z.is_false data then false_ us else emp
+  | Integer {data} -> if Z.is_false data then false_ us else emp
   (* ¬b ==> false = b *)
-  | App {op= App {op= Xor; arg= Integer {data; typ= _}}; arg}
-    when Z.is_true data ->
+  | App {op= App {op= Xor; arg= Integer {data}}; arg} when Z.is_true data ->
       eq_false arg
-  | App {op= App {op= Xor; arg}; arg= Integer {data; typ= _}}
-    when Z.is_true data ->
+  | App {op= App {op= Xor; arg}; arg= Integer {data}} when Z.is_true data ->
       eq_false arg
   | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)
   | App {op= App {op= Or; arg= e1}; arg= e2} -> or_ (pure e1) (pure e2)
@@ -399,7 +395,7 @@ let rec pure (e : Term.t) =
     ->
       or_
         (star (pure cnd) (pure thn))
-        (star (pure (Term.not_ Typ.bool cnd)) (pure els))
+        (star (pure (Term.not_ cnd)) (pure els))
   | App {op= App {op= Eq; arg= e1}; arg= e2} ->
       let cong = Equality.(and_eq e1 e2 true_) in
       if Equality.is_false cong then false_ us

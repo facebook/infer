@@ -62,7 +62,7 @@ let single_existential_occurrence xs term =
 
 let special_cases xs = function
   | Term.App {op= App {op= Eq; arg= Var _}; arg= Var _} as e ->
-      if Set.is_subset (Term.fv e) ~of_:xs then Term.bool true else e
+      if Set.is_subset (Term.fv e) ~of_:xs then Term.true_ else e
   | e -> e
 
 let excise_term ({us; min; xs} as goal) pure term =
@@ -136,7 +136,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let o_n = Term.integer o_n Typ.siz in
+  let o_n = Term.integer o_n in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
   let com = Sh.star (Sh.seg {msg with siz= n; arr= a0}) com in
@@ -147,8 +147,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
          (Term.concat
             [|Term.memory ~siz:n ~arr:a0; Term.memory ~siz:o_n ~arr:a1|]))
       (Sh.star
-         (Sh.seg
-            {loc= Term.add Typ.ptr k n; bas= b; len= m; siz= o_n; arr= a1})
+         (Sh.seg {loc= Term.add k n; bas= b; len= m; siz= o_n; arr= a1})
          (Sh.rem_seg msg min))
   in
   let sub =
@@ -178,7 +177,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let n_o = Term.integer n_o Typ.siz in
+  let n_o = Term.integer n_o in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let a1', xs, zs, _ = fresh_var "a1" xs zs ~wrt:(Set.union us xs) in
@@ -193,11 +192,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
                (Term.memory ~siz:n ~arr:a'))
             (Sh.star
                (Sh.seg
-                  { loc= Term.add Typ.ptr l o
-                  ; bas= b'
-                  ; len= m'
-                  ; siz= n_o
-                  ; arr= a1' })
+                  {loc= Term.add l o; bas= b'; len= m'; siz= n_o; arr= a1'})
                (Sh.rem_seg ssg sub))))
   in
   {goal with us; com; min; xs; sub; zs}
@@ -222,7 +217,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Term.integer l_k Typ.siz in
+  let l_k = Term.integer l_k in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
   let com =
@@ -265,9 +260,9 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Term.integer l_k Typ.siz
-  and ko_ln = Term.integer ko_ln Typ.siz in
-  let ln = Term.add Typ.ptr l n in
+  let l_k = Term.integer l_k in
+  let ko_ln = Term.integer ko_ln in
+  let ln = Term.add l n in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
@@ -315,10 +310,10 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Term.integer l_k Typ.siz in
-  let ko_l = Term.integer ko_l Typ.siz in
-  let ln_ko = Term.integer ln_ko Typ.siz in
-  let ko = Term.add Typ.ptr k o in
+  let l_k = Term.integer l_k in
+  let ko_l = Term.integer ko_l in
+  let ln_ko = Term.integer ln_ko in
+  let ko = Term.add k o in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
@@ -371,7 +366,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Term.integer k_l Typ.siz in
+  let k_l = Term.integer k_l in
   let a0', xs, zs, _ = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
@@ -412,9 +407,9 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Term.integer k_l Typ.siz in
-  let ln_ko = Term.integer ln_ko Typ.siz in
-  let ko = Term.add Typ.ptr k o in
+  let k_l = Term.integer k_l in
+  let ln_ko = Term.integer ln_ko in
+  let ko = Term.add k o in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
   let com = Sh.star (Sh.seg msg) com in
@@ -458,10 +453,10 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       msg (Sh.pp_seg_norm sub.cong) ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Term.integer k_l Typ.siz in
-  let ln_k = Term.integer ln_k Typ.siz in
-  let ko_ln = Term.integer ko_ln Typ.siz in
-  let ln = Term.add Typ.ptr l n in
+  let k_l = Term.integer k_l in
+  let ln_k = Term.integer ln_k in
+  let ko_ln = Term.integer ko_ln in
+  let ln = Term.add l n in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
   let a2, us, zs, _ = fresh_var "a2" us zs ~wrt in
@@ -513,8 +508,8 @@ let excise_seg ({sub} as goal) msg ssg =
     match[@warning "-p"] Z.sign k_l with
     (* k-l < 0 so k < l *)
     | -1 -> (
-        let ko = Term.add Typ.ptr k o in
-        let ln = Term.add Typ.ptr l n in
+        let ko = Term.add k o in
+        let ln = Term.add l n in
         Equality.difference sub.cong ko ln
         >>= fun ko_ln ->
         match[@warning "-p"] Z.sign ko_ln with
@@ -553,8 +548,8 @@ let excise_seg ({sub} as goal) msg ssg =
         | 1 -> Some (excise_seg_sub_prefix goal msg ssg o_n) ) )
     (* k-l > 0 so k > l *)
     | 1 -> (
-        let ko = Term.add Typ.ptr k o in
-        let ln = Term.add Typ.ptr l n in
+        let ko = Term.add k o in
+        let ln = Term.add l n in
         Equality.difference sub.cong ko ln
         >>= fun ko_ln ->
         match[@warning "-p"] Z.sign ko_ln with

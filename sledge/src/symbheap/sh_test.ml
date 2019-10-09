@@ -13,7 +13,7 @@ let%test_module _ =
     let pp = Format.printf "@\n%a@." Sh.pp
     let pp_djn = Format.printf "@\n%a@." Sh.pp_djn
     let ( ~$ ) = Var.Set.of_list
-    let ( ! ) i = Term.integer (Z.of_int i) Typ.siz
+    let ( ! ) i = Term.integer (Z.of_int i)
     let ( = ) = Term.eq
     let wrt = Var.Set.empty
     let x_, wrt = Var.fresh "x" ~wrt

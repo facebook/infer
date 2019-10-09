@@ -21,7 +21,7 @@ let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
     | {Global.reg; init= Some (arr, siz)} ->
         let loc = Term.var (Var.of_reg reg) in
-        let len = Term.integer (Z.of_int siz) Typ.siz in
+        let len = Term.integer (Z.of_int siz) in
         let arr = Term.of_exp arr in
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )
