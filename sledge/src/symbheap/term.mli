@@ -59,6 +59,12 @@ type opN =
   | Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
+type recN =
+  | Record
+      (** Record constant that may recursively refer to itself
+          (transitively) from its args. NOTE: represented by cyclic values. *)
+[@@deriving compare, equal, hash, sexp]
+
 type qset = (t, comparator_witness) Qset.t
 
 and t = private
@@ -74,9 +80,7 @@ and t = private
   | Ap2 of op2 * t * t
   | Ap3 of op3 * t * t * t
   | ApN of opN * t vector
-  | Struct_rec of {elts: t vector}
-      (** Struct constant that may recursively refer to itself
-          (transitively) from [elts]. NOTE: represented by cyclic values. *)
+  | RecN of recN * t vector
   | Integer of {data: Z.t}
       (** Integer constant, or if [typ] is a [Pointer], null pointer value
           that never refers to an object *)

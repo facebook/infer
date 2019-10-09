@@ -56,6 +56,7 @@ module rec T : sig
   [@@deriving compare, equal, hash, sexp]
 
   type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
+  type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
     (* nary arithmetic *)
@@ -70,8 +71,8 @@ module rec T : sig
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
-    (* array/struct constants and operations *)
-    | Struct_rec of {elts: t vector}  (** NOTE: may be cyclic *)
+    (* recursive application *)
+    | RecN of recN * t vector  (** NOTE: cyclic *)
     (* numeric constants *)
     | Integer of {data: Z.t}
     | Float of {data: string}
@@ -120,6 +121,7 @@ and T0 : sig
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
   type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
+  type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
@@ -131,7 +133,7 @@ and T0 : sig
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
-    | Struct_rec of {elts: t vector}
+    | RecN of recN * t vector
     | Integer of {data: Z.t}
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
@@ -166,6 +168,7 @@ end = struct
 
   type op3 = Conditional [@@deriving compare, equal, hash, sexp]
   type opN = Concat | Record [@@deriving compare, equal, hash, sexp]
+  type recN = Record [@@deriving compare, equal, hash, sexp]
 
   type t =
     | Add of qset
@@ -177,7 +180,7 @@ end = struct
     | Ap2 of op2 * t * t
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
-    | Struct_rec of {elts: t vector}
+    | RecN of recN * t vector
     | Integer of {data: Z.t}
     | Float of {data: string}
   [@@deriving compare, equal, hash, sexp]
@@ -194,13 +197,13 @@ let empty_qset = Qset.empty (module T)
 let fix (f : (t -> 'a as 'f) -> 'f) (bot : 'f) (e : t) : 'a =
   let rec fix_f seen e =
     match e with
-    | Struct_rec _ ->
+    | RecN _ ->
         if List.mem ~equal:( == ) seen e then f bot e
         else f (fix_f (e :: seen)) e
     | _ -> f (fix_f seen) e
   in
   let rec fix_f_seen_nil e =
-    match e with Struct_rec _ -> f (fix_f [e]) e | _ -> f fix_f_seen_nil e
+    match e with RecN _ -> f (fix_f [e]) e | _ -> f fix_f_seen_nil e
   in
   fix_f_seen_nil e
 
@@ -267,7 +270,7 @@ let rec pp ?is_x fs term =
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | ApN (Record, elts) -> pf "{%a}" pp_record elts
-    | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
+    | RecN (Record, elts) -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
     | Ap1 (Extract {unsigned; bits}, arg) ->
         pf "(%s%i)@ %a" (if unsigned then "u" else "i") bits pp arg
     | Ap1 (Convert {dst; unsigned= true; src= Integer {bits}}, arg) ->
@@ -373,8 +376,8 @@ let invariant e =
   | Ap1 (Select _, _) -> ()
   | Ap3 (Conditional, _, _, _) -> ()
   | Ap2 (Update _, _, _) -> ()
-  | ApN (Record, elts) -> assert (not (Vector.is_empty elts))
-  | Struct_rec {elts} -> assert (not (Vector.is_empty elts))
+  | ApN (Record, elts) | RecN (Record, elts) ->
+      assert (not (Vector.is_empty elts))
 
 (** Variables are the terms constructed by [Var] *)
 module Var = struct
@@ -498,12 +501,10 @@ let fold_terms e ~init ~f =
       | Ap1 (_, x) -> fold_terms_ x s
       | Ap2 (_, x, y) -> fold_terms_ y (fold_terms_ x s)
       | Ap3 (_, x, y, z) -> fold_terms_ z (fold_terms_ y (fold_terms_ x s))
-      | ApN (_, xs) ->
+      | ApN (_, xs) | RecN (_, xs) ->
           Vector.fold ~f:(fun s x -> fold_terms_ x s) xs ~init:s
       | Add args | Mul args ->
           Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms_ arg s)
-      | Struct_rec {elts= args} ->
-          Vector.fold args ~init:s ~f:(fun s elt -> fold_terms_ elt s)
       | _ -> s
     in
     f s e
@@ -881,9 +882,8 @@ let iter e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x ; f y
   | Ap3 (_, x, y, z) -> f x ; f y ; f z
-  | ApN (_, xs) -> Vector.iter ~f xs
+  | ApN (_, xs) | RecN (_, xs) -> Vector.iter ~f xs
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Struct_rec {elts= args} -> Vector.iter ~f args
   | _ -> ()
 
 let fold e ~init:s ~f =
@@ -891,10 +891,9 @@ let fold e ~init:s ~f =
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) -> Vector.fold ~f:(fun s x -> f x s) xs ~init:s
+  | ApN (_, xs) | RecN (_, xs) ->
+      Vector.fold ~f:(fun s x -> f x s) xs ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Struct_rec {elts= args} ->
-      Vector.fold ~f:(fun s e -> f e s) args ~init:s
   | _ -> s
 
 let norm1 op x =
@@ -961,27 +960,27 @@ let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 
-let struct_rec key =
+let rec_app key =
   let memo_id = Hashtbl.create key in
   let dummy = null in
   Staged.stage
-  @@ fun ~id elt_thks ->
+  @@ fun ~id op elt_thks ->
   match Hashtbl.find memo_id id with
   | None ->
-      (* Add placeholder to prevent computing [elts] in calls to
-         [struct_rec] from [elt_thks] for recursive occurrences of [id]. *)
+      (* Add placeholder to prevent computing [elts] in calls to [rec_app]
+         from [elt_thks] for recursive occurrences of [id]. *)
       let elta = Array.create ~len:(Vector.length elt_thks) dummy in
       let elts = Vector.of_array elta in
       Hashtbl.set memo_id ~key:id ~data:elts ;
       Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elta.(i) <- elt) ;
-      Struct_rec {elts} |> check invariant
+      RecN (op, elts) |> check invariant
   | Some elts ->
       (* Do not check invariant as invariant will be checked above after the
          thunks are forced, before which invariant-checking may spuriously
          fail. Note that it is important that the value constructed here
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
-      Struct_rec {elts}
+      RecN (op, elts)
 
 let extract ?(unsigned = false) ~bits term =
   norm1 (Extract {unsigned; bits}) term
@@ -993,55 +992,56 @@ let size_of t =
   Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
       if n % 8 = 0 then Some (integer (Z.of_int (n / 8))) else None )
 
-let rec of_exp (e : Exp.t) =
-  let unsigned op typ x y =
-    match Typ.prim_bit_size_of typ with
-    | Some bits ->
-        op
-          (extract ~unsigned:true ~bits (of_exp x))
-          (extract ~unsigned:true ~bits (of_exp y))
-    | None -> violates Exp.invariant e
+let of_exp e =
+  let rec_app = Staged.unstage (rec_app (module Exp)) in
+  let rec of_exp e =
+    let unsigned op typ x y =
+      match Typ.prim_bit_size_of typ with
+      | Some bits ->
+          op
+            (extract ~unsigned:true ~bits (of_exp x))
+            (extract ~unsigned:true ~bits (of_exp y))
+      | None -> violates Exp.invariant e
+    in
+    match e with
+    | Reg {name} -> var (Var {id= 0; name})
+    | Nondet {msg} -> nondet msg
+    | Label {parent; name} -> label ~parent ~name
+    | Integer {data} -> integer data
+    | Float {data} -> float data
+    | Ap1 (Convert {unsigned; dst}, src, arg) ->
+        convert ~unsigned ~dst ~src (of_exp arg)
+    | Ap1 (Select idx, _, arg) -> select ~rcd:(of_exp arg) ~idx
+    | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
+    | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
+    | Ap2 (Lt, _, x, y) | Ap2 (Gt, _, y, x) -> lt (of_exp x) (of_exp y)
+    | Ap2 (Le, _, x, y) | Ap2 (Ge, _, y, x) -> le (of_exp x) (of_exp y)
+    | Ap2 (Ult, typ, x, y) | Ap2 (Ugt, typ, y, x) -> unsigned lt typ x y
+    | Ap2 (Ule, typ, x, y) | Ap2 (Uge, typ, y, x) -> unsigned le typ x y
+    | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
+    | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
+    | Ap2 (Add, _, x, y) -> add (of_exp x) (of_exp y)
+    | Ap2 (Sub, _, x, y) -> sub (of_exp x) (of_exp y)
+    | Ap2 (Mul, _, x, y) -> mul (of_exp x) (of_exp y)
+    | Ap2 (Div, _, x, y) -> div (of_exp x) (of_exp y)
+    | Ap2 (Rem, _, x, y) -> rem (of_exp x) (of_exp y)
+    | Ap2 (Udiv, typ, x, y) -> unsigned div typ x y
+    | Ap2 (Urem, typ, x, y) -> unsigned rem typ x y
+    | Ap2 (And, _, x, y) -> and_ (of_exp x) (of_exp y)
+    | Ap2 (Or, _, x, y) -> or_ (of_exp x) (of_exp y)
+    | Ap2 (Xor, _, x, y) -> xor (of_exp x) (of_exp y)
+    | Ap2 (Shl, _, x, y) -> shl (of_exp x) (of_exp y)
+    | Ap2 (Lshr, _, x, y) -> lshr (of_exp x) (of_exp y)
+    | Ap2 (Ashr, _, x, y) -> ashr (of_exp x) (of_exp y)
+    | Ap2 (Update idx, _, rcd, elt) ->
+        update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
+    | Ap3 (Conditional, _, cnd, thn, els) ->
+        conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
+    | ApN (Record, _, elts) -> record (Vector.map ~f:of_exp elts)
+    | ApN (Struct_rec, _, elts) ->
+        rec_app ~id:e Record (Vector.map ~f:(fun e -> lazy (of_exp e)) elts)
   in
-  match e with
-  | Reg {name} -> var (Var {id= 0; name})
-  | Nondet {msg} -> nondet msg
-  | Label {parent; name} -> label ~parent ~name
-  | Integer {data} -> integer data
-  | Float {data} -> float data
-  | Ap1 (Convert {unsigned; dst}, src, arg) ->
-      convert ~unsigned ~dst ~src (of_exp arg)
-  | Ap1 (Select idx, _, arg) -> select ~rcd:(of_exp arg) ~idx
-  | Ap2 (Eq, _, x, y) -> eq (of_exp x) (of_exp y)
-  | Ap2 (Dq, _, x, y) -> dq (of_exp x) (of_exp y)
-  | Ap2 (Lt, _, x, y) | Ap2 (Gt, _, y, x) -> lt (of_exp x) (of_exp y)
-  | Ap2 (Le, _, x, y) | Ap2 (Ge, _, y, x) -> le (of_exp x) (of_exp y)
-  | Ap2 (Ult, typ, x, y) | Ap2 (Ugt, typ, y, x) -> unsigned lt typ x y
-  | Ap2 (Ule, typ, x, y) | Ap2 (Uge, typ, y, x) -> unsigned le typ x y
-  | Ap2 (Ord, _, x, y) -> ord (of_exp x) (of_exp y)
-  | Ap2 (Uno, _, x, y) -> uno (of_exp x) (of_exp y)
-  | Ap2 (Add, _, x, y) -> add (of_exp x) (of_exp y)
-  | Ap2 (Sub, _, x, y) -> sub (of_exp x) (of_exp y)
-  | Ap2 (Mul, _, x, y) -> mul (of_exp x) (of_exp y)
-  | Ap2 (Div, _, x, y) -> div (of_exp x) (of_exp y)
-  | Ap2 (Rem, _, x, y) -> rem (of_exp x) (of_exp y)
-  | Ap2 (Udiv, typ, x, y) -> unsigned div typ x y
-  | Ap2 (Urem, typ, x, y) -> unsigned rem typ x y
-  | Ap2 (And, _, x, y) -> and_ (of_exp x) (of_exp y)
-  | Ap2 (Or, _, x, y) -> or_ (of_exp x) (of_exp y)
-  | Ap2 (Xor, _, x, y) -> xor (of_exp x) (of_exp y)
-  | Ap2 (Shl, _, x, y) -> shl (of_exp x) (of_exp y)
-  | Ap2 (Lshr, _, x, y) -> lshr (of_exp x) (of_exp y)
-  | Ap2 (Ashr, _, x, y) -> ashr (of_exp x) (of_exp y)
-  | Ap2 (Update idx, _, rcd, elt) ->
-      update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
-  | Ap3 (Conditional, _, cnd, thn, els) ->
-      conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
-  | ApN (Record, _, elts) -> record (Vector.map ~f:of_exp elts)
-  | ApN (Struct_rec, _, elts) ->
-      Staged.unstage
-        (struct_rec (module Exp))
-        ~id:e
-        (Vector.map elts ~f:(fun e -> lazy (of_exp e)))
+  of_exp e
 
 (** Transform *)
 
@@ -1074,11 +1074,11 @@ let map e ~f =
     match e with
     | Add args -> map_qset addN ~f args
     | Mul args -> map_qset mulN ~f args
-    | Struct_rec {elts= args} -> Struct_rec {elts= Vector.map args ~f:map_}
     | Ap1 (op, x) -> map1 op ~f x
     | Ap2 (op, x, y) -> map2 op ~f x y
     | Ap3 (op, x, y, z) -> map3 op ~f x y z
     | ApN (op, xs) -> mapN op ~f xs
+    | RecN (op, xs) -> RecN (op, Vector.map ~f:map_ xs)
     | _ -> e
   in
   fix map_ (fun e -> e) e
@@ -1102,17 +1102,16 @@ let rec is_constant e =
   | Ap1 (_, x) -> is_constant x
   | Ap2 (_, x, y) -> is_constant x && is_constant y
   | Ap3 (_, x, y, z) -> is_constant x && is_constant y && is_constant z
-  | ApN (_, xs) -> Vector.for_all ~f:is_constant xs
+  | ApN (_, xs) | RecN (_, xs) -> Vector.for_all ~f:is_constant xs
   | Add args | Mul args ->
       Qset.for_all ~f:(fun arg _ -> is_constant arg) args
-  | Struct_rec {elts= args} -> Vector.for_all ~f:is_constant args
   | _ -> true
 
 let classify = function
   | Add _ | Mul _ -> `Interpreted
   | Ap2 ((Eq | Dq), _, _) -> `Simplified
   | Ap1 _ | Ap2 _ | Ap3 _ | ApN _ -> `Uninterpreted
-  | _ -> `Atomic
+  | RecN _ | Var _ | Nondet _ | Label _ | Integer _ | Float _ -> `Atomic
 
 let solve e f =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp e pp f]
