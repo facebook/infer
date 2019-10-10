@@ -22,6 +22,7 @@ install: [
 depends: [
   "ANSITerminal" {>="0.7"}
   "apron"
+  "async" {>="v0.12.0" & < "v0.13"}
   "atdgen" {>="2.0.0"}
   "base64" {>="3.0.0"}
   "cmdliner" {>="1.0.0"}
@@ -43,6 +44,7 @@ depends: [
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
   "ppx_fields_conv" {>="v0.12.0" & < "v0.13"}
+  "ppx_let" {>="v0.12.0" & < "v0.13"}
   "sawja" {>="1.5.7"}
   "sqlite3"
   "utop" {with-test}

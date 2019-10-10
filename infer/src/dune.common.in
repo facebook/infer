@@ -68,6 +68,7 @@ let common_libraries =
   @ [ "ANSITerminal"
     ; "apron"
     ; "apron.octMPQ"
+    ; "async"
     ; "atdgen"
     ; "base"
     ; "base64"

@@ -22,6 +22,11 @@ install: [
 depends: [
   "ANSITerminal" {= "0.8.1"}
   "apron" {= "20160125"}
+  "async" {= "v0.12.0"}
+  "async_extra" {= "v0.12.0"}
+  "async_kernel" {= "v0.12.0"}
+  "async_rpc_kernel" {= "v0.12.0"}
+  "async_unix" {= "v0.12.0"}
   "atd" {= "2.0.0"}
   "atdgen" {= "2.0.0"}
   "atdgen-runtime" {= "2.0.0"}
@@ -109,6 +114,7 @@ depends: [
   "ppx_variants_conv" {= "v0.12.0"}
   "ppxfind" {= "1.3"}
   "ppxlib" {= "0.8.0"}
+  "protocol_version_header" {= "v0.12.0"}
   "re" {= "1.9.0"}
   "result" {= "1.4"}
   "sawja" {= "1.5.7"}
@@ -119,6 +125,7 @@ depends: [
   "splittable_random" {= "v0.12.0"}
   "sqlite3" {= "4.4.1"}
   "stdio" {= "v0.12.0"}
+  "textutils" {= "v0.12.0"}
   "time_now" {= "v0.12.0"}
   "topkg" {= "1.0.0"}
   "typerep" {= "v0.12.0"}
