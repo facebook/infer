@@ -770,6 +770,9 @@ and simp_not term =
   | Ap2 (And, x, y) -> simp_or (simp_not x) (simp_not y)
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
   | Ap2 (Or, x, y) -> simp_and (simp_not x) (simp_not y)
+  (* ¬¬e ==> e *)
+  | Ap2 (Xor, Integer {data}, e) when Z.is_true data -> e
+  | Ap2 (Xor, e, Integer {data}) when Z.is_true data -> e
   (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
   | Ap3 (Conditional, cnd, thn, els) ->
       simp_cond cnd (simp_not thn) (simp_not els)
