@@ -167,7 +167,8 @@ let retn mod_name fun_name k result =
   result
 
 let fail fmt =
-  raisef
+  let margin = Format.pp_get_margin fs () in
+  raisef ~margin
     (fun msg ->
       Format.fprintf fs "@\n@[<2>| %s@]@." msg ;
       Failure msg )

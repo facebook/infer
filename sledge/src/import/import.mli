@@ -77,7 +77,7 @@ type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
 
 exception Unimplemented of string
 
-val raisef : (string -> exn) -> ('a, unit -> _) fmt -> 'a
+val raisef : ?margin:int -> (string -> exn) -> ('a, unit -> _) fmt -> 'a
 (** Take a function from a string message to an exception, and a format
     string with the additional arguments it specifies, and then call the
     function on the formatted string and raise the returned exception. *)

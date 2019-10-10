@@ -65,9 +65,14 @@ let warn fmt =
       Format.pp_force_newline fs () )
     fs fmt
 
-let raisef exn fmt =
+let raisef ?margin exn fmt =
   let bt = Caml.Printexc.get_raw_backtrace () in
   let fs = Format.str_formatter in
+  ( match margin with
+  | Some m ->
+      Format.pp_set_margin fs m ;
+      Format.pp_set_max_indent fs (m - 1)
+  | None -> () ) ;
   Format.pp_open_box fs 2 ;
   Format.kfprintf
     (fun fs () ->
