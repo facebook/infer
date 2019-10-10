@@ -48,6 +48,7 @@ type op2 =
   | Shl  (** Shift left, bitwise *)
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
+  | Splat  (** Iterated concatenation of a single byte *)
   | Update of int  (** Constant record with updated index *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -175,6 +176,9 @@ val ashr : ?typ:Typ.t -> t -> t -> t
 
 (* if-then-else *)
 val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
+
+(* memory *)
+val splat : Typ.t -> byt:t -> siz:t -> t
 
 (* records (struct / array values) *)
 val record : Typ.t -> t vector -> t

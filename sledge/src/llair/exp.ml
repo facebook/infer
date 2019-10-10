@@ -48,6 +48,7 @@ module T = struct
       | Lshr
       | Ashr
       (* array/struct operations *)
+      | Splat
       | Update of int
     [@@deriving compare, equal, hash, sexp]
 
@@ -130,6 +131,7 @@ let pp_op2 fs op =
   | Shl -> pf "shl"
   | Lshr -> pf "lshr"
   | Ashr -> pf "ashr"
+  | Splat -> pf "^"
   | Update idx -> pf "[_|%i→_]" idx
 
 let rec pp fs exp =
@@ -155,6 +157,7 @@ let rec pp fs exp =
     | Ap1 (Convert {dst}, src, arg) ->
         pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
+    | Ap2 (Splat, _, byt, siz) -> pf "%a^%a" pp byt pp siz
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Ap2 (Xor, Integer {bits= 1}, {desc= Integer {data}}, x)
@@ -217,6 +220,13 @@ let rec invariant exp =
       | Array _ -> assert true
       | Tuple {elts} | Struct {elts} -> assert (valid_idx idx elts)
       | _ -> assert false )
+  | Ap2 (Splat, typ, byt, siz) -> (
+      assert (Typ.convertible Typ.byt (typ_of byt)) ;
+      assert (Typ.convertible Typ.siz (typ_of siz)) ;
+      match (Typ.prim_bit_size_of typ, siz.desc) with
+      | Some n, Integer {data} -> assert (Z.equal (Z.of_int n) data)
+      | None, Integer {data} -> assert (not (Z.equal Z.zero data))
+      | _ -> () )
   | Ap2 (Update idx, typ, rcd, elt) -> (
       assert (Typ.castable typ (typ_of rcd)) ;
       match typ with
@@ -276,7 +286,7 @@ and typ_of exp =
       Typ.bool
   | Ap2
       ( ( Add | Sub | Mul | Div | Rem | Udiv | Urem | And | Or | Xor | Shl
-        | Lshr | Ashr | Update _ )
+        | Lshr | Ashr | Splat | Update _ )
       , typ
       , _
       , _ )
@@ -460,6 +470,13 @@ let conditional ?typ ~cnd ~thn ~els =
   let typ = match typ with Some typ -> typ | None -> typ_of thn in
   { desc= Ap3 (Conditional, typ, cnd, thn, els)
   ; term= Term.conditional ~cnd:cnd.term ~thn:thn.term ~els:els.term }
+  |> check invariant
+
+(* memory *)
+
+let splat typ ~byt ~siz =
+  { desc= Ap2 (Splat, typ, byt, siz)
+  ; term= Term.splat ~byt:byt.term ~siz:siz.term }
   |> check invariant
 
 (* records (struct / array values) *)

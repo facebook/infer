@@ -371,7 +371,18 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> xlate_int x llv
     | ConstantFP -> xlate_float x llv
-    | ConstantPointerNull | ConstantAggregateZero -> Exp.null
+    | ConstantPointerNull -> Exp.null
+    | ConstantAggregateZero -> (
+        let llt = Llvm.type_of llv in
+        let typ = xlate_type x llt in
+        match typ with
+        | Integer _ -> Exp.integer typ Z.zero
+        | Pointer _ -> Exp.null
+        | Array _ | Tuple _ | Struct _ ->
+            Exp.splat typ
+              ~byt:(Exp.integer Typ.byt Z.zero)
+              ~siz:(Exp.integer Typ.siz (Z.of_int (size_of x llt)))
+        | _ -> fail "ConstantAggregateZero of type %a" Typ.pp typ () )
     | ConstantVector | ConstantArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
