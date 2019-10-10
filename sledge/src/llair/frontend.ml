@@ -1309,12 +1309,13 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
 
-let transform : Llvm.llmodule -> unit =
+let transform ~internalize : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
   let entry_points = Config.find_list "entry-points" in
-  Llvm_ipo.add_internalize_predicate pm (fun fn ->
-      List.exists entry_points ~f:(String.equal fn) ) ;
+  if internalize then
+    Llvm_ipo.add_internalize_predicate pm (fun fn ->
+        List.exists entry_points ~f:(String.equal fn) ) ;
   Llvm_ipo.add_global_dce pm ;
   Llvm_ipo.add_global_optimizer pm ;
   Llvm_ipo.add_merge_functions pm ;
@@ -1349,7 +1350,7 @@ let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
  fun llcontext link_ctx bc_file ->
   Llvm_linker.link_in link_ctx (read_and_parse llcontext bc_file)
 
-let translate ~models ~fuzzer : string list -> Llair.t =
+let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
  fun inputs ->
   [%Trace.call fun {pf} ->
     pf "%a" (List.pp "@ " Format.pp_print_string) inputs]
@@ -1371,7 +1372,7 @@ let translate ~models ~fuzzer : string list -> Llair.t =
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
   ) ;
-  transform llmodule ;
+  transform ~internalize llmodule ;
   scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)

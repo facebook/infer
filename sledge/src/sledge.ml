@@ -135,10 +135,16 @@ let translate =
       ~doc:"do not add models for C/C++ runtime and standard libraries"
   and fuzzer =
     flag "fuzzer" no_arg ~doc:"add a harness for libFuzzer targets"
+  and no_internalize =
+    flag "no-internalize" no_arg
+      ~doc:
+        "do not internalize all functions except the entry points \
+         specified in the config file"
   in
   fun bitcode_inputs () ->
     let program =
-      Frontend.translate ~models:(not no_models) ~fuzzer bitcode_inputs
+      Frontend.translate ~models:(not no_models) ~fuzzer
+        ~internalize:(not no_internalize) bitcode_inputs
     in
     Option.iter ~f:(marshal program) llair_output ;
     program

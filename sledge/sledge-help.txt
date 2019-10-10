@@ -56,6 +56,8 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-modules <file>]       write list of bitcode files to <file>, or to standard
                           output if <file> is `-`
+  [-no-internalize]       do not internalize all functions except the entry
+                          points specified in the config file
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
   [-preanalyze-globals]   pre-analyze global variables used by each function
@@ -139,6 +141,8 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
   [-margin <cols>]        wrap debug tracing at <cols> columns
+  [-no-internalize]       do not internalize all functions except the entry
+                          points specified in the config file
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
   [-preanalyze-globals]   pre-analyze global variables used by each function
@@ -162,6 +166,8 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
   [-margin <cols>]        wrap debug tracing at <cols> columns
+  [-no-internalize]       do not internalize all functions except the entry
+                          points specified in the config file
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
   [-trace <spec>]         enable debug tracing

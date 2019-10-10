@@ -28,7 +28,7 @@ default: test
 # all analyze tests
 translate:
 	@find -L llvm -name '*.ll' -or -name '*.bc' \
-	 | parallel --bar $(SLEDGE) llvm translate -no-models $(SLEDGE_ARGS)
+	 | parallel --bar $(SLEDGE) llvm translate -no-models -no-internalize $(SLEDGE_ARGS)
 
 _translate-report-raw:
 	@find -L llvm -name '*.out' \
