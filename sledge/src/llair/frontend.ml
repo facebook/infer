@@ -778,7 +778,7 @@ let pp_code fs (insts, term, blocks) =
 
 let rec xlate_func_name x llv =
   match Llvm.classify_value llv with
-  | Function -> Exp.reg (xlate_name x ~global:() llv)
+  | Function | GlobalVariable -> Exp.reg (xlate_name x ~global:() llv)
   | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
   | Argument | Instruction _ -> xlate_value x llv
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
