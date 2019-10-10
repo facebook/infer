@@ -94,8 +94,8 @@ end
 [@@@warning "-32"]
 
 let pp_profiler_sample_set fmt s =
-  F.fprintf fmt " (set size = %i) " (JPS.ProfilerSample.cardinal s) ;
-  JPS.ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Typ.Procname.pp m) s
+  F.fprintf fmt " (set size = %i) " (Typ.Procname.Set.cardinal s) ;
+  Typ.Procname.Set.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Typ.Procname.pp m) s
 
 
 module TestSample = struct
@@ -126,16 +126,16 @@ let affected_methods method_range_map file_changed_lines changed_lines =
       if
         String.equal method_file file_changed_lines
         && List.exists ~f:(fun l -> in_range l range) changed_lines
-      then JPS.ProfilerSample.add key acc
+      then Typ.Procname.Set.add key acc
       else acc )
-    method_range_map JPS.ProfilerSample.empty
+    method_range_map Typ.Procname.Set.empty
 
 
 let compute_affected_methods_java changed_lines_map method_range_map =
-  String.Map.fold changed_lines_map ~init:JPS.ProfilerSample.empty
+  String.Map.fold changed_lines_map ~init:Typ.Procname.Set.empty
     ~f:(fun ~key:file_changed_lines ~data acc ->
       let am = affected_methods method_range_map file_changed_lines data in
-      JPS.ProfilerSample.union am acc )
+      Typ.Procname.Set.union am acc )
 
 
 let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map =
@@ -144,13 +144,13 @@ let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_
   | Some changed_lines ->
       affected_methods clang_range_map fname changed_lines
   | None ->
-      JPS.ProfilerSample.empty
+      Typ.Procname.Set.empty
 
 
 let emit_relevant_methods relevant_methods =
   let cleaned_methods =
     List.dedup_and_sort ~compare:String.compare
-      (List.map (JPS.ProfilerSample.elements relevant_methods) ~f:Typ.Procname.to_string)
+      (List.map (Typ.Procname.Set.elements relevant_methods) ~f:Typ.Procname.to_string)
   in
   let json = `List (List.map ~f:(fun t -> `String t) cleaned_methods) in
   let outpath = Config.results_dir ^/ Config.export_changed_functions_output in
@@ -181,11 +181,11 @@ let test_to_run ?clang_range_map ?source_file () =
         compute_affected_methods_java changed_lines_map method_range
   in
   let profiler_samples = TestSample.read_test_sample test_samples_file in
-  if JPS.ProfilerSample.is_empty affected_methods then []
+  if Typ.Procname.Set.is_empty affected_methods then []
   else
     List.fold profiler_samples ~init:[] ~f:(fun acc (label, profiler_samples) ->
-        let intersection = JPS.ProfilerSample.inter affected_methods profiler_samples in
-        if JPS.ProfilerSample.is_empty intersection then acc else label :: acc )
+        let intersection = Typ.Procname.Set.inter affected_methods profiler_samples in
+        if Typ.Procname.Set.is_empty intersection then acc else label :: acc )
 
 
 let emit_tests_to_run relevant_tests =

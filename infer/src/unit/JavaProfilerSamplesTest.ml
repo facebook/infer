@@ -163,7 +163,7 @@ let test_from_json_string_with_valid_input =
     assert_equal ~cmp:(List.equal JavaProfilerSamples.equal_labeled_profiler_sample) expected found
   in
   let input1 = "[{\"test\": \"label1\",\"methods\": []}]" in
-  let expected1 = [("label1", JavaProfilerSamples.ProfilerSample.of_list [])] in
+  let expected1 = [("label1", Typ.Procname.Set.of_list [])] in
   let input2 =
     Printf.sprintf
       "[{\"foo\":{},\"test\": \"label1\",\"methods\": [{\"class\": \"ggg.hhh.Iii\", \"boo\": \
@@ -178,7 +178,7 @@ let test_from_json_string_with_valid_input =
   in
   let expected2 =
     [ ( "label1"
-      , JavaProfilerSamples.ProfilerSample.of_list
+      , Typ.Procname.Set.of_list
           [ Typ.Procname.(
               Java
                 (Java.make
@@ -198,7 +198,7 @@ let test_from_json_string_with_valid_input =
                    ; mk_split (None, "long") ]
                    Java.Non_Static)) ] )
     ; ( "label2"
-      , JavaProfilerSamples.ProfilerSample.of_list
+      , Typ.Procname.Set.of_list
           [ Typ.Procname.(
               Java
                 (Java.make
@@ -218,7 +218,7 @@ let test_from_json_string_with_valid_input =
   in
   let expected3 =
     [ ( "label1"
-      , JavaProfilerSamples.ProfilerSample.of_list
+      , Typ.Procname.Set.of_list
           [ Typ.Procname.(
               Java
                 (Java.make
@@ -230,7 +230,7 @@ let test_from_json_string_with_valid_input =
                    (Typ.Name.Java.from_string "ggg.hhh.Iii")
                    None "<clinit>" [] Java.Non_Static)) ] )
     ; ( "label2"
-      , JavaProfilerSamples.ProfilerSample.of_list
+      , Typ.Procname.Set.of_list
           [ Typ.Procname.(
               Java
                 (Java.make

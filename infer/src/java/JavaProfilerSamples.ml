@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module ProfilerSample = Caml.Set.Make (Typ.Procname)
 
 module JNI = struct
   (* https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html *)
@@ -282,13 +281,13 @@ let create_procname ~classname ~methodname ~signature =
        Typ.Procname.Java.Non_Static)
 
 
-type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
+type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
 
 let equal_labeled_profiler_sample = [%compare.equal: labeled_profiler_sample]
 
 let from_java_profiler_samples j ~use_signature =
   let process_methods methods =
-    ProfilerSample.of_list
+    Typ.Procname.Set.of_list
       (List.map
          ~f:(fun {Java_profiler_samples_t.classname; methodname; signature} ->
            let signature =

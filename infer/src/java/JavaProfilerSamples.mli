@@ -7,8 +7,6 @@
 
 open! IStd
 
-module ProfilerSample : Caml.Set.S with type elt = Typ.Procname.t
-
 module JNI : sig
   val void_method_with_no_arguments : string
 
@@ -41,7 +39,7 @@ module JNI : sig
   end
 end
 
-type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
+type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
 
 val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_sample -> bool
 
