@@ -1,6 +1,7 @@
 {
    "external-java-packages": [
     "android.",
+    "androidx.",
     "com.android.",
     "com.fasterxml",
     "com.google.",

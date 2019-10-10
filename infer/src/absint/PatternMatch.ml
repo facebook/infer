@@ -66,10 +66,23 @@ let implements_list = implements "java.util.List"
 
 let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
 
-let implements_pseudo_collection t s =
-  implements "android.util.SparseArray" t s
-  || implements "android.util.SparseIntArray" t s
-  || implements_xmob_utils "IntArrayList" t s
+let implements_pseudo_collection =
+  let androidx_class_names =
+    List.map
+      ~f:(fun class_name -> "androidx.collection." ^ class_name)
+      [ "ArrayMap"
+      ; "ArraySet"
+      ; "CircularArray"
+      ; "LongSparseArray"
+      ; "LruCache"
+      ; "SimpleArrayMap"
+      ; "SparseArrayCompat" ]
+  in
+  fun t s ->
+    implements "android.util.SparseArray" t s
+    || implements "android.util.SparseIntArray" t s
+    || implements_xmob_utils "IntArrayList" t s
+    || List.exists ~f:(fun class_name -> implements class_name t s) androidx_class_names
 
 
 let implements_enumeration = implements "java.util.Enumeration"
