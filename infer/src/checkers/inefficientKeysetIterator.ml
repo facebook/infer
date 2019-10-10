@@ -26,6 +26,10 @@ let find_first_arg_id ~fun_name ~class_name_f ~lhs_f = function
       None
 
 
+let implements_map tenv s =
+  PatternMatch.implements_map tenv s || PatternMatch.implements_androidx_map tenv s
+
+
 (** If given a node that has 4 instructions and calls fun_name, 
     pickup bcvarY, i.e. variable for the first argument 
      n$X      = *&$bcvarY
@@ -52,8 +56,7 @@ let report_matching_get tenv summary pvar loop_nodes : unit =
       let instrs = Procdesc.Node.get_instrs node in
       if Instrs.count instrs >= 5 then
         let instr_arr = Instrs.get_underlying_not_reversed instrs in
-        find_first_arg_id ~fun_name:"get"
-          ~class_name_f:(PatternMatch.implements_map tenv)
+        find_first_arg_id ~fun_name:"get" ~class_name_f:(implements_map tenv)
           ~lhs_f:(fun _ -> true)
           instr_arr.(3)
         |> Option.iter ~f:(fun arg_id ->
@@ -113,7 +116,7 @@ let checker Callbacks.{summary; exe_env} : Summary.t =
         when_dominating_preds_satisfy idom loop_head ~fun_name:"iterator"
           ~class_name_f:(PatternMatch.implements_set tenv) ~f:(fun itr_node _ ->
             when_dominating_preds_satisfy idom itr_node ~fun_name:"keySet"
-              ~class_name_f:(PatternMatch.implements_map tenv) ~f:(fun _keySet_node get_pvar ->
+              ~class_name_f:(implements_map tenv) ~f:(fun _keySet_node get_pvar ->
                 report_matching_get tenv summary get_pvar loop_nodes ) ) )
     loop_head_to_loop_nodes ;
   summary

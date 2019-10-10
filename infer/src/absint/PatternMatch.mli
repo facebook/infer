@@ -70,6 +70,9 @@ val implements_nio : string -> Tenv.t -> string -> bool
 val implements_map : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Map *)
 
+val implements_androidx_map : Tenv.t -> string -> bool
+(** Check whether class implements a AndroidX's Map *)
+
 val implements_set : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Set *)
 

@@ -95,6 +95,8 @@ let implements_nio class_name = implements ("java.nio." ^ class_name)
 
 let implements_map = implements "java.util.Map"
 
+let implements_androidx_map = implements "androidx.collection.SimpleArrayMap"
+
 let implements_set = implements "java.util.Set"
 
 let implements_map_entry = implements "java.util.Map$Entry"

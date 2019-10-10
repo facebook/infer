@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import android.os.Bundle;
+import androidx.collection.ArrayMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -90,6 +91,13 @@ class Test {
   public void from_bundle_ok(Bundle extras) {
     for (String key : extras.keySet()) {
       Object t = extras.get(key);
+    }
+  }
+
+  // ArrayMap extends SimpleMap.
+  void inefficient_arraymap_loop_bad(ArrayMap<String, Integer> arrayMap) {
+    for (String key : arrayMap.keySet()) {
+      arrayMap.get(key);
     }
   }
 }
