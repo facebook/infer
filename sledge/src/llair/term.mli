@@ -69,13 +69,13 @@ and t = private
   | RecN of recN * t vector
       (** Recursive n-ary application, may recursively refer to itself
           (transitively) from its args. NOTE: represented by cyclic values. *)
-  | Integer of {data: Z.t}  (** Integer constant *)
-  | Float of {data: string}  (** Floating-point constant *)
+  | Label of {parent: string; name: string}
+      (** Address of named code block within parent function *)
   | Nondet of {msg: string}
       (** Anonymous local variable with arbitrary value, representing
           non-deterministic approximation of value described by [msg] *)
-  | Label of {parent: string; name: string}
-      (** Address of named code block within parent function *)
+  | Float of {data: string}  (** Floating-point constant *)
+  | Integer of {data: Z.t}  (** Integer constant *)
 [@@deriving compare, equal, hash, sexp]
 
 val comparator : (t, comparator_witness) Comparator.t

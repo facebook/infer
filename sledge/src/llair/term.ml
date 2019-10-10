@@ -59,10 +59,10 @@ module rec T : sig
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
     | RecN of recN * t vector  (** NOTE: cyclic *)
-    | Integer of {data: Z.t}
-    | Float of {data: string}
-    | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | Nondet of {msg: string}
+    | Float of {data: string}
+    | Integer of {data: Z.t}
   [@@deriving compare, equal, hash, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -119,10 +119,10 @@ and T0 : sig
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
     | RecN of recN * t vector
-    | Integer of {data: Z.t}
-    | Float of {data: string}
-    | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | Nondet of {msg: string}
+    | Float of {data: string}
+    | Integer of {data: Z.t}
   [@@deriving compare, equal, hash, sexp]
 end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
@@ -166,10 +166,10 @@ end = struct
     | Ap3 of op3 * t * t * t
     | ApN of opN * t vector
     | RecN of recN * t vector
-    | Integer of {data: Z.t}
-    | Float of {data: string}
-    | Nondet of {msg: string}
     | Label of {parent: string; name: string}
+    | Nondet of {msg: string}
+    | Float of {data: string}
+    | Integer of {data: Z.t}
   [@@deriving compare, equal, hash, sexp]
 end
 
