@@ -6,8 +6,6 @@
  *)
 
 open! IStd
-module F = Format
-module MF = MarkupFormatter
 module L = Logging
 
 type lock_effect =
@@ -351,13 +349,14 @@ let ui_matcher_records =
     ; methods= ["on"] } ]
 
 
-let is_ui_method =
+let is_modeled_ui_method =
   let matchers = List.map ui_matcher_records ~f:MethodMatcher.of_record in
   (* we pass an empty actuals list because all matching is done on class and method name here *)
   fun tenv pname -> MethodMatcher.of_list matchers tenv pname []
 
 
 type annotation_trail = DirectlyAnnotated | Override of Typ.Procname.t | SuperClass of Typ.name
+[@@deriving compare]
 
 let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_name =
   let is_annotated pn = Annotations.pname_has_return_annot pn ~attrs_of_pname is_annot in
@@ -382,40 +381,13 @@ let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_nam
   else Typ.Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
-let mono_pname = MF.wrap_monospaced Typ.Procname.pp
+let annotated_as_worker_thread ~attrs_of_pname tenv pname =
+  find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_worker_thread tenv pname
 
-let runs_on_ui_thread ~attrs_of_pname tenv pname =
-  let is_uithread = Annotations.ia_is_uithread_equivalent in
-  let describe ~procname fmt = function
-    | DirectlyAnnotated ->
-        F.fprintf fmt "%a is annotated %a" mono_pname procname MF.pp_monospaced
-          Annotations.ui_thread
-    | Override override_pname ->
-        F.fprintf fmt "class %a overrides %a, which is annotated %a" mono_pname procname mono_pname
-          override_pname MF.pp_monospaced Annotations.ui_thread
-    | SuperClass class_name -> (
-      match Typ.Procname.get_class_type_name procname with
-      | None ->
-          L.die InternalError "Cannot get class of method %a@." Typ.Procname.pp procname
-      | Some current_class ->
-          let pp_extends fmt current_class =
-            if Typ.Name.equal current_class class_name then ()
-            else F.fprintf fmt " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) class_name
-          in
-          F.fprintf fmt "class %s%a is annotated %a"
-            (MF.monospaced_to_string (Typ.Name.name current_class))
-            pp_extends current_class MF.pp_monospaced Annotations.ui_thread )
-  in
-  if
-    find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_worker_thread tenv
-      pname
-    |> Option.is_some
-  then None
-  else if is_ui_method tenv pname then
-    Some (F.asprintf "%a is a standard UI-thread method" mono_pname pname)
-  else
-    find_override_or_superclass_annotated ~attrs_of_pname is_uithread tenv pname
-    |> Option.map ~f:(fun trail -> F.asprintf "%a" (describe ~procname:pname) trail)
+
+let annotated_as_uithread_equivalent ~attrs_of_pname tenv pname =
+  find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_uithread_equivalent tenv
+    pname
 
 
 let cpp_lock_types_matcher = Clang.lock_types_matcher

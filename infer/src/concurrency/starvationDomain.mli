@@ -71,8 +71,15 @@ end
 
 module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
+module UIThreadElement : sig
+  type t = StarvationModels.uithread_explanation =
+    | IsModeled of {proc_name: Typ.Procname.t}
+    | CallsModeled of {proc_name: Typ.Procname.t; callee: Typ.Procname.t}
+    | Annotated of {proc_name: Typ.Procname.t; trail: ConcurrencyModels.annotation_trail}
+end
+
 module UIThreadExplanationDomain : sig
-  include ExplicitTrace.TraceElem with type elem_t = string
+  include ExplicitTrace.TraceElem
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
@@ -101,8 +108,8 @@ val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Lo
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 
-val set_on_ui_thread : t -> loc:Location.t -> string -> t
-(** set the property "runs on UI thread" to true by attaching the given explanation string as to
+val set_on_ui_thread : t -> loc:Location.t -> UIThreadElement.t -> t
+(** set the property "runs on UI thread" to true by attaching the given explanation as to
     why this method is thought to do so *)
 
 val add_guard :

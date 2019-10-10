@@ -32,16 +32,8 @@ val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 val get_thread : Typ.Procname.t -> thread
 (** describe how this procedure behaves with respect to thread access *)
 
-val runs_on_ui_thread :
-     attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
-  -> Tenv.t
-  -> Typ.Procname.t
-  -> string option
-(** We don't want to warn on methods that run on the UI thread because they should always be
-    single-threaded. Assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount,
-    @OnUnbind, @OnUnmount always run on the UI thread.  Also assume that any superclass
-    marked @UiThread implies all methods are on UI thread. Return Some string explaining why
-    this method is on the UI thread, else return None. *)
+val is_modeled_ui_method : Tenv.t -> Typ.Procname.t -> bool
+(** is it a modeled UI thread method? *)
 
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> (Typ.name * Typ.name list) option
@@ -55,6 +47,7 @@ type annotation_trail =
   | DirectlyAnnotated  (** the method is directly annotated as such *)
   | Override of Typ.Procname.t  (** it overrides a method annotated in a super class *)
   | SuperClass of Typ.name  (** the method's class or a super class of that is annotated as such *)
+[@@deriving compare]
 
 val find_override_or_superclass_annotated :
      attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
@@ -62,4 +55,18 @@ val find_override_or_superclass_annotated :
   -> Tenv.t
   -> Typ.Procname.t
   -> annotation_trail sexp_option
-(** check if a method's annotations satisfy the given predicate *)
+(** check if a method's transitive annotations satisfy the given predicate *)
+
+val annotated_as_worker_thread :
+     attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
+  -> Tenv.t
+  -> Typ.Procname.t
+  -> annotation_trail sexp_option
+(** check if a method is transitively annotated @WorkerThread *)
+
+val annotated_as_uithread_equivalent :
+     attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
+  -> Tenv.t
+  -> Typ.Procname.t
+  -> annotation_trail sexp_option
+(** check if a method is transitively annotated @UIThread or equivalent *)

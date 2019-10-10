@@ -358,14 +358,45 @@ module CriticalPairs = struct
       astate empty
 end
 
+module UIThreadElement = struct
+  type t = StarvationModels.uithread_explanation =
+    | IsModeled of {proc_name: Typ.Procname.t}
+    | CallsModeled of {proc_name: Typ.Procname.t; callee: Typ.Procname.t}
+    | Annotated of {proc_name: Typ.Procname.t; trail: ConcurrencyModels.annotation_trail}
+  [@@deriving compare]
+
+  let mono_pname = MF.wrap_monospaced Typ.Procname.pp
+
+  let describe fmt = function
+    | IsModeled {proc_name} ->
+        F.fprintf fmt "%a is a standard UI-thread method" mono_pname proc_name
+    | CallsModeled {proc_name= _; callee} ->
+        F.fprintf fmt "it calls %a" pname_pp callee
+    | Annotated {proc_name; trail= DirectlyAnnotated} ->
+        F.fprintf fmt "%a is annotated %a" mono_pname proc_name MF.pp_monospaced
+          Annotations.ui_thread
+    | Annotated {proc_name; trail= Override override_pname} ->
+        F.fprintf fmt "class %a overrides %a, which is annotated %a" mono_pname proc_name
+          mono_pname override_pname MF.pp_monospaced Annotations.ui_thread
+    | Annotated {proc_name; trail= SuperClass class_name} -> (
+      match Typ.Procname.get_class_type_name proc_name with
+      | None ->
+          L.die InternalError "Cannot get class of method %a@." Typ.Procname.pp proc_name
+      | Some current_class ->
+          let pp_extends fmt current_class =
+            if Typ.Name.equal current_class class_name then ()
+            else F.fprintf fmt " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) class_name
+          in
+          F.fprintf fmt "class %s%a is annotated %a"
+            (MF.monospaced_to_string (Typ.Name.name current_class))
+            pp_extends current_class MF.pp_monospaced Annotations.ui_thread )
+
+
+  let pp = describe
+end
+
 module UIThreadExplanationDomain = struct
-  module StringElement = struct
-    include String
-
-    let describe = pp
-  end
-
-  include ExplicitTrace.MakeTraceElem (StringElement) (ExplicitTrace.DefaultCallPrinter)
+  include ExplicitTrace.MakeTraceElem (UIThreadElement) (ExplicitTrace.DefaultCallPrinter)
 
   let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
 
@@ -443,11 +474,9 @@ let ( <= ) ~lhs ~rhs =
   && UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
 
 
-(* for every lock b held locally, add a pair (b, event) *)
 let add_critical_pair tenv_opt lock_state event ~loc acc =
   if should_skip tenv_opt event lock_state then acc
   else
-    (* FIXME we should not do this repeatedly in the fold below *)
     let acquisitions = LockState.get_acquisitions lock_state in
     let critical_pair = CriticalPair.make ~loc acquisitions event in
     CriticalPairs.add critical_pair acc
@@ -455,7 +484,6 @@ let add_critical_pair tenv_opt lock_state event ~loc acc =
 
 let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
   { astate with
-    (* FIXME do one fold not two *)
     critical_pairs=
       List.fold locks ~init:critical_pairs ~f:(fun acc lock ->
           let event = Event.make_acquire lock in

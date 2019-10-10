@@ -190,3 +190,18 @@ let strict_mode_matcher =
 
 let is_strict_mode_violation tenv pn actuals =
   Config.starvation_strict_mode && strict_mode_matcher tenv pn actuals
+
+
+type uithread_explanation =
+  | IsModeled of {proc_name: Typ.Procname.t}
+  | CallsModeled of {proc_name: Typ.Procname.t; callee: Typ.Procname.t}
+  | Annotated of {proc_name: Typ.Procname.t; trail: ConcurrencyModels.annotation_trail}
+[@@deriving compare]
+
+let get_uithread_explanation ~attrs_of_pname tenv proc_name =
+  let open ConcurrencyModels in
+  if annotated_as_worker_thread ~attrs_of_pname tenv proc_name |> Option.is_some then None
+  else if is_modeled_ui_method tenv proc_name then Some (IsModeled {proc_name})
+  else
+    annotated_as_uithread_equivalent ~attrs_of_pname tenv proc_name
+    |> Option.map ~f:(fun trail -> Annotated {proc_name; trail})

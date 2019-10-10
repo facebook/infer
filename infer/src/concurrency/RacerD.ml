@@ -500,7 +500,6 @@ let analyze_procedure {Callbacks.exe_env; summary} =
   let proc_name = Summary.get_proc_name summary in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let open RacerDModels in
-  let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
@@ -513,7 +512,6 @@ let analyze_procedure {Callbacks.exe_env; summary} =
       let threads =
         if
           runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes tenv proc_name
-          |> Option.is_some
           || is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf
         else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv

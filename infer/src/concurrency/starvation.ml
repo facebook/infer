@@ -13,6 +13,8 @@ let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
+let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
+
 let is_ui_thread_model pn =
   ConcurrencyModels.(match get_thread pn with MainThread -> true | _ -> false)
 
@@ -117,8 +119,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let locks = List.hd actuals |> Option.to_list in
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_ui_thread_model callee ->
-          let explanation = F.asprintf "it calls %a" pname_pp callee in
-          Domain.set_on_ui_thread astate ~loc explanation
+          Domain.set_on_ui_thread astate ~loc
+            (Domain.UIThreadElement.CallsModeled {proc_name= procname; callee})
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java -> (
@@ -161,8 +163,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
         StarvationDomain.acquire tenv StarvationDomain.bottom ~procname ~loc (Option.to_list lock)
     in
     let initial =
-      ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes
-        tenv procname
+      StarvationModels.get_uithread_explanation ~attrs_of_pname tenv procname
       |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial ~loc)
     in
     let filter_blocks =
@@ -369,8 +370,7 @@ let report_lockless_violations (tenv, summary) StarvationDomain.{critical_pairs}
     let check annot = Annotations.(ia_ends_with annot lockless) in
     let check_attributes pname =
       PatternMatch.check_class_attributes check tenv pname
-      || Annotations.pname_has_return_annot pname
-           ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes check
+      || Annotations.pname_has_return_annot pname ~attrs_of_pname check
     in
     PatternMatch.override_exists check_attributes tenv pname
   in
