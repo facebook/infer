@@ -64,10 +64,12 @@ let implements_collections = implements "java.util.Collections"
 
 let implements_list = implements "java.util.List"
 
+let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
+
 let implements_pseudo_collection t s =
   implements "android.util.SparseArray" t s
   || implements "android.util.SparseIntArray" t s
-  || implements "com.moblica.common.xmob.utils.IntArrayList" t s
+  || implements_xmob_utils "IntArrayList" t s
 
 
 let implements_enumeration = implements "java.util.Enumeration"

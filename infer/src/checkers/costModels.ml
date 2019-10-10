@@ -9,6 +9,8 @@ open! IStd
 module BasicCost = CostDomain.BasicCost
 open BufferOverrunUtils.ModelEnv
 
+let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one
+
 let linear exp ~of_function {integer_type_widths; location} ~ret:_ inferbo_mem =
   let itv =
     BufferOverrunSemantics.eval integer_type_widths exp inferbo_mem
@@ -164,7 +166,11 @@ module Call = struct
           $+ capt_exp $+ capt_exp $--> JavaString.substring_no_end
         ; +PatternMatch.implements_inject "Provider"
           &:: "get"
-          <>--> modeled ~of_function:"Provider.get" ]
+          <>--> modeled ~of_function:"Provider.get"
+        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
+        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
+        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model
+        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model ]
     in
     merge_dispatchers dispatcher FbCostModels.Call.dispatch
 end
