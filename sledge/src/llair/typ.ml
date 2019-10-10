@@ -131,13 +131,13 @@ let rec equivalent t0 t1 =
       m = n && equivalent t u
   | _ -> equal t0 t1
 
-let rec castable t0 t1 =
+let castable t0 t1 =
   match (t0, t1) with
-  | (Pointer _ | Integer _), (Pointer _ | Integer _) -> (
+  | ( (Pointer _ | Integer _ | Float _ | Array _)
+    , (Pointer _ | Integer _ | Float _ | Array _) ) -> (
     match (prim_bit_size_of t0, prim_bit_size_of t1) with
     | Some n0, Some n1 -> n0 = n1
     | _ -> false )
-  | Array {elt= t; len= m}, Array {elt= u; len= n} -> m = n && castable t u
   | _ -> equal t0 t1
 
 let rec convertible t0 t1 =

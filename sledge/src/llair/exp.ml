@@ -210,20 +210,20 @@ let rec invariant exp =
   | Label _ -> assert true
   | Ap1 (Convert {dst}, src, arg) ->
       assert (Typ.convertible dst src) ;
-      assert (Typ.equal src (typ_of arg))
+      assert (Typ.castable src (typ_of arg))
   | Ap1 (Select idx, typ, rcd) -> (
-      assert (Typ.equal typ (typ_of rcd)) ;
+      assert (Typ.castable typ (typ_of rcd)) ;
       match typ with
       | Array _ -> assert true
       | Tuple {elts} | Struct {elts} -> assert (valid_idx idx elts)
       | _ -> assert false )
   | Ap2 (Update idx, typ, rcd, elt) -> (
-      assert (Typ.equal typ (typ_of rcd)) ;
+      assert (Typ.castable typ (typ_of rcd)) ;
       match typ with
       | Tuple {elts} | Struct {elts} ->
           assert (valid_idx idx elts) ;
-          assert (Typ.equal (Vector.get elts idx) (typ_of elt))
-      | Array {elt= typ_elt} -> assert (Typ.equal typ_elt (typ_of elt))
+          assert (Typ.castable (Vector.get elts idx) (typ_of elt))
+      | Array {elt= typ_elt} -> assert (Typ.castable typ_elt (typ_of elt))
       | _ -> assert false )
   | Ap2 (op, typ, x, y) -> (
     match (op, typ) with
@@ -234,24 +234,25 @@ let rec invariant exp =
      |(Mul | Div | Rem), (Integer _ | Float _)
      |(Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr), Integer _ ->
         let typ_x = typ_of x and typ_y = typ_of y in
-        assert (Typ.equal typ typ_x) ;
-        assert (Typ.equal typ_x typ_y)
+        assert (Typ.castable typ typ_x) ;
+        assert (Typ.castable typ_x typ_y)
     | _ -> assert false )
   | Ap3 (Conditional, typ, cnd, thn, els) ->
       assert (Typ.is_sized typ) ;
-      assert (Typ.equal Typ.bool (typ_of cnd)) ;
-      assert (Typ.equal typ (typ_of thn)) ;
-      assert (Typ.equal typ (typ_of els))
+      assert (Typ.castable Typ.bool (typ_of cnd)) ;
+      assert (Typ.castable typ (typ_of thn)) ;
+      assert (Typ.castable typ (typ_of els))
   | ApN ((Record | Struct_rec), typ, args) -> (
     match typ with
     | Array {elt} ->
         assert (
-          Vector.for_all args ~f:(fun arg -> Typ.equal elt (typ_of arg)) )
+          Vector.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg))
+        )
     | Tuple {elts} | Struct {elts} ->
         assert (Vector.length elts = Vector.length args) ;
         assert (
           Vector.for_all2_exn elts args ~f:(fun typ arg ->
-              Typ.equal typ (typ_of arg) ) )
+              Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
   [@@warning "-9"]
 
