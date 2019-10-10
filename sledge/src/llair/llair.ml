@@ -219,9 +219,8 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
-  let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
-  let dummy_reg = Reg.program ~global:() dummy_ptr_typ "dummy" in
-  { name= Global.mk dummy_reg dummy_ptr_typ Loc.none
+  let dummy_reg = Reg.program ~global:() Typ.ptr "dummy" in
+  { name= Global.mk dummy_reg Typ.ptr Loc.none
   ; params= []
   ; freturn= None
   ; fthrow= dummy_reg
@@ -432,7 +431,7 @@ module Func = struct
     assert (func == func.entry.parent) ;
     let {name= {typ; _}; cfg; _} = func in
     match typ with
-    | Pointer {elt= Function {return; _}} ->
+    | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
             (Vector.contains_dup cfg ~compare:(fun b1 b2 ->

@@ -500,7 +500,7 @@ let simp_convert ~unsigned dst src arg =
   if (not unsigned) && Typ.equivalent dst src then arg
   else
     match (dst, src, arg) with
-    | Integer {bits= m}, Integer {bits= n}, Integer {data} ->
+    | Integer {bits= m; _}, Integer {bits= n; _}, Integer {data} ->
         integer (Z.extract ~unsigned (min m n) data)
     | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
 
@@ -951,8 +951,7 @@ let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 
 let size_of t =
-  Option.bind (Typ.prim_bit_size_of t) ~f:(fun n ->
-      if n % 8 = 0 then Some (integer (Z.of_int (n / 8))) else None )
+  Option.map ~f:(fun n -> integer (Z.of_int n)) (Typ.size_of t)
 
 (** Transform *)
 

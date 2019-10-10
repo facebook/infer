@@ -223,7 +223,7 @@ let rec invariant exp =
   | Ap2 (Splat, typ, byt, siz) -> (
       assert (Typ.convertible Typ.byt (typ_of byt)) ;
       assert (Typ.convertible Typ.siz (typ_of siz)) ;
-      match (Typ.prim_bit_size_of typ, siz.desc) with
+      match (Typ.size_of typ, siz.desc) with
       | Some n, Integer {data} -> assert (Z.equal (Z.of_int n) data)
       | None, Integer {data} -> assert (not (Z.equal Z.zero data))
       | _ -> () )
@@ -545,10 +545,10 @@ let fold_regs e ~init ~f =
 
 let is_true e =
   match e.desc with
-  | Integer {data; typ= Integer {bits= 1}} -> Z.is_true data
+  | Integer {data; typ= Integer {bits= 1; _}} -> Z.is_true data
   | _ -> false
 
 let is_false e =
   match e.desc with
-  | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
+  | Integer {data; typ= Integer {bits= 1; _}} -> Z.is_false data
   | _ -> false

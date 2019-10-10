@@ -16,8 +16,8 @@ let%test_module _ =
     let pp = printf pp
     let pp_classes = printf pp_classes
     let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
-    let i8 = Typ.integer ~bits:8
-    let i64 = Typ.integer ~bits:64
+    let i8 = Typ.int
+    let i64 = Typ.siz
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add
     let ( - ) = Term.sub
@@ -99,10 +99,10 @@ let%test_module _ =
       pp r2 ;
       [%expect
         {|
-          %x_5 = %y_6 = %z_7 = ((i64)(i8) %x_5)
+          %x_5 = %y_6 = %z_7 = ((i64)(i32) %x_5)
 
           {sat= true;
-           rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [((i64)(i8) %x_5) ↦ %x_5]]} |}]
+           rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [((i64)(i32) %x_5) ↦ %x_5]]} |}]
 
     let%test _ = entails_eq r2 x z
     let%test _ = entails_eq (or_ r1 r2) x y

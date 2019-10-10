@@ -206,14 +206,15 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
  fun x llt ->
   let xlate_type_ llt =
     match Llvm.classify_type llt with
-    | Half -> Typ.float ~bits:16 ~enc:`IEEE
-    | Float -> Typ.float ~bits:32 ~enc:`IEEE
-    | Double -> Typ.float ~bits:64 ~enc:`IEEE
-    | X86fp80 -> Typ.float ~bits:80 ~enc:`Extended
-    | Fp128 -> Typ.float ~bits:128 ~enc:`IEEE
-    | Ppc_fp128 -> Typ.float ~bits:128 ~enc:`Pair
-    | Integer -> Typ.integer ~bits:(Llvm.integer_bitwidth llt)
-    | X86_mmx -> Typ.integer ~bits:64
+    | Half -> Typ.float ~bits:16 ~siz:(size_of x llt) ~enc:`IEEE
+    | Float -> Typ.float ~bits:32 ~siz:(size_of x llt) ~enc:`IEEE
+    | Double -> Typ.float ~bits:64 ~siz:(size_of x llt) ~enc:`IEEE
+    | X86fp80 -> Typ.float ~bits:80 ~siz:(size_of x llt) ~enc:`Extended
+    | Fp128 -> Typ.float ~bits:128 ~siz:(size_of x llt) ~enc:`IEEE
+    | Ppc_fp128 -> Typ.float ~bits:128 ~siz:(size_of x llt) ~enc:`Pair
+    | Integer ->
+        Typ.integer ~bits:(Llvm.integer_bitwidth llt) ~siz:(size_of x llt)
+    | X86_mmx -> Typ.integer ~bits:64 ~siz:(size_of x llt)
     | Function ->
         let return = xlate_type_opt x (Llvm.return_type llt) in
         let llargs = Llvm.param_types llt in
@@ -228,11 +229,11 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
     | Vector ->
         let elt = xlate_type x (Llvm.element_type llt) in
         let len = Llvm.vector_size llt in
-        Typ.array ~elt ~len
+        Typ.array ~elt ~len ~siz:(size_of x llt)
     | Array ->
         let elt = xlate_type x (Llvm.element_type llt) in
         let len = Llvm.array_length llt in
-        Typ.array ~elt ~len
+        Typ.array ~elt ~len ~siz:(size_of x llt)
     | Struct ->
         let llelts = Llvm.struct_element_types llt in
         let len = Array.length llelts in
@@ -241,16 +242,16 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           let elts =
             Vector.map ~f:(xlate_type x) (Vector.of_array llelts)
           in
-          Typ.tuple elts ~packed
+          Typ.tuple elts ~siz:(size_of x llt) ~packed
         else
           let name = struct_name llt in
-          if Llvm.is_opaque llt then Typ.opaque ~name
+          if Llvm.is_opaque llt then Typ.opaque ~name ~siz:(size_of x llt)
           else
             let elts =
               Vector.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
             in
-            Typ.struct_ ~name elts ~packed
-    | Token -> Typ.opaque ~name:"token"
+            Typ.struct_ ~name elts ~siz:(size_of x llt) ~packed
+    | Token -> Typ.opaque ~name:"token" ~siz:(size_of x llt)
     | Void | Label | Metadata -> assert false
   in
   Hashtbl.find_or_add memo_type llt ~default:(fun () ->
@@ -379,9 +380,11 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
         | Integer _ -> Exp.integer typ Z.zero
         | Pointer _ -> Exp.null
         | Array _ | Tuple _ | Struct _ ->
+            let llsiz = size_of x llt in
+            if llsiz = 0 then todo "ConstantAggregateZero of size 0" () ;
             Exp.splat typ
               ~byt:(Exp.integer Typ.byt Z.zero)
-              ~siz:(Exp.integer Typ.siz (Z.of_int (size_of x llt)))
+              ~siz:(Exp.integer Typ.siz (Z.of_int llsiz))
         | _ -> fail "ConstantAggregateZero of type %a" Typ.pp typ () )
     | ConstantVector | ConstantArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
@@ -716,9 +719,11 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
   (i32, xlate_type x tip, cxa_exception)
 
 let exception_typs =
-  let pi8 = Typ.pointer ~elt:(Typ.integer ~bits:8) in
-  let i32 = Typ.integer ~bits:32 in
-  let exc = Typ.tuple ~packed:false (Vector.of_array [|pi8; i32|]) in
+  let pi8 = Typ.pointer ~elt:Typ.byt in
+  let i32 = Typ.integer ~bits:32 ~siz:4 in
+  let exc =
+    Typ.tuple ~packed:false (Vector.of_array [|pi8; i32|]) ~siz:12
+  in
   (pi8, i32, exc)
 
 (** Translate a control transfer from instruction [instr] to block [dst] to
