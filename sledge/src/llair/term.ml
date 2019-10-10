@@ -497,7 +497,7 @@ let simp_extract ~unsigned bits arg =
   | _ -> Ap1 (Extract {unsigned; bits}, arg)
 
 let simp_convert ~unsigned dst src arg =
-  if (not unsigned) && Typ.castable dst src then arg
+  if (not unsigned) && Typ.equivalent dst src then arg
   else
     match (dst, src, arg) with
     | Integer {bits= m}, Integer {bits= n}, Integer {data} ->

@@ -54,6 +54,10 @@ val prim_bit_size_of : t -> int option
 val is_sized : t -> bool
 (** Holds of types which are first-class and have a statically-known size. *)
 
+val equivalent : t -> t -> bool
+(** Equivalent types are those that denote the same sets of values in the
+    semantic model. An equivalence relation. *)
+
 val castable : t -> t -> bool
 (** Castable types are those that can be cast between without loss of
     information. An equivalence relation. *)

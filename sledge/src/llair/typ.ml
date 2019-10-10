@@ -121,6 +121,16 @@ let rec prim_bit_size_of = function
       Option.map (prim_bit_size_of elt) ~f:(fun n -> n * len)
   | Function _ | Tuple _ | Struct _ | Opaque _ -> None
 
+let rec equivalent t0 t1 =
+  match (t0, t1) with
+  | (Pointer _ | Integer _), (Pointer _ | Integer _) -> (
+    match (prim_bit_size_of t0, prim_bit_size_of t1) with
+    | Some n0, Some n1 -> n0 = n1
+    | _ -> false )
+  | Array {elt= t; len= m}, Array {elt= u; len= n} ->
+      m = n && equivalent t u
+  | _ -> equal t0 t1
+
 let rec castable t0 t1 =
   match (t0, t1) with
   | (Pointer _ | Integer _), (Pointer _ | Integer _) -> (
