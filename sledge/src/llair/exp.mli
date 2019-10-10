@@ -141,40 +141,40 @@ val float : Typ.t -> string -> t
 val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
 
 (* comparisons *)
-val eq : Typ.t -> t -> t -> t
-val dq : Typ.t -> t -> t -> t
-val gt : Typ.t -> t -> t -> t
-val ge : Typ.t -> t -> t -> t
-val lt : Typ.t -> t -> t -> t
-val le : Typ.t -> t -> t -> t
-val ugt : Typ.t -> t -> t -> t
-val uge : Typ.t -> t -> t -> t
-val ult : Typ.t -> t -> t -> t
-val ule : Typ.t -> t -> t -> t
-val ord : Typ.t -> t -> t -> t
-val uno : Typ.t -> t -> t -> t
+val eq : ?typ:Typ.t -> t -> t -> t
+val dq : ?typ:Typ.t -> t -> t -> t
+val gt : ?typ:Typ.t -> t -> t -> t
+val ge : ?typ:Typ.t -> t -> t -> t
+val lt : ?typ:Typ.t -> t -> t -> t
+val le : ?typ:Typ.t -> t -> t -> t
+val ugt : ?typ:Typ.t -> t -> t -> t
+val uge : ?typ:Typ.t -> t -> t -> t
+val ult : ?typ:Typ.t -> t -> t -> t
+val ule : ?typ:Typ.t -> t -> t -> t
+val ord : ?typ:Typ.t -> t -> t -> t
+val uno : ?typ:Typ.t -> t -> t -> t
 
 (* arithmetic *)
-val add : Typ.t -> t -> t -> t
-val sub : Typ.t -> t -> t -> t
-val mul : Typ.t -> t -> t -> t
-val div : Typ.t -> t -> t -> t
-val rem : Typ.t -> t -> t -> t
-val udiv : Typ.t -> t -> t -> t
-val urem : Typ.t -> t -> t -> t
+val add : ?typ:Typ.t -> t -> t -> t
+val sub : ?typ:Typ.t -> t -> t -> t
+val mul : ?typ:Typ.t -> t -> t -> t
+val div : ?typ:Typ.t -> t -> t -> t
+val rem : ?typ:Typ.t -> t -> t -> t
+val udiv : ?typ:Typ.t -> t -> t -> t
+val urem : ?typ:Typ.t -> t -> t -> t
 
 (* boolean / bitwise *)
-val and_ : Typ.t -> t -> t -> t
-val or_ : Typ.t -> t -> t -> t
+val and_ : ?typ:Typ.t -> t -> t -> t
+val or_ : ?typ:Typ.t -> t -> t -> t
 
 (* bitwise *)
-val xor : Typ.t -> t -> t -> t
-val shl : Typ.t -> t -> t -> t
-val lshr : Typ.t -> t -> t -> t
-val ashr : Typ.t -> t -> t -> t
+val xor : ?typ:Typ.t -> t -> t -> t
+val shl : ?typ:Typ.t -> t -> t -> t
+val lshr : ?typ:Typ.t -> t -> t -> t
+val ashr : ?typ:Typ.t -> t -> t -> t
 
 (* if-then-else *)
-val conditional : Typ.t -> cnd:t -> thn:t -> els:t -> t
+val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
 
 (* records (struct / array values) *)
 val record : Typ.t -> t vector -> t
@@ -199,6 +199,5 @@ val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
 (** Query *)
 
 val term : t -> Term.t
-val typ : t -> Typ.t
 val is_true : t -> bool
 val is_false : t -> bool

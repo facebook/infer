@@ -331,12 +331,12 @@ let ptr_fld x ~ptr ~fld ~lltyp =
   let offset =
     Llvm_target.DataLayout.offset_of_element lltyp fld x.lldatalayout
   in
-  Exp.add Typ.ptr ptr (Exp.integer Typ.siz (Z.of_int64 offset))
+  Exp.add ~typ:Typ.ptr ptr (Exp.integer Typ.siz (Z.of_int64 offset))
 
 let ptr_idx x ~ptr ~idx ~llelt =
   let stride = Llvm_target.DataLayout.abi_size llelt x.lldatalayout in
-  Exp.add Typ.ptr ptr
-    (Exp.mul Typ.siz (Exp.integer Typ.siz (Z.of_int64 stride)) idx)
+  Exp.add ~typ:Typ.ptr ptr
+    (Exp.mul ~typ:Typ.siz (Exp.integer Typ.siz (Z.of_int64 stride)) idx)
 
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
  fun x typ arg -> Exp.convert ~dst:(i32 x) ~src:typ arg
@@ -457,13 +457,14 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     let arg = xlate_value x rand in
     Exp.convert ?unsigned ~dst ~src arg
   in
-  let binary mk =
+  let binary (mk : ?typ:_ -> _) =
     Lazy.force check_vector ;
     let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
-    mk typ (xlate_rand 0) (xlate_rand 1)
+    mk ~typ (xlate_rand 0) (xlate_rand 1)
   in
   let unordered_or mk =
-    binary (fun typ e f -> Exp.or_ Typ.bool (Exp.uno typ e f) (mk typ e f))
+    binary (fun ?typ e f ->
+        Exp.or_ ~typ:Typ.bool (Exp.uno ?typ e f) (mk ?typ e f) )
   in
   ( match opcode with
   | AddrSpaceCast | BitCast -> cast ()
@@ -484,7 +485,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | Ule -> binary Exp.ule )
   | FCmp -> (
     match Llvm.fcmp_predicate llv with
-    | None | Some False -> binary (fun _ _ _ -> Exp.false_)
+    | None | Some False -> binary (fun ?typ:_ _ _ -> Exp.false_)
     | Some Oeq -> binary Exp.eq
     | Some Ogt -> binary Exp.gt
     | Some Oge -> binary Exp.ge
@@ -499,7 +500,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     | Some Ult -> unordered_or Exp.lt
     | Some Ule -> unordered_or Exp.le
     | Some Une -> unordered_or Exp.dq
-    | Some True -> binary (fun _ _ _ -> Exp.true_) )
+    | Some True -> binary (fun ?typ:_ _ _ -> Exp.true_) )
   | Add | FAdd -> binary Exp.add
   | Sub | FSub -> binary Exp.sub
   | Mul | FMul -> binary Exp.mul
@@ -515,7 +516,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
   | Xor -> binary Exp.xor
   | Select ->
       let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 1)) in
-      Exp.conditional typ ~cnd:(xlate_rand 0) ~thn:(xlate_rand 1)
+      Exp.conditional ~typ ~cnd:(xlate_rand 0) ~thn:(xlate_rand 1)
         ~els:(xlate_rand 2)
   | ExtractElement | InsertElement ->
       todo "vector operations: %a" pp_llvalue llv ()
@@ -1150,7 +1151,7 @@ let xlate_instr :
           in
           let match_filter i rev_blocks =
             jump_unwind i
-              (Exp.sub i32 (Exp.integer i32 Z.zero) typeid)
+              (Exp.sub ~typ:i32 (Exp.integer i32 Z.zero) typeid)
               rev_blocks
           in
           let xlate_clause i rev_blocks =
@@ -1167,9 +1168,9 @@ let xlate_instr :
                     let rec xlate_filter i =
                       let tiI = xlate_value x (Llvm.operand clause i) in
                       if i < num_tis - 1 then
-                        Exp.and_ Typ.bool (Exp.dq tip tiI ti)
+                        Exp.and_ ~typ:Typ.bool (Exp.dq ~typ:tip tiI ti)
                           (xlate_filter (i + 1))
-                      else Exp.dq tip tiI ti
+                      else Exp.dq ~typ:tip tiI ti
                     in
                     let key = xlate_filter 0 in
                     let nzero, rev_blocks = match_filter i rev_blocks in
@@ -1180,9 +1181,9 @@ let xlate_instr :
                   let typ = xlate_type x (Llvm.type_of clause) in
                   let clause = xlate_value x clause in
                   let key =
-                    Exp.or_ Typ.bool
-                      (Exp.eq typ clause Exp.null)
-                      (Exp.eq typ clause ti)
+                    Exp.or_ ~typ:Typ.bool
+                      (Exp.eq ~typ clause Exp.null)
+                      (Exp.eq ~typ clause ti)
                   in
                   let nzero, rev_blocks = jump_unwind i typeid rev_blocks in
                   ( Llair.Term.branch ~loc ~key ~nzero ~zero:(jump (i + 1))

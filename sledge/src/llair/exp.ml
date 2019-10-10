@@ -284,8 +284,6 @@ and typ_of exp =
       typ
   [@@warning "-9"]
 
-let typ = typ_of
-
 type exp = t
 
 let pp_exp = pp
@@ -406,121 +404,59 @@ let convert ?(unsigned = false) ~dst ~src exp =
 
 (* comparisons *)
 
-let unsigned typ op x y =
-  let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-  op
-    (Term.extract ~unsigned:true ~bits x)
-    (Term.extract ~unsigned:true ~bits y)
+let binary op mk ?typ x y =
+  let typ = match typ with Some typ -> typ | None -> typ_of x in
+  {desc= Ap2 (op, typ, x, y); term= mk x.term y.term} |> check invariant
 
-let eq typ x y =
-  {desc= Ap2 (Eq, typ, x, y); term= Term.eq x.term y.term}
-  |> check invariant
+let ubinary op mk ?typ x y =
+  let typ = match typ with Some typ -> typ | None -> typ_of x in
+  let umk x y =
+    let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
+    mk
+      (Term.extract ~unsigned:true ~bits x)
+      (Term.extract ~unsigned:true ~bits y)
+  in
+  binary op umk ~typ x y
 
-let dq typ x y =
-  {desc= Ap2 (Dq, typ, x, y); term= Term.dq x.term y.term}
-  |> check invariant
-
-let gt typ x y =
-  {desc= Ap2 (Gt, typ, x, y); term= Term.lt y.term x.term}
-  |> check invariant
-
-let ge typ x y =
-  {desc= Ap2 (Ge, typ, x, y); term= Term.le y.term x.term}
-  |> check invariant
-
-let lt typ x y =
-  {desc= Ap2 (Lt, typ, x, y); term= Term.lt x.term y.term}
-  |> check invariant
-
-let le typ x y =
-  {desc= Ap2 (Le, typ, x, y); term= Term.le x.term y.term}
-  |> check invariant
-
-let ugt typ x y =
-  {desc= Ap2 (Ugt, typ, x, y); term= unsigned typ Term.lt y.term x.term}
-  |> check invariant
-
-let uge typ x y =
-  {desc= Ap2 (Uge, typ, x, y); term= unsigned typ Term.le y.term x.term}
-  |> check invariant
-
-let ult typ x y =
-  {desc= Ap2 (Ult, typ, x, y); term= unsigned typ Term.lt x.term y.term}
-  |> check invariant
-
-let ule typ x y =
-  {desc= Ap2 (Ule, typ, x, y); term= unsigned typ Term.le x.term y.term}
-  |> check invariant
-
-let ord typ x y =
-  {desc= Ap2 (Ord, typ, x, y); term= Term.ord x.term y.term}
-  |> check invariant
-
-let uno typ x y =
-  {desc= Ap2 (Uno, typ, x, y); term= Term.uno x.term y.term}
-  |> check invariant
+let eq = binary Eq Term.eq
+let dq = binary Dq Term.dq
+let gt = binary Gt (fun x y -> Term.lt y x)
+let ge = binary Ge (fun x y -> Term.le y x)
+let lt = binary Lt Term.lt
+let le = binary Le Term.le
+let ugt = ubinary Ugt (fun x y -> Term.lt y x)
+let uge = ubinary Uge (fun x y -> Term.le y x)
+let ult = ubinary Ult Term.lt
+let ule = ubinary Ule Term.le
+let ord = binary Ord Term.ord
+let uno = binary Uno Term.uno
 
 (* arithmetic *)
 
-let add typ x y =
-  {desc= Ap2 (Add, typ, x, y); term= Term.add x.term y.term}
-  |> check invariant
-
-let sub typ x y =
-  {desc= Ap2 (Sub, typ, x, y); term= Term.sub x.term y.term}
-  |> check invariant
-
-let mul typ x y =
-  {desc= Ap2 (Mul, typ, x, y); term= Term.mul x.term y.term}
-  |> check invariant
-
-let div typ x y =
-  {desc= Ap2 (Div, typ, x, y); term= Term.div x.term y.term}
-  |> check invariant
-
-let rem typ x y =
-  {desc= Ap2 (Rem, typ, x, y); term= Term.rem x.term y.term}
-  |> check invariant
-
-let udiv typ x y =
-  {desc= Ap2 (Udiv, typ, x, y); term= unsigned typ Term.div x.term y.term}
-  |> check invariant
-
-let urem typ x y =
-  {desc= Ap2 (Urem, typ, x, y); term= unsigned typ Term.rem x.term y.term}
-  |> check invariant
+let add = binary Add Term.add
+let sub = binary Sub Term.sub
+let mul = binary Mul Term.mul
+let div = binary Div Term.div
+let rem = binary Rem Term.rem
+let udiv = ubinary Udiv Term.div
+let urem = ubinary Urem Term.rem
 
 (* boolean / bitwise *)
 
-let and_ typ x y =
-  {desc= Ap2 (And, typ, x, y); term= Term.and_ x.term y.term}
-  |> check invariant
-
-let or_ typ x y =
-  {desc= Ap2 (Or, typ, x, y); term= Term.or_ x.term y.term}
-  |> check invariant
+let and_ = binary And Term.and_
+let or_ = binary Or Term.or_
 
 (* bitwise *)
 
-let xor typ x y =
-  {desc= Ap2 (Xor, typ, x, y); term= Term.xor x.term y.term}
-  |> check invariant
-
-let shl typ x y =
-  {desc= Ap2 (Shl, typ, x, y); term= Term.shl x.term y.term}
-  |> check invariant
-
-let lshr typ x y =
-  {desc= Ap2 (Lshr, typ, x, y); term= Term.lshr x.term y.term}
-  |> check invariant
-
-let ashr typ x y =
-  {desc= Ap2 (Ashr, typ, x, y); term= Term.ashr x.term y.term}
-  |> check invariant
+let xor = binary Xor Term.xor
+let shl = binary Shl Term.shl
+let lshr = binary Lshr Term.lshr
+let ashr = binary Ashr Term.ashr
 
 (* if-then-else *)
 
-let conditional typ ~cnd ~thn ~els =
+let conditional ?typ ~cnd ~thn ~els =
+  let typ = match typ with Some typ -> typ | None -> typ_of thn in
   { desc= Ap3 (Conditional, typ, cnd, thn, els)
   ; term= Term.conditional ~cnd:cnd.term ~thn:thn.term ~els:els.term }
   |> check invariant
