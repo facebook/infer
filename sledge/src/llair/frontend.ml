@@ -850,10 +850,10 @@ let xlate_instr :
       let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
       emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
+      let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
+      let lltyp = Llvm.type_of maybe_llfunc in
+      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let llfunc =
-        let maybe_llfunc =
-          Llvm.operand instr (Llvm.num_operands instr - 1)
-        in
         let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
         match llfunc_valuekind with
         | Function | Instruction _ | InlineAsm | Argument -> maybe_llfunc
@@ -867,8 +867,6 @@ let xlate_instr :
             todo "operand kind in call instruction %a" pp_llvaluekind
               llfunc_valuekind ()
       in
-      let lltyp = Llvm.type_of llfunc in
-      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let fname = Llvm.value_name llfunc in
       let skip msg =
         ( match Hash_set.strict_add ignored_callees fname with
@@ -947,7 +945,7 @@ let xlate_instr :
         (* general function call that may not throw *)
         | _ ->
             let func = xlate_func_name x llfunc in
-            let typ = xlate_type x (Llvm.type_of llfunc) in
+            let typ = xlate_type x lltyp in
             let lbl = name ^ ".ret" in
             let call =
               let args =
@@ -963,8 +961,13 @@ let xlate_instr :
                            function: %a"
                           Exp.pp func ()
                     | _ -> () ) ;
-                    Array.length
-                      (Llvm.param_types (Llvm.element_type lltyp))
+                    let llfty = Llvm.element_type lltyp in
+                    ( match Llvm.classify_type llfty with
+                    | Function -> ()
+                    | _ ->
+                        fail "called function not of function type: %a"
+                          pp_llvalue instr () ) ;
+                    Array.length (Llvm.param_types llfty)
                 in
                 List.rev_init num_args ~f:(fun i ->
                     xlate_value x (Llvm.operand instr i) )
@@ -993,6 +996,7 @@ let xlate_instr :
               warn "ignoring variable arguments to variadic function: %a"
                 Global.pp (xlate_global x llfunc) ()
           | _ -> () ) ;
+          assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
       let args =
