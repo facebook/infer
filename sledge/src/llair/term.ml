@@ -787,6 +787,8 @@ let simp_xor x y =
   (* true xor b ==> ¬b *)
   | Integer {data}, b when Z.is_true data && is_boolean b -> simp_not b
   | b, Integer {data} when Z.is_true data && is_boolean b -> simp_not b
+  (* e xor e ==> 0 *)
+  | _ when equal x y -> zero
   | _ -> Ap2 (Xor, x, y)
 
 let simp_shl x y =
