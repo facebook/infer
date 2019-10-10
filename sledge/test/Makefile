@@ -7,7 +7,7 @@
 CLANG_ARGS?=-O0
 
 # executable to test
-SLEDGE_EXE=$(CURDIR)/../_build/dev/src/sledge.exe
+SLEDGE_EXE=$(CURDIR)/../_build/_install/dbg/bin/sledge
 
 # additional arguments to pass to sledge
 SLEDGE_ARGS?=
@@ -28,7 +28,7 @@ default: test
 # all analyze tests
 translate:
 	@find -L llvm -name '*.ll' -or -name '*.bc' \
-	 | parallel --bar $(SLEDGE) llvm translate $(SLEDGE_ARGS)
+	 | parallel --bar $(SLEDGE) llvm translate -no-models $(SLEDGE_ARGS)
 
 _translate-report-raw:
 	@find -L llvm -name '*.out' \
@@ -79,10 +79,10 @@ analyze: compile
 # run all tests and generate code coverage information
 BISECT_DIR=$(CURDIR)/../_coverage/out
 coverage:
-	@cd ..; dune build _build/coverage/src/sledge.exe
+	@cd ..; dune build _build/_install/coverage/bin/sledge
 	@mkdir -p $(BISECT_DIR)
-	@-$(MAKE) BISECT_FILE=$(BISECT_DIR)/bisect SLEDGE_EXE=$(CURDIR)/../_build/coverage/src/sledge.exe test -k
-	@find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I ../_build/coverage/ -text ../_coverage/summary.txt -html ../_coverage/
+	@-$(MAKE) BISECT_FILE=$(BISECT_DIR)/bisect SLEDGE_EXE=$(CURDIR)/../_build/_install/coverage/bin/sledge test -k
+	@find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I ../_build/_install/coverage/ -text ../_coverage/summary.txt -html ../_coverage/
 	@echo "open ../_coverage/index.html"
 
 _analyze-report-raw:

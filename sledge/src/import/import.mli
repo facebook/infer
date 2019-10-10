@@ -132,6 +132,8 @@ module List : sig
     -> 'a list pp
   (** Pretty-print a list. *)
 
+  val pop_exn : 'a list -> 'a * 'a list
+
   val find_map_remove :
     'a list -> f:('a -> 'b option) -> ('b * 'a list) option
 

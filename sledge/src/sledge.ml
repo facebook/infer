@@ -130,11 +130,16 @@ let translate =
   let%map_open llair_output =
     flag "llair-output" (optional string)
       ~doc:"<file> write generated LLAIR to <file>"
+  and no_models =
+    flag "no-models" no_arg
+      ~doc:"do not add models for C/C++ runtime and standard libraries"
   and fuzzer =
     flag "fuzzer" no_arg ~doc:"add a harness for libFuzzer targets"
   in
   fun bitcode_inputs () ->
-    let program = Frontend.translate ~fuzzer bitcode_inputs in
+    let program =
+      Frontend.translate ~models:(not no_models) ~fuzzer bitcode_inputs
+    in
     Option.iter ~f:(marshal program) llair_output ;
     program
 

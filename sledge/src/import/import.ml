@@ -160,6 +160,8 @@ module List = struct
         | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
         Option.iter suf ~f:(Format.fprintf fs)
 
+  let pop_exn = function x :: xs -> (x, xs) | [] -> raise Caml.Not_found
+
   let find_map_remove xs ~f =
     let rec find_map_remove_ ys = function
       | [] -> None
