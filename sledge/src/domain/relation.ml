@@ -51,19 +51,16 @@ module Make (State_domain : State_domain_sig) = struct
     (entry, State_domain.exec_move current reg_exps)
 
   let exec_inst (entry, current) inst =
-    match State_domain.exec_inst current inst with
-    | Ok current -> Ok (entry, current)
-    | Error e -> Error e
+    State_domain.exec_inst current inst >>| fun current -> (entry, current)
 
   let exec_intrinsic ~skip_throw (entry, current) areturn intrinsic actuals
       =
-    match
-      State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
-        actuals
-    with
+    State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
+      actuals
+    |> function
+    | Some (Some current) -> Some (Some (entry, current))
+    | Some None -> Some None
     | None -> None
-    | Some (Ok current) -> Some (Ok (entry, current))
-    | Some (Error e) -> Some (Error e)
 
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}

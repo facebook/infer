@@ -443,13 +443,13 @@ module Make (Dom : Domain_sig.Dom) = struct
                     Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
                       areturn callee.name.reg args
                   with
-                | Some (Error ()) ->
+                | Some None ->
                     Report.invalid_access_term
                       (Dom.report_fmt_thunk state)
                       block.term ;
                     Work.skip
-                | Some (Ok state) when Dom.is_false state -> Work.skip
-                | Some (Ok state) -> exec_jump stk state block return
+                | Some (Some state) when Dom.is_false state -> Work.skip
+                | Some (Some state) -> exec_jump stk state block return
                 | None when Llair.Func.is_undefined callee ->
                     exec_skip_func stk state block areturn return
                 | None ->
@@ -465,8 +465,7 @@ module Make (Dom : Domain_sig.Dom) = struct
   let exec_inst : Dom.t -> Llair.inst -> (Dom.t, Dom.t * Llair.inst) result
       =
    fun state inst ->
-    Dom.exec_inst state inst
-    |> Result.map_error ~f:(fun () -> (state, inst))
+    Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
 
   let exec_block :
       exec_opts -> Llair.t -> Stack.t -> Dom.t -> Llair.block -> Work.x =

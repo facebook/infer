@@ -17,7 +17,7 @@ module type Dom = sig
   val exec_assume : t -> Exp.t -> t option
   val exec_kill : t -> Reg.t -> t
   val exec_move : t -> (Reg.t * Exp.t) vector -> t
-  val exec_inst : t -> Llair.inst -> (t, unit) result
+  val exec_inst : t -> Llair.inst -> t option
 
   val exec_intrinsic :
        skip_throw:bool
@@ -25,7 +25,7 @@ module type Dom = sig
     -> Reg.t option
     -> Reg.t
     -> Exp.t list
-    -> (t, unit) result option
+    -> t option option
 
   type from_call [@@deriving sexp_of]
 

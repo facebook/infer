@@ -669,25 +669,22 @@ let exec_spec pre {xs; foot; sub; ms; post} =
   ;
   let foot = Sh.extend_us xs foot in
   let zs, pre = Sh.bind_exists pre ~wrt:xs in
-  ( match Solver.infer_frame pre xs foot with
-  | Some frame ->
-      Ok
-        (Sh.exists (Set.union zs xs)
-           (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
-  | None -> Error () )
+  ( Solver.infer_frame pre xs foot
+  >>| fun frame ->
+  Sh.exists (Set.union zs xs)
+    (Sh.star post (Sh.exists ms (Sh.rename sub frame))) )
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" (Result.pp "%a" Sh.pp) r]
+  [%Trace.retn fun {pf} r -> pf "%a" (Option.pp "%a" Sh.pp) r]
 
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
 let rec exec_specs pre = function
   | ({xs; foot; _} as spec) :: specs ->
-      let open Result.Monad_infix in
       let pre_pure = Sh.star (Sh.exists xs (Sh.pure_approx foot)) pre in
       exec_spec pre_pure spec
       >>= fun post ->
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
-  | [] -> Ok (Sh.false_ pre.us)
+  | [] -> Some (Sh.false_ pre.us)
 
 (*
  * Exposed interface
@@ -701,7 +698,7 @@ let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
 
 let move pre reg_exps =
   exec_spec pre (move_spec pre.us reg_exps)
-  |> function Ok post -> post | _ -> assert false
+  |> function Some post -> post | _ -> fail "Exec.move failed"
 
 let load pre ~reg ~ptr ~len = exec_spec pre (load_spec pre.us reg ptr len)
 let store pre ~ptr ~exp ~len = exec_spec pre (store_spec pre.us ptr exp len)
@@ -718,14 +715,10 @@ let memmov pre ~dst ~src ~len =
 let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec pre.us reg num len)
 let free pre ~ptr = exec_spec pre (free_spec pre.us ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
-let abort _ = Error ()
+let abort _ = None
 
 let intrinsic ~skip_throw :
-       Sh.t
-    -> Var.t option
-    -> Var.t
-    -> Term.t list
-    -> (Sh.t, unit) result option =
+    Sh.t -> Var.t option -> Var.t -> Term.t list -> Sh.t option option =
  fun pre areturn intrinsic actuals ->
   [%Trace.info
     "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
@@ -737,7 +730,7 @@ let intrinsic ~skip_throw :
     let n = Var.name intrinsic in
     match String.index n '.' with None -> n | Some i -> String.prefix n i
   in
-  let skip pre = Some (Ok pre) in
+  let skip pre = Some (Some pre) in
   match (areturn, name, actuals) with
   (*
    * cstdlib - memory management

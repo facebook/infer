@@ -10,28 +10,15 @@
 val assume : Sh.t -> Term.t -> Sh.t option
 val kill : Sh.t -> Var.t -> Sh.t
 val move : Sh.t -> (Var.t * Term.t) vector -> Sh.t
-
-val load :
-  Sh.t -> reg:Var.var -> ptr:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val store :
-  Sh.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val memset :
-  Sh.t -> dst:Term.t -> byt:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val memcpy :
-  Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val memmov :
-  Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val alloc :
-  Sh.t -> reg:Var.var -> num:Term.t -> len:Term.t -> (Sh.t, unit) result
-
-val free : Sh.t -> ptr:Term.t -> (Sh.t, unit) result
+val load : Sh.t -> reg:Var.var -> ptr:Term.t -> len:Term.t -> Sh.t option
+val store : Sh.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> Sh.t option
+val memset : Sh.t -> dst:Term.t -> byt:Term.t -> len:Term.t -> Sh.t option
+val memcpy : Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> Sh.t option
+val memmov : Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> Sh.t option
+val alloc : Sh.t -> reg:Var.var -> num:Term.t -> len:Term.t -> Sh.t option
+val free : Sh.t -> ptr:Term.t -> Sh.t option
 val nondet : Sh.t -> Var.var sexp_option -> Sh.t
-val abort : Sh.t -> (Sh.t, unit) result
+val abort : Sh.t -> Sh.t option
 
 val intrinsic :
      skip_throw:bool
@@ -39,4 +26,4 @@ val intrinsic :
   -> Var.t option
   -> Var.t
   -> Term.t list
-  -> (Sh.t, unit) result option
+  -> Sh.t option option

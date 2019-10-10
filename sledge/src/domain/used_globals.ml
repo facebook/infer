@@ -38,12 +38,12 @@ let exec_move st reg_exps =
 let exec_inst st inst =
   [%Trace.call fun {pf} -> pf "pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
-  Ok
+  Some
     (Llair.Inst.fold_exps inst ~init:st ~f:(fun acc e ->
          used_globals ~init:acc e ))
   |>
   [%Trace.retn fun {pf} ->
-    Result.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
+    Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
   let name = Reg.name intrinsic in
@@ -57,7 +57,7 @@ let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
       ~f:(String.equal name)
   then
     List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)
-    |> fun res -> Some (Ok res)
+    |> fun res -> Some (Some res)
   else None
 
 type from_call = t [@@deriving sexp_of]

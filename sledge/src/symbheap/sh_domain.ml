@@ -40,7 +40,7 @@ let exec_inst pre inst =
   assert (Set.disjoint (Sh.fv pre) (Reg.Set.vars (Llair.Inst.locals inst))) ;
   match inst with
   | Move {reg_exps; _} ->
-      Ok
+      Some
         (Exec.move pre
            (Vector.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
   | Load {reg; ptr; len; _} ->
@@ -62,7 +62,7 @@ let exec_inst pre inst =
       Exec.alloc pre ~reg:(Reg.var reg) ~num:(Exp.term num)
         ~len:(Exp.term len)
   | Free {ptr; _} -> Exec.free pre ~ptr:(Exp.term ptr)
-  | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:Reg.var reg))
+  | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:Reg.var reg))
   | Abort _ -> Exec.abort pre
 
 let exec_intrinsic ~skip_throw q r i es =
