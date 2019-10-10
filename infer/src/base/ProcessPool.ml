@@ -85,8 +85,9 @@ let marshal_to_pipe ?file_lock fd x =
       PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"send to pipe" () ) ;
   Option.iter file_lock ~f:(fun {Utils.lock} -> lock ()) ;
   Marshal.to_channel fd x [] ;
-  Option.iter file_lock ~f:(fun {Utils.unlock} -> unlock ()) ;
+  (* Channel flush should be inside the critical section. *)
   Out_channel.flush fd ;
+  Option.iter file_lock ~f:(fun {Utils.unlock} -> unlock ()) ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
