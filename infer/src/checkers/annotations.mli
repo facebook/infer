@@ -37,8 +37,6 @@ val guarded_by : string
 
 val suppress_lint : string
 
-val thread_confined : string
-
 val thread_safe : string
 
 val mainthread : string

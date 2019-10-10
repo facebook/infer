@@ -21,14 +21,14 @@ val acquires_ownership : Typ.Procname.t -> Tenv.t -> bool
 val is_box : Typ.Procname.t -> bool
 (** return true if the given procname boxes a primitive type into a reference type *)
 
-val is_thread_confined_method : Tenv.t -> Procdesc.t -> bool
+val is_thread_confined_method : Tenv.t -> Typ.Procname.t -> bool
 (** Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
    run on the same thread. For the moment we won't warn on accesses resulting from use of such
    methods at all. In future we should account for races between these methods and methods from
    completely different classes that don't necessarily run on the same thread as the confined
    object. *)
 
-val should_analyze_proc : Procdesc.t -> Tenv.t -> bool
+val should_analyze_proc : Tenv.t -> Typ.Procname.t -> bool
 (** return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it.
    note: in the future, we will want to analyze the procedures in all of these cases in order to

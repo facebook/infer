@@ -266,11 +266,10 @@ let is_box = function
   methods at all. In future we should account for races between these methods and methods from
   completely different classes that don't necessarily run on the same thread as the confined
   object. *)
-(* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
-let is_thread_confined_method tenv pdesc =
-  Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_confined
-  || PatternMatch.check_current_class_attributes Annotations.ia_is_thread_confined tenv
-       (Procdesc.get_proc_name pdesc)
+let is_thread_confined_method tenv pname =
+  ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
+    Annotations.ia_is_thread_confined tenv pname
+  |> Option.is_some
 
 
 let threadsafe_annotations =
@@ -310,19 +309,17 @@ let is_assumed_thread_safe item_annot =
   List.exists ~f item_annot
 
 
-(* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
-let pdesc_is_assumed_thread_safe pdesc tenv =
-  is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc)
-  || PatternMatch.check_current_class_attributes is_assumed_thread_safe tenv
-       (Procdesc.get_proc_name pdesc)
+let is_assumed_thread_safe tenv pname =
+  ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname is_assumed_thread_safe
+    tenv pname
+  |> Option.is_some
 
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
          analyze the procedure or report any warnings on it *)
 (* note: in the future, we will want to analyze the procedures in all of these cases in order to
          find more bugs. this is just a temporary measure to avoid obvious false positives *)
-let should_analyze_proc pdesc tenv =
-  let pn = Procdesc.get_proc_name pdesc in
+let should_analyze_proc tenv pn =
   (not
      ( match pn with
      | Typ.Procname.Java java_pname ->
@@ -332,7 +329,7 @@ let should_analyze_proc pdesc tenv =
      | _ ->
          false ))
   && (not (FbThreadSafety.is_logging_method pn))
-  && (not (pdesc_is_assumed_thread_safe pdesc tenv))
+  && (not (is_assumed_thread_safe tenv pn))
   && not (should_skip pn)
 
 
@@ -350,7 +347,6 @@ let is_thread_safe_method pname tenv =
 
 let is_marked_thread_safe pname tenv =
   ((* current class not marked [@NotThreadSafe] *)
-   (* FIXME use ConcurrencyModels.find_override_or_superclass_annotated *)
    not
      (PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
   && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname is_thread_safe tenv
@@ -410,9 +406,9 @@ let should_flag_interface_call tenv exps call_flags pname =
       && (not (is_builder_function java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
       thread-safe (would be unreasonable to ask everyone to annotate them) *)
-      (* FIXME use ConcurrencyModels.find_override_or_superclass_annotated for the two cases below *)
-      && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
-      && (not (has_return_annot thread_safe_or_thread_confined pname))
+      && ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
+           thread_safe_or_thread_confined tenv pname
+         |> Option.is_none
       && receiver_is_not_safe exps tenv
       && not (implements_threadsafe_interface java_pname tenv)
   | _ ->
@@ -423,8 +419,7 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
   let is_threadsafe_collection pn tenv =
     match pn with
     | Typ.Procname.Java java_pname ->
-        (* FIXME use get_class_type_name *)
-        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
+        let typename = Typ.Procname.Java.get_class_type_name java_pname in
         let aux tn _ =
           match Typ.Name.name tn with
           | "java.util.concurrent.ConcurrentMap"

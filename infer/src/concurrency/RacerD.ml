@@ -11,6 +11,8 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
+let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
+
 module Payload = SummaryPayload.Make (struct
   type t = RacerDDomain.summary
 
@@ -505,14 +507,14 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open RacerDDomain in
-  if should_analyze_proc proc_desc tenv then
+  if should_analyze_proc tenv proc_name then
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make summary tenv ProcData.empty_extras in
     let initial =
       let threads =
         if
-          runs_on_ui_thread ~attrs_of_pname:Summary.OnDisk.proc_resolve_attributes tenv proc_name
-          || is_thread_confined_method tenv proc_desc
+          runs_on_ui_thread ~attrs_of_pname tenv proc_name
+          || is_thread_confined_method tenv proc_name
         then ThreadsDomain.AnyThreadButSelf
         else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_name tenv
         then ThreadsDomain.AnyThread
