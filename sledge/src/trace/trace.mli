@@ -60,5 +60,6 @@ val retn : string -> string -> (pf -> 'b -> unit) -> 'b -> 'b
 val flush : unit -> unit
 (** Flush the internal buffers. *)
 
-val fail : ('a, Formatter.t, unit, _) format4 -> 'a
-(** Emit a message at the current indentation level, and [assert false]. *)
+val fail : ('a, unit -> _) fmt -> 'a
+(** Emit a message at the current indentation level, and raise a [Failure]
+    exception indicating a fatal error. *)

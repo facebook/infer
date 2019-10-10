@@ -77,6 +77,11 @@ type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
 
 exception Unimplemented of string
 
+val raisef : (string -> exn) -> ('a, unit -> _) fmt -> 'a
+(** Take a function from a string message to an exception, and a format
+    string with the additional arguments it specifies, and then call the
+    function on the formatted string and raise the returned exception. *)
+
 val warn : ('a, unit -> unit) fmt -> 'a
 (** Issue a warning for a survivable problem. *)
 
@@ -90,10 +95,6 @@ val assertf : bool -> ('a, unit -> unit) fmt -> 'a
 
 val checkf : bool -> ('a, unit -> bool) fmt -> 'a
 (** As [assertf] but returns the argument bool. *)
-
-val fail : ('a, unit -> _) fmt -> 'a
-(** Raise a [Failure] exception indicating a fatal error not covered by
-    [assertf], [checkf], or [todo]. *)
 
 val check : ('a -> unit) -> 'a -> 'a
 (** Assert that function does not raise on argument, and return argument. *)

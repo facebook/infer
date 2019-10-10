@@ -626,6 +626,6 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     Option.iter r ~f:(fun frame ->
         let lost = Set.diff (Set.union minuend.us xs) frame.us in
         let gain = Set.diff frame.us (Set.union minuend.us xs) in
-        assert (Set.is_empty lost || Trace.fail "lost: %a" Var.Set.pp lost) ;
-        assert (Set.is_empty gain || Trace.fail "gained: %a" Var.Set.pp gain)
+        assert (Set.is_empty lost || fail "lost: %a" Var.Set.pp lost ()) ;
+        assert (Set.is_empty gain || fail "gained: %a" Var.Set.pp gain ())
     )]

@@ -117,8 +117,8 @@ module Invariant = struct
             Error.to_exn
               (Error.create_s
                  (Base.Sexp.message "invariant failed"
-                    [ ("", Source_code_position.sexp_of_t here)
-                    ; ("exn", sexp_of_exn exn)
+                    [ ("", sexp_of_exn exn)
+                    ; ("", Source_code_position.sexp_of_t here)
                     ; ("", sexp_of_t t) ]))
           in
           Caml.Printexc.raise_with_backtrace exn bt ) ;

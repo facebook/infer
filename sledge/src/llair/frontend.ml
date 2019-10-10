@@ -608,7 +608,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       match (exp_typ, mask_typ) with
       | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
           exp
-      | _ -> fail "xlate_opcode: %a" pp_llvalue llv () )
+      | _ -> todo "vector operations: %a" pp_llvalue llv () )
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | UserOp1 | UserOp2
    |Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad | CleanupRet
@@ -785,7 +785,7 @@ let rec xlate_func_name x llv =
   | GlobalIFunc -> todo "ifunc: %a" pp_llvalue llv ()
   | InlineAsm -> todo "inline asm: %a" pp_llvalue llv ()
   | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
-  | _ -> fail "unknown function: %a" pp_llvalue llv ()
+  | k -> todo "function kind %a in %a" pp_llvaluekind k pp_llvalue llv ()
 
 let ignored_callees = Hash_set.create (module String)
 
@@ -860,13 +860,12 @@ let xlate_instr :
         | ConstantExpr -> (
           match Llvm.constexpr_opcode maybe_llfunc with
           | BitCast -> Llvm.operand maybe_llfunc 0
-          | IntToPtr -> todo "calls with inttoptr" ()
           | _ ->
-              fail "Unknown value in a call instruction %a" pp_llvalue
+              todo "opcode kind in call instruction %a" pp_llvalue
                 maybe_llfunc () )
         | _ ->
-            fail "Unhandled operand type in a call instruction %a"
-              pp_llvaluekind llfunc_valuekind ()
+            todo "operand kind in call instruction %a" pp_llvaluekind
+              llfunc_valuekind ()
       in
       let lltyp = Llvm.type_of llfunc in
       assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;

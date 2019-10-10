@@ -167,12 +167,11 @@ let retn mod_name fun_name k result =
   result
 
 let fail fmt =
-  Format.fprintf fs "@\n@[<2>| " ;
-  Format.kfprintf
-    (fun fs ->
-      Format.fprintf fs "@]@." ;
-      assert false )
-    fs fmt
+  raisef
+    (fun msg ->
+      Format.fprintf fs "@\n@[<2>| %s@]@." msg ;
+      Failure msg )
+    fmt
 
 let%test_module _ =
   (module struct let () = init ~margin:70 ~config:!config () end)

@@ -662,10 +662,10 @@ let exec_spec pre {xs; foot; sub; ms; post} =
       ms Sh.pp post ;
     assert (
       let vs = Set.diff (Set.diff foot.us xs) pre.us in
-      Set.is_empty vs || Trace.fail "unbound foot: {%a}" Var.Set.pp vs ) ;
+      Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
     assert (
       let vs = Set.diff (Set.diff post.us xs) pre.us in
-      Set.is_empty vs || Trace.fail "unbound post: {%a}" Var.Set.pp vs )]
+      Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let foot = Sh.extend_us xs foot in
   let zs, pre = Sh.bind_exists pre ~wrt:xs in
@@ -698,7 +698,7 @@ let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
 
 let move pre reg_exps =
   exec_spec pre (move_spec pre.us reg_exps)
-  |> function Some post -> post | _ -> fail "Exec.move failed"
+  |> function Some post -> post | _ -> fail "Exec.move failed" ()
 
 let load pre ~reg ~ptr ~len = exec_spec pre (load_spec pre.us reg ptr len)
 let store pre ~ptr ~exp ~len = exec_spec pre (store_spec pre.us ptr exp len)

@@ -145,12 +145,11 @@ let rec invariant q =
   try
     assert (
       Set.disjoint us xs
-      || Trace.fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp (Set.inter us xs)
-           pp q ) ;
+      || fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp (Set.inter us xs) pp q
+           () ) ;
     assert (
       Set.is_subset (fv q) ~of_:us
-      || Trace.fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us)
-    ) ;
+      || fail "unbound but free: %a" Var.Set.pp (Set.diff (fv q) us) () ) ;
     Equality.invariant cong ;
     ( match djns with
     | [[]] ->
@@ -274,8 +273,8 @@ let exists xs q =
   ;
   assert (
     Set.is_subset xs ~of_:q.us
-    || Trace.fail "Sh.exists fail xs - q.us:%a" Var.Set.pp
-         (Set.diff xs q.us) ) ;
+    || fail "Sh.exists fail xs - q.us:%a" Var.Set.pp (Set.diff xs q.us) ()
+  ) ;
   {q with us= Set.diff q.us xs; xs= Set.union q.xs xs} |> check invariant
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]

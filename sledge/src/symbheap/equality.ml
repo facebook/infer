@@ -99,8 +99,8 @@ let invariant r =
       iter_max_solvables a ~f:(fun b ->
           assert (
             in_car r b
-            || Trace.fail "@[subterm %a of %a not in carrier of@ %a@]"
-                 Term.pp b Term.pp a pp r ) ) )
+            || fail "@[subterm %a of %a not in carrier of@ %a@]" Term.pp b
+                 Term.pp a pp r () ) ) )
 
 (** Core operations *)
 

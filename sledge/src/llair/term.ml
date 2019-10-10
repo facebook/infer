@@ -990,7 +990,7 @@ let map e ~f =
   | RecN (_, xs) ->
       assert (
         xs == Vector.map_preserving_phys_equal ~f xs
-        || fail "Term.map does not support updating subterms of RecN." ) ;
+        || fail "Term.map does not support updating subterms of RecN." () ) ;
       e
   | _ -> e
 
