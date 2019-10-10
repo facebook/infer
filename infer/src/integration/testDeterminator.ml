@@ -14,8 +14,6 @@ module YB = Yojson.Basic
 (* a flag used to make the method search signature sensitive *)
 let use_method_signature = false
 
-module RangeMap = Typ.Procname.Map
-
 module MethodRangeMap = struct
   let split_class_method_name qualified_method_name =
     String.rsplit2_exn qualified_method_name ~on:'.'
@@ -34,7 +32,7 @@ module MethodRangeMap = struct
               L.die UserError "Could not read file %s" code_graph_file
         in
         let method_decls = java_method_decls_of_string json_string in
-        List.fold method_decls ~init:RangeMap.empty ~f:(fun acc decl ->
+        List.fold method_decls ~init:Typ.Procname.Map.empty ~f:(fun acc decl ->
             let start_location =
               { Location.line= decl.start_line
               ; col= -1
@@ -56,7 +54,7 @@ module MethodRangeMap = struct
                     JPS.JNI.void_method_with_no_arguments
                 in
                 let key = JPS.create_procname ~classname ~methodname ~signature in
-                RangeMap.add key range acc
+                Typ.Procname.Map.add key range acc
             | None ->
                 acc )
     | _ ->
@@ -120,7 +118,7 @@ end
 let in_range l range = l >= (fst range).Location.line && l <= (snd range).Location.line
 
 let affected_methods method_range_map file_changed_lines changed_lines =
-  RangeMap.fold
+  Typ.Procname.Map.fold
     (fun key ((l1, _) as range) acc ->
       let method_file = SourceFile.to_string l1.Location.file in
       if
