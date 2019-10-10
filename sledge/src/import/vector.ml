@@ -78,6 +78,7 @@ let fold_map x ~init ~f =
 
 let concat xs = v (Array.concat (al xs))
 let copy x = v (Array.copy (a x))
+let of_ x = v [|x|]
 let of_array = v
 let of_list x = v (Array.of_list x)
 let of_list_rev x = v (Array.of_list_rev x)

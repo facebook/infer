@@ -47,8 +47,8 @@ module Make (State_domain : State_domain_sig) = struct
   let exec_kill (entry, current) reg =
     (entry, State_domain.exec_kill current reg)
 
-  let exec_move (entry, current) formal actual =
-    (entry, State_domain.exec_move current formal actual)
+  let exec_move (entry, current) reg_exps =
+    (entry, State_domain.exec_move current reg_exps)
 
   let exec_inst (entry, current) inst =
     match State_domain.exec_inst current inst with

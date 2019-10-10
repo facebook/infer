@@ -91,6 +91,8 @@ val copy : 'a t -> 'a t
 (* val sub : ('a t, 'a t) Base__Blit_intf.sub *)
 (* val subo : ('a t, 'a t) Base__Blit_intf.subo *)
 
+val of_ : 'a -> 'a t
+
 val of_array : 'a array -> 'a t
 (** [of_array a] is a vector that shares its representation with array [a],
     therefore mutating [a] changes [of_array a]. The intended use for

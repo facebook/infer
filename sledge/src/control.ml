@@ -344,7 +344,7 @@ module Make (Dom : Domain_sig.Dom) = struct
     let exit_state =
       match (freturn, exp) with
       | Some freturn, Some return_val ->
-          Dom.exec_move pre_state freturn return_val
+          Dom.exec_move pre_state (Vector.of_ (freturn, return_val))
       | None, None -> pre_state
       | _ -> violates Llair.Func.invariant block.parent
     in
@@ -376,7 +376,9 @@ module Make (Dom : Domain_sig.Dom) = struct
     ( match Stack.pop_throw stk ~unwind ~init:pre_state with
     | Some (from_call, retn_site, stk, unwind_state) ->
         let fthrow = func.fthrow in
-        let exit_state = Dom.exec_move unwind_state fthrow exc in
+        let exit_state =
+          Dom.exec_move unwind_state (Vector.of_ (fthrow, exc))
+        in
         let post_state = Dom.post func.locals from_call exit_state in
         let retn_state =
           Dom.retn func.params func.freturn from_call post_state

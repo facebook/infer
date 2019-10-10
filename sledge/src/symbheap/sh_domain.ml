@@ -30,7 +30,10 @@ let join l r = Some (Sh.or_ l r)
 let is_false = Sh.is_false
 let exec_assume q b = Exec.assume q (Exp.term b)
 let exec_kill q r = Exec.kill q (Reg.var r)
-let exec_move q r e = Exec.move q (Reg.var r) (Exp.term e)
+
+let exec_move q res =
+  Exec.move q (Vector.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
+
 let exec_inst = Exec.inst
 
 let exec_intrinsic ~skip_throw q r i es =
@@ -156,7 +159,8 @@ let retn formals freturn {areturn; subst; frame} q =
   let freturn = Option.map ~f:Reg.var freturn in
   let q =
     match (areturn, freturn) with
-    | Some areturn, Some freturn -> Exec.move q areturn (Term.var freturn)
+    | Some areturn, Some freturn ->
+        Exec.move q (Vector.of_ (areturn, Term.var freturn))
     | Some areturn, None -> Exec.kill q areturn
     | _ -> q
   in

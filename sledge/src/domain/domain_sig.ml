@@ -16,7 +16,7 @@ module type Dom = sig
   val is_false : t -> bool
   val exec_assume : t -> Exp.t -> t option
   val exec_kill : t -> Reg.t -> t
-  val exec_move : t -> Reg.t -> Exp.t -> t
+  val exec_move : t -> (Reg.t * Exp.t) vector -> t
   val exec_inst : t -> Llair.inst -> (t, unit) result
 
   val exec_intrinsic :

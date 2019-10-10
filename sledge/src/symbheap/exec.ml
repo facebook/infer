@@ -695,8 +695,8 @@ let rec exec_specs pre = function
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
   | [] -> Ok (Sh.false_ pre.us)
 
-let move pre reg exp =
-  exec_spec pre (move_spec pre.us (Vector.of_array [|(reg, exp)|]))
+let move pre reg_exps =
+  exec_spec pre (move_spec pre.us reg_exps)
   |> function Ok post -> post | _ -> assert false
 
 let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
