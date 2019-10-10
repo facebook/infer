@@ -48,12 +48,6 @@ let assign ~ws ~rs ~us =
  * Instruction small axioms
  *)
 
-let assume pre cnd =
-  let post = Sh.and_ cnd pre in
-  if Sh.is_false post then None else Some post
-
-let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
-
 (* { emp }
  *   rs := es
  * { *ᵢ rᵢ=eᵢΘ }
@@ -695,45 +689,36 @@ let rec exec_specs pre = function
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
   | [] -> Ok (Sh.false_ pre.us)
 
+(*
+ * Exposed interface
+ *)
+
+let assume pre cnd =
+  let post = Sh.and_ cnd pre in
+  if Sh.is_false post then None else Some post
+
+let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
+
 let move pre reg_exps =
   exec_spec pre (move_spec pre.us reg_exps)
   |> function Ok post -> post | _ -> assert false
 
-let inst : Sh.t -> Llair.inst -> (Sh.t, unit) result =
- fun pre inst ->
-  [%Trace.info
-    "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
-  assert (Set.disjoint (Sh.fv pre) (Reg.Set.vars (Llair.Inst.locals inst))) ;
-  let us = pre.us in
-  match inst with
-  | Move {reg_exps; _} ->
-      exec_spec pre
-        (move_spec us
-           (Vector.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
-  | Load {reg; ptr; len; _} ->
-      exec_spec pre
-        (load_spec us (Reg.var reg) (Exp.term ptr) (Exp.term len))
-  | Store {ptr; exp; len; _} ->
-      exec_spec pre
-        (store_spec us (Exp.term ptr) (Exp.term exp) (Exp.term len))
-  | Memset {dst; byt; len; _} ->
-      exec_spec pre
-        (memset_spec us (Exp.term dst) (Exp.term byt) (Exp.term len))
-  | Memcpy {dst; src; len; _} ->
-      exec_specs pre
-        (memcpy_specs us (Exp.term dst) (Exp.term src) (Exp.term len))
-  | Memmov {dst; src; len; _} ->
-      exec_specs pre
-        (memmov_specs us (Exp.term dst) (Exp.term src) (Exp.term len))
-  | Alloc {reg; num; len; _} ->
-      exec_spec pre
-        (alloc_spec us (Reg.var reg) (Exp.term num) (Exp.term len))
-  | Free {ptr; _} -> exec_spec pre (free_spec us (Exp.term ptr))
-  | Nondet {reg= Some reg; _} -> Ok (kill pre (Reg.var reg))
-  | Nondet {reg= None; _} -> Ok pre
-  | Abort _ -> Error ()
+let load pre ~reg ~ptr ~len = exec_spec pre (load_spec pre.us reg ptr len)
+let store pre ~ptr ~exp ~len = exec_spec pre (store_spec pre.us ptr exp len)
 
-let skip : Sh.t -> (Sh.t, _) result option = fun pre -> Some (Ok pre)
+let memset pre ~dst ~byt ~len =
+  exec_spec pre (memset_spec pre.us dst byt len)
+
+let memcpy pre ~dst ~src ~len =
+  exec_specs pre (memcpy_specs pre.us dst src len)
+
+let memmov pre ~dst ~src ~len =
+  exec_specs pre (memmov_specs pre.us dst src len)
+
+let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec pre.us reg num len)
+let free pre ~ptr = exec_spec pre (free_spec pre.us ptr)
+let nondet pre = function Some reg -> kill pre reg | None -> pre
+let abort _ = Error ()
 
 let intrinsic ~skip_throw :
        Sh.t
@@ -752,6 +737,7 @@ let intrinsic ~skip_throw :
     let n = Var.name intrinsic in
     match String.index n '.' with None -> n | Some i -> String.prefix n i
   in
+  let skip pre = Some (Ok pre) in
   match (areturn, name, actuals) with
   (*
    * cstdlib - memory management

@@ -34,7 +34,36 @@ let exec_kill q r = Exec.kill q (Reg.var r)
 let exec_move q res =
   Exec.move q (Vector.map res ~f:(fun (r, e) -> (Reg.var r, Exp.term e)))
 
-let exec_inst = Exec.inst
+let exec_inst pre inst =
+  [%Trace.info
+    "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
+  assert (Set.disjoint (Sh.fv pre) (Reg.Set.vars (Llair.Inst.locals inst))) ;
+  match inst with
+  | Move {reg_exps; _} ->
+      Ok
+        (Exec.move pre
+           (Vector.map reg_exps ~f:(fun (r, e) -> (Reg.var r, Exp.term e))))
+  | Load {reg; ptr; len; _} ->
+      Exec.load pre ~reg:(Reg.var reg) ~ptr:(Exp.term ptr)
+        ~len:(Exp.term len)
+  | Store {ptr; exp; len; _} ->
+      Exec.store pre ~ptr:(Exp.term ptr) ~exp:(Exp.term exp)
+        ~len:(Exp.term len)
+  | Memset {dst; byt; len; _} ->
+      Exec.memset pre ~dst:(Exp.term dst) ~byt:(Exp.term byt)
+        ~len:(Exp.term len)
+  | Memcpy {dst; src; len; _} ->
+      Exec.memcpy pre ~dst:(Exp.term dst) ~src:(Exp.term src)
+        ~len:(Exp.term len)
+  | Memmov {dst; src; len; _} ->
+      Exec.memmov pre ~dst:(Exp.term dst) ~src:(Exp.term src)
+        ~len:(Exp.term len)
+  | Alloc {reg; num; len; _} ->
+      Exec.alloc pre ~reg:(Reg.var reg) ~num:(Exp.term num)
+        ~len:(Exp.term len)
+  | Free {ptr; _} -> Exec.free pre ~ptr:(Exp.term ptr)
+  | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:Reg.var reg))
+  | Abort _ -> Exec.abort pre
 
 let exec_intrinsic ~skip_throw q r i es =
   Exec.intrinsic ~skip_throw q (Option.map ~f:Reg.var r) (Reg.var i)
