@@ -11,13 +11,17 @@ open BufferOverrunUtils.ModelEnv
 
 let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one
 
-let linear exp ~of_function {integer_type_widths; location} ~ret:_ inferbo_mem =
+let cost_of_exp exp ~degree_kind ~of_function {integer_type_widths; location} ~ret:_ inferbo_mem =
   let itv =
     BufferOverrunSemantics.eval integer_type_widths exp inferbo_mem
     |> BufferOverrunDomain.Val.get_itv
   in
-  CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+  CostUtils.of_itv ~itv ~degree_kind ~of_function location
 
+
+let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
+
+let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
 let modeled ~of_function {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
   let callsite = CallSite.make pname location in
@@ -107,6 +111,12 @@ end
 module BoundsOfCollection = BoundsOf (CostUtils.Collection)
 module BoundsOfArray = BoundsOf (CostUtils.Array)
 
+module ImmutableSet = struct
+  let construct = linear ~of_function:"ImmutableSet.construct"
+
+  let choose_table_size = log ~of_function:"ImmutableSet.chooseTableSize"
+end
+
 module Call = struct
   let dispatch : (Tenv.t, CostUtils.model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -170,7 +180,14 @@ module Call = struct
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "getElement" <>--> unit_cost_model
         ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "put" <>--> unit_cost_model
-        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model ]
+        ; +PatternMatch.implements_xmob_utils "IntHashMap" &:: "remove" <>--> unit_cost_model
+        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+          &:: "chooseTableSize" <>$ capt_exp $+...$--> ImmutableSet.choose_table_size
+        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+          &:: "construct" <>$ capt_exp_of_prim_typ int_typ $+...$--> ImmutableSet.construct
+        ; +PatternMatch.implements_google "common.collect.ImmutableSet"
+          &:: "construct" <>$ any_arg $+ capt_exp_of_prim_typ int_typ
+          $+...$--> ImmutableSet.construct ]
     in
     merge_dispatchers dispatcher FbCostModels.Call.dispatch
 end
