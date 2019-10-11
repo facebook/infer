@@ -163,7 +163,6 @@ DIRECT_TESTS += \
   java_racerd \
   java_starvation \
   java_topl \
-  java_tracing \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += java_fb-performance

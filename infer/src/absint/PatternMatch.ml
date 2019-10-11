@@ -425,11 +425,6 @@ let get_fields_nullified procdesc =
   nullified_flds
 
 
-(** Checks if the exception is an unchecked exception *)
-let is_runtime_exception tenv typename =
-  is_subtype_of_str tenv typename "java.lang.RuntimeException"
-
-
 (** Checks if the class name is a Java exception *)
 let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
 

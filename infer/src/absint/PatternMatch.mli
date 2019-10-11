@@ -141,10 +141,6 @@ val get_fields_nullified : Procdesc.t -> Typ.Fieldname.Set.t
 val is_throwable : Tenv.t -> Typ.Name.t -> bool
 (** [is_throwable tenv class_name] checks if class_name is of type java.lang.Throwable *)
 
-val is_runtime_exception : Tenv.t -> Typ.Name.t -> bool
-(** [is_runtime_exception tenv class_name] checks if classname is
-    of type java.lang.RuntimeException *)
-
 val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
      including supertypes*)

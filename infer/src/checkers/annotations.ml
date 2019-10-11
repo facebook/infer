@@ -103,8 +103,6 @@ let true_on_null = "TrueOnNull"
 
 let ui_thread = "UiThread"
 
-let verify_annotation = "com.facebook.infer.annotation.Verify"
-
 let visibleForTesting = "VisibleForTesting"
 
 let volatile = "volatile"
@@ -222,8 +220,6 @@ let ia_is_field_injector_readonly ia =
 let ia_is_field_injector_readwrite ia =
   List.exists ~f:(ia_ends_with ia) field_injector_readwrite_list
 
-
-let ia_is_verify ia = ia_contains ia verify_annotation
 
 let ia_is_expensive ia = ia_ends_with ia expensive
 

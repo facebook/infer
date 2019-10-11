@@ -926,23 +926,6 @@ let reset_global_values proc_desc =
   set_current_language proc_desc
 
 
-(* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
-let exception_preconditions tenv pname summary =
-  let collect_exceptions pre (exns, all_post_exn) (prop, _) =
-    match Tabulation.prop_get_exn_name pname prop with
-    | Some exn_name when PatternMatch.is_runtime_exception tenv exn_name ->
-        ((pre, exn_name) :: exns, all_post_exn)
-    | _ ->
-        (exns, false)
-  in
-  let collect_spec errors spec =
-    List.fold
-      ~f:(collect_exceptions spec.BiabductionSummary.pre)
-      ~init:errors spec.BiabductionSummary.posts
-  in
-  List.fold ~f:collect_spec ~init:([], true) (Tabulation.get_specs_from_payload summary)
-
-
 (* Collect all pairs of the kind (precondition, custom error) from a summary *)
 let custom_error_preconditions summary =
   let collect_errors pre (errors, all_post_error) (prop, _) =
@@ -994,41 +977,6 @@ let is_unavoidable tenv pre =
       true
   | _ ->
       false
-
-
-(** Detects if there are specs of the form {precondition} proc {runtime exception} and report
-    an error in that case, generating the trace that lead to the runtime exception if the method is
-    called in the context { precondition } *)
-let report_runtime_exceptions tenv pdesc summary =
-  let pname = Summary.get_proc_name summary in
-  let is_public_method =
-    PredSymb.equal_access (Summary.get_attributes summary).access PredSymb.Public
-  in
-  let is_main =
-    is_public_method
-    &&
-    match pname with
-    | Typ.Procname.Java pname_java ->
-        Typ.Procname.Java.is_static pname_java
-        && String.equal (Typ.Procname.Java.get_method pname_java) "main"
-    | _ ->
-        false
-  in
-  let is_annotated pdesc = Annotations.pdesc_has_return_annot pdesc Annotations.ia_is_verify in
-  let exn_preconditions, all_post_exn = exception_preconditions tenv pname summary in
-  let should_report pre =
-    all_post_exn || is_main || is_annotated pdesc || is_unavoidable tenv pre
-  in
-  let report (pre, runtime_exception) =
-    if should_report pre then
-      let pre_str =
-        F.asprintf "%a" (Prop.pp_prop Pp.text) (BiabductionSummary.Jprop.to_prop pre)
-      in
-      let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
-      let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
-      Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn
-  in
-  List.iter ~f:report exn_preconditions
 
 
 let report_custom_errors tenv summary =
@@ -1150,8 +1098,6 @@ let analyze_proc summary exe_env tenv proc_cfg : Summary.t =
   let updated_summary = update_summary tenv summary specs phase res in
   if Language.curr_language_is Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary ;
-  if Language.curr_language_is Java && Config.tracing then
-    report_runtime_exceptions tenv proc_desc updated_summary ;
   updated_summary
 
 

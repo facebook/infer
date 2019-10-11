@@ -1,1 +1,0 @@
-../infer/CloseableAsResourceExample.java

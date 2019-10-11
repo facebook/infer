@@ -14,12 +14,6 @@ let builtins_package = "com.facebook.infer.builtins"
 
 let infer_builtins_cl = builtins_package ^ ".InferBuiltins"
 
-let npe_cl = "java.lang.NullPointerException"
-
-let cce_cl = "java.lang.ClassCastException"
-
-let out_of_bound_cl = "java.lang.ArrayIndexOutOfBoundsException"
-
 (** {2 Names of special variables, constants and method names} *)
 
 let this = Mangled.this

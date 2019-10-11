@@ -704,8 +704,6 @@ val trace_rearrange : bool
 
 val trace_topl : bool
 
-val tracing : bool
-
 val tv_commit : string option
 
 val tv_limit : int

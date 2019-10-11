@@ -2380,12 +2380,6 @@ and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
 
 
-and tracing =
-  CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
-    "Report error traces for runtime exceptions (Java only): generate preconditions for \
-     runtimeexceptions in Java and report errors for public methods which throw runtime exceptions"
-
-
 and tv_commit =
   CLOpt.mk_string_opt ~long:"tv-commit" ~meta:"commit" "Commit hash to submit to Traceview"
 
@@ -3236,8 +3230,6 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 
 and trace_topl = !trace_topl
-
-and tracing = !tracing
 
 and tv_commit = !tv_commit
 

@@ -1302,7 +1302,7 @@ let rec sym_exec exe_env tenv current_summary instr_ (prop_ : Prop.normal Prop.t
           | _ ->
               ()
       in
-      if not (Config.tracing || Typ.Procname.is_java current_pname) then
+      if not (Typ.Procname.is_java current_pname) then
         check_already_dereferenced tenv current_pname cond prop__ ;
       check_condition_always_true_false () ;
       let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in

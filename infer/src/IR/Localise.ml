@@ -317,15 +317,6 @@ let deref_str_array_bound size_opt index_opt =
   ; problem_str= "could be accessed with " ^ index_str ^ " out of bounds" }
 
 
-(** Java unchecked exceptions errors *)
-let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
-  { no_desc with
-    descriptions=
-      [ MF.monospaced_to_string (Typ.Procname.to_string proc_name)
-      ; "can throw " ^ MF.monospaced_to_string (Typ.Name.name exn_name)
-      ; "whenever " ^ pre_str ] }
-
-
 let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
   let accessed_fld_str = Typ.Fieldname.to_string accessed_fld in

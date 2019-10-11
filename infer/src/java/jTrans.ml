@@ -457,8 +457,6 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
     None
 
 
-let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new)
-
 let builtin_get_array_length = Exp.Const (Const.Cfun BuiltinDecl.__get_array_length)
 
 let create_sil_deref exp ~root_typ ~typ loc =
@@ -641,7 +639,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
         let instrs =
           let is_non_constructor_call = match invoke_code with I_Special -> false | _ -> true in
           match sil_obj_expr with
-          | Exp.Var _ when is_non_constructor_call && not Config.tracing ->
+          | Exp.Var _ when is_non_constructor_call ->
               let obj_typ_no_ptr =
                 match sil_obj_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_obj_type
               in
@@ -807,18 +805,6 @@ type translation =
   | Instr of Procdesc.Node.t
   | Prune of Procdesc.Node.t * Procdesc.Node.t
   | Loop of Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t
-
-let is_this expr =
-  match expr with
-  | JBir.Var (_, var) -> (
-    match JBir.var_name_debug var with
-    | None ->
-        false
-    | Some name_opt ->
-        String.equal (Mangled.to_string JConfig.this) name_opt )
-  | _ ->
-      false
-
 
 let assume_not_null loc sil_expr =
   let builtin_infer_assume = Exp.Const (Const.Cfun BuiltinDecl.__infer_assume) in
@@ -1101,166 +1087,6 @@ let instruction (context : JContext.t) pc instr : translation =
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         Instr call_node
-    | Check (CheckNullPointer expr) when Config.tracing && is_this expr ->
-        (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)
-        let instrs, sil_expr, _ = expression context pc expr in
-        let this_not_null_node =
-          create_node (Procdesc.Node.Stmt_node ThisNotNull)
-            (instrs @ [assume_not_null loc sil_expr])
-        in
-        Instr this_not_null_node
-    | Check (CheckNullPointer expr) when Config.tracing ->
-        let instrs, sil_expr, _ = expression context pc expr in
-        let not_null_node =
-          let sil_not_null = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
-          let sil_prune_not_null = Sil.Prune (sil_not_null, loc, true, Sil.Ik_if)
-          and not_null_kind = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_NotNull) in
-          create_node not_null_kind (instrs @ [sil_prune_not_null])
-        in
-        let throw_npe_node =
-          let sil_is_null = Exp.BinOp (Binop.Eq, sil_expr, Exp.null) in
-          let sil_prune_null = Sil.Prune (sil_is_null, loc, true, Sil.Ik_if)
-          and npe_kind = Procdesc.Node.Stmt_node ThrowNPE
-          and npe_cn = JBasics.make_cn JConfig.npe_cl in
-          let class_type = JTransType.get_class_type program tenv npe_cn
-          and class_type_np = JTransType.get_class_type_no_pointer program tenv npe_cn in
-          let sizeof_exp =
-            Exp.Sizeof
-              {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-          in
-          let args = [(sizeof_exp, class_type)] in
-          let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr =
-            Sil.Call ((ret_id, class_type), builtin_new, args, loc, CallFlags.default)
-          in
-          let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let _, call_instrs =
-            let ret_opt = Some (Exp.Var ret_id, class_type) in
-            method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special
-              Typ.Procname.Java.Static
-          in
-          let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr =
-            Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2= sil_exn; loc}
-          in
-          let npe_instrs = instrs @ [sil_prune_null] @ (new_instr :: call_instrs) @ [set_instr] in
-          create_node npe_kind npe_instrs
-        in
-        Prune (not_null_node, throw_npe_node)
-    | Check (CheckArrayBound (array_expr, index_expr)) when Config.tracing ->
-        let instrs, _, sil_length_expr, sil_index_expr =
-          let array_instrs, sil_array_expr, _ = expression context pc array_expr
-          and length_instrs, sil_length_expr, _ =
-            expression context pc (JBir.Unop (JBir.ArrayLength, array_expr))
-          and index_instrs, sil_index_expr, _ = expression context pc index_expr in
-          let instrs = array_instrs @ index_instrs @ length_instrs in
-          (instrs, sil_array_expr, sil_length_expr, sil_index_expr)
-        in
-        let in_bound_node =
-          let in_bound_node_kind =
-            Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_InBound)
-          in
-          let sil_assume_in_bound =
-            let sil_in_bound =
-              let sil_positive_index =
-                Exp.BinOp (Binop.Ge, sil_index_expr, Exp.Const (Const.Cint IntLit.zero))
-              and sil_less_than_length = Exp.BinOp (Binop.Lt, sil_index_expr, sil_length_expr) in
-              Exp.BinOp (Binop.LAnd, sil_positive_index, sil_less_than_length)
-            in
-            Sil.Prune (sil_in_bound, loc, true, Sil.Ik_if)
-          in
-          create_node in_bound_node_kind (instrs @ [sil_assume_in_bound])
-        and throw_out_of_bound_node =
-          let out_of_bound_node_kind = Procdesc.Node.Stmt_node OutOfBound in
-          let sil_assume_out_of_bound =
-            let sil_out_of_bound =
-              let sil_negative_index =
-                Exp.BinOp (Binop.Lt, sil_index_expr, Exp.Const (Const.Cint IntLit.zero))
-              and sil_greater_than_length =
-                Exp.BinOp (Binop.Gt, sil_index_expr, sil_length_expr)
-              in
-              Exp.BinOp (Binop.LOr, sil_negative_index, sil_greater_than_length)
-            in
-            Sil.Prune (sil_out_of_bound, loc, true, Sil.Ik_if)
-          in
-          let out_of_bound_cn = JBasics.make_cn JConfig.out_of_bound_cl in
-          let class_type = JTransType.get_class_type program tenv out_of_bound_cn
-          and class_type_np = JTransType.get_class_type_no_pointer program tenv out_of_bound_cn in
-          let sizeof_exp =
-            Exp.Sizeof
-              {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-          in
-          let args = [(sizeof_exp, class_type)] in
-          let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr =
-            Sil.Call ((ret_id, ret_type), builtin_new, args, loc, CallFlags.default)
-          in
-          let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let _, call_instrs =
-            method_invocation context loc pc None out_of_bound_cn constr_ms
-              (Some (Exp.Var ret_id, class_type))
-              [] I_Special Typ.Procname.Java.Static
-          in
-          let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr =
-            Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2= sil_exn; loc}
-          in
-          let out_of_bound_instrs =
-            instrs @ [sil_assume_out_of_bound] @ (new_instr :: call_instrs) @ [set_instr]
-          in
-          create_node out_of_bound_node_kind out_of_bound_instrs
-        in
-        Prune (in_bound_node, throw_out_of_bound_node)
-    | Check (CheckCast (expr, object_type)) when Config.tracing ->
-        let sil_type = JTransType.expr_type context expr
-        and instrs, sil_expr, _ = expression context pc expr
-        and ret_id = Ident.create_fresh Ident.knormal
-        and sizeof_expr =
-          JTransType.sizeof_of_object_type program tenv object_type Subtype.subtypes_instof
-        in
-        let check_cast = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
-        let args = [(sil_expr, sil_type); (sizeof_expr, Typ.mk Tvoid)] in
-        let call = Sil.Call ((ret_id, ret_type), check_cast, args, loc, CallFlags.default) in
-        let res_ex = Exp.Var ret_id in
-        let is_instance_node =
-          let check_is_false = Exp.BinOp (Binop.Ne, res_ex, Exp.zero) in
-          let asssume_instance_of = Sil.Prune (check_is_false, loc, true, Sil.Ik_if)
-          and instance_of_kind =
-            Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_IsInstance)
-          in
-          create_node instance_of_kind (instrs @ [call; asssume_instance_of])
-        and throw_cast_exception_node =
-          let check_is_true = Exp.BinOp (Binop.Ne, res_ex, Exp.one) in
-          let asssume_not_instance_of = Sil.Prune (check_is_true, loc, true, Sil.Ik_if)
-          and throw_cast_exception_kind = Procdesc.Node.Stmt_node ClassCastException
-          and cce_cn = JBasics.make_cn JConfig.cce_cl in
-          let class_type = JTransType.get_class_type program tenv cce_cn
-          and class_type_np = JTransType.get_class_type_no_pointer program tenv cce_cn in
-          let sizeof_exp =
-            Exp.Sizeof
-              {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-          in
-          let args = [(sizeof_exp, class_type)] in
-          let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr =
-            Sil.Call ((ret_id, ret_type), builtin_new, args, loc, CallFlags.default)
-          in
-          let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let _, call_instrs =
-            method_invocation context loc pc None cce_cn constr_ms
-              (Some (Exp.Var ret_id, class_type))
-              [] I_Special Typ.Procname.Java.Static
-          in
-          let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr =
-            Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2= sil_exn; loc}
-          in
-          let cce_instrs =
-            instrs @ [call; asssume_not_instance_of] @ (new_instr :: call_instrs) @ [set_instr]
-          in
-          create_node throw_cast_exception_kind cce_instrs
-        in
-        Prune (is_instance_node, throw_cast_exception_node)
     | MonitorEnter expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__set_locked_attribute
           MonitorEnter
@@ -1274,9 +1100,6 @@ let instruction (context : JContext.t) pc instr : translation =
            flags '~formula:false' *)
         Skip
     | Check _ ->
-        (* Infer only considers 3 kinds of runtime error exceptions
-           currently: NullPointer, ArrayBound, Cast. And only when
-           Config.tracing=true. *)
         Skip
     | MayInit _ ->
         (* Infer ignores Sawja MayInit instruction. This instruction

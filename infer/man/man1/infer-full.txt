@@ -1781,12 +1781,6 @@ INTERNAL OPTIONS
            Activates: Detailed tracing information during TOPL analysis
            (Conversely: --no-trace-topl)
 
-       --tracing
-           Activates: Report error traces for runtime exceptions (Java only):
-           generate preconditions for runtimeexceptions in Java and report
-           errors for public methods which throw runtime exceptions
-           (Conversely: --no-tracing)
-
        --tv-commit commit
            Commit hash to submit to Traceview
 
