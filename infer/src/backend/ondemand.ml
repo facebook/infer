@@ -287,21 +287,6 @@ let create_perf_stats_report source_file =
   PerfStats.get_reporter (PerfStats.Backend source_file) ()
 
 
-let hash_procname proc_name = Typ.Procname.to_unique_id proc_name |> Utils.string_crc_hex32
-
-let memcache_get proc_name =
-  if not Config.memcached then None
-  else
-    let key = hash_procname proc_name in
-    Summary.SummaryServer.get ~key
-
-
-let memcache_set proc_name summ =
-  if Config.memcached then
-    let key = hash_procname proc_name in
-    Summary.SummaryServer.set ~key summ
-
-
 let register_callee ?caller_summary callee_pname =
   Option.iter
     ~f:(fun (summary : Summary.t) ->
@@ -348,28 +333,22 @@ let analyze_callee ?caller_summary callee =
     | Some callee_summary_option ->
         callee_summary_option
     | None ->
-        let callee_summary_option, update_memcached =
-          match memcache_get callee_pname with
-          | Some summ_opt ->
-              (summ_opt, false)
-          | None ->
-              if callee_should_be_analyzed callee then
-                match get_callee_proc_desc callee with
-                | Some callee_pdesc ->
-                    ( Some
-                        (run_proc_analysis
-                           ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                           callee_pdesc)
-                    , true )
-                | None ->
-                    (Summary.OnDisk.get callee_pname, true)
-              else (
-                EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
-                (Summary.OnDisk.get callee_pname, true) )
+        let summ_opt =
+          if callee_should_be_analyzed callee then
+            match get_callee_proc_desc callee with
+            | Some callee_pdesc ->
+                Some
+                  (run_proc_analysis
+                     ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                     callee_pdesc)
+            | None ->
+                Summary.OnDisk.get callee_pname
+          else (
+            EventLogger.log_skipped_pname (F.asprintf "%a" Typ.Procname.pp callee_pname) ;
+            Summary.OnDisk.get callee_pname )
         in
-        if update_memcached then memcache_set callee_pname callee_summary_option ;
-        LocalCache.add callee_pname callee_summary_option ;
-        callee_summary_option
+        LocalCache.add callee_pname summ_opt ;
+        summ_opt
 
 
 let analyze_proc_desc ~caller_summary callee_pdesc =

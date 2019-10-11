@@ -120,7 +120,3 @@ module OnDisk : sig
   val dummy : t
   (** dummy summary for testing *)
 end
-
-module SummaryValue : Memcached.Value with type t = t option
-
-module SummaryServer : Memcached.Server with module Value = SummaryValue

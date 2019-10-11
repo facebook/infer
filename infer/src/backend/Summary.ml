@@ -288,11 +288,3 @@ module OnDisk = struct
     in
     Procedures.get_all ~filter () |> List.iter ~f:reset
 end
-
-module SummaryValue = struct
-  type nonrec t = t option
-
-  let label = "summary"
-end
-
-module SummaryServer = Memcached.Make (SummaryValue)

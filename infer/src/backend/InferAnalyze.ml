@@ -42,16 +42,14 @@ let analyze_target : TaskScheduler.target Tasks.doer =
     Ondemand.analyze_proc_name_toplevel exe_env proc_name
   in
   fun target ->
-    if Config.memcached then Memcached.connect () ;
     let exe_env = Exe_env.mk () in
     (* clear cache for each source file to avoid it growing unboundedly *)
     clear_caches () ;
-    ( match target with
+    match target with
     | Procname procname ->
         analyze_proc_name exe_env procname
     | File source_file ->
-        analyze_source_file exe_env source_file ) ;
-    if Config.memcached then Memcached.disconnect ()
+        analyze_source_file exe_env source_file
 
 
 let output_json_makefile_stats clusters =
