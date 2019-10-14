@@ -190,69 +190,79 @@ type x =
 let ptr_siz : x -> int =
  fun x -> Llvm_target.DataLayout.pointer_size x.lldatalayout
 
-let size_of : x -> Llvm.lltype -> int =
- fun x llt ->
-  if Llvm.type_is_sized llt then
-    match
-      Int64.to_int (Llvm_target.DataLayout.abi_size llt x.lldatalayout)
-    with
-    | Some n -> n
-    | None -> fail "size_of: %a" pp_lltype llt ()
-  else todo "types with undetermined size: %a" pp_lltype llt ()
+let size_of, bit_size_of =
+  let size_to_int size_of x llt =
+    if Llvm.type_is_sized llt then
+      match Int64.to_int (size_of llt x.lldatalayout) with
+      | Some n -> n
+      | None -> fail "type size too large: %a" pp_lltype llt ()
+    else fail "types with undetermined size: %a" pp_lltype llt ()
+  in
+  ( size_to_int Llvm_target.DataLayout.abi_size
+  , size_to_int Llvm_target.DataLayout.size_in_bits )
 
 let memo_type : (Llvm.lltype, Typ.t) Hashtbl.t = Hashtbl.Poly.create ()
 
 let rec xlate_type : x -> Llvm.lltype -> Typ.t =
  fun x llt ->
   let xlate_type_ llt =
-    match Llvm.classify_type llt with
-    | Half -> Typ.float ~bits:16 ~siz:(size_of x llt) ~enc:`IEEE
-    | Float -> Typ.float ~bits:32 ~siz:(size_of x llt) ~enc:`IEEE
-    | Double -> Typ.float ~bits:64 ~siz:(size_of x llt) ~enc:`IEEE
-    | X86fp80 -> Typ.float ~bits:80 ~siz:(size_of x llt) ~enc:`Extended
-    | Fp128 -> Typ.float ~bits:128 ~siz:(size_of x llt) ~enc:`IEEE
-    | Ppc_fp128 -> Typ.float ~bits:128 ~siz:(size_of x llt) ~enc:`Pair
-    | Integer ->
-        Typ.integer ~bits:(Llvm.integer_bitwidth llt) ~siz:(size_of x llt)
-    | X86_mmx -> Typ.integer ~bits:64 ~siz:(size_of x llt)
-    | Function ->
-        let return = xlate_type_opt x (Llvm.return_type llt) in
-        let llargs = Llvm.param_types llt in
-        let len = Array.length llargs in
-        let args = Vector.init len ~f:(fun i -> xlate_type x llargs.(i)) in
-        Typ.function_ ~return ~args
-    | Pointer ->
-        if size_of x llt <> ptr_siz x then
-          todo "non-integral pointer types: %a" pp_lltype llt () ;
-        let elt = xlate_type x (Llvm.element_type llt) in
-        Typ.pointer ~elt
-    | Vector ->
-        let elt = xlate_type x (Llvm.element_type llt) in
-        let len = Llvm.vector_size llt in
-        Typ.array ~elt ~len ~siz:(size_of x llt)
-    | Array ->
-        let elt = xlate_type x (Llvm.element_type llt) in
-        let len = Llvm.array_length llt in
-        Typ.array ~elt ~len ~siz:(size_of x llt)
-    | Struct ->
-        let llelts = Llvm.struct_element_types llt in
-        let len = Array.length llelts in
-        let packed = Llvm.is_packed llt in
-        if Llvm.is_literal llt then
-          let elts =
-            Vector.map ~f:(xlate_type x) (Vector.of_array llelts)
-          in
-          Typ.tuple elts ~siz:(size_of x llt) ~packed
-        else
-          let name = struct_name llt in
-          if Llvm.is_opaque llt then Typ.opaque ~name ~siz:(size_of x llt)
+    if Llvm.type_is_sized llt then
+      let byts = size_of x llt in
+      let bits = bit_size_of x llt in
+      match Llvm.classify_type llt with
+      | Half | Float | Double | Fp128 -> Typ.float ~bits ~byts ~enc:`IEEE
+      | X86fp80 -> Typ.float ~bits ~byts ~enc:`Extended
+      | Ppc_fp128 -> Typ.float ~bits ~byts ~enc:`Pair
+      | Integer -> Typ.integer ~bits ~byts
+      | X86_mmx -> Typ.integer ~bits ~byts
+      | Pointer ->
+          if byts <> ptr_siz x then
+            todo "non-integral pointer types: %a" pp_lltype llt () ;
+          let elt = xlate_type x (Llvm.element_type llt) in
+          Typ.pointer ~elt
+      | Vector ->
+          let elt = xlate_type x (Llvm.element_type llt) in
+          let len = Llvm.vector_size llt in
+          Typ.array ~elt ~len ~bits ~byts
+      | Array ->
+          let elt = xlate_type x (Llvm.element_type llt) in
+          let len = Llvm.array_length llt in
+          Typ.array ~elt ~len ~bits ~byts
+      | Struct ->
+          let llelts = Llvm.struct_element_types llt in
+          let len = Array.length llelts in
+          let packed = Llvm.is_packed llt in
+          if Llvm.is_literal llt then
+            let elts =
+              Vector.map ~f:(xlate_type x) (Vector.of_array llelts)
+            in
+            Typ.tuple elts ~bits ~byts ~packed
           else
+            let name = struct_name llt in
             let elts =
               Vector.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
             in
-            Typ.struct_ ~name elts ~siz:(size_of x llt) ~packed
-    | Token -> Typ.opaque ~name:"token" ~siz:(size_of x llt)
-    | Void | Label | Metadata -> assert false
+            Typ.struct_ ~name elts ~bits ~byts ~packed
+      | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
+      | Void | Label | Metadata | Token -> assert false
+    else
+      match Llvm.classify_type llt with
+      | Function ->
+          let return = xlate_type_opt x (Llvm.return_type llt) in
+          let llargs = Llvm.param_types llt in
+          let len = Array.length llargs in
+          let args =
+            Vector.init len ~f:(fun i -> xlate_type x llargs.(i))
+          in
+          Typ.function_ ~return ~args
+      | Struct when Llvm.is_opaque llt -> Typ.opaque ~name:(struct_name llt)
+      | Token -> Typ.opaque ~name:"token"
+      | Vector | Array | Struct ->
+          todo "unsized non-opaque aggregate types: %a" pp_lltype llt ()
+      | Half | Float | Double | X86fp80 | Fp128 | Ppc_fp128 | Integer
+       |X86_mmx | Pointer ->
+          fail "expected to be sized: %a" pp_lltype llt ()
+      | Void | Label | Metadata -> assert false
   in
   Hashtbl.find_or_add memo_type llt ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_lltype llt]
@@ -374,17 +384,16 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Exp.t =
     | ConstantFP -> xlate_float x llv
     | ConstantPointerNull -> Exp.null
     | ConstantAggregateZero -> (
-        let llt = Llvm.type_of llv in
-        let typ = xlate_type x llt in
+        let typ = xlate_type x (Llvm.type_of llv) in
         match typ with
         | Integer _ -> Exp.integer typ Z.zero
         | Pointer _ -> Exp.null
         | Array _ | Tuple _ | Struct _ ->
-            let llsiz = size_of x llt in
-            if llsiz = 0 then todo "ConstantAggregateZero of size 0" () ;
+            let siz = Typ.size_of typ in
+            if siz = 0 then todo "ConstantAggregateZero of size 0" () ;
             Exp.splat typ
               ~byt:(Exp.integer Typ.byt Z.zero)
-              ~siz:(Exp.integer Typ.siz (Z.of_int llsiz))
+              ~siz:(Exp.integer Typ.siz (Z.of_int siz))
         | _ -> fail "ConstantAggregateZero of type %a" Typ.pp typ () )
     | ConstantVector | ConstantArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
@@ -720,9 +729,9 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
 
 let exception_typs =
   let pi8 = Typ.pointer ~elt:Typ.byt in
-  let i32 = Typ.integer ~bits:32 ~siz:4 in
+  let i32 = Typ.integer ~bits:32 ~byts:4 in
   let exc =
-    Typ.tuple ~packed:false (Vector.of_array [|pi8; i32|]) ~siz:12
+    Typ.tuple ~packed:false (Vector.of_array [|pi8; i32|]) ~bits:96 ~byts:12
   in
   (pi8, i32, exc)
 
@@ -843,14 +852,12 @@ let xlate_instr :
   match opcode with
   | Load ->
       let reg = xlate_name x instr in
-      let llt = Llvm.type_of instr in
-      let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
+      let len = Exp.size_of (Exp.reg reg) in
       let ptr = xlate_value x (Llvm.operand instr 0) in
       emit_inst (Llair.Inst.load ~reg ~ptr ~len ~loc)
   | Store ->
       let exp = xlate_value x (Llvm.operand instr 0) in
-      let llt = Llvm.type_of (Llvm.operand instr 0) in
-      let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
+      let len = Exp.size_of exp in
       let ptr = xlate_value x (Llvm.operand instr 1) in
       emit_inst (Llair.Inst.store ~ptr ~exp ~len ~loc)
   | Alloca ->
@@ -862,8 +869,7 @@ let xlate_instr :
           (xlate_value x rand)
       in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let llt = Llvm.element_type (Llvm.type_of instr) in
-      let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
+      let len = Exp.size_of (Exp.reg reg) in
       emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
@@ -914,8 +920,7 @@ let xlate_instr :
             (* operator new(unsigned long, std::align_val_t) *) ] ->
             let reg = xlate_name x instr in
             let num = xlate_value x (Llvm.operand instr 0) in
-            let llt = Llvm.type_of instr in
-            let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
+            let len = Exp.size_of (Exp.reg reg) in
             emit_inst (Llair.Inst.alloc ~reg ~num ~len ~loc)
         | ["_ZdlPv" (* operator delete(void* ptr) *)]
          |[ "_ZdlPvSt11align_val_t"
@@ -1036,8 +1041,7 @@ let xlate_instr :
         when num_args > 0 ->
           let reg = xlate_name x instr in
           let num = xlate_value x (Llvm.operand instr 0) in
-          let llt = Llvm.type_of instr in
-          let len = Exp.integer Typ.siz (Z.of_int (size_of x llt)) in
+          let len = Exp.size_of (Exp.reg reg) in
           let dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term
             ~prefix:[Llair.Inst.alloc ~reg ~num ~len ~loc]

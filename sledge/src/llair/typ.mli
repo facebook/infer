@@ -10,19 +10,24 @@
 type t = private
   | Function of {return: t option; args: t vector}
       (** (Global) function names have type Pointer to Function. *)
-  | Integer of {bits: int; siz: int}  (** Integer of given bitwidth. *)
-  | Float of {bits: int; siz: int; enc: [`IEEE | `Extended | `Pair]}
+  | Integer of {bits: int; byts: int}  (** Integer of given bitwidth. *)
+  | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
       (** Floating-point numbers of given bitwidth and encoding. *)
   | Pointer of {elt: t}  (** Pointer to element type. *)
-  | Array of {elt: t; len: int; siz: int}
+  | Array of {elt: t; len: int; bits: int; byts: int}
       (** Statically-sized array of [len] elements of type [elt]. *)
-  | Tuple of {elts: t vector; siz: int; packed: bool}
+  | Tuple of {elts: t vector; bits: int; byts: int; packed: bool}
       (** Anonymous aggregate of heterogeneous types. *)
-  | Struct of {name: string; elts: t vector; siz: int; packed: bool}
+  | Struct of
+      { name: string
+      ; elts: t vector
+      ; bits: int
+      ; byts: int
+      ; packed: bool }
       (** Uniquely named aggregate of heterogeneous types. Every cycle of
           recursive types contains a [Struct]. NOTE: recursive [Struct]
           types are represented by cyclic values. *)
-  | Opaque of {name: string; siz: int}
+  | Opaque of {name: string}
       (** Uniquely named aggregate type whose definition is hidden. *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -39,21 +44,29 @@ val int : t
 val siz : t
 val ptr : t
 val function_ : return:t option -> args:t vector -> t
-val integer : bits:int -> siz:int -> t
-val float : bits:int -> siz:int -> enc:[`Extended | `IEEE | `Pair] -> t
+val integer : bits:int -> byts:int -> t
+val float : bits:int -> byts:int -> enc:[`Extended | `IEEE | `Pair] -> t
 val pointer : elt:t -> t
-val array : elt:t -> len:int -> siz:int -> t
-val tuple : t vector -> siz:int -> packed:bool -> t
-val struct_ : name:string -> siz:int -> packed:bool -> t lazy_t vector -> t
-val opaque : name:string -> siz:int -> t
+val array : elt:t -> len:int -> bits:int -> byts:int -> t
+val tuple : t vector -> bits:int -> byts:int -> packed:bool -> t
+
+val struct_ :
+  name:string -> bits:int -> byts:int -> packed:bool -> t lazy_t vector -> t
+
+val opaque : name:string -> t
 
 (** Queries *)
 
-val size_of : t -> int option
-val prim_bit_size_of : t -> int option
-
 val is_sized : t -> bool
 (** Holds of types which are first-class and have a statically-known size. *)
+
+val bit_size_of : t -> int
+(** The number of bits required to hold a value of the given type. Raises
+    unless [is_sized] holds. *)
+
+val size_of : t -> int
+(** The number of bytes between adjacent values of the given type, including
+    alignment padding. Raises unless is_sized holds. *)
 
 val equivalent : t -> t -> bool
 (** Equivalent types are those that denote the same sets of values in the

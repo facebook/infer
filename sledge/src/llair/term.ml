@@ -352,7 +352,9 @@ let invariant e =
   | ApN (Concat, mems) -> assert (Vector.length mems <> 1)
   | ApN (Record, elts) | RecN (Record, elts) ->
       assert (not (Vector.is_empty elts))
-  | Ap1 (Convert {dst; src}, _) -> assert (Typ.convertible src dst)
+  | Ap1 (Convert {dst; src}, _) ->
+      assert (not (Typ.equivalent dst src)) ;
+      assert (Typ.convertible dst src)
   | _ -> ()
   [@@warning "-9"]
 
@@ -497,12 +499,13 @@ let simp_extract ~unsigned bits arg =
   | _ -> Ap1 (Extract {unsigned; bits}, arg)
 
 let simp_convert ~unsigned dst src arg =
-  if (not unsigned) && Typ.equivalent dst src then arg
-  else
-    match (dst, src, arg) with
-    | Integer {bits= m; _}, Integer {bits= n; _}, Integer {data} ->
-        integer (Z.extract ~unsigned (min m n) data)
-    | _ -> Ap1 (Convert {unsigned; dst; src}, arg)
+  match (dst, src, arg) with
+  | Typ.Integer {bits= m; _}, Typ.Integer {bits= n; _}, Integer {data} ->
+      if (not unsigned) && m >= n then arg
+      else integer (Z.extract ~unsigned (min m n) data)
+  | _ ->
+      if Typ.equivalent dst src then arg
+      else Ap1 (Convert {unsigned; dst; src}, arg)
 
 (* arithmetic *)
 
@@ -949,9 +952,7 @@ let concat xs = normN Concat (Vector.of_array xs)
 let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
-
-let size_of t =
-  Option.map ~f:(fun n -> integer (Z.of_int n)) (Typ.size_of t)
+let size_of t = integer (Z.of_int (Typ.size_of t))
 
 (** Transform *)
 

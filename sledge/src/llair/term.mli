@@ -197,7 +197,7 @@ val rec_app :
      (module Hashtbl.Key with type t = 'id)
   -> (id:'id -> recN -> t lazy_t vector -> t) Staged.t
 
-val size_of : Typ.t -> t option
+val size_of : Typ.t -> t
 
 (** Transform *)
 

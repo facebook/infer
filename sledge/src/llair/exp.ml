@@ -212,6 +212,7 @@ let rec invariant exp =
     match typ with Float _ -> assert true | _ -> assert false )
   | Label _ -> assert true
   | Ap1 (Convert {dst}, src, arg) ->
+      assert (not (Typ.equal dst src)) ;
       assert (Typ.convertible dst src) ;
       assert (Typ.castable src (typ_of arg))
   | Ap1 (Select idx, typ, rcd) -> (
@@ -223,9 +224,9 @@ let rec invariant exp =
   | Ap2 (Splat, typ, byt, siz) -> (
       assert (Typ.convertible Typ.byt (typ_of byt)) ;
       assert (Typ.convertible Typ.siz (typ_of siz)) ;
-      match (Typ.size_of typ, siz.desc) with
-      | Some n, Integer {data} -> assert (Z.equal (Z.of_int n) data)
-      | None, Integer {data} -> assert (not (Z.equal Z.zero data))
+      assert (Typ.is_sized typ) ;
+      match siz.desc with
+      | Integer {data} -> assert (Z.equal (Z.of_int (Typ.size_of typ)) data)
       | _ -> () )
   | Ap2 (Update idx, typ, rcd, elt) -> (
       assert (Typ.castable typ (typ_of rcd)) ;
@@ -294,6 +295,8 @@ and typ_of exp =
    |ApN ((Record | Struct_rec), typ, _) ->
       typ
   [@@warning "-9"]
+
+let typ = typ_of
 
 type exp = t
 
@@ -422,10 +425,8 @@ let binary op mk ?typ x y =
 let ubinary op mk ?typ x y =
   let typ = match typ with Some typ -> typ | None -> typ_of x in
   let umk x y =
-    let bits = Option.value_exn (Typ.prim_bit_size_of typ) in
-    mk
-      (Term.extract ~unsigned:true ~bits x)
-      (Term.extract ~unsigned:true ~bits y)
+    let extract = Term.extract ~unsigned:true ~bits:(Typ.bit_size_of typ) in
+    mk (extract x) (extract y)
   in
   binary op umk ~typ x y
 
@@ -519,6 +520,8 @@ let struct_rec key =
          shares the array in the memo table, so that the update after
          forcing the recursive thunks also updates this value. *)
       {desc= ApN (Struct_rec, typ, elts); term= rec_app ~id Vector.empty}
+
+let size_of exp = integer Typ.siz (Z.of_int (Typ.size_of (typ exp)))
 
 (** Traverse *)
 
