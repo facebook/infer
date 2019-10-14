@@ -84,7 +84,7 @@ module Bound : sig
 
   val widen_u_thresholds : thresholds:Z.t list -> t -> t -> t
 
-  val is_const : t -> Z.t sexp_option
+  val is_const : t -> Z.t option
 
   val plus_l : weak:bool -> t -> t -> t
 
@@ -96,9 +96,9 @@ module Bound : sig
 
   val neg : t -> t
 
-  val div_const_l : t -> Ints.NonZeroInt.t -> t sexp_option
+  val div_const_l : t -> Ints.NonZeroInt.t -> t option
 
-  val div_const_u : t -> Ints.NonZeroInt.t -> t sexp_option
+  val div_const_u : t -> Ints.NonZeroInt.t -> t option
 
   val get_symbols : t -> Symb.SymbolSet.t
 

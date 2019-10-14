@@ -17,7 +17,7 @@ val memcpy : Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> Sh.t option
 val memmov : Sh.t -> dst:Term.t -> src:Term.t -> len:Term.t -> Sh.t option
 val alloc : Sh.t -> reg:Var.var -> num:Term.t -> len:Term.t -> Sh.t option
 val free : Sh.t -> ptr:Term.t -> Sh.t option
-val nondet : Sh.t -> Var.var sexp_option -> Sh.t
+val nondet : Sh.t -> Var.var option -> Sh.t
 val abort : Sh.t -> Sh.t option
 
 val intrinsic :

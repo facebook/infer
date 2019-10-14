@@ -54,19 +54,19 @@ val find_override_or_superclass_annotated :
   -> (Annot.Item.t -> bool)
   -> Tenv.t
   -> Typ.Procname.t
-  -> annotation_trail sexp_option
+  -> annotation_trail option
 (** check if a method's transitive annotations satisfy the given predicate *)
 
 val annotated_as_worker_thread :
      attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
   -> Tenv.t
   -> Typ.Procname.t
-  -> annotation_trail sexp_option
+  -> annotation_trail option
 (** check if a method is transitively annotated @WorkerThread *)
 
 val annotated_as_uithread_equivalent :
      attrs_of_pname:(BuiltinDecl.t -> ProcAttributes.t option)
   -> Tenv.t
   -> Typ.Procname.t
-  -> annotation_trail sexp_option
+  -> annotation_trail option
 (** check if a method is transitively annotated @UIThread or equivalent *)

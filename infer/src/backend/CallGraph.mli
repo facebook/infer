@@ -60,7 +60,7 @@ val add_edge : t -> pname:Typ.Procname.t -> successor_pname:Typ.Procname.t -> un
 (** add an edge from [pname] to [successor_pname] in the graph, creating a node for [pname] if there
     isn't one already *)
 
-val create_node : t -> Typ.Procname.t -> Typ.Procname.t sexp_list -> unit
+val create_node : t -> Typ.Procname.t -> Typ.Procname.t list -> unit
 (** create a new node with edges from [pname] to [successor_pnames] in the graph *)
 
 val fold_flagged : t -> f:(Node.t -> 'a -> 'a) -> 'a -> 'a

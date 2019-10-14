@@ -12,7 +12,7 @@ type trace =
 [@@deriving compare]
 
 module ModifiedVar : sig
-  type nonempty_action_type = trace * trace sexp_list
+  type nonempty_action_type = trace * trace list
 
   type t = {var: Var.t; trace_list: nonempty_action_type}
 end
@@ -31,7 +31,7 @@ val add_to_errlog :
      nesting:int
   -> str:string
   -> ModifiedVar.t
-  -> Errlog.loc_trace_elem sexp_list
-  -> Errlog.loc_trace_elem sexp_list
+  -> Errlog.loc_trace_elem list
+  -> Errlog.loc_trace_elem list
 
 val join : t -> t -> t
