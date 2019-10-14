@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import com.google.common.base.Objects;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -62,5 +63,28 @@ class ListTest {
 
   void call_iterate_elements_linear(List<Integer> l1, List<Integer> l2) {
     iterate_elements_linear(two_lists(l1, l2));
+  }
+
+  void iter_multiple_list1_linear(List<Integer> l1, List<Integer> l2) {
+    List<Integer> l;
+    if (unknown_bool) {
+      l = l1;
+    } else {
+      l = l2;
+    }
+    List<Integer> m = new ArrayList<Integer>();
+    for (Integer i : l) {
+      m.add(i);
+    }
+  }
+
+  void iter_multiple_list2_linear(List<Integer> l1, List<Integer> l2) {
+    List<Integer> l;
+    if (unknown_bool) {
+      l = l1;
+    } else {
+      l = l2;
+    }
+    for (Integer i : l) {}
   }
 }
