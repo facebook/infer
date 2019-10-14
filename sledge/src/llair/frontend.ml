@@ -758,20 +758,28 @@ let xlate_jump :
       | _ -> reg_exps )
     | At_end blk -> fail "xlate_jump: %a" pp_llblock blk ()
   in
-  let jmp = Llair.Jump.mk (label_of_block dst) in
+  let dst_lbl = label_of_block dst in
+  let jmp = Llair.Jump.mk dst_lbl in
   match xlate_jump_ reg_exps (Llvm.instr_begin dst) with
   | [] -> (jmp, blocks)
   | reg_exps ->
       let mov =
         Llair.Inst.move ~reg_exps:(Vector.of_list_rev reg_exps) ~loc
       in
-      let lbl = find_name instr ^ ".jmp" in
+      let lbl = find_name instr ^ ".jmp." ^ dst_lbl in
       let blk =
         Llair.Block.mk ~lbl
           ~cmnd:(Vector.of_array [|mov|])
           ~term:(Llair.Term.goto ~dst:jmp ~loc)
       in
-      (Llair.Jump.mk lbl, blk :: blocks)
+      let blocks =
+        match List.find blocks ~f:(fun b -> String.equal lbl b.lbl) with
+        | None -> blk :: blocks
+        | Some blk0 ->
+            assert (Llair.Block.equal blk0 blk) ;
+            blocks
+      in
+      (Llair.Jump.mk lbl, blocks)
 
 (** An LLVM instruction is translated to a sequence of LLAIR instructions
     and a terminator, plus some additional blocks to which it may refer
