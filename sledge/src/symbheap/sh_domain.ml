@@ -19,9 +19,9 @@ let report_fmt_thunk = Fn.flip pp
 
 let init globals =
   Vector.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Global.reg; init= Some (arr, siz)} ->
+    | {Global.reg; init= Some arr} ->
         let loc = Term.var (Reg.var reg) in
-        let len = Term.integer (Z.of_int siz) in
+        let len = Term.size_of (Exp.typ arr) in
         let arr = arr.term in
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; arr})
     | _ -> q )

@@ -7,7 +7,7 @@
 
 (** Global variables *)
 
-type t = {reg: Reg.t; init: (Exp.t * int) option; typ: Typ.t; loc: Loc.t}
+type t = {reg: Reg.t; init: Exp.t option; typ: Typ.t; loc: Loc.t}
 [@@deriving compare, equal, hash, sexp]
 
 let pp fs {reg} =
@@ -20,7 +20,7 @@ let pp fs {reg} =
 
 let pp_defn fs {reg; init; typ; loc} =
   Format.fprintf fs "@[<2>%a %a%a%a@]" Typ.pp typ Reg.pp reg Loc.pp loc
-    (Option.pp "@ = @[%a@]" (fun fs (init, _) -> Exp.pp fs init))
+    (Option.pp "@ = @[%a@]" Exp.pp)
     init
 
 let invariant g =

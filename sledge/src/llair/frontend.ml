@@ -654,13 +654,8 @@ and xlate_global : x -> Llvm.llvalue -> Global.t =
       Hashtbl.set memo_global ~key:llg ~data:(Global.mk g typ loc) ;
       let init =
         match Llvm.classify_value llg with
-        | GlobalVariable -> (
-          match Llvm.global_initializer llg with
-          | Some llinit ->
-              let siz = size_of x (Llvm.element_type llt) in
-              let init = xlate_value x llinit in
-              Some (init, siz)
-          | _ -> None )
+        | GlobalVariable ->
+            Option.map ~f:(xlate_value x) (Llvm.global_initializer llg)
         | _ -> None
       in
       Global.mk ?init g typ loc
