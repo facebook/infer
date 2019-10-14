@@ -694,7 +694,9 @@ let assume pre cnd =
   let post = Sh.and_ cnd pre in
   if Sh.is_false post then None else Some post
 
-let kill pre reg = Sh.exists (Set.add Var.Set.empty reg) pre
+let kill pre reg =
+  let ms = Set.add Var.Set.empty reg in
+  Sh.extend_us ms (Sh.exists ms pre)
 
 let move pre reg_exps =
   exec_spec pre (move_spec pre.us reg_exps)
