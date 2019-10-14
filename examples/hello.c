@@ -11,3 +11,4 @@ void test() {
   int* s = NULL;
   *s = 42;
 }
+// this code uses the concept of pointer in it.

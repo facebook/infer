@@ -63,3 +63,4 @@ void common_realloc_leak() {
   if (q != NULL)
     free(q);
 }
+// this is c code
