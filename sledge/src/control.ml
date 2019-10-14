@@ -271,7 +271,7 @@ module Make (Dom : Domain_sig.Dom) = struct
   let summary_table = Hashtbl.create (module Reg)
 
   let exec_call opts stk state block call globals =
-    let Llair.{callee; args= actuals; areturn; return; recursive} = call in
+    let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
       pf "%a from %a with state %a" Reg.pp name.reg Reg.pp
@@ -430,7 +430,7 @@ module Make (Dom : Domain_sig.Dom) = struct
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
-    | Call ({callee; args; areturn; return} as call) -> (
+    | Call ({callee; actuals; areturn; return} as call) -> (
         let lookup name =
           Option.to_list (Llair.Func.find pgm.functions name)
         in
@@ -441,7 +441,7 @@ module Make (Dom : Domain_sig.Dom) = struct
             List.fold callees ~init:Work.skip ~f:(fun x callee ->
                 ( match
                     Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
-                      areturn callee.name.reg args
+                      areturn callee.name.reg actuals
                   with
                 | Some None ->
                     Report.invalid_access_term

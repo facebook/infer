@@ -971,8 +971,8 @@ let xlate_instr :
             let typ = xlate_type x lltyp in
             let lbl = name ^ ".ret" in
             let call =
-              let args =
-                let num_args =
+              let actuals =
+                let num_actuals =
                   if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
                     Llvm.num_arg_operands instr
                   else
@@ -992,13 +992,13 @@ let xlate_instr :
                           pp_llvalue instr () ) ;
                     Array.length (Llvm.param_types llfty)
                 in
-                List.rev_init num_args ~f:(fun i ->
+                List.rev_init num_actuals ~f:(fun i ->
                     xlate_value x (Llvm.operand instr i) )
               in
               let areturn = xlate_name_opt x instr in
               let return = Llair.Jump.mk lbl in
-              Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw:None
-                ~loc
+              Llair.Term.call ~func ~typ ~actuals ~areturn ~return
+                ~throw:None ~loc
             in
             continue (fun (insts, term) ->
                 let cmnd = Vector.of_list insts in
@@ -1010,7 +1010,7 @@ let xlate_instr :
       let fname = Llvm.value_name llfunc in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
-      let num_args =
+      let num_actuals =
         if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
           Llvm.num_arg_operands instr
         else (
@@ -1022,11 +1022,6 @@ let xlate_instr :
           assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
-      let args =
-        List.rev_init num_args ~f:(fun i ->
-            xlate_value x (Llvm.operand instr i) )
-      in
-      let areturn = xlate_name_opt x instr in
       (* intrinsics *)
       match String.split fname ~on:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
@@ -1040,7 +1035,7 @@ let xlate_instr :
       | ["_Znwm" (* operator new(size_t num) *)]
        |[ "_ZnwmSt11align_val_t"
           (* operator new(unsigned long num, std::align_val_t) *) ]
-        when num_args > 0 ->
+        when num_actuals > 0 ->
           let reg = xlate_name x instr in
           let num = xlate_value x (Llvm.operand instr 0) in
           let len = Exp.size_of (Exp.reg reg) in
@@ -1056,11 +1051,17 @@ let xlate_instr :
       | _ ->
           let func = xlate_func_name x llfunc in
           let typ = xlate_type x (Llvm.type_of llfunc) in
+          let actuals =
+            List.rev_init num_actuals ~f:(fun i ->
+                xlate_value x (Llvm.operand instr i) )
+          in
+          let areturn = xlate_name_opt x instr in
           let return, blocks = xlate_jump x instr return_blk loc [] in
           let throw, blocks = xlate_jump x instr unwind_blk loc blocks in
           let throw = Some throw in
           emit_term
-            (Llair.Term.call ~func ~typ ~args ~areturn ~return ~throw ~loc)
+            (Llair.Term.call ~func ~typ ~actuals ~areturn ~return ~throw
+               ~loc)
             ~blocks )
   | Ret ->
       let exp =
@@ -1146,11 +1147,11 @@ let xlate_instr :
       let ti = Exp.reg ti in
       let typeid = xlate_llvm_eh_typeid_for x tip ti in
       let lbl = name ^ ".unwind" in
-      let param = xlate_name x instr in
+      let reg = xlate_name x instr in
       let jump_unwind i sel rev_blocks =
-        let arg = Exp.record exc_typ (Vector.of_array [|exc; sel|]) in
+        let exp = Exp.record exc_typ (Vector.of_array [|exc; sel|]) in
         let mov =
-          Llair.Inst.move ~reg_exps:(Vector.of_array [|(param, arg)|]) ~loc
+          Llair.Inst.move ~reg_exps:(Vector.of_array [|(reg, exp)|]) ~loc
         in
         let lbl = lbl ^ "." ^ Int.to_string i in
         let blk =

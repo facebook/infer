@@ -30,7 +30,7 @@ type jump = {mutable dst: block; mutable retreating: bool}
 and 'a call =
   { callee: 'a
   ; typ: Typ.t
-  ; args: Exp.t list
+  ; actuals: Exp.t list
   ; areturn: Reg.t option
   ; return: jump
   ; throw: jump option
@@ -81,12 +81,12 @@ let sexp_of_term = function
           {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}]
   | Iswitch {ptr; tbl; loc} ->
       sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump vector; loc: Loc.t}]
-  | Call {callee; typ; args; areturn; return; throw; recursive; loc} ->
+  | Call {callee; typ; actuals; areturn; return; throw; recursive; loc} ->
       sexp_ctor "Call"
         [%sexp
           { callee: Exp.t
           ; typ: Typ.t
-          ; args: Exp.t list
+          ; actuals: Exp.t list
           ; areturn: Reg.t option
           ; return: jump
           ; throw: jump option
@@ -158,8 +158,9 @@ let pp_inst fs inst =
         reg msg Loc.pp loc
   | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
 
-let pp_args pp_arg fs args =
-  Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
+let pp_actuals pp_actual fs actuals =
+  Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_actual)
+    (List.rev actuals)
 
 let pp_formal fs reg = Reg.pp fs reg
 
@@ -188,12 +189,12 @@ let pp_term fs term =
         (Vector.pp "@ " (fun fs jmp ->
              Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ))
         tbl Loc.pp loc
-  | Call {callee; args; areturn; return; throw; recursive; loc; _} ->
+  | Call {callee; actuals; areturn; return; throw; recursive; loc; _} ->
       pf "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
         (Option.pp "%a := " Reg.pp)
         areturn
         (if recursive then "↑" else "")
-        Exp.pp callee (pp_args Exp.pp) args pp_jump return
+        Exp.pp callee (pp_actuals Exp.pp) actuals pp_jump return
         (Option.pp "@ throwto %a" pp_jump)
         throw Loc.pp loc
   | Return {exp; loc} ->
@@ -309,10 +310,10 @@ module Term = struct
     @@ fun () ->
     match term with
     | Switch _ | Iswitch _ -> assert true
-    | Call {typ; args= actls; areturn; _} -> (
+    | Call {typ; actuals; areturn; _} -> (
       match typ with
-      | Pointer {elt= Function {args= frmls; return= retn_typ; _}} ->
-          assert (Vector.length frmls = List.length actls) ;
+      | Pointer {elt= Function {args; return= retn_typ; _}} ->
+          assert (Vector.length args = List.length actuals) ;
           assert (Option.is_some retn_typ || Option.is_none areturn)
       | _ -> assert false )
     | Return {exp; _} -> (
@@ -336,11 +337,11 @@ module Term = struct
 
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let call ~func ~typ ~args ~areturn ~return ~throw ~loc =
+  let call ~func ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
       { callee= func
       ; typ
-      ; args
+      ; actuals
       ; areturn
       ; return
       ; throw
@@ -408,7 +409,7 @@ module Func = struct
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
-      freturn Global.pp name (pp_args pp_formal) formals
+      freturn Global.pp name (pp_actuals pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else

@@ -48,7 +48,7 @@ type jump = {mutable dst: block; mutable retreating: bool}
 and 'a call =
   { callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
-  ; args: Exp.t list  (** Stack of arguments, first-arg-last. *)
+  ; actuals: Exp.t list  (** Stack of arguments, first-arg-last. *)
   ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
@@ -153,7 +153,7 @@ module Term : sig
   val call :
        func:Exp.t
     -> typ:Typ.t
-    -> args:Exp.t list
+    -> actuals:Exp.t list
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
