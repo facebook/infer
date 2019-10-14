@@ -1293,7 +1293,7 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
   ;
   let name = xlate_global x llf in
-  let params =
+  let formals =
     Llvm.fold_left_params
       (fun rev_args param -> xlate_name x param :: rev_args)
       [] llf
@@ -1327,10 +1327,10 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Llair.Func.mk ~name ~params ~freturn ~fthrow ~entry ~cfg
+      Llair.Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg
   | At_end _ ->
       report_undefined llf name ;
-      Llair.Func.mk_undefined ~name ~params ~freturn ~fthrow )
+      Llair.Func.mk_undefined ~name ~formals ~freturn ~fthrow )
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Llair.Func.pp]
 

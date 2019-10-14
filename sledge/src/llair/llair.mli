@@ -89,7 +89,7 @@ and cfg
     parameters are the function parameters. *)
 and func = private
   { name: Global.t
-  ; params: Reg.t list  (** Formal parameters, first-param-last stack *)
+  ; formals: Reg.t list  (** Formal parameters, first-param-last stack *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
@@ -184,7 +184,7 @@ module Func : sig
 
   val mk :
        name:Global.t
-    -> params:Reg.t list
+    -> formals:Reg.t list
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> entry:block
@@ -193,7 +193,7 @@ module Func : sig
 
   val mk_undefined :
        name:Global.t
-    -> params:Reg.t list
+    -> formals:Reg.t list
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> t

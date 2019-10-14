@@ -57,7 +57,7 @@ and cfg = block vector
 (* [entry] is not part of [cfg] since it cannot be jumped to, only called. *)
 and func =
   { name: Global.t
-  ; params: Reg.t list
+  ; formals: Reg.t list
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t
@@ -107,10 +107,10 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
 
 let sexp_of_cfg v = [%sexp_of: block vector] v
 
-let sexp_of_func {name; params; freturn; fthrow; locals; entry; cfg} =
+let sexp_of_func {name; formals; freturn; fthrow; locals; entry; cfg} =
   [%sexp
     { name: Global.t
-    ; params: Reg.t list
+    ; formals: Reg.t list
     ; freturn: Reg.t option
     ; fthrow: Reg.t
     ; locals: Reg.Set.t
@@ -161,7 +161,7 @@ let pp_inst fs inst =
 let pp_args pp_arg fs args =
   Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
 
-let pp_param fs reg = Reg.pp fs reg
+let pp_formal fs reg = Reg.pp fs reg
 
 let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]"
@@ -221,7 +221,7 @@ let rec dummy_block =
 and dummy_func =
   let dummy_reg = Reg.program ~global:() Typ.ptr "dummy" in
   { name= Global.mk dummy_reg Typ.ptr Loc.none
-  ; params= []
+  ; formals= []
   ; freturn= None
   ; fthrow= dummy_reg
   ; locals= Reg.Set.empty
@@ -395,7 +395,7 @@ module Func = struct
 
   let pp fs
       ( { name
-        ; params
+        ; formals
         ; freturn
         ; fthrow= _
         ; locals= _
@@ -408,7 +408,7 @@ module Func = struct
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
-      freturn Global.pp name (pp_args pp_param) params
+      freturn Global.pp name (pp_args pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
@@ -442,7 +442,7 @@ module Func = struct
 
   let find functions name = Map.find functions name
 
-  let mk ~(name : Global.t) ~params ~freturn ~fthrow ~entry ~cfg =
+  let mk ~(name : Global.t) ~formals ~freturn ~fthrow ~entry ~cfg =
     let locals =
       let locals_cmnd locals cmnd =
         Vector.fold_right ~f:Inst.union_locals cmnd ~init:locals
@@ -453,7 +453,7 @@ module Func = struct
       let init = locals_block Reg.Set.empty entry in
       Vector.fold ~f:locals_block cfg ~init
     in
-    let func = {name; params; freturn; fthrow; locals; entry; cfg} in
+    let func = {name; formals; freturn; fthrow; locals; entry; cfg} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
@@ -474,12 +474,12 @@ module Func = struct
     Vector.iter cfg ~f:resolve_parent_and_jumps ;
     func |> check invariant
 
-  let mk_undefined ~name ~params ~freturn ~fthrow =
+  let mk_undefined ~name ~formals ~freturn ~fthrow =
     let entry =
       Block.mk ~lbl:"" ~cmnd:Vector.empty ~term:Term.unreachable
     in
     let cfg = Vector.empty in
-    mk ~name ~entry ~params ~freturn ~fthrow ~cfg
+    mk ~name ~entry ~formals ~freturn ~fthrow ~cfg
 end
 
 (** Derived meta-data *)

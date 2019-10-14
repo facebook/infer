@@ -38,7 +38,7 @@ module Make (Dom : Domain_sig.Dom) = struct
       | Return of
           { recursive: bool  (** return from a possibly-recursive call *)
           ; dst: Llair.Jump.t
-          ; params: Reg.t list
+          ; formals: Reg.t list
           ; locals: Reg.Set.t
           ; from_call: Dom.from_call
           ; stk: t }
@@ -95,9 +95,9 @@ module Make (Dom : Domain_sig.Dom) = struct
 
     let empty = Empty |> check invariant
 
-    let push_return Llair.{callee= {params; locals}; return; recursive}
+    let push_return Llair.{callee= {formals; locals}; return; recursive}
         from_call stk =
-      Return {recursive; dst= return; params; locals; from_call; stk}
+      Return {recursive; dst= return; formals; locals; from_call; stk}
       |> check invariant
 
     let push_throw jmp stk =
@@ -128,8 +128,8 @@ module Make (Dom : Domain_sig.Dom) = struct
 
     let pop_throw stk ~init ~unwind =
       let rec pop_throw_ state = function
-        | Return {params; locals; from_call; stk} ->
-            pop_throw_ (unwind params locals from_call state) stk
+        | Return {formals; locals; from_call; stk} ->
+            pop_throw_ (unwind formals locals from_call state) stk
         | Throw (dst, Return {from_call; stk}) ->
             Some (from_call, dst, stk, state)
         | Empty -> None
@@ -272,7 +272,7 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let exec_call opts stk state block call globals =
     let Llair.{callee; args= actuals; areturn; return; recursive} = call in
-    let Llair.{name; params= formals; freturn; locals; entry} = callee in
+    let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
       pf "%a from %a with state %a" Reg.pp name.reg Reg.pp
         return.dst.parent.name.reg Dom.pp state]
@@ -325,7 +325,7 @@ module Make (Dom : Domain_sig.Dom) = struct
                 data ) )]
 
   let exec_return ~opts stk pre_state (block : Llair.block) exp =
-    let Llair.{name; params; freturn; locals} = block.parent in
+    let Llair.{name; formals; freturn; locals} = block.parent in
     [%Trace.call fun {pf} ->
       pf "from %a with pre_state %a" Reg.pp name.reg Dom.pp pre_state]
     ;
@@ -334,7 +334,7 @@ module Make (Dom : Domain_sig.Dom) = struct
         let globals = used_globals opts name.reg in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
-            ~formals:(Set.union (Reg.Set.of_list params) globals)
+            ~formals:(Set.union (Reg.Set.of_list formals) globals)
         in
         Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;
@@ -351,7 +351,7 @@ module Make (Dom : Domain_sig.Dom) = struct
     ( match Stack.pop_return stk with
     | Some (from_call, retn_site, stk) ->
         let post_state = summarize (Dom.post locals from_call exit_state) in
-        let retn_state = Dom.retn params freturn from_call post_state in
+        let retn_state = Dom.retn formals freturn from_call post_state in
         exec_jump stk retn_state block retn_site
     | None ->
         (* Create and store a function summary for main *)
@@ -369,8 +369,8 @@ module Make (Dom : Domain_sig.Dom) = struct
     let func = block.parent in
     [%Trace.call fun {pf} -> pf "from %a" Reg.pp func.name.reg]
     ;
-    let unwind params scope from_call state =
-      Dom.retn params (Some func.fthrow) from_call
+    let unwind formals scope from_call state =
+      Dom.retn formals (Some func.fthrow) from_call
         (Dom.post scope from_call state)
     in
     ( match Stack.pop_throw stk ~unwind ~init:pre_state with
@@ -381,7 +381,7 @@ module Make (Dom : Domain_sig.Dom) = struct
         in
         let post_state = Dom.post func.locals from_call exit_state in
         let retn_state =
-          Dom.retn func.params func.freturn from_call post_state
+          Dom.retn func.formals func.freturn from_call post_state
         in
         exec_jump stk retn_state block retn_site
     | None -> Work.skip )
@@ -482,7 +482,7 @@ module Make (Dom : Domain_sig.Dom) = struct
     let entry_points = Config.find_list "entry-points" in
     List.find_map ~f:(Llair.Func.find pgm.functions) entry_points
     |> function
-    | Some {name= {reg}; locals; params= []; entry} ->
+    | Some {name= {reg}; locals; formals= []; entry} ->
         Some
           (Work.init
              (fst
