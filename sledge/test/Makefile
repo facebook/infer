@@ -48,7 +48,7 @@ translate-report-errors:
 # report errors
 translate-report:
 	@$(MAKE) --silent _translate-report-raw \
-	 | grep -E -v "RESULT: Unimplemented: (coroutines|landingpad of type other than {i8\*, i32}|windows exception handling|non-integral pointer types|types with undetermined size):" \
+	 | grep -E -v "RESULT: Unimplemented" \
 	 | grep -E -v "RESULT: (Success|Invalid input)" \
 	 | column -ts$$'\t'
 

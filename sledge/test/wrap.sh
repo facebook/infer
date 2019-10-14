@@ -27,7 +27,9 @@ cd $testdir
 )
 status=$?
 case $status in
-  ( 139 ) echo -e "RESULT: SEGFAULT" >> $testname.out ;;
+  ( 132 ) echo -e "RESULT: illegal instruction" >> $testname.out ;;
+  ( 136 ) echo -e "RESULT: floating-point exception" >> $testname.out ;;
+  ( 139 ) echo -e "RESULT: segmentation violation" >> $testname.out ;;
   ( 127 ) echo -e "RESULT: MEMOUT" >> $testname.out ;;
   ( 137 | 152 ) echo -e "RESULT: TIMEOUT" >> $testname.out ;;
   ( * ) ;;
