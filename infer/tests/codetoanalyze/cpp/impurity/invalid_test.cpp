@@ -9,8 +9,8 @@
 int* global_pointer;
 
 void free_global_pointer_impure() { free(global_pointer); }
-// If Pulse raises an error, it stops the world and has no summary.
-void double_free_global_impure_FN() {
+// If Pulse raises an error, consider the function as impure.
+void double_free_global_impure() {
   free_global_pointer_impure();
   free_global_pointer_impure();
 }

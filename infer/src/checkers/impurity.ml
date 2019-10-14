@@ -113,34 +113,36 @@ let extract_impurity pdesc pre_post : ImpurityDomain.t =
   {modified_globals; modified_params}
 
 
-let report_errors summary (ImpurityDomain.{modified_globals; modified_params} as astate) =
+let report_errors summary modified_opt =
   let pdesc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name pdesc in
   let pname_loc = Procdesc.get_loc pdesc in
-  if Purity.should_report pdesc && not (ImpurityDomain.is_pure astate) then
-    let impure_fun_desc = F.asprintf "Impure function %a" Typ.Procname.pp proc_name in
-    let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-    let modified_ltr ~str set acc =
-      ImpurityDomain.ModifiedVarSet.fold (ImpurityDomain.add_to_errlog ~nesting:1 ~str) set acc
-    in
-    let ltr =
-      impure_fun_ltr
-      :: modified_ltr ~str:"parameter" modified_params
-           (modified_ltr ~str:"global var" modified_globals [])
-    in
-    Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc
+  let impure_fun_desc = F.asprintf "Impure function %a" Typ.Procname.pp proc_name in
+  let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
+  ( match modified_opt with
+  | None ->
+      Reporting.log_error summary ~loc:pname_loc ~ltr:[impure_fun_ltr] IssueType.impure_function
+        impure_fun_desc
+  | Some (ImpurityDomain.{modified_globals; modified_params} as astate) ->
+      if Purity.should_report pdesc && not (ImpurityDomain.is_pure astate) then
+        let modified_ltr ~str set acc =
+          ImpurityDomain.ModifiedVarSet.fold (ImpurityDomain.add_to_errlog ~nesting:1 ~str) set acc
+        in
+        let ltr =
+          impure_fun_ltr
+          :: modified_ltr ~str:"parameter" modified_params
+               (modified_ltr ~str:"global var" modified_globals [])
+        in
+        Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc
+  ) ;
+  summary
 
 
 let checker ({Callbacks.summary} as callback) : Summary.t =
   let pulse_summary = Pulse.checker callback in
-  match pulse_summary.payloads.pulse with
-  | Some pre_posts ->
-      let modified =
-        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
-            let modified = extract_impurity (Summary.get_proc_desc summary) pre_post in
-            ImpurityDomain.join acc modified )
-      in
-      report_errors summary modified ; summary
-  | None ->
-      debug "@\n\n[WARNING] Couldn't find any Pulse summary to extract impurity information." ;
-      summary
+  pulse_summary.payloads.pulse
+  |> Option.map ~f:(fun pre_posts ->
+         List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc pre_post ->
+             let modified = extract_impurity (Summary.get_proc_desc summary) pre_post in
+             ImpurityDomain.join acc modified ) )
+  |> report_errors summary
