@@ -32,9 +32,9 @@ module type Dom = sig
   val call :
        summaries:bool
     -> globals:Reg.Set.t
-    -> Exp.t list
-    -> Reg.t option
-    -> Reg.t list
+    -> actuals:Exp.t list
+    -> areturn:Reg.t option
+    -> formals:Reg.t list
     -> locals:Reg.Set.t
     -> t
     -> t * from_call

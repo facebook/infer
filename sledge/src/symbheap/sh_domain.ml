@@ -113,7 +113,7 @@ type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries ~globals actuals areturn formals ~locals q =
+let call ~summaries ~globals ~actuals ~areturn ~formals ~locals q =
   [%Trace.call fun {pf} ->
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \

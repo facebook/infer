@@ -271,8 +271,8 @@ module Make (Dom : Domain_sig.Dom) = struct
   let summary_table = Hashtbl.create (module Reg)
 
   let exec_call opts stk state block call globals =
-    let Llair.{callee; args; areturn; return; recursive} = call in
-    let Llair.{name; params; freturn; locals; entry} = callee in
+    let Llair.{callee; args= actuals; areturn; return; recursive} = call in
+    let Llair.{name; params= formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
       pf "%a from %a with state %a" Reg.pp name.reg Reg.pp
         return.dst.parent.name.reg Dom.pp state]
@@ -281,7 +281,7 @@ module Make (Dom : Domain_sig.Dom) = struct
       if opts.function_summaries then Dom.dnf state else [state]
     in
     let domain_call =
-      Dom.call ~globals args areturn params
+      Dom.call ~globals ~actuals ~areturn ~formals
         ~locals:(Set.add_option freturn locals)
     in
     List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
@@ -487,8 +487,8 @@ module Make (Dom : Domain_sig.Dom) = struct
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
-                   ~globals:(used_globals opts reg) [] None [] ~locals
-                   (Dom.init pgm.globals)))
+                   ~globals:(used_globals opts reg) ~actuals:[]
+                   ~areturn:None ~formals:[] ~locals (Dom.init pgm.globals)))
              entry)
     | _ -> None
 

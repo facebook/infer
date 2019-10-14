@@ -63,7 +63,8 @@ let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
 type from_call = t [@@deriving sexp_of]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
-let call ~summaries:_ ~globals:_ actuals _ _ ~locals:_ st =
+let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~locals:_ st
+    =
   (empty, List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a))
 
 let resolve_callee lookup ptr st =
