@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-int main(int argc, const char* argv[]) {
+int main() {
+  int n;
   int a = 0;
-  if (argc > 0) {
+  if (n > 0) {
     int b = 1;
   };
   return 0;

@@ -22,3 +22,9 @@ SWAPWORD:
   result = (result << 16) | (result >> 16);
   goto* codetable[*(opcodes++)];
 }
+
+int main() {
+  char opcodes[10];
+
+  return fn(opcodes);
+}
