@@ -233,6 +233,8 @@ val prune_ne : t -> t -> t
 
 val prune_lt : t -> t -> t
 
+val prune_le : t -> t -> t
+
 val subst : t -> Bound.eval_sym -> t
 
 val max_of_ikind : Typ.IntegerWidths.t -> Typ.ikind -> t

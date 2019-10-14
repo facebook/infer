@@ -411,6 +411,10 @@ module Val = struct
 
   let prune_ge_one : t -> t = lift_prune1 Itv.prune_ge_one
 
+  let prune_length_le : t -> Itv.t -> t =
+   fun x y -> lift_prune_length1 (fun x -> Itv.prune_le x y) x
+
+
   let prune_length_lt : t -> Itv.t -> t =
    fun x y -> lift_prune_length1 (fun x -> Itv.prune_lt x y) x
 
@@ -865,7 +869,7 @@ module AliasTarget = struct
     | Empty of Loc.t
     | Size of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | Fgets of Loc.t
-    | IteratorOffset of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
+    | IteratorOffset of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
     | IteratorHasNext of {l: Loc.t; java_tmp: Loc.t option}
     | Top
   [@@deriving compare]
@@ -889,9 +893,9 @@ module AliasTarget = struct
             Loc.pp l pp_intlit i
       | Fgets l ->
           F.fprintf fmt "%t=fgets(%a)" pp_key Loc.pp l
-      | IteratorOffset {l; i; java_tmp} ->
-          F.fprintf fmt "iterator offset(%t%a)=length(%a)%a" pp_key pp_java_tmp java_tmp Loc.pp l
-            pp_intlit i
+      | IteratorOffset {alias_typ; l; i; java_tmp} ->
+          F.fprintf fmt "iterator offset(%t%a)%alength(%a)%a" pp_key pp_java_tmp java_tmp
+            alias_typ_pp alias_typ Loc.pp l pp_intlit i
       | IteratorHasNext {l; java_tmp} ->
           F.fprintf fmt "%t%a=hasNext(%a)" pp_key pp_java_tmp java_tmp Loc.pp l
       | Top ->
@@ -933,9 +937,9 @@ module AliasTarget = struct
         Option.map (f l) ~f:(fun l -> Size {alias_typ; l; i; java_tmp})
     | Fgets l ->
         Option.map (f l) ~f:(fun l -> Fgets l)
-    | IteratorOffset {l; i; java_tmp} ->
+    | IteratorOffset {alias_typ; l; i; java_tmp} ->
         let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> IteratorOffset {l; i; java_tmp})
+        Option.map (f l) ~f:(fun l -> IteratorOffset {alias_typ; l; i; java_tmp})
     | IteratorHasNext {l; java_tmp} ->
         let java_tmp = Option.bind java_tmp ~f in
         Option.map (f l) ~f:(fun l -> IteratorHasNext {l; java_tmp})
@@ -948,7 +952,9 @@ module AliasTarget = struct
     ||
     match (lhs, rhs) with
     | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-      , Size {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} ) ->
+      , Size {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} )
+    | ( IteratorOffset {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
+      , IteratorOffset {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} ) ->
         (* (a=size(l)+2) <= (a>=size(l)+1)  *)
         (* (a>=size(l)+2) <= (a>=size(l)+1)  *)
         Loc.equal l1 l2 && IntLit.geq i1 i2 && Option.equal Loc.equal java_tmp1 java_tmp2
@@ -956,27 +962,38 @@ module AliasTarget = struct
         false
 
 
-  let join x y =
-    if equal x y then x
-    else
-      match (x, y) with
-      | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-        , Size {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
-        when Loc.equal l1 l2 && Option.equal Loc.equal java_tmp1 java_tmp2 ->
-          (* (a=size(l)+1) join (a=size(l)+2) is (a>=size(l)+1) *)
-          (* (a=size(l)+1) join (a>=size(l)+2) is (a>=size(l)+1) *)
-          Size {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
-      | _, _ ->
-          Top
+  let join =
+    let locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 =
+      Loc.equal l1 l2 && Option.equal Loc.equal java_tmp1 java_tmp2
+    in
+    fun x y ->
+      if equal x y then x
+      else
+        match (x, y) with
+        | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
+          , Size {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
+          when locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 ->
+            (* (a=size(l)+1) join (a=size(l)+2) is (a>=size(l)+1) *)
+            (* (a=size(l)+1) join (a>=size(l)+2) is (a>=size(l)+1) *)
+            Size {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
+        | ( IteratorOffset {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
+          , IteratorOffset {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
+          when locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 ->
+            IteratorOffset {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
+        | _, _ ->
+            Top
 
 
   let widen ~prev ~next ~num_iters:_ =
     if equal prev next then prev
     else
       match (prev, next) with
-      | Size {alias_typ= Eq}, Size {alias_typ= _} ->
+      | Size {alias_typ= Eq}, Size {alias_typ= _}
+      | IteratorOffset {alias_typ= Eq}, IteratorOffset {alias_typ= _} ->
           join prev next
-      | Size {alias_typ= Le; i= i1}, Size {alias_typ= _; i= i2} when IntLit.eq i1 i2 ->
+      | Size {alias_typ= Le; i= i1}, Size {alias_typ= _; i= i2}
+      | IteratorOffset {alias_typ= Le; i= i1}, IteratorOffset {alias_typ= _; i= i2}
+        when IntLit.eq i1 i2 ->
           join prev next
       | _, _ ->
           Top
@@ -988,8 +1005,8 @@ module AliasTarget = struct
     match x with
     | Size {alias_typ; l; i} when Loc.equal l loc ->
         Size {alias_typ; l; i= IntLit.(add i minus_one); java_tmp= None}
-    | IteratorOffset {l; i; java_tmp} when Loc.equal l loc ->
-        IteratorOffset {l; i= IntLit.(add i minus_one); java_tmp}
+    | IteratorOffset {alias_typ; l; i; java_tmp} when Loc.equal l loc ->
+        IteratorOffset {alias_typ; l; i= IntLit.(add i minus_one); java_tmp}
     | _ ->
         x
 end
@@ -1102,7 +1119,9 @@ module AliasMap = struct
 
 
   let add_iterator_offset_alias id arr x =
-    add (Key.of_id id) (AliasTarget.IteratorOffset {l= arr; i= IntLit.zero; java_tmp= None}) x
+    add (Key.of_id id)
+      (AliasTarget.IteratorOffset {alias_typ= Eq; l= arr; i= IntLit.zero; java_tmp= None})
+      x
 
 
   let incr_iterator_offset_alias id x =
