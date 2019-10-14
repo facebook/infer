@@ -207,15 +207,7 @@ val abs_val : int
 
 val allow_leak : bool
 
-val analysis_blacklist_files_containing : string list
-
-val analysis_path_regex_blacklist : string list
-
-val analysis_path_regex_whitelist : string list
-
 val analysis_stops : bool
-
-val analysis_suppress_errors : string list
 
 val annotation_reachability : bool
 
@@ -588,13 +580,21 @@ val reactive_mode : bool
 
 val reanalyze : bool
 
+val report_blacklist_files_containing : string list
+
 val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 
 val report_hook : string option
 
+val report_path_regex_blacklist : string list
+
+val report_path_regex_whitelist : string list
+
 val report_previous : string option
+
+val report_suppress_errors : string list
 
 val reports_include_ml_loc : bool
 

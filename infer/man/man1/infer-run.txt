@@ -120,13 +120,12 @@ OPTIONS
            completed (Conversely: --report)
 
        --report-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)
+           Do not report any issues on files containing the specified string
 
        --report-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)
+           Do not report any issues on files whose relative path matches the
+           specified OCaml regex, even if they match the whitelist specified
+           by --report-whitelist-path-regex
 
        --report-force-relative-path
            Activates: Force converting an absolute path to a relative path to
@@ -139,6 +138,11 @@ OPTIONS
 
        --report-suppress-errors +error_name
            do not report a type of errors
+
+       --report-whitelist-path-regex +path_regex
+           Report issues only on files whose relative path matches the
+           specified OCaml regex (and which do not match
+           --report-blacklist-path-regex)
 
        --results-dir,-o dir
            Write results and internal files in the specified directory

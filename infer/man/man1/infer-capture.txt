@@ -134,9 +134,9 @@ BUCK FLAVORS OPTIONS
            expression (only supported by the javac integration for now).
 
        --flavors
-           Activates: Buck integration using Buck flavors (clang only), eg
-           `infer --flavors -- buck build //foo:bar#infer` (Conversely:
-           --no-flavors)
+           Activates: Buck integration using the infer-capture-all Buck
+           flavor (clang only). Use for clang-based Buck projects (as opposed
+           to Java). (Conversely: --no-flavors)
 
        --Xbuck +string
            Pass values as command-line arguments to invocations of `buck

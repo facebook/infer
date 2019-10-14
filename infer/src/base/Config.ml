@@ -619,34 +619,6 @@ and allow_leak =
   CLOpt.mk_bool ~deprecated:["leak"] ~long:"allow-leak" "Forget leaked memory during abstraction"
 
 
-and ( analysis_blacklist_files_containing
-    , analysis_path_regex_blacklist
-    , analysis_path_regex_whitelist
-    , analysis_suppress_errors ) =
-  let mk_filtering_option ~suffix ~help ~meta =
-    let deprecated =
-      List.map ["checkers"; "infer"] ~f:(fun name -> Printf.sprintf "%s-%s" name suffix)
-    in
-    let long = Printf.sprintf "report-%s" suffix in
-    CLOpt.mk_string_list ~deprecated ~long ~meta
-      ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
-      help
-  in
-  ( mk_filtering_option ~suffix:"blacklist-files-containing"
-      ~help:
-        "blacklist files containing the specified string for the given analyzer (see \
-         $(b,--analyzer) for valid values)"
-      ~meta:"string"
-  , mk_filtering_option ~suffix:"blacklist-path-regex"
-      ~help:
-        "blacklist the analysis of files whose relative path matches the specified OCaml-style \
-         regex (to whitelist: $(b,--<analyzer>-whitelist-path-regex))"
-      ~meta:"path_regex"
-  , mk_filtering_option ~suffix:"whitelist-path-regex" ~help:"" ~meta:"path_regex"
-  , mk_filtering_option ~suffix:"suppress-errors" ~help:"do not report a type of errors"
-      ~meta:"error_name" )
-
-
 and analysis_stops =
   CLOpt.mk_bool ~deprecated:["analysis_stops"] ~long:"analysis-stops"
     "Issue a warning when the analysis stops"
@@ -1451,8 +1423,8 @@ and filter_paths =
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
     ~in_help:InferCommand.[(Capture, manual_buck_flavors)]
-    "Buck integration using Buck flavors (clang only), eg $(i,`infer --flavors -- buck build \
-     //foo:bar#infer`)"
+    "Buck integration using the infer-capture-all Buck flavor (clang only). Use for clang-based \
+     Buck projects (as opposed to Java)."
 
 
 and force_delete_results_dir =
@@ -2030,6 +2002,35 @@ and report =
   CLOpt.mk_bool ~long:"report" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
     "Run the reporting phase once the analysis has completed"
+
+
+and ( report_blacklist_files_containing
+    , report_path_regex_blacklist
+    , report_path_regex_whitelist
+    , report_suppress_errors ) =
+  let mk_filtering_option ~suffix ~help ~meta =
+    let deprecated =
+      List.map ["checkers"; "infer"] ~f:(fun name -> Printf.sprintf "%s-%s" name suffix)
+    in
+    let long = Printf.sprintf "report-%s" suffix in
+    CLOpt.mk_string_list ~deprecated ~long ~meta
+      ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+      help
+  in
+  ( mk_filtering_option ~suffix:"blacklist-files-containing"
+      ~help:"Do not report any issues on files containing the specified string" ~meta:"string"
+  , mk_filtering_option ~suffix:"blacklist-path-regex"
+      ~help:
+        "Do not report any issues on files whose relative path matches the specified OCaml regex, \
+         even if they match the whitelist specified by $(b,--report-whitelist-path-regex)"
+      ~meta:"path_regex"
+  , mk_filtering_option ~suffix:"whitelist-path-regex"
+      ~help:
+        "Report issues only on files whose relative path matches the specified OCaml regex (and \
+         which do not match $(b,--report-blacklist-path-regex))"
+      ~meta:"path_regex"
+  , mk_filtering_option ~suffix:"suppress-errors" ~help:"do not report a type of errors"
+      ~meta:"error_name" )
 
 
 and report_current =
@@ -2699,14 +2700,6 @@ and abs_val = !abs_val
 
 and allow_leak = !allow_leak
 
-and analysis_path_regex_whitelist = !analysis_path_regex_whitelist
-
-and analysis_path_regex_blacklist = !analysis_path_regex_blacklist
-
-and analysis_blacklist_files_containing = !analysis_blacklist_files_containing
-
-and analysis_suppress_errors = !analysis_suppress_errors
-
 and analysis_stops = !analysis_stops
 
 and annotation_reachability = !annotation_reachability
@@ -3100,6 +3093,8 @@ and relative_path_backtrack = !relative_path_backtrack
 
 and report = !report
 
+and report_blacklist_files_containing = !report_blacklist_files_containing
+
 and report_current = !report_current
 
 and report_custom_error = !report_custom_error
@@ -3110,7 +3105,13 @@ and report_formatter = !report_formatter
 
 and report_hook = !report_hook
 
+and report_path_regex_blacklist = !report_path_regex_blacklist
+
+and report_path_regex_whitelist = !report_path_regex_whitelist
+
 and report_previous = !report_previous
+
+and report_suppress_errors = !report_suppress_errors
 
 and reports_include_ml_loc = !reports_include_ml_loc
 

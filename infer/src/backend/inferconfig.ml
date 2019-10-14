@@ -287,10 +287,10 @@ let skip_implementation_matcher =
 
 
 let load_filters () =
-  { whitelist= Config.analysis_path_regex_whitelist
-  ; blacklist= Config.analysis_path_regex_blacklist
-  ; blacklist_files_containing= Config.analysis_blacklist_files_containing
-  ; suppress_errors= Config.analysis_suppress_errors }
+  { whitelist= Config.report_path_regex_whitelist
+  ; blacklist= Config.report_path_regex_blacklist
+  ; blacklist_files_containing= Config.report_blacklist_files_containing
+  ; suppress_errors= Config.report_suppress_errors }
 
 
 let filters_from_inferconfig inferconfig : filters =

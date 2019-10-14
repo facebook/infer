@@ -533,9 +533,9 @@ OPTIONS
            types (Conversely: --filtering | -f)           See also infer-report(1).
 
        --flavors
-           Activates: Buck integration using Buck flavors (clang only), eg
-           `infer --flavors -- buck build //foo:bar#infer` (Conversely:
-           --no-flavors)           See also infer-capture(1).
+           Activates: Buck integration using the infer-capture-all Buck
+           flavor (clang only). Use for clang-based Buck projects (as opposed
+           to Java). (Conversely: --no-flavors)           See also infer-capture(1).
 
        --force-delete-results-dir
            Activates: Do not refuse to delete the results directory if it
@@ -941,13 +941,13 @@ OPTIONS
            completed (Conversely: --report)           See also infer-analyze(1) and infer-run(1).
 
        --report-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)           See also infer-report(1) and infer-run(1).
+           Do not report any issues on files containing the specified string       
+    See also infer-report(1) and infer-run(1).
 
        --report-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)           See also infer-report(1) and infer-run(1).
+           Do not report any issues on files whose relative path matches the
+           specified OCaml regex, even if they match the whitelist specified
+           by --report-whitelist-path-regex           See also infer-report(1) and infer-run(1).
 
        --report-current path
            report of the latest revision           See also infer-reportdiff(1).
@@ -970,6 +970,11 @@ OPTIONS
 
        --report-suppress-errors +error_name
            do not report a type of errors           See also infer-report(1) and infer-run(1).
+
+       --report-whitelist-path-regex +path_regex
+           Report issues only on files whose relative path matches the
+           specified OCaml regex (and which do not match
+           --report-blacklist-path-regex)           See also infer-report(1) and infer-run(1).
 
        --results-dir,-o dir
            Write results and internal files in the specified directory       
