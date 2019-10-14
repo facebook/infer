@@ -42,7 +42,8 @@ let command ~summary ?readme param =
     try
       main () |> ignore ;
       Trace.flush () ;
-      Format.printf "@\nRESULT: Success@."
+      Format.printf "@\nRESULT: Success: Invalid Accesses: %i@."
+        (Report.invalid_access_count ())
     with exn ->
       let bt = Caml.Printexc.get_raw_backtrace () in
       Trace.flush () ;

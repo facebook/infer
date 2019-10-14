@@ -22,7 +22,11 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
+let count = ref 0
+let invalid_access_count () = !count
+
 let invalid_access fmt_thunk pp access loc =
+  Int.incr count ;
   let rep fs =
     Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Loc.pp
       (loc access) pp access

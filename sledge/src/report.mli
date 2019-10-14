@@ -10,3 +10,4 @@
 val unknown_call : Llair.term -> unit
 val invalid_access_inst : (Formatter.t -> unit) -> Llair.inst -> unit
 val invalid_access_term : (Formatter.t -> unit) -> Llair.term -> unit
+val invalid_access_count : unit -> int
