@@ -240,11 +240,11 @@ and freshen_xs q ~wrt =
     if xs == q.xs && q' == q then q else {q' with xs} )
   |>
   [%Trace.retn fun {pf} q' ->
-    pf "%a" pp q' ;
-    invariant q' ;
+    pf "%a@ %a" Var.Subst.pp sub pp q' ;
     assert (Set.equal q'.us q.us) ;
     assert (Set.disjoint q'.xs (Var.Subst.domain sub)) ;
-    assert (Set.disjoint q'.xs (Set.inter q.xs wrt))]
+    assert (Set.disjoint q'.xs (Set.inter q.xs wrt)) ;
+    invariant q']
 
 let extend_us us q =
   let us = Set.union us q.us in
@@ -273,8 +273,7 @@ let exists xs q =
   ;
   assert (
     Set.is_subset xs ~of_:q.us
-    || fail "Sh.exists fail xs - q.us:%a" Var.Set.pp (Set.diff xs q.us) ()
-  ) ;
+    || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Set.diff xs q.us) () ) ;
   {q with us= Set.diff q.us xs; xs= Set.union q.xs xs} |> check invariant
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
@@ -439,6 +438,13 @@ let rec pure_approx ({us; xs; cong; pure; heap= _; djns} as q) =
   in
   if heap == q.heap && djns == q.djns then q
   else {us; xs; cong; pure; heap; djns} |> check invariant
+
+let pure_approx q =
+  [%Trace.call fun {pf} -> pf "%a" pp q]
+  ;
+  pure_approx q
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =

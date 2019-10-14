@@ -646,10 +646,16 @@ let strlen_spec us reg ptr =
  * Symbolic Execution
  *)
 
+let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
+  let gain_us = Set.diff q1.us q0.us in
+  let lose_us = Set.diff q0.us q1.us in
+  (Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
+  && (Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
+
 (* execute a command with given spec from pre *)
-let exec_spec pre {xs; foot; sub; ms; post} =
+let exec_spec pre0 {xs; foot; sub; ms; post} =
   [%Trace.call fun {pf} ->
-    pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre
+    pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre0
       (Sh.pp_us ~pre:"@<2>∀ ")
       xs Sh.pp foot
       (fun fs sub ->
@@ -661,20 +667,22 @@ let exec_spec pre {xs; foot; sub; ms; post} =
           Format.fprintf fs "%a := " Var.Set.pp ms )
       ms Sh.pp post ;
     assert (
-      let vs = Set.diff (Set.diff foot.us xs) pre.us in
+      let vs = Set.diff (Set.diff foot.us xs) pre0.us in
       Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
     assert (
-      let vs = Set.diff (Set.diff post.us xs) pre.us in
+      let vs = Set.diff (Set.diff post.us xs) pre0.us in
       Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let foot = Sh.extend_us xs foot in
-  let zs, pre = Sh.bind_exists pre ~wrt:xs in
+  let zs, pre = Sh.bind_exists pre0 ~wrt:xs in
   ( Solver.infer_frame pre xs foot
   >>| fun frame ->
   Sh.exists (Set.union zs xs)
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))) )
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" (Option.pp "%a" Sh.pp) r]
+  [%Trace.retn fun {pf} r ->
+    pf "%a" (Option.pp "%a" Sh.pp) r ;
+    assert (Option.for_all ~f:(check_preserve_us pre0) r)]
 
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
@@ -686,6 +694,14 @@ let rec exec_specs pre = function
       >>= fun post ->
       exec_specs pre specs >>| fun posts -> Sh.or_ post posts
   | [] -> Some (Sh.false_ pre.us)
+
+let exec_specs pre specs =
+  [%Trace.call fun _ -> ()]
+  ;
+  exec_specs pre specs
+  |>
+  [%Trace.retn fun _ r ->
+    assert (Option.for_all ~f:(check_preserve_us pre) r)]
 
 (*
  * Exposed interface
@@ -723,18 +739,13 @@ let abort _ = None
 let intrinsic ~skip_throw :
     Sh.t -> Var.t option -> Var.t -> Term.t list -> Sh.t option option =
  fun pre areturn intrinsic actuals ->
-  [%Trace.info
-    "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
-      (Option.pp "%a := " Var.pp)
-      areturn Var.pp intrinsic (List.pp ",@ " Term.pp) (List.rev actuals)
-      Sh.pp pre] ;
   let us = pre.us in
   let name =
     let n = Var.name intrinsic in
     match String.index n '.' with None -> n | Some i -> String.prefix n i
   in
   let skip pre = Some (Some pre) in
-  match (areturn, name, actuals) with
+  ( match (areturn, name, actuals) with
   (*
    * cstdlib - memory management
    *)
@@ -808,4 +819,12 @@ let intrinsic ~skip_throw :
    *)
   (* bool folly::usingJEMalloc() *)
   | Some _, "_ZN5folly13usingJEMallocEv", [] -> skip pre
-  | _ -> None
+  | _ -> None )
+  $> function
+  | None -> ()
+  | Some _ ->
+      [%Trace.info
+        "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
+          (Option.pp "%a := " Var.pp)
+          areturn Var.pp intrinsic (List.pp ",@ " Term.pp)
+          (List.rev actuals) Sh.pp pre]

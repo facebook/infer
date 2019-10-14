@@ -428,7 +428,7 @@ module Var = struct
     let pp fs s =
       Format.fprintf fs "@[<1>[%a]@]"
         (List.pp ",@ " (fun fs (k, v) ->
-             Format.fprintf fs "@[[%a ↦ %a]@]" pp_t k pp_t v ))
+             Format.fprintf fs "@[%a ↦ %a@]" pp_t k pp_t v ))
         (Map.to_alist s)
 
     let empty = empty_map

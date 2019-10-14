@@ -274,7 +274,7 @@ module Make (Dom : Domain_sig.Dom) = struct
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a with state %a" Reg.pp name.reg Reg.pp
+      pf "%a from %a with state@ %a" Reg.pp name.reg Reg.pp
         return.dst.parent.name.reg Dom.pp state]
     ;
     let dnf_states =
