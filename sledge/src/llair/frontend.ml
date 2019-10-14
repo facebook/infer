@@ -1423,7 +1423,12 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
   let x = {llcontext; llmodule; lldatalayout} in
   let globals =
     Llvm.fold_left_globals
-      (fun globals llg -> xlate_global x llg :: globals)
+      (fun globals llg ->
+        if
+          Poly.equal (Llvm.linkage llg) Appending
+          && Llvm.(array_length (element_type (type_of llg))) = 0
+        then globals
+        else xlate_global x llg :: globals )
       [] llmodule
   in
   let functions =
