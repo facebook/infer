@@ -1368,6 +1368,23 @@ let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
  fun llcontext link_ctx bc_file ->
   Llvm_linker.link_in link_ctx (read_and_parse llcontext bc_file)
 
+let check_datalayout llcontext lldatalayout =
+  let check_size llt typ =
+    let llsiz =
+      Int64.to_int_exn (Llvm_target.DataLayout.abi_size llt lldatalayout)
+    in
+    let siz = Typ.size_of typ in
+    if llsiz != siz then
+      todo "size_of %a = %i != %i" Typ.pp typ llsiz siz ()
+  in
+  check_size (Llvm.i1_type llcontext) Typ.bool ;
+  check_size (Llvm.i8_type llcontext) Typ.byt ;
+  check_size (Llvm.i32_type llcontext) Typ.int ;
+  check_size (Llvm.i64_type llcontext) Typ.siz ;
+  check_size
+    (Llvm_target.DataLayout.intptr_type llcontext lldatalayout)
+    Typ.ptr
+
 let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
  fun inputs ->
   [%Trace.call fun {pf} ->
@@ -1395,6 +1412,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.t =
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
   in
+  check_datalayout llcontext lldatalayout ;
   let x = {llcontext; llmodule; lldatalayout} in
   let globals =
     Llvm.fold_left_globals
