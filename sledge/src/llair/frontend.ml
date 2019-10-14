@@ -472,7 +472,6 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       ( if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
         todo "vector operations: %a" pp_llvalue llv () )
   in
-  let cast () = xlate_rand 0 in
   let convert ?unsigned () =
     let dst = Lazy.force typ in
     let rand = Llvm.operand llv 0 in
@@ -490,7 +489,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
         Exp.or_ ~typ:Typ.bool (Exp.uno ?typ e f) (mk ?typ e f) )
   in
   ( match opcode with
-  | AddrSpaceCast | BitCast -> cast ()
+  | AddrSpaceCast | BitCast -> convert ()
   | Trunc | ZExt | FPToUI | UIToFP | PtrToInt | IntToPtr ->
       convert ~unsigned:true ()
   | SExt | FPTrunc | FPExt | FPToSI | SIToFP -> convert ()
@@ -578,7 +577,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
         todo "vector operations: %a" pp_llvalue llv () ;
       let len = Llvm.num_operands llv in
-      if len <= 1 then cast ()
+      if len <= 1 then convert ()
       else
         let rec xlate_indices i =
           [%Trace.call fun {pf} ->
