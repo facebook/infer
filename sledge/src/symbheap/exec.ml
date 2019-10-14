@@ -680,6 +680,7 @@ let exec_spec pre {xs; foot; sub; ms; post} =
    preconditions are known to be tautologous *)
 let rec exec_specs pre = function
   | ({xs; foot; _} as spec) :: specs ->
+      let foot = Sh.extend_us xs foot in
       let pre_pure = Sh.star (Sh.exists xs (Sh.pure_approx foot)) pre in
       exec_spec pre_pure spec
       >>= fun post ->
