@@ -22,8 +22,8 @@ let exec_intrinsic ~skip_throw:_ _ _ _ _ : t option option = None
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
-let call ~summaries:_ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_ ~locals:_
-    _ =
+let call ~summaries:_ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_ ~freturn:_
+    ~locals:_ _ =
   ((), ())
 
 let recursion_beyond_bound = `skip

@@ -281,8 +281,7 @@ module Make (Dom : Domain_sig.Dom) = struct
       if opts.function_summaries then Dom.dnf state else [state]
     in
     let domain_call =
-      Dom.call ~globals ~actuals ~areturn ~formals
-        ~locals:(Set.add_option freturn locals)
+      Dom.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
     List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
         match
@@ -326,8 +325,7 @@ module Make (Dom : Domain_sig.Dom) = struct
 
   let exec_return ~opts stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} ->
-      pf "from %a with pre_state %a" Reg.pp name.reg Dom.pp pre_state]
+    [%Trace.call fun {pf} -> pf "from: %a" Reg.pp name.reg]
     ;
     let summarize post_state =
       if opts.function_summaries then (
@@ -482,13 +480,14 @@ module Make (Dom : Domain_sig.Dom) = struct
     let entry_points = Config.find_list "entry-points" in
     List.find_map ~f:(Llair.Func.find pgm.functions) entry_points
     |> function
-    | Some {name= {reg}; locals; formals= []; entry} ->
+    | Some {name= {reg}; formals= []; freturn; locals; entry} ->
         Some
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
                    ~globals:(used_globals opts reg) ~actuals:[]
-                   ~areturn:None ~formals:[] ~locals (Dom.init pgm.globals)))
+                   ~areturn:None ~formals:[] ~freturn ~locals
+                   (Dom.init pgm.globals)))
              entry)
     | _ -> None
 

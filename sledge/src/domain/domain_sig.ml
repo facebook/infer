@@ -35,6 +35,7 @@ module type Dom = sig
     -> actuals:Exp.t list
     -> areturn:Reg.t option
     -> formals:Reg.t list
+    -> freturn:Reg.t option
     -> locals:Reg.Set.t
     -> t
     -> t * from_call

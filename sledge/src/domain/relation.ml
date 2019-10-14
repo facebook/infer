@@ -25,8 +25,8 @@ module Make (State_domain : State_domain_sig) = struct
   let embed b = (b, b)
 
   let pp fs (entry, curr) =
-    Format.fprintf fs "@[<v 1> entry: %a@;current:%a@]" State_domain.pp
-      entry State_domain.pp curr
+    Format.fprintf fs "@[<v>entry: %a@ current: %a@]" State_domain.pp entry
+      State_domain.pp curr
 
   let report_fmt_thunk (_, curr) fs = State_domain.pp fs curr
   let init globals = embed (State_domain.init globals)
@@ -68,7 +68,7 @@ module Make (State_domain : State_domain_sig) = struct
 
   let recursion_beyond_bound = State_domain.recursion_beyond_bound
 
-  let call ~summaries ~globals ~actuals ~areturn ~formals ~locals
+  let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals
       (entry, current) =
     [%Trace.call fun {pf} ->
       pf
@@ -80,7 +80,7 @@ module Make (State_domain : State_domain_sig) = struct
     ;
     let caller_current, state_from_call =
       State_domain.call ~summaries ~globals ~actuals ~areturn ~formals
-        ~locals current
+        ~freturn ~locals current
     in
     ( (caller_current, caller_current)
     , {state_from_call; caller_entry= entry} )

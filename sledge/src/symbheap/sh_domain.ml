@@ -113,7 +113,7 @@ type from_call = {areturn: Var.t option; subst: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries ~globals ~actuals ~areturn ~formals ~locals q =
+let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   [%Trace.call fun {pf} ->
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
@@ -124,7 +124,7 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~locals q =
   let actuals = List.map ~f:Exp.term actuals in
   let areturn = Option.map ~f:Reg.var areturn in
   let formals = List.map ~f:Reg.var formals in
-  let locals = Reg.Set.vars locals in
+  let locals = Reg.Set.vars (Set.add_option freturn locals) in
   let q', freshen_locals =
     Sh.freshen q ~wrt:(Set.add_list formals locals)
   in
