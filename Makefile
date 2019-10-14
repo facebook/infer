@@ -154,6 +154,7 @@ DIRECT_TESTS += \
   java_nullsafe-default \
   java_hoisting \
   java_hoistingExpensive \
+  java_impurity \
   java_inefficientKeysetIterator \
   java_infer \
   java_litho \
