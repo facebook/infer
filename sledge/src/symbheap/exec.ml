@@ -74,7 +74,7 @@ let move_spec us reg_exps =
 let load_spec us reg ptr len =
   let {us; xs; seg} = fresh_seg ~loc:ptr ~siz:len us in
   let foot = Sh.seg seg in
-  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let post =
     Sh.and_
       (Term.eq (Term.var reg) (Term.rename sub seg.arr))
@@ -246,9 +246,7 @@ let memmov_specs us dst src len =
 let alloc_spec us reg num len =
   let foot = Sh.emp in
   let siz = Term.mul num len in
-  let sub, ms, us =
-    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Term.fv siz) ~us
-  in
+  let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
@@ -287,9 +285,7 @@ let dallocx_spec us ptr =
  *)
 let malloc_spec us reg siz =
   let foot = Sh.emp in
-  let sub, ms, us =
-    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Term.fv siz) ~us
-  in
+  let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
@@ -302,9 +298,7 @@ let malloc_spec us reg siz =
  *)
 let mallocx_spec us reg siz =
   let foot = Sh.pure Term.(dq siz zero) in
-  let sub, ms, us =
-    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Term.fv siz) ~us
-  in
+  let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us= _; xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
@@ -318,9 +312,7 @@ let mallocx_spec us reg siz =
 let calloc_spec us reg num len =
   let foot = Sh.emp in
   let siz = Term.mul num len in
-  let sub, ms, us =
-    assign ~ws:(Set.add Var.Set.empty reg) ~rs:(Term.fv siz) ~us
-  in
+  let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:(Term.fv siz) ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let arr = Term.splat ~byt:Term.zero ~siz in
@@ -340,10 +332,7 @@ let posix_memalign_spec us reg ptr siz =
   let {us; xs; seg= pseg} = fresh_seg ~loc:ptr ~siz:size_of_ptr us in
   let foot = Sh.seg pseg in
   let sub, ms, us =
-    assign
-      ~ws:(Set.add Var.Set.empty reg)
-      ~rs:(Set.union foot.us (Term.fv siz))
-      ~us
+    assign ~ws:(Var.Set.of_ reg) ~rs:(Set.union foot.us (Term.fv siz)) ~us
   in
   let q, us, xs = fresh_var "q" us xs in
   let pseg' = {pseg with arr= q} in
@@ -374,10 +363,7 @@ let realloc_spec us reg ptr siz =
   in
   let foot = Sh.or_ (null_eq ptr) (Sh.seg pseg) in
   let sub, ms, us =
-    assign
-      ~ws:(Set.add Var.Set.empty reg)
-      ~rs:(Set.union foot.us (Term.fv siz))
-      ~us
+    assign ~ws:(Var.Set.of_ reg) ~rs:(Set.union foot.us (Term.fv siz)) ~us
   in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
@@ -418,9 +404,7 @@ let rallocx_spec us reg ptr siz =
   in
   let pheap = Sh.seg pseg in
   let foot = Sh.and_ Term.(dq siz zero) pheap in
-  let sub, ms, us =
-    assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us
-  in
+  let sub, ms, us = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let {us; xs; seg= rseg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz ~xs us in
@@ -457,8 +441,7 @@ let xallocx_spec us reg ptr siz ext =
   let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.and_ Term.(dq siz zero) (Sh.seg seg) in
   let sub, ms, us =
-    assign
-      ~ws:(Set.add Var.Set.empty reg)
+    assign ~ws:(Var.Set.of_ reg)
       ~rs:Set.(union foot.us (union (Term.fv siz) (Term.fv ext)))
       ~us
   in
@@ -500,7 +483,7 @@ let sallocx_spec us reg ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
   let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.seg seg in
-  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let post = Sh.and_ Term.(eq (var reg) len) (Sh.rename sub foot) in
   {xs; foot; sub; ms; post}
 
@@ -512,7 +495,7 @@ let malloc_usable_size_spec us reg ptr =
   let len, us, xs = fresh_var "m" us Var.Set.empty in
   let {us; xs; seg} = fresh_seg ~loc:ptr ~bas:ptr ~len ~siz:len ~xs us in
   let foot = Sh.seg seg in
-  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let post = Sh.and_ Term.(le len (var reg)) (Sh.rename sub foot) in
   {xs; foot; sub; ms; post}
 
@@ -523,7 +506,7 @@ let malloc_usable_size_spec us reg ptr =
 let nallocx_spec us reg siz =
   let xs = Var.Set.empty in
   let foot = Sh.pure (Term.dq siz Term.zero) in
-  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let post = Sh.or_ (null_eq loc) (Sh.pure (Term.eq loc siz)) in
@@ -632,7 +615,7 @@ let mallctlnametomib_spec us p o =
 let strlen_spec us reg ptr =
   let {us; xs; seg} = fresh_seg ~loc:ptr us in
   let foot = Sh.seg seg in
-  let sub, ms, _ = assign ~ws:(Set.add Var.Set.empty reg) ~rs:foot.us ~us in
+  let sub, ms, _ = assign ~ws:(Var.Set.of_ reg) ~rs:foot.us ~us in
   let {Sh.loc= p; bas= b; len= m; _} = seg in
   let ret = Term.sub (Term.sub (Term.add b m) p) Term.one in
   let post =
@@ -712,7 +695,7 @@ let assume pre cnd =
   if Sh.is_false post then None else Some post
 
 let kill pre reg =
-  let ms = Set.add Var.Set.empty reg in
+  let ms = Var.Set.of_ reg in
   Sh.extend_us ms (Sh.exists ms pre)
 
 let move pre reg_exps =

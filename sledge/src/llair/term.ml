@@ -376,6 +376,7 @@ module Var = struct
     let pp_full ?is_x vs = Set.pp (pp_full ?is_x) vs
     let pp = pp_full ?is_x:None
     let empty = Set.empty (module T)
+    let of_ = Set.add empty
     let of_option = Option.fold ~f:Set.add ~init:empty
     let of_list = Set.of_list (module T)
     let of_vector = Set.of_vector (module T)
