@@ -909,7 +909,7 @@ Proof
     >- (last_x_assum (qspec_then `n` mp_tac) >> rw []) >>
     `n = m - 1` by (fs [PL_def] >> rfs []) >>
     rw [] >>
-    `el (m - 1) s_ext_path = last s_ext_path` by metis_tac [take_all, last_take] >>
+    `el (m - 1) s_ext_path = last s_ext_path` by metis_tac [take_all, pathTheory.last_take] >>
     fs [last_step_def])
 QED
 

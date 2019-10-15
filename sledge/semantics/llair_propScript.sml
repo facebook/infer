@@ -9,6 +9,7 @@
 
 open HolKernel boolLib bossLib Parse;
 open arithmeticTheory integerTheory integer_wordTheory wordsTheory listTheory;
+open pred_setTheory finite_mapTheory;
 open settingsTheory miscTheory llairTheory;
 
 new_theory "llair_prop";
@@ -152,6 +153,67 @@ Theorem eval_exp_ignores:
   ∀s1 e v s2. s1.locals = s2.locals ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
 Proof
   metis_tac [eval_exp_ignores_lem]
+QED
+
+Definition exp_uses_def:
+  (exp_uses (Var x) = {x}) ∧
+  (exp_uses Nondet = {}) ∧
+  (exp_uses (Label _) = {}) ∧
+  (exp_uses (Splat e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Memory e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Concat es) = bigunion (set (map exp_uses es))) ∧
+  (exp_uses (Integer _ _) = {}) ∧
+  (exp_uses (Eq e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Lt e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Ult e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Sub _ e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Record es) = bigunion (set (map exp_uses es))) ∧
+  (exp_uses (Select e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
+  (exp_uses (Update e1 e2 e3) = exp_uses e1 ∪ exp_uses e2 ∪ exp_uses e3)
+Termination
+  WF_REL_TAC `measure exp_size` >> rw [] >>
+  Induct_on `es` >> rw [exp_size_def] >> res_tac >> rw []
+End
+
+Theorem eval_exp_ignores_unused_lem:
+  ∀s1 e v.
+    eval_exp s1 e v ⇒
+    ∀s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ⇒
+    eval_exp s2 e v
+Proof
+  ho_match_mp_tac eval_exp_ind >>
+  rw [exp_uses_def] >> simp [Once eval_exp_cases]
+  >- (
+    fs [DRESTRICT_EQ_DRESTRICT, EXTENSION, FDOM_DRESTRICT] >>
+    imp_res_tac FLOOKUP_SUBMAP >>
+    fs [FLOOKUP_DRESTRICT]) >>
+  fs [drestrict_union_eq]
+  >- metis_tac []
+  >- metis_tac []
+  >- (
+    rpt (pop_assum mp_tac) >>
+    qid_spec_tac `vals` >>
+    Induct_on `es` >> rw [] >> Cases_on `vals` >> rw [PULL_EXISTS] >> fs [] >>
+    rw [] >> fs [drestrict_union_eq] >>
+    rename [`v1++flat vs`] >>
+    first_x_assum (qspec_then `vs` mp_tac) >> rw [] >>
+    qexists_tac `v1 :: vals'` >> rw [])
+  >- metis_tac []
+  >- metis_tac []
+  >- metis_tac []
+  >- metis_tac []
+  >- (
+    rpt (pop_assum mp_tac) >>
+    qid_spec_tac `vals` >>
+    Induct_on `es` >> rw [] >> fs [drestrict_union_eq])
+  >- metis_tac []
+  >- metis_tac []
+QED
+
+Theorem eval_exp_ignores_unused:
+  ∀s1 e v s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
+Proof
+  metis_tac [eval_exp_ignores_unused_lem]
 QED
 
 export_theory ();
