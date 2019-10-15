@@ -52,13 +52,15 @@ Definition instr_next_ips_def:
 End
 
 Inductive next_ips:
- (∀prog ip i l.
+ (∀prog ip i l i2.
     get_instr prog ip (Inl i) ∧
-    l ∈ instr_next_ips i ip
+    l ∈ instr_next_ips i ip ∧
+    get_instr prog l i2
     ⇒
     next_ips prog ip l) ∧
- (∀prog ip from_l phis.
-    get_instr prog ip (Inr (from_l, phis))
+ (∀prog ip from_l phis i2.
+    get_instr prog ip (Inr (from_l, phis)) ∧
+    get_instr prog (inc_pc ip) i2
     ⇒
     next_ips prog ip (inc_pc ip))
 End
@@ -107,6 +109,32 @@ Proof
   simp [Once good_path_cases] >>
   Cases_on `path'` >> fs [next_ips_cases, IN_DEF] >>
   metis_tac []
+QED
+
+Theorem good_path_append:
+  !prog p1 p2.
+    good_path prog (p1++p2) ⇔
+    good_path prog p1 ∧ good_path prog p2 ∧
+    (p1 ≠ [] ∧ p2 ≠ [] ⇒ HD p2 ∈ next_ips prog (last p1))
+Proof
+  Induct_on `p1` >> rw []
+  >- metis_tac [good_path_rules] >>
+  Cases_on `p1` >> Cases_on `p2` >> rw []
+  >- metis_tac [good_path_rules]
+  >- (
+    simp [Once good_path_cases] >>
+    metis_tac [good_path_rules, next_ips_cases, IN_DEF])
+  >- metis_tac [good_path_rules] >>
+  rename1 `ip1::ip2::(ips1++ip3::ips2)` >>
+  first_x_assum (qspecl_then [`prog`, `[ip3]++ips2`] mp_tac) >>
+  rw [] >> simp [Once good_path_cases, LAST_DEF] >> rw [] >>
+  eq_tac >> rw []
+  >- metis_tac [good_path_rules]
+  >- (qpat_x_assum `good_path _ [_;_]` mp_tac >> simp [Once good_path_cases])
+  >- metis_tac [good_path_rules, next_ips_cases, IN_DEF]
+  >- metis_tac [good_path_rules]
+  >- (qpat_x_assum `good_path _ (ip1::ip2::ips1)` mp_tac >> simp [Once good_path_cases])
+  >- (qpat_x_assum `good_path _ (ip1::ip2::ips1)` mp_tac >> simp [Once good_path_cases])
 QED
 
 (* ----- Helper functions to get registers out of instructions ----- *)
@@ -234,7 +262,7 @@ Definition is_ssa_def:
         ⇒
         ip1 = ip2)) ∧
     (* Each use is dominated by its assignment *)
-    (∀ip1 r. r ∈ uses prog ip1 ⇒ ∃ip2. r ∈ assigns prog ip2 ∧ dominates prog ip2 ip1)
+    (∀ip1 r. r ∈ uses prog ip1 ⇒ ∃ip2. ip2.f = ip1.f ∧ r ∈ assigns prog ip2 ∧ dominates prog ip2 ip1)
 End
 
 Theorem dominates_trans:
@@ -403,6 +431,97 @@ Proof
     qexists_tac `[]` >> rw [] >>
     fs [Once good_path_cases, uses_cases, IN_DEF] >>
     metis_tac [])
+QED
+
+Theorem ssa_dominates_live_range_lem:
+  ∀prog r ip1 ip2.
+    is_ssa prog ∧ ip1.f = ip2.f ∧ r ∈ assigns prog ip1 ∧ r ∈ live prog ip2 ⇒
+    dominates prog ip1 ip2
+Proof
+  rw [dominates_def, is_ssa_def, live_def] >>
+  `path ≠ [] ⇒ (last path).f = ip2.f`
+  by (
+    rw [] >>
+    irule good_path_same_func >>
+    qexists_tac `ip2::path` >> rw [] >>
+    Cases_on `path` >> fs [MEM_LAST] >> metis_tac []) >>
+  first_x_assum drule >> rw [] >>
+  first_x_assum (qspec_then `path'++path` mp_tac) >>
+  impl_tac
+  >- (
+    fs [LAST_DEF] >> rw [] >> fs []
+    >- (
+      simp_tac std_ss [GSYM APPEND, good_path_append] >> rw []
+      >- (
+        qpat_x_assum `good_path _ (_::_)` mp_tac >>
+        qpat_x_assum `good_path _ (_::_)` mp_tac >>
+        simp [Once good_path_cases] >>
+        metis_tac [])
+      >- (
+        simp [LAST_DEF] >>
+        qpat_x_assum `good_path _ (_::_)` mp_tac >>
+        qpat_x_assum `good_path _ (_::_)` mp_tac >>
+        simp [Once good_path_cases] >>
+        rw [] >> rw []))
+    >- (Cases_on `path` >> fs [])) >>
+  rw [] >>
+  `ip2'.f = ip2.f`
+  by (
+    irule good_path_same_func >>
+    qexists_tac `entry_ip ip2.f::path'` >>
+    qexists_tac `prog` >>
+    conj_tac
+    >- (
+      Cases_on `path` >>
+      full_simp_tac std_ss [GSYM APPEND, FRONT_APPEND, APPEND_NIL, LAST_CONS]
+      >- metis_tac [MEM_FRONT] >>
+      fs [] >> metis_tac [])
+    >- metis_tac [MEM_LAST]) >>
+  `ip2' = ip1` by metis_tac [] >>
+  rw [] >>
+  Cases_on `path` >> fs [] >>
+  full_simp_tac std_ss [GSYM APPEND, FRONT_APPEND] >> fs [] >> rw [FRONT_DEF] >> fs []
+  >- metis_tac []
+  >- (
+    `mem ip1 path' = mem ip1 (front path' ++ [last path'])` by metis_tac [APPEND_FRONT_LAST] >>
+    fs [LAST_DEF] >>
+    metis_tac [])
+  >- metis_tac []
+  >- metis_tac []
+QED
+
+Theorem ssa_dominates_live_range:
+  ∀prog r ip.
+    is_ssa prog ∧ r ∈ uses prog ip
+    ⇒
+    ∃ip1. ip1.f = ip.f ∧ r ∈ assigns prog ip1 ∧
+      ∀ip2. ip2.f = ip.f ∧ r ∈ live prog ip2 ⇒
+        dominates prog ip1 ip2
+Proof
+  rw [] >> drule ssa_dominates_live_range_lem >> rw [] >>
+  fs [is_ssa_def] >>
+  first_assum drule >> rw [] >> metis_tac []
+QED
+
+Theorem reachable_dominates_same_func:
+  ∀prog ip1 ip2. reachable prog ip2 ∧ dominates prog ip1 ip2 ⇒ ip1.f = ip2.f
+Proof
+  rw [reachable_def, dominates_def] >> res_tac >>
+  irule good_path_same_func >>
+  metis_tac [MEM_LAST, MEM_FRONT]
+QED
+
+Theorem next_ips_reachable:
+  ∀prog ip1 ip2. reachable prog ip1 ∧ ip2 ∈ next_ips prog ip1 ⇒ reachable prog ip2
+Proof
+  rw [] >> imp_res_tac next_ips_same_func >>
+  fs [reachable_def] >>
+  qexists_tac `path ++ [ip2]` >>
+  simp_tac std_ss [GSYM APPEND, LAST_APPEND_CONS, LAST_CONS] >>
+  simp [good_path_append] >>
+  simp [Once good_path_cases] >>
+  fs [next_ips_cases, IN_DEF] >>
+  metis_tac []
 QED
 
 export_theory ();

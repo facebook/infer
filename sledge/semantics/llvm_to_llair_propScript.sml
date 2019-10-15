@@ -87,7 +87,12 @@ Definition mem_state_rel_def:
       (∃v v' e.
         v_rel v.value v' ∧
         flookup s.locals r = Some v ∧
-        flookup emap r = Some e ∧ eval_exp s' e v')) ∧
+        flookup emap r = Some e ∧ eval_exp s' e v' ∧
+        (* Each register used in e is dominated by an assignment to that
+         * register for the entire live range of r. *)
+        (∀ip1 r'. ip1.f = s.ip.f ∧ r ∈ live prog ip1 ∧ r' ∈ exp_uses e ⇒
+          ∃ip2. untranslate_reg r' ∈ assigns prog ip2 ∧ dominates prog ip2 ip1))) ∧
+    reachable prog s.ip ∧
     erase_tags s.heap = s'.heap ∧
     s'.status = get_observation prog s
 End
@@ -114,10 +119,9 @@ Proof
 QED
 
 Theorem mem_state_rel_no_update:
-  ∀prog emap s1 s1' v res_v r e i i'.
+  ∀prog emap s1 s1' v res_v r i i'.
   assigns prog s1.ip = {} ∧
   mem_state_rel prog emap s1 s1' ∧
-  eval_exp s1' e res_v ∧
   v_rel v.value res_v ∧
   i ∈ next_ips prog s1.ip
   ⇒
@@ -126,18 +130,21 @@ Proof
   rw [mem_state_rel_def]
   >- (
     first_x_assum (qspec_then `r` mp_tac) >> simp [Once live_gen_kill, PULL_EXISTS] >>
-    impl_tac >- metis_tac [next_ips_same_func] >>
-    rw [] >> ntac 3 HINT_EXISTS_TAC >> rw [])
+    metis_tac [next_ips_same_func])
+  >- metis_tac [next_ips_reachable]
   >- cheat
 QED
 
 Theorem mem_state_rel_update:
   ∀prog emap s1 s1' v res_v r e i.
+  is_ssa prog ∧
   assigns prog s1.ip = {r} ∧
   mem_state_rel prog emap s1 s1' ∧
   eval_exp s1' e res_v ∧
   v_rel v.value res_v ∧
-  i ∈ next_ips prog s1.ip
+  i ∈ next_ips prog s1.ip ∧
+  (∀r_use. r_use ∈ exp_uses e ⇒
+    ∃r_tmp. r_use ∈ exp_uses (translate_arg emap (Variable r_tmp)) ∧ r_tmp ∈ live prog s1.ip)
   ⇒
   mem_state_rel prog (emap |+ (r, e))
         (s1 with <|ip := i; locals := s1.locals |+ (r, v) |>)
@@ -148,20 +155,31 @@ Proof
     rw [FLOOKUP_UPDATE]
     >- (
       HINT_EXISTS_TAC >> rw [] >>
-      cheat) >>
+      first_x_assum drule >> rw [] >>
+      first_x_assum drule >> rw [] >>
+      fs [exp_uses_def, translate_arg_def] >>
+      pop_assum (qspec_then `s1.ip` mp_tac) >> simp [] >>
+      disch_then drule >> rw [] >>
+      `dominates prog s1.ip ip1`
+      by (
+        irule ssa_dominates_live_range_lem >> rw [] >>
+        metis_tac [next_ips_same_func]) >>
+      metis_tac [dominates_trans]) >>
     `i.f = s1.ip.f` by metis_tac [next_ips_same_func] >> simp [] >>
     first_x_assum irule >>
     simp [Once live_gen_kill, PULL_EXISTS, METIS_PROVE [] ``x ∨ y ⇔ (~y ⇒ x)``] >>
     metis_tac [])
+  >- metis_tac [next_ips_reachable]
   >- cheat
 QED
 
 Theorem mem_state_rel_update_keep:
   ∀prog emap s1 s1' v res_v r i ty.
-  assigns prog s1.ip = {r} ∧ (* r ∉ uses prog s1.ip ∧
-  translate_reg r ty ∉ exp_uses e ∧*)
+  is_ssa prog ∧
+  assigns prog s1.ip = {r} ∧
   mem_state_rel prog emap s1 s1' ∧
   v_rel v.value res_v ∧
+  reachable prog s1.ip ∧
   i ∈ next_ips prog s1.ip
   ⇒
   mem_state_rel prog (emap |+ (r, Var (translate_reg r ty)))
@@ -173,27 +191,39 @@ Proof
     rw [FLOOKUP_UPDATE]
     >- (
       simp [Once eval_exp_cases] >>
-      qexists_tac `res_v` >> rw [] >>
-      rw [FLOOKUP_UPDATE, exp_uses_def] >>
-      Cases_on `r` >> simp [translate_reg_def, untranslate_reg_def, EXTENSION] >>
-      rw [METIS_PROVE [] ``(¬x ∨ y ⇔ (x ⇒ y)) ∧ (x ∨ (y ⇒ z) ⇔ ¬(y ⇒ z) ⇒ x)``] >>
-      qexists_tac `Reg s` >> rw [] >>
-      `Reg s ∈ assigns prog s1.ip` by fs [] >>
-      CCONTR_TAC >> fs [] >>
-      `x = s1.ip` by cheat (*metis_tac [prog_ok_def, is_ssa_def, next_ips_same_func]*) >>
-      fs [] >> rw [] >>
-      cheat) >>
+      qexists_tac `res_v` >> rw [exp_uses_def] >>
+      rw [FLOOKUP_UPDATE] >>
+      Cases_on `r` >> simp [translate_reg_def, untranslate_reg_def] >>
+      `∃ip. ip.f = ip1.f ∧ Reg s ∈ uses prog ip`
+      by (
+        qabbrev_tac `x = (ip1.f = i.f)` >>
+        fs [live_def] >> qexists_tac `last (ip1::path')` >> rw [] >>
+        irule good_path_same_func >>
+        qexists_tac `ip1::path'` >> rw [MEM_LAST] >>
+        metis_tac []) >>
+      metis_tac [ssa_dominates_live_range]) >>
     first_x_assum (qspec_then `r'` mp_tac) >>
     simp [Once live_gen_kill, PULL_EXISTS] >>
     impl_tac >> rw []
     >- metis_tac [] >>
-    ntac 3 HINT_EXISTS_TAC >> rw [] >>
-    cheat
-    (* Need to rule out this case in the definition of mem_state_rel
-  r2 := r1 + 1
-  r1 := 4
-  r3 := r2
-  *))
+    ntac 3 HINT_EXISTS_TAC >> rw []
+    >- (
+      `DRESTRICT (s1' with locals := s1'.locals |+ (translate_reg r ty,res_v)).locals (exp_uses e) =
+       DRESTRICT s1'.locals (exp_uses e)`
+      suffices_by metis_tac [eval_exp_ignores_unused] >>
+      rw [] >>
+      first_x_assum (qspecl_then [`s1.ip`, `translate_reg r ty`] mp_tac) >> simp [Once live_gen_kill] >>
+      impl_tac >- metis_tac [] >> rw [] >>
+      `ip2 = s1.ip`
+      by (
+        fs [is_ssa_def, EXTENSION, IN_DEF] >>
+        Cases_on `r` >> fs [translate_reg_def, untranslate_reg_def] >>
+        metis_tac [reachable_dominates_same_func]) >>
+      metis_tac [dominates_irrefl])
+    >- (
+      first_x_assum irule >> rw [] >>
+      metis_tac [next_ips_same_func]))
+  >- metis_tac [next_ips_reachable]
   >- cheat
 QED
 
@@ -250,6 +280,17 @@ Theorem translate_constant_correct:
    ∃v'. eval_exp s' (translate_const c) v' ∧ v_rel (eval_const g c) v'
 Proof
   metis_tac [translate_constant_correct_lem]
+QED
+
+Theorem translate_const_no_reg[simp]:
+  ∀c. r ∉ exp_uses (translate_const c)
+Proof
+  ho_match_mp_tac translate_const_ind >>
+  rw [translate_const_def, exp_uses_def, MEM_MAP, METIS_PROVE [] ``x ∨ y ⇔ (~x ⇒ y)``] >>
+  TRY pairarg_tac >> fs []
+  >- metis_tac []
+  >- metis_tac [] >>
+  cheat
 QED
 
 Theorem translate_arg_correct:
@@ -430,8 +471,25 @@ Proof
   metis_tac [EVERY2_LUPDATE_same, LIST_REL_LENGTH, LIST_REL_EL_EQN]
 QED
 
+Theorem prog_ok_nonterm:
+  ∀prog i ip.
+    prog_ok prog ∧ get_instr prog ip (Inl i) ∧ ¬terminator i ⇒ inc_pc ip ∈ next_ips prog ip
+Proof
+  rw [next_ips_cases, IN_DEF, get_instr_cases, PULL_EXISTS] >>
+  `terminator (last b.body) ∧ b.body ≠ []` by metis_tac [prog_ok_def] >>
+  Cases_on `length b.body = idx + 1`
+  >- (
+    drule LAST_EL >>
+    rw [] >> fs [DECIDE ``PRE (x + 1) = x``]) >>
+  Cases_on `el idx b.body` >>
+  fs [instr_next_ips_def, terminator_def] >>
+  rw [EXISTS_OR_THM, inc_pc_def, inc_bip_def]
+QED
+
 Theorem translate_instr_to_exp_correct:
   ∀emap instr r t s1 s1' s2 prog l.
+    is_ssa prog ∧
+    prog_ok prog ∧
     classify_instr instr = Exp r t ∧
     mem_state_rel prog emap s1 s1' ∧
     get_instr prog s1.ip (Inl instr) ∧
@@ -449,8 +507,7 @@ Proof
   simp [translate_instr_to_exp_def, classify_instr_def] >>
   conj_tac
   >- ( (* Sub *)
-    rw [step_instr_cases, get_instr_cases, update_result_def,
-        llvmTheory.inc_pc_def, inc_pc_def, inc_bip_def] >>
+    rw [step_instr_cases, get_instr_cases, update_result_def] >>
     qpat_x_assum `Sub _ _ _ _ _ _ = el _ _` (assume_tac o GSYM) >>
     `bigunion (image arg_to_regs {a1; a2}) ⊆ live prog s1.ip`
     by (
@@ -470,13 +527,36 @@ Proof
     Cases_on `r ∈ regs_to_keep` >> rw []
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
-      qexists_tac `res_v` >> rw [] >>
-      rw [] >>
-      cheat)
+      qexists_tac `res_v` >> rw []
+      >- simp [inc_pc_def, llvmTheory.inc_pc_def] >>
+      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+      simp [llvmTheory.inc_pc_def] >>
+      irule mem_state_rel_update_keep >> rw []
+      >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
+      >- (
+        drule prog_ok_nonterm >>
+        simp [get_instr_cases, PULL_EXISTS] >>
+        ntac 3 (disch_then drule) >>
+        simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def])
+      >- fs [mem_state_rel_def])
+    >- rw [inc_pc_def, llvmTheory.inc_pc_def]
     >- (
-      irule mem_state_rel_update >>
-      rw [IN_DEF, next_ips_cases, get_instr_cases, assigns_cases, EXTENSION,
-          instr_assigns_def, instr_next_ips_def, inc_pc_def, inc_bip_def] >>
+      simp [llvmTheory.inc_pc_def] >>
+      irule mem_state_rel_update >> rw []
+      >- (
+        fs [exp_uses_def]
+        >| [Cases_on `a1`, Cases_on `a2`] >>
+        fs [translate_arg_def] >>
+        rename1 `flookup _ r_tmp` >>
+        qexists_tac `r_tmp` >> rw [] >>
+        simp [Once live_gen_kill] >> disj2_tac >>
+        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def])
+      >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
+      >- (
+        drule prog_ok_nonterm >>
+        simp [get_instr_cases, PULL_EXISTS] >>
+        ntac 3 (disch_then drule) >>
+        simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
       metis_tac [])) >>
   conj_tac
   >- ( (* Extractvalue *)
@@ -666,6 +746,7 @@ Theorem translate_instrs_correct1:
     multi_step prog s1 tr s2 ⇒
     !s1' b' emap regs_to_keep d b types idx.
       prog_ok prog ∧
+      is_ssa prog ∧
       mem_state_rel prog emap s1 s1' ∧
       alookup prog s1.ip.f = Some d ∧
       alookup d.blocks s1.ip.b = Some b ∧
@@ -747,7 +828,8 @@ Proof
               >- (
                 disj1_tac >>
                 qexists_tac `Br a l1 l2` >>
-                rw [instr_next_ips_def, Abbr `target`]) >>
+                rw [instr_next_ips_def, Abbr `target`] >>
+                cheat) >>
               CCONTR_TAC >> fs [] >>
               imp_res_tac get_instr_func >> fs [] >> rw [] >>
               fs [instr_assigns_def])
@@ -756,6 +838,7 @@ Proof
               qmatch_goalsub_abbrev_tac `eval_exp s3 _` >>
               `s1'.locals = s3.locals` by fs [Abbr `s3`] >>
               metis_tac [eval_exp_ignores]))
+          >- cheat
           >- (
             cheat)))
       >- ( (* Invoke *)
@@ -763,6 +846,8 @@ Proof
       >- ( (* Unreachable *)
         cheat)
       >- ( (* Exit *)
+        cheat)
+      >- ( (* Throw *)
         cheat))
     >- ( (* Call *)
       cheat)
@@ -776,9 +861,11 @@ Proof
     Cases_on `∃r t. classify_instr i = Exp r t` >> fs []
     >- ( (* instructions that compile to expressions *)
       drule translate_instr_to_exp_correct >>
-      ntac 3 (disch_then drule) >>
+      ntac 5 (disch_then drule) >>
       disch_then (qspec_then `regs_to_keep` mp_tac) >>
       rw [] >> fs [translate_trace_def] >>
+      `reachable prog (inc_pc s1.ip)`
+      by metis_tac [prog_ok_nonterm, next_ips_reachable, mem_state_rel_def] >>
       first_x_assum drule >>
       simp [inc_pc_def, inc_bip_def] >>
       disch_then (qspecl_then [`regs_to_keep`, `types`] mp_tac) >> rw [] >>
@@ -793,12 +880,13 @@ Proof
       simp [Once step_block_cases] >> disj2_tac >>
       pairarg_tac >> rw [] >> fs [] >>
       metis_tac [])
-    >- cheat)
+    >- ( (* Non-expression instructions *)
+      cheat))
 QED
 
 Theorem multi_step_to_step_block:
   ∀prog s1 tr s2 s1'.
-    prog_ok prog ∧
+    prog_ok prog ∧ is_ssa prog ∧
     multi_step prog s1 tr s2 ∧
     state_rel prog emap s1 s1'
     ⇒
@@ -860,6 +948,7 @@ Theorem translate_prog_correct_lem1:
     ⇒
     ∀emap s1'.
     prog_ok prog ∧
+    is_ssa prog ∧
     state_rel prog emap (first path) s1'
     ⇒
     ∃path' emap.
@@ -873,7 +962,7 @@ Proof
   ho_match_mp_tac finite_okpath_ind >> rw []
   >- (qexists_tac `stopped_at s1'` >> rw [] >> metis_tac []) >>
   fs [] >>
-  drule multi_step_to_step_block >> ntac 2 (disch_then drule) >>
+  drule multi_step_to_step_block >> ntac 3 (disch_then drule) >>
   disch_then (qspec_then `types` mp_tac) >> rw [] >>
   first_x_assum drule >> rw [] >>
   qexists_tac `pcons s1' tr' path'` >> rw [] >>
@@ -890,6 +979,7 @@ Theorem translate_prog_correct_lem2:
     okpath (step (translate_prog prog)) path' ∧ finite path'
     ⇒
     ∀s1.
+    prog_ok prog ∧
     state_rel prog emap s1 (first path')
     ⇒
     ∃path.
@@ -923,14 +1013,14 @@ QED
 
 Theorem translate_prog_correct:
   ∀prog s1 s1'.
-    prog_ok prog ∧
+    prog_ok prog ∧ is_ssa prog ∧
     state_rel prog emap s1 s1'
     ⇒
     multi_step_sem prog s1 = image (I ## map untranslate_trace) (sem (translate_prog prog) s1')
 Proof
   rw [sem_def, multi_step_sem_def, EXTENSION] >> eq_tac >> rw []
   >- (
-    drule translate_prog_correct_lem1 >> ntac 3 (disch_then drule) >>
+    drule translate_prog_correct_lem1 >> ntac 4 (disch_then drule) >>
     disch_then (qspec_then `types` mp_tac) >> rw [pairTheory.EXISTS_PROD] >>
     PairCases_on `x` >> rw [] >>
     qexists_tac `map (translate_trace types) x1` >> rw []
@@ -959,8 +1049,8 @@ Proof
     *)
   >- (
     fs [toList_some] >>
-    drule translate_prog_correct_lem2 >> disch_then drule >> disch_then drule >>
-    rw [] >>
+    drule translate_prog_correct_lem2 >> simp [] >>
+    disch_then drule >> rw [] >>
     qexists_tac `path'` >> rw [] >>
     fs [IN_DEF, observation_prefixes_cases, toList_some] >> rw [] >>
     rfs [lmap_fromList] >>

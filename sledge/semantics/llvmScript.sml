@@ -145,6 +145,7 @@ Definition terminator_def:
   (terminator (Invoke _ _ _ _ _ _) ⇔ T) ∧
   (terminator Unreachable ⇔ T) ∧
   (terminator Exit ⇔ T) ∧
+  (terminator (Cxa_throw _ _ _) ⇔ T) ∧
   (terminator _ ⇔ F)
 End
 
