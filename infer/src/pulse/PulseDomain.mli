@@ -84,6 +84,7 @@ module Attribute : sig
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
+    | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
     | StdVectorReserve

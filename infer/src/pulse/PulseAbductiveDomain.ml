@@ -578,12 +578,13 @@ module PrePost = struct
               PulseDomain.InterprocAction.ViaCall
                 {action= trace.action; f= Call proc_name; location}
           ; history= trace.history }
-    | MustBeValid _
-    | WrittenTo _
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
     | Closure _
-    | StdVectorReserve ->
+    | Constant _
+    | MustBeValid _
+    | StdVectorReserve
+    | WrittenTo _ ->
         attr
 
 

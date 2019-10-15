@@ -146,7 +146,12 @@ let eval location exp0 astate =
         Closures.record location name (List.rev rev_captured) astate
     | Cast (_, exp') ->
         eval exp' astate
-    | Sizeof _ | UnOp _ | BinOp _ | Exn _ | Const _ ->
+    | Const c ->
+        (* TODO: make identical const the same address *)
+        let addr = AbstractAddress.mk_fresh () in
+        let astate = Memory.add_attribute addr (Constant c) astate in
+        Ok (astate, (addr, []))
+    | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
         Ok (astate, (AbstractAddress.mk_fresh (), (* TODO history *) []))
   in
   eval exp0 astate

@@ -255,6 +255,7 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
     | Closure of Typ.Procname.t
+    | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit InterprocAction.t
     | StdVectorReserve
@@ -293,6 +294,8 @@ module Attribute = struct
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
     | Closure pname ->
         Typ.Procname.pp f pname
+    | Constant c ->
+        F.fprintf f "=%a" (Const.pp Pp.text) c
     | Invalid invalidation ->
         (Trace.pp Invalidation.pp) f invalidation
     | MustBeValid action ->
