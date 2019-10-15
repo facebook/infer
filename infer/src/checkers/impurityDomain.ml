@@ -43,13 +43,23 @@ let join astate1 astate2 =
       astate1 astate2
 
 
-let add_to_errlog ~nesting ~str ModifiedVar.{var; trace_list} errlog =
+type param_source = Formal | Global
+
+let pp_param_source fmt = function
+  | Formal ->
+      F.pp_print_string fmt "parameter"
+  | Global ->
+      F.pp_print_string fmt "global variable"
+
+
+let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
   let rec aux ~nesting rev_errlog action =
     match action with
     | WrittenTo (PulseDomain.InterprocAction.Immediate {location}) ->
         let rev_errlog =
           Errlog.make_trace_element nesting location
-            (F.asprintf "%s '%a' is modified at %a" str Var.pp var Location.pp location)
+            (F.asprintf "%a '%a' is modified at %a" pp_param_source param_source Var.pp var
+               Location.pp location)
             []
           :: rev_errlog
         in
@@ -57,14 +67,14 @@ let add_to_errlog ~nesting ~str ModifiedVar.{var; trace_list} errlog =
     | WrittenTo (PulseDomain.InterprocAction.ViaCall {action; f; location}) ->
         aux ~nesting:(nesting + 1)
           ( Errlog.make_trace_element nesting location
-              (F.asprintf "%s '%a' is modified when calling %a at %a" str Var.pp var
-                 PulseDomain.CallEvent.describe f Location.pp location)
+              (F.asprintf "%a '%a' is modified when calling %a at %a" pp_param_source param_source
+                 Var.pp var PulseDomain.CallEvent.describe f Location.pp location)
               []
           :: rev_errlog )
           (WrittenTo action)
     | Invalid trace ->
         PulseDomain.Trace.add_to_errlog
-          ~header:(F.asprintf "%s '%a'" str Var.pp var)
+          ~header:(F.asprintf "%a '%a'" pp_param_source param_source Var.pp var)
           (fun f invalidation ->
             F.fprintf f "%a here" PulseDomain.Invalidation.describe invalidation )
           trace rev_errlog

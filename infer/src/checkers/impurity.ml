@@ -125,13 +125,14 @@ let report_errors summary modified_opt =
         impure_fun_desc
   | Some (ImpurityDomain.{modified_globals; modified_params} as astate) ->
       if Purity.should_report pdesc && not (ImpurityDomain.is_pure astate) then
-        let modified_ltr ~str set acc =
-          ImpurityDomain.ModifiedVarSet.fold (ImpurityDomain.add_to_errlog ~nesting:1 ~str) set acc
+        let modified_ltr param_source set acc =
+          ImpurityDomain.ModifiedVarSet.fold
+            (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
+            set acc
         in
         let ltr =
           impure_fun_ltr
-          :: modified_ltr ~str:"parameter" modified_params
-               (modified_ltr ~str:"global var" modified_globals [])
+          :: modified_ltr Formal modified_params (modified_ltr Global modified_globals [])
         in
         Reporting.log_error summary ~loc:pname_loc ~ltr IssueType.impure_function impure_fun_desc
   ) ;

@@ -27,9 +27,11 @@ val pure : t
 
 val is_pure : t -> bool
 
+type param_source = Formal | Global
+
 val add_to_errlog :
      nesting:int
-  -> str:string
+  -> param_source
   -> ModifiedVar.t
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
