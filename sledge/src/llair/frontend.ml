@@ -1171,13 +1171,13 @@ let xlate_instr :
         let mov =
           Llair.Inst.move ~reg_exps:(Vector.of_array [|(reg, exp)|]) ~loc
         in
-        let lbl = lbl ^ "." ^ Int.to_string i in
+        let lbl_i = lbl ^ "." ^ Int.to_string i in
         let blk =
-          Llair.Block.mk ~lbl
+          Llair.Block.mk ~lbl:lbl_i
             ~cmnd:(Vector.of_array [|mov|])
             ~term:(Llair.Term.goto ~dst:(Llair.Jump.mk lbl) ~loc)
         in
-        (Llair.Jump.mk lbl, blk :: rev_blocks)
+        (Llair.Jump.mk lbl_i, blk :: rev_blocks)
       in
       let goto_unwind i sel blocks =
         let dst, blocks = jump_unwind i sel blocks in
