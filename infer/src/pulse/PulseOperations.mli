@@ -25,6 +25,13 @@ val eval : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
 
+module TBool : sig
+  (** booleans with \top *)
+  type t = True | False | Top
+end
+
+val eval_cond : Location.t -> Exp.t -> t -> (t * TBool.t) access_result
+
 val eval_deref : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
 (** Like [eval] but evaluates [*exp]. *)
 

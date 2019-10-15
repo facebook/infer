@@ -287,6 +287,8 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
+  let const_rank = Variants.to_rank (Constant (Const.Cint IntLit.zero))
+
   let pp f = function
     | AddressOfCppTemporary (var, history) ->
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
@@ -357,6 +359,13 @@ module Attributes = struct
   let is_modified attrs =
     Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
+
+
+  let get_constant attrs =
+    Set.find_rank attrs Attribute.const_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Constant c) = attr in
+           c )
 
 
   include Set
@@ -469,6 +478,8 @@ module Memory : sig
 
   val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
 
+  val get_constant : AbstractAddress.t -> t -> Const.t option
+
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
@@ -539,6 +550,11 @@ end = struct
   let get_closure_proc_name address memory =
     Graph.find_opt address (snd memory)
     |> Option.bind ~f:(fun attributes -> Attributes.get_closure_proc_name attributes)
+
+
+  let get_constant address memory =
+    Graph.find_opt address (snd memory)
+    |> Option.bind ~f:(fun attributes -> Attributes.get_constant attributes)
 
 
   let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory

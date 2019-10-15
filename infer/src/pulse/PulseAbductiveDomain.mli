@@ -75,6 +75,8 @@ module Memory : sig
   val eval_edge : AbstractAddress.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
   (** [eval_edge addr access astate] follows the edge [addr --access--> .] in memory and returns
       what it points to or creates a fresh value if that edge didn't exist.  *)
+
+  val get_constant : AbstractAddress.t -> t -> Const.t option
 end
 
 val is_local : Var.t -> t -> bool

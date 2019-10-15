@@ -157,6 +157,63 @@ let eval location exp0 astate =
   eval exp0 astate
 
 
+type eval_result =
+  | EvalConst of Const.t
+  | EvalAddr of AbstractAddress.t
+  | EvalError of PulseDiagnostic.t
+
+let eval_to_const location exp astate =
+  match (exp : Exp.t) with
+  | Const c ->
+      EvalConst c
+  | exp -> (
+    match eval location exp astate with
+    | Error err ->
+        EvalError err
+    | Ok (astate, (addr, _)) -> (
+      match Memory.get_constant addr astate with Some c -> EvalConst c | None -> EvalAddr addr ) )
+
+
+let eval_binop (bop : Binop.t) c1 c2 =
+  match bop with Eq -> Const.equal c1 c2 | Ne -> not (Const.equal c1 c2) | _ -> true
+
+
+module TBool = struct
+  (** booleans with \top *)
+  type t = True | False | Top
+
+  let negate = function True -> False | False -> True | Top -> Top
+
+  let of_bool b = if b then True else False
+end
+
+let negate_cond result = Result.map result ~f:(fun (astate, b) -> (astate, TBool.negate b))
+
+let rec eval_cond location exp astate =
+  match (exp : Exp.t) with
+  | BinOp (bop, e1, e2) -> (
+    match eval_to_const location e1 astate with
+    | EvalError err ->
+        Error err
+    | EvalAddr _ ->
+        (* TODO: might want to remember [addr = const] and other kinds of pure facts *)
+        Ok (astate, TBool.Top)
+    | EvalConst c1 -> (
+      match eval_to_const location e2 astate with
+      | EvalError err ->
+          Error err
+      | EvalAddr _ ->
+          (* TODO: might want to remember [addr = const] and other kinds of pure facts *)
+          Ok (astate, TBool.Top)
+      | EvalConst c2 ->
+          Ok (astate, eval_binop bop c1 c2 |> TBool.of_bool) ) )
+  | UnOp (LNot, exp', _) ->
+      negate_cond (eval_cond location exp' astate)
+  | exp ->
+      let zero = Exp.Const (Cint IntLit.zero) in
+      eval_cond location (Exp.BinOp (Ne, exp, zero)) astate
+
+
 let eval_deref location exp astate =
   eval location exp astate
   >>= fun (astate, addr_trace) ->

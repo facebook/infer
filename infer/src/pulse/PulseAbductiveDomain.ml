@@ -209,6 +209,8 @@ module Memory = struct
     BaseMemory.get_closure_proc_name addr (astate.post :> base_domain).heap
 
 
+  let get_constant addr astate = BaseMemory.get_constant addr (astate.post :> base_domain).heap
+
   let std_vector_reserve addr astate =
     map_post_heap astate ~f:(fun heap -> BaseMemory.std_vector_reserve addr heap)
 

@@ -185,10 +185,15 @@ module PulseTransferFunctions = struct
               Ok astate
         in
         [check_error summary result]
-    | Prune (condition, loc, _is_then_branch, _if_kind) ->
-        (* ignored for now *)
-        let post = PulseOperations.eval loc condition astate |> check_error summary |> fst in
-        [post]
+    | Prune (condition, loc, _is_then_branch, _if_kind) -> (
+        let post, cond_satisfiable =
+          PulseOperations.eval_cond loc condition astate |> check_error summary
+        in
+        match (cond_satisfiable : PulseOperations.TBool.t) with
+        | False ->
+            (* [condition] is known to be unsatisfiable: prune path *) []
+        | True | Top ->
+            (* [condition] is true or unknown value: go into the branch *) [post] )
     | Call (ret, call_exp, actuals, loc, call_flags) ->
         dispatch_call summary ret call_exp actuals loc call_flags astate |> check_error summary
     | Metadata (ExitScope (vars, location)) ->

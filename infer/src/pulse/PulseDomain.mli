@@ -186,6 +186,8 @@ module Memory : sig
 
   val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
 
+  val get_constant : AbstractAddress.t -> t -> Const.t option
+
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
   val is_std_vector_reserved : AbstractAddress.t -> t -> bool
