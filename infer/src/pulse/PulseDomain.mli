@@ -47,11 +47,11 @@ end
 
 module ValueHistory : sig
   type event =
-    | VariableDeclaration of Location.t
-    | CppTemporaryCreated of Location.t
-    | Assignment of {location: Location.t}
-    | Capture of {captured_as: Pvar.t; location: Location.t}
+    | Assignment of Location.t
     | Call of {f: CallEvent.t; location: Location.t}
+    | Capture of {captured_as: Pvar.t; location: Location.t}
+    | CppTemporaryCreated of Location.t
+    | VariableDeclaration of Location.t
 
   type t = event list [@@deriving compare]
 

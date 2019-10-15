@@ -123,32 +123,32 @@ end
 
 module ValueHistory = struct
   type event =
-    | VariableDeclaration of Location.t
-    | CppTemporaryCreated of Location.t
-    | Assignment of {location: Location.t}
-    | Capture of {captured_as: Pvar.t; location: Location.t}
+    | Assignment of Location.t
     | Call of {f: CallEvent.t; location: Location.t}
+    | Capture of {captured_as: Pvar.t; location: Location.t}
+    | CppTemporaryCreated of Location.t
+    | VariableDeclaration of Location.t
   [@@deriving compare]
 
   let pp_event_no_location fmt = function
-    | VariableDeclaration _ ->
-        F.pp_print_string fmt "variable declared"
-    | CppTemporaryCreated _ ->
-        F.pp_print_string fmt "C++ temporary created"
-    | Capture {captured_as; location= _} ->
-        F.fprintf fmt "value captured as `%a`" (Pvar.pp Pp.text) captured_as
     | Assignment _ ->
         F.pp_print_string fmt "assigned"
     | Call {f; location= _} ->
         F.fprintf fmt "returned from call to %a" CallEvent.pp f
+    | Capture {captured_as; location= _} ->
+        F.fprintf fmt "value captured as `%a`" (Pvar.pp Pp.text) captured_as
+    | CppTemporaryCreated _ ->
+        F.pp_print_string fmt "C++ temporary created"
+    | VariableDeclaration _ ->
+        F.pp_print_string fmt "variable declared"
 
 
   let location_of_event = function
-    | VariableDeclaration location
-    | CppTemporaryCreated location
-    | Assignment {location}
+    | Assignment location
+    | Call {location}
     | Capture {location}
-    | Call {location} ->
+    | CppTemporaryCreated location
+    | VariableDeclaration location ->
         location
 
 

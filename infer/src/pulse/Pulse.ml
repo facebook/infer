@@ -167,7 +167,7 @@ module PulseTransferFunctions = struct
         [check_error summary result]
     | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
         (* [*lhs_exp := rhs_exp] *)
-        let event = ValueHistory.Assignment {location= loc} in
+        let event = ValueHistory.Assignment loc in
         let result =
           PulseOperations.eval loc rhs_exp astate
           >>= fun (astate, (rhs_addr, rhs_history)) ->
