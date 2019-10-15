@@ -472,6 +472,9 @@ module Var = struct
           else (
             assert (not (Set.equal vs' vs)) ;
             Set.add vs' data ) )
+      |> check (fun vs' ->
+             assert (Set.disjoint (domain sub) vs') ;
+             assert (Set.is_subset (range sub) ~of_:vs') )
   end
 end
 
