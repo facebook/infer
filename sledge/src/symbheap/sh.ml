@@ -403,6 +403,22 @@ let rec pure (e : Term.t) =
 
 let and_ e q = star (pure e) q
 
+let subst sub q =
+  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
+  ;
+  let dom, eqs =
+    Var.Subst.fold sub ~init:(Var.Set.empty, Term.true_)
+      ~f:(fun var trm (dom, eqs) ->
+        ( Set.add dom var
+        , Term.and_ (Term.eq (Term.var var) (Term.var trm)) eqs ) )
+  in
+  exists dom (and_ eqs q)
+  |>
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q' ;
+    assert (Set.disjoint q'.us (Var.Subst.domain sub))]
+
 let seg pt =
   let us = fv_seg pt in
   if Term.equal Term.null pt.loc then false_ us

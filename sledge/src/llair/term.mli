@@ -127,6 +127,7 @@ module Var : sig
     val domain : t -> Set.t
     val range : t -> Set.t
     val apply_set : t -> Set.t -> Set.t
+    val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
   end
 end
 

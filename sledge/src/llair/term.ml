@@ -444,6 +444,9 @@ module Var = struct
           (sub, wrt) )
       |> fst |> check invariant
 
+    let fold sub ~init ~f =
+      Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
+
     let invert sub =
       Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
           Map.add_exn sub' ~key:data ~data:key )
