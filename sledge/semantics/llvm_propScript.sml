@@ -428,6 +428,10 @@ Proof
     >- (fs [globals_ok_def] >> metis_tac [])
     >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac []))
   >- (
+    fs [state_invariant_def, globals_ok_def, stack_ok_def, frame_ok_def,
+        EVERY_MEM] >>
+    metis_tac [])
+  >- (
     irule inc_pc_invariant >> rw [get_instr_update, update_invariant]>>
     metis_tac [terminator_def])
   >- (
@@ -495,13 +499,9 @@ Proof
 QED
 
 Theorem exit_no_step:
-  !p s1. get_instr p s1.ip (Inl Exit) ⇒ ¬?l s2. step p s1 l s2
+  !p s1. s1.exited ≠ None ⇒ ¬?l s2. step p s1 l s2
 Proof
   rw [step_cases, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``]
-  >- (
-    `i = Exit` by metis_tac [get_instr_func, sumTheory.INL_11] >>
-    rw [step_instr_cases]) >>
-  metis_tac [get_instr_func, sumTheory.sum_distinct]
 QED
 
 Definition is_call_def:

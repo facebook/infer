@@ -74,6 +74,12 @@ Definition untranslate_reg_def:
   untranslate_reg (Var_name x t) = Reg x
 End
 
+Inductive complete_trace_rel:
+  (∀i. complete_trace_rel (Some i) (Complete i)) ∧
+  (complete_trace_rel None Partial) ∧
+  (complete_trace_rel None Stuck)
+End
+
 (* Define when an LLVM state is related to a llair one.
  * Parameterised on a map for locals relating LLVM registers to llair
  * expressions that compute the value in that register. This corresponds to part
@@ -94,7 +100,7 @@ Definition mem_state_rel_def:
           ∃ip2. untranslate_reg r' ∈ assigns prog ip2 ∧ dominates prog ip2 ip1))) ∧
     reachable prog s.ip ∧
     erase_tags s.heap = s'.heap ∧
-    s'.status = get_observation prog s
+    complete_trace_rel s.exited s'.status
 End
 
 (* Define when an LLVM state is related to a llair one
@@ -105,7 +111,8 @@ End
 Definition state_rel_def:
   state_rel prog emap (s:llvm$state) (s':llair$state) ⇔
     pc_rel prog emap s.ip s'.bp ∧
-    mem_state_rel prog emap s s'
+    mem_state_rel prog emap s s' ∧
+    s'.status = get_observation prog s
 End
 
 Theorem mem_state_ignore_bp:
@@ -132,7 +139,6 @@ Proof
     first_x_assum (qspec_then `r` mp_tac) >> simp [Once live_gen_kill, PULL_EXISTS] >>
     metis_tac [next_ips_same_func])
   >- metis_tac [next_ips_reachable]
-  >- cheat
 QED
 
 Theorem mem_state_rel_update:
@@ -170,7 +176,6 @@ Proof
     simp [Once live_gen_kill, PULL_EXISTS, METIS_PROVE [] ``x ∨ y ⇔ (~y ⇒ x)``] >>
     metis_tac [])
   >- metis_tac [next_ips_reachable]
-  >- cheat
 QED
 
 Theorem mem_state_rel_update_keep:
@@ -224,7 +229,6 @@ Proof
       first_x_assum irule >> rw [] >>
       metis_tac [next_ips_same_func]))
   >- metis_tac [next_ips_reachable]
-  >- cheat
 QED
 
 Theorem v_rel_bytes:
@@ -267,6 +271,7 @@ Proof
     simp [v_rel_cases, PULL_EXISTS, MAP_MAP_o] >>
     fs [combinTheory.o_DEF, pairTheory.LAMBDA_PROD] >>
     metis_tac [])
+  (* TODO: unimplemented stuff *)
   >- cheat
   >- cheat
   >- cheat
@@ -290,6 +295,7 @@ Proof
   TRY pairarg_tac >> fs []
   >- metis_tac []
   >- metis_tac [] >>
+  (* TODO: unimplemented stuff *)
   cheat
 QED
 
@@ -488,8 +494,7 @@ QED
 
 Theorem translate_instr_to_exp_correct:
   ∀emap instr r t s1 s1' s2 prog l.
-    is_ssa prog ∧
-    prog_ok prog ∧
+    is_ssa prog ∧ prog_ok prog ∧
     classify_instr instr = Exp r t ∧
     mem_state_rel prog emap s1 s1' ∧
     get_instr prog s1.ip (Inl instr) ∧
@@ -528,17 +533,18 @@ Proof
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw []
-      >- simp [inc_pc_def, llvmTheory.inc_pc_def] >>
-      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
-      simp [llvmTheory.inc_pc_def] >>
-      irule mem_state_rel_update_keep >> rw []
-      >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
+      >- simp [inc_pc_def, llvmTheory.inc_pc_def]
       >- (
-        drule prog_ok_nonterm >>
-        simp [get_instr_cases, PULL_EXISTS] >>
-        ntac 3 (disch_then drule) >>
-        simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def])
-      >- fs [mem_state_rel_def])
+        rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+        simp [llvmTheory.inc_pc_def] >>
+        irule mem_state_rel_update_keep >> rw []
+        >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
+        >- (
+          drule prog_ok_nonterm >>
+          simp [get_instr_cases, PULL_EXISTS] >>
+          ntac 3 (disch_then drule) >>
+          simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def])
+        >- fs [mem_state_rel_def]))
     >- rw [inc_pc_def, llvmTheory.inc_pc_def]
     >- (
       simp [llvmTheory.inc_pc_def] >>
@@ -580,6 +586,7 @@ Proof
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw [] >>
       rw [update_results_def] >>
+      (* TODO: unfinished *)
       cheat)
     >- cheat) >>
   conj_tac
@@ -611,6 +618,7 @@ Proof
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw [] >>
       rw [update_results_def] >>
+      (* TODO: unfinished *)
       cheat)
     >- cheat) >>
   cheat
@@ -741,6 +749,17 @@ Proof
   metis_tac [un_translate_glob_inv]
 QED
 
+Theorem take_to_call_lem:
+  ∀i idx body.
+    idx < length body ∧ el idx body = i ∧ ¬terminator i ∧ ¬is_call i ⇒
+    take_to_call (drop idx body) = i :: take_to_call (drop (idx + 1) body)
+Proof
+  Induct_on `idx` >> rw []
+  >- (Cases_on `body` >> fs [take_to_call_def] >> rw []) >>
+  Cases_on `body` >> fs [] >>
+  first_x_assum drule >> simp [ADD1]
+QED
+
 Theorem translate_instrs_correct1:
   ∀prog s1 tr s2.
     multi_step prog s1 tr s2 ⇒
@@ -839,8 +858,9 @@ Proof
               `s1'.locals = s3.locals` by fs [Abbr `s3`] >>
               metis_tac [eval_exp_ignores]))
           >- cheat
-          >- (
-            cheat)))
+          >- cheat)
+        >- (
+          cheat))
       >- ( (* Invoke *)
         cheat)
       >- ( (* Unreachable *)
@@ -872,7 +892,9 @@ Proof
       rename1 `state_rel prog emap3 s3 s3'` >>
       qexists_tac `emap3` >> qexists_tac `s3'` >> rw [] >>
       `take_to_call (drop idx b.body) = i :: take_to_call (drop (idx + 1) b.body)`
-      by cheat >>
+      by (
+        irule take_to_call_lem >> simp [] >>
+        fs [get_instr_cases]) >>
       simp [translate_instrs_def] >>
       Cases_on `r ∉ regs_to_keep` >> fs [] >> rw []
       >- metis_tac [] >>
@@ -898,6 +920,7 @@ Theorem multi_step_to_step_block:
 Proof
   rw [] >> pop_assum mp_tac >> simp [Once state_rel_def] >> rw [pc_rel_cases]
   >- (
+    (* Non-phi instruction *)
     drule translate_instrs_correct1 >> simp [] >>
     disch_then drule >>
     disch_then (qspecl_then [`regs_to_keep`, `types`] mp_tac) >> simp [] >>
@@ -905,13 +928,14 @@ Proof
     qexists_tac `s2'` >> simp [] >>
     ntac 3 HINT_EXISTS_TAC >>
     rw [] >> fs [dest_fn_def]) >>
-  (* Phi nodes *)
+  (* Phi instruction *)
   reverse (fs [Once multi_step_cases])
   >- metis_tac [get_instr_func, sumTheory.sum_distinct] >>
   qpat_x_assum `last_step _ _ _ _` mp_tac >>
   simp [last_step_def] >> simp [Once llvmTheory.step_cases] >>
   rw [] >> imp_res_tac get_instr_func >> fs [] >> rw [] >>
   fs [translate_trace_def] >>
+  (* TODO: unfinished *)
   cheat
 QED
 
@@ -1027,7 +1051,11 @@ Proof
     >- rw [MAP_MAP_o, combinTheory.o_DEF, un_translate_trace_inv] >>
     qexists_tac `path'` >> rw [] >>
     fs [IN_DEF, observation_prefixes_cases, toList_some] >> rw [] >>
-    `?labs. labels path' = fromList labs` by cheat >>
+    `?labs. labels path' = fromList labs`
+    by (
+      fs [GSYM finite_labels] >>
+      imp_res_tac llistTheory.LFINITE_toList >>
+      fs [toList_some]) >>
     fs [] >>
     rfs [lmap_fromList, combinTheory.o_DEF, MAP_MAP_o] >>
     simp [FILTER_FLAT, MAP_FLAT, MAP_MAP_o, combinTheory.o_DEF, FILTER_MAP]
@@ -1035,8 +1063,6 @@ Proof
     >- fs [state_rel_def, mem_state_rel_def] >>
     rename [`labels path' = fromList l'`, `labels path = fromList l`,
             `state_rel _ _ (last path) (last path')`, `lsub ≼ flat l`] >>
-    qexists_tac `map (translate_trace types) lsub` >>
-    fs [FILTER_MAP, trans_trace_not_tau] >>
     cheat)
 (*
     `INJ (translate_trace types) (set l2' ∪ set (flat l2)) UNIV`

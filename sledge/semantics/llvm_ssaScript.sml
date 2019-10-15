@@ -31,7 +31,7 @@ Definition instr_next_ips_def:
   (instr_next_ips (Invoke _ _ _ _ l1 l2) ip =
     { <| f := ip.f; b := Some l; i := Phi_ip ip.b |> | l | l ∈ {l1; l2} }) ∧
   (instr_next_ips Unreachable ip = {}) ∧
-  (instr_next_ips Exit ip = {}) ∧
+  (instr_next_ips (Exit _) ip = {}) ∧
   (instr_next_ips (Sub _ _ _ _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Extractvalue _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Insertvalue _ _ _ _) ip = { inc_pc ip }) ∧

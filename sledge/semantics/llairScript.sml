@@ -94,7 +94,7 @@ Datatype:
   | Return exp
   | Throw exp
   | Unreachable
-  | Exit
+  | Exit exp
 End
 
 Datatype:
@@ -473,7 +473,10 @@ Inductive step_term:
         stack := rest;
         heap := s.heap |>) ∧
 
-  (∀prog s. step_term prog s Exit (s with status := Complete))
+  (∀prog s e i size.
+   eval_exp s e (FlatV (IntV i size))
+   ⇒
+   step_term prog s (Exit e) (s with status := Complete i))
   (* TODO Throw *)
 
 End
@@ -486,7 +489,6 @@ Inductive step_block:
    step_term prog s1 t s2
    ⇒
    step_block prog s1 [] [] t s2) ∧
-
 
   (∀prog s1 i1 i2 l1 is t s2.
    step_inst s1 i1 l1 s2 ∧

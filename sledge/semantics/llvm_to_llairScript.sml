@@ -219,7 +219,7 @@ Definition classify_instr_def:
   (classify_instr (Br _ _ _) = Term) ∧
   (classify_instr (Invoke _ _ _ _ _ _) = Term) ∧
   (classify_instr Unreachable = Term) ∧
-  (classify_instr Exit = Term) ∧
+  (classify_instr (Exit _) = Term) ∧
   (classify_instr (Load _ _ _) = Non_exp) ∧
   (classify_instr (Store _ _) = Non_exp) ∧
   (classify_instr (Cxa_throw _ _ _) = Non_exp) ∧

@@ -90,7 +90,7 @@ Datatype:
   | Br arg label label
   | Invoke reg ty arg (targ list) label label
   | Unreachable
-  | Exit
+  | Exit arg
   (* Non-terminators *)
   | Sub reg bool bool ty arg arg
   | Extractvalue reg targ (const list)
@@ -144,7 +144,7 @@ Definition terminator_def:
   (terminator (Br _ _ _) ⇔ T) ∧
   (terminator (Invoke _ _ _ _ _ _) ⇔ T) ∧
   (terminator Unreachable ⇔ T) ∧
-  (terminator Exit ⇔ T) ∧
+  (terminator (Exit _) ⇔ T) ∧
   (terminator (Cxa_throw _ _ _) ⇔ T) ∧
   (terminator _ ⇔ F)
 End
@@ -196,7 +196,8 @@ Datatype:
        globals : glob_var |-> (num # word64);
        locals : reg |-> pv;
        stack : frame list;
-       heap : bool heap |>
+       heap : bool heap;
+       exited : int option |>
 End
 
 (* ----- Things about types ----- *)
@@ -524,6 +525,13 @@ Inductive step_instr:
   (* TODO *)
   (step_instr prog s (Invoke r t a args l1 l2) Tau s) ∧
 
+  (eval s a = Some v1 ∧
+  signed_v_to_int v1.value = Some exit_code
+   ⇒
+   step_instr prog s
+     (Exit a) Tau
+     (s with exited := Some (exit_code))) ∧
+
   (eval s a1 = Some v1 ∧
    eval s a2 = Some v2 ∧
    do_sub nuw nsw v1 v2 t = Some v3
@@ -677,6 +685,7 @@ End
 
 Inductive step:
  (get_instr p s.ip (Inl i) ∧
+  s.exited = None ∧
   step_instr p s i l s'
   ⇒
   step p s l s') ∧
@@ -693,6 +702,7 @@ Inductive step:
  * %r1 = phi [0, %l]
  *)
  (get_instr p s.ip (Inr (from_l, phis)) ∧
+  s.exited = None ∧
   map (do_phi from_l s) phis = map Some updates
   ⇒
   step p s Tau (inc_pc (s with locals := locals |++ updates)))
@@ -701,8 +711,8 @@ End
 
 Definition get_observation_def:
   get_observation prog last_s =
-    if get_instr prog last_s.ip (Inl Exit) then
-      Complete
+    if last_s.exited ≠ None then
+      Complete (THE last_s.exited)
     else if ∃s l. step prog last_s l s then
       Partial
     else
@@ -799,6 +809,7 @@ Definition is_init_state_def:
     s.ip.i = Offset 0 ∧
     s.locals = fempty ∧
     s.stack = [] ∧
+    s.exited = None ∧
     globals_ok s ∧
     heap_ok s.heap ∧
     fdom s.globals = fdom global_init ∧

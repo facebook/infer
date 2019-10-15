@@ -30,12 +30,12 @@ End
 Datatype:
   trace_type =
   | Stuck
-  | Complete
+  | Complete int
   | Partial
 End
 
 Inductive observation_prefixes:
-  (∀l. observation_prefixes (Complete, l) (Complete, filter ($≠ Tau) l)) ∧
+  (∀l i. observation_prefixes (Complete i, l) (Complete i, filter ($≠ Tau) l)) ∧
   (∀l. observation_prefixes (Stuck, l) (Stuck, filter ($≠ Tau) l)) ∧
   (∀l1 l2 x.
     l2 ≼ l1 ∧ (l2 = l1 ⇒ x = Partial)
