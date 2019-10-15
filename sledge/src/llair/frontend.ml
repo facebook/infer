@@ -540,8 +540,26 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 1)) in
       Exp.conditional ~typ ~cnd:(xlate_rand 0) ~thn:(xlate_rand 1)
         ~els:(xlate_rand 2)
-  | ExtractElement | InsertElement ->
-      todo "vector operations: %a" pp_llvalue llv ()
+  | ExtractElement | InsertElement -> (
+      let typ =
+        let lltyp = Llvm.type_of (Llvm.operand llv 0) in
+        let llelt = Llvm.element_type lltyp in
+        let elt = xlate_type x llelt in
+        let len = Llvm.vector_size llelt in
+        let byts = size_of x lltyp in
+        let bits = bit_size_of x lltyp in
+        Typ.array ~elt ~len ~bits ~byts
+      in
+      let idx i =
+        match (xlate_rand i).desc with
+        | Integer {data} -> Z.to_int data
+        | _ -> todo "vector operations: %a" pp_llvalue llv ()
+      in
+      let rcd = xlate_rand 0 in
+      match opcode with
+      | ExtractElement -> Exp.select typ rcd (idx 1)
+      | InsertElement -> Exp.update typ ~rcd (idx 2) ~elt:(xlate_rand 1)
+      | _ -> assert false )
   | ExtractValue | InsertValue ->
       let agg = xlate_rand 0 in
       let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
