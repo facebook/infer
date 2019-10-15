@@ -52,6 +52,28 @@ translate-report:
 	 | grep -E -v "RESULT: (Success|Invalid input)" \
 	 | column -ts$$'\t'
 
+Buckets:=\
+  "Invalid input"\
+  "Success"\
+  "Unimplemented: ConstantAggregateZero of size 0"\
+  "Unimplemented: call null"\
+  "Unimplemented: coroutines"\
+  "Unimplemented: ifuncs"\
+  "Unimplemented: inline asm"\
+  "Unimplemented: landingpad of type"\
+  "Unimplemented: non-integral pointer types"\
+  "Unimplemented: opcode kind in call instruction"\
+  "Unimplemented: operand kind in call instruction"\
+  "Unimplemented: size_of"\
+  "Unimplemented: statepoints"\
+  "Unimplemented: unsized non-opaque aggregate types"\
+  "Unimplemented: vector operations"\
+  "Unimplemented: windows exception handling"\
+  "segmentation violation"
+
+report-summary:
+	for b in $(Buckets); do (printf "$$b\t"; grep -E "$$b" report.expected | wc -l); done | sort -t$$'\t' -k 2 -n -r | column -ts$$'\t'
+
 # compile c to llvm bitcode
 %.bc : %.c
 	@(cd $(dir $*) && clang -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
