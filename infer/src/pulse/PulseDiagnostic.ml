@@ -49,7 +49,7 @@ let get_message = function
             F.fprintf fmt "accessing memory that "
         | ViaCall {f; _} ->
             F.fprintf fmt "call to %a eventually accesses memory that "
-              PulseDomain.describe_call_event f
+              PulseDomain.CallEvent.describe f
       in
       let pp_invalidation_trace line fmt trace =
         match trace.PulseDomain.Trace.action with
@@ -59,7 +59,7 @@ let get_message = function
             F.fprintf fmt "%a on line %d indirectly during the call to %a"
               PulseDomain.Invalidation.describe
               (PulseDomain.InterprocAction.get_immediate action)
-              line PulseDomain.describe_call_event f
+              line PulseDomain.CallEvent.describe f
       in
       let line_of_trace trace =
         let {Location.line; _} =

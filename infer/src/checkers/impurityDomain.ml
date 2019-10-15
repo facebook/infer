@@ -58,7 +58,7 @@ let add_to_errlog ~nesting ~str ModifiedVar.{var; trace_list} errlog =
         aux ~nesting:(nesting + 1)
           ( Errlog.make_trace_element nesting location
               (F.asprintf "%s '%a' is modified when calling %a at %a" str Var.pp var
-                 PulseDomain.describe_call_event f Location.pp location)
+                 PulseDomain.CallEvent.describe f Location.pp location)
               []
           :: rev_errlog )
           (WrittenTo action)

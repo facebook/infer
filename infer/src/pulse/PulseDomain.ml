@@ -10,29 +10,31 @@ module L = Logging
 
 (* {2 Abstract domain description } *)
 
-type call_event =
-  | Call of Typ.Procname.t
-  | Model of string
-  | SkippedKnownCall of Typ.Procname.t
-  | SkippedUnknownCall of Exp.t
-[@@deriving compare]
+module CallEvent = struct
+  type t =
+    | Call of Typ.Procname.t
+    | Model of string
+    | SkippedKnownCall of Typ.Procname.t
+    | SkippedUnknownCall of Exp.t
+  [@@deriving compare]
 
-let pp_call_event_config ~verbose fmt =
-  let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
-  function
-  | Call proc_name ->
-      F.fprintf fmt "`%a`" pp_proc_name proc_name
-  | Model model ->
-      F.fprintf fmt "`%s` (modelled)" model
-  | SkippedKnownCall proc_name ->
-      F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
-  | SkippedUnknownCall call_exp ->
-      F.fprintf fmt "unresolved call expression `%a`" Exp.pp call_exp
+  let pp_config ~verbose fmt =
+    let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
+    function
+    | Call proc_name ->
+        F.fprintf fmt "`%a`" pp_proc_name proc_name
+    | Model model ->
+        F.fprintf fmt "`%s` (modelled)" model
+    | SkippedKnownCall proc_name ->
+        F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
+    | SkippedUnknownCall call_exp ->
+        F.fprintf fmt "unresolved call expression `%a`" Exp.pp call_exp
 
 
-let pp_call_event = pp_call_event_config ~verbose:true
+  let pp = pp_config ~verbose:true
 
-let describe_call_event = pp_call_event_config ~verbose:false
+  let describe = pp_config ~verbose:false
+end
 
 module Invalidation = struct
   type std_vector_function =
@@ -125,7 +127,7 @@ module ValueHistory = struct
     | CppTemporaryCreated of Location.t
     | Assignment of {location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
-    | Call of {f: call_event; location: Location.t}
+    | Call of {f: CallEvent.t; location: Location.t}
   [@@deriving compare]
 
   let pp_event_no_location fmt = function
@@ -138,7 +140,7 @@ module ValueHistory = struct
     | Assignment _ ->
         F.pp_print_string fmt "assigned"
     | Call {f; location= _} ->
-        F.fprintf fmt "returned from call to %a" pp_call_event f
+        F.fprintf fmt "returned from call to %a" CallEvent.pp f
 
 
   let location_of_event = function
@@ -175,7 +177,7 @@ end
 module InterprocAction = struct
   type 'a t =
     | Immediate of {imm: 'a; location: Location.t}
-    | ViaCall of {action: 'a t; f: call_event; location: Location.t}
+    | ViaCall of {action: 'a t; f: CallEvent.t; location: Location.t}
   [@@deriving compare]
 
   let dummy = Immediate {imm= (); location= Location.dummy}
@@ -191,7 +193,7 @@ module InterprocAction = struct
     | Immediate {imm; _} ->
         pp_immediate fmt imm
     | ViaCall {f; action; _} ->
-        F.fprintf fmt "%a in call to %a" pp_immediate (get_immediate action) pp_call_event f
+        F.fprintf fmt "%a in call to %a" pp_immediate (get_immediate action) CallEvent.pp f
 
 
   let add_to_errlog ~nesting pp_immediate action errlog =
@@ -206,7 +208,7 @@ module InterprocAction = struct
       | ViaCall {action; f; location} ->
           aux ~nesting:(nesting + 1)
             ( Errlog.make_trace_element nesting location
-                (F.asprintf "when calling %a here" pp_call_event f)
+                (F.asprintf "when calling %a here" CallEvent.pp f)
                 []
             :: rev_errlog )
             action

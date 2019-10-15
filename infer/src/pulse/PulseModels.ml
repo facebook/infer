@@ -106,7 +106,7 @@ module StdBasicString = struct
 
   let destructor : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let model = PulseDomain.Model "std::basic_string::~basic_string()" in
+    let model = PulseDomain.CallEvent.Model "std::basic_string::~basic_string()" in
     let call_event = PulseDomain.ValueHistory.Call {f= model; location} in
     match actuals with
     | [(this_hist, _)] ->
