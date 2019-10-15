@@ -220,7 +220,7 @@ and rename sub q =
   else
     let us = Var.Subst.apply_set sub q.us in
     assert (not (Set.equal us q.us)) ;
-    let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Subst.range sub)) in
+    let q' = apply_subst sub (freshen_xs q ~wrt:(Set.union q.us us)) in
     {q' with us} )
   |>
   [%Trace.retn fun {pf} q' ->
@@ -230,7 +230,9 @@ and rename sub q =
 
 (** freshen existentials, preserving vocabulary *)
 and freshen_xs q ~wrt =
-  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  [%Trace.call fun {pf} ->
+    pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q ;
+    assert (Set.is_subset q.us ~of_:wrt)]
   ;
   let sub = Var.Subst.freshen q.xs ~wrt in
   ( if Var.Subst.is_empty sub then q
