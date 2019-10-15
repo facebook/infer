@@ -14,6 +14,7 @@ module type Dom = sig
   val init : Global.t vector -> t
   val join : t -> t -> t option
   val is_false : t -> bool
+  val dnf : t -> t list
   val exec_assume : t -> Exp.t -> t option
   val exec_kill : t -> Reg.t -> t
   val exec_move : t -> (Reg.t * Exp.t) vector -> t
@@ -40,13 +41,13 @@ module type Dom = sig
     -> t
     -> t * from_call
 
-  val recursion_beyond_bound : [`skip | `prune]
   val post : Reg.Set.t -> from_call -> t -> t
   val retn : Reg.t list -> Reg.t option -> from_call -> t -> t
-  val dnf : t -> t list
 
   val resolve_callee :
     (string -> Llair.func list) -> Exp.t -> t -> Llair.func list * t
+
+  val recursion_beyond_bound : [`skip | `prune]
 
   type summary
 

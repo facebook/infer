@@ -28,6 +28,7 @@ let init globals =
 
 let join l r = Some (Sh.or_ l r)
 let is_false = Sh.is_false
+let dnf = Sh.dnf
 let exec_assume q b = Exec.assume q (Exp.term b)
 let exec_kill q r = Exec.kill q (Reg.var r)
 
@@ -68,8 +69,6 @@ let exec_inst pre inst =
 let exec_intrinsic ~skip_throw q r i es =
   Exec.intrinsic ~skip_throw q (Option.map ~f:Reg.var r) (Reg.var i)
     (List.map ~f:Exp.term es)
-
-let dnf = Sh.dnf
 
 let term_eq_class_has_only_vars_in fvs cong term =
   [%Trace.call fun {pf} ->
@@ -163,8 +162,6 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
     pf "@[<v>subst: %a@ frame: %a@ q': %a@]" Var.Subst.pp subst pp frame pp
       q']
 
-let recursion_beyond_bound = `prune
-
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals _ q =
   [%Trace.call fun {pf} ->
@@ -203,6 +200,8 @@ let resolve_callee lookup ptr q =
   match Reg.of_exp ptr with
   | Some callee -> (lookup (Reg.name callee), q)
   | None -> ([], q)
+
+let recursion_beyond_bound = `prune
 
 type summary = {xs: Var.Set.t; foot: t; post: t}
 

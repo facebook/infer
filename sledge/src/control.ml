@@ -328,7 +328,8 @@ module Make (Dom : Domain_sig.Dom) = struct
     [%Trace.call fun {pf} -> pf "from: %a" Reg.pp name.reg]
     ;
     let summarize post_state =
-      if opts.function_summaries then (
+      if not opts.function_summaries then post_state
+      else
         let globals = used_globals opts name.reg in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
@@ -336,8 +337,7 @@ module Make (Dom : Domain_sig.Dom) = struct
         in
         Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;
-        post_state )
-      else post_state
+        post_state
     in
     let exit_state =
       match (freturn, exp) with
