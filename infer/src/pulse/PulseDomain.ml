@@ -222,7 +222,12 @@ end
 module Trace = struct
   type 'a t = {action: 'a InterprocAction.t; history: ValueHistory.t} [@@deriving compare]
 
-  let pp pp_immediate f {action; _} = InterprocAction.pp pp_immediate f action
+  let pp pp_immediate f {action; history} =
+    if Config.debug_level_analysis < 3 then InterprocAction.pp pp_immediate f action
+    else
+      F.fprintf f "{@[action=@[%a@]@;history=@[%a@]@]}" (InterprocAction.pp pp_immediate) action
+        ValueHistory.pp history
+
 
   let add_errlog_header ~title location errlog =
     let depth = 0 in
@@ -464,7 +469,9 @@ module Memory : sig
 
   val mem_edges : AbstractAddress.t -> t -> bool
 
-  val pp : F.formatter -> t -> unit
+  val pp_heap : F.formatter -> t -> unit
+
+  val pp_attributes : F.formatter -> t -> unit
 
   val register_address : AbstractAddress.t -> t -> t
 
@@ -506,7 +513,9 @@ end = struct
 
   type t = edges Graph.t * Attributes.t Graph.t
 
-  let pp = Pp.pair ~fst:(Graph.pp ~pp_value:pp_edges) ~snd:(Graph.pp ~pp_value:Attributes.pp)
+  let pp_heap fmt (heap, _) = Graph.pp ~pp_value:pp_edges fmt heap
+
+  let pp_attributes fmt (_, attrs) = Graph.pp ~pp_value:Attributes.pp fmt attrs
 
   let register_address addr memory =
     if Graph.mem addr (fst memory) then memory
@@ -796,7 +805,8 @@ let ( <= ) ~lhs ~rhs =
 
 
 let pp fmt {heap; stack} =
-  F.fprintf fmt "{@[<v1> heap=@[<hv>%a@];@;stack=@[<hv>%a@];@]}" Memory.pp heap Stack.pp stack
+  F.fprintf fmt "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@]}" Stack.pp stack
+    Memory.pp_heap heap Memory.pp_attributes heap
 
 
 module GraphVisit : sig

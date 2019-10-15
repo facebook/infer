@@ -66,8 +66,7 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
     type disjunct = {visited: bool; astate: TransferFunctions.Domain.t}
 
     let pp_disjunct fmt ({visited; astate}[@warning "+9"]) =
-      F.fprintf fmt "{@[<hv>visited= %b;@;astate= @[%a@]@]}" visited TransferFunctions.Domain.pp
-        astate
+      F.fprintf fmt "@[<hv>visited=%b;@;@[%a@]@]" visited TransferFunctions.Domain.pp astate
 
 
     type t = disjunct list
@@ -79,9 +78,11 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
     let elements disjuncts = List.map disjuncts ~f:(fun {astate} -> astate)
 
     let pp f disjuncts =
-      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts)
-        (PrettyPrintable.pp_collection ~pp_item:pp_disjunct)
-        disjuncts
+      let pp_disjuncts f disjuncts =
+        List.iteri disjuncts ~f:(fun i disjunct ->
+            F.fprintf f "#%d: @[%a@]@;" i pp_disjunct disjunct )
+      in
+      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
   end
 
   type disjunct_t = Disjuncts.disjunct = {visited: bool; astate: TransferFunctions.Domain.t}

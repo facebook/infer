@@ -70,7 +70,7 @@ type t =
   { post: Domain.t  (** state at the current program point*)
   ; pre: InvertedDomain.t  (** inferred pre at the current program point *) }
 
-let pp f {post; pre} = F.fprintf f "@[<v>%a@;[%a]@]" Domain.pp post InvertedDomain.pp pre
+let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
 
 let ( <= ) ~lhs ~rhs =
   match
