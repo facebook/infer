@@ -187,7 +187,7 @@ module PulseTransferFunctions = struct
         [check_error summary result]
     | Prune (condition, loc, _is_then_branch, _if_kind) -> (
         let post, cond_satisfiable =
-          PulseOperations.eval_cond loc condition astate |> check_error summary
+          PulseOperations.assert_is_true loc ~condition astate |> check_error summary
         in
         match (cond_satisfiable : PulseOperations.TBool.t) with
         | False ->

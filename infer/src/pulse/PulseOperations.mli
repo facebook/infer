@@ -30,7 +30,7 @@ module TBool : sig
   type t = True | False | Top
 end
 
-val eval_cond : Location.t -> Exp.t -> t -> (t * TBool.t) access_result
+val assert_is_true : Location.t -> condition:Exp.t -> t -> (t * TBool.t) access_result
 
 val eval_deref : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
 (** Like [eval] but evaluates [*exp]. *)

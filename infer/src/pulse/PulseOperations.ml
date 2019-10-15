@@ -157,62 +157,65 @@ let eval location exp0 astate =
   eval exp0 astate
 
 
-type eval_result =
-  | EvalConst of Const.t
-  | EvalAddr of AbstractAddress.t
-  | EvalError of PulseDiagnostic.t
+type eval_result = EvalConst of Const.t | EvalAddr of AbstractAddress.t
 
 let eval_to_const location exp astate =
   match (exp : Exp.t) with
   | Const c ->
-      EvalConst c
+      Ok (astate, EvalConst c)
   | exp -> (
-    match eval location exp astate with
-    | Error err ->
-        EvalError err
-    | Ok (astate, (addr, _)) -> (
-      match Memory.get_constant addr astate with Some c -> EvalConst c | None -> EvalAddr addr ) )
+      eval location exp astate
+      >>| fun (astate, (addr, _)) ->
+      match Memory.get_constant addr astate with
+      | Some c ->
+          (astate, EvalConst c)
+      | None ->
+          (astate, EvalAddr addr) )
 
 
-let eval_binop (bop : Binop.t) c1 c2 =
-  match bop with Eq -> Const.equal c1 c2 | Ne -> not (Const.equal c1 c2) | _ -> true
+let eval_binop ~negated (bop : Binop.t) c1 c2 =
+  match (bop, negated) with
+  | Eq, false | Ne, true ->
+      Const.equal c1 c2
+  | Eq, true | Ne, false ->
+      not (Const.equal c1 c2)
+  | _ ->
+      true
 
 
 module TBool = struct
   (** booleans with \top *)
   type t = True | False | Top
 
-  let negate = function True -> False | False -> True | Top -> Top
-
   let of_bool b = if b then True else False
 end
 
-let negate_cond result = Result.map result ~f:(fun (astate, b) -> (astate, TBool.negate b))
-
-let rec eval_cond location exp astate =
+let rec eval_cond ~negated location exp astate =
   match (exp : Exp.t) with
   | BinOp (bop, e1, e2) -> (
-    match eval_to_const location e1 astate with
-    | EvalError err ->
-        Error err
-    | EvalAddr _ ->
-        (* TODO: might want to remember [addr = const] and other kinds of pure facts *)
-        Ok (astate, TBool.Top)
-    | EvalConst c1 -> (
-      match eval_to_const location e2 astate with
-      | EvalError err ->
-          Error err
-      | EvalAddr _ ->
-          (* TODO: might want to remember [addr = const] and other kinds of pure facts *)
-          Ok (astate, TBool.Top)
-      | EvalConst c2 ->
-          Ok (astate, eval_binop bop c1 c2 |> TBool.of_bool) ) )
+      eval_to_const location e1 astate
+      >>= fun (astate, eval1) ->
+      eval_to_const location e2 astate
+      >>| fun (astate, eval2) ->
+      match (eval1, eval2) with
+      | EvalConst c1, EvalConst c2 ->
+          (astate, eval_binop ~negated bop c1 c2 |> TBool.of_bool)
+      | EvalAddr _, EvalAddr _ ->
+          (astate, TBool.Top)
+      | EvalAddr v, EvalConst c | EvalConst c, EvalAddr v -> (
+        match (bop, negated) with
+        | Eq, false | Ne, true ->
+            (Memory.add_attribute v (Constant c) astate, TBool.True)
+        | _ ->
+            (astate, TBool.Top) ) )
   | UnOp (LNot, exp', _) ->
-      negate_cond (eval_cond location exp' astate)
+      eval_cond ~negated:(not negated) location exp' astate
   | exp ->
       let zero = Exp.Const (Cint IntLit.zero) in
-      eval_cond location (Exp.BinOp (Ne, exp, zero)) astate
+      eval_cond ~negated location (Exp.BinOp (Ne, exp, zero)) astate
 
+
+let assert_is_true location ~condition astate = eval_cond ~negated:false location condition astate
 
 let eval_deref location exp astate =
   eval location exp astate
