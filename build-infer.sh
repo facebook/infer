@@ -13,7 +13,9 @@ set -u
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR"
+DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
+SANDCASTLE=${SANDCASTLE:-}
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 INFER_OPAM_DEFAULT_SWITCH="ocaml-variants.4.07.1+flambda"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
@@ -129,6 +131,9 @@ install_opam_deps () {
         locked=--locked
     fi
     opam install --deps-only infer "$INFER_ROOT" $locked
+    if [ -n "$SANDCASTLE" ]; then
+        opam pin list | grep yojson || opam pin add yojson "${DEPENDENCIES_DIR}/yojson-1.7.0fix"
+    fi
 }
 
 echo "initializing opam... " >&2
