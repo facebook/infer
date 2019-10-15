@@ -68,46 +68,6 @@ let get_declaring_function pv =
 
 let pp_translation_unit fmt = function None -> () | Some fname -> SourceFile.pp fmt fname
 
-let pp_ ~verbose f pv =
-  let name = pv.pv_name in
-  match pv.pv_kind with
-  | Local_var _ ->
-      Mangled.pp f name
-  | Callee_var _ ->
-      Mangled.pp f name ;
-      if verbose then F.pp_print_string f "|callee"
-  | Abduced_retvar _ ->
-      Mangled.pp f name ;
-      if verbose then F.pp_print_string f "|abducedRetvar"
-  | Abduced_ref_param (_, index, _) ->
-      Mangled.pp f name ;
-      if verbose then F.fprintf f "|abducedRefParam%d" index
-  | Global_var {translation_unit; is_constexpr; is_ice; is_pod} ->
-      if verbose then
-        F.fprintf f "#GB<%a%s%s%s>$" pp_translation_unit translation_unit
-          (if is_constexpr then "|const" else "")
-          (if is_ice then "|ice" else "")
-          (if not is_pod then "|!pod" else "") ;
-      Mangled.pp f name
-  | Seed_var ->
-      F.fprintf f "old_%a" Mangled.pp name
-
-
-(** Pretty print a pvar which denotes a value, not an address *)
-let pp_value f pv = pp_ ~verbose:true f pv
-
-(** Non-verbose version of pp_value *)
-let pp_value_non_verbose f pv = pp_ ~verbose:false f pv
-
-(** Pretty print a program variable. *)
-let pp pe f pv =
-  let ampersand = match pe.Pp.kind with TEXT -> "&" | HTML -> "&amp;" in
-  F.fprintf f "%s%a" ampersand pp_value pv
-
-
-(** Dump a program variable. *)
-let d (pvar : t) = L.d_pp_with_pe pp pvar
-
 let get_name pv = pv.pv_name
 
 let to_string pv = Mangled.to_string pv.pv_name
@@ -195,6 +155,52 @@ let is_cpp_temporary pvar =
   let name = to_string pvar in
   String.is_substring ~substring:materialized_cpp_temporary name
 
+
+let pp_ ~verbose f pv =
+  let name = pv.pv_name in
+  match pv.pv_kind with
+  | _ when (not verbose) && is_cpp_temporary pv ->
+      F.pp_print_string f "C++ temporary"
+  | _ when (not verbose) && is_clang_tmp pv ->
+      F.pp_print_string f "compiler-generated variable"
+  | _ when (not verbose) && is_frontend_tmp pv ->
+      F.pp_print_string f "infer intermediate variable"
+  | Local_var _ ->
+      Mangled.pp f name
+  | Callee_var _ ->
+      Mangled.pp f name ;
+      if verbose then F.pp_print_string f "|callee"
+  | Abduced_retvar _ ->
+      Mangled.pp f name ;
+      if verbose then F.pp_print_string f "|abducedRetvar"
+  | Abduced_ref_param (_, index, _) ->
+      Mangled.pp f name ;
+      if verbose then F.fprintf f "|abducedRefParam%d" index
+  | Global_var {translation_unit; is_constexpr; is_ice; is_pod} ->
+      if verbose then
+        F.fprintf f "#GB<%a%s%s%s>$" pp_translation_unit translation_unit
+          (if is_constexpr then "|const" else "")
+          (if is_ice then "|ice" else "")
+          (if not is_pod then "|!pod" else "") ;
+      Mangled.pp f name
+  | Seed_var ->
+      F.fprintf f "old_%a" Mangled.pp name
+
+
+(** Pretty print a pvar which denotes a value, not an address *)
+let pp_value f pv = pp_ ~verbose:true f pv
+
+(** Non-verbose version of pp_value *)
+let pp_value_non_verbose f pv = pp_ ~verbose:false f pv
+
+(** Pretty print a program variable. *)
+let pp pe f pv =
+  let ampersand = match pe.Pp.kind with TEXT -> "&" | HTML -> "&amp;" in
+  F.fprintf f "%s%a" ampersand pp_value pv
+
+
+(** Dump a program variable. *)
+let d (pvar : t) = L.d_pp_with_pe pp pvar
 
 (** Turn an ordinary program variable into a callee program variable *)
 let to_callee pname pvar =
