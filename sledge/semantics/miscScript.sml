@@ -25,6 +25,8 @@ Datatype:
   obs =
   | Tau
   | W 'a (word8 list)
+  | Exit int
+  | Error
 End
 
 Datatype:
@@ -42,6 +44,55 @@ Inductive observation_prefixes:
     ⇒
     observation_prefixes (x, l1) (Partial, filter ($≠ Tau) l2))
 End
+
+Definition take_prop_def:
+  (take_prop P n [] = []) ∧
+  (take_prop P n (x::xs) =
+    if n = 0 then
+      []
+    else if P x then
+      x :: take_prop P (n - 1) xs
+    else
+      x :: take_prop P n xs)
+End
+
+Theorem filter_take_prop[simp]:
+  ∀P n l. filter P (take_prop P n l) = take n (filter P l)
+Proof
+  Induct_on `l` >> rw [take_prop_def]
+QED
+
+Theorem take_prop_prefix[simp]:
+  ∀P n l. take_prop P n l ≼ l
+Proof
+  Induct_on `l` >> rw [take_prop_def]
+QED
+
+(*
+Theorem take_prop_eq:
+  ∀P n l. take_prop P n l = l ∧ l ≠ [] ∧ n ≤ length (filter P l) ⇒ P (last l)
+Proof
+  Induct_on `l` >> simp_tac (srw_ss()) [take_prop_def] >> rpt gen_tac >>
+  Cases_on `n = 0` >> pop_assum mp_tac >> simp_tac (srw_ss()) [] >>
+  Cases_on `P h` >> pop_assum mp_tac >> simp_tac (srw_ss()) [] >>
+  strip_tac >> strip_tac >>
+  Cases_on `l` >> pop_assum mp_tac >> simp_tac (srw_ss()) []
+  >- metis_tac [take_prop_def] >>
+  ntac 2 strip_tac >> first_x_assum drule >>
+  simp []
+QED
+*)
+
+Theorem take_prop_eq:
+  ∀P n l. take_prop P n l = l ⇒ length (filter P l) ≤ n
+Proof
+  Induct_on `l` >> simp_tac (srw_ss()) [take_prop_def] >> rpt gen_tac >>
+  Cases_on `n = 0` >> pop_assum mp_tac >> simp_tac (srw_ss()) [] >>
+  Cases_on `P h` >> pop_assum mp_tac >> simp_tac (srw_ss()) [] >>
+  strip_tac >> strip_tac >>
+  Cases_on `l` >> pop_assum mp_tac >> simp_tac (srw_ss()) [] >>
+  ntac 2 strip_tac >> first_x_assum drule >> simp []
+QED
 
 (* ----- Theorems about list library functions ----- *)
 
@@ -141,6 +192,12 @@ Theorem last_take[simp]:
 Proof
   Induct >> rw [] >> Cases_on `l` >> rw [] >> fs [LAST_DEF] >>
   rw [] >> fs []
+QED
+
+Theorem filter_is_prefix:
+  ∀l1 l2 P. l1 ≼ l2 ⇒ filter P l1 ≼ filter P l2
+Proof
+  Induct >> rw [] >> Cases_on `l2` >> fs []
 QED
 
 (* ----- Theorems about log ----- *)

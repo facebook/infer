@@ -433,7 +433,7 @@ Inductive step_term:
    Lab_name fname bname = (case alookup table idx of Some lab => lab | None => default)
    ⇒
    step_term prog s
-     (Switch e table default)
+     (Switch e table default) Tau
      (s with bp := Lab_name fname bname)) ∧
 
   (∀prog s e labs i idx idx_size.
@@ -441,7 +441,7 @@ Inductive step_term:
    idx < length labs
    ⇒
    step_term prog s
-     (Iswitch e labs)
+     (Iswitch e labs) Tau
      (s with bp := el i labs)) ∧
 
   (∀prog s v fname bname es t ret1 ret2 vals f.
@@ -450,7 +450,7 @@ Inductive step_term:
    list_rel (eval_exp s) es vals
    ⇒
    step_term prog s
-     (Call v (Lab_name fname bname) es t ret1 ret2)
+     (Call v (Lab_name fname bname) es t ret1 ret2) Tau
      <| bp := Lab_name fname bname;
         glob_addrs := s.glob_addrs;
         locals := alist_to_fmap (zip (f.params, vals));
@@ -466,7 +466,7 @@ Inductive step_term:
    s.stack = top::rest
    ⇒
    step_term prog s
-     (Return e)
+     (Return e) Tau
      <| bp := top.ret;
         glob_addrs := s.glob_addrs;
         locals := top.saved_locals |+ (top.ret_var, r);
@@ -476,7 +476,7 @@ Inductive step_term:
   (∀prog s e i size.
    eval_exp s e (FlatV (IntV i size))
    ⇒
-   step_term prog s (Exit e) (s with status := Complete i))
+   step_term prog s (Exit e) (Exit i) (s with status := Complete i))
   (* TODO Throw *)
 
 End
@@ -485,22 +485,26 @@ End
  * instruction pointer and do a big-step evaluation for each block *)
 Inductive step_block:
 
-  (∀prog s1 t s2.
-   step_term prog s1 t s2
+  (∀prog s1 t l s2.
+   step_term prog s1 t l s2
    ⇒
-   step_block prog s1 [] [] t s2) ∧
+   step_block prog s1 [] t [l] s2) ∧
 
-  (∀prog s1 i1 i2 l1 is t s2.
-   step_inst s1 i1 l1 s2 ∧
-   (¬?l2 s3. step_inst s2 i2 l2 s3)
+  (∀prog s1 t.
+   ¬(∃s2 (l:var obs). step_term prog s1 t l s2)
    ⇒
-   step_block prog s1 (i1::i2::is) [l1] t (s2 with status := Stuck)) ∧
+   step_block prog s1 [] t [Error] (s1 with status := Stuck)) ∧
+
+  (∀prog s1 i1 is t.
+   (¬∃l s2. step_inst s1 i1 l s2)
+   ⇒
+   step_block prog s1 (i1::is) t [Error] (s1 with status := Stuck)) ∧
 
   (∀prog s1 i l is ls t s2 s3.
    step_inst s1 i l s2 ∧
-   step_block prog s2 is ls t s3
+   step_block prog s2 is t ls s3
    ⇒
-   step_block prog s1 (i::is) (l::ls) t s3)
+   step_block prog s1 (i::is) t (l::ls) s3)
 
 End
 
@@ -516,7 +520,7 @@ End
 Inductive step:
   ∀prog s b ls s'.
     get_block prog s.bp b ∧
-    step_block prog s b.cmnd ls b.term s' ∧
+    step_block prog s b.cmnd b.term ls s' ∧
     s.status = Partial
     ⇒
     step prog s ls s'

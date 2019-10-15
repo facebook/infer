@@ -187,8 +187,10 @@ End
 
 (* TODO *)
 Definition translate_instr_to_term_def:
-  translate_instr_to_term f emap (Br a l1 l2) =
-    Switch (translate_arg emap a) [(0, translate_label f l2)] (translate_label f l1)
+  (translate_instr_to_term f emap (Br a l1 l2) =
+    Switch (translate_arg emap a) [(0, translate_label f l2)] (translate_label f l1)) ∧
+  (translate_instr_to_term f emap (Exit a) =
+    Exit (translate_arg emap a))
 End
 
 Datatype:

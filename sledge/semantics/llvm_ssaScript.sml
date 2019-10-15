@@ -151,6 +151,7 @@ Definition instr_uses_def:
   (instr_uses (Invoke _ _ a targs _ _) =
     arg_to_regs a ∪ BIGUNION (set (map (arg_to_regs o snd) targs))) ∧
   (instr_uses Unreachable = {}) ∧
+  (instr_uses (Exit a) = arg_to_regs a) ∧
   (instr_uses (Sub _ _ _ _ a1 a2) =
     arg_to_regs a1 ∪ arg_to_regs a2) ∧
   (instr_uses (Extractvalue _ (_, a) _) = arg_to_regs a) ∧

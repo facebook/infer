@@ -197,7 +197,7 @@ Datatype:
        locals : reg |-> pv;
        stack : frame list;
        heap : bool heap;
-       exited : int option |>
+       status : trace_type |>
 End
 
 (* ----- Things about types ----- *)
@@ -513,7 +513,8 @@ Inductive step_instr:
           globals := s.globals;
           locals := fr.saved_locals;
           stack := st;
-          heap := new_h |>)) ∧
+          heap := new_h;
+          status := s.status |>)) ∧
 
   (eval s a = Some <| poison := p; value := FlatV (W1V tf) |> ∧
    l = Some (if tf = 0w then l2 else l1)
@@ -529,8 +530,8 @@ Inductive step_instr:
   signed_v_to_int v1.value = Some exit_code
    ⇒
    step_instr prog s
-     (Exit a) Tau
-     (s with exited := Some (exit_code))) ∧
+     (Exit a) (Exit exit_code)
+     (s with status := Complete exit_code)) ∧
 
   (eval s a1 = Some v1 ∧
    eval s a2 = Some v2 ∧
@@ -651,7 +652,8 @@ Inductive step_instr:
              saved_locals := s.locals;
              result_var := r;
              stack_allocs := [] |> :: s.stack;
-        heap := s.heap |>)(* ∧
+        heap := s.heap;
+        status := s.status |>)(* ∧
 
   (* TODO *)
   (step_instr prog s (Cxa_allocate_exn r a) Tau s) ∧
@@ -685,7 +687,6 @@ End
 
 Inductive step:
  (get_instr p s.ip (Inl i) ∧
-  s.exited = None ∧
   step_instr p s i l s'
   ⇒
   step p s l s') ∧
@@ -702,21 +703,20 @@ Inductive step:
  * %r1 = phi [0, %l]
  *)
  (get_instr p s.ip (Inr (from_l, phis)) ∧
-  s.exited = None ∧
   map (do_phi from_l s) phis = map Some updates
   ⇒
   step p s Tau (inc_pc (s with locals := locals |++ updates)))
-
 End
 
-Definition get_observation_def:
-  get_observation prog last_s =
-    if last_s.exited ≠ None then
-      Complete (THE last_s.exited)
-    else if ∃s l. step prog last_s l s then
-      Partial
-    else
-      Stuck
+Inductive sem_step:
+  (step p s1 l s2 ∧
+   s1.status = Partial
+   ⇒
+   sem_step p s1 l s2) ∧
+  ((¬∃l s2. step p s1 l s2) ∧
+   s1.status = Partial
+   ⇒
+   sem_step p s1 Error (s1 with status := Stuck))
 End
 
 (* The semantics of a program will be the finite traces of stores to global
@@ -724,8 +724,8 @@ End
  * *)
 Definition sem_def:
   sem p s1 =
-    { (get_observation p (last path), filter ($≠ Tau) l)  | (path, l) |
-      toList (labels path) = Some l ∧ finite path ∧ okpath (step p) path ∧ first path = s1 }
+    { ((last path).status, filter ($≠ Tau) l)  | (path, l) |
+      toList (labels path) = Some l ∧ finite path ∧ okpath (sem_step p) path ∧ first path = s1 }
 End
 
 (* ----- Invariants on state ----- *)
@@ -756,14 +756,15 @@ End
 Definition prog_ok_def:
   prog_ok p ⇔
     ((* All blocks end with terminators and terminators only appear at the end.
-      * All labels mentioned in instructions actually exist *)
+      * All labels mentioned in branches actually exist, and target non-entry
+      * blocks *)
      ∀fname dec bname block.
        alookup p fname = Some dec ∧
        alookup dec.blocks bname = Some block
        ⇒
        block.body ≠ [] ∧ terminator (last block.body) ∧
        every (λi. ¬terminator i) (front block.body) ∧
-       every (λlab. alookup dec.blocks (Some lab) ≠ None)
+       every (λlab. ∃b. alookup dec.blocks (Some lab) = Some b ∧ b.h ≠ Entry)
              (instr_to_labs (last block.body)) ∧
        (∀phis lands. block.h = Head phis lands ⇒
          every (λx. case x of Phi _ _ l => every (λ(lab, _). alookup dec.blocks lab ≠ None) l) phis)) ∧
@@ -809,7 +810,7 @@ Definition is_init_state_def:
     s.ip.i = Offset 0 ∧
     s.locals = fempty ∧
     s.stack = [] ∧
-    s.exited = None ∧
+    s.status = Partial ∧
     globals_ok s ∧
     heap_ok s.heap ∧
     fdom s.globals = fdom global_init ∧
