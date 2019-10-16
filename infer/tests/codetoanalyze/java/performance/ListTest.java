@@ -87,4 +87,15 @@ class ListTest {
     }
     for (Integer i : l) {}
   }
+
+  void iter_multiple_list3_linear(List<Integer> a, List<Integer> l1, List<Integer> l2) {
+    List<Integer> l;
+    if (unknown_bool) {
+      l = l1;
+    } else {
+      l = l2;
+    }
+    a.addAll(l);
+    for (Integer i : a) {}
+  }
 }

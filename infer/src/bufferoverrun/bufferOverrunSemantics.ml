@@ -499,13 +499,27 @@ let get_offset_sym_f integer_type_widths mem e =
 
 let get_size_sym_f integer_type_widths mem e = Val.get_size_sym (eval integer_type_widths e mem)
 
+(* This function evaluates the array length conservatively, which is useful when there are multiple
+   array locations and their lengths are joined to top.  For example, if the [arr_locs] points to
+   two arrays [a] and [b] and if their lengths are [a.length] and [b.length], this function
+   evaluates its length as [\[0, a.length.ub + b.length.ub\]].  *)
+let conservative_array_length ?traces arr_locs mem =
+  let accum_add arr_loc acc = Mem.find arr_loc mem |> Val.array_sizeof |> Itv.plus acc in
+  PowLoc.fold accum_add arr_locs Itv.zero
+  |> Val.of_itv ?traces |> Val.get_iterator_itv |> Val.set_itv_updated_by_addition
+
+
 let eval_array_locs_length arr_locs mem =
   if PowLoc.is_empty arr_locs then Val.Itv.top
   else
     let arr = Mem.find_set arr_locs mem in
     let traces = Val.get_traces arr in
     let length = Val.get_array_blk arr |> ArrayBlk.sizeof in
-    Val.of_itv ~traces length
+    match Itv.get_bound length Symb.BoundEnd.UpperBound with
+    | NonBottom b when not (Bounds.Bound.is_pinf b) ->
+        Val.of_itv ~traces length
+    | _ ->
+        conservative_array_length ~traces arr_locs mem
 
 
 module Prune = struct

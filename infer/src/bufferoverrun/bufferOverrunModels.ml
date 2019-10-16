@@ -915,11 +915,7 @@ module Collection = struct
          will be size of the collection. *)
       let collection_size =
         let arr_locs = eval_collection_internal_array_locs iterator mem in
-        let accum_add arr_loc acc =
-          Dom.Mem.find arr_loc mem |> Dom.Val.array_sizeof |> Itv.plus acc
-        in
-        PowLoc.fold accum_add arr_locs Itv.zero
-        |> Dom.Val.of_itv |> Dom.Val.get_iterator_itv |> Dom.Val.set_itv_updated_by_addition
+        Sem.conservative_array_length arr_locs mem
       in
       model_by_value collection_size ret_id mem
       |> Dom.Mem.add_iterator_has_next_alias ret_id iterator
