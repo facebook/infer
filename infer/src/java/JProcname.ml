@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-
 open! IStd
 module L = Logging
 
@@ -265,7 +264,8 @@ module JNI = struct
   end
 end
 
-let create_procname ~classname ~methodname ~signature =
+let create_procname ~classname ~methodname ~signature ~use_signature =
+  let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
   let name = Typ.Name.Java.from_string classname in
   let args, ret_typ = JNI.parse_method_str signature in
   let java_type_args = List.map ~f:JNI.to_java_type args in
@@ -281,31 +281,6 @@ let create_procname ~classname ~methodname ~signature =
        Typ.Procname.Java.Non_Static)
 
 
-type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
-
-let equal_labeled_profiler_sample = [%compare.equal: labeled_profiler_sample]
-
-let from_java_profiler_samples j ~use_signature =
-  let process_methods methods =
-    Typ.Procname.Set.of_list
-      (List.map
-         ~f:(fun {Java_profiler_samples_t.classname; methodname; signature} ->
-           let signature =
-             if use_signature then signature else JNI.void_method_with_no_arguments
-           in
-           create_procname ~classname ~methodname ~signature )
-         methods)
-  in
-  List.map j ~f:(fun {Java_profiler_samples_t.test; methods} -> (test, process_methods methods))
-
-
-let from_json_string str ~use_signature =
-  from_java_profiler_samples
-    (Java_profiler_samples_j.java_profiler_samples_of_string str)
-    ~use_signature
-
-
-let from_json_file file ~use_signature =
-  from_java_profiler_samples
-    (Atdgen_runtime.Util.Json.from_file Java_profiler_samples_j.read_java_profiler_samples file)
-    ~use_signature
+let make_void_signature_procname ~classname ~methodname =
+  let signature = JNI.void_method_with_no_arguments in
+  create_procname ~signature ~classname ~methodname ~use_signature:true

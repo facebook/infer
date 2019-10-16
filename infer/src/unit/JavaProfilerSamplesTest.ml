@@ -7,7 +7,7 @@
 
 open! IStd
 open OUnit2
-module T = JavaProfilerSamples.JNI.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY
+module T = JProcname.JNI.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY
 
 let mk_split (pkg, typ) = Typ.Name.Java.Split.make ?package:pkg typ
 
@@ -100,7 +100,7 @@ let test_jni_parse_str_with_valid_input =
                    )) ]
           , Void ) ] )
   ; ( "test_jni_parse_str_with_empty_method_signature"
-    , JavaProfilerSamples.JNI.void_method_with_no_arguments
+    , JProcname.JNI.void_method_with_no_arguments
     , T.[Method ([], Void)] )
   ; ("test_jni_parse_str_with_empty_input", "", []) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
@@ -174,7 +174,7 @@ let test_from_json_string_with_valid_input =
        \"methodOne\",\"signature\": \"%s\",\"wat\": \"\"},{\"class\": \"ddd.eee.Fff\",\"boo\": \
        \"\",\"method\": \"methodTwo\",\"signature\": \"(Ljava/lang/String;[IJ)[[C\",\"wat\": \
        \"\"}]}]"
-      JavaProfilerSamples.JNI.void_method_with_no_arguments
+      JProcname.JNI.void_method_with_no_arguments
   in
   let expected2 =
     [ ( "label1"
@@ -264,7 +264,7 @@ let test_from_json_string_with_invalid_input =
     , Printf.sprintf
         "{\"whatever\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
          \"methodOne\", \"signature\": \"%s\"}], \"foo\": {}}"
-        JavaProfilerSamples.JNI.void_method_with_no_arguments
+        JProcname.JNI.void_method_with_no_arguments
     , Yojson.Json_error
         "Line 1, bytes 0-33:\nExpected '[' but found '{\"whatever\": {}, \"methods\": [{\"cl'" )
   ; ( "test_from_json_string_3"

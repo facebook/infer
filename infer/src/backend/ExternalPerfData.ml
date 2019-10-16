@@ -58,16 +58,6 @@ let pp_perf_profiler_item itm =
     itm.p25_inclusive_cpu_time_ms itm.p25_exclusive_cpu_time_ms
 
 
-let make_void_signature_procname classname methodname =
-  let signature = JavaProfilerSamples.JNI.void_method_with_no_arguments in
-  L.(debug Analysis Medium)
-    "@\n Making procname with void signature for classname = %s   methodname = %s @\n" classname
-    methodname ;
-  let procname = JavaProfilerSamples.create_procname ~classname ~methodname ~signature in
-  L.(debug Analysis Medium) " Resulting procname= %a @\n" Typ.Procname.pp procname ;
-  procname
-
-
 let _read_file_perf_data fname =
   let perf_profiler_data_str =
     match Utils.read_file fname with
@@ -81,7 +71,7 @@ let _read_file_perf_data fname =
     pp_perf_profiler_item itm ;
     match split_class_method_name itm.Perf_profiler_t.function_name with
     | Some (classname, methodname) ->
-        let procname = make_void_signature_procname classname methodname in
+        let procname = JProcname.make_void_signature_procname ~classname ~methodname in
         global_perf_profiler_data :=
           PerfProfilerDataMap.add procname itm !global_perf_profiler_data
     | _ ->

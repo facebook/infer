@@ -8,11 +8,10 @@
 open! IStd
 module L = Logging
 module F = Format
-module JPS = JavaProfilerSamples
 module YB = Yojson.Basic
 
 (* a flag used to make the method search signature sensitive *)
-let use_method_signature = false
+let use_signature = false
 
 module MethodRangeMap = struct
   let split_class_method_name qualified_method_name =
@@ -47,13 +46,9 @@ module MethodRangeMap = struct
             let classname, methodname = split_class_method_name decl.method_name in
             match decl.signature with
             | Some signature ->
-                let signature =
-                  if use_method_signature then signature
-                  else
-                    (* When we should not use the signature we use 'void ()' *)
-                    JPS.JNI.void_method_with_no_arguments
+                let key =
+                  JProcname.create_procname ~use_signature ~classname ~methodname ~signature
                 in
-                let key = JPS.create_procname ~classname ~methodname ~signature in
                 Typ.Procname.Map.add key range acc
             | None ->
                 acc )
@@ -102,7 +97,7 @@ module TestSample = struct
     | Some test_samples_file ->
         L.(debug TestDeterminator Medium)
           "Reading Profiler Samples File '%s'....@\n" test_samples_file ;
-        JPS.from_json_file test_samples_file ~use_signature:use_method_signature
+        JavaProfilerSamples.from_json_file test_samples_file ~use_signature
     | None ->
         L.die UserError "Missing profiler samples argument"
 

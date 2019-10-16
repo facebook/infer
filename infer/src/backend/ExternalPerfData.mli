@@ -8,5 +8,3 @@
 open! IStd
 
 val in_profiler_data_map : Typ.Procname.t -> bool
-
-val make_void_signature_procname : string -> string -> Typ.Procname.t

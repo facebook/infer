@@ -219,7 +219,9 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
     | _ ->
         ""
   in
-  let procname = ExternalPerfData.make_void_signature_procname class_name method_name in
+  let procname =
+    JProcname.make_void_signature_procname ~classname:class_name ~methodname:method_name
+  in
   let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostItem.is_top curr_item then infinite_issue

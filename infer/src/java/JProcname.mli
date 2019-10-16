@@ -39,12 +39,7 @@ module JNI : sig
   end
 end
 
-type labeled_profiler_sample = string * Typ.Procname.Set.t [@@deriving compare]
+val create_procname :
+  classname:string -> methodname:string -> signature:string -> use_signature:bool -> Typ.Procname.t
 
-val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_sample -> bool
-
-val from_json_string : string -> use_signature:bool -> labeled_profiler_sample list
-
-val from_json_file : string -> use_signature:bool -> labeled_profiler_sample list
-
-val create_procname : classname:string -> methodname:string -> signature:string -> Typ.Procname.t
+val make_void_signature_procname : classname:string -> methodname:string -> Typ.Procname.t
