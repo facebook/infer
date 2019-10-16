@@ -148,7 +148,7 @@ module Term : sig
   val iswitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
 
   val call :
-       func:Exp.t
+       callee:Exp.t
     -> typ:Typ.t
     -> actuals:Exp.t list
     -> areturn:Reg.t option

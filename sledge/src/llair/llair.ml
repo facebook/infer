@@ -329,16 +329,9 @@ module Term = struct
 
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let call ~func ~typ ~actuals ~areturn ~return ~throw ~loc =
+  let call ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
-      { callee= func
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee; typ; actuals; areturn; return; throw; recursive= false; loc}
     |> check invariant
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant

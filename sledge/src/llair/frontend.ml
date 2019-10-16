@@ -985,7 +985,7 @@ let xlate_instr :
             skip "inline asm"
         (* general function call that may not throw *)
         | _ ->
-            let func = xlate_func_name x llfunc in
+            let callee = xlate_func_name x llfunc in
             let typ = xlate_type x lltyp in
             let lbl = name ^ ".ret" in
             let call =
@@ -1000,7 +1000,7 @@ let xlate_instr :
                         warn
                           "ignoring variable arguments to variadic \
                            function: %a"
-                          Exp.pp func ()
+                          Exp.pp callee ()
                     | _ -> () ) ;
                     let llfty = Llvm.element_type lltyp in
                     ( match Llvm.classify_type llfty with
@@ -1015,7 +1015,7 @@ let xlate_instr :
               in
               let areturn = xlate_name_opt x instr in
               let return = Llair.Jump.mk lbl in
-              Llair.Term.call ~func ~typ ~actuals ~areturn ~return
+              Llair.Term.call ~callee ~typ ~actuals ~areturn ~return
                 ~throw:None ~loc
             in
             continue (fun (insts, term) ->
@@ -1067,7 +1067,7 @@ let xlate_instr :
           todo "statepoints:@ %a" pp_llvalue instr ()
       (* general function call that may throw *)
       | _ ->
-          let func = xlate_func_name x llfunc in
+          let callee = xlate_func_name x llfunc in
           let typ = xlate_type x (Llvm.type_of llfunc) in
           let actuals =
             List.rev_init num_actuals ~f:(fun i ->
@@ -1078,7 +1078,7 @@ let xlate_instr :
           let throw, blocks = xlate_jump x instr unwind_blk loc blocks in
           let throw = Some throw in
           emit_term
-            (Llair.Term.call ~func ~typ ~actuals ~areturn ~return ~throw
+            (Llair.Term.call ~callee ~typ ~actuals ~areturn ~return ~throw
                ~loc)
             ~blocks )
   | Ret ->
