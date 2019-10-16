@@ -80,3 +80,24 @@ type summary = t
 let pp_summary = pp
 let create_summary ~locals:_ ~formals:_ state = (state, state)
 let apply_summary st summ = Some (Set.union st summ)
+
+(** Query *)
+
+type r = Per_function of Reg.Set.t Reg.Map.t | Declared of Reg.Set.t
+
+let by_function : r -> Reg.t -> t =
+ fun s fn ->
+  [%Trace.call fun {pf} -> pf "%a" Reg.pp fn]
+  ;
+  ( match s with
+  | Declared set -> set
+  | Per_function map -> (
+    match Map.find map fn with
+    | Some gs -> gs
+    | None ->
+        fail
+          "main analysis reached function %a that was not reached by \
+           used-globals pre-analysis "
+          Reg.pp fn () ) )
+  |>
+  [%Trace.retn fun {pf} r -> pf "%a" Reg.Set.pp r]

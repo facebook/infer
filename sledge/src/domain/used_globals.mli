@@ -8,3 +8,10 @@
 (** Used-globals abstract domain *)
 
 include Domain_sig.Dom with type summary = Reg.Set.t
+
+type r =
+  | Per_function of Reg.Set.t Reg.Map.t
+      (** per-function used-globals map *)
+  | Declared of Reg.Set.t  (** program-wide set *)
+
+val by_function : r -> Reg.t -> summary

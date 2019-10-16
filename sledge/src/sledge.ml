@@ -69,19 +69,19 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.t))
     file
 
-let used_globals pgm preanalyze =
+let used_globals pgm preanalyze : Used_globals.r =
   if preanalyze then
     let summary_table =
       Used_globals_executor.compute_summaries
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
-        ; globals= `Declared Reg.Set.empty }
+        ; globals= Declared Reg.Set.empty }
         pgm
     in
-    `Per_function (Map.map summary_table ~f:Reg.Set.union_list)
+    Per_function (Map.map summary_table ~f:Reg.Set.union_list)
   else
-    `Declared
+    Declared
       (Vector.fold pgm.globals ~init:Reg.Set.empty ~f:(fun acc g ->
            Set.add acc g.reg ))
 

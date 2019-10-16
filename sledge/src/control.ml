@@ -13,8 +13,7 @@ type exec_opts =
   { bound: int
   ; skip_throw: bool
   ; function_summaries: bool
-  ; globals: [`Per_function of Reg.Set.t Reg.Map.t | `Declared of Reg.Set.t]
-  }
+  ; globals: Used_globals.r }
 
 module Make (Dom : Domain_sig.Dom) = struct
   module Stack : sig
@@ -248,23 +247,6 @@ module Make (Dom : Domain_sig.Dom) = struct
       | None -> [%Trace.info "queue empty"] ; ()
   end
 
-  let used_globals : exec_opts -> Reg.t -> Reg.Set.t =
-   fun opts fn ->
-    [%Trace.call fun {pf} -> pf "%a" Reg.pp fn]
-    ;
-    ( match opts.globals with
-    | `Declared set -> set
-    | `Per_function map -> (
-      match Map.find map fn with
-      | Some gs -> gs
-      | None ->
-          fail
-            "main analysis reached function %a that was not reached by \
-             used-globals pre-analysis "
-            Reg.pp fn () ) )
-    |>
-    [%Trace.retn fun {pf} r -> pf "%a" Reg.Set.pp r]
-
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
@@ -330,7 +312,7 @@ module Make (Dom : Domain_sig.Dom) = struct
     let summarize post_state =
       if not opts.function_summaries then post_state
       else
-        let globals = used_globals opts name.reg in
+        let globals = Used_globals.by_function opts.globals name.reg in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
             ~formals:(Set.union (Reg.Set.of_list formals) globals)
@@ -452,7 +434,8 @@ module Make (Dom : Domain_sig.Dom) = struct
                     exec_skip_func stk state block areturn return
                 | None ->
                     exec_call opts stk state block {call with callee}
-                      (used_globals opts callee.name.reg) )
+                      (Used_globals.by_function opts.globals callee.name.reg)
+                )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->
@@ -485,8 +468,8 @@ module Make (Dom : Domain_sig.Dom) = struct
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
-                   ~globals:(used_globals opts reg) ~actuals:[]
-                   ~areturn:None ~formals:[] ~freturn ~locals
+                   ~globals:(Used_globals.by_function opts.globals reg)
+                   ~actuals:[] ~areturn:None ~formals:[] ~freturn ~locals
                    (Dom.init pgm.globals)))
              entry)
     | _ -> None
