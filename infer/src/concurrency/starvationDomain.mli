@@ -78,15 +78,7 @@ module UIThreadElement : sig
     | Annotated of {proc_name: Typ.Procname.t; trail: ConcurrencyModels.annotation_trail}
 end
 
-module UIThreadExplanationDomain : sig
-  include ExplicitTrace.TraceElem
-
-  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
-end
-
-module UIThreadDomain :
-  AbstractDomain.WithBottom
-  with type t = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
+module UIThreadDomain : AbstractDomain.WithBottom
 
 module GuardToLockMap : AbstractDomain.WithTop
 

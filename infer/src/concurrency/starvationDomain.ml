@@ -403,13 +403,6 @@ module UIThreadExplanationDomain = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let ( <= ) ~lhs:_ ~rhs:_ = true
-
-  let make_trace ?(header = "") pname elem =
-    let trace = make_loc_trace elem in
-    let trace_descr = Format.asprintf "%s%a" header pname_pp pname in
-    let start_loc = get_loc elem in
-    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
-    header_step :: trace
 end
 
 module UIThreadDomain = struct

@@ -472,64 +472,47 @@ let report_starvation env {StarvationDomain.critical_pairs; ui} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
-  let report_remote_block ui_explain event current_lock endpoint_pname endpoint_elem report_map =
+  let report_remote_block event current_lock endpoint_pname endpoint_elem report_map =
     let acquisitions = endpoint_elem.CriticalPair.elem.acquisitions in
     match endpoint_elem.CriticalPair.elem.event with
     | MayBlock (block_descr, sev) when Acquisitions.lock_is_held current_lock acquisitions ->
         let error_message =
           Format.asprintf
-            "Method %a runs on UI thread (because %a) and%a, which may be held by another thread \
-             which %s."
-            pname_pp current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp_locks
-            current_lock block_descr
+            "Method %a runs on UI thread and%a, which may be held by another thread which %s."
+            pname_pp current_pname Lock.pp_locks current_lock block_descr
         in
         let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " current_pname event in
         let second_trace =
           CriticalPair.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem
         in
-        let ui_trace =
-          UIThreadExplanationDomain.make_trace ~header:"[Trace 1 on UI thread] " current_pname
-            ui_explain
-        in
-        let ltr = first_trace @ second_trace @ ui_trace in
+        let ltr = first_trace @ second_trace in
         let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname event in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
     | _ ->
         report_map
   in
-  let report_on_current_elem ui_explain (critical_pair : CriticalPair.t) report_map =
+  let report_on_current_elem (critical_pair : CriticalPair.t) report_map =
     let event = critical_pair.elem.event in
     match event with
     | MayBlock (_, sev) ->
         let error_message =
-          Format.asprintf "Method %a runs on UI thread (because %a), and may block; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
+          Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp current_pname
+            Event.describe event
         in
         let loc = CriticalPair.get_loc critical_pair in
-        let trace =
+        let ltr =
           CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
         in
-        let ui_trace =
-          UIThreadExplanationDomain.make_trace ~header:"[Trace on UI thread] " current_pname
-            ui_explain
-        in
-        let ltr = trace @ ui_trace in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
     | StrictModeCall _ ->
         let error_message =
-          Format.asprintf
-            "Method %a runs on UI thread (because %a), and may violate Strict Mode; %a." pname_pp
-            current_pname UIThreadExplanationDomain.pp ui_explain Event.describe event
+          Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
+            current_pname Event.describe event
         in
         let loc = CriticalPair.get_loc critical_pair in
-        let trace =
+        let ltr =
           CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
         in
-        let ui_trace =
-          UIThreadExplanationDomain.make_trace ~header:"[Trace on UI thread] " current_pname
-            ui_explain
-        in
-        let ltr = trace @ ui_trace in
         ReportMap.add_strict_mode_violation current_pname loc ltr error_message report_map
     | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
@@ -542,18 +525,14 @@ let report_starvation env {StarvationDomain.critical_pairs; ui} report_map' =
                    (* skip methods on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_bottom ui then
                      CriticalPairs.fold
-                       (report_remote_block ui_explain critical_pair endpoint_lock endpoint_pname)
+                       (report_remote_block critical_pair endpoint_lock endpoint_pname)
                        critical_pairs acc
                    else acc ) )
   in
   (* do not report starvation/strict mode warnings on constructors, keep that for callers *)
   if Typ.Procname.is_constructor current_pname then report_map'
-  else
-    match ui with
-    | AbstractDomain.Types.Bottom ->
-        report_map'
-    | AbstractDomain.Types.NonBottom ui_explain ->
-        CriticalPairs.fold (report_on_current_elem ui_explain) critical_pairs report_map'
+  else if UIThreadDomain.is_bottom ui then report_map'
+  else CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 
 let reporting {Callbacks.procedures; source_file} =
