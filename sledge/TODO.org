@@ -1,5 +1,10 @@
 * overall
 ** rename accumulators from [z] to [s] for "state"
+* cli
+** find a better naming convention than .llair and .llair.txt
+** add a command to generate text llair directly from bitcode
+- maybe `sledge llvm disassemble`?
+* config
 * llvm
 * import
 ** consider adding set ops that operate on a set and the domain of a map
@@ -14,37 +19,17 @@ copy it to the left arg of |> and to the arg of Trace.retn
 rather than nearest enclosing
 * modeling
 ** translate memset to store, and remove memset inst
-** change translation of `invoke _Znwm` to possibly throw
+** change translation of `invoke _Znwm` (operator new) to possibly throw
+depends on [[*generalize specs to express throwing exceptions][generalize specs to express throwing exceptions]]
 ** revise spec of strlen to account for non-max length strings
-** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
+- consider an intrinsic to return the end of the block containing a pointer
 * llair
-** divide Exp into two: one for code and one for formulas
-- Exp simplification does not preserve order of operations, which is wrong wrt overflow
-- code Exps don't need polynomial simplification
-- code Exps could be given strong types in order to check the frontend, while letting formula Exps have weaker types as dictated by the logic
-- treat formula exps as unbounded, clamp to bounded range when conferting to a code exp
-** check if simplification via simp_sub in simp_eq is still needed
-- it leads to violations of the subexp assertion on app1
-** replace Option.value_exn (Typ.prim_bit_size_of typ) with bits_of_int
 ** simplify combinations of mul and div, e.g. x * (y / z) ==> (x * y) / z
-** ? simplify "greater-than" exps to "less-than" in reverse order
-** when Xor exps have types, simplify e xor e to 0
+** ? add Not exp and represent e.g. Dq as Not Eq
+to strengthen equality propagation power
 ** normalize polynomial equations by dividing coefficients by their gcd
-** treat Typ.ptr as an integer of some particular size (i.e. ptr = intptr)
-- normalizing e.g. p - q to the polynomial p + (-1 * q) forces this interpretation of types
-- options are to handle Pointer _ as Integer {bits= 64} everywhere, or
-- to remove Pointer and just use Integer
-- keeping Pointer makes Typ.equal finer than semantically justified, but may be unproblematic and otherwise worthwhile for reporting/debugging
-** ? remove src typ from Convert
 ** add config to pp e.g. Exp.t as sexps
 ** add check for variable non-occurrence to Exp.rename
-** define version of map that transforms args of Struct_rec
-- keep a set of seen Struct_rec exps to avoid divergence
-- | AppN {op; args; loc} ->
-      let op' = f op in
-      let args' = Vector.map_preserving_phys_equal args ~f in
-      if op' == op && args' == args then e
-      else AppN {op= op'; args= args'; loc}
 ** define Label module for Exp.Label and Llair.label
 - to unify how functions and blocks are named
 - the Exp.label construction in Control.exec_term Iswitch is unwieldy
@@ -87,62 +72,27 @@ let freshen x ~wrt =
 #+END_SRC
 ** ? rename loc to pos for source locations, to avoid clash with logic loc
 ** ? expose the roots computed by Llair.mk
-** ? types
-- could add types to Exp constructors, indicating the types at which the operation interprets its arguments
-  + pros
-    * could enforce well-typedness modulo castability
-      - quite weak constraint, but might catch some bugs
-      - not castable:
-        + Bytes <-> (Function | Opaque | Memory)
-        + between (Int | Float | Array) when prim_bit_size different
-        + Pointer <-> (Function | Tuple | Struct | Opaque | Memory)
-        + between (Function | Tuple | Struct | Opaque | Memory)
-    * perhaps helpful when debugging
-    * needed for correct semantics
-      - where size of integer and floating point numbers matters (overflow behavior and interpretation of conversions)
-  + cons
-    - perf: increases size of representation of Exp, perhaps a lot
-    - code complexity: need to plumb through target-specific data in order to e.g. be able to create equalities at intptr type
-- instructions and globals could use accurate types to replace len fields with static sizeof type
-- load instructions would need accurate types on reg to create equalities between it and its value in Exec
-- memcpy and memmov would need types to create equality between src and dst in Exec
-- formals would need types, to create equalities between formals and actuals in Domain
-- types could be useful for approximate human-readable printing for general expressions
-  + to print p+o as p.f, will likely need to consult what p is equal to, to find some meaningful type, and it could easily take much more work than this to produce reliably readable results
-- target-specific types and layout
-  + change Typ.target into a separate module
-  + construct an instance in frontend as first step
-  + use it during translation
-  + return it as part of program
-  + pass it from Control to Domain, etc.
-- function types could include the types of throw continuation args
+** use type info to print e.g. p+o as p.f
+will likely need to consult what p is equal to, to find some meaningful type, and it could easily take much more work than this to produce reliably readable results
+** do not hardcode target-specific types and layout
+- add a target module
+- construct an instance in frontend as first step
+- use it during translation
+- return it as part of program
+- pass it from Control to Domain, etc.
+** function types could include the types of throw continuation args
 but they are currently the same for all functions: i8*
-** ? change blocks to take all free variables as args
-+ currently the scope of an identifier bound by e.g. Load is the continuation of the inst as well as all the conts that it dominates, this is somewhat messy
-+ build a table from blocks to conts
-+ build a table from blocks to free vars
-+ need a fixed-point computation for blocks to vars table
-+ to xlate a block
-  - get the terminator
-  - if all the destination blocks except the current block are already in the table
-    * then
-      - xlate block itself like now
-        + when get to the terminal
-        + look up free vars vector of the jump destinaton in table
-        + map over the vector
-          * if the var is the name of a PHI instr
-            - find and translate the arg for the src block of the jmp instr
-              use the find_map of find_jump_args
-          * else use the var
-        + use this vector for the jump args
-      - compute the free vars of its code
-      - use this vector for the cont params
-      - add free vars to table
-      - add block to cont mapping to table
-    * else recurse over the destination blocks except the current block
-+ after entry block (and recursively everything reachable from it) is xlated, map over the function block list looking up from the table to get order of conts to match order of blocks
 ** ? format #line directives in programs
+** find a way to avoid the manually generated sexp functions in Llair
+** change Abort from an inst to a term
+** change string in Llair.functions to some informative type
+main constraint is that these uses of string need to be compatible with the "name" of a global
+** clarify typ arg of Exp constructors
+change constructor functions to not take the Typ.t as a separate arg, but to take a pair of an Exp.t and a Typ.t to indicate what the Typ.t refers to
+** change function Call arguments to always be variables
 * frontend
+** make filenames in debug locations relative, and do something with model and system header paths
+** check if freturn and fthrow reg names in frontend can clash
 ** ? translate PtrToInt and IntToPtr as cast when sizes match
 ** use llvm.lifetime.{start,end} to determine where to (alloc and?) free locals
 ** hoist alloca's to the beginning of the entry block whenever they dominate the return instr
@@ -177,7 +127,7 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 - inline asm can take addresses of blocks as args, that can be jumped to
 - treating inline asm conservatively requires considering these control flows
 ** support missing intrinsics
-** Try to extract scope for `ConstantExpr` and `ConstantPointerNull` value types
+** try to extract scope for `ConstantExpr` and `ConstantPointerNull` value types
 ** support vector operations
 - by lowering into multiple scalar operations
 - most cases handled by Frontend.transform
@@ -185,6 +135,7 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 ** support multiple address spaces
 - need to, at least, treat addrspacecast as converting between pointer types of different sizes
 ** exceptions
+- operator new should possibly throw
 - is it correct to translate landingpad clauses not matching to unreachable, or should the exception be re-thrown
 - check suspicious translation of landingpads
   The translation of landingpads with cleanup and other clauses ignores the other clauses. This seems suspicious, is this semantics correct?
@@ -224,8 +175,18 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 ** ? remove Exp.Nondet, replace with free variables
 it is not obvious whether it will be simpler to use free variables instead of Nondet in the frontend, or to treat Nondet as a single-occurrence existential variable in the analyzer
 ** llvm bugs?
+- `opt -S -ipsccp llvm/Transforms/SimplifyCFG/indirectbr.ll` crashes, which makes sledge crash in the same way because it calls `Llvm_ipo.add_ipsccp`
+- Calling `size_in_bits` on `%struct.__sFILE = type { %struct.__sFILE }` from llvm/Verifier/recursive-struct-param.ll crashes even though `type_is_sized` holds
 - Why aren't shufflevector instructions with zeroinitializer masks eliminated by the scalarizer pass?
-* congruence
+* term
+** rename 'simplification' to 'normalization' and 'simp' to 'norm' for consistency with Equality
+** should Add and Mul have an Ap form like ApN
+with a corresponding norm function to use in the exposed interface and e.g. map?
+** refactor Term so that the representation type is private
+for all of the module except for the normalization functions, to ensure with the type system that everything passed out of the external interface has been checked to satisfy the invariant
+** try only after getting rid of redundant type definitions due to Base containers
+* equality
+** treat disequalities in Equality
 ** should handle equality and disequality simplification
 - equalities of equalities to integers currently handled by Sh.pure
 - doing it in Exp leads to violations of the subexp assertion on app1
@@ -234,13 +195,18 @@ it is not obvious whether it will be simpler to use free variables instead of No
 - detecting duplicates probably not worth the time since if any occur, the only cost is adding a redundant equation to pnd which will be quickly processed
 ** optimize: when called from extend, norm_extend calls norm unnecessarily
 ** revise mli to two sections, one for a "relation" api (with merge, mem/check, etc) and one for a "formula" api (with and_, or_, etc.)
-** ? assert exps in formulas are in the carrier
+** ? assert terms in formulas are in the carrier
 us and xs, or just fv?
 ** strengthen invariant
 ** optimize: combine use and cls into one map
 since they (could) have the same domain
 ** optimize: can identity mappings in lkp be removed?
+** ? maybe need Mul terms in carrier due to non-linear to linear abstraction
 * symbolic heap
+** the way that Sh normalization is done needs to be overhauled, need more pure consequences
+** expose and use Sh.stars
+** ? rename 'cong' to 'eqr'
+** ? rename 'canon' to 'norm'
 ** normalize exps in terms of reps
 - add operation to normalize by rewriting in terms of reps
 - check for unsat
@@ -298,13 +264,23 @@ unnecessarily, e.g. freshening, etc.
 ** solve more existential equations in excise_exp
 If sub.pure contains an equation involving an existential, add equation to min, remove the var from xs, continue. If all pure atoms normalize to true, added equations induce good existential witnesses, and excise will return them as part of min.
 * symbolic execution
+** change function call to use substitution instead of conjoining equalities to pass args
+depends on [[*change function Call arguments to always be variables][change function Call arguments to always be variables]]
 ** narrow scope of existentials in specs
 in calls to exec_spec, only vars in post need appear in xs, others can be existential in foot
+** generalize specs to express throwing exceptions
 * domain
 ** implement resolve_virtual to not skip virtual calls
 ** consider lazy renaming
 - instead of eagerly constructing renaming substitutions, traverse the formula and lazily construct the renaming substitution map
 - may be better in case there are many variables that do not occur in the formula
+* relation
+** refactor lifting in Domain to use something like
+type 'a with_entry = {entry: State_domain.t; current: 'a}
+type t = State_domain.t with_entry
+type from_call = State_domain.from_call with_entry
+* used globals
+** consider moving used globals info from exec_opts to a field of func
 * control
 ** change Depths.t from environment- to state-like treatment
 - currently each waiting state has an associated depths map
@@ -316,9 +292,11 @@ in calls to exec_spec, only vars in post need appear in xs, others can be existe
 ** change Work.run to move Domain.join into ~f
 ** canonicalize renamings in stacks
 It seems possible that two edges will be distinct only due to differences between choice of fresh variable names for shadowed variables. It is not obvious that this could not lead to an infinite number of Edge.t values even without recursion. Using predictable names for local variables, such as a pair of the declared name and the depth of the stack, would avoid these difficulties.
-* config
-** move Control.bound to Config
 * build
 ** adapt infer's dead code detection
+- this does not work easily, due at least to issues with wrapped libraries
+* test
+** ban #include from test code
+tests can be sensitive to different system headers
 * optimization
 ** Control uses Var.Set for locals, but could benefit from a set with constant-time union
