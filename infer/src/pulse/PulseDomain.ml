@@ -127,7 +127,8 @@ module ValueHistory = struct
     | Call of {f: CallEvent.t; location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | CppTemporaryCreated of Location.t
-    | VariableDeclaration of Location.t
+    | FormalDeclared of Pvar.t * Location.t
+    | VariableDeclared of Pvar.t * Location.t
   [@@deriving compare]
 
   let pp_event_no_location fmt = function
@@ -136,11 +137,17 @@ module ValueHistory = struct
     | Call {f; location= _} ->
         F.fprintf fmt "returned from call to %a" CallEvent.pp f
     | Capture {captured_as; location= _} ->
-        F.fprintf fmt "value captured as `%a`" (Pvar.pp Pp.text) captured_as
+        F.fprintf fmt "value captured as `%a`" Pvar.pp_value_non_verbose captured_as
     | CppTemporaryCreated _ ->
         F.pp_print_string fmt "C++ temporary created"
-    | VariableDeclaration _ ->
-        F.pp_print_string fmt "variable declared"
+    | FormalDeclared (pvar, _) ->
+        let pp_proc fmt pvar =
+          Pvar.get_declaring_function pvar
+          |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Typ.Procname.pp proc_name)
+        in
+        F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+    | VariableDeclared (pvar, _) ->
+        F.fprintf fmt "variable `%a` declared here" Pvar.pp_value_non_verbose pvar
 
 
   let location_of_event = function
@@ -148,7 +155,8 @@ module ValueHistory = struct
     | Call {location}
     | Capture {location}
     | CppTemporaryCreated location
-    | VariableDeclaration location ->
+    | FormalDeclared (_, location)
+    | VariableDeclared (_, location) ->
         location
 
 

@@ -199,7 +199,7 @@ module PulseTransferFunctions = struct
     | Metadata (ExitScope (vars, location)) ->
         [PulseOperations.remove_vars vars location astate]
     | Metadata (VariableLifetimeBegins (pvar, _, location)) ->
-        [PulseOperations.realloc_var (Var.of_pvar pvar) location astate]
+        [PulseOperations.realloc_pvar pvar location astate]
     | Metadata (Abstract _ | Nullify _ | Skip) ->
         [astate]
 

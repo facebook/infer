@@ -239,10 +239,10 @@ let mk_initial proc_desc =
     let location = Procdesc.get_loc proc_desc in
     Procdesc.get_formals proc_desc
     |> List.map ~f:(fun (mangled, _) ->
-           let var = Var.of_pvar (Pvar.mk mangled proc_name) in
-           ( var
-           , (AbstractAddress.mk_fresh (), [PulseDomain.ValueHistory.VariableDeclaration location])
-           ) )
+           let pvar = Pvar.mk mangled proc_name in
+           ( Var.of_pvar pvar
+           , ( AbstractAddress.mk_fresh ()
+             , [PulseDomain.ValueHistory.FormalDeclared (pvar, location)] ) ) )
   in
   let initial_stack =
     List.fold formals ~init:(InvertedDomain.empty :> PulseDomain.t).stack

@@ -225,8 +225,10 @@ let eval_deref location exp astate =
   >>| fun astate -> Memory.eval_edge (fst addr_trace) Dereference astate
 
 
-let realloc_var var location astate =
-  Stack.add var (AbstractAddress.mk_fresh (), [ValueHistory.VariableDeclaration location]) astate
+let realloc_pvar pvar location astate =
+  Stack.add (Var.of_pvar pvar)
+    (AbstractAddress.mk_fresh (), [ValueHistory.VariableDeclared (pvar, location)])
+    astate
 
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate

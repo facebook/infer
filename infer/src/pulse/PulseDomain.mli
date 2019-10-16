@@ -51,7 +51,8 @@ module ValueHistory : sig
     | Call of {f: CallEvent.t; location: Location.t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | CppTemporaryCreated of Location.t
-    | VariableDeclaration of Location.t
+    | FormalDeclared of Pvar.t * Location.t
+    | VariableDeclared of Pvar.t * Location.t
 
   type t = event list [@@deriving compare]
 

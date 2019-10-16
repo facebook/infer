@@ -57,7 +57,7 @@ val havoc_field :
   -> t
   -> t access_result
 
-val realloc_var : Var.t -> Location.t -> t -> t
+val realloc_pvar : Pvar.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> PulseDomain.Stack.value -> t -> t
 
