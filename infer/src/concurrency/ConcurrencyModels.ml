@@ -390,6 +390,12 @@ let annotated_as_uithread_equivalent ~attrs_of_pname tenv pname =
     pname
 
 
+let runs_on_ui_thread ~attrs_of_pname tenv pname =
+  annotated_as_worker_thread ~attrs_of_pname tenv pname |> Option.is_none
+  && ( is_modeled_ui_method tenv pname
+     || annotated_as_uithread_equivalent ~attrs_of_pname tenv pname |> Option.is_some )
+
+
 let cpp_lock_types_matcher = Clang.lock_types_matcher
 
 let is_recursive_lock_type = function

@@ -119,8 +119,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let locks = List.hd actuals |> Option.to_list in
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_ui_thread_model callee ->
-          Domain.set_on_ui_thread astate ~loc
-            (Domain.UIThreadElement.CallsModeled {proc_name= procname; callee})
+          Domain.set_on_ui_thread astate ()
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java -> (
@@ -163,8 +162,9 @@ let analyze_procedure {Callbacks.exe_env; summary} =
         StarvationDomain.acquire tenv StarvationDomain.bottom ~procname ~loc (Option.to_list lock)
     in
     let initial =
-      StarvationModels.get_uithread_explanation ~attrs_of_pname tenv procname
-      |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial ~loc)
+      if ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv procname then
+        StarvationDomain.set_on_ui_thread initial ()
+      else initial
     in
     let filter_blocks =
       if is_nonblocking tenv proc_desc then StarvationDomain.filter_blocking_calls else Fn.id

@@ -52,7 +52,3 @@ val should_flag_interface_call : Tenv.t -> HilExp.t list -> CallFlags.t -> Typ.P
 
 val is_synchronized_container : Typ.Procname.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** is a call on an access expression to a method of a synchronized container? *)
-
-val runs_on_ui_thread :
-  attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
-(** is method not transitively annotated @WorkerThread and is modeled or annotated @UIThread or equivalent? *)

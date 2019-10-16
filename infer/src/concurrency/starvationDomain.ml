@@ -358,65 +358,7 @@ module CriticalPairs = struct
       astate empty
 end
 
-module UIThreadElement = struct
-  type t = StarvationModels.uithread_explanation =
-    | IsModeled of {proc_name: Typ.Procname.t}
-    | CallsModeled of {proc_name: Typ.Procname.t; callee: Typ.Procname.t}
-    | Annotated of {proc_name: Typ.Procname.t; trail: ConcurrencyModels.annotation_trail}
-  [@@deriving compare]
-
-  let mono_pname = MF.wrap_monospaced Typ.Procname.pp
-
-  let describe fmt = function
-    | IsModeled {proc_name} ->
-        F.fprintf fmt "%a is a standard UI-thread method" mono_pname proc_name
-    | CallsModeled {proc_name= _; callee} ->
-        F.fprintf fmt "it calls %a" pname_pp callee
-    | Annotated {proc_name; trail= DirectlyAnnotated} ->
-        F.fprintf fmt "%a is annotated %a" mono_pname proc_name MF.pp_monospaced
-          Annotations.ui_thread
-    | Annotated {proc_name; trail= Override override_pname} ->
-        F.fprintf fmt "class %a overrides %a, which is annotated %a" mono_pname proc_name
-          mono_pname override_pname MF.pp_monospaced Annotations.ui_thread
-    | Annotated {proc_name; trail= SuperClass class_name} -> (
-      match Typ.Procname.get_class_type_name proc_name with
-      | None ->
-          L.die InternalError "Cannot get class of method %a@." Typ.Procname.pp proc_name
-      | Some current_class ->
-          let pp_extends fmt current_class =
-            if Typ.Name.equal current_class class_name then ()
-            else F.fprintf fmt " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) class_name
-          in
-          F.fprintf fmt "class %s%a is annotated %a"
-            (MF.monospaced_to_string (Typ.Name.name current_class))
-            pp_extends current_class MF.pp_monospaced Annotations.ui_thread )
-
-
-  let pp = describe
-end
-
-module UIThreadExplanationDomain = struct
-  include ExplicitTrace.MakeTraceElem (UIThreadElement) (ExplicitTrace.DefaultCallPrinter)
-
-  let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-
-  let ( <= ) ~lhs:_ ~rhs:_ = true
-end
-
-module UIThreadDomain = struct
-  include AbstractDomain.BottomLifted (UIThreadExplanationDomain)
-
-  let with_callsite astate callsite =
-    match astate with
-    | AbstractDomain.Types.Bottom ->
-        astate
-    | AbstractDomain.Types.NonBottom ui_explain ->
-        AbstractDomain.Types.NonBottom
-          (UIThreadExplanationDomain.with_callsite ui_explain callsite)
-end
-
+module UIThreadDomain = AbstractDomain.BooleanOr
 module FlatLock = AbstractDomain.Flat (Lock)
 
 module GuardToLockMap = struct
@@ -513,17 +455,13 @@ let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; ui} as 
   let critical_pairs' =
     CriticalPairs.with_callsite callee_summary.critical_pairs (Some tenv) lock_state callsite
   in
-  let callee_ui = UIThreadDomain.with_callsite callee_summary.ui callsite in
   { astate with
     critical_pairs= CriticalPairs.join critical_pairs critical_pairs'
-  ; ui= UIThreadDomain.join ui callee_ui }
+  ; ui= UIThreadDomain.join ui callee_summary.ui }
 
 
-let set_on_ui_thread ({ui} as astate) ~loc explain =
-  let ui =
-    UIThreadDomain.join ui
-      (AbstractDomain.Types.NonBottom (UIThreadExplanationDomain.make explain loc))
-  in
+let set_on_ui_thread ({ui} as astate) () =
+  let ui = UIThreadDomain.join ui true in
   {astate with ui}
 
 
