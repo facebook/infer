@@ -83,8 +83,6 @@ and block = private
         (** Position in a topological order, ignoring [retreating] edges. *)
   }
 
-and cfg
-
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
 and func = private
@@ -93,8 +91,7 @@ and func = private
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
-  ; entry: block
-  ; cfg: cfg }
+  ; entry: block }
 
 type functions
 

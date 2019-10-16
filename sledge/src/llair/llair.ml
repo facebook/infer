@@ -52,17 +52,13 @@ and block =
   ; mutable parent: func
   ; mutable sort_index: int }
 
-and cfg = block vector
-
-(* [entry] is not part of [cfg] since it cannot be jumped to, only called. *)
 and func =
   { name: Global.t
   ; formals: Reg.t list
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t
-  ; entry: block
-  ; cfg: cfg }
+  ; entry: block }
 
 let sexp_cons (hd : Sexp.t) (tl : Sexp.t) =
   match tl with
@@ -105,17 +101,14 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
     ; parent: Reg.t = parent.name.reg
     ; sort_index: int }]
 
-let sexp_of_cfg v = [%sexp_of: block vector] v
-
-let sexp_of_func {name; formals; freturn; fthrow; locals; entry; cfg} =
+let sexp_of_func {name; formals; freturn; fthrow; locals; entry} =
   [%sexp
     { name: Global.t
     ; formals: Reg.t list
     ; freturn: Reg.t option
     ; fthrow: Reg.t
     ; locals: Reg.Set.t
-    ; entry: block
-    ; cfg: cfg }]
+    ; entry: block }]
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y = Int.compare x.sort_index y.sort_index
@@ -226,8 +219,7 @@ and dummy_func =
   ; freturn= None
   ; fthrow= dummy_reg
   ; locals= Reg.Set.empty
-  ; entry= dummy_block
-  ; cfg= Vector.empty }
+  ; entry= dummy_block }
 
 (** Instructions *)
 
@@ -385,6 +377,32 @@ module Block = struct
     ; sort_index= dummy_block.sort_index }
 end
 
+(* Blocks compared by label, which are unique within a function, used to
+   compute unique sort_index ids *)
+module Block_label = struct
+  module T = struct
+    module T0 = struct
+      type t = block [@@deriving sexp_of]
+
+      let compare x y =
+        [%compare: string * Global.t] (x.lbl, x.parent.name)
+          (y.lbl, y.parent.name)
+
+      let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
+    end
+
+    include T0
+    include Comparator.Make (T0)
+  end
+
+  include T
+
+  let empty_set = Set.empty (module T)
+end
+
+module BlockQ = Hash_queue.Make (Block_label)
+module FuncQ = Hash_queue.Make (Reg)
+
 (** Functions *)
 
 module Func = struct
@@ -394,14 +412,42 @@ module Func = struct
     | {entry= {cmnd; term= Unreachable; _}; _} -> Vector.is_empty cmnd
     | _ -> false
 
+  let fold_cfg ~init ~f func =
+    let seen = Hash_set.create (module Block_label) in
+    let rec fold_cfg_ s blk =
+      if Result.is_error (Hash_set.strict_add seen blk) then s
+      else
+        let s =
+          let f s j = fold_cfg_ s j.dst in
+          match blk.term with
+          | Switch {tbl; els; _} ->
+              let s = Vector.fold ~f:(fun s (_, j) -> f s j) ~init:s tbl in
+              f s els
+          | Iswitch {tbl; _} -> Vector.fold ~f ~init:s tbl
+          | Call {return; throw; _} ->
+              let s = f s return in
+              Option.fold ~f ~init:s throw
+          | Return _ | Throw _ | Unreachable -> s
+        in
+        f s blk
+    in
+    fold_cfg_ init func.entry
+
+  let fold_term func ~init ~f =
+    fold_cfg func ~init ~f:(fun s blk -> f s blk.term)
+
+  let iter_term func ~f =
+    fold_cfg func ~init:() ~f:(fun () blk -> f blk.term)
+
+  let entry_cfg func = fold_cfg ~init:[] ~f:(fun cfg blk -> blk :: cfg) func
+
   let pp fs
       ( { name
         ; formals
         ; freturn
         ; fthrow= _
         ; locals= _
-        ; entry= {cmnd; term; sort_index; _}
-        ; cfg } as func ) =
+        ; entry= {cmnd; term; sort_index; _} } as func ) =
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
@@ -413,29 +459,24 @@ module Func = struct
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
+          let cfg =
+            List.sort ~compare:Block.compare (List.tl_exn (entry_cfg func))
+          in
           Format.fprintf fs " { #%i %a@;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
             sort_index Loc.pp name.loc pp_cmnd cmnd Term.pp term
-            (pp_if (not (Vector.is_empty cfg)) "@ @   ")
-            (Vector.pp "@\n@\n  " Block.pp)
+            (pp_if (not (List.is_empty cfg)) "@ @   ")
+            (List.pp "@\n@\n  " Block.pp)
             cfg )
-
-  let fold_term {entry; cfg; _} ~init ~f =
-    Vector.fold cfg ~init:(f init entry.term) ~f:(fun a blk -> f a blk.term)
-
-  let iter_term {entry; cfg; _} ~f =
-    f entry.term ;
-    Vector.iter cfg ~f:(fun blk -> f blk.term)
 
   let invariant func =
     Invariant.invariant [%here] func [%sexp_of: t]
     @@ fun () ->
     assert (func == func.entry.parent) ;
-    let {name= {typ; _}; cfg; _} = func in
-    match typ with
+    match func.name.typ with
     | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
-            (Vector.contains_dup cfg ~compare:(fun b1 b2 ->
+            (List.contains_dup (entry_cfg func) ~compare:(fun b1 b2 ->
                  String.compare b1.lbl b2.lbl )) ) ;
         assert (Bool.(Option.is_some return = Option.is_some func.freturn)) ;
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
@@ -454,7 +495,7 @@ module Func = struct
       let init = locals_block Reg.Set.empty entry in
       Vector.fold ~f:locals_block cfg ~init
     in
-    let func = {name; formals; freturn; fthrow; locals; entry; cfg} in
+    let func = {name; formals; freturn; fthrow; locals; entry} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
@@ -484,32 +525,6 @@ module Func = struct
 end
 
 (** Derived meta-data *)
-
-(* Blocks compared by label, which are unique within a function, used to
-   compute unique sort_index ids *)
-module Block_label = struct
-  module T = struct
-    module T0 = struct
-      type t = block [@@deriving sexp_of]
-
-      let compare x y =
-        [%compare: string * Global.t] (x.lbl, x.parent.name)
-          (y.lbl, y.parent.name)
-
-      let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
-    end
-
-    include T0
-    include Comparator.Make (T0)
-  end
-
-  include T
-
-  let empty_set = Set.empty (module T)
-end
-
-module BlockQ = Hash_queue.Make (Block_label)
-module FuncQ = Hash_queue.Make (Reg)
 
 let set_derived_metadata functions =
   let compute_roots functions =
@@ -565,12 +580,6 @@ let set_derived_metadata functions =
         block.sort_index <- !index ;
         index := !index - 1 )
   in
-  let sort_cfgs functions =
-    Map.iter functions ~f:(fun {cfg; _} ->
-        Array.sort
-          ~compare:(fun x y -> Int.compare x.sort_index y.sort_index)
-          (Vector.to_array cfg) )
-  in
   let functions =
     List.fold functions
       ~init:(Map.empty (module String))
@@ -580,7 +589,6 @@ let set_derived_metadata functions =
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
   set_sort_indices tips_to_roots ;
-  sort_cfgs functions ;
   functions
 
 let invariant pgm =
