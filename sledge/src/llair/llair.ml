@@ -434,13 +434,9 @@ module Func = struct
 
   let entry_cfg func = fold_cfg ~init:[] ~f:(fun cfg blk -> blk :: cfg) func
 
-  let pp fs
-      ( { name
-        ; formals
-        ; freturn
-        ; fthrow= _
-        ; locals= _
-        ; entry= {cmnd; term; sort_index; _} } as func ) =
+  let pp fs func =
+    let {name; formals; freturn; entry; _} = func in
+    let {cmnd; term; sort_index; _} = entry in
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
