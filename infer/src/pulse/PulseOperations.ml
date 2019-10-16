@@ -355,7 +355,7 @@ let mark_address_of_cpp_temporary history variable address astate =
 
 
 let mark_address_of_stack_variable history variable location address astate =
-  Memory.add_attribute address (AddressOfStackVariable (variable, history, location)) astate
+  Memory.add_attribute address (AddressOfStackVariable (variable, location, history)) astate
 
 
 let remove_vars vars location astate =

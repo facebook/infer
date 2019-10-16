@@ -319,7 +319,7 @@ module PrePost = struct
       BaseMemory.fold_attrs
         (fun addr attrs heap ->
           Attributes.get_address_of_stack_variable attrs
-          |> Option.value_map ~default:heap ~f:(fun (var, history, location) ->
+          |> Option.value_map ~default:heap ~f:(fun (var, location, history) ->
                  let get_local_typ_opt pvar =
                    Procdesc.get_locals pdesc
                    |> List.find_map ~f:(fun ProcAttributes.{name; typ} ->

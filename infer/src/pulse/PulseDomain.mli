@@ -85,7 +85,7 @@ end
 module Attribute : sig
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
-    | AddressOfStackVariable of Var.t * ValueHistory.t * Location.t
+    | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Closure of Typ.Procname.t
     | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
@@ -104,7 +104,7 @@ module Attributes : sig
 
   val get_written_to : t -> unit InterprocAction.t option
 
-  val get_address_of_stack_variable : t -> (Var.t * ValueHistory.t * Location.t) option
+  val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
 
   val is_modified : t -> bool
 end
