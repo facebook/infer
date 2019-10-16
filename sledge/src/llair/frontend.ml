@@ -324,7 +324,14 @@ let should_inline : Llvm.llvalue -> bool =
   match Llvm.use_begin llv with
   | Some use -> (
     match Llvm.use_succ use with
-    | Some _ -> false (* do not inline if >= 2 uses *)
+    | Some _ -> (
+      match Llvm.classify_value llv with
+      | Instruction
+          ( Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP
+          | FPTrunc | FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast
+            ) ->
+          true (* inline casts *)
+      | _ -> false (* do not inline if >= 2 uses *) )
     | None -> true )
   | None -> true
 
