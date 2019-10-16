@@ -90,9 +90,9 @@ let analyze =
     flag "bound"
       (optional_with_default 1 int)
       ~doc:"<int> stop execution exploration at depth <int>"
-  and skip_throw =
-    flag "skip-throw" no_arg
-      ~doc:"do not explore past throwing an exception"
+  and exceptions =
+    flag "exceptions" no_arg
+      ~doc:"explore executions that throw and handle exceptions"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
@@ -114,6 +114,7 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
+    let skip_throw = not exceptions in
     exec {bound; skip_throw; function_summaries; globals} pgm
 
 let analyze_cmd =

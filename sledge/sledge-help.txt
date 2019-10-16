@@ -50,6 +50,7 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
                           symbolic heap domain), "globals" (used-globals
                           domain), or "unit" (unit domain)
+  [-exceptions]           explore executions that throw and handle exceptions
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -61,7 +62,6 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
   [-preanalyze-globals]   pre-analyze global variables used by each function
-  [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
@@ -137,6 +137,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
                           symbolic heap domain), "globals" (used-globals
                           domain), or "unit" (unit domain)
+  [-exceptions]           explore executions that throw and handle exceptions
   [-function-summaries]   use function summaries (in development)
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -146,7 +147,6 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
   [-preanalyze-globals]   pre-analyze global variables used by each function
-  [-skip-throw]           do not explore past throwing an exception
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
@@ -190,10 +190,10 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
                          symbolic heap domain), "globals" (used-globals domain),
                          or "unit" (unit domain)
+  [-exceptions]          explore executions that throw and handle exceptions
   [-function-summaries]  use function summaries (in development)
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-preanalyze-globals]  pre-analyze global variables used by each function
-  [-skip-throw]          do not explore past throwing an exception
   [-trace <spec>]        enable debug tracing
   [-help]                print this help text and exit
                          (alias: -?)
