@@ -38,8 +38,7 @@ let exec_move q res =
 let exec_inst pre inst =
   [%Trace.info
     "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
-  assert (Set.disjoint (Sh.fv pre) (Reg.Set.vars (Llair.Inst.locals inst))) ;
-  match inst with
+  match (inst : Llair.inst) with
   | Move {reg_exps; _} ->
       Some
         (Exec.move pre
