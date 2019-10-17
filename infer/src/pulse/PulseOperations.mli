@@ -14,7 +14,7 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 
 module Closures : sig
   val check_captured_addresses :
-    unit PulseDomain.InterprocAction.t -> AbstractAddress.t -> t -> (t, PulseDiagnostic.t) result
+    Location.t -> AbstractAddress.t -> t -> (t, PulseDiagnostic.t) result
   (** assert the validity of the addresses captured by the lambda *)
 end
 
@@ -70,31 +70,22 @@ val write_deref :
 (** write the edge [ref --*--> obj] *)
 
 val invalidate :
-     Location.t
-  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-  -> PulseDomain.AddrTracePair.t
-  -> t
-  -> t access_result
+  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that the address is invalid *)
 
 val invalidate_deref :
-     Location.t
-  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-  -> PulseDomain.AddrTracePair.t
-  -> t
-  -> t access_result
+  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that what the address points to is invalid *)
 
 val invalidate_array_elements :
-     Location.t
-  -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-  -> PulseDomain.AddrTracePair.t
-  -> t
-  -> t access_result
+  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that all the array elements that address points to is invalid *)
 
 val shallow_copy :
-  Location.t -> PulseDomain.AddrTracePair.t -> t -> (t * AbstractAddress.t) access_result
+     Location.t
+  -> PulseDomain.AddrTracePair.t
+  -> t
+  -> (t * (AbstractAddress.t * PulseDomain.ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
 val remove_vars : Var.t list -> Location.t -> t -> t

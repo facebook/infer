@@ -100,8 +100,14 @@ void invalidate_and_set_to_null(struct X** x_ptr) {
   *x_ptr = nullptr;
 }
 
-void access_to_invalidated_alias(struct X* x, struct X* y) {
+void access_to_invalidated_alias_bad(struct X* x, struct X* y) {
   y = x;
   invalidate_and_set_to_null(&x);
   wraps_read(*y);
+}
+
+void access_to_invalidated_alias2_bad(struct X* x, struct X* y) {
+  y = x;
+  invalidate_and_set_to_null(&y);
+  wraps_read(*x);
 }

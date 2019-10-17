@@ -6,16 +6,14 @@
  *)
 
 open! IStd
+module Invalidation = PulseDomain.Invalidation
+module Trace = PulseDomain.Trace
+module ValueHistory = PulseDomain.ValueHistory
 
 (** an error to report to the user *)
 type t =
-  | AccessToInvalidAddress of
-      { invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
-      ; accessed_by: unit PulseDomain.Trace.t }
-  | StackVariableAddressEscape of
-      { variable: Var.t
-      ; history: PulseDomain.ValueHistory.t
-      ; location: Location.t }
+  | AccessToInvalidAddress of {invalidated_by: Invalidation.t Trace.t; accessed_by: unit Trace.t}
+  | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 val get_message : t -> string
 

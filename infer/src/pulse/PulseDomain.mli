@@ -48,34 +48,39 @@ end
 module ValueHistory : sig
   type event =
     | Assignment of Location.t
-    | Call of {f: CallEvent.t; location: Location.t}
+    | Call of {f: CallEvent.t; location: Location.t; in_call: t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | CppTemporaryCreated of Location.t
     | FormalDeclared of Pvar.t * Location.t
+    | VariableAccessed of Pvar.t * Location.t
     | VariableDeclared of Pvar.t * Location.t
 
-  type t = event list [@@deriving compare]
+  and t = event list [@@deriving compare]
 
-  val add_to_errlog :
-    nesting:int -> event list -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
-end
-
-module InterprocAction : sig
-  type 'a t =
-    | Immediate of {imm: 'a; location: Location.t}
-    | ViaCall of {action: 'a t; f: CallEvent.t; location: Location.t}
-  [@@deriving compare]
-
-  val get_immediate : 'a t -> 'a
-
-  val to_outer_location : 'a t -> Location.t
+  val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 end
 
 module Trace : sig
-  type 'a t = {action: 'a InterprocAction.t; history: ValueHistory.t} [@@deriving compare]
+  type 'a t =
+    | Immediate of {imm: 'a; location: Location.t; history: ValueHistory.t}
+    | ViaCall of
+        { f: CallEvent.t
+        ; location: Location.t  (** location of the call event *)
+        ; history: ValueHistory.t  (** the call involves a value with this prior history *)
+        ; in_call: 'a t  (** last step of the trace is in a call to [f] made at [location] *) }
+  [@@deriving compare]
+
+  val get_outer_location : 'a t -> Location.t
+  (** skip histories and go straight to the where the action is: either the action itself or the
+      call that leads to the action *)
+
+  val get_start_location : 'a t -> Location.t
+  (** initial step in the history if not empty, or else same as {!get_outer_location} *)
+
+  val get_immediate : 'a t -> 'a
 
   val add_to_errlog :
-       header:string
+       nesting:int
     -> (F.formatter -> 'a -> unit)
     -> 'a t
     -> Errlog.loc_trace_elem list
@@ -89,20 +94,20 @@ module Attribute : sig
     | Closure of Typ.Procname.t
     | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit InterprocAction.t
+    | MustBeValid of unit Trace.t
     | StdVectorReserve
-    | WrittenTo of unit InterprocAction.t
+    | WrittenTo of unit Trace.t
   [@@deriving compare]
 end
 
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
 
-  val get_must_be_valid : t -> unit InterprocAction.t option
+  val get_must_be_valid : t -> unit Trace.t option
 
   val get_invalid : t -> Invalidation.t Trace.t option
 
-  val get_written_to : t -> unit InterprocAction.t option
+  val get_written_to : t -> unit Trace.t option
 
   val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
 
@@ -183,7 +188,7 @@ module Memory : sig
 
   val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
-  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
+  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 

@@ -20,16 +20,15 @@ type model = exec_fun
 module Misc = struct
   let shallow_copy model_desc : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event = PulseDomain.ValueHistory.Call {f= Model model_desc; location} in
+    let event = PulseDomain.ValueHistory.Call {f= Model model_desc; location; in_call= []} in
     ( match actuals with
     | [(dest_pointer_hist, _); (src_pointer_hist, _)] ->
         PulseOperations.eval_access location src_pointer_hist Dereference astate
         >>= fun (astate, obj) ->
         PulseOperations.shallow_copy location obj astate
         >>= fun (astate, obj_copy) ->
-        let obj_hist = snd obj in
         PulseOperations.write_deref location ~ref:dest_pointer_hist
-          ~obj:(obj_copy, event :: obj_hist)
+          ~obj:(fst obj_copy, event :: snd obj_copy)
           astate
     | _ ->
         Ok astate )
@@ -46,9 +45,7 @@ module C = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
-        PulseOperations.invalidate location
-          (PulseDomain.InterprocAction.Immediate {imm= PulseDomain.Invalidation.CFree; location})
-          deleted_access astate
+        PulseOperations.invalidate location PulseDomain.Invalidation.CFree deleted_access astate
         >>| List.return
     | _ ->
         Ok [astate]
@@ -59,9 +56,8 @@ module Cplusplus = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
-        PulseOperations.invalidate location
-          (PulseDomain.InterprocAction.Immediate {imm= PulseDomain.Invalidation.CppDelete; location})
-          deleted_access astate
+        PulseOperations.invalidate location PulseDomain.Invalidation.CppDelete deleted_access
+          astate
         >>| List.return
     | _ ->
         Ok [astate]
@@ -69,10 +65,12 @@ module Cplusplus = struct
 
   let placement_new : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event = PulseDomain.ValueHistory.Call {f= Model "<placement new>()"; location} in
+    let event =
+      PulseDomain.ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []}
+    in
     match List.rev actuals with
-    | ((address, _), _) :: _ ->
-        Ok [PulseOperations.write_id ret_id (address, [event]) astate]
+    | ((address, hist), _) :: _ ->
+        Ok [PulseOperations.write_id ret_id (address, event :: hist) astate]
     | _ ->
         Ok [PulseOperations.havoc_id ret_id [event] astate]
 end
@@ -92,7 +90,9 @@ module StdBasicString = struct
 
   let data : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event = PulseDomain.ValueHistory.Call {f= Model "std::basic_string::data()"; location} in
+    let event =
+      PulseDomain.ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []}
+    in
     match actuals with
     | [(this_hist, _)] ->
         to_internal_string location this_hist astate
@@ -107,24 +107,15 @@ module StdBasicString = struct
   let destructor : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
     let model = PulseDomain.CallEvent.Model "std::basic_string::~basic_string()" in
-    let call_event = PulseDomain.ValueHistory.Call {f= model; location} in
+    let call_event = PulseDomain.ValueHistory.Call {f= model; location; in_call= []} in
     match actuals with
     | [(this_hist, _)] ->
         to_internal_string location this_hist astate
-        >>= fun (astate, string_addr_hist) ->
-        let invalidation =
-          PulseDomain.InterprocAction.ViaCall
-            { location
-            ; f= model
-            ; action=
-                ViaCall
-                  { location
-                  ; f= Model "deleting the underlying string"
-                  ; action= Immediate {imm= PulseDomain.Invalidation.CppDelete; location} } }
-        in
-        PulseOperations.invalidate_deref location invalidation string_addr_hist astate
+        >>= fun (astate, (string_addr, string_hist)) ->
+        let string_addr_hist = (string_addr, call_event :: string_hist) in
+        PulseOperations.invalidate_deref location CppDelete string_addr_hist astate
         >>= fun astate ->
-        PulseOperations.invalidate location invalidation string_addr_hist astate
+        PulseOperations.invalidate location CppDelete string_addr_hist astate
         >>| fun astate -> [astate]
     | _ ->
         Ok [PulseOperations.havoc_id ret_id [call_event] astate]
@@ -134,7 +125,9 @@ module StdFunction = struct
   let operator_call : model =
    fun ~caller_summary location ~ret ~actuals astate ->
     let havoc_ret (ret_id, _) astate =
-      let event = PulseDomain.ValueHistory.Call {f= Model "std::function::operator()"; location} in
+      let event =
+        PulseDomain.ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []}
+      in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
     match actuals with
@@ -143,9 +136,7 @@ module StdFunction = struct
     | (lambda_ptr_hist, _) :: actuals -> (
         PulseOperations.eval_access location lambda_ptr_hist Dereference astate
         >>= fun (astate, (lambda, _)) ->
-        PulseOperations.Closures.check_captured_addresses
-          (PulseDomain.InterprocAction.Immediate {imm= (); location})
-          lambda astate
+        PulseOperations.Closures.check_captured_addresses location lambda astate
         >>= fun astate ->
         match PulseAbductiveDomain.Memory.get_closure_proc_name lambda astate with
         | None ->
@@ -178,12 +169,8 @@ module StdVector = struct
   let reallocate_internal_array trace vector vector_f location astate =
     to_internal_array location vector astate
     >>= fun (astate, array_address) ->
-    let invalidation =
-      PulseDomain.InterprocAction.Immediate
-        {imm= PulseDomain.Invalidation.StdVector vector_f; location}
-    in
-    PulseOperations.invalidate_array_elements location invalidation array_address astate
-    >>= PulseOperations.invalidate_deref location invalidation array_address
+    PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
+    >>= PulseOperations.invalidate_deref location (StdVector vector_f) array_address
     >>= PulseOperations.havoc_field location vector internal_array trace
 
 
@@ -196,7 +183,8 @@ module StdVector = struct
             { f=
                 Model
                   (Format.asprintf "%a()" PulseDomain.Invalidation.pp_std_vector_function vector_f)
-            ; location }
+            ; location
+            ; in_call= [] }
         in
         reallocate_internal_array [crumb] vector vector_f location astate >>| List.return
     | _ ->
@@ -205,11 +193,14 @@ module StdVector = struct
 
   let at : model =
    fun ~caller_summary:_ location ~ret ~actuals astate ->
-    let event = PulseDomain.ValueHistory.Call {f= Model "std::vector::at()"; location} in
+    let event =
+      PulseDomain.ValueHistory.Call {f= Model "std::vector::at()"; location; in_call= []}
+    in
     match actuals with
     | [(vector, _); (index, _)] ->
         element_of_internal_array location vector (fst index) astate
-        >>| fun (astate, (addr, _)) -> [PulseOperations.write_id (fst ret) (addr, [event]) astate]
+        >>| fun (astate, (addr, hist)) ->
+        [PulseOperations.write_id (fst ret) (addr, event :: hist) astate]
     | _ ->
         Ok [PulseOperations.havoc_id (fst ret) [event] astate]
 
@@ -218,7 +209,9 @@ module StdVector = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(vector, _); _value] ->
-        let crumb = PulseDomain.ValueHistory.Call {f= Model "std::vector::reserve()"; location} in
+        let crumb =
+          PulseDomain.ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []}
+        in
         reallocate_internal_array [crumb] vector Reserve location astate
         >>| PulseAbductiveDomain.Memory.std_vector_reserve (fst vector)
         >>| List.return
@@ -231,7 +224,7 @@ module StdVector = struct
     match actuals with
     | [(vector, _); _value] ->
         let crumb =
-          PulseDomain.ValueHistory.Call {f= Model "std::vector::push_back()"; location}
+          PulseDomain.ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []}
         in
         if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
           (* assume that any call to [push_back] is ok after one called [reserve] on the same vector

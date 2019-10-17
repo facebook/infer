@@ -9,7 +9,7 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
-module InterprocAction = PulseDomain.InterprocAction
+module Trace = PulseDomain.Trace
 module ValueHistory = PulseDomain.ValueHistory
 module Memory = PulseAbductiveDomain.Memory
 module Stack = PulseAbductiveDomain.Stack
@@ -28,10 +28,11 @@ type t = PulseAbductiveDomain.t
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
 (** Check that the [address] is not known to be invalid *)
-let check_addr_access action (address, history) astate =
-  Memory.check_valid action address astate
+let check_addr_access location (address, history) astate =
+  let accessed_by = Trace.Immediate {imm= (); location; history} in
+  Memory.check_valid accessed_by address astate
   |> Result.map_error ~f:(fun invalidated_by ->
-         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= {action; history}} )
+         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by} )
 
 
 module Closures = struct
@@ -93,45 +94,43 @@ module Closures = struct
               let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
               Some (address_captured, new_trace) )
     in
-    let closure_addr = AbstractAddress.mk_fresh () in
+    let closure_addr_hist = (AbstractAddress.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
     let astate =
-      Memory.set_cell closure_addr
+      Memory.set_cell closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
         location astate
     in
-    (astate, (closure_addr, (* TODO: trace *) []))
+    (astate, closure_addr_hist)
 end
 
 let eval_var var astate = Stack.eval var astate
 
-let eval_access location addr_trace access astate =
-  let addr = fst addr_trace in
-  let action = InterprocAction.Immediate {imm= (); location} in
-  check_addr_access action addr_trace astate >>| fun astate -> Memory.eval_edge addr access astate
+let eval_access location addr_hist access astate =
+  check_addr_access location addr_hist astate
+  >>| fun astate -> Memory.eval_edge addr_hist access astate
 
 
 let eval location exp0 astate =
-  let action = InterprocAction.Immediate {imm= (); location} in
   let rec eval exp astate =
     match (exp : Exp.t) with
     | Var id ->
-        Ok (eval_var (Var.of_id id) astate)
+        Ok (eval_var (* error in case of missing history? *) [] (Var.of_id id) astate)
     | Lvar pvar ->
-        Ok (eval_var (Var.of_pvar pvar) astate)
+        Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
         eval exp' astate
-        >>= fun (astate, addr_trace) ->
-        check_addr_access action addr_trace astate
-        >>| fun astate -> Memory.eval_edge (fst addr_trace) (FieldAccess field) astate
+        >>= fun (astate, addr_hist) ->
+        check_addr_access location addr_hist astate
+        >>| fun astate -> Memory.eval_edge addr_hist (FieldAccess field) astate
     | Lindex (exp', exp_index) ->
         eval exp_index astate
-        >>= fun (astate, addr_trace_index) ->
+        >>= fun (astate, addr_hist_index) ->
         eval exp' astate
-        >>= fun (astate, addr_trace) ->
-        check_addr_access action addr_trace astate
+        >>= fun (astate, addr_hist) ->
+        check_addr_access location addr_hist astate
         >>| fun astate ->
-        Memory.eval_edge (fst addr_trace) (ArrayAccess (Typ.void, fst addr_trace_index)) astate
+        Memory.eval_edge addr_hist (ArrayAccess (Typ.void, fst addr_hist_index)) astate
     | Closure {name; captured_vars} ->
         List.fold_result captured_vars ~init:(astate, [])
           ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _) ->
@@ -219,10 +218,9 @@ let assert_is_true location ~condition astate = eval_cond ~negated:false locatio
 
 let eval_deref location exp astate =
   eval location exp astate
-  >>= fun (astate, addr_trace) ->
-  let action = InterprocAction.Immediate {imm= (); location} in
-  check_addr_access action addr_trace astate
-  >>| fun astate -> Memory.eval_edge (fst addr_trace) Dereference astate
+  >>= fun (astate, addr_hist) ->
+  check_addr_access location addr_hist astate
+  >>| fun astate -> Memory.eval_edge addr_hist Dereference astate
 
 
 let realloc_pvar pvar location astate =
@@ -238,12 +236,9 @@ let havoc_id id loc_opt astate =
   else astate
 
 
-let action_of_address location = InterprocAction.Immediate {imm= (); location}
-
 let write_access location addr_trace_ref access addr_trace_obj astate =
-  let action = action_of_address location in
-  check_addr_access action addr_trace_ref astate
-  >>| Memory.add_edge (fst addr_trace_ref) access addr_trace_obj location
+  check_addr_access location addr_trace_ref astate
+  >>| Memory.add_edge addr_trace_ref access addr_trace_obj location
 
 
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
@@ -263,18 +258,16 @@ let havoc_field location addr_trace field trace_obj astate =
 
 
 let invalidate location cause addr_trace astate =
-  let action = action_of_address location in
-  check_addr_access action addr_trace astate >>| Memory.invalidate addr_trace cause
+  check_addr_access location addr_trace astate >>| Memory.invalidate addr_trace cause location
 
 
-let invalidate_deref location cause (addr_ref, history) astate =
-  let astate, (addr_obj, _) = Memory.eval_edge addr_ref Dereference astate in
-  invalidate location cause (addr_obj, history) astate
+let invalidate_deref location cause ref_addr_hist astate =
+  let astate, (addr_obj, _) = Memory.eval_edge ref_addr_hist Dereference astate in
+  invalidate location cause (addr_obj, snd ref_addr_hist) astate
 
 
 let invalidate_array_elements location cause addr_trace astate =
-  let action = action_of_address location in
-  check_addr_access action addr_trace astate
+  check_addr_access location addr_trace astate
   >>| fun astate ->
   match Memory.find_opt (fst addr_trace) astate with
   | None ->
@@ -284,15 +277,14 @@ let invalidate_array_elements location cause addr_trace astate =
         (fun access dest_addr_trace astate ->
           match (access : Memory.Access.t) with
           | ArrayAccess _ ->
-              Memory.invalidate dest_addr_trace cause astate
+              Memory.invalidate dest_addr_trace cause location astate
           | _ ->
               astate )
         edges astate
 
 
 let shallow_copy location addr_hist astate =
-  let action = action_of_address location in
-  check_addr_access action addr_hist astate
+  check_addr_access location addr_hist astate
   >>| fun astate ->
   let cell =
     match Memory.find_opt (fst addr_hist) astate with
@@ -301,7 +293,7 @@ let shallow_copy location addr_hist astate =
     | Some cell ->
         cell
   in
-  let copy = AbstractAddress.mk_fresh () in
+  let copy = (AbstractAddress.mk_fresh (), [ValueHistory.Assignment location]) in
   (Memory.set_cell copy cell location astate, copy)
 
 
@@ -391,11 +383,11 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
           PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
             astate
           >>| fun (post, return_val_opt) ->
-          let event = ValueHistory.Call {f= Call callee_pname; location= call_loc} in
+          let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
           let post =
             match return_val_opt with
-            | Some return_val ->
-                write_id (fst ret) (return_val, [event]) post
+            | Some (return_val, return_hist) ->
+                write_id (fst ret) (return_val, event :: return_hist) post
             | None ->
                 havoc_id (fst ret) [event] post
           in
@@ -403,5 +395,7 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
-      let event = ValueHistory.Call {f= SkippedKnownCall callee_pname; location= call_loc} in
+      let event =
+        ValueHistory.Call {f= SkippedKnownCall callee_pname; location= call_loc; in_call= []}
+      in
       Ok [havoc_id (fst ret) [event] astate]

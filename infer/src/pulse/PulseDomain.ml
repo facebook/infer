@@ -124,18 +124,26 @@ end
 module ValueHistory = struct
   type event =
     | Assignment of Location.t
-    | Call of {f: CallEvent.t; location: Location.t}
+    | Call of {f: CallEvent.t; location: Location.t; in_call: t}
     | Capture of {captured_as: Pvar.t; location: Location.t}
     | CppTemporaryCreated of Location.t
     | FormalDeclared of Pvar.t * Location.t
+    | VariableAccessed of Pvar.t * Location.t
     | VariableDeclared of Pvar.t * Location.t
-  [@@deriving compare]
 
-  let pp_event_no_location fmt = function
+  and t = event list [@@deriving compare]
+
+  let pp_event_no_location fmt event =
+    let pp_pvar fmt pvar =
+      if Pvar.is_global pvar then
+        F.fprintf fmt "global variable `%a`" Pvar.pp_value_non_verbose pvar
+      else F.fprintf fmt "variable `%a`" Pvar.pp_value_non_verbose pvar
+    in
+    match event with
     | Assignment _ ->
         F.pp_print_string fmt "assigned"
     | Call {f; location= _} ->
-        F.fprintf fmt "returned from call to %a" CallEvent.pp f
+        F.fprintf fmt "passed as argument to %a" CallEvent.pp f
     | Capture {captured_as; location= _} ->
         F.fprintf fmt "value captured as `%a`" Pvar.pp_value_non_verbose captured_as
     | CppTemporaryCreated _ ->
@@ -146,8 +154,10 @@ module ValueHistory = struct
           |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Typ.Procname.pp proc_name)
         in
         F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+    | VariableAccessed (pvar, _) ->
+        F.fprintf fmt "%a accessed here" pp_pvar pvar
     | VariableDeclared (pvar, _) ->
-        F.fprintf fmt "variable `%a` declared here" Pvar.pp_value_non_verbose pvar
+        F.fprintf fmt "%a declared here" pp_pvar pvar
 
 
   let location_of_event = function
@@ -156,105 +166,115 @@ module ValueHistory = struct
     | Capture {location}
     | CppTemporaryCreated location
     | FormalDeclared (_, location)
+    | VariableAccessed (_, location)
     | VariableDeclared (_, location) ->
         location
 
 
-  let pp_event fmt crumb =
-    F.fprintf fmt "%a at %a" pp_event_no_location crumb Location.pp_line (location_of_event crumb)
+  let pp_event fmt event =
+    F.fprintf fmt "%a at %a" pp_event_no_location event Location.pp_line (location_of_event event)
 
 
-  let errlog_trace_elem_of_event ~nesting crumb =
-    let location = location_of_event crumb in
-    let description = F.asprintf "%a" pp_event_no_location crumb in
+  let pp fmt history =
+    let rec pp_aux fmt = function
+      | [] ->
+          ()
+      | (Call {f; in_call} as event) :: tail ->
+          F.fprintf fmt "%a@;" pp_event event ;
+          F.fprintf fmt "[%a]@;" pp_aux (List.rev in_call) ;
+          if not (List.is_empty tail) then F.fprintf fmt "return from call to %a@;" CallEvent.pp f ;
+          pp_aux fmt tail
+      | event :: tail ->
+          F.fprintf fmt "%a@;" pp_event event ;
+          pp_aux fmt tail
+    in
+    F.fprintf fmt "@[%a@]" pp_aux (List.rev history)
+
+
+  let add_event_to_errlog ~nesting event errlog =
+    let location = location_of_event event in
+    let description = F.asprintf "%a" pp_event_no_location event in
     let tags = [] in
-    Errlog.make_trace_element nesting location description tags
+    Errlog.make_trace_element nesting location description tags :: errlog
 
 
-  type t = event list [@@deriving compare]
-
-  let pp f events = Pp.seq ~print_env:Pp.text_break pp_event f events
-
-  let add_to_errlog ~nesting events errlog =
-    List.rev_map_append ~f:(errlog_trace_elem_of_event ~nesting) events errlog
+  let add_returned_from_call_to_errlog ~nesting f location errlog =
+    let description = F.asprintf "return from call to %a" CallEvent.pp f in
+    let tags = [] in
+    Errlog.make_trace_element nesting location description tags :: errlog
 
 
-  let get_start_location = function [] -> None | crumb :: _ -> Some (location_of_event crumb)
+  let add_to_errlog ~nesting history errlog =
+    let rec add_to_errlog_aux ~nesting history errlog =
+      match history with
+      | [] ->
+          errlog
+      | (Call {f; location; in_call} as event) :: tail ->
+          add_to_errlog_aux ~nesting tail
+          @@ add_event_to_errlog ~nesting event
+          @@ add_to_errlog_aux ~nesting:(nesting + 1) in_call
+          @@ add_returned_from_call_to_errlog ~nesting f location
+          @@ errlog
+      | event :: tail ->
+          add_to_errlog_aux ~nesting tail @@ add_event_to_errlog ~nesting event @@ errlog
+    in
+    add_to_errlog_aux ~nesting history errlog
 end
 
-module InterprocAction = struct
+module Trace = struct
   type 'a t =
-    | Immediate of {imm: 'a; location: Location.t}
-    | ViaCall of {action: 'a t; f: CallEvent.t; location: Location.t}
+    | Immediate of {imm: 'a; location: Location.t; history: ValueHistory.t}
+    | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: 'a t}
   [@@deriving compare]
 
-  let dummy = Immediate {imm= (); location= Location.dummy}
+  (** only for use in the attributes' [*_rank] functions *)
+  let mk_dummy imm = Immediate {imm; location= Location.dummy; history= []}
 
   let rec get_immediate = function
     | Immediate {imm; _} ->
         imm
-    | ViaCall {action; _} ->
-        get_immediate action
+    | ViaCall {in_call; _} ->
+        get_immediate in_call
 
 
-  let pp pp_immediate fmt = function
-    | Immediate {imm; _} ->
-        pp_immediate fmt imm
-    | ViaCall {f; action; _} ->
-        F.fprintf fmt "%a in call to %a" pp_immediate (get_immediate action) CallEvent.pp f
+  let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
+
+  let get_history = function Immediate {history; _} | ViaCall {history; _} -> history
+
+  let get_start_location trace =
+    match get_history trace |> List.last with
+    | Some event ->
+        ValueHistory.location_of_event event
+    | None ->
+        get_outer_location trace
 
 
-  let add_to_errlog ~nesting pp_immediate action errlog =
-    let rec aux ~nesting rev_errlog action =
-      match action with
-      | Immediate {imm; location} ->
-          let rev_errlog =
-            Errlog.make_trace_element nesting location (F.asprintf "%a" pp_immediate imm) []
-            :: rev_errlog
-          in
-          List.rev_append rev_errlog errlog
-      | ViaCall {action; f; location} ->
-          aux ~nesting:(nesting + 1)
-            ( Errlog.make_trace_element nesting location
-                (F.asprintf "when calling %a here" CallEvent.pp f)
-                []
-            :: rev_errlog )
-            action
-    in
-    aux ~nesting [] action
+  let rec pp pp_immediate fmt = function
+    | Immediate {imm; location= _; history} ->
+        if Config.debug_level_analysis < 3 then pp_immediate fmt imm
+        else F.fprintf fmt "%a::%a" ValueHistory.pp history pp_immediate imm
+    | ViaCall {f; location= _; history; in_call} ->
+        if Config.debug_level_analysis < 3 then pp pp_immediate fmt in_call
+        else
+          F.fprintf fmt "%a::%a[%a]" ValueHistory.pp history CallEvent.pp f (pp pp_immediate)
+            in_call
 
 
-  let to_outer_location = function Immediate {location} | ViaCall {location} -> location
-end
-
-module Trace = struct
-  type 'a t = {action: 'a InterprocAction.t; history: ValueHistory.t} [@@deriving compare]
-
-  let pp pp_immediate f {action; history} =
-    if Config.debug_level_analysis < 3 then InterprocAction.pp pp_immediate f action
-    else
-      F.fprintf f "{@[action=@[%a@]@;history=@[%a@]@]}" (InterprocAction.pp pp_immediate) action
-        ValueHistory.pp history
-
-
-  let add_errlog_header ~title location errlog =
-    let depth = 0 in
-    let tags = [] in
-    Errlog.make_trace_element depth location title tags :: errlog
-
-
-  let add_to_errlog ~header pp_immediate trace errlog =
-    let start_location =
-      match ValueHistory.get_start_location trace.history with
-      | Some location ->
-          location
-      | None ->
-          InterprocAction.to_outer_location trace.action
-    in
-    add_errlog_header ~title:header start_location
-    @@ ValueHistory.add_to_errlog ~nesting:1 trace.history
-    @@ InterprocAction.add_to_errlog ~nesting:1 pp_immediate trace.action
-    @@ errlog
+  let rec add_to_errlog ~nesting pp_immediate trace errlog =
+    match trace with
+    | Immediate {imm; location; history} ->
+        ValueHistory.add_to_errlog ~nesting history
+        @@ Errlog.make_trace_element nesting location (F.asprintf "%a" pp_immediate imm) []
+           :: errlog
+    | ViaCall {f; location; in_call; history} ->
+        ValueHistory.add_to_errlog ~nesting history
+        @@ (fun errlog ->
+             Errlog.make_trace_element nesting location
+               (F.asprintf "when calling %a here" CallEvent.pp f)
+               []
+             :: errlog )
+        @@ add_to_errlog ~nesting:(nesting + 1) pp_immediate in_call
+        @@ errlog
 end
 
 module Attribute = struct
@@ -272,9 +292,9 @@ module Attribute = struct
     | Closure of Typ.Procname.t
     | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit InterprocAction.t
+    | MustBeValid of unit Trace.t
     | StdVectorReserve
-    | WrittenTo of unit InterprocAction.t
+    | WrittenTo of unit Trace.t
   [@@deriving compare, variants]
 
   let equal = [%compare.equal: t]
@@ -283,7 +303,7 @@ module Attribute = struct
 
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
 
-  let written_to_rank = Variants.to_rank (WrittenTo InterprocAction.dummy)
+  let written_to_rank = Variants.to_rank (WrittenTo (Trace.mk_dummy ()))
 
   let address_of_stack_variable_rank =
     let pname = Typ.Procname.from_string_c_fun "" in
@@ -292,19 +312,19 @@ module Attribute = struct
     Variants.to_rank (AddressOfStackVariable (var, location, []))
 
 
-  let invalid_rank =
-    Variants.to_rank
-      (Invalid
-         {action= Immediate {imm= Invalidation.Nullptr; location= Location.dummy}; history= []})
+  let invalid_rank = Variants.to_rank (Invalid (Trace.mk_dummy Invalidation.Nullptr))
 
-
-  let must_be_valid_rank = Variants.to_rank (MustBeValid InterprocAction.dummy)
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (Trace.mk_dummy ()))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let const_rank = Variants.to_rank (Constant (Const.Cint IntLit.zero))
 
-  let pp f = function
+  let pp f attribute =
+    let pp_string_if_debug string fmt () =
+      if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
+    in
+    match attribute with
     | AddressOfCppTemporary (var, history) ->
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, location, history) ->
@@ -314,19 +334,13 @@ module Attribute = struct
     | Constant c ->
         F.fprintf f "=%a" (Const.pp Pp.text) c
     | Invalid invalidation ->
-        (Trace.pp Invalidation.pp) f invalidation
+        F.fprintf f "Invalid %a" (Trace.pp Invalidation.pp) invalidation
     | MustBeValid action ->
-        F.fprintf f "MustBeValid (read by %a @ %a)"
-          (InterprocAction.pp (fun _ () -> ()))
-          action Location.pp
-          (InterprocAction.to_outer_location action)
+        F.fprintf f "MustBeValid %a" (Trace.pp (pp_string_if_debug "access")) action
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | WrittenTo action ->
-        F.fprintf f "WrittenTo (written by %a @ %a)"
-          (InterprocAction.pp (fun _ () -> ()))
-          action Location.pp
-          (InterprocAction.to_outer_location action)
+        F.fprintf f "WrittenTo %a" (Trace.pp (pp_string_if_debug "mutation")) action
 end
 
 module Attributes = struct
@@ -489,7 +503,7 @@ module Memory : sig
 
   val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
-  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t InterprocAction.t -> t -> t
+  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
 
@@ -553,8 +567,9 @@ end = struct
         (fst memory, Graph.add addr new_attrs (snd memory))
 
 
-  let invalidate (address, history) invalidation memory =
-    add_attribute address (Attribute.Invalid {action= invalidation; history}) memory
+  let invalidate (address, history) invalid location memory =
+    let invalidation = Trace.Immediate {imm= invalid; location; history} in
+    add_attribute address (Attribute.Invalid invalidation) memory
 
 
   let check_valid address memory =

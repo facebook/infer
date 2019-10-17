@@ -9,7 +9,6 @@ module F = Format
 module L = Logging
 open Result.Monad_infix
 module AbstractAddress = PulseDomain.AbstractAddress
-module InterprocAction = PulseDomain.InterprocAction
 module Invalidation = PulseDomain.Invalidation
 module ValueHistory = PulseDomain.ValueHistory
 
@@ -55,7 +54,7 @@ module PulseTransferFunctions = struct
   type extras = unit
 
   let exec_unknown_call reason ret call actuals _flags call_loc astate =
-    let event = ValueHistory.Call {f= reason; location= call_loc} in
+    let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
     let havoc_ret (ret, _) astate = PulseOperations.havoc_id ret [event] astate in
     match proc_name_of_call call with
     | Some callee_pname when Typ.Procname.is_constructor callee_pname -> (
@@ -105,14 +104,12 @@ module PulseTransferFunctions = struct
 
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope call_loc (pvar, typ) astate =
-    let event =
-      InterprocAction.Immediate {imm= Invalidation.GoneOutOfScope (pvar, typ); location= call_loc}
-    in
+    let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
     (* invalidate both [&x] and [x]: reading either is now forbidden *)
     PulseOperations.eval call_loc (Exp.Lvar pvar) astate
     >>= fun (astate, out_of_scope_base) ->
-    PulseOperations.invalidate_deref call_loc event out_of_scope_base astate
-    >>= PulseOperations.invalidate call_loc event out_of_scope_base
+    PulseOperations.invalidate_deref call_loc gone_out_of_scope out_of_scope_base astate
+    >>= PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base
 
 
   let dispatch_call summary ret call_exp actuals call_loc flags astate =
@@ -161,8 +158,7 @@ module PulseTransferFunctions = struct
         (* [lhs_id := *rhs_exp] *)
         let result =
           PulseOperations.eval_deref loc rhs_exp astate
-          >>| fun (astate, (rhs_addr, rhs_history)) ->
-          PulseOperations.write_id lhs_id (rhs_addr, rhs_history) astate
+          >>| fun (astate, rhs_addr_hist) -> PulseOperations.write_id lhs_id rhs_addr_hist astate
         in
         [check_error summary result]
     | Store {e1= lhs_exp; e2= rhs_exp; loc} ->

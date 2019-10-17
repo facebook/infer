@@ -7,6 +7,9 @@
 open! IStd
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
+module Invalidation = PulseDomain.Invalidation
+module Trace = PulseDomain.Trace
+module ValueHistory = PulseDomain.ValueHistory
 
 (* layer on top of {!PulseDomain} to propagate operations on the current state to the pre-condition
    when necessary
@@ -29,7 +32,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> PulseDomain.Stack.value option
 
-  val eval : Var.t -> t -> t * PulseDomain.AddrTracePair.t
+  val eval : ValueHistory.t -> Var.t -> t -> t * PulseDomain.AddrTracePair.t
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -46,25 +49,23 @@ module Memory : sig
   val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
 
   val add_edge :
-    AbstractAddress.t -> Access.t -> PulseDomain.AddrTracePair.t -> Location.t -> t -> t
-
-  val check_valid :
-       unit PulseDomain.InterprocAction.t
-    -> AbstractAddress.t
+       AbstractAddress.t * ValueHistory.t
+    -> Access.t
+    -> PulseDomain.AddrTracePair.t
+    -> Location.t
     -> t
-    -> (t, PulseDomain.Invalidation.t PulseDomain.Trace.t) result
+    -> t
+
+  val check_valid : unit Trace.t -> AbstractAddress.t -> t -> (t, Invalidation.t Trace.t) result
 
   val find_opt : AbstractAddress.t -> t -> PulseDomain.Memory.cell option
 
   val find_edge_opt : AbstractAddress.t -> Access.t -> t -> PulseDomain.AddrTracePair.t option
 
-  val set_cell : AbstractAddress.t -> PulseDomain.Memory.cell -> Location.t -> t -> t
+  val set_cell :
+    AbstractAddress.t * ValueHistory.t -> PulseDomain.Memory.cell -> Location.t -> t -> t
 
-  val invalidate :
-       AbstractAddress.t * PulseDomain.ValueHistory.t
-    -> PulseDomain.Invalidation.t PulseDomain.InterprocAction.t
-    -> t
-    -> t
+  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
 
@@ -72,9 +73,10 @@ module Memory : sig
 
   val std_vector_reserve : AbstractAddress.t -> t -> t
 
-  val eval_edge : AbstractAddress.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
-  (** [eval_edge addr access astate] follows the edge [addr --access--> .] in memory and returns
-      what it points to or creates a fresh value if that edge didn't exist.  *)
+  val eval_edge :
+    AbstractAddress.t * ValueHistory.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
+  (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
+      returns what it points to or creates a fresh value if that edge didn't exist.  *)
 
   val get_constant : AbstractAddress.t -> t -> Const.t option
 end
@@ -95,9 +97,9 @@ module PrePost : sig
     -> Location.t
     -> t
     -> formals:Var.t list
-    -> actuals:((AbstractAddress.t * PulseDomain.ValueHistory.t) * Typ.t) list
+    -> actuals:((AbstractAddress.t * ValueHistory.t) * Typ.t) list
     -> domain_t
-    -> (domain_t * AbstractAddress.t option, PulseDiagnostic.t) result
+    -> (domain_t * (AbstractAddress.t * ValueHistory.t) option, PulseDiagnostic.t) result
   (** return the abstract state after the call along with an optional return value *)
 end
 

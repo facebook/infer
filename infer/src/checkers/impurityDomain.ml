@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type trace =
-  | WrittenTo of unit PulseDomain.InterprocAction.t
+  | WrittenTo of unit PulseDomain.Trace.t
   | Invalid of PulseDomain.Invalidation.t PulseDomain.Trace.t
 [@@deriving compare]
 
@@ -53,31 +53,19 @@ let pp_param_source fmt = function
 
 
 let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
-  let rec aux ~nesting rev_errlog action =
-    match action with
-    | WrittenTo (PulseDomain.InterprocAction.Immediate {location}) ->
-        let rev_errlog =
-          Errlog.make_trace_element nesting location
-            (F.asprintf "%a '%a' is modified at %a" pp_param_source param_source Var.pp var
-               Location.pp location)
-            []
-          :: rev_errlog
-        in
-        List.rev_append rev_errlog errlog
-    | WrittenTo (PulseDomain.InterprocAction.ViaCall {action; f; location}) ->
-        aux ~nesting:(nesting + 1)
-          ( Errlog.make_trace_element nesting location
-              (F.asprintf "%a '%a' is modified when calling %a at %a" pp_param_source param_source
-                 Var.pp var PulseDomain.CallEvent.describe f Location.pp location)
-              []
-          :: rev_errlog )
-          (WrittenTo action)
-    | Invalid trace ->
-        PulseDomain.Trace.add_to_errlog
-          ~header:(F.asprintf "%a '%a'" pp_param_source param_source Var.pp var)
-          (fun f invalidation ->
-            F.fprintf f "%a here" PulseDomain.Invalidation.describe invalidation )
-          trace rev_errlog
+  let aux ~nesting errlog trace =
+    match trace with
+    | WrittenTo access_trace ->
+        PulseDomain.Trace.add_to_errlog ~nesting
+          (fun fmt () ->
+            F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
+          access_trace errlog
+    | Invalid invalidation_trace ->
+        PulseDomain.Trace.add_to_errlog ~nesting
+          (fun fmt invalid ->
+            F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
+              PulseDomain.Invalidation.describe invalid )
+          invalidation_trace errlog
   in
   let first_trace, rest = trace_list in
-  List.fold_left rest ~init:(aux ~nesting [] first_trace) ~f:(aux ~nesting)
+  List.fold_left rest ~init:(aux ~nesting errlog first_trace) ~f:(aux ~nesting)

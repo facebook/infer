@@ -10,6 +10,9 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
+module Invalidation = PulseDomain.Invalidation
+module Trace = PulseDomain.Trace
+module ValueHistory = PulseDomain.ValueHistory
 module BaseStack = PulseDomain.Stack
 module BaseMemory = PulseDomain.Memory
 
@@ -98,21 +101,21 @@ module Stack = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let eval var astate =
+  let eval origin var astate =
     match BaseStack.find_opt var (astate.post :> base_domain).stack with
     | Some addr_hist ->
         (astate, addr_hist)
     | None ->
-        let addr_hist = (AbstractAddress.mk_fresh (), []) in
+        let addr = AbstractAddress.mk_fresh () in
+        let addr_hist = (addr, origin) in
         let post_stack = BaseStack.add var addr_hist (astate.post :> base_domain).stack in
         let pre =
           (* do not overwrite values of variables already in the pre *)
           if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
           then
-            let foot_stack = BaseStack.add var addr_hist (astate.pre :> base_domain).stack in
-            let foot_heap =
-              BaseMemory.register_address (fst addr_hist) (astate.pre :> base_domain).heap
-            in
+            (* HACK: do not record the history of values in the pre as they are unused *)
+            let foot_stack = BaseStack.add var (addr, []) (astate.pre :> base_domain).stack in
+            let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
             InvertedDomain.make foot_stack foot_heap
           else astate.pre
         in
@@ -152,53 +155,56 @@ module Memory = struct
 
 
   (** if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-  let record_must_be_valid action address (pre : InvertedDomain.t) =
+  let record_must_be_valid access_trace address (pre : InvertedDomain.t) =
     if BaseMemory.mem_edges address (pre :> base_domain).heap then
       InvertedDomain.update pre
-        ~heap:(BaseMemory.add_attribute address (MustBeValid action) (pre :> base_domain).heap)
+        ~heap:
+          (BaseMemory.add_attribute address (MustBeValid access_trace) (pre :> base_domain).heap)
     else pre
 
 
-  let check_valid action addr ({post; pre} as astate) =
+  let check_valid access_trace addr ({post; pre} as astate) =
     BaseMemory.check_valid addr (post :> base_domain).heap
     >>| fun () ->
-    let new_pre = record_must_be_valid action addr pre in
+    let new_pre = record_must_be_valid access_trace addr pre in
     if phys_equal new_pre pre then astate else {astate with pre= new_pre}
 
 
-  let add_edge addr access new_addr_trace loc astate =
+  let add_edge (addr, history) access new_addr_hist location astate =
     map_post_heap astate ~f:(fun heap ->
-        BaseMemory.add_edge addr access new_addr_trace heap
-        |> BaseMemory.add_attribute addr
-             (WrittenTo (PulseDomain.InterprocAction.Immediate {imm= (); location= loc})) )
+        BaseMemory.add_edge addr access new_addr_hist heap
+        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {imm= (); location; history}))
+    )
 
 
   let find_edge_opt address access astate =
     BaseMemory.find_edge_opt address access (astate.post :> base_domain).heap
 
 
-  let eval_edge addr access astate =
-    match find_edge_opt addr access astate with
-    | Some addr_trace' ->
-        (astate, addr_trace')
+  let eval_edge (addr_src, hist_src) access astate =
+    match find_edge_opt addr_src access astate with
+    | Some addr_hist_dst ->
+        (astate, addr_hist_dst)
     | None ->
-        let addr_trace' = (AbstractAddress.mk_fresh (), []) in
+        let addr_dst = AbstractAddress.mk_fresh () in
+        let addr_hist_dst = (addr_dst, hist_src) in
         let post_heap =
-          BaseMemory.add_edge addr access addr_trace' (astate.post :> base_domain).heap
+          BaseMemory.add_edge addr_src access addr_hist_dst (astate.post :> base_domain).heap
         in
         let foot_heap =
-          if BaseMemory.mem_edges addr (astate.pre :> base_domain).heap then
-            BaseMemory.add_edge addr access addr_trace' (astate.pre :> base_domain).heap
-            |> BaseMemory.register_address (fst addr_trace')
+          if BaseMemory.mem_edges addr_src (astate.pre :> base_domain).heap then
+            (* HACK: do not record the history of values in the pre as they are unused *)
+            BaseMemory.add_edge addr_src access (addr_dst, []) (astate.pre :> base_domain).heap
+            |> BaseMemory.register_address addr_dst
           else (astate.pre :> base_domain).heap
         in
         ( { post= Domain.update astate.post ~heap:post_heap
           ; pre= InvertedDomain.update astate.pre ~heap:foot_heap }
-        , addr_trace' )
+        , addr_hist_dst )
 
 
-  let invalidate address action astate =
-    map_post_heap astate ~f:(fun heap -> BaseMemory.invalidate address action heap)
+  let invalidate address invalidation location astate =
+    map_post_heap astate ~f:(fun heap -> BaseMemory.invalidate address invalidation location heap)
 
 
   let add_attribute address attributes astate =
@@ -221,11 +227,11 @@ module Memory = struct
 
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 
-  let set_cell addr cell loc astate =
+  let set_cell (addr, history) cell location astate =
     map_post_heap astate ~f:(fun heap ->
         BaseMemory.set_cell addr cell heap
-        |> BaseMemory.add_attribute addr
-             (WrittenTo (PulseDomain.InterprocAction.Immediate {imm= (); location= loc})) )
+        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {imm= (); location; history}))
+    )
 
 
   module Edges = BaseMemory.Edges
@@ -241,8 +247,7 @@ let mk_initial proc_desc =
     |> List.map ~f:(fun (mangled, _) ->
            let pvar = Pvar.mk mangled proc_name in
            ( Var.of_pvar pvar
-           , ( AbstractAddress.mk_fresh ()
-             , [PulseDomain.ValueHistory.FormalDeclared (pvar, location)] ) ) )
+           , (AbstractAddress.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
   in
   let initial_stack =
     List.fold formals ~init:(InvertedDomain.empty :> PulseDomain.t).stack
@@ -305,11 +310,10 @@ module PrePost = struct
 
 
   let add_out_of_scope_attribute addr pvar location history heap typ =
-    let action =
-      PulseDomain.InterprocAction.Immediate
-        {imm= PulseDomain.Invalidation.GoneOutOfScope (pvar, typ); location}
+    let attr =
+      Attribute.Invalid (Immediate {imm= GoneOutOfScope (pvar, typ); location; history})
     in
-    BaseMemory.add_attribute addr (Invalid {action; history}) heap
+    BaseMemory.add_attribute addr attr heap
 
 
   (** invalidate local variables going out of scope *)
@@ -356,8 +360,8 @@ module PrePost = struct
   (** stuff we carry around when computing the result of applying one pre/post pair *)
   type call_state =
     { astate: t  (** caller's abstract state computed so far *)
-    ; subst: AbstractAddress.t AddressMap.t
-          (** translation from callee addresses to caller addresses *)
+    ; subst: (AbstractAddress.t * ValueHistory.t) AddressMap.t
+          (** translation from callee addresses to caller addresses and their caller histories *)
     ; rev_subst: AbstractAddress.t AddressMap.t
           (** the inverse translation from [subst] from caller addresses to callee addresses *)
     ; visited: AddressSet.t
@@ -373,28 +377,31 @@ module PrePost = struct
       "@[<v>{ astate=@[<hv2>%a@];@, subst=@[<hv2>%a@];@, rev_subst=@[<hv2>%a@];@, \
        visited=@[<hv2>%a@]@, }@]"
       pp astate
-      (AddressMap.pp ~pp_value:AbstractAddress.pp)
+      (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractAddress.pp fmt addr))
       subst
       (AddressMap.pp ~pp_value:AbstractAddress.pp)
       rev_subst AddressSet.pp visited
 
 
-  let fold_globals_of_stack stack call_state ~f =
+  let fold_globals_of_stack call_loc stack call_state ~f =
     Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:BaseStack.fold)
       stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
         match var with
         | Var.ProgramVar pvar when Pvar.is_global pvar ->
-            let call_state, (addr_caller, _) =
-              let astate, var_value = Stack.eval var call_state.astate in
+            let call_state, addr_hist_caller =
+              let astate, var_value =
+                Stack.eval [ValueHistory.VariableAccessed (pvar, call_loc)] var call_state.astate
+              in
               if phys_equal astate call_state.astate then (call_state, var_value)
               else ({call_state with astate}, var_value)
             in
-            f pvar ~stack_value ~addr_caller call_state
+            f pvar ~stack_value ~addr_hist_caller call_state
         | _ ->
             Ok call_state )
 
 
-  let visit call_state ~addr_callee ~addr_caller =
+  let visit call_state ~addr_callee ~addr_hist_caller =
+    let addr_caller = fst addr_hist_caller in
     ( match AddressMap.find_opt addr_caller call_state.rev_subst with
     | Some addr_callee' when not (AbstractAddress.equal addr_callee addr_callee') ->
         L.d_printfln "Huho, address %a in post already bound to %a, not %a@\nState=%a"
@@ -408,7 +415,7 @@ module PrePost = struct
       ( `NotAlreadyVisited
       , { call_state with
           visited= AddressSet.add addr_callee call_state.visited
-        ; subst= AddressMap.add addr_callee addr_caller call_state.subst
+        ; subst= AddressMap.add addr_callee addr_hist_caller call_state.subst
         ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
@@ -422,13 +429,16 @@ module PrePost = struct
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
-  let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre ~addr_caller
-      history call_state =
-    let mk_action action =
-      PulseDomain.InterprocAction.ViaCall
-        {action; f= Call callee_proc_name; location= call_location}
+  let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre
+      ~addr_hist_caller call_state =
+    let add_call trace =
+      Trace.ViaCall
+        { in_call= trace
+        ; f= Call callee_proc_name
+        ; location= call_location
+        ; history= snd addr_hist_caller }
     in
-    match visit call_state ~addr_callee:addr_pre ~addr_caller with
+    match visit call_state ~addr_callee:addr_pre ~addr_hist_caller with
     | `AlreadyVisited, call_state ->
         Ok call_state
     | `NotAlreadyVisited, call_state -> (
@@ -436,24 +446,23 @@ module PrePost = struct
         BaseMemory.find_opt addr_pre pre.PulseDomain.heap
         >>= fun (edges_pre, attrs_pre) ->
         Attributes.get_must_be_valid attrs_pre
-        >>| fun callee_action ->
-        let action = mk_action callee_action in
-        match Memory.check_valid action addr_caller call_state.astate with
+        >>| fun callee_access_trace ->
+        let access_trace = add_call callee_access_trace in
+        match Memory.check_valid access_trace (fst addr_hist_caller) call_state.astate with
         | Error invalidated_by ->
             Error
-              (PulseDiagnostic.AccessToInvalidAddress
-                 {invalidated_by; accessed_by= {action; history}})
+              (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace})
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result
               ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
               ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
-                let astate, (addr_caller_dest, _) =
-                  Memory.eval_edge addr_caller access call_state.astate
+                let astate, addr_hist_dest_caller =
+                  Memory.eval_edge addr_hist_caller access call_state.astate
                 in
                 let call_state = {call_state with astate} in
                 materialize_pre_from_address callee_proc_name call_location ~pre
-                  ~addr_pre:addr_pre_dest ~addr_caller:addr_caller_dest history call_state ))
+                  ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ))
         |> function Some result -> result | None -> Ok call_state )
 
 
@@ -461,15 +470,14 @@ module PrePost = struct
       has been instantiated with the corresponding [actual] into the current state
       [call_state.astate] *)
   let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
-    let addr_caller, trace = actual in
-    L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractAddress.pp addr_caller ;
+    L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractAddress.pp (fst actual) ;
     (let open Option.Monad_infix in
     BaseStack.find_opt formal pre.PulseDomain.stack
     >>= fun (addr_formal_pre, _) ->
     BaseMemory.find_edge_opt addr_formal_pre Dereference pre.PulseDomain.heap
     >>| fun (formal_pre, _) ->
     materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
-      ~addr_caller trace call_state)
+      ~addr_hist_caller:actual call_state)
     |> function Some result -> result | None -> Ok call_state
 
 
@@ -514,11 +522,11 @@ module PrePost = struct
 
 
   let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
-    fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
-      ~f:(fun _var ~stack_value:(addr_pre, history) ~addr_caller call_state ->
+    fold_globals_of_stack call_location (pre_post.pre :> PulseDomain.t).stack call_state
+      ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
         materialize_pre_from_address callee_proc_name call_location
           ~pre:(pre_post.pre :> PulseDomain.t)
-          ~addr_pre ~addr_caller history call_state )
+          ~addr_pre ~addr_hist_caller call_state )
 
 
   let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
@@ -537,19 +545,21 @@ module PrePost = struct
 
   (* {3 applying the post to the current state} *)
 
-  let subst_find_or_new subst addr_callee =
+  let subst_find_or_new subst addr_callee ~default_hist_caller =
     match AddressMap.find_opt addr_callee subst with
     | None ->
-        let addr_fresh = AbstractAddress.mk_fresh () in
-        (addr_fresh, AddressMap.add addr_callee addr_fresh subst)
-    | Some addr_caller ->
-        (addr_caller, subst)
+        let addr_hist_fresh = (AbstractAddress.mk_fresh (), default_hist_caller) in
+        (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
+    | Some addr_hist_caller ->
+        (subst, addr_hist_caller)
 
 
-  let call_state_subst_find_or_new call_state addr_callee =
-    let addr_caller, new_subst = subst_find_or_new call_state.subst addr_callee in
-    if phys_equal new_subst call_state.subst then (call_state, addr_caller)
-    else ({call_state with subst= new_subst}, addr_caller)
+  let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
+    let new_subst, addr_hist_caller =
+      subst_find_or_new call_state.subst addr_callee ~default_hist_caller
+    in
+    if phys_equal new_subst call_state.subst then (call_state, addr_hist_caller)
+    else ({call_state with subst= new_subst}, addr_hist_caller)
 
 
   let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~cell_pre_opt ~addr_caller call_state =
@@ -572,14 +582,15 @@ module PrePost = struct
             old_post_edges edges_pre )
 
 
-  let add_call_to_attr proc_name location attr =
+  let add_call_to_attr proc_name call_location caller_history attr =
     match (attr : Attribute.t) with
-    | Invalid trace ->
+    | Invalid invalidation ->
         Attribute.Invalid
-          { action=
-              PulseDomain.InterprocAction.ViaCall
-                {action= trace.action; f= Call proc_name; location}
-          ; history= trace.history }
+          (ViaCall
+             { f= Call proc_name
+             ; location= call_location
+             ; history= caller_history
+             ; in_call= invalidation })
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
     | Closure _
@@ -591,25 +602,28 @@ module PrePost = struct
 
 
   let record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
-      ~cell_post:(edges_post, attrs_post) ~addr_caller call_state =
+      ~cell_post:(edges_post, attrs_post) ~addr_hist_caller:(addr_caller, hist_caller) call_state =
     let post_edges_minus_pre =
       delete_edges_in_callee_pre_from_caller ~addr_callee ~cell_pre_opt ~addr_caller call_state
     in
     let heap = (call_state.astate.post :> base_domain).heap in
     let heap =
       let attrs_post_caller =
-        Attributes.map ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc attr) attrs_post
+        Attributes.map attrs_post ~f:(fun attr ->
+            add_call_to_attr callee_proc_name call_loc hist_caller attr )
       in
       BaseMemory.set_attrs addr_caller attrs_post_caller heap
     in
     let subst, translated_post_edges =
       BaseMemory.Edges.fold_map ~init:call_state.subst edges_post
         ~f:(fun subst (addr_callee, trace_post) ->
-          let addr_curr, subst = subst_find_or_new subst addr_callee in
+          let subst, (addr_curr, hist_curr) =
+            subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
+          in
           ( subst
           , ( addr_curr
-            , PulseDomain.ValueHistory.Call {f= Call callee_proc_name; location= call_loc}
-              :: trace_post ) ) )
+            , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
+              :: hist_curr ) ) )
     in
     let heap =
       let edges_post_caller =
@@ -618,14 +632,23 @@ module PrePost = struct
           post_edges_minus_pre translated_post_edges
       in
       let written_to =
-        (let open Option.Monad_infix in
+        let open Option.Monad_infix in
         BaseMemory.find_opt addr_caller heap
-        >>= fun (_edges, attrs) ->
-        Attributes.get_written_to attrs
-        >>| fun callee_action ->
+        >>= (fun (_edges, attrs) -> Attributes.get_written_to attrs)
+        |> fun written_to_callee_opt ->
+        let callee_trace =
+          match written_to_callee_opt with
+          | None ->
+              Trace.Immediate {imm= (); location= call_loc; history= []}
+          | Some access_trace ->
+              access_trace
+        in
         Attribute.WrittenTo
-          (ViaCall {action= callee_action; f= Call callee_proc_name; location= call_loc}))
-        |> Option.value ~default:(Attribute.WrittenTo (Immediate {imm= (); location= call_loc}))
+          (ViaCall
+             { in_call= callee_trace
+             ; f= Call callee_proc_name
+             ; location= call_loc
+             ; history= hist_caller })
       in
       BaseMemory.set_edges addr_caller edges_post_caller heap
       |> BaseMemory.add_attribute addr_caller written_to
@@ -635,9 +658,9 @@ module PrePost = struct
 
 
   let rec record_post_for_address callee_proc_name call_loc ({pre; post} as pre_post) ~addr_callee
-      ~addr_caller call_state =
-    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp addr_caller ;
-    match visit call_state ~addr_callee ~addr_caller with
+      ~addr_hist_caller call_state =
+    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp (fst addr_hist_caller) ;
+    match visit call_state ~addr_callee ~addr_hist_caller with
     | `AlreadyVisited, call_state ->
         call_state
     | `NotAlreadyVisited, call_state -> (
@@ -651,23 +674,23 @@ module PrePost = struct
           let call_state_after_post =
             if is_cell_read_only ~cell_pre_opt ~cell_post then call_state
             else
-              record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt ~addr_caller
-                ~cell_post call_state
+              record_post_cell callee_proc_name call_loc ~addr_callee ~cell_pre_opt
+                ~addr_hist_caller ~cell_post call_state
           in
           IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold
             ~init:call_state_after_post edges_post
             ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
-              let call_state, addr_curr_dest =
+              let call_state, addr_hist_curr_dest =
                 call_state_subst_find_or_new call_state addr_callee_dest
+                  ~default_hist_caller:(snd addr_hist_caller)
               in
               record_post_for_address callee_proc_name call_loc pre_post
-                ~addr_callee:addr_callee_dest ~addr_caller:addr_curr_dest call_state ) )
+                ~addr_callee:addr_callee_dest ~addr_hist_caller:addr_hist_curr_dest call_state ) )
 
 
   let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual call_state =
-    let addr_caller, _ = actual in
     L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractAddress.pp
-      addr_caller ;
+      (fst actual) ;
     match
       let open Option.Monad_infix in
       BaseStack.find_opt formal (pre_post.pre :> PulseDomain.t).PulseDomain.stack
@@ -676,7 +699,7 @@ module PrePost = struct
         (pre_post.pre :> PulseDomain.t).PulseDomain.heap
       >>| fun (formal_pre, _) ->
       record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:formal_pre
-        ~addr_caller call_state
+        ~addr_hist_caller:actual call_state
     with
     | Some call_state ->
         call_state
@@ -697,18 +720,19 @@ module PrePost = struct
       | None ->
           (call_state, None)
       | Some (return_callee, _) ->
-          let return_caller =
+          let return_caller_addr_hist =
             match AddressMap.find_opt return_callee call_state.subst with
-            | Some return_caller ->
-                return_caller
+            | Some return_caller_hist ->
+                return_caller_hist
             | None ->
-                AbstractAddress.mk_fresh ()
+                ( AbstractAddress.mk_fresh ()
+                , [ (* this could maybe include an event like "returned here" *) ] )
           in
           let call_state =
             record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:return_callee
-              ~addr_caller:return_caller call_state
+              ~addr_hist_caller:return_caller_addr_hist call_state
           in
-          (call_state, Some return_caller) )
+          (call_state, Some return_caller_addr_hist) )
 
 
   let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
@@ -732,11 +756,11 @@ module PrePost = struct
 
   let apply_post_for_globals callee_proc_name call_location pre_post call_state =
     match
-      fold_globals_of_stack (pre_post.pre :> PulseDomain.t).stack call_state
-        ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_caller call_state ->
+      fold_globals_of_stack call_location (pre_post.pre :> PulseDomain.t).stack call_state
+        ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_hist_caller call_state ->
           Ok
             (record_post_for_address callee_proc_name call_location pre_post ~addr_callee
-               ~addr_caller call_state) )
+               ~addr_hist_caller call_state) )
     with
     | Error _ ->
         (* always return [Ok _] above *) assert false
@@ -755,10 +779,10 @@ module PrePost = struct
             match AddressMap.find_opt addr_callee call_state.subst with
             | None ->
                 (* callee address has no meaning for the caller *) heap
-            | Some addr_caller ->
+            | Some (addr_caller, history) ->
                 let attrs' =
                   Attributes.map
-                    ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc attr)
+                    ~f:(fun attr -> add_call_to_attr callee_proc_name call_loc history attr)
                     attrs
                 in
                 BaseMemory.set_attrs addr_caller attrs' heap )

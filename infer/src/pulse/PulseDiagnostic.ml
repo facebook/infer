@@ -7,25 +7,24 @@
 
 open! IStd
 module F = Format
+module CallEvent = PulseDomain.CallEvent
+module Invalidation = PulseDomain.Invalidation
+module Trace = PulseDomain.Trace
+module ValueHistory = PulseDomain.ValueHistory
 
 type t =
-  | AccessToInvalidAddress of
-      { invalidated_by: PulseDomain.Invalidation.t PulseDomain.Trace.t
-      ; accessed_by: unit PulseDomain.Trace.t }
-  | StackVariableAddressEscape of
-      { variable: Var.t
-      ; history: PulseDomain.ValueHistory.t
-      ; location: Location.t }
+  | AccessToInvalidAddress of {invalidated_by: Invalidation.t Trace.t; accessed_by: unit Trace.t}
+  | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 let get_location = function
   | AccessToInvalidAddress {accessed_by} ->
-      PulseDomain.InterprocAction.to_outer_location accessed_by.action
+      Trace.get_outer_location accessed_by
   | StackVariableAddressEscape {location} ->
       location
 
 
 let get_message = function
-  | AccessToInvalidAddress {accessed_by; invalidated_by; _} ->
+  | AccessToInvalidAddress {accessed_by; invalidated_by} ->
       (* The goal is to get one of the following messages depending on the scenario:
 
          42: delete x; return x->f
@@ -43,31 +42,27 @@ let get_message = function
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
       *)
-      let pp_access_trace fmt (trace : _ PulseDomain.Trace.t) =
-        match trace.action with
-        | Immediate {imm= _; _} ->
+      let pp_access_trace fmt (trace : unit Trace.t) =
+        match trace with
+        | Immediate {imm= (); _} ->
             F.fprintf fmt "accessing memory that "
         | ViaCall {f; _} ->
-            F.fprintf fmt "call to %a eventually accesses memory that "
-              PulseDomain.CallEvent.describe f
+            F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
       in
-      let pp_invalidation_trace line fmt trace =
-        match trace.PulseDomain.Trace.action with
-        | Immediate {imm= invalidation; _} ->
-            F.fprintf fmt "%a on line %d" PulseDomain.Invalidation.describe invalidation line
-        | ViaCall {action; f; _} ->
-            F.fprintf fmt "%a on line %d indirectly during the call to %a"
-              PulseDomain.Invalidation.describe
-              (PulseDomain.InterprocAction.get_immediate action)
-              line PulseDomain.CallEvent.describe f
+      let pp_invalidation_trace line fmt (trace : Invalidation.t Trace.t) =
+        let pp_line fmt line = F.fprintf fmt " on line %d" line in
+        match trace with
+        | ViaCall {f; in_call} ->
+            let invalid = Trace.get_immediate in_call in
+            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalid
+              pp_line line CallEvent.describe f
+        | Immediate {imm= invalid} ->
+            F.fprintf fmt "%a%a" Invalidation.describe invalid pp_line line
       in
-      let line_of_trace trace =
-        let {Location.line; _} =
-          PulseDomain.InterprocAction.to_outer_location trace.PulseDomain.Trace.action
-        in
+      let invalidation_line =
+        let {Location.line; _} = Trace.get_outer_location invalidated_by in
         line
       in
-      let invalidation_line = line_of_trace invalidated_by in
       F.asprintf "%a%a" pp_access_trace accessed_by
         (pp_invalidation_trace invalidation_line)
         invalidated_by
@@ -79,18 +74,29 @@ let get_message = function
       F.asprintf "address of %a is returned by the function" pp_var variable
 
 
+let add_errlog_header ~title location errlog =
+  let depth = 0 in
+  let tags = [] in
+  Errlog.make_trace_element depth location title tags :: errlog
+
+
 let get_trace = function
   | AccessToInvalidAddress {accessed_by; invalidated_by} ->
-      PulseDomain.Trace.add_to_errlog ~header:"invalidation part of the trace starts here"
-        (fun f invalidation ->
-          F.fprintf f "memory %a here" PulseDomain.Invalidation.describe invalidation )
-        invalidated_by
-      @@ PulseDomain.Trace.add_to_errlog ~header:"use-after-lifetime part of the trace starts here"
-           (fun f () -> F.pp_print_string f "invalid access occurs here")
+      let start_location = Trace.get_start_location invalidated_by in
+      add_errlog_header ~title:"invalidation part of the trace starts here" start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           (fun fmt invalid -> F.fprintf fmt "%a" Invalidation.describe invalid)
+           invalidated_by
+      @@
+      let access_start_location = Trace.get_start_location accessed_by in
+      add_errlog_header ~title:"use-after-lifetime part of the trace starts here"
+        access_start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           (fun fmt () -> F.pp_print_string fmt "invalid access occurs here")
            accessed_by
       @@ []
   | StackVariableAddressEscape {history; location; _} ->
-      PulseDomain.ValueHistory.add_to_errlog ~nesting:0 history
+      ValueHistory.add_to_errlog ~nesting:0 history
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
@@ -98,7 +104,6 @@ let get_trace = function
 
 let get_issue_type = function
   | AccessToInvalidAddress {invalidated_by} ->
-      PulseDomain.InterprocAction.get_immediate invalidated_by.action
-      |> PulseDomain.Invalidation.issue_type_of_cause
+      Trace.get_immediate invalidated_by |> Invalidation.issue_type_of_cause
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape
