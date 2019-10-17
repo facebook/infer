@@ -19,13 +19,25 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @interface AnyThread {}
 
-@Target({ElementType.METHOD})
-@Retention(RetentionPolicy.CLASS)
-@interface ForUiThread {}
+/*
+  Sources:
 
-@Target({ElementType.METHOD})
-@Retention(RetentionPolicy.CLASS)
-@interface ForNonUiThread {}
+  https://developer.android.com/reference/android/support/annotation/UiThread
+  "Denotes that the annotated method or constructor should only be called on the UI thread."
+
+  https://developer.android.com/reference/android/support/annotation/MainThread
+  "Denotes that the annotated method should only be called on the main thread."
+  "Note: Ordinarily, an app's main thread is also the UI thread."
+  (this is what's assumed here also)
+
+  https://developer.android.com/reference/android/support/annotation/WorkerThread
+  "Denotes that the annotated method should only be called on a worker thread."
+
+  https://developer.android.com/reference/android/support/annotation/AnyThread
+  "Denotes that the annotated method can be called from any thread (e.g. it is "thread safe".) [...]
+   static tools can then check that nothing you call from within this method or class have more
+   strict threading requirements."
+*/
 
 public class UiThreads {
 
@@ -38,12 +50,6 @@ public class UiThreads {
   @AnyThread
   void anyThread() {}
 
-  @ForUiThread
-  void forUiThread() {}
-
-  @ForNonUiThread
-  void forNonUiThread() {}
-
   @WorkerThread
   void workerThread() {}
 
@@ -52,11 +58,9 @@ public class UiThreads {
   void callUiThreadMethod() {
     uiThread();
     mainThread();
-    forUiThread();
   }
 
   void callNonUiThreadMethod() {
-    forNonUiThread();
     workerThread();
   }
 
@@ -80,30 +84,6 @@ public class UiThreads {
   @MainThread
   void callsFromMainThreadOk() {
     callUiThreadMethod();
-    anyThread();
-    unannotated();
-  }
-
-  @ForUiThread
-  void callsFromForUiThreadBad() {
-    callNonUiThreadMethod();
-  }
-
-  @ForUiThread
-  void callsFromForUiThreadOk() {
-    callUiThreadMethod();
-    anyThread();
-    unannotated();
-  }
-
-  @ForNonUiThread
-  void callsFromNonUiThreadBad() {
-    callUiThreadMethod();
-  }
-
-  @ForNonUiThread
-  void callsFromNonUiThreadOk() {
-    callNonUiThreadMethod();
     anyThread();
     unannotated();
   }

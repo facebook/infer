@@ -29,9 +29,9 @@ val performance_critical : string
 
 val prop : string
 
-val for_non_ui_thread : string
+val for_non_ui_thread : string [@@warning "-32"]
 
-val for_ui_thread : string
+val for_ui_thread : string [@@warning "-32"]
 
 val guarded_by : string
 
