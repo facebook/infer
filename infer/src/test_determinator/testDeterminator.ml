@@ -49,7 +49,7 @@ module MethodRangeMap = struct
                 let key =
                   JProcname.create_procname ~use_signature ~classname ~methodname ~signature
                 in
-                Typ.Procname.Map.add key range acc
+                Typ.Procname.Map.add key (range, ()) acc
             | None ->
                 acc )
     | _ ->
@@ -92,12 +92,21 @@ let pp_profiler_sample_set fmt s =
 
 
 module TestSample = struct
-  let read_test_sample test_samples_file_opt =
+  let read_java_test_sample test_samples_file_opt =
     match test_samples_file_opt with
     | Some test_samples_file ->
         L.(debug TestDeterminator Medium)
           "Reading Profiler Samples File '%s'....@\n" test_samples_file ;
         JavaProfilerSamples.from_json_file test_samples_file ~use_signature
+    | None ->
+        L.die UserError "Missing profiler samples argument"
+
+
+  let read_clang_test_sample test_samples_file_opt =
+    match test_samples_file_opt with
+    | Some test_samples_file ->
+        Atdgen_runtime.Util.Json.from_file Clang_profiler_samples_j.read_profiler_samples
+          test_samples_file
     | None ->
         L.die UserError "Missing profiler samples argument"
 
@@ -112,14 +121,18 @@ end
 
 let in_range l range = l >= (fst range).Location.line && l <= (snd range).Location.line
 
+let is_file_in_changed_lines file_changed_lines changed_lines range =
+  let l1, _ = range in
+  let method_file = SourceFile.to_string l1.Location.file in
+  String.equal method_file file_changed_lines
+  && List.exists ~f:(fun l -> in_range l range) changed_lines
+
+
 let affected_methods method_range_map file_changed_lines changed_lines =
   Typ.Procname.Map.fold
-    (fun key ((l1, _) as range) acc ->
-      let method_file = SourceFile.to_string l1.Location.file in
-      if
-        String.equal method_file file_changed_lines
-        && List.exists ~f:(fun l -> in_range l range) changed_lines
-      then Typ.Procname.Set.add key acc
+    (fun key (range, _) acc ->
+      if is_file_in_changed_lines file_changed_lines changed_lines range then
+        Typ.Procname.Set.add key acc
       else acc )
     method_range_map Typ.Procname.Set.empty
 
@@ -138,6 +151,18 @@ let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_
       affected_methods clang_range_map fname changed_lines
   | None ->
       Typ.Procname.Set.empty
+
+
+let compute_affected_proc_names_clang ~clang_range_map ~source_file ~changed_lines_map =
+  let fname = SourceFile.to_rel_path source_file in
+  match String.Map.find changed_lines_map fname with
+  | Some changed_lines ->
+      Typ.Procname.Map.fold
+        (fun _ (range, clang_proc) acc ->
+          if is_file_in_changed_lines fname changed_lines range then clang_proc :: acc else acc )
+        clang_range_map []
+  | None ->
+      []
 
 
 let emit_relevant_methods relevant_methods =
@@ -160,25 +185,51 @@ let compute_and_emit_relevant_methods ~clang_range_map ~source_file =
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
-let test_to_run ?clang_range_map ?source_file () =
+let java_test_to_run () =
   let test_samples_file = Config.profiler_samples in
   let code_graph_file = Config.method_decls_info in
   let changed_lines_file = Config.modified_lines in
   let changed_lines_map = DiffLines.create_changed_lines_map changed_lines_file in
-  let affected_methods =
-    match (clang_range_map, source_file) with
-    | Some clang_range_map, Some source_file ->
-        compute_affected_methods_clang ~source_file ~clang_range_map ~changed_lines_map
-    | _ (* Java case *) ->
-        let method_range = MethodRangeMap.create_java_method_range_map code_graph_file in
-        compute_affected_methods_java changed_lines_map method_range
-  in
-  let profiler_samples = TestSample.read_test_sample test_samples_file in
+  let method_range = MethodRangeMap.create_java_method_range_map code_graph_file in
+  let affected_methods = compute_affected_methods_java changed_lines_map method_range in
+  let profiler_samples = TestSample.read_java_test_sample test_samples_file in
   if Typ.Procname.Set.is_empty affected_methods then []
   else
     List.fold profiler_samples ~init:[] ~f:(fun acc (label, profiler_samples) ->
         let intersection = Typ.Procname.Set.inter affected_methods profiler_samples in
         if Typ.Procname.Set.is_empty intersection then acc else label :: acc )
+
+
+let match_profiler_samples_affected_methods native_symbols affected_methods =
+  let match_samples_method affected_method =
+    let match_sample_method affected_method native_symbol =
+      match affected_method with
+      | Some (ClangProc.CFunction {name}) ->
+          String.equal name native_symbol.Clang_profiler_samples_t.name
+      | _ ->
+          false
+      (* TODO: deal with mangled names, other method kinds *)
+    in
+    List.exists ~f:(match_sample_method affected_method) native_symbols
+  in
+  List.exists ~f:match_samples_method affected_methods
+
+
+(* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
+let clang_test_to_run ~clang_range_map ~source_file () =
+  let test_samples_file = Config.profiler_samples in
+  let changed_lines_file = Config.modified_lines in
+  let changed_lines_map = DiffLines.create_changed_lines_map changed_lines_file in
+  let affected_methods =
+    compute_affected_proc_names_clang ~source_file ~clang_range_map ~changed_lines_map
+  in
+  let profiler_samples = TestSample.read_clang_test_sample test_samples_file in
+  if List.is_empty affected_methods then []
+  else
+    List.fold profiler_samples ~init:[]
+      ~f:(fun acc ({test; native_symbols} : Clang_profiler_samples_t.profiler_sample) ->
+        if match_profiler_samples_affected_methods native_symbols affected_methods then test :: acc
+        else acc )
 
 
 let emit_tests_to_run relevant_tests =
@@ -188,5 +239,11 @@ let emit_tests_to_run relevant_tests =
 
 
 let compute_and_emit_test_to_run ?clang_range_map ?source_file () =
-  let relevant_tests = test_to_run ?clang_range_map ?source_file () in
+  let relevant_tests =
+    match (clang_range_map, source_file) with
+    | Some clang_range_map, Some source_file ->
+        clang_test_to_run ~clang_range_map ~source_file ()
+    | _ ->
+        java_test_to_run ()
+  in
   emit_tests_to_run relevant_tests

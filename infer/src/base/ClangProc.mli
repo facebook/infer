@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 
-val process_ast :
-     Clang_ast_t.decl
-  -> SourceFile.t
-  -> ((Location.t * Location.t) * ClangProc.t option) Typ.Procname.Map.t
+type t =
+  | CFunction of {name: string; mangled_name: string option}
+  | CppMethod of {mangled_name: string}
+  | ObjcMethod of {mangled_name: string}
+  | ObjcBlock of {mangled_name: string}

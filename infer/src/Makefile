@@ -19,7 +19,7 @@ INFER_MAIN = infer
 
 #### Checkers declarations ####
 
-INFER_ATDGEN_STUB_BASES = atd/jsonbug atd/runstate atd/java_method_decl atd/perf_profiler atd/java_profiler_samples
+INFER_ATDGEN_STUB_BASES = atd/jsonbug atd/runstate atd/java_method_decl atd/perf_profiler atd/java_profiler_samples atd/clang_profiler_samples
 INFER_ATDGEN_TYPES = j t
 INFER_ATDGEN_STUB_ATDS = $(INFER_ATDGEN_STUB_BASES:.atd)
 INFER_ATDGEN_SUFFIXES = $(foreach atd_t,$(INFER_ATDGEN_TYPES),_$(atd_t).ml _$(atd_t).mli)
@@ -305,7 +305,7 @@ clean:
 	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(BIN_DIR)/llvm_sil
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
-	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_*
+	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_ast_*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
 
