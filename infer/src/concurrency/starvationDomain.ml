@@ -270,7 +270,7 @@ module CriticalPair = struct
 
 
   let make_trace ?(header = "") ?(include_acquisitions = true) top_pname
-      {elem= {acquisitions; event}; trace; loc} =
+      ({elem= {acquisitions; event}; trace; loc} as pair) =
     let acquisitions_map =
       if include_acquisitions then
         Acquisitions.fold
@@ -283,7 +283,7 @@ module CriticalPair = struct
     in
     let header_step =
       let description = F.asprintf "%s%a" header pname_pp top_pname in
-      let loc = Location.dummy in
+      let loc = get_loc pair in
       Errlog.make_trace_element 0 loc description []
     in
     (* construct the trace segment starting at [call_site] and ending at next call *)
