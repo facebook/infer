@@ -6,10 +6,11 @@
  */
 
 #include <algorithm>
+#import <Foundation/Foundation.h>
 
 int example_function1() { return 1; }
 
-int example_function2() { return 222; }
+int example_function2() { return 222; } // change here
 
 namespace Shapes {
 
@@ -25,7 +26,34 @@ class Cube {
 void Cube::set_size(int s) { size = s; }
 
 void Cube::sort(Cube* xs, unsigned n) {
-  // this is a lambda folks
+  // this is a lambda folks //change here
   std::sort(xs, xs + n, [](Cube a, Cube b) { return (a.area() < b.area()); });
 }
 } // namespace Shapes
+
+@interface Person : NSObject
+
+@property NSString* name;
+
+- (BOOL)isEqual:(id)obj;
+
+- (void)printName;
+
+@end
+
+@implementation Person
+
+- (BOOL)isEqual:(id)obj {
+  BOOL result = NO;
+  if ([obj isKindOfClass:[self class]]) {
+    Person* otherObject = obj;
+    result = [self.name isEqualToString:[otherObject name]];
+  }
+  return result;
+}
+
+- (void)printName {
+  NSLog(@"The name is %@", _name); // change here
+}
+
+@end

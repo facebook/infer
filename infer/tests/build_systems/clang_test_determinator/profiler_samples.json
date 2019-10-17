@@ -1,7 +1,7 @@
 [
     {
       "field1": {},
-      "test": "label1",
+      "test": "label1_c_function",
       "field2": {},
       "native_symbols": [
         {
@@ -18,7 +18,7 @@
       "field1": {},
       "field2": {},
       "field3": {},
-      "test": "label2",
+      "test": "label2_c_function",
       "field4": {},
       "native_symbols": [
         {
@@ -27,6 +27,40 @@
         {
           "name": "example_function20",
           "mangled_name" : "example_function20"
+        }
+      ],
+      "field5": {},
+      "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label1_objc_method",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "-[Person isEqual:]"
+        },
+        {
+          "name": "exampleMethod2"
+        }
+      ],
+      "field5": {},
+      "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label2_objc_method",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "-[Person printName]"
+        },
+        {
+          "name": "exampleMethod3"
         }
       ],
       "field5": {},

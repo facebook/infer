@@ -206,6 +206,8 @@ let match_profiler_samples_affected_methods native_symbols affected_methods =
       match affected_method with
       | Some (ClangProc.CFunction {name}) ->
           String.equal name native_symbol.Clang_profiler_samples_t.name
+      | Some (ClangProc.ObjcMethod {mangled_name}) ->
+          String.equal mangled_name native_symbol.Clang_profiler_samples_t.name
       | _ ->
           false
       (* TODO: deal with mangled names, other method kinds *)

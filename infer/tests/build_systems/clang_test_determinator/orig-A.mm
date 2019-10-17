@@ -6,6 +6,7 @@
  */
 
 #include <algorithm>
+#import <Foundation/Foundation.h>
 
 int example_function1() { return 1; }
 
@@ -28,3 +29,30 @@ void Cube::sort(Cube* xs, unsigned n) {
   std::sort(xs, xs + n, [](Cube a, Cube b) { return (a.area() < b.area()); });
 }
 } // namespace Shapes
+
+@interface Person : NSObject
+
+@property NSString* name;
+
+- (BOOL)isEqual:(id)obj;
+
+- (void)printName;
+
+@end
+
+@implementation Person
+
+- (BOOL)isEqual:(id)obj {
+  BOOL result = NO;
+  if ([obj isKindOfClass:[self class]]) {
+    Person* otherObject = obj;
+    result = [self.name isEqualToString:[otherObject name]];
+  }
+  return result;
+}
+
+- (void)printName {
+  NSLog(@"The person's name is %@", _name);
+}
+
+@end
