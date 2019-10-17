@@ -642,17 +642,15 @@ module ThresholdReports = struct
       CostIssues.enabled_cost_map none
 end
 
-(*
-  Calculate the final Worst Case Cost predicted for each cost field and each WTO component.
-  It is the dot product of basic_cost_map and get_node_nb_exec.
-*)
+(** Calculate the final Worst Case Cost predicted for each cost field
+   and each WTO component.  It is the dot product of the symbolic cost
+   of the node and how many times it is executed.  *)
 module WorstCaseCost = struct
   type astate = {costs: CostDomain.t; reports: ThresholdReports.t}
 
-  (*
-  We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
-  Instead, we report Top cost only at the top level per function when `report_infinity` is set to true
-*)
+  (** We don't report when the cost is Top as it corresponds to
+     subsequent 'don't know's.  Instead, we report Top cost only at
+     the top level per function.  *)
   let should_report_cost cost ~threshold =
     (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:threshold)
 
