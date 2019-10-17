@@ -27,6 +27,7 @@ BUILD_SYSTEMS_TESTS += \
   ck_analytics ck_imports \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
+  clang_test_determinator \
   clang_translation \
   clang_unknown_ext \
   clang_with_blacklisted_flags \

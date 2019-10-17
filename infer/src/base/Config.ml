@@ -1883,8 +1883,7 @@ and procedures_source_file =
 
 
 and process_clang_ast =
-  CLOpt.mk_bool ~long:"process-clang-ast"
-    ~default:true (* To be made false after this is deployed *)
+  CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
     "process the ast to emit some info about the file (Not available for Java)"
 
 

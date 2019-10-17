@@ -11,7 +11,7 @@ B_CPP = src/b.cpp
 BUCK_TARGET = //src:test
 TEST_DETERMINATOR_RESULT = infer-out/changed_functions.json
 DIFF_OUTPUT = diff.mod.test
-INFER_OPTIONS = --flavors --linters --no-capture --export-changed-functions --modified-lines $(DIFF_OUTPUT) --project-root $(TESTS_DIR)
+INFER_OPTIONS = --flavors --process-clang-ast --no-linters --no-capture --export-changed-functions --modified-lines $(DIFF_OUTPUT) --project-root $(TESTS_DIR)
 
 $(DIFF_OUTPUT):
 	$(QUIET)echo -n '$(A_CPP):' > diff.mod.test

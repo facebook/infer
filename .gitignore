@@ -30,6 +30,7 @@ duplicates.txt
 /infer/tests/build_systems/buck_export_changed_functions/diff.mod.test
 /infer/tests/build_systems/clang_compilation_db_escaped/compile_commands.json
 /infer/tests/build_systems/clang_compilation_db_relpath/compile_commands.json
+/infer/tests/build_systems/clang_test_determinator/*.test
 /infer/tests/build_systems/export_changed_functions/*.test
 /infer/tests/build_systems/clang_with_MD_flag/hello.d
 /infer/tests/build_systems/codetoanalyze/mvn/**/target/

@@ -11,7 +11,7 @@ include $(TESTS_DIR)/base.make
 A_CPP = A.cpp
 TEST_DETERMINATOR_RESULT = infer-out-mod2/diff_determinator.json
 DIFF_OUTPUT = diff.mod2.test
-INFER_OPTIONS = --export-changed-functions --process-clang-ast --no-linters --no-capture --buck-compilation-database 'no-deps'
+INFER_OPTIONS = --test-determinator --process-clang-ast --no-linters --no-capture
 
 default: $(TEST_DETERMINATOR_RESULT)
 
@@ -24,23 +24,23 @@ $(DIFF_OUTPUT):
 		orig-$(A_CPP) mod2-$(A_CPP) || [ $$? = 1 ]) >> diff.mod2.test
 
 $(TEST_DETERMINATOR_RESULT): $(DIFF_OUTPUT)
-	$(QUIET)$(call silent_on_success,Testing export-changed-functions with set of changes in mod1,\
+	$(QUIET)$(call silent_on_success,Testing clang test-determinator with set of changes in mod1,\
 		cp mod1-$(A_CPP) $(A_CPP);\
-		$(INFER_BIN) -o infer-out-mod1 $(INFER_OPTIONS) --modified-lines diff.mod1.test -- clang -c $(A_CPP))
+		$(INFER_BIN) -o infer-out-mod1 $(INFER_OPTIONS) --profiler-samples profiler_samples.json --modified-lines diff.mod1.test -- clang -c $(A_CPP))
 	$(QUIET)$(call silent_on_success,Testing test-determinator-clang with set of changes in mod2,\
 		cp mod2-$(A_CPP) $(A_CPP);\
-		$(INFER_BIN) -o infer-out-mod2 $(INFER_OPTIONS) --modified-lines diff.mod2.test -- clang -c $(A_CPP))
+		$(INFER_BIN) -o infer-out-mod2 $(INFER_OPTIONS) --profiler-samples profiler_samples.json --modified-lines diff.mod2.test -- clang -c $(A_CPP))
 	$(QUIET) rm $(A_CPP)
 
 .PHONY: test
 test: $(TEST_DETERMINATOR_RESULT)
-	$(QUIET)$(call check_no_diff,changed_functions.json.mod1.exp,infer-out-mod1/changed_functions.json)
-	$(QUIET)$(call check_no_diff,changed_functions.json.mod2.exp,infer-out-mod2/changed_functions.json)
+	$(QUIET)$(call check_no_diff,test_determinator.json.mod1.exp,infer-out-mod1/test_determinator.json)
+	$(QUIET)$(call check_no_diff,test_determinator.json.mod2.exp,infer-out-mod2/test_determinator.json)
 
 .PHONY: replace
 replace: $(TEST_DETERMINATOR_RESULT)
-	$(COPY) infer-out-mod1/changed_functions.json changed_functions.json.mod1.exp
-	$(COPY) infer-out-mod2/changed_functions.json changed_functions.json.mod2.exp
+	$(COPY) infer-out-mod1/test_determinator.json test_determinator.json.mod1.exp
+	$(COPY) infer-out-mod2/test_determinator.json test_determinator.json.mod2.exp
 
 .PHONY: clean
 clean:

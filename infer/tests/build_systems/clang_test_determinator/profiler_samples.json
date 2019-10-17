@@ -1,0 +1,35 @@
+[
+    {
+      "field1": {},
+      "test": "label1",
+      "field2": {},
+      "native_symbols": [
+        {
+          "name": "example_function1"
+        },
+        {
+          "name": "example_function10",
+          "mangled_name" : "example_function10"
+        }
+      ],
+      "field3": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label2",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "example_function2"
+        },
+        {
+          "name": "example_function20",
+          "mangled_name" : "example_function20"
+        }
+      ],
+      "field5": {},
+      "field6": {}
+    }
+  ]
