@@ -119,7 +119,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let locks = List.hd actuals |> Option.to_list in
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_ui_thread_model callee ->
-          Domain.set_on_ui_thread astate ()
+          Domain.set_on_ui_thread astate
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java -> (
@@ -163,7 +163,7 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     let initial =
       if ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv procname then
-        StarvationDomain.set_on_ui_thread initial ()
+        StarvationDomain.set_on_ui_thread initial
       else initial
     in
     let filter_blocks =
@@ -401,7 +401,7 @@ let report_lockless_violations (tenv, summary) StarvationDomain.{critical_pairs}
     inner class but this is no longer obvious in the path, because of nested-class path normalisation.
     The net effect of the above issues is that we will only see these locks in conflicting pairs
     once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks env StarvationDomain.{critical_pairs; ui} report_map' =
+let report_deadlocks env StarvationDomain.{critical_pairs; thread} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
@@ -457,9 +457,9 @@ let report_deadlocks env StarvationDomain.{critical_pairs; ui} report_map' =
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
                  ~f:(fun acc
-                    (endpoint_pname, {critical_pairs= endp_critical_pairs; ui= endp_ui})
+                    (endpoint_pname, {critical_pairs= endp_critical_pairs; thread= endp_thread})
                     ->
-                   if UIThreadDomain.is_bottom ui || UIThreadDomain.is_bottom endp_ui then
+                   if ThreadDomain.can_run_in_parallel thread endp_thread then
                      CriticalPairs.fold
                        (report_endpoint_elem elem endpoint_pname)
                        endp_critical_pairs acc
@@ -468,7 +468,7 @@ let report_deadlocks env StarvationDomain.{critical_pairs; ui} report_map' =
   CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 
-let report_starvation env {StarvationDomain.critical_pairs; ui} report_map' =
+let report_starvation env {StarvationDomain.critical_pairs; thread} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
@@ -521,17 +521,17 @@ let report_starvation env {StarvationDomain.critical_pairs; ui} report_map' =
                  and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc (endpoint_pname, {critical_pairs; ui}) ->
+                 ~f:(fun acc (endpoint_pname, {critical_pairs; thread}) ->
                    (* skip methods on ui thread, as they cannot run in parallel to us *)
-                   if UIThreadDomain.is_bottom ui then
+                   if ThreadDomain.is_uithread thread then acc
+                   else
                      CriticalPairs.fold
                        (report_remote_block critical_pair endpoint_lock endpoint_pname)
-                       critical_pairs acc
-                   else acc ) )
+                       critical_pairs acc ) )
   in
   (* do not report starvation/strict mode warnings on constructors, keep that for callers *)
-  if Typ.Procname.is_constructor current_pname then report_map'
-  else if UIThreadDomain.is_bottom ui then report_map'
+  if Typ.Procname.is_constructor current_pname || not (ThreadDomain.is_uithread thread) then
+    report_map'
   else CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 

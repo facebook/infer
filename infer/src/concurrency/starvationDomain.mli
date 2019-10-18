@@ -71,7 +71,25 @@ end
 
 module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
-module UIThreadDomain : AbstractDomain.WithBottom
+(** Domain for thread-type.  The main goals are 
+    - Track code paths that are explicitly on UI thread (via annotations, or assertions). 
+    - Maintain UI-thread-ness through the call stack (if a callee is on UI thread then the 
+      trace any call site must be on the UI thread too). 
+    - If we are not on the UI thread we assume we are on a background thread. 
+    - Traces with "UI-thread" status cannot interleave but all other combinations can.  
+    - We do not track other annotations (eg WorkerThread or AnyThread) as they can be 
+      erroneously applied -- other checkers should catch those errors (annotation reachability).
+    - Top is AnyThread, and is used as the initial state for analysis.
+*)
+module ThreadDomain : sig
+  type t = UIThread | AnyThread
+
+  include AbstractDomain.WithTop with type t := t
+
+  val can_run_in_parallel : t -> t -> bool
+
+  val is_uithread : t -> bool
+end
 
 module GuardToLockMap : AbstractDomain.WithTop
 
@@ -79,7 +97,7 @@ type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
-  ; ui: UIThreadDomain.t }
+  ; thread: ThreadDomain.t }
 
 include AbstractDomain.WithBottom with type t := t
 
@@ -93,8 +111,8 @@ val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Lo
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
 
-val set_on_ui_thread : t -> unit -> t
-(** set the property "runs on UI thread" to true *)
+val set_on_ui_thread : t -> t
+(** signal that the procedure is running on UI thread *)
 
 val add_guard :
      acquire_now:bool

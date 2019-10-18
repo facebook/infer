@@ -9,7 +9,7 @@
 class ThreadSensitivity {
   Object monitorA, monitorB;
 
-  void FN_conditionalAssertMainThread_Bad(boolean b) {
+  void conditionalAssertMainThread_Bad(boolean b) {
     if (b) {
       // this branch asserts on Main thread
       OurThreadUtils.assertMainThread();
@@ -66,7 +66,7 @@ class ThreadSensitivity {
 
   Object monitorG, monitorH;
 
-  public void FN_confusedAssertBad(boolean b, boolean c) {
+  public void confusedAssertBad(boolean b, boolean c) {
     if (b) {
       OurThreadUtils.assertOnBackgroundThread();
     } else {
@@ -82,6 +82,29 @@ class ThreadSensitivity {
     } else {
       synchronized (monitorH) {
         synchronized (monitorG) {
+        }
+      }
+    }
+  }
+
+  Object monitorI, monitorJ;
+
+  public void FP_confusedAssertOk(boolean b) {
+    if (b) {
+      OurThreadUtils.assertOnBackgroundThread();
+    }
+
+    // b determines if running on UI thread, should NOT report
+    if (b) {
+      synchronized (monitorI) {
+        synchronized (monitorJ) {
+        }
+      }
+    }
+
+    if (b) {
+      synchronized (monitorJ) {
+        synchronized (monitorI) {
         }
       }
     }

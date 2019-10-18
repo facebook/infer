@@ -358,7 +358,37 @@ module CriticalPairs = struct
       astate empty
 end
 
-module UIThreadDomain = AbstractDomain.BooleanOr
+module ThreadDomain = struct
+  type t = UIThread | AnyThread [@@deriving equal]
+
+  let top = AnyThread
+
+  let is_top = function AnyThread -> true | UIThread -> false
+
+  let join st1 st2 =
+    match (st1, st2) with AnyThread, _ | _, AnyThread -> AnyThread | _, _ -> UIThread
+
+
+  let ( <= ) ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp fmt st =
+    (match st with UIThread -> "UIThread" | AnyThread -> "AnyThread") |> F.pp_print_string fmt
+
+
+  (* There is only one UI thread, so (UIThread || UIThread) is impossible. *)
+  let can_run_in_parallel st1 st2 =
+    match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
+
+
+  let is_uithread = function UIThread -> true | _ -> false
+
+  (* If we know that either the caller or the callee is on UIThread, keep it that way. *)
+  let integrate_summary ~caller ~callee =
+    match (caller, callee) with UIThread, _ | _, UIThread -> UIThread | _, _ -> AnyThread
+end
+
 module FlatLock = AbstractDomain.Flat (Lock)
 
 module GuardToLockMap = struct
@@ -373,31 +403,31 @@ type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
-  ; ui: UIThreadDomain.t }
+  ; thread: ThreadDomain.t }
 
 let bottom =
   { guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
-  ; ui= UIThreadDomain.bottom }
+  ; thread= ThreadDomain.top }
 
 
-let is_bottom {guard_map; lock_state; critical_pairs; ui} =
+let is_bottom {guard_map; lock_state; critical_pairs; thread} =
   GuardToLockMap.is_empty guard_map && LockState.is_top lock_state
   && CriticalPairs.is_empty critical_pairs
-  && UIThreadDomain.is_bottom ui
+  && ThreadDomain.is_top thread
 
 
-let pp fmt {guard_map; lock_state; critical_pairs; ui} =
-  F.fprintf fmt "{guard_map= %a; lock_state= %a; critical_pairs= %a; ui= %a}" GuardToLockMap.pp
-    guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs UIThreadDomain.pp ui
+let pp fmt {guard_map; lock_state; critical_pairs; thread} =
+  F.fprintf fmt "{guard_map= %a; lock_state= %a; critical_pairs= %a; thread= %a}" GuardToLockMap.pp
+    guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs ThreadDomain.pp thread
 
 
 let join lhs rhs =
   { guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
-  ; ui= UIThreadDomain.join lhs.ui rhs.ui }
+  ; thread= ThreadDomain.join lhs.thread rhs.thread }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
@@ -406,7 +436,7 @@ let ( <= ) ~lhs ~rhs =
   GuardToLockMap.( <= ) ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.( <= ) ~lhs:lhs.lock_state ~rhs:rhs.lock_state
   && CriticalPairs.( <= ) ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
-  && UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
+  && ThreadDomain.( <= ) ~lhs:lhs.thread ~rhs:rhs.thread
 
 
 let add_critical_pair tenv_opt lock_state event ~loc acc =
@@ -449,7 +479,7 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; ui} as astate) ~callee
+let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; thread} as astate) ~callee
     ~loc ~callee_summary =
   let callsite = CallSite.make callee loc in
   let critical_pairs' =
@@ -457,13 +487,10 @@ let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; ui} as 
   in
   { astate with
     critical_pairs= CriticalPairs.join critical_pairs critical_pairs'
-  ; ui= UIThreadDomain.join ui callee_summary.ui }
+  ; thread= ThreadDomain.integrate_summary ~caller:thread ~callee:callee_summary.thread }
 
 
-let set_on_ui_thread ({ui} as astate) () =
-  let ui = UIThreadDomain.join ui true in
-  {astate with ui}
-
+let set_on_ui_thread astate = {astate with thread= ThreadDomain.UIThread}
 
 let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
   let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
