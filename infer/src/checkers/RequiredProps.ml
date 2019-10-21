@@ -116,20 +116,25 @@ let has_prop prop_set prop =
 module LithoContext = struct
   type t = Domain.t
 
-  let check_callee ~callee_pname ~tenv _ = LithoFramework.is_component_builder callee_pname tenv
+  let check_callee ~callee_pname ~tenv _ =
+    LithoFramework.is_component_builder callee_pname tenv
+    || LithoFramework.is_component_create_method callee_pname tenv
+
 
   let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
-    (* If the method is build() itself or doesn't contain a build() in
+    (* If the method is build() or create() itself or doesn't contain a build() in
        its summary, we want to track it in the domain. *)
-    LithoFramework.is_component_build_method callee_pname tenv
+    ( LithoFramework.is_component_build_method callee_pname tenv
+    || LithoFramework.is_component_create_method callee_pname tenv )
     ||
-    (* check if build() exists in callees *)
+    (* check if build()/create() exists in callees *)
     let build_exists_in_callees =
       Option.value_map callee_summary_opt ~default:[] ~f:Domain.bindings
       |> List.exists ~f:(fun (_, call_set) ->
              LithoDomain.CallSet.exists
                (fun LithoDomain.MethodCall.{procname} ->
-                 LithoFramework.is_component_build_method procname tenv )
+                 LithoFramework.is_component_build_method procname tenv
+                 || LithoFramework.is_component_create_method procname tenv )
                call_set )
     in
     not build_exists_in_callees

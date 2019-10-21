@@ -31,12 +31,26 @@ let is_component_builder procname tenv =
       false
 
 
+let is_component procname tenv =
+  match procname with
+  | Typ.Procname.Java java_procname ->
+      PatternMatch.is_subtype_of_str tenv
+        (Typ.Procname.Java.get_class_type_name java_procname)
+        "com.facebook.litho.Component"
+  | _ ->
+      false
+
+
 let is_component_build_method procname tenv =
   match Typ.Procname.get_method procname with
   | "build" ->
       is_component_builder procname tenv
   | _ ->
       false
+
+
+let is_component_create_method procname tenv =
+  match Typ.Procname.get_method procname with "create" -> is_component procname tenv | _ -> false
 
 
 let is_on_create_layout = function
