@@ -20,5 +20,5 @@ import java.lang.annotation.Target;
  * practice).
  */
 @Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
+@Target({ElementType.TYPE})
 public @interface NullsafeStrict {}
