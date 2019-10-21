@@ -34,32 +34,38 @@ type origin_descr = string * Location.t option * AnnotatedSignature.t option
 
 (* callee signature *)
 
-type parameter_not_nullable =
-  string
-  * (* description *)
-    int
-  * (* parameter number *)
-    Typ.Procname.t
-  * Location.t
-  * (* callee location *)
-    origin_descr
-
 (** Instance of an error *)
 type err_instance =
   | Condition_redundant of (bool * string option)
-  | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
-  | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
+  | Inconsistent_subclass of
+      { base_proc_name: Typ.Procname.t
+      ; overridden_proc_name: Typ.Procname.t
+      ; inconsistent_subclass_type: inconsistent_subclass_type }
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
-  | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
+  | Over_annotation of over_annotation_type
   | Nullable_dereference of
       { nullable_object_descr: string option
       ; dereference_type: dereference_type
       ; origin_descr: origin_descr }
-  | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
-  | Return_over_annotated of Typ.Procname.t
+  | Bad_assignment of {rhs_origin_descr: origin_descr; assignment_type: assignment_type}
 [@@deriving compare]
+
+and inconsistent_subclass_type =
+  | InconsistentParam of {param_description: string; param_position: int}
+  | InconsistentReturn
+
+and over_annotation_type =
+  | FieldOverAnnotedAsNullable of Typ.Fieldname.t
+  | ReturnOverAnnotatedAsNullable of Typ.Procname.t
+      (** Return value of a method can be made non-nullable *)
+
+and assignment_type =
+  | PassingParamToAFunction of
+      { param_description: string
+      ; param_position: int
+      ; function_procname: Typ.Procname.t }
+  | AssigningToAField of Typ.Fieldname.t
+  | ReturningFromAFunction of Typ.Procname.t
 
 and dereference_type =
   | MethodCall of Typ.Procname.t  (** nullable_object.some_method() *)

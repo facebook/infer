@@ -62,33 +62,38 @@ type origin_descr = string * Location.t option * AnnotatedSignature.t option
 (* ignore origin descr *)
 let compare_origin_descr _ _ = 0
 
-type parameter_not_nullable =
-  string
-  * (* description *)
-    int
-  * (* parameter number *)
-    Typ.Procname.t
-  * Location.t
-  * (* callee location *)
-    origin_descr
-[@@deriving compare]
-
 (** Instance of an error *)
 type err_instance =
   | Condition_redundant of (bool * string option)
-  | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
-  | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
+  | Inconsistent_subclass of
+      { base_proc_name: Typ.Procname.t
+      ; overridden_proc_name: Typ.Procname.t
+      ; inconsistent_subclass_type: inconsistent_subclass_type }
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Field_annotation_inconsistent of Typ.Fieldname.t * origin_descr
-  | Field_over_annotated of Typ.Fieldname.t * Typ.Procname.t
+  | Over_annotation of over_annotation_type
   | Nullable_dereference of
       { nullable_object_descr: string option
       ; dereference_type: dereference_type
       ; origin_descr: origin_descr }
-  | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of Typ.Procname.t * origin_descr
-  | Return_over_annotated of Typ.Procname.t
+  | Bad_assignment of {rhs_origin_descr: origin_descr; assignment_type: assignment_type}
 [@@deriving compare]
+
+and inconsistent_subclass_type =
+  | InconsistentParam of {param_description: string; param_position: int}
+  | InconsistentReturn
+
+and over_annotation_type =
+  | FieldOverAnnotedAsNullable of Typ.Fieldname.t
+  | ReturnOverAnnotatedAsNullable of Typ.Procname.t
+      (** Return value of a method can be made non-nullable *)
+
+and assignment_type =
+  | PassingParamToAFunction of
+      { param_description: string
+      ; param_position: int
+      ; function_procname: Typ.Procname.t }
+  | AssigningToAField of Typ.Fieldname.t
+  | ReturningFromAFunction of Typ.Procname.t
 
 and dereference_type =
   | MethodCall of Typ.Procname.t
@@ -122,21 +127,13 @@ let get_forall = function
       true
   | Field_not_initialized _ ->
       false
-  | Field_annotation_inconsistent _ ->
+  | Over_annotation _ ->
       false
-  | Field_over_annotated _ ->
+  | Bad_assignment _ ->
       false
-  | Inconsistent_subclass_return_annotation _ ->
-      false
-  | Inconsistent_subclass_parameter_annotation _ ->
+  | Inconsistent_subclass _ ->
       false
   | Nullable_dereference _ ->
-      false
-  | Parameter_annotation_inconsistent _ ->
-      false
-  | Return_annotation_inconsistent _ ->
-      false
-  | Return_over_annotated _ ->
       false
 
 
@@ -221,153 +218,163 @@ type st_report_error =
   -> string
   -> unit
 
+let get_infer_issue_type = function
+  | Condition_redundant _ ->
+      IssueType.eradicate_condition_redundant
+  | Over_annotation (FieldOverAnnotedAsNullable _) ->
+      IssueType.eradicate_field_over_annotated
+  | Over_annotation (ReturnOverAnnotatedAsNullable _) ->
+      IssueType.eradicate_return_over_annotated
+  | Field_not_initialized _ ->
+      IssueType.eradicate_field_not_initialized
+  | Bad_assignment {assignment_type= PassingParamToAFunction _} ->
+      IssueType.eradicate_parameter_not_nullable
+  | Bad_assignment {assignment_type= AssigningToAField _} ->
+      IssueType.eradicate_field_not_nullable
+  | Bad_assignment {assignment_type= ReturningFromAFunction _} ->
+      IssueType.eradicate_return_not_nullable
+  | Nullable_dereference _ ->
+      IssueType.eradicate_nullable_dereference
+  | Inconsistent_subclass {inconsistent_subclass_type= InconsistentReturn} ->
+      IssueType.eradicate_inconsistent_subclass_return_annotation
+  | Inconsistent_subclass {inconsistent_subclass_type= InconsistentParam _} ->
+      IssueType.eradicate_inconsistent_subclass_parameter_annotation
+
+
+(* If an error is related to a particular field, we support suppressing the
+   error via a supress annotation placed near the field declaration *)
+let get_field_name_for_error_suppressing = function
+  | Over_annotation (FieldOverAnnotedAsNullable field_name) ->
+      Some field_name
+  | Field_not_initialized (field_name, _) ->
+      Some field_name
+  | Condition_redundant _
+  | Over_annotation (ReturnOverAnnotatedAsNullable _)
+  (* In case of assignment to a field, it should be fixed case by case for each assignment *)
+  | Bad_assignment _
+  | Nullable_dereference _
+  | Inconsistent_subclass _ ->
+      None
+
+
+let get_error_description err_instance =
+  let nullable_annotation = "@Nullable" in
+  match err_instance with
+  | Condition_redundant (is_always_true, s_opt) ->
+      P.sprintf "The condition %s is always %b according to the existing annotations."
+        (Option.value s_opt ~default:"") is_always_true
+  | Over_annotation (FieldOverAnnotedAsNullable field_name) ->
+      Format.asprintf "Field %a is always initialized in the constructor but is declared %a"
+        MF.pp_monospaced
+        (Typ.Fieldname.to_simplified_string field_name)
+        MF.pp_monospaced nullable_annotation
+  | Over_annotation (ReturnOverAnnotatedAsNullable proc_name) ->
+      Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
+        (Typ.Procname.to_simplified_string proc_name)
+        MF.pp_monospaced nullable_annotation
+  | Field_not_initialized (field_name, proc_name) ->
+      let constructor_name =
+        if Typ.Procname.is_constructor proc_name then "the constructor"
+        else
+          match proc_name with
+          | Typ.Procname.Java pn_java ->
+              MF.monospaced_to_string (Typ.Procname.Java.get_method pn_java)
+          | _ ->
+              MF.monospaced_to_string (Typ.Procname.to_simplified_string proc_name)
+      in
+      Format.asprintf "Field %a is not initialized in %s and is not declared %a" MF.pp_monospaced
+        (Typ.Fieldname.to_simplified_string field_name)
+        constructor_name MF.pp_monospaced nullable_annotation
+  | Bad_assignment {rhs_origin_descr= origin_descr_string, _, _; assignment_type} -> (
+    match assignment_type with
+    | PassingParamToAFunction {param_description; param_position; function_procname} ->
+        Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null. %s"
+          MF.pp_monospaced
+          (Typ.Procname.to_simplified_string ~withclass:true function_procname)
+          param_position MF.pp_monospaced param_description origin_descr_string
+    | AssigningToAField field_name ->
+        Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
+          (Typ.Fieldname.to_simplified_string field_name)
+          MF.pp_monospaced nullable_annotation origin_descr_string
+    | ReturningFromAFunction function_proc_name ->
+        Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
+          MF.pp_monospaced
+          (Typ.Procname.to_simplified_string function_proc_name)
+          MF.pp_monospaced nullable_annotation origin_descr_string )
+  | Nullable_dereference {nullable_object_descr; dereference_type; origin_descr= origin_str, _, _}
+    ->
+      let nullable_object_descr =
+        match dereference_type with
+        | MethodCall _ | AccessToField _ -> (
+          match nullable_object_descr with
+          | None ->
+              "Object"
+          (* Just describe an object itself *)
+          | Some descr ->
+              MF.monospaced_to_string descr )
+        | ArrayLengthAccess | AccessByIndex _ -> (
+          (* In Java, those operations can be applied only to arrays *)
+          match nullable_object_descr with
+          | None ->
+              "Array"
+          | Some descr ->
+              Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
+      in
+      let action_descr =
+        match dereference_type with
+        | MethodCall method_name ->
+            Format.sprintf "calling %s"
+              (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
+        | AccessToField field_name ->
+            Format.sprintf "accessing field %s"
+              (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
+        | AccessByIndex {index_desc} ->
+            Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
+        | ArrayLengthAccess ->
+            "accessing its length"
+      in
+      Format.sprintf "%s is nullable and is not locally checked for null when %s. %s"
+        nullable_object_descr action_descr origin_str
+  | Inconsistent_subclass {base_proc_name; overridden_proc_name; inconsistent_subclass_type} -> (
+      let base_method_descr = Typ.Procname.to_simplified_string ~withclass:true base_proc_name in
+      let overridden_method_descr =
+        Typ.Procname.to_simplified_string ~withclass:true overridden_proc_name
+      in
+      match inconsistent_subclass_type with
+      | InconsistentReturn ->
+          Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
+            MF.pp_monospaced overridden_method_descr MF.pp_monospaced nullable_annotation
+            MF.pp_monospaced base_method_descr
+      | InconsistentParam {param_description; param_position} ->
+          let translate_position = function
+            | 1 ->
+                "First"
+            | 2 ->
+                "Second"
+            | 3 ->
+                "Third"
+            | n ->
+                string_of_int n ^ "th"
+          in
+          Format.asprintf
+            "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
+             %a."
+            (translate_position param_position)
+            MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
+            MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
+            MF.pp_monospaced base_method_descr )
+
+
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
-  let nullable_annotation = "@Nullable" in
-  let kind, description, field_name =
-    match err_instance with
-    | Condition_redundant (is_always_true, s_opt) ->
-        ( IssueType.eradicate_condition_redundant
-        , P.sprintf "The condition %s is always %b according to the existing annotations."
-            (Option.value s_opt ~default:"") is_always_true
-        , None )
-    | Field_not_initialized (fn, pn) ->
-        let constructor_name =
-          if Typ.Procname.is_constructor pn then "the constructor"
-          else
-            match pn with
-            | Typ.Procname.Java pn_java ->
-                MF.monospaced_to_string (Typ.Procname.Java.get_method pn_java)
-            | _ ->
-                MF.monospaced_to_string (Typ.Procname.to_simplified_string pn)
-        in
-        ( IssueType.eradicate_field_not_initialized
-        , Format.asprintf "Field %a is not initialized in %s and is not declared %a"
-            MF.pp_monospaced
-            (Typ.Fieldname.to_simplified_string fn)
-            constructor_name MF.pp_monospaced nullable_annotation
-        , Some fn )
-    | Field_annotation_inconsistent (fn, (origin_description, _, _)) ->
-        let kind_s, description =
-          ( IssueType.eradicate_field_not_nullable
-          , Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
-              (Typ.Fieldname.to_simplified_string fn)
-              MF.pp_monospaced nullable_annotation origin_description )
-        in
-        (kind_s, description, None)
-    | Field_over_annotated (fn, pn) ->
-        let constructor_name =
-          if Typ.Procname.is_constructor pn then "the constructor"
-          else
-            match pn with
-            | Typ.Procname.Java pn_java ->
-                Typ.Procname.Java.get_method pn_java
-            | _ ->
-                Typ.Procname.to_simplified_string pn
-        in
-        ( IssueType.eradicate_field_over_annotated
-        , Format.asprintf "Field %a is always initialized in %s but is declared %a"
-            MF.pp_monospaced
-            (Typ.Fieldname.to_simplified_string fn)
-            constructor_name MF.pp_monospaced nullable_annotation
-        , Some fn )
-    | Nullable_dereference {nullable_object_descr; dereference_type; origin_descr= origin_str, _, _}
-      ->
-        let nullable_object_descr =
-          match dereference_type with
-          | MethodCall _ | AccessToField _ -> (
-            match nullable_object_descr with
-            | None ->
-                "Object"
-            (* Just describe an object itself *)
-            | Some descr ->
-                MF.monospaced_to_string descr )
-          | ArrayLengthAccess | AccessByIndex _ -> (
-            (* In Java, those operations can be applied only to arrays *)
-            match nullable_object_descr with
-            | None ->
-                "Array"
-            | Some descr ->
-                Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
-        in
-        let action_descr =
-          match dereference_type with
-          | MethodCall method_name ->
-              Format.sprintf "calling %s"
-                (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
-          | AccessToField field_name ->
-              Format.sprintf "accessing field %s"
-                (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
-          | AccessByIndex {index_desc} ->
-              Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
-          | ArrayLengthAccess ->
-              "accessing its length"
-        in
-        let description =
-          Format.sprintf "%s is nullable and is not locally checked for null when %s. %s"
-            nullable_object_descr action_descr origin_str
-        in
-        (IssueType.eradicate_nullable_dereference, description, None)
-    | Parameter_annotation_inconsistent (s, n, pn, _, (origin_desc, _, _)) ->
-        let kind_s, description =
-          ( IssueType.eradicate_parameter_not_nullable
-          , Format.asprintf
-              "%a needs a non-null value in parameter %d but argument %a can be null. %s"
-              MF.pp_monospaced
-              (Typ.Procname.to_simplified_string ~withclass:true pn)
-              n MF.pp_monospaced s origin_desc )
-        in
-        (kind_s, description, None)
-    | Return_annotation_inconsistent (pn, (origin_description, _, _)) ->
-        let kind_s, description =
-          ( IssueType.eradicate_return_not_nullable
-          , Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
-              MF.pp_monospaced
-              (Typ.Procname.to_simplified_string pn)
-              MF.pp_monospaced nullable_annotation origin_description )
-        in
-        (kind_s, description, None)
-    | Return_over_annotated pn ->
-        ( IssueType.eradicate_return_over_annotated
-        , Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
-            (Typ.Procname.to_simplified_string pn)
-            MF.pp_monospaced nullable_annotation
-        , None )
-    | Inconsistent_subclass_return_annotation (pn, opn) ->
-        ( IssueType.eradicate_inconsistent_subclass_return_annotation
-        , Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
-            MF.pp_monospaced
-            (Typ.Procname.to_simplified_string ~withclass:true pn)
-            MF.pp_monospaced nullable_annotation MF.pp_monospaced
-            (Typ.Procname.to_simplified_string ~withclass:true opn)
-        , None )
-    | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
-        let translate_position = function
-          | 1 ->
-              "First"
-          | 2 ->
-              "Second"
-          | 3 ->
-              "Third"
-          | n ->
-              string_of_int n ^ "th"
-        in
-        ( IssueType.eradicate_inconsistent_subclass_parameter_annotation
-        , Format.asprintf
-            "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
-             %a."
-            (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
-            (Typ.Procname.to_simplified_string ~withclass:true pn)
-            MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
-            MF.pp_monospaced
-            (Typ.Procname.to_simplified_string ~withclass:true opn)
-        , None )
-  in
+  let infer_issue_type = get_infer_issue_type err_instance in
+  let field_name = get_field_name_for_error_suppressing err_instance in
+  let err_description = get_error_description err_instance in
   let severity = Severity.err_instance_get_severity tenv err_instance in
-  st_report_error pname pdesc kind loc ~field_name
+  st_report_error pname pdesc infer_issue_type loc ~field_name
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
-    ?severity description
+    ?severity err_description
 
 
 (** Report an error unless is has been reported already, or unless it's a forall error
