@@ -12,14 +12,14 @@ open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = ('a, PulseDiagnostic.t) result
+type 'a access_result = ('a, Diagnostic.t) result
 
 (** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
   let accessed_by = Trace.Immediate {imm= (); location; history} in
   Memory.check_valid accessed_by address astate
   |> Result.map_error ~f:(fun invalidated_by ->
-         PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by} )
+         Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by} )
 
 
 module Closures = struct
@@ -304,7 +304,7 @@ let check_address_escape escape_location proc_desc address history astate =
                    (* The returned address corresponds to a C++ temporary. It will have gone out of
                       scope by now except if it was bound to a global. *)
                    Error
-                     (PulseDiagnostic.StackVariableAddressEscape
+                     (Diagnostic.StackVariableAddressEscape
                         {variable; location= escape_location; history})
                | _ ->
                    Ok () ) )
@@ -322,8 +322,7 @@ let check_address_escape escape_location proc_desc address history astate =
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable
             AbstractValue.pp address ;
           Error
-            (PulseDiagnostic.StackVariableAddressEscape
-               {variable; location= escape_location; history}) )
+            (Diagnostic.StackVariableAddressEscape {variable; location= escape_location; history}) )
         else Ok () )
   in
   check_address_of_cpp_temporary () >>= check_address_of_stack_variable >>| fun () -> astate

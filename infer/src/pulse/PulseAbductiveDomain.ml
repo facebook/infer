@@ -442,8 +442,7 @@ module PrePost = struct
         let access_trace = add_call callee_access_trace in
         match Memory.check_valid access_trace (fst addr_hist_caller) call_state.astate with
         | Error invalidated_by ->
-            Error
-              (PulseDiagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace})
+            Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace})
         | Ok astate ->
             let call_state = {call_state with astate} in
             Container.fold_result

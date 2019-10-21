@@ -6,7 +6,9 @@
  *)
 
 open! IStd
-open PulseBasicInterface
+module Invalidation = PulseInvalidation
+module Trace = PulseTrace
+module ValueHistory = PulseValueHistory
 
 (** an error to report to the user *)
 type t =

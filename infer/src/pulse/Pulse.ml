@@ -11,7 +11,7 @@ open Result.Monad_infix
 open PulseBasicInterface
 
 let report summary diagnostic =
-  let open PulseDiagnostic in
+  let open Diagnostic in
   Reporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
     (get_issue_type diagnostic) (get_message diagnostic)
 

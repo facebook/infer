@@ -95,7 +95,7 @@ module PrePost : sig
     -> formals:Var.t list
     -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
     -> domain_t
-    -> (domain_t * (AbstractValue.t * ValueHistory.t) option, PulseDiagnostic.t) result
+    -> (domain_t * (AbstractValue.t * ValueHistory.t) option, Diagnostic.t) result
   (** return the abstract state after the call along with an optional return value *)
 end
 

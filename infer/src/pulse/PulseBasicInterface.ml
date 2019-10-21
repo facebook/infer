@@ -12,6 +12,7 @@ module AbstractValue = PulseAbstractValue
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent
+module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
