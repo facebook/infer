@@ -91,7 +91,8 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
   in
   let is_temp = Idenv.exp_is_temp idenv e in
   let should_report =
-    InferredNullability.is_nonnull inferred_nullability
+    (* TODO: This condition should be extracted into a dedicated rule *)
+    InferredNullability.is_nonnull_or_declared_nonnull inferred_nullability
     && Config.eradicate_condition_redundant && true_branch && (not is_temp)
     && PatternMatch.type_is_class typ
     && (not (from_try_with_resources ()))
@@ -166,20 +167,22 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
           (Some instr_ref) loc curr_pdesc )
 
 
-let is_nonnull AnnotatedField.{annotated_type} =
+let is_declared_nonnull AnnotatedField.{annotated_type} =
   match annotated_type.nullability with
   | AnnotatedNullability.Nullable _ ->
       false
+  | AnnotatedNullability.DeclaredNonnull _ ->
+      true
   | AnnotatedNullability.Nonnull _ ->
       true
 
 
-(* Do we have evidence that the field is annotated as non-nullable? *)
-let is_field_annotated_as_nonnull annotated_field_opt =
+(* Is field declared as non-nullable (implicitly or explicitly)? *)
+let is_field_declared_as_nonnull annotated_field_opt =
   (* If the field is not present, we optimistically assume it is not nullable.
     TODO(T54687014) investigate if this leads to unsoundness issues in practice
   *)
-  Option.exists annotated_field_opt ~f:is_nonnull
+  Option.exists annotated_field_opt ~f:is_declared_nonnull
 
 
 let lookup_field_in_typestate pname field_name typestate =
@@ -282,7 +285,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
             if should_check_field_initialization then (
               (* Check if non-null field is not initialized. *)
               if
-                is_field_annotated_as_nonnull annotated_field
+                is_field_declared_as_nonnull annotated_field
                 && not is_initialized_in_either_constructor_or_initializer
               then
                 report_error tenv find_canonical_duplicate

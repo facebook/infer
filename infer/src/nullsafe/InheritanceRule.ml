@@ -10,6 +10,18 @@ type violation = {base: Nullability.t; overridden: Nullability.t} [@@deriving co
 
 type type_role = Param | Ret
 
+let is_whitelisted_violation ~subtype ~supertype =
+  match (subtype, supertype) with
+  | Nullability.DeclaredNonnull, Nullability.Nonnull ->
+      (* It is a violation that we are currently willing to ignore because
+         it is hard to obey in practice.
+         It might lead to unsoundness issues, so this might be reconsidered.
+      *)
+      true
+  | _ ->
+      false
+
+
 let check type_role ~base ~overridden =
   let subtype, supertype =
     match type_role with
@@ -20,7 +32,9 @@ let check type_role ~base ~overridden =
         (* contravariance for param *)
         (base, overridden)
   in
-  Result.ok_if_true (Nullability.is_subtype ~subtype ~supertype) ~error:{base; overridden}
+  Result.ok_if_true
+    (Nullability.is_subtype ~subtype ~supertype || is_whitelisted_violation ~subtype ~supertype)
+    ~error:{base; overridden}
 
 
 type violation_type =

@@ -16,8 +16,11 @@ module F = Format
     this information is inferred according to flow-sensitive inferrence rule.
 *)
 
-(* TODO(T52947663) add notion of unknown nullability *)
-type t = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
+type t =
+  | Nullable of nullable_origin
+  | DeclaredNonnull of declared_nonnull_origin  (** See {Nullability.t} for explanation *)
+  | Nonnull of nonnull_origin
+[@@deriving compare]
 
 and nullable_origin =
   | AnnotatedNullable  (** The type is expicitly annotated with @Nullable in the code *)
@@ -28,17 +31,21 @@ and nullable_origin =
   | ModelledNullable  (** nullsafe knows it is nullable via its internal models *)
 [@@deriving compare]
 
-and nonnull_origin =
+and declared_nonnull_origin =
   | AnnotatedNonnull
       (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe recognizes *)
-  | NotAnnotatedHenceNullableMode
+  | ImplicitlyNonnull
       (** Infer was run in mode where all not annotated (non local) types are treated as non nullable *)
+
+and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 
 let get_nullability = function
   | Nullable _ ->
       Nullability.Nullable
+  | DeclaredNonnull _ ->
+      Nullability.DeclaredNonnull
   | Nonnull _ ->
       Nullability.Nonnull
 
@@ -55,20 +62,19 @@ let pp fmt t =
     | ModelledNullable ->
         "model"
   in
+  let string_of_declared_nonnull_origin origin =
+    match origin with AnnotatedNonnull -> "@" | ImplicitlyNonnull -> "implicit"
+  in
   let string_of_nonnull_origin nonnull_origin =
-    match nonnull_origin with
-    | AnnotatedNonnull ->
-        "@"
-    | NotAnnotatedHenceNullableMode ->
-        "default"
-    | ModelledNonnull ->
-        "model"
+    match nonnull_origin with ModelledNonnull -> "model"
   in
   match t with
-  | Nullable nullable_origin ->
-      F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin nullable_origin)
-  | Nonnull nonnull_origin ->
-      F.fprintf fmt "Nonnull[%s]" (string_of_nonnull_origin nonnull_origin)
+  | Nullable origin ->
+      F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin origin)
+  | DeclaredNonnull origin ->
+      F.fprintf fmt "DeclaredNonnull[%s]" (string_of_declared_nonnull_origin origin)
+  | Nonnull origin ->
+      F.fprintf fmt "Nonnull[%s]" (string_of_nonnull_origin origin)
 
 
 let of_annot_item ia =
@@ -78,6 +84,6 @@ let of_annot_item ia =
       else AnnotatedNullable
     in
     Nullable nullable_origin
-  else if Annotations.ia_is_nonnull ia then Nonnull AnnotatedNonnull
+  else if Annotations.ia_is_nonnull ia then DeclaredNonnull AnnotatedNonnull
     (* Currently, we treat not annotated types as nonnull *)
-  else Nonnull NotAnnotatedHenceNullableMode
+  else DeclaredNonnull ImplicitlyNonnull

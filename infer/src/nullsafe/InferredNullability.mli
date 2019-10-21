@@ -25,6 +25,8 @@ val create_nullable : TypeOrigin.t -> t
 
 val create_nonnull : TypeOrigin.t -> t
 
+val is_nonnull_or_declared_nonnull : t -> bool
+
 val is_nonnull : t -> bool
 
 val set_nonnull : t -> t

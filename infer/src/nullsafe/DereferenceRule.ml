@@ -18,7 +18,7 @@ type dereference_type =
 let check = function
   | Nullability.Nullable as nullability ->
       Error nullability
-  | Nullability.Nonnull ->
+  | Nullability.DeclaredNonnull | Nullability.Nonnull ->
       Ok ()
 
 

@@ -538,7 +538,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | Some (t, nullability) ->
               let should_report =
                 Config.eradicate_condition_redundant
-                && InferredNullability.is_nonnull nullability
+                (* TODO: This condition should be extracted into a dedicated rule *)
+                && InferredNullability.is_nonnull_or_declared_nonnull nullability
                 && not (InferredNullability.origin_is_fun_library nullability)
               in
               ( if checks.eradicate && should_report then
@@ -693,29 +694,31 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           in
           EradicateChecks.{num; formal= formal_param; actual; is_formal_propagates_nullable}
         in
-        (* If the function has @PropagatesNullable params, and inferred type for each of
-           corresponding actual param is non-nullable, inferred type for the whole result
-           can be strengthened to non-nullable as well.
+        (* If the function has @PropagatesNullable params the nullability of result is determined by
+           nullability of actual values of these params.
          *)
         let clarify_ret_by_propagates_nullable ret
             (resolved_params : EradicateChecks.resolved_param list) =
-          let propagates_nullable_params =
-            List.filter resolved_params ~f:(fun (param : EradicateChecks.resolved_param) ->
-                param.is_formal_propagates_nullable )
+          (* Nullability of actual values of params that are marked as propagating nullables *)
+          let nullability_of_propagates_nullable_params =
+            List.filter_map resolved_params
+              ~f:(fun EradicateChecks.
+                        {is_formal_propagates_nullable; actual= _, inferred_nullability}
+                 -> Option.some_if is_formal_propagates_nullable inferred_nullability )
           in
-          if List.is_empty propagates_nullable_params then ret
-          else if
-            List.for_all propagates_nullable_params
-              ~f:(fun EradicateChecks.{actual= _, inferred_nullability_actual} ->
-                InferredNullability.is_nonnull inferred_nullability_actual )
-          then
-            (* All params' inferred types are non-nullable.
-              Strengten the result to be non-nullable as well! *)
-            let ret_type_annotation, ret_typ = ret in
-            (InferredNullability.set_nonnull ret_type_annotation, ret_typ)
-          else
-            (* At least one param's inferred type is nullable, can not strengthen the result *)
-            ret
+          match nullability_of_propagates_nullable_params with
+          | [] ->
+              ret
+          | head :: tail ->
+              (* We got non-empty list of params that propagate null.
+                   It means that nullability of the return value will be determined by actual (inferred) nullability of them.
+                   Joining their nullability will give us the least upper bound of nullability of the result *)
+              let upper_bound_nullability =
+                List.fold tail ~init:head ~f:(fun acc nullability ->
+                    InferredNullability.join acc nullability )
+              in
+              let _, ret_typ = ret in
+              (upper_bound_nullability, ret_typ)
         in
         (* Infer nullability of function call result based on its signature *)
         let preliminary_resolved_ret =

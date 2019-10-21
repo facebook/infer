@@ -19,7 +19,11 @@ open! IStd
           annotated nullability applies only for types declared at methods and field level.
 *)
 
-type t = Nullable of nullable_origin | Nonnull of nonnull_origin [@@deriving compare]
+type t =
+  | Nullable of nullable_origin
+  | DeclaredNonnull of declared_nonnull_origin  (** See {Nullability.t} for explanation *)
+  | Nonnull of nonnull_origin
+[@@deriving compare]
 
 and nullable_origin =
   | AnnotatedNullable  (** The type is expicitly annotated with @Nullable in the code *)
@@ -30,11 +34,13 @@ and nullable_origin =
   | ModelledNullable  (** nullsafe knows it is nullable via its internal models *)
 [@@deriving compare]
 
-and nonnull_origin =
+and declared_nonnull_origin =
   | AnnotatedNonnull
       (** The type is explicitly annotated as non nullable via one of nonnull annotations Nullsafe recognizes *)
-  | NotAnnotatedHenceNullableMode
+  | ImplicitlyNonnull
       (** Infer was run in mode where all not annotated (non local) types are treated as non nullable *)
+
+and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
 [@@deriving compare]
 

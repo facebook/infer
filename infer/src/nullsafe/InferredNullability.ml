@@ -11,9 +11,17 @@ type t = {nullability: Nullability.t; origin: TypeOrigin.t} [@@deriving compare]
 
 let get_nullability {nullability} = nullability
 
-let is_nonnull {nullability} = match nullability with Nullable -> false | Nonnull -> true
+let is_nonnull_or_declared_nonnull {nullability} =
+  match nullability with Nullable -> false | DeclaredNonnull -> true | Nonnull -> true
 
-let set_nonnull t = {t with nullability= Nullability.Nonnull}
+
+let is_nonnull {nullability} =
+  match nullability with Nullable -> false | DeclaredNonnull -> false | Nonnull -> true
+
+
+let set_nullability nullability t = {t with nullability}
+
+let set_nonnull = set_nullability Nullability.Nonnull
 
 let descr_origin t =
   let descr_opt = TypeOrigin.get_description t.origin in
@@ -71,5 +79,7 @@ let of_annotated_nullability annotated_nullability origin =
   match annotated_nullability with
   | AnnotatedNullability.Nullable _ ->
       {origin; nullability= Nullability.Nullable}
+  | AnnotatedNullability.DeclaredNonnull _ ->
+      {origin; nullability= Nullability.DeclaredNonnull}
   | AnnotatedNullability.Nonnull _ ->
       {origin; nullability= Nullability.Nonnull}

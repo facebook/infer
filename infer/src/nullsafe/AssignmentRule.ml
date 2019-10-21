@@ -17,8 +17,15 @@ type assignment_type =
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
 
+let is_whitelisted_assignment ~lhs ~rhs =
+  match (lhs, rhs) with Nullability.Nonnull, Nullability.DeclaredNonnull -> true | _ -> false
+
+
 let check ~lhs ~rhs =
-  Result.ok_if_true (Nullability.is_subtype ~subtype:rhs ~supertype:lhs) ~error:{lhs; rhs}
+  let is_allowed_assignment =
+    Nullability.is_subtype ~subtype:rhs ~supertype:lhs || is_whitelisted_assignment ~lhs ~rhs
+  in
+  Result.ok_if_true is_allowed_assignment ~error:{lhs; rhs}
 
 
 let violation_description _ assignment_type ~rhs_origin_descr =
