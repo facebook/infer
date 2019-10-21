@@ -8,8 +8,8 @@ open! IStd
 module F = Format
 module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
-module Attributes = PulseDomain.Attributes
 module BaseStack = PulseDomain.Stack
+open PulseBasicInterface
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 

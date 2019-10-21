@@ -9,33 +9,6 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-module Attribute : sig
-  type t =
-    | AddressOfCppTemporary of Var.t * ValueHistory.t
-    | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-    | Closure of Typ.Procname.t
-    | Constant of Const.t
-    | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit Trace.t
-    | StdVectorReserve
-    | WrittenTo of unit Trace.t
-  [@@deriving compare]
-end
-
-module Attributes : sig
-  include PrettyPrintable.PPUniqRankSet with type elt = Attribute.t
-
-  val get_must_be_valid : t -> unit Trace.t option
-
-  val get_invalid : t -> Invalidation.t Trace.t option
-
-  val get_written_to : t -> unit Trace.t option
-
-  val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
-
-  val is_modified : t -> bool
-end
-
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 

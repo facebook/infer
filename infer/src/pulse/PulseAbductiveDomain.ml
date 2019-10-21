@@ -8,8 +8,6 @@ open! IStd
 module F = Format
 module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
-module Attribute = PulseDomain.Attribute
-module Attributes = PulseDomain.Attributes
 module BaseStack = PulseDomain.Stack
 module BaseMemory = PulseDomain.Memory
 open PulseBasicInterface
