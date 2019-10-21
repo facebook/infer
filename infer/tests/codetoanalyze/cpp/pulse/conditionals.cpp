@@ -24,3 +24,29 @@ void FP_unreachable_ne_then_eq_ok(int* x, int y) {
     free(x);
   }
 }
+
+bool equal_explicit(size_t x, size_t y) {
+  if (x == y) {
+    return true;
+  }
+  return false;
+}
+
+bool equal(size_t x, size_t y) {
+  return x == y;
+}
+
+void FP_unreachable_interproc_compare_ok(int *x, size_t y) {
+  if (equal(y, 0)) {
+    free(x);
+  }
+  if (equal_explicit(y,1)) {
+    free(x);
+  }
+}
+
+void compare_deref_ok(int *x) {
+  if (!equal((size_t) x,0)) {
+    *x = 42;
+  }
+}
