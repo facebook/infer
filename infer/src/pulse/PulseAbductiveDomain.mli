@@ -28,7 +28,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> PulseDomain.Stack.value option
 
-  val eval : ValueHistory.t -> Var.t -> t -> t * PulseDomain.AddrTracePair.t
+  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -47,7 +47,7 @@ module Memory : sig
   val add_edge :
        AbstractValue.t * ValueHistory.t
     -> Access.t
-    -> PulseDomain.AddrTracePair.t
+    -> AbstractValue.t * ValueHistory.t
     -> Location.t
     -> t
     -> t
@@ -56,7 +56,7 @@ module Memory : sig
 
   val find_opt : AbstractValue.t -> t -> PulseDomain.Memory.cell option
 
-  val find_edge_opt : AbstractValue.t -> Access.t -> t -> PulseDomain.AddrTracePair.t option
+  val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 
   val set_cell :
     AbstractValue.t * ValueHistory.t -> PulseDomain.Memory.cell -> Location.t -> t -> t
@@ -70,7 +70,7 @@ module Memory : sig
   val std_vector_reserve : AbstractValue.t -> t -> t
 
   val eval_edge :
-    AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * PulseDomain.AddrTracePair.t
+    AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist.  *)
 

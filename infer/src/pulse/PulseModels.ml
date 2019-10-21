@@ -12,7 +12,7 @@ type exec_fun =
      caller_summary:Summary.t
   -> Location.t
   -> ret:Ident.t * Typ.t
-  -> actuals:(PulseDomain.AddrTracePair.t * Typ.t) list
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t list PulseOperations.access_result
 

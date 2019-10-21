@@ -9,12 +9,9 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-module AddrTracePair : sig
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
-end
-
 module Stack : sig
-  include PrettyPrintable.MonoMap with type key = Var.t and type value = AddrTracePair.t
+  include
+    PrettyPrintable.MonoMap with type key = Var.t and type value = AbstractValue.t * ValueHistory.t
 
   (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
      different type *)
@@ -27,7 +24,7 @@ module Memory : sig
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
-  type edges = AddrTracePair.t Edges.t
+  type edges = (AbstractValue.t * ValueHistory.t) Edges.t
 
   val pp_edges : F.formatter -> edges -> unit [@@warning "-32"]
 
@@ -55,9 +52,9 @@ module Memory : sig
 
   val register_address : AbstractValue.t -> t -> t
 
-  val add_edge : AbstractValue.t -> Access.t -> AddrTracePair.t -> t -> t
+  val add_edge : AbstractValue.t -> Access.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
-  val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTracePair.t option
+  val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 
   val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
 

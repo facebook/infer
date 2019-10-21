@@ -18,7 +18,7 @@ module Closures : sig
   (** assert the validity of the addresses captured by the lambda *)
 end
 
-val eval : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
+val eval : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Use the stack and heap to evaluate the given expression down to an abstract address representing
     its value.
 
@@ -32,26 +32,26 @@ end
 
 val assert_is_true : Location.t -> condition:Exp.t -> t -> (t * TBool.t) access_result
 
-val eval_deref : Location.t -> Exp.t -> t -> (t * PulseDomain.AddrTracePair.t) access_result
+val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Like [eval] but evaluates [*exp]. *)
 
 val eval_access :
      Location.t
-  -> PulseDomain.AddrTracePair.t
+  -> AbstractValue.t * ValueHistory.t
   -> PulseDomain.Memory.Access.t
   -> t
-  -> (t * PulseDomain.AddrTracePair.t) access_result
+  -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_deref :
-  Location.t -> PulseDomain.AddrTracePair.t -> ValueHistory.t -> t -> t access_result
+  Location.t -> AbstractValue.t * ValueHistory.t -> ValueHistory.t -> t -> t access_result
 
 val havoc_field :
      Location.t
-  -> PulseDomain.AddrTracePair.t
+  -> AbstractValue.t * ValueHistory.t
   -> Typ.Fieldname.t
   -> ValueHistory.t
   -> t
@@ -63,27 +63,27 @@ val write_id : Ident.t -> PulseDomain.Stack.value -> t -> t
 
 val write_deref :
      Location.t
-  -> ref:PulseDomain.AddrTracePair.t
-  -> obj:PulseDomain.AddrTracePair.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> obj:AbstractValue.t * ValueHistory.t
   -> t
   -> t access_result
 (** write the edge [ref --*--> obj] *)
 
 val invalidate :
-  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that the address is invalid *)
 
 val invalidate_deref :
-  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that what the address points to is invalid *)
 
 val invalidate_array_elements :
-  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that all the array elements that address points to is invalid *)
 
 val shallow_copy :
      Location.t
-  -> PulseDomain.AddrTracePair.t
+  -> AbstractValue.t * ValueHistory.t
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)

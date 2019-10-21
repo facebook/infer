@@ -13,7 +13,7 @@ open PulseBasicInterface
 
 (* {3 Heap domain } *)
 
-module AddrTracePair = struct
+module AddrHistPair = struct
   type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
 
   let pp f addr_trace =
@@ -31,7 +31,7 @@ module Memory : sig
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
-  type edges = AddrTracePair.t Edges.t
+  type edges = AddrHistPair.t Edges.t
 
   val pp_edges : F.formatter -> edges -> unit
 
@@ -65,9 +65,9 @@ module Memory : sig
 
   val register_address : AbstractValue.t -> t -> t
 
-  val add_edge : AbstractValue.t -> Access.t -> AddrTracePair.t -> t -> t
+  val add_edge : AbstractValue.t -> Access.t -> AddrHistPair.t -> t -> t
 
-  val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTracePair.t option
+  val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrHistPair.t option
 
   val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
 
@@ -93,9 +93,9 @@ end = struct
 
   module Edges = PrettyPrintable.MakePPMap (Access)
 
-  type edges = AddrTracePair.t Edges.t [@@deriving compare]
+  type edges = AddrHistPair.t Edges.t [@@deriving compare]
 
-  let pp_edges = Edges.pp ~pp_value:AddrTracePair.pp
+  let pp_edges = Edges.pp ~pp_value:AddrHistPair.pp
 
   type cell = edges * Attributes.t
 
@@ -224,16 +224,16 @@ module Stack = struct
       F.fprintf f "%a%a" pp_ampersand var Var.pp var
   end
 
-  include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrTracePair)
+  include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
 
   let pp fmt m =
     let pp_item fmt (var_address, v) =
-      F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrTracePair.pp v
+      F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrHistPair.pp v
     in
     PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
 
 
-  let compare = compare AddrTracePair.compare
+  let compare = compare AddrHistPair.compare
 end
 
 type t = {heap: Memory.t; stack: Stack.t}
