@@ -9,14 +9,6 @@ open! IStd
 
 (** Module for Pattern matching. *)
 
-let type_is_object typ =
-  match typ.Typ.desc with
-  | Tptr ({desc= Tstruct name}, _) ->
-      Typ.Name.equal name Typ.Name.Java.java_lang_object
-  | _ ->
-      false
-
-
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 let rec supertype_exists tenv pred name =
   match Tenv.lookup tenv name with

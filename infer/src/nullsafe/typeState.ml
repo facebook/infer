@@ -36,17 +36,21 @@ let pp fmt typestate =
   pp_map typestate
 
 
-let type_join typ1 typ2 = if PatternMatch.type_is_object typ1 then typ2 else typ1
-
 let map_join m1 m2 =
   let range_join _exp range1_opt range2_opt =
     Option.both range1_opt range2_opt
     |> Option.map
-         ~f:(fun (((typ1, inferred_nullability1) as range1), (typ2, inferred_nullability2)) ->
+         ~f:(fun (((typ1, inferred_nullability1) as range1), (_, inferred_nullability2)) ->
            InferredNullability.join inferred_nullability1 inferred_nullability2
            |> Option.value_map ~default:range1 ~f:(fun ta' ->
-                  let typ' = type_join typ1 typ2 in
-                  (typ', ta') ) )
+                  ( (* Java does not support local type inference (for codebases and Java version nullsafe is currently aimed for).
+                   The real type does not depend on types being joined; it is determined by the corresponding type declaration instead.
+                   We don't really use type information for reasons not related to things like diagnostic, and using one of types
+                   serves as a good proxy.
+                   Let's take the left one.
+                  *)
+                    typ1
+                  , ta' ) ) )
   in
   if phys_equal m1 m2 then m1 else M.merge range_join m1 m2
 

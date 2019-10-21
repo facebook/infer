@@ -132,9 +132,6 @@ val type_get_class_name : Typ.t -> Typ.Name.t option
 val type_is_class : Typ.t -> bool
 (** Is the type a class type *)
 
-val type_is_object : Typ.t -> bool
-(** Is the type java.lang.Object *)
-
 val get_fields_nullified : Procdesc.t -> Typ.Fieldname.Set.t
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 
