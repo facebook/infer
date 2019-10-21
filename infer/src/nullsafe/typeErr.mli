@@ -38,40 +38,24 @@ type origin_descr = string * Location.t option * AnnotatedSignature.t option
 type err_instance =
   | Condition_redundant of (bool * string option)
   | Inconsistent_subclass of
-      { base_proc_name: Typ.Procname.t
-      ; overridden_proc_name: Typ.Procname.t
-      ; inconsistent_subclass_type: inconsistent_subclass_type }
+      { inheritance_violation: InheritanceRule.violation
+      ; violation_type: InheritanceRule.violation_type
+      ; base_proc_name: Typ.Procname.t
+      ; overridden_proc_name: Typ.Procname.t }
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Over_annotation of over_annotation_type
+  | Over_annotation of
+      { over_annotated_violation: OverAnnotatedRule.violation
+      ; violation_type: OverAnnotatedRule.violation_type }
   | Nullable_dereference of
-      { nullable_object_descr: string option
-      ; dereference_type: dereference_type
+      { dereference_violation: DereferenceRule.violation
+      ; dereference_type: DereferenceRule.dereference_type
+      ; nullable_object_descr: string option
       ; origin_descr: origin_descr }
-  | Bad_assignment of {rhs_origin_descr: origin_descr; assignment_type: assignment_type}
+  | Bad_assignment of
+      { assignment_violation: AssignmentRule.violation
+      ; assignment_type: AssignmentRule.assignment_type
+      ; rhs_origin_descr: origin_descr }
 [@@deriving compare]
-
-and inconsistent_subclass_type =
-  | InconsistentParam of {param_description: string; param_position: int}
-  | InconsistentReturn
-
-and over_annotation_type =
-  | FieldOverAnnotedAsNullable of Typ.Fieldname.t
-  | ReturnOverAnnotatedAsNullable of Typ.Procname.t
-      (** Return value of a method can be made non-nullable *)
-
-and assignment_type =
-  | PassingParamToAFunction of
-      { param_description: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
-  | AssigningToAField of Typ.Fieldname.t
-  | ReturningFromAFunction of Typ.Procname.t
-
-and dereference_type =
-  | MethodCall of Typ.Procname.t  (** nullable_object.some_method() *)
-  | AccessToField of Typ.Fieldname.t  (** nullable_object.some_field *)
-  | AccessByIndex of {index_desc: string}  (** nullable_array[some_index] *)
-  | ArrayLengthAccess  (** nullable_array.length *)
 
 val node_reset_forall : Procdesc.Node.t -> unit
 

@@ -66,40 +66,24 @@ let compare_origin_descr _ _ = 0
 type err_instance =
   | Condition_redundant of (bool * string option)
   | Inconsistent_subclass of
-      { base_proc_name: Typ.Procname.t
-      ; overridden_proc_name: Typ.Procname.t
-      ; inconsistent_subclass_type: inconsistent_subclass_type }
+      { inheritance_violation: InheritanceRule.violation
+      ; violation_type: InheritanceRule.violation_type
+      ; base_proc_name: Typ.Procname.t
+      ; overridden_proc_name: Typ.Procname.t }
   | Field_not_initialized of Typ.Fieldname.t * Typ.Procname.t
-  | Over_annotation of over_annotation_type
+  | Over_annotation of
+      { over_annotated_violation: OverAnnotatedRule.violation
+      ; violation_type: OverAnnotatedRule.violation_type }
   | Nullable_dereference of
-      { nullable_object_descr: string option
-      ; dereference_type: dereference_type
+      { dereference_violation: DereferenceRule.violation
+      ; dereference_type: DereferenceRule.dereference_type
+      ; nullable_object_descr: string option
       ; origin_descr: origin_descr }
-  | Bad_assignment of {rhs_origin_descr: origin_descr; assignment_type: assignment_type}
+  | Bad_assignment of
+      { assignment_violation: AssignmentRule.violation
+      ; assignment_type: AssignmentRule.assignment_type
+      ; rhs_origin_descr: origin_descr }
 [@@deriving compare]
-
-and inconsistent_subclass_type =
-  | InconsistentParam of {param_description: string; param_position: int}
-  | InconsistentReturn
-
-and over_annotation_type =
-  | FieldOverAnnotedAsNullable of Typ.Fieldname.t
-  | ReturnOverAnnotatedAsNullable of Typ.Procname.t
-      (** Return value of a method can be made non-nullable *)
-
-and assignment_type =
-  | PassingParamToAFunction of
-      { param_description: string
-      ; param_position: int
-      ; function_procname: Typ.Procname.t }
-  | AssigningToAField of Typ.Fieldname.t
-  | ReturningFromAFunction of Typ.Procname.t
-
-and dereference_type =
-  | MethodCall of Typ.Procname.t
-  | AccessToField of Typ.Fieldname.t
-  | AccessByIndex of {index_desc: string}
-  | ArrayLengthAccess
 
 module H = Hashtbl.Make (struct
   type t = err_instance * InstrRef.t option [@@deriving compare]
@@ -221,35 +205,35 @@ type st_report_error =
 let get_infer_issue_type = function
   | Condition_redundant _ ->
       IssueType.eradicate_condition_redundant
-  | Over_annotation (FieldOverAnnotedAsNullable _) ->
+  | Over_annotation {violation_type= OverAnnotatedRule.FieldOverAnnoted _} ->
       IssueType.eradicate_field_over_annotated
-  | Over_annotation (ReturnOverAnnotatedAsNullable _) ->
+  | Over_annotation {violation_type= OverAnnotatedRule.ReturnOverAnnotated _} ->
       IssueType.eradicate_return_over_annotated
   | Field_not_initialized _ ->
       IssueType.eradicate_field_not_initialized
-  | Bad_assignment {assignment_type= PassingParamToAFunction _} ->
+  | Bad_assignment {assignment_type= PassingParamToFunction _} ->
       IssueType.eradicate_parameter_not_nullable
-  | Bad_assignment {assignment_type= AssigningToAField _} ->
+  | Bad_assignment {assignment_type= AssigningToField _} ->
       IssueType.eradicate_field_not_nullable
-  | Bad_assignment {assignment_type= ReturningFromAFunction _} ->
+  | Bad_assignment {assignment_type= ReturningFromFunction _} ->
       IssueType.eradicate_return_not_nullable
   | Nullable_dereference _ ->
       IssueType.eradicate_nullable_dereference
-  | Inconsistent_subclass {inconsistent_subclass_type= InconsistentReturn} ->
+  | Inconsistent_subclass {violation_type= InconsistentReturn} ->
       IssueType.eradicate_inconsistent_subclass_return_annotation
-  | Inconsistent_subclass {inconsistent_subclass_type= InconsistentParam _} ->
+  | Inconsistent_subclass {violation_type= InconsistentParam _} ->
       IssueType.eradicate_inconsistent_subclass_parameter_annotation
 
 
 (* If an error is related to a particular field, we support suppressing the
    error via a supress annotation placed near the field declaration *)
 let get_field_name_for_error_suppressing = function
-  | Over_annotation (FieldOverAnnotedAsNullable field_name) ->
+  | Over_annotation {violation_type= OverAnnotatedRule.FieldOverAnnoted field_name} ->
       Some field_name
   | Field_not_initialized (field_name, _) ->
       Some field_name
   | Condition_redundant _
-  | Over_annotation (ReturnOverAnnotatedAsNullable _)
+  | Over_annotation {violation_type= OverAnnotatedRule.ReturnOverAnnotated _}
   (* In case of assignment to a field, it should be fixed case by case for each assignment *)
   | Bad_assignment _
   | Nullable_dereference _
@@ -263,15 +247,8 @@ let get_error_description err_instance =
   | Condition_redundant (is_always_true, s_opt) ->
       P.sprintf "The condition %s is always %b according to the existing annotations."
         (Option.value s_opt ~default:"") is_always_true
-  | Over_annotation (FieldOverAnnotedAsNullable field_name) ->
-      Format.asprintf "Field %a is always initialized in the constructor but is declared %a"
-        MF.pp_monospaced
-        (Typ.Fieldname.to_simplified_string field_name)
-        MF.pp_monospaced nullable_annotation
-  | Over_annotation (ReturnOverAnnotatedAsNullable proc_name) ->
-      Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
-        (Typ.Procname.to_simplified_string proc_name)
-        MF.pp_monospaced nullable_annotation
+  | Over_annotation {over_annotated_violation; violation_type} ->
+      OverAnnotatedRule.violation_description over_annotated_violation violation_type
   | Field_not_initialized (field_name, proc_name) ->
       let constructor_name =
         if Typ.Procname.is_constructor proc_name then "the constructor"
@@ -285,84 +262,20 @@ let get_error_description err_instance =
       Format.asprintf "Field %a is not initialized in %s and is not declared %a" MF.pp_monospaced
         (Typ.Fieldname.to_simplified_string field_name)
         constructor_name MF.pp_monospaced nullable_annotation
-  | Bad_assignment {rhs_origin_descr= origin_descr_string, _, _; assignment_type} -> (
-    match assignment_type with
-    | PassingParamToAFunction {param_description; param_position; function_procname} ->
-        Format.asprintf "%a needs a non-null value in parameter %d but argument %a can be null. %s"
-          MF.pp_monospaced
-          (Typ.Procname.to_simplified_string ~withclass:true function_procname)
-          param_position MF.pp_monospaced param_description origin_descr_string
-    | AssigningToAField field_name ->
-        Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
-          (Typ.Fieldname.to_simplified_string field_name)
-          MF.pp_monospaced nullable_annotation origin_descr_string
-    | ReturningFromAFunction function_proc_name ->
-        Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
-          MF.pp_monospaced
-          (Typ.Procname.to_simplified_string function_proc_name)
-          MF.pp_monospaced nullable_annotation origin_descr_string )
-  | Nullable_dereference {nullable_object_descr; dereference_type; origin_descr= origin_str, _, _}
+  | Bad_assignment {rhs_origin_descr= rhs_origin_descr, _, _; assignment_type; assignment_violation}
     ->
-      let nullable_object_descr =
-        match dereference_type with
-        | MethodCall _ | AccessToField _ -> (
-          match nullable_object_descr with
-          | None ->
-              "Object"
-          (* Just describe an object itself *)
-          | Some descr ->
-              MF.monospaced_to_string descr )
-        | ArrayLengthAccess | AccessByIndex _ -> (
-          (* In Java, those operations can be applied only to arrays *)
-          match nullable_object_descr with
-          | None ->
-              "Array"
-          | Some descr ->
-              Format.sprintf "Array %s" (MF.monospaced_to_string descr) )
-      in
-      let action_descr =
-        match dereference_type with
-        | MethodCall method_name ->
-            Format.sprintf "calling %s"
-              (MF.monospaced_to_string (Typ.Procname.to_simplified_string method_name))
-        | AccessToField field_name ->
-            Format.sprintf "accessing field %s"
-              (MF.monospaced_to_string (Typ.Fieldname.to_simplified_string field_name))
-        | AccessByIndex {index_desc} ->
-            Format.sprintf "accessing at index %s" (MF.monospaced_to_string index_desc)
-        | ArrayLengthAccess ->
-            "accessing its length"
-      in
-      Format.sprintf "%s is nullable and is not locally checked for null when %s. %s"
-        nullable_object_descr action_descr origin_str
-  | Inconsistent_subclass {base_proc_name; overridden_proc_name; inconsistent_subclass_type} -> (
-      let base_method_descr = Typ.Procname.to_simplified_string ~withclass:true base_proc_name in
-      let overridden_method_descr =
-        Typ.Procname.to_simplified_string ~withclass:true overridden_proc_name
-      in
-      match inconsistent_subclass_type with
-      | InconsistentReturn ->
-          Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
-            MF.pp_monospaced overridden_method_descr MF.pp_monospaced nullable_annotation
-            MF.pp_monospaced base_method_descr
-      | InconsistentParam {param_description; param_position} ->
-          let translate_position = function
-            | 1 ->
-                "First"
-            | 2 ->
-                "Second"
-            | 3 ->
-                "Third"
-            | n ->
-                string_of_int n ^ "th"
-          in
-          Format.asprintf
-            "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
-             %a."
-            (translate_position param_position)
-            MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
-            MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
-            MF.pp_monospaced base_method_descr )
+      AssignmentRule.violation_description assignment_violation assignment_type ~rhs_origin_descr
+  | Nullable_dereference
+      { dereference_violation
+      ; nullable_object_descr
+      ; dereference_type
+      ; origin_descr= origin_descr, _, _ } ->
+      DereferenceRule.violation_description dereference_violation dereference_type
+        ~nullable_object_descr ~origin_descr
+  | Inconsistent_subclass
+      {inheritance_violation; violation_type; base_proc_name; overridden_proc_name} ->
+      InheritanceRule.violation_description inheritance_violation violation_type ~base_proc_name
+        ~overridden_proc_name
 
 
 (** Report an error right now. *)

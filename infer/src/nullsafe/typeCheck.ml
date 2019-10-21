@@ -148,7 +148,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       in
       if checks.eradicate then
         EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
-          instr_ref exp (TypeErr.AccessToField field_name) inferred_nullability loc ;
+          instr_ref exp (DereferenceRule.AccessToField field_name) inferred_nullability loc ;
       tr_new
   | Exp.Lindex (array_exp, index_exp) ->
       let _, inferred_nullability =
@@ -161,7 +161,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       if checks.eradicate then
         EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
           instr_ref array_exp
-          (TypeErr.AccessByIndex {index_desc})
+          (DereferenceRule.AccessByIndex {index_desc})
           inferred_nullability loc ;
       tr_default
   | _ ->
@@ -472,7 +472,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       in
       if checks.eradicate then
         EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
-          instr_ref array_exp TypeErr.ArrayLengthAccess ta loc ;
+          instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New)
         typestate

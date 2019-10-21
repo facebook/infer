@@ -28,17 +28,16 @@ let is_virtual = function
 
 let check_object_dereference tenv find_canonical_duplicate curr_pname node instr_ref object_exp
     dereference_type inferred_nullability loc =
-  if
-    not
-      (NullsafeRules.passes_dereference_rule
-         (InferredNullability.get_nullability inferred_nullability))
-  then
-    let origin_descr = InferredNullability.descr_origin inferred_nullability in
-    let nullable_object_descr = explain_expr tenv node object_exp in
-    let type_error =
-      TypeErr.Nullable_dereference {nullable_object_descr; dereference_type; origin_descr}
-    in
-    report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname
+  Result.iter_error
+    (DereferenceRule.check (InferredNullability.get_nullability inferred_nullability))
+    ~f:(fun dereference_violation ->
+      let origin_descr = InferredNullability.descr_origin inferred_nullability in
+      let nullable_object_descr = explain_expr tenv node object_exp in
+      let type_error =
+        TypeErr.Nullable_dereference
+          {dereference_violation; nullable_object_descr; dereference_type; origin_descr}
+      in
+      report_error tenv find_canonical_duplicate type_error (Some instr_ref) loc curr_pname )
 
 
 (** Where the condition is coming from *)
@@ -144,22 +143,27 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     in
     Annotations.ia_is_cleanup ret_annotation_deprecated
   in
-  let should_report_nullable =
-    (not
-       (NullsafeRules.passes_assignment_rule
-          ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
-          ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)))
-    && (not (AndroidFramework.is_destroy_method curr_pname))
-    && PatternMatch.type_is_class t_lhs
-    && (not (Typ.Fieldname.Java.is_outer_instance fname))
-    && (not (field_is_injector_readwrite ()))
-    && not (field_is_in_cleanup_context ())
+  let assignment_check_result =
+    AssignmentRule.check
+      ~lhs:(InferredNullability.get_nullability inferred_nullability_lhs)
+      ~rhs:(InferredNullability.get_nullability inferred_nullability_rhs)
   in
-  if should_report_nullable then
-    let rhs_origin_descr = InferredNullability.descr_origin inferred_nullability_rhs in
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Bad_assignment {rhs_origin_descr; assignment_type= TypeErr.AssigningToAField fname})
-      (Some instr_ref) loc curr_pdesc
+  Result.iter_error assignment_check_result ~f:(fun assignment_violation ->
+      let should_report =
+        (not (AndroidFramework.is_destroy_method curr_pname))
+        && PatternMatch.type_is_class t_lhs
+        && (not (Typ.Fieldname.Java.is_outer_instance fname))
+        && (not (field_is_injector_readwrite ()))
+        && not (field_is_in_cleanup_context ())
+      in
+      if should_report then
+        let rhs_origin_descr = InferredNullability.descr_origin inferred_nullability_rhs in
+        report_error tenv find_canonical_duplicate
+          (TypeErr.Bad_assignment
+             { assignment_violation
+             ; rhs_origin_descr
+             ; assignment_type= AssignmentRule.AssigningToField fname })
+          (Some instr_ref) loc curr_pdesc )
 
 
 let is_nonnull AnnotatedField.{annotated_type} =
@@ -289,17 +293,19 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
               | None ->
                   ()
               | Some annotated_field ->
-                  if
-                    Config.eradicate_field_over_annotated
-                    && NullsafeRules.is_overannotated
-                         ~lhs:
-                           (AnnotatedNullability.get_nullability
-                              annotated_field.annotated_type.nullability)
-                         ~rhs_upper_bound:(field_nullability_upper_bound_over_all_typestates ())
-                  then
-                    report_error tenv find_canonical_duplicate
-                      (TypeErr.Over_annotation (TypeErr.FieldOverAnnotedAsNullable field_name))
-                      None loc curr_constructor_pdesc )
+                  if Config.eradicate_field_over_annotated then
+                    let lhs =
+                      AnnotatedNullability.get_nullability
+                        annotated_field.annotated_type.nullability
+                    in
+                    let rhs_upper_bound = field_nullability_upper_bound_over_all_typestates () in
+                    Result.iter_error (OverAnnotatedRule.check ~lhs ~rhs_upper_bound)
+                      ~f:(fun over_annotated_violation ->
+                        report_error tenv find_canonical_duplicate
+                          (TypeErr.Over_annotation
+                             { over_annotated_violation
+                             ; violation_type= OverAnnotatedRule.FieldOverAnnoted field_name })
+                          None loc curr_constructor_pdesc ) )
           in
           List.iter ~f:do_field fields
       | None ->
@@ -313,12 +319,14 @@ let check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
   let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   let rhs = InferredNullability.get_nullability ret_inferred_nullability in
-  if not (NullsafeRules.passes_assignment_rule ~lhs ~rhs) then
-    let rhs_origin_descr = InferredNullability.descr_origin ret_inferred_nullability in
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Bad_assignment
-         {rhs_origin_descr; assignment_type= TypeErr.ReturningFromAFunction curr_pname})
-      None loc curr_pdesc
+  Result.iter_error (AssignmentRule.check ~lhs ~rhs) ~f:(fun assignment_violation ->
+      let rhs_origin_descr = InferredNullability.descr_origin ret_inferred_nullability in
+      report_error tenv find_canonical_duplicate
+        (TypeErr.Bad_assignment
+           { assignment_violation
+           ; rhs_origin_descr
+           ; assignment_type= AssignmentRule.ReturningFromFunction curr_pname })
+        None loc curr_pdesc )
 
 
 let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
@@ -330,10 +338,13 @@ let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname cur
      correct upper bound.
     *)
   let rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
-  if NullsafeRules.is_overannotated ~lhs ~rhs_upper_bound then
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Over_annotation (TypeErr.ReturnOverAnnotatedAsNullable curr_pname)) None loc
-      curr_pdesc
+  Result.iter_error (OverAnnotatedRule.check ~lhs ~rhs_upper_bound)
+    ~f:(fun over_annotated_violation ->
+      report_error tenv find_canonical_duplicate
+        (TypeErr.Over_annotation
+           { over_annotated_violation
+           ; violation_type= OverAnnotatedRule.ReturnOverAnnotated curr_pname })
+        None loc curr_pdesc )
 
 
 (** Check the annotations when returning from a method. *)
@@ -373,7 +384,7 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
           loc
       in
       check_object_dereference tenv find_canonical_duplicate curr_pdesc node instr_ref
-        original_this_e (TypeErr.MethodCall callee_pname) this_inferred_nullability loc
+        original_this_e (DereferenceRule.MethodCall callee_pname) this_inferred_nullability loc
   | [] ->
       ()
 
@@ -389,7 +400,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
     resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
-    let report () =
+    let report assignment_violation =
       let param_description =
         match explain_expr tenv node orig_e2 with
         | Some descr ->
@@ -400,9 +411,10 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
       let rhs_origin_descr = InferredNullability.descr_origin nullability_actual in
       report_error tenv find_canonical_duplicate
         (TypeErr.Bad_assignment
-           { rhs_origin_descr
+           { assignment_violation
+           ; rhs_origin_descr
            ; assignment_type=
-               TypeErr.PassingParamToAFunction
+               AssignmentRule.PassingParamToFunction
                  {param_description; param_position; function_procname= callee_pname} })
         (Some instr_ref) loc curr_pdesc
     in
@@ -411,7 +423,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
       to the formal param *)
       let lhs = AnnotatedNullability.get_nullability formal.param_annotated_type.nullability in
       let rhs = InferredNullability.get_nullability nullability_actual in
-      if not (NullsafeRules.passes_assignment_rule ~lhs ~rhs) then report ()
+      Result.iter_error (AssignmentRule.check ~lhs ~rhs) ~f:report
   in
   let should_check_parameters =
     match callee_pname with
@@ -430,35 +442,33 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
 
 let check_inheritance_rule_for_return find_canonical_duplicate tenv loc ~base_proc_name
     ~overridden_proc_name ~overridden_proc_desc ~base_nullability ~overridden_nullability =
-  if
-    not
-      (NullsafeRules.passes_inheritance_rule NullsafeRules.Ret ~base:base_nullability
-         ~overridden:overridden_nullability)
-  then
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Inconsistent_subclass
-         { overridden_proc_name
-         ; base_proc_name
-         ; inconsistent_subclass_type= TypeErr.InconsistentReturn })
-      None loc overridden_proc_desc
+  Result.iter_error
+    (InheritanceRule.check InheritanceRule.Ret ~base:base_nullability
+       ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
+      report_error tenv find_canonical_duplicate
+        (TypeErr.Inconsistent_subclass
+           { inheritance_violation
+           ; violation_type= InheritanceRule.InconsistentReturn
+           ; overridden_proc_name
+           ; base_proc_name })
+        None loc overridden_proc_desc )
 
 
 let check_inheritance_rule_for_param find_canonical_duplicate tenv loc ~overridden_param_name
     ~base_proc_name ~overridden_proc_name ~overridden_proc_desc ~param_position ~base_nullability
     ~overridden_nullability =
-  if
-    not
-      (NullsafeRules.passes_inheritance_rule NullsafeRules.Param ~base:base_nullability
-         ~overridden:overridden_nullability)
-  then
-    report_error tenv find_canonical_duplicate
-      (TypeErr.Inconsistent_subclass
-         { base_proc_name
-         ; overridden_proc_name
-         ; inconsistent_subclass_type=
-             TypeErr.InconsistentParam
-               {param_position; param_description= Mangled.to_string overridden_param_name} })
-      None loc overridden_proc_desc
+  Result.iter_error
+    (InheritanceRule.check InheritanceRule.Param ~base:base_nullability
+       ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
+      report_error tenv find_canonical_duplicate
+        (TypeErr.Inconsistent_subclass
+           { inheritance_violation
+           ; violation_type=
+               InheritanceRule.InconsistentParam
+                 {param_position; param_description= Mangled.to_string overridden_param_name}
+           ; base_proc_name
+           ; overridden_proc_name })
+        None loc overridden_proc_desc )
 
 
 let check_inheritance_rule_for_params find_canonical_duplicate tenv loc ~base_proc_name
