@@ -7,6 +7,7 @@
 open! IStd
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
+module BaseMemory = PulseBaseMemory
 
 (* layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
    when necessary
@@ -37,11 +38,11 @@ module Stack : sig
   val exists : (Var.t -> BaseDomain.Stack.value -> bool) -> t -> bool
 end
 
-(** memory operations like {!BaseDomain.Memory} but that also take care of propagating facts to the
+(** memory operations like {!BaseMemory} but that also take care of propagating facts to the
     precondition *)
 module Memory : sig
-  module Access = BaseDomain.Memory.Access
-  module Edges = BaseDomain.Memory.Edges
+  module Access = BaseMemory.Access
+  module Edges = BaseMemory.Edges
 
   val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
 
@@ -55,11 +56,11 @@ module Memory : sig
 
   val check_valid : unit Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t Trace.t) result
 
-  val find_opt : AbstractValue.t -> t -> BaseDomain.Memory.cell option
+  val find_opt : AbstractValue.t -> t -> BaseMemory.cell option
 
   val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 
-  val set_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.Memory.cell -> Location.t -> t -> t
+  val set_cell : AbstractValue.t * ValueHistory.t -> BaseMemory.cell -> Location.t -> t -> t
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 

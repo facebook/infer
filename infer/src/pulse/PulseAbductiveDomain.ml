@@ -7,10 +7,10 @@
 open! IStd
 module F = Format
 module L = Logging
+open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseStack = BaseDomain.Stack
-module BaseMemory = BaseDomain.Memory
-open PulseBasicInterface
+module BaseMemory = PulseBaseMemory
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [InvertedDomain], representing the inferred pre-condition*)
