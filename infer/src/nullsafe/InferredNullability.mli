@@ -43,7 +43,7 @@ val of_annotated_nullability : AnnotatedNullability.t -> TypeOrigin.t -> t
 val get_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred.  *)
 
-val join : t -> t -> t option
+val join : t -> t -> t
 (** This is what happens with nullability when we join two flows in CFG,
     e.g.
     {[

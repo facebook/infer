@@ -9,8 +9,6 @@ open! IStd
 
 type t = {nullability: Nullability.t; origin: TypeOrigin.t} [@@deriving compare]
 
-let equal = [%compare.equal: t]
-
 let get_nullability {nullability} = nullability
 
 let is_nonnull {nullability} = match nullability with Nullable -> false | Nonnull -> true
@@ -50,9 +48,7 @@ let join t1 t2 =
          *)
         TypeOrigin.join t1.origin t2.origin
   in
-  let result = {nullability= joined_nullability; origin= joined_origin} in
-  (* TODO: make the result return non optional value *)
-  if equal result t1 then None else Some result
+  {nullability= joined_nullability; origin= joined_origin}
 
 
 let get_origin t = t.origin
