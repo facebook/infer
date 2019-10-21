@@ -12,7 +12,7 @@ open! IStd
 (** Typestate *)
 type t
 
-type range = Typ.t * InferredNullability.t * Location.t list
+type range = Typ.t * InferredNullability.t
 
 val add_id : Ident.t -> range -> t -> t
 
@@ -29,7 +29,5 @@ val lookup_id : Ident.t -> t -> range option
 val lookup_pvar : Pvar.t -> t -> range option
 
 val pp : Format.formatter -> t -> unit
-
-val range_add_locs : range -> Location.t list -> range
 
 val remove_id : Ident.t -> t -> t

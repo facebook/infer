@@ -39,9 +39,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         InferredNullability.of_annotated_nullability
           param_signature.param_annotated_type.nullability origin
       in
-      TypeState.add pvar
-        (param_signature.param_annotated_type.typ, inferred_nullability, [])
-        typestate
+      TypeState.add pvar (param_signature.param_annotated_type.typ, inferred_nullability) typestate
     in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty in
@@ -54,7 +52,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt =
-        match ret_range with Some (typ_found, _, _) -> Some typ_found | None -> None
+        match ret_range with Some (typ_found, _) -> Some typ_found | None -> None
       in
       (* TODO(T54088319): model this in AnnotatedNullability *)
       let ret_implicitly_nullable =

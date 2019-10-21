@@ -113,35 +113,27 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
     (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
   match e with
   | _ when Exp.is_null_literal e ->
-      let typ, inferred_nullability, locs = tr_default in
+      let typ, inferred_nullability = tr_default in
       if PatternMatch.type_is_class typ then
-        (typ, InferredNullability.create_nullable (TypeOrigin.Const loc), locs)
-      else (typ, InferredNullability.with_origin inferred_nullability (TypeOrigin.Const loc), locs)
-  | Exp.Lvar pvar -> (
-    match TypeState.lookup_pvar pvar typestate with
-    | Some tr ->
-        TypeState.range_add_locs tr [loc]
-    | None ->
-        tr_default )
-  | Exp.Var id -> (
-    match TypeState.lookup_id id typestate with
-    | Some tr ->
-        TypeState.range_add_locs tr [loc]
-    | None ->
-        tr_default )
+        (typ, InferredNullability.create_nullable (TypeOrigin.Const loc))
+      else (typ, InferredNullability.with_origin inferred_nullability (TypeOrigin.Const loc))
+  | Exp.Lvar pvar ->
+      Option.value (TypeState.lookup_pvar pvar typestate) ~default:tr_default
+  | Exp.Var id ->
+      Option.value (TypeState.lookup_id id typestate) ~default:tr_default
   | Exp.Exn e1 ->
       typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
         typestate e1 tr_default loc
   | Exp.Const _ ->
-      let typ, _, locs = tr_default in
-      (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc), locs)
+      let typ, _ = tr_default in
+      (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc))
   | Exp.Lfield (exp, field_name, typ) ->
-      let _, _, locs = tr_default in
-      let _, inferred_nullability, locs' =
+      let _, _ = tr_default in
+      let _, inferred_nullability =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create_nonnull TypeOrigin.ONone, locs)
+          (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
       in
       let exp_origin = InferredNullability.get_origin inferred_nullability in
@@ -150,8 +142,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
         | Some AnnotatedField.{annotated_type} ->
             ( annotated_type.typ
             , InferredNullability.of_annotated_nullability annotated_type.nullability
-                (TypeOrigin.Field (exp_origin, field_name, loc))
-            , locs' )
+                (TypeOrigin.Field (exp_origin, field_name, loc)) )
         | None ->
             tr_default
       in
@@ -160,7 +151,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
           instr_ref exp (TypeErr.AccessToField field_name) inferred_nullability loc ;
       tr_new
   | Exp.Lindex (array_exp, index_exp) ->
-      let _, inferred_nullability, _ =
+      let _, inferred_nullability =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate array_exp tr_default loc
       in
@@ -190,7 +181,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
     in
     let pvar_get_origin pvar =
       match TypeState.lookup_pvar pvar typestate with
-      | Some (_, inferred_nullability, _) ->
+      | Some (_, inferred_nullability) ->
           Some (InferredNullability.get_origin inferred_nullability)
       | None ->
           None
@@ -232,8 +223,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             let range =
               ( annotated_type.typ
               , InferredNullability.of_annotated_nullability annotated_type.nullability
-                  (TypeOrigin.Field (origin, fn, loc))
-              , [loc] )
+                  (TypeOrigin.Field (origin, fn, loc)) )
             in
             TypeState.add pvar range typestate
         | None ->
@@ -251,7 +241,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
             let already_defined_in_typestate =
               match TypeState.lookup_pvar pvar typestate with
-              | Some (_, inferred_nullability, _) ->
+              | Some (_, inferred_nullability) ->
                   not
                     (TypeOrigin.equal TypeOrigin.Undef
                        (InferredNullability.get_origin inferred_nullability))
@@ -286,7 +276,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | _ ->
               None )
           |> Option.value_map
-               ~f:(fun (_, nullability, _) -> InferredNullability.get_origin nullability)
+               ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
                ~default:TypeOrigin.ONone
         in
         let exp' = Idenv.expand_expr_temps idenv node exp_ in
@@ -410,7 +400,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
     typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
       typestate1 exp1
-      (typ1, InferredNullability.create_nonnull origin1, [loc1])
+      (typ1, InferredNullability.create_nonnull origin1)
       loc1
   in
   (* check if there are errors in exp1 *)
@@ -460,10 +450,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             typestate1
       in
       check_field_assign () ; typestate2
-  | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
+  | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], _, _)
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
     ->
-      TypeState.add_id id (typ, InferredNullability.create_nonnull TypeOrigin.New, [loc]) typestate
+      TypeState.add_id id (typ, InferredNullability.create_nonnull TypeOrigin.New) typestate
       (* new never returns null *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
@@ -473,18 +463,18 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc) typestate'
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
-      let _, ta, _ =
+      let _, ta =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
           typestate array_exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
+          (t, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
       in
       if checks.eradicate then
         EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
           instr_ref array_exp TypeErr.ArrayLengthAccess ta loc ;
       TypeState.add_id id
-        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New, [loc])
+        (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New)
         typestate
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
@@ -534,8 +524,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let is_anonymous_inner_class_constructor =
         Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
       in
-      let do_return (ret_ta, ret_typ) loc' typestate' =
-        let mk_return_range () = (ret_typ, ret_ta, [loc']) in
+      let do_return (ret_ta, ret_typ) typestate' =
+        let mk_return_range () = (ret_typ, ret_ta) in
         let id = fst ret_id_typ in
         TypeState.add_id id (mk_return_range ()) typestate'
       in
@@ -545,7 +535,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let clear_nullable_flag typestate'' pvar =
           (* remove the nullable flag for the given pvar *)
           match TypeState.lookup_pvar pvar typestate'' with
-          | Some (t, nullability, _) ->
+          | Some (t, nullability) ->
               let should_report =
                 Config.eradicate_condition_redundant
                 && InferredNullability.is_nonnull nullability
@@ -558,7 +548,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                   (Some instr_ref) loc curr_pdesc ) ;
               TypeState.add pvar
                 (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-                (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
+                (t, InferredNullability.create_nonnull TypeOrigin.ONone)
                 typestate''
           | None ->
               typestate'
@@ -593,10 +583,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let set_nonnull_to_pvar typestate1 pvar =
           (* handle the annotation flag for pvar *)
           match TypeState.lookup_pvar pvar typestate1 with
-          | Some (t, _, _) ->
+          | Some (t, _) ->
               TypeState.add pvar
                 (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-                (t, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
+                (t, InferredNullability.create_nonnull TypeOrigin.ONone)
                 typestate1
           | None ->
               typestate1
@@ -688,11 +678,11 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let typestate_after_call, finally_resolved_ret =
         let resolve_param i (formal_param, actual_param) =
           let (orig_e2, e2), t2 = actual_param in
-          let _, inferred_nullability_actual, _ =
+          let _, inferred_nullability_actual =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
               (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-              (t2, InferredNullability.create_nonnull TypeOrigin.ONone, [])
+              (t2, InferredNullability.create_nonnull TypeOrigin.ONone)
               loc
           in
           let actual = (orig_e2, inferred_nullability_actual) in
@@ -795,7 +785,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         in
         (typestate_after_call, ret_respecting_propagates_nullable)
       in
-      do_return finally_resolved_ret loc typestate_after_call
+      do_return finally_resolved_ret typestate_after_call
   | Sil.Call _ ->
       typestate
   | Sil.Prune (cond, loc, true_branch, _) ->
@@ -851,10 +841,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           | Some e_str ->
               let pvar = Pvar.mk (Mangled.from_string e_str) curr_pname in
               let e1 = Exp.Lvar pvar in
-              let typ, ta, _ =
+              let typ, ta =
                 typecheck_expr_simple typestate e1 (Typ.mk Tvoid) TypeOrigin.ONone loc
               in
-              let range = (typ, ta, [loc]) in
+              let range = (typ, ta) in
               let typestate1 = TypeState.add pvar range typestate in
               (typestate1, e1, EradicateChecks.From_containsKey)
           | None ->
@@ -863,10 +853,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let set_nonnull e' typestate2 =
           let handle_pvar typestate' pvar =
             match TypeState.lookup_pvar pvar typestate' with
-            | Some (t, current_nullability, locs) ->
+            | Some (t, current_nullability) ->
                 if not (InferredNullability.is_nonnull current_nullability) then
                   let new_nullability = InferredNullability.set_nonnull current_nullability in
-                  TypeState.add pvar (t, new_nullability, locs) typestate'
+                  TypeState.add pvar (t, new_nullability) typestate'
                 else typestate'
             | None ->
                 typestate'
@@ -890,7 +880,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                   (typestate, e, EradicateChecks.From_condition)
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
-            let typ, inferred_nullability, _ =
+            let typ, inferred_nullability =
               typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
             in
             if checks.eradicate then
@@ -923,7 +913,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                     else (typestate, e, EradicateChecks.From_condition) )
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
-            let typ, inferred_nullability, _ =
+            let typ, inferred_nullability =
               typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
             in
             if checks.eradicate then

@@ -17,7 +17,7 @@ module M = Caml.Map.Make (struct
   let compare = Exp.compare
 end)
 
-type range = Typ.t * InferredNullability.t * Location.t list [@@deriving compare]
+type range = Typ.t * InferredNullability.t [@@deriving compare]
 
 type t = range M.t [@@deriving compare]
 
@@ -26,13 +26,11 @@ let equal = [%compare.equal: t]
 let empty = M.empty
 
 let pp fmt typestate =
-  let pp_loc fmt loc = F.pp_print_int fmt loc.Location.line in
-  let pp_locs fmt locs = F.fprintf fmt " [%a]" (Pp.seq pp_loc) locs in
-  let pp_one exp (typ, ta, locs) =
-    F.fprintf fmt "  %a -> [%s] %s %a%a@\n" Exp.pp exp
+  let pp_one exp (typ, ta) =
+    F.fprintf fmt "  %a -> [%s] %s %a@\n" Exp.pp exp
       (TypeOrigin.to_string (InferredNullability.get_origin ta))
       (InferredNullability.to_string ta)
-      (Typ.pp_full Pp.text) typ pp_locs locs
+      (Typ.pp_full Pp.text) typ
   in
   let pp_map map = M.iter pp_one map in
   pp_map typestate
@@ -40,26 +38,15 @@ let pp fmt typestate =
 
 let type_join typ1 typ2 = if PatternMatch.type_is_object typ1 then typ2 else typ1
 
-let locs_join locs1 locs2 = IList.merge_sorted_nodup ~cmp:Location.compare ~res:[] locs1 locs2
-
-(** Add a list of locations to a range. *)
-let range_add_locs (typ, ta, locs1) locs2 =
-  let locs' = locs_join locs1 locs2 in
-  (typ, ta, locs')
-
-
 let map_join m1 m2 =
   let range_join _exp range1_opt range2_opt =
     Option.both range1_opt range2_opt
     |> Option.map
-         ~f:(fun ( ((typ1, inferred_nullability1, locs1) as range1)
-                 , (typ2, inferred_nullability2, locs2) )
-            ->
+         ~f:(fun (((typ1, inferred_nullability1) as range1), (typ2, inferred_nullability2)) ->
            InferredNullability.join inferred_nullability1 inferred_nullability2
            |> Option.value_map ~default:range1 ~f:(fun ta' ->
                   let typ' = type_join typ1 typ2 in
-                  let locs' = locs_join locs1 locs2 in
-                  (typ', ta', locs') ) )
+                  (typ', ta') ) )
   in
   if phys_equal m1 m2 then m1 else M.merge range_join m1 m2
 

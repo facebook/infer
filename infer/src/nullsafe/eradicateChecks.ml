@@ -119,16 +119,16 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     exp_lhs exp_rhs typ loc fname annotated_field_opt typecheck_expr : unit =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let curr_pattrs = Procdesc.get_attributes curr_pdesc in
-  let t_lhs, inferred_nullability_lhs, _ =
+  let t_lhs, inferred_nullability_lhs =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
       (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
+      (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
       loc
   in
-  let _, inferred_nullability_rhs, _ =
+  let _, inferred_nullability_rhs =
     typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
       (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-      (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [loc])
+      (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
       loc
   in
   let field_is_injector_readwrite () =
@@ -206,7 +206,7 @@ let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
      *)
       Nullability.top
   (* We were able to lookup the field. Its nullability gives precise upper bound. *)
-  | Some (_, inferred_nullability, _) ->
+  | Some (_, inferred_nullability) ->
       InferredNullability.get_nullability inferred_nullability
 
 
@@ -254,7 +254,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
               in
               predicate_holds_for_some_typestate
                 (Lazy.force typestates_for_curr_constructor_and_all_initializer_methods) field_name
-                ~predicate:(fun (_, nullability, _) ->
+                ~predicate:(fun (_, nullability) ->
                   is_initialized (InferredNullability.get_origin nullability) )
             in
             (* TODO(T54584721) This check is completely independent of the current constuctor we check.
@@ -347,7 +347,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
          | _ ->
              false ->
       ()
-  | Some (_, ret_inferred_nullability, _) ->
+  | Some (_, ret_inferred_nullability) ->
       (* TODO(T54308240) Model ret_implicitly_nullable in AnnotatedNullability *)
       if not ret_implicitly_nullable then
         check_return_not_nullable tenv find_canonical_duplicate loc curr_pname curr_pdesc
@@ -364,10 +364,10 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
     callee_pname (instr_ref : TypeErr.InstrRef.t) loc typecheck_expr : unit =
   match call_params with
   | ((original_this_e, this_e), typ) :: _ ->
-      let _, this_inferred_nullability, _ =
+      let _, this_inferred_nullability =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
-          (typ, InferredNullability.create_nonnull TypeOrigin.ONone, [])
+          (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
       in
       check_object_dereference tenv find_canonical_duplicate curr_pdesc node instr_ref
