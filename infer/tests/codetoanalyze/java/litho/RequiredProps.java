@@ -90,6 +90,35 @@ public class RequiredProps {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
+  // current domain can't handle implicit calls like this
+  public Component FP_setRequiredOnBothBranchesNoAssignOk(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object());
+    } else {
+      builder.prop1(new Object());
+    }
+    return builder.prop2(new Object()).prop3(new Object()).build();
+  }
+
+  // gets confused at cyclic dependency to builder when setting prop1
+  public Component FP_setRequiredOk(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    builder = builder.prop1(new Object());
+    return builder.prop2(new Object()).prop3(new Object()).build();
+  }
+
+  // only missing prop3
+  public Component setRequiredOnBothBranchesMissingProp3Bad(boolean b) {
+    MyComponent.Builder builder = mMyComponent.create();
+    if (b) {
+      builder.prop1(new Object());
+    } else {
+      builder.prop1(new Object());
+    }
+    return builder.prop2(new Object()).build();
+  }
+
   // don't want to report here; want to report at clients that don't pass prop1
   private MyComponent buildSuffix(MyComponent.Builder builder) {
     return builder.prop2(new Object()).prop3(new Object()).build();
