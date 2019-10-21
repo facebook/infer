@@ -7,7 +7,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module AbstractAddress = PulseDomain.AbstractAddress
 module BaseStack = PulseDomain.Stack
 open PulseBasicInterface
 
@@ -16,11 +15,11 @@ let debug fmt = L.(debug Analysis Verbose fmt)
 (* An impurity analysis that relies on pulse to determine how the state
    changes *)
 
-let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractAddress.t list option =
+let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractValue.t list option =
   match
     List.fold2 ~init:(Some [])
       ~f:(fun acc (_, (addr_dest_pre, _)) (_, (addr_dest_post, _)) ->
-        if AbstractAddress.equal addr_dest_pre addr_dest_post then
+        if AbstractValue.equal addr_dest_pre addr_dest_post then
           Option.map acc ~f:(fun acc -> addr_dest_pre :: acc)
         else None )
       (PulseDomain.Memory.Edges.bindings edges_pre)
@@ -62,11 +61,11 @@ let extract_impurity pdesc pre_post : ImpurityDomain.t =
       | [] ->
           acc
       | addr :: addr_to_explore -> (
-          if PulseDomain.AbstractAddressSet.mem addr visited then aux acc ~addr_to_explore ~visited
+          if AbstractValue.Set.mem addr visited then aux acc ~addr_to_explore ~visited
           else
             let cell_pre_opt = PulseDomain.Memory.find_opt addr pre_heap in
             let cell_post_opt = PulseDomain.Memory.find_opt addr post_heap in
-            let visited = PulseDomain.AbstractAddressSet.add addr visited in
+            let visited = AbstractValue.Set.add addr visited in
             match (cell_pre_opt, cell_post_opt) with
             | None, None ->
                 aux acc ~addr_to_explore ~visited
@@ -88,7 +87,7 @@ let extract_impurity pdesc pre_post : ImpurityDomain.t =
                     (add_invalid_and_modified ~check_empty:true attrs_post acc)
                     ~addr_to_explore ~visited ) )
     in
-    match aux [] ~addr_to_explore:[addr] ~visited:PulseDomain.AbstractAddressSet.empty with
+    match aux [] ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty with
     | [] ->
         acc
     | hd :: tl ->

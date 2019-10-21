@@ -9,30 +9,8 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-module AbstractAddress : sig
-  type t = private int [@@deriving compare]
-
-  val equal : t -> t -> bool
-
-  val init : unit -> unit
-
-  val pp : F.formatter -> t -> unit [@@warning "-32"]
-
-  val mk_fresh : unit -> t
-
-  type state
-
-  val get_state : unit -> state
-
-  val set_state : state -> unit
-end
-
-module AbstractAddressSet : PrettyPrintable.PPSet with type elt = AbstractAddress.t
-
-module AbstractAddressMap : PrettyPrintable.PPMap with type key = AbstractAddress.t
-
 module AddrTracePair : sig
-  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
+  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
 end
 
 module Stack : sig
@@ -45,7 +23,7 @@ end
 
 module Memory : sig
   module Access :
-    PrettyPrintable.PrintableOrderedType with type t = AbstractAddress.t HilExp.Access.t
+    PrettyPrintable.PrintableOrderedType with type t = AbstractValue.t HilExp.Access.t
 
   module Edges : PrettyPrintable.PPMap with type key = Access.t
 
@@ -57,43 +35,43 @@ module Memory : sig
 
   type t
 
-  val filter : (AbstractAddress.t -> bool) -> t -> t
+  val filter : (AbstractValue.t -> bool) -> t -> t
 
-  val filter_heap : (AbstractAddress.t -> edges -> bool) -> t -> t
+  val filter_heap : (AbstractValue.t -> edges -> bool) -> t -> t
 
-  val find_opt : AbstractAddress.t -> t -> cell option
+  val find_opt : AbstractValue.t -> t -> cell option
 
-  val fold_attrs : (AbstractAddress.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+  val fold_attrs : (AbstractValue.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
 
-  val set_attrs : AbstractAddress.t -> Attributes.t -> t -> t
+  val set_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
-  val set_edges : AbstractAddress.t -> edges -> t -> t
+  val set_edges : AbstractValue.t -> edges -> t -> t
 
-  val set_cell : AbstractAddress.t -> cell -> t -> t
+  val set_cell : AbstractValue.t -> cell -> t -> t
 
-  val find_edges_opt : AbstractAddress.t -> t -> edges option
+  val find_edges_opt : AbstractValue.t -> t -> edges option
 
-  val mem_edges : AbstractAddress.t -> t -> bool
+  val mem_edges : AbstractValue.t -> t -> bool
 
-  val register_address : AbstractAddress.t -> t -> t
+  val register_address : AbstractValue.t -> t -> t
 
-  val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
+  val add_edge : AbstractValue.t -> Access.t -> AddrTracePair.t -> t -> t
 
-  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
+  val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTracePair.t option
 
-  val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
+  val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
 
-  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
+  val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
+  val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t Trace.t) result
 
-  val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
+  val get_closure_proc_name : AbstractValue.t -> t -> Typ.Procname.t option
 
-  val get_constant : AbstractAddress.t -> t -> Const.t option
+  val get_constant : AbstractValue.t -> t -> Const.t option
 
-  val std_vector_reserve : AbstractAddress.t -> t -> t
+  val std_vector_reserve : AbstractValue.t -> t -> t
 
-  val is_std_vector_reserved : AbstractAddress.t -> t -> bool
+  val is_std_vector_reserved : AbstractValue.t -> t -> bool
 end
 
 type t = {heap: Memory.t; stack: Stack.t}
@@ -102,7 +80,7 @@ val empty : t
 
 include AbstractDomain.NoJoin with type t := t
 
-val reachable_addresses : t -> AbstractAddressSet.t
+val reachable_addresses : t -> AbstractValue.Set.t
 (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable
     from the stack variables *)
 

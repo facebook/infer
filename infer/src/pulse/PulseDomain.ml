@@ -11,63 +11,20 @@ open PulseBasicInterface
 
 (* {2 Abstract domain description } *)
 
-(** An abstract address in memory. *)
-module AbstractAddress : sig
-  type t = private int [@@deriving compare]
-
-  val equal : t -> t -> bool
-
-  val mk_fresh : unit -> t
-
-  val pp : F.formatter -> t -> unit
-
-  val init : unit -> unit
-
-  type state
-
-  val get_state : unit -> state
-
-  val set_state : state -> unit
-end = struct
-  type t = int [@@deriving compare]
-
-  let equal = [%compare.equal: t]
-
-  let next_fresh = ref 1
-
-  let mk_fresh () =
-    let l = !next_fresh in
-    incr next_fresh ; l
-
-
-  let pp f l = F.fprintf f "v%d" l
-
-  let init () = next_fresh := 1
-
-  type state = int
-
-  let get_state () = !next_fresh
-
-  let set_state counter = next_fresh := counter
-end
-
-module AbstractAddressSet = PrettyPrintable.MakePPSet (AbstractAddress)
-module AbstractAddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
-
 (* {3 Heap domain } *)
 
 module AddrTracePair = struct
-  type t = AbstractAddress.t * ValueHistory.t [@@deriving compare]
+  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
 
   let pp f addr_trace =
     if Config.debug_level_analysis >= 3 then
-      Pp.pair ~fst:AbstractAddress.pp ~snd:ValueHistory.pp f addr_trace
-    else AbstractAddress.pp f (fst addr_trace)
+      Pp.pair ~fst:AbstractValue.pp ~snd:ValueHistory.pp f addr_trace
+    else AbstractValue.pp f (fst addr_trace)
 end
 
 module Memory : sig
   module Access : sig
-    include PrettyPrintable.PrintableOrderedType with type t = AbstractAddress.t HilExp.Access.t
+    include PrettyPrintable.PrintableOrderedType with type t = AbstractValue.t HilExp.Access.t
 
     val equal : t -> t -> bool
   end
@@ -84,54 +41,54 @@ module Memory : sig
 
   val empty : t
 
-  val filter : (AbstractAddress.t -> bool) -> t -> t
+  val filter : (AbstractValue.t -> bool) -> t -> t
 
-  val filter_heap : (AbstractAddress.t -> edges -> bool) -> t -> t
+  val filter_heap : (AbstractValue.t -> edges -> bool) -> t -> t
 
-  val find_opt : AbstractAddress.t -> t -> cell option
+  val find_opt : AbstractValue.t -> t -> cell option
 
-  val fold_attrs : (AbstractAddress.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+  val fold_attrs : (AbstractValue.t -> Attributes.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
 
-  val set_attrs : AbstractAddress.t -> Attributes.t -> t -> t
+  val set_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
-  val set_edges : AbstractAddress.t -> edges -> t -> t
+  val set_edges : AbstractValue.t -> edges -> t -> t
 
-  val set_cell : AbstractAddress.t -> cell -> t -> t
+  val set_cell : AbstractValue.t -> cell -> t -> t
 
-  val find_edges_opt : AbstractAddress.t -> t -> edges option
+  val find_edges_opt : AbstractValue.t -> t -> edges option
 
-  val mem_edges : AbstractAddress.t -> t -> bool
+  val mem_edges : AbstractValue.t -> t -> bool
 
   val pp_heap : F.formatter -> t -> unit
 
   val pp_attributes : F.formatter -> t -> unit
 
-  val register_address : AbstractAddress.t -> t -> t
+  val register_address : AbstractValue.t -> t -> t
 
-  val add_edge : AbstractAddress.t -> Access.t -> AddrTracePair.t -> t -> t
+  val add_edge : AbstractValue.t -> Access.t -> AddrTracePair.t -> t -> t
 
-  val find_edge_opt : AbstractAddress.t -> Access.t -> t -> AddrTracePair.t option
+  val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTracePair.t option
 
-  val add_attribute : AbstractAddress.t -> Attribute.t -> t -> t
+  val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
 
-  val invalidate : AbstractAddress.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
+  val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val check_valid : AbstractAddress.t -> t -> (unit, Invalidation.t Trace.t) result
+  val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t Trace.t) result
 
-  val get_closure_proc_name : AbstractAddress.t -> t -> Typ.Procname.t option
+  val get_closure_proc_name : AbstractValue.t -> t -> Typ.Procname.t option
 
-  val get_constant : AbstractAddress.t -> t -> Const.t option
+  val get_constant : AbstractValue.t -> t -> Const.t option
 
-  val std_vector_reserve : AbstractAddress.t -> t -> t
+  val std_vector_reserve : AbstractValue.t -> t -> t
 
-  val is_std_vector_reserved : AbstractAddress.t -> t -> bool
+  val is_std_vector_reserved : AbstractValue.t -> t -> bool
 end = struct
   module Access = struct
-    type t = AbstractAddress.t HilExp.Access.t [@@deriving compare]
+    type t = AbstractValue.t HilExp.Access.t [@@deriving compare]
 
     let equal = [%compare.equal: t]
 
-    let pp = HilExp.Access.pp AbstractAddress.pp
+    let pp = HilExp.Access.pp AbstractValue.pp
   end
 
   module Edges = PrettyPrintable.MakePPMap (Access)
@@ -142,7 +99,7 @@ end = struct
 
   type cell = edges * Attributes.t
 
-  module Graph = PrettyPrintable.MakePPMap (AbstractAddress)
+  module Graph = PrettyPrintable.MakePPMap (AbstractValue)
 
   type t = edges Graph.t * Attributes.t Graph.t
 
@@ -184,7 +141,7 @@ end = struct
 
 
   let check_valid address memory =
-    L.d_printfln "Checking validity of %a" AbstractAddress.pp address ;
+    L.d_printfln "Checking validity of %a" AbstractValue.pp address ;
     match Graph.find_opt address (snd memory) |> Option.bind ~f:Attributes.get_invalid with
     | Some invalidation ->
         Error invalidation
@@ -295,20 +252,20 @@ let empty =
     [rhs_to_lhs]) between the addresses of [lhs] and [rhs] such that [lhs_to_rhs(reachable(lhs)) =
     reachable(rhs)] (where addresses are reachable if they are reachable from stack variables).  *)
 module GraphComparison = struct
-  module AddressMap = PrettyPrintable.MakePPMap (AbstractAddress)
+  module AddressMap = PrettyPrintable.MakePPMap (AbstractValue)
 
   (** translation between the abstract values on the LHS and the ones on the RHS *)
   type mapping =
-    { rhs_to_lhs: AbstractAddress.t AddressMap.t  (** map from RHS values to LHS *)
-    ; lhs_to_rhs: AbstractAddress.t AddressMap.t  (** inverse map from [rhs_to_lhs] *) }
+    { rhs_to_lhs: AbstractValue.t AddressMap.t  (** map from RHS values to LHS *)
+    ; lhs_to_rhs: AbstractValue.t AddressMap.t  (** inverse map from [rhs_to_lhs] *) }
 
   let empty_mapping = {rhs_to_lhs= AddressMap.empty; lhs_to_rhs= AddressMap.empty}
 
   let pp_mapping fmt {rhs_to_lhs; lhs_to_rhs} =
     F.fprintf fmt "@[<v>{ rhs_to_lhs=@[<hv2>%a@];@,lhs_to_rhs=@[<hv2>%a@];@,}@]"
-      (AddressMap.pp ~pp_value:AbstractAddress.pp)
+      (AddressMap.pp ~pp_value:AbstractValue.pp)
       rhs_to_lhs
-      (AddressMap.pp ~pp_value:AbstractAddress.pp)
+      (AddressMap.pp ~pp_value:AbstractValue.pp)
       lhs_to_rhs
 
 
@@ -316,13 +273,13 @@ module GraphComparison = struct
   let record_equal ~addr_lhs ~addr_rhs mapping =
     (* have we seen [addr_lhs] before?.. *)
     match AddressMap.find_opt addr_lhs mapping.lhs_to_rhs with
-    | Some addr_rhs' when not (AbstractAddress.equal addr_rhs addr_rhs') ->
+    | Some addr_rhs' when not (AbstractValue.equal addr_rhs addr_rhs') ->
         (* ...yes, but it was bound to another address *)
         L.d_printfln
           "Aliasing in LHS not in RHS: LHS address %a in current already bound to %a, not %a@\n\
            State=%a"
-          AbstractAddress.pp addr_lhs AbstractAddress.pp addr_rhs' AbstractAddress.pp addr_rhs
-          pp_mapping mapping ;
+          AbstractValue.pp addr_lhs AbstractValue.pp addr_rhs' AbstractValue.pp addr_rhs pp_mapping
+          mapping ;
         `AliasingLHS
     | Some _addr_rhs (* [_addr_rhs = addr_rhs] *) ->
         `AlreadyVisited
@@ -335,7 +292,7 @@ module GraphComparison = struct
           L.d_printfln
             "Aliasing in RHS not in LHS: RHS address %a in current already bound to %a, not %a@\n\
              State=%a"
-            AbstractAddress.pp addr_rhs AbstractAddress.pp addr_lhs' AbstractAddress.pp addr_lhs
+            AbstractValue.pp addr_rhs AbstractValue.pp addr_lhs' AbstractValue.pp addr_lhs
             pp_mapping mapping ;
           `AliasingRHS
       | None ->
@@ -354,7 +311,7 @@ module GraphComparison = struct
   (** can we extend [mapping] so that the subgraph of [lhs] rooted at [addr_lhs] is isomorphic to
       the subgraph of [rhs] rooted at [addr_rhs]? *)
   let rec isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping =
-    L.d_printfln "%a<->%a@\n" AbstractAddress.pp addr_lhs AbstractAddress.pp addr_rhs ;
+    L.d_printfln "%a<->%a@\n" AbstractValue.pp addr_lhs AbstractValue.pp addr_rhs ;
     match record_equal mapping ~addr_lhs ~addr_rhs with
     | `AlreadyVisited ->
         IsomorphicUpTo mapping
@@ -449,12 +406,12 @@ module GraphVisit : sig
     -> t
     -> init:'accum
     -> f:(   'accum
-          -> AbstractAddress.t
+          -> AbstractValue.t
           -> Var.t
           -> Memory.Access.t list
           -> ('accum, 'final) Base.Continue_or_stop.t)
     -> finish:('accum -> 'final)
-    -> AbstractAddressSet.t * 'final
+    -> AbstractValue.Set.t * 'final
   (** Generic graph traversal of the memory starting from each variable in the stack that pass
       [var_filter], in order. Returns the result of folding over every address in the graph and the
       set of addresses that have been visited before [f] returned [Stop] or all reachable addresses
@@ -464,9 +421,9 @@ end = struct
   open Base.Continue_or_stop
 
   let visit address visited =
-    if AbstractAddressSet.mem address visited then `AlreadyVisited
+    if AbstractValue.Set.mem address visited then `AlreadyVisited
     else
-      let visited = AbstractAddressSet.add address visited in
+      let visited = AbstractValue.Set.add address visited in
       `NotAlreadyVisited visited
 
 
@@ -501,7 +458,7 @@ end = struct
 
   let fold ~var_filter astate ~init ~f ~finish =
     let finish (visited, accum) = (visited, finish accum) in
-    let init = (AbstractAddressSet.empty, init) in
+    let init = (AbstractValue.Set.empty, init) in
     Container.fold_until astate.stack
       ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold) ~init ~finish
       ~f:(fun visited_accum (var, (address, _loc)) ->

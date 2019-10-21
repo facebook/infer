@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module AbstractAddress = PulseDomain.AbstractAddress
 open PulseBasicInterface
 
 type t = PulseAbductiveDomain.t
@@ -15,7 +14,7 @@ type 'a access_result = ('a, PulseDiagnostic.t) result
 
 module Closures : sig
   val check_captured_addresses :
-    Location.t -> AbstractAddress.t -> t -> (t, PulseDiagnostic.t) result
+    Location.t -> AbstractValue.t -> t -> (t, PulseDiagnostic.t) result
   (** assert the validity of the addresses captured by the lambda *)
 end
 
@@ -86,20 +85,20 @@ val shallow_copy :
      Location.t
   -> PulseDomain.AddrTracePair.t
   -> t
-  -> (t * (AbstractAddress.t * ValueHistory.t)) access_result
+  -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
 val remove_vars : Var.t list -> Location.t -> t -> t
 
 val check_address_escape :
-  Location.t -> Procdesc.t -> AbstractAddress.t -> ValueHistory.t -> t -> t access_result
+  Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result
 
 val call :
      caller_summary:Summary.t
   -> Location.t
   -> Typ.Procname.t
   -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractAddress.t * ValueHistory.t) * Typ.t) list
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
   -> t list access_result
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if

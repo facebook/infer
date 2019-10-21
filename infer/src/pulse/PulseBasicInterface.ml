@@ -8,6 +8,7 @@ open! IStd
 
 (** Basic Pulse modules that are safe to use in any module *)
 
+module AbstractValue = PulseAbstractValue
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent

@@ -7,7 +7,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module AbstractAddress = PulseDomain.AbstractAddress
 module BaseStack = PulseDomain.Stack
 module BaseMemory = PulseDomain.Memory
 open PulseBasicInterface
@@ -102,7 +101,7 @@ module Stack = struct
     | Some addr_hist ->
         (astate, addr_hist)
     | None ->
-        let addr = AbstractAddress.mk_fresh () in
+        let addr = AbstractValue.mk_fresh () in
         let addr_hist = (addr, origin) in
         let post_stack = BaseStack.add var addr_hist (astate.post :> base_domain).stack in
         let pre =
@@ -182,7 +181,7 @@ module Memory = struct
     | Some addr_hist_dst ->
         (astate, addr_hist_dst)
     | None ->
-        let addr_dst = AbstractAddress.mk_fresh () in
+        let addr_dst = AbstractValue.mk_fresh () in
         let addr_hist_dst = (addr_dst, hist_src) in
         let post_heap =
           BaseMemory.add_edge addr_src access addr_hist_dst (astate.post :> base_domain).heap
@@ -243,7 +242,7 @@ let mk_initial proc_desc =
     |> List.map ~f:(fun (mangled, _) ->
            let pvar = Pvar.mk mangled proc_name in
            ( Var.of_pvar pvar
-           , (AbstractAddress.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
+           , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
   in
   let initial_stack =
     List.fold formals ~init:(InvertedDomain.empty :> PulseDomain.t).stack
@@ -264,17 +263,13 @@ let discard_unreachable ({pre; post} as astate) =
   let pre_addresses = PulseDomain.reachable_addresses (pre :> PulseDomain.t) in
   let pre_old_heap = (pre :> PulseDomain.t).heap in
   let pre_new_heap =
-    BaseMemory.filter
-      (fun address -> PulseDomain.AbstractAddressSet.mem address pre_addresses)
-      pre_old_heap
+    BaseMemory.filter (fun address -> AbstractValue.Set.mem address pre_addresses) pre_old_heap
   in
   let post_addresses = PulseDomain.reachable_addresses (post :> PulseDomain.t) in
-  let all_addresses = PulseDomain.AbstractAddressSet.union pre_addresses post_addresses in
+  let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
   let post_old_heap = (post :> PulseDomain.t).heap in
   let post_new_heap =
-    BaseMemory.filter
-      (fun address -> PulseDomain.AbstractAddressSet.mem address all_addresses)
-      post_old_heap
+    BaseMemory.filter (fun address -> AbstractValue.Set.mem address all_addresses) post_old_heap
   in
   if phys_equal pre_new_heap pre_old_heap && phys_equal post_new_heap post_old_heap then astate
   else
@@ -345,8 +340,8 @@ module PrePost = struct
   (* {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call
      to the current state} *)
 
-  module AddressSet = PulseDomain.AbstractAddressSet
-  module AddressMap = PulseDomain.AbstractAddressMap
+  module AddressSet = AbstractValue.Set
+  module AddressMap = AbstractValue.Map
 
   (** raised when the pre/post pair and the current state disagree on the aliasing, i.e. some
      addresses that are distinct in the pre/post are aliased in the current state. Typically raised
@@ -356,9 +351,9 @@ module PrePost = struct
   (** stuff we carry around when computing the result of applying one pre/post pair *)
   type call_state =
     { astate: t  (** caller's abstract state computed so far *)
-    ; subst: (AbstractAddress.t * ValueHistory.t) AddressMap.t
+    ; subst: (AbstractValue.t * ValueHistory.t) AddressMap.t
           (** translation from callee addresses to caller addresses and their caller histories *)
-    ; rev_subst: AbstractAddress.t AddressMap.t
+    ; rev_subst: AbstractValue.t AddressMap.t
           (** the inverse translation from [subst] from caller addresses to callee addresses *)
     ; visited: AddressSet.t
           (** set of callee addresses that have been visited already
@@ -373,9 +368,9 @@ module PrePost = struct
       "@[<v>{ astate=@[<hv2>%a@];@, subst=@[<hv2>%a@];@, rev_subst=@[<hv2>%a@];@, \
        visited=@[<hv2>%a@]@, }@]"
       pp astate
-      (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractAddress.pp fmt addr))
+      (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
       subst
-      (AddressMap.pp ~pp_value:AbstractAddress.pp)
+      (AddressMap.pp ~pp_value:AbstractValue.pp)
       rev_subst AddressSet.pp visited
 
 
@@ -399,10 +394,10 @@ module PrePost = struct
   let visit call_state ~addr_callee ~addr_hist_caller =
     let addr_caller = fst addr_hist_caller in
     ( match AddressMap.find_opt addr_caller call_state.rev_subst with
-    | Some addr_callee' when not (AbstractAddress.equal addr_callee addr_callee') ->
+    | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
         L.d_printfln "Huho, address %a in post already bound to %a, not %a@\nState=%a"
-          AbstractAddress.pp addr_caller AbstractAddress.pp addr_callee' AbstractAddress.pp
-          addr_callee pp_call_state call_state ;
+          AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
+          pp_call_state call_state ;
         raise Aliasing
     | _ ->
         () ) ;
@@ -466,7 +461,7 @@ module PrePost = struct
       has been instantiated with the corresponding [actual] into the current state
       [call_state.astate] *)
   let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
-    L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractAddress.pp (fst actual) ;
+    L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
     (let open Option.Monad_infix in
     BaseStack.find_opt formal pre.PulseDomain.stack
     >>= fun (addr_formal_pre, _) ->
@@ -489,7 +484,7 @@ module PrePost = struct
 
                   TODO: can the traces be leveraged here? maybe easy to detect writes by looking at
                   the post trace *)
-              AbstractAddress.equal addr_dest_pre addr_dest_post )
+              AbstractValue.equal addr_dest_pre addr_dest_post )
             edges_pre edges_post
         in
         if CommandLineOption.strict_mode then assert are_edges_equal ;
@@ -544,7 +539,7 @@ module PrePost = struct
   let subst_find_or_new subst addr_callee ~default_hist_caller =
     match AddressMap.find_opt addr_callee subst with
     | None ->
-        let addr_hist_fresh = (AbstractAddress.mk_fresh (), default_hist_caller) in
+        let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
         (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
     | Some addr_hist_caller ->
         (subst, addr_hist_caller)
@@ -655,7 +650,7 @@ module PrePost = struct
 
   let rec record_post_for_address callee_proc_name call_loc ({pre; post} as pre_post) ~addr_callee
       ~addr_hist_caller call_state =
-    L.d_printfln "%a<->%a" AbstractAddress.pp addr_callee AbstractAddress.pp (fst addr_hist_caller) ;
+    L.d_printfln "%a<->%a" AbstractValue.pp addr_callee AbstractValue.pp (fst addr_hist_caller) ;
     match visit call_state ~addr_callee ~addr_hist_caller with
     | `AlreadyVisited, call_state ->
         call_state
@@ -685,7 +680,7 @@ module PrePost = struct
 
 
   let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual call_state =
-    L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractAddress.pp
+    L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractValue.pp
       (fst actual) ;
     match
       let open Option.Monad_infix in
@@ -721,7 +716,7 @@ module PrePost = struct
             | Some return_caller_hist ->
                 return_caller_hist
             | None ->
-                ( AbstractAddress.mk_fresh ()
+                ( AbstractValue.mk_fresh ()
                 , [ (* this could maybe include an event like "returned here" *) ] )
           in
           let call_state =

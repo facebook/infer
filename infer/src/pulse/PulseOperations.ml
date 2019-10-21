@@ -6,7 +6,6 @@
  *)
 open! IStd
 module L = Logging
-module AbstractAddress = PulseDomain.AbstractAddress
 module Memory = PulseAbductiveDomain.Memory
 module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix
@@ -91,7 +90,7 @@ module Closures = struct
               let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
               Some (address_captured, new_trace) )
     in
-    let closure_addr_hist = (AbstractAddress.mk_fresh (), [ValueHistory.Assignment location]) in
+    let closure_addr_hist = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
     let astate =
       Memory.set_cell closure_addr_hist
@@ -144,16 +143,16 @@ let eval location exp0 astate =
         eval exp' astate
     | Const c ->
         (* TODO: make identical const the same address *)
-        let addr = AbstractAddress.mk_fresh () in
+        let addr = AbstractValue.mk_fresh () in
         let astate = Memory.add_attribute addr (Constant c) astate in
         Ok (astate, (addr, []))
     | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
-        Ok (astate, (AbstractAddress.mk_fresh (), (* TODO history *) []))
+        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
   eval exp0 astate
 
 
-type eval_result = EvalConst of Const.t | EvalAddr of AbstractAddress.t
+type eval_result = EvalConst of Const.t | EvalAddr of AbstractValue.t
 
 let eval_to_const location exp astate =
   match (exp : Exp.t) with
@@ -222,14 +221,14 @@ let eval_deref location exp astate =
 
 let realloc_pvar pvar location astate =
   Stack.add (Var.of_pvar pvar)
-    (AbstractAddress.mk_fresh (), [ValueHistory.VariableDeclared (pvar, location)])
+    (AbstractValue.mk_fresh (), [ValueHistory.VariableDeclared (pvar, location)])
     astate
 
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
 
 let havoc_id id loc_opt astate =
-  if Stack.mem (Var.of_id id) astate then write_id id (AbstractAddress.mk_fresh (), loc_opt) astate
+  if Stack.mem (Var.of_id id) astate then write_id id (AbstractValue.mk_fresh (), loc_opt) astate
   else astate
 
 
@@ -247,11 +246,11 @@ let write_field location addr_trace_ref field addr_trace_obj astate =
 
 
 let havoc_deref location addr_trace trace_obj astate =
-  write_deref location ~ref:addr_trace ~obj:(AbstractAddress.mk_fresh (), trace_obj) astate
+  write_deref location ~ref:addr_trace ~obj:(AbstractValue.mk_fresh (), trace_obj) astate
 
 
 let havoc_field location addr_trace field trace_obj astate =
-  write_field location addr_trace field (AbstractAddress.mk_fresh (), trace_obj) astate
+  write_field location addr_trace field (AbstractValue.mk_fresh (), trace_obj) astate
 
 
 let invalidate location cause addr_trace astate =
@@ -290,7 +289,7 @@ let shallow_copy location addr_hist astate =
     | Some cell ->
         cell
   in
-  let copy = (AbstractAddress.mk_fresh (), [ValueHistory.Assignment location]) in
+  let copy = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
   (Memory.set_cell copy cell location astate, copy)
 
 
@@ -298,7 +297,7 @@ let check_address_escape escape_location proc_desc address history astate =
   let is_assigned_to_global address astate =
     let points_to_address pointer address astate =
       Memory.find_edge_opt pointer Dereference astate
-      |> Option.exists ~f:(fun (pointee, _) -> AbstractAddress.equal pointee address)
+      |> Option.exists ~f:(fun (pointee, _) -> AbstractValue.equal pointee address)
     in
     Stack.exists
       (fun var (pointer, _) -> Var.is_global var && points_to_address pointer address astate)
@@ -324,13 +323,13 @@ let check_address_escape escape_location proc_desc address history astate =
     IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Stack.fold) astate
       ~f:(fun (variable, (var_address, _)) ->
         if
-          AbstractAddress.equal var_address address
+          AbstractValue.equal var_address address
           && ( Var.is_cpp_temporary variable
              || Var.is_local_to_procedure proc_name variable
                 && not (Procdesc.is_captured_var proc_desc variable) )
         then (
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable
-            AbstractAddress.pp address ;
+            AbstractValue.pp address ;
           Error
             (PulseDiagnostic.StackVariableAddressEscape
                {variable; location= escape_location; history}) )

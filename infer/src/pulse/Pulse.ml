@@ -8,7 +8,6 @@ open! IStd
 module F = Format
 module L = Logging
 open Result.Monad_infix
-module AbstractAddress = PulseDomain.AbstractAddress
 open PulseBasicInterface
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
@@ -218,7 +217,7 @@ module DisjunctiveAnalyzer = AbstractInterpreter.MakeWTO (DisjunctiveTransferFun
 let checker {Callbacks.exe_env; summary} =
   let tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary) in
   let proc_data = ProcData.make summary tenv () in
-  AbstractAddress.init () ;
+  AbstractValue.init () ;
   let pdesc = Summary.get_proc_desc summary in
   let initial =
     DisjunctiveTransferFunctions.Disjuncts.singleton (PulseAbductiveDomain.mk_initial pdesc)
