@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
-module BaseStack = BaseDomain.Stack
+module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,

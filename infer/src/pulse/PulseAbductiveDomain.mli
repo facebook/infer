@@ -8,6 +8,7 @@ open! IStd
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
+module BaseStack = PulseBaseStack
 
 (* layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
    when necessary
@@ -19,23 +20,23 @@ include AbstractDomain.NoJoin
 
 val mk_initial : Procdesc.t -> t
 
-(** stack operations like {!BaseDomain.Stack} but that also take care of propagating facts to the
+(** stack operations like {!BaseStack} but that also take care of propagating facts to the
     precondition *)
 module Stack : sig
-  val add : Var.t -> BaseDomain.Stack.value -> t -> t
+  val add : Var.t -> BaseStack.value -> t -> t
 
   val remove_vars : Var.t list -> t -> t
 
-  val fold : (Var.t -> BaseDomain.Stack.value -> 'a -> 'a) -> t -> 'a -> 'a
+  val fold : (Var.t -> BaseStack.value -> 'a -> 'a) -> t -> 'a -> 'a
 
-  val find_opt : Var.t -> t -> BaseDomain.Stack.value option
+  val find_opt : Var.t -> t -> BaseStack.value option
 
   val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
 
-  val exists : (Var.t -> BaseDomain.Stack.value -> bool) -> t -> bool
+  val exists : (Var.t -> BaseStack.value -> bool) -> t -> bool
 end
 
 (** memory operations like {!BaseMemory} but that also take care of propagating facts to the

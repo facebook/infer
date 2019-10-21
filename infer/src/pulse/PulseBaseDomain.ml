@@ -9,44 +9,9 @@ module F = Format
 module L = Logging
 open PulseBasicInterface
 module Memory = PulseBaseMemory
+module Stack = PulseBaseStack
 
 (* {2 Abstract domain description } *)
-
-module AddrHistPair = struct
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
-
-  let pp f addr_trace =
-    if Config.debug_level_analysis >= 3 then
-      Pp.pair ~fst:AbstractValue.pp ~snd:ValueHistory.pp f addr_trace
-    else AbstractValue.pp f (fst addr_trace)
-end
-
-(** Stacks: map addresses of variables to values and initialisation location. *)
-module Stack = struct
-  module VarAddress = struct
-    include Var
-
-    let pp f var =
-      let pp_ampersand f = function
-        | ProgramVar _ ->
-            F.pp_print_string f "&"
-        | LogicalVar _ ->
-            ()
-      in
-      F.fprintf f "%a%a" pp_ampersand var Var.pp var
-  end
-
-  include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
-
-  let pp fmt m =
-    let pp_item fmt (var_address, v) =
-      F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrHistPair.pp v
-    in
-    PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
-
-
-  let compare = compare AddrHistPair.compare
-end
 
 type t = {heap: Memory.t; stack: Stack.t}
 

@@ -8,16 +8,7 @@
 open! IStd
 open PulseBasicInterface
 
-module Stack : sig
-  include
-    PrettyPrintable.MonoMap with type key = Var.t and type value = AbstractValue.t * ValueHistory.t
-
-  (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
-     different type *)
-  val compare : t -> t -> int [@@warning "-32"]
-end
-
-type t = {heap: PulseBaseMemory.t; stack: Stack.t}
+type t = {heap: PulseBaseMemory.t; stack: PulseBaseStack.t}
 
 val empty : t
 
