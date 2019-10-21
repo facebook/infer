@@ -7,7 +7,6 @@
 open! IStd
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
-module Trace = PulseDomain.Trace
 open PulseBasicInterface
 
 (* layer on top of {!PulseDomain} to propagate operations on the current state to the pre-condition

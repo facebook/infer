@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module Trace = PulseDomain.Trace
 open PulseBasicInterface
 
 (** an error to report to the user *)

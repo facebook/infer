@@ -10,7 +10,6 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
-module Trace = PulseDomain.Trace
 module BaseStack = PulseDomain.Stack
 module BaseMemory = PulseDomain.Memory
 open PulseBasicInterface

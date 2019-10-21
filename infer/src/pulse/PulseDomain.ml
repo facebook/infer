@@ -11,62 +11,6 @@ open PulseBasicInterface
 
 (* {2 Abstract domain description } *)
 
-module Trace = struct
-  type 'a t =
-    | Immediate of {imm: 'a; location: Location.t; history: ValueHistory.t}
-    | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: 'a t}
-  [@@deriving compare]
-
-  (** only for use in the attributes' [*_rank] functions *)
-  let mk_dummy imm = Immediate {imm; location= Location.dummy; history= []}
-
-  let rec get_immediate = function
-    | Immediate {imm; _} ->
-        imm
-    | ViaCall {in_call; _} ->
-        get_immediate in_call
-
-
-  let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
-
-  let get_history = function Immediate {history; _} | ViaCall {history; _} -> history
-
-  let get_start_location trace =
-    match get_history trace |> List.last with
-    | Some event ->
-        ValueHistory.location_of_event event
-    | None ->
-        get_outer_location trace
-
-
-  let rec pp pp_immediate fmt = function
-    | Immediate {imm; location= _; history} ->
-        if Config.debug_level_analysis < 3 then pp_immediate fmt imm
-        else F.fprintf fmt "%a::%a" ValueHistory.pp history pp_immediate imm
-    | ViaCall {f; location= _; history; in_call} ->
-        if Config.debug_level_analysis < 3 then pp pp_immediate fmt in_call
-        else
-          F.fprintf fmt "%a::%a[%a]" ValueHistory.pp history CallEvent.pp f (pp pp_immediate)
-            in_call
-
-
-  let rec add_to_errlog ~nesting pp_immediate trace errlog =
-    match trace with
-    | Immediate {imm; location; history} ->
-        ValueHistory.add_to_errlog ~nesting history
-        @@ Errlog.make_trace_element nesting location (F.asprintf "%a" pp_immediate imm) []
-           :: errlog
-    | ViaCall {f; location; in_call; history} ->
-        ValueHistory.add_to_errlog ~nesting history
-        @@ (fun errlog ->
-             Errlog.make_trace_element nesting location
-               (F.asprintf "when calling %a here" CallEvent.pp f)
-               []
-             :: errlog )
-        @@ add_to_errlog ~nesting:(nesting + 1) pp_immediate in_call
-        @@ errlog
-end
-
 module Attribute = struct
   (** Make sure we don't depend on [AbstractAddress] to avoid attributes depending on
       addresses. Otherwise they become a pain to handle when comparing memory states. *)
@@ -91,9 +35,11 @@ module Attribute = struct
 
   let to_rank = Variants.to_rank
 
+  let mk_dummy_trace imm = Trace.Immediate {imm; location= Location.dummy; history= []}
+
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
 
-  let written_to_rank = Variants.to_rank (WrittenTo (Trace.mk_dummy ()))
+  let written_to_rank = Variants.to_rank (WrittenTo (mk_dummy_trace ()))
 
   let address_of_stack_variable_rank =
     let pname = Typ.Procname.from_string_c_fun "" in
@@ -102,9 +48,9 @@ module Attribute = struct
     Variants.to_rank (AddressOfStackVariable (var, location, []))
 
 
-  let invalid_rank = Variants.to_rank (Invalid (Trace.mk_dummy Invalidation.Nullptr))
+  let invalid_rank = Variants.to_rank (Invalid (mk_dummy_trace Invalidation.Nullptr))
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (Trace.mk_dummy ()))
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (mk_dummy_trace ()))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 

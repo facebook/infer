@@ -9,7 +9,6 @@ module L = Logging
 module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
-module Trace = PulseDomain.Trace
 module Memory = PulseAbductiveDomain.Memory
 module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix

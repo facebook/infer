@@ -10,4 +10,5 @@ open! IStd
 
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
+module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
