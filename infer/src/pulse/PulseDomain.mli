@@ -7,16 +7,7 @@
 
 open! IStd
 module F = Format
-
-module CallEvent : sig
-  type t =
-    | Call of Typ.Procname.t  (** known function with summary *)
-    | Model of string  (** hardcoded model *)
-    | SkippedKnownCall of Typ.Procname.t  (** known function without summary *)
-    | SkippedUnknownCall of Exp.t  (** couldn't link the expression to a proc name *)
-
-  val describe : F.formatter -> t -> unit
-end
+open PulseBasicInterface
 
 module Invalidation : sig
   type std_vector_function =

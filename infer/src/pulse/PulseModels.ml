@@ -6,6 +6,7 @@
  *)
 open! IStd
 open Result.Monad_infix
+open PulseBasicInterface
 
 type exec_fun =
      caller_summary:Summary.t
@@ -106,7 +107,7 @@ module StdBasicString = struct
 
   let destructor : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let model = PulseDomain.CallEvent.Model "std::basic_string::~basic_string()" in
+    let model = CallEvent.Model "std::basic_string::~basic_string()" in
     let call_event = PulseDomain.ValueHistory.Call {f= model; location; in_call= []} in
     match actuals with
     | [(this_hist, _)] ->

@@ -7,34 +7,9 @@
 open! IStd
 module F = Format
 module L = Logging
+open PulseBasicInterface
 
 (* {2 Abstract domain description } *)
-
-module CallEvent = struct
-  type t =
-    | Call of Typ.Procname.t
-    | Model of string
-    | SkippedKnownCall of Typ.Procname.t
-    | SkippedUnknownCall of Exp.t
-  [@@deriving compare]
-
-  let pp_config ~verbose fmt =
-    let pp_proc_name = if verbose then Typ.Procname.pp else Typ.Procname.describe in
-    function
-    | Call proc_name ->
-        F.fprintf fmt "`%a`" pp_proc_name proc_name
-    | Model model ->
-        F.fprintf fmt "`%s` (modelled)" model
-    | SkippedKnownCall proc_name ->
-        F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
-    | SkippedUnknownCall call_exp ->
-        F.fprintf fmt "unresolved call expression `%a`" Exp.pp call_exp
-
-
-  let pp = pp_config ~verbose:true
-
-  let describe = pp_config ~verbose:false
-end
 
 module Invalidation = struct
   type std_vector_function =

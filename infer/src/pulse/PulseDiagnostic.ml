@@ -7,10 +7,10 @@
 
 open! IStd
 module F = Format
-module CallEvent = PulseDomain.CallEvent
 module Invalidation = PulseDomain.Invalidation
 module Trace = PulseDomain.Trace
 module ValueHistory = PulseDomain.ValueHistory
+open PulseBasicInterface
 
 type t =
   | AccessToInvalidAddress of {invalidated_by: Invalidation.t Trace.t; accessed_by: unit Trace.t}
