@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type violation = {lhs: Nullability.t; rhs: Nullability.t} [@@deriving compare]
+type violation = {is_strict_mode: bool; lhs: Nullability.t; rhs: Nullability.t}
+[@@deriving compare]
 
 type assignment_type =
   | PassingParamToFunction of
@@ -17,15 +18,24 @@ type assignment_type =
   | ReturningFromFunction of Typ.Procname.t
 [@@deriving compare]
 
-let is_whitelisted_assignment ~lhs ~rhs =
-  match (lhs, rhs) with Nullability.Nonnull, Nullability.DeclaredNonnull -> true | _ -> false
+let is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs =
+  match (is_strict_mode, lhs, rhs) with
+  | false, Nullability.Nonnull, Nullability.DeclaredNonnull ->
+      (* We allow DeclaredNonnull -> Nonnull conversion outside of strict mode for better adoption.
+         Otherwise using strictified classes in non-strict context becomes a pain because
+         of extra warnings.
+     *)
+      true
+  | _ ->
+      false
 
 
-let check ~lhs ~rhs =
+let check ~is_strict_mode ~lhs ~rhs =
   let is_allowed_assignment =
-    Nullability.is_subtype ~subtype:rhs ~supertype:lhs || is_whitelisted_assignment ~lhs ~rhs
+    Nullability.is_subtype ~subtype:rhs ~supertype:lhs
+    || is_whitelisted_assignment ~is_strict_mode ~lhs ~rhs
   in
-  Result.ok_if_true is_allowed_assignment ~error:{lhs; rhs}
+  Result.ok_if_true is_allowed_assignment ~error:{is_strict_mode; lhs; rhs}
 
 
 let violation_description _ assignment_type ~rhs_origin_descr =

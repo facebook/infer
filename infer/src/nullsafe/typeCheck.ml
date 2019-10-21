@@ -18,7 +18,7 @@ module ComplexExpressions = struct
   let procname_is_false_on_null tenv pn =
     match PatternMatch.lookup_attributes tenv pn with
     | Some proc_attributes ->
-        let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
+        let annotated_signature = Models.get_modelled_annotated_signature tenv proc_attributes in
         let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
         Annotations.ia_is_false_on_null ret_annotation_deprecated
     | None ->
@@ -29,7 +29,7 @@ module ComplexExpressions = struct
     let annotated_true_on_null () =
       match PatternMatch.lookup_attributes tenv pn with
       | Some proc_attributes ->
-          let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
+          let annotated_signature = Models.get_modelled_annotated_signature tenv proc_attributes in
           let AnnotatedSignature.{ret_annotation_deprecated} = annotated_signature.ret in
           Annotations.ia_is_true_on_null ret_annotation_deprecated
       | None ->
@@ -109,7 +109,7 @@ type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 type checks = {eradicate: bool; check_ret_type: check_return_type list}
 
 (** Typecheck an expression. *)
-let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref
+let rec typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
     (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
   match e with
   | _ when Exp.is_null_literal e ->
@@ -122,16 +122,16 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
   | Exp.Var id ->
       Option.value (TypeState.lookup_id id typestate) ~default:tr_default
   | Exp.Exn e1 ->
-      typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
-        typestate e1 tr_default loc
+      typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
+        curr_pdesc typestate e1 tr_default loc
   | Exp.Const _ ->
       let typ, _ = tr_default in
       (typ, InferredNullability.create_nonnull (TypeOrigin.Const loc))
   | Exp.Lfield (exp, field_name, typ) ->
       let _, _ = tr_default in
       let _, inferred_nullability =
-        typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
-          typestate exp
+        typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
+          curr_pdesc typestate exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
           (typ, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
@@ -147,20 +147,21 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
             tr_default
       in
       if checks.eradicate then
-        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
-          instr_ref exp (DereferenceRule.AccessToField field_name) inferred_nullability loc ;
+        EradicateChecks.check_object_dereference ~is_strict_mode tenv find_canonical_duplicate
+          curr_pdesc node instr_ref exp (DereferenceRule.AccessToField field_name)
+          inferred_nullability loc ;
       tr_new
   | Exp.Lindex (array_exp, index_exp) ->
       let _, inferred_nullability =
-        typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
-          typestate array_exp tr_default loc
+        typecheck_expr ~is_strict_mode find_canonical_duplicate visited checks tenv node instr_ref
+          curr_pdesc typestate array_exp tr_default loc
       in
       let index_desc =
         match EradicateChecks.explain_expr tenv node index_exp with Some s -> s | None -> "?"
       in
       if checks.eradicate then
-        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
-          instr_ref array_exp
+        EradicateChecks.check_object_dereference ~is_strict_mode tenv find_canonical_duplicate
+          curr_pdesc node instr_ref array_exp
           (DereferenceRule.AccessByIndex {index_desc})
           inferred_nullability loc ;
       tr_default
@@ -170,7 +171,8 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 
 (** Typecheck an instruction. *)
 let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_pname curr_pdesc
-    find_canonical_duplicate curr_annotated_signature instr_ref linereader typestate instr =
+    find_canonical_duplicate (curr_annotated_signature : AnnotatedSignature.t) instr_ref linereader
+    typestate instr =
   (* Handle the case where a field access X.f happens via a temporary variable $Txxx.
      This has been observed in assignments this.f = exp when exp contains an ifthenelse.
      Reconstuct the original expression knowing: the origin of $Txxx is 'this'. *)
@@ -284,7 +286,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           (* parameter.field *)
           let name = Pvar.get_name pvar in
           let filter AnnotatedSignature.{mangled} = Mangled.equal mangled name in
-          List.exists ~f:filter curr_annotated_signature.AnnotatedSignature.params
+          List.exists ~f:filter curr_annotated_signature.params
         in
         let is_static_field pvar =
           (* static field *)
@@ -397,16 +399,18 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             typestate' )
   in
   (* typecheck_expr with fewer parameters, using a common template for typestate range  *)
-  let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
-    typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
-      typestate1 exp1
+  let typecheck_expr_simple ~is_strict_mode typestate1 exp1 typ1 origin1 loc1 =
+    typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node instr_ref
+      curr_pdesc typestate1 exp1
       (typ1, InferredNullability.create_nonnull origin1)
       loc1
   in
   (* check if there are errors in exp1 *)
-  let typecheck_expr_for_errors typestate1 exp1 loc1 : unit =
-    ignore (typecheck_expr_simple typestate1 exp1 (Typ.mk Tvoid) TypeOrigin.Undef loc1)
+  let typecheck_expr_for_errors ~is_strict_mode typestate1 exp1 loc1 : unit =
+    ignore
+      (typecheck_expr_simple ~is_strict_mode typestate1 exp1 (Typ.mk Tvoid) TypeOrigin.Undef loc1)
   in
+  let is_strict_mode = curr_annotated_signature.is_strict_mode in
   match instr with
   | Sil.Metadata (ExitScope (vars, _)) ->
       List.fold_right vars ~init:typestate ~f:(fun var astate ->
@@ -418,23 +422,25 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   | Sil.Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
       typestate
   | Sil.Load {id; e; typ; loc} ->
-      typecheck_expr_for_errors typestate e loc ;
+      typecheck_expr_for_errors ~is_strict_mode typestate e loc ;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
-      TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc) typestate'
+      TypeState.add_id id
+        (typecheck_expr_simple ~is_strict_mode typestate' e' typ TypeOrigin.Undef loc)
+        typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
   | Sil.Store {e1; typ; e2; loc} ->
-      typecheck_expr_for_errors typestate e1 loc ;
+      typecheck_expr_for_errors ~is_strict_mode typestate e1 loc ;
       let e1', typestate1 = convert_complex_exp_to_pvar node true e1 typestate loc in
       let check_field_assign () =
         match e1 with
         | Exp.Lfield (_, fn, f_typ) ->
             let field_type_opt = AnnotatedField.get tenv fn f_typ in
             if checks.eradicate then
-              EradicateChecks.check_field_assignment tenv find_canonical_duplicate curr_pdesc node
-                instr_ref typestate1 e1' e2 typ loc fn field_type_opt
-                (typecheck_expr find_canonical_duplicate calls_this checks tenv)
+              EradicateChecks.check_field_assignment ~is_strict_mode tenv find_canonical_duplicate
+                curr_pdesc node instr_ref typestate1 e1' e2 typ loc fn field_type_opt
+                (typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv)
         | _ ->
             ()
       in
@@ -442,7 +448,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         match e1' with
         | Exp.Lvar pvar ->
             TypeState.add pvar
-              (typecheck_expr_simple typestate1 e2 typ TypeOrigin.Undef loc)
+              (typecheck_expr_simple ~is_strict_mode typestate1 e2 typ TypeOrigin.Undef loc)
               typestate1
         | Exp.Lfield _ ->
             typestate1
@@ -457,22 +463,24 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       (* new never returns null *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
-      typecheck_expr_for_errors typestate e loc ;
+      typecheck_expr_for_errors ~is_strict_mode typestate e loc ;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
       (* cast copies the type of the first argument *)
-      TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc) typestate'
+      TypeState.add_id id
+        (typecheck_expr_simple ~is_strict_mode typestate' e' typ TypeOrigin.ONone loc)
+        typestate'
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
       let _, ta =
-        typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
-          typestate array_exp
+        typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node
+          instr_ref curr_pdesc typestate array_exp
           (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
           (t, InferredNullability.create_nonnull TypeOrigin.ONone)
           loc
       in
       if checks.eradicate then
-        EradicateChecks.check_object_dereference tenv find_canonical_duplicate curr_pdesc node
-          instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
+        EradicateChecks.check_object_dereference ~is_strict_mode tenv find_canonical_duplicate
+          curr_pdesc node instr_ref array_exp DereferenceRule.ArrayLengthAccess ta loc ;
       TypeState.add_id id
         (Typ.mk (Tint Typ.IInt), InferredNullability.create_nonnull TypeOrigin.New)
         typestate
@@ -511,13 +519,15 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       let etl = drop_unchecked_params calls_this callee_attributes etl_ in
       let call_params, typestate1 =
         let handle_et (e1, t1) (etl1, typestate1) =
-          typecheck_expr_for_errors typestate e1 loc ;
+          typecheck_expr_for_errors ~is_strict_mode typestate e1 loc ;
           let e2, typestate2 = convert_complex_exp_to_pvar node false e1 typestate1 loc in
           (((e1, e2), t1) :: etl1, typestate2)
         in
         List.fold_right ~f:handle_et etl ~init:([], typestate)
       in
-      let callee_annotated_signature = Models.get_modelled_annotated_signature callee_attributes in
+      let callee_annotated_signature =
+        Models.get_modelled_annotated_signature tenv callee_attributes
+      in
       let signature_params =
         drop_unchecked_signature_params callee_attributes callee_annotated_signature
       in
@@ -669,7 +679,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             | Some map_get_str ->
                 let pvar_map_get = Pvar.mk (Mangled.from_string map_get_str) curr_pname in
                 TypeState.add pvar_map_get
-                  (typecheck_expr_simple typestate' exp_value typ_value TypeOrigin.Undef loc)
+                  (typecheck_expr_simple ~is_strict_mode typestate' exp_value typ_value
+                     TypeOrigin.Undef loc)
                   typestate'
             | None ->
                 typestate' )
@@ -680,8 +691,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let resolve_param i (formal_param, actual_param) =
           let (orig_e2, e2), t2 = actual_param in
           let _, inferred_nullability_actual =
-            typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
-              curr_pdesc typestate e2
+            typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks tenv node
+              instr_ref curr_pdesc typestate e2
               (* TODO(T54687014) optimistic default might be an unsoundness issue - investigate *)
               (t2, InferredNullability.create_nonnull TypeOrigin.ONone)
               loc
@@ -764,12 +775,12 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         let typestate_after_call =
           if not is_anonymous_inner_class_constructor then (
             if cflags.CallFlags.cf_virtual && checks.eradicate then
-              EradicateChecks.check_call_receiver tenv find_canonical_duplicate curr_pdesc node
-                typestate1 call_params callee_pname instr_ref loc
-                (typecheck_expr find_canonical_duplicate calls_this checks) ;
+              EradicateChecks.check_call_receiver ~is_strict_mode tenv find_canonical_duplicate
+                curr_pdesc node typestate1 call_params callee_pname instr_ref loc
+                (typecheck_expr ~is_strict_mode find_canonical_duplicate calls_this checks) ;
             if checks.eradicate then
-              EradicateChecks.check_call_parameters tenv find_canonical_duplicate curr_pdesc node
-                callee_attributes resolved_params loc instr_ref ;
+              EradicateChecks.check_call_parameters ~is_strict_mode tenv find_canonical_duplicate
+                curr_pdesc node callee_attributes resolved_params loc instr_ref ;
             if Models.is_check_not_null callee_pname then
               match Models.get_check_not_null_parameter callee_pname with
               | Some index ->
@@ -845,7 +856,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
               let pvar = Pvar.mk (Mangled.from_string e_str) curr_pname in
               let e1 = Exp.Lvar pvar in
               let typ, ta =
-                typecheck_expr_simple typestate e1 (Typ.mk Tvoid) TypeOrigin.ONone loc
+                typecheck_expr_simple ~is_strict_mode typestate e1 (Typ.mk Tvoid) TypeOrigin.ONone
+                  loc
               in
               let range = (typ, ta) in
               let typestate1 = TypeState.add pvar range typestate in
@@ -874,7 +886,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
         | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
           when IntLit.iszero i -> (
-            typecheck_expr_for_errors typestate e loc ;
+            typecheck_expr_for_errors ~is_strict_mode typestate e loc ;
             let typestate1, e1, from_call =
               match from_is_true_on_null e with
               | Some e1 ->
@@ -884,7 +896,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let typ, inferred_nullability =
-              typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
+              typecheck_expr_simple ~is_strict_mode typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone
+                loc
             in
             if checks.eradicate then
               EradicateChecks.check_zero tenv find_canonical_duplicate curr_pdesc node' e' typ
@@ -901,7 +914,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
         | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
           when IntLit.iszero i -> (
-            typecheck_expr_for_errors typestate e loc ;
+            typecheck_expr_for_errors ~is_strict_mode typestate e loc ;
             let typestate1, e1, from_call =
               match from_instanceof e with
               | Some e1 ->
@@ -917,7 +930,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let typ, inferred_nullability =
-              typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc
+              typecheck_expr_simple ~is_strict_mode typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone
+                loc
             in
             if checks.eradicate then
               EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc node e' typ

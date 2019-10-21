@@ -42,11 +42,12 @@ and declared_nonnull_origin =
 
 and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
+  | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
 [@@deriving compare]
 
 val get_nullability : t -> Nullability.t
 
-val of_annot_item : Annot.Item.t -> t
+val of_annot_item : is_strict_mode:bool -> Annot.Item.t -> t
 (** Converts the information from the annotation to nullability.
     NOTE: it does not take into account models etc., so this is intended to be used
     as a helper function for more high-level annotation processing.

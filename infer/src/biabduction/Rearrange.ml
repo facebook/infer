@@ -1489,7 +1489,9 @@ let is_weak_captured_var pdesc var_name =
 
 let var_has_annotation ?(check_weak_captured_var = false) pdesc is_annotation pvar =
   let is_weak_captured_var = is_weak_captured_var pdesc (Pvar.to_string pvar) in
-  let ann_sig = Models.get_modelled_annotated_signature (Procdesc.get_attributes pdesc) in
+  let ann_sig =
+    Models.get_modelled_annotated_signature_for_biabduction (Procdesc.get_attributes pdesc)
+  in
   AnnotatedSignature.param_has_annot is_annotation pvar ann_sig
   || (check_weak_captured_var && is_weak_captured_var)
 

@@ -12,7 +12,7 @@ open! IStd
 
 type violation [@@deriving compare]
 
-val check : Nullability.t -> (unit, violation) result
+val check : is_strict_mode:bool -> Nullability.t -> (unit, violation) result
 
 type dereference_type =
   | MethodCall of Typ.Procname.t

@@ -115,7 +115,7 @@ let final_initializer_typestates_lazy tenv curr_pname curr_pdesc get_procs_in_fi
        PatternMatch.method_is_initializer tenv proc_attributes
        ||
        let ia =
-         (Models.get_modelled_annotated_signature proc_attributes).AnnotatedSignature.ret
+         (Models.get_modelled_annotated_signature tenv proc_attributes).AnnotatedSignature.ret
            .ret_annotation_deprecated
        in
        Annotations.ia_is_initializer ia

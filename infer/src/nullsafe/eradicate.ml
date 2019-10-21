@@ -113,12 +113,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         (!calls_this, None)
 
 
-  let callback2 calls_this checks {Callbacks.summary; exe_env; get_procs_in_file}
+  let callback2 tenv curr_pname calls_this checks {Callbacks.summary; get_procs_in_file}
       annotated_signature linereader proc_loc : unit =
     let curr_pdesc = Summary.get_proc_desc summary in
     let idenv = Idenv.create curr_pdesc in
-    let curr_pname = Summary.get_proc_name summary in
-    let tenv = Exe_env.get_tenv exe_env curr_pname in
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
@@ -131,7 +129,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             (ann_sig, loc, idenv_pn)
         | None ->
             let ann_sig =
-              Models.get_modelled_annotated_signature (Procdesc.get_attributes pdesc)
+              Models.get_modelled_annotated_signature tenv (Procdesc.get_attributes pdesc)
             in
             let loc = Procdesc.get_loc pdesc in
             (ann_sig, loc, Idenv.create pdesc)
@@ -183,6 +181,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let proc_desc = Summary.get_proc_desc summary in
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
+    let curr_pname = Summary.get_proc_name summary in
+    let tenv = Exe_env.get_tenv callback_args.exe_env curr_pname in
     let filter_special_cases () =
       if
         ( match proc_name with
@@ -195,7 +195,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       then None
       else
         let annotated_signature =
-          Models.get_modelled_annotated_signature (Procdesc.get_attributes proc_desc)
+          Models.get_modelled_annotated_signature tenv (Procdesc.get_attributes proc_desc)
         in
         Some annotated_signature
     in
@@ -207,7 +207,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         let linereader = Printer.LineReader.create () in
         if Config.eradicate_verbose then
           L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature ;
-        callback2 calls_this checks callback_args annotated_signature linereader loc ) ;
+        callback2 tenv curr_pname calls_this checks callback_args annotated_signature linereader
+          loc ) ;
     summary
 end
 

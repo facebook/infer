@@ -59,6 +59,8 @@ let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"
 
+let nullsafe_strict = "NullsafeStrict"
+
 let mainthread = "MainThread"
 
 let nonblocking = "NonBlocking"
@@ -124,9 +126,9 @@ let ma_has_annotation_with ({return; params} : Annot.Method.t) (predicate : Anno
 let annot_ends_with ({class_name} : Annot.t) ann_name =
   String.is_suffix class_name ~suffix:ann_name
   &&
-  (* here, [class_name] ends with [ann_name] but it could be that it's just a suffix 
-     of the last dot-component of [class_name], eg [class_name="x.y.z.a.bcd"] and 
-     [ann_name="cd"]; in that case we want to fail the check, so we check that the 
+  (* here, [class_name] ends with [ann_name] but it could be that it's just a suffix
+     of the last dot-component of [class_name], eg [class_name="x.y.z.a.bcd"] and
+     [ann_name="cd"]; in that case we want to fail the check, so we check that the
      character just before the match is indeed a dot (or there is no dot at all). *)
   let dot_pos = String.(length class_name - length ann_name - 1) in
   Int.is_negative dot_pos || Char.equal '.' class_name.[dot_pos]
@@ -175,6 +177,8 @@ let ia_is_propagates_nullable ia = ia_ends_with ia propagates_nullable
 let ia_is_nullable ia = ia_ends_with ia nullable || ia_is_propagates_nullable ia
 
 let ia_is_nonnull ia = List.exists ~f:(ia_ends_with ia) [nonnull; notnull; camel_nonnull]
+
+let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict
 
 let ia_is_false_on_null ia = ia_ends_with ia false_on_null
 

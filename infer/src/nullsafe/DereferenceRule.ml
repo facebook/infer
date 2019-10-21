@@ -15,10 +15,13 @@ type dereference_type =
   | ArrayLengthAccess
 [@@deriving compare]
 
-let check = function
-  | Nullability.Nullable as nullability ->
+let check ~is_strict_mode nullability =
+  match nullability with
+  | Nullability.Nullable ->
       Error nullability
-  | Nullability.DeclaredNonnull | Nullability.Nonnull ->
+  | Nullability.DeclaredNonnull ->
+      if is_strict_mode then Error nullability else Ok ()
+  | Nullability.Nonnull ->
       Ok ()
 
 

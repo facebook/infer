@@ -27,10 +27,33 @@ let table_has_procedure table proc_name =
   with Caml.Not_found -> false
 
 
-(** Return the annotated signature of the procedure, taking into account models. *)
-let get_modelled_annotated_signature proc_attributes =
+(* This is used outside of nullsafe for biabduction.
+   If biabduction and nullsafe want to depend on common functionality, this functionality
+   should be refactored out in a dedicated library.
+ *)
+let get_modelled_annotated_signature_for_biabduction proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let annotated_signature = AnnotatedSignature.get proc_attributes in
+  let annotated_signature = AnnotatedSignature.get ~is_strict_mode:false proc_attributes in
+  let proc_id = Typ.Procname.to_unique_id proc_name in
+  let lookup_models_nullable ann_sig =
+    try
+      let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
+      AnnotatedSignature.set_modelled_nullability proc_name ann_sig modelled_nullability
+    with Caml.Not_found -> ann_sig
+  in
+  annotated_signature |> lookup_models_nullable
+
+
+(** Return the annotated signature of the procedure, taking into account models. *)
+let get_modelled_annotated_signature tenv proc_attributes =
+  let proc_name = proc_attributes.ProcAttributes.proc_name in
+  let is_strict_mode =
+    PatternMatch.get_this_type proc_attributes
+    |> Option.bind ~f:(fun this_class -> PatternMatch.type_get_annotation tenv this_class)
+    |> Option.exists ~f:(fun annotations_for_this ->
+           Annotations.ia_is_nullsafe_strict annotations_for_this )
+  in
+  let annotated_signature = AnnotatedSignature.get ~is_strict_mode proc_attributes in
   let proc_id = Typ.Procname.to_unique_id proc_name in
   let lookup_models_nullable ann_sig =
     try
