@@ -65,5 +65,41 @@
       ],
       "field5": {},
       "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label1_block",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name":  "",
+          "mangled_name": "__18+[Person multiply]_block_invoke"
+        },
+        {
+          "name": "exampleMethod3"
+        }
+      ],
+      "field5": {},
+      "field6": {}
+    },
+    {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "test": "label2_block",
+      "field4": {},
+      "native_symbols": [
+        {
+          "name": "",
+          "mangled_name": "___Z3sumv_block_invoke_2"
+        },
+        {
+          "name": "exampleMethod3"
+        }
+      ],
+      "field5": {},
+      "field6": {}
     }
   ]

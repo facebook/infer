@@ -55,4 +55,26 @@ void Cube::sort(Cube* xs, unsigned n) {
   NSLog(@"The person's name is %@", _name);
 }
 
++ (void)multiply {
+  double (^multiplyTwoValues)(double, double) =
+      ^(double first, double second) { // change here
+        return first * second;
+      };
+
+  double result = multiplyTwoValues(2, 4);
+
+  NSLog(@"The result is %f", result);
+}
+
 @end
+
+void sum() {
+  double (^sumTwoValues)(double, double) =
+      ^(double firstValue, double secondValue) {
+        return firstValue + secondValue;
+      };
+
+  double result = sumTwoValues(2, 4);
+
+  NSLog(@"The result is %f", result);
+}

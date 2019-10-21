@@ -588,3 +588,21 @@ let get_superclass_curr_class_objc_from_decl (decl : Clang_ast_t.decl) =
         "Expected to be called only with ObjCInterfaceDecl, ObjCImplementationDecl, \
          ObjCCategoryDecl or ObjCCategoryImplDecl, but got %s"
         (Clang_ast_proj.get_decl_kind_string decl)
+
+
+let get_method_body_opt decl =
+  let open Clang_ast_t in
+  match decl with
+  | FunctionDecl (_, _, _, fdi)
+  | CXXMethodDecl (_, _, _, fdi, _)
+  | CXXConstructorDecl (_, _, _, fdi, _)
+  | CXXConversionDecl (_, _, _, fdi, _)
+  | CXXDestructorDecl (_, _, _, fdi, _) ->
+      fdi.Clang_ast_t.fdi_body
+  | ObjCMethodDecl (_, _, mdi) ->
+      mdi.Clang_ast_t.omdi_body
+  | BlockDecl (_, block_decl_info) ->
+      block_decl_info.Clang_ast_t.bdi_body
+  | _ ->
+      Logging.die InternalError "Should only be called with method, but got %s"
+        (Clang_ast_proj.get_decl_kind_string decl)

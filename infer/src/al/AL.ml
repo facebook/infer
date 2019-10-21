@@ -208,24 +208,6 @@ let compute_if_context (context : CLintersContext.context) stmt =
       : CLintersContext.if_context )
 
 
-let get_method_body_opt decl =
-  let open Clang_ast_t in
-  match decl with
-  | FunctionDecl (_, _, _, fdi)
-  | CXXMethodDecl (_, _, _, fdi, _)
-  | CXXConstructorDecl (_, _, _, fdi, _)
-  | CXXConversionDecl (_, _, _, fdi, _)
-  | CXXDestructorDecl (_, _, _, fdi, _) ->
-      fdi.Clang_ast_t.fdi_body
-  | ObjCMethodDecl (_, _, mdi) ->
-      mdi.Clang_ast_t.omdi_body
-  | BlockDecl (_, block_decl_info) ->
-      block_decl_info.Clang_ast_t.bdi_body
-  | _ ->
-      Logging.die InternalError "Should only be called with method, but got %s"
-        (Clang_ast_proj.get_decl_kind_string decl)
-
-
 let call_tableaux linters cxt an map_active =
   if CFrontend_config.tableaux_evaluation then Tableaux.build_valuation linters an cxt map_active
 
@@ -332,7 +314,7 @@ and do_frontend_checks_decl linters (context : CLintersContext.context)
         (* We need to visit explicitly nodes reachable via Parameters transitions
       because they won't be visited during the evaluation of the formula *)
         do_frontend_checks_via_transition linters context' map_active an CTL.Parameters ;
-        ( match get_method_body_opt decl with
+        ( match CAst_utils.get_method_body_opt decl with
         | Some stmt ->
             do_frontend_checks_stmt linters context' map_active stmt
         | None ->

@@ -208,6 +208,13 @@ let match_profiler_samples_affected_methods native_symbols affected_methods =
           String.equal name native_symbol.Clang_profiler_samples_t.name
       | Some (ClangProc.ObjcMethod {mangled_name}) ->
           String.equal mangled_name native_symbol.Clang_profiler_samples_t.name
+      | Some (ClangProc.ObjcBlock {mangled_name}) -> (
+        match native_symbol.Clang_profiler_samples_t.mangled_name with
+        | Some native_sym_mangled_name ->
+            (* Assuming mangled name is there for blocks *)
+            String.equal native_sym_mangled_name mangled_name
+        | None ->
+            false )
       | _ ->
           false
       (* TODO: deal with mangled names, other method kinds *)
