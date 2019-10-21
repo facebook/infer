@@ -9,33 +9,6 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-module Invalidation : sig
-  type std_vector_function =
-    | Assign
-    | Clear
-    | Emplace
-    | EmplaceBack
-    | Insert
-    | PushBack
-    | Reserve
-    | ShrinkToFit
-  [@@deriving compare]
-
-  val pp_std_vector_function : Format.formatter -> std_vector_function -> unit
-
-  type t =
-    | CFree
-    | CppDelete
-    | GoneOutOfScope of Pvar.t * Typ.t
-    | Nullptr
-    | StdVector of std_vector_function
-  [@@deriving compare]
-
-  val issue_type_of_cause : t -> IssueType.t
-
-  val describe : Format.formatter -> t -> unit
-end
-
 module ValueHistory : sig
   type event =
     | Assignment of Location.t

@@ -7,6 +7,7 @@
 
 open! IStd
 module AbstractAddress = PulseDomain.AbstractAddress
+open PulseBasicInterface
 
 type t = PulseAbductiveDomain.t
 
@@ -70,15 +71,15 @@ val write_deref :
 (** write the edge [ref --*--> obj] *)
 
 val invalidate :
-  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that the address is invalid *)
 
 val invalidate_deref :
-  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that what the address points to is invalid *)
 
 val invalidate_array_elements :
-  Location.t -> PulseDomain.Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
+  Location.t -> Invalidation.t -> PulseDomain.AddrTracePair.t -> t -> t access_result
 (** record that all the array elements that address points to is invalid *)
 
 val shallow_copy :

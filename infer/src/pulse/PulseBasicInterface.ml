@@ -9,3 +9,4 @@ open! IStd
 (** Basic Pulse modules that are safe to use in any module *)
 
 module CallEvent = PulseCallEvent
+module Invalidation = PulseInvalidation

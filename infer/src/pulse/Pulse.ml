@@ -9,8 +9,8 @@ module F = Format
 module L = Logging
 open Result.Monad_infix
 module AbstractAddress = PulseDomain.AbstractAddress
-module Invalidation = PulseDomain.Invalidation
 module ValueHistory = PulseDomain.ValueHistory
+open PulseBasicInterface
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   struct

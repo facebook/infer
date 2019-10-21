@@ -10,7 +10,7 @@ module F = Format
 
 type trace =
   | WrittenTo of unit PulseDomain.Trace.t
-  | Invalid of PulseDomain.Invalidation.t PulseDomain.Trace.t
+  | Invalid of PulseInvalidation.t PulseDomain.Trace.t
 [@@deriving compare]
 
 module ModifiedVar = struct
@@ -64,7 +64,7 @@ let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
         PulseDomain.Trace.add_to_errlog ~nesting
           (fun fmt invalid ->
             F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
-              PulseDomain.Invalidation.describe invalid )
+              PulseInvalidation.describe invalid )
           invalidation_trace errlog
   in
   let first_trace, rest = trace_list in

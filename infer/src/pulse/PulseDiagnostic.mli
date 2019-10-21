@@ -6,9 +6,9 @@
  *)
 
 open! IStd
-module Invalidation = PulseDomain.Invalidation
 module Trace = PulseDomain.Trace
 module ValueHistory = PulseDomain.ValueHistory
+open PulseBasicInterface
 
 (** an error to report to the user *)
 type t =

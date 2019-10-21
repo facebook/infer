@@ -46,7 +46,7 @@ module C = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
-        PulseOperations.invalidate location PulseDomain.Invalidation.CFree deleted_access astate
+        PulseOperations.invalidate location Invalidation.CFree deleted_access astate
         >>| List.return
     | _ ->
         Ok [astate]
@@ -57,8 +57,7 @@ module Cplusplus = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(deleted_access, _)] ->
-        PulseOperations.invalidate location PulseDomain.Invalidation.CppDelete deleted_access
-          astate
+        PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
         >>| List.return
     | _ ->
         Ok [astate]
@@ -181,9 +180,7 @@ module StdVector = struct
     | (vector, _) :: _ ->
         let crumb =
           PulseDomain.ValueHistory.Call
-            { f=
-                Model
-                  (Format.asprintf "%a()" PulseDomain.Invalidation.pp_std_vector_function vector_f)
+            { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
             ; location
             ; in_call= [] }
         in

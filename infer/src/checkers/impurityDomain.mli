@@ -8,7 +8,7 @@ open! IStd
 
 type trace =
   | WrittenTo of unit PulseDomain.Trace.t
-  | Invalid of PulseDomain.Invalidation.t PulseDomain.Trace.t
+  | Invalid of PulseInvalidation.t PulseDomain.Trace.t
 
 module ModifiedVar : sig
   type nonempty_action_type = trace * trace list

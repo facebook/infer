@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module Invalidation = PulseDomain.Invalidation
 module Trace = PulseDomain.Trace
 module ValueHistory = PulseDomain.ValueHistory
 open PulseBasicInterface
