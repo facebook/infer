@@ -7,6 +7,7 @@
 
 open! IStd
 open PulseBasicInterface
+open PulseDomainInterface
 
 type t = PulseAbductiveDomain.t
 
@@ -38,7 +39,7 @@ val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistor
 val eval_access :
      Location.t
   -> AbstractValue.t * ValueHistory.t
-  -> PulseDomain.Memory.Access.t
+  -> BaseMemory.Access.t
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
@@ -59,7 +60,7 @@ val havoc_field :
 
 val realloc_pvar : Pvar.t -> Location.t -> t -> t
 
-val write_id : Ident.t -> PulseDomain.Stack.value -> t -> t
+val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
 val write_deref :
      Location.t

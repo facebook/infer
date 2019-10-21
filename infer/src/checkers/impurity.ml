@@ -7,8 +7,8 @@
 open! IStd
 module F = Format
 module L = Logging
-module BaseStack = PulseDomain.Stack
 open PulseBasicInterface
+open PulseDomainInterface
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
@@ -22,8 +22,8 @@ let get_matching_dest_addr_opt ~edges_pre ~edges_post : AbstractValue.t list opt
         if AbstractValue.equal addr_dest_pre addr_dest_post then
           Option.map acc ~f:(fun acc -> addr_dest_pre :: acc)
         else None )
-      (PulseDomain.Memory.Edges.bindings edges_pre)
-      (PulseDomain.Memory.Edges.bindings edges_post)
+      (BaseMemory.Edges.bindings edges_pre)
+      (BaseMemory.Edges.bindings edges_post)
   with
   | Unequal_lengths ->
       debug "Mismatch in pre and post.\n" ;
@@ -52,9 +52,9 @@ let add_invalid_and_modified ~check_empty attrs acc =
 
   TODO: keep track of impure library calls *)
 let extract_impurity pdesc pre_post : ImpurityDomain.t =
-  let pre_heap = (PulseAbductiveDomain.extract_pre pre_post).PulseDomain.heap in
-  let post_heap = (PulseAbductiveDomain.extract_post pre_post).PulseDomain.heap in
-  let post_stack = (PulseAbductiveDomain.extract_post pre_post).PulseDomain.stack in
+  let pre_heap = (AbductiveDomain.extract_pre pre_post).BaseDomain.heap in
+  let post_heap = (AbductiveDomain.extract_post pre_post).BaseDomain.heap in
+  let post_stack = (AbductiveDomain.extract_post pre_post).BaseDomain.stack in
   let add_to_modified var addr acc =
     let rec aux acc ~addr_to_explore ~visited : ImpurityDomain.trace list =
       match addr_to_explore with
@@ -63,8 +63,8 @@ let extract_impurity pdesc pre_post : ImpurityDomain.t =
       | addr :: addr_to_explore -> (
           if AbstractValue.Set.mem addr visited then aux acc ~addr_to_explore ~visited
           else
-            let cell_pre_opt = PulseDomain.Memory.find_opt addr pre_heap in
-            let cell_post_opt = PulseDomain.Memory.find_opt addr post_heap in
+            let cell_pre_opt = BaseMemory.find_opt addr pre_heap in
+            let cell_post_opt = BaseMemory.find_opt addr post_heap in
             let visited = AbstractValue.Set.add addr visited in
             match (cell_pre_opt, cell_post_opt) with
             | None, None ->

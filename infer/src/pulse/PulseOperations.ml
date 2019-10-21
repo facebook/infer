@@ -6,20 +6,11 @@
  *)
 open! IStd
 module L = Logging
-module Memory = PulseAbductiveDomain.Memory
-module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix
 open PulseBasicInterface
+open PulseDomainInterface
 
-include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-  struct
-  [@@@warning "-60"]
-
-  (** Do not use {!PulseDomain} directly, go through {!PulseAbductiveDomain} instead *)
-  module PulseDomain = struct end [@@deprecated "Use PulseAbductiveDomain instead."]
-end
-
-type t = PulseAbductiveDomain.t
+type t = AbductiveDomain.t
 
 type 'a access_result = ('a, PulseDiagnostic.t) result
 
@@ -33,7 +24,7 @@ let check_addr_access location (address, history) astate =
 
 module Closures = struct
   open Result.Monad_infix
-  module Memory = PulseAbductiveDomain.Memory
+  module Memory = AbductiveDomain.Memory
 
   let fake_capture_field_prefix = "__capture_"
 
@@ -352,7 +343,7 @@ let remove_vars vars location astate =
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =
-              if Var.appears_in_source_code var && PulseAbductiveDomain.is_local var astate then
+              if Var.appears_in_source_code var && AbductiveDomain.is_local var astate then
                 mark_address_of_stack_variable history var location address astate
               else astate
             in
@@ -363,7 +354,7 @@ let remove_vars vars location astate =
             astate )
   in
   let astate' = Stack.remove_vars vars astate in
-  if phys_equal astate' astate then astate else PulseAbductiveDomain.discard_unreachable astate'
+  if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
 
 
 let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
@@ -373,11 +364,10 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
       in
-      (* call {!PulseAbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
+      (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
       List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
           (* apply all pre/post specs *)
-          PulseAbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals
-            astate
+          AbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals astate
           >>| fun (post, return_val_opt) ->
           let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
           let post =

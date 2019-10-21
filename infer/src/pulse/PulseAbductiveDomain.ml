@@ -7,8 +7,9 @@
 open! IStd
 module F = Format
 module L = Logging
-module BaseStack = PulseDomain.Stack
-module BaseMemory = PulseDomain.Memory
+module BaseDomain = PulseBaseDomain
+module BaseStack = BaseDomain.Stack
+module BaseMemory = BaseDomain.Memory
 open PulseBasicInterface
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
@@ -16,7 +17,7 @@ open PulseBasicInterface
 module type BaseDomain = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private PulseDomain.t
+  type t = private BaseDomain.t
 
   val empty : t
 
@@ -28,8 +29,8 @@ module type BaseDomain = sig
 end
 
 (* just to expose the [heap] and [stack] record field names without having to type
-   [PulseDomain.heap] *)
-type base_domain = PulseDomain.t = {heap: BaseMemory.t; stack: BaseStack.t}
+   [BaseDomain.heap] *)
+type base_domain = BaseDomain.t = {heap: BaseMemory.t; stack: BaseStack.t}
 
 (** operations common to [Domain] and [InvertedDomain], see also the [BaseDomain] signature *)
 module BaseDomainCommon = struct
@@ -46,21 +47,21 @@ end
 (** represents the post abstract state at each program point *)
 module Domain : BaseDomain = struct
   include BaseDomainCommon
-  include PulseDomain
+  include BaseDomain
 end
 
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module InvertedDomain : BaseDomain = struct
   include BaseDomainCommon
 
-  type t = PulseDomain.t
+  type t = BaseDomain.t
 
-  let empty = PulseDomain.empty
+  let empty = BaseDomain.empty
 
-  let pp = PulseDomain.pp
+  let pp = BaseDomain.pp
 
   (** inverted lattice *)
-  let ( <= ) ~lhs ~rhs = PulseDomain.( <= ) ~rhs:lhs ~lhs:rhs
+  let ( <= ) ~lhs ~rhs = BaseDomain.( <= ) ~rhs:lhs ~lhs:rhs
 end
 
 (** biabduction-style pre/post state *)
@@ -72,16 +73,16 @@ let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post Inverted
 
 let ( <= ) ~lhs ~rhs =
   match
-    PulseDomain.isograph_map PulseDomain.empty_mapping
-      ~lhs:(rhs.pre :> PulseDomain.t)
-      ~rhs:(lhs.pre :> PulseDomain.t)
+    BaseDomain.isograph_map BaseDomain.empty_mapping
+      ~lhs:(rhs.pre :> BaseDomain.t)
+      ~rhs:(lhs.pre :> BaseDomain.t)
   with
   | NotIsomorphic ->
       false
   | IsomorphicUpTo foot_mapping ->
-      PulseDomain.is_isograph foot_mapping
-        ~lhs:(lhs.post :> PulseDomain.t)
-        ~rhs:(rhs.post :> PulseDomain.t)
+      BaseDomain.is_isograph foot_mapping
+        ~lhs:(lhs.post :> BaseDomain.t)
+        ~rhs:(rhs.post :> BaseDomain.t)
 
 
 module Stack = struct
@@ -245,7 +246,7 @@ let mk_initial proc_desc =
            , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
   in
   let initial_stack =
-    List.fold formals ~init:(InvertedDomain.empty :> PulseDomain.t).stack
+    List.fold formals ~init:(InvertedDomain.empty :> BaseDomain.t).stack
       ~f:(fun stack (formal, addr_loc) -> BaseStack.add formal addr_loc stack)
   in
   let pre =
@@ -260,21 +261,21 @@ let mk_initial proc_desc =
 
 
 let discard_unreachable ({pre; post} as astate) =
-  let pre_addresses = PulseDomain.reachable_addresses (pre :> PulseDomain.t) in
-  let pre_old_heap = (pre :> PulseDomain.t).heap in
+  let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
+  let pre_old_heap = (pre :> BaseDomain.t).heap in
   let pre_new_heap =
     BaseMemory.filter (fun address -> AbstractValue.Set.mem address pre_addresses) pre_old_heap
   in
-  let post_addresses = PulseDomain.reachable_addresses (post :> PulseDomain.t) in
+  let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
   let all_addresses = AbstractValue.Set.union pre_addresses post_addresses in
-  let post_old_heap = (post :> PulseDomain.t).heap in
+  let post_old_heap = (post :> BaseDomain.t).heap in
   let post_new_heap =
     BaseMemory.filter (fun address -> AbstractValue.Set.mem address all_addresses) post_old_heap
   in
   if phys_equal pre_new_heap pre_old_heap && phys_equal post_new_heap post_old_heap then astate
   else
-    { pre= InvertedDomain.make (pre :> PulseDomain.t).stack pre_new_heap
-    ; post= Domain.make (post :> PulseDomain.t).stack post_new_heap }
+    { pre= InvertedDomain.make (pre :> BaseDomain.t).stack pre_new_heap
+    ; post= Domain.make (post :> BaseDomain.t).stack post_new_heap }
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -288,7 +289,7 @@ module PrePost = struct
     let post_stack =
       BaseStack.filter
         (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
-        (astate.post :> PulseDomain.t).stack
+        (astate.post :> BaseDomain.t).stack
     in
     (* deregister empty edges *)
     let deregister_empty heap =
@@ -309,7 +310,7 @@ module PrePost = struct
 
   (** invalidate local variables going out of scope *)
   let invalidate_locals pdesc astate : t =
-    let heap : BaseMemory.t = (astate.post :> PulseDomain.t).heap in
+    let heap : BaseMemory.t = (astate.post :> BaseDomain.t).heap in
     let heap' =
       BaseMemory.fold_attrs
         (fun addr attrs heap ->
@@ -411,8 +412,8 @@ module PrePost = struct
 
 
   let pp f {pre; post} =
-    F.fprintf f "PRE:@\n  @[%a@]@\n" PulseDomain.pp (pre :> PulseDomain.t) ;
-    F.fprintf f "POST:@\n  @[%a@]@\n" PulseDomain.pp (post :> PulseDomain.t)
+    F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
+    F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t)
 
 
   (* {3 reading the pre from the current state} *)
@@ -434,7 +435,7 @@ module PrePost = struct
         Ok call_state
     | `NotAlreadyVisited, call_state -> (
         (let open Option.Monad_infix in
-        BaseMemory.find_opt addr_pre pre.PulseDomain.heap
+        BaseMemory.find_opt addr_pre pre.BaseDomain.heap
         >>= fun (edges_pre, attrs_pre) ->
         Attributes.get_must_be_valid attrs_pre
         >>| fun callee_access_trace ->
@@ -463,9 +464,9 @@ module PrePost = struct
   let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
     L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
     (let open Option.Monad_infix in
-    BaseStack.find_opt formal pre.PulseDomain.stack
+    BaseStack.find_opt formal pre.BaseDomain.stack
     >>= fun (addr_formal_pre, _) ->
-    BaseMemory.find_edge_opt addr_formal_pre Dereference pre.PulseDomain.heap
+    BaseMemory.find_edge_opt addr_formal_pre Dereference pre.BaseDomain.heap
     >>| fun (formal_pre, _) ->
     materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
       ~addr_hist_caller:actual call_state)
@@ -501,7 +502,7 @@ module PrePost = struct
     match
       IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal (actual, _) ->
           materialize_pre_from_actual callee_proc_name call_location
-            ~pre:(pre_post.pre :> PulseDomain.t)
+            ~pre:(pre_post.pre :> BaseDomain.t)
             ~formal ~actual call_state )
     with
     | Unequal_lengths ->
@@ -513,10 +514,10 @@ module PrePost = struct
 
 
   let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
-    fold_globals_of_stack call_location (pre_post.pre :> PulseDomain.t).stack call_state
+    fold_globals_of_stack call_location (pre_post.pre :> BaseDomain.t).stack call_state
       ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
         materialize_pre_from_address callee_proc_name call_location
-          ~pre:(pre_post.pre :> PulseDomain.t)
+          ~pre:(pre_post.pre :> BaseDomain.t)
           ~addr_pre ~addr_hist_caller call_state )
 
 
@@ -655,12 +656,12 @@ module PrePost = struct
     | `AlreadyVisited, call_state ->
         call_state
     | `NotAlreadyVisited, call_state -> (
-      match BaseMemory.find_opt addr_callee (post :> PulseDomain.t).PulseDomain.heap with
+      match BaseMemory.find_opt addr_callee (post :> BaseDomain.t).BaseDomain.heap with
       | None ->
           call_state
       | Some ((edges_post, _attrs_post) as cell_post) ->
           let cell_pre_opt =
-            BaseMemory.find_opt addr_callee (pre :> PulseDomain.t).PulseDomain.heap
+            BaseMemory.find_opt addr_callee (pre :> BaseDomain.t).BaseDomain.heap
           in
           let call_state_after_post =
             if is_cell_read_only ~cell_pre_opt ~cell_post then call_state
@@ -684,10 +685,10 @@ module PrePost = struct
       (fst actual) ;
     match
       let open Option.Monad_infix in
-      BaseStack.find_opt formal (pre_post.pre :> PulseDomain.t).PulseDomain.stack
+      BaseStack.find_opt formal (pre_post.pre :> BaseDomain.t).BaseDomain.stack
       >>= fun (addr_formal_pre, _) ->
       BaseMemory.find_edge_opt addr_formal_pre Dereference
-        (pre_post.pre :> PulseDomain.t).PulseDomain.heap
+        (pre_post.pre :> BaseDomain.t).BaseDomain.heap
       >>| fun (formal_pre, _) ->
       record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:formal_pre
         ~addr_hist_caller:actual call_state
@@ -700,13 +701,13 @@ module PrePost = struct
 
   let record_post_for_return callee_proc_name call_loc pre_post call_state =
     let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
-    match BaseStack.find_opt return_var (pre_post.post :> PulseDomain.t).stack with
+    match BaseStack.find_opt return_var (pre_post.post :> BaseDomain.t).stack with
     | None ->
         (call_state, None)
     | Some (addr_return, _) -> (
       match
         BaseMemory.find_edge_opt addr_return Dereference
-          (pre_post.post :> PulseDomain.t).PulseDomain.heap
+          (pre_post.post :> BaseDomain.t).BaseDomain.heap
       with
       | None ->
           (call_state, None)
@@ -747,7 +748,7 @@ module PrePost = struct
 
   let apply_post_for_globals callee_proc_name call_location pre_post call_state =
     match
-      fold_globals_of_stack call_location (pre_post.pre :> PulseDomain.t).stack call_state
+      fold_globals_of_stack call_location (pre_post.pre :> BaseDomain.t).stack call_state
         ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_hist_caller call_state ->
           Ok
             (record_post_for_address callee_proc_name call_location pre_post ~addr_callee
@@ -777,11 +778,11 @@ module PrePost = struct
                     attrs
                 in
                 BaseMemory.set_attrs addr_caller attrs' heap )
-        (pre_post.post :> PulseDomain.t).heap heap0
+        (pre_post.post :> BaseDomain.t).heap heap0
     in
     if phys_equal heap heap0 then call_state
     else
-      let post = Domain.make (call_state.astate.post :> PulseDomain.t).stack heap in
+      let post = Domain.make (call_state.astate.post :> BaseDomain.t).stack heap in
       {call_state with astate= {call_state.astate with post}}
 
 
@@ -843,6 +844,6 @@ module PrePost = struct
         Ok (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state)
 end
 
-let extract_pre {pre} = (pre :> PulseDomain.t)
+let extract_pre {pre} = (pre :> BaseDomain.t)
 
-let extract_post {post} = (post :> PulseDomain.t)
+let extract_post {post} = (post :> BaseDomain.t)

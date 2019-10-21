@@ -10,17 +10,6 @@ module L = Logging
 open Result.Monad_infix
 open PulseBasicInterface
 
-include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
-  struct
-  [@@@warning "-60"]
-
-  (** Do not use {!PulseDomain} directly as it could result in bypassing abduction mechanisms in
-     {!PulseOperations} and {!PulseAbductiveDomain} that take care of propagating facts to the
-     precondition. *)
-  module PulseDomain = struct end
-  [@@deprecated "Use PulseAbductiveDomain or PulseOperations instead."]
-end
-
 let report summary diagnostic =
   let open PulseDiagnostic in
   Reporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
