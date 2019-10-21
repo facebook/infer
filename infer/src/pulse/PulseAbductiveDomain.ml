@@ -11,9 +11,9 @@ module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
 module Trace = PulseDomain.Trace
-module ValueHistory = PulseDomain.ValueHistory
 module BaseStack = PulseDomain.Stack
 module BaseMemory = PulseDomain.Memory
+open PulseBasicInterface
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [InvertedDomain], representing the inferred pre-condition*)

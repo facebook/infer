@@ -21,7 +21,7 @@ type model = exec_fun
 module Misc = struct
   let shallow_copy model_desc : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event = PulseDomain.ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
     ( match actuals with
     | [(dest_pointer_hist, _); (src_pointer_hist, _)] ->
         PulseOperations.eval_access location src_pointer_hist Dereference astate
@@ -65,9 +65,7 @@ module Cplusplus = struct
 
   let placement_new : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event =
-      PulseDomain.ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []}
-    in
+    let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
     match List.rev actuals with
     | ((address, hist), _) :: _ ->
         Ok [PulseOperations.write_id ret_id (address, event :: hist) astate]
@@ -90,9 +88,7 @@ module StdBasicString = struct
 
   let data : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
-    let event =
-      PulseDomain.ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []}
-    in
+    let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
     match actuals with
     | [(this_hist, _)] ->
         to_internal_string location this_hist astate
@@ -107,7 +103,7 @@ module StdBasicString = struct
   let destructor : model =
    fun ~caller_summary:_ location ~ret:(ret_id, _) ~actuals astate ->
     let model = CallEvent.Model "std::basic_string::~basic_string()" in
-    let call_event = PulseDomain.ValueHistory.Call {f= model; location; in_call= []} in
+    let call_event = ValueHistory.Call {f= model; location; in_call= []} in
     match actuals with
     | [(this_hist, _)] ->
         to_internal_string location this_hist astate
@@ -126,7 +122,7 @@ module StdFunction = struct
    fun ~caller_summary location ~ret ~actuals astate ->
     let havoc_ret (ret_id, _) astate =
       let event =
-        PulseDomain.ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []}
+        ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []}
       in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
@@ -179,7 +175,7 @@ module StdVector = struct
     match actuals with
     | (vector, _) :: _ ->
         let crumb =
-          PulseDomain.ValueHistory.Call
+          ValueHistory.Call
             { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
             ; location
             ; in_call= [] }
@@ -191,9 +187,7 @@ module StdVector = struct
 
   let at : model =
    fun ~caller_summary:_ location ~ret ~actuals astate ->
-    let event =
-      PulseDomain.ValueHistory.Call {f= Model "std::vector::at()"; location; in_call= []}
-    in
+    let event = ValueHistory.Call {f= Model "std::vector::at()"; location; in_call= []} in
     match actuals with
     | [(vector, _); (index, _)] ->
         element_of_internal_array location vector (fst index) astate
@@ -207,9 +201,7 @@ module StdVector = struct
    fun ~caller_summary:_ location ~ret:_ ~actuals astate ->
     match actuals with
     | [(vector, _); _value] ->
-        let crumb =
-          PulseDomain.ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []}
-        in
+        let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
         reallocate_internal_array [crumb] vector Reserve location astate
         >>| PulseAbductiveDomain.Memory.std_vector_reserve (fst vector)
         >>| List.return
@@ -222,7 +214,7 @@ module StdVector = struct
     match actuals with
     | [(vector, _); _value] ->
         let crumb =
-          PulseDomain.ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []}
+          ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []}
         in
         if PulseAbductiveDomain.Memory.is_std_vector_reserved (fst vector) astate then
           (* assume that any call to [push_back] is ok after one called [reserve] on the same vector

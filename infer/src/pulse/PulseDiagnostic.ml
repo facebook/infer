@@ -8,7 +8,6 @@
 open! IStd
 module F = Format
 module Trace = PulseDomain.Trace
-module ValueHistory = PulseDomain.ValueHistory
 open PulseBasicInterface
 
 type t =

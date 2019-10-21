@@ -45,16 +45,16 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
-val havoc_id : Ident.t -> PulseDomain.ValueHistory.t -> t -> t
+val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_deref :
-  Location.t -> PulseDomain.AddrTracePair.t -> PulseDomain.ValueHistory.t -> t -> t access_result
+  Location.t -> PulseDomain.AddrTracePair.t -> ValueHistory.t -> t -> t access_result
 
 val havoc_field :
      Location.t
   -> PulseDomain.AddrTracePair.t
   -> Typ.Fieldname.t
-  -> PulseDomain.ValueHistory.t
+  -> ValueHistory.t
   -> t
   -> t access_result
 
@@ -86,25 +86,20 @@ val shallow_copy :
      Location.t
   -> PulseDomain.AddrTracePair.t
   -> t
-  -> (t * (AbstractAddress.t * PulseDomain.ValueHistory.t)) access_result
+  -> (t * (AbstractAddress.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
 val remove_vars : Var.t list -> Location.t -> t -> t
 
 val check_address_escape :
-     Location.t
-  -> Procdesc.t
-  -> AbstractAddress.t
-  -> PulseDomain.ValueHistory.t
-  -> t
-  -> t access_result
+  Location.t -> Procdesc.t -> AbstractAddress.t -> ValueHistory.t -> t -> t access_result
 
 val call :
      caller_summary:Summary.t
   -> Location.t
   -> Typ.Procname.t
   -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractAddress.t * PulseDomain.ValueHistory.t) * Typ.t) list
+  -> actuals:((AbstractAddress.t * ValueHistory.t) * Typ.t) list
   -> t
   -> t list access_result
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if

@@ -9,21 +9,6 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-module ValueHistory : sig
-  type event =
-    | Assignment of Location.t
-    | Call of {f: CallEvent.t; location: Location.t; in_call: t}
-    | Capture of {captured_as: Pvar.t; location: Location.t}
-    | CppTemporaryCreated of Location.t
-    | FormalDeclared of Pvar.t * Location.t
-    | VariableAccessed of Pvar.t * Location.t
-    | VariableDeclared of Pvar.t * Location.t
-
-  and t = event list [@@deriving compare]
-
-  val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
-end
-
 module Trace : sig
   type 'a t =
     | Immediate of {imm: 'a; location: Location.t; history: ValueHistory.t}

@@ -10,10 +10,10 @@ module AbstractAddress = PulseDomain.AbstractAddress
 module Attribute = PulseDomain.Attribute
 module Attributes = PulseDomain.Attributes
 module Trace = PulseDomain.Trace
-module ValueHistory = PulseDomain.ValueHistory
 module Memory = PulseAbductiveDomain.Memory
 module Stack = PulseAbductiveDomain.Stack
 open Result.Monad_infix
+open PulseBasicInterface
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   struct
