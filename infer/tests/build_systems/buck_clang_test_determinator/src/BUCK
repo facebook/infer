@@ -1,0 +1,6 @@
+cxx_library(
+  name = 'test',
+  srcs = [
+    'a.c', 'b.c',
+  ],
+)

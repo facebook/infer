@@ -27,9 +27,9 @@ let merge_global_tenvs infer_deps_file =
   L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0)
 
 
-let merge_changed_functions_json infer_out_src =
-  let main_changed_fs_file = Config.results_dir ^/ Config.export_changed_functions_output in
-  let changed_fs_file = infer_out_src ^/ Config.export_changed_functions_output in
+let merge_json_results infer_out_src json_file_name =
+  let main_changed_fs_file = Config.results_dir ^/ json_file_name in
+  let changed_fs_file = infer_out_src ^/ json_file_name in
   let main_json = try YB.from_file main_changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
   let changed_json = try YB.from_file changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
   let all_fs =
@@ -42,12 +42,25 @@ let merge_changed_functions_json infer_out_src =
   YB.to_file main_changed_fs_file all_fs
 
 
-let merge_changed_functions () =
-  L.progress "Merging changed functions files...@." ;
+let merge_all_json_results merge_results results_json_str =
+  L.progress "Merging %s files...@." results_json_str ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
-  Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_changed_functions_json
-    infer_deps_file ;
-  L.progress "Done merging changed functions files@."
+  Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_results infer_deps_file ;
+  L.progress "Done merging %s files@." results_json_str
+
+
+let merge_changed_functions () =
+  let merge_changed_functions_json infer_out_src =
+    merge_json_results infer_out_src Config.export_changed_functions_output
+  in
+  merge_all_json_results merge_changed_functions_json "changed functions"
+
+
+let merge_test_determinator_results () =
+  let merge_test_determinator_json infer_out_src =
+    merge_json_results infer_out_src Config.test_determinator_output
+  in
+  merge_all_json_results merge_test_determinator_json "test determinator result"
 
 
 let merge_captured_targets () =

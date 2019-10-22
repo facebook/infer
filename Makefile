@@ -80,6 +80,7 @@ ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += \
   buck_blacklist \
   buck-clang-db \
+  buck_clang_test_determinator \
   buck_flavors \
   buck_flavors_diff \
   buck_flavors_run \

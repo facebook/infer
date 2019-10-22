@@ -27,6 +27,7 @@ duplicates.txt
 *.ast.biniou
 /infer/tests/build_systems/buck_flavors_deterministic/capture_hash-*.sha
 /infer/tests/build_systems/buck_flavors_diff/src/hello.c
+/infer/tests/build_systems/buck_clang_test_determinator/diff.mod.test
 /infer/tests/build_systems/buck_export_changed_functions/diff.mod.test
 /infer/tests/build_systems/clang_compilation_db_escaped/compile_commands.json
 /infer/tests/build_systems/clang_compilation_db_relpath/compile_commands.json
