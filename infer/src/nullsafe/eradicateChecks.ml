@@ -298,12 +298,14 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
                   ()
               | Some annotated_field ->
                   if Config.eradicate_field_over_annotated then
-                    let lhs =
+                    let what =
                       AnnotatedNullability.get_nullability
                         annotated_field.annotated_type.nullability
                     in
-                    let rhs_upper_bound = field_nullability_upper_bound_over_all_typestates () in
-                    Result.iter_error (OverAnnotatedRule.check ~lhs ~rhs_upper_bound)
+                    let by_rhs_upper_bound =
+                      field_nullability_upper_bound_over_all_typestates ()
+                    in
+                    Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
                       ~f:(fun over_annotated_violation ->
                         report_error tenv find_canonical_duplicate
                           (TypeErr.Over_annotation
@@ -337,13 +339,13 @@ let check_return_not_nullable ~is_strict_mode tenv find_canonical_duplicate loc 
 let check_return_overrannotated tenv find_canonical_duplicate loc curr_pname curr_pdesc
     (ret_signature : AnnotatedSignature.ret_signature) ret_inferred_nullability =
   (* Returning from a function is essentially an assignment the actual return value to the formal `return` *)
-  let lhs = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
+  let what = AnnotatedNullability.get_nullability ret_signature.ret_annotated_type.nullability in
   (* In our CFG implementation, there is only one place where we return from a function
      (all execution flow joins are already made), hence inferreed nullability of returns gives us
      correct upper bound.
     *)
-  let rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
-  Result.iter_error (OverAnnotatedRule.check ~lhs ~rhs_upper_bound)
+  let by_rhs_upper_bound = InferredNullability.get_nullability ret_inferred_nullability in
+  Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
     ~f:(fun over_annotated_violation ->
       report_error tenv find_canonical_duplicate
         (TypeErr.Over_annotation

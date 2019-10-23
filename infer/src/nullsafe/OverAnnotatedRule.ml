@@ -6,19 +6,20 @@
  *)
 open! IStd
 
-type violation = {lhs: Nullability.t; rhs_upper_bound: Nullability.t} [@@deriving compare]
+type violation = {declared_nullability: Nullability.t; can_be_narrowed_to: Nullability.t}
+[@@deriving compare]
 
-let check ~lhs ~rhs_upper_bound =
+let check ~what ~by_rhs_upper_bound =
   if
-    Nullability.is_strict_subtype ~subtype:rhs_upper_bound ~supertype:lhs
+    Nullability.is_strict_subtype ~subtype:by_rhs_upper_bound ~supertype:what
     && (* Suppress violations for anything apart from Nullable since such
           issues are not very actionable and/or clear for the user.
           E.g. we technically can suggest changing [DeclaredNonnull] to [Nonnull],
           but in practice that requires strictification the code, which is a
           separate effort.
         *)
-       Nullability.equal lhs Nullable
-  then Error {lhs; rhs_upper_bound}
+       Nullability.equal what Nullable
+  then Error {declared_nullability= what; can_be_narrowed_to= by_rhs_upper_bound}
   else Ok ()
 
 

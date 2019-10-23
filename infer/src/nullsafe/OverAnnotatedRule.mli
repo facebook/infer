@@ -21,8 +21,11 @@ open! IStd
 
 type violation [@@deriving compare]
 
-val check : lhs:Nullability.t -> rhs_upper_bound:Nullability.t -> (unit, violation) result
-(** If an upper bound of `rhs_i` over ALL assignents `lhs = rhs_i` that exist in the program
+val check : what:Nullability.t -> by_rhs_upper_bound:Nullability.t -> (unit, violation) result
+(**
+   Checks if the declared type for `what` can be narrowed, based on the information about
+   all assignments `what = rhs_i`.
+   If an upper bound of `rhs_i` over ALL assignents `what = rhs_i` that exist in the program
    is a _strict_ subtype of lhs, `lhs`'s type can be narrowed to be that upper bound.
 *)
 
