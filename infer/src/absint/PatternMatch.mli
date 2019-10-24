@@ -9,8 +9,8 @@ open! IStd
 
 (** Module for Pattern matching. *)
 
-val get_this_type : ProcAttributes.t -> Typ.t option
-(** Get the this type of a procedure *)
+val get_this_type_nonstatic_methods_only : ProcAttributes.t -> Typ.t option
+(** Get the `this` type of a procedure. Should not be called on non-static methods, otherwise it can return a wrong type *)
 
 val get_type_name : Typ.t -> string
 (** Get the name of a type *)

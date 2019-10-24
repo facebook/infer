@@ -143,7 +143,7 @@ let is_suppressed ?(field_name = None) tenv proc_desc kind =
       annotation_matches
   in
   let is_field_suppressed () =
-    match (field_name, PatternMatch.get_this_type proc_attributes) with
+    match (field_name, PatternMatch.get_this_type_nonstatic_methods_only proc_attributes) with
     | Some field_name, Some t -> (
       match Typ.Struct.get_field_type_and_annotation ~lookup field_name t with
       | Some (_, ia) ->
@@ -154,7 +154,7 @@ let is_suppressed ?(field_name = None) tenv proc_desc kind =
         false
   in
   let is_class_suppressed () =
-    match PatternMatch.get_this_type proc_attributes with
+    match PatternMatch.get_this_type_nonstatic_methods_only proc_attributes with
     | Some t -> (
       match PatternMatch.type_get_annotation tenv t with
       | Some ia ->

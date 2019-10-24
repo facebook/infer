@@ -234,7 +234,10 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_construc
     ~typestates_for_all_constructors_incl_current loc : unit =
   State.set_node start_node ;
   if Typ.Procname.is_constructor curr_constructor_pname then
-    match PatternMatch.get_this_type (Procdesc.get_attributes curr_constructor_pdesc) with
+    match
+      PatternMatch.get_this_type_nonstatic_methods_only
+        (Procdesc.get_attributes curr_constructor_pdesc)
+    with
     | Some {desc= Tptr (({desc= Tstruct name} as ts), _)} -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->

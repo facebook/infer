@@ -339,7 +339,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   let drop_unchecked_params calls_this proc_attributes params =
     let pname = proc_attributes.ProcAttributes.proc_name in
     if Typ.Procname.is_constructor pname then
-      match PatternMatch.get_this_type proc_attributes with
+      match PatternMatch.get_this_type_nonstatic_methods_only proc_attributes with
       | Some _ ->
           constructor_check_calls_this calls_this pname ;
           (* Drop reference parameters to this and outer objects. *)

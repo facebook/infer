@@ -48,10 +48,7 @@ let get_modelled_annotated_signature_for_biabduction proc_attributes =
 let get_modelled_annotated_signature tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let is_strict_mode =
-    PatternMatch.get_this_type proc_attributes
-    |> Option.bind ~f:(fun this_class -> PatternMatch.type_get_annotation tenv this_class)
-    |> Option.exists ~f:(fun annotations_for_this ->
-           Annotations.ia_is_nullsafe_strict annotations_for_this )
+    PatternMatch.check_current_class_attributes Annotations.ia_is_nullsafe_strict tenv proc_name
   in
   let annotated_signature = AnnotatedSignature.get ~is_strict_mode proc_attributes in
   let proc_id = Typ.Procname.to_unique_id proc_name in

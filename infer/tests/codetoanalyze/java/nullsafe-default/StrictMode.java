@@ -25,6 +25,14 @@ class Strict {
     return nonnull;
   }
 
+  public static @Nullable String staticNullable() {
+    return null;
+  }
+
+  public static String staticNonnull() {
+    return "";
+  }
+
   // 1. Inside the same class, we trust annotations.
 
   private void sameClass_dereferenceNullableMethodIsBad() {
@@ -33,6 +41,14 @@ class Strict {
 
   private void sameClass_dereferenceNonnullMethodIsOK() {
     getNonnull().toString();
+  }
+
+  private void sameClass_dereferenceNullableStaticMethodIsBad() {
+    staticNullable().toString();
+  }
+
+  private void sameClass_dereferenceNonnullStaticMethodIsOK() {
+    staticNonnull().toString();
   }
 
   private void sameClass_dereferenceNullableFieldIsBad() {
@@ -61,6 +77,14 @@ class Strict {
     (new OtherStrict()).getNonnull().toString();
   }
 
+  private void strictClass_dereferenceNullableStaticMethodIsBad() {
+    OtherStrict.staticNullable().toString();
+  }
+
+  private void strictClass_dereferenceNonnullStaticMethodIsOK() {
+    OtherStrict.staticNonnull().toString();
+  }
+
   private void strictClass_dereferenceNullableFieldIsBad() {
     (new OtherStrict()).nullable.toString();
   }
@@ -87,6 +111,15 @@ class Strict {
   private void nonStrictClass_dereferenceNonnullMethodIsBad() {
     // even that it is declared as nonnull, can not dereference it without checking before
     (new NonStrict()).getNonnull().toString();
+  }
+
+  private void nonStrictClass_dereferenceNullableStaticMethodIsBad() {
+    NonStrict.staticNullable().toString();
+  }
+
+  private void nonStrictClass_dereferenceNonnullStaticMethodIsBad() {
+    // even that it is declared as nonnull, can not dereference it without checking before
+    NonStrict.staticNonnull().toString();
   }
 
   private void nonStrictClass_dereferenceNullableFieldIsBad() {
@@ -173,6 +206,14 @@ class OtherStrict {
   public String getNonnull() {
     return nonnull;
   }
+
+  public static @Nullable String staticNullable() {
+    return null;
+  }
+
+  public static String staticNonnull() {
+    return "";
+  }
 }
 
 class NonStrict {
@@ -185,5 +226,13 @@ class NonStrict {
 
   public String getNonnull() {
     return nonnull;
+  }
+
+  public static @Nullable String staticNullable() {
+    return null;
+  }
+
+  public static String staticNonnull() {
+    return "";
   }
 }

@@ -106,7 +106,7 @@ let implements_jackson class_name = implements ("com.fasterxml.jackson." ^ class
 let implements_org_json class_name = implements ("org.json." ^ class_name)
 
 (** The type the method is invoked on *)
-let get_this_type proc_attributes =
+let get_this_type_nonstatic_methods_only proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
 
 
@@ -283,7 +283,7 @@ let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
 
 (** Check if the method is one of the known initializer methods. *)
 let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) : bool =
-  match get_this_type proc_attributes with
+  match get_this_type_nonstatic_methods_only proc_attributes with
   | Some this_type ->
       if type_has_initializer tenv this_type then
         match proc_attributes.ProcAttributes.proc_name with

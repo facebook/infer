@@ -25,7 +25,7 @@ let is_nonblocking tenv proc_desc =
     Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_nonblocking
   in
   let is_class_suppressed =
-    PatternMatch.get_this_type proc_attributes
+    PatternMatch.get_this_type_nonstatic_methods_only proc_attributes
     |> Option.bind ~f:(PatternMatch.type_get_annotation tenv)
     |> Option.exists ~f:Annotations.ia_is_nonblocking
   in
