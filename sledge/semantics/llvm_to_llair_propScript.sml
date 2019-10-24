@@ -644,7 +644,7 @@ Theorem translate_cast_correct:
     (cop = Inttoptr ⇒ ∃t. ty = PtrT t)
     ⇒
     ∃v3'.
-      eval_exp s1' (Convert (cop = Sext) (translate_ty ty) t2 e1') v3' ∧
+      eval_exp s1' (Convert (cop ≠ Sext) (translate_ty ty) t2 e1') v3' ∧
       v_rel result v3'
 Proof
   rw [] >> simp [Once eval_exp_cases, PULL_EXISTS, Once v_rel_cases] >>

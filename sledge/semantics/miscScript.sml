@@ -219,6 +219,13 @@ Proof
   >- (fs [optionTheory.IS_SOME_EXISTS] >> metis_tac [MAP])
 QED
 
+Theorem list_rel_flat:
+  ∀r ls l. list_rel r (flat ls) l ⇔ ∃ls2. list_rel (list_rel r) ls ls2 ∧ l = flat ls2
+Proof
+  Induct_on `ls` >> rw [LIST_REL_SPLIT1] >> eq_tac >> rw [PULL_EXISTS] >>
+  metis_tac []
+QED
+
 (* ----- Theorems about log ----- *)
 
 Theorem mul_div_bound:
@@ -454,6 +461,28 @@ Proof
   fs [] >>
   full_simp_tac std_ss [GSYM WORD_NEG_MUL] >>
   full_simp_tac std_ss [w2w_def]
+QED
+
+Theorem w21_sw2sw_extend:
+  dimindex (:'b) ≤ dimindex (:'a)
+  ⇒
+  w2i (sw2sw (w :'b word) :'a word) = w2i (w : 'b word)
+Proof
+  rw [] >>
+  `∃j. INT_MIN (:'b) ≤ j ∧ j ≤ INT_MAX (:'b) ∧ w = i2w j` by metis_tac [ranged_int_word_nchotomy] >>
+  rw [sw2sw_i2w] >>
+  `INT_MIN (:'a) ≤ j ∧ j ≤ INT_MAX (:'a)`
+  by (
+    fs [INT_MIN_def, INT_MAX_def] >>
+    `2 ** (dimindex (:'b) - 1) ≤ 2 ** (dimindex (:'a) - 1)`
+    by rw [EXP_BASE_LE_IFF] >>
+    qmatch_assum_abbrev_tac `b ≤ a` >>
+    rw []
+    >- intLib.COOPER_TAC >>
+    `&(b - 1) ≤ &(a - 1)` by intLib.COOPER_TAC >>
+    full_simp_tac bool_ss [GSYM INT_LE] >>
+    intLib.COOPER_TAC) >>
+  rw [w2i_i2w]
 QED
 
 (* ----- Theorems about lazy lists ----- *)

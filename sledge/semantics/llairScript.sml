@@ -57,7 +57,7 @@ Datatype:
   | Select exp exp
   (* Args: Record, index, value *)
   | Update exp exp exp
-  (* Args: signed?, to-type, from-type, value *)
+  (* Args: unsigned?, to-type, from-type, value *)
   | Convert bool typ typ exp
 End
 
@@ -322,13 +322,13 @@ Inductive eval_exp:
    eval_exp s e (FlatV v) ∧
    size = sizeof_bits to_t
    ⇒
-   eval_exp s (Convert F to_t from_t e) (FlatV (IntV (truncate_2comp (&i2n v) size) size))) ∧
+   eval_exp s (Convert T to_t from_t e) (FlatV (IntV (truncate_2comp (&i2n v) size) size))) ∧
 
   (∀s to_t from_t e size size1 i.
    eval_exp s e (FlatV (IntV i size1)) ∧
    size = sizeof_bits to_t
    ⇒
-   eval_exp s (Convert T to_t from_t e) (FlatV (IntV (truncate_2comp i size) size)))
+   eval_exp s (Convert F to_t from_t e) (FlatV (IntV (truncate_2comp i size) size)))
 
 End
 

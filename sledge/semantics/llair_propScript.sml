@@ -179,4 +179,182 @@ Proof
   metis_tac [eval_exp_ignores_unused_lem]
 QED
 
+(* Relate the semantics of Convert to something more closely following the
+ * implementation *)
+
+Definition Zextract_def:
+  Zextract (:'a) z off len = &w2n ((len+off-1 -- off) (i2w z : 'a word))
+End
+
+Definition Zsigned_extract_def:
+  Zsigned_extract (:'a) z off len = w2i ((len+off-1 --- off) (i2w z : 'a word))
+End
+
+(*
+ * Some tests of extract and signed_extract in both HOL and OCaml to check that
+ * we are defining the same thing *)
+
+(*
+ EVAL ``
+   let bp1 = 0b11001100w : word8 in
+   let bp2 = 0b01011011w : word8 in
+   let i1 = &(w2n bp1) in
+   let i2 = w2i bp1 in
+   let i3 = &(w2n bp2) in
+     Zextract (:128) i1 0 8 = i1 ∧
+     Zextract (:128) i2 0 8 = i1 ∧
+     Zextract (:128) i3 0 8 = i3 ∧
+     Zsigned_extract (:128) i1 0 8 = i2 ∧
+     Zsigned_extract (:128) i2 0 8 = i2 ∧
+     Zsigned_extract (:128) i3 0 8 = i3 ∧
+
+     Zextract (:128) i1 2 4 = 3 ∧
+     Zextract (:128) i2 2 4 = 3 ∧
+     Zextract (:128) i1 2 5 = 19 ∧
+     Zextract (:128) i2 2 5 = 19 ∧
+     Zextract (:128) i3 1 2 = 1 ∧
+     Zextract (:128) i3 1 3 = 5 ∧
+
+     Zsigned_extract (:128) i1 2 4 = 3 ∧
+     Zsigned_extract (:128) i2 2 4 = 3 ∧
+     Zsigned_extract (:128) i1 2 5 = -13 ∧
+     Zsigned_extract (:128) i2 2 5 = -13 ∧
+     Zsigned_extract (:128) i3 1 2 = 1 ∧
+     Zsigned_extract (:128) i3 1 3 = -3``
+
+   let i1 = Z.of_int 0b11001100 in
+   let i2 = Z.of_int (-52) in
+   let i3 = Z.of_int 0b01011011 in
+     Z.extract i1 0 8 = i1 &&
+     Z.extract i2 0 8 = i1 &&
+     Z.extract i3 0 8 = i3 &&
+     Z.signed_extract i1 0 8 = i2 &&
+     Z.signed_extract i2 0 8 = i2 &&
+     Z.signed_extract i3 0 8 = i3 &&
+
+     Z.extract i1 2 4 = Z.of_int 3 &&
+     Z.extract i2 2 4 = Z.of_int 3 &&
+     Z.extract i1 2 5 = Z.of_int 19 &&
+     Z.extract i2 2 5 = Z.of_int 19 &&
+     Z.extract i3 1 2 = Z.of_int 1 &&
+     Z.extract i3 1 3 = Z.of_int 5 &&
+
+     Z.signed_extract i1 2 4 = Z.of_int 3 &&
+     Z.signed_extract i2 2 4 = Z.of_int 3 &&
+     Z.signed_extract i1 2 5 = Z.of_int (-13) &&
+     Z.signed_extract i2 2 5 = Z.of_int (-13) &&
+     Z.signed_extract i3 1 2 = Z.of_int 1 &&
+     Z.signed_extract i3 1 3 = Z.of_int (-3);;
+     *)
+
+Definition extract_def:
+  extract (:'a) unsigned bits z =
+    if unsigned then Zextract (:'a) z 0 bits else Zsigned_extract (:'a) z 0 bits
+End
+
+Definition simp_convert_def:
+  simp_convert (:'a) unsigned dst src arg =
+    case (dst, src, arg) of
+    | (IntegerT m, IntegerT n, Integer data _) =>
+      if ¬unsigned ∧ m ≥ n then (Integer data dst)
+      else Integer (extract (:'a) unsigned (MIN m n) data) dst
+    | _ =>
+      arg
+End
+
+Theorem Zextract0:
+  dimindex (:'b) ≤ dimindex (:'a)
+  ⇒
+  Zextract (:'a) i 0 (dimindex (:'b)) = &w2n (i2w i : 'b word)
+Proof
+  rw [Zextract_def] >>
+  `w2n ((dimindex (:β) − 1 -- 0) (i2w i : 'a word)) =
+   w2n (w2w (i2w i : 'a word) : 'b word)`
+  by (
+    rw [w2n_w2w] >>
+    `dimindex (:'b) = dimindex (:'a)` by decide_tac >>
+    fs [WORD_ALL_BITS]) >>
+  rw [w2w_i2w]
+QED
+
+Theorem Zsigned_extract0:
+  dimindex (:'b) ≤ dimindex (:'a)
+  ⇒
+  Zsigned_extract (:'a) i 0 (dimindex (:'b)) = w2i (i2w i : 'b word)
+Proof
+  rw [Zsigned_extract_def] >>
+  rw [word_sign_extend_bits, word_sign_extend_def, ADD1] >>
+  `0 < dimindex (:'b) ⇒ dimindex (:'b) - 1 + 1 = dimindex (:'b)` by decide_tac >>
+  `min (dimindex (:β)) (dimindex (:α)) = dimindex (:β)` by fs [MIN_DEF] >>
+  rw [] >>
+  `w2n ((dimindex (:β) − 1 -- 0) (i2w i : 'a word)) =
+   w2n (w2w (i2w i : 'a word) : 'b word)`
+  by (
+    rw [w2n_w2w] >>
+    `dimindex (:'b) = dimindex (:'a)` by decide_tac >>
+    fs [WORD_ALL_BITS]) >>
+  rw [GSYM sw2sw_def, w2w_i2w] >>
+  rw [w21_sw2sw_extend]
+QED
+
+Theorem convert_implementation:
+  ∀h unsigned dst src const i m n.
+    const = Integer i src ∧
+    src = IntegerT n ∧ 0 < n ∧
+    dst = IntegerT m ∧
+    ifits i (sizeof_bits src) ∧
+    dimindex (:'b) = min m n ∧
+    dimindex (:'b) ≤ dimindex (:'a)
+    ⇒
+    eval_exp h (Convert unsigned dst src const) =
+    eval_exp h (simp_convert (:'a) unsigned dst src const)
+Proof
+  rw [EXTENSION, IN_DEF] >>
+  simp [simp_convert_def] >>
+  CASE_TAC >>
+  fs [METIS_PROVE [] ``¬(¬unsigned ∧ m ≥ n) ⇔ (m ≥ n ⇒ unsigned)``] >>
+  ONCE_REWRITE_TAC [eval_exp_cases] >>
+  fs [sizeof_bits_def] >>
+  ONCE_REWRITE_TAC [eval_exp_cases] >> rw [] >>
+  `truncate_2comp i n = i` by metis_tac [fits_ident] >>
+  rw [] >>
+  Cases_on `unsigned` >> fs [extract_def] >>
+  irule (METIS_PROVE [] ``y = z ⇒ (x = y ⇔ x = z)``) >> rw []
+  >- ( (* unsigned *)
+    drule Zextract0 >> rw [] >>
+    `min m n = n ∨ min m n = m` by rw [MIN_DEF]
+    >- ( (* zero extending *)
+      `truncate_2comp i n = w2i (i2w i : 'b word)` by metis_tac [truncate_2comp_i2w_w2i] >>
+      fs [] >>
+      qpat_x_assum `w2i (i2w _) = _` (fn th => ONCE_REWRITE_TAC [GSYM th]) >>
+      rw [GSYM w2n_i2n])
+    >- ( (* truncating *)
+      fs [] >> rw [] >>
+      `∀i. truncate_2comp i (dimindex (:β)) = w2i (i2w i : 'b word)`
+      by rw [GSYM truncate_2comp_i2w_w2i] >>
+      rw [i2w_pos, i2n_def, i2w_def] >>
+      `?j. 0 ≤ j ∧ -i = j` by rw [] >>
+      `i = -j` by intLib.COOPER_TAC >>
+      simp [] >>
+      simp [GSYM int_sub] >>
+      `?k. j = &k` by metis_tac [NUM_POSINT_EXISTS] >>
+      simp [] >>
+      `k < 2 ** n`
+      by (fs [ifits_def] >> Cases_on `n` >> fs [ADD1, EXP_ADD]) >>
+      simp [INT_SUB, word_2comp_n2w, dimword_def] >>
+      qabbrev_tac `d = dimindex (:'b)` >>
+      `∃x. (2:num) ** n = 2 ** x * 2 ** d`
+      by (
+        `?x. n = x + d` by (qexists_tac `n - d` >> fs [MIN_DEF]) >>
+        metis_tac [EXP_ADD]) >>
+      metis_tac [MOD_COMPLEMENT, bitTheory.ZERO_LT_TWOEXP, MULT_COMM]))
+  >- (
+    `min m n = m` by rw [MIN_DEF] >>
+    drule Zsigned_extract0 >> rw [] >> fs [] >>
+    `w2i (i2w i : 'b word) = truncate_2comp i m` by metis_tac [truncate_2comp_i2w_w2i] >>
+    rw [] >>
+    `0 < dimindex (:'b)` by rw [] >>
+    metis_tac [fits_ident, truncate_2comp_fits])
+QED
+
 export_theory ();
