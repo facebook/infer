@@ -99,8 +99,15 @@ let extract_impurity pdesc pre_post : ImpurityDomain.t =
     |> List.fold_left ~init:ImpurityDomain.ModifiedVarSet.empty ~f:(fun acc (name, typ) ->
            let var = Var.of_pvar (Pvar.mk name pname) in
            match BaseStack.find_opt var post_stack with
-           | Some (addr, _) when Typ.is_pointer typ ->
-               add_to_modified var addr acc
+           | Some (addr, _) when Typ.is_pointer typ -> (
+             match BaseMemory.find_opt addr pre_heap with
+             | Some (edges_pre, _) ->
+                 BaseMemory.Edges.fold
+                   (fun _ (addr, _) acc -> add_to_modified var addr acc)
+                   edges_pre acc
+             | None ->
+                 debug "The address is not materialized in pre-heap." ;
+                 acc )
            | _ ->
                acc )
   in

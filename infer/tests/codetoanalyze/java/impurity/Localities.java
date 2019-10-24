@@ -135,11 +135,10 @@ class Localities {
     return tmp.bar;
   }
 
-  // This behavior seems to be different than C++
   // @pure, @loc:{}
-  boolean copy_ref_pure_FP(int[] a, int b) {
+  boolean copy_ref_pure(int[] a, int b) {
     int[] local = a; // copy reference
-    a = new int[1]; //  can't detect that a becomes fresh
+    a = new int[1]; //  a becomes fresh
     a[0] = local[0]; // not modification
     return true;
   }
@@ -152,5 +151,11 @@ class Localities {
     local[0] = b; // modify arg a
     b = a[0]; // not modification
     return true;
+  }
+
+  void swap_pure(Object s1, Object s2) {
+    Object temp = s2;
+    s2 = s1;
+    s1 = temp;
   }
 }
