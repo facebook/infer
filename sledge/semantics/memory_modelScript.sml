@@ -172,6 +172,7 @@ End
 
 (* Allocate a free chunk of memory, and write non-deterministic bytes into it *)
 Inductive allocate:
+  ∀h size tag p bytes b.
    b = Interval T p (p + size) ∧
    is_free b h ∧
    length bytes = size

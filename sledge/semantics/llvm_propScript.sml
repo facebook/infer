@@ -356,7 +356,7 @@ Proof
 QED
 
 Theorem step_instr_invariant:
-  ∀i l s2.
+  ∀p s1 i l s2.
     step_instr p s1 i l s2 ⇒ prog_ok p ∧ get_instr p s1.ip (Inl i) ∧ state_invariant p s1
     ⇒
     state_invariant p s2
@@ -497,14 +497,6 @@ Proof
   >- (fs [globals_ok_def] >> metis_tac [])
   >- (fs [stack_ok_def, frame_ok_def, EVERY_MEM] >> metis_tac [])
 QED
-
-(* TODO: remove
-Theorem exit_no_step:
-  !p s1. s1.exited ≠ None ⇒ ¬?l s2. step p s1 l s2
-Proof
-  rw [step_cases, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``]
-QED
-*)
 
 Definition is_call_def:
   (is_call (Call _ _ _ _) ⇔ T) ∧
