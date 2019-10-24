@@ -9,7 +9,7 @@
 
 open HolKernel boolLib bossLib Parse lcsymtacs;
 open listTheory arithmeticTheory pred_setTheory finite_mapTheory wordsTheory integer_wordTheory;
-open rich_listTheory pathTheory;
+open optionTheory rich_listTheory pathTheory;
 open settingsTheory miscTheory memory_modelTheory;
 open llvmTheory llvm_propTheory llvm_ssaTheory llairTheory llair_propTheory llvm_to_llairTheory;
 
@@ -421,7 +421,7 @@ Proof
   >- (
     fs [mem_state_rel_def, fmap_rel_OPTREL_FLOOKUP] >>
     CASE_TAC >> fs [] >> first_x_assum (qspec_then `g` mp_tac) >> rw [] >>
-    rename1 `option_rel _ _ opt` >> Cases_on `opt` >> fs [optionTheory.OPTREL_def] >>
+    rename1 `option_rel _ _ opt` >> Cases_on `opt` >> fs [OPTREL_def] >>
     (* TODO: false at the moment, need to work out the llair story on globals *)
     cheat)
   (* TODO: unimplemented stuff *)
@@ -503,7 +503,6 @@ QED
 
 Theorem translate_sub_correct:
   ∀prog gmap emap s1 s1' nsw nuw ty v1 v1' v2 v2' e2' e1' result.
-    mem_state_rel prog gmap emap s1 s1' ∧
     do_sub nuw nsw v1 v2 ty = Some result ∧
     eval_exp s1' e1' v1' ∧
     v_rel v1.value v1' ∧
@@ -629,6 +628,49 @@ Proof
   metis_tac [EVERY2_LUPDATE_same, LIST_REL_LENGTH, LIST_REL_EL_EQN]
 QED
 
+val trunc_thms =
+  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] truncate_2comp_i2w_w2i))
+                 [``:1``, ``:8``, ``:32``, ``:64``]);
+
+val i2n_thms =
+  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] (GSYM w2n_i2n)))
+                 [``:1``, ``:8``, ``:32``, ``:64``]);
+
+Theorem translate_cast_correct:
+  ∀prog gmap emap s1' cop ty v1 v1' e1' result t2.
+    do_cast cop v1.value ty = Some result ∧
+    eval_exp s1' e1' v1' ∧
+    v_rel v1.value v1' ∧
+    (cop = Inttoptr ⇒ ∃t. ty = PtrT t)
+    ⇒
+    ∃v3'.
+      eval_exp s1' (Convert (cop = Sext) (translate_ty ty) t2 e1') v3' ∧
+      v_rel result v3'
+Proof
+  rw [] >> simp [Once eval_exp_cases, PULL_EXISTS, Once v_rel_cases] >>
+  Cases_on `cop ≠ Sext`
+  >- (
+    Cases_on `cop` >> fs [do_cast_def] >> rw [] >>
+    BasicProvers.EVERY_CASE_TAC >> fs [] >>
+    fs [OPTION_JOIN_EQ_SOME, w64_cast_some, signed_v_to_int_some,
+        unsigned_v_to_num_some, mk_ptr_some] >>
+    rw [sizeof_bits_def, translate_ty_def, translate_size_def] >>
+    rfs [] >> fs [v_rel_cases] >>
+    HINT_EXISTS_TAC >>
+    rw [w2w_n2w, trunc_thms, i2n_thms, w2w_def, pointer_size_def]) >>
+  fs [do_cast_def, OPTION_JOIN_EQ_SOME, PULL_EXISTS, w64_cast_some,
+      translate_ty_def, sizeof_bits_def, signed_v_to_int_some,
+      translate_size_def] >>
+  rfs [v_rel_cases, w2w_i2w] >> rw [trunc_thms] >>
+  qmatch_assum_abbrev_tac `eval_exp _ _ (FlatV (IntV i s))` >>
+  qexists_tac `s` >> qexists_tac `i` >> rw [] >>
+  unabbrev_all_tac >> rw [] >>
+  rw [i2w_w2i_extend, WORD_w2w_OVER_MUL, WORD_ALL_BITS] >>
+  Cases_on `w2w w : word1` >> rw [] >> fs [dimword_1] >>
+  Cases_on `n` >> rw [] >> fs [] >>
+  Cases_on `n'` >> rw [] >> fs []
+QED
+
 Theorem prog_ok_nonterm:
   ∀prog i ip.
     prog_ok prog ∧ get_instr prog ip (Inl i) ∧ ¬terminator i ⇒ inc_pc ip ∈ next_ips prog ip
@@ -644,6 +686,25 @@ Proof
   rw [EXISTS_OR_THM, inc_pc_def, inc_bip_def]
 QED
 
+Theorem const_idx_uses[simp]:
+  ∀cs gmap e.
+    exp_uses (foldl (λe c. Select e (translate_const gmap c)) e cs) = exp_uses e
+Proof
+  Induct_on `cs` >> rw [exp_uses_def] >>
+  rw [translate_const_no_reg, EXTENSION]
+QED
+
+Theorem exp_uses_trans_upd_val[simp]:
+  ∀cs gmap e1 e2. exp_uses (translate_updatevalue gmap e1 e2 cs) =
+    (if cs = [] then {} else exp_uses e1) ∪ exp_uses e2
+Proof
+  Induct_on `cs` >> rw [exp_uses_def, translate_updatevalue_def] >>
+  rw [translate_const_no_reg, EXTENSION] >>
+  metis_tac []
+QED
+
+(* TODO: identify some lemmas to cut down on the duplicated proof in the very
+ * similar cases *)
 Theorem translate_instr_to_exp_correct:
   ∀gmap emap instr r t s1 s1' s2 prog l.
     is_ssa prog ∧ prog_ok prog ∧
@@ -676,30 +737,29 @@ Proof
     disch_then drule >> disch_then drule >>
     first_x_assum (mp_then.mp_then mp_then.Any mp_tac translate_arg_correct) >>
     disch_then drule >> disch_then drule >> rw [] >>
-    drule translate_sub_correct >> disch_then drule >>
-    disch_then (qspecl_then [`v'`, `v''`] mp_tac) >> simp [] >>
+    drule translate_sub_correct >>
+    simp [] >>
+    disch_then (qspecl_then [`s1'`, `v'`, `v''`] mp_tac) >> simp [] >>
     disch_then drule >> disch_then drule >> rw [] >>
     rename1 `eval_exp _ (Sub _ _ _) res_v` >>
     rename1 `r ∈ _` >>
+    simp [inc_pc_def, llvmTheory.inc_pc_def] >>
+    `assigns prog s1.ip = {r}`
+    by rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def] >>
+    `reachable prog s1.ip` by fs [mem_state_rel_def] >>
+    `s1.ip with i := inc_bip (Offset idx) ∈ next_ips prog s1.ip`
+    by (
+      drule prog_ok_nonterm >>
+      simp [get_instr_cases, PULL_EXISTS] >>
+      ntac 3 (disch_then drule) >>
+      simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
     Cases_on `r ∈ regs_to_keep` >> rw []
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
-      qexists_tac `res_v` >> rw []
-      >- simp [inc_pc_def, llvmTheory.inc_pc_def]
-      >- (
-        rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
-        simp [llvmTheory.inc_pc_def] >>
-        irule mem_state_rel_update_keep >> rw []
-        >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
-        >- (
-          drule prog_ok_nonterm >>
-          simp [get_instr_cases, PULL_EXISTS] >>
-          ntac 3 (disch_then drule) >>
-          simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def])
-        >- fs [mem_state_rel_def]))
-    >- rw [inc_pc_def, llvmTheory.inc_pc_def]
+      qexists_tac `res_v` >> rw [] >>
+      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+      irule mem_state_rel_update_keep >> rw [])
     >- (
-      simp [llvmTheory.inc_pc_def] >>
       irule mem_state_rel_update >> rw []
       >- (
         fs [exp_uses_def]
@@ -708,72 +768,142 @@ Proof
         rename1 `flookup _ r_tmp` >>
         qexists_tac `r_tmp` >> rw [] >>
         simp [Once live_gen_kill] >> disj2_tac >>
-        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def])
-      >- rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def]
-      >- (
-        drule prog_ok_nonterm >>
-        simp [get_instr_cases, PULL_EXISTS] >>
-        ntac 3 (disch_then drule) >>
-        simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
+        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def]) >>
       metis_tac [])) >>
   conj_tac
   >- ( (* Extractvalue *)
-    rw [step_instr_cases] >>
-    simp [llvmTheory.inc_pc_def, update_result_def, FLOOKUP_UPDATE] >>
-    drule translate_extract_correct >> rpt (disch_then drule) >>
-    drule translate_arg_correct >> disch_then drule >>
+    rw [step_instr_cases, get_instr_cases, update_result_def] >>
+    qpat_x_assum `Extractvalue _ _ _ = el _ _` (assume_tac o GSYM) >>
     `arg_to_regs a ⊆ live prog s1.ip`
     by (
-      fs [get_instr_cases] >>
-      qpat_x_assum `Extractvalue _ _ _ = el _ _` (mp_tac o GSYM) >>
       simp [Once live_gen_kill, SUBSET_DEF, uses_cases, IN_DEF, get_instr_cases,
             instr_uses_def]) >>
+    drule translate_extract_correct >> rpt (disch_then drule) >>
+    drule translate_arg_correct >> disch_then drule >>
     simp [] >> strip_tac >>
     disch_then drule >> simp [] >> rw [] >>
     rename1 `eval_exp _ (foldl _ _ _) res_v` >>
-    rw [inc_bip_def, inc_pc_def] >>
+    rw [inc_pc_def, llvmTheory.inc_pc_def] >>
     rename1 `r ∈ _` >>
+    `assigns prog s1.ip = {r}`
+    by rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def] >>
+    `reachable prog s1.ip` by fs [mem_state_rel_def] >>
+    `s1.ip with i := inc_bip (Offset idx) ∈ next_ips prog s1.ip`
+    by (
+      drule prog_ok_nonterm >>
+      simp [get_instr_cases, PULL_EXISTS] >>
+      ntac 3 (disch_then drule) >>
+      simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
     Cases_on `r ∈ regs_to_keep` >> rw []
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw [] >>
-      rw [update_results_def] >>
-      (* TODO: unfinished *)
-      cheat)
-    >- cheat) >>
+      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+      irule mem_state_rel_update_keep >> rw [])
+    >- (
+      irule mem_state_rel_update >> rw []
+      >- (
+        Cases_on `a` >>
+        fs [translate_arg_def] >>
+        rename1 `flookup _ r_tmp` >>
+        qexists_tac `r_tmp` >> rw [] >>
+        simp [Once live_gen_kill] >> disj2_tac >>
+        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def]) >>
+      metis_tac [])) >>
   conj_tac
   >- ( (* Updatevalue *)
-    rw [step_instr_cases] >>
-    simp [llvmTheory.inc_pc_def, update_result_def, FLOOKUP_UPDATE] >>
+    rw [step_instr_cases, get_instr_cases, update_result_def] >>
+    qpat_x_assum `Insertvalue _ _ _ _ = el _ _` (assume_tac o GSYM) >>
+    `arg_to_regs a1 ⊆ live prog s1.ip ∧
+     arg_to_regs a2 ⊆ live prog s1.ip`
+    by (
+      ONCE_REWRITE_TAC [live_gen_kill] >>
+      simp [SUBSET_DEF, uses_cases, IN_DEF, get_instr_cases,
+            instr_uses_def]) >>
     drule translate_update_correct >> rpt (disch_then drule) >>
     first_x_assum (mp_then.mp_then mp_then.Any mp_tac translate_arg_correct) >>
     disch_then drule >>
     first_x_assum (mp_then.mp_then mp_then.Any mp_tac translate_arg_correct) >>
     disch_then drule >>
-    `arg_to_regs a1 ⊆ live prog s1.ip ∧
-     arg_to_regs a2 ⊆ live prog s1.ip`
+    simp [] >> strip_tac >> strip_tac >>
+    disch_then (qspecl_then [`v'`, `v''`] mp_tac) >> simp [] >>
+    disch_then drule >> disch_then drule >>
+    rw [] >>
+    rename1 `eval_exp _ (translate_updatevalue _ _ _ _) res_v` >>
+    rw [inc_pc_def, llvmTheory.inc_pc_def] >>
+    rename1 `r ∈ _` >>
+    `assigns prog s1.ip = {r}`
+    by rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def] >>
+    `reachable prog s1.ip` by fs [mem_state_rel_def] >>
+    `s1.ip with i := inc_bip (Offset idx) ∈ next_ips prog s1.ip`
     by (
-      fs [get_instr_cases] >>
-      qpat_x_assum `Insertvalue _ _ _ _ = el _ _` (mp_tac o GSYM) >>
-      ONCE_REWRITE_TAC [live_gen_kill] >>
-      simp [SUBSET_DEF, uses_cases, IN_DEF, get_instr_cases,
-            instr_uses_def]) >>
-   simp [] >> strip_tac >> strip_tac >>
-   disch_then (qspecl_then [`v'`, `v''`] mp_tac) >> simp [] >>
-   disch_then drule >> disch_then drule >>
-   rw [] >>
-   rename1 `eval_exp _ (translate_updatevalue _ _ _ _) res_v` >>
-   rw [inc_pc_def, inc_bip_def] >>
-   rename1 `r ∈ _` >>
-   Cases_on `r ∈ regs_to_keep` >> rw []
+      drule prog_ok_nonterm >>
+      simp [get_instr_cases, PULL_EXISTS] >>
+      ntac 3 (disch_then drule) >>
+      simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
+    Cases_on `r ∈ regs_to_keep` >> rw []
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw [] >>
-      rw [update_results_def] >>
-      (* TODO: unfinished *)
-      cheat)
-    >- cheat) >>
-  (* Other expressions, Icmp, Inttoptr, Ptrtoint, Gep, Alloca *)
+      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+      irule mem_state_rel_update_keep >> rw [])
+    >- (
+      irule mem_state_rel_update >> strip_tac
+      >- (
+        Cases_on `a1` >> Cases_on `a2` >>
+        rw [translate_arg_def] >>
+        rename1 `flookup _ r_tmp` >>
+        qexists_tac `r_tmp` >> rw [] >>
+        simp [Once live_gen_kill] >> disj2_tac >>
+        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def]) >>
+      rw [] >> metis_tac [] ))>>
+  conj_tac
+  >- ( (* Cast *)
+    rw [step_instr_cases, get_instr_cases, update_result_def] >>
+    qpat_x_assum `Cast _ _ _ _ = el _ _` (assume_tac o GSYM) >>
+    `arg_to_regs a1 ⊆ live prog s1.ip`
+    by (
+      simp [Once live_gen_kill, SUBSET_DEF, uses_cases, IN_DEF, get_instr_cases,
+            instr_uses_def] >>
+      metis_tac []) >>
+    fs [] >>
+    first_x_assum (mp_then.mp_then mp_then.Any mp_tac translate_arg_correct) >>
+    disch_then drule >> disch_then drule >> rw [] >>
+    drule translate_cast_correct >> ntac 2 (disch_then drule) >>
+    simp [] >>
+    disch_then (qspec_then `translate_ty t1` mp_tac) >>
+    impl_tac
+    (* TODO: prog_ok should enforce that the type is consistent *)
+    >- cheat >>
+    rw [] >>
+    rename1 `eval_exp _ (Convert _ _ _ _) res_v` >>
+    rw [inc_pc_def, llvmTheory.inc_pc_def] >>
+    rename1 `r ∈ _` >>
+    `assigns prog s1.ip = {r}`
+    by rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def] >>
+    `reachable prog s1.ip` by fs [mem_state_rel_def] >>
+    `s1.ip with i := inc_bip (Offset idx) ∈ next_ips prog s1.ip`
+    by (
+      drule prog_ok_nonterm >>
+      simp [get_instr_cases, PULL_EXISTS] >>
+      ntac 3 (disch_then drule) >>
+      simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
+    Cases_on `r ∈ regs_to_keep` >> rw []
+    >- (
+      simp [step_inst_cases, PULL_EXISTS] >>
+      qexists_tac `res_v` >> rw [] >>
+      rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
+      irule mem_state_rel_update_keep >> rw [])
+    >- (
+      irule mem_state_rel_update >> rw []
+      >- (
+        fs [exp_uses_def] >> Cases_on `a1` >> fs [translate_arg_def] >>
+        rename1 `flookup _ r_tmp` >>
+        qexists_tac `r_tmp` >> rw [] >>
+        simp [Once live_gen_kill] >> disj2_tac >>
+        simp [uses_cases, IN_DEF, get_instr_cases, instr_uses_def, arg_to_regs_def]) >>
+      metis_tac [])) >>
+  (* TODO: unimplemented instruction translations *)
   cheat
 QED
 
@@ -877,7 +1007,7 @@ Proof
       >- (
         first_x_assum (qspec_then `x` mp_tac) >> rw [] >>
         rename1 `option_rel _ _ opt` >> Cases_on `opt` >>
-        fs [optionTheory.OPTREL_def] >>
+        fs [OPTREL_def] >>
         cheat) >>
       cheat))
 QED

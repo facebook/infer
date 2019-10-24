@@ -57,6 +57,8 @@ Datatype:
   | Select exp exp
   (* Args: Record, index, value *)
   | Update exp exp exp
+  (* Args: signed?, to-type, from-type, value *)
+  | Convert bool typ typ exp
 End
 
 Datatype:
@@ -166,6 +168,18 @@ Termination
   first_x_assum drule >> decide_tac
 End
 
+(* The size of a type in bits *)
+Definition sizeof_bits_def:
+  (sizeof_bits (IntegerT n) = n) ∧
+  (sizeof_bits (PointerT t) = pointer_size) ∧
+  (sizeof_bits (ArrayT t n) = n * sizeof_bits t) ∧
+  (sizeof_bits (TupleT ts) = sum (map sizeof_bits ts))
+Termination
+  WF_REL_TAC `measure typ_size` >> simp [] >>
+  Induct >> rw [definition "typ_size_def"] >> simp [] >>
+  first_x_assum drule >> decide_tac
+End
+
 Definition first_class_type_def:
   (first_class_type (IntegerT _) ⇔ T) ∧
   (first_class_type (PointerT _) ⇔ T) ∧
@@ -195,12 +209,6 @@ Definition bool2v_def:
   bool2v b = FlatV (IntV (if b then 1 else 0) 1)
 End
 
-(* The integer, interpreted as 2's complement, fits in the given number of bits *)
-Definition ifits_def:
-  ifits (i:int) size ⇔
-    0 < size ∧ -(2 ** (size - 1)) ≤ i ∧ i < 2 ** (size - 1)
-End
-
 (* The natural number, interpreted as unsigned, fits in the given number of bits *)
 Definition nfits_def:
   nfits (n:num) size ⇔
@@ -208,7 +216,8 @@ Definition nfits_def:
 End
 
 (* Convert an integer to an unsigned number, following the 2's complement,
- * assuming (ifits i size) *)
+ * assuming (ifits i size). This looks like what OCaml's Z.extract does, which
+ * is used in LLAIR for Convert expressions *)
 Definition i2n_def:
   i2n (IntV i size) : num =
     if i < 0 then
@@ -307,7 +316,19 @@ Inductive eval_exp:
    eval_exp s e3 r ∧
    idx < length vals
    ⇒
-   eval_exp s (Update e1 e2 e3) (AggV (list_update r idx vals)))
+   eval_exp s (Update e1 e2 e3) (AggV (list_update r idx vals))) ∧
+
+  (∀s to_t from_t e v size.
+   eval_exp s e (FlatV v) ∧
+   size = sizeof_bits to_t
+   ⇒
+   eval_exp s (Convert F to_t from_t e) (FlatV (IntV (truncate_2comp (&i2n v) size) size))) ∧
+
+  (∀s to_t from_t e size size1 i.
+   eval_exp s e (FlatV (IntV i size1)) ∧
+   size = sizeof_bits to_t
+   ⇒
+   eval_exp s (Convert T to_t from_t e) (FlatV (IntV (truncate_2comp i size) size)))
 
 End
 

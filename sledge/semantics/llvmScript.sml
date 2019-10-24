@@ -72,6 +72,10 @@ Datatype:
   phi = Phi reg ty ((label option, arg) alist)
 End
 
+Datatype:
+  cast_op = Trunc | Zext | Sext | Ptrtoint | Inttoptr
+End
+
 (*
  * The Exit instruction below models a system/libc call to exit the program. The
  * semantics needs some way to tell the difference between normally terminated
@@ -99,8 +103,7 @@ Datatype:
   | Load reg ty targ
   | Store targ targ
   | Gep reg ty targ (targ list)
-  | Ptrtoint reg targ ty
-  | Inttoptr reg targ ty
+  | Cast reg cast_op targ ty
   | Icmp reg cond ty arg arg
   | Call reg ty fun_name (targ list)
   (* C++ runtime functions *)
@@ -440,6 +443,34 @@ Definition get_comp_def:
   (get_comp Ult = $<+)
 End
 
+Definition do_cast_def:
+  (do_cast Trunc v t =
+    option_join (option_map (λw. w64_cast (n2w w) t) (unsigned_v_to_num v))) ∧
+  (do_cast Zext v t =
+    option_join (option_map (λw. w64_cast (n2w w) t) (unsigned_v_to_num v))) ∧
+  (do_cast Sext v t =
+    option_join (option_map (λi. w64_cast (i2w i) t) (signed_v_to_int v))) ∧
+  (do_cast Ptrtoint v t =
+    case v of
+    | FlatV (PtrV w) => w64_cast w t
+    | _ => None) ∧
+  (do_cast Inttoptr v t =
+    option_join (option_map mk_ptr (unsigned_v_to_num v)))
+End
+
+(*
+  EVAL ``do_cast Trunc (FlatV (W32V 4294967295w)) (IntT W8) = Some (FlatV (W8V 255w))``
+  EVAL ``do_cast Trunc (FlatV (W32V 511w)) (IntT W8) = Some (FlatV (W8V 255w))``
+  EVAL ``do_cast Trunc (FlatV (W32V 255w)) (IntT W8) = Some (FlatV (W8V 255w))``
+  EVAL ``do_cast Trunc (FlatV (W32V 4294967166w)) (IntT W8) = Some (FlatV (W8V 126w))``
+  EVAL ``do_cast Trunc (FlatV (W32V 257w)) (IntT W8) = Some (FlatV (W8V 1w))``
+  EVAL ``do_cast Zext (FlatV (W8V 127w)) (IntT W32) = Some (FlatV (W32V 127w))``
+  EVAL ``do_cast Zext (FlatV (W8V 129w)) (IntT W32) = Some (FlatV (W32V 129w))``
+  EVAL ``do_cast Sext (FlatV (W8V 127w)) (IntT W32) = Some (FlatV (W32V 127w))``
+  EVAL ``do_cast Sext (FlatV (W8V 129w)) (IntT W32) = Some (FlatV (W32V (n2w (2 ** 32 - 1 - 255 + 129))))``
+  *)
+
+
 Definition do_icmp_def:
   do_icmp c v1 v2 =
     option_map (\b. <| poison := (v1.poison ∨ v2.poison); value := bool_to_v b |>)
@@ -625,26 +656,16 @@ Inductive step_instr:
                   value := ptr |>
                s))) ∧
 
-  (∀prog s r t1 a1 t v1 int_v w.
+  (∀prog s cop r t1 a1 t v1 v2.
    eval s a1 = Some v1 ∧
-   v1.value = FlatV (PtrV w) ∧
-   w64_cast w t = Some int_v
+   do_cast cop v1.value t = Some v2
    ⇒
    step_instr prog s
-    (Ptrtoint r (t1, a1) t) Tau
-    (inc_pc (update_result r <| poison := v1.poison; value := int_v |> s))) ∧
-
-  (∀prog s r t1 a1 t ptr v1 n.
-   eval s a1 = Some v1 ∧
-   unsigned_v_to_num v1.value = Some n ∧
-   mk_ptr n = Some ptr
-   ⇒
-   step_instr prog s
-    (Inttoptr r (t1, a1) t) Tau
-    (inc_pc (update_result r <| poison := v1.poison; value := ptr |> s))) ∧
+    (Cast r cop (t1, a1) t) Tau
+    (inc_pc (update_result r <| poison := v1.poison; value := v2 |> s))) ∧
 
   (∀prog s r c t a1 a2 v3 v1 v2.
-  eval s a1 = Some v1 ∧
+   eval s a1 = Some v1 ∧
    eval s a2 = Some v2 ∧
    do_icmp c v1 v2 = Some v3
    ⇒

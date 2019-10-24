@@ -39,8 +39,7 @@ Definition instr_next_ips_def:
   (instr_next_ips (Load _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Store _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Gep _ _ _ _) ip = { inc_pc ip }) ∧
-  (instr_next_ips (Ptrtoint _ _ _) ip = { inc_pc ip }) ∧
-  (instr_next_ips (Inttoptr _ _ _) ip = { inc_pc ip }) ∧
+  (instr_next_ips (Cast _ _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Icmp _ _ _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Call _ _ _ _) ip = { inc_pc ip }) ∧
   (instr_next_ips (Cxa_allocate_exn _ _) ip = { inc_pc ip }) ∧
@@ -163,8 +162,7 @@ Definition instr_uses_def:
     arg_to_regs a1 ∪ arg_to_regs a2) ∧
   (instr_uses (Gep _ _ (_, a) targs) =
     arg_to_regs a ∪ BIGUNION (set (map (arg_to_regs o snd) targs))) ∧
-  (instr_uses (Ptrtoint _ (_, a) _) = arg_to_regs a) ∧
-  (instr_uses (Inttoptr _ (_, a) _) = arg_to_regs a) ∧
+  (instr_uses (Cast _ _ (_, a) _) = arg_to_regs a) ∧
   (instr_uses (Icmp _ _ _ a1 a2) =
     arg_to_regs a1 ∪ arg_to_regs a2) ∧
   (instr_uses (Call _ _ _ targs) =
@@ -206,8 +204,7 @@ Definition instr_assigns_def:
   (instr_assigns (Alloca r _ _) = {r}) ∧
   (instr_assigns (Load r _ _) = {r}) ∧
   (instr_assigns (Gep r _ _ _) = {r}) ∧
-  (instr_assigns (Ptrtoint r _ _) = {r}) ∧
-  (instr_assigns (Inttoptr r _ _) = {r}) ∧
+  (instr_assigns (Cast r _ _ _) = {r}) ∧
   (instr_assigns (Icmp r _ _ _ _) = {r}) ∧
   (instr_assigns (Call r _ _ _) = {r}) ∧
   (instr_assigns (Cxa_allocate_exn r _) = {r}) ∧

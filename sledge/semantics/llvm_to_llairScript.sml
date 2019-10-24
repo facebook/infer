@@ -129,7 +129,9 @@ Definition translate_instr_to_exp_def:
   (translate_instr_to_exp gmap emap (Extractvalue _ (t, a) cs) =
     foldl (λe c. Select e (translate_const gmap c)) (translate_arg gmap emap a) cs) ∧
   (translate_instr_to_exp gmap emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
-    translate_updatevalue gmap (translate_arg gmap emap a1) (translate_arg gmap emap a2) cs)
+    translate_updatevalue gmap (translate_arg gmap emap a1) (translate_arg gmap emap a2) cs) ∧
+  (translate_instr_to_exp gmap emap (Cast _ cop (t1, a1) t) =
+    Convert (cop = Sext) (translate_ty t) (translate_ty t1) (translate_arg gmap emap a1))
 End
 
 (* This translation of insertvalue to update and select is quadratic in the
@@ -236,8 +238,7 @@ Definition classify_instr_def:
   (classify_instr (Alloca r t _) = Exp r (PtrT t)) ∧
   (classify_instr (Gep r t _ idx) =
     Exp r (PtrT (THE (extract_type t (map idx_to_num idx))))) ∧
-  (classify_instr (Ptrtoint r _ t) = Exp r t) ∧
-  (classify_instr (Inttoptr r _ t) = Exp r t) ∧
+  (classify_instr (Cast r _ _ t) = Exp r t) ∧
   (classify_instr (Icmp r _ _ _ _) = Exp r (IntT W1)) ∧
   (* TODO *)
   (classify_instr (Cxa_allocate_exn r _) = Exp r ARB) ∧

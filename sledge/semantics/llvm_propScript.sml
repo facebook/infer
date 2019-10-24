@@ -10,6 +10,7 @@
 open HolKernel boolLib bossLib Parse;
 open pairTheory listTheory rich_listTheory arithmeticTheory wordsTheory;
 open pred_setTheory finite_mapTheory relationTheory llistTheory pathTheory;
+open optionTheory;
 open logrootTheory numposrepTheory;
 open settingsTheory miscTheory memory_modelTheory llvmTheory;
 
@@ -290,6 +291,132 @@ QED
 
 (* ----- Theorems about the step function ----- *)
 
+Theorem w64_cast_some:
+  ∀w t.
+    (w64_cast w t = Some v)
+    ⇔
+    v = FlatV (W1V (w2w w)) ∧ t = IntT W1 ∨
+    v = FlatV (W8V (w2w w)) ∧ t = IntT W8 ∨
+    v = FlatV (W32V (w2w w)) ∧ t = IntT W32 ∨
+    v = FlatV (W64V (w2w w)) ∧ t = IntT W64
+Proof
+  Cases_on `t` >> rw [w64_cast_def] >> Cases_on `s` >> rw [w64_cast_def] >>
+  metis_tac []
+QED
+
+Theorem unsigned_v_to_num_some:
+  ∀v n.
+    (unsigned_v_to_num v = Some n)
+    ⇔
+    (∃w. v = FlatV (W1V w) ∧ n = w2n w) ∨
+    (∃w. v = FlatV (W8V w) ∧ n = w2n w) ∨
+    (∃w. v = FlatV (W32V w) ∧ n = w2n w) ∨
+    (∃w. v = FlatV (W64V w) ∧ n = w2n w)
+Proof
+  Cases_on `v` >> rw [unsigned_v_to_num_def] >>
+  Cases_on `a` >> rw [unsigned_v_to_num_def]
+QED
+
+Theorem signed_v_to_int_some:
+  ∀v n.
+    (signed_v_to_int v = Some n)
+    ⇔
+    (∃w. v = FlatV (W1V w) ∧ n = w2i w) ∨
+    (∃w. v = FlatV (W8V w) ∧ n = w2i w) ∨
+    (∃w. v = FlatV (W32V w) ∧ n = w2i w) ∨
+    (∃w. v = FlatV (W64V w) ∧ n = w2i w)
+Proof
+  Cases_on `v` >> rw [signed_v_to_int_def] >>
+  Cases_on `a` >> rw [signed_v_to_int_def] >>
+  metis_tac []
+QED
+
+Theorem signed_v_to_num_some:
+  ∀v n.
+    (signed_v_to_num v = Some n)
+    ⇔
+    ∃m. 0 ≤ m ∧ n = Num m ∧
+      ((∃w. v = FlatV (W1V w) ∧ m = w2i w) ∨
+       (∃w. v = FlatV (W8V w) ∧ m = w2i w) ∨
+       (∃w. v = FlatV (W32V w) ∧ m = w2i w) ∨
+       (∃w. v = FlatV (W64V w) ∧ m = w2i w))
+Proof
+  rw [signed_v_to_num_def, OPTION_JOIN_EQ_SOME, signed_v_to_int_some] >>
+  metis_tac [intLib.COOPER_PROVE ``!x:int. 0 ≤ x ⇔ ¬(x < 0)``]
+QED
+
+Theorem mk_ptr_some:
+  ∀n p. mk_ptr n = Some p ⇔ n < 256 ** pointer_size ∧ p = FlatV (PtrV (n2w n))
+Proof
+  rw [mk_ptr_def] >> metis_tac []
+QED
+
+(* How many bytes a value of the given type occupies *)
+Definition sizeof_bits_def:
+  (sizeof_bits (IntT W1) = 1) ∧
+  (sizeof_bits (IntT W8) = 8) ∧
+  (sizeof_bits (IntT W32) = 32) ∧
+  (sizeof_bits (IntT W64) = 64) ∧
+  (sizeof_bits (PtrT _) = pointer_size) ∧
+  (sizeof_bits (ArrT n t) = n * sizeof_bits t) ∧
+  (sizeof_bits (StrT ts) = sum (map sizeof_bits ts))
+Termination
+  WF_REL_TAC `measure ty_size` >> simp [] >>
+  Induct >> rw [ty_size_def] >> simp [] >>
+  first_x_assum drule >> decide_tac
+End
+
+Theorem do_cast_zext:
+  (∃t'. sizeof_bits t' < sizeof_bits t ∧ value_type t' v) ∧ do_cast Zext v t = Some v'
+  ⇒
+  unsigned_v_to_num v = unsigned_v_to_num v'
+Proof
+  rw [do_cast_def, OPTION_JOIN_EQ_SOME, w64_cast_some] >>
+  fs [unsigned_v_to_num_def, unsigned_v_to_num_some, sizeof_bits_def, value_type_cases] >>
+  rw [w2n_11, w2w_n2w]  >>
+  fs [sizeof_bits_def]
+  >- (
+    `w2n w' < dimword (:1)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+  >- (
+    `w2n w' < dimword (:1)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+  >- (
+    `w2n w' < dimword (:8)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+  >- (
+    `w2n w' < dimword (:1)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+  >- (
+    `w2n w' < dimword (:8)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+  >- (
+    `w2n w' < dimword (:32)` by metis_tac [w2n_lt] >>
+    fs [dimword_1])
+QED
+
+val trunc_thms =
+  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] (GSYM truncate_2comp_i2w_w2i)))
+                 [``:1``, ``:8``, ``:32``, ``:64``]);
+
+val ifits_thms =
+  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] (ifits_w2i )))
+                 [``:1``, ``:8``, ``:32``, ``:64``]);
+
+Theorem do_cast_sext:
+  (∃t'. sizeof_bits t' < sizeof_bits t ∧ value_type t' v) ∧ do_cast Sext v t = Some v'
+  ⇒
+  signed_v_to_int v = signed_v_to_int v'
+Proof
+  rw [do_cast_def, OPTION_JOIN_EQ_SOME, w64_cast_some] >>
+  fs [signed_v_to_int_def, signed_v_to_num_some, sizeof_bits_def, value_type_cases] >>
+  rw [] >>
+  fs [sizeof_bits_def, signed_v_to_int_def] >> rw [integer_wordTheory.w2w_i2w] >>
+  rw [trunc_thms, GSYM fits_ident] >>
+  rw [ifits_thms] >>
+  metis_tac [ifits_thms, ifits_mono, DECIDE ``1 ≤ 8 ∧ 1 ≤ 32 ∧ 8 ≤ 32 ∧ 1 ≤ 64 ∧ 8 ≤ 64 ∧ 32 ≤ 64``]
+QED
+
 Theorem get_instr_func:
   ∀p ip i1 i2. get_instr p ip i1 ∧ get_instr p ip i2 ⇒ i1 = i2
 Proof
@@ -350,7 +477,7 @@ Proof
 QED
 
 Triviality not_none_eq:
-  !x. x ≠ None ⇔ ?y. x = Some y
+  !x. x ≠ None ⇔ ∃y. x = Some y
 Proof
   Cases >> rw []
 QED
@@ -373,8 +500,8 @@ Proof
       >- metis_tac [] >>
       fs [deallocate_def, heap_ok_def] >> rw [flookup_fdiff] >>
       eq_tac >> rw []
-      >- metis_tac [optionTheory.NOT_IS_SOME_EQ_NONE]
-      >- metis_tac [optionTheory.NOT_IS_SOME_EQ_NONE] >>
+      >- metis_tac [NOT_IS_SOME_EQ_NONE]
+      >- metis_tac [NOT_IS_SOME_EQ_NONE] >>
       fs [allocations_ok_def, stack_ok_def, EXTENSION] >> metis_tac [])
     >- (
       fs [globals_ok_def, deallocate_def] >> rw [] >>
@@ -452,9 +579,6 @@ Proof
     irule inc_pc_invariant >> rw [get_instr_update, update_invariant]
     >- (irule set_bytes_invariant >> rw [] >> metis_tac [])
     >- (fs [get_instr_cases] >> metis_tac [terminator_def]))
-  >- (
-    irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
-    metis_tac [terminator_def])
   >- (
     irule inc_pc_invariant >> rw [get_instr_update, update_invariant] >>
     metis_tac [terminator_def])
@@ -701,10 +825,10 @@ QED
 Triviality some_lemma:
   ∀P a b. (some (x, y). P x y) = Some (a, b) ⇒ P a b
 Proof
-  rw [optionTheory.some_def] >>
+  rw [some_def] >>
   qmatch_assum_abbrev_tac `(@x. Q x) = _` >>
   `Q (@x. Q x)` suffices_by (rw [Abbr `Q`]) >>
-  `?x. Q x` suffices_by rw [SELECT_THM] >>
+  `∃x. Q x` suffices_by rw [SELECT_THM] >>
   unabbrev_all_tac >> rw [] >>
   pairarg_tac >> fs [] >> rw [EXISTS_PROD] >>
   metis_tac []
@@ -724,7 +848,7 @@ Proof
   rw [] >>
   Cases_on `get_next_step p (last path) = None ∧ ∀s. path ≠ stopped_at s`
   >- (
-    fs [get_next_step_def, optionTheory.some_def, FORALL_PROD, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
+    fs [get_next_step_def, some_def, FORALL_PROD, METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
     Cases_on `∃l2 s2. sem_step p (last path) l2 s2` >> fs []
     >- ( (* Can take a last step from the end of the path *)
       first_x_assum drule >> rw [] >>
@@ -747,7 +871,7 @@ Proof
       fs [finite_length] >>
       qexists_tac `n` >> rw [] >>
       `length (plink p' (pcons (last p') l (stopped_at s))) = Some (n + Suc 1 - 1)`
-      by metis_tac [length_plink, alt_length_thm, optionTheory.OPTION_MAP_DEF] >>
+      by metis_tac [length_plink, alt_length_thm, OPTION_MAP_DEF] >>
       rw []
       >- fs [sem_step_cases]
       >- metis_tac [sem_step_not_last]
@@ -777,8 +901,8 @@ Proof
     drule sem_step_not_last >> simp [] >> strip_tac >>
     qpat_x_assum `sem_step p s2 l s3` mp_tac >> rw [Once sem_step_cases]
     >- (
-      `?i. get_instr p s2.ip i` by metis_tac [get_instr_cases, step_cases] >>
-      `?x. i = Inl x` by (fs [last_step_cases] >> metis_tac [sumTheory.sum_CASES]) >>
+      `∃i. get_instr p s2.ip i` by metis_tac [get_instr_cases, step_cases] >>
+      `∃x. i = Inl x` by (fs [last_step_cases] >> metis_tac [sumTheory.sum_CASES]) >>
       drule step_same_block >> disch_then drule >> simp [] >>
       impl_tac
       >- (fs [last_step_cases] >> metis_tac []) >>
@@ -798,7 +922,7 @@ Proof
     qabbrev_tac `P = (\s2 l. sem_step p s l s2 ∧ ¬last_step p s l s2)` >>
     `P s' l` by (irule some_lemma >> simp [Abbr `P`]) >>
     pop_assum mp_tac >> simp [Abbr `P`]) >>
-  `?n. length path1 = Some n` by fs [finite_length] >>
+  `∃n. length path1 = Some n` by fs [finite_length] >>
   `n ≠ 0` by metis_tac [length_never_zero] >>
   `length (plink path path1) = Some (Suc m + n - 1)` by metis_tac [length_plink] >>
   simp [take_pconcat, PL_def, finite_pconcat, length_plink] >>
@@ -807,7 +931,7 @@ Proof
   simp [GSYM PULL_EXISTS] >>
   unabbrev_all_tac >> drule unfold_last >>
   qmatch_goalsub_abbrev_tac `last_step _ (last path1) _ _` >>
-  simp [Once get_next_step_def, optionTheory.some_def, FORALL_PROD] >>
+  simp [Once get_next_step_def, some_def, FORALL_PROD] >>
   strip_tac >>
   simp [CONJ_ASSOC, Once CONJ_SYM] >>
   simp [GSYM CONJ_ASSOC] >>
@@ -834,7 +958,7 @@ Proof
       unabbrev_all_tac >> simp [] >>
       fs [] >> fs [Once unfold_thm] >>
       Cases_on `get_next_step p (last path)` >> simp [] >> fs [] >> rw [] >>
-      fs [get_next_step_def, optionTheory.some_def, FORALL_PROD] >>
+      fs [get_next_step_def, some_def, FORALL_PROD] >>
       TRY split_pair_case_tac >> fs [sem_step_cases] >>
       metis_tac [])
     >- fs [alt_length_thm, length_never_zero])
@@ -852,7 +976,7 @@ Theorem find_path_prefix:
 Proof
   ho_match_mp_tac finite_okpath_ind >> rw [toList_THM]
   >- fs [observation_prefixes_cases, IN_DEF] >>
-  `?s ls. obs = (s, ls)` by metis_tac [pairTheory.pair_CASES] >>
+  `∃s ls. obs = (s, ls)` by metis_tac [pairTheory.pair_CASES] >>
   fs [] >>
   `∃l. length path = Some l ∧ l ≠ 0` by metis_tac [finite_length, length_never_zero] >>
   `take (l-1) path = path` by metis_tac [take_all] >>
@@ -894,7 +1018,7 @@ Proof
   >- (
     drule expand_multi_step_path >> rw [] >>
     rename [`toList (labels m_path) = Some m_l`, `toList (labels s_path) = Some (flat m_l)`] >>
-    `?n short_l.
+    `∃n short_l.
       n ∈ PL s_path ∧
       toList (labels (take n s_path)) = Some short_l ∧
       x = ((last (take n s_path)).status, filter ($≠ Tau) short_l)`
@@ -911,7 +1035,7 @@ Proof
     impl_tac >> rw []
     >- metis_tac [] >>
     rename1 `last_step _ (last s_ext_path) last_l last_s` >>
-    `?s_ext_l. toList (labels s_ext_path) = Some s_ext_l` by metis_tac [LFINITE_toList, finite_labels] >>
+    `∃s_ext_l. toList (labels s_ext_path) = Some s_ext_l` by metis_tac [LFINITE_toList, finite_labels] >>
     qabbrev_tac `orig_path = take n (pconcat s_ext_path last_l (stopped_at last_s))` >>
     drule contract_step_path >> simp [] >> disch_then drule >> rw [] >>
     rename [`toList (labels m_path) = Some m_l`,
@@ -930,7 +1054,7 @@ Proof
       Cases_on `(last m_path).status` >> simp [] >>
       qexists_tac `s_ext_l ++ [last_l]` >> rw []) >>
     fs [PL_def, finite_pconcat] >> rfs [] >>
-    `?m. length s_ext_path = Some m` by metis_tac [finite_length] >>
+    `∃m. length s_ext_path = Some m` by metis_tac [finite_length] >>
     `length s_ext_path = Some m` by metis_tac [finite_length] >>
     `length (pconcat s_ext_path last_l (stopped_at (last m_path))) = Some (m + 1)`
     by metis_tac [length_pconcat, alt_length_thm] >>

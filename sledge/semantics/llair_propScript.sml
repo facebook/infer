@@ -16,56 +16,6 @@ new_theory "llair_prop";
 
 numLib.prefer_num ();
 
-Theorem ifits_w2i:
-  ∀(w : 'a word). ifits (w2i w) (dimindex (:'a))
-Proof
-  rw [ifits_def, GSYM INT_MIN_def] >>
-  metis_tac [INT_MIN, w2i_ge, integer_wordTheory.INT_MAX_def, w2i_le,
-             intLib.COOPER_PROVE ``!(x:int) y. x ≤ y - 1 ⇔ x < y``]
-QED
-
-Theorem truncate_2comp_fits:
-  ∀i size. 0 < size ⇒ ifits (truncate_2comp i size) size
-Proof
-  rw [truncate_2comp_def, ifits_def] >>
-  qmatch_goalsub_abbrev_tac `(i + s1) % s2` >>
-  `s2 ≠ 0 ∧ ¬(s2 < 0)` by rw [Abbr `s2`]
-  >- (
-    `0 ≤ (i + s1) % s2` suffices_by intLib.COOPER_TAC >>
-    drule INT_MOD_BOUNDS >>
-    rw [])
-  >- (
-    `(i + s1) % s2 < 2 * s1` suffices_by intLib.COOPER_TAC >>
-    `2 * s1 = s2` by rw [Abbr `s1`, Abbr `s2`, GSYM EXP] >>
-    drule INT_MOD_BOUNDS >>
-    rw [Abbr `s1`, Abbr `s2`])
-QED
-
-Theorem fits_ident:
-  ∀i size. 0 < size ⇒ (ifits i size ⇔ truncate_2comp i size = i)
-Proof
-  rw [ifits_def, truncate_2comp_def] >>
-  rw [intLib.COOPER_PROVE ``!(x:int) y z. x - y = z <=> x = y + z``] >>
-  qmatch_goalsub_abbrev_tac `(_ + s1) % s2` >>
-  `s2 ≠ 0 ∧ ¬(s2 < 0)` by rw [Abbr `s2`] >>
-  `2 * s1 = s2` by rw [Abbr `s1`, Abbr `s2`, GSYM EXP] >>
-  eq_tac >>
-  rw []
-  >- (
-    simp [Once INT_ADD_COMM] >>
-    irule INT_LESS_MOD >>
-    rw [] >>
-    intLib.COOPER_TAC)
-  >- (
-   `0 ≤ (i + s1) % (2 * s1)` suffices_by intLib.COOPER_TAC >>
-    drule INT_MOD_BOUNDS >>
-    simp [])
-  >- (
-   `(i + s1) % (2 * s1) < 2 * s1` suffices_by intLib.COOPER_TAC >>
-    drule INT_MOD_BOUNDS >>
-    simp [])
-QED
-
 Theorem i2n_n2i:
   !n size. 0 < size ⇒ (nfits n size ⇔ (i2n (n2i n size) = n))
 Proof
@@ -179,7 +129,8 @@ Definition exp_uses_def:
   (exp_uses (Sub _ e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
   (exp_uses (Record es) = bigunion (set (map exp_uses es))) ∧
   (exp_uses (Select e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
-  (exp_uses (Update e1 e2 e3) = exp_uses e1 ∪ exp_uses e2 ∪ exp_uses e3)
+  (exp_uses (Update e1 e2 e3) = exp_uses e1 ∪ exp_uses e2 ∪ exp_uses e3) ∧
+  (exp_uses (Convert _ _ _ e) = exp_uses e)
 Termination
   WF_REL_TAC `measure exp_size` >> rw [] >>
   Induct_on `es` >> rw [exp_size_def] >> res_tac >> rw []
@@ -216,6 +167,8 @@ Proof
     rpt (pop_assum mp_tac) >>
     qid_spec_tac `vals` >>
     Induct_on `es` >> rw [] >> fs [drestrict_union_eq])
+  >- metis_tac []
+  >- metis_tac []
   >- metis_tac []
   >- metis_tac []
 QED

@@ -375,6 +375,87 @@ Proof
     simp [INT_MOD_PLUS])
 QED
 
+(* The integer, interpreted as 2's complement, fits in the given number of bits *)
+Definition ifits_def:
+  ifits (i:int) size ⇔
+    0 < size ∧ -(2 ** (size - 1)) ≤ i ∧ i < 2 ** (size - 1)
+End
+Theorem ifits_w2i:
+  ∀(w : 'a word). ifits (w2i w) (dimindex (:'a))
+Proof
+  rw [ifits_def, GSYM INT_MIN_def] >>
+  metis_tac [INT_MIN, w2i_ge, integer_wordTheory.INT_MAX_def, w2i_le,
+             intLib.COOPER_PROVE ``!(x:int) y. x ≤ y - 1 ⇔ x < y``]
+QED
+
+Theorem truncate_2comp_fits:
+  ∀i size. 0 < size ⇒ ifits (truncate_2comp i size) size
+Proof
+  rw [truncate_2comp_def, ifits_def] >>
+  qmatch_goalsub_abbrev_tac `(i + s1) % s2` >>
+  `s2 ≠ 0 ∧ ¬(s2 < 0)` by rw [Abbr `s2`]
+  >- (
+    `0 ≤ (i + s1) % s2` suffices_by intLib.COOPER_TAC >>
+    drule INT_MOD_BOUNDS >>
+    rw [])
+  >- (
+    `(i + s1) % s2 < 2 * s1` suffices_by intLib.COOPER_TAC >>
+    `2 * s1 = s2` by rw [Abbr `s1`, Abbr `s2`, GSYM EXP] >>
+    drule INT_MOD_BOUNDS >>
+    rw [Abbr `s1`, Abbr `s2`])
+QED
+
+Theorem ifits_mono:
+  ∀i s1 s2. s1 ≤ s2 ∧ ifits i s1 ⇒ ifits i s2
+Proof
+  rw [ifits_def]
+  >- (
+    `&(2 ** (s1 − 1)) ≤ &(2 ** (s2 − 1))` suffices_by intLib.COOPER_TAC >>
+    rw [])
+  >- (
+    `&(2 ** (s1 − 1)) ≤ &(2 ** (s2 − 1))` suffices_by intLib.COOPER_TAC >>
+    rw [])
+QED
+
+Theorem fits_ident:
+  ∀i size. 0 < size ⇒ (ifits i size ⇔ truncate_2comp i size = i)
+Proof
+  rw [ifits_def, truncate_2comp_def] >>
+  rw [intLib.COOPER_PROVE ``!(x:int) y z. x - y = z <=> x = y + z``] >>
+  qmatch_goalsub_abbrev_tac `(_ + s1) % s2` >>
+  `s2 ≠ 0 ∧ ¬(s2 < 0)` by rw [Abbr `s2`] >>
+  `2 * s1 = s2` by rw [Abbr `s1`, Abbr `s2`, GSYM EXP] >>
+  eq_tac >>
+  rw []
+  >- (
+    simp [Once INT_ADD_COMM] >>
+    irule INT_LESS_MOD >>
+    rw [] >>
+    intLib.COOPER_TAC)
+  >- (
+   `0 ≤ (i + s1) % (2 * s1)` suffices_by intLib.COOPER_TAC >>
+    drule INT_MOD_BOUNDS >>
+    simp [])
+  >- (
+   `(i + s1) % (2 * s1) < 2 * s1` suffices_by intLib.COOPER_TAC >>
+    drule INT_MOD_BOUNDS >>
+    simp [])
+QED
+
+Theorem i2w_w2i_extend:
+  i2w (w2i (w : 'a word)) : 'b word =
+    if ¬word_msb w then
+      w2w w
+    else
+      -w2w (-w)
+Proof
+  rw [i2w_def, w2i_def] >>
+  BasicProvers.FULL_CASE_TAC >> fs [] >>
+  fs [] >>
+  full_simp_tac std_ss [GSYM WORD_NEG_MUL] >>
+  full_simp_tac std_ss [w2w_def]
+QED
+
 (* ----- Theorems about lazy lists ----- *)
 
 Theorem toList_some:
