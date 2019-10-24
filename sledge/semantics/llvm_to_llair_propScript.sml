@@ -71,6 +71,10 @@ Inductive pc_rel:
   * should point to a block generated from them *)
  (∀prog emap ip bp b from_l phis.
     get_instr prog ip (Inr (from_l, phis)) ∧
+    (* We should have just jumped here from block from_l *)
+    (∃d b. alookup prog ip.f = Some d ∧
+         alookup d.blocks from_l = Some b ∧
+         ip.b ∈ set (map Some (instr_to_labs (last b.body)))) ∧
     (* TODO: constrain b to be generated from the phis *)
     get_block (translate_prog prog) bp b
     ⇒
@@ -1038,14 +1042,19 @@ Proof
         >- (Cases_on `lab1` >> rw [Abbr `target'`, translate_label_def, dest_label_def])
         >- (
           fs [get_instr_cases] >>
-          `every (λlab. ∃b. alookup d.blocks (Some lab) = Some b ∧ b.h ≠ Entry)
+          `every (λlab. ∃b phis landing. alookup d.blocks (Some lab) = Some b ∧ b.h = Head phis landing)
                  (instr_to_labs (last b.body))`
-          by metis_tac [prog_ok_def] >>
+          by (fs [prog_ok_def, EVERY_MEM] >> metis_tac []) >>
           rfs [instr_to_labs_def] >>
-          rw [pc_rel_cases, get_instr_cases, get_block_cases, GSYM PULL_EXISTS]
-          >- metis_tac [blockHeader_nchotomy] >>
+          rw [pc_rel_cases, get_instr_cases, get_block_cases, PULL_EXISTS] >>
+          fs [GSYM PULL_EXISTS, Abbr `target`] >>
+          rw [MEM_MAP, instr_to_labs_def] >>
           fs [translate_prog_def] >>
-          (* Unfinished *)
+          `∀y z. dest_fn y = dest_fn z ⇒ y = z`
+          by (Cases_on `y` >> Cases_on `z` >> rw [dest_fn_def]) >>
+          rw [alookup_map_key] >>
+          (* Unfinished, will get more proof obligations once pc_rel is fleshed
+           * out for Inr case *)
           cheat)
         >- (
           fs [mem_state_rel_def] >> rw []
@@ -1160,13 +1169,39 @@ Proof
   reverse (fs [Once multi_step_cases])
   >- metis_tac [get_instr_func, sumTheory.sum_distinct] >>
   qpat_x_assum `last_step _ _ _ _` mp_tac >>
-  (*
-  simp [last_step_def] >> simp [Once llvmTheory.step_cases] >>
-  rw [] >> imp_res_tac get_instr_func >> fs [] >> rw [] >>
-  fs [translate_trace_def] >>
-  *)
-  (* TODO: unfinished *)
-  cheat
+  simp [last_step_cases] >> strip_tac
+  >- (
+    fs [llvmTheory.step_cases]
+    >- metis_tac [get_instr_func, sumTheory.sum_distinct] >>
+    fs [translate_trace_def] >> rw [] >>
+    (* Needs the completed pc_rel for the Inr case *)
+    cheat)
+  >- metis_tac [get_instr_func, sumTheory.sum_distinct]
+  >- metis_tac [get_instr_func, sumTheory.sum_distinct]
+  >- (
+    fs [llvmTheory.step_cases] >> rw [translate_trace_def] >>
+    `!i. ¬get_instr prog s1.ip (Inl i)`
+    by metis_tac [get_instr_func, sumTheory.sum_distinct] >>
+    fs [METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
+    first_x_assum drule >> rw [] >>
+    `~every IS_SOME (map (do_phi from_l s1) phis)` by metis_tac [map_is_some] >>
+    fs [get_instr_cases] >>
+    rename [`alookup _ s1.ip.b = Some b_targ`, `alookup _ from_l = Some b_src`] >>
+    `every (phi_contains_label from_l) phis`
+    by (
+      fs [prog_ok_def, get_instr_cases] >>
+      first_x_assum (qspecl_then [`s1.ip.f`, `d`, `from_l`] mp_tac) >> rw [] >>
+      fs [EVERY_MEM, MEM_MAP] >>
+      rfs [] >> rw [] >> first_x_assum drule >> rw [] >>
+      first_x_assum irule >> fs [] >> rfs [] >> fs []) >>
+    fs [EVERY_MEM, EXISTS_MEM, MEM_MAP] >>
+    first_x_assum drule >> rw [] >>
+    rename1 `phi_contains_label _ phi` >> Cases_on `phi` >>
+    fs [do_phi_def, phi_contains_label_def] >>
+    rename1 `alookup entries from_l ≠ None` >>
+    Cases_on `alookup entries from_l` >> fs [] >>
+    (* TODO: LLVM "eval" gets stuck *)
+    cheat)
 QED
 
 Theorem step_block_to_multi_step:
@@ -1179,6 +1214,7 @@ Theorem step_block_to_multi_step:
       multi_step prog s1 (map untranslate_trace tr) s2 ∧
       state_rel prog gmap emap s2 s2'
 Proof
+  (* TODO, LLVM can simulate llair direction *)
   cheat
 QED
 
@@ -1264,6 +1300,7 @@ Theorem translate_global_var_11:
       ⇒
       t1 = t2
 Proof
+  (* TODO, LLVM can simulate llair direction *)
   cheat
 QED
 

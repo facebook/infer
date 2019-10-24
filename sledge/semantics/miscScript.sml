@@ -200,6 +200,25 @@ Proof
   Induct >> rw [] >> Cases_on `l2` >> fs []
 QED
 
+Theorem alookup_map_key:
+  ∀al x f g.
+    (∀y z. f y = f z ⇒ y = z)
+    ⇒
+    alookup (map (\(k, v). (f k, g k v)) al) (f x) =
+    option_map (g x) (alookup al x)
+Proof
+  Induct >> rw [] >> pairarg_tac >> rw [] >> metis_tac []
+QED
+
+Theorem map_is_some:
+  ∀f l1. (∃l2. map f l1 = map Some l2) ⇔ every IS_SOME (map f l1)
+Proof
+  Induct_on `l1` >> rw [] >> eq_tac >> rw []
+  >- (Cases_on `l2` >> fs [])
+  >- (Cases_on `l2` >> fs [EVERY_MAP] >> metis_tac [])
+  >- (fs [optionTheory.IS_SOME_EXISTS] >> metis_tac [MAP])
+QED
+
 (* ----- Theorems about log ----- *)
 
 Theorem mul_div_bound:

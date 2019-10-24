@@ -752,21 +752,25 @@ Definition instr_to_labs_def:
   (instr_to_labs _ = [])
 End
 
+Definition phi_contains_label_def:
+  phi_contains_label l (Phi _ _ ls) ⇔ alookup ls l ≠ None
+End
+
 Definition prog_ok_def:
   prog_ok p ⇔
     ((* All blocks end with terminators and terminators only appear at the end.
       * All labels mentioned in branches actually exist, and target non-entry
-      * blocks *)
+      * blocks, whose phi nodes have entries for the label of the block that the
+      * branch is from. *)
      ∀fname dec bname block.
        alookup p fname = Some dec ∧
        alookup dec.blocks bname = Some block
        ⇒
        block.body ≠ [] ∧ terminator (last block.body) ∧
        every (λi. ¬terminator i) (front block.body) ∧
-       every (λlab. ∃b. alookup dec.blocks (Some lab) = Some b ∧ b.h ≠ Entry)
-             (instr_to_labs (last block.body)) ∧
-       (∀phis lands. block.h = Head phis lands ⇒
-         every (λx. case x of Phi _ _ l => every (λ(lab, _). alookup dec.blocks lab ≠ None) l) phis)) ∧
+       every (λlab. ∃b phis land. alookup dec.blocks (Some lab) = Some b ∧
+                        b.h = Head phis land ∧ every (phi_contains_label bname) phis)
+             (instr_to_labs (last block.body))) ∧
     ((* All functions have an entry block *)
      ∀fname dec.
        alookup p fname = Some dec ⇒
