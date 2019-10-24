@@ -85,4 +85,13 @@ class UnknownCallsTest {
   void call_may_throw_exception_constant() {
     for (int i = 0; i < may_throw_exception(); i++) {}
   }
+
+  abstract class AbstractC {
+    abstract int[] abstract_func();
+  }
+
+  void call_concrete_func_linear(AbstractC x) {
+    int[] a = x.abstract_func();
+    for (int i = 0; i < a.length; i++) {}
+  }
 }

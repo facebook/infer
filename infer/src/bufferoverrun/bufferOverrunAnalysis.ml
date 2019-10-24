@@ -80,6 +80,11 @@ module TransferFunctions = struct
     Dom.Mem.find (Loc.of_allocsite (Allocsite.make_symbol path)) mem
 
 
+  let assign_symbolic_pname_value pname (id, typ) location mem =
+    let v = symbolic_pname_value pname typ location mem in
+    Dom.Mem.add_stack (Loc.of_id id) v mem
+
+
   let instantiate_mem_reachable (ret_id, ret_typ) callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
@@ -140,6 +145,14 @@ module TransferFunctions = struct
     match pname with
     | Typ.Procname.Java java_pname ->
         Typ.Procname.Java.is_external java_pname
+    | _ ->
+        false
+
+
+  let is_non_static pname =
+    match pname with
+    | Typ.Procname.Java java_pname ->
+        not (Typ.Procname.Java.is_static java_pname)
     | _ ->
         false
 
@@ -268,7 +281,7 @@ module TransferFunctions = struct
         mem
     | Prune (exp, _, _, _) ->
         Sem.Prune.prune integer_type_widths exp mem
-    | Call (((id, ret_typ) as ret), Const (Cfun callee_pname), params, location, _) -> (
+    | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.exec} ->
@@ -289,8 +302,11 @@ module TransferFunctions = struct
               if is_external callee_pname then (
                 L.(debug BufferOverrun Verbose)
                   "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
-                let v = symbolic_pname_value callee_pname ret_typ location mem in
-                Dom.Mem.add_stack (Loc.of_id id) v mem )
+                assign_symbolic_pname_value callee_pname ret location mem )
+              else if is_non_static callee_pname then (
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ Non-static call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                assign_symbolic_pname_value callee_pname ret location mem )
               else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
