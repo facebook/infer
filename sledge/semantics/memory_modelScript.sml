@@ -570,5 +570,60 @@ Proof
     fs [is_allocated_def, interval_to_set_def, SUBSET_DEF] >>
     metis_tac [LESS_EQ_REFL, DECIDE ``!x y. x < x + SUC y``])
 QED
+Theorem erase_tags_set_bytes:
+  ∀p v l h. erase_tags (set_bytes p v l h) = set_bytes () v l (erase_tags h)
+Proof
+  Induct_on `v` >> rw [set_bytes_def] >>
+  irule (METIS_PROVE [] ``x = y ⇒ f a b c x = f a b c y``) >>
+  rw [erase_tags_def]
+QED
+
+Theorem erase_tags_unit_id[simp]:
+  ∀h. erase_tags h = h
+Proof
+  rw [erase_tags_def, theorem "heap_component_equality", fmap_eq_flookup, FLOOKUP_o_f] >>
+  CASE_TAC >> rw [] >>
+  Cases_on `x'` >> rw []
+QED
+
+Theorem is_allocated_suc:
+  n ≤ n' ⇒ is_allocated (Interval b n (Suc n')) h ⇒ is_allocated (Interval b n n') h
+Proof
+  rw [is_allocated_def, interval_ok_def, interval_to_set_def, SUBSET_DEF,
+      interval_freeable_def]
+  >- (first_x_assum irule >> rw [])
+  >- (qexists_tac `b2` >> rw [])
+QED
+
+Theorem get_bytes_erase_tags:
+  ∀h i. heap_ok h ∧ is_allocated i h ⇒ map snd (get_bytes (erase_tags h) i) = map snd (get_bytes h i)
+Proof
+  Cases_on `i` >> rw [get_bytes_def, MAP_MAP_o, combinTheory.o_DEF, erase_tags_def] >>
+  Induct_on `n0 - n` >> rw [erase_tags_def, FLOOKUP_o_f]
+  >- (`n0 - n = 0` by decide_tac >> rw [COUNT_LIST_def]) >>
+  Cases_on `n0` >> fs [] >>
+  `Suc n' - n = Suc (n' - n)` by decide_tac >>
+  asm_simp_tac std_ss [COUNT_LIST_SNOC] >>
+  `v = n' - n` by decide_tac >> fs [] >>
+  first_x_assum (qspecl_then [`n'`, `n`] mp_tac) >> rw []
+  >- (
+    fs [LIST_EQ_REWRITE, EL_MAP, FLOOKUP_o_f] >> rw [] >>
+    `n ≤ n'` by decide_tac >>
+    drule is_allocated_suc >> disch_then drule >> rw []) >>
+  BasicProvers.EVERY_CASE_TAC >> rw []
+  >- (
+    fs [heap_ok_def] >> rfs [is_allocated_def] >>
+    first_x_assum (qspec_then `n'` mp_tac) >> rw [] >>
+    pop_assum (qspec_then `b2` mp_tac) >> rw [] >>
+    fs [interval_to_set_def, SUBSET_DEF] >>
+    first_x_assum (qspec_then `n'` mp_tac) >> rw []) >>
+  pairarg_tac >> rw []
+QED
+
+Theorem is_allocated_erase_tags[simp]:
+  ∀i h. is_allocated i (erase_tags h) ⇔ is_allocated i h
+Proof
+  rw [is_allocated_def, erase_tags_def]
+QED
 
 export_theory ();

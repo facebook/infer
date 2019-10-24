@@ -74,7 +74,10 @@ Termination
 End
 
 Definition translate_glob_var_def:
-  translate_glob_var (Glob_var g) t = Var_name g (translate_ty t)
+  translate_glob_var gmap (Glob_var g) =
+    case flookup gmap (Glob_var g) of
+    | None => Var_name g (PointerT (IntegerT 64))
+    | Some t => Var_name g (translate_ty (PtrT t))
 End
 
 Definition translate_reg_def:
@@ -86,25 +89,24 @@ Definition translate_label_def:
 End
 
 Definition translate_const_def:
-  (translate_const (IntC s i) = Integer i (IntegerT (translate_size s))) ∧
-  (translate_const (StrC tcs) =
-    Record (map (λ(ty, c). translate_const c) tcs)) ∧
-  (translate_const (ArrC tcs) =
-    Record (map (λ(ty, c). translate_const c) tcs)) ∧
+  (translate_const gmap (IntC s i) = Integer i (IntegerT (translate_size s))) ∧
+  (translate_const gmap (StrC tcs) =
+    Record (map (λ(ty, c). translate_const gmap c) tcs)) ∧
+  (translate_const gmap (ArrC tcs) =
+    Record (map (λ(ty, c). translate_const gmap c) tcs)) ∧
+  (translate_const gmap (GlobalC g) = Var (translate_glob_var gmap g)) ∧
   (* TODO *)
-  (translate_const (GlobalC g) = Var (translate_glob_var g ARB)) ∧
-  (* TODO *)
-  (translate_const (GepC _ _ _ _) = ARB) ∧
-  (translate_const UndefC = Nondet)
+  (translate_const gmap (GepC _ _ _ _) = ARB) ∧
+  (translate_const gmap UndefC = Nondet)
 Termination
-  WF_REL_TAC `measure const_size` >>
+  WF_REL_TAC `measure (const_size o snd)` >>
   Induct_on `tcs` >> rw [] >> rw [const_size_def] >>
   first_x_assum drule >> decide_tac
 End
 
 Definition translate_arg_def:
-  (translate_arg emap (Constant c) = translate_const c) ∧
-  (translate_arg emap (Variable r) =
+  (translate_arg gmap emap (Constant c) = translate_const gmap c) ∧
+  (translate_arg gmap emap (Variable r) =
     case flookup emap r of
     (* With the current strategy of threading the emap through the whole
      * function, we should never get a None here.
@@ -114,20 +116,20 @@ Definition translate_arg_def:
 End
 
 Definition translate_updatevalue_def:
-  (translate_updatevalue a v [] = v) ∧
-  (translate_updatevalue a v (c::cs) =
-    let c' = translate_const c in
-      Update a c' (translate_updatevalue (Select a c') v cs))
+  (translate_updatevalue gmap a v [] = v) ∧
+  (translate_updatevalue gmap a v (c::cs) =
+    let c' = translate_const gmap c in
+      Update a c' (translate_updatevalue gmap (Select a c') v cs))
 End
 
 (* TODO *)
 Definition translate_instr_to_exp_def:
-  (translate_instr_to_exp emap (llvm$Sub _ _ _ ty a1 a2) =
-    llair$Sub (translate_ty ty) (translate_arg emap a1) (translate_arg emap a2)) ∧
-  (translate_instr_to_exp emap (Extractvalue _ (t, a) cs) =
-    foldl (λe c. Select e (translate_const c)) (translate_arg emap a) cs) ∧
-  (translate_instr_to_exp emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
-    translate_updatevalue (translate_arg emap a1) (translate_arg emap a2) cs)
+  (translate_instr_to_exp gmap emap (llvm$Sub _ _ _ ty a1 a2) =
+    llair$Sub (translate_ty ty) (translate_arg gmap emap a1) (translate_arg gmap emap a2)) ∧
+  (translate_instr_to_exp gmap emap (Extractvalue _ (t, a) cs) =
+    foldl (λe c. Select e (translate_const gmap c)) (translate_arg gmap emap a) cs) ∧
+  (translate_instr_to_exp gmap emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
+    translate_updatevalue gmap (translate_arg gmap emap a1) (translate_arg gmap emap a2) cs)
 End
 
 (* This translation of insertvalue to update and select is quadratic in the
@@ -179,18 +181,18 @@ End
 
 (* TODO *)
 Definition translate_instr_to_inst_def:
-  (translate_instr_to_inst emap (llvm$Store (t1, a1) (t2, a2)) =
-    llair$Store (translate_arg emap a2) (translate_arg emap a1) (sizeof t1)) ∧
-  (translate_instr_to_inst emap (Load r t (t1, a1)) =
-    Load (translate_reg r t) (translate_arg emap a1) (sizeof t))
+  (translate_instr_to_inst gmap emap (llvm$Store (t1, a1) (t2, a2)) =
+    llair$Store (translate_arg gmap emap a2) (translate_arg gmap emap a1) (sizeof t1)) ∧
+  (translate_instr_to_inst gmap emap (Load r t (t1, a1)) =
+    Load (translate_reg r t) (translate_arg gmap emap a1) (sizeof t))
 End
 
 (* TODO *)
 Definition translate_instr_to_term_def:
-  (translate_instr_to_term f emap (Br a l1 l2) =
-    Switch (translate_arg emap a) [(0, translate_label f l2)] (translate_label f l1)) ∧
-  (translate_instr_to_term f emap (Exit a) =
-    Exit (translate_arg emap a))
+  (translate_instr_to_term f gmap emap (Br a l1 l2) =
+    Switch (translate_arg gmap emap a) [(0, translate_label f l2)] (translate_label f l1)) ∧
+  (translate_instr_to_term f gmap emap (Exit a) =
+    Exit (translate_arg gmap emap a))
 End
 
 Datatype:
@@ -224,7 +226,7 @@ Definition classify_instr_def:
   (classify_instr (Exit _) = Term) ∧
   (classify_instr (Load _ _ _) = Non_exp) ∧
   (classify_instr (Store _ _) = Non_exp) ∧
-  (classify_instr (Cxa_throw _ _ _) = Non_exp) ∧
+  (classify_instr (Cxa_throw _ _ _) = Term) ∧
   (classify_instr Cxa_end_catch = Non_exp) ∧
   (classify_instr (Cxa_begin_catch _ _) = Non_exp) ∧
   (classify_instr (Sub r _ _ t _ _) = Exp r t) ∧
@@ -240,6 +242,11 @@ Definition classify_instr_def:
   (* TODO *)
   (classify_instr (Cxa_allocate_exn r _) = Exp r ARB) ∧
   (classify_instr (Cxa_get_exception_ptr r _) = Exp r ARB)
+End
+
+Definition extend_emap_non_exp_def:
+  (extend_emap_non_exp emap (Load r t _) = emap |+ (r, Var (translate_reg r t))) ∧
+  (extend_emap_non_exp emap _ = emap)
 End
 
 (* Translate a list of instructions into an block. f is the name of the function
@@ -264,22 +271,22 @@ End
  *
  *)
 Definition translate_instrs_def:
-  (translate_instrs f emap reg_to_keep [] = (<| cmnd := []; term := Unreachable |>, emap)) ∧
-  (translate_instrs f emap reg_to_keep (i :: is) =
+  (translate_instrs f gmap emap reg_to_keep [] = (<| cmnd := []; term := Unreachable |>, emap)) ∧
+  (translate_instrs f gmap emap reg_to_keep (i :: is) =
     case classify_instr i of
     | Exp r t =>
       let x = translate_reg r t in
-      let e = translate_instr_to_exp emap i in
+      let e = translate_instr_to_exp gmap emap i in
         if r ∈ reg_to_keep then
-          let (b, emap') = translate_instrs f (emap |+ (r, Var x)) reg_to_keep is in
+          let (b, emap') = translate_instrs f gmap (emap |+ (r, Var x)) reg_to_keep is in
             (b with cmnd := Move [(x, e)] :: b.cmnd, emap')
         else
-          translate_instrs f (emap |+ (r, e)) reg_to_keep is
+          translate_instrs f gmap (emap |+ (r, e)) reg_to_keep is
     | Non_exp =>
-        let (b, emap') = translate_instrs f emap reg_to_keep is in
-          (b with cmnd := translate_instr_to_inst emap i :: b.cmnd, emap')
+        let (b, emap') = translate_instrs f gmap (extend_emap_non_exp emap i) reg_to_keep is in
+          (b with cmnd := translate_instr_to_inst gmap emap i :: b.cmnd, emap')
     | Term =>
-        (<| cmnd := []; term := translate_instr_to_term f emap i |>, emap)
+        (<| cmnd := []; term := translate_instr_to_term f gmap emap i |>, emap)
     (* TODO *)
     | Call => ARB)
 End
@@ -298,21 +305,21 @@ Definition translate_label_opt_def:
 End
 
 Definition translate_header_def:
-  (translate_header f entry Entry = []) ∧
-  (translate_header f entry (Head phis _) =
+  (translate_header f gmap entry Entry = []) ∧
+  (translate_header f gmap entry (Head phis _) =
     map
       (λ(r, t, largs).
         (translate_reg r t,
         (* TODO: shouldn't use fempty here *)
-         map (λ(l, arg). (translate_label_opt f entry l, translate_arg fempty arg)) largs))
+         map (λ(l, arg). (translate_label_opt f entry l, translate_arg gmap fempty arg)) largs))
       (map dest_phi phis))
 End
 
 Definition translate_block_def:
-  translate_block f entry_n emap regs_to_keep (l, b) =
-    let (b', emap') = translate_instrs f emap regs_to_keep b.body in
+  translate_block f entry_n gmap emap regs_to_keep (l, b) =
+    let (b', emap') = translate_instrs f gmap emap regs_to_keep b.body in
       ((Lab_name f (the (option_map dest_label l) entry_n),
-       (translate_header f entry_n b.h, b')),
+       (translate_header f gmap entry_n b.h, b')),
        emap')
 End
 
@@ -373,7 +380,7 @@ Definition translate_param_def:
 End
 
 Definition translate_def_def:
-  translate_def f d =
+  translate_def f d gmap =
     let used_names = ARB in
     let entry_name = gen_name used_names "entry" in
     (* TODO *)
@@ -386,7 +393,7 @@ Definition translate_def_def:
     let (bs, emap) =
       foldl
         (λ(bs, emap) b.
-          let (b', emap') = translate_block f entry_name emap regs_to_keep b in
+          let (b', emap') = translate_block f entry_name gmap emap regs_to_keep b in
             (b'::bs, emap'))
         ([], fempty) d.blocks
     in
@@ -405,8 +412,9 @@ End
 
 Definition translate_prog_def:
   translate_prog p =
-    <| glob_init := ARB;
-       functions := map (\(fname, d). (dest_fn fname, translate_def (dest_fn fname) d)) p |>
+    let gmap = ARB in
+      <| glob_init := ARB;
+         functions := map (\(fname, d). (dest_fn fname, translate_def (dest_fn fname) d gmap)) p |>
 End
 
 export_theory ();

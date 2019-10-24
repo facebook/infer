@@ -314,6 +314,7 @@ End
 (* BEGIN Functions to interface to the generic memory model *)
 Definition type_to_shape_def:
   (type_to_shape (IntegerT n) = Flat (sizeof (IntegerT n)) (IntegerT n)) ∧
+  (type_to_shape (PointerT t) = Flat (sizeof (PointerT t)) (PointerT t)) ∧
   (type_to_shape (ArrayT t n) = Array (type_to_shape t) n) ∧
   (type_to_shape (TupleT ts) = Tuple (map type_to_shape ts))
 Termination
@@ -324,7 +325,13 @@ Termination
 End
 
 Definition convert_value_def:
-  convert_value (IntegerT size) n = IntV (&n) size
+  (convert_value (IntegerT size) n =
+    if size = 1 then
+      IntV (if n = 0 then 0 else -1) size
+    else
+      n2i n size) ∧
+  (convert_value (PointerT t) n =
+    n2i n pointer_size)
 End
 
 Definition bytes_to_llair_value_def:

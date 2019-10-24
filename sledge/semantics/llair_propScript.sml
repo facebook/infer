@@ -139,6 +139,16 @@ Proof
     rw [w2i_n2w_pos])
 QED
 
+Theorem w2i_n2w:
+  ∀n. n < dimword (:'a) ⇒ IntV (w2i (n2w n : 'a word)) (dimindex (:'a)) = n2i n (dimindex (:'a))
+Proof
+  rw [n2i_def]
+  >- (
+    qspec_then `n` mp_tac w2i_n2w_neg >>
+    fs [dimword_def, INT_MIN_def] >> rw [GSYM INT_SUB])
+  >- (irule w2i_n2w_pos >> rw [INT_MIN_def])
+QED
+
 Theorem eval_exp_ignores_lem:
   ∀s1 e v. eval_exp s1 e v ⇒ ∀s2. s1.locals = s2.locals ⇒ eval_exp s2 e v
 Proof

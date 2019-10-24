@@ -336,8 +336,6 @@ Definition unsigned_v_to_num_def:
   (unsigned_v_to_num _ = None)
 End
 
-(* TODO: This is a bit of a mess. Consider changing to a relation to deal with
- * partiality *)
 Definition eval_const_def:
   (eval_const g (IntC W1 i) = FlatV (W1V (i2w i))) ∧
   (eval_const g (IntC W8 i) = FlatV (W8V (i2w i))) ∧
@@ -386,7 +384,7 @@ Termination
 End
 
 Definition convert_value_def:
-  (convert_value (IntT W1) n = W1V (n2w n)) ∧
+  (convert_value (IntT W1) n = W1V (if n = 0 then 0w else 1w)) ∧
   (convert_value (IntT W8) n = W8V (n2w n)) ∧
   (convert_value (IntT W32) n = W32V (n2w n)) ∧
   (convert_value (IntT W64) n = W64V (n2w n)) ∧
@@ -578,7 +576,8 @@ Inductive step_instr:
   (eval s a1 = Some <| poison := p1; value := FlatV (PtrV w) |> ∧
    interval = Interval freeable (w2n w) (w2n w + sizeof t) ∧
    is_allocated interval s.heap ∧
-   pbytes = get_bytes s.heap interval
+   pbytes = get_bytes s.heap interval ∧
+   first_class_type t
    ⇒
    step_instr prog s
      (Load r t (t1, a1)) Tau
