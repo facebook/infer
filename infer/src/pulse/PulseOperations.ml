@@ -23,7 +23,6 @@ let check_addr_access location (address, history) astate =
 
 
 module Closures = struct
-  open Result.Monad_infix
   module Memory = AbductiveDomain.Memory
 
   let fake_capture_field_prefix = "__capture_"
