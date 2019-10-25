@@ -150,20 +150,23 @@ module Memory = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  (** if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-  let record_must_be_valid access_trace address (pre : InvertedDomain.t) =
-    if BaseMemory.mem_edges address (pre :> base_domain).heap then
-      InvertedDomain.update pre
-        ~heap:
-          (BaseMemory.add_attribute address (MustBeValid access_trace) (pre :> base_domain).heap)
-    else pre
+  (** if [address] is in [pre] then add the attribute [attr] *)
+  let abduce_attribute address attribute astate =
+    L.d_printfln "Abducing %a:%a" AbstractValue.pp address Attribute.pp attribute ;
+    let new_pre =
+      if BaseMemory.mem_edges address (astate.pre :> base_domain).heap then
+        InvertedDomain.update astate.pre
+          ~heap:(BaseMemory.add_attribute address attribute (astate.pre :> base_domain).heap)
+      else astate.pre
+    in
+    if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
-  let check_valid access_trace addr ({post; pre} as astate) =
-    BaseMemory.check_valid addr (post :> base_domain).heap
+  let check_valid access_trace addr astate =
+    BaseMemory.check_valid addr (astate.post :> base_domain).heap
     >>| fun () ->
-    let new_pre = record_must_be_valid access_trace addr pre in
-    if phys_equal new_pre pre then astate else {astate with pre= new_pre}
+    (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
+    abduce_attribute addr (MustBeValid access_trace) astate
 
 
   let add_edge (addr, history) access new_addr_hist location astate =

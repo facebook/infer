@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -19,6 +20,8 @@ type t =
   | StdVectorReserve
   | WrittenTo of unit Trace.t
 [@@deriving compare]
+
+val pp : F.formatter -> t -> unit
 
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = t
