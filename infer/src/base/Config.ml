@@ -296,6 +296,8 @@ let specs_files_suffix = ".specs"
 
 let starvation_issues_dir_name = "starvation_issues"
 
+let test_determinator_results = "test_determinator_results"
+
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 

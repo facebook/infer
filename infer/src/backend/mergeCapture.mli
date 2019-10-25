@@ -10,5 +10,3 @@ open! IStd
 val merge_captured_targets : unit -> unit
 
 val merge_changed_functions : unit -> unit
-
-val merge_test_determinator_results : unit -> unit

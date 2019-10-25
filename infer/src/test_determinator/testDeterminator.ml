@@ -9,6 +9,7 @@ open! IStd
 module L = Logging
 module F = Format
 module YB = Yojson.Basic
+module YBU = Yojson.Basic.Util
 
 (* a flag used to make the method search signature sensitive *)
 let use_signature = false
@@ -241,18 +242,47 @@ let clang_test_to_run ~clang_range_map ~source_file () =
         else acc )
 
 
-let emit_tests_to_run relevant_tests =
+let emit_tests_to_run_java relevant_tests =
   let json = `List (List.map ~f:(fun t -> `String t) relevant_tests) in
   let outpath = Config.results_dir ^/ Config.test_determinator_output in
   YB.to_file outpath json
 
 
+let emit_tests_to_run_clang source_file relevant_tests =
+  if not (List.is_empty relevant_tests) then (
+    let json = `List (List.map ~f:(fun t -> `String t) relevant_tests) in
+    let abbrev_source_file = DB.source_file_encoding source_file in
+    let test_determinator_results_path = Config.results_dir ^/ Config.test_determinator_results in
+    let outpath = test_determinator_results_path ^/ abbrev_source_file ^ ".json" in
+    Utils.create_dir test_determinator_results_path ;
+    Utils.write_json_to_file outpath json )
+
+
 let compute_and_emit_test_to_run ?clang_range_map ?source_file () =
-  let relevant_tests =
-    match (clang_range_map, source_file) with
-    | Some clang_range_map, Some source_file ->
-        clang_test_to_run ~clang_range_map ~source_file ()
-    | _ ->
-        java_test_to_run ()
+  match (clang_range_map, source_file) with
+  | Some clang_range_map, Some source_file ->
+      let relevant_tests = clang_test_to_run ~clang_range_map ~source_file () in
+      emit_tests_to_run_clang source_file relevant_tests
+  | _ ->
+      let relevant_tests = java_test_to_run () in
+      emit_tests_to_run_java relevant_tests
+
+
+let merge_test_determinator_results () =
+  let main_results_list = ref [] in
+  let merge_json_results intermediate_result =
+    let changed_json =
+      try YB.from_file intermediate_result |> YBU.to_list with Sys_error _ -> []
+    in
+    main_results_list := List.append changed_json !main_results_list
   in
-  emit_tests_to_run relevant_tests
+  let test_determinator_results_path = Config.results_dir ^/ Config.test_determinator_results in
+  let main_results_file = Config.results_dir ^/ Config.test_determinator_output in
+  Utils.directory_iter merge_json_results test_determinator_results_path ;
+  let main_results_list_sorted =
+    List.dedup_and_sort
+      ~compare:(fun s1 s2 ->
+        match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
+      !main_results_list
+  in
+  YB.to_file main_results_file (`List main_results_list_sorted)

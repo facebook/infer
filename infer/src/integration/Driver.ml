@@ -412,8 +412,6 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
   in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
-    if Config.test_determinator && Config.process_clang_ast then
-      MergeCapture.merge_test_determinator_results () ;
     MergeCapture.merge_captured_targets () ;
     RunState.set_merge_capture false ;
     RunState.store () ) ;

@@ -17,3 +17,5 @@ val compute_and_emit_relevant_methods :
      clang_range_map:((Location.t * Location.t) * ClangProc.t option) Typ.Procname.Map.t
   -> source_file:SourceFile.t
   -> unit
+
+val merge_test_determinator_results : unit -> unit

@@ -56,13 +56,6 @@ let merge_changed_functions () =
   merge_all_json_results merge_changed_functions_json "changed functions"
 
 
-let merge_test_determinator_results () =
-  let merge_test_determinator_json infer_out_src =
-    merge_json_results infer_out_src Config.test_determinator_output
-  in
-  merge_all_json_results merge_test_determinator_json "test determinator result"
-
-
 let merge_captured_targets () =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;

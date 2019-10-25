@@ -1214,4 +1214,6 @@ let main ~report_json =
       pp_json_report_by_report_kind formats_by_report_kind fname
   | None ->
       pp_summary_and_issues formats_by_report_kind issue_formats ) ;
+  if Config.test_determinator && Config.process_clang_ast then
+    TestDeterminator.merge_test_determinator_results () ;
   PerfStats.get_reporter PerfStats.Reporting ()

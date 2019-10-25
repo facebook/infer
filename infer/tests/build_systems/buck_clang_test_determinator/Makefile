@@ -11,8 +11,8 @@ B_C = src/b.c
 BUCK_TARGET = //src:test
 TEST_DETERMINATOR_RESULT = infer-out/test_determinator.json
 DIFF_OUTPUT = diff.mod.test
-INFER_OPTIONS = --flavors --process-clang-ast --no-linters --no-capture --test-determinator \
-	--modified-lines $(DIFF_OUTPUT) --project-root $(TESTS_DIR) --profiler-samples profiler_samples.json
+INFER_OPTIONS = --buck-compilation-database no-deps --process-clang-ast --no-linters --no-capture --test-determinator \
+	--modified-lines $(DIFF_OUTPUT) --profiler-samples profiler_samples.json
 
 $(DIFF_OUTPUT):
 	$(QUIET)echo -n '$(A_C):' > diff.mod.test

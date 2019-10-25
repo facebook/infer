@@ -179,6 +179,8 @@ val specs_files_suffix : string
 
 val starvation_issues_dir_name : string
 
+val test_determinator_results : string
+
 val trace_absarray : bool
 
 val trace_events_file : string
