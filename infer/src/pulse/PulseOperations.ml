@@ -200,7 +200,12 @@ let rec eval_cond ~negated location exp astate =
       eval_cond ~negated location (Exp.BinOp (Ne, exp, zero)) astate
 
 
-let assert_is_true location ~condition astate = eval_cond ~negated:false location condition astate
+let assert_is_true location ~condition astate =
+  eval_cond ~negated:false location condition astate
+  >>| fun (astate, result) ->
+  let can_go_through = match (result : TBool.t) with Top | True -> true | False -> false in
+  (astate, can_go_through)
+
 
 let eval_deref location exp astate =
   eval location exp astate
