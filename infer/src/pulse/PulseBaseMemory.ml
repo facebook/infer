@@ -82,15 +82,14 @@ let check_valid address memory =
       Ok ()
 
 
-let get_closure_proc_name address memory =
-  Graph.find_opt address (snd memory)
-  |> Option.bind ~f:(fun attributes -> Attributes.get_closure_proc_name attributes)
+let get_attribute getter address memory =
+  let open Option.Monad_infix in
+  Graph.find_opt address (snd memory) >>= getter
 
 
-let get_constant address memory =
-  Graph.find_opt address (snd memory)
-  |> Option.bind ~f:(fun attributes -> Attributes.get_constant attributes)
+let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
+let get_constant = get_attribute Attributes.get_constant
 
 let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
 
