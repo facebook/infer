@@ -23,3 +23,14 @@ val is_synchronized_library_call : Tenv.t -> Typ.Procname.t -> bool
 
 val should_skip_analysis : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 (** should we treat a method call as skip (eg library methods in guava) to avoid FPs? *)
+
+val is_ui_thread_model : Typ.Procname.t -> bool
+(** is procedure an assertion we are on the UI thread or equivalent *)
+
+val is_annotated_nonblocking :
+  attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
+(** is procedure transitively annotated [@Nonblocking] *)
+
+val is_annotated_lockless :
+  attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
+(** is procedure transitively annotated [@Lockless] *)

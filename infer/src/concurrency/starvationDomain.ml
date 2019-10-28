@@ -30,7 +30,9 @@ module ThreadDomain = struct
     (match st with UIThread -> "UIThread" | AnyThread -> "AnyThread") |> F.pp_print_string fmt
 
 
-  (* There is only one UI thread, so (UIThread || UIThread) is impossible. *)
+  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. 
+      In addition, this is monotonic wrt the lattice (increasing either argument cannot 
+      transition from true to false). *)
   let can_run_in_parallel st1 st2 =
     match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
 

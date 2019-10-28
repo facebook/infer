@@ -22,11 +22,6 @@ module ThreadDomain : sig
   type t = UIThread | AnyThread
 
   include AbstractDomain.WithTop with type t := t
-
-  val can_run_in_parallel : t -> t -> bool
-  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. 
-      In addition, this is monotonic wrt the lattice (increasing either argument cannot 
-      transition from true to false). *)
 end
 
 (** Abstraction of a path that represents a lock, special-casing comparison
