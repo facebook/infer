@@ -120,9 +120,6 @@ val m1_255 : t
 val nat : t
 (** [0, +oo] *)
 
-val one : t
-(** 1 *)
-
 val pos : t
 (** [1, +oo] *)
 
@@ -131,6 +128,9 @@ val top : t
 
 val zero : t
 (** 0 *)
+
+val zero_one : t
+(** [0, 1] *)
 
 val unknown_bool : t
 (** [0, 1] *)

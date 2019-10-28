@@ -140,4 +140,23 @@ class ArrayListTest {
     } // a.size should be [0, b.size]
     int j = b.get(a.size());
   }
+
+  void add_and_remove_ok(ArrayList<Integer> a) {
+    ArrayList<Integer> b = new ArrayList<Integer>();
+    b.add(0);
+    for (Integer i : a) {
+      b.add(0);
+      b.remove(0);
+    } // b.size is one here
+    int j = b.get(0);
+  }
+
+  void add_and_remove_bad(ArrayList<Integer> a) {
+    ArrayList<Integer> b = new ArrayList<Integer>();
+    for (Integer i : a) {
+      b.add(0);
+      b.remove(0);
+    } // b.size is zero here
+    int j = b.get(0);
+  }
 }

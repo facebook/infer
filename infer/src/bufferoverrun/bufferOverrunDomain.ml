@@ -1009,6 +1009,16 @@ module AliasTarget = struct
         IteratorOffset {alias_typ; l; i= IntLit.(add i minus_one); java_tmp}
     | _ ->
         x
+
+
+  let incr_or_not_size_alias loc x =
+    match x with
+    | Size {l; i} when Loc.equal l loc ->
+        Size {alias_typ= Le; l; i; java_tmp= None}
+    | IteratorOffset {l; i; java_tmp} when Loc.equal l loc ->
+        IteratorOffset {alias_typ= Le; l; i; java_tmp}
+    | _ ->
+        x
 end
 
 module AliasMap = struct
@@ -1109,6 +1119,19 @@ module AliasMap = struct
 
 
   let incr_size_alias loc = map (AliasTarget.incr_size_alias loc)
+
+  let incr_or_not_size_alias loc = map (AliasTarget.incr_or_not_size_alias loc)
+
+  let forget_size_alias arr_locs x =
+    let not_in_arr_locs _k v =
+      match v with
+      | AliasTarget.Size {l} | AliasTarget.IteratorOffset {l} ->
+          not (PowLoc.mem l arr_locs)
+      | _ ->
+          true
+    in
+    filter not_in_arr_locs x
+
 
   let store_n ~prev loc id n x =
     match find_id id prev with
@@ -1222,9 +1245,16 @@ module Alias = struct
         a
 
 
+  let update_size_alias locs a ~f = PowLoc.fold f locs a
+
   let incr_size_alias : PowLoc.t -> t -> t =
-    let incr_size_alias1 loc a = lift_map (AliasMap.incr_size_alias loc) a in
-    fun locs a -> PowLoc.fold incr_size_alias1 locs a
+   fun locs a ->
+    update_size_alias locs a ~f:(fun loc acc -> lift_map (AliasMap.incr_size_alias loc) acc)
+
+
+  let incr_or_not_size_alias : PowLoc.t -> t -> t =
+   fun locs a ->
+    update_size_alias locs a ~f:(fun loc acc -> lift_map (AliasMap.incr_or_not_size_alias loc) acc)
 
 
   let add_empty_size_alias : Loc.t -> PowLoc.t -> t -> t =
@@ -1266,6 +1296,9 @@ module Alias = struct
 
   let remove_temp : Ident.t -> t -> t =
    fun temp -> lift_map (AliasMap.remove (AliasMap.Key.of_id temp))
+
+
+  let forget_size_alias arr_locs = lift_map (AliasMap.forget_size_alias arr_locs)
 end
 
 module CoreVal = struct
@@ -1799,6 +1832,8 @@ module MemReach = struct
 
   let incr_size_alias locs m = {m with alias= Alias.incr_size_alias locs m.alias}
 
+  let incr_or_not_size_alias locs m = {m with alias= Alias.incr_or_not_size_alias locs m.alias}
+
   let add_iterator_offset_alias id m =
     let arr_locs =
       let add_arr l v acc = if Itv.is_zero (Val.array_sizeof v) then PowLoc.add l acc else acc in
@@ -2024,6 +2059,8 @@ module MemReach = struct
     {m with stack_locs; mem_pure}
 
 
+  let forget_size_alias arr_locs m = {m with alias= Alias.forget_size_alias arr_locs m.alias}
+
   let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
 
   let init_array_relation :
@@ -2196,6 +2233,8 @@ module Mem = struct
 
   let incr_size_alias locs = map ~f:(MemReach.incr_size_alias locs)
 
+  let incr_or_not_size_alias locs = map ~f:(MemReach.incr_or_not_size_alias locs)
+
   let add_iterator_offset_alias : Ident.t -> t -> t =
    fun id -> map ~f:(MemReach.add_iterator_offset_alias id)
 
@@ -2305,6 +2344,8 @@ module Mem = struct
   let forget_unreachable_locs : formals:(Pvar.t * Typ.t) list -> t -> t =
    fun ~formals -> map ~f:(MemReach.forget_unreachable_locs ~formals)
 
+
+  let forget_size_alias arr_locs = map ~f:(MemReach.forget_size_alias arr_locs)
 
   let[@warning "-32"] init_param_relation : Loc.t -> t -> t =
    fun loc -> map ~f:(MemReach.init_param_relation loc)

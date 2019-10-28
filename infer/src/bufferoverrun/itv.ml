@@ -139,6 +139,8 @@ module ItvPure = struct
 
   let zero = of_bound Bound.zero
 
+  let zero_one = (Bound.zero, Bound.one)
+
   let get_iterator_itv = set_lb_zero
 
   let true_sem = one
@@ -521,6 +523,8 @@ let true_sem = NonBottom ItvPure.true_sem
 let unknown_bool = NonBottom ItvPure.unknown_bool
 
 let zero = NonBottom ItvPure.zero
+
+let zero_one = NonBottom ItvPure.zero_one
 
 let of_bool = function
   | Boolean.Bottom ->

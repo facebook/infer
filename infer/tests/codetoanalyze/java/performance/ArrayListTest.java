@@ -6,6 +6,7 @@
  */
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class ArrayListTest {
@@ -291,6 +292,19 @@ public class ArrayListTest {
         break;
       }
     }
+  }
+
+  public static HashMap<Integer, Integer> init_with_put_linear(ArrayList<Integer> a) {
+    HashMap<Integer, Integer> m = new HashMap<>();
+    for (Integer i : a) {
+      m.put(i, i);
+    }
+    return m;
+  }
+
+  public static void call_init_with_put_linear(ArrayList<Integer> a) {
+    HashMap<Integer, Integer> m = init_with_put_linear(a);
+    for (HashMap.Entry<Integer, Integer> e : m.entrySet()) {}
   }
 }
 

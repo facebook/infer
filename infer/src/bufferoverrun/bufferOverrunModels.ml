@@ -844,36 +844,39 @@ module Collection = struct
 
 
   let change_size_by ~size_f coll_id {location} ~ret:_ mem =
+    let arr_locs = get_collection_internal_array_locs coll_id mem in
+    let mem = Dom.Mem.forget_size_alias arr_locs mem in
+    Dom.Mem.transform_mem ~f:(Dom.Val.transform_array_length location ~f:size_f) arr_locs mem
+
+
+  let change_size_by_incr coll_id {location} ~ret:_ mem =
+    let arr_locs = get_collection_internal_array_locs coll_id mem in
+    Dom.Mem.transform_mem ~f:(Dom.Val.transform_array_length location ~f:Itv.incr) arr_locs mem
+    |> Dom.Mem.incr_size_alias arr_locs
+
+
+  let change_size_by_incr_or_not coll_id {location} ~ret:_ mem =
+    let arr_locs = get_collection_internal_array_locs coll_id mem in
     Dom.Mem.transform_mem
-      ~f:(Dom.Val.transform_array_length location ~f:size_f)
-      (get_collection_internal_array_locs coll_id mem)
-      mem
+      ~f:(Dom.Val.transform_array_length location ~f:(Itv.plus Itv.zero_one))
+      arr_locs mem
+    |> Dom.Mem.incr_or_not_size_alias arr_locs
 
 
-  let add coll_id =
-    let exec {location} ~ret:_ mem =
-      let arr_locs = get_collection_internal_array_locs coll_id mem in
-      Dom.Mem.transform_mem ~f:(Dom.Val.transform_array_length location ~f:Itv.incr) arr_locs mem
-      |> Dom.Mem.incr_size_alias arr_locs
-    in
-    {exec; check= no_check}
-
+  let add coll_id = {exec= change_size_by_incr coll_id; check= no_check}
 
   let singleton_collection =
     let exec env ~ret:((id, _) as ret) mem =
       let {exec= new_exec; check= _} = new_collection in
       let mem = new_exec env ~ret mem in
-      change_size_by ~size_f:Itv.incr id ~ret env mem
+      change_size_by_incr id ~ret env mem
     in
     {exec; check= no_check}
 
 
   (** increase the size by [0, 1] because put replaces the value
      rather than add a new one when the key is found in the map *)
-  let put coll_id =
-    let zero_one = Itv.set_lb_zero Itv.one in
-    {exec= change_size_by ~size_f:(Itv.plus zero_one) coll_id; check= no_check}
-
+  let put coll_id = {exec= change_size_by_incr_or_not coll_id; check= no_check}
 
   (* The return value is set by [set_itv_updated_by_addition] in order to be sure that it can be
      used as a control variable value in the cost checker. *)
@@ -982,8 +985,7 @@ module Collection = struct
 
 
   let add_at_index (coll_id : Ident.t) index_exp =
-    { exec= change_size_by ~size_f:Itv.incr coll_id
-    ; check= check_index ~last_included:true coll_id index_exp }
+    {exec= change_size_by_incr coll_id; check= check_index ~last_included:true coll_id index_exp}
 
 
   let remove_at_index coll_id index_exp =
