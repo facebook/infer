@@ -43,12 +43,13 @@ and declared_nonnull_origin =
 and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
+  | PrimitiveType  (** Primitive types are non-nullable by language design *)
 [@@deriving compare]
 
 val get_nullability : t -> Nullability.t
 
-val of_annot_item : is_strict_mode:bool -> Annot.Item.t -> t
-(** Converts the information from the annotation to nullability.
+val of_type_and_annotation : is_strict_mode:bool -> Typ.t -> Annot.Item.t -> t
+(** Given the type and its annotations, returns its nullability.
     NOTE: it does not take into account models etc., so this is intended to be used
     as a helper function for more high-level annotation processing.
  *)

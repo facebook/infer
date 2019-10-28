@@ -28,8 +28,11 @@ and param_signature =
 [@@deriving compare]
 
 (* get nullability of method's return type given its annotations and information about its params *)
-let nullability_for_return ia ~is_strict_mode ~has_propagates_nullable_in_param =
-  let nullability = AnnotatedNullability.of_annot_item ~is_strict_mode ia in
+let nullability_for_return ret_type ret_annotations ~is_strict_mode
+    ~has_propagates_nullable_in_param =
+  let nullability =
+    AnnotatedNullability.of_type_and_annotation ~is_strict_mode ret_type ret_annotations
+  in
   (* if any param is annotated with propagates nullable, then the result is nullable *)
   match nullability with
   | AnnotatedNullability.Nullable _ ->
@@ -43,9 +46,10 @@ let nullability_for_return ia ~is_strict_mode ~has_propagates_nullable_in_param 
 
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
-let extract_nullability ~is_strict_mode return_annotation param_annotations =
+let extract_nullability ~is_strict_mode ret_type ret_annotations param_annotated_types =
   let params_nullability =
-    List.map param_annotations ~f:(AnnotatedNullability.of_annot_item ~is_strict_mode)
+    List.map param_annotated_types ~f:(fun (typ, annotations) ->
+        AnnotatedNullability.of_type_and_annotation typ annotations ~is_strict_mode )
   in
   let has_propagates_nullable_in_param =
     List.exists params_nullability ~f:(function
@@ -55,13 +59,14 @@ let extract_nullability ~is_strict_mode return_annotation param_annotations =
           false )
   in
   let return_nullability =
-    nullability_for_return return_annotation ~is_strict_mode ~has_propagates_nullable_in_param
+    nullability_for_return ret_type ret_annotations ~is_strict_mode
+      ~has_propagates_nullable_in_param
   in
   (return_nullability, params_nullability)
 
 
 let get ~is_strict_mode proc_attributes : t =
-  let Annot.Method.{return= return_annotation; params= original_params_annotation} =
+  let Annot.Method.{return= ret_annotation; params= original_params_annotation} =
     proc_attributes.ProcAttributes.method_annotation
   in
   let formals = proc_attributes.ProcAttributes.formals in
@@ -85,12 +90,14 @@ let get ~is_strict_mode proc_attributes : t =
     in
     List.rev (zip_params (List.rev original_params_annotation) (List.rev formals))
   in
-  let _, final_params_annotation = List.unzip params_with_annotations in
+  let param_annotated_types =
+    List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
+  in
   let return_nullability, params_nullability =
-    extract_nullability ~is_strict_mode return_annotation final_params_annotation
+    extract_nullability ~is_strict_mode ret_type ret_annotation param_annotated_types
   in
   let ret =
-    { ret_annotation_deprecated= return_annotation
+    { ret_annotation_deprecated= ret_annotation
     ; ret_annotated_type= AnnotatedType.{nullability= return_nullability; typ= ret_type} }
   in
   let params =

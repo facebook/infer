@@ -135,6 +135,12 @@ class Strict {
     return (new NonStrict()).getNullable();
   }
 
+  public int usingPrimitiveTypesFromNonStrictIsOK() {
+    // Of course, primitive types can not be nullable so it
+    // does not matter if they are used from NonStrict
+    return NonStrict.getPrimitiveTypeValue();
+  }
+
   private String nonStrictClass_convertingNonnullToNonnullIsBad() {
     // even that it is declared as nonnull, can not convert it to nonnull it without checking before
     return (new NonStrict()).getNonnull();
@@ -234,5 +240,9 @@ class NonStrict {
 
   public static String staticNonnull() {
     return "";
+  }
+
+  public static int getPrimitiveTypeValue() {
+    return 0;
   }
 }

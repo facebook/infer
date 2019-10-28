@@ -28,7 +28,8 @@ let get tenv fn typ =
     { annotation_deprecated= annotation
     ; annotated_type=
         AnnotatedType.
-          {nullability= AnnotatedNullability.of_annot_item annotation ~is_strict_mode; typ} }
+          { nullability= AnnotatedNullability.of_type_and_annotation typ annotation ~is_strict_mode
+          ; typ } }
   in
   Option.map
     (Typ.Struct.get_field_type_and_annotation ~lookup fn typ)

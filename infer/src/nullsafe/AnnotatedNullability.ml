@@ -40,6 +40,7 @@ and declared_nonnull_origin =
 and nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
+  | PrimitiveType  (** Primitive types are non-nullable by language design *)
 [@@deriving compare]
 
 let get_nullability = function
@@ -67,7 +68,13 @@ let pp fmt t =
     match origin with AnnotatedNonnull -> "@" | ImplicitlyNonnull -> "implicit"
   in
   let string_of_nonnull_origin nonnull_origin =
-    match nonnull_origin with ModelledNonnull -> "model" | StrictMode -> "strict"
+    match nonnull_origin with
+    | ModelledNonnull ->
+        "model"
+    | StrictMode ->
+        "strict"
+    | PrimitiveType ->
+        "primitive"
   in
   match t with
   | Nullable origin ->
@@ -78,14 +85,15 @@ let pp fmt t =
       F.fprintf fmt "Nonnull[%s]" (string_of_nonnull_origin origin)
 
 
-let of_annot_item ~is_strict_mode ia =
-  if Annotations.ia_is_nullable ia then
+let of_type_and_annotation ~is_strict_mode typ annotations =
+  if not (PatternMatch.type_is_class typ) then Nonnull PrimitiveType
+  else if Annotations.ia_is_nullable annotations then
     let nullable_origin =
-      if Annotations.ia_is_propagates_nullable ia then AnnotatedPropagatesNullable
+      if Annotations.ia_is_propagates_nullable annotations then AnnotatedPropagatesNullable
       else AnnotatedNullable
     in
     Nullable nullable_origin
   else if is_strict_mode then Nonnull StrictMode
-  else if Annotations.ia_is_nonnull ia then DeclaredNonnull AnnotatedNonnull
+  else if Annotations.ia_is_nonnull annotations then DeclaredNonnull AnnotatedNonnull
     (* Currently, we treat not annotated types as nonnull *)
   else DeclaredNonnull ImplicitlyNonnull
