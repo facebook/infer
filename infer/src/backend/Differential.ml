@@ -213,7 +213,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
   let class_name =
-    match Str.split (Str.regexp ("." ^ method_name)) cost_info.Jsonbug_t.procedure_id with
+    match Str.split (Str.regexp_string ("." ^ method_name)) cost_info.Jsonbug_t.procedure_id with
     | [class_name; _] ->
         class_name
     | _ ->

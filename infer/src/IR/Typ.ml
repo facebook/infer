@@ -1136,7 +1136,7 @@ module Procname = struct
   let is_infer_undefined pn =
     match pn with
     | Java j ->
-        let regexp = Str.regexp "com.facebook.infer.builtins.InferUndefined" in
+        let regexp = Str.regexp_string "com.facebook.infer.builtins.InferUndefined" in
         Str.string_match regexp (Java.get_class_name j) 0
     | _ ->
         (* TODO: add cases for obj-c, c, c++ *)
