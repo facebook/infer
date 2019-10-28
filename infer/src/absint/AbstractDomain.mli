@@ -225,6 +225,12 @@ end
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) :
   InvertedMapS with type key = Key.t and type value = ValueDomain.t
 
+(** Similar to [InvertedMap] but it guarantees that it has a canonical form. For example, both [{a
+   -> top_v}] and [empty] represent the same abstract value [top] in [InvertedMap], but in this
+   implementation, [top] is always implemented as [empty] by not adding the [top_v] explicitly. *)
+module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : WithTop) :
+  InvertedMapS with type key = Key.t and type value = ValueDomain.t
+
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
 include

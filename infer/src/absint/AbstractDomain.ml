@@ -533,6 +533,152 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
     inter prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
 end
 
+module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : WithTop) =
+struct
+  module M = InvertedMap (Key) (ValueDomain)
+
+  type key = M.key
+
+  type value = M.value
+
+  type t = M.t
+
+  let empty = M.empty
+
+  let is_empty = M.is_empty
+
+  let mem = M.mem
+
+  let add k v m = if ValueDomain.is_top v then M.remove k m else M.add k v m
+
+  let none_if_top_opt = function Some v when ValueDomain.is_top v -> None | r -> r
+
+  let update k f m =
+    let f opt_v = f opt_v |> none_if_top_opt in
+    M.update k f m
+
+
+  let singleton k v = add k v empty
+
+  let remove = M.remove
+
+  let merge f x y =
+    let f k opt_v1 opt_v2 = f k opt_v1 opt_v2 |> none_if_top_opt in
+    M.merge f x y
+
+
+  let union f x y =
+    let f k v1 v2 = f k v1 v2 |> none_if_top_opt in
+    M.union f x y
+
+
+  let compare = M.compare
+
+  let equal = M.equal
+
+  let iter = M.iter
+
+  let fold = M.fold
+
+  let for_all = M.for_all
+
+  let exists = M.exists
+
+  let filter = M.filter
+
+  let partition = M.partition
+
+  let cardinal = M.cardinal
+
+  let bindings = M.bindings
+
+  let min_binding = M.min_binding
+
+  let min_binding_opt = M.min_binding_opt
+
+  let max_binding = M.max_binding
+
+  let max_binding_opt = M.max_binding_opt
+
+  let choose = M.choose
+
+  let choose_opt = M.choose_opt
+
+  let split = M.split
+
+  let find = M.find
+
+  let find_opt = M.find_opt
+
+  let find_first = M.find_first
+
+  let find_first_opt = M.find_first_opt
+
+  let find_last = M.find_last
+
+  let find_last_opt = M.find_last_opt
+
+  let mapi f m =
+    let tops = ref [] in
+    let f k v =
+      let v = f k v in
+      if ValueDomain.is_top v then tops := k :: !tops ;
+      v
+    in
+    let m = M.mapi f m in
+    List.fold_left !tops ~init:m ~f:(fun m k -> remove k m)
+
+
+  let map f m = mapi (fun _ v -> f v) m
+
+  let is_singleton_or_more = M.is_singleton_or_more
+
+  let pp_key = M.pp_key
+
+  let pp = M.pp
+
+  let ( <= ) = M.( <= )
+
+  let inter ~f astate1 astate2 =
+    if phys_equal astate1 astate2 then astate1
+    else
+      let equals1 = ref true in
+      let equals2 = ref true in
+      let res =
+        merge
+          (fun _ v1_opt v2_opt ->
+            match (v1_opt, v2_opt) with
+            | Some v1, Some v2 ->
+                let v = f v1 v2 in
+                if ValueDomain.is_top v then None
+                else (
+                  if not (phys_equal v v1) then equals1 := false ;
+                  if not (phys_equal v v2) then equals2 := false ;
+                  Some v )
+            | Some _, None ->
+                equals1 := false ;
+                None
+            | None, Some _ ->
+                equals2 := false ;
+                None
+            | None, None ->
+                None )
+          astate1 astate2
+      in
+      if !equals1 then astate1 else if !equals2 then astate2 else res
+
+
+  let join = inter ~f:ValueDomain.join
+
+  let widen ~prev ~next ~num_iters =
+    inter prev next ~f:(fun prev next -> ValueDomain.widen ~prev ~next ~num_iters)
+
+
+  let top = M.top
+
+  let is_top = M.is_top
+end
+
 module FiniteMultiMap
     (Key : PrettyPrintable.PrintableOrderedType)
     (Value : PrettyPrintable.PrintableOrderedType) =

@@ -874,6 +874,10 @@ module AliasTarget = struct
     | Top
   [@@deriving compare]
 
+  let top = Top
+
+  let is_top = function Top -> true | _ -> false
+
   let equal = [%compare.equal: t]
 
   let pp_with_key pp_key =
@@ -1034,7 +1038,7 @@ module AliasMap = struct
     let use_loc l = function LocKey l' -> Loc.equal l l' | IdentKey _ -> false
   end
 
-  include AbstractDomain.InvertedMap (Key) (AliasTarget)
+  include AbstractDomain.SafeInvertedMap (Key) (AliasTarget)
 
   let some_non_top = function AliasTarget.Top -> None | v -> Some v
 
