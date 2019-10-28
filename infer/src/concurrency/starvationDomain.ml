@@ -11,6 +11,37 @@ module MF = MarkupFormatter
 
 let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
+module ThreadDomain = struct
+  type t = UIThread | AnyThread [@@deriving compare]
+
+  let top = AnyThread
+
+  let is_top = function AnyThread -> true | UIThread -> false
+
+  let join st1 st2 =
+    match (st1, st2) with AnyThread, _ | _, AnyThread -> AnyThread | _, _ -> UIThread
+
+
+  let ( <= ) ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp fmt st =
+    (match st with UIThread -> "UIThread" | AnyThread -> "AnyThread") |> F.pp_print_string fmt
+
+
+  (* There is only one UI thread, so (UIThread || UIThread) is impossible. *)
+  let can_run_in_parallel st1 st2 =
+    match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
+
+
+  let is_uithread = function UIThread -> true | _ -> false
+
+  (* If we know that either the caller or the callee is on UIThread, keep it that way. *)
+  let integrate_summary ~caller ~callee =
+    match (caller, callee) with UIThread, _ | _, UIThread -> UIThread | _, _ -> AnyThread
+end
+
 module Lock = struct
   (* TODO (T37174859): change to [HilExp.t] *)
   type t = AccessPath.t
@@ -220,7 +251,8 @@ end = struct
 end
 
 module CriticalPairElement = struct
-  type t = {acquisitions: Acquisitions.t; event: Event.t} [@@deriving compare]
+  type t = {acquisitions: Acquisitions.t; event: Event.t; thread: ThreadDomain.t}
+  [@@deriving compare]
 
   let pp fmt {acquisitions; event} =
     F.fprintf fmt "{acquisitions= %a; event= %a}" Acquisitions.pp acquisitions Event.pp event
@@ -232,7 +264,7 @@ end
 module CriticalPair = struct
   include ExplicitTrace.MakeTraceElem (CriticalPairElement) (ExplicitTrace.DefaultCallPrinter)
 
-  let make ~loc acquisitions event = make {acquisitions; event} loc
+  let make ~loc acquisitions event thread = make {acquisitions; event; thread} loc
 
   let is_blocking_call {elem= {event}} = match event with LockAcquire _ -> true | _ -> false
 
@@ -241,17 +273,21 @@ module CriticalPair = struct
 
 
   let may_deadlock ({elem= pair1} as t1 : t) ({elem= pair2} as t2 : t) =
-    Option.both (get_final_acquire t1) (get_final_acquire t2)
-    |> Option.exists ~f:(fun (lock1, lock2) ->
-           (not (Lock.equal lock1 lock2))
-           && Acquisitions.lock_is_held lock2 pair1.acquisitions
-           && Acquisitions.lock_is_held lock1 pair2.acquisitions
-           && Acquisitions.inter pair1.acquisitions pair2.acquisitions |> Acquisitions.is_empty )
+    ThreadDomain.can_run_in_parallel pair1.thread pair2.thread
+    && Option.both (get_final_acquire t1) (get_final_acquire t2)
+       |> Option.exists ~f:(fun (lock1, lock2) ->
+              (not (Lock.equal lock1 lock2))
+              && Acquisitions.lock_is_held lock2 pair1.acquisitions
+              && Acquisitions.lock_is_held lock1 pair2.acquisitions
+              && Acquisitions.inter pair1.acquisitions pair2.acquisitions |> Acquisitions.is_empty
+          )
 
 
-  let with_callsite t existing_acquisitions call_site =
-    let f ({acquisitions} as elem : CriticalPairElement.t) =
-      {elem with acquisitions= Acquisitions.union existing_acquisitions acquisitions}
+  let with_callsite t existing_acquisitions call_site thread =
+    let f (elem : CriticalPairElement.t) =
+      { elem with
+        acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions
+      ; thread= ThreadDomain.integrate_summary ~caller:thread ~callee:elem.thread }
     in
     let new_t = map ~f t in
     with_callsite new_t call_site
@@ -314,6 +350,11 @@ module CriticalPair = struct
       Errlog.make_trace_element 0 loc endpoint_descr []
     in
     List.concat (([header_step] :: call_stack) @ [[endpoint_step]])
+
+
+  let is_uithread t = ThreadDomain.is_uithread t.elem.thread
+
+  let can_run_in_parallel t1 t2 = ThreadDomain.can_run_in_parallel t1.elem.thread t2.elem.thread
 end
 
 let is_recursive_lock event tenv =
@@ -345,48 +386,17 @@ let should_skip tenv_opt event lock_state =
 module CriticalPairs = struct
   include CriticalPair.FiniteSet
 
-  let with_callsite astate tenv_opt lock_state call_site =
+  let with_callsite astate tenv lock_state call_site thread =
     let existing_acquisitions = LockState.get_acquisitions lock_state in
     fold
       (fun ({elem= {event}} as critical_pair : CriticalPair.t) acc ->
-        if should_skip tenv_opt event lock_state then acc
+        if should_skip (Some tenv) event lock_state then acc
         else
           let new_pair =
-            CriticalPair.with_callsite critical_pair existing_acquisitions call_site
+            CriticalPair.with_callsite critical_pair existing_acquisitions call_site thread
           in
           add new_pair acc )
       astate empty
-end
-
-module ThreadDomain = struct
-  type t = UIThread | AnyThread [@@deriving equal]
-
-  let top = AnyThread
-
-  let is_top = function AnyThread -> true | UIThread -> false
-
-  let join st1 st2 =
-    match (st1, st2) with AnyThread, _ | _, AnyThread -> AnyThread | _, _ -> UIThread
-
-
-  let ( <= ) ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-
-  let pp fmt st =
-    (match st with UIThread -> "UIThread" | AnyThread -> "AnyThread") |> F.pp_print_string fmt
-
-
-  (* There is only one UI thread, so (UIThread || UIThread) is impossible. *)
-  let can_run_in_parallel st1 st2 =
-    match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
-
-
-  let is_uithread = function UIThread -> true | _ -> false
-
-  (* If we know that either the caller or the callee is on UIThread, keep it that way. *)
-  let integrate_summary ~caller ~callee =
-    match (caller, callee) with UIThread, _ | _, UIThread -> UIThread | _, _ -> AnyThread
 end
 
 module FlatLock = AbstractDomain.Flat (Lock)
@@ -439,11 +449,11 @@ let ( <= ) ~lhs ~rhs =
   && ThreadDomain.( <= ) ~lhs:lhs.thread ~rhs:rhs.thread
 
 
-let add_critical_pair tenv_opt lock_state event ~loc acc =
+let add_critical_pair tenv_opt lock_state event thread ~loc acc =
   if should_skip tenv_opt event lock_state then acc
   else
     let acquisitions = LockState.get_acquisitions lock_state in
-    let critical_pair = CriticalPair.make ~loc acquisitions event in
+    let critical_pair = CriticalPair.make ~loc acquisitions event thread in
     CriticalPairs.add critical_pair acc
 
 
@@ -452,26 +462,27 @@ let acquire tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
     critical_pairs=
       List.fold locks ~init:critical_pairs ~f:(fun acc lock ->
           let event = Event.make_acquire lock in
-          add_critical_pair (Some tenv) lock_state event ~loc acc )
+          add_critical_pair (Some tenv) lock_state event astate.thread ~loc acc )
   ; lock_state=
       List.fold locks ~init:lock_state ~f:(fun acc lock ->
           LockState.acquire ~procname ~loc lock acc ) }
 
 
-let make_call_with_event tenv_opt new_event ~loc astate =
+let make_call_with_event new_event ~loc astate =
   { astate with
     critical_pairs=
-      add_critical_pair tenv_opt astate.lock_state new_event ~loc astate.critical_pairs }
+      add_critical_pair None astate.lock_state new_event astate.thread ~loc astate.critical_pairs
+  }
 
 
 let blocking_call ~callee sev ~loc astate =
   let new_event = Event.make_blocking_call callee sev in
-  make_call_with_event None new_event ~loc astate
+  make_call_with_event new_event ~loc astate
 
 
 let strict_mode_call ~callee ~loc astate =
   let new_event = Event.make_strict_mode_call callee in
-  make_call_with_event None new_event ~loc astate
+  make_call_with_event new_event ~loc astate
 
 
 let release ({lock_state} as astate) locks =
@@ -483,7 +494,7 @@ let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; thread}
     ~loc ~callee_summary =
   let callsite = CallSite.make callee loc in
   let critical_pairs' =
-    CriticalPairs.with_callsite callee_summary.critical_pairs (Some tenv) lock_state callsite
+    CriticalPairs.with_callsite callee_summary.critical_pairs tenv lock_state callsite thread
   in
   { astate with
     critical_pairs= CriticalPairs.join critical_pairs critical_pairs'

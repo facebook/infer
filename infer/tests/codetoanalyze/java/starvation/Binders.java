@@ -20,9 +20,15 @@ class Binders {
     b.transact(0, null, null, 1);
   }
 
-  void interBad() throws RemoteException {
+  // assert happens after bad call so thread status is still unknown
+  void FN_interBad() throws RemoteException {
     b.transact(0, null, null, 0);
     forceMainThread();
+  }
+
+  void interBad() throws RemoteException {
+    forceMainThread();
+    b.transact(0, null, null, 0);
   }
 
   void intraBad() throws RemoteException {

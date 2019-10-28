@@ -11,8 +11,6 @@ module MF = MarkupFormatter
 
 let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
-let debug fmt = L.(debug Analysis Verbose fmt)
-
 let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
 
 let is_ui_thread_model pn =
@@ -401,20 +399,15 @@ let report_lockless_violations (tenv, summary) StarvationDomain.{critical_pairs}
     inner class but this is no longer obvious in the path, because of nested-class path normalisation.
     The net effect of the above issues is that we will only see these locks in conflicting pairs
     once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks env StarvationDomain.{critical_pairs; thread} report_map' =
+let report_deadlocks env StarvationDomain.{critical_pairs} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
-      not
-        ( CriticalPair.may_deadlock current_elem elem
-        && should_report_deadlock_on_current_proc current_elem elem )
-    then report_map
-    else
-      let () =
-        debug "Possible deadlock:@.%a@.%a@." CriticalPair.pp current_elem CriticalPair.pp elem
-      in
+      CriticalPair.may_deadlock current_elem elem
+      && should_report_deadlock_on_current_proc current_elem elem
+    then
       match (current_elem.CriticalPair.elem.event, elem.CriticalPair.elem.event) with
       | LockAcquire lock1, LockAcquire lock2 ->
           let error_message =
@@ -435,6 +428,7 @@ let report_deadlocks env StarvationDomain.{critical_pairs; thread} report_map' =
           ReportMap.add_deadlock current_pname loc ltr error_message report_map
       | _, _ ->
           report_map
+    else report_map
   in
   let report_on_current_elem elem report_map =
     match elem.CriticalPair.elem.event with
@@ -456,82 +450,85 @@ let report_deadlocks env StarvationDomain.{critical_pairs; thread} report_map' =
                    and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc
-                    (endpoint_pname, {critical_pairs= endp_critical_pairs; thread= endp_thread})
-                    ->
-                   if ThreadDomain.can_run_in_parallel thread endp_thread then
-                     CriticalPairs.fold
-                       (report_endpoint_elem elem endpoint_pname)
-                       endp_critical_pairs acc
-                   else acc ) )
+                 ~f:(fun acc (endpoint_pname, {critical_pairs= endp_critical_pairs}) ->
+                   CriticalPairs.fold
+                     (report_endpoint_elem elem endpoint_pname)
+                     endp_critical_pairs acc ) )
   in
   CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 
-let report_starvation env {StarvationDomain.critical_pairs; thread} report_map' =
+(** report blocking call chains on the UI thread, or, a call chain on the UI thread taking a lock, 
+    which is held in another call chain making a blocking call *)
+let report_starvation env {StarvationDomain.critical_pairs} report_map' =
   let open StarvationDomain in
   let _, current_summary = env in
   let current_pname = Summary.get_proc_name current_summary in
   let report_remote_block event current_lock endpoint_pname endpoint_elem report_map =
-    let acquisitions = endpoint_elem.CriticalPair.elem.acquisitions in
-    match endpoint_elem.CriticalPair.elem.event with
-    | MayBlock (block_descr, sev) when Acquisitions.lock_is_held current_lock acquisitions ->
-        let error_message =
-          Format.asprintf
-            "Method %a runs on UI thread and%a, which may be held by another thread which %s."
-            pname_pp current_pname Lock.pp_locks current_lock block_descr
-        in
-        let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " current_pname event in
-        let second_trace =
-          CriticalPair.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem
-        in
-        let ltr = first_trace @ second_trace in
-        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname event in
-        ReportMap.add_starvation sev current_pname loc ltr error_message report_map
-    | _ ->
-        report_map
+    (* only consider methods that can run in parallel to the ui thread *)
+    if CriticalPair.can_run_in_parallel event endpoint_elem then
+      let acquisitions = endpoint_elem.CriticalPair.elem.acquisitions in
+      match endpoint_elem.CriticalPair.elem.event with
+      | MayBlock (block_descr, sev) when Acquisitions.lock_is_held current_lock acquisitions ->
+          let error_message =
+            Format.asprintf
+              "Method %a runs on UI thread and%a, which may be held by another thread which %s."
+              pname_pp current_pname Lock.pp_locks current_lock block_descr
+          in
+          let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " current_pname event in
+          let second_trace =
+            CriticalPair.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem
+          in
+          let ltr = first_trace @ second_trace in
+          let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:current_pname event in
+          ReportMap.add_starvation sev current_pname loc ltr error_message report_map
+      | _ ->
+          report_map
+    else report_map
   in
   let report_on_current_elem (critical_pair : CriticalPair.t) report_map =
-    let event = critical_pair.elem.event in
-    match event with
-    | MayBlock (_, sev) ->
-        let error_message =
-          Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp current_pname
-            Event.describe event
-        in
-        let loc = CriticalPair.get_loc critical_pair in
-        let ltr =
-          CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
-        in
-        ReportMap.add_starvation sev current_pname loc ltr error_message report_map
-    | StrictModeCall _ ->
-        let error_message =
-          Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
-            current_pname Event.describe event
-        in
-        let loc = CriticalPair.get_loc critical_pair in
-        let ltr =
-          CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
-        in
-        ReportMap.add_strict_mode_violation current_pname loc ltr error_message report_map
-    | LockAcquire endpoint_lock ->
-        Lock.owner_class endpoint_lock
-        |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
-               (* get the class of the root variable of the lock in the endpoint elem
+    (* we must be on the UI thread, otherwise there is no reason to report *)
+    if CriticalPair.is_uithread critical_pair then
+      let event = critical_pair.elem.event in
+      match event with
+      | MayBlock (_, sev) ->
+          let error_message =
+            Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp current_pname
+              Event.describe event
+          in
+          let loc = CriticalPair.get_loc critical_pair in
+          let ltr =
+            CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
+          in
+          ReportMap.add_starvation sev current_pname loc ltr error_message report_map
+      | StrictModeCall _ ->
+          let error_message =
+            Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
+              current_pname Event.describe event
+          in
+          let loc = CriticalPair.get_loc critical_pair in
+          let ltr =
+            CriticalPair.make_trace ~include_acquisitions:false current_pname critical_pair
+          in
+          ReportMap.add_strict_mode_violation current_pname loc ltr error_message report_map
+      | LockAcquire endpoint_lock ->
+          Lock.owner_class endpoint_lock
+          |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
+                 (* get the class of the root variable of the lock in the endpoint elem
                  and retrieve all the summaries of the methods of that class *)
-               (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc (endpoint_pname, {critical_pairs; thread}) ->
-                   (* skip methods on ui thread, as they cannot run in parallel to us *)
-                   if ThreadDomain.is_uithread thread then acc
-                   else
-                     CriticalPairs.fold
-                       (report_remote_block critical_pair endpoint_lock endpoint_pname)
-                       critical_pairs acc ) )
+                 (* for each summary related to the endpoint, analyse and report on its pairs *)
+                 fold_reportable_summaries env endpoint_class ~init:report_map
+                   ~f:(fun acc (endpoint_pname, {critical_pairs; thread}) ->
+                     (* perf optimisation: skip if element and other method are both on UI thread *)
+                     if ThreadDomain.can_run_in_parallel critical_pair.elem.thread thread then
+                       CriticalPairs.fold
+                         (report_remote_block critical_pair endpoint_lock endpoint_pname)
+                         critical_pairs acc
+                     else acc ) )
+    else report_map
   in
   (* do not report starvation/strict mode warnings on constructors, keep that for callers *)
-  if Typ.Procname.is_constructor current_pname || not (ThreadDomain.is_uithread thread) then
-    report_map'
+  if Typ.Procname.is_constructor current_pname then report_map'
   else CriticalPairs.fold report_on_current_elem critical_pairs report_map'
 
 

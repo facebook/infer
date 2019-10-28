@@ -8,6 +8,27 @@
 open! IStd
 module F = Format
 
+(** Domain for thread-type.  The main goals are 
+    - Track code paths that are explicitly on UI thread (via annotations, or assertions). 
+    - Maintain UI-thread-ness through the call stack (if a callee is on UI thread then the 
+      trace any call site must be on the UI thread too). 
+    - If we are not on the UI thread we assume we are on a background thread. 
+    - Traces with "UI-thread" status cannot interleave but all other combinations can.  
+    - We do not track other annotations (eg WorkerThread or AnyThread) as they can be 
+      erroneously applied -- other checkers should catch those errors (annotation reachability).
+    - Top is AnyThread, and is used as the initial state for analysis.
+*)
+module ThreadDomain : sig
+  type t = UIThread | AnyThread
+
+  include AbstractDomain.WithTop with type t := t
+
+  val can_run_in_parallel : t -> t -> bool
+  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. 
+      In addition, this is monotonic wrt the lattice (increasing either argument cannot 
+      transition from true to false). *)
+end
+
 (** Abstraction of a path that represents a lock, special-casing comparison
     to work over type, base variable modulo this and access list *)
 module Lock : sig
@@ -43,7 +64,7 @@ end
 
 (** An event and the currently-held locks at the time it occurred. *)
 module CriticalPairElement : sig
-  type t = private {acquisitions: Acquisitions.t; event: Event.t}
+  type t = private {acquisitions: Acquisitions.t; event: Event.t; thread: ThreadDomain.t}
 end
 
 (** A [CriticalPairElement] equipped with a call stack. 
@@ -64,32 +85,19 @@ module CriticalPair : sig
   (** outermost callsite location OR lock acquisition *)
 
   val may_deadlock : t -> t -> bool
+  (** two pairs can run in parallel and satisfy the conditions for deadlock *)
 
   val make_trace :
     ?header:string -> ?include_acquisitions:bool -> Typ.Procname.t -> t -> Errlog.loc_trace
+
+  val is_uithread : t -> bool
+  (** is pair about an event on the UI thread *)
+
+  val can_run_in_parallel : t -> t -> bool
+  (** can two pairs describe events on two threads that can run in parallel *)
 end
 
 module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
-
-(** Domain for thread-type.  The main goals are 
-    - Track code paths that are explicitly on UI thread (via annotations, or assertions). 
-    - Maintain UI-thread-ness through the call stack (if a callee is on UI thread then the 
-      trace any call site must be on the UI thread too). 
-    - If we are not on the UI thread we assume we are on a background thread. 
-    - Traces with "UI-thread" status cannot interleave but all other combinations can.  
-    - We do not track other annotations (eg WorkerThread or AnyThread) as they can be 
-      erroneously applied -- other checkers should catch those errors (annotation reachability).
-    - Top is AnyThread, and is used as the initial state for analysis.
-*)
-module ThreadDomain : sig
-  type t = UIThread | AnyThread
-
-  include AbstractDomain.WithTop with type t := t
-
-  val can_run_in_parallel : t -> t -> bool
-
-  val is_uithread : t -> bool
-end
 
 module GuardToLockMap : AbstractDomain.WithTop
 
