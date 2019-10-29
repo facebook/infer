@@ -133,9 +133,7 @@ ifeq ($(WINDOWS_BUILD),yes)
 # http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
 	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
 endif
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).exe $(INFER_BIN).exe
-	$(MAKE) $(INFER_BIN_ALIASES)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
@@ -144,6 +142,8 @@ endif
 
 .PHONY: infer
 infer: $(INFER_BIN).exe
+	$(INSTALL_PROGRAM) $(INFER_BIN).exe $(INFER_BIN)
+	$(MAKE) $(INFER_BIN_ALIASES)
 
 $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	dune build $(INFER_CONFIG_TARGETS:.exe=.bc)
@@ -155,9 +155,7 @@ ifeq ($(WINDOWS_BUILD),yes)
 # http://cygwin.1069669.n5.nabble.com/cp-utility-bug-when-dest-name-exe-file-exist-tp57955p58001.html
 	$(REMOVE) $(INFER_BIN) $(INFER_BIN).exe
 endif
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN).bc
-	$(MAKE) $(INFER_BIN_ALIASES)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
@@ -165,6 +163,8 @@ endif
 
 .PHONY: byte
 byte: $(INFER_BIN).bc
+	$(INSTALL_PROGRAM) $(INFER_BIN).bc $(INFER_BIN)
+	$(MAKE) $(INFER_BIN_ALIASES)
 
 roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
