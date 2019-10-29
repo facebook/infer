@@ -137,16 +137,12 @@ val remove_guard : t -> HilExp.t -> t
 val unlock_guard : t -> HilExp.t -> t
 (** Release the lock the guard was constructed with. *)
 
-type summary = t
+type summary = {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t}
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary :
-     Tenv.t
-  -> caller_summary:t
-  -> callee:Typ.Procname.t
-  -> loc:Location.t
-  -> callee_summary:summary
-  -> t
+val integrate_summary : Tenv.t -> CallSite.t -> t -> summary -> t
+
+val summary_of_astate : t -> summary
 
 val filter_blocking_calls : t -> t

@@ -66,9 +66,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
     let do_call callee loc astate =
+      let callsite = CallSite.make callee loc in
       Payload.read ~caller_summary:summary ~callee_pname:callee
-      |> Option.value_map ~default:astate ~f:(fun callee_summary ->
-             Domain.integrate_summary tenv ~caller_summary:astate ~callee_summary ~callee ~loc )
+      |> Option.fold ~init:astate ~f:(Domain.integrate_summary tenv callsite)
     in
     match instr with
     | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
@@ -155,7 +155,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:filter_blocks
-    |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
+    |> Option.map ~f:Domain.summary_of_astate
+    |> Option.fold ~init:summary ~f:(fun acc payload -> Payload.update_summary payload acc)
 
 
 (** per-procedure report map, which takes care of deduplication *)
@@ -452,7 +453,7 @@ let report_on_pair ((tenv, summary) as env) (pair : Domain.CriticalPair.t) repor
 
 
 let reporting {Callbacks.procedures; source_file} =
-  let report_on_summary env (summary : Domain.t) report_map =
+  let report_on_summary env (summary : Domain.summary) report_map =
     Domain.CriticalPairs.fold (report_on_pair env) summary.critical_pairs report_map
   in
   let report_procedure issue_log ((tenv, summary) as env) =

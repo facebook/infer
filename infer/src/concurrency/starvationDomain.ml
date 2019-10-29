@@ -492,17 +492,6 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let integrate_summary tenv ~caller_summary:({lock_state; critical_pairs; thread} as astate) ~callee
-    ~loc ~callee_summary =
-  let callsite = CallSite.make callee loc in
-  let critical_pairs' =
-    CriticalPairs.with_callsite callee_summary.critical_pairs tenv lock_state callsite thread
-  in
-  { astate with
-    critical_pairs= CriticalPairs.join critical_pairs critical_pairs'
-  ; thread= ThreadDomain.integrate_summary ~caller:thread ~callee:callee_summary.thread }
-
-
 let set_on_ui_thread astate = {astate with thread= ThreadDomain.UIThread}
 
 let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
@@ -534,6 +523,22 @@ let filter_blocking_calls ({critical_pairs} as astate) =
   {astate with critical_pairs= CriticalPairs.filter CriticalPair.is_blocking_call critical_pairs}
 
 
-type summary = t
+type summary = {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t}
 
-let pp_summary = pp
+let pp_summary fmt (summary : summary) =
+  F.fprintf fmt "{thread= %a; critical_pairs= %a}" ThreadDomain.pp summary.thread CriticalPairs.pp
+    summary.critical_pairs
+
+
+let integrate_summary tenv callsite (astate : t) (summary : summary) =
+  let critical_pairs' =
+    CriticalPairs.with_callsite summary.critical_pairs tenv astate.lock_state callsite
+      astate.thread
+  in
+  { astate with
+    critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'
+  ; thread= ThreadDomain.integrate_summary ~caller:astate.thread ~callee:summary.thread }
+
+
+let summary_of_astate : t -> summary =
+ fun astate -> {critical_pairs= astate.critical_pairs; thread= astate.thread}
