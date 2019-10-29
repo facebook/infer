@@ -281,6 +281,9 @@ type t = State_domain.t with_entry
 type from_call = State_domain.from_call with_entry
 * used globals
 ** consider moving used globals info from exec_opts to a field of func
+* intervals
+** do something smarter with intrinsics
+** implement summarization
 * control
 ** change Depths.t from environment- to state-like treatment
 - currently each waiting state has an associated depths map

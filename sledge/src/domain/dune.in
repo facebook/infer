@@ -10,11 +10,12 @@ let deps = ["import"; "trace"; "llair_"]
 
 ;;
 Jbuild_plugin.V1.send
-@@ Format.sprintf {|
+@@ Format.sprintf
+     {|
 (library
  (name domain)
  %s
- (libraries %s))
+ (libraries apron apron.boxMPQ %s))
 |}
      (flags `lib deps)
      (libraries deps)

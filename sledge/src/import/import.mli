@@ -12,7 +12,8 @@ include module type of (
     sig
       include
         (module type of Base (* extended below, remove *)
-        with module Invariant := Base.Invariant
+        with module Array := Base.Array
+         and module Invariant := Base.Invariant
          and module List := Base.List
          and module Map := Base.Map
          and module Option := Base.Option
@@ -231,6 +232,12 @@ module Qset : sig
   include module type of Qset
 
   val pp : (unit, unit) fmt -> ('a * Q.t) pp -> ('a, _) t pp
+end
+
+module Array : sig
+  include module type of Base.Array
+
+  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
 end
 
 module Q : sig

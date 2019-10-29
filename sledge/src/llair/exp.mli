@@ -121,6 +121,7 @@ module Reg : sig
   val program : ?global:unit -> Typ.t -> string -> t
   val var : t -> Var.t
   val name : t -> string
+  val typ : t -> Typ.t
 end
 
 (** Construct *)

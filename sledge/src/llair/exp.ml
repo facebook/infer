@@ -373,6 +373,8 @@ module Reg = struct
   let name r =
     match r.desc with Reg x -> x.name | _ -> violates invariant r
 
+  let typ r = match r.desc with Reg x -> x.typ | _ -> violates invariant r
+
   let of_exp e =
     match e.desc with Reg _ -> Some (e |> check invariant) | _ -> None
 

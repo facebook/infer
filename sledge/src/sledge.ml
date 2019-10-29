@@ -16,6 +16,7 @@ type 'a param = 'a Command.Param.t
 module Sh_executor = Control.Make (Domain.Relation.Make (Sh_domain))
 module Unit_executor = Control.Make (Domain.Unit)
 module Used_globals_executor = Control.Make (Domain.Used_globals)
+module Itv_executor = Control.Make (Domain.Itv)
 
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
@@ -105,7 +106,8 @@ let analyze =
          (Arg_type.of_alist_exn
             [ ("sh", Sh_executor.exec_pgm)
             ; ("globals", Used_globals_executor.exec_pgm)
-            ; ("unit", Unit_executor.exec_pgm) ]))
+            ; ("unit", Unit_executor.exec_pgm)
+            ; ("itv", Itv_executor.exec_pgm) ]))
       ~doc:
         "<string> select abstract domain; must be one of \"sh\" (default, \
          symbolic heap domain), \"globals\" (used-globals domain), or \

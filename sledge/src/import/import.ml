@@ -12,7 +12,8 @@ include (
     sig
       include
         (module type of Base (* extended below, remove *)
-        with module Invariant := Base.Invariant
+        with module Array := Base.Array
+         and module Invariant := Base.Invariant
          and module List := Base.List
          and module Map := Base.Map
          and module Option := Base.Option
@@ -291,6 +292,12 @@ module Qset = struct
   include Qset
 
   let pp sep pp_elt fs s = List.pp sep pp_elt fs (to_list s)
+end
+
+module Array = struct
+  include Base.Array
+
+  let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
 end
 
 module Q = struct
