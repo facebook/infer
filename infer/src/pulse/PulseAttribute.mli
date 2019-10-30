@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module Arithmetic = PulseArithmetic
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -13,8 +14,8 @@ module ValueHistory = PulseValueHistory
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
+  | Arithmetic of Arithmetic.t
   | Closure of Typ.Procname.t
-  | Constant of Const.t
   | Invalid of Invalidation.t Trace.t
   | MustBeValid of unit Trace.t
   | StdVectorReserve
@@ -30,7 +31,7 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Typ.Procname.t option
 
-  val get_constant : t -> Const.t option
+  val get_arithmetic : t -> Arithmetic.t option
 
   val get_invalid : t -> Invalidation.t Trace.t option
 

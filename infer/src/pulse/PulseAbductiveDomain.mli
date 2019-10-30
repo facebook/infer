@@ -45,7 +45,11 @@ module Memory : sig
   module Access = BaseMemory.Access
   module Edges = BaseMemory.Edges
 
+  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
+  (** add the attribute to the pre, if meaningful (does not modify the post) *)
+
   val add_attribute : AbstractValue.t -> Attribute.t -> t -> t
+  (** add the attribute only to the post *)
 
   val add_edge :
        AbstractValue.t * ValueHistory.t
@@ -76,7 +80,7 @@ module Memory : sig
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist.  *)
 
-  val get_constant : AbstractValue.t -> t -> Const.t option
+  val get_arithmetic : AbstractValue.t -> t -> Arithmetic.t option
 end
 
 val is_local : Var.t -> t -> bool

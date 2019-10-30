@@ -134,7 +134,7 @@ let eval location exp0 astate =
     | Const c ->
         (* TODO: make identical const the same address *)
         let addr = AbstractValue.mk_fresh () in
-        let astate = Memory.add_attribute addr (Constant c) astate in
+        let astate = Memory.add_attribute addr (Arithmetic (Arithmetic.EqualTo c)) astate in
         Ok (astate, (addr, []))
     | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
@@ -142,57 +142,39 @@ let eval location exp0 astate =
   eval exp0 astate
 
 
-type eval_result = EvalConst of Const.t | EvalAddr of AbstractValue.t
-
-let eval_to_const location exp astate =
+let eval_arith location exp astate =
   match (exp : Exp.t) with
   | Const c ->
-      Ok (astate, EvalConst c)
+      Ok (astate, None, Some (Arithmetic.EqualTo c))
   | exp -> (
       eval location exp astate
       >>| fun (astate, (addr, _)) ->
-      match Memory.get_constant addr astate with
-      | Some c ->
-          (astate, EvalConst c)
+      match Memory.get_arithmetic addr astate with
+      | Some a ->
+          (astate, Some addr, Some a)
       | None ->
-          (astate, EvalAddr addr) )
+          (astate, Some addr, None) )
 
 
-let eval_binop ~negated (bop : Binop.t) c1 c2 =
-  match (bop, negated) with
-  | Eq, false | Ne, true ->
-      Const.equal c1 c2
-  | Eq, true | Ne, false ->
-      not (Const.equal c1 c2)
-  | _ ->
-      true
+let record_abduced addr_opt arith_opt astate =
+  match Option.both addr_opt arith_opt with
+  | None ->
+      astate
+  | Some (addr, arith) ->
+      let attribute = Attribute.Arithmetic arith in
+      Memory.abduce_attribute addr attribute astate |> Memory.add_attribute addr attribute
 
-
-module TBool = struct
-  (** booleans with \top *)
-  type t = True | False | Top
-
-  let of_bool b = if b then True else False
-end
 
 let rec eval_cond ~negated location exp astate =
   match (exp : Exp.t) with
-  | BinOp (bop, e1, e2) -> (
-      eval_to_const location e1 astate
-      >>= fun (astate, eval1) ->
-      eval_to_const location e2 astate
-      >>| fun (astate, eval2) ->
-      match (eval1, eval2) with
-      | EvalConst c1, EvalConst c2 ->
-          (astate, eval_binop ~negated bop c1 c2 |> TBool.of_bool)
-      | EvalAddr _, EvalAddr _ ->
-          (astate, TBool.Top)
-      | EvalAddr v, EvalConst c | EvalConst c, EvalAddr v -> (
-        match (bop, negated) with
-        | Eq, false | Ne, true ->
-            (Memory.add_attribute v (Constant c) astate, TBool.True)
-        | _ ->
-            (astate, TBool.Top) ) )
+  | BinOp (bop, e1, e2) ->
+      eval_arith location e1 astate
+      >>= fun (astate, addr1, eval1) ->
+      eval_arith location e2 astate
+      >>| fun (astate, addr2, eval2) ->
+      let result, abduced1, abduced2 = Arithmetic.abduce_binop_is_true ~negated bop eval1 eval2 in
+      let astate = record_abduced addr1 abduced1 astate |> record_abduced addr2 abduced2 in
+      (astate, result)
   | UnOp (LNot, exp', _) ->
       eval_cond ~negated:(not negated) location exp' astate
   | exp ->
@@ -200,12 +182,7 @@ let rec eval_cond ~negated location exp astate =
       eval_cond ~negated location (Exp.BinOp (Ne, exp, zero)) astate
 
 
-let assert_is_true location ~condition astate =
-  eval_cond ~negated:false location condition astate
-  >>| fun (astate, result) ->
-  let can_go_through = match (result : TBool.t) with Top | True -> true | False -> false in
-  (astate, can_go_through)
-
+let assert_is_true location ~condition astate = eval_cond ~negated:false location condition astate
 
 let eval_deref location exp astate =
   eval location exp astate

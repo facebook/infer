@@ -89,7 +89,7 @@ let get_attribute getter address memory =
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_constant = get_attribute Attributes.get_constant
+let get_arithmetic = get_attribute Attributes.get_arithmetic
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 

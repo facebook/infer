@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module Arithmetic = PulseArithmetic
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -28,8 +29,8 @@ module Attribute = struct
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
+    | Arithmetic of Arithmetic.t
     | Closure of Typ.Procname.t
-    | Constant of Const.t
     | Invalid of Invalidation.t Trace.t
     | MustBeValid of unit Trace.t
     | StdVectorReserve
@@ -59,7 +60,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let const_rank = Variants.to_rank (Constant (Const.Cint IntLit.zero))
+  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.EqualTo (Cint IntLit.zero)))
 
   let pp f attribute =
     let pp_string_if_debug string fmt () =
@@ -72,8 +73,8 @@ module Attribute = struct
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
     | Closure pname ->
         Typ.Procname.pp f pname
-    | Constant c ->
-        F.fprintf f "=%a" (Const.pp Pp.text) c
+    | Arithmetic phi ->
+        Arithmetic.pp f phi
     | Invalid invalidation ->
         F.fprintf f "Invalid %a" (Trace.pp Invalidation.pp) invalidation
     | MustBeValid action ->
@@ -131,11 +132,11 @@ module Attributes = struct
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 
-  let get_constant attrs =
+  let get_arithmetic attrs =
     Set.find_rank attrs Attribute.const_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Constant c) = attr in
-           c )
+           let[@warning "-8"] (Attribute.Arithmetic a) = attr in
+           a )
 
 
   include Set

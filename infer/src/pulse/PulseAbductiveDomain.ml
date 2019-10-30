@@ -214,7 +214,7 @@ module Memory = struct
     BaseMemory.get_closure_proc_name addr (astate.post :> base_domain).heap
 
 
-  let get_constant addr astate = BaseMemory.get_constant addr (astate.post :> base_domain).heap
+  let get_arithmetic addr astate = BaseMemory.get_arithmetic addr (astate.post :> base_domain).heap
 
   let std_vector_reserve addr astate =
     map_post_heap astate ~f:(fun heap -> BaseMemory.std_vector_reserve addr heap)
@@ -347,10 +347,35 @@ module PrePost = struct
   module AddressSet = AbstractValue.Set
   module AddressMap = AbstractValue.Map
 
-  (** raised when the pre/post pair and the current state disagree on the aliasing, i.e. some
-     addresses that are distinct in the pre/post are aliased in the current state. Typically raised
-     when calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
-  exception Aliasing
+  type cannot_apply_pre =
+    | Aliasing of
+        { addr_caller: AbstractValue.t
+        ; addr_callee: AbstractValue.t
+        ; addr_callee': AbstractValue.t }
+        (** raised when the precondition and the current state disagree on the aliasing, i.e. some
+            addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to
+            a single address [caller_addr] in the caller's current state. Typically raised when
+            calling [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+    | Arithmetic of
+        { addr_caller: AbstractValue.t
+        ; addr_callee: AbstractValue.t
+        ; arith_caller: Arithmetic.t option
+        ; arith_callee: Arithmetic.t option }
+        (** raised when the pre asserts arithmetic facts that are demonstrably false in the caller
+            state *)
+
+  let pp_cannot_apply_pre fmt = function
+    | Aliasing {addr_caller; addr_callee; addr_callee'} ->
+        F.fprintf fmt "address %a in caller already bound to %a, not %a" AbstractValue.pp
+          addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
+    | Arithmetic {addr_caller; addr_callee; arith_caller; arith_callee} ->
+        F.fprintf fmt "caller addr %a%a but callee addr %a%a; %a=%a is unsatisfiable"
+          AbstractValue.pp addr_caller (Pp.option Arithmetic.pp) arith_caller AbstractValue.pp
+          addr_callee (Pp.option Arithmetic.pp) arith_callee AbstractValue.pp addr_caller
+          AbstractValue.pp addr_callee
+
+
+  exception CannotApplyPre of cannot_apply_pre
 
   (** stuff we carry around when computing the result of applying one pre/post pair *)
   type call_state =
@@ -399,10 +424,7 @@ module PrePost = struct
     let addr_caller = fst addr_hist_caller in
     ( match AddressMap.find_opt addr_caller call_state.rev_subst with
     | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
-        L.d_printfln "Huho, address %a in post already bound to %a, not %a@\nState=%a"
-          AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
-          pp_call_state call_state ;
-        raise Aliasing
+        raise (CannotApplyPre (Aliasing {addr_caller; addr_callee; addr_callee'}))
     | _ ->
         () ) ;
     if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
@@ -421,6 +443,32 @@ module PrePost = struct
 
   (* {3 reading the pre from the current state} *)
 
+  let solve_arithmetic_constraints ~addr_pre ~attrs_pre ~addr_hist_caller call_state =
+    match Attributes.get_arithmetic attrs_pre with
+    | None ->
+        call_state
+    | Some _ as arith_callee ->
+        let addr_caller = fst addr_hist_caller in
+        let astate = call_state.astate in
+        let arith_caller = Memory.get_arithmetic addr_caller astate in
+        (* TODO: we don't use [abduced_callee] but we could probably use it to refine the attributes
+           for that address in the post since abstract values are immutable *)
+        let satisfiable, abduce_caller, _abduce_callee =
+          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller arith_callee
+        in
+        if not satisfiable then
+          raise
+            (CannotApplyPre
+               (Arithmetic {addr_caller; addr_callee= addr_pre; arith_caller; arith_callee})) ;
+        let new_astate =
+          Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
+              let attribute = Attribute.Arithmetic abduce_caller in
+              Memory.abduce_attribute addr_caller attribute astate
+              |> Memory.add_attribute addr_caller attribute )
+        in
+        {call_state with astate= new_astate}
+
+
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
      [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
      addresses are traversed in the process. *)
@@ -433,7 +481,10 @@ module PrePost = struct
       match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
       | None ->
           Ok call_state
-      | Some (edges_pre, _attrs_pre) ->
+      | Some (edges_pre, attrs_pre) ->
+          let call_state =
+            solve_arithmetic_constraints ~addr_pre ~attrs_pre ~addr_hist_caller call_state
+          in
           Container.fold_result
             ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
             ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
@@ -572,8 +623,8 @@ module PrePost = struct
              ; in_call= invalidation })
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
+    | Arithmetic _
     | Closure _
-    | Constant _
     | MustBeValid _
     | StdVectorReserve
     | WrittenTo _ ->
@@ -839,9 +890,10 @@ module PrePost = struct
     match
       materialize_pre callee_proc_name call_location pre_post ~formals ~actuals empty_call_state
     with
-    | exception Aliasing ->
+    | exception CannotApplyPre reason ->
         (* can't make sense of the pre-condition in the current context: give up on that particular
            pre/post pair *)
+        L.d_printfln "Cannot apply precondition: %a" pp_cannot_apply_pre reason ;
         Ok None
     | None ->
         (* couldn't apply the pre for some technical reason (as in: not by the fault of the
