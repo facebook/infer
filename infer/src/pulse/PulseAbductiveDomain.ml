@@ -831,11 +831,11 @@ module PrePost = struct
     | exception Aliasing ->
         (* can't make sense of the pre-condition in the current context: give up on that particular
            pre/post pair *)
-        Ok (astate, None)
+        Ok None
     | None ->
         (* couldn't apply the pre for some technical reason (as in: not by the fault of the
            programmer as far as we know) *)
-        Ok (astate, None)
+        Ok None
     | Some (Error _ as error) ->
         (* error: the function call requires to read some state known to be invalid *)
         error
@@ -843,7 +843,7 @@ module PrePost = struct
         (* reset [visited] *)
         let call_state = {call_state with visited= AddressSet.empty} in
         (* apply the postcondition *)
-        Ok (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state)
+        Ok (Some (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state))
 end
 
 let extract_pre {pre} = (pre :> BaseDomain.t)

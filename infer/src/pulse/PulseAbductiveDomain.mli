@@ -97,8 +97,9 @@ module PrePost : sig
     -> formals:Var.t list
     -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
     -> domain_t
-    -> (domain_t * (AbstractValue.t * ValueHistory.t) option, Diagnostic.t) result
-  (** return the abstract state after the call along with an optional return value *)
+    -> ((domain_t * (AbstractValue.t * ValueHistory.t) option) option, Diagnostic.t) result
+  (** return the abstract state after the call along with an optional return value, or [None] if
+      the precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
 end
 
 val discard_unreachable : t -> t

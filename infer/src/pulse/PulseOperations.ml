@@ -371,16 +371,21 @@ let call ~caller_summary call_loc callee_pname ~ret ~actuals astate =
       List.fold_result preposts ~init:[] ~f:(fun posts pre_post ->
           (* apply all pre/post specs *)
           AbductiveDomain.PrePost.apply callee_pname call_loc pre_post ~formals ~actuals astate
-          >>| fun (post, return_val_opt) ->
-          let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
-          let post =
-            match return_val_opt with
-            | Some (return_val, return_hist) ->
-                write_id (fst ret) (return_val, event :: return_hist) post
-            | None ->
-                havoc_id (fst ret) [event] post
-          in
-          post :: posts )
+          >>| function
+          | None ->
+              (* couldn't apply pre/post pair *) posts
+          | Some (post, return_val_opt) ->
+              let event =
+                ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []}
+              in
+              let post =
+                match return_val_opt with
+                | Some (return_val, return_hist) ->
+                    write_id (fst ret) (return_val, event :: return_hist) post
+                | None ->
+                    havoc_id (fst ret) [event] post
+              in
+              post :: posts )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Typ.Procname.pp callee_pname ;
