@@ -33,7 +33,7 @@ end)
 module ItvUpdatedBy = struct
   type t = Addition | Multiplication | Top
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     match (lhs, rhs) with
     | Addition, _ ->
         true
@@ -47,7 +47,7 @@ module ItvUpdatedBy = struct
         true
 
 
-  let join x y = if ( <= ) ~lhs:x ~rhs:y then y else x
+  let join x y = if leq ~lhs:x ~rhs:y then y else x
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
@@ -149,18 +149,18 @@ module Val = struct
     ; traces }
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv
-      && ItvThresholds.( <= ) ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
-      && ItvUpdatedBy.( <= ) ~lhs:lhs.itv_updated_by ~rhs:rhs.itv_updated_by
-      && ModeledRange.( <= ) ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
-      && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
-      && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
-      && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
-      && Relation.Sym.( <= ) ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
-      && Relation.Sym.( <= ) ~lhs:lhs.size_sym ~rhs:rhs.size_sym
+      Itv.leq ~lhs:lhs.itv ~rhs:rhs.itv
+      && ItvThresholds.leq ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
+      && ItvUpdatedBy.leq ~lhs:lhs.itv_updated_by ~rhs:rhs.itv_updated_by
+      && ModeledRange.leq ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
+      && Relation.Sym.leq ~lhs:lhs.sym ~rhs:rhs.sym
+      && PowLoc.leq ~lhs:lhs.powloc ~rhs:rhs.powloc
+      && ArrayBlk.leq ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
+      && Relation.Sym.leq ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
+      && Relation.Sym.leq ~lhs:lhs.size_sym ~rhs:rhs.size_sym
 
 
   let widen ~prev ~next ~num_iters =
@@ -951,7 +951,7 @@ module AliasTarget = struct
         Some Top
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     equal lhs rhs
     ||
     match (lhs, rhs) with
@@ -1180,9 +1180,9 @@ end
 module Alias = struct
   type t = {map: AliasMap.t; ret: AliasRet.t}
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
-    else AliasMap.( <= ) ~lhs:lhs.map ~rhs:rhs.map && AliasRet.( <= ) ~lhs:lhs.ret ~rhs:rhs.ret
+    else AliasMap.leq ~lhs:lhs.map ~rhs:rhs.map && AliasRet.leq ~lhs:lhs.ret ~rhs:rhs.ret
 
 
   let join x y =
@@ -1335,14 +1335,14 @@ end
 module PruningExp = struct
   type t = Unknown | Binop of {bop: Binop.t; lhs: CoreVal.t; rhs: CoreVal.t} [@@deriving compare]
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     match (lhs, rhs) with
     | _, Unknown ->
         true
     | Unknown, _ ->
         false
     | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2} ->
-        Binop.equal bop1 bop2 && Val.( <= ) ~lhs:lhs1 ~rhs:lhs2 && Val.( <= ) ~lhs:rhs1 ~rhs:rhs2
+        Binop.equal bop1 bop2 && Val.leq ~lhs:lhs1 ~rhs:lhs2 && Val.leq ~lhs:rhs1 ~rhs:rhs2
 
 
   let join x y =
@@ -1386,7 +1386,7 @@ module PruningExp = struct
 
 
   let is_empty =
-    let le_false v = Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:Itv.zero in
+    let le_false v = Itv.leq ~lhs:(Val.get_itv v) ~rhs:Itv.zero in
     function
     | Unknown ->
         false
@@ -1420,8 +1420,8 @@ end
 module PrunedVal = struct
   type t = {v: CoreVal.t; pruning_exp: PruningExp.t} [@@deriving compare]
 
-  let ( <= ) ~lhs ~rhs =
-    Val.( <= ) ~lhs:lhs.v ~rhs:rhs.v && PruningExp.( <= ) ~lhs:lhs.pruning_exp ~rhs:rhs.pruning_exp
+  let leq ~lhs ~rhs =
+    Val.leq ~lhs:lhs.v ~rhs:rhs.v && PruningExp.leq ~lhs:lhs.pruning_exp ~rhs:rhs.pruning_exp
 
 
   let join x y = {v= Val.join x.v y.v; pruning_exp= PruningExp.join x.pruning_exp y.pruning_exp}
@@ -1523,7 +1523,7 @@ module LatestPrune = struct
         F.fprintf fmt "LatestPrune: ret(%a) %a / %a" Ident.pp v PrunePairs.pp p1 PrunePairs.pp p2
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
@@ -1532,29 +1532,29 @@ module LatestPrune = struct
       | Top, _ ->
           false
       | Latest p1, Latest p2 ->
-          PrunePairs.( <= ) ~lhs:p1 ~rhs:p2
+          PrunePairs.leq ~lhs:p1 ~rhs:p2
       | TrueBranch (x1, p1), TrueBranch (x2, p2)
       | FalseBranch (x1, p1), FalseBranch (x2, p2)
       | TrueBranch (x1, p1), V (x2, p2, _)
       | FalseBranch (x1, p1), V (x2, _, p2) ->
-          Pvar.equal x1 x2 && PrunePairs.( <= ) ~lhs:p1 ~rhs:p2
+          Pvar.equal x1 x2 && PrunePairs.leq ~lhs:p1 ~rhs:p2
       | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) ->
           Pvar.equal x1 x2
-          && PrunePairs.( <= ) ~lhs:ptrue1 ~rhs:ptrue2
-          && PrunePairs.( <= ) ~lhs:pfalse1 ~rhs:pfalse2
+          && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
+          && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
       | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) ->
           Ident.equal x1 x2
-          && PrunePairs.( <= ) ~lhs:ptrue1 ~rhs:ptrue2
-          && PrunePairs.( <= ) ~lhs:pfalse1 ~rhs:pfalse2
+          && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
+          && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
       | _, _ ->
           false
 
 
   let join x y =
     match (x, y) with
-    | _, _ when ( <= ) ~lhs:x ~rhs:y ->
+    | _, _ when leq ~lhs:x ~rhs:y ->
         y
-    | _, _ when ( <= ) ~lhs:y ~rhs:x ->
+    | _, _ when leq ~lhs:y ~rhs:x ->
         x
     | Latest p1, Latest p2 ->
         Latest (PrunePairs.join p1 p2)
@@ -1713,14 +1713,14 @@ module MemReach = struct
     ; oenv= GOption.GSome oenv }
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      StackLocs.( <= ) ~lhs:lhs.stack_locs ~rhs:rhs.stack_locs
-      && MemPure.( <= ) ~lhs:lhs.mem_pure ~rhs:rhs.mem_pure
-      && Alias.( <= ) ~lhs:lhs.alias ~rhs:rhs.alias
-      && LatestPrune.( <= ) ~lhs:lhs.latest_prune ~rhs:rhs.latest_prune
-      && Relation.( <= ) ~lhs:lhs.relation ~rhs:rhs.relation
+      StackLocs.leq ~lhs:lhs.stack_locs ~rhs:rhs.stack_locs
+      && MemPure.leq ~lhs:lhs.mem_pure ~rhs:rhs.mem_pure
+      && Alias.leq ~lhs:lhs.alias ~rhs:rhs.alias
+      && LatestPrune.leq ~lhs:lhs.latest_prune ~rhs:rhs.latest_prune
+      && Relation.leq ~lhs:lhs.relation ~rhs:rhs.relation
 
 
   let widen ~prev ~next ~num_iters =
@@ -2113,7 +2113,7 @@ module Mem = struct
 
   let is_exc_raised = function ExcRaised -> true | _ -> false
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
@@ -2126,7 +2126,7 @@ module Mem = struct
       | _, ExcRaised ->
           false
       | NonBottom lhs, NonBottom rhs ->
-          MemReach.( <= ) ~lhs ~rhs
+          MemReach.leq ~lhs ~rhs
 
 
   let join x y =

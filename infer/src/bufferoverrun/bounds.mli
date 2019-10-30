@@ -132,7 +132,7 @@ type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
 module NonNegativeBound : sig
   type t [@@deriving compare]
 
-  val ( <= ) : lhs:t -> rhs:t -> bool
+  val leq : lhs:t -> rhs:t -> bool
 
   val join : t -> t -> t
 

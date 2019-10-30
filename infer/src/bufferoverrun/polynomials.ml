@@ -292,13 +292,12 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
 
   (* assumes symbols are not comparable *)
-  let rec ( <= ) : lhs:t -> rhs:t -> bool =
+  let rec leq : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
     phys_equal lhs rhs
-    || NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const
-       && M.le ~le_elt:( <= ) lhs.terms rhs.terms
+    || (NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:leq lhs.terms rhs.terms)
     || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
-           NonNegativeInt.( <= ) ~lhs:lhs_ub ~rhs:(int_lb rhs) )
+           NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
 
 
   let rec xcompare ~lhs ~rhs =
@@ -317,7 +316,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
             let p' = mask_min_max_constant p in
             M.update (S.mask_min_max_constant s)
               (function
-                | None -> Some p' | Some p -> if ( <= ) ~lhs:p ~rhs:p' then Some p' else Some p )
+                | None -> Some p' | Some p -> if leq ~lhs:p ~rhs:p' then Some p' else Some p )
               acc )
           terms M.empty }
 
@@ -499,9 +498,9 @@ module NonNegativePolynomial = struct
   type degree_with_term =
     (Degree.t * NonNegativeNonTopPolynomial.t, TopTraces.t) AbstractDomain.Types.below_above
 
-  let ( <= ) =
-    AbstractDomain.StackedUtils.( <= ) ~le_below:NonNegativeNonTopPolynomial.( <= )
-      ~le_above:TopTraces.( <= )
+  let leq =
+    AbstractDomain.StackedUtils.leq ~leq_below:NonNegativeNonTopPolynomial.leq
+      ~leq_above:TopTraces.leq
 
 
   let pp ~hum =

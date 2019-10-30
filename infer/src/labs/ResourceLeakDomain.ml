@@ -10,7 +10,7 @@ module F = Format
 
 type t = unit
 
-let ( <= ) ~lhs:_ ~rhs:_ = assert false
+let leq ~lhs:_ ~rhs:_ = assert false
 
 let join _a _b = assert false
 

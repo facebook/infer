@@ -93,7 +93,7 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
     let rev_filter_not_over_approximated disjuncts ~not_in =
       List.rev_filter disjuncts ~f:(fun disjunct ->
           List.exists not_in ~f:(fun disj_not_in ->
-              TransferFunctions.Domain.( <= ) ~lhs:disjunct.astate ~rhs:disj_not_in.astate )
+              TransferFunctions.Domain.leq ~lhs:disjunct.astate ~rhs:disj_not_in.astate )
           |> not )
 
 
@@ -137,7 +137,7 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
           false
 
 
-    let ( <= ) ~lhs ~rhs = phys_equal lhs rhs || is_trivial_subset lhs ~of_:rhs
+    let leq ~lhs ~rhs = phys_equal lhs rhs || is_trivial_subset lhs ~of_:rhs
 
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
@@ -145,7 +145,7 @@ module MakeDisjunctive (TransferFunctions : DisjReady) (DConfig : DisjunctiveCon
       else
         let visited_prev = set_visited true prev in
         let post = join_up_to_imply visited_prev next in
-        if ( <= ) ~lhs:post ~rhs:prev then set_visited false prev else post
+        if leq ~lhs:post ~rhs:prev then set_visited false prev else post
 
 
     let pp = Disjuncts.pp

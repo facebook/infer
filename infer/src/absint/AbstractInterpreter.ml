@@ -212,10 +212,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
         if
           if is_narrowing then
             (old_state.State.visit_count :> int) > Config.max_narrows
-            || Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre
-          else Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre
+            || Domain.leq ~lhs:old_state.State.pre ~rhs:new_pre
+          else Domain.leq ~lhs:new_pre ~rhs:old_state.State.pre
         then (inv_map, ReachedFixPoint)
-        else if is_narrowing && not (Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre) then (
+        else if is_narrowing && not (Domain.leq ~lhs:new_pre ~rhs:old_state.State.pre) then (
           L.(debug Analysis Verbose)
             "Terminate narrowing because old and new states are not comparable at %a:%a@."
             Typ.Procname.pp (Summary.get_proc_name summary) Node.pp_id node_id ;

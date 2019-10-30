@@ -16,11 +16,11 @@ module UseDefChain = struct
     | NullDefAssign of (Location.t * AccessPath.t)
   [@@deriving compare]
 
-  let ( <= ) ~lhs ~rhs = compare lhs rhs <= 0
+  let leq ~lhs ~rhs = compare lhs rhs <= 0
 
   (* Keep only one chain in join/widen as we are going to report only one
    * trace to the user eventually. *)
-  let join lhs rhs = if ( <= ) ~lhs ~rhs then rhs else lhs
+  let join lhs rhs = if leq ~lhs ~rhs then rhs else lhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 

@@ -100,7 +100,7 @@ module Record
 struct
   type t = {maybe_uninit_vars: Domain1.t; aliased_vars: Domain2.t; prepost: Domain3.t prepost}
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       let {maybe_uninit_vars= lhs_uv; aliased_vars= lhs_av; prepost= {pre= lhs_pre; post= lhs_post}}
@@ -111,10 +111,10 @@ struct
           =
         rhs
       in
-      Domain1.( <= ) ~lhs:lhs_uv ~rhs:rhs_uv
-      && Domain2.( <= ) ~lhs:lhs_av ~rhs:rhs_av
-      && Domain3.( <= ) ~lhs:lhs_pre ~rhs:rhs_pre
-      && Domain3.( <= ) ~lhs:lhs_post ~rhs:rhs_post
+      Domain1.leq ~lhs:lhs_uv ~rhs:rhs_uv
+      && Domain2.leq ~lhs:lhs_av ~rhs:rhs_av
+      && Domain3.leq ~lhs:lhs_pre ~rhs:rhs_pre
+      && Domain3.leq ~lhs:lhs_post ~rhs:rhs_post
 
 
   let join astate1 astate2 =

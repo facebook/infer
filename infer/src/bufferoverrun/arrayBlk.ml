@@ -66,7 +66,7 @@ module ArrInfo = struct
           Top
 
 
-  let ( <= ) : lhs:t -> rhs:t -> bool =
+  let leq : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
     if phys_equal lhs rhs then true
     else

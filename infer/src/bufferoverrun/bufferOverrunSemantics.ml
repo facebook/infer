@@ -729,7 +729,7 @@ module Prune = struct
   let is_unreachable_constant : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> bool =
    fun integer_type_widths e m ->
     let v = eval integer_type_widths e m in
-    Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
+    Itv.leq ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
     && PowLoc.is_bot (Val.get_pow_loc v)
     && ArrayBlk.is_bot (Val.get_array_blk v)
 

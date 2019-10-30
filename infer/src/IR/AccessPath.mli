@@ -111,7 +111,7 @@ module Abs : sig
   val is_exact : t -> bool
   (** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
 
-  val ( <= ) : lhs:t -> rhs:t -> bool
+  val leq : lhs:t -> rhs:t -> bool
   (** return true if \gamma(lhs) \subseteq \gamma(rhs) *)
 
   val pp : Format.formatter -> t -> unit

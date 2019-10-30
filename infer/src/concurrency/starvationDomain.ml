@@ -22,7 +22,7 @@ module ThreadDomain = struct
     match (st1, st2) with AnyThread, _ | _, AnyThread -> AnyThread | _, _ -> UIThread
 
 
-  let ( <= ) ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
+  let leq ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
@@ -191,7 +191,7 @@ end = struct
     {map; acquisitions}
 
 
-  let ( <= ) ~lhs ~rhs = Map.( <= ) ~lhs:lhs.map ~rhs:rhs.map
+  let leq ~lhs ~rhs = Map.leq ~lhs:lhs.map ~rhs:rhs.map
 
   let top = {map= Map.top; acquisitions= Acquisitions.empty}
 
@@ -444,11 +444,11 @@ let join lhs rhs =
 
 let widen ~prev ~next ~num_iters:_ = join prev next
 
-let ( <= ) ~lhs ~rhs =
-  GuardToLockMap.( <= ) ~lhs:lhs.guard_map ~rhs:rhs.guard_map
-  && LockState.( <= ) ~lhs:lhs.lock_state ~rhs:rhs.lock_state
-  && CriticalPairs.( <= ) ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
-  && ThreadDomain.( <= ) ~lhs:lhs.thread ~rhs:rhs.thread
+let leq ~lhs ~rhs =
+  GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
+  && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
+  && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
+  && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
 
 
 let add_critical_pair tenv_opt lock_state event thread ~loc acc =

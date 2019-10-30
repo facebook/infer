@@ -11,7 +11,7 @@ module F = Format
 module FiniteBounds = struct
   type t = int
 
-  let ( <= ) ~lhs ~rhs = lhs <= rhs
+  let leq ~lhs ~rhs = lhs <= rhs
 
   let join a b = max a b
 

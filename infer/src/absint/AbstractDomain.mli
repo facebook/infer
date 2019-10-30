@@ -26,7 +26,7 @@ exception Stop_analysis
 module type NoJoin = sig
   include PrettyPrintable.PrintableType
 
-  val ( <= ) : lhs:t -> rhs:t -> bool
+  val leq : lhs:t -> rhs:t -> bool
   (** the implication relation: [lhs <= rhs] means [lhs |- rhs] *)
 end
 
@@ -104,9 +104,9 @@ include
 end
 
 module StackedUtils : sig
-  val ( <= ) :
-       le_below:(lhs:'b -> rhs:'b -> bool)
-    -> le_above:(lhs:'a -> rhs:'a -> bool)
+  val leq :
+       leq_below:(lhs:'b -> rhs:'b -> bool)
+    -> leq_above:(lhs:'a -> rhs:'a -> bool)
     -> lhs:('b, 'a) below_above
     -> rhs:('b, 'a) below_above
     -> bool

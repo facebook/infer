@@ -53,7 +53,7 @@ module ItvPure = struct
 
   let exists_str ~f (l, u) = Bound.exists_str ~f l || Bound.exists_str ~f u
 
-  let ( <= ) : lhs:t -> rhs:t -> bool =
+  let leq : lhs:t -> rhs:t -> bool =
    fun ~lhs:(l1, u1) ~rhs:(l2, u2) -> Bound.le l2 l1 && Bound.le u1 u2
 
 
@@ -545,9 +545,9 @@ let of_int_lit : IntLit.t -> t = fun n -> of_big_int (IntLit.to_big_int n)
 
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
-let le : lhs:t -> rhs:t -> bool = ( <= )
+let le : lhs:t -> rhs:t -> bool = leq
 
-let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
+let eq : t -> t -> bool = fun x y -> leq ~lhs:x ~rhs:y && leq ~lhs:y ~rhs:x
 
 let range loop_head : t -> ItvRange.t = function
   | Bottom ->

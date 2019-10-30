@@ -100,7 +100,7 @@ let pp f {resolve; reverse} =
     Reverse.pp reverse
 
 
-let ( <= ) ~lhs ~rhs = IdAccessPathMapDomain.( <= ) ~lhs:lhs.resolve ~rhs:rhs.resolve
+let leq ~lhs ~rhs = IdAccessPathMapDomain.leq ~lhs:lhs.resolve ~rhs:rhs.resolve
 
 let join bindings1 bindings2 =
   if phys_equal bindings1 bindings2 then bindings1

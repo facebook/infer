@@ -117,10 +117,10 @@ let tests =
       assert_bool "extract" (AccessPath.equal (AccessPath.Abs.extract xF_exact) xF) ;
       assert_bool "is_exact" (AccessPath.Abs.is_exact x_exact) ;
       assert_bool "not is_exact" (not (AccessPath.Abs.is_exact x_abstract)) ;
-      assert_bool "(<=)1" (AccessPath.Abs.( <= ) ~lhs:x_exact ~rhs:x_abstract) ;
-      assert_bool "(<=)2" (AccessPath.Abs.( <= ) ~lhs:xF_exact ~rhs:x_abstract) ;
-      assert_bool "not (<=)1" (not (AccessPath.Abs.( <= ) ~lhs:x_abstract ~rhs:x_exact)) ;
-      assert_bool "not (<=)2" (not (AccessPath.Abs.( <= ) ~lhs:x_abstract ~rhs:xF_exact))
+      assert_bool "(<=)1" (AccessPath.Abs.leq ~lhs:x_exact ~rhs:x_abstract) ;
+      assert_bool "(<=)2" (AccessPath.Abs.leq ~lhs:xF_exact ~rhs:x_abstract) ;
+      assert_bool "not (<=)1" (not (AccessPath.Abs.leq ~lhs:x_abstract ~rhs:x_exact)) ;
+      assert_bool "not (<=)2" (not (AccessPath.Abs.leq ~lhs:x_abstract ~rhs:xF_exact))
     in
     "abstraction" >:: abstraction_test_
   in
@@ -151,11 +151,11 @@ let tests =
       (* [mem_fuzzy] should behave the same as [mem] except in this case *)
       assert_bool "mem_fuzzy_not_fully_contained"
         (AccessPathDomains.Set.mem_fuzzy yF_abstract aps3) ;
-      assert_bool "<= on same is true" (AccessPathDomains.Set.( <= ) ~lhs:aps1 ~rhs:aps1) ;
-      assert_bool "aps1 <= aps2" (AccessPathDomains.Set.( <= ) ~lhs:aps1 ~rhs:aps2) ;
-      assert_bool "aps2 <= aps1" (AccessPathDomains.Set.( <= ) ~lhs:aps2 ~rhs:aps1) ;
-      assert_bool "aps1 <= aps3" (AccessPathDomains.Set.( <= ) ~lhs:aps1 ~rhs:aps3) ;
-      assert_bool "not aps3 <= aps1" (not (AccessPathDomains.Set.( <= ) ~lhs:aps3 ~rhs:aps1)) ;
+      assert_bool "<= on same is true" (AccessPathDomains.Set.leq ~lhs:aps1 ~rhs:aps1) ;
+      assert_bool "aps1 <= aps2" (AccessPathDomains.Set.leq ~lhs:aps1 ~rhs:aps2) ;
+      assert_bool "aps2 <= aps1" (AccessPathDomains.Set.leq ~lhs:aps2 ~rhs:aps1) ;
+      assert_bool "aps1 <= aps3" (AccessPathDomains.Set.leq ~lhs:aps1 ~rhs:aps3) ;
+      assert_bool "not aps3 <= aps1" (not (AccessPathDomains.Set.leq ~lhs:aps3 ~rhs:aps1)) ;
       assert_eq (AccessPathDomains.Set.join aps1 aps1) "{ x*, x }" ;
       assert_eq (AccessPathDomains.Set.join aps1 aps2) "{ x*, x, x.f }" ;
       assert_eq (AccessPathDomains.Set.join aps1 aps3) "{ x*, x, x.f, y.f }" ;

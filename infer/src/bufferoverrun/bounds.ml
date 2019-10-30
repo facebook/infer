@@ -1167,7 +1167,7 @@ end
 module NonNegativeBound = struct
   type t = Bound.t * BoundTrace.t [@@deriving compare]
 
-  let ( <= ) ~lhs:(bound_lhs, _) ~rhs:(bound_rhs, _) = Bound.le bound_lhs bound_rhs
+  let leq ~lhs:(bound_lhs, _) ~rhs:(bound_rhs, _) = Bound.le bound_lhs bound_rhs
 
   let join (bound_x, trace_x) (bound_y, trace_y) =
     (Bound.overapprox_max bound_x bound_y, BoundTrace.join trace_x trace_y)

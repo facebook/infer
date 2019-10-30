@@ -41,7 +41,7 @@ module NonNegativePolynomial : sig
 
   val pp_hum : Format.formatter -> t -> unit
 
-  val ( <= ) : lhs:t -> rhs:t -> bool
+  val leq : lhs:t -> rhs:t -> bool
 
   val top : t
 

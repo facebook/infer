@@ -187,7 +187,7 @@ module ThreadsDomain = struct
   let bottom = NoThread
 
   (* NoThread < AnyThreadButSelf < Any *)
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     phys_equal lhs rhs
     ||
     match (lhs, rhs) with
@@ -319,7 +319,7 @@ module OwnershipAbstractValue = struct
 
   let make_owned_if formal_index = OwnedIf (IntSet.singleton formal_index)
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     phys_equal lhs rhs
     ||
     match (lhs, rhs) with
@@ -518,13 +518,13 @@ let is_bottom {threads; locks; accesses; ownership; attribute_map} =
   && AttributeMapDomain.is_empty attribute_map
 
 
-let ( <= ) ~lhs ~rhs =
+let leq ~lhs ~rhs =
   if phys_equal lhs rhs then true
   else
-    ThreadsDomain.( <= ) ~lhs:lhs.threads ~rhs:rhs.threads
-    && LocksDomain.( <= ) ~lhs:lhs.locks ~rhs:rhs.locks
-    && AccessDomain.( <= ) ~lhs:lhs.accesses ~rhs:rhs.accesses
-    && AttributeMapDomain.( <= ) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
+    ThreadsDomain.leq ~lhs:lhs.threads ~rhs:rhs.threads
+    && LocksDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
+    && AccessDomain.leq ~lhs:lhs.accesses ~rhs:rhs.accesses
+    && AttributeMapDomain.leq ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
 
 let join astate1 astate2 =

@@ -251,7 +251,7 @@ module Abs = struct
 
   let is_exact = function Exact _ -> true | Abstracted _ -> false
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     match (lhs, rhs) with
     | Abstracted _, Exact _ ->
         false

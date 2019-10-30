@@ -295,25 +295,25 @@ let tests =
   let lteq_test =
     let lteq_test_ _ =
       (* regular tree tests *)
-      assert_bool "<= equal;" (Domain.( <= ) ~lhs:tree ~rhs:tree) ;
-      assert_bool "<= bases" (Domain.( <= ) ~lhs:x_base_tree ~rhs:x_y_base_tree) ;
-      assert_bool "<= regular1" (Domain.( <= ) ~lhs:x_base_tree ~rhs:xFG_tree) ;
-      assert_bool "<= regular2" (Domain.( <= ) ~lhs:xFG_tree ~rhs:tree) ;
-      assert_bool "<= regular3" (Domain.( <= ) ~lhs:y_base_tree ~rhs:tree) ;
-      assert_bool "<= bases negative1" (not (Domain.( <= ) ~lhs:x_y_base_tree ~rhs:x_base_tree)) ;
-      assert_bool "<= bases negative2" (not (Domain.( <= ) ~lhs:x_base_tree ~rhs:y_base_tree)) ;
-      assert_bool "<= negative1" (not (Domain.( <= ) ~lhs:xFG_tree ~rhs:y_base_tree)) ;
-      assert_bool "<= negative2" (not (Domain.( <= ) ~lhs:tree ~rhs:xFG_tree)) ;
+      assert_bool "<= equal;" (Domain.leq ~lhs:tree ~rhs:tree) ;
+      assert_bool "<= bases" (Domain.leq ~lhs:x_base_tree ~rhs:x_y_base_tree) ;
+      assert_bool "<= regular1" (Domain.leq ~lhs:x_base_tree ~rhs:xFG_tree) ;
+      assert_bool "<= regular2" (Domain.leq ~lhs:xFG_tree ~rhs:tree) ;
+      assert_bool "<= regular3" (Domain.leq ~lhs:y_base_tree ~rhs:tree) ;
+      assert_bool "<= bases negative1" (not (Domain.leq ~lhs:x_y_base_tree ~rhs:x_base_tree)) ;
+      assert_bool "<= bases negative2" (not (Domain.leq ~lhs:x_base_tree ~rhs:y_base_tree)) ;
+      assert_bool "<= negative1" (not (Domain.leq ~lhs:xFG_tree ~rhs:y_base_tree)) ;
+      assert_bool "<= negative2" (not (Domain.leq ~lhs:tree ~rhs:xFG_tree)) ;
       (* star tree tests *)
-      assert_bool "<= star lhs equal" (Domain.( <= ) ~lhs:x_star_tree ~rhs:x_star_tree) ;
-      assert_bool "<= star rhs1" (Domain.( <= ) ~lhs:x_base_tree ~rhs:x_star_tree) ;
-      assert_bool "<= star rhs2" (Domain.( <= ) ~lhs:xFG_tree ~rhs:x_star_tree) ;
-      assert_bool "<= star rhs3" (Domain.( <= ) ~lhs:y_base_tree ~rhs:yF_star_tree) ;
-      assert_bool "<= star rhs4" (Domain.( <= ) ~lhs:yF_star_tree ~rhs:tree) ;
-      assert_bool "<= star lhs negative1" (not (Domain.( <= ) ~lhs:x_star_tree ~rhs:x_base_tree)) ;
-      assert_bool "<= star lhs negative2" (not (Domain.( <= ) ~lhs:x_star_tree ~rhs:xFG_tree)) ;
-      assert_bool "<= star lhs negative3" (not (Domain.( <= ) ~lhs:yF_star_tree ~rhs:y_base_tree)) ;
-      assert_bool "<= star lhs negative4" (not (Domain.( <= ) ~lhs:tree ~rhs:yF_star_tree)) ;
+      assert_bool "<= star lhs equal" (Domain.leq ~lhs:x_star_tree ~rhs:x_star_tree) ;
+      assert_bool "<= star rhs1" (Domain.leq ~lhs:x_base_tree ~rhs:x_star_tree) ;
+      assert_bool "<= star rhs2" (Domain.leq ~lhs:xFG_tree ~rhs:x_star_tree) ;
+      assert_bool "<= star rhs3" (Domain.leq ~lhs:y_base_tree ~rhs:yF_star_tree) ;
+      assert_bool "<= star rhs4" (Domain.leq ~lhs:yF_star_tree ~rhs:tree) ;
+      assert_bool "<= star lhs negative1" (not (Domain.leq ~lhs:x_star_tree ~rhs:x_base_tree)) ;
+      assert_bool "<= star lhs negative2" (not (Domain.leq ~lhs:x_star_tree ~rhs:xFG_tree)) ;
+      assert_bool "<= star lhs negative3" (not (Domain.leq ~lhs:yF_star_tree ~rhs:y_base_tree)) ;
+      assert_bool "<= star lhs negative4" (not (Domain.leq ~lhs:tree ~rhs:yF_star_tree)) ;
       (* <= tree but not <= trace tests *)
       (* same as x_base_tree, but with a trace higher in the traces lattice *)
       let x_base_tree_higher_trace =
@@ -323,14 +323,13 @@ let tests =
       let x_star_tree_diff_trace =
         Domain.BaseMap.singleton x_base (Domain.make_starred_leaf y_trace)
       in
-      assert_bool "(x, {}) <= (x, {y})"
-        (Domain.( <= ) ~lhs:x_base_tree ~rhs:x_base_tree_higher_trace) ;
+      assert_bool "(x, {}) <= (x, {y})" (Domain.leq ~lhs:x_base_tree ~rhs:x_base_tree_higher_trace) ;
       assert_bool "(x, {y}) not <= (x, {})"
-        (not (Domain.( <= ) ~lhs:x_base_tree_higher_trace ~rhs:x_base_tree)) ;
+        (not (Domain.leq ~lhs:x_base_tree_higher_trace ~rhs:x_base_tree)) ;
       assert_bool "(x*, {y})* not <= (x*, {x})"
-        (not (Domain.( <= ) ~lhs:x_star_tree_diff_trace ~rhs:x_star_tree)) ;
+        (not (Domain.leq ~lhs:x_star_tree_diff_trace ~rhs:x_star_tree)) ;
       assert_bool "(x*, {x})* not <= (x*, {y})"
-        (not (Domain.( <= ) ~lhs:x_star_tree ~rhs:x_star_tree_diff_trace))
+        (not (Domain.leq ~lhs:x_star_tree ~rhs:x_star_tree_diff_trace))
     in
     "lteq" >:: lteq_test_
   in

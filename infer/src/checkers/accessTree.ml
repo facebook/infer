@@ -176,7 +176,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
   let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
     if phys_equal lhs rhs then true
     else
-      TraceDomain.( <= ) ~lhs:lhs_trace ~rhs:rhs_trace
+      TraceDomain.leq ~lhs:lhs_trace ~rhs:rhs_trace
       &&
       match (lhs_tree, rhs_tree) with
       | Subtree lhs_subtree, Subtree rhs_subtree ->
@@ -193,7 +193,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
           false
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       BaseMap.for_all

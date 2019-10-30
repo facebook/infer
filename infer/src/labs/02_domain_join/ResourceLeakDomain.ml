@@ -10,7 +10,7 @@ module F = Format
 
 type t = int
 
-let ( <= ) ~lhs ~rhs = lhs <= rhs
+let leq ~lhs ~rhs = lhs <= rhs
 
 let join a b = max a b
 

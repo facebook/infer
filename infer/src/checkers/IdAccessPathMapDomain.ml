@@ -32,7 +32,7 @@ let check_invariant ap1 ap2 = function
           HilExp.AccessExpression.pp ap2
 
 
-let ( <= ) ~lhs ~rhs =
+let leq ~lhs ~rhs =
   if phys_equal lhs rhs then true
   else
     IdMap.for_all

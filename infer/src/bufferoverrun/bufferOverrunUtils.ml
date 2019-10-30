@@ -226,7 +226,7 @@ module Exec = struct
     let set_c_strlen1 allocsite arrinfo acc =
       let loc = Loc.of_allocsite allocsite in
       let idx = Dom.Val.of_itv ~traces (ArrayBlk.ArrInfo.offsetof arrinfo) in
-      if Itv.( <= ) ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null loc idx acc
+      if Itv.leq ~lhs:Itv.zero ~rhs:src_itv then Dom.Mem.set_first_idx_of_null loc idx acc
       else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
     ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem

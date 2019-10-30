@@ -315,7 +315,7 @@ module ControlFlowCost = struct
       let f sum =
         let cost_of_sum = Sum.cost ~of_item sum in
         let new_cost = BasicCost.min_default_left t.cost cost_of_sum in
-        if not (BasicCost.( <= ) ~lhs:t.cost ~rhs:new_cost) then (
+        if not (BasicCost.leq ~lhs:t.cost ~rhs:new_cost) then (
           on_improve sum cost_of_sum new_cost ;
           t.cost <- new_cost )
       in
@@ -325,7 +325,7 @@ module ControlFlowCost = struct
     let improve_cost_with t cost' =
       let old_cost = t.cost in
       let new_cost = BasicCost.min_default_left old_cost cost' in
-      if not (BasicCost.( <= ) ~lhs:old_cost ~rhs:new_cost) then (
+      if not (BasicCost.leq ~lhs:old_cost ~rhs:new_cost) then (
         t.cost <- new_cost ;
         Some old_cost )
       else None
@@ -652,7 +652,7 @@ module WorstCaseCost = struct
      subsequent 'don't know's.  Instead, we report Top cost only at
      the top level per function.  *)
   let should_report_cost cost ~threshold =
-    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:threshold)
+    (not (BasicCost.is_top cost)) && not (BasicCost.leq ~lhs:cost ~rhs:threshold)
 
 
   let exec_node tenv {costs; reports} extras instr_node =

@@ -168,7 +168,7 @@ module GraphComparison = struct
     match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
 end
 
-let ( <= ) ~lhs ~rhs =
+let leq ~lhs ~rhs =
   phys_equal lhs rhs || GraphComparison.is_isograph ~lhs ~rhs GraphComparison.empty_mapping
 
 

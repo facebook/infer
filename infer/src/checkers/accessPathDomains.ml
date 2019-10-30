@@ -24,9 +24,8 @@ module Set = struct
     APSet.filter
       (fun lhs ->
         not
-          (APSet.exists
-             (fun rhs -> (not (phys_equal lhs rhs)) && AccessPath.Abs.( <= ) ~lhs ~rhs)
-             aps) )
+          (APSet.exists (fun rhs -> (not (phys_equal lhs rhs)) && AccessPath.Abs.leq ~lhs ~rhs) aps)
+        )
       aps
 
 
@@ -35,18 +34,17 @@ module Set = struct
   let of_list = APSet.of_list
 
   let mem ap aps =
-    APSet.mem ap aps
-    || APSet.exists (fun other_ap -> AccessPath.Abs.( <= ) ~lhs:ap ~rhs:other_ap) aps
+    APSet.mem ap aps || APSet.exists (fun other_ap -> AccessPath.Abs.leq ~lhs:ap ~rhs:other_ap) aps
 
 
   let mem_fuzzy ap aps =
     let has_overlap ap1 ap2 =
-      AccessPath.Abs.( <= ) ~lhs:ap1 ~rhs:ap2 || AccessPath.Abs.( <= ) ~lhs:ap2 ~rhs:ap1
+      AccessPath.Abs.leq ~lhs:ap1 ~rhs:ap2 || AccessPath.Abs.leq ~lhs:ap2 ~rhs:ap1
     in
     APSet.mem ap aps || APSet.exists (has_overlap ap) aps
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       let rhs_contains lhs_ap = mem lhs_ap rhs in

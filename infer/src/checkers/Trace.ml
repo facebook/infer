@@ -162,12 +162,12 @@ module Make (Spec : Spec) = struct
 
     type t = {known: Known.t; footprint: Footprint.t; sanitizers: Sanitizers.t}
 
-    let ( <= ) ~lhs ~rhs =
+    let leq ~lhs ~rhs =
       if phys_equal lhs rhs then true
       else
-        Known.( <= ) ~lhs:lhs.known ~rhs:rhs.known
-        && Footprint.( <= ) ~lhs:lhs.footprint ~rhs:rhs.footprint
-        && Sanitizers.( <= ) ~lhs:lhs.sanitizers ~rhs:rhs.sanitizers
+        Known.leq ~lhs:lhs.known ~rhs:rhs.known
+        && Footprint.leq ~lhs:lhs.footprint ~rhs:rhs.footprint
+        && Sanitizers.leq ~lhs:lhs.sanitizers ~rhs:rhs.sanitizers
 
 
     let join astate1 astate2 =
@@ -546,9 +546,9 @@ module Make (Spec : Spec) = struct
     {sources; sinks; passthroughs}
 
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     phys_equal lhs rhs
-    || Sources.( <= ) ~lhs:lhs.sources ~rhs:rhs.sources
+    || Sources.leq ~lhs:lhs.sources ~rhs:rhs.sources
        && Sinks.subset lhs.sinks rhs.sinks
        && Passthroughs.subset lhs.passthroughs rhs.passthroughs
 

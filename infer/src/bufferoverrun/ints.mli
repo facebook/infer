@@ -63,7 +63,7 @@ module NonNegativeInt : sig
 
   val is_one : t -> bool
 
-  val ( <= ) : lhs:t -> rhs:t -> bool
+  val leq : lhs:t -> rhs:t -> bool
 
   val succ : t -> t
 

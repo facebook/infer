@@ -82,7 +82,7 @@ module MockTrace = Trace.Make (struct
     else None
 end)
 
-let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
+let trace_equal t1 t2 = MockTrace.leq ~lhs:t1 ~rhs:t2 && MockTrace.leq ~lhs:t2 ~rhs:t1
 
 let source_equal s source = MockSource.equal s source
 

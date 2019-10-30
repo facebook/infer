@@ -126,7 +126,7 @@ module NoRelation = struct
 
     let f3_false _ _ _ = false
 
-    let ( <= ) ~lhs:() ~rhs:() = true
+    let leq ~lhs:() ~rhs:() = true
 
     let join = f2
 
@@ -980,7 +980,7 @@ module Make (Manager : Manager_S) = struct
 
     let pp fmt x = Abstract1.print fmt x
 
-    let ( <= ) ~lhs ~rhs = sync_env_lift (Abstract1.is_leq man) lhs rhs
+    let leq ~lhs ~rhs = sync_env_lift (Abstract1.is_leq man) lhs rhs
 
     let sat_tcons tcons x =
       let tcons = Constraints.remove_strict_ineq_tcons1 tcons in
@@ -1213,7 +1213,7 @@ module Make (Manager : Manager_S) = struct
       let ge_than_lhs pack_id rhs =
         match PackMap.find pack_id lhs with
         | lhs ->
-            Val.( <= ) ~lhs ~rhs
+            Val.leq ~lhs ~rhs
         | exception Caml.Not_found ->
             Val.is_top rhs
       in
@@ -1247,7 +1247,7 @@ module Make (Manager : Manager_S) = struct
       PackMap.merge widen_opt prev next
 
 
-    let ( <= ) ~lhs ~rhs =
+    let leq ~lhs ~rhs =
       let _, packs_lhs, packs_rhs = sync_pack lhs rhs in
       le_synced_packs ~lhs:packs_lhs ~rhs:packs_rhs
 

@@ -22,7 +22,7 @@ module PathCountDomain = struct
 
   let initial = make_path_count 1
 
-  let ( <= ) ~lhs ~rhs =
+  let leq ~lhs ~rhs =
     match (lhs, rhs) with
     | PathCount c1, PathCount c2 ->
         c1 <= c2

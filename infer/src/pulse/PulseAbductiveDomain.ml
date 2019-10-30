@@ -61,7 +61,7 @@ module InvertedDomain : BaseDomain = struct
   let pp = BaseDomain.pp
 
   (** inverted lattice *)
-  let ( <= ) ~lhs ~rhs = BaseDomain.( <= ) ~rhs:lhs ~lhs:rhs
+  let leq ~lhs ~rhs = BaseDomain.leq ~rhs:lhs ~lhs:rhs
 end
 
 (** biabduction-style pre/post state *)
@@ -71,7 +71,7 @@ type t =
 
 let pp f {post; pre} = F.fprintf f "@[<v>%a@;PRE=[%a]@]" Domain.pp post InvertedDomain.pp pre
 
-let ( <= ) ~lhs ~rhs =
+let leq ~lhs ~rhs =
   match
     BaseDomain.isograph_map BaseDomain.empty_mapping
       ~lhs:(rhs.pre :> BaseDomain.t)
