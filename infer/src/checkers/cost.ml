@@ -84,8 +84,13 @@ module BoundMap = struct
                 | ExcRaised ->
                     BasicCost.one
                 | NonBottom mem ->
-                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map)
-                      ~node_id mem
+                    let cost =
+                      BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_map)
+                        ~node_id mem
+                    in
+                    (* The zero cost of node does not make sense especially when the abstract memory
+                       is non-bottom.  *)
+                    if BasicCost.is_zero cost then BasicCost.one else cost
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id BasicCost.pp

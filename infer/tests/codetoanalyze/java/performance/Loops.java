@@ -127,4 +127,21 @@ public class Loops {
       offset += 8;
     } while (i != 0);
   }
+
+  class MyLinkedList {
+    MyLinkedList next;
+
+    MyLinkedList getNext() {
+      return next;
+    }
+  }
+
+  void length_of_linked_list_linear_FP(MyLinkedList p) {
+    int n = 0;
+    while (p != null) {
+      n++;
+      p = p.getNext();
+    }
+    linear(n);
+  }
 }
