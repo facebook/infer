@@ -91,6 +91,8 @@ let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_constant = get_attribute Attributes.get_constant
 
+let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+
 let std_vector_reserve address memory = add_attribute address Attribute.StdVectorReserve memory
 
 let is_std_vector_reserved address memory =

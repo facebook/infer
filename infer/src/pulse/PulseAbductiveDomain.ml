@@ -426,38 +426,23 @@ module PrePost = struct
      addresses are traversed in the process. *)
   let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre
       ~addr_hist_caller call_state =
-    let add_call trace =
-      Trace.ViaCall
-        { in_call= trace
-        ; f= Call callee_proc_name
-        ; location= call_location
-        ; history= snd addr_hist_caller }
-    in
     match visit call_state ~addr_callee:addr_pre ~addr_hist_caller with
     | `AlreadyVisited, call_state ->
         Ok call_state
     | `NotAlreadyVisited, call_state -> (
-        (let open Option.Monad_infix in
-        BaseMemory.find_opt addr_pre pre.BaseDomain.heap
-        >>= fun (edges_pre, attrs_pre) ->
-        Attributes.get_must_be_valid attrs_pre
-        >>| fun callee_access_trace ->
-        let access_trace = add_call callee_access_trace in
-        match Memory.check_valid access_trace (fst addr_hist_caller) call_state.astate with
-        | Error invalidated_by ->
-            Error (Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace})
-        | Ok astate ->
-            let call_state = {call_state with astate} in
-            Container.fold_result
-              ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
-              ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
-                let astate, addr_hist_dest_caller =
-                  Memory.eval_edge addr_hist_caller access call_state.astate
-                in
-                let call_state = {call_state with astate} in
-                materialize_pre_from_address callee_proc_name call_location ~pre
-                  ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ))
-        |> function Some result -> result | None -> Ok call_state )
+      match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
+      | None ->
+          Ok call_state
+      | Some (edges_pre, _attrs_pre) ->
+          Container.fold_result
+            ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
+            ~init:call_state edges_pre ~f:(fun call_state (access, (addr_pre_dest, _)) ->
+              let astate, addr_hist_dest_caller =
+                Memory.eval_edge addr_hist_caller access call_state.astate
+              in
+              let call_state = {call_state with astate} in
+              materialize_pre_from_address callee_proc_name call_location ~pre
+                ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
   (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that
@@ -804,6 +789,32 @@ module PrePost = struct
     r
 
 
+  let check_all_valid callee_proc_name call_location {pre; post= _} call_state =
+    AddressMap.fold
+      (fun addr_pre (addr_caller, hist_caller) astate_result ->
+        match astate_result with
+        | Error _ ->
+            astate_result
+        | Ok astate -> (
+          match BaseMemory.get_must_be_valid addr_pre (pre :> BaseDomain.t).heap with
+          | None ->
+              astate_result
+          | Some callee_access_trace ->
+              let access_trace =
+                Trace.ViaCall
+                  { in_call= callee_access_trace
+                  ; f= Call callee_proc_name
+                  ; location= call_location
+                  ; history= hist_caller }
+              in
+              Memory.check_valid access_trace addr_caller astate
+              |> Result.map_error ~f:(fun invalidated_by ->
+                     L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+                     Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace}
+                 ) ) )
+      call_state.subst (Ok call_state.astate)
+
+
   (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
        in the *current* pre as appropriate so that callers of the current procedure will also know
        about the deeper reads)
@@ -835,13 +846,17 @@ module PrePost = struct
     | None ->
         (* couldn't apply the pre for some technical reason (as in: not by the fault of the
            programmer as far as we know) *)
-        Ok None
+        Ok (Some (astate, None))
     | Some (Error _ as error) ->
         (* error: the function call requires to read some state known to be invalid *)
         error
     | Some (Ok call_state) ->
+        L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
+        let open Result.Monad_infix in
+        check_all_valid callee_proc_name call_location pre_post call_state
+        >>= fun astate ->
         (* reset [visited] *)
-        let call_state = {call_state with visited= AddressSet.empty} in
+        let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
         Ok (Some (apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state))
 end
