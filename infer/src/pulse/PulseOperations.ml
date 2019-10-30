@@ -131,12 +131,12 @@ let eval location exp0 astate =
         Closures.record location name (List.rev rev_captured) astate
     | Cast (_, exp') ->
         eval exp' astate
-    | Const c ->
+    | Const (Cint i) ->
         (* TODO: make identical const the same address *)
         let addr = AbstractValue.mk_fresh () in
-        let astate = Memory.add_attribute addr (Arithmetic (Arithmetic.EqualTo c)) astate in
+        let astate = Memory.add_attribute addr (Arithmetic (Arithmetic.equal_to i)) astate in
         Ok (astate, (addr, []))
-    | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
+    | Const _ | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
   eval exp0 astate
@@ -144,8 +144,8 @@ let eval location exp0 astate =
 
 let eval_arith location exp astate =
   match (exp : Exp.t) with
-  | Const c ->
-      Ok (astate, None, Some (Arithmetic.EqualTo c))
+  | Const (Cint i) ->
+      Ok (astate, None, Some (Arithmetic.equal_to i))
   | exp -> (
       eval location exp astate
       >>| fun (astate, (addr, _)) ->
@@ -167,14 +167,17 @@ let record_abduced addr_opt arith_opt astate =
 
 let rec eval_cond ~negated location exp astate =
   match (exp : Exp.t) with
-  | BinOp (bop, e1, e2) ->
+  | BinOp (bop, e1, e2) -> (
       eval_arith location e1 astate
       >>= fun (astate, addr1, eval1) ->
       eval_arith location e2 astate
       >>| fun (astate, addr2, eval2) ->
-      let result, abduced1, abduced2 = Arithmetic.abduce_binop_is_true ~negated bop eval1 eval2 in
-      let astate = record_abduced addr1 abduced1 astate |> record_abduced addr2 abduced2 in
-      (astate, result)
+      match Arithmetic.abduce_binop_is_true ~negated bop eval1 eval2 with
+      | Unsatisfiable ->
+          (astate, false)
+      | Satisfiable (abduced1, abduced2) ->
+          let astate = record_abduced addr1 abduced1 astate |> record_abduced addr2 abduced2 in
+          (astate, true) )
   | UnOp (LNot, exp', _) ->
       eval_cond ~negated:(not negated) location exp' astate
   | exp ->

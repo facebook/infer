@@ -60,7 +60,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.EqualTo (Cint IntLit.zero)))
+  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero))
 
   let pp f attribute =
     let pp_string_if_debug string fmt () =

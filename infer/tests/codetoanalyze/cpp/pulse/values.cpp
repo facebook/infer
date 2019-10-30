@@ -48,7 +48,7 @@ void free_if(int* x, int b) {
   }
 }
 
-void FP_no_free_if_ok(int* x) {
+void no_free_if_ok(int* x) {
   free_if(x, 0);
   *x = 42;
 }

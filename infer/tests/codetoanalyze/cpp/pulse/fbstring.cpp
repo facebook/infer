@@ -30,7 +30,7 @@ struct LikeFBString {
   int category_;
   char* buffer_;
   size_t size_;
-  unsigned int refcount;
+  unsigned int* refcount_;
 
   LikeFBString() {}
 
@@ -64,18 +64,20 @@ struct LikeFBString {
   }
 
   void copyLarge(const LikeFBString& src) {
-    refcount++;
     buffer_ = src.buffer_;
     size_ = src.size_;
+    refcount_ = src.refcount_;
+    *refcount_ = *refcount_ + 1;
   }
 
   int category() const { return category_; }
 
-  void incr_ref_count() { refcount++; }
-
   void decr_ref_count() {
-    refcount--;
-    if (refcount == 0) {
+    if (*refcount_ <= 0) {
+      exit(1);
+    }
+    *refcount_ = *refcount_ - 1;
+    if (*refcount_ == 0) {
       free(buffer_);
     }
   }
@@ -89,10 +91,7 @@ void copy_fbstring(LikeFBString& s) {
   LikeFBString t = s;
 }
 
-void FP_pass_to_copy_ok() {
-  // Currently pulse follows impossible control flow and thinks the
-  // underlying buffer of s is freed twice: once per copy. That is
-  // caused by manual ref-counting in the case of large strings.
+void pass_to_copy_ok() {
   LikeFBString s;
   copy_fbstring(s);
 }

@@ -447,26 +447,25 @@ module PrePost = struct
     match Attributes.get_arithmetic attrs_pre with
     | None ->
         call_state
-    | Some _ as arith_callee ->
+    | Some _ as arith_callee -> (
         let addr_caller = fst addr_hist_caller in
         let astate = call_state.astate in
         let arith_caller = Memory.get_arithmetic addr_caller astate in
         (* TODO: we don't use [abduced_callee] but we could probably use it to refine the attributes
            for that address in the post since abstract values are immutable *)
-        let satisfiable, abduce_caller, _abduce_callee =
-          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller arith_callee
-        in
-        if not satisfiable then
-          raise
-            (CannotApplyPre
-               (Arithmetic {addr_caller; addr_callee= addr_pre; arith_caller; arith_callee})) ;
-        let new_astate =
-          Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
-              let attribute = Attribute.Arithmetic abduce_caller in
-              Memory.abduce_attribute addr_caller attribute astate
-              |> Memory.add_attribute addr_caller attribute )
-        in
-        {call_state with astate= new_astate}
+        match Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller arith_callee with
+        | Unsatisfiable ->
+            raise
+              (CannotApplyPre
+                 (Arithmetic {addr_caller; addr_callee= addr_pre; arith_caller; arith_callee}))
+        | Satisfiable (abduce_caller, _abduce_callee) ->
+            let new_astate =
+              Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
+                  let attribute = Attribute.Arithmetic abduce_caller in
+                  Memory.abduce_attribute addr_caller attribute astate
+                  |> Memory.add_attribute addr_caller attribute )
+            in
+            {call_state with astate= new_astate} )
 
 
   (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in

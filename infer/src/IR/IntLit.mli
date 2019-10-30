@@ -89,6 +89,8 @@ val shift_right : t -> t -> t
 
 val sub : t -> t -> t
 
+val max : t -> t -> t
+
 val min : t -> t -> t
 
 val to_int : t -> int option

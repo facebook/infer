@@ -15,8 +15,7 @@ void unreachable_eq_then_ne_ok(int* x, int y) {
   }
 }
 
-// pulse only tracks equality for now, not disequality
-void FP_unreachable_ne_then_eq_ok(int* x, int y) {
+void unreachable_ne_then_eq_ok(int* x, int y) {
   if (y != 0) {
     free(x);
   }
@@ -32,6 +31,7 @@ bool equal_explicit(size_t x, size_t y) {
   return false;
 }
 
+// need relational domain to give this a good spec
 bool equal(size_t x, size_t y) {
   return x == y;
 }
