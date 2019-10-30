@@ -14,7 +14,7 @@ module ValueHistory = PulseValueHistory
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-  | Arithmetic of Arithmetic.t
+  | Arithmetic of Arithmetic.t * Trace.t
   | Closure of Typ.Procname.t
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
@@ -31,7 +31,7 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Typ.Procname.t option
 
-  val get_arithmetic : t -> Arithmetic.t option
+  val get_arithmetic : t -> (Arithmetic.t * Trace.t) option
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 

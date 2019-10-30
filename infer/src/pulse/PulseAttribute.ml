@@ -29,7 +29,7 @@ module Attribute = struct
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-    | Arithmetic of Arithmetic.t
+    | Arithmetic of Arithmetic.t * Trace.t
     | Closure of Typ.Procname.t
     | Invalid of Invalidation.t * Trace.t
     | MustBeValid of Trace.t
@@ -60,7 +60,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero))
+  let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero, dummy_trace))
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -73,8 +73,8 @@ module Attribute = struct
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
     | Closure pname ->
         Typ.Procname.pp f pname
-    | Arithmetic phi ->
-        Arithmetic.pp f phi
+    | Arithmetic (phi, trace) ->
+        F.fprintf f "Arith %a" (Trace.pp ~pp_immediate:(fun fmt -> Arithmetic.pp fmt phi)) trace
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -137,8 +137,8 @@ module Attributes = struct
   let get_arithmetic attrs =
     Set.find_rank attrs Attribute.const_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Arithmetic a) = attr in
-           a )
+           let[@warning "-8"] (Attribute.Arithmetic (a, trace)) = attr in
+           (a, trace) )
 
 
   include Set

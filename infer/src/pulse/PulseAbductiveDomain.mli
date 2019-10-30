@@ -80,7 +80,7 @@ module Memory : sig
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist.  *)
 
-  val get_arithmetic : AbstractValue.t -> t -> Arithmetic.t option
+  val get_arithmetic : AbstractValue.t -> t -> (Arithmetic.t * Trace.t) option
 end
 
 val is_local : Var.t -> t -> bool

@@ -440,25 +440,41 @@ module PrePost = struct
 
   (* {3 reading the pre from the current state} *)
 
-  let solve_arithmetic_constraints ~addr_pre ~attrs_pre ~addr_hist_caller call_state =
+  let add_call_to_trace proc_name call_location caller_history in_call =
+    Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
+
+
+  let solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
+      ~addr_hist_caller call_state =
     match Attributes.get_arithmetic attrs_pre with
     | None ->
         call_state
-    | Some _ as arith_callee -> (
-        let addr_caller = fst addr_hist_caller in
+    | Some (arith_callee, arith_callee_hist) -> (
+        let addr_caller, hist_caller = addr_hist_caller in
         let astate = call_state.astate in
-        let arith_caller = Memory.get_arithmetic addr_caller astate in
+        let arith_caller_opt = Memory.get_arithmetic addr_caller astate |> Option.map ~f:fst in
         (* TODO: we don't use [abduced_callee] but we could probably use it to refine the attributes
            for that address in the post since abstract values are immutable *)
-        match Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller arith_callee with
+        match
+          Arithmetic.abduce_binop_is_true ~negated:false Eq arith_caller_opt (Some arith_callee)
+        with
         | Unsatisfiable ->
             raise
               (CannotApplyPre
-                 (Arithmetic {addr_caller; addr_callee= addr_pre; arith_caller; arith_callee}))
+                 (Arithmetic
+                    { addr_caller
+                    ; addr_callee= addr_pre
+                    ; arith_caller= arith_caller_opt
+                    ; arith_callee= Some arith_callee }))
         | Satisfiable (abduce_caller, _abduce_callee) ->
             let new_astate =
               Option.fold abduce_caller ~init:astate ~f:(fun astate abduce_caller ->
-                  let attribute = Attribute.Arithmetic abduce_caller in
+                  let attribute =
+                    Attribute.Arithmetic
+                      ( abduce_caller
+                      , add_call_to_trace callee_proc_name call_location hist_caller
+                          arith_callee_hist )
+                  in
                   Memory.abduce_attribute addr_caller attribute astate
                   |> Memory.add_attribute addr_caller attribute )
             in
@@ -479,7 +495,8 @@ module PrePost = struct
           Ok call_state
       | Some (edges_pre, attrs_pre) ->
           let call_state =
-            solve_arithmetic_constraints ~addr_pre ~attrs_pre ~addr_hist_caller call_state
+            solve_arithmetic_constraints callee_proc_name call_location ~addr_pre ~attrs_pre
+              ~addr_hist_caller call_state
           in
           Container.fold_result
             ~fold:(IContainer.fold_of_pervasives_map_fold ~fold:Memory.Edges.fold)
@@ -610,14 +627,13 @@ module PrePost = struct
 
   let add_call_to_attr proc_name call_location caller_history attr =
     match (attr : Attribute.t) with
-    | Invalid (invalidation, in_call) ->
+    | Invalid (invalidation, trace) ->
         Attribute.Invalid
-          ( invalidation
-          , ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
-          )
+          (invalidation, add_call_to_trace proc_name call_location caller_history trace)
+    | Arithmetic (arith, trace) ->
+        Attribute.Arithmetic (arith, add_call_to_trace proc_name call_location caller_history trace)
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
-    | Arithmetic _
     | Closure _
     | MustBeValid _
     | StdVectorReserve

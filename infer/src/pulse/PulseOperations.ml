@@ -134,7 +134,11 @@ let eval location exp0 astate =
     | Const (Cint i) ->
         (* TODO: make identical const the same address *)
         let addr = AbstractValue.mk_fresh () in
-        let astate = Memory.add_attribute addr (Arithmetic (Arithmetic.equal_to i)) astate in
+        let astate =
+          Memory.add_attribute addr
+            (Arithmetic (Arithmetic.equal_to i, Immediate {location; history= []}))
+            astate
+        in
         Ok (astate, (addr, []))
     | Const _ | Sizeof _ | UnOp _ | BinOp _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
@@ -145,7 +149,12 @@ let eval location exp0 astate =
 let eval_arith location exp astate =
   match (exp : Exp.t) with
   | Const (Cint i) ->
-      Ok (astate, None, Some (Arithmetic.equal_to i))
+      Ok
+        ( astate
+        , None
+        , Some
+            ( Arithmetic.equal_to i
+            , Trace.Immediate {location; history= [ValueHistory.Assignment location]} ) )
   | exp -> (
       eval location exp astate
       >>| fun (astate, (addr, _)) ->
@@ -156,36 +165,51 @@ let eval_arith location exp astate =
           (astate, Some addr, None) )
 
 
-let record_abduced addr_opt arith_opt astate =
+let record_abduced ~is_then_branch if_kind location addr_opt orig_arith_hist_opt arith_opt astate =
   match Option.both addr_opt arith_opt with
   | None ->
       astate
   | Some (addr, arith) ->
-      let attribute = Attribute.Arithmetic arith in
+      let event = ValueHistory.Conditional {is_then_branch; if_kind; location} in
+      let trace =
+        match orig_arith_hist_opt with
+        | None ->
+            Trace.Immediate {location; history= [event]}
+        | Some (_, trace) ->
+            Trace.add_event event trace
+      in
+      let attribute = Attribute.Arithmetic (arith, trace) in
       Memory.abduce_attribute addr attribute astate |> Memory.add_attribute addr attribute
 
 
-let rec eval_cond ~negated location exp astate =
-  match (exp : Exp.t) with
-  | BinOp (bop, e1, e2) -> (
-      eval_arith location e1 astate
-      >>= fun (astate, addr1, eval1) ->
-      eval_arith location e2 astate
-      >>| fun (astate, addr2, eval2) ->
-      match Arithmetic.abduce_binop_is_true ~negated bop eval1 eval2 with
-      | Unsatisfiable ->
-          (astate, false)
-      | Satisfiable (abduced1, abduced2) ->
-          let astate = record_abduced addr1 abduced1 astate |> record_abduced addr2 abduced2 in
-          (astate, true) )
-  | UnOp (LNot, exp', _) ->
-      eval_cond ~negated:(not negated) location exp' astate
-  | exp ->
-      let zero = Exp.Const (Cint IntLit.zero) in
-      eval_cond ~negated location (Exp.BinOp (Ne, exp, zero)) astate
+let prune ~is_then_branch if_kind location ~condition astate =
+  let rec prune_aux ~negated exp astate =
+    match (exp : Exp.t) with
+    | BinOp (bop, e1, e2) -> (
+        eval_arith location e1 astate
+        >>= fun (astate, addr1, eval1) ->
+        eval_arith location e2 astate
+        >>| fun (astate, addr2, eval2) ->
+        match
+          Arithmetic.abduce_binop_is_true ~negated bop (Option.map ~f:fst eval1)
+            (Option.map ~f:fst eval2)
+        with
+        | Unsatisfiable ->
+            (astate, false)
+        | Satisfiable (abduced1, abduced2) ->
+            let astate =
+              record_abduced ~is_then_branch if_kind location addr1 eval1 abduced1 astate
+              |> record_abduced ~is_then_branch if_kind location addr2 eval2 abduced2
+            in
+            (astate, true) )
+    | UnOp (LNot, exp', _) ->
+        prune_aux ~negated:(not negated) exp' astate
+    | exp ->
+        let zero = Exp.Const (Cint IntLit.zero) in
+        prune_aux ~negated (Exp.BinOp (Ne, exp, zero)) astate
+  in
+  prune_aux ~negated:false condition astate
 
-
-let assert_is_true location ~condition astate = eval_cond ~negated:false location condition astate
 
 let eval_deref location exp astate =
   eval location exp astate

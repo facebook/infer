@@ -168,9 +168,10 @@ module PulseTransferFunctions = struct
               Ok astate
         in
         [check_error summary result]
-    | Prune (condition, loc, _is_then_branch, _if_kind) ->
+    | Prune (condition, loc, is_then_branch, if_kind) ->
         let post, cond_satisfiable =
-          PulseOperations.assert_is_true loc ~condition astate |> check_error summary
+          PulseOperations.prune ~is_then_branch if_kind loc ~condition astate
+          |> check_error summary
         in
         if cond_satisfiable then
           (* [condition] is true or unknown value: go into the branch *)
