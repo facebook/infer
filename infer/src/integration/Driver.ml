@@ -256,6 +256,7 @@ let python_capture build_system build_cmd =
                 []
             | Some d ->
                 ["--xcode-developer-dir"; d] )
+          @ (if not Config.buck_merge_all_deps then [] else ["--buck-merge-all-deps"])
           @ ("--" :: updated_build_cmd) )
       in
       if in_buck_mode && Config.flavors then ( RunState.set_merge_capture true ; RunState.store () ) ;

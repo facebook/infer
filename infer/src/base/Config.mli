@@ -249,6 +249,8 @@ val buck_cache_mode : bool
 
 val buck_compilation_database : compilation_database_dependencies option
 
+val buck_merge_all_deps : bool
+
 val buck_out : string option
 
 val buck_targets_blacklist : string list

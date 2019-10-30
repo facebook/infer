@@ -69,6 +69,9 @@ def create_argparser(group_name=MODULE_NAME):
                        help='Pass values as command-line arguments to '
                             'invocations of `buck build`.'
                             'NOTE: value should be wrapped in single quotes')
+    group.add_argument('--buck-merge-all-deps',
+                       action='store_true',
+                       help='Find and merge all deps produced by buck')
 
     return parser
 
@@ -195,6 +198,19 @@ class BuckAnalyzer:
         print('time elapsed in finding captured files in buck-out: % 6.2fs'
               % elapsed_time)
 
+    def _find_depsfiles_and_merge(self, merge_out_path):
+        """ Sometimes buck targets --show-output gets confused and returns a
+        folder that doesn't contain infer-deps.txt. This can happen with on
+        for example objc targes with a certain combination of BUCK modes and
+        flavours. This function will walk buck-out and find infer-deps.txt
+        It will merge ALL infer-deps.txt in buck-out, so you might want
+        to do a buck clean first."""
+        fs = []
+        for root, dirs, files in os.walk(config.BUCK_OUT_GEN):
+            fs += [os.path.dirname(os.path.join(root, f)) for f in files
+                   if f == config.INFER_BUCK_DEPS_FILENAME]
+        self._merge_infer_dep_files(fs, merge_out_path)
+
     def _move_buck_out(self):
         """ If keep-going is passed, we may need to compute the infer-deps
         file with the paths to the captured files. To make sure that
@@ -249,8 +265,10 @@ class BuckAnalyzer:
         merged_deps_path = os.path.join(
             self.args.infer_out, config.INFER_BUCK_DEPS_FILENAME)
         self._merge_infer_report_files(result_paths, merged_reports_path)
-        if not ret == os.EX_OK and self.keep_going:
+        if (not ret == os.EX_OK and self.keep_going):
             self._find_deps_and_merge(merged_deps_path)
+        elif self.args.buck_merge_all_deps:
+            self._find_depsfiles_and_merge(merged_deps_path)
         else:
             self._merge_infer_dep_files(result_paths, merged_deps_path)
         infer_out = self.args.infer_out

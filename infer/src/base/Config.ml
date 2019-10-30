@@ -914,6 +914,13 @@ and buck_compilation_database =
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
 
 
+and buck_merge_all_deps =
+  CLOpt.mk_bool ~long:"buck-merge-all-deps" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck_flavors)]
+    "Find and merge all infer dependencies produced by buck. Use this flag if infer doesn't find \
+     any files to analyze after a successful capture."
+
+
 and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
     ~in_help:InferCommand.[(Capture, manual_buck_java)]
@@ -2748,6 +2755,8 @@ and buck_compilation_database =
   | None ->
       None
 
+
+and buck_merge_all_deps = !buck_merge_all_deps
 
 and buck_out = !buck_out
 
