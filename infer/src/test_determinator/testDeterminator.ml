@@ -201,19 +201,39 @@ let java_test_to_run () =
         if Typ.Procname.Set.is_empty intersection then acc else label :: acc )
 
 
+let remove_llvm_suffix_native_symbols native_symbols =
+  let remove_llvm_suffix_native_symbol native_symbol =
+    let remove_llvm_suffix name =
+    (* The first dot of .llvm.... is the first dot after the name, 
+       because neither names nor mangled names can have dots. *)
+      match String.lsplit2 name ~on:'.' with
+      | Some (name_no_suffix, _) ->
+          name_no_suffix
+      | None ->
+          name
+    in
+    let native_symbol_name = remove_llvm_suffix native_symbol.Clang_profiler_samples_t.name in
+    let native_symbol_mangled_name =
+      Option.map ~f:remove_llvm_suffix native_symbol.Clang_profiler_samples_t.mangled_name
+    in
+    {Clang_profiler_samples_t.name= native_symbol_name; mangled_name= native_symbol_mangled_name}
+  in
+  List.map ~f:remove_llvm_suffix_native_symbol native_symbols
+
+
 let match_profiler_samples_affected_methods native_symbols affected_methods =
   let match_samples_method affected_method =
     let match_sample_method affected_method native_symbol =
       match affected_method with
-      | Some (ClangProc.CFunction {name}) ->
-          String.equal name native_symbol.Clang_profiler_samples_t.name
-      | Some (ClangProc.ObjcMethod {mangled_name}) ->
-          String.equal mangled_name native_symbol.Clang_profiler_samples_t.name
-      | Some (ClangProc.ObjcBlock {mangled_name}) -> (
+      | Some (ClangProc.CFunction {name= affected_function_name}) ->
+          String.equal affected_function_name native_symbol.Clang_profiler_samples_t.name
+      | Some (ClangProc.ObjcMethod {mangled_name= affected_method_mangled_name}) ->
+          String.equal affected_method_mangled_name native_symbol.Clang_profiler_samples_t.name
+      | Some (ClangProc.ObjcBlock {mangled_name= affected_block_mangled_name}) -> (
         match native_symbol.Clang_profiler_samples_t.mangled_name with
-        | Some native_sym_mangled_name ->
+        | Some native_symbol_mangled_name ->
             (* Assuming mangled name is there for blocks *)
-            String.equal native_sym_mangled_name mangled_name
+            String.equal native_symbol_mangled_name affected_block_mangled_name
         | None ->
             false )
       | _ ->
@@ -238,7 +258,9 @@ let clang_test_to_run ~clang_range_map ~source_file () =
   else
     List.fold profiler_samples ~init:[]
       ~f:(fun acc ({test; native_symbols} : Clang_profiler_samples_t.profiler_sample) ->
-        if match_profiler_samples_affected_methods native_symbols affected_methods then test :: acc
+        let native_symbols_no_suffix = remove_llvm_suffix_native_symbols native_symbols in
+        if match_profiler_samples_affected_methods native_symbols_no_suffix affected_methods then
+          test :: acc
         else acc )
 
 

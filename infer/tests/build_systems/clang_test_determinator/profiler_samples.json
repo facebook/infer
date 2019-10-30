@@ -57,7 +57,7 @@
       "field4": {},
       "native_symbols": [
         {
-          "name": "-[Person printName]"
+          "name": "-[Person printName].llvm.145683357567"
         },
         {
           "name": "exampleMethod3"
