@@ -16,10 +16,10 @@ type 'a access_result = ('a, Diagnostic.t) result
 
 (** Check that the [address] is not known to be invalid *)
 let check_addr_access location (address, history) astate =
-  let accessed_by = Trace.Immediate {imm= (); location; history} in
-  Memory.check_valid accessed_by address astate
-  |> Result.map_error ~f:(fun invalidated_by ->
-         Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by} )
+  let access_trace = Trace.Immediate {location; history} in
+  Memory.check_valid access_trace address astate
+  |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+         Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} )
 
 
 module Closures = struct

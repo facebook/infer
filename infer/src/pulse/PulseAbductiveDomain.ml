@@ -172,8 +172,7 @@ module Memory = struct
   let add_edge (addr, history) access new_addr_hist location astate =
     map_post_heap astate ~f:(fun heap ->
         BaseMemory.add_edge addr access new_addr_hist heap
-        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {imm= (); location; history}))
-    )
+        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {location; history})) )
 
 
   let find_edge_opt address access astate =
@@ -229,8 +228,7 @@ module Memory = struct
   let set_cell (addr, history) cell location astate =
     map_post_heap astate ~f:(fun heap ->
         BaseMemory.set_cell addr cell heap
-        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {imm= (); location; history}))
-    )
+        |> BaseMemory.add_attribute addr (WrittenTo (Trace.Immediate {location; history})) )
 
 
   module Edges = BaseMemory.Edges
@@ -305,10 +303,9 @@ module PrePost = struct
 
 
   let add_out_of_scope_attribute addr pvar location history heap typ =
-    let attr =
-      Attribute.Invalid (Immediate {imm= GoneOutOfScope (pvar, typ); location; history})
-    in
-    BaseMemory.add_attribute addr attr heap
+    BaseMemory.add_attribute addr
+      (Invalid (GoneOutOfScope (pvar, typ), Immediate {location; history}))
+      heap
 
 
   (** invalidate local variables going out of scope *)
@@ -613,13 +610,11 @@ module PrePost = struct
 
   let add_call_to_attr proc_name call_location caller_history attr =
     match (attr : Attribute.t) with
-    | Invalid invalidation ->
+    | Invalid (invalidation, in_call) ->
         Attribute.Invalid
-          (ViaCall
-             { f= Call proc_name
-             ; location= call_location
-             ; history= caller_history
-             ; in_call= invalidation })
+          ( invalidation
+          , ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
+          )
     | AddressOfCppTemporary (_, _)
     | AddressOfStackVariable (_, _, _)
     | Arithmetic _
@@ -668,7 +663,7 @@ module PrePost = struct
         let callee_trace =
           match written_to_callee_opt with
           | None ->
-              Trace.Immediate {imm= (); location= call_loc; history= []}
+              Trace.Immediate {location= call_loc; history= []}
           | Some access_trace ->
               access_trace
         in
@@ -858,10 +853,10 @@ module PrePost = struct
                   ; history= hist_caller }
               in
               Memory.check_valid access_trace addr_caller astate
-              |> Result.map_error ~f:(fun invalidated_by ->
+              |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
                      L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-                     Diagnostic.AccessToInvalidAddress {invalidated_by; accessed_by= access_trace}
-                 ) ) )
+                     Diagnostic.AccessToInvalidAddress
+                       {invalidation; invalidation_trace; access_trace} ) ) )
       call_state.subst (Ok call_state.astate)
 
 

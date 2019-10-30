@@ -16,10 +16,10 @@ type t =
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Arithmetic of Arithmetic.t
   | Closure of Typ.Procname.t
-  | Invalid of Invalidation.t Trace.t
-  | MustBeValid of unit Trace.t
+  | Invalid of Invalidation.t * Trace.t
+  | MustBeValid of Trace.t
   | StdVectorReserve
-  | WrittenTo of unit Trace.t
+  | WrittenTo of Trace.t
 [@@deriving compare]
 
 val pp : F.formatter -> t -> unit
@@ -33,11 +33,11 @@ module Attributes : sig
 
   val get_arithmetic : t -> Arithmetic.t option
 
-  val get_invalid : t -> Invalidation.t Trace.t option
+  val get_invalid : t -> (Invalidation.t * Trace.t) option
 
-  val get_must_be_valid : t -> unit Trace.t option
+  val get_must_be_valid : t -> Trace.t option
 
-  val get_written_to : t -> unit Trace.t option
+  val get_written_to : t -> Trace.t option
 
   val is_modified : t -> bool
 

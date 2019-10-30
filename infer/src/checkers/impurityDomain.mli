@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type trace = WrittenTo of unit PulseTrace.t | Invalid of PulseInvalidation.t PulseTrace.t
+type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 
 module ModifiedVar : sig
   type nonempty_action_type = trace * trace list

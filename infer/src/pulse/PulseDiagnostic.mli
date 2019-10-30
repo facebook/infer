@@ -12,7 +12,10 @@ module ValueHistory = PulseValueHistory
 
 (** an error to report to the user *)
 type t =
-  | AccessToInvalidAddress of {invalidated_by: Invalidation.t Trace.t; accessed_by: unit Trace.t}
+  | AccessToInvalidAddress of
+      { invalidation: Invalidation.t
+      ; invalidation_trace: Trace.t
+      ; access_trace: Trace.t }
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 val get_message : t -> string

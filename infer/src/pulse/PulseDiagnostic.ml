@@ -13,18 +13,21 @@ module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
 type t =
-  | AccessToInvalidAddress of {invalidated_by: Invalidation.t Trace.t; accessed_by: unit Trace.t}
+  | AccessToInvalidAddress of
+      { invalidation: Invalidation.t
+      ; invalidation_trace: Trace.t
+      ; access_trace: Trace.t }
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 
 let get_location = function
-  | AccessToInvalidAddress {accessed_by} ->
-      Trace.get_outer_location accessed_by
+  | AccessToInvalidAddress {access_trace} ->
+      Trace.get_outer_location access_trace
   | StackVariableAddressEscape {location} ->
       location
 
 
 let get_message = function
-  | AccessToInvalidAddress {accessed_by; invalidated_by} ->
+  | AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} ->
       (* The goal is to get one of the following messages depending on the scenario:
 
          42: delete x; return x->f
@@ -42,30 +45,29 @@ let get_message = function
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
       *)
-      let pp_access_trace fmt (trace : unit Trace.t) =
+      let pp_access_trace fmt (trace : Trace.t) =
         match trace with
-        | Immediate {imm= (); _} ->
+        | Immediate _ ->
             F.fprintf fmt "accessing memory that "
         | ViaCall {f; _} ->
             F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
       in
-      let pp_invalidation_trace line fmt (trace : Invalidation.t Trace.t) =
+      let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
         let pp_line fmt line = F.fprintf fmt " on line %d" line in
         match trace with
-        | ViaCall {f; in_call} ->
-            let invalid = Trace.get_immediate in_call in
-            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalid
-              pp_line line CallEvent.describe f
-        | Immediate {imm= invalid} ->
-            F.fprintf fmt "%a%a" Invalidation.describe invalid pp_line line
+        | Immediate _ ->
+            F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+        | ViaCall {f; _} ->
+            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe
+              invalidation pp_line line CallEvent.describe f
       in
       let invalidation_line =
-        let {Location.line; _} = Trace.get_outer_location invalidated_by in
+        let {Location.line; _} = Trace.get_outer_location invalidation_trace in
         line
       in
-      F.asprintf "%a%a" pp_access_trace accessed_by
-        (pp_invalidation_trace invalidation_line)
-        invalidated_by
+      F.asprintf "%a%a" pp_access_trace access_trace
+        (pp_invalidation_trace invalidation_line invalidation)
+        invalidation_trace
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
@@ -81,19 +83,19 @@ let add_errlog_header ~title location errlog =
 
 
 let get_trace = function
-  | AccessToInvalidAddress {accessed_by; invalidated_by} ->
-      let start_location = Trace.get_start_location invalidated_by in
+  | AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} ->
+      let start_location = Trace.get_start_location invalidation_trace in
       add_errlog_header ~title:"invalidation part of the trace starts here" start_location
       @@ Trace.add_to_errlog ~nesting:1
-           (fun fmt invalid -> F.fprintf fmt "%a" Invalidation.describe invalid)
-           invalidated_by
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "%a" Invalidation.describe invalidation)
+           invalidation_trace
       @@
-      let access_start_location = Trace.get_start_location accessed_by in
+      let access_start_location = Trace.get_start_location access_trace in
       add_errlog_header ~title:"use-after-lifetime part of the trace starts here"
         access_start_location
       @@ Trace.add_to_errlog ~nesting:1
-           (fun fmt () -> F.pp_print_string fmt "invalid access occurs here")
-           accessed_by
+           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
+           access_trace
       @@ []
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
@@ -103,7 +105,7 @@ let get_trace = function
 
 
 let get_issue_type = function
-  | AccessToInvalidAddress {invalidated_by} ->
-      Trace.get_immediate invalidated_by |> Invalidation.issue_type_of_cause
+  | AccessToInvalidAddress {invalidation; _} ->
+      Invalidation.issue_type_of_cause invalidation
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape

@@ -31,21 +31,21 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Arithmetic of Arithmetic.t
     | Closure of Typ.Procname.t
-    | Invalid of Invalidation.t Trace.t
-    | MustBeValid of unit Trace.t
+    | Invalid of Invalidation.t * Trace.t
+    | MustBeValid of Trace.t
     | StdVectorReserve
-    | WrittenTo of unit Trace.t
+    | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
   let equal = [%compare.equal: t]
 
   let to_rank = Variants.to_rank
 
-  let mk_dummy_trace imm = Trace.Immediate {imm; location= Location.dummy; history= []}
+  let dummy_trace = Trace.Immediate {location= Location.dummy; history= []}
 
   let closure_rank = Variants.to_rank (Closure (Typ.Procname.from_string_c_fun ""))
 
-  let written_to_rank = Variants.to_rank (WrittenTo (mk_dummy_trace ()))
+  let written_to_rank = Variants.to_rank (WrittenTo dummy_trace)
 
   let address_of_stack_variable_rank =
     let pname = Typ.Procname.from_string_c_fun "" in
@@ -54,16 +54,16 @@ module Attribute = struct
     Variants.to_rank (AddressOfStackVariable (var, location, []))
 
 
-  let invalid_rank = Variants.to_rank (Invalid (mk_dummy_trace Invalidation.Nullptr))
+  let invalid_rank = Variants.to_rank (Invalid (Invalidation.Nullptr, dummy_trace))
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (mk_dummy_trace ()))
+  let must_be_valid_rank = Variants.to_rank (MustBeValid dummy_trace)
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let const_rank = Variants.to_rank (Arithmetic (Arithmetic.equal_to IntLit.zero))
 
   let pp f attribute =
-    let pp_string_if_debug string fmt () =
+    let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
     in
     match attribute with
@@ -75,14 +75,16 @@ module Attribute = struct
         Typ.Procname.pp f pname
     | Arithmetic phi ->
         Arithmetic.pp f phi
-    | Invalid invalidation ->
-        F.fprintf f "Invalid %a" (Trace.pp Invalidation.pp) invalidation
-    | MustBeValid action ->
-        F.fprintf f "MustBeValid %a" (Trace.pp (pp_string_if_debug "access")) action
+    | Invalid (invalidation, trace) ->
+        F.fprintf f "Invalid %a"
+          (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
+          trace
+    | MustBeValid trace ->
+        F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
-    | WrittenTo action ->
-        F.fprintf f "WrittenTo %a" (Trace.pp (pp_string_if_debug "mutation")) action
+    | WrittenTo trace ->
+        F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 end
 
 module Attributes = struct
@@ -91,8 +93,8 @@ module Attributes = struct
   let get_invalid attrs =
     Set.find_rank attrs Attribute.invalid_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Invalid invalidation) = attr in
-           invalidation )
+           let[@warning "-8"] (Attribute.Invalid (invalidation, trace)) = attr in
+           (invalidation, trace) )
 
 
   let get_must_be_valid attrs =

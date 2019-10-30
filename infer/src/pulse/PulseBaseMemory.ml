@@ -68,9 +68,8 @@ let add_attribute addr attribute memory =
       (fst memory, Graph.add addr new_attrs (snd memory))
 
 
-let invalidate (address, history) invalid location memory =
-  let invalidation = Trace.Immediate {imm= invalid; location; history} in
-  add_attribute address (Attribute.Invalid invalidation) memory
+let invalidate (address, history) invalidation location memory =
+  add_attribute address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
 let check_valid address memory =

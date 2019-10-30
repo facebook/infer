@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type trace = WrittenTo of unit PulseTrace.t | Invalid of PulseInvalidation.t PulseTrace.t
+type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 [@@deriving compare]
 
 module ModifiedVar = struct
@@ -55,14 +55,14 @@ let add_to_errlog ~nesting param_source ModifiedVar.{var; trace_list} errlog =
     match trace with
     | WrittenTo access_trace ->
         PulseTrace.add_to_errlog ~nesting
-          (fun fmt () ->
+          ~pp_immediate:(fun fmt ->
             F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
           access_trace errlog
-    | Invalid invalidation_trace ->
+    | Invalid (invalidation, invalidation_trace) ->
         PulseTrace.add_to_errlog ~nesting
-          (fun fmt invalid ->
+          ~pp_immediate:(fun fmt ->
             F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
-              PulseInvalidation.describe invalid )
+              PulseInvalidation.describe invalidation )
           invalidation_trace errlog
   in
   let first_trace, rest = trace_list in

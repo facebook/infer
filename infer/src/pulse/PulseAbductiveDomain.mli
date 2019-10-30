@@ -59,7 +59,7 @@ module Memory : sig
     -> t
     -> t
 
-  val check_valid : unit Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t Trace.t) result
+  val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
   val find_opt : AbstractValue.t -> t -> BaseMemory.cell option
 
