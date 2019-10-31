@@ -176,5 +176,5 @@ let pp_checker fmt {name; callbacks} =
     |> LanguageSet.elements
   in
   F.fprintf fmt "%s (%a)" name
-    (Pp.seq ~sep:", " (Pp.to_string ~f:Language.to_string))
+    (Pp.seq ~sep:", " (Pp.of_string ~f:Language.to_string))
     langs_of_callbacks

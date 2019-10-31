@@ -50,7 +50,7 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
             (* FIXME(t21762295) *)
             CFrontend_errors.incorrect_assumption __POS__ source_range
               "pointer '%d' for var decl not found. The var decl was: %a" pointer
-              (Pp.to_string ~f:Clang_ast_j.string_of_decl_ref)
+              (Pp.of_string ~f:Clang_ast_j.string_of_decl_ref)
               decl_ref )
 
 

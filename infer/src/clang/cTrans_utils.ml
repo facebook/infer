@@ -19,7 +19,7 @@ let extract_item_from_singleton l pp source_range warning_string =
       item
   | _ ->
       L.die InternalError "At %a: List has %d elements, 1 expected:@\n[@[<h>%a@]]@\n%s"
-        (Pp.to_string ~f:Clang_ast_j.string_of_source_range)
+        (Pp.of_string ~f:Clang_ast_j.string_of_source_range)
         source_range (List.length l) (Pp.semicolon_seq pp) l warning_string
 
 
@@ -561,7 +561,7 @@ let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
 
 let extract_stmt_from_singleton stmt_list source_range warning_string =
   extract_item_from_singleton stmt_list
-    (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+    (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
     source_range warning_string
 
 

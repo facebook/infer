@@ -86,7 +86,7 @@ module JsonFragment = struct
     | _ ->
         L.die InternalError "Unexpected json fragment \"%s\" in state [%a]"
           (to_string json_fragment)
-          (Pp.seq (Pp.to_string ~f:string_of_state))
+          (Pp.seq (Pp.of_string ~f:string_of_state))
           !pp_state
 
 
@@ -102,7 +102,7 @@ module JsonFragment = struct
     | _ ->
         L.die InternalError "Unexpected assoc field \"%t\" in state [%a]"
           (fun f -> Json.pp_field pp_value f key value)
-          (Pp.seq (Pp.to_string ~f:string_of_state))
+          (Pp.seq (Pp.of_string ~f:string_of_state))
           !pp_state
 end
 

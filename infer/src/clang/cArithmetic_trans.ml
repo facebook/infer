@@ -62,7 +62,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `PtrMemD | `PtrMemI ->
       CFrontend_errors.unimplemented __POS__ source_range
         "Pointer-to-member constructs are unsupported. Got '%a'."
-        (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_info)
+        (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_info)
         boi
   | `Add ->
       if Typ.is_pointer t1 then (binop_exp Binop.PlusPI, [])

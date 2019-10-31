@@ -424,7 +424,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ~recover:(fun () -> ())
             ~pp_context:(fun fmt () ->
               F.fprintf fmt "Error adding types from decl '%a'"
-                (Pp.to_string ~f:Clang_ast_j.string_of_decl)
+                (Pp.of_string ~f:Clang_ast_j.string_of_decl)
                 dec )
             trans_unit_ctx ;
           List.iter ~f:translate method_decls

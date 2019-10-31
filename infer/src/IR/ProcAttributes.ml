@@ -126,7 +126,7 @@ let pp f
   F.fprintf f "@[<v>{ proc_name= %a@,; translation_unit= %a@," Typ.Procname.pp proc_name
     SourceFile.pp translation_unit ;
   if not (PredSymb.equal_access default.access access) then
-    F.fprintf f "; access= %a@," (Pp.to_string ~f:PredSymb.string_of_access) access ;
+    F.fprintf f "; access= %a@," (Pp.of_string ~f:PredSymb.string_of_access) access ;
   if not ([%compare.equal: (Mangled.t * Typ.t) list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
   if not ([%compare.equal: string list] default.exceptions exceptions) then
@@ -158,7 +158,7 @@ let pp f
   pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
   if not (ClangMethodKind.equal default.clang_method_kind clang_method_kind) then
     F.fprintf f "; clang_method_kind= %a@,"
-      (Pp.to_string ~f:ClangMethodKind.to_string)
+      (Pp.of_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp_file_pos loc ;
   F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;

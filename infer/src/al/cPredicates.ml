@@ -588,7 +588,7 @@ let has_init_list_const_expr an =
     in
     L.(debug Analysis Verbose)
       "@\n\n[has_init_list_const_expr]  EVALUATE EXP '%a'  result = '%b'@\n"
-      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       exp res ;
     res
   in

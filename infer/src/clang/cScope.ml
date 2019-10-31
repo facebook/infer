@@ -143,7 +143,7 @@ module Variables = struct
 
   let rec visit_stmt stmt ((scope, map) as scope_map) =
     L.debug Capture Verbose "%a{%a}@;"
-      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       stmt (Pp.seq ~sep:"," pp_var_decl) scope.current ;
     match (stmt : Clang_ast_t.stmt) with
     | ReturnStmt (stmt_info, _)
@@ -253,10 +253,10 @@ module CXXTemporaries = struct
 
   and visit_stmt context stmt temporaries =
     L.debug Capture Verbose "<@[<hv2>%a|@,"
-      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       stmt ;
     let r = visit_stmt_aux context stmt temporaries in
-    L.debug Capture Verbose "@]@;/%a>" (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
+    L.debug Capture Verbose "@]@;/%a>" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
     r
 
 

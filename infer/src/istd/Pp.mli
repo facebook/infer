@@ -85,11 +85,11 @@ val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 
 val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a ;-separated sequence *)
 
-val to_string : f:('a -> string) -> F.formatter -> 'a -> unit
-(** turn a "to_string" function into a "pp_foo" *)
+val of_string : f:('a -> string) -> F.formatter -> 'a -> unit
+(** If all you have is to_string, but you need pp_foo. *)
 
 val string_of_pp : (F.formatter -> 'a -> unit) -> 'a -> string
-(** turn "pp_foo" to "to_string" function *)
+(** If all you have is pp_foo, but you need to_string. *)
 
 val current_time : F.formatter -> unit -> unit
 (** Print the current time and date in a format similar to the "date" command *)

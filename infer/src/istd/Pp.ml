@@ -132,7 +132,7 @@ let option pp fmt = function
       F.fprintf fmt "[Some %a]" pp x
 
 
-let to_string ~f fmt x = F.pp_print_string fmt (f x)
+let of_string ~f fmt x = F.pp_print_string fmt (f x)
 
 let string_of_pp pp = Format.asprintf "%a" pp
 

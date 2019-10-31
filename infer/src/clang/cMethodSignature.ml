@@ -71,7 +71,7 @@ let mk name class_param params ret_type ?(has_added_return_param = false) attrib
 let pp fmt ms =
   let pp_param fmt {name; typ} = F.fprintf fmt "%a, %a" Mangled.pp name (Typ.pp Pp.text) typ in
   Format.fprintf fmt "Method %a [%a]->%a %a"
-    (Pp.to_string ~f:Typ.Procname.to_string)
+    (Pp.of_string ~f:Typ.Procname.to_string)
     ms.name (Pp.comma_seq pp_param) ms.params (Typ.pp Pp.text) (fst ms.ret_type)
-    (Pp.to_string ~f:Clang_ast_j.string_of_source_range)
+    (Pp.of_string ~f:Clang_ast_j.string_of_source_range)
     ms.loc

@@ -167,7 +167,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Clang_ast_proj.get_expr_tuple stmt returns None, stmt is %a"
-            (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+            (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
             stmt
     in
     let res_trans = f trans_state stmt in
@@ -537,7 +537,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* FIXME(t21762295): we do not expect this to happen but it does *)
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "di_parent_pointer should be always set for fields/ivars, but got %a"
-            (Pp.option (Pp.to_string ~f:Clang_ast_j.string_of_decl))
+            (Pp.option (Pp.of_string ~f:Clang_ast_j.string_of_decl))
             decl
     in
     let field_name = CGeneral_utils.mk_class_field_name class_tname field_string in
@@ -812,7 +812,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "Decl ref expression %a with pointer %d still needs to be translated"
-          (Pp.to_string ~f:Clang_ast_j.string_of_decl_kind)
+          (Pp.of_string ~f:Clang_ast_j.string_of_decl_kind)
           decl_kind decl_ref.Clang_ast_t.dr_decl_pointer
 
 
@@ -912,7 +912,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     L.(debug Capture Verbose)
       "  BinaryOperator '%a' "
-      (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_kind)
+      (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_kind)
       binary_operator_info.Clang_ast_t.boi_kind ;
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@."
@@ -2196,7 +2196,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (List.length field_exps)
             (Pp.seq ~sep:"," (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text)))
             field_exps (List.length stmts)
-            (Pp.seq ~sep:"," (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string))
+            (Pp.seq ~sep:"," (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
             stmts ;
           let control, _ = instructions trans_state stmts in
           [mk_trans_result (var_exp, var_typ) control] )
@@ -3226,9 +3226,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
-          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
+          (Pp.semicolon_seq (Pp.of_string ~f:Clang_ast_j.string_of_stmt))
           stmts
-          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_attribute))
+          (Pp.semicolon_seq (Pp.of_string ~f:Clang_ast_j.string_of_attribute))
           attrs
 
 
@@ -3244,7 +3244,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | None (* t21762295 *) ->
         CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
           "Break stmt without continuation: %a"
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
+          (Pp.of_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
 
 
@@ -3261,7 +3261,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | None (* t21762295 *) ->
         CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
           "Continue stmt without continuation: %a"
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
+          (Pp.of_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
 
 
@@ -3314,7 +3314,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       L.(debug Capture Verbose)
         "Translating statement '%a' (pointer= '%a')@\n@[<hv2>"
-        (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+        (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
         instr pp_pointer instr ;
       let trans_result =
         try instruction_scope trans_state instr
@@ -3353,7 +3353,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 in
                 (if should_display_error then L.internal_error else L.debug Capture Quiet)
                   "%a: ERROR translating statement '%a'@\n" Location.pp_range (loc_start, loc_end)
-                  (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+                  (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
                   instr ) )
       in
       L.(debug Capture Verbose) "@]" ;
@@ -3631,16 +3631,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CFrontend_errors.unimplemented __POS__ si_source_range
           ~ast_node:(Clang_ast_proj.get_stmt_kind_string instr)
           "Translation of templated code is unsupported: %a"
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+          (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
     | ForStmt ({Clang_ast_t.si_source_range}, _)
     | WhileStmt ({Clang_ast_t.si_source_range}, _)
     | DoStmt ({Clang_ast_t.si_source_range}, _)
     | ObjCForCollectionStmt ({Clang_ast_t.si_source_range}, _) ->
         CFrontend_errors.incorrect_assumption __POS__ si_source_range "Unexpected shape for %a: %a"
-          (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+          (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
           instr
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+          (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
     | MSAsmStmt _
     | CapturedStmt _

@@ -45,7 +45,7 @@ let rec pp fmt = function
   | Darray (de1, de2) ->
       F.fprintf fmt "%a[%a]" pp de1 pp de2
   | Dbinop (op, de1, de2) ->
-      F.fprintf fmt "(%a%a%a)" pp de1 (Pp.to_string ~f:(Binop.str Pp.text)) op pp de2
+      F.fprintf fmt "(%a%a%a)" pp de1 (Pp.of_string ~f:(Binop.str Pp.text)) op pp de2
   | Dconst (Cfun pn) -> (
     match builtin_functions_to_string pn with
     | Some str ->
