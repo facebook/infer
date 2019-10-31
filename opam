@@ -36,6 +36,7 @@ depends: [
   "dune" {build & >="1.0"}
   "elina" {>="1.1"}
   "javalib" {>="3.1.1"}
+  "mlgmpidl" {>="1.2.12"}
   "mtime"
   "ocaml" {>="4.06.0"}
   "ocamlfind" {build}
