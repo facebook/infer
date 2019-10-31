@@ -28,7 +28,8 @@ let source_dirs =
        ; "scuba"
        ; "test_determinator"
        ; "topl"
-       ; "unit" ] )
+       ; "unit"
+       ; "unit" ^/ "nullsafe" ] )
 
 
 let infer_binaries =

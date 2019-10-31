@@ -88,6 +88,9 @@ val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter
 val to_string : f:('a -> string) -> F.formatter -> 'a -> unit
 (** turn a "to_string" function into a "pp_foo" *)
 
+val string_of_pp : (F.formatter -> 'a -> unit) -> 'a -> string
+(** turn "pp_foo" to "to_string" function *)
+
 val current_time : F.formatter -> unit -> unit
 (** Print the current time and date in a format similar to the "date" command *)
 

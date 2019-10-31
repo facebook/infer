@@ -134,6 +134,8 @@ let option pp fmt = function
 
 let to_string ~f fmt x = F.pp_print_string fmt (f x)
 
+let string_of_pp pp = Format.asprintf "%a" pp
+
 let cli_args fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;

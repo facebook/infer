@@ -46,7 +46,7 @@ depend:
 	ocamldep -native \
 	  -I IR -I absint -I al -I atd -I backend -I base -I biabduction -I bufferoverrun \
 	  -I checkers -I clang -I concurrency -I facebook -I integration -I istd -I java \
-	  -I labs -I nullsafe -I pulse -I scuba -I quandary -I topl -I unit -I unit/clang -I deadcode \
+	  -I labs -I nullsafe -I pulse -I scuba -I quandary -I topl -I unit -I unit/clang -I unit/nullsafe -I deadcode \
 	  -I test_determinator \
 	   $(ml_src_files) > deadcode/.depend
 
