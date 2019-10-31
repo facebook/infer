@@ -70,12 +70,42 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Payload.read ~caller_summary:summary ~callee_pname:callee
       |> Option.fold ~init:astate ~f:(Domain.integrate_summary tenv callsite)
     in
+    let do_assume assume_exp (astate : Domain.t) =
+      let open Domain in
+      let add_choice (acc : Domain.t) bool_value =
+        let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.AnyThread in
+        {acc with thread}
+      in
+      match HilExp.get_access_exprs assume_exp with
+      | [access_expr] when BranchGuardDomain.is_thread_guard access_expr astate.branch_guards ->
+          HilExp.eval_boolean_exp access_expr assume_exp |> Option.fold ~init:astate ~f:add_choice
+      | _ ->
+          astate
+    in
+    let do_thread_assert_effect ret_base callee (astate : Domain.t) =
+      let open Domain in
+      match ConcurrencyModels.get_thread_assert_effect callee with
+      | BackgroundThread ->
+          {astate with thread= ThreadDomain.AnyThread}
+      | MainThread ->
+          {astate with thread= ThreadDomain.UIThread}
+      | MainThreadIfTrue ->
+          let ret_access_exp = HilExp.AccessExpression.base ret_base in
+          let branch_guards =
+            BranchGuardDomain.add ret_access_exp BranchGuard.Thread astate.branch_guards
+          in
+          {astate with branch_guards}
+      | UnknownThread ->
+          astate
+    in
     match instr with
-    | Assign _ | Assume _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
+    | Assign _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
         astate
     | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
         astate
-    | Call (_, Direct callee, actuals, _, loc) -> (
+    | Assume (assume_exp, _, _, _) ->
+        do_assume assume_exp astate
+    | Call (ret_base, Direct callee, actuals, _, loc) -> (
       match get_lock_effect callee actuals with
       | Lock locks ->
           do_lock locks loc astate
@@ -100,16 +130,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* model a synchronized call without visible internal behaviour *)
           let locks = List.hd actuals |> Option.to_list in
           do_lock locks loc astate |> do_unlock locks
-      | NoEffect when is_java && is_ui_thread_model callee ->
-          Domain.set_on_ui_thread astate
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
       | NoEffect when is_java -> (
-        match may_block tenv callee actuals with
-        | Some sev ->
-            Domain.blocking_call ~callee sev ~loc astate
-        | None ->
-            do_call callee loc astate )
+          let astate = do_thread_assert_effect ret_base callee astate in
+          match may_block tenv callee actuals with
+          | Some sev ->
+              Domain.blocking_call ~callee sev ~loc astate
+          | None ->
+              do_call callee loc astate )
       | NoEffect ->
           (* in C++/Obj C we only care about deadlocks, not starvation errors *)
           do_call callee loc astate )

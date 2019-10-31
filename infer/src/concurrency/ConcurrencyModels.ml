@@ -34,14 +34,17 @@ let is_thread_utils_method method_name_str = function
       false
 
 
-let get_thread = function
+let get_thread_assert_effect = function
   | Typ.Procname.Java java_pname when is_thread_utils_type java_pname -> (
     match Typ.Procname.Java.get_method java_pname with
-    | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread" ->
+    | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread" | "checkIsOnMainThread" ->
         MainThread
-    | "isMainThread" | "isUiThread" ->
+    | "isMainThread" | "isOnMainThread" | "isUiThread" ->
         MainThreadIfTrue
-    | "assertOnBackgroundThread" | "assertOnNonUiThread" | "checkOnNonUiThread" ->
+    | "assertOnBackgroundThread"
+    | "assertOnNonUiThread"
+    | "checkOnNonUiThread"
+    | "checkOnWorkerThread" ->
         BackgroundThread
     | _ ->
         UnknownThread )

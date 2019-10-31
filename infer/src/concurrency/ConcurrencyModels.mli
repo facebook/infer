@@ -29,8 +29,9 @@ val is_thread_utils_method : string -> Typ.Procname.t -> bool
 val get_lock_effect : Typ.Procname.t -> HilExp.t list -> lock_effect
 (** describe how this procedure behaves with respect to locking *)
 
-val get_thread : Typ.Procname.t -> thread
-(** describe how this procedure behaves with respect to thread access *)
+val get_thread_assert_effect : Typ.Procname.t -> thread
+(** In Java, certain methods can be used to assert execution on a specific kind of thread,
+    or return a boolean equivalent to such a fact. *)
 
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> (Typ.name * Typ.name list) option

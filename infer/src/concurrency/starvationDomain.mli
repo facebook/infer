@@ -96,10 +96,28 @@ module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
 module GuardToLockMap : AbstractDomain.WithTop
 
+(** tracks whether an expression has been tested for whether we execute on UI thread *)
+module BranchGuard : sig
+  type t = Nothing | Thread
+
+  include AbstractDomain.WithTop with type t := t
+end
+
+(** tracks all expressions currently known to have been tested for conditions in [BranchGuard] *)
+module BranchGuardDomain : sig
+  include
+    AbstractDomain.InvertedMapS
+    with type key = HilExp.AccessExpression.t
+     and type value = BranchGuard.t
+
+  val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
+end
+
 type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
+  ; branch_guards: BranchGuardDomain.t
   ; thread: ThreadDomain.t }
 
 include AbstractDomain.WithBottom with type t := t

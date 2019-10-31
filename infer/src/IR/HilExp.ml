@@ -643,6 +643,34 @@ and eval = function
       None
 
 
+let rec eval_boolean_binop op var e1 e2 =
+  Option.both (eval_boolean_exp var e1) (eval_boolean_exp var e2)
+  |> Option.map ~f:(fun (b1, b2) -> op b1 b2)
+
+
+(** return [Some bool_value] if the given boolean expression evaluates to bool_value when
+   [var] is set to true. return None if it has free variables that stop us from
+   evaluating it *)
+and eval_boolean_exp var = function
+  | AccessExpression access_expr when AccessExpression.equal access_expr var ->
+      Some true
+  | Constant c ->
+      Some (not (Const.iszero_int_float c))
+  | UnaryOperator (Unop.LNot, e, _) ->
+      eval_boolean_exp var e |> Option.map ~f:not
+  | BinaryOperator (Binop.LAnd, e1, e2) ->
+      eval_boolean_binop ( && ) var e1 e2
+  | BinaryOperator (Binop.LOr, e1, e2) ->
+      eval_boolean_binop ( || ) var e1 e2
+  | BinaryOperator (Binop.Eq, e1, e2) ->
+      eval_boolean_binop Bool.equal var e1 e2
+  | BinaryOperator (Binop.Ne, e1, e2) ->
+      eval_boolean_binop ( <> ) var e1 e2
+  | _ ->
+      (* non-boolean expression; can't evaluate it *)
+      None
+
+
 let rec ignore_cast e = match e with Cast (_, e) -> ignore_cast e | _ -> e
 
 let access_expr_of_exp ~include_array_indexes ~f_resolve_id exp typ =

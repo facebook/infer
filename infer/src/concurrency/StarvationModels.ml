@@ -192,10 +192,6 @@ let is_strict_mode_violation tenv pn actuals =
   Config.starvation_strict_mode && strict_mode_matcher tenv pn actuals
 
 
-let is_ui_thread_model pn =
-  ConcurrencyModels.(match get_thread pn with MainThread -> true | _ -> false)
-
-
 let is_annotated_nonblocking ~attrs_of_pname tenv pname =
   ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname
     Annotations.ia_is_nonblocking tenv pname

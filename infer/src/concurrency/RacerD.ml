@@ -273,7 +273,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       else astate
     in
     let astate =
-      match get_thread callee_pname with
+      match get_thread_assert_effect callee_pname with
       | BackgroundThread ->
           {astate with threads= ThreadsDomain.AnyThread}
       | MainThread ->
@@ -405,38 +405,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     {astate with accesses; ownership; attribute_map}
 
 
-  let rec eval_binop op var e1 e2 =
-    match (eval_bexp var e1, eval_bexp var e2) with
-    | Some b1, Some b2 ->
-        Some (op b1 b2)
-    | _ ->
-        None
-
-
-  (* return Some bool_value if the given boolean expression evaluates to bool_value when
-           [var] is set to true. return None if it has free variables that stop us from
-           evaluating it *)
-  and eval_bexp var = function
-    | HilExp.AccessExpression access_expr ->
-        if AccessExpression.equal access_expr var then Some true else None
-    | HilExp.Constant c ->
-        Some (not (Const.iszero_int_float c))
-    | HilExp.UnaryOperator (Unop.LNot, e, _) ->
-        let b_opt = eval_bexp var e in
-        Option.map ~f:not b_opt
-    | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
-        eval_binop ( && ) var e1 e2
-    | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
-        eval_binop ( || ) var e1 e2
-    | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
-        eval_binop Bool.equal var e1 e2
-    | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
-        eval_binop ( <> ) var e1 e2
-    | _ ->
-        (* non-boolean expression; can't evaluate it *)
-        None
-
-
   let do_assume assume_exp loc proc_data (astate : Domain.t) =
     let open Domain in
     let add_choice bool_value (acc : Domain.t) = function
@@ -459,7 +427,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let astate' =
       match HilExp.get_access_exprs assume_exp with
       | [access_expr] ->
-          eval_bexp access_expr assume_exp
+          HilExp.eval_boolean_exp access_expr assume_exp
           |> Option.fold ~init:astate ~f:(fun init bool_value ->
                  let choices = AttributeMapDomain.get_choices access_expr astate.attribute_map in
                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].

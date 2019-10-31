@@ -411,34 +411,65 @@ module GuardToLockMap = struct
   let add_guard astate ~guard ~lock = add guard (FlatLock.v lock) astate
 end
 
+module BranchGuard = struct
+  type t = Nothing | Thread
+
+  let top = Nothing
+
+  let is_top = function Nothing -> true | _ -> false
+
+  let pp fmt t = F.fprintf fmt (match t with Nothing -> "Nothing" | Thread -> "Thread")
+
+  let leq ~lhs ~rhs =
+    match (lhs, rhs) with _, Nothing -> true | Nothing, _ -> false | Thread, Thread -> true
+
+
+  let join lhs rhs = match (lhs, rhs) with Thread, Thread -> lhs | _ -> Nothing
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+end
+
+module BranchGuardDomain = struct
+  include AbstractDomain.InvertedMap (HilExp.AccessExpression) (BranchGuard)
+
+  let is_thread_guard acc_exp t =
+    find_opt acc_exp t |> Option.exists ~f:(function BranchGuard.Thread -> true | _ -> false)
+end
+
 type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
+  ; branch_guards: BranchGuardDomain.t
   ; thread: ThreadDomain.t }
 
 let bottom =
   { guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
+  ; branch_guards= BranchGuardDomain.empty
   ; thread= ThreadDomain.top }
 
 
-let is_bottom {guard_map; lock_state; critical_pairs; thread} =
+let is_bottom {guard_map; lock_state; critical_pairs; branch_guards; thread} =
   GuardToLockMap.is_empty guard_map && LockState.is_top lock_state
   && CriticalPairs.is_empty critical_pairs
+  && BranchGuardDomain.is_top branch_guards
   && ThreadDomain.is_top thread
 
 
-let pp fmt {guard_map; lock_state; critical_pairs; thread} =
-  F.fprintf fmt "{guard_map= %a; lock_state= %a; critical_pairs= %a; thread= %a}" GuardToLockMap.pp
-    guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs ThreadDomain.pp thread
+let pp fmt {guard_map; lock_state; critical_pairs; branch_guards; thread} =
+  F.fprintf fmt
+    "{guard_map= %a; lock_state= %a; critical_pairs= %a; branch_guards= %a; thread= %a}"
+    GuardToLockMap.pp guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs
+    BranchGuardDomain.pp branch_guards ThreadDomain.pp thread
 
 
 let join lhs rhs =
   { guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
+  ; branch_guards= BranchGuardDomain.join lhs.branch_guards rhs.branch_guards
   ; thread= ThreadDomain.join lhs.thread rhs.thread }
 
 
@@ -448,6 +479,7 @@ let leq ~lhs ~rhs =
   GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
   && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
+  && BranchGuardDomain.leq ~lhs:lhs.branch_guards ~rhs:rhs.branch_guards
   && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
 
 

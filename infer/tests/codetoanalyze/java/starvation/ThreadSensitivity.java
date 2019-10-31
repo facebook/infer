@@ -30,7 +30,7 @@ class ThreadSensitivity {
 
   // the branches in the following two methods are both on main/UI thread so cannot deadlock
 
-  void FP_conditionalIsMainThread_Ok() {
+  void conditionalIsMainThread_Ok() {
     if (OurThreadUtils.isMainThread()) {
       synchronized (monitorC) {
         synchronized (monitorD) {
@@ -39,7 +39,7 @@ class ThreadSensitivity {
     }
   }
 
-  void FP_conditionalIsUiThread_Ok() {
+  void conditionalIsUiThread_Ok() {
     if (OurThreadUtils.isUiThread()) {
       synchronized (monitorD) {
         synchronized (monitorC) {
