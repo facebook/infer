@@ -227,14 +227,32 @@ module ItvPure = struct
     | Some n ->
         if NonZeroInt.is_one n then itv
         else if NonZeroInt.is_minus_one n then neg itv
-        else if NonZeroInt.is_positive n then
-          let l' = Option.value ~default:Bound.minf (Bound.div_const_l l n) in
-          let u' = Option.value ~default:Bound.pinf (Bound.div_const_u u n) in
-          (l', u')
         else
-          let l' = Option.value ~default:Bound.minf (Bound.div_const_l u n) in
-          let u' = Option.value ~default:Bound.pinf (Bound.div_const_u l n) in
-          (l', u')
+          let l', u' =
+            if NonZeroInt.is_positive n then (Bound.div_const_l l n, Bound.div_const_u u n)
+            else (Bound.div_const_l u n, Bound.div_const_u l n)
+          in
+          let default_l, default_u =
+            if Bound.(le zero l) then
+              if NonZeroInt.is_positive n then
+                (* if 0<=l<=u and 0<c, 0 <= [l/c, u/c] <= u *)
+                (Bound.zero, u)
+              else (* if 0<=l<=u and c<0, -u <= [u/c, l/c] <= 0 *)
+                (Bound.neg u, Bound.zero)
+            else if Bound.(le u zero) then
+              if NonZeroInt.is_positive n then
+                (* if l<=u<=0 and 0<c, l <= [l/c, u/c] <= 0 *)
+                (l, Bound.zero)
+              else (* if l<=u<=0 and c<0, 0 <= [u/c, l/c] <= -l *)
+                (Bound.zero, Bound.neg l)
+            else if Bound.(le l zero && le zero u) then
+              if NonZeroInt.is_positive n then (* if l<=0<=u and 0<c, l <= [l/c, u/c] <= u *)
+                (l, u)
+              else (* if l<=0<=u and c<0, -u <= [u/c, l/c] <= -l *)
+                (Bound.neg u, Bound.neg l)
+            else (Bound.minf, Bound.pinf)
+          in
+          (Option.value ~default:default_l l', Option.value ~default:default_u u')
 
 
   let mult : t -> t -> t =

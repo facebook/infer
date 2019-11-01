@@ -158,3 +158,11 @@ void ignore_character_symbols_constant_FP(char c) {
     }
   }
 }
+
+unsigned int div_const(unsigned int n) { return n / 2; }
+
+void iter_div_const_constant() {
+  unsigned int n = div_const(20);
+  for (int i = 0; i < n; i++) {
+  }
+}
