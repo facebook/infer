@@ -306,30 +306,36 @@ Definition translate_label_opt_def:
 End
 
 Definition translate_header_def:
-  (translate_header f gmap entry Entry = []) ∧
-  (translate_header f gmap entry (Head phis _) =
+  (translate_header f gmap emap entry Entry = []) ∧
+  (translate_header f gmap emap entry (Head phis _) =
     map
       (λ(r, t, largs).
         (translate_reg r t,
-        (* TODO: shouldn't use fempty here *)
-         map (λ(l, arg). (translate_label_opt f entry l, translate_arg gmap fempty arg)) largs))
+         map (λ(l, arg). (translate_label_opt f entry l, translate_arg gmap emap arg)) largs))
       (map dest_phi phis))
+End
+
+Definition header_to_emap_upd_def:
+  (header_to_emap_upd Entry = []) ∧
+  (header_to_emap_upd (Head phis _) =
+    map (λ(r, t, largs). (r, Var (translate_reg r t))) (map dest_phi phis))
 End
 
 Definition translate_block_def:
   translate_block f entry_n gmap emap regs_to_keep (l, b) =
     let (b', emap') = translate_instrs f gmap emap regs_to_keep b.body in
       ((Lab_name f (the (option_map dest_label l) entry_n),
-       (translate_header f gmap entry_n b.h, b')),
-       emap')
+       (translate_header f gmap emap entry_n b.h, b')),
+       (emap' |++ header_to_emap_upd b.h))
 End
 
-(* Given a label and phi node, get the assignment for that incoming label. It's
- * convenient to return a list, but we expect there to be exactly 1 element. *)
+(* Given a label and phi node, get the assignment for that incoming label. *)
 Definition build_move_for_lab_def:
   build_move_for_lab l (r, les) =
-   let les = filter (λ(l', e). l = l') les in
-     map (λ(l', e). (r,e)) les
+    case alookup les l of
+    | Some e => (r,e)
+    (* This shouldn't be able happen in a well-formed program *)
+    | None => (r, Nondet)
 End
 
 (* Given a list of phis and a label, get the move corresponding to entering
@@ -340,7 +346,7 @@ Definition generate_move_block_def:
       case alookup phis l_to of
       | None => <| cmnd := [Move []]; term := t |>
       | Some (phis, _) =>
-        <| cmnd := [Move (flat (map (build_move_for_lab l_from) phis))];
+        <| cmnd := [Move (map (build_move_for_lab l_from) phis)];
            term := t |>
 End
 

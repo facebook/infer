@@ -9,7 +9,7 @@
 
 open HolKernel boolLib bossLib Parse lcsymtacs;
 open listTheory arithmeticTheory pred_setTheory finite_mapTheory wordsTheory integer_wordTheory;
-open optionTheory rich_listTheory pathTheory;
+open optionTheory rich_listTheory pathTheory alistTheory pairTheory sumTheory;
 open settingsTheory miscTheory memory_modelTheory;
 open llvmTheory llvm_propTheory llvm_ssaTheory llairTheory llair_propTheory llvm_to_llairTheory;
 
@@ -48,6 +48,17 @@ Definition dest_llair_lab_def:
   dest_llair_lab (Lab_name f b) = (f, b)
 End
 
+Definition build_phi_block_def:
+  build_phi_block gmap emap f entry from_l to_l phis =
+    generate_move_block [(to_l, (translate_header (dest_fn f) gmap emap entry (Head phis ARB), (ARB:block)))]
+      (translate_label_opt (dest_fn f) entry from_l) to_l
+End
+
+Definition build_phi_emap_def:
+  build_phi_emap phis =
+    map (\x. case x of Phi r t _ => (r, Var (translate_reg r t))) phis
+End
+
 Inductive pc_rel:
  (* LLVM side points to a normal instruction *)
  (∀prog emap ip bp d b idx b' prev_i fname gmap.
@@ -69,14 +80,14 @@ Inductive pc_rel:
 
  (* If the LLVM side points to phi instructions, the llair side
   * should point to a block generated from them *)
- (∀prog emap ip bp b from_l phis.
+ (∀prog gmap emap ip bp from_l phis entry to_l.
     get_instr prog ip (Inr (from_l, phis)) ∧
     (* We should have just jumped here from block from_l *)
     (∃d b. alookup prog ip.f = Some d ∧
-         alookup d.blocks from_l = Some b ∧
-         ip.b ∈ set (map Some (instr_to_labs (last b.body)))) ∧
-    (* TODO: constrain b to be generated from the phis *)
-    get_block (translate_prog prog) bp b
+       alookup d.blocks from_l = Some b ∧
+       ip.b ∈ set (map Some (instr_to_labs (last b.body)))) ∧
+    get_block (translate_prog prog) bp (build_phi_block gmap emap ip.f entry from_l to_l phis) ∧
+    pc_rel prog gmap (emap |++ build_phi_emap phis) (ip with i := inc_bip ip.i) to_l
     ⇒
     pc_rel prog gmap emap ip bp)
 End
@@ -90,19 +101,29 @@ End
  * expressions that compute the value in that register. This corresponds to part
  * of the translation's state.
  *)
-Definition mem_state_rel_def:
-  mem_state_rel prog gmap emap (s:llvm$state) (s':llair$state) ⇔
+
+Definition emap_invariant_def:
+  emap_invariant prog emap ip locals locals' r =
+    ∃v v' e.
+      v_rel v.value v' ∧
+      flookup locals r = Some v ∧
+      flookup emap r = Some e ∧ eval_exp <| locals := locals' |> e v' ∧
+      (* Each register used in e is dominated by an assignment to that
+       * register for the entire live range of r. *)
+      (∀ip1 r'. ip1.f = ip.f ∧ r ∈ live prog ip1 ∧ r' ∈ exp_uses e ⇒
+        ∃ip2. untranslate_reg r' ∈ assigns prog ip2 ∧ dominates prog ip2 ip1)
+End
+
+Definition local_state_rel_def:
+  local_state_rel prog emap ip locals locals' ⇔
     (* Live LLVM registers are mapped and have a related value in the emap
      * (after evaluating) *)
-    (∀r. r ∈ live prog s.ip ⇒
-      (∃v v' e.
-        v_rel v.value v' ∧
-        flookup s.locals r = Some v ∧
-        flookup emap r = Some e ∧ eval_exp s' e v' ∧
-        (* Each register used in e is dominated by an assignment to that
-         * register for the entire live range of r. *)
-        (∀ip1 r'. ip1.f = s.ip.f ∧ r ∈ live prog ip1 ∧ r' ∈ exp_uses e ⇒
-          ∃ip2. untranslate_reg r' ∈ assigns prog ip2 ∧ dominates prog ip2 ip1))) ∧
+    (∀r. r ∈ live prog ip ⇒ emap_invariant prog emap ip locals locals' r)
+End
+
+Definition mem_state_rel_def:
+  mem_state_rel prog gmap emap (s:llvm$state) (s':llair$state) ⇔
+    local_state_rel prog emap s.ip s.locals s'.locals ∧
     reachable prog s.ip ∧
     fmap_rel (\(_,n) n'. w2n n = n')
       s.globals
@@ -128,7 +149,7 @@ Theorem mem_state_ignore_bp[simp]:
     mem_state_rel prog gmap emap s (s' with bp := b) ⇔
     mem_state_rel prog gmap emap s s'
 Proof
-  rw [mem_state_rel_def] >> eq_tac >> rw [] >>
+  rw [local_state_rel_def, mem_state_rel_def, emap_invariant_def] >> eq_tac >> rw [] >>
   first_x_assum drule >> rw [] >>
   `eval_exp (s' with bp := b) e v' ⇔ eval_exp s' e v'`
   by (irule eval_exp_ignores >> rw []) >>
@@ -147,7 +168,7 @@ Theorem mem_state_rel_exited:
     ⇒
     mem_state_rel prog gmap emap (s with status := Complete code) (s' with status := Complete code)
 Proof
-  rw [mem_state_rel_def] >>
+  rw [mem_state_rel_def, local_state_rel_def, emap_invariant_def] >>
   metis_tac [eval_exp_ignores, lemma]
 QED
 
@@ -159,11 +180,17 @@ Theorem mem_state_rel_no_update:
   ⇒
   mem_state_rel prog gmap emap (s1 with ip := i) s1'
 Proof
-  rw [mem_state_rel_def]
+  rw [mem_state_rel_def, local_state_rel_def, emap_invariant_def]
   >- (
     first_x_assum (qspec_then `r` mp_tac) >> simp [Once live_gen_kill, PULL_EXISTS] >>
     metis_tac [next_ips_same_func])
   >- metis_tac [next_ips_reachable]
+QED
+
+Triviality record_lemma:
+  (<|locals := x|> :llair$state).locals = x
+Proof
+  rw []
 QED
 
 Theorem mem_state_rel_update:
@@ -181,11 +208,12 @@ Theorem mem_state_rel_update:
         (s1 with <|ip := i; locals := s1.locals |+ (r, v) |>)
         s1'
 Proof
-  rw [mem_state_rel_def]
+  rw [mem_state_rel_def, local_state_rel_def, emap_invariant_def]
   >- (
     rw [FLOOKUP_UPDATE]
     >- (
-      HINT_EXISTS_TAC >> rw [] >>
+      HINT_EXISTS_TAC >> rw []
+      >- metis_tac [eval_exp_ignores, record_lemma] >>
       first_x_assum drule >> rw [] >>
       first_x_assum drule >> rw [] >>
       fs [exp_uses_def, translate_arg_def] >>
@@ -203,57 +231,227 @@ Proof
   >- metis_tac [next_ips_reachable]
 QED
 
-Theorem mem_state_rel_update_keep:
-  ∀prog gmap emap s1 s1' v res_v r i ty.
+Theorem emap_inv_updates_keep_same_ip1:
+  ∀prog emap ip locals locals' vs res_vs rtys r.
   is_ssa prog ∧
-  assigns prog s1.ip = {r} ∧
-  mem_state_rel prog gmap emap s1 s1' ∧
-  v_rel v.value res_v ∧
-  reachable prog s1.ip ∧
-  i ∈ next_ips prog s1.ip
+  list_rel v_rel (map (\v. v.value) vs) res_vs ∧
+  length rtys = length vs ∧
+  r ∈ set (map fst rtys)
   ⇒
-  mem_state_rel prog gmap (emap |+ (r, Var (translate_reg r ty)))
-        (s1 with <|ip := i; locals := s1.locals |+ (r, v)|>)
-        (s1' with locals := s1'.locals |+ (translate_reg r ty, res_v))
+  emap_invariant prog (emap |++ map (\(r,ty). (r, Var (translate_reg r ty))) rtys) ip
+        (locals |++ zip (map fst rtys, vs))
+        (locals' |++ zip (map (\(r,ty). translate_reg r ty) rtys, res_vs))
+        r
 Proof
-  rw [mem_state_rel_def]
+  rw [emap_invariant_def, flookup_fupdate_list] >>
+  CASE_TAC >> rw []
+  >- (fs [ALOOKUP_NONE, MAP_REVERSE] >> rfs [MAP_ZIP]) >>
+  CASE_TAC >> rw []
   >- (
-    rw [FLOOKUP_UPDATE]
+    fs [ALOOKUP_NONE, MAP_REVERSE, MAP_MAP_o, combinTheory.o_DEF] >>
+    fs [MEM_MAP, FORALL_PROD] >>
+    rw [] >> metis_tac [FST, pair_CASES]) >>
+  rename [`alookup (reverse (zip _)) _ = Some v`,
+          `alookup (reverse (map _ _)) _ = Some e`] >>
+  fs [Once MEM_SPLIT_APPEND_last] >>
+  fs [alookup_some, MAP_EQ_APPEND, reverse_eq_append] >> rw [] >>
+  rfs [zip_eq_append] >> rw [] >> rw [] >>
+  rename [`(fst rty, e)::reverse res = map _ rtys`] >>
+  Cases_on `rtys` >> fs [] >> pairarg_tac >> fs [] >> rw [] >>
+  fs [] >> rw [] >>
+  qpat_x_assum `reverse _ ++ _ = zip _` (mp_tac o GSYM) >> rw [zip_eq_append] >>
+  fs [] >> rw [] >>
+  rename [`[_] = zip (x,y)`] >>
+  Cases_on `x` >> Cases_on `y` >> fs [] >>
+  rw [] >> fs [LIST_REL_SPLIT1] >> rw [] >>
+  HINT_EXISTS_TAC >> rw []
+  >- (
+    rw [Once eval_exp_cases, flookup_fupdate_list] >>
+    qmatch_goalsub_abbrev_tac `reverse (zip (a, b))` >>
+    `length a = length b`
+    by (
+      rw [Abbr `a`, Abbr `b`] >>
+      metis_tac [LIST_REL_LENGTH, LENGTH_MAP, LENGTH_ZIP, LENGTH_REVERSE, ADD_COMM, ADD_ASSOC]) >>
+    CASE_TAC >> rw [] >> fs [alookup_some, reverse_eq_append]
+    >- (fs [ALOOKUP_NONE] >> rfs [MAP_REVERSE, MAP_ZIP] >> fs [Abbr `a`]) >>
+    rfs [zip_eq_append] >>
+    unabbrev_all_tac >>
+    rw [] >>
+    qpat_x_assum `reverse _ ++ _ = zip _` (mp_tac o GSYM) >> rw [zip_eq_append] >>
+    fs [] >> rw [] >>
+    rename [`[_] = zip (a,b)`] >>
+    Cases_on `a` >> Cases_on `b` >> fs [] >>
+    rw [] >> fs [] >> rw [] >>
+    fs [ALOOKUP_NONE] >> fs [] >>
+    rfs [SWAP_REVERSE_SYM] >> rw [] >> fs [MAP_REVERSE] >> rfs [MAP_ZIP] >>
+    fs [MIN_DEF] >>
+    BasicProvers.EVERY_CASE_TAC >> fs [] >>
+    rfs [] >> rw [] >>
+    fs [MAP_MAP_o, combinTheory.o_DEF, LAMBDA_PROD] >>
+    `(\(x:reg,y:ty). x) = fst` by (rw [FUN_EQ_THM] >> pairarg_tac >> rw []) >>
+    fs [] >>
+    rename [`map fst l1 ++ [fst _] ++ map fst l2 = l3 ++ [_] ++ l4`,
+            `map _ l1 ++ [translate_reg _ _] ++ _ = l5 ++ _ ++ l6`,
+            `l7 ++ [v1:llair$flat_v reg_v] ++ l8 = l9 ++ [v2] ++ l10`] >>
+    `map fst l2 = l4` by metis_tac [append_split_last] >>
+    `~mem (translate_reg (fst rty) ty) (map (λ(r,ty). translate_reg r ty) l2)`
+    by (
+      rw [MEM_MAP] >> pairarg_tac >> fs [] >>
+      Cases_on `rty` >>
+      rename1 `fst (r2, ty2)` >> Cases_on `r2` >> Cases_on `r` >>
+      fs [translate_reg_def, MEM_MAP] >> metis_tac [FST]) >>
+    `map (λ(r,ty). translate_reg r ty) l2 = l6` by metis_tac [append_split_last] >>
+    `length l8 = length l10` by metis_tac [LIST_REL_LENGTH, LENGTH_MAP] >>
+    metis_tac [append_split_eq])
+  >- (
+    fs [exp_uses_def] >> rw [] >>
+    Cases_on `fst rty` >> simp [translate_reg_def, untranslate_reg_def] >>
+    `∃ip. ip.f = ip1.f ∧ Reg s ∈ uses prog ip`
+    by (
+      qabbrev_tac `x = (ip1.f = ip.f)` >>
+      fs [live_def] >> qexists_tac `last (ip1::path)` >> rw [] >>
+      irule good_path_same_func >>
+      qexists_tac `ip1::path` >> rw [MEM_LAST] >>
+      metis_tac []) >>
+    metis_tac [ssa_dominates_live_range])
+QED
+
+Theorem emap_inv_updates_keep_same_ip2:
+  ∀prog emap ip locals locals' vs res_vs rtys r.
+  is_ssa prog ∧
+  r ∈ live prog ip ∧
+  assigns prog ip = set (map fst rtys) ∧
+  emap_invariant prog emap ip locals locals' r ∧
+  list_rel v_rel (map (\v. v.value) vs) res_vs ∧
+  length rtys = length vs ∧
+  reachable prog ip ∧
+  ¬mem r (map fst rtys)
+  ⇒
+  emap_invariant prog (emap |++ map (\(r,ty). (r, Var (translate_reg r ty))) rtys) ip
+        (locals |++ zip (map fst rtys, vs))
+        (locals' |++ zip (map (\(r,ty). translate_reg r ty) rtys, res_vs))
+        r
+Proof
+  rw [emap_invariant_def, alistTheory.flookup_fupdate_list] >> rw [] >>
+  CASE_TAC >> rw []
+  >- (
+    CASE_TAC >> rw []
     >- (
-      simp [Once eval_exp_cases] >>
-      qexists_tac `res_v` >> rw [exp_uses_def] >>
-      rw [FLOOKUP_UPDATE] >>
-      Cases_on `r` >> simp [translate_reg_def, untranslate_reg_def] >>
-      `∃ip. ip.f = ip1.f ∧ Reg s ∈ uses prog ip`
-      by (
-        qabbrev_tac `x = (ip1.f = i.f)` >>
-        fs [live_def] >> qexists_tac `last (ip1::path')` >> rw [] >>
-        irule good_path_same_func >>
-        qexists_tac `ip1::path'` >> rw [MEM_LAST] >>
-        metis_tac []) >>
-      metis_tac [ssa_dominates_live_range]) >>
-    first_x_assum (qspec_then `r'` mp_tac) >>
-    simp [Once live_gen_kill, PULL_EXISTS] >>
-    impl_tac >> rw []
-    >- metis_tac [] >>
-    ntac 3 HINT_EXISTS_TAC >> rw []
-    >- (
-      `DRESTRICT (s1' with locals := s1'.locals |+ (translate_reg r ty,res_v)).locals (exp_uses e) =
-       DRESTRICT s1'.locals (exp_uses e)`
-      suffices_by metis_tac [eval_exp_ignores_unused] >>
+      qexists_tac `v'` >> rw [] >>
+      `DRESTRICT (locals' |++ zip (map (λ(r,ty). translate_reg r ty) rtys, res_vs)) (exp_uses e) =
+       DRESTRICT locals' (exp_uses e)`
+      suffices_by metis_tac [eval_exp_ignores_unused, record_lemma] >>
       rw [] >>
-      first_x_assum (qspecl_then [`s1.ip`, `translate_reg r ty`] mp_tac) >> simp [Once live_gen_kill] >>
-      impl_tac >- metis_tac [] >> rw [] >>
-      `ip2 = s1.ip`
+      qmatch_goalsub_abbrev_tac `_ |++ l = _` >>
+      `l = []` suffices_by rw [FUPDATE_LIST_THM] >>
+      rw [Abbr `l`, FILTER_EQ_NIL, LAMBDA_PROD] >>
+      `(λ(p1,p2:llair$flat_v reg_v). p1 ∉ exp_uses e) = (\x. fst x ∉ exp_uses e)`
+      by (rw [EXTENSION, IN_DEF] >> pairarg_tac >> rw []) >>
+      `length rtys = length res_vs` by metis_tac [LIST_REL_LENGTH, LENGTH_MAP] >>
+      rw [every_zip_fst, EVERY_MAP] >> rw [LAMBDA_PROD] >>
+      rw [EVERY_EL] >> pairarg_tac >> rw [] >>
+      qmatch_goalsub_rename_tac `translate_reg r1 ty1 ∉ exp_uses _` >>
+      first_x_assum (qspecl_then [`ip`, `translate_reg r1 ty1`] mp_tac) >> rw [] >>
+      CCONTR_TAC >> fs [] >>
+      `ip2 = ip`
       by (
         fs [is_ssa_def, EXTENSION, IN_DEF] >>
-        Cases_on `r` >> fs [translate_reg_def, untranslate_reg_def] >>
-        metis_tac [reachable_dominates_same_func]) >>
-      metis_tac [dominates_irrefl])
-    >- (
-      first_x_assum irule >> rw [] >>
-      metis_tac [next_ips_same_func]))
-  >- metis_tac [next_ips_reachable]
+        Cases_on `r1` >> fs [translate_reg_def, untranslate_reg_def] >>
+        `assigns prog ip (Reg s)` suffices_by metis_tac [reachable_dominates_same_func] >>
+        rw [LIST_TO_SET_MAP, MEM_EL] >>
+        metis_tac [FST]) >>
+      metis_tac [dominates_irrefl]) >>
+    drule ALOOKUP_MEM >> rw [MEM_MAP] >>
+    pairarg_tac >> fs [MEM_MAP] >> rw [] >>
+    metis_tac [FST]) >>
+  drule ALOOKUP_MEM >> rw [MEM_MAP, MEM_ZIP] >>
+  metis_tac [EL_MEM, LIST_REL_LENGTH, LENGTH_MAP]
+QED
+
+Theorem local_state_rel_next_ip:
+  ∀prog emap ip1 ip2 locals locals'.
+  local_state_rel prog emap ip1 locals locals' ∧
+  ip2 ∈ next_ips prog ip1 ∧
+  (∀r. r ∈ assigns prog ip1 ⇒ emap_invariant prog emap ip1 locals locals' r)
+  ⇒
+  local_state_rel prog emap ip2 locals locals'
+Proof
+  rw [local_state_rel_def, emap_invariant_def] >>
+  Cases_on `r ∈ live prog ip1` >> fs []
+  >- (
+    last_x_assum drule >> rw [] >>
+    ntac 3 HINT_EXISTS_TAC >> rw [] >>
+    first_x_assum irule >> rw [] >>
+    metis_tac [next_ips_same_func]) >>
+  pop_assum mp_tac >> simp [Once live_gen_kill, PULL_EXISTS] >> rw [] >>
+  first_x_assum (qspec_then `ip2` mp_tac) >> rw [] >>
+  first_x_assum drule >> rw [] >>
+  ntac 3 HINT_EXISTS_TAC >> rw [] >>
+  first_x_assum irule >> rw [] >>
+  metis_tac [next_ips_same_func]
+QED
+
+Theorem local_state_rel_updates_keep:
+  ∀rtys prog emap ip locals locals' vs res_vs i.
+  is_ssa prog ∧
+  set (map fst rtys) = assigns prog ip ∧
+  local_state_rel prog emap ip locals locals' ∧
+  length vs = length rtys ∧
+  list_rel v_rel (map (\v. v.value) vs) res_vs ∧
+  i ∈ next_ips prog ip ∧
+  reachable prog ip
+  ⇒
+  local_state_rel prog (emap |++ map (\(r,ty). (r, Var (translate_reg r ty))) rtys) i
+        (locals |++ zip (map fst rtys, vs))
+        (locals' |++ zip (map (\(r,ty). translate_reg r ty) rtys, res_vs))
+Proof
+  rw [] >> irule local_state_rel_next_ip >>
+  qexists_tac `ip` >> rw [] >>
+  fs [local_state_rel_def] >> rw []
+  >- (irule emap_inv_updates_keep_same_ip1 >> rw []) >>
+  fs [local_state_rel_def] >> rw [] >>
+  Cases_on `mem r (map fst rtys)`
+  >- (irule emap_inv_updates_keep_same_ip1 >> rw []) >>
+  irule emap_inv_updates_keep_same_ip2 >> rw []
+QED
+
+Theorem local_state_rel_update_keep:
+  ∀prog emap ip locals locals' v res_v r i ty.
+  is_ssa prog ∧
+  assigns prog ip = {r} ∧
+  local_state_rel prog emap ip locals locals' ∧
+  v_rel v.value res_v ∧
+  reachable prog ip ∧
+  i ∈ next_ips prog ip
+  ⇒
+  local_state_rel prog (emap |+ (r, Var (translate_reg r ty)))
+        i (locals |+ (r, v)) (locals' |+ (translate_reg r ty, res_v))
+Proof
+  rw [] >>
+  drule local_state_rel_updates_keep >>
+  disch_then (qspecl_then [`[(r,ty)]`, `emap`, `ip`] mp_tac) >>
+  simp [] >> disch_then drule >>
+  disch_then (qspecl_then [`[v]`, `[res_v]`] mp_tac) >>
+  simp [] >> disch_then drule >>
+  rw [FUPDATE_LIST_THM]
+QED
+
+Theorem mem_state_rel_update_keep:
+  ∀prog gmap emap s s' v res_v r ty i.
+  is_ssa prog ∧
+  assigns prog s.ip = {r} ∧
+  mem_state_rel prog gmap emap s s' ∧
+  v_rel v.value res_v ∧
+  reachable prog s.ip ∧
+  i ∈ next_ips prog s.ip
+  ⇒
+  mem_state_rel prog gmap (emap |+ (r, Var (translate_reg r ty)))
+        (s with <| ip := i; locals := s.locals |+ (r, v) |>)
+        (s' with locals := s'.locals |+ (translate_reg r ty, res_v))
+Proof
+  rw [mem_state_rel_def]
+  >- metis_tac [local_state_rel_update_keep] >>
+  metis_tac [next_ips_reachable]
 QED
 
 Triviality lemma:
@@ -270,8 +468,7 @@ Theorem mem_state_rel_heap_update:
     ⇒
     mem_state_rel prog gmap emap (s with heap := h) (s' with heap := h')
 Proof
-  rw [mem_state_rel_def, erase_tags_def]
-  >- metis_tac [eval_exp_ignores, lemma] >>
+  rw [mem_state_rel_def, erase_tags_def, local_state_rel_def] >>
   rw [heap_component_equality] >>
   fs [fmap_eq_flookup, FLOOKUP_o_f] >> rw [] >>
   first_x_assum (qspec_then `x` mp_tac) >>
@@ -347,7 +544,7 @@ Proof
   >- (
     Cases_on `t` >>
     fs [llvmTheory.type_to_shape_def, llvmTheory.sizeof_def, llvmTheory.first_class_type_def] >>
-    rw [pairTheory.PAIR_MAP] >>
+    rw [PAIR_MAP] >>
     pairarg_tac >> fs [type_to_shape_def, translate_ty_def, bytes_to_value_def] >>
     first_x_assum (qspec_then `t'` mp_tac) >> simp [] >>
     simp [v_rel_cases] >>
@@ -356,9 +553,9 @@ Proof
   >- (
     Cases_on `t` >>
     fs [llvmTheory.type_to_shape_def, llvmTheory.sizeof_def, llvmTheory.first_class_type_def] >>
-    rw [pairTheory.PAIR_MAP] >>
+    rw [PAIR_MAP] >>
     fs [type_to_shape_def, translate_ty_def, bytes_to_value_def] >>
-    pairarg_tac >> fs [pairTheory.PAIR_MAP] >>
+    pairarg_tac >> fs [PAIR_MAP] >>
     first_x_assum (qspec_then `l` mp_tac) >> simp [] >>
     simp [v_rel_cases] >>
     pairarg_tac >> fs [] >>
@@ -410,11 +607,11 @@ Proof
     metis_tac [truncate_2comp_i2w_w2i, dimindex_1, dimindex_8, dimindex_32, dimindex_64])
   >- (
     simp [v_rel_cases, PULL_EXISTS, MAP_MAP_o] >>
-    fs [combinTheory.o_DEF, pairTheory.LAMBDA_PROD] >>
+    fs [combinTheory.o_DEF, LAMBDA_PROD] >>
     metis_tac [])
   >- (
     simp [v_rel_cases, PULL_EXISTS, MAP_MAP_o] >>
-    fs [combinTheory.o_DEF, pairTheory.LAMBDA_PROD] >>
+    fs [combinTheory.o_DEF, LAMBDA_PROD] >>
     metis_tac [])
   (* TODO: unimplemented stuff *)
   >- cheat
@@ -461,8 +658,8 @@ Theorem translate_arg_correct:
 Proof
   Cases_on `a` >> rw [eval_def, translate_arg_def] >> rw []
   >- metis_tac [translate_constant_correct] >>
-  CASE_TAC >> fs [PULL_EXISTS, mem_state_rel_def, arg_to_regs_def] >>
-  res_tac >> rfs [] >> metis_tac []
+  CASE_TAC >> fs [PULL_EXISTS, mem_state_rel_def, local_state_rel_def, emap_invariant_def, arg_to_regs_def] >>
+  res_tac >> rfs [] >> metis_tac [eval_exp_ignores, record_lemma]
 QED
 
 Theorem is_allocated_mem_state_rel:
@@ -519,7 +716,7 @@ Proof
   rfs [v_rel_cases] >> rw [] >> fs [] >>
   BasicProvers.EVERY_CASE_TAC >> fs [PULL_EXISTS, translate_ty_def, translate_size_def] >>
   pairarg_tac >> fs [] >>
-  fs [pairTheory.PAIR_MAP, wordsTheory.FST_ADD_WITH_CARRY] >>
+  fs [PAIR_MAP, wordsTheory.FST_ADD_WITH_CARRY] >>
   rw [] >>
   qmatch_goalsub_abbrev_tac `w2i (-1w * w1 + w2)` >>
   qexists_tac `w2i w2` >> qexists_tac `w2i w1` >> simp [] >>
@@ -1081,7 +1278,7 @@ Proof
       `(∃code. l = Exit code) ∨ l = Tau `
       by (
         fs [llvmTheory.step_cases] >>
-        `i' = i''` by metis_tac [get_instr_func, sumTheory.INL_11] >>
+        `i' = i''` by metis_tac [get_instr_func, INL_11] >>
         fs [step_instr_cases] >> rfs [terminator_def]) >>
       fs [get_instr_cases, translate_trace_def] >> rw [] >>
       `el idx b.body = el 0 (drop idx b.body)` by rw [EL_DROP] >>
@@ -1176,18 +1373,17 @@ Proof
                  (instr_to_labs (last b.body))`
           by (fs [prog_ok_def, EVERY_MEM] >> metis_tac []) >>
           rfs [instr_to_labs_def] >>
-          rw [pc_rel_cases, get_instr_cases, get_block_cases, PULL_EXISTS] >>
+          rw [Once pc_rel_cases, get_instr_cases, get_block_cases, PULL_EXISTS] >>
           fs [GSYM PULL_EXISTS, Abbr `target`] >>
           rw [MEM_MAP, instr_to_labs_def] >>
           fs [translate_prog_def] >>
           `∀y z. dest_fn y = dest_fn z ⇒ y = z`
           by (Cases_on `y` >> Cases_on `z` >> rw [dest_fn_def]) >>
           rw [alookup_map_key] >>
-          (* Unfinished, will get more proof obligations once pc_rel is fleshed
-           * out for Inr case *)
+          (* TODO *)
           cheat)
         >- (
-          fs [mem_state_rel_def] >> rw []
+          fs [mem_state_rel_def, local_state_rel_def, emap_invariant_def] >> rw []
           >- (
             qpat_x_assum `!r. r ∈ live _ _ ⇒ P r` mp_tac >>
             simp [Once live_gen_kill] >> disch_then (qspec_then `r` mp_tac) >>
@@ -1224,7 +1420,7 @@ Proof
       cheat))
   >- ( (* Middle of the block *)
     fs [llvmTheory.step_cases] >> TRY (fs [get_instr_cases] >> NO_TAC) >>
-    `i' = i` by metis_tac [get_instr_func, sumTheory.INL_11] >> fs [] >>
+    `i' = i` by metis_tac [get_instr_func, INL_11] >> fs [] >>
     rename [`step_instr _ _ _ _ s2`, `state_rel _ _ _ s3 _`,
             `mem_state_rel _ _ _ s1 s1'`] >>
     Cases_on `∃r t. classify_instr i = Exp r t` >> fs []
@@ -1272,8 +1468,138 @@ Proof
       qexists_tac `s2'` >> rw []))
 QED
 
+Theorem do_phi_vals:
+  ∀prog gmap emap from_l s s' phis updates.
+    mem_state_rel prog gmap emap s s' ∧
+    map (do_phi from_l s) phis = map Some updates ∧
+    BIGUNION (set (map (phi_uses from_l) phis)) ⊆ live prog s.ip
+    ⇒
+    ∃es vs.
+      list_rel v_rel (map (λx. (snd x).value) updates) vs ∧
+      list_rel (eval_exp s') es vs ∧
+      map fst updates = map phi_assigns phis ∧
+      map (λx. case x of Phi r t largs =>
+                 case option_map (λarg. translate_arg gmap emap arg) (alookup largs from_l) of
+                   None => (translate_reg r t,Nondet)
+                 | Some e => (translate_reg r t,e))
+          phis
+      = map2 (\p. λe. case p of Phi r t largs => (translate_reg r t, e)) phis es
+Proof
+  Induct_on `phis` >> rw [] >> Cases_on `updates` >> fs [] >>
+  first_x_assum drule >> disch_then drule >> rw [] >>
+  Cases_on `h` >> fs [do_phi_def, OPTION_JOIN_EQ_SOME] >>
+  drule translate_arg_correct >>
+  disch_then drule >>
+  impl_tac
+  >- (fs [phi_uses_def] >> rfs []) >>
+  rw [PULL_EXISTS, phi_assigns_def] >> metis_tac []
+QED
+
+Triviality dest_phi_trip:
+  ∀p f. (λ(x,y,z). f x y z) (dest_phi p) = (λx. case x of Phi x y z => f x y z) p
+Proof
+  Cases >> rw [dest_phi_def]
+QED
+
+Triviality case_phi_lift:
+  ∀f g. f (case x of Phi x y z => g x y z) = case x of Phi x y z => f (g x y z)
+Proof
+  Cases_on `x` >> rw []
+QED
+
+Triviality id2:
+  (λ(v,r). (v,r)) = I
+Proof
+  rw [FUN_EQ_THM] >> Cases_on `x` >> rw []
+QED
+
+Triviality map_fst_map2:
+  ∀l1 l2 f g.
+    length l1 = length l2 ⇒
+    map fst (map2 (λp e. case p of Phi r t largs => (f r t largs, g e)) l1 l2) =
+    map (λp. case p of Phi r t largs => f r t largs) l1
+Proof
+  Induct_on `l1` >> rw [] >> Cases_on `l2` >> fs [] >>
+  CASE_TAC >> rw []
+QED
+
+Theorem build_phi_block_correct:
+  ∀prog s1 s1' to_l from_l phis updates f gmap emap entry bloc.
+    prog_ok prog ∧ is_ssa prog ∧
+    get_instr prog s1.ip (Inr (from_l,phis)) ∧
+    map (do_phi from_l s1) phis = map Some updates ∧
+    mem_state_rel prog gmap emap s1 s1' ∧
+    BIGUNION (set (map (phi_uses from_l) phis)) ⊆ live prog s1.ip ∧
+    bloc = build_phi_block gmap emap f entry from_l to_l phis
+    ⇒
+    ?s2'.
+      s2'.bp = to_l ∧
+      step_block (translate_prog prog) s1' bloc.cmnd bloc.term [Tau; Tau] s2' ∧
+      mem_state_rel prog gmap
+        (emap |++ build_phi_emap phis)
+        (inc_pc (s1 with locals := s1.locals |++ updates)) s2'
+Proof
+  rw [build_phi_block_def, translate_header_def, generate_move_block_def] >>
+  rw [Once step_block_cases] >>
+  rw [Once step_block_cases] >>
+  rw [step_term_cases, PULL_EXISTS] >>
+  simp [Once eval_exp_cases, truncate_2comp_def] >>
+  simp [MAP_MAP_o, combinTheory.o_DEF, PULL_EXISTS, dest_phi_trip] >>
+  simp [case_phi_lift, build_move_for_lab_def] >>
+  (* TODO: This is false because of how the entry block label is translated.
+   * Needs fixing. *)
+  `∀l1 l2. translate_label_opt (dest_fn f) entry l1 = translate_label_opt (dest_fn f) entry l2 ⇒ l1 = l2`
+  by cheat >>
+  qspecl_then [`l`, `from_l`, `translate_label_opt (dest_fn f) entry`,
+               `\x arg. translate_arg gmap emap arg`]
+    (mp_tac o Q.GEN `l`)
+    alookup_map_key >>
+  simp [] >>
+  disch_then kall_tac >>
+  drule do_phi_vals >> ntac 2 (disch_then drule) >>
+  rw [] >> rw [] >>
+  pop_assum kall_tac >>
+  simp [step_inst_cases, PULL_EXISTS] >>
+  qexists_tac `0` >> qexists_tac `vs` >> rw []
+  >- (
+    simp [LIST_REL_MAP1] >> fs [LIST_REL_EL_EQN, EL_MAP2] >> rw [MIN_DEF]
+    >- metis_tac [LENGTH_MAP, DECIDE ``(x:num) = y ⇒ ~(x < y)``] >>
+    CASE_TAC >> simp []) >>
+  simp [llvmTheory.inc_pc_def, update_results_def, MAP_ID, id2] >>
+  `length phis = length es` by metis_tac [LENGTH_MAP, LIST_REL_LENGTH] >>
+  rw [map_fst_map2] >>
+  `s1.ip with i := inc_bip s1.ip.i ∈ next_ips prog s1.ip`
+  by (
+    simp [next_ips_cases, IN_DEF, inc_pc_def] >> disj2_tac >>
+    qexists_tac `from_l` >> qexists_tac `phis` >>
+    fs [get_instr_cases, EXISTS_OR_THM, inc_bip_def, prog_ok_def] >>
+    res_tac >> Cases_on `b.body` >> fs []) >>
+  fs [mem_state_rel_def] >> rw []
+  >- (
+    `map fst (map (λx. case x of Phi r t v2 => (r,t)) phis) =
+     map phi_assigns phis`
+    by (rw [LIST_EQ_REWRITE, EL_MAP] >> CASE_TAC >> rw [phi_assigns_def]) >>
+    first_assum (mp_then.mp_then mp_then.Any mp_tac local_state_rel_updates_keep) >>
+    rpt (disch_then (fn x => first_assum (mp_then.mp_then mp_then.Any mp_tac x))) >>
+    disch_then
+      (qspecl_then [`map (λ(x:phi). case x of Phi r t _ => (r,t)) phis`,
+                    `map snd updates`, `vs`] mp_tac) >>
+    simp [] >> impl_tac >> rw []
+    >- (
+      rw [assigns_cases, EXTENSION, IN_DEF] >>
+      metis_tac [get_instr_func, sum_distinct, INR_11, PAIR_EQ])
+    >- metis_tac [LENGTH_MAP]
+    >- rw [MAP_MAP_o, combinTheory.o_DEF] >>
+    fs [MAP_MAP_o, combinTheory.o_DEF, case_phi_lift] >>
+    `updates = zip (map fst updates,map snd updates)`
+    suffices_by metis_tac [build_phi_emap_def] >>
+    rw [ZIP_MAP] >>
+    rw [LIST_EQ_REWRITE, EL_MAP])
+  >- (irule next_ips_reachable >> qexists_tac `s1.ip` >> rw [])
+QED
+
 Theorem multi_step_to_step_block:
-  ∀prog s1 tr s2 s1'.
+  ∀prog gmap emap s1 tr s2 s1'.
     prog_ok prog ∧ is_ssa prog ∧
     multi_step prog s1 tr s2 ∧
     s1.status = Partial ∧
@@ -1285,7 +1611,7 @@ Theorem multi_step_to_step_block:
       filter ($≠ Tau) tr' = filter ($≠ Tau) (map (translate_trace gmap) tr) ∧
       state_rel prog gmap emap2 s2 s2'
 Proof
-  rw [] >> pop_assum mp_tac >> simp [Once state_rel_def] >> rw [pc_rel_cases]
+  rw [] >> pop_assum mp_tac >> simp [Once state_rel_def] >> rw [Once pc_rel_cases]
   >- (
     (* Non-phi instruction *)
     drule translate_instrs_correct1 >> simp [] >>
@@ -1297,24 +1623,38 @@ Proof
     rw [] >> fs [dest_fn_def]) >>
   (* Phi instruction *)
   reverse (fs [Once multi_step_cases])
-  >- metis_tac [get_instr_func, sumTheory.sum_distinct] >>
+  >- metis_tac [get_instr_func, sum_distinct] >>
   qpat_x_assum `last_step _ _ _ _` mp_tac >>
   simp [last_step_cases] >> strip_tac
   >- (
     fs [llvmTheory.step_cases]
-    >- metis_tac [get_instr_func, sumTheory.sum_distinct] >>
+    >- metis_tac [get_instr_func, sum_distinct] >>
     fs [translate_trace_def] >> rw [] >>
-    (* Needs the completed pc_rel for the Inr case *)
-    cheat)
-  >- metis_tac [get_instr_func, sumTheory.sum_distinct]
-  >- metis_tac [get_instr_func, sumTheory.sum_distinct]
+    `(from_l', phis') = (from_l, phis) ∧ x = (from_l, phis)` by metis_tac [get_instr_func, INR_11] >>
+    fs [] >> rw [] >>
+    qmatch_assum_abbrev_tac `get_block _ _ bloc` >>
+    GEN_EXISTS_TAC "b" `bloc` >>
+    drule build_phi_block_correct >> ntac 2 (disch_then drule) >>
+    simp [Abbr `bloc`] >>
+    disch_then (qspecl_then [`s1'`, `to_l`, `updates`, `s1.ip.f`, `gmap`, `emap`, `entry`] mp_tac) >>
+    simp [] >>
+    impl_tac
+    >- (
+      drule get_instr_live >> rw [SUBSET_DEF, uses_cases, IN_DEF] >>
+      first_x_assum irule >> disj2_tac >> metis_tac []) >>
+    rw [] >>
+    qexists_tac `s2'` >> qexists_tac `emap |++ build_phi_emap phis` >> qexists_tac `[Tau; Tau]` >> rw [] >>
+    fs [state_rel_def] >> rw [] >>
+    fs [llvmTheory.inc_pc_def])
+  >- metis_tac [get_instr_func, sum_distinct]
+  >- metis_tac [get_instr_func, sum_distinct]
   >- (
     fs [llvmTheory.step_cases] >> rw [translate_trace_def] >>
     `!i. ¬get_instr prog s1.ip (Inl i)`
-    by metis_tac [get_instr_func, sumTheory.sum_distinct] >>
+    by metis_tac [get_instr_func, sum_distinct] >>
     fs [METIS_PROVE [] ``~x ∨ y ⇔ (x ⇒ y)``] >>
     first_x_assum drule >> rw [] >>
-    `~every IS_SOME (map (do_phi from_l s1) phis)` by metis_tac [map_is_some] >>
+    `¬every IS_SOME (map (do_phi from_l s1) phis)` by metis_tac [map_is_some] >>
     fs [get_instr_cases] >>
     rename [`alookup _ s1.ip.b = Some b_targ`, `alookup _ from_l = Some b_src`] >>
     `every (phi_contains_label from_l) phis`
@@ -1479,7 +1819,7 @@ Theorem translate_prog_correct:
 Proof
   rw [sem_def, multi_step_sem_def, EXTENSION] >> eq_tac >> rw []
   >- (
-    drule translate_prog_correct_lem1 >> ntac 4 (disch_then drule) >> rw [pairTheory.EXISTS_PROD] >>
+    drule translate_prog_correct_lem1 >> ntac 4 (disch_then drule) >> rw [EXISTS_PROD] >>
     PairCases_on `x` >> rw [] >>
     qexists_tac `map (translate_trace gmap) x1` >> rw []
     >- rw [MAP_MAP_o, combinTheory.o_DEF, un_translate_trace_inv] >>

@@ -214,7 +214,7 @@ Definition instr_assigns_def:
 End
 
 Definition phi_assigns_def:
-  phi_assigns (Phi r _ _) = {r}
+  phi_assigns (Phi r _ _) = r
 End
 
 Inductive assigns:
@@ -225,7 +225,7 @@ Inductive assigns:
     assigns prog ip r) ∧
  (∀prog ip from_l phis r.
     get_instr prog ip (Inr (from_l, phis)) ∧
-    r ∈ BIGUNION (set (map phi_assigns phis))
+    r ∈ set (map phi_assigns phis)
     ⇒
     assigns prog ip r)
 End

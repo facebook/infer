@@ -10,7 +10,7 @@
 
 open HolKernel boolLib bossLib Parse;
 open listTheory rich_listTheory arithmeticTheory integerTheory llistTheory pathTheory;
-open integer_wordTheory wordsTheory pred_setTheory;
+open integer_wordTheory wordsTheory pred_setTheory alistTheory;
 open finite_mapTheory open logrootTheory numposrepTheory;
 open settingsTheory;
 
@@ -224,6 +224,75 @@ Theorem list_rel_flat:
 Proof
   Induct_on `ls` >> rw [LIST_REL_SPLIT1] >> eq_tac >> rw [PULL_EXISTS] >>
   metis_tac []
+QED
+
+Theorem alookup_some:
+  ∀l k v.
+    alookup l k = Some v ⇔ ∃l1 l2. l = l1 ++ [(k,v)] ++ l2 ∧ alookup l1 k = None
+Proof
+  ho_match_mp_tac ALOOKUP_ind >> rw [] >> eq_tac >> rw []
+  >- (qexists_tac `[]` >> qexists_tac `l` >> rw [])
+  >- (Cases_on `l1` >> fs [] >> rw [] >> fs [])
+  >- (qexists_tac `(x,y)::l1` >> rw [])
+  >- (Cases_on `l1` >> fs [] >> rw [] >> rfs [] >> metis_tac [])
+QED
+
+Theorem reverse_eq_append:
+  ∀l1 l2 l3. reverse l1 = l2 ++ l3 ⇔ l1 = reverse l3 ++ reverse l2
+Proof
+  rw [] >> eq_tac >> rw [] >>
+  `reverse (reverse l1) = reverse (l2 ++ l3)` by metis_tac [] >>
+  fs [] >>
+  metis_tac [REVERSE_REVERSE, REVERSE_APPEND]
+QED
+
+Theorem zip_eq_append:
+  ∀l1 l2 l3 l4.
+    length l1 = length l2 ⇒
+    (zip (l1,l2) = l3 ++ l4 ⇔
+     ∃l11 l12 l21 l22.
+       l1 = l11 ++ l12 ∧ l2 = l21 ++
+       l22 ∧ length l11 = length l3 ∧ length l21 = length l3 ∧
+       length l12 = length l4 ∧ length l22 = length l4 ∧
+       l3 = zip (l11, l21) ∧ l4 = zip (l12, l22))
+Proof
+  Induct_on `l1` >> rw []
+  >- metis_tac [] >>
+  Cases_on `l2` >> fs [] >> Cases_on `l3` >> fs []
+  >- (eq_tac >> rw [] >> rw [] >> metis_tac [LENGTH_ZIP]) >>
+  eq_tac >> rw [] >> fs [] >> rw []
+  >- (
+    qexists_tac `h::l11` >> rw [] >>
+    metis_tac [APPEND, ZIP_def, LENGTH]) >>
+  Cases_on `l11` >> Cases_on `l21` >> fs [] >> rw [] >> rfs [] >>
+  metis_tac []
+QED
+
+Theorem append_split_last:
+  ∀l1 l2 l3 l4 x.
+    l1 ++ [x] ++ l2 = l3 ++ [x] ++ l4 /\
+    ¬mem x l2 ∧ ¬mem x l4 ⇒
+    l1 = l3 ∧ l2 = l4
+Proof
+  Induct_on `l1`
+  >- (rw [] >> Cases_on `l3` >> fs [] >> rfs []) >>
+  rpt gen_tac >>
+  Cases_on `l3`
+  >- (simp_tac (srw_ss()) [] >> CCONTR_TAC >> fs [] >> rw [] >> fs []) >>
+  simp_tac (srw_ss()) [] >> metis_tac []
+QED
+
+Theorem append_split_eq:
+  ∀l1 l2 l3 l4 x y.
+    l1 ++ [x] ++ l2 = l3 ++ [y] ++ l4 /\
+    length l2 = length l4 ⇒
+    l1 = l3 ∧ x = y ∧ l2 = l4
+Proof
+  Induct_on `l1` >-
+  (rw [] >> Cases_on `l3` >> fs [] >> rw [] >> fs []) >>
+  rpt gen_tac >> Cases_on `l3`
+  >- (simp_tac (srw_ss()) [] >> CCONTR_TAC >> fs [] >> rw [] >> fs []) >>
+  simp_tac (srw_ss()) [] >> metis_tac []
 QED
 
 (* ----- Theorems about log ----- *)
@@ -483,6 +552,22 @@ Proof
     full_simp_tac bool_ss [GSYM INT_LE] >>
     intLib.COOPER_TAC) >>
   rw [w2i_i2w]
+QED
+
+Theorem sw2sw_trunc:
+  dimindex (:'a) ≤ dimindex (:'b)
+  ⇒
+  (sw2sw (w :'b word) :'a word) = (w2w (w :'b word) :'a word)
+Proof
+  rw [sw2sw_def, w2w_def, bitTheory.SIGN_EXTEND_def] >>
+  fs [dimword_def] >>
+  qmatch_assum_abbrev_tac `a ≤ b` >>
+  `2 ** a ≤ 2 ** b` by rw [EXP_BASE_LE_IFF] >>
+  `2 ** a - 2 ** b = 0` by rw [] >>
+  rw [] >>
+  `∃x. b = a + x` by (qexists_tac `b - a` >> decide_tac) >>
+  rw [EXP_ADD] >>
+  metis_tac [MOD_MULT_MOD, bitTheory.ZERO_LT_TWOEXP]
 QED
 
 (* ----- Theorems about lazy lists ----- *)
@@ -849,6 +934,14 @@ Theorem drestrict_union_eq:
 Proof
   rw [DRESTRICT_EQ_DRESTRICT_SAME] >> eq_tac >> rw [] >> fs [EXTENSION] >>
   metis_tac []
+QED
+
+(* ----- finite map theorems ----- *)
+
+Theorem drestrict_fupdate_list[simp]:
+  ∀l m s. DRESTRICT (m |++ l) s = DRESTRICT m s |++ filter (\(x,y). x ∈ s) l
+Proof
+  Induct_on `l` >> rw [FUPDATE_LIST_THM] >> pairarg_tac >> fs []
 QED
 
 export_theory ();
