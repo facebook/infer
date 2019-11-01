@@ -215,9 +215,11 @@ Definition nfits_def:
     0 < size ∧ n < 2 ** size
 End
 
-(* Convert an integer to an unsigned number, following the 2's complement,
- * assuming (ifits i size). This looks like what OCaml's Z.extract does, which
- * is used in LLAIR for Convert expressions *)
+(* Convert an integer to an unsigned number, following the 2's complement
+ * representation, assuming (ifits i size). This is what OCaml's Z.extract does,
+ * which is used in LLAIR for Convert expressions and unsigned operations, e.g.,
+ * <. The difference between LLAIR's extract and i2n is that i2n assumes that i
+ * fits into size rather than truncating it first. *)
 Definition i2n_def:
   i2n (IntV i size) : num =
     if i < 0 then
