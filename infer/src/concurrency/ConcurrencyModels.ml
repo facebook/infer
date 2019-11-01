@@ -384,19 +384,20 @@ let find_override_or_superclass_annotated ~attrs_of_pname is_annot tenv proc_nam
   else Typ.Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
+let annotated_as ~attrs_of_pname predicate tenv pname =
+  find_override_or_superclass_annotated ~attrs_of_pname predicate tenv pname |> Option.is_some
+
+
 let annotated_as_worker_thread ~attrs_of_pname tenv pname =
-  find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_worker_thread tenv pname
+  annotated_as ~attrs_of_pname Annotations.ia_is_worker_thread tenv pname
 
 
 let annotated_as_uithread_equivalent ~attrs_of_pname tenv pname =
-  find_override_or_superclass_annotated ~attrs_of_pname Annotations.ia_is_uithread_equivalent tenv
-    pname
+  annotated_as ~attrs_of_pname Annotations.ia_is_uithread_equivalent tenv pname
 
 
 let runs_on_ui_thread ~attrs_of_pname tenv pname =
-  annotated_as_worker_thread ~attrs_of_pname tenv pname |> Option.is_none
-  && ( is_modeled_ui_method tenv pname
-     || annotated_as_uithread_equivalent ~attrs_of_pname tenv pname |> Option.is_some )
+  is_modeled_ui_method tenv pname || annotated_as_uithread_equivalent ~attrs_of_pname tenv pname
 
 
 let cpp_lock_types_matcher = Clang.lock_types_matcher

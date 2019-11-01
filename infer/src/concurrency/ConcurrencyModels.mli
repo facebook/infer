@@ -55,6 +55,9 @@ val find_override_or_superclass_annotated :
   -> annotation_trail option
 (** check if a method's transitive annotations satisfy the given predicate *)
 
+val annotated_as_worker_thread :
+  attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
+
 val runs_on_ui_thread :
   attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
 (** is method not transitively annotated @WorkerThread and is modeled or annotated @UIThread or equivalent? *)

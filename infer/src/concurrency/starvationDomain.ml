@@ -12,22 +12,38 @@ module MF = MarkupFormatter
 let pname_pp = MF.wrap_monospaced Typ.Procname.pp
 
 module ThreadDomain = struct
-  type t = UIThread | AnyThread [@@deriving compare]
+  type t = UnknownThread | UIThread | BGThread | AnyThread [@@deriving compare, equal]
 
-  let top = AnyThread
+  let bottom = UnknownThread
 
-  let is_top = function AnyThread -> true | UIThread -> false
+  let is_bottom = function UnknownThread -> true | _ -> false
 
-  let join st1 st2 =
-    match (st1, st2) with AnyThread, _ | _, AnyThread -> AnyThread | _, _ -> UIThread
+  let join lhs rhs =
+    match (lhs, rhs) with
+    | UnknownThread, other | other, UnknownThread ->
+        other
+    | UIThread, UIThread | BGThread, BGThread ->
+        lhs
+    | _, _ ->
+        AnyThread
 
 
-  let leq ~lhs ~rhs = match (lhs, rhs) with AnyThread, UIThread -> false | _, _ -> true
+  (* type is just an int, so use [join] to define [leq] *)
+  let leq ~lhs ~rhs = equal (join lhs rhs) rhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let pp fmt st =
-    (match st with UIThread -> "UIThread" | AnyThread -> "AnyThread") |> F.pp_print_string fmt
+    ( match st with
+    | UnknownThread ->
+        "UnknownThread"
+    | UIThread ->
+        "UIThread"
+    | BGThread ->
+        "BGThread"
+    | AnyThread ->
+        "AnyThread" )
+    |> F.pp_print_string fmt
 
 
   (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. 
@@ -39,9 +55,30 @@ module ThreadDomain = struct
 
   let is_uithread = function UIThread -> true | _ -> false
 
-  (* If we know that either the caller or the callee is on UIThread, keep it that way. *)
-  let integrate_summary ~caller ~callee =
-    match (caller, callee) with UIThread, _ | _, UIThread -> UIThread | _, _ -> AnyThread
+  (* If we know that either the caller is a UI/BG thread or both, keep it that way. 
+     Otherwise, we have no info on caller, so use callee's info. *)
+  let integrate_summary ~caller ~callee = if is_bottom caller then callee else caller
+
+  (** given the current thread state [caller_thread] and the thread state under which a critical pair
+      occurred, [pair_thread], decide whether to throw away the pair (returning [None]) because it 
+      cannot occur within a call from the current state, or adapt its thread state appropriately. *)
+  let apply_to_pair caller_thread pair_thread =
+    match (caller_thread, pair_thread) with
+    | UnknownThread, _ ->
+        (* callee pair knows more than us *)
+        Some pair_thread
+    | AnyThread, UnknownThread ->
+        (* callee pair knows nothing and caller has abstracted away info *)
+        Some AnyThread
+    | AnyThread, _ ->
+        (* callee pair is UI / BG / Any and caller has abstracted away info so use callee's knowledge *)
+        Some pair_thread
+    | UIThread, BGThread | BGThread, UIThread ->
+        (* annotations or assertions are incorrectly used in code, just drop the callee pair *)
+        None
+    | _, _ ->
+        (* caller is UI or BG and callee does not disagree, so use that *)
+        Some caller_thread
 end
 
 module Lock = struct
@@ -285,14 +322,15 @@ module CriticalPair = struct
           )
 
 
-  let with_callsite t existing_acquisitions call_site thread =
-    let f (elem : CriticalPairElement.t) =
-      { elem with
-        acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions
-      ; thread= ThreadDomain.integrate_summary ~caller:thread ~callee:elem.thread }
-    in
-    let new_t = map ~f t in
-    with_callsite new_t call_site
+  let integrate_summary_opt existing_acquisitions call_site (caller_thread : ThreadDomain.t)
+      (callee_pair : t) =
+    ThreadDomain.apply_to_pair caller_thread callee_pair.elem.thread
+    |> Option.map ~f:(fun thread ->
+           let f (elem : CriticalPairElement.t) =
+             let acquisitions = Acquisitions.union existing_acquisitions elem.acquisitions in
+             ({elem with acquisitions; thread} : elem_t)
+           in
+           with_callsite (map ~f callee_pair) call_site )
 
 
   let get_earliest_lock_or_call_loc ~procname ({elem= {acquisitions}} as t) =
@@ -394,10 +432,8 @@ module CriticalPairs = struct
       (fun ({elem= {event}} as critical_pair : CriticalPair.t) acc ->
         if should_skip (Some tenv) event lock_state then acc
         else
-          let new_pair =
-            CriticalPair.with_callsite critical_pair existing_acquisitions call_site thread
-          in
-          add new_pair acc )
+          CriticalPair.integrate_summary_opt existing_acquisitions call_site thread critical_pair
+          |> Option.fold ~init:acc ~f:(fun acc new_pair -> add new_pair acc) )
       astate empty
 end
 
@@ -448,14 +484,14 @@ let bottom =
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
   ; branch_guards= BranchGuardDomain.empty
-  ; thread= ThreadDomain.top }
+  ; thread= ThreadDomain.bottom }
 
 
 let is_bottom {guard_map; lock_state; critical_pairs; branch_guards; thread} =
   GuardToLockMap.is_empty guard_map && LockState.is_top lock_state
   && CriticalPairs.is_empty critical_pairs
   && BranchGuardDomain.is_top branch_guards
-  && ThreadDomain.is_top thread
+  && ThreadDomain.is_bottom thread
 
 
 let pp fmt {guard_map; lock_state; critical_pairs; branch_guards; thread} =
@@ -523,8 +559,6 @@ let release ({lock_state} as astate) locks =
   { astate with
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
-
-let set_on_ui_thread astate = {astate with thread= ThreadDomain.UIThread}
 
 let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
   let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in

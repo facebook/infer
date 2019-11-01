@@ -9,19 +9,18 @@ open! IStd
 module F = Format
 
 (** Domain for thread-type.  The main goals are 
-    - Track code paths that are explicitly on UI thread (via annotations, or assertions). 
-    - Maintain UI-thread-ness through the call stack (if a callee is on UI thread then the 
-      trace any call site must be on the UI thread too). 
-    - If we are not on the UI thread we assume we are on a background thread. 
+    - Track code paths that are explicitly on UI/BG thread (via annotations, or assertions). 
+    - Maintain UI/BG-thread-ness through the call stack (if a caller is of unknown status and 
+      callee is on UI/BG thread then caller must be on the UI/BG thread too). 
     - Traces with "UI-thread" status cannot interleave but all other combinations can.  
-    - We do not track other annotations (eg WorkerThread or AnyThread) as they can be 
-      erroneously applied -- other checkers should catch those errors (annotation reachability).
-    - Top is AnyThread, and is used as the initial state for analysis.
+    - Top is AnyThread, which means that there are executions on both UI and BG threads on 
+      this method.
+    - Bottom is UnknownThread, and used as initial state.
 *)
 module ThreadDomain : sig
-  type t = UIThread | AnyThread
+  type t = UnknownThread | UIThread | BGThread | AnyThread
 
-  include AbstractDomain.WithTop with type t := t
+  include AbstractDomain.WithBottom with type t := t
 end
 
 (** Abstraction of a path that represents a lock, special-casing comparison
@@ -131,9 +130,6 @@ val release : t -> Lock.t list -> t
 val blocking_call : callee:Typ.Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
 
 val strict_mode_call : callee:Typ.Procname.t -> loc:Location.t -> t -> t
-
-val set_on_ui_thread : t -> t
-(** signal that the procedure is running on UI thread *)
 
 val add_guard :
      acquire_now:bool

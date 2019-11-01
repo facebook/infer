@@ -73,7 +73,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let do_assume assume_exp (astate : Domain.t) =
       let open Domain in
       let add_choice (acc : Domain.t) bool_value =
-        let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.AnyThread in
+        let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
         {acc with thread}
       in
       match HilExp.get_access_exprs assume_exp with
@@ -86,7 +86,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let open Domain in
       match ConcurrencyModels.get_thread_assert_effect callee with
       | BackgroundThread ->
-          {astate with thread= ThreadDomain.AnyThread}
+          {astate with thread= ThreadDomain.BGThread}
       | MainThread ->
           {astate with thread= ThreadDomain.UIThread}
       | MainThreadIfTrue ->
@@ -158,9 +158,8 @@ let analyze_procedure {Callbacks.exe_env; summary} =
     let formals = FormalMap.make proc_desc in
     let proc_data = ProcData.make summary tenv formals in
     let loc = Procdesc.get_loc proc_desc in
-    let initial =
-      if not (Procdesc.is_java_synchronized proc_desc) then Domain.bottom
-      else
+    let set_lock_state_for_synchronized_proc astate =
+      if Procdesc.is_java_synchronized proc_desc then
         let lock =
           match procname with
           | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
@@ -170,17 +169,26 @@ let analyze_procedure {Callbacks.exe_env; summary} =
           | _ ->
               FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
         in
-        Domain.acquire tenv Domain.bottom ~procname ~loc (Option.to_list lock)
+        Domain.acquire tenv astate ~procname ~loc (Option.to_list lock)
+      else astate
     in
-    let initial =
-      if ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv procname then
-        Domain.set_on_ui_thread initial
-      else initial
+    let set_thread_status_by_annotation (astate : Domain.t) =
+      let thread =
+        if ConcurrencyModels.annotated_as_worker_thread ~attrs_of_pname tenv procname then
+          Domain.ThreadDomain.BGThread
+        else if ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv procname then
+          Domain.ThreadDomain.UIThread
+        else astate.thread
+      in
+      {astate with thread}
     in
     let filter_blocks =
       if StarvationModels.is_annotated_nonblocking ~attrs_of_pname tenv procname then
         Domain.filter_blocking_calls
       else Fn.id
+    in
+    let initial =
+      Domain.bottom |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
     in
     Analyzer.compute_post proc_data ~initial
     |> Option.map ~f:filter_blocks

@@ -23,8 +23,10 @@ class Workers {
   }
 
   // WorkerThread does not propagate up the call stack
+  // We don't report here, however, since this is an annotation/assertion error,
+  // not starvation/deadlock.
   @UiThread
-  void uiThreadBad() throws RemoteException {
+  void FN_uiThreadBad() throws RemoteException {
     workerOk();
   }
 
