@@ -506,10 +506,18 @@ let simp_extract ~unsigned bits arg =
   | _ -> Ap1 (Extract {unsigned; bits}, arg)
 
 let simp_convert ~unsigned dst src arg =
-  match (dst, src, arg) with
-  | Typ.Integer {bits= m; _}, Typ.Integer {bits= n; _}, Integer {data} ->
-      if (not unsigned) && m >= n then arg
-      else integer (Z.extract ~unsigned (min m n) data)
+  match (dst, src) with
+  | Typ.Integer {bits= m; _}, Typ.Integer {bits= n; _} -> (
+      if m < n then
+        match arg with
+        | Integer {data} -> integer (Z.extract m data)
+        | _ -> Ap1 (Convert {unsigned= false; dst; src}, arg)
+      else
+        match arg with
+        | Integer {data} -> integer (Z.extract ~unsigned n data)
+        | _ ->
+            if unsigned then Ap1 (Convert {unsigned; dst; src}, arg)
+            else arg )
   | _ ->
       if Typ.equivalent dst src then arg
       else Ap1 (Convert {unsigned; dst; src}, arg)

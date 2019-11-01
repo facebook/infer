@@ -41,6 +41,34 @@ let%test_module _ =
               (Exp.integer Typ.siz Z.one)))
           .term
 
+    let%expect_test _ =
+      pp
+        (Exp.convert ~dst:Typ.byt ~unsigned:true ~src:Typ.int
+           (Exp.integer Typ.int (Z.of_int 255)))
+          .term ;
+      [%expect {| -1 |}]
+
+    let%expect_test _ =
+      pp
+        (Exp.convert ~dst:Typ.byt ~unsigned:false ~src:Typ.int
+           (Exp.integer Typ.int (Z.of_int 255)))
+          .term ;
+      [%expect {| -1 |}]
+
+    let%expect_test _ =
+      pp
+        (Exp.convert ~dst:Typ.int ~unsigned:true ~src:Typ.byt
+           (Exp.integer Typ.byt (Z.of_int (-1))))
+          .term ;
+      [%expect {| 255 |}]
+
+    let%expect_test _ =
+      pp
+        (Exp.convert ~dst:Typ.int ~unsigned:false ~src:Typ.byt
+           (Exp.integer Typ.byt (Z.of_int (-1))))
+          .term ;
+      [%expect {| -1 |}]
+
     let%test "unsigned boolean overflow" =
       Term.is_true
         (Exp.uge

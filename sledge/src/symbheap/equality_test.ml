@@ -99,10 +99,9 @@ let%test_module _ =
       pp r2 ;
       [%expect
         {|
-          %x_5 = %y_6 = %z_7 = ((i64)(i32) %x_5)
+          %x_5 = %y_6 = %z_7
 
-          {sat= true;
-           rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [((i64)(i32) %x_5) ↦ %x_5]]} |}]
+          {sat= true; rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]} |}]
 
     let%test _ = entails_eq r2 x z
     let%test _ = entails_eq (or_ r1 r2) x y
