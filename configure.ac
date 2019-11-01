@@ -237,6 +237,13 @@ AC_ASSERT_OCAML_PKG([oUnit])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
+AC_MSG_CHECKING([which ocamlformat to use])
+AS_IF([test x"$is_facebook_tree" = x"yes"],
+  [OCAMLFORMAT="$(pwd)"/facebook/dependencies/bin/ocamlformat],
+  [OCAMLFORMAT=ocamlformat])
+AC_MSG_RESULT([$OCAMLFORMAT])
+AC_SUBST([OCAMLFORMAT])
+
 AC_ARG_VAR([CPATH], [Additional directories to search for C headers.])
 AC_ARG_VAR([LIBRARY_PATH], [Additional directories to search for C shared objects.])
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],
