@@ -203,3 +203,13 @@ public class Cost_test {
     for (int i = 0; i < get_global(); i++) {}
   }
 }
+
+class CloneTest {
+  int i;
+
+  void clone_test_constant() throws CloneNotSupportedException {
+    this.i = 10;
+    CloneTest o = (CloneTest) this.clone();
+    for (int i = 0; i < o.i; i++) {}
+  }
+}

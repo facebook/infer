@@ -1155,6 +1155,15 @@ module ByteBuffer = struct
     {exec; check= no_check}
 end
 
+module Object = struct
+  let clone exp =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval integer_type_widths exp mem in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+end
+
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -1394,5 +1403,6 @@ module Call = struct
         &:: "getShort" <>$ capt_exp $--> ByteBuffer.get_int
       ; +PatternMatch.implements_nio "ByteBuffer" &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
       ; +PatternMatch.implements_nio "ByteBuffer"
-        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int ]
+        &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
+      ; -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone ]
 end
