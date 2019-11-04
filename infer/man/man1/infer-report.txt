@@ -171,7 +171,7 @@ OPTIONS
              INTEGER_OVERFLOW_R2 (enabled by default),
              INTEGER_OVERFLOW_U5 (disabled by default),
              INTERFACE_NOT_THREAD_SAFE (enabled by default),
-             INVARIANT_CALL (enabled by default),
+             INVARIANT_CALL (disabled by default),
              IVAR_NOT_NULL_CHECKED (enabled by default),
              Internal_error (enabled by default),
              JAVASCRIPT_INJECTION (enabled by default),

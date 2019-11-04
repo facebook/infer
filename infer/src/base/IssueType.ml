@@ -321,7 +321,7 @@ let interface_not_thread_safe = register_from_string "INTERFACE_NOT_THREAD_SAFE"
 
 let internal_error = register_from_string "Internal_error"
 
-let invariant_call = register_from_string "INVARIANT_CALL"
+let invariant_call = register_from_string ~enabled:false "INVARIANT_CALL"
 
 let javascript_injection = register_from_string "JAVASCRIPT_INJECTION"
 
