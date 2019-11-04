@@ -40,13 +40,7 @@ let success_cases =
   assert_parse_ok "a.b.C#foo()"
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
     , {ret_nullability= Nonnull; param_nullability= []} ) ;
-  assert_parse_ok "  a.b.C # foo (  )  "
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
-    , {ret_nullability= Nonnull; param_nullability= []} ) ;
   assert_parse_ok "a.b.C#foo() @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
-    , {ret_nullability= Nullable; param_nullability= []} ) ;
-  assert_parse_ok "a.b.C # foo( )     @Nullable   "
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= []}
     , {ret_nullability= Nullable; param_nullability= []} ) ;
   (* One param *)
@@ -62,21 +56,14 @@ let success_cases =
   assert_parse_ok "a.b.C#foo(@Nullable c.d.E) @Nullable"
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
     , {ret_nullability= Nullable; param_nullability= [Nullable]} ) ;
-  assert_parse_ok " a.b.C # foo ( @Nullable   c.d.E  )    @Nullable  "
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"]}
-    , {ret_nullability= Nullable; param_nullability= [Nullable]} ) ;
   (* Many params *)
-  assert_parse_ok "a.b.C#foo(c.d.E,a.b.C,x.y.Z)"
+  assert_parse_ok "a.b.C#foo(c.d.E, a.b.C, x.y.Z)"
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
     , {ret_nullability= Nonnull; param_nullability= [Nonnull; Nonnull; Nonnull]} ) ;
   assert_parse_ok "a.b.C#foo(c.d.E, @Nullable a.b.C, x.y.Z)"
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
     , {ret_nullability= Nonnull; param_nullability= [Nonnull; Nullable; Nonnull]} ) ;
   assert_parse_ok "a.b.C#foo(@Nullable c.d.E, a.b.C, @Nullable x.y.Z) @Nullable"
-    ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
-    , {ret_nullability= Nullable; param_nullability= [Nullable; Nonnull; Nullable]} ) ;
-  assert_parse_ok
-    "a.b.C # foo (  @Nullable    c.d.E   ,   a.b.C  ,   @Nullable   x.y.Z  )   @Nullable    "
     ( {class_name= "a.b.C"; method_name= Method "foo"; param_types= ["c.d.E"; "a.b.C"; "x.y.Z"]}
     , {ret_nullability= Nullable; param_nullability= [Nullable; Nonnull; Nullable]} ) ;
   (* Constructor *)
@@ -97,17 +84,22 @@ let bad_cases =
   assert_parse_bad "" ;
   assert_parse_bad "   " ;
   assert_parse_bad "blablabla" ;
-  assert_parse_bad "a.b.C.f()" ;
   (* no # delimiter *)
-  assert_parse_bad "a.b.C#f(())" ;
+  assert_parse_bad "a.b.C.f()" ;
   (* nested parenthesis *)
-  assert_parse_bad "a.b.C#f(int param)" ;
+  assert_parse_bad "a.b.C#f(())" ;
   (* param names are not accepted *)
-  assert_parse_bad "a.b.C#f(Nullable param)" ;
+  assert_parse_bad "a.b.C#f(int param)" ;
+  (* missed package for class *)
+  assert_parse_bad "C#f()" ;
   (* Missed @ in annotation*)
+  assert_parse_bad "a.b.C#f(Nullable a.b.C)" ;
+  (* Extra spaces *)
+  assert_parse_bad "a.b.C#f( a.b.C )" ;
+  (* No space after comma *)
+  assert_parse_bad "a.b.C#f(a.b.C,a.b.C)" ;
+  (* Param names are not accepted *)
   assert_parse_bad "a.b.C#f(@Nullable int param)"
 
-
-(* param names are not accepted *)
 
 let test = "ThirdPartyMethodTests" >::: [success_cases; bad_cases]
