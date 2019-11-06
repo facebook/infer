@@ -150,6 +150,10 @@ val get_ikind_opt : t -> ikind option
 val size_t : ikind
 (** ikind of size_t *)
 
+val is_weak_pointer : t -> bool
+
+val is_strong_pointer : t -> bool
+
 module Name : sig
   (** Named types. *)
   type t = name [@@deriving compare]

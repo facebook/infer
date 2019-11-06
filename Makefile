@@ -111,6 +111,7 @@ DIRECT_TESTS += \
   objc_performance \
   objc_pulse \
   objc_quandary \
+  objc_self-in-block \
   objc_uninit \
   objcpp_errors \
   objcpp_frontend \

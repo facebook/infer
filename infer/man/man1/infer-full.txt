@@ -310,8 +310,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --siof, --starvation, --uninit (Conversely:
-           --default-checkers)           See also infer-analyze(1).
+           --liveness, --racerd, --siof, --starvation, --self_in_block,
+           --uninit (Conversely: --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -440,6 +440,7 @@ OPTIONS
              Leak_in_footprint (enabled by default),
              MEMORY_LEAK (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
+             MIXED_SELF_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
              NULLSAFE_FIELD_NOT_NULLABLE (enabled by default),
@@ -989,6 +990,14 @@ OPTIONS
 
        --select N
            Select bug number N. If omitted, prompt for input.           See also infer-explore(1).
+
+       --no-self_in_block
+           Deactivates: checker to flag incorrect uses of when Objective-C
+           blocks capture self (Conversely: --self_in_block)           See also infer-analyze(1).
+
+       --self_in_block-only
+           Activates: Enable --self_in_block and disable all other checkers
+           (Conversely: --no-self_in_block-only)           See also infer-analyze(1).
 
        --no-siof
            Deactivates: the Static Initialization Order Fiasco analysis (C++

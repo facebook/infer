@@ -35,6 +35,7 @@ type checkers =
   ; liveness: bool ref
   ; loop_hoisting: bool ref
   ; nullsafe: bool ref
+  ; self_in_block: bool ref
   ; printf_args: bool ref
   ; pulse: bool ref
   ; purity: bool ref
@@ -649,6 +650,7 @@ and { annotation_reachability
     ; liveness
     ; loop_hoisting
     ; nullsafe
+    ; self_in_block
     ; printf_args
     ; pulse
     ; purity
@@ -726,6 +728,9 @@ and { annotation_reachability
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
   and starvation = mk_checker ~long:"starvation" ~default:true "starvation analysis"
+  and self_in_block =
+    mk_checker ~long:"self_in_block" ~default:true
+      "checker to flag incorrect uses of when Objective-C blocks capture self"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" ~default:true in
   let mk_only (var, long, doc, _) =
     let (_ : bool ref) =
@@ -785,6 +790,7 @@ and { annotation_reachability
   ; quandaryBO
   ; racerd
   ; resource_leak
+  ; self_in_block
   ; siof
   ; starvation
   ; uninit }
@@ -3004,6 +3010,8 @@ and only_cheap_debug = !only_cheap_debug
 and only_footprint = !only_footprint
 
 and only_show = !only_show
+
+and self_in_block = !self_in_block
 
 and passthroughs = !passthroughs
 

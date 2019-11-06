@@ -506,6 +506,8 @@ val only_footprint : bool
 
 val only_show : bool
 
+val self_in_block : bool
+
 val perf_profiler_data_file : string option
 
 val pmd_xml : bool

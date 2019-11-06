@@ -411,6 +411,8 @@ let strict_mode_violation =
   register_from_string "STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation"
 
 
+let mixed_self_weakself = register_from_string "MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf"
+
 let symexec_memory_error =
   register_from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"
 

@@ -246,6 +246,10 @@ let is_restrict {is_restrict} = is_restrict
 
 let is_volatile {is_volatile} = is_volatile
 
+let is_weak_pointer t = match t.desc with Tptr (_, Pk_objc_weak) -> true | _ -> false
+
+let is_strong_pointer t = match t.desc with Tptr (_, Pk_pointer) -> true | _ -> false
+
 let mk ?default ?quals desc : t =
   let default_ = {desc; quals= mk_type_quals ()} in
   let mk_aux ?(default = default_) ?(quals = default.quals) desc = {desc; quals} in

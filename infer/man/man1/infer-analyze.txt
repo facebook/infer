@@ -103,8 +103,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --siof, --starvation, --uninit (Conversely:
-           --default-checkers)
+           --liveness, --racerd, --siof, --starvation, --self_in_block,
+           --uninit (Conversely: --default-checkers)
 
        --eradicate
            Activates: the eradicate @Nullable checker for Java annotations
@@ -307,6 +307,14 @@ OPTIONS
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
+
+       --no-self_in_block
+           Deactivates: checker to flag incorrect uses of when Objective-C
+           blocks capture self (Conversely: --self_in_block)
+
+       --self_in_block-only
+           Activates: Enable --self_in_block and disable all other checkers
+           (Conversely: --no-self_in_block-only)
 
        --no-siof
            Deactivates: the Static Initialization Order Fiasco analysis (C++

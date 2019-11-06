@@ -143,7 +143,10 @@ let all_checkers =
         [(Procedure Purity.checker, Language.Java); (Procedure Purity.checker, Language.Clang)] }
   ; { name= "Class loading analysis"
     ; active= Config.class_loads
-    ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] } ]
+    ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] }
+  ; { name= "Self captured in block checker"
+    ; active= Config.self_in_block
+    ; callbacks= [(Procedure SelfInBlock.checker, Language.Clang)] } ]
 
 
 let get_active_checkers () =
