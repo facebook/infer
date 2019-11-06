@@ -28,12 +28,14 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
  fun e1 e2 m ->
   match (e1, e2) with
   | Exp.Var x1, Exp.Var x2 -> (
-    match (Mem.find_alias_id x1 m, Mem.find_alias_id x2 m) with
-    | Some x1', Some x2' ->
-        AliasTarget.equal x1' x2'
-        && PowLoc.for_all (fun l -> not (Mem.is_rep_multi_loc l m)) (AliasTarget.get_locs x1')
-    | _, _ ->
-        false )
+      let same_alias rhs1 tgt1 rhs2 tgt2 =
+        KeyRhs.equal rhs1 rhs2 && AliasTarget.equal tgt1 tgt2 && not (Mem.is_rep_multi_loc rhs1 m)
+      in
+      match (Mem.find_alias_id x1 m, Mem.find_alias_id x2 m) with
+      | Some x1', Some x2' ->
+          RhsAliasTarget.exists2 same_alias x1' x2'
+      | _, _ ->
+          false )
   | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _) ->
       Unop.equal uop1 uop2 && must_alias e1' e2' m
   | Exp.BinOp (bop1, e11, e12), Exp.BinOp (bop2, e21, e22) ->
@@ -314,11 +316,9 @@ let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
   match exp with
   | Exp.Var id -> (
     match Mem.find_alias_id id mem with
-    | Some (AliasTarget.Simple {l= loc; i}) when IntLit.iszero i ->
-        Mem.find loc mem
-    | Some
-        AliasTarget.(
-          Simple _ | Size _ | Empty _ | Fgets _ | IteratorOffset _ | IteratorHasNext _ | Top)
+    | Some tgt ->
+        let alias_loc = RhsAliasTarget.is_simple_zero_alias tgt in
+        Option.value_map alias_loc ~default:Val.bot ~f:(fun loc -> Mem.find loc mem)
     | None ->
         Val.bot )
   | Exp.Lvar pvar ->
@@ -541,7 +541,7 @@ module Prune = struct
 
   let prune_has_next ~true_branch iterator ({mem} as astate) =
     match Mem.find_alias_loc iterator mem with
-    | Some (IteratorOffset {alias_typ; l= arr_loc; i}) when IntLit.(eq i zero) ->
+    | Some (arr_loc, AliasTarget.IteratorOffset {alias_typ; i}) when IntLit.(eq i zero) ->
         let length = collection_length_of_iterator iterator mem |> Val.get_itv in
         let v = Mem.find arr_loc mem in
         let v =
@@ -561,35 +561,35 @@ module Prune = struct
     match e with
     | Exp.Var x -> (
       match Mem.find_alias_id x mem with
-      | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
-          let v = Mem.find lv mem in
+      | Some (rhs, AliasTarget.Simple {i}) when IntLit.iszero i ->
+          let v = Mem.find rhs mem in
           let v' = Val.prune_ne_zero v in
-          update_mem_in_prune lv v' astate
-      | Some (AliasTarget.Empty lv) ->
-          let v = Mem.find lv mem in
+          update_mem_in_prune rhs v' astate
+      | Some (rhs, AliasTarget.Empty) ->
+          let v = Mem.find rhs mem in
           let v' = Val.prune_length_eq_zero v in
-          update_mem_in_prune lv v' astate
-      | Some (AliasTarget.Fgets lv) ->
-          let strlen_loc = Loc.of_c_strlen lv in
+          update_mem_in_prune rhs v' astate
+      | Some (rhs, AliasTarget.Fgets) ->
+          let strlen_loc = Loc.of_c_strlen rhs in
           let v' = Val.prune_ge_one (Mem.find strlen_loc mem) in
           update_mem_in_prune strlen_loc v' astate
-      | Some (IteratorHasNext {l= iterator}) ->
-          prune_has_next ~true_branch:true iterator astate
-      | Some AliasTarget.(Simple _ | Size _ | IteratorOffset _ | Top) | None ->
+      | Some (rhs, AliasTarget.IteratorHasNext _) ->
+          prune_has_next ~true_branch:true rhs astate
+      | _ ->
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias_id x mem with
-      | Some (AliasTarget.Simple {l= lv; i}) when IntLit.iszero i ->
-          let v = Mem.find lv mem in
+      | Some (rhs, AliasTarget.Simple {i}) when IntLit.iszero i ->
+          let v = Mem.find rhs mem in
           let v' = Val.prune_eq_zero v in
-          update_mem_in_prune lv v' astate
-      | Some (AliasTarget.Empty lv) ->
-          let v = Mem.find lv mem in
+          update_mem_in_prune rhs v' astate
+      | Some (rhs, AliasTarget.Empty) ->
+          let v = Mem.find rhs mem in
           let v' = Val.prune_length_ge_one v in
-          update_mem_in_prune lv v' astate
-      | Some (IteratorHasNext {l= iterator}) ->
-          prune_has_next ~true_branch:false iterator astate
-      | Some AliasTarget.(Simple _ | Size _ | Fgets _ | IteratorOffset _ | Top) | None ->
+          update_mem_in_prune rhs v' astate
+      | Some (rhs, AliasTarget.IteratorHasNext _) ->
+          prune_has_next ~true_branch:false rhs astate
+      | _ ->
           astate )
     | _ ->
         astate
@@ -632,11 +632,11 @@ module Prune = struct
   let prune_simple_alias =
     let prune_alias_core ~val_prune_eq ~val_prune_le:_ ~make_pruning_exp integer_type_widths x e
         ({mem} as astate) =
-      Option.value_map (Mem.find_simple_alias x mem) ~default:astate ~f:(fun (lv, opt_i) ->
+      Option.value_map (Mem.find_simple_alias x mem) ~default:astate ~f:(fun (lv, i) ->
           let lhs = Mem.find lv mem in
           let rhs =
             let v' = eval integer_type_widths e mem in
-            Option.value_map opt_i ~default:v' ~f:(fun i -> Val.minus_a v' (Val.of_int_lit i))
+            if IntLit.iszero i then v' else Val.minus_a v' (Val.of_int_lit i)
           in
           let v = val_prune_eq lhs rhs in
           let pruning_exp = make_pruning_exp ~lhs ~rhs in

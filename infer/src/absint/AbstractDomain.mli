@@ -79,6 +79,8 @@ module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 
 module TopLiftedUtils : sig
   val pp_top : Format.formatter -> unit
+
+  val pp : pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a top_lifted -> unit
 end
 
 (** Cartesian product of two domains. *)

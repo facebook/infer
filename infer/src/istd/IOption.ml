@@ -14,5 +14,3 @@ let value_default_f ~f = function None -> f () | Some v -> v
 let if_none_evalopt ~f x = match x with None -> f () | Some _ -> x
 
 let if_none_eval = value_default_f
-
-let map2 x y ~f = match (x, y) with None, _ | _, None -> None | Some x, Some y -> f x y

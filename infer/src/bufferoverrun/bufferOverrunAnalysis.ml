@@ -113,11 +113,9 @@ module TransferFunctions = struct
                   None
             with Caml.Not_found -> None )
       in
-      let ret_alias =
-        Option.find_map (Dom.Mem.find_ret_alias callee_exit_mem) ~f:(fun alias_target ->
-            Dom.AliasTarget.loc_map alias_target ~f:subst_loc )
-      in
-      Option.value_map ret_alias ~default:mem ~f:(fun l -> Dom.Mem.load_alias ret_id l mem)
+      Option.value_map (Dom.Mem.find_ret_alias callee_exit_mem) ~default:mem ~f:(fun tgt ->
+          Option.value_map (Dom.RhsAliasTarget.subst tgt ~subst_loc) ~default:mem
+            ~f:(fun (rhs, ret_alias) -> Dom.Mem.load_alias ret_id rhs ret_alias mem) )
     in
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val =

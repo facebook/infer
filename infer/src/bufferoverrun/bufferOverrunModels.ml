@@ -112,7 +112,9 @@ let malloc ~can_be_zero size_exp =
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path =
-      match Dom.Mem.find_simple_alias id mem with Some (l, None) -> Loc.get_path l | _ -> None
+      Dom.Mem.find_simple_alias id mem
+      |> Option.value_map ~default:None ~f:(fun (rhs, i) ->
+             if IntLit.iszero i then Loc.get_path rhs else None )
     in
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
     let represents_multiple_values = not (Itv.is_one size) in

@@ -865,22 +865,18 @@ module AliasTarget = struct
    "HasNext relation": This is for tracking return values of the [hasNext] function.  If [%r] has an
      alias to [HasNext {l}], which means that [%r] is a [hasNext] results of the iterator [l].  *)
   type t =
-    | Simple of {l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
-    | Empty of Loc.t
-    | Size of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
-    | Fgets of Loc.t
-    | IteratorOffset of {alias_typ: alias_typ; l: Loc.t; i: IntLit.t; java_tmp: Loc.t option}
-    | IteratorHasNext of {l: Loc.t; java_tmp: Loc.t option}
+    | Simple of {i: IntLit.t; java_tmp: Loc.t option}
+    | Empty
+    | Size of {alias_typ: alias_typ; i: IntLit.t; java_tmp: Loc.t option}
+    | Fgets
+    | IteratorOffset of {alias_typ: alias_typ; i: IntLit.t; java_tmp: Loc.t option}
+    | IteratorHasNext of {java_tmp: Loc.t option}
     | Top
   [@@deriving compare]
 
-  let top = Top
-
-  let is_top = function Top -> true | _ -> false
-
   let equal = [%compare.equal: t]
 
-  let pp_with_key pp_key =
+  let pp_with_key ~pp_lhs ~pp_rhs =
     let pp_intlit fmt i =
       if not (IntLit.iszero i) then
         if IntLit.isnegative i then F.fprintf fmt "-%a" IntLit.pp (IntLit.neg i)
@@ -888,41 +884,36 @@ module AliasTarget = struct
     in
     let pp_java_tmp fmt java_tmp = Option.iter java_tmp ~f:(F.fprintf fmt "=%a" Loc.pp) in
     fun fmt -> function
-      | Simple {l; i; java_tmp} ->
-          F.fprintf fmt "%t%a=%a%a" pp_key pp_java_tmp java_tmp Loc.pp l pp_intlit i
-      | Empty l ->
-          F.fprintf fmt "%t=empty(%a)" pp_key Loc.pp l
-      | Size {alias_typ; l; i; java_tmp} ->
-          F.fprintf fmt "%t%a%asize(%a)%a" pp_key pp_java_tmp java_tmp alias_typ_pp alias_typ
-            Loc.pp l pp_intlit i
-      | Fgets l ->
-          F.fprintf fmt "%t=fgets(%a)" pp_key Loc.pp l
-      | IteratorOffset {alias_typ; l; i; java_tmp} ->
-          F.fprintf fmt "iterator offset(%t%a)%alength(%a)%a" pp_key pp_java_tmp java_tmp
-            alias_typ_pp alias_typ Loc.pp l pp_intlit i
-      | IteratorHasNext {l; java_tmp} ->
-          F.fprintf fmt "%t%a=hasNext(%a)" pp_key pp_java_tmp java_tmp Loc.pp l
+      | Simple {i; java_tmp} ->
+          F.fprintf fmt "%t%a=%t%a" pp_lhs pp_java_tmp java_tmp pp_rhs pp_intlit i
+      | Empty ->
+          F.fprintf fmt "%t=empty(%t)" pp_lhs pp_rhs
+      | Size {alias_typ; i; java_tmp} ->
+          F.fprintf fmt "%t%a%asize(%t)%a" pp_lhs pp_java_tmp java_tmp alias_typ_pp alias_typ
+            pp_rhs pp_intlit i
+      | Fgets ->
+          F.fprintf fmt "%t=fgets(%t)" pp_lhs pp_rhs
+      | IteratorOffset {alias_typ; i; java_tmp} ->
+          F.fprintf fmt "iterator offset(%t%a)%alength(%t)%a" pp_lhs pp_java_tmp java_tmp
+            alias_typ_pp alias_typ pp_rhs pp_intlit i
+      | IteratorHasNext {java_tmp} ->
+          F.fprintf fmt "%t%a=hasNext(%t)" pp_lhs pp_java_tmp java_tmp pp_rhs
       | Top ->
-          F.fprintf fmt "%t=?" pp_key
+          F.fprintf fmt "%t=?%t" pp_lhs pp_rhs
 
-
-  let pp = pp_with_key (fun fmt -> F.pp_print_string fmt "_")
-
-  let fgets l = Fgets l
 
   let get_locs = function
-    | Simple {l; java_tmp= Some tmp}
-    | Size {l; java_tmp= Some tmp}
-    | IteratorOffset {l; java_tmp= Some tmp}
-    | IteratorHasNext {l; java_tmp= Some tmp} ->
-        PowLoc.singleton l |> PowLoc.add tmp
-    | Simple {l; java_tmp= None}
-    | Size {l; java_tmp= None}
-    | Empty l
-    | Fgets l
-    | IteratorOffset {l; java_tmp= None}
-    | IteratorHasNext {l; java_tmp= None} ->
-        PowLoc.singleton l
+    | Simple {java_tmp= Some tmp}
+    | Size {java_tmp= Some tmp}
+    | IteratorOffset {java_tmp= Some tmp}
+    | IteratorHasNext {java_tmp= Some tmp} ->
+        PowLoc.singleton tmp
+    | Simple {java_tmp= None}
+    | Size {java_tmp= None}
+    | Empty
+    | Fgets
+    | IteratorOffset {java_tmp= None}
+    | IteratorHasNext {java_tmp= None}
     | Top ->
         PowLoc.empty
 
@@ -931,59 +922,57 @@ module AliasTarget = struct
 
   let loc_map x ~f =
     match x with
-    | Simple {l; i; java_tmp} ->
-        let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> Simple {l; i; java_tmp})
-    | Empty l ->
-        Option.map (f l) ~f:(fun l -> Empty l)
-    | Size {alias_typ; l; i; java_tmp} ->
-        let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> Size {alias_typ; l; i; java_tmp})
-    | Fgets l ->
-        Option.map (f l) ~f:(fun l -> Fgets l)
-    | IteratorOffset {alias_typ; l; i; java_tmp} ->
-        let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> IteratorOffset {alias_typ; l; i; java_tmp})
-    | IteratorHasNext {l; java_tmp} ->
-        let java_tmp = Option.bind java_tmp ~f in
-        Option.map (f l) ~f:(fun l -> IteratorHasNext {l; java_tmp})
+    | Simple {i; java_tmp} ->
+        Simple {i; java_tmp= Option.bind java_tmp ~f}
+    | Empty ->
+        Empty
+    | Size {alias_typ; i; java_tmp} ->
+        Size {alias_typ; i; java_tmp= Option.bind java_tmp ~f}
+    | Fgets ->
+        Fgets
+    | IteratorOffset {alias_typ; i; java_tmp} ->
+        IteratorOffset {alias_typ; i; java_tmp= Option.bind java_tmp ~f}
+    | IteratorHasNext {java_tmp} ->
+        IteratorHasNext {java_tmp= Option.bind java_tmp ~f}
     | Top ->
-        Some Top
+        Top
 
 
   let leq ~lhs ~rhs =
     equal lhs rhs
     ||
     match (lhs, rhs) with
-    | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-      , Size {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} )
-    | ( IteratorOffset {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-      , IteratorOffset {alias_typ= Le; l= l2; i= i2; java_tmp= java_tmp2} ) ->
+    | _, Top ->
+        true
+    | Top, _ ->
+        false
+    | ( Size {alias_typ= _; i= i1; java_tmp= java_tmp1}
+      , Size {alias_typ= Le; i= i2; java_tmp= java_tmp2} )
+    | ( IteratorOffset {alias_typ= _; i= i1; java_tmp= java_tmp1}
+      , IteratorOffset {alias_typ= Le; i= i2; java_tmp= java_tmp2} ) ->
         (* (a=size(l)+2) <= (a>=size(l)+1)  *)
         (* (a>=size(l)+2) <= (a>=size(l)+1)  *)
-        Loc.equal l1 l2 && IntLit.geq i1 i2 && Option.equal Loc.equal java_tmp1 java_tmp2
+        IntLit.geq i1 i2 && Option.equal Loc.equal java_tmp1 java_tmp2
     | _, _ ->
         false
 
 
   let join =
-    let locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 =
-      Loc.equal l1 l2 && Option.equal Loc.equal java_tmp1 java_tmp2
-    in
+    let java_tmp_eq loc1 loc2 = Option.equal Loc.equal loc1 loc2 in
     fun x y ->
       if equal x y then x
       else
         match (x, y) with
-        | ( Size {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-          , Size {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
-          when locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 ->
+        | ( Size {alias_typ= _; i= i1; java_tmp= java_tmp1}
+          , Size {alias_typ= _; i= i2; java_tmp= java_tmp2} )
+          when java_tmp_eq java_tmp1 java_tmp2 ->
             (* (a=size(l)+1) join (a=size(l)+2) is (a>=size(l)+1) *)
             (* (a=size(l)+1) join (a>=size(l)+2) is (a>=size(l)+1) *)
-            Size {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
-        | ( IteratorOffset {alias_typ= _; l= l1; i= i1; java_tmp= java_tmp1}
-          , IteratorOffset {alias_typ= _; l= l2; i= i2; java_tmp= java_tmp2} )
-          when locs_eq ~l1 ~java_tmp1 ~l2 ~java_tmp2 ->
-            IteratorOffset {alias_typ= Le; l= l1; i= IntLit.min i1 i2; java_tmp= java_tmp1}
+            Size {alias_typ= Le; i= IntLit.min i1 i2; java_tmp= java_tmp1}
+        | ( IteratorOffset {alias_typ= _; i= i1; java_tmp= java_tmp1}
+          , IteratorOffset {alias_typ= _; i= i2; java_tmp= java_tmp2} )
+          when java_tmp_eq java_tmp1 java_tmp2 ->
+            IteratorOffset {alias_typ= Le; i= IntLit.min i1 i2; java_tmp= java_tmp1}
         | _, _ ->
             Top
 
@@ -1005,174 +994,272 @@ module AliasTarget = struct
 
   let is_unknown x = PowLoc.exists Loc.is_unknown (get_locs x)
 
-  let incr_size_alias loc x =
+  let is_size = function Size _ | IteratorOffset _ -> true | _ -> false
+
+  let incr_size_alias x =
     match x with
-    | Size {alias_typ; l; i} when Loc.equal l loc ->
-        Size {alias_typ; l; i= IntLit.(add i minus_one); java_tmp= None}
-    | IteratorOffset {alias_typ; l; i; java_tmp} when Loc.equal l loc ->
-        IteratorOffset {alias_typ; l; i= IntLit.(add i minus_one); java_tmp}
+    | Size {alias_typ; i} ->
+        Size {alias_typ; i= IntLit.(add i minus_one); java_tmp= None}
+    | IteratorOffset {alias_typ; i; java_tmp} ->
+        IteratorOffset {alias_typ; i= IntLit.(add i minus_one); java_tmp}
     | _ ->
         x
 
 
-  let incr_or_not_size_alias loc x =
+  let incr_or_not_size_alias x =
     match x with
-    | Size {l; i} when Loc.equal l loc ->
-        Size {alias_typ= Le; l; i; java_tmp= None}
-    | IteratorOffset {l; i; java_tmp} when Loc.equal l loc ->
-        IteratorOffset {alias_typ= Le; l; i; java_tmp}
+    | Size {i} ->
+        Size {alias_typ= Le; i; java_tmp= None}
+    | IteratorOffset {i; java_tmp} ->
+        IteratorOffset {alias_typ= Le; i; java_tmp}
     | _ ->
         x
+
+
+  let set_java_tmp loc = function
+    | Size a ->
+        Size {a with java_tmp= Some loc}
+    | IteratorOffset a ->
+        IteratorOffset {a with java_tmp= Some loc}
+    | IteratorHasNext _ ->
+        IteratorHasNext {java_tmp= Some loc}
+    | _ as alias ->
+        alias
+end
+
+module KeyLhs = struct
+  type t = IdentKey of Ident.t | LocKey of Loc.t [@@deriving compare]
+
+  let of_id id = IdentKey id
+
+  let of_loc l = LocKey l
+
+  let pp f = function IdentKey id -> Ident.pp f id | LocKey l -> Loc.pp f l
+
+  let use_loc l = function LocKey l' -> Loc.equal l l' | IdentKey _ -> false
+end
+
+module KeyRhs = Loc
+
+module RhsAliasTarget = struct
+  type non_top = KeyRhs.t * AliasTarget.t
+
+  type t = non_top top_lifted
+
+  let top = Top
+
+  let is_top = function AbstractDomain.Types.Top -> true | AbstractDomain.Types.NonTop _ -> false
+
+  let leq ~lhs ~rhs =
+    match (lhs, rhs) with
+    | _, Top ->
+        true
+    | Top, _ ->
+        false
+    | NonTop (k1, v1), NonTop (k2, v2) ->
+        KeyRhs.equal k1 k2 && AliasTarget.leq ~lhs:v1 ~rhs:v2
+
+
+  let equal x y = leq ~lhs:x ~rhs:y && leq ~lhs:y ~rhs:x
+
+  let join x y =
+    match (x, y) with
+    | _, Top | Top, _ ->
+        Top
+    | NonTop (k1, v1), NonTop (k2, v2) ->
+        if KeyRhs.equal k1 k2 then NonTop (k1, AliasTarget.join v1 v2) else Top
+
+
+  let widen ~prev ~next ~num_iters =
+    match (prev, next) with
+    | _, Top | Top, _ ->
+        Top
+    | NonTop (k1, v1), NonTop (k2, v2) ->
+        if KeyRhs.equal k1 k2 then NonTop (k1, AliasTarget.widen ~prev:v1 ~next:v2 ~num_iters)
+        else Top
+
+
+  let pp_with_lhs ~pp_lhs fmt x =
+    AbstractDomain.TopLiftedUtils.pp fmt x ~pp:(fun fmt (rhs, v) ->
+        AliasTarget.pp_with_key ~pp_lhs ~pp_rhs:(fun fmt -> KeyRhs.pp fmt rhs) fmt v )
+
+
+  let pp = pp_with_lhs ~pp_lhs:(fun fmt -> F.pp_print_string fmt "_")
+
+  let lift_map ~f = function Top -> Top | NonTop x -> NonTop (f x)
+
+  let lift_map2 ~f = function Top -> Top | NonTop x -> f x
+
+  let forget l =
+    lift_map2 ~f:(fun ((rhs, v) as x) ->
+        if not (KeyRhs.equal l rhs || AliasTarget.use_loc l v) then NonTop x else Top )
+
+
+  let forget_size_alias arr_locs =
+    lift_map2 ~f:(fun ((rhs, v) as x) ->
+        if not (PowLoc.mem rhs arr_locs && AliasTarget.is_size v) then NonTop x else Top )
+
+
+  let incr_size_alias loc =
+    lift_map ~f:(fun ((rhs, v) as x) ->
+        if Loc.equal loc rhs then (rhs, AliasTarget.incr_size_alias v) else x )
+
+
+  let incr_or_not_size_alias loc =
+    lift_map ~f:(fun ((rhs, v) as x) ->
+        if Loc.equal loc rhs then (rhs, AliasTarget.incr_or_not_size_alias v) else x )
+
+
+  let subst ~subst_loc (rhs, tgt) =
+    Option.map (subst_loc rhs) ~f:(fun rhs -> (rhs, AliasTarget.loc_map tgt ~f:subst_loc))
+
+
+  let exists2 f (rhs1, v1) (rhs2, v2) = f rhs1 v1 rhs2 v2
+
+  let is_simple_zero_alias = function
+    | rhs, AliasTarget.Simple {i} when IntLit.iszero i ->
+        Some rhs
+    | _ ->
+        None
+
+
+  let set_java_tmp loc = lift_map ~f:(fun (k, v) -> (k, AliasTarget.set_java_tmp loc v))
+
+  let get_non_top = function Some (NonTop x) -> Some x | _ -> None
 end
 
 module AliasMap = struct
-  module Key = struct
-    type t = IdentKey of Ident.t | LocKey of Loc.t [@@deriving compare]
+  module M = AbstractDomain.SafeInvertedMap (KeyLhs) (RhsAliasTarget)
 
-    let of_id id = IdentKey id
+  type t = M.t
 
-    let of_loc l = LocKey l
+  let leq = M.leq
 
-    let pp f = function IdentKey id -> Ident.pp f id | LocKey l -> Loc.pp f l
+  let join = M.join
 
-    let use_loc l = function LocKey l' -> Loc.equal l l' | IdentKey _ -> false
-  end
-
-  include AbstractDomain.SafeInvertedMap (Key) (AliasTarget)
-
-  let some_non_top = function AliasTarget.Top -> None | v -> Some v
-
-  let add k v m = match some_non_top v with None -> remove k m | Some v -> add k v m
-
-  let join x y =
-    let join_v _key vx vy =
-      IOption.map2 vx vy ~f:(fun vx vy -> AliasTarget.join vx vy |> some_non_top)
-    in
-    merge join_v x y
-
-
-  let widen ~prev:x ~next:y ~num_iters =
-    let widen_v _key vx vy =
-      IOption.map2 vx vy ~f:(fun vx vy ->
-          AliasTarget.widen ~prev:vx ~next:vy ~num_iters |> some_non_top )
-    in
-    merge widen_v x y
-
+  let widen = M.widen
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    if not (is_empty x) then
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp1 fmt (k, v) = AliasTarget.pp_with_key (fun fmt -> Key.pp fmt k) fmt v in
-      F.pp_print_list ~pp_sep pp1 fmt (bindings x)
+    let pp_sep fmt () = F.fprintf fmt ", @," in
+    let pp1 fmt (lhs, v) =
+      RhsAliasTarget.pp_with_lhs ~pp_lhs:(fun fmt -> KeyLhs.pp fmt lhs) fmt v
+    in
+    F.pp_print_list ~pp_sep pp1 fmt (M.bindings x)
 
 
-  let find_id : Ident.t -> t -> AliasTarget.t option = fun id x -> find_opt (Key.of_id id) x
+  let empty = M.empty
 
-  let find_loc : Loc.t -> t -> AliasTarget.t option =
+  let is_empty = M.is_empty
+
+  let add_alias ~lhs tgt m = M.add lhs (NonTop tgt) m
+
+  let remove = M.remove
+
+  let find_id : Ident.t -> t -> RhsAliasTarget.non_top option =
+   fun id x -> M.find_opt (KeyLhs.of_id id) x |> RhsAliasTarget.get_non_top
+
+
+  let find_loc : Loc.t -> t -> RhsAliasTarget.non_top option =
    fun loc x ->
-    match find_opt (Key.LocKey loc) x with
-    | Some (AliasTarget.Size a) ->
-        Some (AliasTarget.Size {a with java_tmp= Some loc})
-    | Some (AliasTarget.IteratorOffset a) ->
-        Some (AliasTarget.IteratorOffset {a with java_tmp= Some loc})
-    | Some (AliasTarget.IteratorHasNext a) ->
-        Some (AliasTarget.IteratorHasNext {a with java_tmp= Some loc})
-    | _ as alias ->
-        alias
+    M.find_opt (KeyLhs.LocKey loc) x
+    |> Option.map ~f:(RhsAliasTarget.set_java_tmp loc)
+    |> RhsAliasTarget.get_non_top
 
 
-  let load : Ident.t -> AliasTarget.t -> t -> t =
-   fun id tgt x ->
-    if AliasTarget.is_unknown tgt then x
+  let load : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
+   fun id loc tgt x ->
+    if Loc.is_unknown loc || AliasTarget.is_unknown tgt then x
     else
       let tgt =
         match tgt with
-        | AliasTarget.Simple {l= loc; i} when IntLit.iszero i && Language.curr_language_is Java ->
-            Option.value (find_loc loc x) ~default:tgt
+        | AliasTarget.Simple {i} when IntLit.iszero i && Language.curr_language_is Java ->
+            Option.value (find_loc loc x) ~default:(loc, tgt)
         | _ ->
-            tgt
+            (loc, tgt)
       in
-      add (Key.of_id id) tgt x
+      add_alias ~lhs:(KeyLhs.of_id id) tgt x
 
 
   let forget : Loc.t -> t -> t =
-   fun l m -> filter (fun k y -> (not (Key.use_loc l k)) && not (AliasTarget.use_loc l y)) m
+   fun l x ->
+    let forget1 k v =
+      if KeyLhs.use_loc l k then RhsAliasTarget.top else RhsAliasTarget.forget l v
+    in
+    M.mapi forget1 x
 
 
   let store : Loc.t -> Ident.t -> t -> t =
    fun l id x ->
     if Language.curr_language_is Java then
       if Loc.is_frontend_tmp l then
-        Option.value_map (find_id id x) ~default:x ~f:(fun tgt -> add (Key.of_loc l) tgt x)
+        Option.value_map (find_id id x) ~default:x ~f:(fun tgt ->
+            add_alias ~lhs:(KeyLhs.of_loc l) tgt x )
       else
         match find_id id x with
-        | Some (AliasTarget.Simple {i; l= java_tmp})
-          when IntLit.iszero i && Loc.is_frontend_tmp java_tmp ->
-            add (Key.of_id id) (AliasTarget.Simple {l; i; java_tmp= Some java_tmp}) x
-            |> add (Key.of_loc java_tmp) (AliasTarget.Simple {l; i; java_tmp= None})
+        | Some (rhs, AliasTarget.Simple {i}) when IntLit.iszero i && Loc.is_frontend_tmp rhs ->
+            add_alias ~lhs:(KeyLhs.of_id id) (l, AliasTarget.Simple {i; java_tmp= Some rhs}) x
+            |> add_alias ~lhs:(KeyLhs.of_loc rhs) (l, AliasTarget.Simple {i; java_tmp= None})
         | _ ->
             x
     else x
 
 
   let add_zero_size_alias ~size ~arr x =
-    add (Key.of_loc size)
-      (AliasTarget.Size {alias_typ= Eq; l= arr; i= IntLit.zero; java_tmp= None})
+    add_alias ~lhs:(KeyLhs.of_loc size)
+      (arr, AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
       x
 
 
-  let incr_size_alias loc = map (AliasTarget.incr_size_alias loc)
+  let incr_size_alias loc x = M.map (RhsAliasTarget.incr_size_alias loc) x
 
-  let incr_or_not_size_alias loc = map (AliasTarget.incr_or_not_size_alias loc)
+  let incr_or_not_size_alias loc x = M.map (RhsAliasTarget.incr_or_not_size_alias loc) x
 
-  let forget_size_alias arr_locs x =
-    let not_in_arr_locs _k v =
-      match v with
-      | AliasTarget.Size {l} | AliasTarget.IteratorOffset {l} ->
-          not (PowLoc.mem l arr_locs)
-      | _ ->
-          true
-    in
-    filter not_in_arr_locs x
-
+  let forget_size_alias arr_locs x = M.map (RhsAliasTarget.forget_size_alias arr_locs) x
 
   let store_n ~prev loc id n x =
     match find_id id prev with
-    | Some (AliasTarget.Size {alias_typ; l; i}) ->
-        add (Key.of_loc loc) (AliasTarget.Size {alias_typ; l; i= IntLit.add i n; java_tmp= None}) x
+    | Some (rhs, AliasTarget.Size {alias_typ; i}) ->
+        add_alias ~lhs:(KeyLhs.of_loc loc)
+          (rhs, AliasTarget.Size {alias_typ; i= IntLit.add i n; java_tmp= None})
+          x
     | _ ->
         x
 
 
   let add_iterator_offset_alias id arr x =
-    add (Key.of_id id)
-      (AliasTarget.IteratorOffset {alias_typ= Eq; l= arr; i= IntLit.zero; java_tmp= None})
+    add_alias ~lhs:(KeyLhs.of_id id)
+      (arr, AliasTarget.IteratorOffset {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
       x
 
 
   let incr_iterator_offset_alias id x =
-    match find_opt (Key.of_id id) x with
-    | Some (AliasTarget.IteratorOffset ({i; java_tmp} as tgt)) ->
+    match M.find_opt (KeyLhs.of_id id) x with
+    | Some (NonTop (rhs, AliasTarget.IteratorOffset ({i; java_tmp} as tgt))) ->
         let i = IntLit.(add i one) in
-        let x = add (Key.of_id id) (AliasTarget.IteratorOffset {tgt with i}) x in
+        let x =
+          add_alias ~lhs:(KeyLhs.of_id id) (rhs, AliasTarget.IteratorOffset {tgt with i}) x
+        in
         Option.value_map java_tmp ~default:x ~f:(fun java_tmp ->
-            add (Key.of_loc java_tmp) (AliasTarget.IteratorOffset {tgt with i; java_tmp= None}) x
-        )
+            add_alias ~lhs:(KeyLhs.of_loc java_tmp)
+              (rhs, AliasTarget.IteratorOffset {tgt with i; java_tmp= None})
+              x )
     | _ ->
         x
 
 
   let add_iterator_has_next_alias ~ret_id ~iterator x =
-    match find_opt (Key.of_id iterator) x with
-    | Some (AliasTarget.IteratorOffset {java_tmp= Some java_tmp}) ->
-        add (Key.of_id ret_id) (AliasTarget.IteratorHasNext {l= java_tmp; java_tmp= None}) x
+    match M.find_opt (KeyLhs.of_id iterator) x with
+    | Some (NonTop (_rhs, AliasTarget.IteratorOffset {java_tmp= Some java_tmp})) ->
+        add_alias ~lhs:(KeyLhs.of_id ret_id)
+          (java_tmp, AliasTarget.IteratorHasNext {java_tmp= None})
+          x
     | _ ->
         x
 end
 
 module AliasRet = struct
-  include AbstractDomain.Flat (AliasTarget)
+  include AbstractDomain.Flat (RhsAliasTarget)
 
   let pp : F.formatter -> t -> unit = fun fmt x -> F.pp_print_string fmt "ret=" ; pp fmt x
 end
@@ -1208,13 +1295,21 @@ module Alias = struct
 
   let bind_map : (AliasMap.t -> 'a) -> t -> 'a = fun f a -> f a.map
 
-  let find_id : Ident.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find_id x)
+  let find_id : Ident.t -> t -> RhsAliasTarget.non_top option =
+   fun x -> bind_map (AliasMap.find_id x)
 
-  let find_loc : Loc.t -> t -> AliasTarget.t option = fun x -> bind_map (AliasMap.find_loc x)
 
-  let find_ret : t -> AliasTarget.t option = fun x -> AliasRet.get x.ret
+  let find_loc : Loc.t -> t -> RhsAliasTarget.non_top option =
+   fun x -> bind_map (AliasMap.find_loc x)
 
-  let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc -> lift_map (AliasMap.load id loc)
+
+  let find_ret : t -> RhsAliasTarget.non_top option =
+   fun x -> AliasRet.get x.ret |> RhsAliasTarget.get_non_top
+
+
+  let load : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
+   fun id loc tgt -> lift_map (AliasMap.load id loc tgt)
+
 
   let store_simple : Loc.t -> Exp.t -> t -> t =
    fun loc e prev ->
@@ -1223,17 +1318,15 @@ module Alias = struct
     | Exp.Var l ->
         let a = lift_map (AliasMap.store loc l) a in
         if Loc.is_return loc then
-          let update_ret retl = {a with ret= AliasRet.v retl} in
+          let update_ret retl = {a with ret= AliasRet.v (NonTop retl)} in
           Option.value_map (find_id l a) ~default:a ~f:update_ret
         else a
     | Exp.BinOp (Binop.PlusA _, Exp.Var id, Exp.Const (Const.Cint i))
     | Exp.BinOp (Binop.PlusA _, Exp.Const (Const.Cint i), Exp.Var id) ->
-        lift_map
-          (AliasMap.load id (AliasTarget.Simple {l= loc; i= IntLit.neg i; java_tmp= None}))
-          a
+        lift_map (AliasMap.load id loc (AliasTarget.Simple {i= IntLit.neg i; java_tmp= None})) a
         |> lift_map (AliasMap.store_n ~prev:prev.map loc id i)
     | Exp.BinOp (Binop.MinusA _, Exp.Var id, Exp.Const (Const.Cint i)) ->
-        lift_map (AliasMap.load id (AliasTarget.Simple {l= loc; i; java_tmp= None})) a
+        lift_map (AliasMap.load id loc (AliasTarget.Simple {i; java_tmp= None})) a
         |> lift_map (AliasMap.store_n ~prev:prev.map loc id (IntLit.neg i))
     | _ ->
         a
@@ -1244,7 +1337,7 @@ module Alias = struct
     let a = PowLoc.fold (fun loc acc -> lift_map (AliasMap.forget loc) acc) locs a in
     match PowLoc.is_singleton_or_more locs with
     | IContainer.Singleton loc ->
-        load id (AliasTarget.fgets loc) a
+        load id loc AliasTarget.Fgets a
     | _ ->
         a
 
@@ -1298,9 +1391,7 @@ module Alias = struct
    fun ~ret_id ~iterator a -> lift_map (AliasMap.add_iterator_has_next_alias ~ret_id ~iterator) a
 
 
-  let remove_temp : Ident.t -> t -> t =
-   fun temp -> lift_map (AliasMap.remove (AliasMap.Key.of_id temp))
-
+  let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove (KeyLhs.of_id temp))
 
   let forget_size_alias arr_locs = lift_map (AliasMap.forget_size_alias arr_locs)
 end
@@ -1786,33 +1877,36 @@ module MemReach = struct
     PowLoc.fold find_join locs Val.bot
 
 
-  let find_alias_id : Ident.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_id k m.alias
+  let find_alias_id : Ident.t -> _ t0 -> RhsAliasTarget.non_top option =
+   fun k m -> Alias.find_id k m.alias
 
-  let find_alias_loc : Loc.t -> _ t0 -> AliasTarget.t option = fun k m -> Alias.find_loc k m.alias
 
-  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
+  let find_alias_loc : Loc.t -> _ t0 -> RhsAliasTarget.non_top option =
+   fun k m -> Alias.find_loc k m.alias
+
+
+  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t) option =
    fun k m ->
     match Alias.find_id k m.alias with
-    | Some (AliasTarget.Simple {l; i}) ->
-        Some (l, if IntLit.iszero i then None else Some i)
-    | Some AliasTarget.(Empty _ | Size _ | Fgets _ | IteratorOffset _ | IteratorHasNext _ | Top)
-    | None ->
+    | Some (l, AliasTarget.Simple {i}) ->
+        Some (l, i)
+    | _ ->
         None
 
 
   let find_size_alias : Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * Loc.t option) option =
    fun k m ->
     match Alias.find_id k m.alias with
-    | Some (AliasTarget.Size {alias_typ; l; java_tmp}) ->
+    | Some (l, AliasTarget.Size {alias_typ; java_tmp}) ->
         Some (alias_typ, l, java_tmp)
     | _ ->
         None
 
 
-  let find_ret_alias : _ t0 -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
+  let find_ret_alias : _ t0 -> RhsAliasTarget.non_top option = fun m -> Alias.find_ret m.alias
 
-  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
-   fun id loc m -> {m with alias= Alias.load id loc m.alias}
+  let load_alias : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
+   fun id loc tgt m -> {m with alias= Alias.load id loc tgt m.alias}
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
@@ -1947,20 +2041,30 @@ module MemReach = struct
 
 
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
-    let apply1 l v acc = update_mem (PowLoc.singleton l) (PrunedVal.get_val v) acc in
+    let apply_prunes prunes m =
+      let apply1 l v acc = update_mem (PowLoc.singleton l) (PrunedVal.get_val v) acc in
+      PrunePairs.fold apply1 prunes m
+    in
     fun e m ->
       match (m.latest_prune, e) with
       | LatestPrune.V (x, prunes, _), Exp.Var r
-      | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
-        match find_simple_alias r m with
-        | Some (Loc.Var (Var.ProgramVar y), None) when Pvar.equal x y ->
-            (PrunePairs.fold apply1 prunes m, prunes)
-        | _ ->
-            (m, PrunePairs.empty) )
+      | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
+          let pruned_val_meet _rhs v1 _v2 =
+            (* NOTE: We need the pruned values, but for now we don't have the meet operation on
+               value. *)
+            Some v1
+          in
+          let apply_simple_alias1 ((m_acc, prunes_acc) as acc) = function
+            | Loc.Var (Var.ProgramVar y), i when Pvar.equal x y && IntLit.iszero i ->
+                (apply_prunes prunes m_acc, PrunePairs.union pruned_val_meet prunes_acc prunes)
+            | _ ->
+                acc
+          in
+          let default = (m, PrunePairs.empty) in
+          Option.value_map ~default (find_simple_alias r m) ~f:(apply_simple_alias1 default)
       | LatestPrune.VRet (x, prunes, _), Exp.Var r
       | LatestPrune.VRet (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
-          if Ident.equal x r then (PrunePairs.fold apply1 prunes m, prunes)
-          else (m, PrunePairs.empty)
+          if Ident.equal x r then (apply_prunes prunes m, prunes) else (m, PrunePairs.empty)
       | _ ->
           (m, PrunePairs.empty)
 
@@ -1974,7 +2078,7 @@ module MemReach = struct
         else {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
     | Lvar return, _, _ when Pvar.is_return return -> (
       match Alias.find_ret m.alias with
-      | Some (Simple {l= Var (ProgramVar pvar); i}) when IntLit.iszero i ->
+      | Some (Loc.Var (ProgramVar pvar), AliasTarget.Simple {i}) when IntLit.iszero i ->
           {m with latest_prune= LatestPrune.replace ~from:pvar ~to_:return m.latest_prune}
       | _ ->
           m )
@@ -2190,15 +2294,15 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
-  let find_alias_id : Ident.t -> _ t0 -> AliasTarget.t option =
+  let find_alias_id : Ident.t -> _ t0 -> RhsAliasTarget.non_top option =
    fun k -> f_lift_default ~default:None (MemReach.find_alias_id k)
 
 
-  let find_alias_loc : Loc.t -> _ t0 -> AliasTarget.t option =
+  let find_alias_loc : Loc.t -> _ t0 -> RhsAliasTarget.non_top option =
    fun k -> f_lift_default ~default:None (MemReach.find_alias_loc k)
 
 
-  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t option) option =
+  let find_simple_alias : Ident.t -> _ t0 -> (Loc.t * IntLit.t) option =
    fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
@@ -2206,25 +2310,25 @@ module Mem = struct
    fun k -> f_lift_default ~default:None (MemReach.find_size_alias k)
 
 
-  let find_ret_alias : _ t0 -> AliasTarget.t option =
-   fun m -> f_lift_default ~default:None MemReach.find_ret_alias m
+  let find_ret_alias : _ t0 -> RhsAliasTarget.non_top option =
+   fun m -> match m with Bottom | ExcRaised -> None | NonBottom m' -> MemReach.find_ret_alias m'
 
 
-  let load_alias : Ident.t -> AliasTarget.t -> t -> t =
-   fun id loc -> map ~f:(MemReach.load_alias id loc)
+  let load_alias : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
+   fun id loc tgt -> map ~f:(MemReach.load_alias id loc tgt)
 
 
   let load_simple_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc -> load_alias id (AliasTarget.Simple {l= loc; i= IntLit.zero; java_tmp= None})
+   fun id loc -> load_alias id loc (AliasTarget.Simple {i= IntLit.zero; java_tmp= None})
 
 
   let load_empty_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc -> load_alias id (AliasTarget.Empty loc)
+   fun id loc -> load_alias id loc AliasTarget.Empty
 
 
   let load_size_alias : Ident.t -> Loc.t -> t -> t =
    fun id loc ->
-    load_alias id (AliasTarget.Size {alias_typ= Eq; l= loc; i= IntLit.zero; java_tmp= None})
+    load_alias id loc (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
