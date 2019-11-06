@@ -152,7 +152,7 @@ module MF = MarkupFormatter
 ```
 
 - Use `[@@deriving compare]` to write comparison functions whenever possible. Watch out for
-  [this issue](https://github.com/whitequark/ppx_deriving/issues/116) when writing
+  [this issue](https://github.com/ocaml-ppx/ppx_deriving/issues/116) when writing
   `type nonrec t = t [@@deriving compare]`.
 
 - Use `let equal_foo = [%compare.equal : foo]` to write equality functions whenever possible.
