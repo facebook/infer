@@ -65,7 +65,7 @@ Then, the AST can be created by Infer in debug mode. Call Infer with
 infer --debug -- <build command>
 ```
 
-This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with `bash File.m.ast.sh` and a file `/path/to/File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
+This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with `bash File.m.ast.sh` and a file `/path/to/File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json). If you get an error about `bdump` not being found you may need to run `eval $(opam env)` to get the `bdump` executable (provided by the biniou opam package) into your `PATH`.
 
 For general info on the clang AST, you can check out [clang's website](http://clang.llvm.org/docs/IntroductionToTheClangAST.html).
 
