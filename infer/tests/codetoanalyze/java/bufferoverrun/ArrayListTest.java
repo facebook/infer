@@ -159,4 +159,28 @@ class ArrayListTest {
     } // b.size is zero here
     int j = b.get(0);
   }
+
+  void multi_adds_in_loop_iterator_ok(ArrayList<Integer> b) {
+    ArrayList<Integer> a1 = new ArrayList<>();
+    ArrayList<Integer> a2 = new ArrayList<>();
+    for (Integer i : b) {
+      a1.add(i);
+      a2.add(i);
+    }
+    int j;
+    j = a1.get(b.size() - 1);
+    j = a2.get(b.size() - 1);
+  }
+
+  void multi_adds_in_loop_iterator_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a1 = new ArrayList<>();
+    ArrayList<Integer> a2 = new ArrayList<>();
+    for (Integer i : b) {
+      a1.add(i);
+      a2.add(i);
+    }
+    int j;
+    j = a1.get(b.size() + 1);
+    j = a2.get(b.size() + 1);
+  }
 }
