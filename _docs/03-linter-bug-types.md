@@ -180,24 +180,24 @@ Note that the custom setter was only invoked once.
 
 ## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
 
-[Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites)
 
 ## <a name="COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"></a> Component initializer with side effects
 
-[Doc in ComponentKit page](http://componentkit.org/docs/no-side-effects.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/no-side-effects)
 
 ## <a name="COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"></a> Component with multiple factory methods
 
-[Doc in ComponentKit page](http://componentkit.org/docs/avoid-overrides.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/avoid-overrides)
 
 
 ## <a name="COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"></a> Component with unconventional superclass
 
-[Doc in ComponentKit page](http://componentkit.org/docs/never-subclass-components.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/never-subclass-components)
 
 ## <a name="MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"></a> Mutable local variable in component file
 
-[Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
 
 
 
