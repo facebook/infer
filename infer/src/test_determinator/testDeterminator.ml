@@ -204,7 +204,7 @@ let java_test_to_run () =
 let remove_llvm_suffix_native_symbols native_symbols =
   let remove_llvm_suffix_native_symbol native_symbol =
     let remove_llvm_suffix name =
-    (* The first dot of .llvm.... is the first dot after the name, 
+      (* The first dot of .llvm.... is the first dot after the name, 
        because neither names nor mangled names can have dots. *)
       match String.lsplit2 name ~on:'.' with
       | Some (name_no_suffix, _) ->
@@ -307,4 +307,6 @@ let merge_test_determinator_results () =
         match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
       !main_results_list
   in
-  YB.to_file main_results_file (`List main_results_list_sorted)
+  YB.to_file main_results_file (`List main_results_list_sorted) ;
+  Logging.progress "Finished executing Test Determinator successfully, results are in %s@."
+    main_results_file

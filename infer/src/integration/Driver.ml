@@ -401,6 +401,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | (Analyze | Run), _ ->
         (true, true)
   in
+  let should_analyze = should_analyze && Config.capture in
   let should_merge =
     match mode with
     | PythonCapture (BBuck, _) when Config.flavors && InferCommand.equal Run Config.command ->

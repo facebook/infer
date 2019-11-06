@@ -3287,7 +3287,13 @@ let captured_dir = results_dir ^/ captured_dir_name
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
   let text = if linters then "linting" :: text else text in
-  let text = if process_clang_ast then "processing" :: text else text in
+  let text =
+    if process_clang_ast && test_determinator then "Test Determinator with" :: text else text
+  in
+  let text =
+    if process_clang_ast && export_changed_functions then "Export Changed Functions with" :: text
+    else text
+  in
   String.concat ~sep:", " text
 
 
