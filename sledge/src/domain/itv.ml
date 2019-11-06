@@ -8,6 +8,9 @@
 (** Interval abstract domain *)
 
 open Apron
+open Option.Let_syntax
+
+type apron_typ = [%import: Apron.Texpr0.typ] [@@deriving equal]
 
 (** Apron-managed map from variables to intervals *)
 type t = Box.t Abstract1.t
@@ -58,22 +61,110 @@ let rec apron_typ_of_llair_typ : Typ.t -> Texpr1.typ option = function
       warn "No corresponding apron type for llair type %a " Typ.pp t () ;
       None
 
-let rec apron_texpr_of_llair_term tm _typ =
+let apron_of_q = Q.to_float >> fun fp -> Texpr1.Cst (Coeff.s_of_float fp)
+
+let rec pow base typ = function
+  | 1 -> base
+  | z ->
+      Texpr1.Binop (Texpr1.Mul, base, pow base typ (z - 1), typ, Texpr0.Rnd)
+
+(* An n-ary term with [subtms] {(q0, e0), ..., (qn, en)} is interpreted as:
+ *    ∑ᵢ eᵢ*qᵢ (when [op] is [Texpr1.Add])
+ *    ∏ᵢ eᵢ^qᵢ (when [op] is [Texpr1.Mul])
+ * (See sledge/src/llair/term.ml functions assert_(mono|poly)mial for details)
+ *)
+let rec texpr_of_nary_term subtms typ q op =
+  assert (Qset.length subtms >= 2) ;
+  let term_to_texpr (tm, coeff) =
+    let%bind base = apron_texpr_of_llair_term tm q typ in
+    match op with
+    | Texpr1.Add ->
+        Some
+          (Texpr1.Binop (Texpr1.Mul, base, apron_of_q coeff, typ, Texpr0.Rnd))
+    | Texpr1.Mul
+    (* only handle positive integer exponents *)
+      when Z.equal Z.one (Q.den coeff) && Q.sign coeff = 1 ->
+        Some (pow base typ (Q.to_int coeff))
+    | _ -> None
+  in
+  match Qset.to_list subtms with
+  | hd :: tl ->
+      List.fold tl ~init:(term_to_texpr hd) ~f:(fun acc curr ->
+          let%bind c = term_to_texpr curr in
+          let%map a = acc in
+          Texpr1.Binop (op, c, a, typ, Texpr0.Rnd) )
+  | _ -> assert false
+
+and apron_texpr_of_llair_term tm q typ =
   match (tm : Term.t) with
-  | Var {name} -> Ok (Texpr1.Var (apron_var_of_name name))
-  | Integer {data} -> Ok (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
+  | Add terms -> texpr_of_nary_term terms typ q Texpr1.Add
+  | Mul terms -> texpr_of_nary_term terms typ q Texpr1.Mul
+  | Var {name} -> Some (Texpr1.Var (apron_var_of_name name))
+  | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} ->
-      Ok (Texpr1.Cst (Coeff.s_of_float (Float.of_string data)))
+      let f =
+        try Float.of_string data with _ -> failwith "malformed float: %s"
+      in
+      Some (Texpr1.Cst (Coeff.s_of_float f))
   | Ap1 (Convert {unsigned= false; dst; src}, t) -> (
     match (apron_typ_of_llair_typ dst, apron_typ_of_llair_typ src) with
-    | None, _ | _, None -> Error ()
+    | None, _ | _, None -> None
     | Some dst, Some src ->
-        Result.bind (apron_texpr_of_llair_term t src) ~f:(fun t ->
-            Ok (Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd)) ) )
+        let subtm = apron_texpr_of_llair_term t q src in
+        if equal_apron_typ src dst then subtm
+        else
+          let%bind t = subtm in
+          Some (Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd)) )
+  (* extraction to unsigned 1-bit int is llvm encoding of C boolean;
+     restrict to [0,1] *)
+  | Ap1 (Extract {unsigned= true; bits= 1}, _t) ->
+      Some (Texpr1.Cst (Coeff.i_of_int 0 1))
+  (* "t xor true" and "true xor t" are negation *)
+  | Ap2 (Xor, t, Integer {data}) when Z.is_true data ->
+      let%map t = apron_texpr_of_llair_term t q typ in
+      Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
+  | Ap2 (Xor, Integer {data}, t) when Z.is_true data ->
+      let%map t = apron_texpr_of_llair_term t q typ in
+      Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
+  (* query apron for abstract evaluation of binary operations*)
+  | Ap2 (op, t1, t2) ->
+      let%bind f =
+        match op with
+        | Rem -> Some (mk_arith_binop typ Texpr0.Mod)
+        | Div -> Some (mk_arith_binop typ Texpr0.Div)
+        | Eq -> Some (mk_bool_binop typ q Tcons0.EQ)
+        | Dq -> Some (mk_bool_binop typ q Tcons0.DISEQ)
+        | Lt -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUP))
+        | Le -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUPEQ))
+        | _ -> None
+      in
+      let%bind te1 = apron_texpr_of_llair_term t1 q typ in
+      let%map te2 = apron_texpr_of_llair_term t2 q typ in
+      f te1 te2
   | x ->
       [%Trace.info
         "No corresponding apron term for llair term: %a" Term.pp x] ;
-      Error ()
+      None
+
+and mk_arith_binop typ op te1 te2 =
+  Texpr1.Binop (op, te1, te2, typ, Texpr0.Rnd)
+
+(** abstract evaluation of boolean binary operation [te1 op te2] at [q] by
+    translation to [te1 - te2 op 0] and intersection with [q]*)
+and mk_bool_binop typ q op te1 te2 =
+  let env = Abstract1.env q in
+  let lhs = Texpr1.Binop (Texpr1.Sub, te1, te2, typ, Texpr0.Rnd) in
+  let tcons = Tcons1.make (Texpr1.of_expr env lhs) op in
+  let ea =
+    Tcons1.array_make env 1 $> fun ea -> Tcons1.array_set ea 0 tcons
+  in
+  (* if meet of q with tree constraint encoding of binop is: (bottom ->
+     binop definitely false); (unchanged from q -> binop definitely true);
+     (else -> binop may be true or false) *)
+  let meet = Abstract1.meet_tcons_array (Lazy.force man) q ea in
+  if is_false meet then Texpr1.Cst (Coeff.s_of_int 0)
+  else if equal meet q then Texpr1.Cst (Coeff.s_of_int (-1))
+  else Texpr1.Cst (Coeff.i_of_int (-1) 0)
 
 let assign reg exp q =
   [%Trace.call fun {pf} -> pf "{%a}@\n%a := %a" pp q Reg.pp reg Exp.pp exp]
@@ -81,9 +172,9 @@ let assign reg exp q =
   let lval = apron_var_of_reg reg in
   ( match
       apron_typ_of_llair_typ (Reg.typ reg)
-      >>| apron_texpr_of_llair_term (Exp.term exp)
+      >>= apron_texpr_of_llair_term (Exp.term exp) q
     with
-  | Some (Ok e) ->
+  | Some e ->
       let env = Abstract1.env q in
       let new_env =
         match
@@ -105,12 +196,11 @@ let assign reg exp q =
 let exec_assume q e =
   match
     apron_typ_of_llair_typ (Exp.typ e)
-    >>| apron_texpr_of_llair_term (Exp.term e)
+    >>= apron_texpr_of_llair_term (Exp.term e) q
   with
-  | Some (Ok texpr) ->
+  | Some e ->
       let cond =
-        Abstract1.bound_texpr (Lazy.force man) q
-          (Texpr1.of_expr q.env texpr)
+        Abstract1.bound_texpr (Lazy.force man) q (Texpr1.of_expr q.env e)
       in
       if Interval.is_zero cond then None else Some q
   | _ -> Some q
@@ -200,7 +290,9 @@ let retn _ freturn {areturn; caller_q} callee_q =
   | None, _ -> caller_q
 
 (** map actuals to formals (via temporary registers), stash constraints on
-    caller-local variables *)
+    caller-local variables. Note that this exploits the non-relational-ness
+    of Box to ignore all variables other than the formal/actual params/
+    returns; this will not be possible if extended to a relational domain *)
 let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     ~locals:_ q =
   if summaries then
