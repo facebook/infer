@@ -47,6 +47,16 @@ let at ?(size = Int64.zero) array_exp index_exp =
   {exec; check}
 
 
+let eval_binop ~f e1 e2 =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let i1 = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_itv in
+    let i2 = Sem.eval integer_type_widths e2 mem |> Dom.Val.get_itv in
+    let v = f i1 i2 |> Dom.Val.of_itv in
+    Dom.Mem.add_stack (Loc.of_id id) v mem
+  in
+  {exec; check= no_check}
+
+
 (* It returns a tuple of:
      - type of array element
      - stride of the type
@@ -1405,5 +1415,9 @@ module Call = struct
       ; +PatternMatch.implements_nio "ByteBuffer" &:: "getInt" <>$ capt_exp $--> ByteBuffer.get_int
       ; +PatternMatch.implements_nio "ByteBuffer"
         &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
-      ; -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone ]
+      ; -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
+      ; +PatternMatch.implements_lang "Math"
+        &:: "max" <>$ capt_exp $+ capt_exp $--> eval_binop ~f:Itv.max_sem
+      ; +PatternMatch.implements_lang "Math"
+        &:: "min" <>$ capt_exp $+ capt_exp $--> eval_binop ~f:Itv.min_sem ]
 end

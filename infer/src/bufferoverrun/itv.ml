@@ -362,6 +362,10 @@ module ItvPure = struct
    fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_min u1 u2)
 
 
+  let max_sem : t -> t -> t =
+   fun (l1, u1) (l2, u2) -> (Bound.underapprox_max l1 l2, Bound.overapprox_max u1 u2)
+
+
   let is_invalid : t -> bool = fun (l, u) -> Bound.is_pinf l || Bound.is_minf u || Bound.lt u l
 
   let normalize : t -> t bottom_lifted = fun x -> if is_invalid x then Bottom else NonBottom x
@@ -669,6 +673,8 @@ let land_sem : t -> t -> Boolean.t = bind2b ItvPure.land_sem
 let lor_sem : t -> t -> Boolean.t = bind2b ItvPure.lor_sem
 
 let min_sem : t -> t -> t = lift2 ItvPure.min_sem
+
+let max_sem : t -> t -> t = lift2 ItvPure.max_sem
 
 let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 

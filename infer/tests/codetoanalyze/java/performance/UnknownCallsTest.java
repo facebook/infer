@@ -34,13 +34,12 @@ class UnknownCallsTest {
     return 0;
   }
 
-  // Expected: linear to maxBytesToRead (= Math.min(...))
+  // Expected: linear
   public int read_max_cost(
       InputStream in, byte[] buffer, int byteOffset, int byteCount, ArrayList<Integer> list)
       throws IOException {
     int maxBytesToRead = Math.min(byteCount, mBytesToRead);
     int bytesRead = in.read(buffer, byteOffset, maxBytesToRead);
-    // after the join, we get maxBytesToRead in [0, +oo]. Hence, the loop gets T
     if (bytesRead > 0) {
       maxBytesToRead = bytesRead + 1;
     }

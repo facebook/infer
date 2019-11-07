@@ -215,6 +215,8 @@ val lt_sem : t -> t -> Boolean.t
 
 val min_sem : t -> t -> t
 
+val max_sem : t -> t -> t
+
 val mod_sem : t -> t -> t
 
 val ne_sem : t -> t -> Boolean.t
