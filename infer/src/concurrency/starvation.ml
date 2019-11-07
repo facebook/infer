@@ -98,6 +98,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | UnknownThread ->
           astate
     in
+    let do_work_scheduling actuals loc astate =
+      match actuals with
+      (* match an executor call where the second arg is the runnable object *)
+      | [HilExp.AccessExpression executor; HilExp.AccessExpression runnable] ->
+          StarvationModels.get_executor_thread_constraint tenv executor
+          |> Option.fold ~init:astate ~f:(fun init thread ->
+                 StarvationModels.get_run_method_from_runnable tenv runnable
+                 |> Option.fold ~init ~f:(Domain.schedule_work loc thread) )
+      | _ ->
+          astate
+    in
     match instr with
     | Assign _ | Call (_, Indirect _, _, _, _) | Metadata _ ->
         astate
@@ -132,6 +143,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_lock locks loc astate |> do_unlock locks
       | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
           Domain.strict_mode_call ~callee ~loc astate
+      | NoEffect when is_java && StarvationModels.schedules_work tenv callee ->
+          do_work_scheduling actuals loc astate
       | NoEffect when is_java -> (
           let astate = do_thread_assert_effect ret_base callee astate in
           match may_block tenv callee actuals with

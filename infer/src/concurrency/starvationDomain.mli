@@ -112,12 +112,22 @@ module BranchGuardDomain : sig
   val is_thread_guard : HilExp.AccessExpression.t -> t -> bool
 end
 
+(** A record of scheduled parallel work: the method scheduled to run, where, and on what thread. *)
+module ScheduledWorkItem : sig
+  type t = {procname: Typ.Procname.t; loc: Location.t; thread: ThreadDomain.t}
+
+  include PrettyPrintable.PrintableOrderedType with type t := t
+end
+
+module ScheduledWorkDomain : AbstractDomain.FiniteSetS with type elt = ScheduledWorkItem.t
+
 type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
   ; branch_guards: BranchGuardDomain.t
-  ; thread: ThreadDomain.t }
+  ; thread: ThreadDomain.t
+  ; scheduled_work: ScheduledWorkDomain.t }
 
 include AbstractDomain.WithBottom with type t := t
 
@@ -151,7 +161,12 @@ val remove_guard : t -> HilExp.t -> t
 val unlock_guard : t -> HilExp.t -> t
 (** Release the lock the guard was constructed with. *)
 
-type summary = {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t}
+val schedule_work :
+  Location.t -> StarvationModels.executor_thread_constraint -> t -> Typ.Procname.t -> t
+(** record the fact that a method is scheduled to run on a certain thread/executor *)
+
+type summary =
+  {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t; scheduled_work: ScheduledWorkDomain.t}
 
 val pp_summary : F.formatter -> summary -> unit
 

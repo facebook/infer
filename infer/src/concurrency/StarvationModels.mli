@@ -31,3 +31,16 @@ val is_annotated_nonblocking :
 val is_annotated_lockless :
   attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option) -> Tenv.t -> Typ.Procname.t -> bool
 (** is procedure transitively annotated [@Lockless] *)
+
+val schedules_work : Tenv.t -> Typ.Procname.t -> bool
+(** call known to schedule runnable first argument to some thread/executor *)
+
+(** an instance field holding a reference to an executor may be annotated as running on UI/non-UI thread *)
+type executor_thread_constraint = ForUIThread | ForNonUIThread
+
+val get_executor_thread_constraint :
+  Tenv.t -> HilExp.AccessExpression.t -> executor_thread_constraint option
+(** given an executor receiver, get its thread constraint, if any *)
+
+val get_run_method_from_runnable : Tenv.t -> HilExp.AccessExpression.t -> Typ.Procname.t option
+(** given a receiver, find the [run()] method in the appropriate class *)

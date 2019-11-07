@@ -472,33 +472,49 @@ module BranchGuardDomain = struct
     find_opt acc_exp t |> Option.exists ~f:(function BranchGuard.Thread -> true | _ -> false)
 end
 
+module ScheduledWorkItem = struct
+  type t = {procname: Typ.Procname.t; loc: Location.t; thread: ThreadDomain.t} [@@deriving compare]
+
+  let pp fmt {procname; loc; thread} =
+    F.fprintf fmt "{procname= %a; loc= %a; thread= %a}" Typ.Procname.pp procname Location.pp loc
+      ThreadDomain.pp thread
+end
+
+module ScheduledWorkDomain = AbstractDomain.FiniteSet (ScheduledWorkItem)
+
 type t =
   { guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
   ; branch_guards: BranchGuardDomain.t
-  ; thread: ThreadDomain.t }
+  ; thread: ThreadDomain.t
+  ; scheduled_work: ScheduledWorkDomain.t }
 
 let bottom =
   { guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
   ; branch_guards= BranchGuardDomain.empty
-  ; thread= ThreadDomain.bottom }
+  ; thread= ThreadDomain.bottom
+  ; scheduled_work= ScheduledWorkDomain.bottom }
 
 
-let is_bottom {guard_map; lock_state; critical_pairs; branch_guards; thread} =
-  GuardToLockMap.is_empty guard_map && LockState.is_top lock_state
-  && CriticalPairs.is_empty critical_pairs
-  && BranchGuardDomain.is_top branch_guards
-  && ThreadDomain.is_bottom thread
+let is_bottom astate =
+  GuardToLockMap.is_empty astate.guard_map
+  && LockState.is_top astate.lock_state
+  && CriticalPairs.is_empty astate.critical_pairs
+  && BranchGuardDomain.is_top astate.branch_guards
+  && ThreadDomain.is_bottom astate.thread
+  && ScheduledWorkDomain.is_bottom astate.scheduled_work
 
 
-let pp fmt {guard_map; lock_state; critical_pairs; branch_guards; thread} =
+let pp fmt astate =
   F.fprintf fmt
-    "{guard_map= %a; lock_state= %a; critical_pairs= %a; branch_guards= %a; thread= %a}"
-    GuardToLockMap.pp guard_map LockState.pp lock_state CriticalPairs.pp critical_pairs
-    BranchGuardDomain.pp branch_guards ThreadDomain.pp thread
+    "{guard_map= %a; lock_state= %a; critical_pairs= %a; branch_guards= %a; thread= %a; \
+     scheduled_work= %a}"
+    GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state CriticalPairs.pp
+    astate.critical_pairs BranchGuardDomain.pp astate.branch_guards ThreadDomain.pp astate.thread
+    ScheduledWorkDomain.pp astate.scheduled_work
 
 
 let join lhs rhs =
@@ -506,7 +522,8 @@ let join lhs rhs =
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
   ; branch_guards= BranchGuardDomain.join lhs.branch_guards rhs.branch_guards
-  ; thread= ThreadDomain.join lhs.thread rhs.thread }
+  ; thread= ThreadDomain.join lhs.thread rhs.thread
+  ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
@@ -517,6 +534,7 @@ let leq ~lhs ~rhs =
   && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
   && BranchGuardDomain.leq ~lhs:lhs.branch_guards ~rhs:rhs.branch_guards
   && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
+  && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
 
 
 let add_critical_pair tenv_opt lock_state event thread ~loc acc =
@@ -589,11 +607,25 @@ let filter_blocking_calls ({critical_pairs} as astate) =
   {astate with critical_pairs= CriticalPairs.filter CriticalPair.is_blocking_call critical_pairs}
 
 
-type summary = {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t}
+let schedule_work loc thread_constraint astate procname =
+  let thread =
+    match thread_constraint with
+    | StarvationModels.ForUIThread ->
+        ThreadDomain.UIThread
+    | StarvationModels.ForNonUIThread ->
+        ThreadDomain.BGThread
+  in
+  let work_item = ScheduledWorkItem.{procname; loc; thread} in
+  {astate with scheduled_work= ScheduledWorkDomain.add work_item astate.scheduled_work}
+
+
+type summary =
+  {critical_pairs: CriticalPairs.t; thread: ThreadDomain.t; scheduled_work: ScheduledWorkDomain.t}
 
 let pp_summary fmt (summary : summary) =
-  F.fprintf fmt "{thread= %a; critical_pairs= %a}" ThreadDomain.pp summary.thread CriticalPairs.pp
-    summary.critical_pairs
+  F.fprintf fmt "{thread= %a; critical_pairs= %a; scheduled_work= %a}" ThreadDomain.pp
+    summary.thread CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp
+    summary.scheduled_work
 
 
 let integrate_summary tenv callsite (astate : t) (summary : summary) =
@@ -607,4 +639,7 @@ let integrate_summary tenv callsite (astate : t) (summary : summary) =
 
 
 let summary_of_astate : t -> summary =
- fun astate -> {critical_pairs= astate.critical_pairs; thread= astate.thread}
+ fun astate ->
+  { critical_pairs= astate.critical_pairs
+  ; thread= astate.thread
+  ; scheduled_work= astate.scheduled_work }

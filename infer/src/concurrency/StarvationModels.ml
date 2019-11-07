@@ -202,3 +202,51 @@ let is_annotated_lockless ~attrs_of_pname tenv pname =
   let check annot = Annotations.(ia_ends_with annot lockless) in
   ConcurrencyModels.find_override_or_superclass_annotated ~attrs_of_pname check tenv pname
   |> Option.is_some
+
+
+let schedules_work =
+  let open MethodMatcher in
+  let matcher =
+    [{default with classname= "java.util.concurrent.Executor"; methods= ["execute"]}] |> of_records
+  in
+  fun tenv pname -> matcher tenv pname []
+
+
+type executor_thread_constraint = ForUIThread | ForNonUIThread
+
+(* Executors are usually stored in fields and annotated according to what type of thread 
+   they schedule work on.  Given an expression representing such a field, try to find the kind of 
+   annotation constraint, if any. *)
+let rec get_executor_thread_constraint tenv (receiver : HilExp.AccessExpression.t) =
+  match receiver with
+  | FieldOffset (_, field_name) ->
+      Typ.Fieldname.Java.get_class field_name
+      |> Typ.Name.Java.from_string |> Tenv.lookup tenv
+      |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.fields @ tstruct.statics)
+      |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Typ.Fieldname.equal fld field_name))
+      |> Option.bind ~f:(fun (_, _, annot) ->
+             if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
+             else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
+             else None )
+  | Dereference prefix ->
+      get_executor_thread_constraint tenv prefix
+  | _ ->
+      None
+
+
+(* Given an object, find the [run] method in its class and return the procname, if any *)
+let get_run_method_from_runnable tenv runnable =
+  let is_run_method = function
+    | Typ.Procname.Java pname when Typ.Procname.Java.(not (is_static pname)) ->
+        (* confusingly, the parameter list in (non-static?) Java procnames does not contain [this] *)
+        Typ.Procname.Java.(
+          String.equal "run" (get_method pname) && List.is_empty (get_parameters pname))
+    | _ ->
+        false
+  in
+  HilExp.AccessExpression.get_typ runnable tenv
+  |> Option.map ~f:(function Typ.{desc= Tptr (typ, _)} -> typ | typ -> typ)
+  |> Option.bind ~f:Typ.name
+  |> Option.bind ~f:(Tenv.lookup tenv)
+  |> Option.map ~f:(fun (tstruct : Typ.Struct.t) -> tstruct.methods)
+  |> Option.bind ~f:(List.find ~f:is_run_method)
