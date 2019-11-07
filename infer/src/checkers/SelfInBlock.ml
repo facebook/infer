@@ -19,7 +19,7 @@ module DomainData = struct
     F.fprintf fmt "%s" s
 
 
-  type t = {pvar: Pvar.t; typ: Typ.t; loc: Location.t; kind: self_pointer_kind}
+  type t = {pvar: Pvar.t; typ: Typ.t [@compare.ignore]; loc: Location.t; kind: self_pointer_kind}
   [@@deriving compare]
 
   let pp fmt {pvar; typ; loc; kind} =
@@ -36,11 +36,11 @@ module TransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
   let is_captured_strong_self attributes pvar =
-    List.exists
-      ~f:(fun (captured, typ) ->
-        Mangled.equal captured (Pvar.get_name pvar)
-        && Pvar.is_self pvar && Typ.is_strong_pointer typ )
-      attributes.ProcAttributes.captured
+    let pvar_name = Pvar.get_name pvar in
+    Pvar.is_self pvar
+    && List.exists
+         ~f:(fun (captured, typ) -> Mangled.equal captured pvar_name && Typ.is_strong_pointer typ)
+         attributes.ProcAttributes.captured
 
 
   let is_captured_weak_self attributes pvar =
@@ -65,6 +65,19 @@ module TransferFunctions = struct
         astate
 end
 
+let make_trace_elements domain =
+  let trace_elems =
+    TransferFunctions.Domain.fold
+      (fun {pvar; loc} trace_elems ->
+        let trace_elem_desc = F.asprintf "Using %a" (Pvar.pp Pp.text) pvar in
+        let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
+        trace_elem :: trace_elems )
+      domain []
+  in
+  List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
+      Location.compare loc1 loc2 )
+
+
 let report_issues summary domain =
   let weakSelf_opt =
     TransferFunctions.Domain.find_first_opt (fun {kind} -> DomainData.is_weak_self kind) domain
@@ -80,7 +93,8 @@ let report_issues summary domain =
            unexpected behavior."
           (Pvar.pp Pp.text) weakSelf Location.pp weakLoc (Pvar.pp Pp.text) self Location.pp selfLoc
       in
-      Reporting.log_error summary ~loc:selfLoc IssueType.mixed_self_weakself message
+      let ltr = make_trace_elements domain in
+      Reporting.log_error summary ~ltr ~loc:selfLoc IssueType.mixed_self_weakself message
   | _ ->
       ()
 
