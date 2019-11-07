@@ -10,7 +10,13 @@ permalink: /docs/getting-started.html
 You can use Homebrew (Mac only), our binary releases, build infer from
 source, or use our Docker image.
 
-On Mac, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a terminal:
+On Mac (Mojave), the simplest way is to use [Homebrew](http://brew.sh/). There is a user-provided tap for infer. Type this into a terminal:
+
+```sh
+brew install amar1729/infer/infer
+```
+
+For Mac pre-Mojave, use Homebrew core:
 
 ```sh
 brew install infer
