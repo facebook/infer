@@ -27,9 +27,13 @@ type unique_repr =
 
 and method_name = Constructor | Method of string
 
+val pp_unique_repr : Format.formatter -> unique_repr -> unit
+
 type nullability = {ret_nullability: type_nullability; param_nullability: type_nullability list}
 
 and type_nullability = Nullable | Nonnull
+
+val pp_nullability : Format.formatter -> nullability -> unit
 
 type parsing_error
 
