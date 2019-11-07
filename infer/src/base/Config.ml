@@ -1758,6 +1758,12 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
 
+and nullsafe_third_party_signatures =
+  CLOpt.mk_string_opt ~long:"nullsafe-third-party-signatures"
+    "Path to a folder with annotated signatures of third-party methods to be taken into account \
+     by nullsafe. Path is relative to .inferconfig folder."
+
+
 and nullsafe_strict_containers =
   CLOpt.mk_bool ~long:"nullsafe-strict-containers" ~default:false
     "Warn when containers are used with nullable keys or values"
@@ -2516,7 +2522,7 @@ and (_ : bool ref) =
 
 (** Parse Command Line Args *)
 
-let inferconfig_file =
+let inferconfig_dir =
   let rec find dir =
     match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
     | `Yes ->
@@ -2526,11 +2532,15 @@ let inferconfig_file =
         let is_root = String.equal dir parent in
         if is_root then None else find parent
   in
+  find (Sys.getcwd ())
+
+
+let inferconfig_file =
   match Sys.getenv CommandDoc.inferconfig_env_var with
   | Some _ as env_path ->
       env_path
   | None ->
-      find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+      Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
 let post_parsing_initialization command_opt =
@@ -2998,6 +3008,8 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 
 and nullable_annotation = !nullable_annotation
+
+and nullsafe_third_party_signatures = !nullsafe_third_party_signatures
 
 and nullsafe_strict_containers = !nullsafe_strict_containers
 

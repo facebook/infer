@@ -1538,6 +1538,14 @@ INTERNAL OPTIONS
            Activates: Warn when containers are used with nullable keys or
            values (Conversely: --no-nullsafe-strict-containers)
 
+       --nullsafe-third-party-signatures string
+           Path to a folder with annotated signatures of third-party methods
+           to be taken into account by nullsafe. Path is relative to
+           .inferconfig folder.
+
+       --nullsafe-third-party-signatures-reset
+           Cancel the effect of --nullsafe-third-party-signatures.
+
        --no-only-cheap-debug
            Deactivates: Disable expensive debugging output (Conversely:
            --only-cheap-debug)

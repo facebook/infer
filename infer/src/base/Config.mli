@@ -404,6 +404,8 @@ val implicit_sdk_root : string option
 
 val inferconfig_file : string option
 
+val inferconfig_dir : string option
+
 val iphoneos_target_sdk_version : string option
 
 val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
@@ -495,6 +497,8 @@ val no_translate_libs : bool
 val nullable_annotation : string option
 
 val nullsafe : bool
+
+val nullsafe_third_party_signatures : string option
 
 val nullsafe_strict_containers : bool
 
