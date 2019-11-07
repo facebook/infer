@@ -443,7 +443,8 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
         (* TODO(T52947663) model is_external as unknown nullability and move the logic out of this check  *)
         (* If method is external, we don't check it, unless it is explicitly modelled *)
         (not (Typ.Procname.Java.is_external java_pname))
-        || Models.is_modelled_for_nullability callee_pname
+        || Models.is_modelled_for_nullability_as_internal callee_pname
+        || Models.is_modelled_for_nullability_as_external callee_pname
     | _ ->
         false
   in

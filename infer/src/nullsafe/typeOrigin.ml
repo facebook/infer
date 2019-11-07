@@ -57,7 +57,8 @@ let get_description origin =
   | Proc po ->
       let modelled_in =
         (* TODO(T54088319) don't calculate this info and propagate it from AnnotatedNullability instead *)
-        if Models.is_modelled_for_nullability po.pname then " modelled in " ^ ModelTables.this_file
+        if Models.is_modelled_for_nullability_as_internal po.pname then
+          " modelled in " ^ ModelTables.this_file
         else ""
       in
       let description =
