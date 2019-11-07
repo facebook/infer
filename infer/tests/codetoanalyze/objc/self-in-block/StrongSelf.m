@@ -27,6 +27,7 @@
     if (strongSelf) {
       [strongSelf foo];
       int x = self->x; // bug here
+      [self foo];
     }
     return 0;
   };

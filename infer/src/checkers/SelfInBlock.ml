@@ -80,10 +80,12 @@ let make_trace_elements domain =
 
 let report_issues summary domain =
   let weakSelf_opt =
-    TransferFunctions.Domain.find_first_opt (fun {kind} -> DomainData.is_weak_self kind) domain
+    TransferFunctions.Domain.filter (fun {kind} -> DomainData.is_weak_self kind) domain
+    |> TransferFunctions.Domain.choose_opt
   in
   let self_opt =
-    TransferFunctions.Domain.find_first_opt (fun {kind} -> DomainData.is_self kind) domain
+    TransferFunctions.Domain.filter (fun {kind} -> DomainData.is_self kind) domain
+    |> TransferFunctions.Domain.choose_opt
   in
   match (weakSelf_opt, self_opt) with
   | Some {pvar= weakSelf; loc= weakLoc}, Some {pvar= self; loc= selfLoc} ->
