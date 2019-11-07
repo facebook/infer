@@ -356,13 +356,13 @@ module Procname : sig
     (** Replace the method of a java procname. *)
 
     val get_class_name : t -> string
-    (** Return the class name of a java procedure name. *)
+    (** Return the fully qualified class name of a java procedure name (package + class name) *)
 
     val get_class_type_name : t -> Name.t
     (** Return the class name as a typename of a java procedure name. *)
 
     val get_simple_class_name : t -> string
-    (** Return the simple class name of a java procedure name. *)
+    (** Return the simple class name of a java procedure name (i.e. name without the package info). *)
 
     val get_package : t -> string option
     (** Return the package name of a java procedure name. *)
@@ -375,6 +375,9 @@ module Procname : sig
 
     val get_return_typ : t -> typ
     (** Return the return type of [pname_java]. return Tvoid if there's no return type *)
+
+    val is_constructor : t -> bool
+    (** Whether the method is constructor *)
 
     val is_access_method : t -> bool
     (** Check if the procedure name is an acess method (e.g. access$100 used to

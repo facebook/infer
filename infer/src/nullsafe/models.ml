@@ -44,7 +44,26 @@ let get_modelled_annotated_signature_for_biabduction proc_attributes =
   annotated_signature |> lookup_models_nullable
 
 
-(** Return the annotated signature of the procedure, taking into account models. *)
+let get_unique_repr proc_name =
+  let java_proc_name =
+    match proc_name with Typ.Procname.Java java_proc_name -> Some java_proc_name | _ -> None
+  in
+  Option.map java_proc_name ~f:ThirdPartyMethod.unique_repr_of_java_proc_name
+
+
+let to_modelled_nullability ThirdPartyMethod.{ret_nullability; param_nullability} =
+  let is_nullable = function
+    | ThirdPartyMethod.Nullable ->
+        true
+    | ThirdPartyMethod.Nonnull ->
+        false
+  in
+  (is_nullable ret_nullability, List.map param_nullability ~f:is_nullable)
+
+
+(** Return the annotated signature of the procedure, taking into account models.
+    External models take precedence over internal ones.
+ *)
 let get_modelled_annotated_signature tenv proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let is_strict_mode =
@@ -52,13 +71,28 @@ let get_modelled_annotated_signature tenv proc_attributes =
   in
   let annotated_signature = AnnotatedSignature.get ~is_strict_mode proc_attributes in
   let proc_id = Typ.Procname.to_unique_id proc_name in
-  let lookup_models_nullable ann_sig =
+  (* Look in the infer internal models *)
+  let correct_by_internal_models ann_sig =
     try
       let modelled_nullability = Hashtbl.find annotated_table_nullability proc_id in
       AnnotatedSignature.set_modelled_nullability proc_name ann_sig modelled_nullability
     with Caml.Not_found -> ann_sig
   in
-  annotated_signature |> lookup_models_nullable
+  (* Look at external models *)
+  let correct_by_external_models ann_sig =
+    get_unique_repr proc_name
+    |> Option.bind
+         ~f:
+           (ThirdPartyAnnotationInfo.find_nullability_info
+              (ThirdPartyAnnotationGlobalRepo.get_repo ()))
+    |> Option.map ~f:to_modelled_nullability
+    |> Option.value_map
+       (* If we found information in third-party repo, overwrite annotated signature *)
+         ~f:(AnnotatedSignature.set_modelled_nullability proc_name ann_sig)
+         ~default:ann_sig
+  in
+  (* External models overwrite internal ones *)
+  annotated_signature |> correct_by_internal_models |> correct_by_external_models
 
 
 (** Return true when the procedure has been modelled for nullability. *)

@@ -48,6 +48,29 @@ let string_of_parsing_error = function
 
 let pp_unique_repr fmt signature = Sexp.pp fmt (sexp_of_unique_repr signature)
 
+let java_type_to_string java_type =
+  let package = Typ.Name.Java.Split.package java_type in
+  let type_name = Typ.Name.Java.Split.type_name java_type in
+  match package with
+  | None ->
+      (* Primitive type *)
+      type_name
+  | Some package ->
+      package ^ "." ^ type_name
+
+
+let unique_repr_of_java_proc_name java_proc_name =
+  let class_name = Typ.Procname.Java.get_class_name java_proc_name in
+  let method_name =
+    if Typ.Procname.Java.is_constructor java_proc_name then Constructor
+    else Method (Typ.Procname.Java.get_method java_proc_name)
+  in
+  let param_types =
+    Typ.Procname.Java.get_parameters java_proc_name |> List.map ~f:java_type_to_string
+  in
+  {class_name; method_name; param_types}
+
+
 let pp_nullability fmt nullability = Sexp.pp fmt (sexp_of_nullability nullability)
 
 let nullable_annotation = "@Nullable"

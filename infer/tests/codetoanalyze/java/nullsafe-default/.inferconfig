@@ -3,5 +3,5 @@
     "external."
   ],
   "nullsafe-strict-containers": true,
-  "nullsafe-third-party-signatures": "third-party-annots"
+  "nullsafe-third-party-signatures": "third-party-signatures"
 }

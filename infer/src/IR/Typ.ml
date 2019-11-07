@@ -764,6 +764,8 @@ module Procname = struct
       ; kind= Static }
 
 
+    let is_constructor {method_name} = String.equal method_name constructor_method_name
+
     let is_anonymous_inner_class_constructor {class_name} =
       Name.Java.is_anonymous_inner_class_name class_name
 
