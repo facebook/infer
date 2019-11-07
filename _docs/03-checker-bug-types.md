@@ -17,6 +17,7 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Ivar not null checked](/docs/checkers-bug-types.html#IVAR_NOT_NULL_CHECKED)
   - [Lock Consistency Violation](/docs/checkers-bug-types.html#LOCK_CONSISTENCY_VIOLATION)
   - [Memory leak](/docs/checkers-bug-types.html#MEMORY_LEAK)
+  - [Mixed self weakSelf](/docs/checkers-bug-types.html#MIXED_SELF_WEAKSELF)
   - [Null dereference](/docs/checkers-bug-types.html#NULL_DEREFERENCE)
   - [Parameter not null checked](/docs/checkers-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Premature nil termination argument](/docs/checkers-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
@@ -229,6 +230,12 @@ The above may happen through a chain of calls. Above, `x` may also be a containe
 - Avoid the offending access (most often the read).  Of course, this may not be possible.
 - Use synchronization to protect the read, by using the same lock protecting the corresponding write.
 - Make the method doing the read access private.  This should silence the warning, since Infer looks for a pair of non-private methods. Objective-C: Infer considers a method as private if it's not exported in the header-file interface. 
+
+<a name="MIXED_SELF_WEAKSELF"></a>
+
+## Mixed self weakSelf
+
+This happens when an Objective-C block captures both `self` and `weakSelf`, a weak pointer to `self`. Possibly the developer meant to capture only `weakSelf` to avoid a retain cycle, but made a typo and used `self` as well in the block, instead of `strongSelf`. In this case, this could cause a retain cycle. 
 
 <a name="MEMORY_LEAK"></a>
 
