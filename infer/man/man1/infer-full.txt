@@ -1540,8 +1540,8 @@ INTERNAL OPTIONS
 
        --nullsafe-third-party-signatures string
            Path to a folder with annotated signatures of third-party methods
-           to be taken into account by nullsafe. Path is relative to
-           .inferconfig folder.
+           to be taken into account by nullsafe. Path is either relative to
+           .inferconfig folder or absolute
 
        --nullsafe-third-party-signatures-reset
            Cancel the effect of --nullsafe-third-party-signatures.

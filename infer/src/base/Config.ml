@@ -1761,7 +1761,7 @@ and nullable_annotation =
 and nullsafe_third_party_signatures =
   CLOpt.mk_string_opt ~long:"nullsafe-third-party-signatures"
     "Path to a folder with annotated signatures of third-party methods to be taken into account \
-     by nullsafe. Path is relative to .inferconfig folder."
+     by nullsafe. Path is either relative to .inferconfig folder or absolute"
 
 
 and nullsafe_strict_containers =
