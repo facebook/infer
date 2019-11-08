@@ -9,22 +9,39 @@ addons:
   apt:
     packages:
     - libmpfr-dev
+  homebrew:
+    packages:
+      - aspcud
+      - automake
+      - gmp
+      - libtool
+      - lzlib
+      - mpfr
+      - pkg-config
+      - sqlite
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ARCH="darwin"; else ARCH="linux"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PATH="/usr/bin:${PATH}"; fi
   - wget -O ${HOME}/opam https://github.com/ocaml/opam/releases/download/2.0.3/opam-2.0.3-x86_64-${ARCH}
   - chmod +x ${HOME}/opam
   - export PATH=${HOME}:${PATH}
   - export OPAMYES=1
   - export OPAMJOBS=2
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export OPAMEXTERNALSOLVER=$(which aspcud); fi
   - opam init --compiler=${OCAML_VERSION} --disable-sandboxing
   - eval $(opam env)
   - export OPAMVERBOSE=1
 install:
+  # ensure infer isn't installed in this switch, then deal with dependencies
+  - opam remove infer
   - opam update --upgrade
   - opam pin add --no-action infer .
-  - opam depext --update infer
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then opam depext --update infer; fi
   - opam install --deps-only infer
 script:
   - opam install infer
+before_cache:
+  - opam remove infer
 os:
 - linux
+- osx
