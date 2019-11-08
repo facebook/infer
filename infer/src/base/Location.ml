@@ -45,3 +45,12 @@ let pp_range f (loc_start, loc_end) =
     else F.fprintf f "-%a" pp_short loc_end
   in
   F.fprintf f "%a%a" pp_file_pos loc_start (pp_end loc_start) loc_end
+
+
+module Map = PrettyPrintable.MakePPMap (struct
+  type nonrec t = t
+
+  let compare = compare
+
+  let pp = pp
+end)
