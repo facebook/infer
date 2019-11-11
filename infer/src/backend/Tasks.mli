@@ -9,10 +9,6 @@ open! IStd
 
 type 'a doer = 'a -> unit
 
-type 'a task_generator = 'a ProcessPool.task_generator
-
-val gen_of_list : 'a list -> 'a task_generator
-
 val run_sequentially : f:'a doer -> 'a list -> unit
 (** Run the tasks sequentially *)
 
@@ -27,7 +23,7 @@ module Runner : sig
        jobs:int
     -> f:'work doer
     -> child_epilogue:(unit -> 'final)
-    -> tasks:'work task_generator
+    -> tasks:'work ProcessPool.TaskGenerator.t
     -> ('work, 'final) t
   (** Create a runner running [jobs] jobs in parallel *)
 

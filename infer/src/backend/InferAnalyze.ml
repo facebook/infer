@@ -18,7 +18,7 @@ let clear_caches () =
   Typ.Procname.SQLite.clear_cache ()
 
 
-let analyze_target : TaskScheduler.target Tasks.doer =
+let analyze_target : SchedulerTypes.target Tasks.doer =
   let analyze_source_file exe_env source_file =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
@@ -116,7 +116,9 @@ let get_source_files_to_analyze ~changed_files =
 
 let analyze source_files_to_analyze =
   if Int.equal Config.jobs 1 then (
-    let target_files = List.rev_map source_files_to_analyze ~f:(fun sf -> TaskScheduler.File sf) in
+    let target_files =
+      List.rev_map source_files_to_analyze ~f:(fun sf -> SchedulerTypes.File sf)
+    in
     Tasks.run_sequentially ~f:analyze_target target_files ;
     BackendStats.get () )
   else (

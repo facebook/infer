@@ -9,6 +9,43 @@ open! IStd
 module F = Format
 module L = Logging
 
+module TaskGenerator = struct
+  type 'a t =
+    { remaining_tasks: unit -> int
+    ; is_empty: unit -> bool
+    ; finished: 'a -> unit
+    ; next: unit -> 'a option }
+
+  let chain (gen1 : 'a t) (gen2 : 'a t) : 'a t =
+    let remaining_tasks () = gen1.remaining_tasks () + gen2.remaining_tasks () in
+    let gen1_returned_empty = ref false in
+    let gen1_is_empty () =
+      gen1_returned_empty := !gen1_returned_empty || gen1.is_empty () ;
+      !gen1_returned_empty
+    in
+    let is_empty () = gen1_is_empty () && gen2.is_empty () in
+    let finished x = if gen1_is_empty () then gen2.finished x else gen1.finished x in
+    let next x = if gen1_is_empty () then gen2.next x else gen1.next x in
+    {remaining_tasks; is_empty; finished; next}
+
+
+  let of_list (lst : 'a list) : 'a t =
+    let content = ref lst in
+    let length = ref (List.length lst) in
+    let remaining_tasks () = !length in
+    let is_empty () = List.is_empty !content in
+    let finished _finished_item = decr length in
+    let next () =
+      match !content with
+      | [] ->
+          None
+      | x :: xs ->
+          content := xs ;
+          Some x
+    in
+    {remaining_tasks; is_empty; finished; next}
+end
+
 let log_or_die fmt = if Config.keep_going then L.internal_error fmt else L.die InternalError fmt
 
 type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
@@ -21,12 +58,6 @@ type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 *)
 type 'a child_state = Initializing | Idle | Processing of 'a
 
-type 'a task_generator =
-  { remaining_tasks: unit -> int
-  ; is_empty: unit -> bool
-  ; finished: 'a -> unit
-  ; next: unit -> 'a option }
-
 (** the state of the pool *)
 type ('work, 'final) t =
   { jobs: int
@@ -38,7 +69,7 @@ type ('work, 'final) t =
   ; children_updates: Unix.File_descr.t
         (** all the children send updates up the same pipe to the pool *)
   ; task_bar: TaskBar.t
-  ; tasks: 'work task_generator  (** generator for work remaining to be done *)
+  ; tasks: 'work TaskGenerator.t  (** generator for work remaining to be done *)
   ; file_lock: Utils.file_lock  (** file lock for sending worker messages *) }
 
 (** {2 Constants} *)
@@ -383,7 +414,7 @@ let create :
     -> child_prelude:(unit -> unit)
     -> f:('work -> unit)
     -> child_epilogue:(unit -> 'final)
-    -> tasks:'work task_generator
+    -> tasks:'work TaskGenerator.t
     -> ('work, 'final) t =
  fun ~jobs ~child_prelude ~f ~child_epilogue ~tasks ->
   let file_lock = Utils.create_file_lock () in

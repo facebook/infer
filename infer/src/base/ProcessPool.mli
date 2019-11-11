@@ -7,6 +7,30 @@
 
 open! IStd
 
+module TaskGenerator : sig
+  (** abstraction for generating jobs *)
+  type 'a t =
+    { remaining_tasks: unit -> int
+          (** number of tasks remaining to complete -- only used for reporting, so imprecision is not a bug *)
+    ; is_empty: unit -> bool
+          (** when should the main loop of the task manager stop expecting new tasks *)
+    ; finished: 'a -> unit
+          (** Process pool calls [finished x] when a worker finishes item [x]. This is only called 
+            if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
+    ; next: unit -> 'a option
+          (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] 
+            must return [None].  However, it is OK to for [next ()] to return [None] when [is_empty] 
+            is false.  This corresponds to the case where there is more work to be done, 
+            but it is not schedulable until some already scheduled work is finished. *)
+    }
+
+  val chain : 'a t -> 'a t -> 'a t
+  (** chain two generators in order *)
+
+  val of_list : 'a list -> 'a t
+  (** schedule tasks out of a concrete list *)
+end
+
 (** Pool of parallel workers that can both receive tasks from the master process and start doing
     tasks on their own. Unix pipes are used for communication, all while refreshing a task bar
     periodically.
@@ -27,28 +51,12 @@ open! IStd
    results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)
 type (_, _) t
 
-(** abstraction for generating jobs *)
-type 'a task_generator =
-  { remaining_tasks: unit -> int
-        (** number of tasks remaining to complete -- only used for reporting, so imprecision is not a bug *)
-  ; is_empty: unit -> bool
-        (** when should the main loop of the task manager stop expecting new tasks *)
-  ; finished: 'a -> unit
-        (** Process pool calls [finished x] when a worker finishes item [x]. This is only called 
-            if [next ()] has previously returned [Some x] and [x] was sent to a worker. *)
-  ; next: unit -> 'a option
-        (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] 
-            must return [None].  However, it is OK to for [next ()] to return [None] when [is_empty] 
-            is false.  This corresponds to the case where there is more work to be done, 
-            but it is not schedulable until some already scheduled work is finished. *)
-  }
-
 val create :
      jobs:int
   -> child_prelude:(unit -> unit)
   -> f:('work -> unit)
   -> child_epilogue:(unit -> 'final)
-  -> tasks:'work task_generator
+  -> tasks:'work TaskGenerator.t
   -> ('work, 'final) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 

@@ -6,5 +6,9 @@
  *)
 open! IStd
 
-val build_from_sources : CallGraph.t -> SourceFile.t list -> unit
-(** build restriction of call graph to procedures reachable from provided sources *)
+val bottom_up : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t
+(** task generator that works by 
+    - loading the syntactic call graph from the capture DB 
+    - restricting it to the reachable procs from the modified files
+    - scheduling leaves only and removing them from the graph when analysed.
+*)

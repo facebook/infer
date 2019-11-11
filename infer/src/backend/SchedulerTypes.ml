@@ -6,4 +6,4 @@
  *)
 open! IStd
 
-val schedule : SourceFile.t list -> SchedulerTypes.target ProcessPool.TaskGenerator.t
+type target = Procname of Typ.Procname.t | File of SourceFile.t

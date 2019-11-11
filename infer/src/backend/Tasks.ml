@@ -9,8 +9,6 @@ open! IStd
 
 type 'a doer = 'a -> unit
 
-type 'a task_generator = 'a ProcessPool.task_generator
-
 let fork_protect ~f x = BackendStats.reset () ; ForkUtils.protect ~f x
 
 module Runner = struct
@@ -39,25 +37,8 @@ module Runner = struct
     ProcessPool.run runner
 end
 
-let gen_of_list (lst : 'a list) : 'a task_generator =
-  let content = ref lst in
-  let length = ref (List.length lst) in
-  let remaining_tasks () = !length in
-  let is_empty () = List.is_empty !content in
-  let finished _finished_item = decr length in
-  let next () =
-    match !content with
-    | [] ->
-        None
-    | x :: xs ->
-        content := xs ;
-        Some x
-  in
-  {remaining_tasks; is_empty; finished; next}
-
-
 let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =
-  let task_generator = gen_of_list tasks in
+  let task_generator = ProcessPool.TaskGenerator.of_list tasks in
   let task_bar = TaskBar.create ~jobs:1 in
   (ProcessPoolState.update_status :=
      fun t status ->
