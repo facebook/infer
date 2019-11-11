@@ -407,6 +407,26 @@ type resolved_param =
   ; actual: Exp.t * InferredNullability.t
   ; is_formal_propagates_nullable: bool }
 
+(* if this method belongs to a third party code, but is not modelled neigher internally nor externally *)
+let is_third_party_without_model proc_name =
+  let is_third_party =
+    match proc_name with
+    | Typ.Procname.Java java_pname ->
+        (* TODO: migrate to the new way of checking for third party: use
+           signatures repository instead of looking it up in config params.
+     *)
+        Typ.Procname.Java.is_external java_pname
+    | _ ->
+        false
+    (* TODO: propagate the knowledge if it is a third-party or not in the annotated signature instead
+     of calculating it every time from scratch.
+   *)
+  in
+  is_third_party
+  && (not (Models.is_modelled_for_nullability_as_internal proc_name))
+  && not (Models.is_modelled_for_nullability_as_external proc_name)
+
+
 (** Check the parameters of a call. *)
 let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pdesc node
     callee_attributes resolved_params loc instr_ref : unit =
@@ -437,18 +457,18 @@ let check_call_parameters ~is_strict_mode tenv find_canonical_duplicate curr_pde
       let rhs = InferredNullability.get_nullability nullability_actual in
       Result.iter_error (AssignmentRule.check ~is_strict_mode ~lhs ~rhs) ~f:report
   in
-  let should_check_parameters =
-    match callee_pname with
-    | Typ.Procname.Java java_pname ->
-        (* TODO(T52947663) model is_external as unknown nullability and move the logic out of this check  *)
-        (* If method is external, we don't check it, unless it is explicitly modelled *)
-        (not (Typ.Procname.Java.is_external java_pname))
-        || Models.is_modelled_for_nullability_as_internal callee_pname
-        || Models.is_modelled_for_nullability_as_external callee_pname
-    | _ ->
-        false
+  (* Currently, in a non-strict mode, Nullsafe does not check calls to unknown third-party functions, i.e.
+     we explicitly assume all params can accept null.
+     Historically this is because there was no actionable way to change third party annotations.
+     Now that we have such a support, this behavior might be reconsidered, provided
+     our tooling and error reporting is friendly enough to be smoothly used by developers.
+    *)
+  let should_ignore_parameters_check =
+    (* TODO(T52947663) model params in third-party non modelled method as a dedicated nullability type,
+       so this logic can be moved to [AssignmentRule.check] *)
+    (not is_strict_mode) && is_third_party_without_model callee_pname
   in
-  if should_check_parameters then
+  if not should_ignore_parameters_check then
     (* left to right to avoid guessing the different lengths *)
     List.iter ~f:check resolved_params
 
