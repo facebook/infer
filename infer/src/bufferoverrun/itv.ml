@@ -358,12 +358,23 @@ module ItvPure = struct
 
   let lor_sem : t -> t -> Boolean.t = fun x y -> Boolean.or_ (to_bool x) (to_bool y)
 
-  let min_sem : t -> t -> t =
-   fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_min u1 u2)
+  let lift_minmax_bound ~use_minmax_bound ~mk ~f x y =
+    let r = f x y in
+    if use_minmax_bound && Bound.is_infty r && Bound.is_not_infty x && Bound.is_not_infty y then
+      mk x y
+    else r
 
 
-  let max_sem : t -> t -> t =
-   fun (l1, u1) (l2, u2) -> (Bound.underapprox_max l1 l2, Bound.overapprox_max u1 u2)
+  let min_sem : ?use_minmax_bound:bool -> t -> t -> t =
+   fun ?(use_minmax_bound = false) (l1, u1) (l2, u2) ->
+    let lift = lift_minmax_bound ~use_minmax_bound ~mk:Bound.of_minmax_bound_min in
+    (lift ~f:Bound.underapprox_min l1 l2, lift ~f:Bound.overapprox_min u1 u2)
+
+
+  let max_sem : ?use_minmax_bound:bool -> t -> t -> t =
+   fun ?(use_minmax_bound = false) (l1, u1) (l2, u2) ->
+    let lift = lift_minmax_bound ~use_minmax_bound ~mk:Bound.of_minmax_bound_max in
+    (lift ~f:Bound.underapprox_max l1 l2, lift ~f:Bound.overapprox_max u1 u2)
 
 
   let is_invalid : t -> bool = fun (l, u) -> Bound.is_pinf l || Bound.is_minf u || Bound.lt u l
@@ -672,9 +683,13 @@ let land_sem : t -> t -> Boolean.t = bind2b ItvPure.land_sem
 
 let lor_sem : t -> t -> Boolean.t = bind2b ItvPure.lor_sem
 
-let min_sem : t -> t -> t = lift2 ItvPure.min_sem
+let min_sem : ?use_minmax_bound:bool -> t -> t -> t =
+ fun ?use_minmax_bound -> lift2 (ItvPure.min_sem ?use_minmax_bound)
 
-let max_sem : t -> t -> t = lift2 ItvPure.max_sem
+
+let max_sem : ?use_minmax_bound:bool -> t -> t -> t =
+ fun ?use_minmax_bound -> lift2 (ItvPure.max_sem ?use_minmax_bound)
+
 
 let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 

@@ -1417,7 +1417,9 @@ module Call = struct
         &:: "getLong" <>$ capt_exp $--> ByteBuffer.get_int
       ; -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
       ; +PatternMatch.implements_lang "Math"
-        &:: "max" <>$ capt_exp $+ capt_exp $--> eval_binop ~f:Itv.max_sem
+        &:: "max" <>$ capt_exp $+ capt_exp
+        $--> eval_binop ~f:(Itv.max_sem ~use_minmax_bound:true)
       ; +PatternMatch.implements_lang "Math"
-        &:: "min" <>$ capt_exp $+ capt_exp $--> eval_binop ~f:Itv.min_sem ]
+        &:: "min" <>$ capt_exp $+ capt_exp
+        $--> eval_binop ~f:(Itv.min_sem ~use_minmax_bound:true) ]
 end

@@ -16,6 +16,14 @@ class MathTest {
     for (int i = 0; i < Math.max(0, arr.length); i++) {}
   }
 
+  void max2_symbolic(int x, int y) {
+    for (int i = 0; i < Math.max(x, y); i++) {}
+  }
+
+  void call_max2_constant() {
+    max2_symbolic(10, 20);
+  }
+
   void linear(int p) {
     for (int count = 0; count < p; count++) {}
   }

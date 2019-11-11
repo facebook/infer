@@ -44,11 +44,17 @@ module Bound : sig
 
   val of_modeled_path : Symb.Symbol.make_t -> Symb.SymbolPath.partial -> t
 
+  val of_minmax_bound_min : t -> t -> t
+
+  val of_minmax_bound_max : t -> t -> t
+
   val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
 
   val is_length_path_of : Symb.SymbolPath.partial -> t -> bool
 
   val is_zero : t -> bool
+
+  val is_infty : t -> bool
 
   val is_not_infty : t -> bool
 

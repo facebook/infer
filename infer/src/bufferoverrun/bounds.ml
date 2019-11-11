@@ -232,6 +232,7 @@ module Bound = struct
     | MInf
     | Linear of Z.t * SymLinear.t
     | MinMax of Z.t * Sign.t * MinMax.t * Z.t * Symb.Symbol.t
+    | MinMaxB of MinMax.t * t * t
     | PInf
   [@@deriving compare]
 
@@ -251,7 +252,7 @@ module Bound = struct
         b
 
 
-  let pp_mark : markup:bool -> F.formatter -> t -> unit =
+  let rec pp_mark : markup:bool -> F.formatter -> t -> unit =
    fun ~markup f -> function
     | MInf ->
         F.pp_print_string f "-oo"
@@ -268,6 +269,8 @@ module Bound = struct
         if Z.(equal c zero) then (Sign.pp ~need_plus:false) f sign
         else F.fprintf f "%a%a" Z.pp_print c (Sign.pp ~need_plus:true) sign ;
         F.fprintf f "%a(%a, %a)" MinMax.pp m Z.pp_print d (Symb.Symbol.pp_mark ~markup) x
+    | MinMaxB (m, x, y) ->
+        F.fprintf f "%a(%a, %a)" MinMax.pp m (pp_mark ~markup) x (pp_mark ~markup) y
 
 
   let pp = pp_mark ~markup:false
@@ -295,6 +298,8 @@ module Bound = struct
 
 
   let is_zero : t -> bool = is_some_const Z.zero
+
+  let is_infty : t -> bool = function MInf | PInf -> true | _ -> false
 
   let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
 
@@ -345,13 +350,15 @@ module Bound = struct
           false )
 
 
-  let is_symbolic : t -> bool = function
+  let rec is_symbolic : t -> bool = function
     | MInf | PInf ->
         false
     | Linear (_, se) ->
         not (SymLinear.is_empty se)
     | MinMax _ ->
         true
+    | MinMaxB (_, x, y) ->
+        is_symbolic x || is_symbolic y
 
 
   let mk_MinMax (c, sign, m, d, s) =
@@ -377,7 +384,7 @@ module Bound = struct
         Some c
     | MinMax _ ->
         None
-    | MInf | PInf | Linear _ ->
+    | MinMaxB _ | MInf | PInf | Linear _ ->
         assert false
 
 
@@ -390,7 +397,7 @@ module Bound = struct
         Some c
     | MinMax _ ->
         None
-    | MInf | PInf | Linear _ ->
+    | MinMaxB _ | MInf | PInf | Linear _ ->
         assert false
 
 
@@ -401,7 +408,7 @@ module Bound = struct
         big_int_ub_of_minmax
 
 
-  let big_int_lb = function
+  let rec big_int_lb = function
     | MInf ->
         None
     | PInf ->
@@ -410,9 +417,11 @@ module Bound = struct
         big_int_lb_of_minmax b
     | Linear (c, se) ->
         SymLinear.big_int_lb se |> Option.map ~f:(Z.( + ) c)
+    | MinMaxB (m, x, y) ->
+        Option.map2 (big_int_lb x) (big_int_lb y) ~f:(MinMax.eval_big_int m)
 
 
-  let big_int_ub = function
+  let rec big_int_ub = function
     | MInf ->
         assert false
     | PInf ->
@@ -421,6 +430,8 @@ module Bound = struct
         big_int_ub_of_minmax b
     | Linear (c, se) ->
         SymLinear.big_int_ub se |> Option.map ~f:(Z.( + ) c)
+    | MinMaxB (m, x, y) ->
+        Option.map2 (big_int_ub x) (big_int_ub y) ~f:(MinMax.eval_big_int m)
 
 
   let linear_ub_of_minmax = function
@@ -430,7 +441,7 @@ module Bound = struct
         Some (Linear (c, SymLinear.singleton_minus_one x))
     | MinMax _ ->
         None
-    | MInf | PInf | Linear _ ->
+    | MinMaxB _ | MInf | PInf | Linear _ ->
         assert false
 
 
@@ -441,7 +452,7 @@ module Bound = struct
         Some (Linear (c, SymLinear.singleton_minus_one x))
     | MinMax _ ->
         None
-    | MInf | PInf | Linear _ ->
+    | MinMaxB _ | MInf | PInf | Linear _ ->
         assert false
 
 
@@ -490,9 +501,17 @@ module Bound = struct
     | Linear (c, se), MinMax _ ->
         (SymLinear.is_le_zero se && le_opt2 Z.leq c (big_int_lb_of_minmax y))
         || le_opt2 le x (linear_lb_of_minmax y)
+    | MinMaxB (Max, x1, x2), y ->
+        le x1 y && le x2 y
+    | MinMaxB (Min, x1, x2), y ->
+        le x1 y || le x2 y
+    | x, MinMaxB (Max, y1, y2) ->
+        le x y1 || le x y2
+    | x, MinMaxB (Min, y1, y2) ->
+        le x y1 && le x y2
 
 
-  let lt : t -> t -> bool =
+  let rec lt : t -> t -> bool =
    fun x y ->
     match (x, y) with
     | MInf, Linear _ | MInf, MinMax _ | MInf, PInf | Linear _, PInf | MinMax _, PInf ->
@@ -501,6 +520,14 @@ module Bound = struct
         le (Linear (Z.succ c, x)) y
     | MinMax (c, sign, min_max, d, x), _ ->
         le (mk_MinMax (Z.succ c, sign, min_max, d, x)) y
+    | MinMaxB (Max, x1, x2), y ->
+        lt x1 y && lt x2 y
+    | MinMaxB (Min, x1, x2), y ->
+        lt x1 y || lt x2 y
+    | x, MinMaxB (Max, y1, y2) ->
+        lt x y1 || lt x y2
+    | x, MinMaxB (Min, y1, y2) ->
+        lt x y1 && lt x y2
     | _, _ ->
         false
 
@@ -509,11 +536,26 @@ module Bound = struct
 
   let eq : t -> t -> bool = fun x y -> le x y && le y x
 
+  let mk_MinMaxB (m, x, y) =
+    if le x y then match m with Min -> x | Max -> y
+    else if le y x then match m with Min -> y | Max -> x
+    else
+      match (x, y) with
+      | (Linear _ | MinMax _), (Linear _ | MinMax _) ->
+          MinMaxB (m, x, y)
+      | _, _ -> (
+        match m with Min -> MInf | Max -> PInf )
+
+
+  let of_minmax_bound_min x y = mk_MinMaxB (Min, x, y)
+
+  let of_minmax_bound_max x y = mk_MinMaxB (Max, x, y)
+
   let xcompare = PartialOrder.of_le ~le
 
   let is_const : t -> bool = function Linear (_, se) -> SymLinear.is_zero se | _ -> false
 
-  let neg : t -> t = function
+  let rec neg : t -> t = function
     | MInf ->
         PInf
     | PInf ->
@@ -522,6 +564,8 @@ module Bound = struct
         if Z.(equal c zero) && SymLinear.is_zero x then b else Linear (Z.neg c, SymLinear.neg x)
     | MinMax (c, sign, min_max, d, x) ->
         mk_MinMax (Z.neg c, Sign.neg sign, min_max, d, x)
+    | MinMaxB (m, x, y) ->
+        mk_MinMaxB (MinMax.neg m, neg x, neg y)
 
 
   let exact_min : otherwise:(t -> t -> t) -> t -> t -> t =
@@ -819,7 +863,7 @@ module Bound = struct
    fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
 
 
-  let plus_exact : weak:bool -> otherwise:(t -> t -> t) -> t -> t -> t =
+  let rec plus_exact : weak:bool -> otherwise:(t -> t -> t) -> t -> t -> t =
    fun ~weak ~otherwise x y ->
     if is_zero x then y
     else if is_zero y then x
@@ -836,6 +880,8 @@ module Bound = struct
         when SymLinear.is_signed_one_symbol_of ~weak (Sign.neg sign) x1 x2 ->
           let c = Sign.eval_big_int sign Z.(c1 + c2) d in
           mk_MinMax (c, Sign.neg sign, MinMax.neg min_max, d, x1)
+      | MinMaxB (m, x, y), z ->
+          mk_MinMaxB (m, plus_exact ~weak ~otherwise x z, plus_exact ~weak ~otherwise y z)
       | _ ->
           otherwise x y
 
@@ -873,7 +919,7 @@ module Bound = struct
         plus_u ~weak:false
 
 
-  let mult_const : Symb.BoundEnd.t -> NonZeroInt.t -> t -> t =
+  let rec mult_const : Symb.BoundEnd.t -> NonZeroInt.t -> t -> t =
    fun bound_end n x ->
     if NonZeroInt.is_one n then x
     else
@@ -896,6 +942,8 @@ module Bound = struct
               of_big_int Z.(i * (n :> Z.t))
           | None ->
               of_bound_end bound_end )
+      | MinMaxB (m, x, y) ->
+          mk_MinMaxB (m, mult_const bound_end n x, mult_const bound_end n y)
 
 
   let mult_const_l = mult_const Symb.BoundEnd.LowerBound
@@ -946,13 +994,15 @@ module Bound = struct
 
   let div_const_u = div_const Symb.BoundEnd.UpperBound
 
-  let get_symbols : t -> Symb.SymbolSet.t = function
+  let rec get_symbols : t -> Symb.SymbolSet.t = function
     | MInf | PInf ->
         Symb.SymbolSet.empty
     | Linear (_, se) ->
         SymLinear.get_symbols se
     | MinMax (_, _, _, _, s) ->
         Symb.SymbolSet.singleton s
+    | MinMaxB (_, x, y) ->
+        Symb.SymbolSet.union (get_symbols x) (get_symbols y)
 
 
   let has_void_ptr_symb x =
@@ -964,7 +1014,7 @@ module Bound = struct
   let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
 
   (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as possible according to [subst_pos]. *)
-  let subst : subst_pos:Symb.BoundEnd.t -> t -> eval_sym -> t bottom_lifted =
+  let rec subst : subst_pos:Symb.BoundEnd.t -> t -> eval_sym -> t bottom_lifted =
     let lift1 : (t -> t) -> t bottom_lifted -> t bottom_lifted =
      fun f x -> match x with Bottom -> Bottom | NonBottom x -> NonBottom (f x)
     in
@@ -1027,9 +1077,9 @@ module Bound = struct
           | NonBottom x' ->
               let res =
                 match (sign, min_max, x') with
-                | Plus, Min, MInf | Minus, Max, PInf ->
+                | Plus, Min, (MInf | MinMaxB _) | Minus, Max, (PInf | MinMaxB _) ->
                     MInf
-                | Plus, Max, PInf | Minus, Min, MInf ->
+                | Plus, Max, (PInf | MinMaxB _) | Minus, Min, (MInf | MinMaxB _) ->
                     PInf
                 | sign, Min, PInf | sign, Max, MInf ->
                     of_big_int (Sign.eval_big_int sign c d)
@@ -1076,6 +1126,12 @@ module Bound = struct
                               (big_int_of_minmax bound_end x' |> Option.value ~default:d))) )
               in
               NonBottom res )
+      | MinMaxB (m, x, y) -> (
+        match (subst ~subst_pos x eval_sym, subst ~subst_pos y eval_sym) with
+        | Bottom, _ | _, Bottom ->
+            Bottom
+        | NonBottom x, NonBottom y ->
+            NonBottom (mk_MinMaxB (m, x, y)) )
 
 
   let subst_lb x eval_sym = subst ~subst_pos:Symb.BoundEnd.LowerBound x eval_sym
@@ -1091,13 +1147,17 @@ module Bound = struct
         b
 
 
-  let simplify_bound_ends_from_paths x =
+  let rec simplify_bound_ends_from_paths x =
     match x with
     | MInf | PInf | MinMax _ ->
         x
     | Linear (c, se) ->
         let se' = SymLinear.simplify_bound_ends_from_paths se in
         if phys_equal se se' then x else Linear (c, se')
+    | MinMaxB (m, a, b) ->
+        let a' = simplify_bound_ends_from_paths a in
+        let b' = simplify_bound_ends_from_paths b in
+        if phys_equal a a' && phys_equal b b' then x else mk_MinMaxB (m, a', b')
 
 
   let is_same_symbol b1 b2 =
@@ -1108,13 +1168,15 @@ module Bound = struct
         None
 
 
-  let exists_str ~f = function
+  let rec exists_str ~f = function
     | MInf | PInf ->
         false
     | Linear (_, s) ->
         SymLinear.exists_str ~f s
     | MinMax (_, _, _, _, s) ->
         Symb.Symbol.exists_str ~f s
+    | MinMaxB (_, x, y) ->
+        exists_str ~f x || exists_str ~f y
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't

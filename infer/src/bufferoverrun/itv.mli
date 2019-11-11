@@ -213,9 +213,9 @@ val lor_sem : t -> t -> Boolean.t
 
 val lt_sem : t -> t -> Boolean.t
 
-val min_sem : t -> t -> t
+val min_sem : ?use_minmax_bound:bool -> t -> t -> t
 
-val max_sem : t -> t -> t
+val max_sem : ?use_minmax_bound:bool -> t -> t -> t
 
 val mod_sem : t -> t -> t
 
