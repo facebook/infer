@@ -70,7 +70,10 @@ let n_procs {node_map} = NodeMap.length node_map
 
 let node_of_procname g pname = id_of_procname g pname |> Option.bind ~f:(node_of_id g)
 
-let remove (g : t) pname id = IdMap.remove g.id_map pname ; NodeMap.remove g.node_map id
+let remove (g : t) pname =
+  IdMap.remove g.id_map pname ;
+  id_of_procname g pname |> Option.iter ~f:(NodeMap.remove g.node_map)
+
 
 let get_or_set_id ({id_map} as graph) procname =
   match id_of_procname graph procname with
@@ -106,18 +109,7 @@ let add_edge ({node_map} as graph) ~pname ~successor_pname =
   Node.add_successor node successor
 
 
-let remove_reachable g start_pname =
-  let add_live_successors_and_remove_self init (n : Node.t) =
-    remove g n.pname n.id ;
-    List.fold n.successors ~init ~f:(fun init succ_id ->
-        node_of_id g succ_id |> Option.fold ~init ~f:(fun acc s -> s :: acc) )
-  in
-  let rec remove_list frontier =
-    if not (List.is_empty frontier) then
-      remove_list (List.fold frontier ~init:[] ~f:add_live_successors_and_remove_self)
-  in
-  node_of_procname g start_pname |> Option.iter ~f:(fun start_node -> remove_list [start_node])
-
+let flag g pname = node_of_procname g pname |> Option.iter ~f:Node.set_flag
 
 let flag_reachable g start_pname =
   let process_node init (n : Node.t) =

@@ -38,14 +38,15 @@ val n_procs : t -> int
 val mem : t -> int -> bool
 (** is an int [id] the index of a node in the graph? *)
 
+val flag : t -> Typ.Procname.t -> unit
+
 val flag_reachable : t -> Typ.Procname.t -> unit
 (** flag all nodes reachable from the node of the given procname, if it exists *)
 
 val get_unflagged_leaves : t -> Node.t list
 (** get all leaves that have their flag set to false *)
 
-val remove_reachable : t -> Typ.Procname.t -> unit
-(** remove all nodes reachable from procname *)
+val remove : t -> Typ.Procname.t -> unit
 
 val to_dotty : t -> string -> unit
 (** output call graph in dotty format with the given filename in results dir *)

@@ -71,7 +71,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
     let empty = !initialized && List.is_empty !pending && Typ.Procname.Set.is_empty !scheduled in
     if empty then (
       remaining := 0 ;
-      L.progress "Finished call graph scheduling, %d procs remaining (in cycles).@."
+      L.progress "Finished call graph scheduling, %d procs remaining (in, or reaching, cycles).@."
         (CallGraph.n_procs syntactic_call_graph) ;
       if Config.debug_level_analysis > 0 then CallGraph.to_dotty syntactic_call_graph "cycles.dot" ;
       (* save some memory *)
@@ -89,7 +89,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
     | n :: ns ->
         pending := ns ;
         scheduled := Typ.Procname.Set.add n.pname !scheduled ;
-        CallGraph.flag_reachable syntactic_call_graph n.pname ;
+        CallGraph.flag syntactic_call_graph n.pname ;
         Some (Procname n.pname)
   in
   let finished = function
@@ -98,7 +98,7 @@ let bottom_up sources : SchedulerTypes.target ProcessPool.TaskGenerator.t =
     | Procname pname ->
         decr remaining ;
         scheduled := Typ.Procname.Set.remove pname !scheduled ;
-        CallGraph.remove_reachable syntactic_call_graph pname
+        CallGraph.remove syntactic_call_graph pname
   in
   let next () =
     (* do construction here, to avoid having the call graph into forked workers *)
