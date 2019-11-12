@@ -202,6 +202,10 @@ public class Cost_test {
   void loop_on_unknown_global_linear() {
     for (int i = 0; i < get_global(); i++) {}
   }
+
+  void band_constant(int x) {
+    for (int i = 0; i < (int) (x & 0xff); i++) {}
+  }
 }
 
 class CloneTest {

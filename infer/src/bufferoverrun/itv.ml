@@ -323,6 +323,8 @@ module ItvPure = struct
     | _, _ ->
         if is_ge_zero x && is_ge_zero y then (Bound.zero, Bound.overapprox_min (ub x) (ub y))
         else if is_le_zero x && is_le_zero y then (Bound.minf, Bound.overapprox_min (ub x) (ub y))
+        else if is_ge_zero x then (Bound.zero, ub x)
+        else if is_ge_zero y then (Bound.zero, ub y)
         else top
 
 
