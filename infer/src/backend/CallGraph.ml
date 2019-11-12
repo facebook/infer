@@ -71,8 +71,8 @@ let n_procs {node_map} = NodeMap.length node_map
 let node_of_procname g pname = id_of_procname g pname |> Option.bind ~f:(node_of_id g)
 
 let remove (g : t) pname =
-  IdMap.remove g.id_map pname ;
-  id_of_procname g pname |> Option.iter ~f:(NodeMap.remove g.node_map)
+  id_of_procname g pname |> Option.iter ~f:(NodeMap.remove g.node_map) ;
+  IdMap.remove g.id_map pname
 
 
 let get_or_set_id ({id_map} as graph) procname =
