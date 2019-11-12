@@ -265,6 +265,8 @@ val equal : t -> t -> bool
 
 val equal_desc : desc -> desc -> bool
 
+val equal_name : name -> name -> bool
+
 val equal_quals : type_quals -> type_quals -> bool
 
 val equal_ignore_quals : t -> t -> bool
@@ -533,6 +535,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
   val parameter_of_name : t -> Name.t -> Parameter.t
 
   val is_java_access_method : t -> bool
+
+  val is_java_class_initializer : t -> bool
 
   val is_objc_method : t -> bool
 

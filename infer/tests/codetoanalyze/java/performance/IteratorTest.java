@@ -17,4 +17,15 @@ public class IteratorTest {
   public void linearIterable(Iterable<?> elements) {
     appendTo(elements.iterator());
   }
+
+  enum Color {
+    RED,
+    GREEN,
+    BLUE;
+
+    // The cost of class initializer should be constant.
+    static {
+      for (Color c : Color.values()) {}
+    }
+  }
 }

@@ -197,6 +197,29 @@ module TransferFunctions = struct
         false
 
 
+  let is_java_enum_values ~caller_pname ~callee_pname =
+    match
+      (Typ.Procname.get_class_type_name caller_pname, Typ.Procname.get_class_type_name callee_pname)
+    with
+    | Some caller_class_name, Some callee_class_name
+      when Typ.equal_name caller_class_name callee_class_name ->
+        Typ.Procname.is_java_class_initializer caller_pname
+        && String.equal (Typ.Procname.get_method callee_pname) "values"
+    | _, _ ->
+        false
+
+
+  let assign_java_enum_values id callee_pname mem =
+    match Typ.Procname.get_class_type_name callee_pname with
+    | Some (JavaClass class_name) ->
+        let class_var = Loc.of_var (Var.of_pvar (Pvar.mk_global class_name)) in
+        let fn = Typ.Fieldname.Java.from_string (Mangled.to_string class_name ^ ".$VALUES") in
+        let v = Dom.Mem.find (Loc.append_field class_var ~fn) mem in
+        Dom.Mem.add_stack (Loc.of_id id) v mem
+    | _ ->
+        assert false
+
+
   let exec_instr : Dom.Mem.t -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
    fun mem {summary; tenv; extras= {get_proc_summary_and_formals; oenv= {integer_type_widths}}}
        node instr ->
@@ -284,31 +307,34 @@ module TransferFunctions = struct
         Sem.Prune.prune integer_type_widths exp mem
     | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        match Models.Call.dispatch tenv callee_pname params with
-        | Some {Models.exec} ->
-            let model_env =
-              let node_hash = CFG.Node.hash node in
-              BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
-                integer_type_widths
-            in
-            exec model_env ~ret mem
-        | None -> (
-          match get_proc_summary_and_formals callee_pname with
-          | Some (callee_exit_mem, callee_formals) ->
-              instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
-                callee_exit_mem location
-          | None ->
-              (* This may happen for procedures with a biabduction model too. *)
-              L.d_printfln_escaped "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
-              if is_external callee_pname then (
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
-                assign_symbolic_pname_value callee_pname ret location mem )
-              else if is_non_static callee_pname then (
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Non-static call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
-                assign_symbolic_pname_value callee_pname ret location mem )
-              else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
+        if is_java_enum_values ~caller_pname:(Summary.get_proc_name summary) ~callee_pname then
+          assign_java_enum_values id callee_pname mem
+        else
+          match Models.Call.dispatch tenv callee_pname params with
+          | Some {Models.exec} ->
+              let model_env =
+                let node_hash = CFG.Node.hash node in
+                BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
+                  integer_type_widths
+              in
+              exec model_env ~ret mem
+          | None -> (
+            match get_proc_summary_and_formals callee_pname with
+            | Some (callee_exit_mem, callee_formals) ->
+                instantiate_mem tenv integer_type_widths ret callee_formals callee_pname params mem
+                  callee_exit_mem location
+            | None ->
+                (* This may happen for procedures with a biabduction model too. *)
+                L.d_printfln_escaped "/!\\ Unknown call to %a" Typ.Procname.pp callee_pname ;
+                if is_external callee_pname then (
+                  L.(debug BufferOverrun Verbose)
+                    "/!\\ External call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                  assign_symbolic_pname_value callee_pname ret location mem )
+                else if is_non_static callee_pname then (
+                  L.(debug BufferOverrun Verbose)
+                    "/!\\ Non-static call to unknown  %a \n\n" Typ.Procname.pp callee_pname ;
+                  assign_symbolic_pname_value callee_pname ret location mem )
+                else Dom.Mem.add_unknown_from id ~callee_pname ~location mem ) )
     | Call ((id, _), fun_exp, _, location, _) ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
