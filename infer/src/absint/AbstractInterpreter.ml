@@ -368,7 +368,7 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
      To mitigate the problem, it tries to do narrowing, in loop level, right after it found a
      fixpoint of a loop.  Thus, it narrows before the widened values are flowed to the following
      loops.  In order to guarantee the termination of the analysis, this eager narrowing is applied
-     only to the outermost loops.  *)
+     only to the outermost loops or when the first visits of each loops.  *)
   type mode = Widen | WidenThenNarrow | Narrow
 
   let is_narrowing_of = function Widen | WidenThenNarrow -> false | Narrow -> true
@@ -406,6 +406,8 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     | Component {head; rest; next} ->
         let inv_map =
           match mode with
+          | Widen when is_first_visit ->
+              do_widen_then_narrow ~pp_instr cfg proc_data inv_map head ~is_first_visit rest
           | Widen | Narrow ->
               exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode
                 ~is_first_visit rest

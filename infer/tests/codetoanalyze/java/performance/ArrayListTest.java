@@ -51,6 +51,16 @@ public class ArrayListTest {
     for (int i = 0, size = list.size(); i < size; ++i) {}
   }
 
+  public void arraylist_add_in_nested_loop_constant() {
+    for (int j = 0; j < 10; j++) {
+      ArrayList<Integer> list = new ArrayList<Integer>();
+      for (int i = 0; i < 10; ++i) {
+        list.add(i);
+      }
+      for (int i = 0, size = list.size(); i < size; ++i) {}
+    }
+  }
+
   public void arraylist_add_in_loop_ok() {
     ArrayList<Integer> list = new ArrayList<Integer>();
     list.add(0);
