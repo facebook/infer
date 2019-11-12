@@ -379,19 +379,19 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     match exec_wto_node ~pp_instr cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
     | inv_map, ReachedFixPoint ->
         if is_narrowing && is_first_visit then
-          exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest
+          exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode ~is_first_visit rest
         else inv_map
     | inv_map, DidNotReachFixPoint ->
-        exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest
+        exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode ~is_first_visit rest
 
 
-  and exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode rest =
-    let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map rest in
+  and exec_wto_rest ~pp_instr cfg proc_data inv_map head ~mode ~is_first_visit rest =
+    let inv_map = exec_wto_partition ~pp_instr cfg proc_data ~mode ~is_first_visit inv_map rest in
     exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~mode
       ~is_first_visit:false rest
 
 
-  and exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map
+  and exec_wto_partition ~pp_instr cfg proc_data ~mode ~is_first_visit inv_map
       (partition : CFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
@@ -402,22 +402,26 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
             ~is_loop_head:false
           |> fst
         in
-        exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~mode ~is_first_visit inv_map next
     | Component {head; rest; next} ->
         let inv_map =
           match mode with
           | Widen | Narrow ->
               exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode
-                ~is_first_visit:true rest
+                ~is_first_visit rest
           | WidenThenNarrow ->
-              let inv_map =
-                exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false
-                  ~mode:Widen ~is_first_visit:true rest
-              in
-              exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false
-                ~mode:Narrow ~is_first_visit:true rest
+              do_widen_then_narrow ~pp_instr cfg proc_data inv_map head ~is_first_visit rest
         in
-        exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
+        exec_wto_partition ~pp_instr cfg proc_data ~mode ~is_first_visit inv_map next
+
+
+  and do_widen_then_narrow ~pp_instr cfg proc_data inv_map head ~is_first_visit rest =
+    let inv_map =
+      exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode:Widen
+        ~is_first_visit rest
+    in
+    exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode:Narrow
+      ~is_first_visit rest
 
 
   let exec_cfg_internal ~pp_instr cfg proc_data ~do_narrowing ~initial =
@@ -432,7 +436,7 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
             exec_node ~pp_instr proc_data start_node ~is_loop_head:false
               ~is_narrowing:(is_narrowing_of mode) initial inv_map
           in
-          exec_wto_partition ~pp_instr cfg proc_data ~mode inv_map next
+          exec_wto_partition ~pp_instr cfg proc_data ~mode ~is_first_visit:true inv_map next
       | Component _ ->
           L.(die InternalError) "Did not expect the start node to be part of a loop"
     in
