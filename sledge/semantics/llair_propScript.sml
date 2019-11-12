@@ -16,10 +16,28 @@ new_theory "llair_prop";
 
 numLib.prefer_num ();
 
-Theorem i2n_n2i:
-  !n size. 0 < size ⇒ (nfits n size ⇔ (i2n (n2i n size) = n))
+Theorem signed2unsigned_fits:
+  0 < n ∧ ifits i n ⇒ ifits (&signed2unsigned i n) (n + 1)
 Proof
-  rw [nfits_def, n2i_def, i2n_def] >> rw []
+  rw [signed2unsigned_def, ifits_def]
+  >- (
+    `?j. i = -&j` by intLib.COOPER_TAC >>
+    rw [] >> fs [] >>
+    rfs [EXP_SUB] >>
+    `j ≤ 2 ** n` by intLib.COOPER_TAC >>
+    rw [INT_SUB, GSYM int_sub])
+  >- (
+    `?j. i = &j` by intLib.COOPER_TAC >>
+    rw [] >> fs [] >>
+    rw [INT_SUB, GSYM int_sub] >>
+    rfs [EXP_SUB] >>
+    intLib.COOPER_TAC)
+QED
+
+Theorem i2n_n2i:
+  ∀n size. 0 < size ⇒ (nfits n size ⇔ (i2n (n2i n size) = n))
+Proof
+  rw [nfits_def, n2i_def, i2n_def, signed2unsigned_def] >> rw []
   >- intLib.COOPER_TAC
   >- (
     `2 ** size ≤ n` by intLib.COOPER_TAC >> simp [INT_SUB] >>
@@ -32,9 +50,9 @@ Proof
 QED
 
 Theorem n2i_i2n:
-  !i size. 0 < size ⇒ (ifits i size ⇔ (n2i (i2n (IntV i size)) size) = IntV i size)
+  ∀i size. 0 < size ⇒ (ifits i size ⇔ (n2i (i2n (IntV i size)) size) = IntV i size)
 Proof
-  rw [ifits_def, n2i_def, i2n_def] >> rw [] >> fs []
+  rw [ifits_def, n2i_def, i2n_def, signed2unsigned_def] >> rw [] >> fs []
   >- (
     eq_tac >> rw []
     >- (
@@ -44,7 +62,7 @@ Proof
     >- (
       fs [intLib.COOPER_PROVE ``∀(x:int) y z. x - y = z ⇔ x = y + z``] >>
       fs [INT_OF_NUM] >>
-      `?j. i = -j` by intLib.COOPER_TAC >> rw [] >> fs [] >>
+      `∃j. i = -j` by intLib.COOPER_TAC >> rw [] >> fs [] >>
       qpat_x_assum `_ ≤ Num _` mp_tac >>
       fs [GSYM INT_OF_NUM] >>
       ASM_REWRITE_TAC [GSYM INT_LE] >> rw [] >>
@@ -69,10 +87,10 @@ Proof
   >- intLib.COOPER_TAC
 QED
 
-Theorem w2n_i2n:
-  ∀w. w2n (w : 'a word) = i2n (IntV (w2i w) (dimindex (:'a)))
+Theorem w2n_signed2unsigned:
+  ∀w. w2n (w : 'a word) = signed2unsigned (w2i w) (dimindex (:'a))
 Proof
-  rw [i2n_def] >> Cases_on `w` >> fs []
+  rw [signed2unsigned_def] >> Cases_on `w` >> fs []
   >- (
     `INT_MIN (:α) ≤ n`
     by (
@@ -87,6 +105,12 @@ Proof
       BasicProvers.EVERY_CASE_TAC >> fs [word_msb_n2w_numeric] >>
       rfs []) >>
     rw [w2i_n2w_pos])
+QED
+
+Theorem w2n_i2n:
+  ∀w. w2n (w : 'a word) = i2n (IntV (w2i w) (dimindex (:'a)))
+Proof
+  rw [i2n_def] >> metis_tac [w2n_signed2unsigned]
 QED
 
 Theorem w2i_n2w:
@@ -130,7 +154,8 @@ Definition exp_uses_def:
   (exp_uses (Record es) = bigunion (set (map exp_uses es))) ∧
   (exp_uses (Select e1 e2) = exp_uses e1 ∪ exp_uses e2) ∧
   (exp_uses (Update e1 e2 e3) = exp_uses e1 ∪ exp_uses e2 ∪ exp_uses e3) ∧
-  (exp_uses (Convert _ _ _ e) = exp_uses e)
+  (exp_uses (Unsigned _ e _) = exp_uses e) ∧
+  (exp_uses (Signed _ e _) = exp_uses e)
 Termination
   WF_REL_TAC `measure exp_size` >> rw [] >>
   Induct_on `es` >> rw [exp_size_def] >> res_tac >> rw []
@@ -177,6 +202,122 @@ Theorem eval_exp_ignores_unused:
   ∀s1 e v s2. DRESTRICT s1.locals (exp_uses e) = DRESTRICT s2.locals (exp_uses e) ⇒ (eval_exp s1 e v ⇔ eval_exp s2 e v)
 Proof
   metis_tac [eval_exp_ignores_unused_lem]
+QED
+
+Triviality num_mod_to_int_mod:
+  y ≠ 0 ⇒ x MOD y = Num (&x % &y)
+Proof
+  fs [INT_MOD]
+QED
+
+Triviality int_of_num2:
+  0 ≤ x ⇒ &Num x = x
+Proof
+  metis_tac [INT_OF_NUM]
+QED
+
+Theorem int_sub_mod:
+  ∀i j. j ≠ 0 ⇒ (i - j) % j = i % j
+Proof
+  rw [int_mod] >>
+  `-j % j = 0 ∧ -j / j = -1`
+  by (
+    ONCE_REWRITE_TAC [INT_NEG_MINUS1] >> rw [] >>
+    rw [INT_MUL_DIV]) >>
+  rw [INT_ADD_DIV, int_sub, INT_RDISTRIB] >>
+  rw [] >>
+  intLib.COOPER_TAC
+QED
+
+Theorem mod_halfway:
+  ∀i b. 0 < b ⇒ ((i + b) % (2 * b) - b < 0 ⇔ 0 ≤ i % (2 * b) - b)
+Proof
+  rw [] >> `b ≠ 0` by intLib.COOPER_TAC >>
+  rw [Once (GSYM INT_MOD_PLUS)] >>
+  `b < 2 * b` by intLib.COOPER_TAC >>
+  rw [INT_LESS_MOD] >>
+  `0 ≤ i % (2 * b) ∧ i % (2 * b) < 2 * b`
+  by (
+    `~(2 * b < 0) ∧ 2 * b ≠ 0` by intLib.COOPER_TAC >>
+    drule INT_MOD_BOUNDS >>
+    rw []) >>
+  `0 ≤ i % (2 * b) + b` by intLib.COOPER_TAC >>
+  Cases_on `i % (2 * b) + b < 2 * b` >> rw [INT_LESS_MOD]
+  >- intLib.COOPER_TAC >>
+  simp [Once (GSYM int_sub_mod)] >>
+  rw [intLib.COOPER_PROVE ``∀x (b:int). x + b - (2 * b) = x - b``] >>
+  `i % (2 * b) − b < 2 * b` by intLib.COOPER_TAC >>
+  `0 ≤ i % (2 * b) − b` by intLib.COOPER_TAC >>
+  rw [INT_LESS_MOD] >>
+  intLib.COOPER_TAC
+QED
+
+Theorem unsigned_truncate:
+  ∀m n i.
+    0 < m ∧ m ≤ n ∧ -i ≤ 2 ** n
+    ⇒
+    signed2unsigned (truncate_2comp i m) m = signed2unsigned i n MOD (2 ** m)
+Proof
+  rw [signed2unsigned_def, truncate_2comp_def] >>
+  qabbrev_tac `b = &(2 ** (m - 1))` >>
+  `&((2:num) ** m) = 2 * b`
+  by (rw [Abbr `b`] >> Cases_on `m` >> fs [ADD1, EXP_ADD]) >>
+  `0 < b` by rw [Abbr `b`] >>
+  `0 < 2 * b ∧ 0 ≠ 2 * b ∧ b < 2 * b` by (rw [Abbr `b`] >> intLib.COOPER_TAC) >>
+  asm_simp_tac std_ss [num_mod_to_int_mod] >>
+  fs [mod_halfway] >>
+  `∃x. &(2 ** n) = 2 * b * 2 ** x`
+  by (
+    rw [Abbr `b`, GSYM EXP_ADD] >>
+    `2 = 2 ** 1` by rw [] >>
+    `∀x. 2 * 2 ** (m + x - 1) = 2 ** (1 + (m + x - 1))` by metis_tac [EXP_ADD] >>
+    rw [] >>
+    qexists_tac `n - m` >> rw []) >>
+  irule (METIS_PROVE [] ``x = y ⇒ f x = f y``) >>
+  fs [GSYM int_le] >>
+  rw [int_of_num2] >>
+  rw [intLib.COOPER_PROVE ``∀(x:int) b. 2 * b + (x - b) = b + x``] >>
+  `0 ≤ i % (2 * b) ∧ i % (2 * b) < 2 * b`
+  by (
+    `~(2 * b < 0) ∧ 2 * b ≠ 0` by intLib.COOPER_TAC >>
+    drule INT_MOD_BOUNDS >>
+    rw [])
+  >- (
+    `0 ≤ 2 * b * &(2 ** x) + i` by intLib.COOPER_TAC >>
+    rw [int_of_num2] >>
+    `2 * b ≠ 0` by intLib.COOPER_TAC >>
+    drule INT_MOD_ADD_MULTIPLES >>
+    rw [Once INT_MUL_COMM] >>
+    rw [Once (GSYM INT_MOD_PLUS)] >>
+    rw [INT_LESS_MOD] >>
+    simp [Once (GSYM int_sub_mod)] >>
+    rw [intLib.COOPER_PROVE ``∀x (b:int). x + b - (2 * b) = x - b``] >>
+    `i % (2 * b) − b < 2 * b` by intLib.COOPER_TAC >>
+    rw [INT_LESS_MOD])
+  >- (
+    rw [Once (GSYM INT_MOD_PLUS)] >>
+    rw [INT_LESS_MOD] >>
+    simp [Once (GSYM int_sub_mod)] >>
+    rw [intLib.COOPER_PROVE ``∀x (b:int). x + b - (2 * b) = x - b``] >>
+    `i % (2 * b) − b < 2 * b` by intLib.COOPER_TAC >>
+    rw [INT_LESS_MOD])
+  >- (
+    `0 ≤ 2 * b * &(2 ** x) + i` by intLib.COOPER_TAC >>
+    rw [int_of_num2] >>
+    `2 * b ≠ 0` by intLib.COOPER_TAC >>
+    drule INT_MOD_ADD_MULTIPLES >>
+    rw [Once INT_MUL_COMM] >>
+    rw [Once (GSYM INT_MOD_PLUS)] >>
+    rw [INT_LESS_MOD] >>
+    `i % (2 * b) + b < 2 * b` by intLib.COOPER_TAC >>
+    rw [INT_LESS_MOD] >>
+    intLib.COOPER_TAC)
+  >- (
+    rw [Once (GSYM INT_MOD_PLUS)] >>
+    rw [INT_LESS_MOD] >>
+    `i % (2 * b) + b < 2 * b` by intLib.COOPER_TAC >>
+    rw [INT_LESS_MOD] >>
+    intLib.COOPER_TAC)
 QED
 
 (* Relate the semantics of Convert to something more closely following the
@@ -247,30 +388,6 @@ End
      Z.signed_extract i3 1 3 = Z.of_int (-3);;
      *)
 
-Definition extract_def:
-  extract (:'a) unsigned bits z =
-    if unsigned then Zextract (:'a) z 0 bits else Zsigned_extract (:'a) z 0 bits
-End
-
-Definition simp_convert_def:
-  simp_convert (:'a) unsigned dst src arg =
-    case (dst, src) of
-    | (IntegerT m, IntegerT n) =>
-      (if m ≤ n then
-        case arg of
-        | Integer data _ => Integer (extract (:'a) F m data) dst
-        | _ => Convert F dst src arg
-      else
-        case arg of
-        | Integer data _ => Integer (extract (:'a) unsigned n data) dst
-        | _ =>
-          if unsigned then Convert unsigned dst src arg
-          else arg)
-    | _ =>
-      if dst = src then arg
-      else Convert unsigned dst src arg
-End
-
 Theorem Zextract0:
   dimindex (:'b) ≤ dimindex (:'a)
   ⇒
@@ -306,93 +423,171 @@ Proof
   rw [w21_sw2sw_extend]
 QED
 
-Theorem convert_implementation_fits:
-  ∀unsigned dst src const i m n.
-    const = Integer i src ∧
-    src = IntegerT n ∧
-    dst = IntegerT m ∧ 0 < m ∧
-    ifits i (sizeof_bits src) ∧
-    dimindex (:'b) = min m n ∧
-    dimindex (:'b) ≤ dimindex (:'a)
-    ⇒
-    ∃i2. simp_convert (:'a) unsigned dst src const = Integer i2 dst ∧ ifits i2 m
+Theorem signed_extract_truncate_2comp:
+  dimindex (:'b) ≤ dimindex (:'a)
+  ⇒
+  Zsigned_extract (:'a) i 0 (dimindex (:'b)) = truncate_2comp i (dimindex (:'b))
 Proof
-  rw [simp_convert_def, extract_def, MIN_DEF] >> fs []
-  >- (drule Zsigned_extract0 >> rw [] >> rw [ifits_w2i])
-  >- (
-    `m = dimindex (:'b)` by decide_tac >>
-     drule Zsigned_extract0 >> rw [] >> rw [ifits_w2i])
-  >- (
-    drule Zextract0 >> rw [] >> rw [w2n_i2w] >> fs [sizeof_bits_def] >>
-    fs [ifits_def, dimword_def] >> rw [] >>
-    qspecl_then [`i`, `&(2 ** dimindex (:β))`] mp_tac INT_MOD_BOUNDS >>
-    rw []
-    >- intLib.COOPER_TAC >>
-    `dimindex (:'b) < m` by decide_tac >>
-    `2 ** dimindex (:'b) ≤ 2 ** (m - 1)` suffices_by intLib.COOPER_TAC >>
-    rw [])
-  >- (
-    drule Zsigned_extract0 >> rw [] >>
-    irule ifits_mono >> qexists_tac `dimindex (:'b)` >> rw [ifits_w2i])
+  rw [] >>
+  drule Zsigned_extract0 >> rw [] >>
+  metis_tac [truncate_2comp_i2w_w2i]
 QED
 
-Theorem convert_implementation:
-  ∀h unsigned dst src const i m n.
-    const = Integer i src ∧
-    src = IntegerT n ∧ 0 < n ∧
-    dst = IntegerT m ∧
-    ifits i (sizeof_bits src) ∧
-    dimindex (:'b) = min m n ∧
+Theorem unsigned_extract_truncate_2comp:
+  dimindex (:'b) ≤ dimindex (:'a)
+  ⇒
+  Zextract (:'a) i 0 (dimindex (:'b)) = &signed2unsigned (truncate_2comp i (dimindex (:'b))) (dimindex (:'b))
+Proof
+  rw [] >> drule Zextract0 >> rw [w2n_i2w] >>
+  `∃n. -i ≤ 2 ** n ∧ dimindex (:'b) ≤ n`
+  by (
+    Cases_on `i < 0` >> rw []
+    >- (
+      `∃j. i = -&j` by intLib.COOPER_TAC >>
+      rw [] >>
+      `1 < 2` by decide_tac >>
+      drule EXP_ALWAYS_BIG_ENOUGH >>
+      disch_then (qspec_then `j` mp_tac) >>
+      rw [] >>
+      qexists_tac `MAX m (dimindex (:'b))` >>
+      rw [MAX_DEF] >>
+      drule bitTheory.TWOEXP_MONO >>
+      intLib.COOPER_TAC)
+    >- (
+      `∃j. i = &j` by intLib.COOPER_TAC >>
+      rw [] >>
+      metis_tac [])) >>
+  `0 < dimword (:'b) ∧ 0 < dimindex (:'b)` by rw [DIMINDEX_GT_0, ZERO_LT_dimword] >>
+  `0 ≠ dimindex (:'b) ∧ 0 ≠ dimword (:'b)` by decide_tac >>
+  drule unsigned_truncate >>
+  ntac 2 (disch_then drule) >>
+  rw [GSYM dimword_def] >>
+  rw [signed2unsigned_def]
+  >- (
+    asm_simp_tac std_ss [GSYM INT_MOD] >>
+    `0 ≤ &(2 ** n) + i`
+    by (fs [INT_EXP] >> intLib.COOPER_TAC) >>
+    asm_simp_tac std_ss [int_of_num2] >>
+    `∃j. i = -&j` by intLib.COOPER_TAC >>
+    rw [] >>
+    `∃x. &(2 ** n) = dimword (:'b) * 2 ** x`
+    by (
+      rw [GSYM EXP_ADD, dimword_def] >>
+      qexists_tac `n - dimindex (:'b)` >> rw []) >>
+    rw [] >>
+    `&dimword (:β) ≠ 0` by intLib.COOPER_TAC >>
+    drule INT_MOD_ADD_MULTIPLES >>
+    simp_tac std_ss [Once INT_MUL_COMM, GSYM INT_MUL])
+  >- (
+    `∃j. i = &j` by intLib.COOPER_TAC >>
+    rw [])
+QED
+
+Definition simp_signed_def:
+  simp_signed (:'a) bits arg to_t =
+    case arg of
+    | Integer data _ => Integer (Zsigned_extract (:'a) data 0 bits) to_t
+    | _ => Signed bits arg to_t
+End
+
+Definition simp_unsigned_def:
+  simp_unsigned (:'a) bits arg to_t =
+    case arg of
+    | Integer data _ => Integer (Zextract (:'a) data 0 bits) to_t
+    | _ => Signed bits arg to_t
+End
+
+Theorem signed_implementation_fits:
+  ∀const i to_t from_t.
+    dimindex (:'b) ≤ sizeof_bits to_t ∧
     dimindex (:'b) ≤ dimindex (:'a)
     ⇒
-    eval_exp h (Convert unsigned dst src const) =
-    eval_exp h (simp_convert (:'a) unsigned dst src const)
+    ∃i2.
+      simp_signed (:'a) (dimindex (:'b)) (Integer i from_t) to_t =
+      Integer i2 to_t ∧ ifits i2 (sizeof_bits to_t)
 Proof
-  rw [EXTENSION, IN_DEF] >>
-  simp [simp_convert_def] >>
-  CASE_TAC >>
+  rw [simp_signed_def] >>
+  drule Zsigned_extract0 >> rw [] >>
+  `ifits (w2i (i2w i : 'b word)) (dimindex (:'b))` by metis_tac [ifits_w2i] >>
+  metis_tac [ifits_mono]
+QED
+
+Theorem unsigned_implementation_fits:
+  ∀const i to_t from_t.
+    dimindex (:'b) < sizeof_bits to_t ∧
+    dimindex (:'b) ≤ dimindex (:'a)
+    ⇒
+    ∃i2.
+      simp_unsigned (:'a) (dimindex (:'b)) (Integer i from_t) to_t =
+      Integer i2 to_t ∧ ifits i2 (sizeof_bits to_t)
+Proof
+  rw [simp_unsigned_def] >>
+  drule Zextract0 >> rw [] >> rw [w2n_i2w] >>
+  fs [ifits_def, dimword_def] >> rw [] >>
+  qspecl_then [`i`, `&(2 ** dimindex (:β))`] mp_tac INT_MOD_BOUNDS >>
+  rw []
+  >- (
+    `0 <= (2:num) ** (sizeof_bits to_t − 1)` by intLib.COOPER_TAC >>
+    intLib.COOPER_TAC)
+  >- (
+    `2 ** dimindex (:'b) ≤ 2 ** (sizeof_bits to_t - 1)` suffices_by intLib.COOPER_TAC >>
+    rw [])
+QED
+
+Theorem signed_implementation:
+  ∀to_t i from_t h m n.
+    dimindex (:'b) ≤ sizeof_bits to_t ∧
+    dimindex (:'b) ≤ dimindex (:'a) ∧
+    from_t = IntegerT m ∧
+    to_t = IntegerT n ∧
+    0 < m ∧
+    ifits i m
+    ⇒
+    eval_exp h (Signed (dimindex (:'b)) (Integer i from_t) to_t) =
+    eval_exp h (simp_signed (:'a) (dimindex (:'b)) (Integer i from_t) to_t)
+Proof
+  rw [EXTENSION, IN_DEF] >> simp [simp_signed_def] >>
   ONCE_REWRITE_TAC [eval_exp_cases] >>
-  fs [sizeof_bits_def] >>
+  fs [] >>
   ONCE_REWRITE_TAC [eval_exp_cases] >> rw [] >>
+  `0 < m` by decide_tac >>
+  `truncate_2comp i m = i` by metis_tac [fits_ident] >>
+  rw [] >> fs [sizeof_bits_def] >>
+  irule (METIS_PROVE [] ``y = z ⇒ (x = y ⇔ x = z)``) >> rw [] >>
+  rw [signed_extract_truncate_2comp] >>
+  `0 < dimindex (:'b)` by metis_tac [DIMINDEX_GT_0] >>
   `0 < n` by decide_tac >>
-  `truncate_2comp i n = i` by metis_tac [fits_ident] >>
-  rw [] >>
-  Cases_on `unsigned` >> fs [extract_def] >>
-  irule (METIS_PROVE [] ``y = z ⇒ (x = y ⇔ x = z)``) >> rw []
-  >- ( (* Truncating, unsigned convert *)
-    drule Zsigned_extract0 >> rw [] >>
-    `min m n = m` by fs [MIN_DEF] >>
-    `∀i. truncate_2comp i (dimindex (:β)) = w2i (i2w i : 'b word)`
-    by rw [GSYM truncate_2comp_i2w_w2i] >>
-    fs [] >> rw [i2w_pos, i2n_def, i2w_def] >>
-    `?j. 0 ≤ j ∧ -i = j` by rw [] >>
-    `i = -j` by intLib.COOPER_TAC >>
-    simp [] >>
-    simp [GSYM int_sub] >>
-    `?k. j = &k` by metis_tac [NUM_POSINT_EXISTS] >>
-    simp [] >>
-    `k < 2 ** n`
-    by (fs [ifits_def] >> Cases_on `n` >> fs [ADD1, EXP_ADD]) >>
-    simp [INT_SUB, word_2comp_n2w, dimword_def] >>
-    qabbrev_tac `d = dimindex (:'b)` >>
-    `∃x. (2:num) ** n = 2 ** x * 2 ** d`
-    by (
-      `?x. n = x + d` by (qexists_tac `n - d` >> fs [MIN_DEF]) >>
-      metis_tac [EXP_ADD]) >>
-    metis_tac [MOD_COMPLEMENT, bitTheory.ZERO_LT_TWOEXP, MULT_COMM])
-  >- ( (* Truncating, signed convert *)
-    `min m n = m` by rw [MIN_DEF] >>
-    drule Zsigned_extract0 >> rw [] >> fs [] >>
-    `w2i (i2w i : 'b word) = truncate_2comp i m` by metis_tac [truncate_2comp_i2w_w2i] >>
-    rw [] >>
-    `0 < dimindex (:'b)` by rw [] >>
-    metis_tac [fits_ident, truncate_2comp_fits]) >>
-  (* extending *)
-    drule Zsigned_extract0 >> drule Zextract0 >> fs [MIN_DEF] >> rw [w2n_i2n] >>
-    `INT_MIN (:'b) ≤ i ∧ i ≤ INT_MAX (:'b)` suffices_by metis_tac [w2i_i2w] >>
-    fs [ifits_def, INT_MAX_def, INT_MIN_def, int_arithTheory.INT_NUM_SUB] >>
-    rw [DECIDE ``!(x:num). x < 1 ⇔ x = 0``,
-        intLib.COOPER_PROVE``!(x:int). x ≤ y -1 ⇔ x < y``]
+  `ifits (truncate_2comp i (dimindex (:β))) n` suffices_by metis_tac [fits_ident] >>
+  metis_tac [truncate_2comp_fits, ifits_mono]
+QED
+
+Theorem unsigned_implementation:
+  ∀to_t i from_t h m n.
+    dimindex (:'b) < sizeof_bits to_t ∧
+    dimindex (:'b) ≤ dimindex (:'a) ∧
+    from_t = IntegerT m ∧
+    to_t = IntegerT n ∧
+    0 < m ∧
+    ifits i m
+    ⇒
+    eval_exp h (Unsigned (dimindex (:'b)) (Integer i from_t) to_t) =
+    eval_exp h (simp_unsigned (:'a) (dimindex (:'b)) (Integer i from_t) to_t)
+Proof
+  rw [EXTENSION, IN_DEF] >> simp [simp_unsigned_def] >>
+  ONCE_REWRITE_TAC [eval_exp_cases] >>
+  fs [] >>
+  ONCE_REWRITE_TAC [eval_exp_cases] >> rw [] >>
+  `0 < m` by decide_tac >>
+  `truncate_2comp i m = i` by metis_tac [fits_ident] >>
+  rw [] >> fs [sizeof_bits_def] >>
+  irule (METIS_PROVE [] ``y = z ⇒ (x = y ⇔ x = z)``) >> rw [] >>
+  rw [unsigned_extract_truncate_2comp] >>
+  `0 < dimindex (:'b)` by metis_tac [DIMINDEX_GT_0] >>
+  `0 < n` by decide_tac >>
+  `ifits (&signed2unsigned (truncate_2comp i (dimindex (:β))) (dimindex (:'b))) n` suffices_by metis_tac [fits_ident] >>
+  irule ifits_mono >>
+  qexists_tac `dimindex (:'b) + 1` >> rw [] >>
+  metis_tac [truncate_2comp_fits, signed2unsigned_fits]
 QED
 
 export_theory ();

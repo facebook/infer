@@ -570,6 +570,12 @@ Proof
   metis_tac [MOD_MULT_MOD, bitTheory.ZERO_LT_TWOEXP]
 QED
 
+Theorem w2i_w2w_expand:
+  dimindex (:'a) < dimindex (:'b) ⇒ w2i (w2w (w : 'a word) : 'b word) = &w2n w
+Proof
+  rw [w2i_def, w2n_w2w, word_msb, word_bit_thm, w2w]
+QED
+
 (* ----- Theorems about lazy lists ----- *)
 
 Theorem toList_some:

@@ -57,8 +57,10 @@ Datatype:
   | Select exp exp
   (* Args: Record, index, value *)
   | Update exp exp exp
-  (* Args: unsigned?, to-type, from-type, value *)
-  | Convert bool typ typ exp
+  (* Args: number of bits, integer expression, result type *)
+  | Signed num exp typ
+  (* Args: number of bits, integer expression, result type *)
+  | Unsigned num exp typ
 End
 
 Datatype:
@@ -215,17 +217,18 @@ Definition nfits_def:
     0 < size ∧ n < 2 ** size
 End
 
+Definition signed2unsigned_def:
+  signed2unsigned i size =
+    if i < 0 then Num (2 ** size + i) else Num i
+End
+
 (* Convert an integer to an unsigned number, following the 2's complement
  * representation, assuming (ifits i size). This is what OCaml's Z.extract does,
  * which is used in LLAIR for Convert expressions and unsigned operations, e.g.,
- * <. The difference between LLAIR's extract and i2n is that i2n assumes that i
- * fits into size rather than truncating it first. *)
+ * <. *)
 Definition i2n_def:
   i2n (IntV i size) : num =
-    if i < 0 then
-      Num (2 ** size + i)
-    else
-      Num i
+    signed2unsigned i size
 End
 
 (* Convert an unsigned number into the integer that it would be in 2's
@@ -320,17 +323,18 @@ Inductive eval_exp:
    ⇒
    eval_exp s (Update e1 e2 e3) (AggV (list_update r idx vals))) ∧
 
-  (∀s to_t from_t e v size.
-   eval_exp s e (FlatV v) ∧
-   size = sizeof_bits to_t
-   ⇒
-   eval_exp s (Convert T to_t from_t e) (FlatV (IntV (truncate_2comp (&i2n v) size) size))) ∧
-
-  (∀s to_t from_t e size size1 i.
+  (∀s e i size to_t size1.
    eval_exp s e (FlatV (IntV i size1)) ∧
-   size = sizeof_bits to_t
+   size < sizeof_bits to_t
    ⇒
-   eval_exp s (Convert F to_t from_t e) (FlatV (IntV (truncate_2comp i size) size)))
+   eval_exp s (Unsigned size e to_t)
+     (FlatV (IntV (&(signed2unsigned (truncate_2comp i size) size)) (sizeof_bits to_t)))) ∧
+
+  (∀s e size size1 i to_t.
+   eval_exp s e (FlatV (IntV i size1)) ∧
+   size ≤ sizeof_bits to_t
+   ⇒
+   eval_exp s (Signed size e to_t) (FlatV (IntV (truncate_2comp i size) (sizeof_bits to_t))))
 
 End
 

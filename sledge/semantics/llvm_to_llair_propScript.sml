@@ -825,47 +825,102 @@ Proof
   metis_tac [EVERY2_LUPDATE_same, LIST_REL_LENGTH, LIST_REL_EL_EQN]
 QED
 
+val sizes = [``:1``, ``:8``, ``:32``, ``:64``];
+
 val trunc_thms =
   LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] truncate_2comp_i2w_w2i))
-                 [``:1``, ``:8``, ``:32``, ``:64``]);
+                 sizes);
 
-val i2n_thms =
-  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] (GSYM w2n_i2n)))
-                 [``:1``, ``:8``, ``:32``, ``:64``]);
+val signed2unsigned_thms =
+  LIST_CONJ (map (fn x => SIMP_RULE (srw_ss()) [] (INST_TYPE [``:'a`` |-> x] (GSYM w2n_signed2unsigned)))
+                 sizes);
+
+Definition good_cast_def:
+  (good_cast Trunc (FlatV (IntV i size)) from_bits to_t ⇔
+    from_bits = size ∧ llair$sizeof_bits to_t < from_bits) ∧
+  (good_cast Zext (FlatV (IntV i size)) from_bits to_t ⇔
+    from_bits = size ∧ from_bits < sizeof_bits to_t) ∧
+  (good_cast Sext (FlatV (IntV i size)) from_bits to_t ⇔
+    from_bits = size ∧ from_bits < sizeof_bits to_t) ∧
+  (good_cast Ptrtoint _ _ _ ⇔ T) ∧
+  (good_cast Inttoptr _ _ _ ⇔ T)
+End
 
 Theorem translate_cast_correct:
-  ∀prog gmap emap s1' cop ty v1 v1' e1' result t2.
-    do_cast cop v1.value ty = Some result ∧
+  ∀prog gmap emap s1' cop from_bits to_ty v1 v1' e1' result.
+    do_cast cop v1.value to_ty = Some result ∧
     eval_exp s1' e1' v1' ∧
     v_rel v1.value v1' ∧
-    (cop = Inttoptr ⇒ ∃t. ty = PtrT t)
+    good_cast cop v1' from_bits (translate_ty to_ty)
     ⇒
     ∃v3'.
-      eval_exp s1' (Convert (cop ≠ Sext) (translate_ty ty) t2 e1') v3' ∧
+      eval_exp s1' ((if (cop = Zext) then Unsigned else Signed)
+                    (if cop = Trunc then sizeof_bits (translate_ty to_ty) else from_bits)
+                    e1' (translate_ty to_ty)) v3' ∧
       v_rel result v3'
 Proof
-  rw [] >> simp [Once eval_exp_cases, PULL_EXISTS, Once v_rel_cases] >>
-  Cases_on `cop ≠ Sext`
-  >- (
-    Cases_on `cop` >> fs [do_cast_def] >> rw [] >>
-    BasicProvers.EVERY_CASE_TAC >> fs [] >>
-    fs [OPTION_JOIN_EQ_SOME, w64_cast_some, signed_v_to_int_some,
-        unsigned_v_to_num_some, mk_ptr_some] >>
+  rw [] >> simp [Once eval_exp_cases, PULL_EXISTS, Once v_rel_cases]
+  >- ( (* Zext *)
+    fs [do_cast_def, OPTION_JOIN_EQ_SOME, unsigned_v_to_num_some, w64_cast_some,
+       translate_ty_def, sizeof_bits_def, translate_size_def] >>
+    rw [] >>
+    rfs [v_rel_cases] >> rw [] >>
+    qmatch_assum_abbrev_tac `eval_exp _ _ (FlatV (IntV i s))` >>
+    qexists_tac `i` >> qexists_tac `s` >> rw [] >>
+    unabbrev_all_tac >>
+    fs [good_cast_def, translate_ty_def, sizeof_bits_def, translate_size_def] >>
+    rw [trunc_thms, signed2unsigned_thms] >>
+    rw [GSYM w2w_def, w2w_w2w, WORD_ALL_BITS] >>
+    rw [w2i_w2w_expand])
+  >- ( (* Trunc *)
+    fs [do_cast_def] >> rw [] >>
+    fs [OPTION_JOIN_EQ_SOME, w64_cast_some, unsigned_v_to_num_some,
+        signed_v_to_int_some, mk_ptr_some] >>
     rw [sizeof_bits_def, translate_ty_def, translate_size_def] >>
     rfs [] >> fs [v_rel_cases] >>
-    HINT_EXISTS_TAC >>
-    rw [w2w_n2w, trunc_thms, i2n_thms, w2w_def, pointer_size_def]) >>
-  fs [do_cast_def, OPTION_JOIN_EQ_SOME, PULL_EXISTS, w64_cast_some,
-      translate_ty_def, sizeof_bits_def, signed_v_to_int_some,
-      translate_size_def] >>
-  rfs [v_rel_cases, w2w_i2w] >> rw [trunc_thms] >>
-  qmatch_assum_abbrev_tac `eval_exp _ _ (FlatV (IntV i s))` >>
-  qexists_tac `s` >> qexists_tac `i` >> rw [] >>
-  unabbrev_all_tac >> rw [] >>
-  rw [i2w_w2i_extend, WORD_w2w_OVER_MUL, WORD_ALL_BITS] >>
-  Cases_on `w2w w : word1` >> rw [] >> fs [dimword_1] >>
-  Cases_on `n` >> rw [] >> fs [] >>
-  Cases_on `n'` >> rw [] >> fs []
+    rw [] >>
+    qmatch_assum_abbrev_tac `eval_exp _ _ (FlatV (IntV i s))` >>
+    qexists_tac `s` >> qexists_tac `i` >> rw [] >>
+    unabbrev_all_tac >>
+    fs [good_cast_def, translate_ty_def, sizeof_bits_def, translate_size_def] >>
+    rw [w2w_n2w, GSYM w2w_def, trunc_thms, pointer_size_def] >>
+    rw [i2w_w2i_extend, WORD_w2w_OVER_MUL] >>
+    rw [w2w_w2w, WORD_ALL_BITS, word_bits_w2w] >>
+    rw [word_mul_def]) >>
+  Cases_on `cop` >> fs [] >> rw []
+  >- ( (* Sext *)
+    fs [do_cast_def] >> rw [] >>
+    fs [OPTION_JOIN_EQ_SOME, w64_cast_some, unsigned_v_to_num_some,
+        signed_v_to_int_some, mk_ptr_some] >>
+    rw [sizeof_bits_def, translate_ty_def, translate_size_def] >>
+    rfs [] >> fs [v_rel_cases] >>
+    rw [] >>
+    qmatch_assum_abbrev_tac `eval_exp _ _ (FlatV (IntV i s))` >>
+    qexists_tac `s` >> qexists_tac `i` >> rw [] >>
+    unabbrev_all_tac >>
+    fs [good_cast_def, translate_ty_def, sizeof_bits_def, translate_size_def] >>
+    rw [trunc_thms, w2w_i2w] >>
+    irule (GSYM w2i_i2w)
+    >- (
+      `w2i w ≤ INT_MAX (:1) ∧ INT_MIN (:1) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC)
+    >- (
+      `w2i w ≤ INT_MAX (:1) ∧ INT_MIN (:1) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC)
+    >- (
+      `w2i w ≤ INT_MAX (:1) ∧ INT_MIN (:1) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC)
+    >- (
+      `w2i w ≤ INT_MAX (:8) ∧ INT_MIN (:8) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC)
+    >- (
+      `w2i w ≤ INT_MAX (:8) ∧ INT_MIN (:8) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC)
+    >- (
+      `w2i w ≤ INT_MAX (:32) ∧ INT_MIN (:32) ≤ w2i w` by metis_tac [w2i_le, w2i_ge] >>
+      fs [] >> intLib.COOPER_TAC))
+  (* TODO: pointer to int and int to pointer casts *)
+  >> cheat
 QED
 
 Theorem prog_ok_nonterm:
@@ -1056,7 +1111,8 @@ Proof
       rw [] >> metis_tac [] ))>>
   conj_tac
   >- ( (* Cast *)
-    rw [step_instr_cases, get_instr_cases, update_result_def] >>
+    simp [step_instr_cases, get_instr_cases, update_result_def] >>
+    rpt strip_tac >>
     qpat_x_assum `Cast _ _ _ _ = el _ _` (assume_tac o GSYM) >>
     `arg_to_regs a1 ⊆ live prog s1.ip`
     by (
@@ -1065,16 +1121,16 @@ Proof
       metis_tac []) >>
     fs [] >>
     first_x_assum (mp_then.mp_then mp_then.Any mp_tac translate_arg_correct) >>
-    disch_then drule >> disch_then drule >> rw [] >>
+    disch_then drule >> disch_then drule >> strip_tac >>
     drule translate_cast_correct >> ntac 2 (disch_then drule) >>
     simp [] >>
-    disch_then (qspec_then `translate_ty t1` mp_tac) >>
+    disch_then (qspec_then `sizeof_bits (translate_ty t1)` mp_tac) >>
     impl_tac
     (* TODO: prog_ok should enforce that the type is consistent *)
     >- cheat >>
-    rw [] >>
-    rename1 `eval_exp _ (Convert _ _ _ _) res_v` >>
-    rw [inc_pc_def, llvmTheory.inc_pc_def] >>
+    strip_tac >>
+    rename1 `eval_exp _ _ res_v` >>
+    simp [inc_pc_def, llvmTheory.inc_pc_def] >>
     rename1 `r ∈ _` >>
     `assigns prog s1.ip = {r}`
     by rw [assigns_cases, EXTENSION, IN_DEF, get_instr_cases, instr_assigns_def] >>
@@ -1085,15 +1141,17 @@ Proof
       simp [get_instr_cases, PULL_EXISTS] >>
       ntac 3 (disch_then drule) >>
       simp [terminator_def, next_ips_cases, IN_DEF, inc_pc_def]) >>
-    Cases_on `r ∈ regs_to_keep` >> rw []
+    Cases_on `r ∈ regs_to_keep` >> simp []
     >- (
       simp [step_inst_cases, PULL_EXISTS] >>
       qexists_tac `res_v` >> rw [] >>
+      fs [] >>
       rw [update_results_def, GSYM FUPDATE_EQ_FUPDATE_LIST] >>
       irule mem_state_rel_update_keep >> rw [])
     >- (
-      irule mem_state_rel_update >> rw []
+      irule mem_state_rel_update >> simp [] >> strip_tac
       >- (
+        rw [] >>
         fs [exp_uses_def] >> Cases_on `a1` >> fs [translate_arg_def] >>
         rename1 `flookup _ r_tmp` >>
         qexists_tac `r_tmp` >> rw [] >>

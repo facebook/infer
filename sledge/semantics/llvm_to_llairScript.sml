@@ -131,7 +131,10 @@ Definition translate_instr_to_exp_def:
   (translate_instr_to_exp gmap emap (Insertvalue _ (t1, a1) (t2, a2) cs) =
     translate_updatevalue gmap (translate_arg gmap emap a1) (translate_arg gmap emap a2) cs) ∧
   (translate_instr_to_exp gmap emap (Cast _ cop (t1, a1) t) =
-    Convert (cop ≠ Sext) (translate_ty t) (translate_ty t1) (translate_arg gmap emap a1))
+    (if cop = Zext then Unsigned else Signed)
+      (sizeof_bits (translate_ty (if cop = Trunc then t else t1)))
+      (translate_arg gmap emap a1)
+      (translate_ty t))
 End
 
 (* This translation of insertvalue to update and select is quadratic in the
