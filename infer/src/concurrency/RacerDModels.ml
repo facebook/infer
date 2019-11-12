@@ -462,3 +462,17 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
           false )
     | _ ->
         false
+
+
+(** check that callee is abstract and accepts one argument. In addition, its argument type must be 
+    equal to its return type. *)
+let is_abstract_getthis_like callee =
+  attrs_of_pname callee
+  |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
+         attrs.is_abstract
+         &&
+         match attrs.formals with
+         | [(_, typ)] when Typ.equal typ attrs.ret_type ->
+             true
+         | _ ->
+             false )

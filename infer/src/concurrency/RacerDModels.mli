@@ -52,3 +52,6 @@ val should_flag_interface_call : Tenv.t -> HilExp.t list -> CallFlags.t -> Typ.P
 
 val is_synchronized_container : Typ.Procname.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** is a call on an access expression to a method of a synchronized container? *)
+
+val is_abstract_getthis_like : Typ.Procname.t -> bool
+(** is the callee an abstract method with one argument where argument type is equal to return type *)

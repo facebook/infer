@@ -186,17 +186,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
       (not call_flags.cf_interface) && List.is_empty actuals
     in
-    let is_abstract_getthis_like callee =
-      Ondemand.get_proc_desc callee
-      |> Option.exists ~f:(fun callee_pdesc ->
-             (Procdesc.get_attributes callee_pdesc).ProcAttributes.is_abstract
-             &&
-             match Procdesc.get_formals callee_pdesc with
-             | [(_, typ)] when Typ.equal typ (snd ret_base) ->
-                 true
-             | _ ->
-                 false )
-    in
     if is_box callee_pname then
       match actuals with
       | HilExp.AccessExpression actual_access_expr :: _ ->
