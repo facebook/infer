@@ -212,6 +212,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
                curr_item ) =
   let file = cost_info.Jsonbug_t.loc.file in
   let method_name = cost_info.Jsonbug_t.procedure_name in
+  let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
   let class_name =
     match Str.split (Str.regexp_string ("." ^ method_name)) cost_info.Jsonbug_t.procedure_id with
     | [class_name; _] ->
@@ -228,7 +229,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
     else if CostItem.is_zero curr_item then zero_issue
     else
       let is_on_cold_start = ExternalPerfData.in_profiler_data_map procname in
-      complexity_increase_issue ~is_on_cold_start
+      complexity_increase_issue ~is_on_cold_start ~is_on_ui_thread
   in
   if (not Config.filtering) || issue_type.IssueType.enabled then
     let qualifier =

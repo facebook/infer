@@ -40,7 +40,7 @@ end
 
 type t = VariantCostMap.t
 
-type summary = {post: t}
+type summary = {post: t; is_on_ui_thread: bool}
 
 let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp post
 

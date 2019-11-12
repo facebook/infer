@@ -10,6 +10,8 @@ module F = Format
 module L = Logging
 module BasicCost = CostDomain.BasicCost
 
+let attrs_of_pname = Summary.OnDisk.proc_resolve_attributes
+
 module Payload = SummaryPayload.Make (struct
   type t = CostDomain.summary
 
@@ -711,15 +713,15 @@ end
 
 module Check = struct
   let report_threshold proc_desc summary ~name ~location ~cost CostIssues.{expensive_issue}
-      ~threshold =
+      ~threshold ~is_on_ui_thread =
+    let pname = Procdesc.get_proc_name proc_desc in
     let report_issue_type =
       L.(debug Analysis Medium)
-        "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp
-        (Procdesc.get_proc_name proc_desc) ;
+        "@\n\n++++++ Checking error type for %a **** @\n" Typ.Procname.pp pname ;
       let is_on_cold_start =
         ExternalPerfData.in_profiler_data_map (Procdesc.get_proc_name proc_desc)
       in
-      expensive_issue ~is_on_cold_start
+      expensive_issue ~is_on_cold_start ~is_on_ui_thread
     in
     let bigO_str =
       Format.asprintf ", %a"
@@ -760,7 +762,7 @@ module Check = struct
     else if BasicCost.is_zero cost then report zero_issue "is zero"
 
 
-  let check_and_report WorstCaseCost.{costs; reports} proc_desc summary =
+  let check_and_report ~is_on_ui_thread WorstCaseCost.{costs; reports} proc_desc summary =
     let pname = Procdesc.get_proc_name proc_desc in
     if not (Typ.Procname.is_java_access_method pname) then (
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map reports
@@ -769,7 +771,7 @@ module Check = struct
             ()
         | ThresholdReports.ReportOn {location; cost} ->
             report_threshold proc_desc summary ~name ~location ~cost kind_spec
-              ~threshold:(Option.value_exn threshold) ) ;
+              ~threshold:(Option.value_exn threshold) ~is_on_ui_thread ) ;
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map costs
         ~f:(fun _kind (CostIssues.{name; top_and_bottom} as issue_spec) cost ->
           if top_and_bottom then report_top_and_bottom proc_desc summary ~name ~cost issue_spec ) )
@@ -811,9 +813,13 @@ let compute_worst_case_cost tenv integer_type_widths get_callee_summary_and_form
   WorstCaseCost.compute tenv extras instr_cfg_wto
 
 
-let get_cost_summary astate = CostDomain.{post= astate.WorstCaseCost.costs}
+let get_cost_summary ~is_on_ui_thread astate =
+  CostDomain.{post= astate.WorstCaseCost.costs; is_on_ui_thread}
 
-let report_errors proc_desc astate summary = Check.check_and_report astate proc_desc summary
+
+let report_errors ~is_on_ui_thread proc_desc astate summary =
+  Check.check_and_report ~is_on_ui_thread astate proc_desc summary
+
 
 let checker {Callbacks.exe_env; summary} : Summary.t =
   let proc_name = Summary.get_proc_name summary in
@@ -846,6 +852,7 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
   let bound_map =
     compute_bound_map node_cfg inferbo_invariant_map control_dep_invariant_map loop_inv_map
   in
+  let is_on_ui_thread = ConcurrencyModels.runs_on_ui_thread ~attrs_of_pname tenv proc_name in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let get_callee_summary_and_formals callee_pname =
@@ -867,5 +874,5 @@ let checker {Callbacks.exe_env; summary} : Summary.t =
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
       CostDomain.VariantCostMap.pp exit_cost_record
   in
-  report_errors proc_desc astate summary ;
-  Payload.update_summary (get_cost_summary astate) summary
+  report_errors ~is_on_ui_thread proc_desc astate summary ;
+  Payload.update_summary (get_cost_summary ~is_on_ui_thread astate) summary

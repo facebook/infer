@@ -323,7 +323,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
 
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
-    | Some {post} when not (Typ.Procname.is_java_access_method proc_name) ->
+    | Some {post; is_on_ui_thread} when not (Typ.Procname.is_java_access_method proc_name) ->
         let hum cost =
           let degree_with_term = CostDomain.BasicCost.get_degree_with_term cost in
           { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
@@ -349,6 +349,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_name= Typ.Procname.get_method proc_name
           ; procedure_id= procedure_id_of_procname proc_name
+          ; is_on_ui_thread
           ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post)
           ; alloc_cost= cost_info (CostDomain.get_cost_kind CostKind.AllocationCost post) }
         in

@@ -75,6 +75,7 @@ type cost_item = {
   loc : loc;
   procedure_name : string;
   procedure_id : string;
+  is_on_ui_thread : bool;
   alloc_cost : cost_info;
   exec_cost : cost_info;
 }

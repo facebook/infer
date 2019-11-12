@@ -11,8 +11,8 @@ type issue_spec =
   { extract_cost_f: Jsonbug_t.cost_item -> Jsonbug_t.cost_info
   ; name: string
   ; threshold: int option
-  ; complexity_increase_issue: is_on_cold_start:bool -> IssueType.t
-  ; expensive_issue: is_on_cold_start:bool -> IssueType.t
+  ; complexity_increase_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
+  ; expensive_issue: is_on_cold_start:bool -> is_on_ui_thread:bool -> IssueType.t
   ; zero_issue: IssueType.t
   ; infinite_issue: IssueType.t
   ; top_and_bottom: bool }
