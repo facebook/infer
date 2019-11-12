@@ -1186,9 +1186,9 @@ module AliasMap = struct
     else x
 
 
-  let add_zero_size_alias ~size ~arr x =
+  let add_zero_size_alias ~size ~i ~arr x =
     add_alias ~lhs:(KeyLhs.of_loc size) ~rhs:arr
-      (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
+      (AliasTarget.Size {alias_typ= Eq; i; java_tmp= None})
       x
 
 
@@ -1343,10 +1343,10 @@ module Alias = struct
     update_size_alias locs a ~f:(fun loc acc -> lift_map (AliasMap.incr_or_not_size_alias loc) acc)
 
 
-  let add_empty_size_alias : Loc.t -> PowLoc.t -> t -> t =
-   fun loc arr_locs prev ->
+  let add_empty_size_alias : Loc.t -> IntLit.t -> PowLoc.t -> t -> t =
+   fun loc i arr_locs prev ->
     let accum_empty_size_alias arr_loc acc =
-      lift_map (AliasMap.add_zero_size_alias ~size:loc ~arr:arr_loc) acc
+      lift_map (AliasMap.add_zero_size_alias ~size:loc ~i ~arr:arr_loc) acc
     in
     PowLoc.fold accum_empty_size_alias arr_locs (lift_map (AliasMap.forget loc) prev)
 
@@ -1864,11 +1864,12 @@ module MemReach = struct
     fun k m -> AliasTargets.fold accum_simple_alias (Alias.find_id k m.alias) []
 
 
-  let find_size_alias : Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * Loc.t option) list =
+  let find_size_alias :
+      Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * IntLit.t * Loc.t option) list =
     let accum_size_alias l tgt acc =
       match tgt with
-      | AliasTarget.Size {alias_typ; java_tmp} ->
-          (alias_typ, l, java_tmp) :: acc
+      | AliasTarget.Size {alias_typ; i; java_tmp} ->
+          (alias_typ, l, i, java_tmp) :: acc
       | _ ->
           acc
     in
@@ -1884,14 +1885,14 @@ module MemReach = struct
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
    fun loc e m ->
     match e with
-    | Exp.Const (Const.Cint zero) when IntLit.iszero zero ->
+    | Exp.Const (Const.Cint i) when IntLit.iszero i || IntLit.isone i ->
         let arr_locs =
           let add_arr l v acc =
             if Itv.is_zero (Val.array_sizeof v) then PowLoc.add l acc else acc
           in
           MemPure.fold add_arr m.mem_pure PowLoc.empty
         in
-        {m with alias= Alias.add_empty_size_alias loc arr_locs m.alias}
+        {m with alias= Alias.add_empty_size_alias loc i arr_locs m.alias}
     | _ ->
         {m with alias= Alias.store_simple loc e m.alias}
 
@@ -2281,7 +2282,8 @@ module Mem = struct
    fun k -> f_lift_default ~default:[] (MemReach.find_simple_alias k)
 
 
-  let find_size_alias : Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * Loc.t option) list =
+  let find_size_alias :
+      Ident.t -> _ t0 -> (AliasTarget.alias_typ * Loc.t * IntLit.t * Loc.t option) list =
    fun k -> f_lift_default ~default:[] (MemReach.find_size_alias k)
 
 

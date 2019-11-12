@@ -74,6 +74,26 @@ class ArrayListTest {
     int j = b.get(a.size());
   }
 
+  void add_in_loop_by_param3_ok(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    if (b.size() > 0) {
+      for (int i = 1; i < b.size(); i++) {
+        a.add(0);
+      }
+      int j = a.get(b.size() - 2);
+    }
+  }
+
+  void add_in_loop_by_param3_bad(ArrayList<Integer> b) {
+    ArrayList<Integer> a = new ArrayList<>();
+    if (b.size() > 0) {
+      for (int i = 1; i < b.size(); i++) {
+        a.add(0);
+      }
+      int j = a.get(b.size() - 1);
+    }
+  }
+
   void add_in_loop_iterator_ok(ArrayList<Integer> b) {
     ArrayList<Integer> a = new ArrayList<>();
     for (Integer i : b) {

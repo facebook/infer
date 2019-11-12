@@ -650,18 +650,23 @@ module Prune = struct
     let prune_alias_core ~val_prune_eq ~val_prune_le ~make_pruning_exp integer_type_widths x e
         ({mem} as astate) =
       List.fold (Mem.find_size_alias x mem) ~init:astate
-        ~f:(fun astate (alias_typ, lv, java_tmp) ->
+        ~f:(fun astate (alias_typ, lv, i, java_tmp) ->
           let array_v = Mem.find lv mem in
-          let size =
-            Val.get_array_blk array_v |> ArrayBlk.sizeof |> Val.of_itv
-            |> Val.set_itv_updated_by_addition
+          let lhs =
+            Val.get_array_blk array_v |> ArrayBlk.sizeof
+            |> Itv.plus (Itv.of_int_lit i)
+            |> Val.of_itv |> Val.set_itv_updated_by_addition
           in
           let rhs = eval integer_type_widths e mem in
           let prune_target val_prune astate =
-            let size' = val_prune size rhs in
-            let array_v' = Val.set_array_length Location.dummy ~length:size' array_v in
-            let pruning_exp = make_pruning_exp ~lhs:size' ~rhs in
-            (update_mem_in_prune lv array_v' ~pruning_exp astate, size', pruning_exp)
+            let lhs' = val_prune lhs rhs in
+            let array_v' =
+              Val.set_array_length Location.dummy
+                ~length:(Val.minus_a lhs' (Val.of_int_lit i))
+                array_v
+            in
+            let pruning_exp = make_pruning_exp ~lhs:lhs' ~rhs in
+            (update_mem_in_prune lv array_v' ~pruning_exp astate, lhs', pruning_exp)
           in
           match alias_typ with
           | AliasTarget.Eq ->
