@@ -80,7 +80,7 @@ public class RequiredProps {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
-  public Component FP_setRequiredOnBothBranchesOk(boolean b) {
+  public Component setRequiredOnBothBranchesOk_FP(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder = builder.prop1(new Object());
@@ -91,7 +91,7 @@ public class RequiredProps {
   }
 
   // current domain can't handle implicit calls like this
-  public Component FP_setRequiredOnBothBranchesNoAssignOk(boolean b) {
+  public Component setRequiredOnBothBranchesNoAssignOk_FP(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     if (b) {
       builder.prop1(new Object());
@@ -102,10 +102,22 @@ public class RequiredProps {
   }
 
   // gets confused at cyclic dependency to builder when setting prop1
-  public Component FP_setRequiredOk(boolean b) {
+  public Component setRequiredOk_FP(boolean b) {
     MyComponent.Builder builder = mMyComponent.create();
     builder = builder.prop1(new Object());
     return builder.prop2(new Object()).prop3(new Object()).build();
+  }
+
+  // due to mutual recursion check, we break cycle at seen props
+  public Component doubleSetOk_FP() {
+    Component.Builder builder =
+        mMyComponent
+            .create()
+            .prop1(new Object())
+            .commonProp(new Object())
+            .prop3(new Object())
+            .commonProp(new Object());
+    return builder.build();
   }
 
   // only missing prop3
