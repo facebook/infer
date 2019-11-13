@@ -9,20 +9,13 @@
 
 [@@@warning "+9"]
 
-module Z = struct
-  include Z
-
-  (** Interpret as a bounded integer with specified signedness and width. *)
-  let extract ?(unsigned = false) bits z =
-    if unsigned then Z.extract z 0 bits else Z.signed_extract z 0 bits
-end
-
 module rec T : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type op1 =
-    | Extract of {unsigned: bool; bits: int}
-    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    | Signed of {bits: int}
+    | Unsigned of {bits: int}
+    | Convert of {src: Typ.t; dst: Typ.t}
     | Select of int
   [@@deriving compare, equal, hash, sexp]
 
@@ -81,8 +74,9 @@ and T0 : sig
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type op1 =
-    | Extract of {unsigned: bool; bits: int}
-    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    | Signed of {bits: int}
+    | Unsigned of {bits: int}
+    | Convert of {src: Typ.t; dst: Typ.t}
     | Select of int
   [@@deriving compare, equal, hash, sexp]
 
@@ -128,8 +122,9 @@ end = struct
   type qset = Qset.M(T).t [@@deriving compare, equal, hash, sexp]
 
   type op1 =
-    | Extract of {unsigned: bool; bits: int}
-    | Convert of {unsigned: bool; dst: Typ.t; src: Typ.t}
+    | Signed of {bits: int}
+    | Unsigned of {bits: int}
+    | Convert of {src: Typ.t; dst: Typ.t}
     | Select of int
   [@@deriving compare, equal, hash, sexp]
 
@@ -219,13 +214,9 @@ let rec pp ?is_x fs term =
     | Float {data} -> pf "%s" data
     | Nondet {msg} -> pf "nondet \"%s\"" msg
     | Label {name} -> pf "%s" name
-    | Ap1 (Extract {unsigned; bits}, arg) ->
-        pf "(%s%i)@ %a" (if unsigned then "u" else "i") bits pp arg
-    | Ap1 (Convert {dst; unsigned= true; src= Integer {bits}}, arg) ->
-        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
-    | Ap1 (Convert {unsigned= true; dst= Integer {bits}; src}, arg) ->
-        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
-    | Ap1 (Convert {dst; src}, arg) ->
+    | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
+    | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
+    | Ap1 (Convert {src; dst}, arg) ->
         pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
@@ -352,9 +343,12 @@ let invariant e =
   | ApN (Concat, mems) -> assert (Vector.length mems <> 1)
   | ApN (Record, elts) | RecN (Record, elts) ->
       assert (not (Vector.is_empty elts))
-  | Ap1 (Convert {dst; src}, _) ->
-      assert (not (Typ.equivalent dst src)) ;
-      assert (Typ.convertible dst src)
+  | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
+  | Ap1 (Convert {src; dst}, _) ->
+      assert (Typ.convertible src dst) ;
+      assert (
+        not (Typ.equivalent src dst) (* avoid redundant representations *)
+      )
   | _ -> ()
   [@@warning "-9"]
 
@@ -500,27 +494,18 @@ let label ~parent ~name = Label {parent; name} |> check invariant
 
 (* type conversions *)
 
-let simp_extract ~unsigned bits arg =
+let simp_signed bits arg =
   match arg with
-  | Integer {data} -> integer (Z.extract ~unsigned bits data)
-  | _ -> Ap1 (Extract {unsigned; bits}, arg)
+  | Integer {data} -> integer (Z.signed_extract data 0 bits)
+  | _ -> Ap1 (Signed {bits}, arg)
 
-let simp_convert ~unsigned dst src arg =
-  match (dst, src) with
-  | Typ.Integer {bits= m; _}, Typ.Integer {bits= n; _} -> (
-      if m < n then
-        match arg with
-        | Integer {data} -> integer (Z.extract m data)
-        | _ -> Ap1 (Convert {unsigned= false; dst; src}, arg)
-      else
-        match arg with
-        | Integer {data} -> integer (Z.extract ~unsigned n data)
-        | _ ->
-            if unsigned then Ap1 (Convert {unsigned; dst; src}, arg)
-            else arg )
-  | _ ->
-      if Typ.equivalent dst src then arg
-      else Ap1 (Convert {unsigned; dst; src}, arg)
+let simp_unsigned bits arg =
+  match arg with
+  | Integer {data} -> integer (Z.extract data 0 bits)
+  | _ -> Ap1 (Unsigned {bits}, arg)
+
+let simp_convert src dst arg =
+  if Typ.equivalent src dst then arg else Ap1 (Convert {src; dst}, arg)
 
 (* arithmetic *)
 
@@ -685,7 +670,7 @@ let simp_cond cnd thn els =
 (* boolean / bitwise *)
 
 let rec is_boolean = function
-  | Ap1 ((Extract {bits= 1; _} | Convert {dst= Integer {bits= 1; _}; _}), _)
+  | Ap1 ((Unsigned {bits= 1} | Convert {dst= Integer {bits= 1; _}; _}), _)
    |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
       true
   | Ap2 ((Div | Rem | And | Or | Xor | Shl | Lshr | Ashr), x, y)
@@ -898,8 +883,9 @@ let rec_app key =
 
 let norm1 op x =
   ( match op with
-  | Extract {unsigned; bits} -> simp_extract ~unsigned bits x
-  | Convert {unsigned; dst; src} -> simp_convert ~unsigned dst src x
+  | Signed {bits} -> simp_signed bits x
+  | Unsigned {bits} -> simp_unsigned bits x
+  | Convert {src; dst} -> simp_convert src dst x
   | Select idx -> simp_select idx x )
   |> check invariant
 
@@ -933,12 +919,9 @@ let normN op xs =
 
 (* exposed interface *)
 
-let extract ?(unsigned = false) ~bits term =
-  norm1 (Extract {unsigned; bits}) term
-
-let convert ?(unsigned = false) ~dst ~src term =
-  norm1 (Convert {unsigned; dst; src}) term
-
+let signed bits term = norm1 (Signed {bits}) term
+let unsigned bits term = norm1 (Unsigned {bits}) term
+let convert src ~to_:dst term = norm1 (Convert {src; dst}) term
 let eq = norm2 Eq
 let dq = norm2 Dq
 let lt = norm2 Lt

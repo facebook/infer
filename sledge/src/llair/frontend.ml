@@ -22,7 +22,7 @@ type llvaluekind = [%import: (Llvm.ValueKind.t[@with Opcode.t := llopcode])]
 [@@deriving sexp]
 
 let _pp_lllinkage fs l = Sexp.pp_hum fs (sexp_of_lllinkage l)
-let _pp_llopcode fs l = Sexp.pp_hum fs (sexp_of_llopcode l)
+let pp_llopcode fs l = Sexp.pp_hum fs (sexp_of_llopcode l)
 let pp_llvaluekind fs l = Sexp.pp_hum fs (sexp_of_llvaluekind l)
 
 exception Invalid_llvm of string
@@ -356,8 +356,18 @@ let ptr_idx x ~ptr ~idx ~llelt =
   Exp.add ~typ:Typ.ptr ptr
     (Exp.mul ~typ:Typ.siz (Exp.integer Typ.siz (Z.of_int64 stride)) idx)
 
+let convert_to_siz =
+  let siz_bits = Typ.bit_size_of Typ.siz in
+  fun typ arg ->
+    match (typ : Typ.t) with
+    | Integer {bits} ->
+        if siz_bits < bits then Exp.signed siz_bits arg ~to_:Typ.siz
+        else if siz_bits > bits then Exp.signed bits arg ~to_:Typ.siz
+        else arg
+    | _ -> fail "convert_to_siz: %a" Typ.pp typ ()
+
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
- fun x typ arg -> Exp.convert ~dst:(i32 x) ~src:typ arg
+ fun x typ arg -> Exp.convert typ ~to_:(i32 x) arg
 
 let rec xlate_intrinsic_exp : string -> (x -> Llvm.llvalue -> Exp.t) option
     =
@@ -479,12 +489,20 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       ( if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
         todo "vector operations: %a" pp_llvalue llv () )
   in
-  let convert ?unsigned () =
+  let convert opcode =
     let dst = Lazy.force typ in
     let rand = Llvm.operand llv 0 in
     let src = xlate_type x (Llvm.type_of rand) in
     let arg = xlate_value x rand in
-    Exp.convert ?unsigned ~dst ~src arg
+    match opcode with
+    | Trunc -> Exp.signed (Typ.bit_size_of dst) arg ~to_:dst
+    | SExt -> Exp.signed (Typ.bit_size_of src) arg ~to_:dst
+    | ZExt -> Exp.unsigned (Typ.bit_size_of src) arg ~to_:dst
+    | (BitCast | AddrSpaceCast) when Typ.equal dst src -> arg
+    | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc | FPExt | PtrToInt
+     |IntToPtr | BitCast | AddrSpaceCast ->
+        Exp.convert src ~to_:dst arg
+    | _ -> fail "convert: %a" pp_llopcode opcode ()
   in
   let binary (mk : ?typ:_ -> _) =
     Lazy.force check_vector ;
@@ -496,10 +514,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
         Exp.or_ ~typ:Typ.bool (Exp.uno ?typ e f) (mk ?typ e f) )
   in
   ( match opcode with
-  | AddrSpaceCast | BitCast -> convert ()
-  | Trunc | ZExt | FPToUI | UIToFP | PtrToInt | IntToPtr ->
-      convert ~unsigned:true ()
-  | SExt | FPTrunc | FPExt | FPToSI | SIToFP -> convert ()
+  | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc
+   |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast ->
+      convert opcode
   | ICmp -> (
     match Option.value_exn (Llvm.icmp_predicate llv) with
     | Eq -> binary Exp.eq
@@ -602,15 +619,16 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
         todo "vector operations: %a" pp_llvalue llv () ;
       let len = Llvm.num_operands llv in
-      if len <= 1 then convert ()
+      assert (len > 0 || invalid_llvm (Llvm.string_of_llvalue llv)) ;
+      if len = 1 then convert BitCast
       else
         let rec xlate_indices i =
           [%Trace.call fun {pf} ->
             pf "%i %a" i pp_llvalue (Llvm.operand llv i)]
           ;
           let idx =
-            Exp.convert ~dst:Typ.siz
-              ~src:(xlate_type x (Llvm.type_of (Llvm.operand llv i)))
+            convert_to_siz
+              (xlate_type x (Llvm.type_of (Llvm.operand llv i)))
               (xlate_rand i)
           in
           ( if i = 1 then
@@ -891,8 +909,8 @@ let xlate_instr :
       let reg = xlate_name x instr in
       let rand = Llvm.operand instr 0 in
       let num =
-        Exp.convert ~dst:Typ.siz
-          ~src:(xlate_type x (Llvm.type_of rand))
+        convert_to_siz
+          (xlate_type x (Llvm.type_of rand))
           (xlate_value x rand)
       in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
@@ -936,8 +954,8 @@ let xlate_instr :
             let reg = xlate_name x instr in
             let num_operand = Llvm.operand instr 0 in
             let num =
-              Exp.convert ~dst:Typ.siz
-                ~src:(xlate_type x (Llvm.type_of num_operand))
+              convert_to_siz
+                (xlate_type x (Llvm.type_of num_operand))
                 (xlate_value x num_operand)
             in
             let len = Exp.integer Typ.siz (Z.of_int 1) in

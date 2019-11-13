@@ -11,14 +11,25 @@
     bitwise-logical, etc. operations over literal values and registers. *)
 
 type op1 =
-  | Convert of {unsigned: bool; dst: Typ.t}
-      (** Convert between specified types, possibly with loss of
-          information. In [Ap1 (Convert {unsigned; dst}, src, arg)], if
-          [src] is an [Integer] type, then [unsigned] indicates that [arg]
-          should be interpreted as an [unsigned] integer. If [src] is a
-          [Float] type and [dst] is an [Integer] type, then [unsigned]
-          indidates that the result should be the nearest non-negative
-          value. *)
+  | Signed of {bits: int}
+      (** [Ap1 (Signed {bits= n}, dst, arg)] is [arg] interpreted as an
+          [n]-bit signed integer and injected into the [dst] type. That is,
+          it two's-complement--decodes the low [n] bits of the infinite
+          two's-complement encoding of [arg]. The injection into [dst] is a
+          no-op, so [dst] must be an integer type with bitwidth at least
+          [n]. *)
+  | Unsigned of {bits: int}
+      (** [Ap1 (Unsigned {bits= n}, dst, arg)] is [arg] interpreted as an
+          [n]-bit unsigned integer and injected into the [dst] type. That
+          is, it unsigned-binary--decodes the low [n] bits of the infinite
+          two's-complement encoding of [arg]. The injection into [dst] is a
+          no-op, so [dst] must be an integer type with bitwidth greater than
+          [n]. *)
+  | Convert of {src: Typ.t}
+      (** [Ap1 (Convert {src}, dst, arg)] is [arg] converted from type [src]
+          to type [dst], possibly with loss of information. The [src] and
+          [dst] types must be [Typ.convertible] and must not both be
+          [Integer] types. *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, hash, sexp]
 
@@ -140,7 +151,9 @@ val integer : Typ.t -> Z.t -> t
 val float : Typ.t -> string -> t
 
 (* type conversions *)
-val convert : ?unsigned:bool -> dst:Typ.t -> src:Typ.t -> t -> t
+val signed : int -> t -> to_:Typ.t -> t
+val unsigned : int -> t -> to_:Typ.t -> t
+val convert : Typ.t -> to_:Typ.t -> t -> t
 
 (* comparisons *)
 val eq : ?typ:Typ.t -> t -> t -> t

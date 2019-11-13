@@ -16,13 +16,11 @@ let%test_module _ =
     let pp = printf pp
     let pp_classes = printf pp_classes
     let of_eqs = List.fold ~init:true_ ~f:(fun r (a, b) -> and_eq a b r)
-    let i8 = Typ.int
-    let i64 = Typ.siz
     let ( ! ) i = Term.integer (Z.of_int i)
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( * ) = Term.mul
-    let f = Term.convert ~dst:i64 ~src:i8
+    let f = Term.unsigned 8
     let g = Term.rem
     let wrt = Var.Set.empty
     let t_, wrt = Var.fresh "t" ~wrt
@@ -99,9 +97,10 @@ let%test_module _ =
       pp r2 ;
       [%expect
         {|
-          %x_5 = %y_6 = %z_7
+          %x_5 = %y_6 = %z_7 = ((u8) %x_5)
 
-          {sat= true; rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]} |}]
+          {sat= true;
+           rep= [[%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [((u8) %x_5) ↦ %x_5]]} |}]
 
     let%test _ = entails_eq r2 x z
     let%test _ = entails_eq (or_ r1 r2) x y
@@ -326,10 +325,6 @@ let%test_module _ =
       pp r15 ; [%expect {|
           {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
-    let%test _ = entails_eq r15 b (Term.convert ~dst:Typ.bool ~src:i64 !1)
-
-    let%test _ =
-      entails_eq r15
-        (Term.convert ~dst:i64 ~unsigned:true ~src:Typ.bool b)
-        !1
+    let%test _ = entails_eq r15 b (Term.signed 1 !1)
+    let%test _ = entails_eq r15 (Term.unsigned 1 b) !1
   end )

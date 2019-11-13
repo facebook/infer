@@ -106,7 +106,7 @@ and apron_texpr_of_llair_term tm q typ =
         try Float.of_string data with _ -> failwith "malformed float: %s"
       in
       Some (Texpr1.Cst (Coeff.s_of_float f))
-  | Ap1 (Convert {unsigned= false; dst; src}, t) -> (
+  | Ap1 (Convert {dst; src}, t) -> (
     match (apron_typ_of_llair_typ dst, apron_typ_of_llair_typ src) with
     | None, _ | _, None -> None
     | Some dst, Some src ->
@@ -117,8 +117,7 @@ and apron_texpr_of_llair_term tm q typ =
           Some (Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd)) )
   (* extraction to unsigned 1-bit int is llvm encoding of C boolean;
      restrict to [0,1] *)
-  | Ap1 (Extract {unsigned= true; bits= 1}, _t) ->
-      Some (Texpr1.Cst (Coeff.i_of_int 0 1))
+  | Ap1 (Unsigned {bits= 1}, _t) -> Some (Texpr1.Cst (Coeff.i_of_int 0 1))
   (* "t xor true" and "true xor t" are negation *)
   | Ap2 (Xor, t, Integer {data}) when Z.is_true data ->
       let%map t = apron_texpr_of_llair_term t q typ in

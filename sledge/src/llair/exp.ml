@@ -13,7 +13,9 @@ module T = struct
   module T0 = struct
     type op1 =
       (* conversion *)
-      | Convert of {unsigned: bool; dst: Typ.t}
+      | Signed of {bits: int}
+      | Unsigned of {bits: int}
+      | Convert of {src: Typ.t}
       (* array/struct operations *)
       | Select of int
     [@@deriving compare, equal, hash, sexp]
@@ -150,11 +152,11 @@ let rec pp fs exp =
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
-    | Ap1 (Convert {dst; unsigned= true}, Integer {bits}, arg) ->
+    | Ap1 (Signed {bits}, dst, arg) ->
+        pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Unsigned {bits}, dst, arg) ->
         pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
-    | Ap1 (Convert {dst= Integer {bits}; unsigned= true}, src, arg) ->
-        pf "((u%i)(%a)@ %a)" bits Typ.pp src pp arg
-    | Ap1 (Convert {dst}, src, arg) ->
+    | Ap1 (Convert {src}, dst, arg) ->
         pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Splat, _, byt, siz) -> pf "%a^%a" pp byt pp siz
@@ -211,10 +213,19 @@ let rec invariant exp =
   | Float {typ} -> (
     match typ with Float _ -> assert true | _ -> assert false )
   | Label _ -> assert true
-  | Ap1 (Convert {dst}, src, arg) ->
-      assert (not (Typ.equal dst src)) ;
-      assert (Typ.convertible dst src) ;
-      assert (Typ.castable src (typ_of arg))
+  | Ap1 (Signed {bits}, dst, arg) -> (
+    match (dst, typ_of arg) with
+    | Integer {bits= dst_bits}, Typ.Integer _ -> assert (bits <= dst_bits)
+    | _ -> assert false )
+  | Ap1 (Unsigned {bits}, dst, arg) -> (
+    match (dst, typ_of arg) with
+    | Integer {bits= dst_bits}, Typ.Integer _ -> assert (bits < dst_bits)
+    | _ -> assert false )
+  | Ap1 (Convert {src= Integer _}, Integer _, _) -> assert false
+  | Ap1 (Convert {src}, dst, arg) ->
+      assert (Typ.convertible src dst) ;
+      assert (Typ.castable src (typ_of arg)) ;
+      assert (not (Typ.equal src dst) (* avoid redundant representations *))
   | Ap1 (Select idx, typ, rcd) -> (
       assert (Typ.castable typ (typ_of rcd)) ;
       match typ with
@@ -273,7 +284,7 @@ and typ_of exp =
   match exp.desc with
   | Reg {typ} | Nondet {typ} | Integer {typ} | Float {typ} -> typ
   | Label _ -> Typ.ptr
-  | Ap1 (Convert {dst}, _, _) -> dst
+  | Ap1 ((Signed _ | Unsigned _ | Convert _), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array {elt} -> elt
@@ -411,11 +422,17 @@ let float typ data =
 
 (* type conversions *)
 
-let convert ?(unsigned = false) ~dst ~src exp =
-  ( if (not unsigned) && Typ.equal dst src then exp
-  else
-    { desc= Ap1 (Convert {unsigned; dst}, src, exp)
-    ; term= Term.convert ~unsigned ~dst ~src exp.term } )
+let signed bits x ~to_:typ =
+  {desc= Ap1 (Signed {bits}, typ, x); term= Term.signed bits x.term}
+  |> check invariant
+
+let unsigned bits x ~to_:typ =
+  {desc= Ap1 (Unsigned {bits}, typ, x); term= Term.unsigned bits x.term}
+  |> check invariant
+
+let convert src ~to_:dst exp =
+  { desc= Ap1 (Convert {src}, dst, exp)
+  ; term= Term.convert src ~to_:dst exp.term }
   |> check invariant
 
 (* comparisons *)
@@ -427,8 +444,8 @@ let binary op mk ?typ x y =
 let ubinary op mk ?typ x y =
   let typ = match typ with Some typ -> typ | None -> typ_of x in
   let umk x y =
-    let extract = Term.extract ~unsigned:true ~bits:(Typ.bit_size_of typ) in
-    mk (extract x) (extract y)
+    let unsigned = Term.unsigned (Typ.bit_size_of typ) in
+    mk (unsigned x) (unsigned y)
   in
   binary op umk ~typ x y
 

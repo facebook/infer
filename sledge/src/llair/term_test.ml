@@ -30,51 +30,16 @@ let%test_module _ =
     let y = var y_
     let z = var z_
 
-    let%test "booleans distinct" = is_false (eq minus_one zero)
-    let%test "unsigned booleans distinct" = is_false (eq one zero)
-
-    let%test "boolean overflow" =
-      is_true
-        (Exp.eq
-           (Exp.integer Typ.bool Z.minus_one)
-           (Exp.convert ~dst:Typ.bool ~src:Typ.siz
-              (Exp.integer Typ.siz Z.one)))
-          .term
-
-    let%expect_test _ =
-      pp
-        (Exp.convert ~dst:Typ.byt ~unsigned:true ~src:Typ.int
-           (Exp.integer Typ.int (Z.of_int 255)))
-          .term ;
-      [%expect {| -1 |}]
-
-    let%expect_test _ =
-      pp
-        (Exp.convert ~dst:Typ.byt ~unsigned:false ~src:Typ.int
-           (Exp.integer Typ.int (Z.of_int 255)))
-          .term ;
-      [%expect {| -1 |}]
-
-    let%expect_test _ =
-      pp
-        (Exp.convert ~dst:Typ.int ~unsigned:true ~src:Typ.byt
-           (Exp.integer Typ.byt (Z.of_int (-1))))
-          .term ;
-      [%expect {| 255 |}]
-
-    let%expect_test _ =
-      pp
-        (Exp.convert ~dst:Typ.int ~unsigned:false ~src:Typ.byt
-           (Exp.integer Typ.byt (Z.of_int (-1))))
-          .term ;
-      [%expect {| -1 |}]
+    let%test "booleans distinct" = is_false (true_ = false_)
+    let%test "u1 values distinct" = is_false (one = zero)
+    let%test "boolean overflow" = is_true (minus_one = signed 1 one)
+    let%test _ = is_true (one = unsigned 1 minus_one)
 
     let%test "unsigned boolean overflow" =
       is_true
         (Exp.uge
            (Exp.integer Typ.bool Z.minus_one)
-           (Exp.convert ~dst:Typ.bool ~src:Typ.siz
-              (Exp.integer Typ.siz Z.one)))
+           (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool))
           .term
 
     let%expect_test _ =
