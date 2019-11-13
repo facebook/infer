@@ -247,10 +247,12 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
             "Please make sure this is an expected change. You can inspect the trace to understand \
              the complexity increase:"
       in
-      let cold_start_msg =
-        if ExternalPerfData.in_profiler_data_map procname then
-          "This function is called during cold start. It is very important to avoid potential \
-           regressions in this phase."
+      let cold_start_or_ui_msg =
+        let common_msg = "It is very important to avoid potential regressions in this phase." in
+        if is_on_ui_thread then
+          Format.asprintf "This function is called on the UI Thread! %s" common_msg
+        else if ExternalPerfData.in_profiler_data_map procname then
+          Format.asprintf "This function is called during cold start! %s" common_msg
         else ""
       in
       let msg =
@@ -268,7 +270,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; zero_issue; infini
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
         prev_item
         (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
-        curr_item cold_start_msg pp_extra_msg ()
+        curr_item cold_start_or_ui_msg pp_extra_msg ()
     in
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
